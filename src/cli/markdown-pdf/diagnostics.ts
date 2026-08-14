@@ -1,4 +1,8 @@
-import type { NormalizedMarkdownPdfPageNumbers, NormalizedMarkdownPdfProfile } from "./profile";
+import type {
+  MarkdownPdfProfileRevisionAssessment,
+  NormalizedMarkdownPdfPageNumbers,
+  NormalizedMarkdownPdfProfile,
+} from "./profile";
 import type { MarkdownPdfTemplateCompatibilityResult } from "./template-compatibility";
 
 export const MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS = {
@@ -10,6 +14,9 @@ export const MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS = {
   rendererCapabilityUnverified: "MARKDOWN_PDF_RENDERER_CAPABILITY_UNVERIFIED",
   rendererCapabilityProbeFailed: "MARKDOWN_PDF_RENDERER_CAPABILITY_PROBE_FAILED",
   rendererCapabilityUnknown: "MARKDOWN_PDF_RENDERER_CAPABILITY_UNKNOWN",
+  profileSchemaVersionInvalid: "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_INVALID",
+  profileSchemaVersionStale: "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_STALE",
+  profileSchemaVersionForward: "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_FORWARD",
 } as const;
 
 export type MarkdownPdfDiagnosticConditionId =
@@ -18,7 +25,10 @@ export type MarkdownPdfDiagnosticConditionId =
 export type MarkdownPdfWarningConditionId =
   | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.occupiedPageNumberSlot
   | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.physicalPageTotalWithLogicalSequence
-  | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.legacyBodyVisibilityFallback;
+  | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.legacyBodyVisibilityFallback
+  | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.profileSchemaVersionInvalid
+  | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.profileSchemaVersionStale
+  | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.profileSchemaVersionForward;
 
 export const MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_WARNING =
   "Selected legacy Markdown PDF template has no provable .document-body boundary; body-scoped page-number visibility will use document-origin fallback behavior.";
@@ -43,11 +53,59 @@ export interface MarkdownPdfDiagnostic {
     | {
         kind: "legacy-body-visibility-fallback";
         bodyBoundary: "legacy-document-origin-fallback";
+      }
+    | {
+        kind: "profile-schema-version";
+        state: "forward" | "invalid" | "stale";
+        declaredRevision?: number;
+        inferredRevision: number;
+        currentRevision: number;
       };
 }
 
 export interface MarkdownPdfDiagnostics {
   conditions: MarkdownPdfDiagnostic[];
+}
+
+function profileRevisionDiagnostic(
+  assessment: MarkdownPdfProfileRevisionAssessment | undefined,
+): MarkdownPdfDiagnostic | undefined {
+  if (!assessment || assessment.state === "missing" || assessment.state === "supported") {
+    return undefined;
+  }
+
+  const context = {
+    kind: "profile-schema-version" as const,
+    state: assessment.state,
+    ...(assessment.declaredRevision === undefined
+      ? {}
+      : { declaredRevision: assessment.declaredRevision }),
+    inferredRevision: assessment.inferredRevision,
+    currentRevision: assessment.currentRevision,
+  };
+
+  if (assessment.state === "invalid") {
+    return {
+      conditionId: MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.profileSchemaVersionInvalid,
+      severity: "warning",
+      message: `Profile schemaVersion is unusable; inferred Profile revision is ${assessment.inferredRevision} and current revision is ${assessment.currentRevision}. Supported Profile content will continue to render.`,
+      context,
+    };
+  }
+  if (assessment.state === "stale") {
+    return {
+      conditionId: MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.profileSchemaVersionStale,
+      severity: "warning",
+      message: `Profile schemaVersion ${assessment.declaredRevision} is below inferred Profile revision ${assessment.inferredRevision}. Supported Profile content will continue to render.`,
+      context,
+    };
+  }
+  return {
+    conditionId: MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.profileSchemaVersionForward,
+    severity: "warning",
+    message: `Profile schemaVersion ${assessment.declaredRevision} is newer than current Profile revision ${assessment.currentRevision}. Supported Profile content will continue to render.`,
+    context,
+  };
 }
 
 function pageNumberTarget(position: NormalizedMarkdownPdfPageNumbers["position"]): {
@@ -60,14 +118,20 @@ function pageNumberTarget(position: NormalizedMarkdownPdfPageNumbers["position"]
 
 export function collectMarkdownPdfDiagnostics(input: {
   profile: NormalizedMarkdownPdfProfile;
+  profileRevision?: MarkdownPdfProfileRevisionAssessment;
   pageNumbers: NormalizedMarkdownPdfPageNumbers;
   templateCompatibility: MarkdownPdfTemplateCompatibilityResult;
 }): MarkdownPdfDiagnostics {
-  if (!input.pageNumbers.enabled) {
-    return { conditions: [] };
+  const conditions: MarkdownPdfDiagnostic[] = [];
+  const revisionDiagnostic = profileRevisionDiagnostic(input.profileRevision);
+  if (revisionDiagnostic) {
+    conditions.push(revisionDiagnostic);
   }
 
-  const conditions: MarkdownPdfDiagnostic[] = [];
+  if (!input.pageNumbers.enabled) {
+    return { conditions };
+  }
+
   const target = pageNumberTarget(input.pageNumbers.position);
   if (input.profile[target.area][target.slot].trim().length > 0) {
     conditions.push({

@@ -132,7 +132,7 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
       async (fixtureDir) => {
         await writeFile(
           join(fixtureDir, "base.yml"),
-          "profile:\n  id: md-pdf-profile-20260101T000000Z-ba5e0001\n  source: deterministic\n  createdAt: 2026-01-01T00:00:00Z\npage:\n  size: Letter\n",
+          "schemaVersion: 2\nprofile:\n  id: md-pdf-profile-20260101T000000Z-ba5e0001\n  source: deterministic\n  createdAt: 2026-01-01T00:00:00Z\npage:\n  size: Letter\n",
           "utf8",
         );
         await writeFile(join(fixtureDir, "cover.png"), minimalPng(1200, 800));
@@ -160,6 +160,10 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
           id: "md-pdf-profile-20260704T080000Z-abc12345",
           source: "deterministic",
         });
+        expect(baseOnly.result.finalProfile.schemaVersion).toBe(3);
+        expect(await readFile(join(fixtureDir, "base.yml"), "utf8")).toStartWith(
+          "schemaVersion: 2\n",
+        );
         expect(baseOnly.result.serializedProfile).toContain(
           "id: md-pdf-profile-20260704T080000Z-abc12345",
         );
@@ -179,6 +183,7 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
           source: "deterministic",
           basedOn: "default",
         });
+        expect(coverOnly.result.finalProfile.schemaVersion).toBe(3);
         await expectNoPlannedProjectArtifacts(coverOnly.outputPlan);
         expect(codexRunnerCallCount).toBe(0);
       },

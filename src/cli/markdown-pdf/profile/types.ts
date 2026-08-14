@@ -1,5 +1,23 @@
 import type { NormalizeMarkdownPdfOptionsInput } from "../validation";
 import type { MarkdownPdfPreset } from "../validation";
+import {
+  MARKDOWN_PDF_CODE_THEMES,
+  MARKDOWN_PDF_PAGE_CHROME_FONT_WEIGHTS,
+  MARKDOWN_PDF_PAGE_CHROME_POSITIONS,
+  MARKDOWN_PDF_PAGE_CHROME_SEPARATOR_STYLES,
+  MARKDOWN_PDF_PAGE_NUMBER_COUNT_ORIGINS,
+  MARKDOWN_PDF_PAGE_NUMBER_SCOPES,
+} from "./feature-registry";
+import type { MarkdownPdfProfileRevisionAssessment } from "./revision";
+
+export {
+  MARKDOWN_PDF_CODE_THEMES,
+  MARKDOWN_PDF_PAGE_CHROME_FONT_WEIGHTS,
+  MARKDOWN_PDF_PAGE_CHROME_POSITIONS,
+  MARKDOWN_PDF_PAGE_CHROME_SEPARATOR_STYLES,
+  MARKDOWN_PDF_PAGE_NUMBER_COUNT_ORIGINS,
+  MARKDOWN_PDF_PAGE_NUMBER_SCOPES,
+};
 
 export type MarkdownPdfProfileFormat = "json" | "yaml";
 
@@ -15,14 +33,6 @@ export interface NormalizedMarkdownPdfProfileIdentity {
   createdAt: string;
 }
 
-export const MARKDOWN_PDF_CODE_THEMES = [
-  "github-light",
-  "light-plus",
-  "min-light",
-  "vitesse-light",
-  "catppuccin-latte",
-] as const;
-
 export type MarkdownPdfCodeTheme = (typeof MARKDOWN_PDF_CODE_THEMES)[number];
 
 export interface NormalizedMarkdownPdfCode {
@@ -34,15 +44,6 @@ export interface NormalizedMarkdownPdfCode {
 
 export type EffectiveMarkdownPdfCodeOptions = NormalizedMarkdownPdfCode;
 
-export const MARKDOWN_PDF_PAGE_CHROME_POSITIONS = [
-  "top-left",
-  "top-center",
-  "top-right",
-  "bottom-left",
-  "bottom-center",
-  "bottom-right",
-] as const;
-
 export type MarkdownPdfPageChromePosition = (typeof MARKDOWN_PDF_PAGE_CHROME_POSITIONS)[number];
 
 export interface MarkdownPdfPageChromeSlots {
@@ -51,21 +52,13 @@ export interface MarkdownPdfPageChromeSlots {
   right: string;
 }
 
-export const MARKDOWN_PDF_PAGE_NUMBER_SCOPES = ["document", "body"] as const;
-
 export type MarkdownPdfPageNumberScope = (typeof MARKDOWN_PDF_PAGE_NUMBER_SCOPES)[number];
-
-export const MARKDOWN_PDF_PAGE_NUMBER_COUNT_ORIGINS = ["document", "body"] as const;
 
 export type MarkdownPdfPageNumberCountOrigin =
   (typeof MARKDOWN_PDF_PAGE_NUMBER_COUNT_ORIGINS)[number];
 
-export const MARKDOWN_PDF_PAGE_CHROME_FONT_WEIGHTS = [400, 500, 600, 700] as const;
-
 export type MarkdownPdfPageChromeFontWeight =
   (typeof MARKDOWN_PDF_PAGE_CHROME_FONT_WEIGHTS)[number];
-
-export const MARKDOWN_PDF_PAGE_CHROME_SEPARATOR_STYLES = ["solid"] as const;
 
 export type MarkdownPdfPageChromeSeparatorStyle =
   (typeof MARKDOWN_PDF_PAGE_CHROME_SEPARATOR_STYLES)[number];
@@ -152,4 +145,5 @@ export interface MarkdownPdfProfileMergeInput {
 export interface MarkdownPdfProfileLoadResult {
   profile: NormalizedMarkdownPdfProfile;
   recipeOptions: NormalizeMarkdownPdfOptionsInput;
+  revisionAssessment: MarkdownPdfProfileRevisionAssessment;
 }

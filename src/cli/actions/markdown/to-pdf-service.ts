@@ -269,6 +269,7 @@ export async function prepareMarkdownPdfRender(
   });
   const diagnostics = collectMarkdownPdfDiagnostics({
     profile: normalizedProfile.profile,
+    profileRevision: normalizedProfile.revisionAssessment,
     pageNumbers: pageNumberConfiguration.effective,
     templateCompatibility,
   });

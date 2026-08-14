@@ -1,6 +1,11 @@
 import { CliError } from "../../errors";
 import type { NormalizeMarkdownPdfOptionsInput } from "../validation";
 import { DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE } from "./defaults";
+import {
+  findUnsupportedMarkdownPdfProfileFeatureCombination,
+  isMarkdownPdfProfileFeatureValue,
+  MARKDOWN_PDF_CODE_THEMES,
+} from "./feature-registry";
 import { normalizeMarkdownPdfProfileIdentity } from "./identity";
 import {
   isMarkdownPdfPageChromeColor,
@@ -11,7 +16,8 @@ import {
   isMarkdownPdfPageChromeSeparatorStyle,
   isMarkdownPdfPageChromeSeparatorWidth,
 } from "./page-number-domains";
-import { validateMarkdownPdfBodyFontKey } from "./schema";
+import { assessMarkdownPdfProfileRevision } from "./revision";
+import { validateMarkdownPdfBodyFontKey, validateMarkdownPdfProfileShape } from "./schema";
 import type {
   EffectiveMarkdownPdfCodeOptions,
   MarkdownPdfCodeTheme,
@@ -34,29 +40,8 @@ import type {
   NormalizedMarkdownPdfPageNumbers,
   NormalizedMarkdownPdfTitleBlock,
 } from "./types";
-import {
-  MARKDOWN_PDF_CODE_THEMES,
-  MARKDOWN_PDF_PAGE_CHROME_POSITIONS,
-  MARKDOWN_PDF_PAGE_NUMBER_COUNT_ORIGINS,
-  MARKDOWN_PDF_PAGE_NUMBER_SCOPES,
-} from "./types";
 
 const META_KEY_PATTERN = /^[A-Za-z][A-Za-z0-9_.-]*$/;
-const PAGE_NUMBER_POSITIONS = new Set<MarkdownPdfPageChromePosition>(
-  MARKDOWN_PDF_PAGE_CHROME_POSITIONS,
-);
-const PAGE_NUMBER_SCOPES = new Set<MarkdownPdfPageNumberScope>(MARKDOWN_PDF_PAGE_NUMBER_SCOPES);
-const PAGE_NUMBER_COUNT_ORIGINS = new Set<MarkdownPdfPageNumberCountOrigin>(
-  MARKDOWN_PDF_PAGE_NUMBER_COUNT_ORIGINS,
-);
-const COVER_STYLES = new Set<MarkdownPdfCoverStyle>(["plain", "report"]);
-const METADATA_TITLE_BLOCK_MODES = new Set<MarkdownPdfMetadataTitleBlockMode>([
-  "auto",
-  "show",
-  "hide",
-]);
-const CODE_THEMES = new Set<MarkdownPdfCodeTheme>(MARKDOWN_PDF_CODE_THEMES);
-
 function isScalar(value: unknown): value is string | number | boolean {
   return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
 }
@@ -308,7 +293,7 @@ function normalizePageNumbers(value: unknown): NormalizedMarkdownPdfPageNumbers 
     stringValue(input.position, "profile.pageNumbers.position") ??
     DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.pageNumbers.position;
 
-  if (!PAGE_NUMBER_POSITIONS.has(position as MarkdownPdfPageChromePosition)) {
+  if (!isMarkdownPdfProfileFeatureValue("pageNumbers.position", position)) {
     throw new CliError(
       "profile.pageNumbers.position must be one of: top-left, top-center, top-right, bottom-left, bottom-center, bottom-right.",
       {
@@ -321,18 +306,22 @@ function normalizePageNumbers(value: unknown): NormalizedMarkdownPdfPageNumbers 
   const scope =
     stringValue(input.scope, "profile.pageNumbers.scope") ??
     DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.pageNumbers.scope;
-  if (!PAGE_NUMBER_SCOPES.has(scope as MarkdownPdfPageNumberScope)) {
+  if (!isMarkdownPdfProfileFeatureValue("pageNumbers.scope", scope)) {
     return invalidValue("profile.pageNumbers.scope must be one of: document, body.");
   }
 
   const countFrom =
     stringValue(input.countFrom, "profile.pageNumbers.countFrom") ??
     DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.pageNumbers.countFrom;
-  if (!PAGE_NUMBER_COUNT_ORIGINS.has(countFrom as MarkdownPdfPageNumberCountOrigin)) {
+  if (!isMarkdownPdfProfileFeatureValue("pageNumbers.countFrom", countFrom)) {
     return invalidValue("profile.pageNumbers.countFrom must be one of: document, body.");
   }
-  if (scope === "document" && countFrom === "body") {
-    return invalidValue("profile.pageNumbers.scope document cannot be used with countFrom body.");
+  const unsupportedCombination = findUnsupportedMarkdownPdfProfileFeatureCombination({
+    "pageNumbers.countFrom": countFrom,
+    "pageNumbers.scope": scope,
+  });
+  if (unsupportedCombination) {
+    return invalidValue(unsupportedCombination.message);
   }
 
   const start =
@@ -369,7 +358,7 @@ function normalizeTitleBlock(value: unknown): NormalizedMarkdownPdfTitleBlock {
   const metadataTitle =
     stringValue(input.metadataTitle, "profile.titleBlock.metadataTitle") ??
     DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.titleBlock.metadataTitle;
-  if (!METADATA_TITLE_BLOCK_MODES.has(metadataTitle as MarkdownPdfMetadataTitleBlockMode)) {
+  if (!isMarkdownPdfProfileFeatureValue("titleBlock.metadataTitle", metadataTitle)) {
     throw new CliError("profile.titleBlock.metadataTitle must be one of: auto, show, hide.", {
       code: "INVALID_INPUT",
       exitCode: 2,
@@ -385,7 +374,7 @@ function normalizeCover(value: unknown): NormalizedMarkdownPdfCover {
   const style =
     stringValue(input.style, "profile.cover.style") ??
     DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.cover.style;
-  if (!COVER_STYLES.has(style as MarkdownPdfCoverStyle)) {
+  if (!isMarkdownPdfProfileFeatureValue("cover.style", style)) {
     throw new CliError("profile.cover.style must be one of: plain, report.", {
       code: "INVALID_INPUT",
       exitCode: 2,
@@ -415,7 +404,7 @@ function normalizeCode(value: unknown): NormalizedMarkdownPdfCode {
   const theme =
     stringValue(input.theme, "profile.code.theme") ??
     DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.code.theme;
-  if (!CODE_THEMES.has(theme as MarkdownPdfCodeTheme)) {
+  if (!isMarkdownPdfProfileFeatureValue("code.theme", theme)) {
     throw new CliError(
       `profile.code.theme must be one of: ${MARKDOWN_PDF_CODE_THEMES.join(", ")}.`,
       {
@@ -541,6 +530,8 @@ export function normalizeMarkdownPdfProfile(
   input: MarkdownPdfProfileMergeInput = {},
 ): MarkdownPdfProfileLoadResult {
   const profile = input.profile ?? {};
+  validateMarkdownPdfProfileShape(profile);
+  const revisionAssessment = assessMarkdownPdfProfileRevision(profile);
   const profileMetadata = normalizeMetadata(profile.metadata, "profile.metadata");
   const frontmatterMetadata = normalizeMetadata(input.frontmatter, "Markdown frontmatter");
   const cliMetadata = parseMetaOverrides(input.meta);
@@ -567,5 +558,6 @@ export function normalizeMarkdownPdfProfile(
       contentLangs: uniqueStrings([...contentLangsFromSource(profile), ...frontmatterContentLangs]),
     },
     recipeOptions: markdownPdfProfileToRecipeOptions(profile, identity),
+    revisionAssessment,
   };
 }

@@ -1,5 +1,6 @@
 import type { NormalizedMarkdownPdfOptions } from "../validation";
 import { DEFAULT_MARKDOWN_PDF_PROFILE } from "./defaults";
+import { MARKDOWN_PDF_PROFILE_CURRENT_REVISION } from "./feature-registry";
 import type { NormalizedMarkdownPdfProfileIdentity } from "./types";
 
 export interface CreateMarkdownPdfProfileConfigInput {
@@ -11,6 +12,7 @@ export function createMarkdownPdfProfileConfig(
   input: CreateMarkdownPdfProfileConfigInput = {},
 ): Record<string, unknown> {
   return {
+    schemaVersion: MARKDOWN_PDF_PROFILE_CURRENT_REVISION,
     ...(input.identity ? { profile: input.identity } : {}),
     ...DEFAULT_MARKDOWN_PDF_PROFILE,
     page: {

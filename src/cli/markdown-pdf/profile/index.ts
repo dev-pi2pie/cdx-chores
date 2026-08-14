@@ -1,4 +1,27 @@
 export { DEFAULT_MARKDOWN_PDF_PROFILE, DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE } from "./defaults";
+export {
+  MARKDOWN_PDF_PROFILE_BASELINE_REVISION,
+  MARKDOWN_PDF_PROFILE_CURRENT_REVISION,
+  MARKDOWN_PDF_PROFILE_FEATURE_COMBINATION_RULES,
+  MARKDOWN_PDF_PROFILE_FEATURE_REGISTRY,
+  markdownPdfProfileFeatureAtPath,
+  markdownPdfProfileFeatureKeys,
+  markdownPdfProfileFeatureValues,
+  markdownPdfProfileRendererCapability,
+  markdownPdfProfileRendererCapabilityFields,
+} from "./feature-registry";
+export type {
+  MarkdownPdfProfileFeatureCombinationRule,
+  MarkdownPdfProfileFeatureDefinition,
+  MarkdownPdfProfileFeatureKind,
+  MarkdownPdfProfileFeatureValue,
+  MarkdownPdfProfileNormalizationRoute,
+} from "./feature-registry";
+export { assessMarkdownPdfProfileRevision, inferMarkdownPdfProfileRevision } from "./revision";
+export type {
+  MarkdownPdfProfileRevisionAssessment,
+  MarkdownPdfProfileRevisionState,
+} from "./revision";
 export { MARKDOWN_PDF_CODE_THEMES } from "./types";
 export {
   isMarkdownPdfPageChromeColor,

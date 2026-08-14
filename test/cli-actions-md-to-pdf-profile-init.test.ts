@@ -23,6 +23,7 @@ describe("cli action modules: md to-pdf profile init", () => {
       });
 
       const profile = await readFile(outputPath, "utf8");
+      expect(profile).toStartWith("schemaVersion: 3\n");
       expect(profile).toContain("page:");
       expect(profile).not.toContain("profile:");
       expect(profile).toContain("pageNumbers:");
@@ -50,6 +51,7 @@ describe("cli action modules: md to-pdf profile init", () => {
       });
 
       const profile = JSON.parse(await readFile(outputPath, "utf8")) as {
+        schemaVersion: number;
         page: { orientation: string; marginTop: string };
         pageNumbers: {
           enabled: boolean;
@@ -61,6 +63,7 @@ describe("cli action modules: md to-pdf profile init", () => {
           format: string;
         };
       };
+      expect(profile.schemaVersion).toBe(3);
       expect(profile.page.orientation).toBe("landscape");
       expect(profile.page.marginTop).toBe("12mm");
       expect(profile.pageNumbers).toEqual({

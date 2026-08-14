@@ -131,6 +131,7 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(stderr.text).toContain("Requesting Codex Markdown PDF profile recommendation...");
       expect(stderr.text).toContain("Wrote Markdown PDF profile: profile.yml");
       const profile = await readMarkdownPdfProfileFile(outputPath);
+      expect(profile.schemaVersion).toBe(3);
       const profileIdentity = profile.profile as NormalizedMarkdownPdfProfileIdentity;
       expect(profileIdentity.id).toMatch(/^md-pdf-profile-20260615T081500Z-[a-f0-9]{8}$/);
       expect(profileIdentity).toMatchObject({
@@ -604,6 +605,7 @@ describe("cli action modules: md pdf-profile codex", () => {
 
       const rawProfile = await readFile(outputPath, "utf8");
       expect(JSON.parse(rawProfile)).toMatchObject({
+        schemaVersion: 3,
         profile: {
           basedOn: "wide-table",
           preset: "wide-table",
@@ -1665,6 +1667,35 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(report.documentSignals.available).toBe(false);
       expect(report.selectedBase.candidateId).toBe("base-profile");
     });
+  });
+
+  test("rejects Codex reports with unsupported artifact versions", async () => {
+    await withTempFixtureDir(
+      "md-pdf-profile-codex-unsupported-report-version",
+      async (fixtureDir) => {
+        const reportPath = join(fixtureDir, "profile-report.json");
+
+        const { runtime } = createActionTestRuntime({
+          cwd: fixtureDir,
+          now: () => new Date("2026-06-15T08:15:00.000Z"),
+        });
+        await actionMdPdfProfileCodex(runtime, {
+          codexReportOutput: "profile-report.json",
+          codexRunner: adaptedRunner("article"),
+          output: "profile.yml",
+        });
+
+        const report = JSON.parse(await readFile(reportPath, "utf8")) as {
+          artifact: { version: number };
+        };
+        report.artifact.version += 1;
+        await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
+
+        await expect(readMarkdownPdfCodexReportArtifact(reportPath)).rejects.toThrow(
+          "Unsupported Markdown PDF Codex report artifact version.",
+        );
+      },
+    );
   });
 
   test("rejects Codex reports with invalid signal mode", async () => {

@@ -9,6 +9,10 @@ import type {
   NormalizedMarkdownPdfPageNumbers,
   NormalizedMarkdownPdfProfile,
 } from "./profile";
+import {
+  markdownPdfProfileRendererCapability,
+  markdownPdfProfileRendererCapabilityFields,
+} from "./profile";
 
 export const MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION = "65.1";
 
@@ -75,20 +79,12 @@ export interface MarkdownPdfRendererCapabilityAssessment {
 
 const PAGE_CHROME_AREAS = ["header", "footer"] as const;
 
-function pageChromeFields(
-  field:
-    | "fontSize"
-    | "fontWeight"
-    | "lineHeight"
-    | "color"
-    | "separator.width"
-    | "separator.style"
-    | "separator.color"
-    | "separator.gap",
+function registryCapabilityFields(
+  capabilityId: MarkdownPdfRendererCapabilityId,
 ): MarkdownPdfRendererCapabilityField[] {
-  return PAGE_CHROME_AREAS.map(
-    (area) => `${area}.style.${field}` as MarkdownPdfRendererCapabilityField,
-  );
+  return markdownPdfProfileRendererCapabilityFields(
+    capabilityId,
+  ) as MarkdownPdfRendererCapabilityField[];
 }
 
 export const MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX: readonly MarkdownPdfRendererCapabilityDefinition[] =
@@ -96,62 +92,70 @@ export const MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX: readonly MarkdownPdfRender
     {
       id: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberStart,
       minimumVersion: MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
-      fields: ["pageNumbers.start"],
+      fields: registryCapabilityFields(MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberStart),
     },
     {
       id: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberIncrement,
       minimumVersion: MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
-      fields: ["pageNumbers.increment"],
+      fields: registryCapabilityFields(MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberIncrement),
     },
     {
       id: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberDocumentScope,
       minimumVersion: MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
-      fields: ["pageNumbers.scope"],
+      fields: registryCapabilityFields(
+        MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberDocumentScope,
+      ),
     },
     {
       id: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberBodyOrigin,
       minimumVersion: MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
-      fields: ["pageNumbers.countFrom"],
+      fields: registryCapabilityFields(MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberBodyOrigin),
     },
     {
       id: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeFontSize,
       minimumVersion: MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
-      fields: pageChromeFields("fontSize"),
+      fields: registryCapabilityFields(MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeFontSize),
     },
     {
       id: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeFontWeight,
       minimumVersion: MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
-      fields: pageChromeFields("fontWeight"),
+      fields: registryCapabilityFields(MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeFontWeight),
     },
     {
       id: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeLineHeight,
       minimumVersion: MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
-      fields: pageChromeFields("lineHeight"),
+      fields: registryCapabilityFields(MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeLineHeight),
     },
     {
       id: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeColor,
       minimumVersion: MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
-      fields: pageChromeFields("color"),
+      fields: registryCapabilityFields(MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeColor),
     },
     {
       id: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeSeparatorWidth,
       minimumVersion: MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
-      fields: pageChromeFields("separator.width"),
+      fields: registryCapabilityFields(
+        MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeSeparatorWidth,
+      ),
     },
     {
       id: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeSeparatorStyle,
       minimumVersion: MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
-      fields: pageChromeFields("separator.style"),
+      fields: registryCapabilityFields(
+        MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeSeparatorStyle,
+      ),
     },
     {
       id: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeSeparatorColor,
       minimumVersion: MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
-      fields: pageChromeFields("separator.color"),
+      fields: registryCapabilityFields(
+        MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeSeparatorColor,
+      ),
     },
     {
       id: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeSeparatorGap,
       minimumVersion: MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
-      fields: pageChromeFields("separator.gap"),
+      fields: registryCapabilityFields(MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeSeparatorGap),
     },
   ];
 
@@ -177,6 +181,17 @@ function appendRequest(
   requests.set(capabilityId, fields);
 }
 
+function appendProfileFeatureRequest(
+  requests: Map<MarkdownPdfRendererCapabilityId, MarkdownPdfRendererCapabilityField[]>,
+  field: MarkdownPdfRendererCapabilityField,
+  value?: unknown,
+): void {
+  const capabilityId = markdownPdfProfileRendererCapability(field, value);
+  if (capabilityId) {
+    appendRequest(requests, capabilityId as MarkdownPdfRendererCapabilityId, field);
+  }
+}
+
 function collectAreaStyleRequests(input: {
   area: "header" | "footer";
   profile: NormalizedMarkdownPdfProfile;
@@ -187,25 +202,19 @@ function collectAreaStyleRequests(input: {
     return;
   }
 
-  for (const [field, capabilityId] of [
-    ["fontSize", MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeFontSize],
-    ["fontWeight", MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeFontWeight],
-    ["lineHeight", MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeLineHeight],
-    ["color", MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeColor],
-  ] as const) {
+  for (const field of ["fontSize", "fontWeight", "lineHeight", "color"] as const) {
     if (style[field] !== undefined) {
-      appendRequest(input.requests, capabilityId, `${input.area}.style.${field}`);
+      appendProfileFeatureRequest(input.requests, `${input.area}.style.${field}`, style[field]);
     }
   }
 
-  for (const [field, capabilityId] of [
-    ["width", MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeSeparatorWidth],
-    ["style", MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeSeparatorStyle],
-    ["color", MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeSeparatorColor],
-    ["gap", MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeSeparatorGap],
-  ] as const) {
+  for (const field of ["width", "style", "color", "gap"] as const) {
     if (style.separator?.[field] !== undefined) {
-      appendRequest(input.requests, capabilityId, `${input.area}.style.separator.${field}`);
+      appendProfileFeatureRequest(
+        input.requests,
+        `${input.area}.style.separator.${field}`,
+        style.separator[field],
+      );
     }
   }
 }
@@ -218,32 +227,16 @@ export function collectMarkdownPdfRendererCapabilityRequests(input: {
 
   if (input.pageNumbers.enabled) {
     if (input.pageNumbers.start !== 1) {
-      appendRequest(
-        requests,
-        MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberStart,
-        "pageNumbers.start",
-      );
+      appendProfileFeatureRequest(requests, "pageNumbers.start", input.pageNumbers.start);
     }
     if (input.pageNumbers.increment !== 1) {
-      appendRequest(
-        requests,
-        MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberIncrement,
-        "pageNumbers.increment",
-      );
+      appendProfileFeatureRequest(requests, "pageNumbers.increment", input.pageNumbers.increment);
     }
     if (input.pageNumbers.scope === "document") {
-      appendRequest(
-        requests,
-        MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberDocumentScope,
-        "pageNumbers.scope",
-      );
+      appendProfileFeatureRequest(requests, "pageNumbers.scope", input.pageNumbers.scope);
     }
     if (input.pageNumbers.countFrom === "body") {
-      appendRequest(
-        requests,
-        MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberBodyOrigin,
-        "pageNumbers.countFrom",
-      );
+      appendProfileFeatureRequest(requests, "pageNumbers.countFrom", input.pageNumbers.countFrom);
     }
   }
 

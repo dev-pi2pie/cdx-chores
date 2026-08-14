@@ -1,26 +1,12 @@
 import { extname } from "node:path";
 
 import { CliError } from "../../errors";
+import { markdownPdfProfileFeatureAtPath, markdownPdfProfileFeatureKeys } from "./feature-registry";
 import type { MarkdownPdfProfileFormat } from "./types";
 
-export const MARKDOWN_PDF_PROFILE_ROOT_KEYS = [
-  "profile",
-  "page",
-  "toc",
-  "metadata",
-  "pdf",
-  "fonts",
-  "cover",
-  "header",
-  "footer",
-  "pageNumbers",
-  "titleBlock",
-  "code",
-] as const;
+export const MARKDOWN_PDF_PROFILE_ROOT_KEYS = Array.from(markdownPdfProfileFeatureKeys());
 
-const MARKDOWN_PDF_PROFILE_ROOT_KEY_SCHEMA_SUMMARIES: Partial<
-  Record<(typeof MARKDOWN_PDF_PROFILE_ROOT_KEYS)[number], string[]>
-> = {
+const MARKDOWN_PDF_PROFILE_ROOT_KEY_SCHEMA_SUMMARIES: Partial<Record<string, string[]>> = {
   page: ["page.size", "page.orientation", "page margins"],
   toc: ["toc.enabled", "toc.depth", "toc.pageBreak"],
   fonts: ["fonts.body", "fonts.heading", "fonts.code", "fonts.pageChrome"],
@@ -28,41 +14,9 @@ const MARKDOWN_PDF_PROFILE_ROOT_KEY_SCHEMA_SUMMARIES: Partial<
 };
 
 export const MARKDOWN_PDF_PROFILE_SUPPORTED_SCHEMA_SUMMARY = MARKDOWN_PDF_PROFILE_ROOT_KEYS.filter(
-  (key) => key !== "profile",
+  (key) => key !== "profile" && key !== "schemaVersion",
 ).flatMap((key) => MARKDOWN_PDF_PROFILE_ROOT_KEY_SCHEMA_SUMMARIES[key] ?? [key]);
 
-const ROOT_KEYS = new Set<string>(MARKDOWN_PDF_PROFILE_ROOT_KEYS);
-const PROFILE_IDENTITY_KEYS = new Set(["id", "source", "basedOn", "preset", "createdAt"]);
-const PAGE_KEYS = new Set([
-  "size",
-  "orientation",
-  "margin",
-  "marginX",
-  "marginY",
-  "marginTop",
-  "marginRight",
-  "marginBottom",
-  "marginLeft",
-]);
-const TOC_KEYS = new Set(["enabled", "depth", "pageBreak"]);
-const COVER_KEYS = new Set(["enabled", "style", "fields"]);
-const COVER_FIELD_KEYS = new Set(["title", "subtitle", "author", "company", "date"]);
-const CHROME_KEYS = new Set(["left", "center", "right", "style"]);
-const CHROME_STYLE_KEYS = new Set(["fontSize", "fontWeight", "lineHeight", "color", "separator"]);
-const CHROME_SEPARATOR_KEYS = new Set(["width", "style", "color", "gap"]);
-const PAGE_NUMBER_KEYS = new Set([
-  "enabled",
-  "position",
-  "format",
-  "scope",
-  "countFrom",
-  "start",
-  "increment",
-]);
-const TITLE_BLOCK_KEYS = new Set(["metadataTitle"]);
-const CODE_KEYS = new Set(["highlight", "theme", "lineNumbers", "transformerNotation"]);
-const PDF_KEYS = new Set(["content-langs"]);
-const FONT_ROLE_KEYS = new Set(["body", "heading", "code", "pageChrome"]);
 const LANGUAGE_TAG_PATTERN = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
 
 export function inferMarkdownPdfProfileFormat(path: string): MarkdownPdfProfileFormat {
@@ -96,7 +50,7 @@ export function assertPlainObject(value: unknown, label: string): Record<string,
 
 function assertAllowedKeys(
   value: Record<string, unknown>,
-  allowedKeys: Set<string>,
+  allowedKeys: ReadonlySet<string>,
   label: string,
 ): void {
   const unknownKeys = Object.keys(value).filter((key) => !allowedKeys.has(key));
@@ -105,26 +59,6 @@ function assertAllowedKeys(
       code: "INVALID_INPUT",
       exitCode: 2,
     });
-  }
-}
-
-function assertOptionalObject(value: unknown, label: string): Record<string, unknown> | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-  return assertPlainObject(value, label);
-}
-
-function validatePageChromeShape(value: Record<string, unknown>, label: string): void {
-  assertAllowedKeys(value, CHROME_KEYS, label);
-  const style = assertOptionalObject(value.style, `${label}.style`);
-  if (!style) {
-    return;
-  }
-  assertAllowedKeys(style, CHROME_STYLE_KEYS, `${label}.style`);
-  const separator = assertOptionalObject(style.separator, `${label}.style.separator`);
-  if (separator) {
-    assertAllowedKeys(separator, CHROME_SEPARATOR_KEYS, `${label}.style.separator`);
   }
 }
 
@@ -141,73 +75,30 @@ export function validateMarkdownPdfBodyFontKey(key: string): void {
   );
 }
 
-export function validateMarkdownPdfProfileShape(profile: Record<string, unknown>): void {
-  assertAllowedKeys(profile, ROOT_KEYS, "profile");
-  const identity = assertOptionalObject(profile.profile, "profile.profile");
-  if (identity) {
-    assertAllowedKeys(identity, PROFILE_IDENTITY_KEYS, "profile.profile");
-  }
-
-  const page = assertOptionalObject(profile.page, "profile.page");
-  if (page) {
-    assertAllowedKeys(page, PAGE_KEYS, "profile.page");
-  }
-
-  const toc = assertOptionalObject(profile.toc, "profile.toc");
-  if (toc) {
-    assertAllowedKeys(toc, TOC_KEYS, "profile.toc");
-  }
-
-  assertOptionalObject(profile.metadata, "profile.metadata");
-  const pdf = assertOptionalObject(profile.pdf, "profile.pdf");
-  if (pdf) {
-    assertAllowedKeys(pdf, PDF_KEYS, "profile.pdf");
-  }
-
-  const fonts = assertOptionalObject(profile.fonts, "profile.fonts");
-  if (fonts) {
-    assertAllowedKeys(fonts, FONT_ROLE_KEYS, "profile.fonts");
-    for (const [role, config] of Object.entries(fonts)) {
-      const fontConfig = assertPlainObject(config, `profile.fonts.${role}`);
-      if (role === "body") {
-        for (const key of Object.keys(fontConfig)) {
-          validateMarkdownPdfBodyFontKey(key);
-        }
+function validateRegisteredObject(
+  value: Record<string, unknown>,
+  path: string,
+  label: string,
+): void {
+  assertAllowedKeys(value, markdownPdfProfileFeatureKeys(path), label);
+  for (const [key, child] of Object.entries(value)) {
+    const childPath = path.length > 0 ? `${path}.${key}` : key;
+    const definition = markdownPdfProfileFeatureAtPath(childPath);
+    if (!definition || (definition.kind !== "object" && definition.kind !== "dynamic-object")) {
+      continue;
+    }
+    const childObject = assertPlainObject(child, `${label}.${key}`);
+    if (childPath === "fonts.body") {
+      for (const fontKey of Object.keys(childObject)) {
+        validateMarkdownPdfBodyFontKey(fontKey);
       }
     }
-  }
-
-  const cover = assertOptionalObject(profile.cover, "profile.cover");
-  if (cover) {
-    assertAllowedKeys(cover, COVER_KEYS, "profile.cover");
-    const fields = assertOptionalObject(cover.fields, "profile.cover.fields");
-    if (fields) {
-      assertAllowedKeys(fields, COVER_FIELD_KEYS, "profile.cover.fields");
+    if (definition.kind === "object") {
+      validateRegisteredObject(childObject, childPath, `${label}.${key}`);
     }
   }
+}
 
-  const header = assertOptionalObject(profile.header, "profile.header");
-  if (header) {
-    validatePageChromeShape(header, "profile.header");
-  }
-
-  const footer = assertOptionalObject(profile.footer, "profile.footer");
-  if (footer) {
-    validatePageChromeShape(footer, "profile.footer");
-  }
-
-  const pageNumbers = assertOptionalObject(profile.pageNumbers, "profile.pageNumbers");
-  if (pageNumbers) {
-    assertAllowedKeys(pageNumbers, PAGE_NUMBER_KEYS, "profile.pageNumbers");
-  }
-
-  const titleBlock = assertOptionalObject(profile.titleBlock, "profile.titleBlock");
-  if (titleBlock) {
-    assertAllowedKeys(titleBlock, TITLE_BLOCK_KEYS, "profile.titleBlock");
-  }
-
-  const code = assertOptionalObject(profile.code, "profile.code");
-  if (code) {
-    assertAllowedKeys(code, CODE_KEYS, "profile.code");
-  }
+export function validateMarkdownPdfProfileShape(profile: Record<string, unknown>): void {
+  validateRegisteredObject(profile, "", "profile");
 }

@@ -418,6 +418,7 @@ function collectProjectValidationResults(
       ? collectMarkdownPdfDiagnostics({
           pageNumbers: normalizedProfile.profile.pageNumbers,
           profile: normalizedProfile.profile,
+          profileRevision: normalizedProfile.revisionAssessment,
           templateCompatibility,
         })
       : { conditions: [] };
