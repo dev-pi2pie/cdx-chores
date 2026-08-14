@@ -1239,7 +1239,7 @@ Phase checkpoint:
 
 Tasks:
 
-- [ ] Create and activate a
+- [x] Create and activate a
       [Phase 13 job record](jobs/2026-08-14-markdown-pdf-phase-13-contract-normalization.md)
       from the Phase 12 documentation
       closeout boundary `11767a14`. Freeze the permanent-file boundary,
@@ -1252,7 +1252,7 @@ Tasks:
       unversioned revision-2 historical baseline and additive `v0.1.7` canary
       features to revision `3`, the first emitted declaration. Do not claim that
       `v0.1.6` serialized the field or reconstruct an undocumented revision `1`.
-- [ ] Add optional top-level `schemaVersion` and one feature registry for
+- [x] Add optional top-level `schemaVersion` and one feature registry for
       recognized keys, later-added values and combinations, introduction
       revisions, validation and normalization routing, diagnostic paths, and
       renderer-capability relationships. Infer the minimum revision from
@@ -1264,30 +1264,30 @@ Tasks:
       `profile/revision.ts` modules; make the schema and normalization modules
       consume the registry, and carry the assessment through
       `MarkdownPdfProfileLoadResult`.
-- [ ] Implement the advisory declaration boundary from the research. Accept only
+- [x] Implement the advisory declaration boundary from the research. Accept only
       positive safe-integer runtime numbers without coercion; keep missing
       declarations quiet; bound malformed, stale, and newer declarations to one
       successful condition in the shared Markdown PDF diagnostics; keep revision
       diagnostics independent of page-number enablement; and retain concrete
       failures for unsupported content, structure, or effective renderer
       capabilities.
-- [ ] Make `md pdf-profile init`, Codex-generated Profiles, and generated Project
+- [x] Make `md pdf-profile init`, Codex-generated Profiles, and generated Project
       `profile.yml` write revision `3`. A new Profile derived from an older base
       writes revision `3` without mutating the base; direct
       rendering never rewrites an input Profile declaration.
-- [ ] Inventory every versioned Markdown PDF artifact and apply one taxonomy:
+- [x] Inventory every versioned Markdown PDF artifact and apply one taxonomy:
       Profile `schemaVersion` is advisory; persisted reader/writer schemas are
       strict only when required by a real consumer; catalogs and harness inputs
       use deterministic digests; ownership markers remain stable; and package
       versions do not version internal evidence formats. Include Project and
       Template reports, renderer and font evidence, and profile-font smoke
       records.
-- [ ] Review the page-number fixture contract `4`, renderer harness contract
+- [x] Review the page-number fixture contract `4`, renderer harness contract
       `4`, and renderer evidence report schema `3` independently. Remove or
       rename manually incremented values that only mirror catalog additions,
       and record why any retained schema version has a real consumer and
       compatibility meaning.
-- [ ] Broaden WeasyPrint candidate and dependency identifiers beyond closed
+- [x] Broaden WeasyPrint candidate and dependency identifiers beyond closed
       literal unions, derive current identifiers from the catalog, and add a
       regression for a compatible future version. Keep `65.1`, `68.0`, and
       `69.0` as the tested evidence matrix, not a runtime allowlist.
@@ -1295,36 +1295,36 @@ Tasks:
       and test files by line count and responsibility. Record a keep-or-split
       disposition rather than treating a numeric threshold alone as proof that
       a file needs refactoring.
-- [ ] Review the page-number renderer fixture catalog and renderer-evidence
+- [x] Review the page-number renderer fixture catalog and renderer-evidence
       harness against the recorded keep-or-split dispositions. If a split is
       accepted, separate catalog construction, execution and inspection,
       laboratory lifecycle, orchestration, and public reporting behind the
       existing fixture import path. Add no second smoke or cleanup mechanism;
       if retained intact, record the cohesive-responsibility rationale.
-- [ ] Review the current Markdown-to-PDF production hotspots for render asset
+- [x] Review the current Markdown-to-PDF production hotspots for render asset
       policy and rewriting, Template Codex decision domains and font ownership,
       and Profile page-chrome/code/font normalization. Apply the recorded
       keep-or-split disposition to confirmed mixed-responsibility modules rather
       than requiring a split from line count alone.
-- [ ] Split directly affected oversized tests by behavioral ownership when the
+- [x] Split directly affected oversized tests by behavioral ownership when the
       new module boundary would otherwise leave a single mixed-responsibility
       suite. Preserve assertions and avoid unrelated fixture rewrites.
-- [ ] Preserve public exports, CLI behavior, catalog scenario values, guarded
+- [x] Preserve public exports, CLI behavior, catalog scenario values, guarded
       cleanup refusal, public-safe report projection, and Node.js runtime
       compatibility. Pure file movement must not silently change the catalog
       digest or evidence acceptance result.
-- [ ] Run focused contract, fixture, harness, renderer-capability, Profile,
+- [x] Run focused contract, fixture, harness, renderer-capability, Profile,
       Template, Project, rendering, and Interactive tests. Cover declaration
       states, revision-2 and revision-3 source inference, unsupported content,
       renderer independence, revision diagnostics with page numbers disabled,
       generated revision `3`, base preservation, non-rewriting renders, and
       diagnostic aggregation. Then run the broad Markdown PDF and repository
       suites, TypeScript, lint, format check, build, and `git diff --check`.
-- [ ] Do not repeat the live renderer matrix for behavior-preserving module
+- [x] Do not repeat the live renderer matrix for behavior-preserving module
       movement. If scenario inputs, renderer behavior, or evidence acceptance
       semantics change, record the affected live evidence that must be rerun
       before closeout.
-- [ ] Review the exact Phase 13 commit range with maintainability and
+- [x] Review the exact Phase 13 commit range with maintainability and
       test-quality reviewers, resolve accepted findings, widen and re-review
       the range when corrections land, and commit a reviewed documentation
       closeout before Phase 14.

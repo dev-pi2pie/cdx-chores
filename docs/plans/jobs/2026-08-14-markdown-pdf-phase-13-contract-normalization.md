@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Phase 13 contract normalization"
 created-date: 2026-08-14
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-08-12-markdown-pdf-page-number-configuration.md
 ---
@@ -20,9 +20,8 @@ cleanup, and Node.js runtime compatibility.
 - Clean implementation starting point: `999bb640`, after the Phase 13 planning
   and Profile revision research commits.
 - The worktree was clean before this activation record began.
-- The final implementation tip will be the last behavior, test, refactor, or
-  accepted-review correction commit. The documentation-only closeout follows
-  the reviewed range and records it.
+- Final implementation tip: `46a8c1f6`, the last accepted-review correction
+  commit. This documentation-only closeout follows the reviewed range.
 
 ## Frozen Contract
 
@@ -166,24 +165,24 @@ focused Profile revision tests without unrelated fixture movement.
 - [x] Activate this job from the Phase 12 closeout boundary before implementation.
 - [x] Record the Profile revision-2/revision-3 feature inventory and bump rules.
 - [x] Record artifact-version, candidate-identity, and keep-or-split dispositions.
-- [ ] Implement registry-owned validation routing, inference, assessment, and
+- [x] Implement registry-owned validation routing, inference, assessment, and
       advisory diagnostics with focused tests.
-- [ ] Emit revision `3` from all Profile generation and derivation surfaces while
+- [x] Emit revision `3` from all Profile generation and derivation surfaces while
       preserving bases and render inputs.
-- [ ] Normalize evidence identities and compatible future renderer candidates.
-- [ ] Apply only accepted module and test splits behind stable boundaries.
-- [ ] Complete focused, broad, static, formatting, build, and diff validation.
-- [ ] Review the exact Phase 13 range for maintainability and test quality,
+- [x] Normalize evidence identities and compatible future renderer candidates.
+- [x] Apply only accepted module and test splits behind stable boundaries.
+- [x] Complete focused, broad, static, formatting, build, and diff validation.
+- [x] Review the exact Phase 13 range for maintainability and test quality,
       resolve accepted findings, and re-review any widened range.
-- [ ] Record a reviewed documentation closeout and Continue, Constrain, or Stop
+- [x] Record a reviewed documentation closeout and Continue, Constrain, or Stop
       verdict before Phase 14.
 
 ## Validation
 
-Focused validation will cover Profile parsing, inference, diagnostics,
-generation, derivation, non-rewriting renders, Codex and Project surfaces,
-Interactive behavior, artifact readers, fixture identity, evidence acceptance,
-and compatible future renderer identifiers. Final validation includes:
+Focused validation covered Profile parsing, inference, diagnostics, generation,
+derivation, non-rewriting renders, Codex and Project surfaces, Interactive
+behavior, artifact readers, fixture identity, evidence acceptance, and
+compatible future renderer identifiers. Final validation used:
 
 ```bash
 rg --files test | rg 'md-to-pdf|markdown-pdf|doctor-markdown' | xargs bun test --timeout 30000
@@ -193,20 +192,34 @@ bun run lint
 bun run format:check
 bun run build
 git diff --check
-git diff --check 11767a14..<final-implementation-tip>
+git diff --check 11767a14..46a8c1f6
 ```
 
-Record test and assertion counts where available. The job will record any
-affected live renderer command only if the permanent-boundary rule requires it.
+Completed results:
+
+- Markdown PDF regression: 1,198 tests and 8,821 assertions passed.
+- Repository regression: 2,218 tests and 13,259 assertions passed.
+- TypeScript, lint, format, build, built-CLI Profile generation, and both diff
+  checks passed.
+- The built Node.js CLI emitted `schemaVersion: 3` in a generated YAML Profile.
+- The renderer catalog digest remained
+  `6fad96e23af73339f422b6de0e832a440dd45aea90ba6aed745c82ee66a99a75`.
+- The renderer harness digest remained
+  `ca63f6a79dbb4ebafa88ef71f0d34d490da3f06c1f266a4b87312d195b1b01ab`.
+
+The live renderer matrix was not repeated. Scenario inputs, renderer behavior,
+evidence acceptance, ownership markers, and both deterministic identities were
+unchanged; the accepted fixture and harness work was responsibility-preserving
+module movement.
 
 ## Commit, Review, And Closeout
 
-- [ ] Record each meaningful validated checkpoint and its evidence boundary.
-- [ ] Review `11767a14..<final-implementation-tip>` independently for
+- [x] Record each meaningful validated checkpoint and its evidence boundary.
+- [x] Review `11767a14..46a8c1f6` independently for
       maintainability and test quality after all implementation gates pass.
-- [ ] Classify findings, commit accepted corrections separately, rerun affected
+- [x] Classify findings, commit accepted corrections separately, rerun affected
       and broad gates, and repeat both reviews on the widened range.
-- [ ] Review the completed job, research status, and parent checklist before the
+- [x] Review the completed job, research status, and parent checklist before the
       documentation-only closeout commit.
 
 No security scan is part of this phase because the planned work does not change
@@ -216,12 +229,21 @@ execution boundary.
 ## Evidence
 
 - Activation documentation: `51e1f056`.
-- Inventory source evidence: `v0.1.6..999bb640` Profile contract comparison,
-  artifact consumer audit, and responsibility inventory recorded in the current
-  completed working-tree checkpoint; checkpoint commit pending.
-- Implementation checkpoints: pending.
-- Exact reviewed range: pending.
-- Final verdict: pending.
+- Inventory and dispositions: `1cb0f69f`.
+- Advisory Profile revision and registry implementation: `d986cb60`.
+- Artifact and candidate identity normalization: `d7893128`.
+- Render-asset and Template-font responsibility splits: `1156958a` and
+  `f2c3077f`.
+- Renderer fixture, harness, and evidence-test modularization: `b1c7ea4f`.
+- Broad-suite Interactive compatibility correction: `434a280f`.
+- Initial review range: `11767a14..434a280f`. Two maintainability findings and
+  two regression-coverage findings were accepted.
+- Typed capability and normalization-ownership correction: `d2b46980`.
+- Project revision-diagnostic handoff and serialization correction: `46a8c1f6`.
+- Final reviewed range: `11767a14..46a8c1f6`. Independent maintainability and
+  test-quality re-reviews reported no findings.
+- Final verdict: **Continue** to Phase 14. Phase 13 meets its compatibility,
+  identity, modularization, validation, and review gates.
 
 ## Related Research
 

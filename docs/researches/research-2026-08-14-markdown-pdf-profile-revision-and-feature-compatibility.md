@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Profile Revision And Feature Compatibility"
 created-date: 2026-08-14
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -20,7 +20,7 @@ harness digests, and ownership markers.
 ## Research At A Glance
 
 Markdown PDF Profiles currently rely on strict key, value, cross-field, and
-renderer-capability validation. The proposal adds an optional top-level
+renderer-capability validation. The settled contract adds an optional top-level
 `schemaVersion` as an advisory Profile feature revision:[^profile-schema]
 
 ```yaml
@@ -99,15 +99,15 @@ This research does not:
 - change the version policy of a persisted report without auditing its reader
   and compatibility requirements
 
-## Current Shipped Contract
+## Starting Contract
 
-The Profile root allowlist contains `profile`, page, ToC, metadata, PDF, font,
-cover, header, footer, page-number, title-block, and code settings. A top-level
-`schemaVersion` is not currently accepted. The optional `profile` object is
-identity metadata for generated Profiles and does not describe the whole
-artifact schema.[^profile-schema]
+At the Phase 13 starting boundary, the Profile root allowlist contained
+`profile`, page, ToC, metadata, PDF, font, cover, header, footer, page-number,
+title-block, and code settings. A top-level `schemaVersion` was not accepted.
+The optional `profile` object was identity metadata for generated Profiles and
+did not describe the whole artifact schema.[^profile-schema]
 
-Profile parsing currently follows this path:
+Profile parsing followed this path:
 
 ```text
 parse YAML or JSON
@@ -129,13 +129,13 @@ temporary evidence reports have separate internal histories. Phase 13 must
 audit each value against its real consumer instead of treating all numbers as
 one Markdown PDF schema.[^codex-report]
 
-## Proposed Contract
+## Settled Contract
 
 ### Field Ownership And Shape
 
-`schemaVersion` is proposed as an optional top-level Profile field because it
-describes the serialized Profile as a whole. It does not belong inside the
-optional generated-identity `profile` object.
+`schemaVersion` is an optional top-level Profile field because it describes the
+serialized Profile as a whole. It does not belong inside the optional
+generated-identity `profile` object.
 
 The serialized name remains `schemaVersion`; public documentation should call
 it an advisory Profile feature revision so the name does not imply an
@@ -150,10 +150,10 @@ lexical value such as `1.0` is accepted when parsing produces the runtime number
 `1`; the reader does not depend on source spelling. Missing and unusable
 declarations do not reject the Profile by themselves and are never coerced.
 
-The proposed declaration assigns the current canary contract revision `3`,
-which will be the first revision written into generated Profiles. Revision `2`
-remains the historical baseline for the stable `v0.1.6` Profile contract,
-although that release's Profiles did not serialize the declaration.
+The declaration assigns the current canary contract revision `3`, the first
+revision written into generated Profiles. Revision `2` remains the historical
+baseline for the stable `v0.1.6` Profile contract, although that release's
+Profiles did not serialize the declaration.
 
 ### Revision Meaning And Bump Rules
 
@@ -342,10 +342,10 @@ when its actual content is supported, but unknown content is never ignored.
 Future deprecations need registry-owned diagnostics and a bounded migration
 interval; breaking semantic changes need a separate reader boundary.
 
-## Page-Number Configuration Plan Phase 13 Implications
+## Page-Number Configuration Plan Phase 13 Implementation
 
-Phase 13 should freeze this contract and registry ownership before general
-version cleanup or module movement. Its implementation handoff is:
+Phase 13 froze this contract and registry ownership before general version
+cleanup or module movement. Its implementation sequence was:
 
 1. inventory the `v0.1.6` revision-2 baseline and current revision-3 additions
 2. implement the optional declaration, one feature registry, source-based
@@ -358,9 +358,9 @@ tests. Pure module movement should not repeat the live renderer matrix. If the
 feature registry changes effective renderer-capability collection or scenario
 inputs, rerun the affected live evidence before closeout.
 
-## Validation Plan
+## Validation Evidence
 
-The implementation should cover:
+The implementation covers:
 
 1. declaration parsing and diagnostics across missing, valid, malformed, stale,
    supported-range, and newer values
@@ -377,10 +377,12 @@ The implementation should cover:
    both supported and unknown content and diagnostics when page numbers are
    disabled
 
-Focused tests should be followed by the broad Markdown PDF suite, full
-repository suite, TypeScript, lint, format check, build, and `git diff --check`.
-Real renderer evidence is required only if effective renderer requests or
-scenario semantics change.
+The completed Phase 13 job records 1,198 passing Markdown PDF tests, 2,218
+passing repository tests, the static and build gates, a built-CLI revision-3
+generation smoke, unchanged renderer catalog and harness digests, and
+finding-free maintainability and test-quality re-reviews of the final
+`11767a14..46a8c1f6` range. The live renderer matrix was not repeated because
+renderer behavior, scenario inputs, and evidence acceptance did not change.
 
 ## Related Research
 
