@@ -86,8 +86,8 @@ remain editable in Profile YAML or JSON.
 - [x] Implement and validate gated page-chrome authoring and slot ownership.
 - [x] Clarify Interactive and direct render-only wording without changing
       precedence or lifecycle behavior.
-- [ ] Complete focused, broad, full, static, format, build, and diff validation.
-- [ ] Run a bounded save-only Interactive smoke and record cleanup.
+- [x] Complete focused, broad, full, static, format, build, and diff validation.
+- [x] Run a bounded save-only Interactive smoke and record cleanup.
 - [ ] Review the exact Phase 14 range for maintainability and test quality,
       resolve accepted findings, and re-review any widened range.
 - [ ] Update the parent Phase 14 checklist and research lifecycle only after
@@ -133,11 +133,23 @@ changes.
 - Phase activation record: `e9811cab`.
 - Temporary Interactive/direct override wording: `6c388816`; 47 focused tests
   and 295 assertions passed with TypeScript, scoped formatting, and diff checks.
-- Formal-guide page-number/page-chrome implementation: 120 focused and
-  diagnostic tests plus all 326 Interactive Markdown PDF tests passed.
+- Formal-guide page-number/page-chrome implementation: `d769023b`; 120 focused
+  and diagnostic tests plus all 326 Interactive Markdown PDF tests passed.
   TypeScript, scoped lint and formatting, build, and diff checks also passed.
-- Implementation commits, validation results, smoke cleanup, reviewed range,
-  and final verdict will be appended as work completes.
+- Broad Markdown PDF regression: 1,173 tests passed across 82 files with 8,378
+  assertions.
+- Full repository regression: 2,229 tests passed across 248 files with 13,284
+  assertions.
+- TypeScript, repository lint, formatting across 827 files, build, worktree
+  diff integrity, and `7bbdc140..d769023b` range diff integrity passed.
+- A built-CLI save-only smoke followed the `pdf-recipes` Profile
+  `formal-guide` path. It selected body-page numbering, bottom-center, and no
+  repeating page chrome. The saved YAML contained `schemaVersion: 3`,
+  `scope: body`, `countFrom: body`, `start: 1`, `increment: 1`,
+  `position: bottom-center`, and `format: "{page}"`. The run exited without
+  rendering, and its exact scratch directory under `examples/playground/` was
+  removed afterward.
+- The reviewed range and final verdict will be appended as work completes.
 
 ## Related Research
 
