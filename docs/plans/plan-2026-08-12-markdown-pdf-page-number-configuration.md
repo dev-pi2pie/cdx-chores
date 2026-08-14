@@ -1247,7 +1247,7 @@ Tasks:
       versioning inventory, modularization dispositions, validation commands,
       meaningful commit checkpoints, exact review range, and final verdict
       before implementation.
-- [ ] Inventory the accepted serialized Profile contract and freeze the revision-
+- [x] Inventory the accepted serialized Profile contract and freeze the revision-
       bump rules from the research. Map the stable `v0.1.6` contract to the
       unversioned revision-2 historical baseline and additive `v0.1.7` canary
       features to revision `3`, the first emitted declaration. Do not claim that
@@ -1291,7 +1291,7 @@ Tasks:
       literal unions, derive current identifiers from the catalog, and add a
       regression for a compatible future version. Keep `65.1`, `68.0`, and
       `69.0` as the tested evidence matrix, not a runtime allowlist.
-- [ ] Inventory oversized Markdown PDF production, fixture, harness, helper,
+- [x] Inventory oversized Markdown PDF production, fixture, harness, helper,
       and test files by line count and responsibility. Record a keep-or-split
       disposition rather than treating a numeric threshold alone as proof that
       a file needs refactoring.

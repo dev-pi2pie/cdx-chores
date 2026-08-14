@@ -84,22 +84,88 @@ evidence before closeout.
 
 ## Inventory And Dispositions
 
-The activation checkpoint freezes the questions below. The next checkpoint
-records the evidence-backed answers before production changes:
+### Profile feature map
 
-- exhaustive revision-2 and revision-3 Profile feature map
-- versioned Profile, Project, Template, renderer, font, and smoke artifacts,
-  their consumers, and strict/advisory/digest/marker dispositions
-- fixture catalog, harness contract, and evidence report identity dispositions
-- renderer candidate and dependency identifier ownership
-- line-count and responsibility inventory for affected production, fixture,
-  harness, helper, and test files, with a keep-or-split decision for each
+Comparison of `v0.1.6` (`38e227bf`) with the clean implementation starting
+point `999bb640` confirms the exhaustive accepted contract below. The inventory
+used the Profile schema, types, normalization, defaults, and domain validators
+in this range:
+
+```bash
+git diff v0.1.6..999bb640 -- src/cli/markdown-pdf/profile
+```
+
+| Revision | Serialized Profile features                                                                                                                                                                                                                   |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `2`      | `profile` identity; `page`; `toc`; dynamic `metadata`; `pdf.content-langs`; `fonts` role maps; `cover`; header/footer `left`, `center`, and `right`; page-number `enabled`, `position`, `format`, and `scope: body`; `titleBlock`; and `code` |
+| `3`      | `pageNumbers.scope: document`; `countFrom`, `start`, and `increment` plus the document-scope/document-origin combination; and header/footer `style` with its typography, color, and separator fields                                          |
+
+Top-level `schemaVersion` is revision-3 declaration metadata, not an inferred
+Profile feature. It is recognized by the revision-3 reader and first emitted by
+revision-3 writers, but its presence never raises the inferred minimum.
+
+Revision `2` remains the inference floor. Empty `header.style` or `footer.style`
+and empty nested `separator` objects still imply revision `3` because a
+revision-2 reader rejects those keys. Pre-existing page-number keys remain
+revision `2` even though current defaults now serialize them beside revision-3
+keys. `schemaVersion` is declaration metadata and never raises inference.
+
+Dynamic metadata and font mappings are registered as bounded map features, not
+as a revision per user-defined member. Revision bumps follow the frozen research
+rules: add a revision for a newly recognized key, value, combination, or other
+serialized construct that an older reader rejects; do not bump for refactors,
+diagnostic wording, candidate additions, formatting, or conformance fixes.
+
+### Artifact taxonomy
+
+| Artifact or identity                      | Disposition      | Reason                                                                |
+| ----------------------------------------- | ---------------- | --------------------------------------------------------------------- |
+| Profile `schemaVersion`                   | add revision `3` | Advisory producer signal; actual content remains authoritative.       |
+| Profile Codex report artifact version `4` | keep strict      | Its persisted reader has an exact compatibility gate.                 |
+| Template and Project report version `1`   | remove           | Their consumers use the artifact type; no reader enforces the number. |
+| Renderer fixture contract `4`             | remove           | Catalog content already determines `catalogDigest`.                   |
+| Renderer harness contract `4`             | remove           | Actual execution inputs should determine `harnessDigest`.             |
+| Renderer evidence report schema `3`       | remove           | No reader consumes it; its two input digests identify the evidence.   |
+| Font-discovery evidence schema `2`        | remove           | It is writer/test-only with no compatibility reader.                  |
+| Profile-font smoke plan schema `1`        | remove           | The plan fields are consumed directly without a version gate.         |
+| Renderer ownership marker containing `v4` | keep             | Stable cleanup authorization token, not a schema.                     |
+| Profile-font smoke marker containing `v1` | keep             | Stable cleanup authorization token, not a schema.                     |
+
+Add an unsupported-version regression around the retained Profile Codex report
+reader. Historical evidence documents remain unchanged when a current writer-
+only field is removed.
+
+### Renderer candidate identity
+
+Broaden candidate ID and dependency-version fields to strings. Keep the concrete
+`65.1`, `68.0`, and `69.0` catalog as the tested evidence matrix and derive
+scenario-reference types from that catalog. Add a compatible future-candidate
+regression so a new renderer does not require widening a runtime allowlist.
+
+### Module responsibility dispositions
+
+| Boundary                              |        Size at inventory | Disposition                                                                                                                                                               |
+| ------------------------------------- | -----------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Profile schema and normalizer         |          213 / 571 lines | Add focused feature-registry and revision modules. Keep schema as structural validation and normalization as the orchestrator; do not split cohesive private normalizers. |
+| Renderer fixture catalog/materializer |              1,231 lines | Split pure candidates and scenario groups from filesystem materialization and digest ownership, retaining the existing import path as a barrel.                           |
+| Renderer evidence harness             |              1,524 lines | Split contract/types, subprocess, laboratory, PDF/PNG inspection and validation, scenarios, orchestration, public report, and CLI behind the existing script facade.      |
+| Renderer evidence tests               |              1,482 lines | Split only with harness ownership while retaining an end-to-end mocked orchestration suite.                                                                               |
+| Render asset preparation              |     703-line `render.ts` | Extract remote/custom-template asset policy and rewriting into a focused internal module; keep render-file creation and Pandoc orchestration in `render.ts`.              |
+| Template Codex decisions              | 658-line decision module | Extract font decision validation and inference only; retain general decision domains and top-level validation.                                                            |
+| Profile signals                       |                434 lines | Keep; it is a cohesive signal collector.                                                                                                                                  |
+| Template CSS synthesis                |                445 lines | Keep; ordered CSS emission is one responsibility.                                                                                                                         |
+| Template output planning              |                375 lines | Keep; collision and writable-plan validation form one transaction.                                                                                                        |
+| Project validation                    |                483 lines | Keep; it is the cross-phase validation boundary.                                                                                                                          |
+
+Project and Template tests are already mostly responsibility-scoped. Reorganize
+only renderer-harness tests required by the accepted source split, and add new
+focused Profile revision tests without unrelated fixture movement.
 
 ## Checklist
 
 - [x] Activate this job from the Phase 12 closeout boundary before implementation.
-- [ ] Record the Profile revision-2/revision-3 feature inventory and bump rules.
-- [ ] Record artifact-version, candidate-identity, and keep-or-split dispositions.
+- [x] Record the Profile revision-2/revision-3 feature inventory and bump rules.
+- [x] Record artifact-version, candidate-identity, and keep-or-split dispositions.
 - [ ] Implement registry-owned validation routing, inference, assessment, and
       advisory diagnostics with focused tests.
 - [ ] Emit revision `3` from all Profile generation and derivation surfaces while
@@ -149,8 +215,10 @@ execution boundary.
 
 ## Evidence
 
-- Activation documentation: pending commit.
-- Inventory checkpoint: pending.
+- Activation documentation: `51e1f056`.
+- Inventory source evidence: `v0.1.6..999bb640` Profile contract comparison,
+  artifact consumer audit, and responsibility inventory recorded in the current
+  completed working-tree checkpoint; checkpoint commit pending.
 - Implementation checkpoints: pending.
 - Exact reviewed range: pending.
 - Final verdict: pending.
