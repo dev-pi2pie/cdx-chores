@@ -1,7 +1,8 @@
 ---
 title: "Markdown PDF Interactive Page-Number And Page-Chrome UX"
 created-date: 2026-08-14
-status: draft
+modified-date: 2026-08-14
+status: completed
 agent: codex
 ---
 
@@ -232,6 +233,25 @@ Focused Interactive, Profile authoring, command help, and lifecycle tests are
 sufficient when the compiled Profile and renderer inputs remain unchanged. The
 live renderer matrix does not need to repeat unless implementation changes
 normalized behavior, renderer CSS, scenario inputs, or evidence acceptance.
+
+## Implementation Evidence
+
+Phase 14 implemented this direction and recorded the full validation and review
+trail in the
+[Phase 14 Interactive UX job record](../plans/jobs/2026-08-14-markdown-pdf-page-number-phase-14-interactive-ux.md).
+The final reviewed implementation range is `7bbdc140..cdea2b23`.
+
+The completed flow proves both guided numbering outcomes, all six positions,
+fresh slot ownership, disabled-state retention, revision-time collision
+diagnostics, simplified-value reset, and deterministic Profile save/reload.
+The built-CLI save-only smoke also produced the expected `schemaVersion: 3`
+Profile with body-origin numbering at bottom center, then removed its scoped
+scratch output. Final maintainability and test-quality reviews found no material
+remaining concerns.
+
+Because no normalized Profile behavior, renderer CSS, scenario input, or
+evidence acceptance changed, the existing renderer matrix remained applicable
+and was not repeated for this prompt-layer refinement.
 
 ## Settled Direction
 

@@ -1354,55 +1354,55 @@ Phase checkpoint:
 
 Tasks:
 
-- [ ] Create and activate a Phase 14 job record when implementation begins,
+- [x] Create and activate a Phase 14 job record when implementation begins,
       linking the
       [Interactive Page-Number And Page-Chrome UX research][interactive-page-number-ux]
       and preserving exact implementation, validation, review, and closeout
       evidence before Phase 15.
-- [ ] Replace the schema-shaped Profile `formal-guide` page-number sequence
+- [x] Replace the schema-shaped Profile `formal-guide` page-number sequence
       with one enablement choice, one outcome-oriented numbering choice, and
       one human-readable position choice. Use `Body pages, starting at 1` as
       the fresh guided default and retain `Entire document, starting at 1` as
       the second guided outcome.
-- [ ] Compile the body choice to `scope: body`, `countFrom: body`, `start: 1`,
+- [x] Compile the body choice to `scope: body`, `countFrom: body`, `start: 1`,
       and `increment: 1`; compile the document choice to `scope: document`,
       `countFrom: document`, `start: 1`, and `increment: 1`. Keep
       `format: "{page}"` in the guided path and leave custom origin, start,
       increment, and label configuration to Profile YAML or JSON.
-- [ ] Skip dependent page-number prompts when disabled while preserving valid
+- [x] Skip dependent page-number prompts when disabled while preserving valid
       inert same-session values for revision. Keep all six existing positions
       and show human-readable labels rather than raw enum values.
-- [ ] Gate repeating page-chrome content behind an explicit `No`, `Header`,
+- [x] Gate repeating page-chrome content behind an explicit `No`, `Header`,
       `Footer`, or `Both` choice. Collect only selected areas, avoid prompting
       the fresh page-number-owned slot, and keep bounded style and separator
       fields in Profile YAML or JSON instead of the common terminal path. When
       page numbers are disabled, keep all three slots available in each
       selected area because no slot is page-number-owned.
-- [ ] Preserve independent `Revise page numbers` and `Revise page chrome`
+- [x] Preserve independent `Revise page numbers` and `Revise page chrome`
       actions. A revised page-number position must not silently delete existing
       slot content; preserve it and surface the existing collision diagnostic
       so the user can revise page chrome deliberately.
-- [ ] Keep the Interactive one-render choice as the existing inherit, enable,
+- [x] Keep the Interactive one-render choice as the existing inherit, enable,
       and disable tri-state with unchanged placement, navigation, retention,
       reset, and effective-review behavior. Refine copy only where it makes the
       temporary scope clearer.
-- [ ] Keep direct `md to-pdf` limited to `--page-numbers` and
+- [x] Keep direct `md to-pdf` limited to `--page-numbers` and
       `--no-page-numbers`; clarify that they affect only the current render and
       reuse Profile or normalized-default details. Do not add detailed
       page-number flags or a parallel `md pdf-profile init` configuration
       surface.
-- [ ] Keep Interactive Project preparation Codex Assistant-only and keep its
+- [x] Keep Interactive Project preparation Codex Assistant-only and keep its
       durable page-number policy in the contained `profile.yml`. Record
       structured Profile/Project Codex page-number authority, provenance, and
       revision as future-canary work rather than expanding this phase.
-- [ ] Add focused formal-guide collection, compilation, revision, page-chrome
+- [x] Add focused formal-guide collection, compilation, revision, page-chrome
       ownership, command-help, and lifecycle regressions. Prove the simplified
       prompts compile to the existing normalized Profile and render inputs.
-- [ ] Run focused and broad Interactive/Markdown PDF tests plus TypeScript,
+- [x] Run focused and broad Interactive/Markdown PDF tests plus TypeScript,
       lint, format check, build, and `git diff --check`. Do not repeat the live
       renderer matrix unless normalized behavior, renderer CSS, scenario
       inputs, or evidence acceptance changes.
-- [ ] Review the exact Phase 14 implementation range with maintainability and
+- [x] Review the exact Phase 14 implementation range with maintainability and
       test-quality reviewers, resolve accepted findings, and record a reviewed
       documentation closeout before Phase 15.
 
@@ -1419,6 +1419,13 @@ Phase checkpoint:
   reusable policy owners.
 - Codex Assistant redesign is explicitly deferred without weakening current
   validation, review, or rendering behavior.
+
+Phase evidence:
+
+- [Phase 14 Interactive UX job record](jobs/2026-08-14-markdown-pdf-page-number-phase-14-interactive-ux.md)
+- Final reviewed range: `7bbdc140..cdea2b23`
+- Verdict: Continue to Phase 15; keep structured Profile/Project Codex
+  Assistant page-number authority deferred to a future canary.
 
 ### Phase 15: Guidance And Lifecycle Closeout
 
