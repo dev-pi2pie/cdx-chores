@@ -404,16 +404,28 @@ describe("interactive Markdown PDF formal-guide answers", () => {
     expect(answers.pageNumbers).toEqual(expected);
   });
 
-  test("revises only page numbers and preserves disabled zero-valued details", async () => {
+  test("disables page numbers without losing non-default inert values or page chrome", async () => {
     const answers: MarkdownPdfProfileFormalGuideAnswers = {
       ...BASE_PROFILE_ANSWERS,
-      pageNumbers: { ...BASE_PROFILE_ANSWERS.pageNumbers, start: 0 },
+      pageNumbers: {
+        enabled: true,
+        position: "top-right",
+        format: "Page {page} of {pages}",
+        scope: "body",
+        countFrom: "document",
+        start: 0,
+        increment: 3,
+      },
+      pageChrome: {
+        header: { left: "Report", center: "", right: "Existing" },
+        footer: { left: "", center: "Footer", right: "" },
+      },
     };
     const revised = await reviseMarkdownPdfFormalGuidePageNumbers(
       answers,
       createPrompts({
         pageNumbersEnabled: ({ current }) => {
-          expect(current).toBe(false);
+          expect(current).toBe(true);
           return false;
         },
         pageNumberOutcome: () => {
@@ -425,14 +437,78 @@ describe("interactive Markdown PDF formal-guide answers", () => {
         pageChromeArea: () => {
           throw new Error("page chrome must not be prompted");
         },
+        pageChromeSelection: () => {
+          throw new Error("page chrome selection must not be prompted");
+        },
       }),
     );
 
-    expect(revised.pageNumbers.enabled).toBe(false);
-    expect(revised.pageNumbers.start).toBe(0);
+    expect(revised.pageNumbers).toEqual({
+      ...answers.pageNumbers,
+      enabled: false,
+    });
     expect(revised.pageChrome).toBe(answers.pageChrome);
     expect(revised.code).toBe(answers.code);
   });
+
+  test.each([
+    { initiallyEnabled: true, state: "enabled" },
+    { initiallyEnabled: false, state: "disabled" },
+  ])(
+    "resets custom values to the simplified contract when revising from the $state state",
+    async ({ initiallyEnabled }) => {
+      const answers: MarkdownPdfProfileFormalGuideAnswers = {
+        ...BASE_PROFILE_ANSWERS,
+        pageNumbers: {
+          enabled: initiallyEnabled,
+          position: "top-right",
+          format: "Page {page} of {pages}",
+          scope: "body",
+          countFrom: "document",
+          start: 0,
+          increment: 3,
+        },
+        pageChrome: {
+          header: { left: "Report", center: "", right: "Existing" },
+          footer: { left: "", center: "Footer", right: "" },
+        },
+      };
+      const revised = await reviseMarkdownPdfFormalGuidePageNumbers(
+        answers,
+        createPrompts({
+          pageNumbersEnabled: ({ current }) => {
+            expect(current).toBe(initiallyEnabled);
+            return true;
+          },
+          pageNumberOutcome: ({ current }) => {
+            expect(current).toBe("body");
+            return "body";
+          },
+          pageNumberPosition: ({ current }) => {
+            expect(current).toBe("top-right");
+            return "bottom-left";
+          },
+          pageChromeArea: () => {
+            throw new Error("page chrome must not be prompted");
+          },
+          pageChromeSelection: () => {
+            throw new Error("page chrome selection must not be prompted");
+          },
+        }),
+      );
+
+      expect(revised.pageNumbers).toEqual({
+        enabled: true,
+        position: "bottom-left",
+        format: "{page}",
+        scope: "body",
+        countFrom: "body",
+        start: 1,
+        increment: 1,
+      });
+      expect(revised.pageChrome).toBe(answers.pageChrome);
+    },
+  );
 
   test.each([
     ["none", []],

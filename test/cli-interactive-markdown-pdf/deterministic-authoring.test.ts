@@ -396,6 +396,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
     });
     expect(result.markdownPdfDeterministicBindCalls).toEqual([]);
     expect(result.markdownPdfDeterministicWriteCalls).toEqual([]);
+    expect(result.stderr).not.toContain("replace configured footer.center content");
   });
 
   test("keeps Template formal-guide prompts and review free of reusable Profile settings", () => {
