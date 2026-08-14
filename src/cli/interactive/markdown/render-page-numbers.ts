@@ -30,9 +30,9 @@ export async function promptMarkdownPdfRenderPageNumberChoice(
   const options: Parameters<typeof select<MarkdownPdfRenderPageNumberPromptOutcome>>[0] = {
     message: "Page numbers for this PDF",
     choices: [
-      { name: "Use recipe setting", value: "inherit" },
-      { name: "Enable for this PDF", value: "enable" },
-      { name: "Disable for this PDF", value: "disable" },
+      { name: "Keep recipe setting", value: "inherit" },
+      { name: "Turn on for this PDF only", value: "enable" },
+      { name: "Turn off for this PDF only", value: "disable" },
       { name: "Back", value: "back" },
       { name: "Cancel", value: "cancel" },
     ],

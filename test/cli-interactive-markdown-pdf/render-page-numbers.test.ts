@@ -37,9 +37,9 @@ describe("interactive Markdown PDF page-number choice", () => {
         {
           message: "Page numbers for this PDF",
           choices: [
-            { name: "Use recipe setting", value: "inherit" },
-            { name: "Enable for this PDF", value: "enable" },
-            { name: "Disable for this PDF", value: "disable" },
+            { name: "Keep recipe setting", value: "inherit" },
+            { name: "Turn on for this PDF only", value: "enable" },
+            { name: "Turn off for this PDF only", value: "disable" },
             { name: "Back", value: "back" },
             { name: "Cancel", value: "cancel" },
           ],
@@ -49,7 +49,7 @@ describe("interactive Markdown PDF page-number choice", () => {
     },
   );
 
-  test("defaults the prompt to Use recipe setting", async () => {
+  test("defaults the prompt to Keep recipe setting", async () => {
     const selectCalls: SelectOptions[] = [];
 
     await expect(

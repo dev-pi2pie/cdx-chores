@@ -154,8 +154,15 @@ describe("cli command: md to-pdf", () => {
     expect(result.stdout).toContain("--bundle <directory>");
     expect(result.stdout).toContain("--code-highlight");
     expect(result.stdout).toContain("--no-code-highlight");
-    expect(result.stdout).toContain("--page-numbers");
-    expect(result.stdout).toContain("--no-page-numbers");
+    expect(result.stdout).toContain(
+      [
+        "--page-numbers            Enable page numbers for this render using",
+        "                            Profile/default details",
+      ].join("\n"),
+    );
+    expect(result.stdout).toContain(
+      "--no-page-numbers         Disable page numbers for this render",
+    );
     expect(result.stderr).toBe("");
   });
 

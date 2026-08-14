@@ -58,10 +58,29 @@ remain editable in Profile YAML or JSON.
 - Keep Project reusable policy in its contained `profile.yml`; change no
   Template or Codex Assistant signal contract.
 
+## Implementation Inventory
+
+- Profile and Template formal-guide answers already have separate types and
+  collection entry points. The shared layout, margin, and ToC contract remains
+  unchanged.
+- Fresh collection has no current answers; revision supplies the selected
+  current group. This existing distinction is sufficient for fresh target-slot
+  omission and revision-time content preservation.
+- Full page-number and style-capable page-chrome answer shapes can remain as the
+  compile boundary even when the simplified prompt no longer authors advanced
+  values.
+- Project preparation bypasses deterministic formal-guide collection and can
+  remain unchanged. Template formal-guide uses only the shared layout, margin,
+  and ToC groups.
+- The occupied-slot diagnostic already has the required warning semantics, but
+  deterministic recipe review did not expose it before Phase 14. Reuse that
+  shared diagnostic during Profile recipe review rather than defining another
+  collision rule.
+
 ## Checklist
 
 - [x] Activate this job from the reviewed Phase 14 planning boundary.
-- [ ] Inventory current prompt, collection, compilation, revision, export, and
+- [x] Inventory current prompt, collection, compilation, revision, export, and
       regression seams before editing.
 - [ ] Implement and validate simplified guided page-number authoring.
 - [ ] Implement and validate gated page-chrome authoring and slot ownership.
