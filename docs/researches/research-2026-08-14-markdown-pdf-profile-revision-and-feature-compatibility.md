@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Profile Revision And Feature Compatibility"
 created-date: 2026-08-14
-status: draft
+status: in-progress
 agent: codex
 ---
 
@@ -170,10 +170,10 @@ an explicit reader boundary.
 
 The initial recorded lineage is:
 
-| Revision | Contract boundary | Declaration behavior |
-| --- | --- | --- |
-| `2` | stable `v0.1.6` Profile contract | historical baseline; Profiles remained unversioned |
-| `3` | additive `v0.1.7` canary Profile contract | current revision and first emitted declaration |
+| Revision | Contract boundary                         | Declaration behavior                               |
+| -------- | ----------------------------------------- | -------------------------------------------------- |
+| `2`      | stable `v0.1.6` Profile contract          | historical baseline; Profiles remained unversioned |
+| `3`      | additive `v0.1.7` canary Profile contract | current revision and first emitted declaration     |
 
 Phase 13 must inventory the exact boundary: features already supported at
 `v0.1.6` receive `introducedIn: 2`, while additive canary features receive
@@ -275,16 +275,16 @@ it has no rendering meaning.
 
 ### Declaration States And Outcomes
 
-| Declaration state | Actual Profile content | Result |
-| --- | --- | --- |
-| missing | all serialized features supported | continue as unversioned legacy input |
-| malformed | all serialized features supported | continue with one invalid-declaration diagnostic |
-| declared revision is below the inferred minimum | all serialized features supported | continue with one stale-declaration diagnostic |
-| inferred minimum is at or below the declared revision, and the declaration is at or below the current registry revision | all serialized features supported | continue without a revision diagnostic |
-| newer than the current registry | all serialized features supported | continue with one forward-declaration diagnostic |
-| any declaration | unknown key | fail on the concrete unknown key |
-| any declaration | invalid value or field combination | fail on the concrete validation |
-| any declaration | effective renderer capability unavailable | fail on the renderer capability |
+| Declaration state                                                                                                       | Actual Profile content                    | Result                                           |
+| ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------ |
+| missing                                                                                                                 | all serialized features supported         | continue as unversioned legacy input             |
+| malformed                                                                                                               | all serialized features supported         | continue with one invalid-declaration diagnostic |
+| declared revision is below the inferred minimum                                                                         | all serialized features supported         | continue with one stale-declaration diagnostic   |
+| inferred minimum is at or below the declared revision, and the declaration is at or below the current registry revision | all serialized features supported         | continue without a revision diagnostic           |
+| newer than the current registry                                                                                         | all serialized features supported         | continue with one forward-declaration diagnostic |
+| any declaration                                                                                                         | unknown key                               | fail on the concrete unknown key                 |
+| any declaration                                                                                                         | invalid value or field combination        | fail on the concrete validation                  |
+| any declaration                                                                                                         | effective renderer capability unavailable | fail on the renderer capability                  |
 
 Missing declarations should remain quiet by default so existing Profiles do not
 gain warning noise. Invalid, stale, and newer declarations should be bounded to
@@ -324,16 +324,16 @@ effective page numbering is enabled.
 
 ### Version-Axis Separation
 
-| Version or identity | Meaning | Compatibility posture |
-| --- | --- | --- |
-| Profile `schemaVersion` | declared serialized-feature revision | advisory; actual-feature validation is authoritative |
-| inferred Profile revision | minimum revision required by explicitly serialized features | derived from the feature registry |
-| WeasyPrint version | renderer capability availability | gate only effectively requested behavior |
-| package or canary version | released CLI/package build | does not version Profile or evidence schemas |
-| persisted report schema | reader/writer compatibility boundary | retain a number only when a real consumer requires it |
-| fixture catalog | deterministic scenario content | identify with a content digest |
-| harness contract | execution and acceptance inputs | identify from deterministic content when possible |
-| ownership marker | safe temporary-laboratory identity | stable safety token, not a schema revision |
+| Version or identity       | Meaning                                                     | Compatibility posture                                 |
+| ------------------------- | ----------------------------------------------------------- | ----------------------------------------------------- |
+| Profile `schemaVersion`   | declared serialized-feature revision                        | advisory; actual-feature validation is authoritative  |
+| inferred Profile revision | minimum revision required by explicitly serialized features | derived from the feature registry                     |
+| WeasyPrint version        | renderer capability availability                            | gate only effectively requested behavior              |
+| package or canary version | released CLI/package build                                  | does not version Profile or evidence schemas          |
+| persisted report schema   | reader/writer compatibility boundary                        | retain a number only when a real consumer requires it |
+| fixture catalog           | deterministic scenario content                              | identify with a content digest                        |
+| harness contract          | execution and acceptance inputs                             | identify from deterministic content when possible     |
+| ownership marker          | safe temporary-laboratory identity                          | stable safety token, not a schema revision            |
 
 ## Compatibility And Migration Direction
 
@@ -390,6 +390,7 @@ scenario semantics change.
 ## Related Plans
 
 - [Markdown PDF Page-Number Configuration Implementation][page-number-plan]
+- [Phase 13 Contract Normalization Job][phase-13-job]
 
 ## References
 
@@ -400,5 +401,6 @@ scenario semantics change.
 [^codex-report]: [Markdown PDF Codex Profile report artifact reader](../../src/cli/markdown-pdf/codex-report/index.ts), [Template report shape](../../src/cli/markdown-pdf/template-codex/report.ts), and [Project report shape](../../src/cli/markdown-pdf/project-codex/types-report.ts)
 
 [page-number-plan]: ../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md
+[phase-13-job]: ../plans/jobs/2026-08-14-markdown-pdf-phase-13-contract-normalization.md
 [page-number-research]: research-2026-08-11-markdown-pdf-page-number-configuration.md
 [profile-page-chrome-research]: research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md

@@ -1239,7 +1239,9 @@ Phase checkpoint:
 
 Tasks:
 
-- [ ] Create and activate a Phase 13 job record from the Phase 12 documentation
+- [ ] Create and activate a
+      [Phase 13 job record](jobs/2026-08-14-markdown-pdf-phase-13-contract-normalization.md)
+      from the Phase 12 documentation
       closeout boundary `11767a14`. Freeze the permanent-file boundary,
       [Profile revision research][profile-revision-research] decisions,
       versioning inventory, modularization dispositions, validation commands,
