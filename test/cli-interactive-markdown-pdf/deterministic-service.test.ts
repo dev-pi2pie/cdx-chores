@@ -10,6 +10,7 @@ import {
 } from "../../src/cli/interactive/markdown/deterministic-authoring";
 import { renderDeterministicRecipeReview } from "../../src/cli/interactive/markdown/authoring-review";
 import {
+  collectMarkdownPdfProfileFormalGuideAnswers,
   compileMarkdownPdfFormalGuideOptions,
   reviseMarkdownPdfFormalGuidePageChrome,
   reviseMarkdownPdfFormalGuidePageNumbers,
@@ -205,6 +206,80 @@ describe("interactive Markdown PDF deterministic service", () => {
       expect(await readFile(join(fixtureDir, "template", "style.css"), "utf8")).toBe(acceptedStyle);
     });
   });
+
+  test.each([{ outcome: "body" as const }, { outcome: "document" as const }])(
+    "saves and reloads the $outcome guided page-number outcome with fresh slot ownership",
+    async ({ outcome }) => {
+      await withTempFixtureDir(`md-pdf-interactive-guided-${outcome}`, async (fixtureDir) => {
+        const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+        const answers = await collectMarkdownPdfProfileFormalGuideAnswers({
+          layout: () => ({
+            preset: "article",
+            pageSize: "A4",
+            orientation: { mode: "preset-default" },
+          }),
+          margins: () => ({ mode: "preset-default" }),
+          tocEnabled: () => false,
+          tocDetails: () => {
+            throw new Error("ToC details must not be prompted");
+          },
+          codeHighlight: () => false,
+          codeTheme: () => {
+            throw new Error("Code theme must not be prompted");
+          },
+          codeLineNumbers: () => {
+            throw new Error("Code line numbers must not be prompted");
+          },
+          codeTransformerNotation: () => {
+            throw new Error("Transformer notation must not be prompted");
+          },
+          pageNumbersEnabled: () => true,
+          pageNumberOutcome: () => outcome,
+          pageNumberPosition: () => "top-right",
+          pageChromeSelection: () => "header",
+          pageChromeArea: ({ area, current, slots }) => {
+            expect(area).toBe("header");
+            expect(current).toBeUndefined();
+            expect(slots).toEqual(["left", "center"]);
+            return { left: "Report", center: "{title}", right: "" };
+          },
+        });
+        const candidate = prepareMarkdownPdfDeterministicRecipe({
+          artifact: "profile",
+          preparation: "formal-guide",
+          formalGuideAnswers: answers,
+          options: compileMarkdownPdfFormalGuideOptions(answers),
+        });
+        const bound = await bindMarkdownPdfDeterministicRecipeDestination(runtime, candidate, {
+          output: `${outcome}.yml`,
+        });
+
+        await writeBoundMarkdownPdfDeterministicRecipe(bound);
+
+        const persisted = await readMarkdownPdfProfileFile(join(fixtureDir, `${outcome}.yml`));
+        const reloaded = normalizeMarkdownPdfProfile({ profile: persisted }).profile;
+        const expectedPageNumbers = {
+          enabled: true,
+          scope: outcome,
+          countFrom: outcome,
+          start: 1,
+          increment: 1,
+          position: "top-right",
+          format: "{page}",
+        } as const;
+        const expectedHeader = {
+          left: "Report",
+          center: "{title}",
+          right: "",
+        };
+        expect(persisted.pageNumbers).toEqual(expectedPageNumbers);
+        expect(persisted.header).toEqual(expectedHeader);
+        expect(reloaded.pageNumbers).toEqual(expectedPageNumbers);
+        expect(reloaded.header).toEqual(expectedHeader);
+        expect(reloaded.footer).toEqual({ left: "", center: "", right: "" });
+      });
+    },
+  );
 
   test("reviews, writes, and reloads disabled page numbers with literal start zero", async () => {
     await withTempFixtureDir("md-pdf-interactive-disabled-page-numbers", async (fixtureDir) => {
