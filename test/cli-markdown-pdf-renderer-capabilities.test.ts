@@ -12,6 +12,7 @@ import {
   DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
   MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
   MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS,
+  MARKDOWN_PDF_PROFILE_FEATURE_REGISTRY,
   MARKDOWN_PDF_RENDERER_CAPABILITY_IDS,
   MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX,
 } from "../src/cli/markdown-pdf";
@@ -142,6 +143,20 @@ describe("Markdown PDF renderer capability matrix", () => {
       [MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeSeparatorGap, "65.1"],
     ]);
     expect(MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION).toBe("65.1");
+    const registeredCapabilityIds = new Set(
+      MARKDOWN_PDF_PROFILE_FEATURE_REGISTRY.flatMap((definition) => [
+        ...(definition.rendererCapability ? [definition.rendererCapability] : []),
+        ...(definition.values?.flatMap((value) =>
+          value.rendererCapability ? [value.rendererCapability] : [],
+        ) ?? []),
+      ]),
+    );
+    expect(registeredCapabilityIds).toEqual(
+      new Set(MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX.map(({ id }) => id)),
+    );
+    expect(MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX.every(({ fields }) => fields.length > 0)).toBe(
+      true,
+    );
     expect(
       MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX.find(
         ({ id }) => id === MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeSeparatorGap,

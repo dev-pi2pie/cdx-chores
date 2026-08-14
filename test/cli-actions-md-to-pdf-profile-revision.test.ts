@@ -19,6 +19,7 @@ import {
   type MarkdownPdfProfileRevisionAssessment,
 } from "../src/cli/markdown-pdf";
 import { materializeMarkdownPdfProfileCodexProfile } from "../src/cli/markdown-pdf/profile-codex";
+import { MARKDOWN_PDF_PROFILE_NORMALIZATION_ROOTS } from "../src/cli/markdown-pdf/profile/normalize";
 import { expectCliError, createActionTestRuntime } from "./helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
@@ -77,6 +78,17 @@ describe("Markdown PDF Profile revision compatibility", () => {
       value: "document",
     });
     expect(MARKDOWN_PDF_PROFILE_SUPPORTED_SCHEMA_SUMMARY).not.toContain("schemaVersion");
+  });
+
+  test("assigns every registered feature to a handled normalization owner", () => {
+    for (const definition of MARKDOWN_PDF_PROFILE_FEATURE_REGISTRY) {
+      const rootPath = definition.path.split(".", 1)[0]!;
+      expect(
+        MARKDOWN_PDF_PROFILE_NORMALIZATION_ROOTS[
+          definition.normalizationRoute
+        ] as readonly string[],
+      ).toContain(rootPath);
+    }
   });
 
   test("infers the revision-2 floor without counting declarations, defaults, or dynamic members", () => {

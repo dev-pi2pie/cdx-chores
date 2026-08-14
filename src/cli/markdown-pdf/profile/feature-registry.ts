@@ -1,3 +1,9 @@
+import {
+  isMarkdownPdfRendererCapabilityField,
+  type MarkdownPdfRendererCapabilityField,
+  type MarkdownPdfRendererCapabilityId,
+} from "../renderer-capability-contract";
+
 export const MARKDOWN_PDF_PROFILE_BASELINE_REVISION = 2;
 export const MARKDOWN_PDF_PROFILE_CURRENT_REVISION = 3;
 
@@ -43,7 +49,7 @@ export type MarkdownPdfProfileNormalizationRoute =
 export interface MarkdownPdfProfileFeatureValue {
   introducedIn: number;
   value: string | number | boolean;
-  rendererCapability?: string;
+  rendererCapability?: MarkdownPdfRendererCapabilityId;
 }
 
 export interface MarkdownPdfProfileFeatureDefinition {
@@ -51,7 +57,7 @@ export interface MarkdownPdfProfileFeatureDefinition {
   kind: MarkdownPdfProfileFeatureKind;
   normalizationRoute: MarkdownPdfProfileNormalizationRoute;
   path: string;
-  rendererCapability?: string;
+  rendererCapability?: MarkdownPdfRendererCapabilityId;
   revisionContribution?: boolean;
   values?: readonly MarkdownPdfProfileFeatureValue[];
 }
@@ -278,7 +284,7 @@ export function isMarkdownPdfProfileFeatureValue(path: string, value: unknown): 
 export function markdownPdfProfileRendererCapability(
   path: string,
   value?: unknown,
-): string | undefined {
+): MarkdownPdfRendererCapabilityId | undefined {
   const definition = markdownPdfProfileFeatureAtPath(path);
   return (
     definition?.values?.find((candidate) => candidate.value === value)?.rendererCapability ??
@@ -287,13 +293,21 @@ export function markdownPdfProfileRendererCapability(
 }
 
 export function markdownPdfProfileRendererCapabilityFields(
-  capabilityId: string,
-): readonly string[] {
+  capabilityId: MarkdownPdfRendererCapabilityId,
+): readonly MarkdownPdfRendererCapabilityField[] {
   return MARKDOWN_PDF_PROFILE_FEATURE_REGISTRY.flatMap((definition) => {
     const ownsCapability =
       definition.rendererCapability === capabilityId ||
       definition.values?.some((value) => value.rendererCapability === capabilityId);
-    return ownsCapability ? [definition.path] : [];
+    if (!ownsCapability) {
+      return [];
+    }
+    if (!isMarkdownPdfRendererCapabilityField(definition.path)) {
+      throw new TypeError(
+        `Profile renderer capability ${capabilityId} is registered to unsupported field ${definition.path}.`,
+      );
+    }
+    return [definition.path];
   });
 }
 

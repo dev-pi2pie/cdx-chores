@@ -13,36 +13,22 @@ import {
   markdownPdfProfileRendererCapability,
   markdownPdfProfileRendererCapabilityFields,
 } from "./profile";
+import {
+  MARKDOWN_PDF_RENDERER_CAPABILITY_IDS,
+  type MarkdownPdfRendererCapabilityField,
+  type MarkdownPdfRendererCapabilityId,
+} from "./renderer-capability-contract";
+
+export {
+  MARKDOWN_PDF_RENDERER_CAPABILITY_FIELDS,
+  MARKDOWN_PDF_RENDERER_CAPABILITY_IDS,
+} from "./renderer-capability-contract";
+export type {
+  MarkdownPdfRendererCapabilityField,
+  MarkdownPdfRendererCapabilityId,
+} from "./renderer-capability-contract";
 
 export const MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION = "65.1";
-
-export const MARKDOWN_PDF_RENDERER_CAPABILITY_IDS = {
-  pageNumberStart: "pageNumbers.start",
-  pageNumberIncrement: "pageNumbers.increment",
-  pageNumberDocumentScope: "pageNumbers.scope.document",
-  pageNumberBodyOrigin: "pageNumbers.countFrom.body",
-  pageChromeFontSize: "pageChrome.fontSize",
-  pageChromeFontWeight: "pageChrome.fontWeight",
-  pageChromeLineHeight: "pageChrome.lineHeight",
-  pageChromeColor: "pageChrome.color",
-  pageChromeSeparatorWidth: "pageChrome.separator.width",
-  pageChromeSeparatorStyle: "pageChrome.separator.style",
-  pageChromeSeparatorColor: "pageChrome.separator.color",
-  pageChromeSeparatorGap: "pageChrome.separator.gap",
-} as const;
-
-export type MarkdownPdfRendererCapabilityId =
-  (typeof MARKDOWN_PDF_RENDERER_CAPABILITY_IDS)[keyof typeof MARKDOWN_PDF_RENDERER_CAPABILITY_IDS];
-
-export type MarkdownPdfRendererCapabilityField =
-  | "pageNumbers.start"
-  | "pageNumbers.increment"
-  | "pageNumbers.scope"
-  | "pageNumbers.countFrom"
-  | `header.style.${"fontSize" | "fontWeight" | "lineHeight" | "color"}`
-  | `footer.style.${"fontSize" | "fontWeight" | "lineHeight" | "color"}`
-  | `header.style.separator.${"width" | "style" | "color" | "gap"}`
-  | `footer.style.separator.${"width" | "style" | "color" | "gap"}`;
 
 export type MarkdownPdfRendererCapabilityStatus =
   | "satisfied"
@@ -82,9 +68,7 @@ const PAGE_CHROME_AREAS = ["header", "footer"] as const;
 function registryCapabilityFields(
   capabilityId: MarkdownPdfRendererCapabilityId,
 ): MarkdownPdfRendererCapabilityField[] {
-  return markdownPdfProfileRendererCapabilityFields(
-    capabilityId,
-  ) as MarkdownPdfRendererCapabilityField[];
+  return [...markdownPdfProfileRendererCapabilityFields(capabilityId)];
 }
 
 export const MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX: readonly MarkdownPdfRendererCapabilityDefinition[] =
@@ -188,7 +172,7 @@ function appendProfileFeatureRequest(
 ): void {
   const capabilityId = markdownPdfProfileRendererCapability(field, value);
   if (capabilityId) {
-    appendRequest(requests, capabilityId as MarkdownPdfRendererCapabilityId, field);
+    appendRequest(requests, capabilityId, field);
   }
 }
 

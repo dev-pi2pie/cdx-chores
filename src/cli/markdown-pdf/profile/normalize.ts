@@ -5,6 +5,9 @@ import {
   findUnsupportedMarkdownPdfProfileFeatureCombination,
   isMarkdownPdfProfileFeatureValue,
   MARKDOWN_PDF_CODE_THEMES,
+  MARKDOWN_PDF_PROFILE_FEATURE_REGISTRY,
+  markdownPdfProfileFeatureAtPath,
+  type MarkdownPdfProfileNormalizationRoute,
 } from "./feature-registry";
 import { normalizeMarkdownPdfProfileIdentity } from "./identity";
 import {
@@ -42,6 +45,50 @@ import type {
 } from "./types";
 
 const META_KEY_PATTERN = /^[A-Za-z][A-Za-z0-9_.-]*$/;
+
+export const MARKDOWN_PDF_PROFILE_NORMALIZATION_ROOTS = {
+  code: ["code"],
+  cover: ["cover"],
+  declaration: ["schemaVersion"],
+  fonts: ["fonts"],
+  identity: ["profile"],
+  metadata: ["metadata"],
+  "page-chrome": ["header", "footer"],
+  "page-numbers": ["pageNumbers"],
+  pdf: ["pdf"],
+  recipe: ["page", "toc"],
+  "title-block": ["titleBlock"],
+} as const satisfies Record<MarkdownPdfProfileNormalizationRoute, readonly string[]>;
+
+function assertMarkdownPdfProfileNormalizationCoverage(): void {
+  for (const definition of MARKDOWN_PDF_PROFILE_FEATURE_REGISTRY) {
+    const rootPath = definition.path.split(".", 1)[0];
+    if (!rootPath) {
+      throw new TypeError("Profile feature paths must not be empty.");
+    }
+    const handledRoots = MARKDOWN_PDF_PROFILE_NORMALIZATION_ROOTS[
+      definition.normalizationRoute
+    ] as readonly string[];
+    if (!handledRoots.includes(rootPath)) {
+      throw new TypeError(
+        `Profile feature ${definition.path} has no ${definition.normalizationRoute} normalization owner.`,
+      );
+    }
+  }
+
+  for (const [route, rootPaths] of Object.entries(MARKDOWN_PDF_PROFILE_NORMALIZATION_ROOTS)) {
+    for (const rootPath of rootPaths) {
+      if (markdownPdfProfileFeatureAtPath(rootPath)?.normalizationRoute !== route) {
+        throw new TypeError(
+          `Profile normalization owner ${route} is not registered for ${rootPath}.`,
+        );
+      }
+    }
+  }
+}
+
+assertMarkdownPdfProfileNormalizationCoverage();
+
 function isScalar(value: unknown): value is string | number | boolean {
   return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
 }
