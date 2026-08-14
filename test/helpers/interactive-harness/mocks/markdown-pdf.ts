@@ -2,6 +2,7 @@ import { mock } from "bun:test";
 import { extname, resolve } from "node:path";
 
 import { CliError } from "../../../../src/cli/errors";
+import { MARKDOWN_PDF_PROFILE_CURRENT_REVISION } from "../../../../src/cli/markdown-pdf/profile/feature-registry";
 import type { HarnessRunnerContext } from "../context";
 import {
   fontDiscoveryModuleUrl,
@@ -387,12 +388,25 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
             ? {
                 normalizedOptions,
                 profile: {
+                  schemaVersion: MARKDOWN_PDF_PROFILE_CURRENT_REVISION,
                   code: formalGuideAnswers.code ?? DEFAULT_CODE,
                   ...(formalGuideAnswers.pageChrome as Record<string, unknown> | undefined),
                   ...(formalGuideAnswers.pageNumbers
                     ? { pageNumbers: formalGuideAnswers.pageNumbers }
                     : {}),
-                  page: normalizedOptions,
+                  page: {
+                    size: normalizedOptions.pageSize,
+                    orientation: normalizedOptions.orientation,
+                    marginTop: normalizedOptions.margins.top,
+                    marginRight: normalizedOptions.margins.right,
+                    marginBottom: normalizedOptions.margins.bottom,
+                    marginLeft: normalizedOptions.margins.left,
+                  },
+                  toc: {
+                    enabled: normalizedOptions.toc,
+                    depth: normalizedOptions.tocDepth,
+                    pageBreak: normalizedOptions.tocPageBreak,
+                  },
                 },
               }
             : {

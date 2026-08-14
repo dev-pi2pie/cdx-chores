@@ -82,7 +82,11 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfCodexFinalProfile: {
-        id: "candidate-profile",
+        profile: {
+          id: "md-pdf-profile-20260101T000000Z-abc12345",
+          source: "codex",
+          createdAt: "2026-01-01T00:00:00Z",
+        },
         pageNumbers: { enabled: false },
       },
       markdownPdfProfilePageNumbersEnabled: true,
