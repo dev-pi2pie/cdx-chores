@@ -829,10 +829,22 @@ handoff containing the accepted field names, reserved tokens, missing/unknown
 behavior, escaping, and migration posture. The cross-feature research owns
 applying that handoff to the new repository-wide guide.
 
+## Interactive UX Follow-Up
+
+The durable page-number contract is intentionally more expressive than the
+common terminal authoring task. The
+[Markdown PDF Interactive Page-Number And Page-Chrome UX][interactive-page-number-ux]
+follow-up owns simplifying Profile `formal-guide`, gating optional header and
+footer collection, keeping advanced values in Profile YAML or JSON, and
+preserving the existing one-render enablement override. Structured Codex
+Assistant page-number authority remains outside that follow-up and is deferred
+to a future canary design.
+
 ## Related Research
 
 - [Profiles, Fonts, And Page Chrome][profile-page-chrome-research]
 - [Markdown PDF Profile Revision And Feature Compatibility][profile-revision-research]
+- [Markdown PDF Interactive Page-Number And Page-Chrome UX][interactive-page-number-ux]
 - [Pattern, Placeholder, And Template Language Guide][pattern-language-research]
 
 ## Related Plans
@@ -872,6 +884,7 @@ applying that handoff to the new repository-wide guide.
 [^command-source]: [Markdown command registration](../../src/cli/commands/markdown.ts)
 
 [markdown-pdf-usage]: ../guides/markdown-pdf-usage.md
+[interactive-page-number-ux]: research-2026-08-14-markdown-pdf-interactive-page-number-and-page-chrome-ux.md
 [page-number-plan]: ../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md
 [pattern-language-research]: research-2026-08-11-pattern-placeholder-and-template-language-guide.md
 [profile-helper]: ../guides/markdown-pdf-codex-profile-helper.md

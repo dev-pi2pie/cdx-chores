@@ -1350,7 +1350,77 @@ Phase checkpoint:
   implementation commits, exact reviewed range, validation evidence, and
   Continue/Constrain/Stop verdict.
 
-### Phase 14: Guidance And Lifecycle Closeout
+### Phase 14: Interactive Page-Number And Page-Chrome UX Refinement
+
+Tasks:
+
+- [ ] Create and activate a Phase 14 job record when implementation begins,
+      linking the
+      [Interactive Page-Number And Page-Chrome UX research][interactive-page-number-ux]
+      and preserving exact implementation, validation, review, and closeout
+      evidence before Phase 15.
+- [ ] Replace the schema-shaped Profile `formal-guide` page-number sequence
+      with one enablement choice, one outcome-oriented numbering choice, and
+      one human-readable position choice. Use `Body pages, starting at 1` as
+      the fresh guided default and retain `Entire document, starting at 1` as
+      the second guided outcome.
+- [ ] Compile the body choice to `scope: body`, `countFrom: body`, `start: 1`,
+      and `increment: 1`; compile the document choice to `scope: document`,
+      `countFrom: document`, `start: 1`, and `increment: 1`. Keep
+      `format: "{page}"` in the guided path and leave custom origin, start,
+      increment, and label configuration to Profile YAML or JSON.
+- [ ] Skip dependent page-number prompts when disabled while preserving valid
+      inert same-session values for revision. Keep all six existing positions
+      and show human-readable labels rather than raw enum values.
+- [ ] Gate repeating page-chrome content behind an explicit `No`, `Header`,
+      `Footer`, or `Both` choice. Collect only selected areas, avoid prompting
+      the fresh page-number-owned slot, and keep bounded style and separator
+      fields in Profile YAML or JSON instead of the common terminal path. When
+      page numbers are disabled, keep all three slots available in each
+      selected area because no slot is page-number-owned.
+- [ ] Preserve independent `Revise page numbers` and `Revise page chrome`
+      actions. A revised page-number position must not silently delete existing
+      slot content; preserve it and surface the existing collision diagnostic
+      so the user can revise page chrome deliberately.
+- [ ] Keep the Interactive one-render choice as the existing inherit, enable,
+      and disable tri-state with unchanged placement, navigation, retention,
+      reset, and effective-review behavior. Refine copy only where it makes the
+      temporary scope clearer.
+- [ ] Keep direct `md to-pdf` limited to `--page-numbers` and
+      `--no-page-numbers`; clarify that they affect only the current render and
+      reuse Profile or normalized-default details. Do not add detailed
+      page-number flags or a parallel `md pdf-profile init` configuration
+      surface.
+- [ ] Keep Interactive Project preparation Codex Assistant-only and keep its
+      durable page-number policy in the contained `profile.yml`. Record
+      structured Profile/Project Codex page-number authority, provenance, and
+      revision as future-canary work rather than expanding this phase.
+- [ ] Add focused formal-guide collection, compilation, revision, page-chrome
+      ownership, command-help, and lifecycle regressions. Prove the simplified
+      prompts compile to the existing normalized Profile and render inputs.
+- [ ] Run focused and broad Interactive/Markdown PDF tests plus TypeScript,
+      lint, format check, build, and `git diff --check`. Do not repeat the live
+      renderer matrix unless normalized behavior, renderer CSS, scenario
+      inputs, or evidence acceptance changes.
+- [ ] Review the exact Phase 14 implementation range with maintainability and
+      test-quality reviewers, resolve accepted findings, and record a reviewed
+      documentation closeout before Phase 15.
+
+Phase checkpoint:
+
+- Common Profile `formal-guide` authoring asks only whether to number, which
+  ordinary numbering outcome to use, and where to place the number.
+- Advanced sequence, label, style, separator, and deliberate-collision details
+  remain available in the durable Profile without a second Interactive schema.
+- Optional header/footer content is no longer an unconditional six-slot prompt
+  sequence, and fresh authoring avoids the page-number-owned slot.
+- Direct and Interactive render-time overrides remain temporary enablement
+  choices, while Profile and contained Project `profile.yml` remain the sole
+  reusable policy owners.
+- Codex Assistant redesign is explicitly deferred without weakening current
+  validation, review, or rendering behavior.
+
+### Phase 15: Guidance And Lifecycle Closeout
 
 Tasks:
 
@@ -1367,9 +1437,10 @@ Tasks:
       presentation plus deliberate later user CSS, while keeping ordinary
       page-number sequence/content policy Profile-owned.
 - [ ] Update Interactive Markdown PDF usage with the one-render choice and
-      update formal-guide and Project-bundle descriptions for durable Profile
-      authoring and handoff.
-- [ ] Update `md pdf-profile init` examples and direct CLI help snapshots.
+      update the simplified formal-guide and Project-bundle descriptions for
+      durable Profile authoring and handoff.
+- [ ] Update `md pdf-profile init` examples and verify direct CLI help examples
+      agree with the Phase 14 render-only toggle wording.
 - [ ] Document `{page}` as logical, `{pages}` as physical, and the warning
       posture for non-default arithmetic and body origin.
 - [ ] Document capability-specific renderer requirements without presenting one
@@ -1400,6 +1471,7 @@ Phase checkpoint:
 
 - [Markdown PDF Page-Number Configuration research][page-number-research]
 - [Markdown PDF Profile Revision And Feature Compatibility][profile-revision-research]
+- [Markdown PDF Interactive Page-Number And Page-Chrome UX][interactive-page-number-ux]
 - [Pattern, Placeholder, and Template Language Guide research][pattern-language-research]
 
 ## Related Guides
@@ -1410,6 +1482,7 @@ Phase checkpoint:
 - [Markdown PDF Codex Template Helper][template-helper]
 
 [markdown-pdf-usage]: ../guides/markdown-pdf-usage.md
+[interactive-page-number-ux]: ../researches/research-2026-08-14-markdown-pdf-interactive-page-number-and-page-chrome-ux.md
 [page-number-research]: ../researches/research-2026-08-11-markdown-pdf-page-number-configuration.md
 [pattern-language-research]: ../researches/research-2026-08-11-pattern-placeholder-and-template-language-guide.md
 [profile-revision-research]: ../researches/research-2026-08-14-markdown-pdf-profile-revision-and-feature-compatibility.md
