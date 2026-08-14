@@ -51,7 +51,7 @@ function cssContentFromTemplate(value: string, metadata: Record<string, string>)
   return tokens.length > 0 ? tokens.join(" ") : cssString("");
 }
 
-function pageNumberSlot(position: MarkdownPdfPageChromePosition): {
+export function resolveMarkdownPdfPageNumberSlot(position: MarkdownPdfPageChromePosition): {
   area: "header" | "footer";
   slot: "left" | "center" | "right";
 } {
@@ -167,7 +167,9 @@ export function createMarkdownPdfPageChromeCss(
     pageNumbers.enabled && pageNumbers.scope === "body" && !usesLegacyDocumentVisibility;
   const usesDocumentVisibility =
     pageNumbers.enabled && (pageNumbers.scope === "document" || usesLegacyDocumentVisibility);
-  const numberTarget = pageNumbers.enabled ? pageNumberSlot(pageNumbers.position) : undefined;
+  const numberTarget = pageNumbers.enabled
+    ? resolveMarkdownPdfPageNumberSlot(pageNumbers.position)
+    : undefined;
   const slots = {
     header: { ...profile.header },
     footer: { ...profile.footer },

@@ -291,36 +291,20 @@ describe("interactive Markdown PDF deterministic service", () => {
       };
       const revisedNumbers = await reviseMarkdownPdfFormalGuidePageNumbers(initial, {
         pageNumbersEnabled: () => true,
-        pageNumberScope: () => "body",
-        pageNumberDetails: () => ({
-          countFrom: "body",
-          start: 0,
-          increment: 3,
-          position: "top-right",
-          format: "Page {page} / {pages}",
-        }),
+        pageNumberOutcome: () => "body",
+        pageNumberPosition: () => "top-right",
       } as unknown as MarkdownPdfFormalGuidePrompts);
       const revised = await reviseMarkdownPdfFormalGuidePageChrome(revisedNumbers, {
+        pageChromeSelection: () => "both",
         pageChromeArea: ({
           area,
+          slots,
         }: Parameters<MarkdownPdfFormalGuidePrompts["pageChromeArea"]>[0]) =>
           area === "header"
             ? {
                 left: "{company}",
                 center: "",
-                right: "{title}",
-                style: {
-                  fontSize: "8pt",
-                  fontWeight: 500,
-                  lineHeight: 1.1,
-                  color: "#123456",
-                  separator: {
-                    width: "0.5pt",
-                    style: "solid",
-                    color: "#abcdef",
-                    gap: 0,
-                  },
-                },
+                right: slots.includes("right") ? "{title}" : "",
               }
             : { left: "{author}", center: "", right: "{date}" },
       } as unknown as MarkdownPdfFormalGuidePrompts);

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 interface PromptChoice {
+  name?: string;
   value: unknown;
 }
 
@@ -22,6 +23,8 @@ interface ConfirmOptions {
 }
 
 interface PromptState {
+  calls: string[];
+  choices: Map<string, PromptChoice[]>;
   confirms: Map<string, boolean[]>;
   defaults: Map<string, unknown[]>;
   inputs: Map<string, string[]>;
@@ -31,6 +34,8 @@ interface PromptState {
 
 function createPromptState(): PromptState {
   return {
+    calls: [],
+    choices: new Map(),
     confirms: new Map(),
     defaults: new Map(),
     inputs: new Map(),
@@ -55,12 +60,14 @@ function shift<T>(values: Map<string, T[]>, message: string): T {
 
 mock.module("@inquirer/prompts", () => ({
   async confirm(options: ConfirmOptions): Promise<boolean> {
+    state.calls.push(`confirm:${options.message}`);
     const defaults = state.defaults.get(options.message) ?? [];
     defaults.push(options.default);
     state.defaults.set(options.message, defaults);
     return shift(state.confirms, options.message);
   },
   async input(options: InputOptions): Promise<string> {
+    state.calls.push(`input:${options.message}`);
     const defaults = state.defaults.get(options.message) ?? [];
     defaults.push(options.default);
     state.defaults.set(options.message, defaults);
@@ -76,6 +83,8 @@ mock.module("@inquirer/prompts", () => ({
     }
   },
   async select(options: SelectOptions): Promise<unknown> {
+    state.calls.push(`select:${options.message}`);
+    state.choices.set(options.message, options.choices);
     const defaults = state.defaults.get(options.message) ?? [];
     defaults.push(options.default);
     state.defaults.set(options.message, defaults);
@@ -94,140 +103,80 @@ beforeEach(() => {
   state = createPromptState();
 });
 
-function rejectedValues(message: string): string[] {
-  return (state.rejected.get(message) ?? []).map(({ value }) => value);
-}
-
 describe("interactive Markdown PDF formal-guide prompt adapter", () => {
-  test("converts page-number inputs and preserves a retained start of zero", async () => {
-    queue(state.selects, "Count page numbers from", "body");
-    queue(state.inputs, "First page number", "0");
-    queue(state.inputs, "Page-number increment", "2");
+  test("offers the two guided numbering outcomes with body as the fresh default", async () => {
+    queue(state.selects, "Number which pages?", "body");
+
+    await expect(createMarkdownPdfFormalGuidePrompts().pageNumberOutcome({})).resolves.toBe("body");
+    expect(state.defaults.get("Number which pages?")).toEqual(["body"]);
+    expect(state.choices.get("Number which pages?")).toEqual([
+      { name: "Body pages, starting at 1", value: "body" },
+      { name: "Entire document, starting at 1", value: "document" },
+    ]);
+  });
+
+  test("offers all six page-number positions with human-readable labels", async () => {
     queue(state.selects, "Page-number position", "top-left");
-    queue(state.inputs, "Page-number label template", "Page {page}");
 
-    const result = await createMarkdownPdfFormalGuidePrompts().pageNumberDetails({
-      countFromChoices: ["document", "body"],
-      current: {
-        countFrom: "body",
-        format: "{page}",
-        increment: 1,
-        position: "bottom-center",
-        start: 0,
-      },
-      scope: "body",
-    });
-
-    expect(result).toEqual({
-      countFrom: "body",
-      format: "Page {page}",
-      increment: 2,
-      position: "top-left",
-      start: 0,
-    });
-    expect(state.defaults.get("First page number")).toEqual(["0"]);
-    expect(typeof result.start).toBe("number");
-    expect(typeof result.increment).toBe("number");
+    await expect(
+      createMarkdownPdfFormalGuidePrompts().pageNumberPosition({ current: "bottom-right" }),
+    ).resolves.toBe("top-left");
+    expect(state.defaults.get("Page-number position")).toEqual(["bottom-right"]);
+    expect(state.choices.get("Page-number position")).toEqual([
+      { name: "Bottom center", value: "bottom-center" },
+      { name: "Bottom right", value: "bottom-right" },
+      { name: "Bottom left", value: "bottom-left" },
+      { name: "Top center", value: "top-center" },
+      { name: "Top right", value: "top-right" },
+      { name: "Top left", value: "top-left" },
+    ]);
   });
 
-  test("rejects blank, negative, decimal, and below-minimum numbering inputs", async () => {
-    queue(state.selects, "Count page numbers from", "document");
-    queue(state.inputs, "First page number", "", "-1", "1.5", "0");
-    queue(state.inputs, "Page-number increment", "", "-1", "1.5", "0", "1");
-    queue(state.selects, "Page-number position", "bottom-right");
-    queue(state.inputs, "Page-number label template", "{page}");
+  test("offers one concise page-chrome gate", async () => {
+    queue(state.selects, "Add repeating header or footer text?", "both");
 
-    const result = await createMarkdownPdfFormalGuidePrompts().pageNumberDetails({
-      countFromChoices: ["document"],
-      scope: "document",
-    });
-
-    expect(result.start).toBe(0);
-    expect(result.increment).toBe(1);
-    expect(rejectedValues("First page number")).toEqual(["", "-1", "1.5"]);
-    expect(rejectedValues("Page-number increment")).toEqual(["", "-1", "1.5", "0"]);
-    expect(state.rejected.get("First page number")?.[0]?.error).toContain("integer of at least 0");
-    expect(state.rejected.get("Page-number increment")?.[0]?.error).toContain(
-      "integer of at least 1",
-    );
+    await expect(
+      createMarkdownPdfFormalGuidePrompts().pageChromeSelection({ current: "header" }),
+    ).resolves.toBe("both");
+    expect(state.defaults.get("Add repeating header or footer text?")).toEqual(["header"]);
+    expect(state.choices.get("Add repeating header or footer text?")).toEqual([
+      { name: "No", value: "none" },
+      { name: "Header", value: "header" },
+      { name: "Footer", value: "footer" },
+      { name: "Both", value: "both" },
+    ]);
   });
 
-  test("rejects invalid page-chrome values and accepts every lower endpoint", async () => {
+  test("prompts only selected page-chrome slots and preserves retained style", async () => {
     queue(state.inputs, "Header left", "{company}");
-    queue(state.inputs, "Header center", "");
     queue(state.inputs, "Header right", "{title}");
-    queue(state.confirms, "Configure header style?", true);
-    queue(state.inputs, "Header font size", "5.9pt", "6pt");
-    queue(state.selects, "Header font weight", 400);
-    queue(state.inputs, "Header line height", "", "0.9", "1");
-    queue(state.inputs, "Header color", "#fff", "#000000");
-    queue(state.confirms, "Add a header separator?", true);
-    queue(state.inputs, "Header separator width", "0.24pt", "0.25pt");
-    queue(state.selects, "Header separator style", "solid");
-    queue(state.inputs, "Header separator color", "black", "#ffffff");
-    queue(state.inputs, "Header separator gap", "-0.1mm", "0");
+    const style = { fontSize: "8pt", separator: { width: "0.5pt" } } as const;
 
-    const result = await createMarkdownPdfFormalGuidePrompts().pageChromeArea({ area: "header" });
+    const result = await createMarkdownPdfFormalGuidePrompts().pageChromeArea({
+      area: "header",
+      current: { left: "Old", center: "Owned", right: "Old", style },
+      slots: ["left", "right"],
+    });
 
     expect(result).toEqual({
       left: "{company}",
-      center: "",
+      center: "Owned",
       right: "{title}",
-      style: {
-        fontSize: "6pt",
-        fontWeight: 400,
-        lineHeight: 1,
-        color: "#000000",
-        separator: {
-          width: "0.25pt",
-          style: "solid",
-          color: "#ffffff",
-          gap: 0,
-        },
-      },
+      style,
     });
-    expect(rejectedValues("Header font size")).toEqual(["5.9pt"]);
-    expect(rejectedValues("Header line height")).toEqual(["", "0.9"]);
-    expect(rejectedValues("Header color")).toEqual(["#fff"]);
-    expect(rejectedValues("Header separator width")).toEqual(["0.24pt"]);
-    expect(rejectedValues("Header separator color")).toEqual(["black"]);
-    expect(rejectedValues("Header separator gap")).toEqual(["-0.1mm"]);
+    expect(state.calls).toEqual(["input:Header left", "input:Header right"]);
   });
 
-  test("rejects values above page-chrome bounds and accepts every upper endpoint", async () => {
+  test("prompts every page-chrome slot when all are available", async () => {
     queue(state.inputs, "Footer left", "{author}");
     queue(state.inputs, "Footer center", "");
     queue(state.inputs, "Footer right", "{date}");
-    queue(state.confirms, "Configure footer style?", true);
-    queue(state.inputs, "Footer font size", "12.1pt", "12pt");
-    queue(state.selects, "Footer font weight", 700);
-    queue(state.inputs, "Footer line height", "2.1", "2");
-    queue(state.inputs, "Footer color", "#gggggg", "#ffffff");
-    queue(state.confirms, "Add a footer separator?", true);
-    queue(state.inputs, "Footer separator width", "2.01pt", "2pt");
-    queue(state.selects, "Footer separator style", "solid");
-    queue(state.inputs, "Footer separator color", "#12345", "#000000");
-    queue(state.inputs, "Footer separator gap", "4.1mm", "4mm");
-
-    const result = await createMarkdownPdfFormalGuidePrompts().pageChromeArea({ area: "footer" });
-
-    expect(result.style).toEqual({
-      fontSize: "12pt",
-      fontWeight: 700,
-      lineHeight: 2,
-      color: "#ffffff",
-      separator: {
-        width: "2pt",
-        style: "solid",
-        color: "#000000",
-        gap: "4mm",
-      },
+    const result = await createMarkdownPdfFormalGuidePrompts().pageChromeArea({
+      area: "footer",
+      slots: ["left", "center", "right"],
     });
-    expect(rejectedValues("Footer font size")).toEqual(["12.1pt"]);
-    expect(rejectedValues("Footer line height")).toEqual(["2.1"]);
-    expect(rejectedValues("Footer color")).toEqual(["#gggggg"]);
-    expect(rejectedValues("Footer separator width")).toEqual(["2.01pt"]);
-    expect(rejectedValues("Footer separator color")).toEqual(["#12345"]);
-    expect(rejectedValues("Footer separator gap")).toEqual(["4.1mm"]);
+
+    expect(result).toEqual({ left: "{author}", center: "", right: "{date}" });
+    expect(state.calls).toEqual(["input:Footer left", "input:Footer center", "input:Footer right"]);
   });
 });

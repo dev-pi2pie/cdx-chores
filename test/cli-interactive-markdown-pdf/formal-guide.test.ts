@@ -63,14 +63,9 @@ function createPrompts(
     codeLineNumbers: () => false,
     codeTransformerNotation: () => false,
     pageNumbersEnabled: () => false,
-    pageNumberScope: () => "body",
-    pageNumberDetails: () => ({
-      position: "bottom-center",
-      format: "{page}",
-      countFrom: "document",
-      start: 1,
-      increment: 1,
-    }),
+    pageNumberOutcome: () => "body",
+    pageNumberPosition: () => "bottom-center",
+    pageChromeSelection: () => "none",
     pageChromeArea: () => ({ left: "", center: "", right: "" }),
     layout: () => BASE_ANSWERS.layout,
     margins: () => BASE_ANSWERS.margins,
@@ -354,11 +349,11 @@ describe("interactive Markdown PDF formal-guide answers", () => {
           expect(current).toBeUndefined();
           return false;
         },
-        pageNumberScope: () => {
-          throw new Error("page-number scope must not be prompted");
+        pageNumberOutcome: () => {
+          throw new Error("page-number outcome must not be prompted");
         },
-        pageNumberDetails: () => {
-          throw new Error("page-number details must not be prompted");
+        pageNumberPosition: () => {
+          throw new Error("page-number position must not be prompted");
         },
       }),
     );
@@ -366,79 +361,47 @@ describe("interactive Markdown PDF formal-guide answers", () => {
     expect(answers.pageNumbers).toEqual(BASE_PROFILE_ANSWERS.pageNumbers);
   });
 
-  test("collects body-origin numbering with literal zero and both origin choices", async () => {
+  test.each([
+    [
+      "body",
+      {
+        enabled: true,
+        position: "top-left",
+        format: "{page}",
+        scope: "body",
+        countFrom: "body",
+        start: 1,
+        increment: 1,
+      },
+    ],
+    [
+      "document",
+      {
+        enabled: true,
+        position: "top-left",
+        format: "{page}",
+        scope: "document",
+        countFrom: "document",
+        start: 1,
+        increment: 1,
+      },
+    ],
+  ] as const)("maps the %s guided outcome to fixed Profile values", async (outcome, expected) => {
     const answers = await collectMarkdownPdfProfileFormalGuideAnswers(
       createPrompts({
         pageNumbersEnabled: () => true,
-        pageNumberScope: ({ current }) => {
+        pageNumberOutcome: ({ current }) => {
           expect(current).toBe("body");
-          return "body";
+          return outcome;
         },
-        pageNumberDetails: ({ countFromChoices, current, scope }) => {
-          expect(scope).toBe("body");
-          expect(countFromChoices).toEqual(["document", "body"]);
-          expect(current?.start).toBe(1);
-          return {
-            position: "top-left",
-            format: "Page {page}",
-            countFrom: "body",
-            start: 0,
-            increment: 2,
-          };
+        pageNumberPosition: ({ current }) => {
+          expect(current).toBe("bottom-center");
+          return "top-left";
         },
       }),
     );
 
-    expect(answers.pageNumbers).toEqual({
-      enabled: true,
-      position: "top-left",
-      format: "Page {page}",
-      scope: "body",
-      countFrom: "body",
-      start: 0,
-      increment: 2,
-    });
-  });
-
-  test("limits document scope collection to document origin", async () => {
-    const answers = await collectMarkdownPdfProfileFormalGuideAnswers(
-      createPrompts({
-        pageNumbersEnabled: () => true,
-        pageNumberScope: () => "document",
-        pageNumberDetails: ({ countFromChoices, scope }) => {
-          expect(scope).toBe("document");
-          expect(countFromChoices).toEqual(["document"]);
-          return {
-            position: "bottom-right",
-            format: "{page} / {pages}",
-            countFrom: "document",
-            start: 1,
-            increment: 1,
-          };
-        },
-      }),
-    );
-
-    expect(answers.pageNumbers.scope).toBe("document");
-    expect(answers.pageNumbers.countFrom).toBe("document");
-  });
-
-  test("rejects an injected document-scope body-origin answer during collection", async () => {
-    await expect(
-      collectMarkdownPdfProfileFormalGuideAnswers(
-        createPrompts({
-          pageNumbersEnabled: () => true,
-          pageNumberScope: () => "document",
-          pageNumberDetails: () => ({
-            position: "bottom-center",
-            format: "{page}",
-            countFrom: "body",
-            start: 1,
-            increment: 1,
-          }),
-        }),
-      ),
-    ).rejects.toThrow("scope document cannot be used with countFrom body");
+    expect(answers.pageNumbers).toEqual(expected);
   });
 
   test("revises only page numbers and preserves disabled zero-valued details", async () => {
@@ -453,11 +416,11 @@ describe("interactive Markdown PDF formal-guide answers", () => {
           expect(current).toBe(false);
           return false;
         },
-        pageNumberScope: () => {
-          throw new Error("page-number scope must not be prompted");
+        pageNumberOutcome: () => {
+          throw new Error("page-number outcome must not be prompted");
         },
-        pageNumberDetails: () => {
-          throw new Error("page-number details must not be prompted");
+        pageNumberPosition: () => {
+          throw new Error("page-number position must not be prompted");
         },
         pageChromeArea: () => {
           throw new Error("page chrome must not be prompted");
@@ -471,17 +434,23 @@ describe("interactive Markdown PDF formal-guide answers", () => {
     expect(revised.code).toBe(answers.code);
   });
 
-  test("revises only page chrome with retained header and footer context", async () => {
+  test.each([
+    ["none", []],
+    ["header", ["header"]],
+    ["footer", ["footer"]],
+    ["both", ["header", "footer"]],
+  ] as const)("collects only %s page-chrome areas", async (selection, expectedAreas) => {
     const calls: string[] = [];
-    const revised = await reviseMarkdownPdfFormalGuidePageChrome(
-      BASE_PROFILE_ANSWERS,
+    const answers = await collectMarkdownPdfProfileFormalGuideAnswers(
       createPrompts({
-        pageNumbersEnabled: () => {
-          throw new Error("page numbers must not be prompted");
+        pageChromeSelection: ({ current }) => {
+          expect(current).toBeUndefined();
+          return selection;
         },
-        pageChromeArea: ({ area, current }) => {
+        pageChromeArea: ({ area, current, slots }) => {
           calls.push(area);
-          expect(current).toBe(BASE_PROFILE_ANSWERS.pageChrome[area]);
+          expect(current).toBeUndefined();
+          expect(slots).toEqual(["left", "center", "right"]);
           return area === "header"
             ? { left: "{company}", center: "", right: "{title}" }
             : { left: "{author}", center: "", right: "{date}" };
@@ -489,12 +458,105 @@ describe("interactive Markdown PDF formal-guide answers", () => {
       }),
     );
 
-    expect(calls).toEqual(["header", "footer"]);
+    const selectedAreas: readonly string[] = expectedAreas;
+    expect(calls).toEqual([...selectedAreas]);
+    expect(answers.pageChrome.header).toEqual(
+      selectedAreas.includes("header")
+        ? { left: "{company}", center: "", right: "{title}" }
+        : { left: "", center: "", right: "" },
+    );
+    expect(answers.pageChrome.footer).toEqual(
+      selectedAreas.includes("footer")
+        ? { left: "{author}", center: "", right: "{date}" }
+        : { left: "", center: "", right: "" },
+    );
+  });
+
+  test.each([...MARKDOWN_PDF_PAGE_CHROME_POSITIONS])(
+    "omits the fresh enabled page-number slot at %s",
+    async (position) => {
+      const [vertical, slot] = position.split("-") as [
+        "top" | "bottom",
+        "left" | "center" | "right",
+      ];
+      const targetArea = vertical === "top" ? "header" : "footer";
+      const calls: Array<{ area: string; slots: readonly string[] }> = [];
+      await collectMarkdownPdfProfileFormalGuideAnswers(
+        createPrompts({
+          pageNumbersEnabled: () => true,
+          pageNumberOutcome: () => "body",
+          pageNumberPosition: () => position,
+          pageChromeSelection: () => "both",
+          pageChromeArea: ({ area, slots }) => {
+            calls.push({ area, slots });
+            return { left: "", center: "", right: "" };
+          },
+        }),
+      );
+
+      expect(calls.find((call) => call.area === targetArea)?.slots).toEqual(
+        ["left", "center", "right"].filter((candidate) => candidate !== slot),
+      );
+      expect(calls.find((call) => call.area !== targetArea)?.slots).toEqual([
+        "left",
+        "center",
+        "right",
+      ]);
+    },
+  );
+
+  test("preserves styles while clearing unselected text during page-chrome revision", async () => {
+    const headerStyle = { fontSize: "8pt" } as const;
+    const footerStyle = { color: "#123456" } as const;
+    const current: MarkdownPdfProfileFormalGuideAnswers = {
+      ...BASE_PROFILE_ANSWERS,
+      pageChrome: {
+        header: { left: "Header", center: "", right: "", style: headerStyle },
+        footer: { left: "Footer", center: "", right: "", style: footerStyle },
+      },
+    };
+    const revised = await reviseMarkdownPdfFormalGuidePageChrome(
+      current,
+      createPrompts({
+        pageChromeSelection: ({ current }) => {
+          expect(current).toBe("both");
+          return "header";
+        },
+        pageChromeArea: ({ current, slots }) => {
+          expect(slots).toEqual(["left", "center", "right"]);
+          return { left: "Revised", center: "", right: "", style: current?.style };
+        },
+      }),
+    );
+
     expect(revised.pageChrome).toEqual({
-      header: { left: "{company}", center: "", right: "{title}" },
-      footer: { left: "{author}", center: "", right: "{date}" },
+      header: { left: "Revised", center: "", right: "", style: headerStyle },
+      footer: { left: "", center: "", right: "", style: footerStyle },
     });
-    expect(revised.pageNumbers).toBe(BASE_PROFILE_ANSWERS.pageNumbers);
+    expect(revised.pageNumbers).toBe(current.pageNumbers);
+  });
+
+  test("prompts an occupied revised page-number slot so it can be cleared", async () => {
+    const current: MarkdownPdfProfileFormalGuideAnswers = {
+      ...BASE_PROFILE_ANSWERS,
+      pageNumbers: { ...BASE_PROFILE_ANSWERS.pageNumbers, enabled: true },
+      pageChrome: {
+        ...BASE_PROFILE_ANSWERS.pageChrome,
+        footer: { left: "", center: "Existing", right: "" },
+      },
+    };
+    const revised = await reviseMarkdownPdfFormalGuidePageChrome(
+      current,
+      createPrompts({
+        pageChromeSelection: () => "footer",
+        pageChromeArea: ({ slots }) => {
+          expect(slots).toEqual(["left", "center", "right"]);
+          return { left: "", center: "", right: "" };
+        },
+      }),
+    );
+
+    expect(revised.pageChrome.footer.center).toBe("");
   });
 
   test("omits preset-derived orientation, margins, and disabled ToC details", () => {

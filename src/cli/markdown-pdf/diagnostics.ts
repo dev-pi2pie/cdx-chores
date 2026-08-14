@@ -3,6 +3,7 @@ import type {
   NormalizedMarkdownPdfPageNumbers,
   NormalizedMarkdownPdfProfile,
 } from "./profile";
+import { resolveMarkdownPdfPageNumberSlot } from "./profile";
 import type { MarkdownPdfTemplateCompatibilityResult } from "./template-compatibility";
 
 export const MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS = {
@@ -108,12 +109,29 @@ function profileRevisionDiagnostic(
   };
 }
 
-function pageNumberTarget(position: NormalizedMarkdownPdfPageNumbers["position"]): {
-  area: "header" | "footer";
-  slot: "left" | "center" | "right";
-} {
-  const [pageArea, slot] = position.split("-") as ["top" | "bottom", "left" | "center" | "right"];
-  return { area: pageArea === "top" ? "header" : "footer", slot };
+export function collectMarkdownPdfOccupiedPageNumberSlotDiagnostic(input: {
+  profile: NormalizedMarkdownPdfProfile;
+  pageNumbers: NormalizedMarkdownPdfPageNumbers;
+}): MarkdownPdfDiagnostic | undefined {
+  if (!input.pageNumbers.enabled) {
+    return undefined;
+  }
+
+  const target = resolveMarkdownPdfPageNumberSlot(input.pageNumbers.position);
+  if (input.profile[target.area][target.slot].trim().length === 0) {
+    return undefined;
+  }
+
+  return {
+    conditionId: MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.occupiedPageNumberSlot,
+    severity: "warning",
+    message: `Page numbers at ${input.pageNumbers.position} replace configured ${target.area}.${target.slot} content for this render.`,
+    context: {
+      kind: "occupied-page-number-slot",
+      position: input.pageNumbers.position,
+      ...target,
+    },
+  };
 }
 
 export function collectMarkdownPdfDiagnostics(input: {
@@ -132,18 +150,9 @@ export function collectMarkdownPdfDiagnostics(input: {
     return { conditions };
   }
 
-  const target = pageNumberTarget(input.pageNumbers.position);
-  if (input.profile[target.area][target.slot].trim().length > 0) {
-    conditions.push({
-      conditionId: MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.occupiedPageNumberSlot,
-      severity: "warning",
-      message: `Page numbers at ${input.pageNumbers.position} replace configured ${target.area}.${target.slot} content for this render.`,
-      context: {
-        kind: "occupied-page-number-slot",
-        position: input.pageNumbers.position,
-        ...target,
-      },
-    });
+  const occupiedSlot = collectMarkdownPdfOccupiedPageNumberSlotDiagnostic(input);
+  if (occupiedSlot) {
+    conditions.push(occupiedSlot);
   }
 
   if (

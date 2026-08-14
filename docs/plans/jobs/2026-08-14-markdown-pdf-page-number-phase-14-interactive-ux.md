@@ -82,9 +82,9 @@ remain editable in Profile YAML or JSON.
 - [x] Activate this job from the reviewed Phase 14 planning boundary.
 - [x] Inventory current prompt, collection, compilation, revision, export, and
       regression seams before editing.
-- [ ] Implement and validate simplified guided page-number authoring.
-- [ ] Implement and validate gated page-chrome authoring and slot ownership.
-- [ ] Clarify Interactive and direct render-only wording without changing
+- [x] Implement and validate simplified guided page-number authoring.
+- [x] Implement and validate gated page-chrome authoring and slot ownership.
+- [x] Clarify Interactive and direct render-only wording without changing
       precedence or lifecycle behavior.
 - [ ] Complete focused, broad, full, static, format, build, and diff validation.
 - [ ] Run a bounded save-only Interactive smoke and record cleanup.
@@ -130,6 +130,12 @@ changes.
 ## Evidence
 
 - Planning and research boundary: `7bbdc140`.
+- Phase activation record: `e9811cab`.
+- Temporary Interactive/direct override wording: `6c388816`; 47 focused tests
+  and 295 assertions passed with TypeScript, scoped formatting, and diff checks.
+- Formal-guide page-number/page-chrome implementation: 120 focused and
+  diagnostic tests plus all 326 Interactive Markdown PDF tests passed.
+  TypeScript, scoped lint and formatting, build, and diff checks also passed.
 - Implementation commits, validation results, smoke cleanup, reviewed range,
   and final verdict will be appended as work completes.
 

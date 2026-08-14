@@ -10,6 +10,7 @@ import {
   collectMarkdownPdfProfileAuthoringReview,
   formatMarkdownPdfProfileAuthoringReview,
 } from "../../markdown-pdf/profile-authoring-review";
+import { collectMarkdownPdfOccupiedPageNumberSlotDiagnostic } from "../../markdown-pdf/diagnostics";
 
 export type MarkdownPdfCandidateReviewAction =
   | "save"
@@ -66,6 +67,14 @@ export function renderDeterministicRecipeReview(
     renderReusableMarkdownPdfCodeReview(runtime, review.normalizedProfile.code);
     for (const line of formatMarkdownPdfProfileAuthoringReview(review)) {
       printLine(runtime.stderr, line);
+    }
+    const occupiedSlot = collectMarkdownPdfOccupiedPageNumberSlotDiagnostic({
+      profile: review.normalizedProfile,
+      pageNumbers: review.normalizedProfile.pageNumbers,
+    });
+    if (occupiedSlot) {
+      printLine(runtime.stderr, "");
+      printLine(runtime.stderr, `Warning: ${occupiedSlot.message}`);
     }
   }
   printLine(runtime.stderr, "");

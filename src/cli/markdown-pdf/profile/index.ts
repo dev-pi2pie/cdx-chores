@@ -41,7 +41,7 @@ export {
   markdownPdfProfileToRecipeOptions,
   resolveMarkdownPdfCodeOptions,
 } from "./normalize";
-export { createMarkdownPdfPageChromeCss } from "./page-chrome";
+export { createMarkdownPdfPageChromeCss, resolveMarkdownPdfPageNumberSlot } from "./page-chrome";
 export type {
   CreateMarkdownPdfPageChromeCssInput,
   MarkdownPdfPageChromeBodyBoundary,

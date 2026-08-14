@@ -78,14 +78,15 @@ describe("interactive Markdown PDF deterministic authoring", () => {
         4,
         "after",
         "github-light",
+        "none",
         "revise-margins",
         "custom",
         "save",
         "exit",
       ],
-      inputQueue: ["15mm", "", "", "", "", "", "", "10mm", "11mm", "12mm", "13mm"],
+      inputQueue: ["15mm", "10mm", "11mm", "12mm", "13mm"],
       requiredPathQueue: ["recipes/formal.json"],
-      confirmQueue: [true, true, false, false, false, false, false, false, true],
+      confirmQueue: [true, true, false, false, false, false, true],
     });
 
     expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(2);
@@ -193,10 +194,10 @@ describe("interactive Markdown PDF deterministic authoring", () => {
         "preset-default",
         "preset-default",
         "light-plus",
+        "none",
         "revise-code",
         "cancel",
       ],
-      inputQueue: ["", "", "", "", "", ""],
       confirmQueue: [false, true, true, true, false, false, false, false],
     });
 
@@ -238,35 +239,17 @@ describe("interactive Markdown PDF deterministic authoring", () => {
         "preset-default",
         "preset-default",
         "body",
-        "body",
-        "top-right",
-        500,
-        "revise-page-numbers",
-        "body",
-        "document",
         "bottom-center",
+        "header",
+        "revise-page-numbers",
+        "document",
+        "top-left",
         "save",
         "exit",
       ],
-      inputQueue: [
-        "0",
-        "2",
-        "Page {page}",
-        "{company}",
-        "",
-        "{title}",
-        "8pt",
-        "1.1",
-        "#123456",
-        "",
-        "",
-        "",
-        "1",
-        "1",
-        "{page}",
-      ],
+      inputQueue: ["Existing header", "", ""],
       requiredPathQueue: ["recipes/page-policy.yml"],
-      confirmQueue: [false, false, true, true, false, false, true, false, true],
+      confirmQueue: [false, false, true, true, false, true],
     });
 
     expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(2);
@@ -278,58 +261,80 @@ describe("interactive Markdown PDF deterministic authoring", () => {
       enabled: true,
       scope: "body",
       countFrom: "body",
-      start: 0,
-      increment: 2,
-      position: "top-right",
-      format: "Page {page}",
-    });
-    expect(firstAnswers.pageChrome).toEqual({
-      header: {
-        left: "{company}",
-        center: "",
-        right: "{title}",
-        style: {
-          fontSize: "8pt",
-          fontWeight: 500,
-          lineHeight: 1.1,
-          color: "#123456",
-        },
-      },
-      footer: { left: "", center: "", right: "" },
-    });
-    expect(secondAnswers.pageNumbers).toEqual({
-      enabled: true,
-      scope: "body",
-      countFrom: "document",
       start: 1,
       increment: 1,
       position: "bottom-center",
       format: "{page}",
     });
+    expect(firstAnswers.pageChrome).toEqual({
+      header: {
+        left: "Existing header",
+        center: "",
+        right: "",
+      },
+      footer: { left: "", center: "", right: "" },
+    });
+    expect(secondAnswers.pageNumbers).toEqual({
+      enabled: true,
+      scope: "document",
+      countFrom: "document",
+      start: 1,
+      increment: 1,
+      position: "top-left",
+      format: "{page}",
+    });
     expect(secondAnswers.pageChrome).toEqual({
       header: {
-        left: "{company}",
+        left: "Existing header",
         center: "",
-        right: "{title}",
-        style: {
-          fontSize: "8pt",
-          fontWeight: 500,
-          lineHeight: 1.1,
-          color: "#123456",
-        },
+        right: "",
       },
       footer: { left: "", center: "", right: "" },
     });
     expect(result.stderr).toContain("Reusable Profile page numbers:");
-    expect(result.stderr).toContain("- Start: 0");
-    expect(result.stderr).toContain("- Increment: 2");
+    expect(result.stderr).toContain("- Start: 1");
+    expect(result.stderr).toContain("- Increment: 1");
     expect(result.stderr).toContain("Reusable Profile page chrome:");
-    expect(result.stderr).toContain("- capabilityId: pageNumbers.start");
-    expect(result.stderr).toContain("  requestedBy: pageNumbers.start");
-    expect(result.stderr).toContain("  minimumVersion: 65.1");
+    expect(result.stderr.match(/replace configured header\.left content/g)).toHaveLength(1);
     expect(result.stderr).not.toContain("installed");
     expect(result.stderr).not.toContain("conditionId");
     expect(result.stderr).not.toContain("readiness");
+    expect(
+      result.promptCalls
+        .map((call) => call.message)
+        .filter((message) =>
+          [
+            "Enable reusable page numbers in this Profile?",
+            "Number which pages?",
+            "Page-number position",
+            "Add repeating header or footer text?",
+            "Header left",
+            "Header center",
+            "Header right",
+          ].includes(message),
+        ),
+    ).toEqual([
+      "Enable reusable page numbers in this Profile?",
+      "Number which pages?",
+      "Page-number position",
+      "Add repeating header or footer text?",
+      "Header left",
+      "Header center",
+      "Header right",
+      "Enable reusable page numbers in this Profile?",
+      "Number which pages?",
+      "Page-number position",
+    ]);
+    expect(result.promptCalls.map((call) => call.message)).not.toContain(
+      "Page-number label template",
+    );
+    expect(result.promptCalls.map((call) => call.message)).not.toContain("First page number");
+    expect(result.promptCalls.map((call) => call.message)).not.toContain("Page-number increment");
+    expect(
+      result.selectChoicesByMessage["Add repeating header or footer text?"]?.map(
+        (choice) => choice.value,
+      ),
+    ).toEqual(["none", "header", "footer", "both"]);
     expect(result.markdownPdfDeterministicWriteCalls).toEqual([
       { artifact: "profile", candidateId: "deterministic-2" },
     ]);
@@ -347,7 +352,9 @@ describe("interactive Markdown PDF deterministic authoring", () => {
         "A4",
         "preset-default",
         "preset-default",
+        "both",
         "revise-page-chrome",
+        "both",
         "cancel",
       ],
       inputQueue: [
@@ -364,7 +371,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
         "{author}",
         "{date}",
       ],
-      confirmQueue: [false, false, false, false, false, false, false],
+      confirmQueue: [false, false, false],
     });
 
     expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(2);
