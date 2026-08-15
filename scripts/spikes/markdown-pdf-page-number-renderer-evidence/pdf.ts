@@ -217,9 +217,10 @@ export function validatePdfEvidence(
     const allMarkers = scenario.expected.pages
       .map((item) => item.marker)
       .filter((marker) => marker.length > 0);
-    for (const unexpected of allMarkers.filter((marker) => marker !== expected.marker))
-      if (page.text.includes(unexpected))
-        mismatches.push(`physical page ${index + 1} contains out-of-order marker ${unexpected}`);
+    if (expected.role !== "table-of-contents")
+      for (const unexpected of allMarkers.filter((marker) => marker !== expected.marker))
+        if (page.text.includes(unexpected))
+          mismatches.push(`physical page ${index + 1} contains out-of-order marker ${unexpected}`);
     const allLabels = scenario.expected.pages.flatMap((item) => item.pageNumberLabels);
     for (const unexpected of allLabels.filter(
       (label) => !expected.pageNumberLabels.includes(label),

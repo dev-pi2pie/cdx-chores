@@ -116,7 +116,7 @@ facts, visual conclusions, cleanup status, and review results.
       behavior before production changes.
 - [x] Extend and validate the existing renderer evidence catalog, extraction,
       visual-review boundary, and guarded cleanup for Phase 14.5 scenarios.
-- [ ] Run the renderer experiment and record an accepted one-pass or bounded
+- [x] Run the renderer experiment and record an accepted one-pass or bounded
       two-pass counter mechanism plus an explicit Continue, Constrain, or Stop
       verdict.
 - [ ] Settle and implement the accepted cover, metadata-title, ToC, body, and
@@ -181,7 +181,31 @@ accepted from CSS string assertions alone.
   Project contract tests also passed. TypeScript, scoped lint and formatting,
   and diff integrity passed. Pre-commit maintainability and test-quality
   re-review found no remaining material concerns.
-- Renderer mechanism verdict: pending.
+- Renderer mechanism verdict: **Continue with one pass**. WeasyPrint `65.1`,
+  `68.0`, and `69.0` each produced five A5 pages with cover, ToC, then three
+  body pages. The body values were logical `5 / 7 / 9`, logical final `9`,
+  physical `3 / 4 / 5`, and physical total `5`. Every historical renderer,
+  product-compatibility, Project, dependency, and actual-launch boundary also
+  passed. Those historical product paths did not yet exercise the new
+  logical-final target and body-group contract. Visual
+  inspection found the combined labels unclipped and fixture page order stable;
+  PDF page-label metadata remained the default physical sequence. A second
+  render is not required. The successful laboratory and both resolved failed
+  attempts were closed through the ownership-guarded cleanup command after
+  review. The accepted catalog digest was
+  `c11864a4248ec151dce7c98f4f2bfd32d29fd06d67f88e836e11dcc4ed5d66bc` and
+  the harness digest was
+  `246473afb35a3c95bb8e1c7fd60f0163e658d55e99e37e028615071b1e08c2c5`.
+  Temporary visual review covered experiment pages 1, 2, 3, and 5 plus
+  built-in product pages 1, 2, and 5. The public invocation is
+  `bun scripts/spikes/markdown-pdf-page-number-renderer-evidence.ts run --live --keep --python <python-launcher>`;
+  no machine-specific launcher or laboratory path is recorded. The catalog
+  digest covers the stable fixture payload, while the harness digest covers
+  stable scenario, stage, and process-boundary metadata; both are SHA-256
+  values exported by the existing contract modules. The production boundary
+  still requires one unambiguous body page group and one logical-final target
+  across built-in and Custom Template paths; missing or ambiguous ownership
+  must fail rather than fall back.
 - Page-role implementation: pending.
 - Counter implementation: pending.
 - Diagnostics and Interactive implementation: pending.

@@ -34,9 +34,10 @@ Profile `schemaVersion` remains `3`. The current revision-3 canary contract has
 not been released as a later stable Profile contract, so Phase 14.5 extends
 that contract instead of inventing revision `4` from an internal plan boundary.
 
-Renderer mechanics and the final page-composition policy remain in progress.
-The research must not be marked `completed` until real PDF evidence proves the
-accepted page-role and counter matrix.
+The renderer mechanism is now settled as one pass. The final page-composition
+policy and production implementation remain in progress. The research must not
+be marked `completed` until real PDF evidence proves the accepted page-role and
+integrated counter matrix.
 
 The distinction is:
 
@@ -45,11 +46,11 @@ The distinction is:
 | four token names and intended logical/physical separation          | settled design intent | prove exact values on real PDFs before implementation is accepted  |
 | `{pages}` logical-final formula                                    | settled design intent | prove the selected logical domain and arithmetic across page roles |
 | revision `3`, no legacy render mode, and bounded migration warning | settled design intent | cover declaration and warning conditions in focused tests          |
-| current metadata-title, ToC, and body behavior                     | observed baseline     | freeze with deterministic and real-PDF evidence                    |
+| current metadata-title, ToC, and body behavior                     | proven baseline       | retain while implementing the accepted replacement                 |
 | metadata-title placement with and without a cover                  | preferred candidate   | compare body-block and explicit title-page outcomes                |
 | ToC repeating content and `toc.pageBreak` behavior                 | preferred candidate   | prove named-page transitions and accepted chrome policy            |
 | blank-page logical ownership                                       | unresolved            | extract page roles across forced blanks and repagination           |
-| one-pass or bounded multi-pass counter mechanism                   | unresolved            | prove all four values across supported renderer candidates         |
+| one-pass or bounded multi-pass counter mechanism                   | settled: one pass     | rerun after production integration                                 |
 
 “Settled design intent” does not mean implemented, renderer-proven, or shipped.
 If the evidence gate cannot support the intended semantics without an unsafe or
@@ -308,6 +309,70 @@ The evidence matrix must cover:
 If one pass cannot produce the contract, research must define a bounded second
 pass with a stability guard before implementation. It must not assume that a
 changed margin-box label can never affect pagination.
+
+### Accepted One-Pass Evidence
+
+The existing guarded renderer laboratory proved the four counters in one pass
+on WeasyPrint `65.1`, `68.0`, and `69.0`. The experiment rendered one protected
+cover, one ToC page, and one body page group containing three physical pages.
+With logical `start: 5` and `increment: 2`, every candidate extracted the same
+values:
+
+| Physical page | Role              | `{page}` | `{pages}` | `{pdfPage}` | `{pdfPages}` |
+| ------------: | ----------------- | -------: | --------: | ----------: | -----------: |
+|             1 | cover             |   hidden |    hidden |      hidden |       hidden |
+|             2 | table of contents |   hidden |    hidden |      hidden |       hidden |
+|             3 | document body     |        5 |         9 |           3 |            5 |
+|             4 | document body     |        7 |         9 |           4 |            5 |
+|             5 | document body     |        9 |         9 |           5 |            5 |
+
+The mechanism uses one body page group, a dedicated logical page counter, and
+`target-counter()` to resolve its final value. The built-in physical `page` and
+`pages` counters remain available for the physical pair. No second render,
+pagination-stability loop, or intermediate final-output replacement is needed.
+
+This establishes a production requirement: the built-in recipe or Custom
+Template handoff must provide exactly one unambiguous body page group and one
+logical-final target owned by that group. Missing or ambiguous ownership must
+fail validation rather than silently falling back to physical counters. The
+integrated built-in and Custom Template lanes must prove these hooks before the
+mechanism is treated as shipped.
+
+The same run also passed the pre-existing renderer scenarios, built-in and
+custom-Template product-compatibility launches, Project launches, dependency
+checks, and the actual CLI launch boundary. Those historical paths did not yet
+exercise the new logical-final target and body-group contract. Representative
+page images from the isolated experiment showed stable A5 page dimensions,
+unclipped combined labels, a chrome-free cover and ToC, and no unexpected PDF
+page-label metadata. Historical product evidence continued to expose the old
+mixed-domain label, confirming that production replacement remains necessary
+rather than already shipped.
+
+The reproducible public invocation is:
+
+```text
+bun scripts/spikes/markdown-pdf-page-number-renderer-evidence.ts run --live --keep --python <python-launcher>
+```
+
+The launcher and laboratory paths remain local-only. The catalog digest is the
+SHA-256 of the stable serialized candidate, scenario, experiment, body-hook,
+visual-boundary, and launch-fixture payload. The harness digest is the SHA-256
+of the stable candidate IDs, scenario IDs, stage list, timeout, and output
+bound. The accepted run used catalog digest
+`c11864a4248ec151dce7c98f4f2bfd32d29fd06d67f88e836e11dcc4ed5d66bc`
+and harness digest
+`246473afb35a3c95bb8e1c7fd60f0163e658d55e99e37e028615071b1e08c2c5`.
+They can be recomputed through `pageNumberRendererContractDigest()` and
+`PAGE_NUMBER_RENDERER_HARNESS_DIGEST` in the existing contract modules.
+Visual inspection covered experiment pages 1, 2, 3, and 5 plus built-in
+product pages 1, 2, and 5. This confirmed stable fixture page order only; it did
+not accept the still-pending production page-role policy. The successful
+laboratory and both resolved failed attempts were then closed through the
+ownership-guarded cleanup command.
+
+The verdict is **Continue** with the one-pass mechanism. This result settles
+the mechanism only; Phase 14.5 still must implement the accepted page-role
+policy and rerun the integrated matrix before the research can complete.
 
 ## Phase 14.5 Implementation Handoff
 

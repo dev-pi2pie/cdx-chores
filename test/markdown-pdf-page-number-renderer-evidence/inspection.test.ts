@@ -282,6 +282,76 @@ describe("Markdown PDF renderer evidence inspection and validation", () => {
     });
   });
 
+  test("allows ToC pages to repeat body heading markers", async () => {
+    await withEvidenceRoot(async (temporaryRoot) => {
+      const target = PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.find(
+        (scenario) => scenario.id === "product-built-in-document-origin",
+      );
+      expect(target).toBeDefined();
+      const mock = createMockExecution({
+        inspect: (path, expected) =>
+          target && pathHasSegment(path, target.id)
+            ? {
+                ...expected,
+                pages: expected.pages.map((page, index) =>
+                  index === 1
+                    ? {
+                        ...page,
+                        text: `${page.text} PRODUCT-A-BODY-2 PRODUCT-A-BODY-3`,
+                      }
+                    : page,
+                ),
+              }
+            : expected,
+      });
+      const report = await runRendererEvidence({
+        temporaryRoot,
+        uniqueId: "toc-repeated-heading-markers",
+        runner: mock.runner,
+        inspectPdf: mock.inspectPdf,
+      });
+
+      expect(report.outcome).toBe("passed");
+      expect(report.failures).toEqual([]);
+    });
+  });
+
+  test("continues to reject repeated heading markers on non-ToC pages", async () => {
+    await withEvidenceRoot(async (temporaryRoot) => {
+      const target = PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.find(
+        (scenario) => scenario.id === "product-built-in-document-origin",
+      );
+      expect(target).toBeDefined();
+      const mock = createMockExecution({
+        inspect: (path, expected) =>
+          target && pathHasSegment(path, target.id)
+            ? {
+                ...expected,
+                pages: expected.pages.map((page, index) =>
+                  index === 2 ? { ...page, text: `${page.text} PRODUCT-A-BODY-2` } : page,
+                ),
+              }
+            : expected,
+      });
+      const report = await runRendererEvidence({
+        temporaryRoot,
+        uniqueId: "body-repeated-heading-markers",
+        runner: mock.runner,
+        inspectPdf: mock.inspectPdf,
+      });
+
+      expect(report.outcome).toBe("failed");
+      expect(
+        report.failures.some(
+          (failure) =>
+            failure.scenarioId === target?.id &&
+            failure.message.includes("out-of-order marker PRODUCT-A-BODY-2"),
+        ),
+      ).toBe(true);
+      await closeRetainedEvidenceLaboratory(report.labPath, temporaryRoot);
+    });
+  });
+
   test("classifies extraction mismatches as contract failures and retains the laboratory", async () => {
     await withEvidenceRoot(async (temporaryRoot) => {
       const mock = createMockExecution({

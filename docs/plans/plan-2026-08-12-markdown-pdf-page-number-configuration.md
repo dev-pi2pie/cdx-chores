@@ -1570,7 +1570,7 @@ Tasks:
       `{page}`, `{pages}`, `{pdfPage}`, and `{pdfPages}`. Preserve deliberate
       ghost acceptance, revision initial values, simple fallback, validation,
       and the completed repeating-content interaction contract.
-- [ ] Prove whether all four counters can coexist in one WeasyPrint pass. If
+- [x] Prove whether all four counters can coexist in one WeasyPrint pass. If
       not, design and test a bounded second pass with pagination-stability and
       cleanup guards before production adoption; do not assume changed margin-
       box content cannot affect page count.

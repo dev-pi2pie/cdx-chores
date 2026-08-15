@@ -1,4 +1,4 @@
-import { baseCss, fixtureHtml, PORTRAIT_SIZE } from "./shared-content";
+import { baseCss, PORTRAIT_SIZE } from "./shared-content";
 import type { CounterExperimentScenario } from "./types";
 
 /**
@@ -18,17 +18,38 @@ export const PAGE_NUMBER_COUNTER_EXPERIMENTS: readonly CounterExperimentScenario
       source: String.raw`PH14\.5-COUNTERS\[page=(?<page>-?\d+);pages=(?<pages>-?\d+);pdfPage=(?<pdfPage>\d+);pdfPages=(?<pdfPages>\d+)\]`,
     },
     capabilities: ["body-origin", "reset", "increment"],
-    html: fixtureHtml([
-      { marker: "PH14.5-COVER", pageName: "cover" },
-      { marker: "PH14.5-TOC", pageName: "toc" },
-      { marker: "PH14.5-BODY-1", pageName: "body-page" },
-      { marker: "PH14.5-BODY-2", pageName: "body-page" },
-      {
-        marker: "PH14.5-BODY-3",
-        pageName: "body-page",
-        content: '<span id="logical-final"></span>',
-      },
-    ]),
+    html: `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <section class="fixture-page cover">
+      <p class="page-marker">PH14.5-COVER</p>
+      <p>Deterministic renderer-contract content.</p>
+    </section>
+    <section class="fixture-page toc">
+      <p class="page-marker">PH14.5-TOC</p>
+      <p>Deterministic renderer-contract content.</p>
+    </section>
+    <main class="document-body">
+      <section class="fixture-page">
+        <p class="page-marker">PH14.5-BODY-1</p>
+        <p>Deterministic renderer-contract content.</p>
+      </section>
+      <section class="fixture-page">
+        <p class="page-marker">PH14.5-BODY-2</p>
+        <p>Deterministic renderer-contract content.</p>
+      </section>
+      <section class="fixture-page">
+        <p class="page-marker">PH14.5-BODY-3</p>
+        <span id="logical-final"></span>
+      </section>
+    </main>
+  </body>
+</html>
+`,
     css: `${baseCss}
 @page {
   size: 148mm 210mm;
@@ -45,7 +66,7 @@ export const PAGE_NUMBER_COUNTER_EXPERIMENTS: readonly CounterExperimentScenario
 @page body:nth(1 of body) { counter-reset: logical-page 3; }
 .cover { page: cover; }
 .toc { page: toc; }
-.body-page { page: body; }
+.document-body { page: body; }
 `,
     expected: {
       pageCount: 5,

@@ -15,6 +15,7 @@ import type {
 } from "../../scripts/spikes/markdown-pdf-page-number-renderer-evidence";
 import {
   PAGE_NUMBER_AUTOMATED_EVIDENCE,
+  PAGE_NUMBER_COUNTER_EXPERIMENTS,
   PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS,
   PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS,
   PAGE_NUMBER_RENDERER_SCENARIOS,
@@ -44,6 +45,21 @@ describe("Markdown PDF renderer evidence orchestration", () => {
     };
 
     expect(compatibleFutureScenario.candidateIds).toEqual(["wp-70-0-canary"]);
+
+    const onePassExperiment = PAGE_NUMBER_COUNTER_EXPERIMENTS[0];
+    expect(onePassExperiment).toBeDefined();
+    expect(onePassExperiment?.html.match(/<main class="document-body">/gu)).toHaveLength(1);
+    expect(onePassExperiment?.html.match(/<section class="fixture-page">/gu)).toHaveLength(3);
+    const bodyGroup = onePassExperiment?.html.match(
+      /<main class="document-body">(?<body>[\s\S]*?)<\/main>/u,
+    )?.groups?.body;
+    expect(bodyGroup).toContain("PH14.5-BODY-1");
+    expect(bodyGroup).toContain("PH14.5-BODY-2");
+    expect(bodyGroup).toContain("PH14.5-BODY-3");
+    expect(onePassExperiment?.html).toContain("PH14.5-COVER");
+    expect(onePassExperiment?.html).toContain("PH14.5-TOC");
+    expect(onePassExperiment?.css).toContain(".document-body { page: body; }");
+    expect(onePassExperiment?.css).not.toContain(".body-page");
   });
 
   test("keeps stable harness metadata and uses bounded timed command requests", async () => {
