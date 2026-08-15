@@ -1,7 +1,7 @@
 ---
 title: "Interactive Markdown PDF Usage"
 created-date: 2026-07-22
-modified-date: 2026-07-28
+modified-date: 2026-08-15
 status: completed
 agent: codex
 ---
@@ -47,7 +47,7 @@ Use `to-pdf` when the current goal is a PDF:
 md -> to-pdf
   -> choose or prepare a recipe
   -> settle the render source or generated lifecycle
-  -> choose code highlighting for this PDF
+  -> choose code highlighting, then page numbers, for this PDF
   -> review reusable, override, and effective settings
   -> choose applicable outputs
   -> render
@@ -70,13 +70,13 @@ different because `pdf-recipes` does not own rendering.
 
 After selecting the Markdown input, choose one recipe source:
 
-| Recipe source | Behavior |
-| --- | --- |
-| Built-in recipe | Use renderer defaults. |
-| Existing profile | Select one reusable Profile file. |
-| Existing bundle | Discover top-level Profile, Template, and Stylesheet roles from one directory. |
-| Custom inputs | Select explicit roles, optionally filling unselected roles from a bundle. |
-| Create a recipe | Prepare a new Profile, Template bundle, or Project bundle before rendering. |
+| Recipe source    | Behavior                                                                       |
+| ---------------- | ------------------------------------------------------------------------------ |
+| Built-in recipe  | Use renderer defaults.                                                         |
+| Existing profile | Select one reusable Profile file.                                              |
+| Existing bundle  | Discover top-level Profile, Template, and Stylesheet roles from one directory. |
+| Custom inputs    | Select explicit roles, optionally filling unselected roles from a bundle.      |
+| Create a recipe  | Prepare a new Profile, Template bundle, or Project bundle before rendering.    |
 
 Custom inputs use two layers. First choose either `Explicit inputs` or
 `Bundle + explicit inputs`. Then select one or more explicit roles: Profile,
@@ -85,22 +85,24 @@ roles; a selected bundle fills only unresolved roles.
 
 The recipe review shows the selected source, resolved role provenance,
 effective page settings, ToC behavior, separate reusable Profile settings,
-the one-render highlighting override, the effective code result, and any
-bundle warnings. No PDF is written before this review.
+the two one-render overrides, their effective results, and any bundle warnings.
+No PDF is written before this review.
 
 ## Prepare A Recipe
 
 The authoring matrix is the same under `to-pdf -> Create a recipe` and
 `pdf-recipes`:
 
-| Artifact | `starter` | `formal-guide` | `Codex Assistant` |
-| --- | --- | --- | --- |
-| Profile | yes | yes | yes |
-| Template bundle | yes | yes | yes |
-| Project bundle | no | no | yes |
+| Artifact        | `starter` | `formal-guide` | `Codex Assistant` |
+| --------------- | --------- | -------------- | ----------------- |
+| Profile         | yes       | yes            | yes               |
+| Template bundle | yes       | yes            | yes               |
+| Project bundle  | no        | no             | yes               |
 
 Project bundle enters Codex Assistant directly because there is no direct
-deterministic Project initializer.
+deterministic Project initializer. It therefore has no Formal Guide cover or
+page-number questions; review and edit its contained Profile for the full
+reusable contract.
 
 Project bundle has no `starter` or `formal-guide` branch and no
 preparation-mode menu. Its Codex-generated contained Profile may own reusable
@@ -110,9 +112,21 @@ code settings; the Project itself does not add another settings schema.
 
 `starter` uses the deterministic starter configuration.
 
-`formal-guide` asks for document preset, page size, orientation, margins, and
-table-of-contents behavior. At recipe review, its layout, margin, and ToC
-groups can be revised independently without changing artifact type.
+`formal-guide` asks Profile and Template artifacts for document preset, page
+size, orientation, margins, and table-of-contents behavior. A Profile uses this
+exact group order:
+
+```text
+layout -> margins -> cover -> table of contents -> code highlighting
+  -> page numbers -> repeating header or footer text
+```
+
+The cover decision comes before ToC so the front matter is settled before the
+ToC that follows it. `Add a cover page?` defaults to no. Enabling it uses the
+Profile's metadata-backed cover fields; their full schema and placeholder rules
+are documented in
+[Covers, Repeating Content, And Page Numbers](markdown-pdf-usage.md#covers-repeating-content-and-page-numbers).
+Recipe review offers `Revise cover page` without recollecting the other groups.
 
 For a Profile, `formal-guide` also adds a Code highlighting section:
 
@@ -124,6 +138,41 @@ For a Profile, `formal-guide` also adds a Code highlighting section:
 Interactive mode skips Theme, line-number, and transformer prompts, retains a
 valid inert theme, and forces both dependent features off. Recipe review
 offers `Revise code highlighting` for this Profile section.
+
+The page-number section first asks whether to enable reusable numbering. When
+enabled, it keeps common authoring concise:
+
+1. `Number which pages?` chooses `Body pages, starting at 1` (the default) or
+   `Entire document, starting at 1`.
+2. `Page-number label` chooses `Page 1` (recommended), `1` (compact), or a
+   custom label.
+3. `Page-number position` chooses one of the six header and footer slots.
+
+The two numbering outcomes set the visible scope and counting origin together,
+with start and increment fixed at `1`. A custom label uses the same inline
+ghost-completion interaction as other guided text: `Page {page} of {pages}` is
+suggested, Right Arrow accepts the suggestion, and the prompt explains the
+logical `{page}`/`{pages}` and physical `{pdfPage}`/`{pdfPages}` tokens. The
+label must contain a current-page token, `{page}` or `{pdfPage}`. See
+[Covers, Repeating Content, And Page Numbers](markdown-pdf-usage.md#covers-repeating-content-and-page-numbers)
+for the canonical token semantics and migration notes.
+
+`Add repeating header or footer text?` then selects only the slots the Profile
+needs instead of asking six unconditional questions. When page numbers are
+enabled, their slot is shown as reserved and cannot also be selected for
+repeating text. Revising page-number placement does not silently erase existing
+content in the newly occupied slot: Interactive asks before clearing the
+conflict. Each selected slot accepts literal text or `{title}`, `{company}`,
+`{author}`, and `{date}` placeholders, shows a slot-aware ghost suggestion, and
+explains that values resolve from CLI metadata, Markdown frontmatter, then
+Profile metadata. Recipe review offers separate `Revise page numbers` and
+`Revise repeating page content` actions.
+
+Formal Guide deliberately does not expose every Profile field. Use the Profile
+YAML or JSON directly for independent `scope` and `countFrom` values, custom
+start or increment values, page-role visibility, cover fields and style, or
+other advanced combinations. The canonical schema remains in
+[Markdown PDF Usage](markdown-pdf-usage.md#profiles).
 
 This opinionated default applies only to Interactive Profile
 `formal-guide`. Profile `starter` and direct Profile initialization remain off
@@ -218,7 +267,7 @@ Every generated path shares the same preparation boundary:
 A render-capable `to-pdf` continuation then:
 
 4. choose the concrete save or render lifecycle
-5. for rendering, choose code highlighting for this PDF
+5. for rendering, choose code highlighting and then page numbers for this PDF
 6. choose outputs and review the effective render
 7. materialize and render without implicit regeneration
 
@@ -227,19 +276,19 @@ writes the reviewed candidate. Its optional render handoff starts the shared
 `to-pdf` flow after that save.
 
 Changing Codex setup invalidates the previous candidate. Changing only a local
-destination or the one-render highlighting override does not request another
-candidate, change artifact identity, or rewrite an already saved recipe.
+destination or either one-render override does not request another candidate,
+change artifact identity, or rewrite an already saved recipe.
 
 ## Code Highlighting For One Render
 
 Every `to-pdf` render path asks `Code highlighting for this PDF` after its
 render source is settled:
 
-| Interactive choice | Renderer input | Result |
-| --- | --- | --- |
-| `Use recipe setting` | omitted | Use the resolved Profile setting; without a Profile, highlighting remains off. |
-| `Enable for this render` | `true` | Enable highlighting without changing the Profile. Without Profile settings, use the default `github-light` theme. |
-| `Disable for this render` | `false` | Disable highlighting, line numbers, and transformer notation for this PDF only. |
+| Interactive choice        | Renderer input | Result                                                                                                            |
+| ------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `Use recipe setting`      | omitted        | Use the resolved Profile setting; without a Profile, highlighting remains off.                                    |
+| `Enable for this render`  | `true`         | Enable highlighting without changing the Profile. Without Profile settings, use the default `github-light` theme. |
+| `Disable for this render` | `false`        | Disable highlighting, line numbers, and transformer notation for this PDF only.                                   |
 
 `Use recipe setting` is the default. Theme, line numbers, and transformer
 notation remain reusable Profile settings; Interactive mode does not offer
@@ -251,18 +300,21 @@ The prompt appears at the boundary appropriate to the source:
 existing / built-in / Custom
   -> source selected
   -> code highlighting for this PDF
+  -> page numbers for this PDF
   -> authoritative renderer preparation
 
 generated Profile / Template / Project
   -> candidate accepted
   -> temporary-render or save-and-render selected
   -> code highlighting for this PDF
+  -> page numbers for this PDF
   -> Codex report choice when applicable
   -> artifact and PDF outputs
 
 saved-recipe handoff
   -> Markdown input chosen or reused
   -> code highlighting for this PDF
+  -> page numbers for this PDF
   -> authoritative renderer preparation
 ```
 
@@ -289,14 +341,38 @@ Changing the Markdown input, source, artifact, preparation mode, or generated
 candidate resets the choice to `Use recipe setting`. `Cancel` performs no
 implicit write or render.
 
+## Page Numbers For One Render
+
+Immediately after code highlighting, every `to-pdf` path asks `Page numbers for
+this PDF`:
+
+| Interactive choice           | Renderer input | Result                                                                                        |
+| ---------------------------- | -------------- | --------------------------------------------------------------------------------------------- |
+| `Keep recipe setting`        | omitted        | Use the resolved Profile setting; without enabled Profile numbering, page numbers remain off. |
+| `Turn on for this PDF only`  | `true`         | Enable page numbers for this PDF without changing the Profile.                                |
+| `Turn off for this PDF only` | `false`        | Disable page numbers for this PDF without changing the Profile.                               |
+
+`Keep recipe setting` is the default. This override changes only whether page
+numbers are enabled; reusable label, position, scope, counting origin, start,
+and increment values still come from the Profile or renderer defaults.
+
+The code and page-number choices are independent retained state for the current
+render source. `Back` from page numbers returns to code highlighting. Returning
+to the same accepted generated candidate or recovering output planning retains
+both choices. Final review offers `Change code highlighting` and `Change page
+numbers` without rebinding or rewriting a saved recipe. Changing the Markdown
+input, recipe source, artifact, preparation mode, or generated candidate resets
+both choices to their recipe-setting defaults. `Cancel` performs no implicit
+write or render.
+
 ## Lifecycle Choices
 
-| Entry and source | Available lifecycle |
-| --- | --- |
-| `to-pdf`, existing or built-in recipe | Render the PDF; never remove the selected recipe. |
-| `to-pdf`, generated recipe | Render with a CLI-owned temporary recipe, or save the recipe and render. |
-| `pdf-recipes`, generated recipe | Save the Profile or bundle. |
-| `pdf-recipes`, after save | Render through a `to-pdf` handoff, create another recipe, or exit. |
+| Entry and source                      | Available lifecycle                                                      |
+| ------------------------------------- | ------------------------------------------------------------------------ |
+| `to-pdf`, existing or built-in recipe | Render the PDF; never remove the selected recipe.                        |
+| `to-pdf`, generated recipe            | Render with a CLI-owned temporary recipe, or save the recipe and render. |
+| `pdf-recipes`, generated recipe       | Save the Profile or bundle.                                              |
+| `pdf-recipes`, after save             | Render through a `to-pdf` handoff, create another recipe, or exit.       |
 
 Durably saved and pre-existing artifacts are never automatically removed.
 
@@ -339,10 +415,10 @@ be retained and shown for Interactive recovery.
 The session is created below the operating-system temporary directory returned
 by Node.js `os.tmpdir()`, not below the current working directory.[^node-tmp]
 
-| Platform | Temporary-directory selection |
-| --- | --- |
-| Windows | `TEMP`, then `TMP`, then the Windows system temporary directory. |
-| macOS, Linux, and other non-Windows systems | `TMPDIR`, then `TMP`, then `TEMP`, then `/tmp`. |
+| Platform                                    | Temporary-directory selection                                    |
+| ------------------------------------------- | ---------------------------------------------------------------- |
+| Windows                                     | `TEMP`, then `TMP`, then the Windows system temporary directory. |
+| macOS, Linux, and other non-Windows systems | `TMPDIR`, then `TMP`, then `TEMP`, then `/tmp`.                  |
 
 The actual directory therefore varies by operating system, distribution,
 login session, and environment configuration. A session child uses the prefix
@@ -368,9 +444,9 @@ Custom-input rendering continues through the direct prepared-render path.
 
 The final review shows recipe output, PDF output, report retention, overwrite
 behavior, cleanup ownership, reusable Profile settings when present, the
-one-render override, and the effective code result before rendering starts.
-Changing only code highlighting from this review preserves the applicable
-outputs, report, cleanup ownership, and accepted artifact. Generated
+one-render overrides, and their effective results before rendering starts.
+Changing only code highlighting or page numbers from this review preserves the
+applicable outputs, report, cleanup ownership, and accepted artifact. Generated
 materialization is not repeated.
 
 ## Codex Reports
@@ -384,8 +460,8 @@ Report choices appear only for Codex-assisted candidates:
 Temporary rendering supports no report or a separate report path only. The
 separate report must not collide with the PDF or temporary session.
 For a generated Codex candidate, report retention is chosen after the
-one-render highlighting prompt. `Back` or `Cancel` at that highlighting
-boundary therefore does not collect a report output path.
+code-highlighting and page-number prompts. `Back` or `Cancel` at either
+override boundary therefore does not collect a report output path.
 
 ## `pdf-recipes` Handoff
 
@@ -399,9 +475,9 @@ If Codex preparation used a Markdown sample, the handoff asks whether to reuse
 it or choose another Markdown input. Without a saved sample, the handoff asks
 for the render input. Rendering still occurs only inside the shared `to-pdf`
 flow. The same `Code highlighting for this PDF` prompt appears after the
-Markdown input is chosen or reused. The saved Profile, or a Profile contained
-by the saved bundle, remains reusable state; the handoff choice remains
-one-render state.
+Markdown input is chosen or reused, followed by `Page numbers for this PDF`.
+The saved Profile, or a Profile contained by the saved bundle, remains reusable
+state; the handoff choices remain one-render state.
 
 ## Navigation And Safety
 
@@ -410,8 +486,9 @@ one-render state.
 - `Cancel` exits without an implicit save or render.
 - `Back` from the initial highlighting prompt returns to the current source,
   candidate, or handoff-input checkpoint without writing or rendering.
-- Changing only the one-render highlighting override reuses the accepted
-  source or candidate and applicable output state.
+- `Back` from page numbers returns to code highlighting.
+- Changing only either one-render override reuses the accepted source or
+  candidate and applicable output state.
 - Existing files are not overwritten unless overwrite is explicitly enabled.
 - Final PDF writes use the shared safe renderer output boundary.
 - Recipe and PDF output paths must not collide.
@@ -426,6 +503,7 @@ md pdf-template init|codex
 md pdf-project codex
 md to-pdf [--profile | --template | --css | --bundle]
   [--code-highlight | --no-code-highlight]
+  [--page-numbers | --no-page-numbers]
 ```
 
 Interactive artifacts remain ordinary Profile files and Template or Project
@@ -433,7 +511,8 @@ bundle directories, so either surface can consume artifacts created by the
 other. Interactive Profile `formal-guide` defaults its reusable highlighting
 setting to enabled. Direct Profile initialization, Interactive Profile
 `starter`, and direct `to-pdf` rendering keep their existing default of
-disabled; the direct flags and renderer precedence are unchanged.
+disabled. Direct render flags remain transient, and renderer precedence is
+unchanged.
 
 ## Related Docs
 

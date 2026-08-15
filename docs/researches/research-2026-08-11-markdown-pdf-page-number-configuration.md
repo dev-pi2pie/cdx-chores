@@ -12,39 +12,27 @@ Define a deterministic, user-facing page-number contract for `md to-pdf`
 across Profile YAML/JSON, generated HTML, generated CSS, direct CLI overrides,
 Interactive authoring, custom Template compatibility, and current guide docs.
 
-The contract should add explicit visibility and sequence controls, preserve the
-current cover-counting behavior by default, allow an explicit body-relative
-sequence, make page-number wording and page-chrome layout reviewable, and avoid
-assigning Profile-owned render policy to Template generation.
+The original investigation sought explicit visibility and sequence controls,
+body-relative numbering, reviewable page-number wording and repeating-content
+layout, and a clean boundary between Profile policy and Template presentation.
+Those goals are now implemented; this document retains the design history while
+Phase 15 aligns current guidance and lifecycle evidence.
 
-> **Phase 14.5 follow-up:** The physical `{pages}` contract recorded here was
-> implemented and validated through Phase 14, then a post-implementation smoke
-> exposed an implicit metadata-title page, hidden ToC repeating content, and a
-> logical-versus-physical denominator mismatch. The current investigation is
-> [Markdown PDF Page Roles And Counter Semantics][page-role-counter-research].
-> It supersedes this document's placeholder-total and page-role direction
-> without erasing the historical implementation evidence.
+> **Historical boundary:** The physical `{pages}` contract recorded in the
+> initial design was implemented through Phase 14. A post-implementation smoke
+> then exposed an implicit metadata-title page, hidden ToC repeating content,
+> and a logical-versus-physical denominator mismatch. The completed
+> [Markdown PDF Page Roles And Counter Semantics][page-role-counter-research]
+> follow-up supersedes those parts of the initial direction without erasing the
+> implementation history.
 
 ## Research At A Glance
 
-The current implementation supports opt-in page numbers with a position,
-format string, and body-only scope. It hides page chrome on cover and ToC pages,
-but it does not expose the counter start, counter increment, document-wide
-visibility, footer layout, or slot-collision behavior as dedicated contracts.
-
-The proposed contract separates where numbers are visible (`scope`) from where
-the logical sequence begins (`countFrom`). `countFrom: document` preserves the
-current hidden-but-counted cover and front-matter behavior, while
-`countFrom: body` starts the configured sequence at the first body page. The
-contract also supports literal `start: 0`, uses the arithmetic name
-`increment`, and preserves the existing `format` key and short placeholders.
-Warning-backed fallbacks cover occupied page-number slots and legacy custom
-Templates when document-origin inference remains safe. Body-origin numbering
-requires a provable `.document-body` boundary and fails clearly when it is
-missing. The first slice uses bounded header/footer style fields, the stable
-body hook, and direct enable/disable overrides only. Renderer baselines are
-selected by the pinned compatibility-smoke design below rather than by
-unresolved version guesses. The resulting proposed shape is:
+The shipped revision-3 Profile contract separates label visibility (`scope`)
+from the logical counter domain (`countFrom`). It supports non-negative
+`start`, positive `increment`, six positions, bounded header/footer styles,
+metadata-based covers, the stable `.document-body` hook, and render-only direct
+enable/disable overrides. A representative current shape is:
 
 ```yaml
 fonts:
@@ -75,12 +63,13 @@ pageNumbers:
   format: "Page {page}"
 ```
 
-This shape is a research direction, not a shipped schema. The renderer CSS and
-minimum WeasyPrint version for accepted advanced controls still require the
-recorded smoke results before implementation, but the versions, fixtures, and
-decision rule are defined below. The fallback behavior recorded below is a
-design requirement, but it is not shipped until implementation and tests prove
-it.
+The current placeholder vocabulary distinguishes logical `{page}` and
+`{pages}` from physical `{pdfPage}` and `{pdfPages}`. The implementation uses a
+one-pass counter mechanism, requires WeasyPrint `65.1` for effectively
+requested advanced capabilities, and has been validated on versions `65.1`,
+`68.0`, and `69.0`. Later sections preserve the proposal and validation path;
+the [Markdown PDF Usage guide][markdown-pdf-usage] is canonical for current
+reader-facing behavior.
 
 ## Scope
 
@@ -109,11 +98,15 @@ This research does not:
 The cross-feature language inventory and new guide are owned by
 [Pattern, Placeholder, and Template Language Guide][pattern-language-research].
 
-## Current Shipped Contract
+## Historical Pre-Implementation Baseline
+
+This section records the behavior inspected before the plan changed production
+code. Its types, defaults, and CLI limitations are historical evidence, not the
+current contract.
 
 ### Profile Shape
 
-The normalized page-number Profile currently contains:[^profile-types]
+The normalized page-number Profile at that baseline contained:[^profile-types]
 
 ```ts
 interface NormalizedMarkdownPdfPageNumbers {
@@ -140,7 +133,7 @@ normalization, defaults, serialization, Codex patch-path, and test updates.[^pro
 
 ### Page-Chrome Content
 
-The Profile currently exposes three header slots and three footer slots:
+The baseline Profile exposed three header slots and three footer slots:
 
 ```yaml
 header:
@@ -155,7 +148,7 @@ footer:
 ```
 
 Page numbers select one of the same six CSS page-margin boxes. When enabled,
-the current generator replaces the selected header/footer slot with
+the baseline generator replaced the selected header/footer slot with
 `pageNumbers.format`. A non-empty user value in that slot is silently lost.[^page-chrome-source]
 
 The content parser treats `{page}` and `{pages}` as reserved page counters and
@@ -169,9 +162,9 @@ precedence order:
   -> profile metadata
 ```
 
-Unknown metadata placeholders currently resolve to an empty string. Cover
-fields use a separate metadata-only resolver, so the brace language is not yet
-one unified Profile placeholder contract.[^placeholder-source]
+Unknown metadata placeholders resolved to an empty string. Cover fields used a
+separate metadata-only resolver, so the brace language was not yet one unified
+Profile placeholder contract.[^placeholder-source]
 
 ### Generated HTML And CSS
 
@@ -189,13 +182,14 @@ Generated Profile CSS writes ordinary header/footer/page-number content into
 boxes. Clearing the visible boxes does not remove those pages from the physical
 page counter.
 
-The current `fonts.pageChrome.default` setting changes the font family inherited
-by page-margin boxes. There are no dedicated Profile settings for page-chrome
-font size, weight, line height, color, padding, or separators.[^font-source]
+The baseline `fonts.pageChrome.default` setting changed the font family
+inherited by page-margin boxes. It had no dedicated Profile settings for
+page-chrome font size, weight, line height, color, padding, or
+separators.[^font-source]
 
-### Current Evidence Map
+### Baseline Evidence Map
 
-| Current claim                                | Source evidence                            | Test evidence                              |
+| Baseline claim                               | Source evidence                            | Test evidence                              |
 | -------------------------------------------- | ------------------------------------------ | ------------------------------------------ |
 | Profile fields and defaults                  | types, defaults, schema, and normalization | Profile normalization tests                |
 | page-number content and slot replacement     | page-chrome CSS generator                  | recipe page-chrome tests                   |
@@ -204,11 +198,11 @@ font size, weight, line height, color, padding, or separators.[^font-source]
 | Template-Codex required structural hooks     | Template-Codex family contract             | Template-Codex family and validation tests |
 | direct CLI has no page-number-specific flags | `md to-pdf` command registration           | command option tests                       |
 
-These sources establish the current implementation boundary. They do not prove
+These sources establish the pre-implementation boundary. They do not prove
 the proposed sequence-origin reset, increment, document visibility, or footer
 layout; those remain subject to the renderer validation plan below.[^recipe-tests]
 
-## Proposed Page-Number Contract
+## Initial Page-Number Contract Direction
 
 The contract has four parts: the logical sequence, visibility, label placement,
 and inherited page-chrome style. They combine in this order:
@@ -471,7 +465,7 @@ or silently reinterpret existing dotted metadata keys.
 The cross-feature research should consume this result and compare it with the
 strict rename template and data glob contracts.
 
-## Compatibility And Breaking-Change Review
+## Initial Compatibility And Breaking-Change Review
 
 The proposed behavior is mostly additive. Its remaining compatibility boundary
 comes from Profiles that actually contain newly introduced fields:
@@ -512,7 +506,7 @@ Profile revision `3`, provides no legacy rendering mode, and limits migration
 output to an explicit revision-1 or revision-2 Profile whose active label uses
 `{pages}`.
 
-### Diagnostic And Fallback Contract
+### Initial Diagnostic And Fallback Contract
 
 Warnings are successful diagnostics, not partial failures. In the plain CLI,
 they should be written to `stderr` and leave the successful exit status at
@@ -799,7 +793,7 @@ header/footer style remain Profile-only in the first slice. Interactive
 authoring may edit those durable Profile values, but render-only Interactive
 state should not create a second detailed override surface.
 
-## Validation Plan
+## Initial Validation Plan
 
 The eventual implementation should include:
 
@@ -833,7 +827,7 @@ recorded.
 
 ## Documentation Impact
 
-The feature work should update, as applicable:
+The feature work updates:
 
 - [Markdown PDF Usage][markdown-pdf-usage]
 - [Markdown PDF Codex Profile Helper][profile-helper]
@@ -841,12 +835,38 @@ The feature work should update, as applicable:
 - Profile examples produced by `md pdf-profile init`
 - CLI option help for direct overrides
 
-The Markdown PDF guides own current feature behavior. The cross-feature guide
-should link to them for advanced PDF details rather than duplicating the full
-renderer contract. This research should publish a concise final placeholder
-handoff containing the accepted field names, reserved tokens, missing/unknown
-behavior, escaping, and migration posture. The cross-feature research owns
-applying that handoff to the new repository-wide guide.
+The Markdown PDF guides own current feature behavior. The future cross-feature
+guide should link to them for advanced PDF details rather than duplicate the
+renderer contract.
+
+## Settled Placeholder Handoff
+
+This is the stable input for the separate
+[Pattern, Placeholder, and Template Language Guide][pattern-language-research]
+work:
+
+| Contract area         | Shipped handoff                                                                                                                                                                                                                       |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| schema                | `pageNumbers.enabled`, `position`, `format`, `scope`, `countFrom`, `start`, and `increment`; `format` remains Profile-only                                                                                                            |
+| numbering             | `scope` controls visibility; `countFrom` selects the logical domain; `start` is a non-negative integer; `increment` is a positive integer; `scope: document` with `countFrom: body` is invalid                                        |
+| reserved tokens       | `{page}` is logical-current, `{pages}` is logical-final, `{pdfPage}` is physical-current, and `{pdfPages}` is physical-total; tokens are exact and case-sensitive                                                                     |
+| metadata              | Other well-formed placeholders use merged metadata after CLI, frontmatter, Profile, and derived-default precedence; missing or unknown metadata becomes empty text                                                                    |
+| braces and namespaces | Malformed brace text stays literal; no literal-brace escape syntax or namespaced aliases are shipped                                                                                                                                  |
+| migration             | An enabled revision-1 or revision-2 Profile using exact `{pages}` renders with one warning to use `{pdfPages}` for historical physical-total intent; revision `3`, missing or unusable declarations, and inactive labels remain quiet |
+| Template boundary     | Body-scoped document-origin numbering may warn and fall back for an arbitrary legacy Template with no hook; body origin and managed Templates require one provable `.document-body` boundary                                          |
+| renderer              | Effectively requested advanced counter and repeating-content capabilities require WeasyPrint `65.1`; unsupported active capabilities fail before rendering                                                                            |
+
+The [Markdown PDF Usage guide][markdown-pdf-usage] is the canonical operational
+reference. This handoff deliberately does not introduce the repository-wide
+guide, namespaces, or escaping syntax.
+
+## Phase 15 Guidance Traceability
+
+Phase 15 owns final guide alignment, example and help verification, exact-range
+documentation review, and lifecycle closure. Its evidence belongs in the
+[Phase 15 Guidance Closeout][phase-15-job] record. While that pass is active,
+this parent research remains `in-progress`; the cross-feature language research
+remains `draft`, and no archive move occurs.
 
 ## Interactive UX Follow-Up
 

@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-07-28
+modified-date: 2026-08-15
 status: completed
 agent: codex
 ---
@@ -48,11 +48,11 @@ guided preparation, review, lifecycle, recovery, and handoff behavior.
 
 ## Codex Helper Choice
 
-| Need | Recommended helper |
-| --- | --- |
-| Reusable page shape, ToC, page numbers, fonts, code highlighting, or text cover policy | `md pdf-profile codex` |
-| Reviewable HTML/CSS layout, local cover images, managed assets, or reusable template styling | `md pdf-template codex` |
-| One coordinated project folder containing `profile.yml`, `template.html`, `style.css`, and optional managed assets | `md pdf-project codex` |
+| Need                                                                                                               | Recommended helper      |
+| ------------------------------------------------------------------------------------------------------------------ | ----------------------- |
+| Reusable page shape, ToC, page numbers, fonts, code highlighting, or text cover policy                             | `md pdf-profile codex`  |
+| Reviewable HTML/CSS layout, local cover images, managed assets, or reusable template styling                       | `md pdf-template codex` |
+| One coordinated project folder containing `profile.yml`, `template.html`, `style.css`, and optional managed assets | `md pdf-project codex`  |
 
 The dedicated guides are:
 
@@ -126,11 +126,11 @@ cdx-chores md to-pdf --input ./docs/report.md --output ./exports/report.pdf --ov
 `--profile`, `--template`, and `--css` are the direct Markdown PDF render-input
 options. They remain fully supported and can be used independently or together:
 
-| Render input | Direct option |
-| --- | --- |
-| Reusable rendering policy | `--profile <file>` |
+| Render input                 | Direct option       |
+| ---------------------------- | ------------------- |
+| Reusable rendering policy    | `--profile <file>`  |
 | Custom Pandoc HTML structure | `--template <file>` |
-| Custom print styling | `--css <file>` |
+| Custom print styling         | `--css <file>`      |
 
 For precise, visible selection, provide each accepted artifact directly:
 
@@ -255,13 +255,13 @@ The default preset is `article`.
 
 Supported presets:
 
-| Preset | Best for | Default orientation | Default margins |
-| ------ | -------- | ------------------- | --------------- |
-| `article` | General notes and short articles | `portrait` | `18mm` |
-| `report` | Longer documents with ToC-friendly spacing | `portrait` | `18mm` |
-| `wide-table` | Wide tables or matrix-style documents | `landscape` | `12mm` |
-| `compact` | Dense internal references | `portrait` | `12mm` |
-| `reader` | Screen-reading oriented PDFs with larger type | `portrait` | `20mm` top/bottom, `22mm` left/right |
+| Preset       | Best for                                      | Default orientation | Default margins                      |
+| ------------ | --------------------------------------------- | ------------------- | ------------------------------------ |
+| `article`    | General notes and short articles              | `portrait`          | `18mm`                               |
+| `report`     | Longer documents with ToC-friendly spacing    | `portrait`          | `18mm`                               |
+| `wide-table` | Wide tables or matrix-style documents         | `landscape`         | `12mm`                               |
+| `compact`    | Dense internal references                     | `portrait`          | `12mm`                               |
+| `reader`     | Screen-reading oriented PDFs with larger type | `portrait`          | `20mm` top/bottom, `22mm` left/right |
 
 Example:
 
@@ -389,10 +389,10 @@ Interactive Profile `starter`; both remain off by default.
 For each Interactive `to-pdf` render, `Code highlighting for this PDF` maps to
 the existing direct behavior:
 
-| Interactive choice | Direct equivalent | Behavior |
-| --- | --- | --- |
-| `Use recipe setting` | omit both flags | Use the resolved Profile; without one, remain off. |
-| `Enable for this render` | `--code-highlight` | Enable Shiki for this PDF without mutating the Profile. |
+| Interactive choice        | Direct equivalent     | Behavior                                                      |
+| ------------------------- | --------------------- | ------------------------------------------------------------- |
+| `Use recipe setting`      | omit both flags       | Use the resolved Profile; without one, remain off.            |
+| `Enable for this render`  | `--code-highlight`    | Enable Shiki for this PDF without mutating the Profile.       |
 | `Disable for this render` | `--no-code-highlight` | Disable highlighting and its dependent features for this PDF. |
 
 Theme, line numbers, and transformer notation remain Profile-owned. Template
@@ -439,14 +439,14 @@ const maybe = true; // [!code warning]
 
 Markdown PDF code highlighting enables a narrow Shiki transformer subset:
 
-| Shiki transformer | Syntax | Markdown PDF support |
-| --- | --- | --- |
-| `transformerNotationHighlight` | `[!code highlight]`, `[!code highlight:N]` | Supported |
-| `transformerNotationDiff` | `[!code ++]`, `[!code --]`, `[!code ++:N]`, `[!code --:N]` | Supported |
-| `transformerNotationFocus` | `[!code focus]`, `[!code focus:N]` | Supported |
-| `transformerNotationErrorLevel` | `[!code error]`, `[!code warning]`, `[!code error:N]`, `[!code warning:N]` | Supported for `error` and `warning`; `info` is not enabled |
-| `transformerMetaHighlight` | Code-fence meta such as ```` ```js {1,3-4}```` | Not supported |
-| `transformerNotationWordHighlight` | `[!code word:...]` | Not supported |
+| Shiki transformer                  | Syntax                                                                     | Markdown PDF support                                       |
+| ---------------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `transformerNotationHighlight`     | `[!code highlight]`, `[!code highlight:N]`                                 | Supported                                                  |
+| `transformerNotationDiff`          | `[!code ++]`, `[!code --]`, `[!code ++:N]`, `[!code --:N]`                 | Supported                                                  |
+| `transformerNotationFocus`         | `[!code focus]`, `[!code focus:N]`                                         | Supported                                                  |
+| `transformerNotationErrorLevel`    | `[!code error]`, `[!code warning]`, `[!code error:N]`, `[!code warning:N]` | Supported for `error` and `warning`; `info` is not enabled |
+| `transformerMetaHighlight`         | Code-fence meta such as ` ```js {1,3-4}`                                   | Not supported                                              |
+| `transformerNotationWordHighlight` | `[!code word:...]`                                                         | Not supported                                              |
 
 Shiki range suffixes are supported for the enabled notation types:
 
@@ -522,6 +522,13 @@ cdx-chores md pdf-profile init \
 
 Unknown profile keys fail by default so misspelled settings do not silently change the output.
 
+Generated Profiles declare `schemaVersion: 3`. The declaration identifies the
+feature revision used when the Profile was written; it is not a hard render
+gate. A missing, invalid, stale, or forward declaration does not discard
+otherwise supported keys. Inconsistent declarations produce a warning, while
+each key and value is still validated against the current schema. Unknown keys
+and invalid field combinations remain errors.
+
 `md pdf-profile init --preset <name>` stores profile values derived from the preset. It does not currently store the preset name itself. For example, a generated `wide-table` profile preserves derived page shape such as landscape orientation and margins, but later rendering still uses the default `article` preset CSS unless `--preset wide-table` is also passed to `md to-pdf`.
 
 Profiles generated by `md pdf-profile codex` can include `profile.preset`, which is replayed by `md to-pdf --profile <path>` before renderer defaults. Render-time CLI flags still override matching profile-derived settings.
@@ -569,19 +576,22 @@ This ownership-aware behavior does not change the cascade boundary: Profile CSS
 loads before the Template or user stylesheet, so manually authored or edited
 CSS loaded later can still override Profile styling deliberately.
 
-A custom `--template` replaces the generated template HTML. If the custom template does not include the generated cover structure, profile text cover settings will not appear in the rendered PDF.
+A custom `--template` replaces the generated template HTML. An enabled Profile
+cover therefore requires either the built-in recipe or a validated managed
+Project Template with exactly one live `.pdf-cover` hook. An arbitrary custom
+Template is rejected instead of silently dropping the requested cover.
 
 The Codex profile helper stays inside the profile boundary. Use custom templates or CSS for local cover images, arbitrary CSS, custom HTML layout, exact table styling, and other template-only behavior.
 
-| Need | `md pdf-profile codex` | `md pdf-template codex` |
-| --- | --- | --- |
-| Output | Reusable profile YAML/JSON | Reviewable template bundle |
-| Best owner | Page shape, ToC, page numbers, fonts, code-highlight settings | Cover images, custom layout, custom CSS, managed assets |
-| ToC | Owns reusable ToC render settings: enabled, depth, page break | Preserves and styles Pandoc ToC hooks only |
-| Code highlighting | Owns Shiki render settings | Owns Shiki-compatible CSS only |
-| Cover/title page | Text/metadata cover fields only | Custom cover layout and composition |
-| Cover image asset | Not supported; use the template helper | `--cover-image` local managed asset |
-| Render with | `md to-pdf --profile ...` or a profile-only `--bundle` | `md to-pdf --bundle ...` or explicit `--template ... --css ...` |
+| Need              | `md pdf-profile codex`                                        | `md pdf-template codex`                                         |
+| ----------------- | ------------------------------------------------------------- | --------------------------------------------------------------- |
+| Output            | Reusable profile YAML/JSON                                    | Reviewable template bundle                                      |
+| Best owner        | Page shape, ToC, page numbers, fonts, code-highlight settings | Cover images, custom layout, custom CSS, managed assets         |
+| ToC               | Owns reusable ToC render settings: enabled, depth, page break | Preserves and styles Pandoc ToC hooks only                      |
+| Code highlighting | Owns Shiki render settings                                    | Owns Shiki-compatible CSS only                                  |
+| Cover/title page  | Text/metadata cover fields only                               | Custom cover layout and composition                             |
+| Cover image asset | Not supported; use the template helper                        | `--cover-image` local managed asset                             |
+| Render with       | `md to-pdf --profile ...` or a profile-only `--bundle`        | `md to-pdf --bundle ...` or explicit `--template ... --css ...` |
 
 Template bundles can style highlighted code, but Shiki is enabled only by an
 effective Profile or a render override such as `md to-pdf --code-highlight`
@@ -612,16 +622,14 @@ see [Markdown PDF Codex Template Helper](markdown-pdf-codex-template-helper.md).
 
 Templates generated before Shiki code highlighting was added continue to render, but their `style.css` may not include the newer `.cdx-code` hook styles for highlighted blocks, line numbers, and transformer notation. To pick up the built-in code-block styling, regenerate the template with `md pdf-template init --overwrite` or copy the code-block CSS from a newly generated template.
 
-## Covers And Page Chrome
+## Covers, Repeating Content, And Page Numbers
 
-Cover pages are rendered as part of the generated HTML/CSS recipe. The first built-in profile styles are:
-
-- `plain`
-- `report`
-
-Example:
+The Profile owns metadata-based covers, repeating header and footer content,
+and page-number policy. A concise combined example is:
 
 ```yaml
+schemaVersion: 3
+
 cover:
   enabled: true
   style: report
@@ -631,11 +639,7 @@ cover:
     author: "{author}"
     company: "{company}"
     date: "{date}"
-```
 
-Headers and footers use deterministic placeholder fields:
-
-```yaml
 header:
   left: "{company}"
   right: "{title}"
@@ -643,29 +647,148 @@ header:
 footer:
   left: "{author}"
   right: "{date}"
-```
 
-Page numbers are disabled by default. Enable them explicitly:
-
-```yaml
 pageNumbers:
   enabled: true
   position: bottom-center
-  format: "{page}"
+  format: "Page {page} of {pages}"
   scope: body
+  countFrom: body
+  start: 1
+  increment: 1
 ```
 
-`{page}` is the current PDF page number. `{pages}` is the document-wide total page count, so it is not part of the recommended default format. Cover and ToC pages do not receive the normal body page chrome by default.
+### Cover And Page Roles
+
+`cover.enabled` defaults to `false`; `plain` and `report` are the supported
+styles. Cover fields resolve metadata placeholders after `--meta`, Markdown
+frontmatter, Profile metadata, and derived defaults are merged. A cover whose
+fields resolve to no visible metadata warns because it may produce an empty
+page.
+
+The built-in recipe uses this page order:
+
+```text
+cover, when enabled -> ToC, when enabled -> document body
+```
+
+`titleBlock.metadataTitle` accepts `auto`, `show`, or `hide`. `auto` keeps the
+resolved title in the body when there is no cover and suppresses a duplicate
+body title when the cover owns it. `show` is an explicit request that may
+repeat the title; `hide` always suppresses it.
+
+The cover is always free of repeating content and page-number labels. The ToC
+restores configured header and footer content and shows a page number only
+under document scope. Body pages receive configured repeating content and the
+effective page-number policy. A named-page transition can still place the ToC
+and body on separate physical pages even when `toc.pageBreak` is `auto` or
+`none`.
+
+### Repeating Content
+
+`header` and `footer` each accept `left`, `center`, and `right` strings. Their
+optional shared `style` supports `fontSize`, `fontWeight` (`400`, `500`, `600`,
+or `700`), `lineHeight` (`1` through `2`), six-digit hexadecimal `color`, and a
+`separator` with `width` from `0.25pt` through `2pt`, `gap` from `0mm` through
+`4mm` (or numeric `0`), `style: solid`, and a six-digit hexadecimal `color`.
+`fontSize` is a `pt` value from `6pt` through `12pt`. Page-number typography
+inherits the style of its selected header or footer area and
+`fonts.pageChrome`.
+
+If an enabled page number selects an occupied header or footer slot, the page
+number replaces that slot for the render and emits one warning. It is not
+relocated automatically.
+
+### Page-Number Sequence And Visibility
+
+Page numbers default to disabled. The normalized defaults are:
+
+```yaml
+pageNumbers:
+  enabled: false
+  position: bottom-center
+  format: "{page}"
+  scope: body
+  countFrom: document
+  start: 1
+  increment: 1
+```
+
+`scope` controls where labels are visible. `body` hides labels on the cover and
+ToC; `document` shows them on eligible ToC and body pages, while the protected
+cover remains unlabeled. `countFrom` controls the logical counter domain:
+`document` counts every physical page, including hidden cover and ToC pages;
+`body` begins at the first body-owned page. `scope: document` with
+`countFrom: body` is invalid because pre-body pages would have no logical
+number.
+
+`start` is a non-negative integer and `increment` is a positive integer. Hidden
+labels still participate in the selected logical sequence. The four exact,
+case-sensitive format tokens are:
+
+| Token        | Meaning                                          |
+| ------------ | ------------------------------------------------ |
+| `{page}`     | Current logical number in the `countFrom` domain |
+| `{pages}`    | Final logical number in that same sequence       |
+| `{pdfPage}`  | One-based physical position in the rendered PDF  |
+| `{pdfPages}` | Physical page count of the rendered PDF          |
+
+For `N` pages in the logical domain, `{pages}` is
+`start + ((N - 1) * increment)`. With four body pages, `start: 5`, and
+`increment: 2`, the logical sequence is `5, 7, 9, 11` and `{pages}` is `11`;
+the physical tokens are unaffected.
+
+Other well-formed placeholders in `format`, `header`, and `footer` are metadata
+lookups. Missing or unknown metadata resolves to an empty string. Malformed
+brace text remains literal. No literal-brace escaping syntax or namespaced
+placeholder aliases are currently supported.
+
+`{pages}` previously meant the physical PDF total. When page numbers are
+enabled and an explicitly declared revision-1 or revision-2 Profile uses the
+exact `{pages}` token, rendering succeeds with one migration warning. Replace
+it with `{pdfPages}` when physical-total behavior was intended. Profiles with
+revision `3`, no declaration, an unusable declaration, disabled page numbers,
+or no exact `{pages}` token do not receive this warning.
+
+Successful diagnostics are emitted once per document on `stderr`. The shared
+terminal renderer colors the warning label yellow only for
+an eligible TTY; redirected, no-color, and structured diagnostics remain free
+of ANSI presentation codes. Configuration and capability errors use the normal
+nonzero failure path.
+
+### Direct Overrides, Templates, And Renderer Support
+
+`--page-numbers` and `--no-page-numbers` are render-only toggles. They override
+the Profile's `enabled` value without rewriting the Profile; all other
+page-number settings remain Profile-owned.
+
+Body-scoped numbering needs a provable `.document-body` boundary. The built-in
+recipe and validated managed Project Templates provide it. An arbitrary legacy
+Template without that hook may use document-origin visibility fallback with a
+warning, but `countFrom: body` fails rather than guessing. Managed Templates
+with a missing or ambiguous body hook also fail validation.
+
+Advanced page-number counters and header/footer styling require WeasyPrint
+`65.1` or newer. The renderer checks only capabilities requested by the
+effective Profile and fails before rendering when an active capability cannot
+be satisfied. The contract has been verified on WeasyPrint `65.1`, `68.0`, and
+`69.0`.
+
+`--no-default-css` removes all generated Profile CSS. An enabled metadata cover
+is allowed with one warning that custom CSS now owns its page break, layout,
+and chrome reset. Effective page numbers are incompatible with
+`--no-default-css` and fail before output, whether enabled by the Profile or by
+the direct render override.
 
 ## Profile Fonts And Mixed Language
 
 Mixed-language font configuration has three separate responsibilities:
 
-| Input | Responsibility |
-| --- | --- |
-| `pdf.content-langs` | Declares expected languages and orders configured language families in the general body fallback stack |
-| `fonts.body.<language>` | Assigns a family to one language slot and emits a matching `:lang(...)` rule |
-| A rendered `lang` attribute | Activates that language rule for an exact span or block |
+| Input                       | Responsibility                                                                                         |
+| --------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `pdf.content-langs`         | Declares expected languages and orders configured language families in the general body fallback stack |
+| `fonts.body.<language>`     | Assigns a family to one language slot and emits a matching `:lang(...)` rule                           |
+| A rendered `lang` attribute | Activates that language rule for an exact span or block                                                |
 
 Most mixed-language documents should start with ordered fallback fonts. Put the
 Latin/body default first when Latin text should keep the primary body font:

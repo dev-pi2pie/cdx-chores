@@ -274,11 +274,14 @@ placeholders remain supported, and first-slice namespaces are not shipped. The
 guide should link the stable handoff rather than copy exploratory research
 prose.
 
-Phase 14.5 now owns that handoff. The guide must not publish the historical
-physical meaning of `{pages}` as current. It should wait for
-[Markdown PDF Page Roles And Counter Semantics][page-role-counter-research] to
-prove `{page}`, `{pages}`, `{pdfPage}`, and `{pdfPages}` across cover, metadata-
-title, ToC, body, and blank-page roles.
+The page-number work has now published its
+[settled placeholder handoff][page-number-handoff], backed by the completed
+[Markdown PDF Page Roles And Counter Semantics][page-role-counter-research]
+evidence. The future cross-feature guide should link to that stable handoff and
+the canonical [Markdown PDF Usage guide][markdown-pdf-guide]. It must not
+publish the historical physical meaning of `{pages}` as current or duplicate
+the full renderer contract. This research remains `draft`; Phase 15 does not
+implement the repository-wide guide.
 
 ### Completion Criteria
 
@@ -302,6 +305,7 @@ title, ToC, body, and blank-page roles.
 [data-stack-guide]: ../guides/data-stack-usage.md
 [markdown-pdf-guide]: ../guides/markdown-pdf-usage.md
 [markdown-pdf-template-guide]: ../guides/markdown-pdf-codex-template-helper.md
+[page-number-handoff]: research-2026-08-11-markdown-pdf-page-number-configuration.md#settled-placeholder-handoff
 [page-number-research]: research-2026-08-11-markdown-pdf-page-number-configuration.md
 [page-role-counter-research]: research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md
 [rename-common-guide]: ../guides/rename-common-usage.md
