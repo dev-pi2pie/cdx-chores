@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number configuration implementation"
 created-date: 2026-08-12
-modified-date: 2026-08-14
+modified-date: 2026-08-15
 status: active
 agent: codex
 ---
@@ -1350,7 +1350,7 @@ Phase checkpoint:
   implementation commits, exact reviewed range, validation evidence, and
   Continue/Constrain/Stop verdict.
 
-### Phase 14: Interactive Page-Number And Page-Chrome UX Refinement
+### Phase 14: Interactive Page-Number And Repeating Page Content UX Refinement
 
 Tasks:
 
@@ -1406,7 +1406,7 @@ Tasks:
       test-quality reviewers, resolve accepted findings, and record a reviewed
       documentation closeout before Phase 15.
 
-Phase checkpoint:
+First checkpoint — 2026-08-14:
 
 - Common Profile `formal-guide` authoring asks only whether to number, which
   ordinary numbering outcome to use, and where to place the number.
@@ -1423,9 +1423,78 @@ Phase checkpoint:
 Phase evidence:
 
 - [Phase 14 Interactive UX job record](jobs/2026-08-14-markdown-pdf-page-number-phase-14-interactive-ux.md)
-- Final reviewed range: `7bbdc140..cdea2b23`
-- Verdict: Continue to Phase 15; keep structured Profile/Project Codex
-  Assistant page-number authority deferred to a future canary.
+- Final implementation/test review range: `7bbdc140..cdea2b23`
+- Documentation-only closeout tip: `0294b4ad`
+- Historical verdict: Continue to Phase 15; keep structured Profile/Project
+  Codex Assistant page-number authority deferred to a future canary.
+
+#### Reopened refinement — 2026-08-15
+
+The first Phase 14 checkpoint remains complete and its evidence remains valid.
+Usability review reopened this phase before Phase 15 because the shorter flow
+still exposes unfamiliar `page chrome` terminology, treats page-number and
+header/footer placement as separate layouts, fixes guided labels to bare
+`{page}`, and does not teach the metadata placeholders supported by repeating
+content.
+
+Tasks:
+
+- [x] Reopen the
+      [Interactive Page Numbers And Repeating Page Content UX research][interactive-page-number-ux]
+      as `in-progress`, preserve the first checkpoint evidence, and activate a
+      separate [reopened Phase 14 job record][reopened-phase-14-job] from the
+      clean `0294b4ad` boundary.
+- [ ] Replace user-facing `page chrome` wording with `repeating page content`,
+      `header/footer position`, and `revise repeating page content` while
+      retaining internal Profile and TypeScript names where they remain useful.
+- [ ] Present one six-position header/footer layout. When page numbering is
+      enabled, reserve its selected position and offer the other five for
+      repeating content; when disabled, offer all six positions. Use a
+      single-choice page-number position followed by a checkbox selection for
+      repeating content. Preserve an occupied reserved position by default and
+      expose a deliberate conflict-clear action during revision.
+- [ ] Add `Page 1` (recommended), `1` (compact), and `Custom...` page-number
+      label routes compiling to `Page {page}`, `{page}`, and validated custom
+      `pageNumbers.format` input.
+- [ ] Extend the shared inline ghost prompt with an optional editable initial
+      value. Teach `{page}` as the logical number and `{pages}` as the physical
+      PDF total without persisting a ghost suggestion automatically or adding
+      a new logical-total token. Keep existing metadata placeholders compatible
+      in revised custom labels without promoting them as additional common
+      page-number concepts.
+- [ ] Replace the `Header`, `Footer`, or `Both` gate with direct selection of
+      available repeating-content positions. Provide slot-aware ghost examples
+      such as `{title}`, `{company}`, `{author}`, and `{date}`, and explain that
+      values may come from CLI metadata, Markdown frontmatter, or Profile
+      metadata.
+- [ ] Preserve same-session inert page-number values, revision initial values,
+      advanced header/footer styles, and occupied-slot collision diagnostics.
+      Ordinary disabled review should not present inactive sequence details as
+      effective output. On guided enablement or re-enablement, compile
+      `start: 1` and `increment: 1`, default representable outcome, label, and
+      position choices from retained values, and deliberately replace advanced
+      sequence combinations the guided flow cannot represent.
+- [ ] Keep direct and Interactive render-time overrides, Project and Template
+      ownership, the Profile schema, normalization, renderer behavior, and
+      Codex Assistant signal contracts unchanged.
+- [ ] Add focused ghost-input, formal-guide, enabled/disabled branch, label,
+      slot ownership, revision, persistence, review, command-boundary, and
+      lifecycle regressions.
+- [ ] Run focused and broad Interactive/Markdown PDF tests plus the full test,
+      TypeScript, lint, format, build, and diff gates. Run bounded save-only
+      smokes for enabled custom-label and disabled repeating-content paths, and
+      remove their scoped scratch data.
+- [ ] Review the exact reopened implementation range with maintainability and
+      test-quality reviewers, resolve accepted findings, and record a reviewed
+      documentation closeout before Phase 15.
+
+Reopened checkpoint:
+
+- Phase 14 is `in-progress`; Phase 15 remains pending.
+- The first implementation and review range remains historical evidence rather
+  than being rewritten as unfinished work.
+- Structured Profile/Project Codex Assistant page-number authority remains
+  future-canary work outside this refinement.
 
 ### Phase 15: Guidance And Lifecycle Closeout
 
@@ -1478,7 +1547,7 @@ Phase checkpoint:
 
 - [Markdown PDF Page-Number Configuration research][page-number-research]
 - [Markdown PDF Profile Revision And Feature Compatibility][profile-revision-research]
-- [Markdown PDF Interactive Page-Number And Page-Chrome UX][interactive-page-number-ux]
+- [Markdown PDF Interactive Page Numbers And Repeating Page Content UX][interactive-page-number-ux]
 - [Pattern, Placeholder, and Template Language Guide research][pattern-language-research]
 
 ## Related Guides
@@ -1495,4 +1564,5 @@ Phase checkpoint:
 [profile-revision-research]: ../researches/research-2026-08-14-markdown-pdf-profile-revision-and-feature-compatibility.md
 [profile-helper]: ../guides/markdown-pdf-codex-profile-helper.md
 [project-helper]: ../guides/markdown-pdf-codex-project-helper.md
+[reopened-phase-14-job]: jobs/2026-08-15-markdown-pdf-page-number-phase-14-reopened-interactive-ux.md
 [template-helper]: ../guides/markdown-pdf-codex-template-helper.md
