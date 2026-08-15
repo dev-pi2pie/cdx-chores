@@ -1722,38 +1722,38 @@ Completed checkpoint:
 
 Tasks:
 
-- [ ] Create and activate a Phase 15 guidance-closeout job record with the exact
+- [x] Create and activate a Phase 15 guidance-closeout job record with the exact
       starting commit, permanent documentation boundary, current-guide and
       CLI-help inventory, validation results, documentation-review range, and
       final lifecycle decisions in the [Phase 15 job record][phase-15-job].
-- [ ] Make [Markdown PDF Usage][markdown-pdf-usage] the canonical guide for the
+- [x] Make [Markdown PDF Usage][markdown-pdf-usage] the canonical guide for the
       shipped Profile schema, defaults, four logical/physical page-number
       terms, migration and collision diagnostics, renderer capability
       requirements, page roles, metadata-based cover behavior, custom-Template
       compatibility, `--no-default-css` boundaries, and direct render-only
       toggle. Keep its YAML and command examples concise and complete.
-- [ ] Update [Interactive Markdown PDF Usage][interactive-markdown-pdf-usage]
+- [x] Update [Interactive Markdown PDF Usage][interactive-markdown-pdf-usage]
       with the cover-before-ToC decision and independent revision, simplified
       page-number and repeating-content flow, ghost-guided label/content input,
       transient one-render choice, disabled-value retention, and Project-bundle
       handoff. Keep Project on its Codex Assistant route rather than implying a
       deterministic Project `formal-guide`.
-- [ ] Update [Markdown PDF Codex Profile Helper][profile-helper] to distinguish
+- [x] Update [Markdown PDF Codex Profile Helper][profile-helper] to distinguish
       bounded Codex patches from common Formal Guide authoring and the complete
       advanced Profile YAML/JSON contract. Do not imply that Codex Assistant
       receives or authors every page-number, page-chrome, or cover field.
-- [ ] Update [Markdown PDF Codex Project Helper][project-helper] with the
+- [x] Update [Markdown PDF Codex Project Helper][project-helper] with the
       Profile-owned page-number and metadata-cover contract,
       Profile/Template compatibility, generated-bundle review, `--bundle`
       rendering, explicit-role equivalent, validation behavior, and final
       schema-revision materialization.
-- [ ] Update [Markdown PDF Codex Template Helper][template-helper] with the
+- [x] Update [Markdown PDF Codex Template Helper][template-helper] with the
       stable body and managed-cover hooks plus the CSS ownership boundary:
       allow cover/ToC and layout presentation plus deliberate later user CSS,
       while keeping ordinary page-number sequence/content policy
       Profile-owned. Document that an arbitrary custom Template cannot silently
       discard an enabled Profile metadata cover.
-- [ ] Verify `md pdf-profile init` output, direct CLI help, bundle and
+- [x] Verify `md pdf-profile init` output, direct CLI help, bundle and
       explicit-role render commands, and every changed YAML or shell example
       against the implemented command, schema, diagnostics, and generated
       artifacts. Record any discovered implementation mismatch in the Phase 15
@@ -1761,12 +1761,12 @@ Tasks:
       required instead of documenting unshipped behavior. Do not close the
       parent plan or research while a mismatch invalidates the shipped contract
       or their completion claims.
-- [ ] Publish the concise settled Markdown PDF placeholder handoff in the
+- [x] Publish the concise settled Markdown PDF placeholder handoff in the
       [page-number research][page-number-research], then link it from the
       [cross-feature language research][pattern-language-research]. Do not
       implement the repository-wide language guide, placeholder namespaces, or
       literal-brace escaping in this plan.
-- [ ] Record the already-proven renderer versions, capability baselines,
+- [x] Record the already-proven renderer versions, capability baselines,
       extracted-page results, visual conclusions, and cleanup in public-safe
       wording. Reuse the completed renderer evidence unless documentation
       verification exposes a behavior mismatch or Phase 15 changes production

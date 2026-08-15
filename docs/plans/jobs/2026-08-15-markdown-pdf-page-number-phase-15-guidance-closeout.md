@@ -60,18 +60,18 @@ plans, or job records.
 - [x] Establish the clean `58bb6f97` Phase 15 boundary, create this job record,
       link it from the parent plan and research, and freeze the documentation,
       validation, review, and lifecycle scope.
-- [ ] Inventory current guides, direct help, generated Profile output, schema,
+- [x] Inventory current guides, direct help, generated Profile output, schema,
       diagnostics, Interactive prompts, helper boundaries, and repository links.
-- [ ] Update the canonical Markdown PDF Usage guide and parent-research
+- [x] Update the canonical Markdown PDF Usage guide and parent-research
       placeholder handoff from shipped evidence.
-- [ ] Update Interactive usage and the Profile, Template, and Project helper
+- [x] Update Interactive usage and the Profile, Template, and Project helper
       guides without expanding their implemented authority.
-- [ ] Validate every changed shell/YAML example, direct help, generated Profile
+- [x] Validate every changed shell/YAML example, direct help, generated Profile
       output, relevant diagnostics, compatibility behavior, and links.
-- [ ] Record existing renderer versions, extraction and visual conclusions,
+- [x] Record existing renderer versions, extraction and visual conclusions,
       capability baselines, and cleanup in public-safe wording; rerun renderer
       evidence only if Phase 15 exposes a mismatch or changes production code.
-- [ ] Run focused and full repository tests plus TypeScript, lint, format,
+- [x] Run focused and full repository tests plus TypeScript, lint, format,
       build, worktree, and exact-range diff gates.
 - [ ] Review the Phase 15 documentation range, resolve accepted findings, and
       re-review the widened range.
@@ -109,10 +109,38 @@ the shipped contract or their completion claims.
 
 - Starting commit and Phase 15 review base: `58bb6f97`.
 - Whole-plan review base: `de646be9`.
-- Activation checkpoint: pending.
-- Guide and CLI inventory: pending.
-- Documentation checkpoints: pending.
-- Example and repository validation: pending.
+- Activation checkpoint: `a91c7751` created this record, linked the parent plan
+  and research, and corrected the planned job date to the UTC documentation
+  date before guide work began.
+- Guide and CLI inventory: current source, schemas, normalization, diagnostics,
+  renderer capabilities, Formal Guide prompts, Codex helper boundaries, and
+  their focused tests were mapped to the seven affected guide/research files.
+  The inventory identified the historical physical `{pages}` wording, the
+  pre-cover/pre-page-number Interactive narrative, and incomplete managed-hook,
+  revision, and Project ownership guidance as the material stale claims.
+- Documentation checkpoint: `3cd6a51f` aligned Markdown PDF Usage, Interactive
+  usage, all three helper guides, the parent research handoff, and the draft
+  cross-feature research backlink. The main usage guide is now canonical; the
+  surface-specific guides link to it instead of duplicating the full schema.
+- Focused validation: 1,316 Markdown PDF tests across 86 files passed with
+  9,560 assertions. The independently owned documentation slices also passed
+  their narrower canonical, Interactive, and helper-focused suites before the
+  integrated selector.
+- Built CLI and example validation: `md to-pdf --help` exposed only the
+  documented `--page-numbers` and `--no-page-numbers` render toggles;
+  `md pdf-profile init --help` matched the documented recipe options; and a
+  generated starter Profile emitted `schemaVersion: 3` plus the documented
+  disabled/default cover, page-number, title-block, code, and ToC values.
+- Repository validation: 2,349 tests across 251 files passed with 14,055
+  assertions. TypeScript, lint, repository formatting, scoped Markdown
+  formatting, build, link-target, worktree-diff, and `git diff --check` gates
+  passed.
+- Renderer evidence was not rerun because Phase 15 changed documentation only
+  and found no shipped-contract mismatch. The completed guarded `65.1`, `68.0`,
+  and `69.0` extraction and visual evidence, capability baselines, and cleanup
+  records remain authoritative.
+- Cleanup: the ignored playground directory used to verify generated Profile
+  output was removed; no temporary Profile or other smoke artifact remains.
 - Phase 15 documentation review: pending.
 - Whole-plan review: pending.
 - Lifecycle verdict: pending.
