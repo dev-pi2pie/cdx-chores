@@ -2,7 +2,7 @@
 title: "Markdown PDF Interactive Page Numbers And Repeating Page Content UX"
 created-date: 2026-08-14
 modified-date: 2026-08-15
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -495,7 +495,7 @@ This evidence remains valid historical proof. Reopening the research does not
 reinterpret that implementation as incomplete; it records a newly identified
 usability refinement before Phase 15 guidance closeout.
 
-## Current Direction
+## Settled Direction
 
 - Use page numbers and repeating page content as the user-facing concepts.
 - Present one six-position layout and reserve the enabled page-number slot.
@@ -506,8 +506,13 @@ usability refinement before Phase 15 guidance closeout.
   settings in Profile YAML or JSON.
 - Preserve the simple one-render override and current Project/Template/Codex
   Assistant boundaries.
-- Keep this research `in-progress` until the reopened implementation,
-  validation, exact-range review, and evidence links are complete.
+
+The reopened implementation completed in reviewed range
+`0294b4ad..3400e2d0`. Focused, broad, repository-wide, static, build, and two
+save-only Interactive smoke paths passed. The initial test review's four
+coverage findings were resolved before the widened range was re-reviewed with
+no remaining material findings. The [reopened Phase 14 job][reopened-phase-14-job]
+records the detailed evidence.
 
 ## Related Research
 

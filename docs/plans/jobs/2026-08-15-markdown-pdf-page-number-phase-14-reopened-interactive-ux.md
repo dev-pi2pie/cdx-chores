@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number Phase 14 reopened Interactive UX"
 created-date: 2026-08-15
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-08-12-markdown-pdf-page-number-configuration.md
 ---
@@ -104,11 +104,11 @@ override, artifact ownership, or Codex Assistant signal contract.
       validation.
 - [x] Run bounded save-only Interactive smokes for enabled custom-label and
       disabled repeating-content paths, then remove their scoped scratch data.
-- [ ] Review the exact reopened implementation range for maintainability and
+- [x] Review the exact reopened implementation range for maintainability and
       test quality, resolve accepted findings, and re-review any widened range.
-- [ ] Update the parent checklist and research status only after implementation
+- [x] Update the parent checklist and research status only after implementation
       evidence is complete.
-- [ ] Record a reviewed documentation closeout and Continue, Constrain, or Stop
+- [x] Record a reviewed documentation closeout and Continue, Constrain, or Stop
       verdict before Phase 15.
 
 ## Validation Plan
@@ -151,9 +151,12 @@ CSS, scenario inputs, or evidence acceptance changes.
 - Shared ghost interaction: `d6946f63`, implementing optional initial values,
   isolated Markdown PDF completion contexts, fresh static ghosts, revision
   fragment completion, simple fallback, cycle reset, and cancellation cleanup.
-- Shared ghost interaction contract: the reviewed documentation checkpoint defining
-  completion contexts, advanced and simple behavior, revision defaults,
-  runtime-context plumbing, and focused validation ownership.
+- Shared ghost interaction contract: `9532c4c2`, defining completion contexts,
+  advanced and simple behavior, revision defaults, runtime-context plumbing,
+  and focused validation ownership.
+- Guided formal-guide implementation: `ed63b88c`.
+- Broad validation and save-only smoke record: `8cbeebd7`.
+- Accepted test-review regressions: `3400e2d0`.
 - Implementation inventory: shared prompt changes are isolated to the inline
   controller, candidate resolver, and focused tests. Formal-guide production
   changes are isolated to prompt/types/collection exports, authoring context,
@@ -182,8 +185,8 @@ CSS, scenario inputs, or evidence acceptance changes.
   the full repository passed 2,246 tests with 13,385 assertions.
 - Static validation: TypeScript, repository lint, repository formatting,
   package build, and diff integrity passed.
-- Enabled save-only smoke: the built CLI's `md -> pdf-recipes -> Profile ->
-formal-guide` route accepted the custom ghost `Page {page} of {pages}`,
+- Enabled save-only smoke: the built CLI's `md` -> `pdf-recipes` -> `Profile` ->
+  `formal-guide` route accepted the custom ghost `Page {page} of {pages}`,
   reserved `bottom-center` for page numbering, accepted header-left `{title}`
   repeating content, saved a revision-3 YAML Profile, and reloaded the expected
   normalized values.
@@ -200,7 +203,24 @@ formal-guide` route accepted the custom ghost `Page {page} of {pages}`,
 - Saved Profile coverage remains persistence verification. Interactive does not
   load an arbitrary persisted Profile into `formal-guide` revision, and this
   phase adds no such entry point.
-- Review and closeout evidence: pending.
+- Initial exact-range review of `0294b4ad..8cbeebd7` found no material
+  maintainability or documentation concerns and four test-coverage gaps. All
+  four were accepted: combined metadata and page-token persistence,
+  formal-guide ghost-adapter wiring, the disabled all-six adapter layout, and
+  advanced-failure fallback with a revision initial value.
+- The accepted regressions passed 39 focused tests with 171 assertions. The
+  full repository then passed 2,250 tests with 13,398 assertions, followed by
+  TypeScript, repository lint and formatting, package build, and diff checks.
+- Widened exact-range review of `0294b4ad..3400e2d0` found no remaining material
+  maintainability or test-quality concerns. Documentation review found the
+  research, plan, and job consistent with the implementation and ready for
+  closeout.
+
+## Verdict
+
+**Continue to Phase 15.** Reopened Phase 14 is complete. Structured
+Profile/Project Codex Assistant page-number authority remains deferred to a
+future canary and does not block guidance and lifecycle closeout.
 
 ## Related Research
 

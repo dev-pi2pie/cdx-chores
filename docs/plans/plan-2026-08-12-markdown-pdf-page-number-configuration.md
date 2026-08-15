@@ -1499,15 +1499,17 @@ Tasks:
       TypeScript, lint, format, build, and diff gates. Run bounded save-only
       smokes for enabled custom-label and disabled repeating-content paths, and
       remove their scoped scratch data.
-- [ ] Review the exact reopened implementation range with maintainability and
+- [x] Review the exact reopened implementation range with maintainability and
       test-quality reviewers, resolve accepted findings, and record a reviewed
       documentation closeout before Phase 15.
 
 Reopened checkpoint:
 
-- Phase 14 is `in-progress`; Phase 15 remains pending.
+- Phase 14 is `completed`; Phase 15 remains pending.
 - The first implementation and review range remains historical evidence rather
   than being rewritten as unfinished work.
+- The reopened implementation, validation, review-fix, and final re-review
+  range is `0294b4ad..3400e2d0`; no material findings remain.
 - Structured Profile/Project Codex Assistant page-number authority remains
   future-canary work outside this refinement.
 
