@@ -2,6 +2,7 @@ import { parse, type DefaultTreeAdapterTypes } from "parse5";
 
 import { CliError } from "../errors";
 import type { NormalizedMarkdownPdfProfile } from "./profile";
+import { MARKDOWN_PDF_COVER_HOOK_CLASS } from "./profile/cover";
 import {
   inspectMarkdownPdfTemplateBody,
   type MarkdownPdfTemplateBodyInspection,
@@ -12,8 +13,6 @@ export interface MarkdownPdfTemplateCompatibilityResult {
   coverBoundary?: "built-in" | "managed-proven";
   inspection?: MarkdownPdfTemplateBodyInspection;
 }
-
-const COVER_CLASS = "pdf-cover";
 
 type Parse5Node = DefaultTreeAdapterTypes.Node;
 type Parse5Element = DefaultTreeAdapterTypes.Element;
@@ -28,7 +27,7 @@ function hasClass(node: Parse5Element, className: string): boolean {
 }
 
 function countLiveCoverHooks(node: Parse5Node): number {
-  const current = isElement(node) && hasClass(node, COVER_CLASS) ? 1 : 0;
+  const current = isElement(node) && hasClass(node, MARKDOWN_PDF_COVER_HOOK_CLASS) ? 1 : 0;
   return (
     current +
     ("childNodes" in node
@@ -85,7 +84,7 @@ export function assessMarkdownPdfTemplateCoverCompatibility(input: {
   const hookCount = countLiveCoverHooks(parsedTemplate);
   if (hookCount !== 1) {
     throw new CliError(
-      `The selected managed Markdown PDF template requires exactly one live .pdf-cover element when the Profile cover is enabled (found ${hookCount}).`,
+      `The selected managed Markdown PDF template requires exactly one live .${MARKDOWN_PDF_COVER_HOOK_CLASS} element when the Profile cover is enabled (found ${hookCount}).`,
       {
         code: "MARKDOWN_PDF_COVER_BOUNDARY_REQUIRED",
         exitCode: 2,

@@ -211,6 +211,50 @@ describe("interactive Markdown PDF formal-guide answers", () => {
     expect(revised.pageNumbers).toBe(answers.pageNumbers);
   });
 
+  test("disables a cover without replacing advanced values or unrelated page policy", async () => {
+    const answers: MarkdownPdfProfileFormalGuideAnswers = {
+      ...BASE_PROFILE_ANSWERS,
+      cover: {
+        enabled: true,
+        style: "report",
+        fields: {
+          title: "Confidential: {title}",
+          subtitle: "Prepared for {company}",
+          author: "Written by {author}",
+          company: "{company}",
+          date: "Published {date}",
+        },
+      },
+      pageNumbers: {
+        enabled: true,
+        position: "bottom-right",
+        format: "Page {page} of {pages}",
+        scope: "body",
+        countFrom: "body",
+        start: 1,
+        increment: 1,
+      },
+      pageChrome: {
+        header: { left: "{company}", center: "", right: "{title}" },
+        footer: { left: "{author}", center: "", right: "" },
+      },
+    };
+
+    const revised = await reviseMarkdownPdfFormalGuideCover(
+      answers,
+      createPrompts({
+        coverEnabled: ({ current }) => {
+          expect(current).toBe(true);
+          return false;
+        },
+      }),
+    );
+
+    expect(revised.cover).toEqual({ ...answers.cover, enabled: false });
+    expect(revised.pageNumbers).toBe(answers.pageNumbers);
+    expect(revised.pageChrome).toBe(answers.pageChrome);
+  });
+
   test("collects layout, margins, and disabled ToC without requesting ToC details", async () => {
     const calls: string[] = [];
     const prompts = createPrompts({

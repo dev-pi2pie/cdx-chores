@@ -277,6 +277,42 @@ describe("markdown PDF recipe generation", () => {
     expect(recipe.styleCss).toContain(".pdf-cover");
   });
 
+  test("escapes HTML-sensitive cover metadata and custom fields without duplicating company", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        metadata: {
+          customCredit: 'Author <One> & "Team"',
+        },
+        cover: {
+          enabled: true,
+          fields: {
+            title: "{title}",
+            subtitle: 'Custom <subtitle> & "quoted"',
+            author: "{customCredit}",
+            company: "{company}",
+            date: "",
+          },
+        },
+      },
+      frontmatter: {
+        title: 'R&D <Q1> "Brief"',
+        company: 'A&B <Co> "Lab"',
+      },
+    });
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions(), {
+      profile: normalizedProfile.profile,
+    });
+    const escapedCompany = "A&amp;B &lt;Co&gt; &quot;Lab&quot;";
+
+    expect(recipe.templateHtml).toContain("R&amp;D &lt;Q1&gt; &quot;Brief&quot;");
+    expect(recipe.templateHtml).toContain("Custom &lt;subtitle&gt; &amp; &quot;quoted&quot;");
+    expect(recipe.templateHtml).toContain("Author &lt;One&gt; &amp; &quot;Team&quot;");
+    expect(recipe.templateHtml.match(new RegExp(escapedCompany, "g"))).toHaveLength(1);
+    expect(recipe.templateHtml).toContain(`<p class="pdf-cover__company">${escapedCompany}</p>`);
+    expect(recipe.templateHtml).not.toContain('R&D <Q1> "Brief"');
+    expect(recipe.templateHtml).not.toContain('A&B <Co> "Lab"');
+  });
+
   test("suppresses duplicate metadata title block when titleBlock mode is auto", () => {
     const normalizedProfile = normalizeMarkdownPdfProfile({
       profile: {
