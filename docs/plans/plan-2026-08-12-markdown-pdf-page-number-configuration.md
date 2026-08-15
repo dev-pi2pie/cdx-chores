@@ -1771,7 +1771,7 @@ Tasks:
       wording. Reuse the completed renderer evidence unless documentation
       verification exposes a behavior mismatch or Phase 15 changes production
       code.
-- [ ] Run focused help/schema/example tests, Markdown formatting and link
+- [x] Run focused help/schema/example tests, Markdown formatting and link
       checks, `git diff --check`, and an exact-range documentation review.
       Resolve accepted findings, re-run the affected gates, and record the
       widened reviewed range in the Phase 15 job record.
