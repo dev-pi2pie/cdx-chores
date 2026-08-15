@@ -35,16 +35,28 @@ describe("Markdown PDF page-chrome sequence and visibility", () => {
     expect(css).toBe("");
   });
 
-  test("preserves ordinary headers and ToC clearing when numbering is disabled", () => {
+  test("resets ToC boxes before restoring configured repeating content", () => {
     const css = pageChromeCss(
       { enabled: false },
       { bodyBoundary: "not-required" },
-      { header: { left: "Ordinary header" } },
+      {
+        header: {
+          left: "Ordinary header",
+          style: { color: "#234567", fontSize: "8.5pt" },
+        },
+      },
     );
 
     expect(css).toContain('@top-left {\n    content: "Ordinary header";');
     expect(css).toContain("@page toc {");
-    expect(namedPageRule(css, "toc")).toContain("@top-left {\n    content: none;");
+    const tocRule = namedPageRule(css, "toc");
+    expect(tocRule).toContain("@top-left {\n    content: none;");
+    expect(tocRule).toContain('@top-left {\n    content: "Ordinary header";');
+    expect(tocRule).toContain("font-size: 8.5pt;");
+    expect(tocRule).toContain("color: #234567;");
+    expect(tocRule.indexOf("content: none;")).toBeLessThan(
+      tocRule.indexOf('content: "Ordinary header";'),
+    );
     expect(css).not.toContain("counter-increment:");
     expect(css).not.toContain("counter-reset:");
     expect(css).not.toContain(".document-body");
@@ -160,7 +172,7 @@ describe("Markdown PDF page-chrome sequence and visibility", () => {
     expect(css).not.toContain(".document-body");
   });
 
-  test("clears unrelated ToC chrome before restoring only document-visible numbering", () => {
+  test("clears ToC boxes before restoring repeating content and document-visible numbering", () => {
     const css = pageChromeCss(
       {
         enabled: true,
@@ -180,9 +192,36 @@ describe("Markdown PDF page-chrome sequence and visibility", () => {
     expect(tocRule).toContain("@top-left {\n    content: none;");
     expect(tocRule).toContain("@bottom-left {\n    content: none;");
     expect(tocRule).toContain('@bottom-center {\n    content: "Page " counter(page);');
-    expect(tocRule).not.toContain("Private header");
-    expect(tocRule).not.toContain("Private right");
-    expect(tocRule).not.toContain("Private footer");
+    expect(tocRule).toContain('content: "Private header";');
+    expect(tocRule).toContain('content: "Private right";');
+    expect(tocRule).toContain('content: "Private footer";');
+    expect(tocRule.indexOf("content: none;")).toBeLessThan(
+      tocRule.indexOf('content: "Private header";'),
+    );
+  });
+
+  test("keeps a body-scoped number hidden on ToC while restoring unreserved chrome", () => {
+    const css = pageChromeCss(
+      {
+        enabled: true,
+        scope: "body",
+        countFrom: "body",
+        position: "bottom-center",
+        format: "Body {page}",
+      },
+      { bodyBoundary: "proven" },
+      {
+        header: { left: "Guide title", right: "Section" },
+        footer: { left: "Company", center: "Reserved footer" },
+      },
+    );
+
+    const tocRule = namedPageRule(css, "toc");
+    expect(tocRule).toContain('content: "Guide title";');
+    expect(tocRule).toContain('content: "Section";');
+    expect(tocRule).toContain('content: "Company";');
+    expect(tocRule).not.toContain("Body ");
+    expect(tocRule).not.toContain("Reserved footer");
   });
 
   test("keeps generated covers hidden while sequence participation follows the origin", () => {

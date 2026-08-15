@@ -254,18 +254,7 @@ export function createMarkdownPdfPageChromeCss(
     return "";
   }
 
-  const tocMarginBoxes = [emptyMarginBoxes()];
-  if (usesDocumentVisibility && numberTarget) {
-    tocMarginBoxes.push(
-      marginBoxRule(
-        numberTarget.area === "header" ? "top" : "bottom",
-        numberTarget.slot,
-        pageNumbers.format,
-        profile.metadata,
-        slots[numberTarget.area].style,
-      ),
-    );
-  }
+  const tocMarginBoxes = [emptyMarginBoxes(), ...genericMarginBoxes];
   generatedRules.push(pageRule("toc", [], tocMarginBoxes));
 
   return `\n${generatedRules.join("\n\n")}\n`;

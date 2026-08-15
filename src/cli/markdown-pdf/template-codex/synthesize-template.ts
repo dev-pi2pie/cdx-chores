@@ -133,13 +133,14 @@ ${identityComment(input)}
   <title>$if(title)$$title$$else$Markdown PDF$endif$</title>
 </head>
 <body class="template-family-${input.family}">
-${coverMediaHtml({ managedAssets: input.managedAssets, slots: input.slots })}${documentTitleHtml(input.titlePolicy)}
+${coverMediaHtml({ managedAssets: input.managedAssets, slots: input.slots })}
 $if(toc)$
 <nav id="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocId}" role="doc-toc">
 $toc$
 </nav>
 $endif$
 <main class="document-body">
+${documentTitleHtml(input.titlePolicy)}
 $body$
 </main>
 </body>

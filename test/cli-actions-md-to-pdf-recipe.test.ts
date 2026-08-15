@@ -7,13 +7,9 @@ import {
 } from "../src/cli/markdown-pdf";
 
 describe("markdown PDF recipe generation", () => {
-  test("keeps the built-in cover, metadata title, ToC, and body blocks in document order", () => {
+  test("keeps the automatic metadata title inside the single body after the ToC", () => {
     const normalizedProfile = normalizeMarkdownPdfProfile({
       profile: {
-        cover: {
-          enabled: true,
-          style: "plain",
-        },
         titleBlock: {
           metadataTitle: "auto",
         },
@@ -33,15 +29,66 @@ describe("markdown PDF recipe generation", () => {
     });
 
     const roleMarkers = [
-      'class="pdf-cover pdf-cover--plain"',
-      'class="document-title"',
       '<nav id="TOC" role="doc-toc">',
       '<main class="document-body">',
+      'class="document-title"',
+      "$body$",
     ];
     const roleIndexes = roleMarkers.map((marker) => recipe.templateHtml.indexOf(marker));
 
     expect(roleIndexes.every((index) => index >= 0)).toBe(true);
     expect(roleIndexes).toEqual([...roleIndexes].sort((left, right) => left - right));
+    expect(recipe.templateHtml.match(/<main class="document-body">/g)).toHaveLength(1);
+  });
+
+  test("suppresses an automatic metadata title when a dedicated cover exists", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        cover: { enabled: true, style: "plain" },
+        titleBlock: { metadataTitle: "auto" },
+      },
+      frontmatter: { title: "Dedicated Cover" },
+    });
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions({ toc: true }), {
+      profile: normalizedProfile.profile,
+      titleSignals: {
+        frontmatterTitle: { present: true, charCount: "Dedicated Cover".length },
+        firstH1: { present: false, charCount: 0 },
+        normalizedTitleMatch: false,
+        duplicateVisibleTitleRisk: false,
+      },
+    });
+
+    const coverIndex = recipe.templateHtml.indexOf('class="pdf-cover pdf-cover--plain"');
+    const tocIndex = recipe.templateHtml.indexOf('<nav id="TOC" role="doc-toc">');
+    const bodyIndex = recipe.templateHtml.indexOf('<main class="document-body">');
+
+    expect(coverIndex).toBeGreaterThanOrEqual(0);
+    expect(coverIndex).toBeLessThan(tocIndex);
+    expect(tocIndex).toBeLessThan(bodyIndex);
+    expect(recipe.templateHtml).not.toContain('class="document-title"');
+  });
+
+  test("keeps an explicitly shown metadata title body-owned when a cover exists", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        cover: { enabled: true },
+        titleBlock: { metadataTitle: "show" },
+      },
+      frontmatter: { title: "Repeated By Request" },
+    });
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions({ toc: true }), {
+      profile: normalizedProfile.profile,
+    });
+
+    const tocIndex = recipe.templateHtml.indexOf('<nav id="TOC" role="doc-toc">');
+    const bodyIndex = recipe.templateHtml.indexOf('<main class="document-body">');
+    const titleIndex = recipe.templateHtml.indexOf('class="document-title"');
+    const bodyContentIndex = recipe.templateHtml.indexOf("$body$");
+
+    expect(tocIndex).toBeLessThan(bodyIndex);
+    expect(bodyIndex).toBeLessThan(titleIndex);
+    expect(titleIndex).toBeLessThan(bodyContentIndex);
   });
 
   test("generates report ToC page break CSS by default", () => {
@@ -270,11 +317,21 @@ describe("markdown PDF recipe generation", () => {
 
     expect(recipe.templateHtml).toContain('class="document-title"');
     expect(recipe.templateHtml).toContain('<h1 class="title">$title$</h1>');
+    const bodyIndex = recipe.templateHtml.indexOf('<main class="document-body">');
+    const titleIndex = recipe.templateHtml.indexOf('class="document-title"');
+    const bodyContentIndex = recipe.templateHtml.indexOf("$body$");
+    expect(recipe.templateHtml).not.toContain('class="pdf-cover');
+    expect(recipe.templateHtml.match(/<main class="document-body">/g)).toHaveLength(1);
+    expect(bodyIndex).toBeLessThan(titleIndex);
+    expect(titleIndex).toBeLessThan(bodyContentIndex);
   });
 
   test("suppresses metadata title block with titleBlock mode hide", () => {
     const normalizedProfile = normalizeMarkdownPdfProfile({
       profile: {
+        cover: {
+          enabled: true,
+        },
         titleBlock: {
           metadataTitle: "hide",
         },
@@ -285,6 +342,7 @@ describe("markdown PDF recipe generation", () => {
     });
 
     expect(recipe.templateHtml).not.toContain('class="document-title"');
+    expect(recipe.templateHtml).toContain('class="pdf-cover pdf-cover--plain"');
   });
 
   test("generates report cover CSS with landscape page options", () => {

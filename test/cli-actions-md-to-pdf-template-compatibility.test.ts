@@ -7,6 +7,7 @@ import {
   assessMarkdownPdfTemplateCompatibility,
   DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
   MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_WARNING,
+  type MarkdownPdfProcessRunner,
 } from "../src/cli/markdown-pdf";
 import { createPdfRunner } from "./cli-actions-md-to-pdf.helpers";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
@@ -70,6 +71,90 @@ describe("Markdown PDF selected-template compatibility", () => {
       expect(prepared.recipe.styleCss).toContain("@page toc {");
       expect(prepared.recipe.styleCss).not.toContain("@page body");
       expect(prepared.recipe.styleCss).not.toContain(".document-body {\n  page: body;");
+    });
+  });
+
+  test("keeps arbitrary Template ownership while restoring ToC chrome and document numbering", async () => {
+    await withTempFixtureDir("md-pdf-template-compat-toc-chrome", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "profile.yml");
+      const templatePath = join(fixtureDir, "custom-template.html");
+      const outputPath = join(fixtureDir, "report.pdf");
+      const customTemplate =
+        '<html><body><article class="custom-document">$body$</article></body></html>\n';
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(
+        profilePath,
+        [
+          "header:",
+          "  left: Guide header",
+          "  right: Replaced header",
+          "footer:",
+          "  left: Guide footer",
+          "pageNumbers:",
+          "  enabled: true",
+          "  scope: document",
+          "  countFrom: document",
+          "  position: top-right",
+          "  format: 'Page {page}'",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await writeFile(templatePath, customTemplate, "utf8");
+      const { calls, runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      let selectedTemplate = "";
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "pandoc" && !args.includes("--version")) {
+          const selectedTemplatePath = args[args.indexOf("--template") + 1];
+          if (selectedTemplatePath) {
+            selectedTemplate = await readFile(selectedTemplatePath, "utf8");
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const { runtime, stderr } = createActionTestRuntime();
+      const options = {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        template: toRepoRelativePath(templatePath),
+        toc: true,
+      } as const;
+
+      const prepared = await prepareMarkdownPdfRender(runtime, options);
+      const tocRuleStart = prepared.recipe.styleCss.indexOf("@page toc {");
+      const tocCss = prepared.recipe.styleCss.slice(tocRuleStart);
+
+      expect(prepared.resolvedInputs.template).toEqual({ path: templatePath, source: "explicit" });
+      expect(prepared.templateCompatibility.bodyBoundary).toBe("not-required");
+      expect(tocRuleStart).toBeGreaterThanOrEqual(0);
+      expect(tocCss).toContain("@top-left {\n    content: none;");
+      expect(tocCss).toContain('@top-left {\n    content: "Guide header";');
+      expect(tocCss).toContain('@top-right {\n    content: "Page " counter(');
+      expect(tocCss).toContain('@bottom-left {\n    content: "Guide footer";');
+      expect(tocCss).not.toContain("Replaced header");
+      expect(tocCss.indexOf("content: none;")).toBeLessThan(
+        tocCss.indexOf('content: "Guide header";'),
+      );
+
+      await actionMdToPdf(runtime, {
+        ...options,
+        output: toRepoRelativePath(outputPath),
+        runner: capturingRunner,
+      });
+
+      const pandocRender = calls.find(
+        (call) => call.command === "pandoc" && !call.args.includes("--version"),
+      );
+      expect(pandocRender?.args).toContain("--toc");
+      expect(selectedTemplate).toContain('<article class="custom-document">$body$</article>');
+      expect(selectedTemplate).not.toContain('class="document-body"');
+      expect(selectedTemplate).not.toContain('class="document-title"');
+      expect(selectedTemplate.match(/\$body\$/g)).toHaveLength(1);
+      expect(await readFile(outputPath, "utf8")).toContain("%PDF");
+      expect(stderr.text).toContain(
+        "Page numbers at top-right replace configured header.right content for this render.",
+      );
     });
   });
 

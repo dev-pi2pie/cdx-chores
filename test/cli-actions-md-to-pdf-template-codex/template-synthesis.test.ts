@@ -222,6 +222,32 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     expect(result.styleCss).toContain(".cdx-code-line-content");
   });
 
+  test("keeps body-owned title ordering identical for deterministic and decision synthesis", () => {
+    const outputPlan = createSynthesisOutputPlan();
+    const signals = createSynthesisSignals({ toc: true });
+    const deterministic = synthesizeMdPdfTemplateCodex({ outputPlan, signals });
+    const adapted = synthesizeMdPdfTemplateCodexFromDecision({
+      decision: createTemplateDecision({ signals }),
+      outputPlan,
+      signals,
+    });
+
+    for (const result of [deterministic, adapted]) {
+      const tocIndex = result.templateHtml.indexOf(
+        `<nav id="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocId}" role="doc-toc">`,
+      );
+      const bodyIndex = result.templateHtml.indexOf('<main class="document-body">');
+      const titleIndex = result.templateHtml.indexOf('<header class="document-title">');
+      const bodyContentIndex = result.templateHtml.indexOf("$body$");
+
+      expect(tocIndex).toBeGreaterThanOrEqual(0);
+      expect(tocIndex).toBeLessThan(bodyIndex);
+      expect(bodyIndex).toBeLessThan(titleIndex);
+      expect(titleIndex).toBeLessThan(bodyContentIndex);
+      expect(result.templateHtml.match(/<main class="document-body">/g)).toHaveLength(1);
+    }
+  });
+
   test("omits cover media and ToC page-break CSS for plain document synthesis", () => {
     const result = synthesizeMdPdfTemplateCodex({
       outputPlan: createSynthesisOutputPlan(),
@@ -265,7 +291,7 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
   test("keeps metadata title blocks when there is no duplicate title risk", () => {
     const result = synthesizeMdPdfTemplateCodex({
       outputPlan: createSynthesisOutputPlan(),
-      signals: createSynthesisSignals(),
+      signals: createSynthesisSignals({ toc: true }),
     });
 
     expect(result.titlePolicy).toMatchObject({
@@ -274,6 +300,9 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
     });
     expect(result.templateHtml).toContain('<header class="document-title">');
     expect(result.templateHtml).toContain('<h1 class="title">$title$</h1>');
+    expect(result.templateHtml.indexOf('<nav id="TOC"')).toBeLessThan(
+      result.templateHtml.indexOf('<header class="document-title">'),
+    );
   });
 
   test("lets cover-title placement own the visible title block", () => {
@@ -298,8 +327,13 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
 
   test("preserves base-profile metadata title show ownership", () => {
     const result = synthesizeMdPdfTemplateCodex({
-      outputPlan: createSynthesisOutputPlan(),
+      outputPlan: createSynthesisOutputPlan({ includeCoverAsset: true }),
       signals: createSynthesisSignals({
+        coverImage: {
+          orientationBucket: "landscape",
+          fitPressure: "normal",
+        },
+        toc: true,
         titleSignals: {
           frontmatterTitle: { present: true, charCount: 14 },
           firstH1: { present: true, charCount: 14 },
@@ -315,6 +349,13 @@ describe("cli action modules: md pdf-template codex template synthesis", () => {
       visibleMetadataTitle: true,
     });
     expect(result.templateHtml).toContain('<header class="document-title">');
+    const coverIndex = result.templateHtml.indexOf('<section class="pdf-cover');
+    const tocIndex = result.templateHtml.indexOf('<nav id="TOC"');
+    const bodyIndex = result.templateHtml.indexOf('<main class="document-body">');
+    const titleIndex = result.templateHtml.indexOf('<header class="document-title">');
+    expect(coverIndex).toBeLessThan(tocIndex);
+    expect(tocIndex).toBeLessThan(bodyIndex);
+    expect(bodyIndex).toBeLessThan(titleIndex);
   });
 
   test("preserves base-profile metadata title hide ownership", () => {

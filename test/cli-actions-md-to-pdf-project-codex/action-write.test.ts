@@ -43,6 +43,37 @@ const SENSITIVE_DIAGNOSTIC_TEXT =
   "Rejected /Users/alice/private/style.css, file:///Users/alice/private/style.css, ssh://host/private/style.css, smb://server/share/style.css, vscode://file/secrets/style.css, C:\\Users\\Alice\\style.css, \\\\server\\share\\style.css, ./secrets/style.css, ../drafts/style.css, assets/internal-style.css, and https://example.test/private?token=abc from localhost:3000, 127.0.0.1:3000, 127.1:3000, 2130706433:3000, and [::1]:3000";
 const TERMINAL_CONTROL_DIAGNOSTIC_TEXT = `${SENSITIVE_DIAGNOSTIC_TEXT} \u001B[31munsafe\u001B[0m \u0007bell`;
 
+function expectManagedProjectTemplateRoles(
+  templateHtml: string,
+  expected: { cover: boolean; metadataTitle: boolean },
+): void {
+  const coverIndex = templateHtml.indexOf('<section class="pdf-cover');
+  const tocIndex = templateHtml.indexOf('<nav id="TOC" role="doc-toc">');
+  const bodyIndex = templateHtml.indexOf('<main class="document-body">');
+  const titleIndex = templateHtml.indexOf('<header class="document-title">');
+  const bodyContentIndex = templateHtml.indexOf("$body$");
+
+  expect(templateHtml).toContain("$if(toc)$");
+  expect(tocIndex).toBeGreaterThanOrEqual(0);
+  expect(templateHtml.match(/<main class="document-body">/g)).toHaveLength(1);
+  expect(tocIndex).toBeLessThan(bodyIndex);
+  expect(bodyIndex).toBeLessThan(bodyContentIndex);
+
+  if (expected.cover) {
+    expect(coverIndex).toBeGreaterThanOrEqual(0);
+    expect(coverIndex).toBeLessThan(tocIndex);
+  } else {
+    expect(coverIndex).toBe(-1);
+  }
+
+  if (expected.metadataTitle) {
+    expect(bodyIndex).toBeLessThan(titleIndex);
+    expect(titleIndex).toBeLessThan(bodyContentIndex);
+  } else {
+    expect(titleIndex).toBe(-1);
+  }
+}
+
 function adaptedProfileRunner(unmatchedDirections: string[] = []): MarkdownPdfCodexProfileRunner {
   return async ({ prompt }) =>
     JSON.stringify({
@@ -785,7 +816,8 @@ describe("cli action modules: md pdf-project codex action writes", () => {
       expectPrivacySafeReport(stdout.text, fixtureDir);
       expectPrivacySafeReport(stderr.text, fixtureDir);
       expect(await readFile(join(outputPath, "profile.yml"), "utf8")).toContain("md-pdf-profile-");
-      expect(await readFile(join(outputPath, "template.html"), "utf8")).toContain("$body$");
+      const templateHtml = await readFile(join(outputPath, "template.html"), "utf8");
+      expectManagedProjectTemplateRoles(templateHtml, { cover: true, metadataTitle: false });
       expect(await readFile(join(outputPath, "style.css"), "utf8")).toContain(".cdx-code-line");
       expect(await pathExists(join(outputPath, "assets", "cover.png"))).toBe(true);
 
@@ -855,7 +887,12 @@ describe("cli action modules: md pdf-project codex action writes", () => {
       expect(stdout.text).not.toContain("Follow-up render usability: planned");
       expect(stdout.text).not.toContain("Codex report:");
       expect(await pathExists(join(fixtureDir, "project-output", "profile.yml"))).toBe(true);
-      expect(await pathExists(join(fixtureDir, "project-output", "template.html"))).toBe(true);
+      const templatePath = join(fixtureDir, "project-output", "template.html");
+      expect(await pathExists(templatePath)).toBe(true);
+      expectManagedProjectTemplateRoles(await readFile(templatePath, "utf8"), {
+        cover: false,
+        metadataTitle: true,
+      });
       expect(await pathExists(join(fixtureDir, "project-output", "style.css"))).toBe(true);
     });
   });

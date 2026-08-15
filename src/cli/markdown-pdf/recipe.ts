@@ -79,7 +79,9 @@ export function createMarkdownPdfTemplate(input: CreateMarkdownPdfRecipeInput = 
   const metadataTitleMode = input.profile?.titleBlock.metadataTitle ?? "auto";
   const shouldRenderMetadataTitle =
     metadataTitleMode === "show" ||
-    (metadataTitleMode === "auto" && !input.titleSignals?.duplicateVisibleTitleRisk);
+    (metadataTitleMode === "auto" &&
+      !input.profile?.cover.enabled &&
+      !input.titleSignals?.duplicateVisibleTitleRisk);
   const metadataTitleHtml = shouldRenderMetadataTitle
     ? `$if(title)$
 <header class="document-title">
@@ -101,13 +103,14 @@ $endif$`
   <title>$if(title)$$title$$else$Markdown PDF$endif$</title>
 </head>
 <body>
-${coverHtml}${metadataTitleHtml}
+${coverHtml}
 $if(toc)$
 <nav id="TOC" role="doc-toc">
 $toc$
 </nav>
 $endif$
 <main class="document-body">
+${metadataTitleHtml}
 $body$
 </main>
 </body>
