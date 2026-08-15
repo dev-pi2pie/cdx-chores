@@ -128,6 +128,11 @@ export interface PdfExtractionSummary {
   labelsByPhysicalPage: string[][];
   pageRolesByPhysicalPage: Array<PhysicalPageRole | "unidentified">;
   counterValuesByPhysicalPage: Array<ExpectedCounterValues | null>;
+  textOccurrences: Array<{
+    text: string;
+    count: number;
+    physicalPages: number[];
+  }>;
   pageLabelState: PdfEvidence["pageLabelState"];
 }
 

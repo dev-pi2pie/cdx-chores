@@ -117,6 +117,14 @@ describe("Markdown PDF renderer evidence orchestration", () => {
       ["PRODUCT-A-L6/8-P4/5"],
       ["PRODUCT-A-L8/8-P5/5"],
     ]);
+    expect(bodyVisibleDocumentOrigin?.markdown).toContain("company: PRODUCT-A-COMPANY-ONCE");
+    expect(bodyVisibleDocumentOrigin?.expected.textOccurrences).toEqual([
+      {
+        text: "PRODUCT-A-COMPANY-ONCE",
+        count: 1,
+        physicalPages: [1],
+      },
+    ]);
   });
 
   test("keeps stable harness metadata and uses bounded timed command requests", async () => {
@@ -154,6 +162,17 @@ describe("Markdown PDF renderer evidence orchestration", () => {
           pageLabelState: "default-physical",
         }),
       );
+      expect(
+        report.candidates[0]?.productScenarios.find(
+          (scenario) => scenario.id === "product-built-in-document-origin",
+        )?.extraction?.textOccurrences,
+      ).toEqual([
+        {
+          text: "PRODUCT-A-COMPANY-ONCE",
+          count: 1,
+          physicalPages: [1],
+        },
+      ]);
       expect(
         mock.requests
           .filter((request) => request.stage === "actual-launch")

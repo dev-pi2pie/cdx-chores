@@ -4,6 +4,7 @@ import { PORTRAIT_SIZE } from "./shared-content";
 const productDocumentOriginMarkdown = `---
 title: PRODUCTACOVER
 author: Renderer evidence
+company: PRODUCT-A-COMPANY-ONCE
 ---
 
 # PRODUCT-A-BODY-1
@@ -249,6 +250,7 @@ export const PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS: readonly ProductRendererSce
           role: "cover",
           marker: "PRODUCTACOVER",
           pageNumberLabels: [],
+          requiredText: ["PRODUCT-A-COMPANY-ONCE"],
           forbiddenText: ["PRODUCT-A-HEADER", "PRODUCT-A-REPLACED-SLOT"],
         },
         {
@@ -284,6 +286,13 @@ export const PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS: readonly ProductRendererSce
         },
       ],
       pngPages: [1, 2, 5],
+      textOccurrences: [
+        {
+          text: "PRODUCT-A-COMPANY-ONCE",
+          count: 1,
+          physicalPages: [1],
+        },
+      ],
     },
     visualReviewRequired: [],
   },

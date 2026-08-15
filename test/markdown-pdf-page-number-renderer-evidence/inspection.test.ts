@@ -398,6 +398,51 @@ describe("Markdown PDF renderer evidence inspection and validation", () => {
     });
   });
 
+  test("requires the Product A company marker exactly once on its visible cover page", async () => {
+    await withEvidenceRoot(async (temporaryRoot) => {
+      const target = PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.find(
+        (scenario) => scenario.id === "product-built-in-document-origin",
+      );
+      expect(target).toBeDefined();
+      const mock = createMockExecution({
+        inspect: (path, expected) =>
+          target && pathHasSegment(path, target.id)
+            ? {
+                ...expected,
+                pages: expected.pages.map((page, index) =>
+                  index === 1 ? { ...page, text: `${page.text} PRODUCT-A-COMPANY-ONCE` } : page,
+                ),
+              }
+            : expected,
+      });
+      const report = await runRendererEvidence({
+        temporaryRoot,
+        uniqueId: "product-a-duplicate-company-marker",
+        runner: mock.runner,
+        inspectPdf: mock.inspectPdf,
+      });
+
+      expect(report.outcome).toBe("failed");
+      expect(report.failures).toContainEqual(
+        expect.objectContaining({
+          scenarioId: target?.id,
+          message: expect.stringContaining(
+            "extracted text PRODUCT-A-COMPANY-ONCE expected 1 occurrence(s), received 2",
+          ),
+        }),
+      );
+      expect(report.failures).toContainEqual(
+        expect.objectContaining({
+          scenarioId: target?.id,
+          message: expect.stringContaining(
+            "extracted text PRODUCT-A-COMPANY-ONCE expected physical pages 1, received 1,2",
+          ),
+        }),
+      );
+      await closeRetainedEvidenceLaboratory(report.labPath, temporaryRoot);
+    });
+  });
+
   test("classifies extraction mismatches as contract failures and retains the laboratory", async () => {
     await withEvidenceRoot(async (temporaryRoot) => {
       const mock = createMockExecution({

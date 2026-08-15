@@ -66,6 +66,15 @@ export interface ExpectedPdfDocument {
   orientation: PageOrientation;
   pages: readonly ExpectedPhysicalPage[];
   pngPages: readonly number[];
+  /**
+   * Exact extracted-text occurrences that establish document-level placement
+   * contracts beyond a single page's required/forbidden text assertions.
+   */
+  textOccurrences?: readonly {
+    text: string;
+    count: number;
+    physicalPages: readonly number[];
+  }[];
 }
 
 export interface RendererContractScenario {

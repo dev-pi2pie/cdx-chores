@@ -340,7 +340,13 @@ async function runRendererEvidenceInLaboratory(
         ],
         pngPages: scenario.expected.pngPages,
         validate: (evidence) => validatePdfEvidence(scenario, evidence),
-        summarize: (evidence) => extractionSummary(evidence, scenario.expected.pages),
+        summarize: (evidence) =>
+          extractionSummary(
+            evidence,
+            scenario.expected.pages,
+            undefined,
+            scenario.expected.textOccurrences,
+          ),
         temporaryImages,
         onExtraction: (summary) => {
           scenarioEvidence.extraction = summary;

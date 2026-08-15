@@ -143,6 +143,36 @@ function textWithoutWhitespace(value: string): string {
   return value.replace(/\s+/gu, "");
 }
 
+function textOccurrenceCount(text: string, expectedText: string): number {
+  if (expectedText.length === 0) return 0;
+  let count = 0;
+  let index = 0;
+  while (index < text.length) {
+    const found = text.indexOf(expectedText, index);
+    if (found === -1) break;
+    count += 1;
+    index = found + expectedText.length;
+  }
+  return count;
+}
+
+function extractedTextOccurrences(
+  evidence: PdfEvidence,
+  expected: NonNullable<ExpectedPdfDocument["textOccurrences"]>,
+): Array<{ text: string; count: number; physicalPages: number[] }> {
+  return expected.map((item) => {
+    const normalizedExpectedText = textWithoutWhitespace(item.text);
+    const counts = evidence.pages.map((page) =>
+      textOccurrenceCount(textWithoutWhitespace(page.text), normalizedExpectedText),
+    );
+    return {
+      text: item.text,
+      count: counts.reduce((total, count) => total + count, 0),
+      physicalPages: counts.flatMap((count, index) => (count > 0 ? [index + 1] : [])),
+    };
+  });
+}
+
 export function findContiguousLabelRun(
   page: PdfPageEvidence,
   label: string,
@@ -191,6 +221,18 @@ export function validatePdfEvidence(
     mismatches.push(
       `expected ${scenario.expected.pageCount} pages, received ${evidence.pageCount}`,
     );
+  for (const expected of scenario.expected.textOccurrences ?? []) {
+    const actual = extractedTextOccurrences(evidence, [expected])[0];
+    if (!actual) continue;
+    if (actual.count !== expected.count)
+      mismatches.push(
+        `extracted text ${expected.text} expected ${expected.count} occurrence(s), received ${actual.count}`,
+      );
+    if (JSON.stringify(actual.physicalPages) !== JSON.stringify(expected.physicalPages))
+      mismatches.push(
+        `extracted text ${expected.text} expected physical pages ${expected.physicalPages.join(",") || "none"}, received ${actual.physicalPages.join(",") || "none"}`,
+      );
+  }
   for (let index = 0; index < scenario.expected.pages.length; index += 1) {
     const expected = scenario.expected.pages[index];
     const page = evidence.pages[index];
@@ -286,6 +328,7 @@ export function extractionSummary(
   evidence: PdfEvidence,
   expectedPages: readonly ExpectedPhysicalPage[],
   counterEvidencePattern?: CounterEvidencePattern,
+  expectedTextOccurrences: ExpectedPdfDocument["textOccurrences"] = [],
 ): PdfExtractionSummary {
   const scenarioMarkers = expectedPages.map((page) => page.marker).filter(Boolean);
   return {
@@ -311,6 +354,7 @@ export function extractionSummary(
     counterValuesByPhysicalPage: evidence.pages.map((page) =>
       extractCounterValues(page.text, counterEvidencePattern),
     ),
+    textOccurrences: extractedTextOccurrences(evidence, expectedTextOccurrences),
     pageLabelState: evidence.pageLabelState,
   };
 }
