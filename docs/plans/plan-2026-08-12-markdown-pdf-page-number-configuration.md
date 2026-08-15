@@ -2,7 +2,7 @@
 title: "Markdown PDF page-number configuration implementation"
 created-date: 2026-08-12
 modified-date: 2026-08-15
-status: active
+status: completed
 agent: codex
 ---
 
@@ -1775,7 +1775,7 @@ Tasks:
       checks, `git diff --check`, and an exact-range documentation review.
       Resolve accepted findings, re-run the affected gates, and record the
       widened reviewed range in the Phase 15 job record.
-- [ ] Link the completed Phase 13 through Phase 15 implementation records and
+- [x] Link the completed Phase 13 through Phase 15 implementation records and
       their completion evidence from this plan and the parent research. Only
       then mark the parent page-number research `completed` and this plan
       `completed`; keep the completed follow-up research completed, keep the
@@ -1799,9 +1799,31 @@ Phase checkpoint:
   work as shipped.
 - Public records contain reproducible versions, results, and conclusions but no
   local activation commands, environment names, or resolved machine paths.
-- The parent page-number research and plan satisfy the repository's evidence
-  requirements before either is marked `completed`; the cross-feature language
+- The parent page-number research and plan have satisfied the repository's
+  evidence requirements and are `completed`; the cross-feature language
   research remains a separate draft and no document is archived in this phase.
+
+Completed checkpoint:
+
+- Phase 15 aligned the canonical Markdown PDF Usage guide, Interactive usage,
+  the three Codex helper guides, and the parent/cross-feature research handoff.
+  Built help and a generated revision-3 starter Profile matched the documented
+  commands, schema, and defaults.
+- The exact `58bb6f97..63b83197` Phase 15 documentation range passed widened
+  review after one accepted traceability fix.
+- The initial whole-plan `de646be9..8c708319` review found one shared CSS
+  inspection maintainability issue and no test-quality or trust-boundary
+  finding. The accepted fix landed in `c774dbce`; widened
+  `de646be9..c774dbce` re-review found no remaining material findings.
+- Post-fix verification passed 2,355 tests across 252 files with 14,065
+  assertions plus TypeScript, lint, formatting, build, worktree, and exact-range
+  diff gates. Existing guarded WeasyPrint `65.1`, `68.0`, and `69.0` extraction
+  and visual evidence remains authoritative because the guidance pass changed
+  no renderer behavior.
+- The [Phase 15 job record][phase-15-job] contains the final public-safe
+  validation, review, cleanup, and lifecycle evidence. The parent research and
+  this plan are `completed`; the cross-feature language research remains
+  `draft`, and no archive move is performed.
 
 ## Related Research
 

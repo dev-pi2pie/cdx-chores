@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number Phase 15 guidance closeout"
 created-date: 2026-08-15
-status: active
+status: completed
 agent: codex
 plan: ../plan-2026-08-12-markdown-pdf-page-number-configuration.md
 ---
@@ -75,10 +75,10 @@ plans, or job records.
       build, worktree, and exact-range diff gates.
 - [x] Review the Phase 15 documentation range, resolve accepted findings, and
       re-review the widened range.
-- [ ] Review the whole-plan `de646be9..<candidate-tip>` range for
+- [x] Review the whole-plan `de646be9..<candidate-tip>` range for
       maintainability, test quality, and trust-boundary regressions; resolve
       accepted findings and re-review the widened range.
-- [ ] Link final evidence, update only the settled lifecycle states and parent
+- [x] Link final evidence, update only the settled lifecycle states and parent
       checklists, complete this job, and commit the documentation closeout.
 
 ## Validation Plan
@@ -146,8 +146,26 @@ the shipped contract or their completion claims.
   the Phase 13, reopened Phase 14, Phase 14.5, Phase 14.6, and Phase 15 records
   without duplicating their evidence. Widened `58bb6f97..63b83197` re-review
   found no remaining material documentation or lifecycle issue.
-- Whole-plan review: pending.
-- Lifecycle verdict: pending.
+- Whole-plan review: the initial exact `de646be9..8c708319` maintainability
+  review found one duplicated CSS escape/comment/string inspection primitive;
+  test-quality and trust-boundary reviews found no material findings. The
+  accepted fix in `c774dbce` extracts one internal scanner while preserving the
+  Project validator's strict malformed-input errors and the Template validator's
+  tolerant normalized-prefix policy. The widened
+  `de646be9..c774dbce` maintainability, test-quality, and trust-boundary
+  re-reviews found no remaining material findings.
+- Post-fix validation: 57 focused CSS inspection and endpoint tests passed with
+  226 assertions. The full repository then passed 2,355 tests across 252 files
+  with 14,065 assertions. TypeScript, lint, repository formatting, build,
+  worktree, and widened Phase 15 and whole-plan diff checks passed.
+- Final implementation/review tip: `c774dbce`. This later documentation-only
+  closeout records the reviewed verdict and is checked separately for
+  documentation quality and diff integrity.
+- Lifecycle verdict: **Completed.** Current guidance matches the shipped
+  revision-3 Profile, Interactive, Template, Project, diagnostic, page-role,
+  counter, renderer-capability, and metadata-cover contracts. The parent
+  research and implementation plan may close; the cross-feature language
+  research remains `draft`, and no archive move is part of this phase.
 
 ## Related Research
 

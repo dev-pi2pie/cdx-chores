@@ -2,7 +2,7 @@
 title: "Markdown PDF Page-Number Configuration"
 created-date: 2026-08-11
 modified-date: 2026-08-15
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -862,11 +862,12 @@ guide, namespaces, or escaping syntax.
 
 ## Phase 15 Guidance Traceability
 
-Phase 15 owns final guide alignment, example and help verification, exact-range
-documentation review, and lifecycle closure. Its evidence belongs in the
-[Phase 15 Guidance Closeout][phase-15-job] record. While that pass is active,
-this parent research remains `in-progress`; the cross-feature language research
-remains `draft`, and no archive move occurs.
+Phase 15 completed final guide alignment, example and help verification,
+exact-range documentation review, and whole-plan review. Its public-safe
+evidence and final verdict are recorded in the
+[Phase 15 Guidance Closeout][phase-15-job] record. This research is now
+`completed`; the cross-feature language research remains `draft`, and no
+archive move occurred.
 
 ## Implementation Records
 
