@@ -1528,45 +1528,45 @@ Tasks:
 - [x] Freeze the built-in recipe's current cover, automatic metadata-title,
       ToC, body, and renderer-inserted blank-page behavior in deterministic
       tests before changing page composition or CSS.
-- [ ] Complete the research evidence needed to settle whether the metadata
+- [x] Complete the research evidence needed to settle whether the metadata
       title remains a block on the first body page or becomes an explicit
       title-page role. Define `metadataTitle: auto`, `show`, and `hide` when a
       dedicated cover exists, and prevent an accidental cover-like page from
       remaining an undocumented named-page side effect.
-- [ ] Audit `toc.pageBreak` against actual named `toc` to named `body`
+- [x] Audit `toc.pageBreak` against actual named `toc` to named `body`
       transitions. Settle whether the ToC is always a dedicated page group and
       whether configured repeating header/footer content applies there. Keep
       the dedicated cover as the explicit protected chrome-free exception.
-- [ ] After renderer evidence accepts the page-role matrix and counter
+- [x] After renderer evidence accepts the page-role matrix and counter
       mechanism, implement the intended four-token page-label contract:
       `{page}` is the current logical number, `{pages}` is the final logical
       number in the same `countFrom`, `start`, and `increment` sequence,
       `{pdfPage}` is the current physical PDF page, and `{pdfPages}` is the
       physical PDF page count. Keep `scope` responsible only for visibility;
       do not describe this target as shipped before its evidence gate passes.
-- [ ] Validate and then implement `countFrom: document` across every physical
+- [x] Validate and then implement `countFrom: document` across every physical
       output page even when a protected role hides its label. Validate
       `countFrom: body` from the first body-owned page, and settle how inserted
       blank pages acquire a logical role while always participating in the
       physical PDF sequence. If the matrix cannot support the intended
       semantics safely, revise the research instead of approximating it.
-- [ ] Keep Profile `schemaVersion` at `3`. Add `{pdfPage}` and `{pdfPages}` to
+- [x] Keep Profile `schemaVersion` at `3`. Add `{pdfPage}` and `{pdfPages}` to
       the revision-3 feature registry and renderer-capability relationships;
       do not branch placeholder meaning on the declaration or rewrite an input
       Profile.
-- [ ] Replace the old physical-`{pages}` logical-sequence diagnostic. Add one
+- [x] Replace the old physical-`{pages}` logical-sequence diagnostic. Add one
       successful migration warning only when effective page numbers are
       enabled, the source Profile explicitly declares revision `1` or `2`, and
       the active label contains exact `{pages}`. Report the effective
       `countFrom`, recommend `{pdfPages}` for physical-total intent, and skip
       this warning for missing or unusable declarations.
-- [ ] Render the migration warning with the shared color helper: use ANSI
+- [x] Render the migration warning with the shared color helper: use ANSI
       standard yellow for the warning label or heading only when `stderr` is an
       eligible TTY, preserve plain text under `NO_COLOR`, `--no-color`, or
       redirection, and keep structured diagnostics free of escape sequences.
       Make color-stream selection explicit without changing existing `stdout`
       callers.
-- [ ] Update formal-guide page-label ghost help and completion candidates for
+- [x] Update formal-guide page-label ghost help and completion candidates for
       `{page}`, `{pages}`, `{pdfPage}`, and `{pdfPages}`. Preserve deliberate
       ghost acceptance, revision initial values, simple fallback, validation,
       and the completed repeating-content interaction contract.
@@ -1574,17 +1574,17 @@ Tasks:
       not, design and test a bounded second pass with pagination-stability and
       cleanup guards before production adoption; do not assume changed margin-
       box content cannot affect page count.
-- [ ] Cover dedicated-cover and no-cover composition, metadata-title states,
+- [x] Cover dedicated-cover and no-cover composition, metadata-title states,
       ToC states and page-break behavior, valid scope/origin combinations,
       non-default arithmetic, blank pages, repagination, and combined four-
       token labels across the frozen renderer candidates. Record extracted
       values by physical page and representative visual evidence.
-- [ ] Verify direct CLI, Interactive generated and saved Profiles, Project
+- [x] Verify direct CLI, Interactive generated and saved Profiles, Project
       bundles, custom Template body hooks, warning frequency, ANSI/no-color
       presentation, feature inference, and non-rewriting renders. Rerun the
       affected live renderer matrix because page composition, CSS, placeholder
       semantics, and evidence acceptance change.
-- [ ] Run focused, broad Markdown PDF, full repository, TypeScript, lint,
+- [x] Run focused, broad Markdown PDF, full repository, TypeScript, lint,
       format, build, and `git diff --check` gates. Review the exact Phase 14.5
       commit range with maintainability and test-quality reviewers, resolve
       accepted findings, and commit a reviewed documentation closeout before
@@ -1602,6 +1602,24 @@ Phase checkpoint:
   plus active `{pages}` produces the bounded migration warning.
 - Real renderer evidence, exact-range review, and the Phase 14.5 job record are
   complete before current guidance is published.
+
+Completed checkpoint:
+
+- Phase 14.5 is `completed`; Phase 15 remains pending.
+- Profile `schemaVersion` remains `3`.
+- The reviewed implementation and evidence range is
+  `6b1b9bba..d0961278`. Two accepted evidence gaps were fixed at the tip, and
+  the widened maintainability and test-quality re-review found no material
+  findings.
+- WeasyPrint `65.1`, `68.0`, and `69.0` passed the final guarded product and
+  Project matrix. The final catalog digest is
+  `7b3761bff1b9300739936f7ccbb2ab032ea0cd1c525e26a58f451923d987cc59`;
+  the harness digest is
+  `dbf41562c71ee837861b4e68507fa295613ed98df840c0a4ef90b65ced8718d8`.
+- The [Phase 14.5 job record][phase-14-5-job] and
+  [Page Roles And Counter Semantics research][page-role-counter-research]
+  contain the public-safe implementation, validation, visual-review, and
+  cleanup evidence.
 
 ### Phase 15: Guidance And Lifecycle Closeout
 

@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number Phase 14.5 page roles and counters"
 created-date: 2026-08-15
-status: active
+status: completed
 agent: codex
 plan: ../plan-2026-08-12-markdown-pdf-page-number-configuration.md
 ---
@@ -12,10 +12,10 @@ Complete Phase 14.5 by making cover, metadata-title, table-of-contents,
 document-body, and inserted-blank page roles explicit, then proving and
 implementing distinct logical and physical page-number placeholders.
 
-Production semantics remain behind the renderer evidence gate. If the frozen
-WeasyPrint matrix cannot support the intended contract safely, this job must
-record a **Constrain** or **Stop** verdict and return to research instead of
-shipping an approximation.
+Production semantics were held behind the renderer evidence gate during this
+job. The frozen WeasyPrint matrix passed the intended contract, so the final
+verdict is **Continue**; the recorded fallback would have been **Constrain** or
+**Stop** rather than shipping an approximation.
 
 ## Starting Boundary
 
@@ -119,27 +119,27 @@ facts, visual conclusions, cleanup status, and review results.
 - [x] Run the renderer experiment and record an accepted one-pass or bounded
       two-pass counter mechanism plus an explicit Continue, Constrain, or Stop
       verdict.
-- [ ] Settle and implement the accepted cover, metadata-title, ToC, body, and
+- [x] Settle and implement the accepted cover, metadata-title, ToC, body, and
       inserted-blank role matrix.
-- [ ] Implement and verify the four-token logical/physical counter contract.
-- [ ] Keep revision `3`, add token-aware feature inference and capability
+- [x] Implement and verify the four-token logical/physical counter contract.
+- [x] Keep revision `3`, add token-aware feature inference and capability
       requests, and preserve non-rewriting renders.
-- [ ] Implement and verify the bounded revision-1/revision-2 migration warning
+- [x] Implement and verify the bounded revision-1/revision-2 migration warning
       and stream-aware ANSI/plain presentation.
-- [ ] Update Interactive completion, help, validation, save/reload, and
+- [x] Update Interactive completion, help, validation, save/reload, and
       lifecycle coverage for all four tokens.
-- [ ] Verify direct, Interactive, saved Profile, Project bundle, explicit-role,
+- [x] Verify direct, Interactive, saved Profile, Project bundle, explicit-role,
       and Custom Template rendering.
-- [ ] Rerun the affected renderer matrix, inspect representative pages, record
+- [x] Rerun the affected renderer matrix, inspect representative pages, record
       public-safe evidence, and close every successful or resolved laboratory
       through the guarded cleanup path.
-- [ ] Run focused, broad Markdown PDF, full repository, TypeScript, lint,
+- [x] Run focused, broad Markdown PDF, full repository, TypeScript, lint,
       format, build, worktree, and exact-range diff gates.
-- [ ] Review the exact `6b1b9bba..<implementation-and-evidence-tip>` range for
+- [x] Review the exact `6b1b9bba..<implementation-and-evidence-tip>` range for
       maintainability and test quality, resolve accepted findings, widen the
       range, and re-review when fixes land.
-- [ ] Review the completed job, research, and parent checklist, then commit a
-      documentation-only closeout before Phase 15.
+- [x] Review the completed job, research, and parent checklist, then prepare
+      the documentation-only closeout checkpoint before Phase 15.
 
 ## Validation Plan
 
@@ -179,8 +179,9 @@ accepted from CSS string assertions alone.
 - Baseline validation: 38 recipe/page-chrome tests passed with 199 assertions;
   33 evidence-harness tests passed with 1,078 assertions; two deterministic
   Project contract tests also passed. TypeScript, scoped lint and formatting,
-  and diff integrity passed. Pre-commit maintainability and test-quality
-  re-review found no remaining material concerns.
+  and diff integrity passed. The baseline-only pre-production review found no
+  material concerns in that checkpoint; the later final-range review and its
+  two accepted evidence gaps are recorded separately below.
 - Renderer mechanism verdict: **Continue with one pass**. WeasyPrint `65.1`,
   `68.0`, and `69.0` each produced five A5 pages with cover, ToC, then three
   body pages. The body values were logical `5 / 7 / 9`, logical final `9`,
@@ -206,17 +207,67 @@ accepted from CSS string assertions alone.
   still requires one unambiguous body page group and one logical-final target
   across built-in and Custom Template paths; missing or ambiguous ownership
   must fail rather than fall back.
-- Page-role implementation: pending.
-- Counter implementation: pending.
-- Diagnostics and Interactive implementation: pending.
-- Integrated renderer evidence and validation: pending.
-- Exact-range review and accepted fixes: pending.
-- Documentation closeout: pending.
+- Page-role implementation: built-in and newly managed Templates now compose
+  cover, ToC, then one body group. An automatic metadata title is body-owned
+  and suppressed by a dedicated cover; explicit `show` remains body-owned and
+  `hide` remains absent. Configured repeating content applies to ToC and body
+  pages, document-scoped page numbers may appear on the ToC, body-scoped page
+  numbers remain hidden there, and the cover remains chrome-free. Custom
+  Template body-hook compatibility and Project bundle equivalence remain
+  covered.
+- Counter implementation: `{page}` and `{pages}` use the Profile-owned logical
+  counter and one post-Pandoc logical-final target; `{pdfPage}` and
+  `{pdfPages}` retain the renderer's physical counters. `scope` changes only
+  visibility. `countFrom`, `start`, and `increment` own logical arithmetic.
+  Missing, duplicate, or colliding body/final-target ownership fails before
+  final output rather than falling back silently.
+- Revision, diagnostics, and Interactive implementation: Profile revision
+  remains `3`; exact embedded token inference and capability requests are
+  registry-owned. Explicit revision `1` or `2` plus effective exact `{pages}`
+  emits one successful migration warning recommending `{pdfPages}`; missing,
+  invalid, revision `3`, disabled, and near-miss inputs remain quiet. Only the
+  `stderr` warning heading is yellow when that stream is color-eligible.
+  Interactive ghost completion, help, validation, fallback, and save/reload
+  cover all four tokens without exposing advanced sequence questions.
+- Integrated renderer evidence: WeasyPrint `65.1`, `68.0`, and `69.0` passed
+  the final product and Project matrix. The final catalog digest is
+  `7b3761bff1b9300739936f7ccbb2ab032ea0cd1c525e26a58f451923d987cc59`;
+  the harness digest is
+  `dbf41562c71ee837861b4e68507fa295613ed98df840c0a4ef90b65ced8718d8`.
+  The matrix proved body visibility with document-origin arithmetic, body-
+  origin non-default arithmetic, a physical-only label on an inserted blank,
+  automatic metadata-title ownership, and Project bundle/explicit parity.
+  Representative images showed clean cover, ToC, body, blank, and metadata-
+  title transitions without clipping or overlap. Every retained laboratory
+  was closed through the guarded cleanup path.
+- Supplementary local smoke: a gitignored Formal Guide Profile render produced
+  one ToC page without a body-scoped label and four body pages labeled
+  `Page 1 of 4` through `Page 4 of 4`. This confirmed that logical `{pages}`
+  excludes the ToC for `countFrom: body` while the physical PDF has five pages.
+  The smoke remains non-durable local QA rather than public renderer evidence.
+- Validation: the final evidence suite passed 39 tests with 1,235 assertions;
+  the full repository passed 2,331 tests with 13,942 assertions across 251
+  files. TypeScript, lint, formatting for 834 files, build, worktree, diff
+  integrity, and the exact-range diff gate passed.
+- Checkpoints after activation: `6d0e9751`, `85895d1a`, `ea00e3db`,
+  `dc6446bb`, `c6492dfb`, `eeea1a61`, `c004b799`, `92579e76`, and
+  `d0961278`.
+- Exact-range review: maintainability and test-quality review covered
+  `6b1b9bba..92579e76`. Two evidence gaps were accepted: body-scoped
+  visibility with document-origin arithmetic, and a physical-only product
+  label. `d0961278` added both cases; real renderer evidence passed, and the
+  widened `6b1b9bba..d0961278` re-review found no material findings.
+- Documentation closeout: this reviewed job, the completed research, and the
+  parent Phase 14.5 checklist record the accepted contract. Phase 15 remains
+  pending. The documentation-only commit containing these changes is the
+  durable completion boundary; no implementation or evidence work remains.
 
 ## Verdict
 
-**In progress.** Production work may begin only through the frozen-baseline and
-renderer-evidence gates above.
+**Continue; Phase 14.5 completed.** The one-pass mechanism, page-role policy,
+four-token contract, migration warning, Interactive teaching, renderer matrix,
+and exact-range reviews are complete. The parent plan remains active because
+Phase 15 guidance and lifecycle closeout are still pending.
 
 ## Related Research
 

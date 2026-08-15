@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Page Roles And Counter Semantics"
 created-date: 2026-08-15
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -34,28 +34,25 @@ Profile `schemaVersion` remains `3`. The current revision-3 canary contract has
 not been released as a later stable Profile contract, so Phase 14.5 extends
 that contract instead of inventing revision `4` from an internal plan boundary.
 
-The renderer mechanism is now settled as one pass. The final page-composition
-policy and production implementation remain in progress. The research must not
-be marked `completed` until real PDF evidence proves the accepted page-role and
-integrated counter matrix.
+The renderer mechanism, page-composition policy, production implementation,
+and integrated real-PDF matrix are complete. Phase 14.5 keeps one counter
+meaning per token and uses no revision-selected render compatibility mode.
 
 The distinction is:
 
-| Area                                                               | Current status        | Evidence gate                                                      |
-| ------------------------------------------------------------------ | --------------------- | ------------------------------------------------------------------ |
-| four token names and intended logical/physical separation          | settled design intent | prove exact values on real PDFs before implementation is accepted  |
-| `{pages}` logical-final formula                                    | settled design intent | prove the selected logical domain and arithmetic across page roles |
-| revision `3`, no legacy render mode, and bounded migration warning | settled design intent | cover declaration and warning conditions in focused tests          |
-| current metadata-title, ToC, and body behavior                     | proven baseline       | retain while implementing the accepted replacement                 |
-| metadata-title placement with and without a cover                  | preferred candidate   | compare body-block and explicit title-page outcomes                |
-| ToC repeating content and `toc.pageBreak` behavior                 | preferred candidate   | prove named-page transitions and accepted chrome policy            |
-| blank-page logical ownership                                       | unresolved            | extract page roles across forced blanks and repagination           |
-| one-pass or bounded multi-pass counter mechanism                   | settled: one pass     | rerun after production integration                                 |
+| Area                                                               | Current status      | Evidence gate                                              |
+| ------------------------------------------------------------------ | ------------------- | ---------------------------------------------------------- |
+| four token names and logical/physical separation                   | completed           | focused, integrated, and real-PDF evidence                 |
+| `{pages}` logical-final formula                                    | completed           | body/document origins and non-default arithmetic           |
+| revision `3`, no legacy render mode, and bounded migration warning | completed           | diagnostic, non-rewrite, and ANSI/plain tests              |
+| historical metadata-title, ToC, and body behavior                  | recorded baseline   | deterministic pre-change fixtures                          |
+| metadata-title placement with and without a cover                  | completed           | body-owned title and dedicated-cover matrix                |
+| ToC repeating content and `toc.pageBreak` behavior                 | completed           | named-page, repeating-content, and real-PDF evidence       |
+| inserted-blank ownership                                           | completed           | role extraction plus logical and physical counter evidence |
+| one-pass or bounded multi-pass counter mechanism                   | completed: one pass | frozen and integrated renderer matrices                    |
 
-“Settled design intent” does not mean implemented, renderer-proven, or shipped.
-If the evidence gate cannot support the intended semantics without an unsafe or
-unstable mechanism, Phase 14.5 must stop and revise this research rather than
-ship an approximate token meaning.
+The implementation passed the evidence gate without requiring a second render
+or an approximate token meaning.
 
 ## Why This Follow-Up Exists
 
@@ -92,9 +89,9 @@ this research. Phase 14.5 must convert the finding into deterministic fixtures,
 extracted PDF text, representative page images, and a recorded renderer
 matrix.
 
-## Current Page-Role Map
+## Historical Page-Role Baseline
 
-The built-in recipe currently orders the generated regions as:
+Before Phase 14.5, the built-in recipe ordered the generated regions as:
 
 ```text
 dedicated cover, when enabled
@@ -112,15 +109,13 @@ The corresponding behavior is:
 | ToC             | named `toc` page      | cleared                    | restored only by applicable page-number policy |
 | body            | named `body` page     | configured content applies | follows effective page-number policy           |
 
-Enabling the dedicated cover does not currently guarantee that an automatic
-metadata title disappears. A Profile can therefore produce cover, metadata-
-title, ToC, and body regions in sequence. That may be deliberate when
-`metadataTitle: show` forces a repeated title, but it is surprising as an
-automatic default.
+This baseline allowed a Profile to produce cover, metadata-title, ToC, and body
+regions in sequence. The dedicated fixtures retain that historical behavior so
+the accepted replacement is explicit rather than accidental.
 
-## Page Composition Direction To Prove
+## Accepted Page Composition Contract
 
-The preferred direction is that a title block remains a block, not an implicit
+The implemented direction keeps a title block as body content, not an implicit
 cover-like page:
 
 ```text
@@ -132,7 +127,7 @@ Cover -> ToC -> body content
          metadataTitle: auto suppresses a duplicate body title
 ```
 
-Under this direction:
+The settled rules are:
 
 - `metadataTitle: auto` renders in the body only when no dedicated cover or
   visible source title already represents it
@@ -142,21 +137,16 @@ Under this direction:
 - a separate title page is expressed through the dedicated cover feature, not
   created accidentally by a named-page transition
 
-Phase 14.5 must compare this direction with an explicit named title-page role
-before changing production composition. It must record pagination, ToC order,
-heading duplication, body-start hooks, and custom-Template compatibility for
-the accepted option.
+The dedicated cover remains the only explicit title-page role. Built-in and
+newly managed Templates use the same cover, ToC, and single-body ordering.
+Existing arbitrary Custom Templates retain template ownership and are not
+rewritten; their body-hook compatibility is validated at render preparation.
 
 ## ToC Configuration And Repeating Content
 
-The current named `toc` page clears all normal margin boxes. This means an
-enabled ToC does not receive configured repeating header or footer text. A
-document-scoped page number may be restored independently, while body-scoped
-page numbers remain hidden.
-
-That exception is not represented by an ordinary Profile choice. Phase 14.5
-must settle one explicit policy instead of leaving the result as a CSS side
-effect. The preferred candidate is:
+The named `toc` page first clears all margin boxes and then restores the
+configured effective repeating content. This makes the ownership boundary
+explicit while preserving the dedicated cover as the protected exception:
 
 | Target role         | Repeating header/footer    | Page-number visibility |
 | ------------------- | -------------------------- | ---------------------- |
@@ -165,16 +155,14 @@ effect. The preferred candidate is:
 | body                | configured content applies | document or body scope |
 | body metadata title | same as body               | same as body           |
 
-The cover remains the protected chrome-free exception. If evidence instead
-supports a clean ToC page, the Profile needs a clear public policy for that
-exception; Interactive users should not have to infer it from the internal
-term `pageChrome`.
+The cover remains the protected chrome-free exception. Interactive wording
+uses repeating page content rather than requiring users to understand the
+internal `pageChrome` term.
 
-The research must also audit `toc.pageBreak`. An `auto` value does not by
-itself prove that the ToC can share a physical page with adjacent content,
-because changing from a named `toc` page to a named `body` page can establish a
-page boundary. The final contract must distinguish an explicit break option
-from a break caused by page-style ownership.
+The `toc.pageBreak` audit confirms that explicit break declarations and named-
+page transitions are separate causes. In particular, `auto` or `none` does not
+promise that ToC and body content share one physical page when the renderer
+transitions from the named `toc` group to the named `body` group.
 
 ## Logical And Physical Counter Contract
 
@@ -192,8 +180,7 @@ any placeholder value.
 Hidden labels still count. For example, a protected cover may have no visible
 number while the following ToC is logical document page `2`.
 
-The four placeholders have one intended current-canary meaning each. Phase 14.5
-must prove these values before treating the contract as implemented:
+The four placeholders have one implemented current-canary meaning each:
 
 | Placeholder  | Meaning                         | Affected by `countFrom` | Affected by `start` and `increment` |
 | ------------ | ------------------------------- | ----------------------: | ----------------------------------: |
@@ -271,9 +258,9 @@ Redirected output, `NO_COLOR`, `--no-color`, and disabled runtime color produce
 the same readable text without ANSI sequences. Structured diagnostics carry
 severity, condition ID, message, and context without presentation escapes.
 
-The current shared color helper derives TTY support from `stdout`. Phase 14.5
-should make stream selection explicit before using it for `stderr` warnings,
-while retaining `stdout` as the compatibility default for existing callers.
+The shared color helper now accepts an explicit stream. Warning presentation
+uses `stderr`, while `stdout` remains the compatibility default for existing
+callers.
 
 ## Revision-3 Feature Registry Implications
 
@@ -289,12 +276,11 @@ supported content remains authoritative.
 
 ## Renderer Investigation
 
-WeasyPrint directly exposes physical page counters, but the current CSS also
-resets page-based numbering for logical body sequences. Phase 14.5 must prove
-whether independent logical-current, logical-final, physical-current, and
-physical-total values can coexist in one pass.
+WeasyPrint directly exposes physical page counters. Phase 14.5 proved that a
+Profile-owned logical counter and one logical-final target can coexist with
+those physical counters in one pass.
 
-The evidence matrix must cover:
+The evidence matrix covered:
 
 - cover enabled and disabled
 - metadata title `auto`, `show`, and `hide`
@@ -306,9 +292,9 @@ The evidence matrix must cover:
 - all four placeholders alone and in one custom label
 - supported WeasyPrint candidates from the existing renderer catalog
 
-If one pass cannot produce the contract, research must define a bounded second
-pass with a stability guard before implementation. It must not assume that a
-changed margin-box label can never affect pagination.
+Because one pass produced the contract across the frozen candidates, no second
+pass, pagination-stability loop, or intermediate final-output replacement was
+introduced.
 
 ### Accepted One-Pass Evidence
 
@@ -332,21 +318,17 @@ The mechanism uses one body page group, a dedicated logical page counter, and
 pagination-stability loop, or intermediate final-output replacement is needed.
 
 This establishes a production requirement: the built-in recipe or Custom
-Template handoff must provide exactly one unambiguous body page group and one
-logical-final target owned by that group. Missing or ambiguous ownership must
-fail validation rather than silently falling back to physical counters. The
-integrated built-in and Custom Template lanes must prove these hooks before the
-mechanism is treated as shipped.
+Template handoff provides exactly one unambiguous body page group and one
+logical-final target owned by that group. Missing or ambiguous ownership fails
+validation rather than silently falling back to physical counters.
 
-The same run also passed the pre-existing renderer scenarios, built-in and
-custom-Template product-compatibility launches, Project launches, dependency
-checks, and the actual CLI launch boundary. Those historical paths did not yet
-exercise the new logical-final target and body-group contract. Representative
+The same baseline run also passed the pre-existing renderer scenarios, built-
+in and custom-Template product-compatibility launches, Project launches,
+dependency checks, and the actual CLI launch boundary. Representative
 page images from the isolated experiment showed stable A5 page dimensions,
 unclipped combined labels, a chrome-free cover and ToC, and no unexpected PDF
 page-label metadata. Historical product evidence continued to expose the old
-mixed-domain label, confirming that production replacement remains necessary
-rather than already shipped.
+mixed-domain label, confirming why production replacement was necessary.
 
 The reproducible public invocation is:
 
@@ -365,18 +347,44 @@ and harness digest
 They can be recomputed through `pageNumberRendererContractDigest()` and
 `PAGE_NUMBER_RENDERER_HARNESS_DIGEST` in the existing contract modules.
 Visual inspection covered experiment pages 1, 2, 3, and 5 plus built-in
-product pages 1, 2, and 5. This confirmed stable fixture page order only; it did
-not accept the still-pending production page-role policy. The successful
+product pages 1, 2, and 5. The successful
 laboratory and both resolved failed attempts were then closed through the
 ownership-guarded cleanup command.
 
-The verdict is **Continue** with the one-pass mechanism. This result settles
-the mechanism only; Phase 14.5 still must implement the accepted page-role
-policy and rerun the integrated matrix before the research can complete.
+The baseline verdict was **Continue** with the one-pass mechanism.
 
-## Phase 14.5 Implementation Handoff
+### Integrated Production Evidence
 
-Phase 14.5 should proceed in this order:
+After implementation, the guarded laboratory reran the product and Project
+paths on WeasyPrint `65.1`, `68.0`, and `69.0`. Every candidate passed with
+catalog digest
+`7b3761bff1b9300739936f7ccbb2ab032ea0cd1c525e26a58f451923d987cc59`
+and harness digest
+`dbf41562c71ee837861b4e68507fa295613ed98df840c0a4ef90b65ced8718d8`.
+
+The accepted product cases establish:
+
+- body-scoped labels with document-origin arithmetic: cover and ToC labels are
+  hidden, while physical body pages 3, 4, and 5 show logical values 4, 6, and 8
+  with logical final 8 and physical total 5
+- body-origin arithmetic with `start: 5` and `increment: 2`: the ToC remains
+  unlabeled and three body pages show 5, 7, and 9 with logical final 9
+- a physical-only label on a renderer-inserted blank: the three pages show
+  physical values 1/3, 2/3, and 3/3 without requiring a logical-final target
+- no-cover automatic metadata title ownership: the ToC is physical page 1 and
+  the title appears only inside the body on physical page 2; configured header
+  and footer content repeats without overlap
+- Project bundle and explicit-role paths agree on page roles and labels
+
+Representative images confirmed a chrome-free cover, configured ToC chrome,
+body-only label visibility, an unclipped physical-only blank-page label, and a
+body-owned automatic metadata title. PDF page-label metadata remained the
+default physical sequence. Every retained laboratory was closed through the
+guarded cleanup path.
+
+## Phase 14.5 Implementation Record
+
+Phase 14.5 completed in this order:
 
 1. freeze current page-role and ToC behavior in deterministic tests
 2. run the focused renderer spike for page roles and four counter values
@@ -390,15 +398,19 @@ Phase 14.5 should proceed in this order:
 10. complete focused, Markdown PDF, repository-wide, static, build, format,
     and exact-range review gates
 
-## Completion Criteria
+## Completion Evidence
 
-This research can become `completed` only when:
+This research is `completed` because:
 
-- the accepted page-role and ToC policy is recorded
+- the accepted page-role and ToC policy is implemented and recorded
 - all four placeholder values are proven from real PDFs
-- single-pass or bounded multi-pass ownership is settled
+- one-pass ownership is settled
 - compatibility warning and no-color behavior are specified and tested
-- Phase 14.5 implementation and exact-range review evidence are linked
+- exact-range maintainability and test-quality review covered
+  `6b1b9bba..d0961278` after two accepted evidence gaps were fixed, and the
+  widened re-review found no material findings
+- the [Phase 14.5 job record][phase-14-5-job] contains the validation, commit,
+  renderer, visual-review, cleanup, and closeout ledger
 
 ## Related Research
 
@@ -411,6 +423,7 @@ This research can become `completed` only when:
 ## Related Plans
 
 - [Markdown PDF Page-Number Configuration Implementation][page-number-plan]
+- [Phase 14.5 Page Roles And Counters Job][phase-14-5-job]
 
 ## References
 
@@ -419,6 +432,7 @@ This research can become `completed` only when:
 [^recipe-source]: [Built-in Markdown PDF recipe](../../src/cli/markdown-pdf/recipe.ts) and [page-chrome CSS generator](../../src/cli/markdown-pdf/profile/page-chrome.ts)
 
 [interactive-research]: research-2026-08-14-markdown-pdf-interactive-page-number-and-page-chrome-ux.md
+[phase-14-5-job]: ../plans/jobs/2026-08-15-markdown-pdf-page-number-phase-14-5-page-roles-and-counters.md
 [page-number-plan]: ../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md
 [page-number-research]: research-2026-08-11-markdown-pdf-page-number-configuration.md
 [pattern-language-research]: research-2026-08-11-pattern-placeholder-and-template-language-guide.md
