@@ -1,4 +1,14 @@
-export type TemplateCandidateScope = "root" | "timestamp" | "date";
+export type TemplateCompletionKind =
+  | "rename-template"
+  | "markdown-pdf-page-label"
+  | "markdown-pdf-repeating-content";
+
+type RenameTemplateCandidateScope = "root" | "timestamp" | "date";
+
+export type TemplateCandidateScope =
+  | RenameTemplateCandidateScope
+  | "page-label"
+  | "repeating-content";
 
 export interface TemplateCompletionMatch {
   candidates: string[];
@@ -29,7 +39,16 @@ const TIMESTAMP_TEMPLATE_CANDIDATES = [
 
 const DATE_TEMPLATE_CANDIDATES = ["{date}", "{date_local}", "{date_utc}"] as const;
 
-function resolveTemplateCandidateScope(fragment: string): TemplateCandidateScope {
+const MARKDOWN_PDF_PAGE_LABEL_CANDIDATES = ["{page}", "{pages}"] as const;
+
+const MARKDOWN_PDF_REPEATING_CONTENT_CANDIDATES = [
+  "{title}",
+  "{company}",
+  "{author}",
+  "{date}",
+] as const;
+
+function resolveRenameTemplateCandidateScope(fragment: string): RenameTemplateCandidateScope {
   if (fragment.startsWith("{timestamp")) {
     return "timestamp";
   }
@@ -39,7 +58,7 @@ function resolveTemplateCandidateScope(fragment: string): TemplateCandidateScope
   return "root";
 }
 
-function getCandidatesForScope(scope: TemplateCandidateScope): readonly string[] {
+function getRenameTemplateCandidates(scope: RenameTemplateCandidateScope): readonly string[] {
   if (scope === "timestamp") {
     return TIMESTAMP_TEMPLATE_CANDIDATES;
   }
@@ -49,7 +68,38 @@ function getCandidatesForScope(scope: TemplateCandidateScope): readonly string[]
   return ROOT_TEMPLATE_CANDIDATES;
 }
 
-export function resolveTemplateCompletionMatch(value: string): TemplateCompletionMatch | undefined {
+function getTemplateCandidates(
+  kind: TemplateCompletionKind,
+  fragment: string,
+): {
+  candidates: readonly string[];
+  scope: TemplateCandidateScope;
+} {
+  if (kind === "markdown-pdf-page-label") {
+    return {
+      candidates: MARKDOWN_PDF_PAGE_LABEL_CANDIDATES,
+      scope: "page-label",
+    };
+  }
+
+  if (kind === "markdown-pdf-repeating-content") {
+    return {
+      candidates: MARKDOWN_PDF_REPEATING_CONTENT_CANDIDATES,
+      scope: "repeating-content",
+    };
+  }
+
+  const scope = resolveRenameTemplateCandidateScope(fragment);
+  return {
+    candidates: getRenameTemplateCandidates(scope),
+    scope,
+  };
+}
+
+export function resolveTemplateCompletionMatch(
+  value: string,
+  kind: TemplateCompletionKind = "rename-template",
+): TemplateCompletionMatch | undefined {
   const fragmentStart = value.lastIndexOf("{");
   const lastClose = value.lastIndexOf("}");
   if (fragmentStart < 0 || fragmentStart < lastClose) {
@@ -61,10 +111,8 @@ export function resolveTemplateCompletionMatch(value: string): TemplateCompletio
     return undefined;
   }
 
-  const scope = resolveTemplateCandidateScope(fragment);
-  const candidates = getCandidatesForScope(scope).filter((candidate) =>
-    candidate.startsWith(fragment),
-  );
+  const registry = getTemplateCandidates(kind, fragment);
+  const candidates = registry.candidates.filter((candidate) => candidate.startsWith(fragment));
   if (candidates.length === 0) {
     return undefined;
   }
@@ -73,8 +121,8 @@ export function resolveTemplateCompletionMatch(value: string): TemplateCompletio
     candidates,
     fragment,
     fragmentStart,
-    scope,
-    scopeKey: `${scope}:${fragment}`,
+    scope: registry.scope,
+    scopeKey: `${registry.scope}:${fragment}`,
   };
 }
 

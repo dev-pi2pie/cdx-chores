@@ -347,14 +347,14 @@ repeating page content.
 
 The page-number transition contract is:
 
-| Transition                  | Outcome, arithmetic, label, and position behavior                                                                                  |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Fresh -> disabled           | Skip dependent prompts; retain the normal inert Profile defaults                                                                   |
-| Fresh -> enabled            | Default to body/body, `start: 1`, `increment: 1`, `Page {page}`, and bottom center                                                 |
-| Enabled -> disabled         | Change only `enabled`; retain every valid inert page-number value and release the owned position                                   |
-| Disabled -> enabled         | Ask outcome, label, and position again; fix arithmetic to `1`/`1`; default each directly representable choice from retained values |
-| Enabled -> revise enabled   | Use the same guided prompts and defaults as disabled -> enabled                                                                    |
-| Persisted Profile -> revise | Apply the same rules as same-session revision; do not treat persisted values as less authoritative                                 |
+| Transition                                     | Outcome, arithmetic, label, and position behavior                                                                                         |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Fresh -> disabled                              | Skip dependent prompts; retain the normal inert Profile defaults                                                                          |
+| Fresh -> enabled                               | Default to body/body, `start: 1`, `increment: 1`, `Page {page}`, and bottom center                                                        |
+| Enabled -> disabled                            | Change only `enabled`; retain every valid inert page-number value and release the owned position                                          |
+| Disabled -> enabled                            | Ask outcome, label, and position again; fix arithmetic to `1`/`1`; default each directly representable choice from retained values        |
+| Enabled -> revise enabled                      | Use the same guided prompts and defaults as disabled -> enabled                                                                           |
+| Accepted candidate -> save/reload verification | Preserve the compiled Profile through serialization and normalization; this is verification, not another Interactive revision entry point |
 
 Outcome defaults retain body/body or document/document when the current values
 match those guided choices. An advanced scope/origin combination cannot be
@@ -365,6 +365,12 @@ revision deliberately replaces it. `start` and `increment` likewise return to
 Label revision preselects `Page 1` for `Page {page}`, `1` for `{page}`, and
 `Custom...` for every other value. The custom route exposes that value as
 editable initial input. Position defaults to the valid current position.
+
+Interactive currently revises only the accepted candidate retained within the
+same `formal-guide` authoring session. Loading an arbitrary saved Profile back
+into Interactive revision would be a separate product flow and is outside this
+phase. Save/reload tests prove persistence and normalization compatibility
+without claiming that entry point exists.
 
 Repeating-content revision preselects non-reserved positions that already
 contain text. Leaving a selected value unchanged preserves it; unselecting a

@@ -183,6 +183,144 @@ describe("text inline prompt controller", () => {
     expect(stdout.text).toContain("\x1b[2mutc}\x1b[22m");
   });
 
+  test("Markdown PDF completion starts with the full ghost then completes typed fragments", async () => {
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    const prompt = promptTextInlineGhost({
+      message: "Page-number label",
+      ghostHintLabel: "Page-number label suggestion",
+      ghostText: "Page {page} of {pages}",
+      completionKind: "markdown-pdf-page-label",
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: (value) => (value.includes("{page}") ? true : "Include {page}"),
+    });
+
+    await nextRenderTick();
+    expect(stdout.text).toContain("\x1b[2mPage {page} of {pages}\x1b[22m");
+
+    stdin.emit("keypress", "{", { name: "{" });
+    stdin.emit("keypress", "p", { name: "p" });
+    await nextRenderTick();
+    expect(stdout.text).toContain("Page-number label {p");
+    expect(stdout.text).toContain("\x1b[2mage}\x1b[22m");
+
+    stdin.emit("keypress", "", { name: "right" });
+    stdin.emit("keypress", "\r", { name: "return" });
+    await expect(prompt).resolves.toBe("{page}");
+  });
+
+  test("Markdown PDF completion cycles only within its active context", async () => {
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    const prompt = promptTextInlineGhost({
+      message: "Repeating content",
+      ghostText: "{title}",
+      completionKind: "markdown-pdf-repeating-content",
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: (value) => (value.length > 0 ? true : "Required"),
+    });
+
+    await nextRenderTick();
+    stdin.emit("keypress", "{", { name: "{" });
+    await nextRenderTick();
+    stdin.emit("keypress", "", { name: "down" });
+    await nextRenderTick();
+    expect(stdout.text).toContain("\x1b[2mcompany}\x1b[22m");
+
+    stdin.emit("keypress", "\t", { name: "tab" });
+    stdin.emit("keypress", "\r", { name: "return" });
+    await expect(prompt).resolves.toBe("{company}");
+  });
+
+  test("restoring the fresh full ghost resets the fragment candidate cycle", async () => {
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    const prompt = promptTextInlineGhost({
+      message: "Page-number label",
+      ghostText: "Page {page} of {pages}",
+      completionKind: "markdown-pdf-page-label",
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: (value) => (value.includes("{page}") ? true : "Include {page}"),
+    });
+
+    await nextRenderTick();
+    stdin.emit("keypress", "{", { name: "{" });
+    stdin.emit("keypress", "", { name: "down" });
+    await nextRenderTick();
+    expect(stdout.text).toContain("\x1b[2mpages}\x1b[22m");
+
+    stdin.emit("keypress", "", { ctrl: true, name: "u" });
+    await nextRenderTick();
+    const writesAfterReset = stdout.writes.length;
+    stdin.emit("keypress", "{", { name: "{" });
+    await nextRenderTick();
+    expect(stdout.writes.slice(writesAfterReset).join("")).toContain("\x1b[2mpage}\x1b[22m");
+
+    stdin.emit("keypress", "", { name: "right" });
+    stdin.emit("keypress", "\r", { name: "return" });
+    await expect(prompt).resolves.toBe("{page}");
+  });
+
+  test("initial values are editable and suppress the full static ghost", async () => {
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    const prompt = promptTextInlineGhost({
+      message: "Page-number label",
+      ghostHintLabel: "Page-number label suggestion",
+      ghostText: "Page {page} of {pages}",
+      initialValue: "Page {page}",
+      completionKind: "markdown-pdf-page-label",
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: (value) => (value.includes("{page}") ? true : "Include {page}"),
+    });
+
+    await nextRenderTick();
+    expect(stdout.text).toContain("Page-number label Page {page}");
+    expect(stdout.text).not.toContain("\x1b[2mPage {page} of {pages}\x1b[22m");
+    expect(stdout.text).not.toContain("Page-number label suggestion");
+
+    stdin.emit("keypress", "\b", { name: "backspace" });
+    stdin.emit("keypress", "\b", { name: "backspace" });
+    await nextRenderTick();
+    expect(stdout.text).toContain("\x1b[2me}\x1b[22m");
+
+    stdin.emit("keypress", "", { name: "right" });
+    stdin.emit("keypress", "!", { name: "!" });
+    stdin.emit("keypress", "\r", { name: "return" });
+    await expect(prompt).resolves.toBe("Page {page}!");
+  });
+
+  test("visible Markdown PDF ghost remains a suggestion until it is accepted", async () => {
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    const validatedValues: string[] = [];
+    const prompt = promptTextInlineGhost({
+      message: "Page-number label",
+      ghostText: "Page {page}",
+      completionKind: "markdown-pdf-page-label",
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: (value) => {
+        validatedValues.push(value);
+        return value.length > 0 ? true : "Required";
+      },
+    });
+
+    await nextRenderTick();
+    stdin.emit("keypress", "\r", { name: "return" });
+    await nextRenderTick();
+    expect(validatedValues).toEqual([""]);
+
+    stdin.emit("keypress", "", { name: "right" });
+    stdin.emit("keypress", "\r", { name: "return" });
+    await expect(prompt).resolves.toBe("Page {page}");
+    expect(validatedValues).toEqual(["", "Page {page}"]);
+  });
+
   test("promptTextInlineGhost prints help lines once while rerendering only the input line", async () => {
     const stdin = new FakePromptReadStream();
     const stdout = new FakePromptWriteStream();
@@ -307,6 +445,31 @@ describe("text inline prompt controller", () => {
     expect(stdout.text).toContain("\x1b[?25h");
   });
 
+  test("promptTextInlineGhost cancels and restores raw mode with an initial value", async () => {
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    const prompt = promptTextInlineGhost({
+      message: "Page-number label",
+      ghostText: "Page {page} of {pages}",
+      initialValue: "Page {page}",
+      completionKind: "markdown-pdf-page-label",
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: (value) => (value.includes("{page}") ? true : "Include {page}"),
+    });
+
+    await nextRenderTick();
+    stdin.emit("keypress", "\x03", { ctrl: true, name: "c" });
+
+    await expect(prompt).rejects.toMatchObject({
+      name: "ExitPromptError",
+      message: "User aborted prompt",
+    });
+    expect(stdin.rawModeCalls).toEqual([true, false]);
+    expect(stdin.pauseCalls).toBe(1);
+    expect(stdout.text).toContain("\x1b[?25h");
+  });
+
   test("promptTextInlineGhost uses display width for non-ASCII ghost cursor positioning", async () => {
     const stdin = new FakePromptReadStream();
     const stdout = new FakePromptWriteStream();
@@ -425,5 +588,72 @@ describe("text inline prompt controller", () => {
     expect(stdout.text).toContain(
       "Template suggestion (Right arrow to accept): {timestamp}-{stem}",
     );
+  });
+
+  test("promptTextWithGhost passes the initial value to simple input as its default", async () => {
+    let receivedDefault: unknown;
+    const stdout = new FakePromptWriteStream();
+    const result = await promptTextWithGhost({
+      message: "Page-number label",
+      helpLines: ["{page}: current logical page number"],
+      ghostHintLabel: "Page-number label suggestion",
+      ghostText: "Page {page} of {pages}",
+      initialValue: "Page {page}",
+      completionKind: "markdown-pdf-page-label",
+      runtimeConfig: {
+        mode: "simple",
+        autocomplete: {
+          enabled: true,
+          minChars: 1,
+          maxSuggestions: 12,
+          includeHidden: false,
+        },
+      },
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: (value) => (value.includes("{page}") ? true : "Include {page}"),
+      promptImpls: {
+        simpleInput: async (options) => {
+          receivedDefault = options.default;
+          return String(options.default);
+        },
+      },
+    });
+
+    expect(result).toBe("Page {page}");
+    expect(receivedDefault).toBe("Page {page}");
+    expect(stdout.text).toContain("{page}: current logical page number");
+    expect(stdout.text).not.toContain("Page-number label suggestion");
+  });
+
+  test("promptTextWithGhost prints the fresh Markdown PDF suggestion in simple mode", async () => {
+    const stdout = new FakePromptWriteStream();
+    const result = await promptTextWithGhost({
+      message: "Page-number label",
+      helpLines: ["{page}: current logical page number"],
+      ghostHintLabel: "Page-number label suggestion",
+      ghostText: "Page {page} of {pages}",
+      completionKind: "markdown-pdf-page-label",
+      runtimeConfig: {
+        mode: "simple",
+        autocomplete: {
+          enabled: true,
+          minChars: 1,
+          maxSuggestions: 12,
+          includeHidden: false,
+        },
+      },
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: (value) => (value.includes("{page}") ? true : "Include {page}"),
+      promptImpls: {
+        simpleInput: async (options) => {
+          expect(options.default).toBeUndefined();
+          return "Page {page}";
+        },
+      },
+    });
+
+    expect(result).toBe("Page {page}");
+    expect(stdout.text).toContain("{page}: current logical page number");
+    expect(stdout.text).toContain("Page-number label suggestion: Page {page} of {pages}");
   });
 });

@@ -66,8 +66,9 @@ override, artifact ownership, or Codex Assistant signal contract.
   suggestion.
 - On enablement or re-enablement, collect outcome, label, and position; compile
   `start` and `increment` to `1`. Default representable outcome, label, and
-  position choices from retained or persisted values. An accepted guided
-  revision replaces advanced sequence values it cannot represent.
+  position choices from values retained in the current authoring session. An
+  accepted guided revision replaces advanced sequence values it cannot
+  represent.
 - Keep existing metadata placeholders compatible in custom labels while
   teaching only `{page}`, `{pages}`, and literal label text in the common help.
 - Thread the existing Interactive path prompt context into fresh and revision
@@ -87,9 +88,9 @@ override, artifact ownership, or Codex Assistant signal contract.
 
 - [x] Reopen the Phase 14 research and parent plan without deleting the first
       checkpoint or its evidence.
-- [ ] Inventory the shared ghost prompt and current formal-guide state and
+- [x] Inventory the shared ghost prompt and current formal-guide state and
       revision seams before editing production code.
-- [ ] Extend the shared ghost helper and candidate resolver with initial-value,
+- [x] Extend the shared ghost helper and candidate resolver with initial-value,
       Markdown PDF completion-context, advanced-key, and simple-fallback
       regressions while preserving rename behavior.
 - [ ] Implement and validate user-facing terminology and the shared
@@ -150,6 +151,21 @@ CSS, scenario inputs, or evidence acceptance changes.
 - Shared ghost interaction: the reviewed documentation checkpoint defining
   completion contexts, advanced and simple behavior, revision defaults,
   runtime-context plumbing, and focused validation ownership.
+- Implementation inventory: shared prompt changes are isolated to the inline
+  controller, candidate resolver, and focused tests. Formal-guide production
+  changes are isolated to prompt/types/collection exports, authoring context,
+  and review wording; compilation, Profile normalization, diagnostics, and
+  renderer CSS remain unchanged.
+- Focused baseline: 125 shared-prompt, formal-guide, deterministic, and
+  lifecycle tests passed with 548 assertions before implementation.
+- Shared prompt infrastructure: optional initial values, isolated Markdown PDF
+  completion contexts, fresh static ghosts, revision fragment completion,
+  advanced-key behavior, simple fallback, cycle reset, and cancellation cleanup
+  passed 28 focused tests with 85 assertions plus TypeScript, scoped lint and
+  formatting, and diff integrity.
+- Saved Profile coverage remains persistence verification. Interactive does not
+  load an arbitrary persisted Profile into `formal-guide` revision, and this
+  phase adds no such entry point.
 - Implementation, validation, smoke, review, and closeout evidence: pending.
 
 ## Related Research

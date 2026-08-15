@@ -44,4 +44,39 @@ describe("text template candidates", () => {
       scopeKey: "date:{date_",
     });
   });
+
+  test("keeps page-label candidates isolated from rename and metadata tokens", () => {
+    expect(resolveTemplateCompletionMatch("Page {p", "markdown-pdf-page-label")).toEqual({
+      candidates: ["{page}", "{pages}"],
+      fragment: "{p",
+      fragmentStart: 5,
+      scope: "page-label",
+      scopeKey: "page-label:{p",
+    });
+    expect(resolveTemplateCompletionMatch("{timestamp", "markdown-pdf-page-label")).toBeUndefined();
+    expect(resolveTemplateCompletionMatch("{title", "markdown-pdf-page-label")).toBeUndefined();
+  });
+
+  test("keeps repeating-content candidates isolated from page and rename tokens", () => {
+    expect(resolveTemplateCompletionMatch("{", "markdown-pdf-repeating-content")).toEqual({
+      candidates: ["{title}", "{company}", "{author}", "{date}"],
+      fragment: "{",
+      fragmentStart: 0,
+      scope: "repeating-content",
+      scopeKey: "repeating-content:{",
+    });
+    expect(
+      resolveTemplateCompletionMatch("{page", "markdown-pdf-repeating-content"),
+    ).toBeUndefined();
+    expect(
+      resolveTemplateCompletionMatch("{timestamp", "markdown-pdf-repeating-content"),
+    ).toBeUndefined();
+  });
+
+  test("preserves rename-template resolution as the default completion context", () => {
+    expect(resolveTemplateCompletionMatch("{page")).toBeUndefined();
+    expect(resolveTemplateCompletionMatch("{t")).toEqual(
+      resolveTemplateCompletionMatch("{t", "rename-template"),
+    );
+  });
 });
