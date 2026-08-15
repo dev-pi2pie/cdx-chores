@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Page-Number Configuration"
 created-date: 2026-08-11
-modified-date: 2026-08-14
+modified-date: 2026-08-15
 status: in-progress
 agent: codex
 ---
@@ -16,6 +16,14 @@ The contract should add explicit visibility and sequence controls, preserve the
 current cover-counting behavior by default, allow an explicit body-relative
 sequence, make page-number wording and page-chrome layout reviewable, and avoid
 assigning Profile-owned render policy to Template generation.
+
+> **Phase 14.5 follow-up:** The physical `{pages}` contract recorded here was
+> implemented and validated through Phase 14, then a post-implementation smoke
+> exposed an implicit metadata-title page, hidden ToC repeating content, and a
+> logical-versus-physical denominator mismatch. The current investigation is
+> [Markdown PDF Page Roles And Counter Semantics][page-role-counter-research].
+> It supersedes this document's placeholder-total and page-role direction
+> without erasing the historical implementation evidence.
 
 ## Research At A Glance
 
@@ -328,9 +336,9 @@ Renaming the key would add migration complexity without adding capability.
 Documentation should call it the “page-number label template” while retaining
 `format`. The first slice keeps it Profile-only, with `{page}` as its default.
 
-In this contract, `{pages}` retains its physical PDF page-count meaning. It is
-not a logical final page number when arithmetic is customized or body origin
-excludes pre-body pages. For example:
+In the contract implemented before Phase 14.5, `{pages}` retained its physical
+PDF page-count meaning. It was not a logical final page number when arithmetic
+was customized or body origin excluded pre-body pages. For example:
 
 ```text
 countFrom: document
@@ -341,10 +349,11 @@ physical pages: 5
 possible final label: Page 8 of 5
 ```
 
-The CLI should therefore warn when `{pages}` is combined with non-default
-arithmetic or `countFrom: body`. The value remains accepted, but `{page}`-only
-wording is the recommended default. A logical final-number placeholder remains
-unsupported until separate renderer or second-pass evidence exists.
+The CLI therefore warned when `{pages}` was combined with non-default
+arithmetic or `countFrom: body`. Phase 14.5 replaces that warning and evaluates
+`{pages}` as the final logical number alongside physical `{pdfPage}` and
+`{pdfPages}` terms. The new research owns the required renderer or bounded
+second-pass evidence.
 
 #### Position And Collisions
 
@@ -497,6 +506,12 @@ it does not make a declared Profile revision an exact compatibility gate. The
 stable `v0.1.6` Profile contract is the unversioned revision-2 baseline; the
 additive canary contract is revision `3`, the first emitted declaration.
 
+The row preserving physical `{pages}` meaning is historical after Phase 14.5.
+The new direction intentionally documents one canary breaking change, keeps
+Profile revision `3`, provides no legacy rendering mode, and limits migration
+output to an explicit revision-1 or revision-2 Profile whose active label uses
+`{pages}`.
+
 ### Diagnostic And Fallback Contract
 
 Warnings are successful diagnostics, not partial failures. In the plain CLI,
@@ -519,6 +534,10 @@ matrix is:
 | `scope: body`, `countFrom: document` uses legacy Template inference | success    | one warning per document                   |
 | `countFrom: body` has no provable body-start hook                   | hard error | once, before rendering                     |
 | renderer lacks an effectively requested advanced control            | hard error | once, before rendering                     |
+
+The first row records the pre-Phase-14.5 diagnostic. The follow-up replaces it
+with the bounded revision-1/revision-2 migration warning defined by the
+[page-role and counter research][page-role-counter-research].
 
 Renderer gating is based on effective behavior after valid Profile and CLI
 precedence, not merely on whether a default-valued key was written. The first
@@ -845,6 +864,7 @@ to a future canary design.
 - [Profiles, Fonts, And Page Chrome][profile-page-chrome-research]
 - [Markdown PDF Profile Revision And Feature Compatibility][profile-revision-research]
 - [Markdown PDF Interactive Page-Number And Page-Chrome UX][interactive-page-number-ux]
+- [Markdown PDF Page Roles And Counter Semantics][page-role-counter-research]
 - [Pattern, Placeholder, And Template Language Guide][pattern-language-research]
 
 ## Related Plans
@@ -886,6 +906,7 @@ to a future canary design.
 [markdown-pdf-usage]: ../guides/markdown-pdf-usage.md
 [interactive-page-number-ux]: research-2026-08-14-markdown-pdf-interactive-page-number-and-page-chrome-ux.md
 [page-number-plan]: ../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md
+[page-role-counter-research]: research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md
 [pattern-language-research]: research-2026-08-11-pattern-placeholder-and-template-language-guide.md
 [profile-helper]: ../guides/markdown-pdf-codex-profile-helper.md
 [profile-page-chrome-research]: research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md

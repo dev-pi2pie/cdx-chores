@@ -1,6 +1,7 @@
 ---
 title: "Pattern, Placeholder, and Template Language Guide"
 created-date: 2026-08-11
+modified-date: 2026-08-15
 status: draft
 agent: codex
 ---
@@ -261,7 +262,7 @@ handoff:
 | Contract area        | Required handoff                                                                     |
 | -------------------- | ------------------------------------------------------------------------------------ |
 | schema               | shipped field names, values, defaults, and invalid combinations                      |
-| numbering model      | `scope` visibility, `countFrom` origin, arithmetic, and `{pages}` physical meaning   |
+| numbering model      | `scope`, `countFrom`, arithmetic, and four logical/physical counters                 |
 | placeholder language | reserved terms, metadata precedence, missing/unknown/braces, and unsupported escapes |
 | diagnostics          | warning/error conditions, channel, status, frequency, and structured output          |
 | Template behavior    | document-origin warning inference and body-origin missing-hook hard failure          |
@@ -272,6 +273,12 @@ The handoff must also confirm that `format` remains Profile-only, short
 placeholders remain supported, and first-slice namespaces are not shipped. The
 guide should link the stable handoff rather than copy exploratory research
 prose.
+
+Phase 14.5 now owns that handoff. The guide must not publish the historical
+physical meaning of `{pages}` as current. It should wait for
+[Markdown PDF Page Roles And Counter Semantics][page-role-counter-research] to
+prove `{page}`, `{pages}`, `{pdfPage}`, and `{pdfPages}` across cover, metadata-
+title, ToC, body, and blank-page roles.
 
 ### Completion Criteria
 
@@ -287,6 +294,7 @@ prose.
 ## Related Research
 
 - [Markdown PDF Page-Number Configuration][page-number-research]
+- [Markdown PDF Page Roles And Counter Semantics][page-role-counter-research]
 - [Rename Pattern Router And Docs UX V1][rename-pattern-research]
 
 ## References
@@ -295,6 +303,7 @@ prose.
 [markdown-pdf-guide]: ../guides/markdown-pdf-usage.md
 [markdown-pdf-template-guide]: ../guides/markdown-pdf-codex-template-helper.md
 [page-number-research]: research-2026-08-11-markdown-pdf-page-number-configuration.md
+[page-role-counter-research]: research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md
 [rename-common-guide]: ../guides/rename-common-usage.md
 [rename-pattern-research]: archive/research-2026-02-27-rename-pattern-router-and-docs-ux-v1.md
 [rename-scope-guide]: ../guides/rename-scope-and-codex-capability-guide.md

@@ -19,6 +19,14 @@ Direct and Interactive rendering retain the existing one-render enablement
 override, and Codex-assisted page-number intent remains a separate future
 design problem.
 
+> **Post-implementation follow-up:** Phase 14 completed against the placeholder
+> and page-role contract implemented at that checkpoint. A later renderer smoke
+> exposed an implicit metadata-title page, hidden ToC repeating content, and a
+> logical-versus-physical `{pages}` mismatch. The current direction is owned by
+> [Markdown PDF Page Roles And Counter Semantics][page-role-counter-research]
+> and plan Phase 14.5; the completed interaction and lifecycle evidence in this
+> document remains valid.
+
 ## Why This Follow-Up Exists
 
 The parent [Markdown PDF Page-Number Configuration][page-number-research]
@@ -189,7 +197,9 @@ Custom page-number label
 > Page {page} of {pages}
 
 {page} is the current logical page number.
-{pages} is the total physical number of pages in the PDF.
+At the Phase 14 checkpoint, `{pages}` was the total physical number of pages in
+the PDF. Phase 14.5 supersedes that renderer meaning while preserving this
+section as the interaction contract implemented and tested by Phase 14.
 ```
 
 The ghost is a suggestion, not a persisted value. The user must deliberately
@@ -208,10 +218,11 @@ label prompt should not promote metadata as another page-number concept, but
 must preserve a value such as `{company} — Page {page} of {pages}` during
 revision and save/reload testing.[^metadata]
 
-No new total token belongs in this phase. `{pages}` retains its existing
-physical-document meaning. A future logical or numbered-body total would need
-separate renderer and template-language research rather than overloading the
-current token.[^placeholder-contract]
+No new total token belonged in Phase 14. At that checkpoint, `{pages}` retained
+its physical-document meaning. The required separate renderer and template-
+language research now exists as
+[Markdown PDF Page Roles And Counter Semantics][page-role-counter-research]; it
+owns the later four-token contract without reopening this completed UX phase.[^placeholder-contract]
 
 ## Shared Ghost Interaction Contract
 
@@ -259,7 +270,7 @@ with the same validation:
 ```text
 Page-number label suggestion: Page {page} of {pages}
 {page}: current logical page number
-{pages}: total physical PDF pages
+{pages}: total physical PDF pages at the Phase 14 checkpoint
 
 Custom page-number label:
 ```
@@ -500,7 +511,8 @@ usability refinement before Phase 15 guidance closeout.
 - Use page numbers and repeating page content as the user-facing concepts.
 - Present one six-position layout and reserve the enabled page-number slot.
 - Offer `Page 1`, `1`, and ghost-guided custom page-number labels.
-- Keep `{pages}` as the physical PDF total and defer logical-total semantics.
+- At the Phase 14 checkpoint, keep `{pages}` as the physical PDF total and
+  defer logical-total semantics to separate renderer research.
 - Teach existing metadata placeholders through non-authoritative ghost hints.
 - Preserve advanced sequence, style, separator, and deliberate-collision
   settings in Profile YAML or JSON.
@@ -514,12 +526,36 @@ coverage findings were resolved before the widened range was re-reviewed with
 no remaining material findings. The [reopened Phase 14 job][reopened-phase-14-job]
 records the detailed evidence.
 
+## Post-Implementation Page-Role And Counter Follow-Up — 2026-08-15
+
+A bounded live render after Phase 14 showed that an automatic metadata title
+can occupy a cover-like first physical page without being the dedicated cover.
+The page receives generic repeating content, while the following named ToC page
+clears configured header/footer content. With body-origin numbering, the first
+body page then displays logical number `1` while the Phase 14 `{pages}` token
+still reports the physical PDF total.
+
+These findings do not invalidate the completed formal-guide, ghost-input,
+repeating-content, persistence, or lifecycle work. They establish a new
+renderer and template-language boundary. The follow-up research owns:
+
+- cover, metadata-title, ToC, body, and blank-page roles
+- `toc.pageBreak` behavior across named-page transitions
+- repeating-content and page-number visibility by page role
+- logical `{page}` and `{pages}` values
+- physical `{pdfPage}` and `{pdfPages}` values
+- the revision-1/revision-2 `{pages}` migration warning
+
+Phase 14 remains `completed`. Phase 14.5 must settle and implement that contract
+before Phase 15 publishes final guidance.
+
 ## Related Research
 
 - [Markdown PDF Page-Number Configuration][page-number-research]
 - [Markdown PDF Profile Revision And Feature Compatibility][profile-revision-research]
 - [Pattern, Placeholder, and Template Language Guide][pattern-language-research]
 - [Markdown PDF Interactive Code Highlighting][interactive-code-research]
+- [Markdown PDF Page Roles And Counter Semantics][page-role-counter-research]
 
 ## Related Plans
 
@@ -544,6 +580,7 @@ records the detailed evidence.
 [interactive-code-research]: research-2026-07-23-markdown-pdf-interactive-code-highlighting.md
 [page-number-plan]: ../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md
 [page-number-research]: research-2026-08-11-markdown-pdf-page-number-configuration.md
+[page-role-counter-research]: research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md
 [pattern-language-research]: research-2026-08-11-pattern-placeholder-and-template-language-guide.md
 [profile-revision-research]: research-2026-08-14-markdown-pdf-profile-revision-and-feature-compatibility.md
 [reopened-phase-14-job]: ../plans/jobs/2026-08-15-markdown-pdf-page-number-phase-14-reopened-interactive-ux.md

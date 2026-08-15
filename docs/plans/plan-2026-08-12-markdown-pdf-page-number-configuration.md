@@ -165,13 +165,16 @@ equal to one.
 
 - `format` remains the canonical page-number label-template key.
 - `{page}` is the logical page value.
-- `{pages}` remains the physical PDF page count.
+- Through the completed Phase 14 implementation, `{pages}` remains the physical
+  PDF page count. Phase 14.5 changes it to the final logical value and adds
+  physical `{pdfPage}` and `{pdfPages}` terms after renderer evidence.
 - short metadata placeholders retain their shipped meaning.
 - missing metadata still resolves to an empty string.
 - an occupied selected slot keeps page-number-wins behavior and emits one
   warning per document.
-- `{pages}` with body-origin or non-default arithmetic remains accepted and
-  emits one warning per document.
+- Through Phase 14, `{pages}` with body-origin or non-default arithmetic remains
+  accepted and emits one warning per document. Phase 14.5 replaces that
+  condition with the explicit revision-1/revision-2 migration warning.
 - warnings preserve successful exit status and use structured diagnostics when
   output is machine-readable.
 - direct `md to-pdf` does not gain a new JSON mode in this feature; structured
@@ -245,6 +248,7 @@ overrides alongside this toggle.
 - direct Template-helper body-hook compatibility with base Profiles and partial
   bundles
 - page-number CSS sequence, visibility, placement, and inherited styling
+- Phase 14.5 page-role composition plus logical and physical counter semantics
 - legacy Template fallback and stable body-boundary enforcement
 - warnings, hard errors, structured diagnostics, and capability gates
 - direct enable/disable override
@@ -258,8 +262,6 @@ overrides alongside this toggle.
 ### Out of scope
 
 - changing or authoring PDF viewer page-label metadata
-- changing physical PDF page indices or `{pages}` semantics
-- a logical final-page-number placeholder
 - arbitrary Profile-authored CSS
 - `pageNumbers.style`
 - detailed direct flags for sequence, visibility, label, position, or style
@@ -1505,13 +1507,100 @@ Tasks:
 
 Reopened checkpoint:
 
-- Phase 14 is `completed`; Phase 15 remains pending.
+- Phase 14 is `completed`; Phase 14.5 is pending before Phase 15.
 - The first implementation and review range remains historical evidence rather
   than being rewritten as unfinished work.
 - The reopened implementation, validation, review-fix, and final re-review
   range is `0294b4ad..3400e2d0`; no material findings remain.
 - Structured Profile/Project Codex Assistant page-number authority remains
   future-canary work outside this refinement.
+
+### Phase 14.5: Page Roles, Logical Counters, And Physical PDF Counters
+
+Tasks:
+
+- [ ] Create and activate a Phase 14.5 job record from the reviewed Phase 14
+      closeout boundary. Link the
+      [Page Roles And Counter Semantics research][page-role-counter-research]
+      and freeze the permanent-file boundary, renderer evidence matrix,
+      meaningful commit checkpoints, exact review range, and closeout verdict.
+- [ ] Freeze the built-in recipe's current cover, automatic metadata-title,
+      ToC, body, and renderer-inserted blank-page behavior in deterministic
+      tests before changing page composition or CSS.
+- [ ] Complete the research evidence needed to settle whether the metadata
+      title remains a block on the first body page or becomes an explicit
+      title-page role. Define `metadataTitle: auto`, `show`, and `hide` when a
+      dedicated cover exists, and prevent an accidental cover-like page from
+      remaining an undocumented named-page side effect.
+- [ ] Audit `toc.pageBreak` against actual named `toc` to named `body`
+      transitions. Settle whether the ToC is always a dedicated page group and
+      whether configured repeating header/footer content applies there. Keep
+      the dedicated cover as the explicit protected chrome-free exception.
+- [ ] After renderer evidence accepts the page-role matrix and counter
+      mechanism, implement the intended four-token page-label contract:
+      `{page}` is the current logical number, `{pages}` is the final logical
+      number in the same `countFrom`, `start`, and `increment` sequence,
+      `{pdfPage}` is the current physical PDF page, and `{pdfPages}` is the
+      physical PDF page count. Keep `scope` responsible only for visibility;
+      do not describe this target as shipped before its evidence gate passes.
+- [ ] Validate and then implement `countFrom: document` across every physical
+      output page even when a protected role hides its label. Validate
+      `countFrom: body` from the first body-owned page, and settle how inserted
+      blank pages acquire a logical role while always participating in the
+      physical PDF sequence. If the matrix cannot support the intended
+      semantics safely, revise the research instead of approximating it.
+- [ ] Keep Profile `schemaVersion` at `3`. Add `{pdfPage}` and `{pdfPages}` to
+      the revision-3 feature registry and renderer-capability relationships;
+      do not branch placeholder meaning on the declaration or rewrite an input
+      Profile.
+- [ ] Replace the old physical-`{pages}` logical-sequence diagnostic. Add one
+      successful migration warning only when effective page numbers are
+      enabled, the source Profile explicitly declares revision `1` or `2`, and
+      the active label contains exact `{pages}`. Report the effective
+      `countFrom`, recommend `{pdfPages}` for physical-total intent, and skip
+      this warning for missing or unusable declarations.
+- [ ] Render the migration warning with the shared color helper: use ANSI
+      standard yellow for the warning label or heading only when `stderr` is an
+      eligible TTY, preserve plain text under `NO_COLOR`, `--no-color`, or
+      redirection, and keep structured diagnostics free of escape sequences.
+      Make color-stream selection explicit without changing existing `stdout`
+      callers.
+- [ ] Update formal-guide page-label ghost help and completion candidates for
+      `{page}`, `{pages}`, `{pdfPage}`, and `{pdfPages}`. Preserve deliberate
+      ghost acceptance, revision initial values, simple fallback, validation,
+      and the completed repeating-content interaction contract.
+- [ ] Prove whether all four counters can coexist in one WeasyPrint pass. If
+      not, design and test a bounded second pass with pagination-stability and
+      cleanup guards before production adoption; do not assume changed margin-
+      box content cannot affect page count.
+- [ ] Cover dedicated-cover and no-cover composition, metadata-title states,
+      ToC states and page-break behavior, valid scope/origin combinations,
+      non-default arithmetic, blank pages, repagination, and combined four-
+      token labels across the frozen renderer candidates. Record extracted
+      values by physical page and representative visual evidence.
+- [ ] Verify direct CLI, Interactive generated and saved Profiles, Project
+      bundles, custom Template body hooks, warning frequency, ANSI/no-color
+      presentation, feature inference, and non-rewriting renders. Rerun the
+      affected live renderer matrix because page composition, CSS, placeholder
+      semantics, and evidence acceptance change.
+- [ ] Run focused, broad Markdown PDF, full repository, TypeScript, lint,
+      format, build, and `git diff --check` gates. Review the exact Phase 14.5
+      commit range with maintainability and test-quality reviewers, resolve
+      accepted findings, and commit a reviewed documentation closeout before
+      Phase 15.
+
+Phase checkpoint:
+
+- Page composition makes cover, metadata-title, ToC, body, and blank-page roles
+  explicit instead of relying on accidental named-page transitions.
+- Repeating content and page-number visibility have one documented role matrix;
+  `toc.pageBreak` wording matches actual renderer behavior.
+- Logical and physical placeholders remain distinct under every supported
+  sequence origin and arithmetic combination.
+- Revision `3` remains advisory and current; only explicit revision `1` or `2`
+  plus active `{pages}` produces the bounded migration warning.
+- Real renderer evidence, exact-range review, and the Phase 14.5 job record are
+  complete before current guidance is published.
 
 ### Phase 15: Guidance And Lifecycle Closeout
 
@@ -1534,8 +1623,9 @@ Tasks:
       durable Profile authoring and handoff.
 - [ ] Update `md pdf-profile init` examples and verify direct CLI help examples
       agree with the Phase 14 render-only toggle wording.
-- [ ] Document `{page}` as logical, `{pages}` as physical, and the warning
-      posture for non-default arithmetic and body origin.
+- [ ] Document `{page}` and `{pages}` as the current and final logical values,
+      `{pdfPage}` and `{pdfPages}` as physical PDF values, and the explicit
+      revision-1/revision-2 `{pages}` migration warning.
 - [ ] Document capability-specific renderer requirements without presenting one
       local development environment as the public baseline.
 - [ ] Publish the concise placeholder handoff required by the cross-feature
@@ -1565,6 +1655,7 @@ Phase checkpoint:
 - [Markdown PDF Page-Number Configuration research][page-number-research]
 - [Markdown PDF Profile Revision And Feature Compatibility][profile-revision-research]
 - [Markdown PDF Interactive Page Numbers And Repeating Page Content UX][interactive-page-number-ux]
+- [Markdown PDF Page Roles And Counter Semantics][page-role-counter-research]
 - [Pattern, Placeholder, and Template Language Guide research][pattern-language-research]
 
 ## Related Guides
@@ -1577,6 +1668,7 @@ Phase checkpoint:
 [markdown-pdf-usage]: ../guides/markdown-pdf-usage.md
 [interactive-page-number-ux]: ../researches/research-2026-08-14-markdown-pdf-interactive-page-number-and-page-chrome-ux.md
 [page-number-research]: ../researches/research-2026-08-11-markdown-pdf-page-number-configuration.md
+[page-role-counter-research]: ../researches/research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md
 [pattern-language-research]: ../researches/research-2026-08-11-pattern-placeholder-and-template-language-guide.md
 [profile-revision-research]: ../researches/research-2026-08-14-markdown-pdf-profile-revision-and-feature-compatibility.md
 [profile-helper]: ../guides/markdown-pdf-codex-profile-helper.md

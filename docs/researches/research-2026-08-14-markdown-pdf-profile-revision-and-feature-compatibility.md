@@ -1,6 +1,7 @@
 ---
 title: "Markdown PDF Profile Revision And Feature Compatibility"
 created-date: 2026-08-14
+modified-date: 2026-08-15
 status: completed
 agent: codex
 ---
@@ -164,9 +165,12 @@ another serialized construct that an older reader would reject.
 
 Do not increase it for internal refactoring, diagnostic wording, renderer
 candidate additions, formatting changes, or a fix that restores documented
-behavior. A breaking reinterpretation of an existing feature cannot rely on
-this advisory revision alone; it requires separate compatibility research and
-an explicit reader boundary.
+behavior. After a Profile revision ships as a supported contract, a breaking
+reinterpretation of an existing feature cannot rely on this advisory revision
+alone; it requires separate compatibility research and an explicit reader
+boundary. Before the first revision-3 canary contract ships, separate research
+may still refine that contract without inventing another revision from an
+internal implementation checkpoint.
 
 The initial recorded lineage is:
 
@@ -342,6 +346,21 @@ when its actual content is supported, but unknown content is never ignored.
 Future deprecations need registry-owned diagnostics and a bounded migration
 interval; breaking semantic changes need a separate reader boundary.
 
+### Phase 14.5 Current-Canary Clarification
+
+[Markdown PDF Page Roles And Counter Semantics][page-role-counter-research]
+refines the still-unshipped revision-3 canary placeholder contract. It changes
+`{pages}` from the physical PDF total to the final logical number and adds
+physical `{pdfPage}` and `{pdfPages}` terms without increasing the Profile
+revision to `4`.
+
+The renderer has one current meaning per token and does not branch on the
+declaration. An explicit `schemaVersion: 1` or `schemaVersion: 2` combined with
+active `{pages}` only triggers a successful migration warning recommending
+`{pdfPages}` for historical physical-total intent. A missing or unusable
+declaration skips that migration classification. Supported content remains
+authoritative, and direct rendering still never rewrites the input Profile.
+
 ## Page-Number Configuration Plan Phase 13 Implementation
 
 Phase 13 froze this contract and registry ownership before general version
@@ -387,6 +406,7 @@ renderer behavior, scenario inputs, and evidence acceptance did not change.
 ## Related Research
 
 - [Markdown PDF Page-Number Configuration][page-number-research]
+- [Markdown PDF Page Roles And Counter Semantics][page-role-counter-research]
 - [Profiles, Fonts, And Page Chrome][profile-page-chrome-research]
 
 ## Related Plans
@@ -403,6 +423,7 @@ renderer behavior, scenario inputs, and evidence acceptance did not change.
 [^codex-report]: [Markdown PDF Codex Profile report artifact reader](../../src/cli/markdown-pdf/codex-report/index.ts), [Template report shape](../../src/cli/markdown-pdf/template-codex/report.ts), and [Project report shape](../../src/cli/markdown-pdf/project-codex/types-report.ts)
 
 [page-number-plan]: ../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md
+[page-role-counter-research]: research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md
 [phase-13-job]: ../plans/jobs/2026-08-14-markdown-pdf-phase-13-contract-normalization.md
 [page-number-research]: research-2026-08-11-markdown-pdf-page-number-configuration.md
 [profile-page-chrome-research]: research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md
