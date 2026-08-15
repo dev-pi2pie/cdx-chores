@@ -590,6 +590,45 @@ describe("text inline prompt controller", () => {
     );
   });
 
+  test("promptTextWithGhost preserves the revision value when advanced input falls back", async () => {
+    let advancedCalls = 0;
+    let receivedDefault: unknown;
+    const stdout = new FakePromptWriteStream();
+    const result = await promptTextWithGhost({
+      message: "Page-number label",
+      ghostHintLabel: "Page-number label suggestion",
+      ghostText: "Page {page} of {pages}",
+      initialValue: "Page {page}",
+      completionKind: "markdown-pdf-page-label",
+      runtimeConfig: {
+        mode: "auto",
+        autocomplete: {
+          enabled: true,
+          minChars: 1,
+          maxSuggestions: 12,
+          includeHidden: false,
+        },
+      },
+      stdin: { isTTY: true } as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: (value) => (value.includes("{page}") ? true : "Include {page}"),
+      promptImpls: {
+        advancedInline: async () => {
+          advancedCalls += 1;
+          throw new Error("boom");
+        },
+        simpleInput: async (options) => {
+          receivedDefault = options.default;
+          return String(options.default);
+        },
+      },
+    });
+
+    expect(advancedCalls).toBe(1);
+    expect(receivedDefault).toBe("Page {page}");
+    expect(result).toBe("Page {page}");
+  });
+
   test("promptTextWithGhost passes the initial value to simple input as its default", async () => {
     let receivedDefault: unknown;
     const stdout = new FakePromptWriteStream();

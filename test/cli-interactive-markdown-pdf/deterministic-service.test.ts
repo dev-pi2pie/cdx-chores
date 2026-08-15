@@ -237,7 +237,7 @@ describe("interactive Markdown PDF deterministic service", () => {
           pageNumberOutcome: () => outcome,
           pageNumberLabel: ({ current }) => {
             expect(current).toBeUndefined();
-            return outcome === "body" ? "Page {page}" : "Page {page} for {company}";
+            return outcome === "body" ? "Page {page}" : "{company} — Page {page} of {pages}";
           },
           pageNumberPosition: () => "top-right",
           repeatingContentEnabled: ({ current }) => {
@@ -279,7 +279,7 @@ describe("interactive Markdown PDF deterministic service", () => {
           start: 1,
           increment: 1,
           position: "top-right",
-          format: outcome === "body" ? "Page {page}" : "Page {page} for {company}",
+          format: outcome === "body" ? "Page {page}" : "{company} — Page {page} of {pages}",
         } as const;
         const expectedHeader = {
           left: "Report",

@@ -14,6 +14,14 @@ interface InputOptions {
   validate?: (value: string) => boolean | string | Promise<boolean | string>;
 }
 
+interface GhostPromptOptions extends InputOptions {
+  completionKind?: string;
+  ghostHintLabel?: string;
+  ghostText: string;
+  helpLines?: string[];
+  initialValue?: string;
+}
+
 interface SelectOptions {
   message: string;
   choices: PromptChoice[];
@@ -33,6 +41,7 @@ interface PromptState {
   checkboxes: Map<string, unknown[][]>;
   confirms: Map<string, boolean[]>;
   defaults: Map<string, unknown[]>;
+  ghostPrompts: Map<string, GhostPromptOptions[]>;
   inputs: Map<string, string[]>;
   rejected: Map<string, Array<{ error: string; value: string }>>;
   selects: Map<string, unknown[]>;
@@ -45,6 +54,7 @@ function createPromptState(): PromptState {
     checkboxes: new Map(),
     confirms: new Map(),
     defaults: new Map(),
+    ghostPrompts: new Map(),
     inputs: new Map(),
     rejected: new Map(),
     selects: new Map(),
@@ -109,6 +119,28 @@ mock.module("@inquirer/prompts", () => ({
       throw new Error(`Mocked selection is not offered for ${options.message}: ${String(value)}`);
     }
     return value;
+  },
+}));
+
+mock.module("../../src/cli/prompts/text-inline", () => ({
+  async promptTextWithGhost(options: GhostPromptOptions): Promise<string> {
+    state.calls.push(`ghost:${options.message}`);
+    const prompts = state.ghostPrompts.get(options.message) ?? [];
+    prompts.push(options);
+    state.ghostPrompts.set(options.message, prompts);
+    const defaults = state.defaults.get(options.message) ?? [];
+    defaults.push(options.initialValue);
+    state.defaults.set(options.message, defaults);
+    while (true) {
+      const value = shift(state.inputs, options.message);
+      const validation = options.validate ? await options.validate(value) : true;
+      if (validation === true) {
+        return value;
+      }
+      const rejected = state.rejected.get(options.message) ?? [];
+      rejected.push({ error: String(validation), value });
+      state.rejected.set(options.message, rejected);
+    }
   },
 }));
 
@@ -181,6 +213,37 @@ describe("interactive Markdown PDF formal-guide prompt adapter", () => {
         value: "Page one",
       },
     ]);
+    expect(state.ghostPrompts.get("Custom page-number label")?.[0]).toMatchObject({
+      completionKind: "markdown-pdf-page-label",
+      ghostHintLabel: "Page-number label suggestion (Right arrow to accept)",
+      ghostText: "Page {page} of {pages}",
+      helpLines: [
+        "{page}: current logical page number",
+        "{pages}: total physical PDF pages",
+        "Literal text, punctuation, and digits are allowed; a literal total can become stale.",
+      ],
+      initialValue: "{company} - Page {page}",
+    });
+  });
+
+  test("passes the fresh custom page-label ghost contract without an initial value", async () => {
+    queue(state.selects, "Page-number label", "custom");
+    queue(state.inputs, "Custom page-number label", "Page {page}/{pages}");
+
+    await expect(createMarkdownPdfFormalGuidePrompts().pageNumberLabel({})).resolves.toBe(
+      "Page {page}/{pages}",
+    );
+    const prompt = state.ghostPrompts.get("Custom page-number label")?.[0];
+    expect(prompt).toMatchObject({
+      completionKind: "markdown-pdf-page-label",
+      ghostText: "Page {page} of {pages}",
+      helpLines: [
+        "{page}: current logical page number",
+        "{pages}: total physical PDF pages",
+        "Literal text, punctuation, and digits are allowed; a literal total can become stale.",
+      ],
+    });
+    expect(prompt?.initialValue).toBeUndefined();
   });
 
   test("selects repeating-content positions from only the available layout", async () => {
@@ -207,6 +270,33 @@ describe("interactive Markdown PDF formal-guide prompt adapter", () => {
     ]);
   });
 
+  test("renders all six enabled repeating-content choices when no position is reserved", async () => {
+    queue(state.checkboxes, "Repeating-content positions", []);
+
+    await expect(
+      createMarkdownPdfFormalGuidePrompts().repeatingContentPositions({
+        available: [
+          "top-left",
+          "top-center",
+          "top-right",
+          "bottom-left",
+          "bottom-center",
+          "bottom-right",
+        ],
+      }),
+    ).resolves.toEqual([]);
+    const choices = state.choices.get("Repeating-content positions");
+    expect(choices).toEqual([
+      { name: "Header left", value: "top-left", checked: false },
+      { name: "Header center", value: "top-center", checked: false },
+      { name: "Header right", value: "top-right", checked: false },
+      { name: "Footer left", value: "bottom-left", checked: false },
+      { name: "Footer center", value: "bottom-center", checked: false },
+      { name: "Footer right", value: "bottom-right", checked: false },
+    ]);
+    expect(choices?.every((choice) => choice.disabled === undefined)).toBe(true);
+  });
+
   test("uses slot-aware repeating-content input and an explicit conflict-clear default", async () => {
     queue(state.inputs, "Footer left content", "", "{author}");
     queue(
@@ -227,10 +317,41 @@ describe("interactive Markdown PDF formal-guide prompt adapter", () => {
     expect(state.rejected.get("Footer left content")).toEqual([
       { error: "Repeating content is required", value: "" },
     ]);
+    expect(state.ghostPrompts.get("Footer left content")?.[0]).toMatchObject({
+      completionKind: "markdown-pdf-repeating-content",
+      ghostHintLabel: "Content suggestion (Right arrow to accept)",
+      ghostText: "{author}",
+      helpLines: [
+        "Placeholders: {title}, {company}, {author}, {date}",
+        "Values resolve from CLI metadata, Markdown frontmatter, then Profile metadata.",
+        "Unknown or missing placeholders render as empty text; literal text is also valid.",
+      ],
+    });
     expect(
       state.defaults.get(
         "Clear existing footer center content that conflicts with page numbering?",
       ),
     ).toEqual([false]);
+  });
+
+  test("passes revised repeating content as the editable ghost-prompt initial value", async () => {
+    queue(state.inputs, "Header center content", "{company}");
+
+    await expect(
+      createMarkdownPdfFormalGuidePrompts().repeatingContent({
+        current: "Acme {company}",
+        position: "top-center",
+      }),
+    ).resolves.toBe("{company}");
+    expect(state.ghostPrompts.get("Header center content")?.[0]).toMatchObject({
+      completionKind: "markdown-pdf-repeating-content",
+      ghostText: "{company}",
+      helpLines: [
+        "Placeholders: {title}, {company}, {author}, {date}",
+        "Values resolve from CLI metadata, Markdown frontmatter, then Profile metadata.",
+        "Unknown or missing placeholders render as empty text; literal text is also valid.",
+      ],
+      initialValue: "Acme {company}",
+    });
   });
 });
