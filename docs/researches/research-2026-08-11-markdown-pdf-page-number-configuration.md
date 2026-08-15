@@ -870,6 +870,7 @@ to a future canary design.
 ## Related Plans
 
 - [Markdown PDF Page-Number Configuration Implementation][page-number-plan]
+- [Phase 15 Guidance Closeout][phase-15-job]
 
 ## References
 
@@ -906,6 +907,7 @@ to a future canary design.
 [markdown-pdf-usage]: ../guides/markdown-pdf-usage.md
 [interactive-page-number-ux]: research-2026-08-14-markdown-pdf-interactive-page-number-and-page-chrome-ux.md
 [page-number-plan]: ../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md
+[phase-15-job]: ../plans/jobs/2026-08-15-markdown-pdf-page-number-phase-15-guidance-closeout.md
 [page-role-counter-research]: research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md
 [pattern-language-research]: research-2026-08-11-pattern-placeholder-and-template-language-guide.md
 [profile-helper]: ../guides/markdown-pdf-codex-profile-helper.md

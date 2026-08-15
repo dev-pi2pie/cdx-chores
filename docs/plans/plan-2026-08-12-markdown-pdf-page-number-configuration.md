@@ -1725,10 +1725,7 @@ Tasks:
 - [ ] Create and activate a Phase 15 guidance-closeout job record with the exact
       starting commit, permanent documentation boundary, current-guide and
       CLI-help inventory, validation results, documentation-review range, and
-      final lifecycle decisions at
-      `jobs/2026-08-16-markdown-pdf-page-number-phase-15-guidance-closeout.md`.
-      After creating it, add the job-record link to this plan and the parent
-      page-number research.
+      final lifecycle decisions in the [Phase 15 job record][phase-15-job].
 - [ ] Make [Markdown PDF Usage][markdown-pdf-usage] the canonical guide for the
       shipped Profile schema, defaults, four logical/physical page-number
       terms, migration and collision diagnostics, renderer capability
@@ -1836,4 +1833,5 @@ Phase checkpoint:
 [reopened-phase-14-job]: jobs/2026-08-15-markdown-pdf-page-number-phase-14-reopened-interactive-ux.md
 [phase-14-5-job]: jobs/2026-08-15-markdown-pdf-page-number-phase-14-5-page-roles-and-counters.md
 [phase-14-6-job]: jobs/2026-08-15-markdown-pdf-page-number-phase-14-6-interactive-cover-page-authoring.md
+[phase-15-job]: jobs/2026-08-15-markdown-pdf-page-number-phase-15-guidance-closeout.md
 [template-helper]: ../guides/markdown-pdf-codex-template-helper.md
