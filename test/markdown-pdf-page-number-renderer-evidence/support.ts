@@ -57,10 +57,16 @@ function expectedScenarioEvidence(
         ),
       );
       return {
-        text: [page.marker, ...page.pageNumberLabels].filter(Boolean).join(" "),
-        runs: [evidenceRun(page.marker, 20, 100, 40, 5), ...labelRuns].filter(
-          (run) => run.text.length > 0,
-        ),
+        text: [page.marker, ...(page.requiredText ?? []), ...page.pageNumberLabels]
+          .filter(Boolean)
+          .join(" "),
+        runs: [
+          evidenceRun(page.marker, 20, 100, 40, 5),
+          ...(page.requiredText ?? []).map((text, index) =>
+            evidenceRun(text, 20, 110 + index * 5, 40, 5),
+          ),
+          ...labelRuns,
+        ].filter((run) => run.text.length > 0),
         widthMillimeters,
         heightMillimeters,
       };

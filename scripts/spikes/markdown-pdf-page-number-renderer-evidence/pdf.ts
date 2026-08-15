@@ -139,7 +139,7 @@ function runOccupiesRegion(
   return horizontal && vertical;
 }
 
-function normalizedLabelText(value: string): string {
+function textWithoutWhitespace(value: string): string {
   return value.replace(/\s+/gu, "");
 }
 
@@ -147,7 +147,7 @@ export function findContiguousLabelRun(
   page: PdfPageEvidence,
   label: string,
 ): PdfTextRunEvidence | undefined {
-  const expected = normalizedLabelText(label);
+  const expected = textWithoutWhitespace(label);
   for (let start = 0; start < page.runs.length; start += 1) {
     let actual = "";
     let left = Number.POSITIVE_INFINITY;
@@ -161,7 +161,7 @@ export function findContiguousLabelRun(
     ) {
       const run = page.runs[index];
       if (!run) break;
-      actual += normalizedLabelText(run.text);
+      actual += textWithoutWhitespace(run.text);
       left = Math.min(left, run.xMillimeters);
       bottom = Math.min(bottom, run.yMillimeters);
       right = Math.max(right, run.xMillimeters + run.widthMillimeters);
@@ -211,8 +211,12 @@ export function validatePdfEvidence(
           `physical page ${index + 1} label ${label} is outside ${expected.pageNumberRegion}`,
         );
     }
+    const normalizedPageText = textWithoutWhitespace(page.text);
+    for (const required of expected.requiredText ?? [])
+      if (!normalizedPageText.includes(textWithoutWhitespace(required)))
+        mismatches.push(`physical page ${index + 1} is missing required text ${required}`);
     for (const forbidden of expected.forbiddenText ?? [])
-      if (page.text.includes(forbidden))
+      if (normalizedPageText.includes(textWithoutWhitespace(forbidden)))
         mismatches.push(`physical page ${index + 1} contains forbidden text ${forbidden}`);
     const allMarkers = scenario.expected.pages
       .map((item) => item.marker)

@@ -11,6 +11,7 @@ import {
   runRendererEvidence,
 } from "../../scripts/spikes/markdown-pdf-page-number-renderer-evidence";
 import type { PdfEvidence } from "../../scripts/spikes/markdown-pdf-page-number-renderer-evidence";
+import { validatePdfEvidence } from "../../scripts/spikes/markdown-pdf-page-number-renderer-evidence/pdf";
 import {
   PAGE_NUMBER_COUNTER_EXPERIMENTS,
   PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS,
@@ -145,6 +146,51 @@ describe("Markdown PDF renderer evidence inspection and validation", () => {
         ],
       }),
     );
+  });
+
+  test("compacts PDF whitespace only for required and forbidden annotation text", () => {
+    const scenario = {
+      expected: {
+        pageCount: 1,
+        sizeMillimeters: [148, 210] as const,
+        orientation: "portrait" as const,
+        pages: [
+          {
+            role: "document-body" as const,
+            marker: "WRAP-MARKER",
+            pageNumberLabels: ["WRAP-LABEL"],
+            requiredText: ["PRODUCT-D-FOOTER"],
+            forbiddenText: ["PRODUCT-D-METADATA-TITLE"],
+          },
+        ],
+        pngPages: [],
+      },
+    };
+    const basePage = {
+      text: "WRAP-MARKER PRODUCT-D- FOOTER WRAP-LABEL",
+      runs: [evidenceRun("WRAP-MARKER", 20, 100, 40, 5), evidenceRun("WRAP-LABEL", 60, 10, 28, 4)],
+      widthMillimeters: 148,
+      heightMillimeters: 210,
+    };
+    const evidence: PdfEvidence = {
+      pageCount: 1,
+      pages: [basePage],
+      pageLabelState: "default-physical",
+    };
+
+    expect(validatePdfEvidence(scenario, evidence)).toEqual([]);
+    expect(
+      validatePdfEvidence(scenario, {
+        ...evidence,
+        pages: [{ ...basePage, text: `${basePage.text} PRODUCT-D-METADATA- TITLE` }],
+      }),
+    ).toContain("physical page 1 contains forbidden text PRODUCT-D-METADATA-TITLE");
+    expect(
+      validatePdfEvidence(scenario, {
+        ...evidence,
+        pages: [{ ...basePage, text: basePage.text.replace("WRAP-MARKER", "WRAP- MARKER") }],
+      }),
+    ).toContain("physical page 1 is missing marker WRAP-MARKER");
   });
 
   test("retains failed optional counter evidence without failing the required outcome", async () => {
@@ -468,7 +514,7 @@ describe("Markdown PDF renderer evidence inspection and validation", () => {
       (scenario) => scenario.id === "product-explicit-body-origin",
     );
     expect(selected).toBeDefined();
-    const label = selected?.expected.pages[1]?.pageNumberLabels[0] ?? "PRODUCT-B-0/4";
+    const label = selected?.expected.pages[1]?.pageNumberLabels[0] ?? "PRODUCT-B-L5/9-P2/4";
     const cases: Array<{
       id: string;
       message: string;
@@ -554,7 +600,9 @@ describe("Markdown PDF renderer evidence inspection and validation", () => {
   test("aggregates contiguous split text runs before validating a label region", async () => {
     await withEvidenceRoot(async (temporaryRoot) => {
       const scenarioId = "product-explicit-body-origin";
-      const label = "PRODUCT-B-0/4";
+      const label = "PRODUCT-B-L5/9-P2/4";
+      const firstLabelRun = "PRODUCT-B-";
+      const secondLabelRun = "L5/9-P2/4";
       const mock = createMockExecution({
         inspect: (path, evidence) =>
           pathHasSegment(path, scenarioId)
@@ -564,12 +612,12 @@ describe("Markdown PDF renderer evidence inspection and validation", () => {
                   pageIndex === 1
                     ? {
                         ...page,
-                        text: page.text.replace(label, "PRODUCT-B- 0/4"),
+                        text: page.text.replace(label, `${firstLabelRun} ${secondLabelRun}`),
                         runs: page.runs.flatMap((run) =>
                           run.text === label
                             ? [
-                                evidenceRun("PRODUCT-B-", 110, 190, 18, 4),
-                                evidenceRun("0/4", 128, 190, 10, 4),
+                                evidenceRun(firstLabelRun, 110, 190, 18, 4),
+                                evidenceRun(secondLabelRun, 128, 190, 20, 4),
                               ]
                             : [run],
                         ),
@@ -594,6 +642,55 @@ describe("Markdown PDF renderer evidence inspection and validation", () => {
             candidate.productScenarios.find((scenario) => scenario.id === scenarioId)?.passed,
         ),
       ).toBe(true);
+    });
+  });
+
+  test("gates required repeating content and automatic metadata-title page ownership", async () => {
+    await withEvidenceRoot(async (temporaryRoot) => {
+      const scenario = PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.find(
+        (item) => item.id === "product-built-in-automatic-metadata-title",
+      );
+      expect(scenario?.expected.pages.map((page) => page.role)).toEqual([
+        "table-of-contents",
+        "document-body",
+      ]);
+      expect(scenario?.expected.pages[0]?.forbiddenText).toContain("PRODUCT-D-METADATA-TITLE");
+      expect(scenario?.expected.pages[1]?.requiredText).toContain("PRODUCT-D-METADATA-TITLE");
+
+      const mock = createMockExecution({
+        inspect: (path, evidence) =>
+          scenario && pathHasSegment(path, scenario.id)
+            ? {
+                ...evidence,
+                pages: evidence.pages.map((page, index) =>
+                  index === 0
+                    ? {
+                        ...page,
+                        text: page.text.replace("PRODUCT-D-HEADER", ""),
+                        runs: page.runs.filter((run) => run.text !== "PRODUCT-D-HEADER"),
+                      }
+                    : page,
+                ),
+              }
+            : evidence,
+      });
+      const report = await runRendererEvidence({
+        temporaryRoot,
+        uniqueId: "required-repeating-content",
+        runner: mock.runner,
+        inspectPdf: mock.inspectPdf,
+      });
+
+      expect(report.outcome).toBe("failed");
+      expect(report.failures).toContainEqual(
+        expect.objectContaining({
+          scenarioId: scenario?.id,
+          message: expect.stringContaining(
+            "physical page 1 is missing required text PRODUCT-D-HEADER",
+          ),
+        }),
+      );
+      await closeRetainedEvidenceLaboratory(report.labPath, temporaryRoot);
     });
   });
 

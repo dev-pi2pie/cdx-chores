@@ -33,7 +33,7 @@ titleBlock:
 pageNumbers:
   enabled: true
   position: bottom-center
-  format: "PROJECT-BASE-{page}/{pages}"
+  format: "PROJECT-BASE-L{page}/{pages}-P{pdfPage}/{pdfPages}"
   scope: body
   countFrom: body
   start: 0
@@ -93,13 +93,13 @@ export const PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS: readonly ProjectRendererSce
         {
           role: "document-body",
           marker: "PROJECT-BASE-BODY-1",
-          pageNumberLabels: ["PROJECT-BASE-0/2"],
+          pageNumberLabels: ["PROJECT-BASE-L0/2-P1/2"],
           pageNumberRegion: "bottom-center",
         },
         {
           role: "document-body",
           marker: "PROJECT-BASE-BODY-2",
-          pageNumberLabels: ["PROJECT-BASE-2/2"],
+          pageNumberLabels: ["PROJECT-BASE-L2/2-P2/2"],
           pageNumberRegion: "bottom-center",
         },
       ],

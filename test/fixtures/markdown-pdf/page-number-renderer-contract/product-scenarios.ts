@@ -38,7 +38,10 @@ cover:
   style: plain
 
 titleBlock:
-  metadataTitle: hide
+  metadataTitle: auto
+
+header:
+  left: "PRODUCT-A-HEADER"
 
 footer:
   center: "PRODUCT-A-REPLACED-SLOT"
@@ -46,7 +49,7 @@ footer:
 pageNumbers:
   enabled: true
   position: bottom-center
-  format: "PRODUCT-A-{page}/{pages}"
+  format: "PRODUCT-A-L{page}/{pages}-P{pdfPage}/{pdfPages}"
   scope: document
   countFrom: document
   start: 0
@@ -78,7 +81,7 @@ const productBodyOriginProfile = `page:
 toc:
   enabled: true
   depth: 1
-  pageBreak: after
+  pageBreak: none
 
 fonts:
   pageChrome:
@@ -88,6 +91,7 @@ titleBlock:
   metadataTitle: hide
 
 header:
+  left: "PRODUCT-B-HEADER"
   right: "PRODUCT-B-REPLACED-SLOT"
   style:
     fontSize: 9pt
@@ -103,10 +107,10 @@ header:
 pageNumbers:
   enabled: true
   position: top-right
-  format: "PRODUCT-B-{page}/{pages}"
+  format: "PRODUCT-B-L{page}/{pages}-P{pdfPage}/{pdfPages}"
   scope: body
   countFrom: body
-  start: 0
+  start: 5
   increment: 2
 `;
 
@@ -134,9 +138,7 @@ const productStylesheetPrecedenceMarkdown = `# PRODUCT-C-BODY-1
 
 Product stylesheet-precedence page one.
 
-<div style="break-after: page"></div>
-
-# PRODUCT-C-BODY-2
+# PRODUCT-C-BODY-2 {.product-c-right-page}
 
 Product stylesheet-precedence page two.
 `;
@@ -169,8 +171,8 @@ footer:
 pageNumbers:
   enabled: true
   position: bottom-right
-  format: "PRODUCT-C-{page}/{pages}"
-  scope: body
+  format: "PRODUCT-C-L{page}/{pages}-P{pdfPage}/{pdfPages}"
+  scope: document
   countFrom: document
   start: 1
   increment: 1
@@ -185,13 +187,56 @@ const productStylesheetPrecedenceCss = `@page body {
     border-top-color: #0055aa;
   }
 }
+
+.product-c-right-page {
+  break-before: right;
+}
+`;
+
+const productAutomaticMetadataTitleMarkdown = `---
+title: PRODUCT-D-METADATA-TITLE
+author: Renderer evidence
+---
+
+# PRODUCT-D-BODY-1
+
+The automatic metadata title remains inside the body after the table of contents.
+`;
+
+const productAutomaticMetadataTitleProfile = `page:
+  size: A5
+  orientation: portrait
+  margin: 18mm
+
+toc:
+  enabled: true
+  depth: 1
+  pageBreak: after
+
+titleBlock:
+  metadataTitle: auto
+
+header:
+  left: "PRODUCT-D-HEADER"
+
+footer:
+  left: "PRODUCT-D-FOOTER"
+
+pageNumbers:
+  enabled: true
+  position: bottom-center
+  format: "PRODUCT-D-L{page}/{pages}-P{pdfPage}/{pdfPages}"
+  scope: document
+  countFrom: document
+  start: 1
+  increment: 1
 `;
 
 export const PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS: readonly ProductRendererScenario[] = [
   {
     id: "product-built-in-document-origin",
     purpose:
-      "Automate the built-in Profile path through cover and ToC participation, selected-slot replacement, document-origin arithmetic, and bottom-center placement.",
+      "Automate the built-in Profile path through cover and ToC participation, automatic-title suppression, unreserved repeating content, selected-slot replacement, document-origin arithmetic, and bottom-center placement.",
     required: true,
     markdown: productDocumentOriginMarkdown,
     profile: productDocumentOriginProfile,
@@ -204,34 +249,38 @@ export const PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS: readonly ProductRendererSce
           role: "cover",
           marker: "PRODUCTACOVER",
           pageNumberLabels: [],
-          forbiddenText: ["PRODUCT-A-REPLACED-SLOT"],
+          forbiddenText: ["PRODUCT-A-HEADER", "PRODUCT-A-REPLACED-SLOT"],
         },
         {
           role: "table-of-contents",
           marker: "PRODUCT-A-BODY-1",
-          pageNumberLabels: ["PRODUCT-A-2/5"],
+          pageNumberLabels: ["PRODUCT-A-L2/8-P2/5"],
           pageNumberRegion: "bottom-center",
-          forbiddenText: ["PRODUCT-A-REPLACED-SLOT"],
+          requiredText: ["PRODUCT-A-HEADER"],
+          forbiddenText: ["PRODUCTACOVER", "PRODUCT-A-REPLACED-SLOT"],
         },
         {
           role: "document-body",
           marker: "PRODUCT-A-BODY-1",
-          pageNumberLabels: ["PRODUCT-A-4/5"],
+          pageNumberLabels: ["PRODUCT-A-L4/8-P3/5"],
           pageNumberRegion: "bottom-center",
+          requiredText: ["PRODUCT-A-HEADER"],
           forbiddenText: ["PRODUCT-A-REPLACED-SLOT"],
         },
         {
           role: "document-body",
           marker: "PRODUCT-A-BODY-2",
-          pageNumberLabels: ["PRODUCT-A-6/5"],
+          pageNumberLabels: ["PRODUCT-A-L6/8-P4/5"],
           pageNumberRegion: "bottom-center",
+          requiredText: ["PRODUCT-A-HEADER"],
           forbiddenText: ["PRODUCT-A-REPLACED-SLOT"],
         },
         {
           role: "document-body",
           marker: "PRODUCT-A-BODY-3",
-          pageNumberLabels: ["PRODUCT-A-8/5"],
+          pageNumberLabels: ["PRODUCT-A-L8/8-P5/5"],
           pageNumberRegion: "bottom-center",
+          requiredText: ["PRODUCT-A-HEADER"],
           forbiddenText: ["PRODUCT-A-REPLACED-SLOT"],
         },
       ],
@@ -242,7 +291,7 @@ export const PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS: readonly ProductRendererSce
   {
     id: "product-explicit-body-origin",
     purpose:
-      "Automate a selected Template body boundary with body-only visibility, top-right placement, and body-origin arithmetic; visual review covers the configured presentation.",
+      "Automate a selected Template body boundary with a named ToC transition despite pageBreak none, unreserved repeating content, body-only visibility, top-right placement, and body-origin arithmetic; visual review covers the configured presentation.",
     required: true,
     markdown: productBodyOriginMarkdown,
     profile: productBodyOriginProfile,
@@ -256,27 +305,31 @@ export const PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS: readonly ProductRendererSce
           role: "table-of-contents",
           marker: "PRODUCT-B-PREBODY",
           pageNumberLabels: [],
+          requiredText: ["PRODUCT-B-HEADER"],
           forbiddenText: ["PRODUCT-B-REPLACED-SLOT"],
         },
         {
           role: "document-body",
           marker: "PRODUCT-B-BODY-1",
-          pageNumberLabels: ["PRODUCT-B-0/4"],
+          pageNumberLabels: ["PRODUCT-B-L5/9-P2/4"],
           pageNumberRegion: "top-right",
+          requiredText: ["PRODUCT-B-HEADER"],
           forbiddenText: ["PRODUCT-B-REPLACED-SLOT"],
         },
         {
           role: "document-body",
           marker: "PRODUCT-B-BODY-2",
-          pageNumberLabels: ["PRODUCT-B-2/4"],
+          pageNumberLabels: ["PRODUCT-B-L7/9-P3/4"],
           pageNumberRegion: "top-right",
+          requiredText: ["PRODUCT-B-HEADER"],
           forbiddenText: ["PRODUCT-B-REPLACED-SLOT"],
         },
         {
           role: "document-body",
           marker: "PRODUCT-B-BODY-3",
-          pageNumberLabels: ["PRODUCT-B-4/4"],
+          pageNumberLabels: ["PRODUCT-B-L9/9-P4/4"],
           pageNumberRegion: "top-right",
+          requiredText: ["PRODUCT-B-HEADER"],
           forbiddenText: ["PRODUCT-B-REPLACED-SLOT"],
         },
       ],
@@ -287,33 +340,72 @@ export const PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS: readonly ProductRendererSce
   {
     id: "product-custom-stylesheet-precedence",
     purpose:
-      "Automate later-stylesheet launch, Profile-owned content, and bottom-right placement; visual review covers font ownership and the presentation cascade.",
+      "Automate later-stylesheet launch, an inserted blank page, four-token Profile-owned content, and bottom-right placement; visual review covers font ownership and the presentation cascade.",
     required: true,
     markdown: productStylesheetPrecedenceMarkdown,
     profile: productStylesheetPrecedenceProfile,
     css: productStylesheetPrecedenceCss,
     expected: {
-      pageCount: 2,
+      pageCount: 3,
       sizeMillimeters: PORTRAIT_SIZE,
       orientation: "portrait",
       pages: [
         {
           role: "document-body",
           marker: "PRODUCT-C-BODY-1",
-          pageNumberLabels: ["PRODUCT-C-1/2"],
+          pageNumberLabels: ["PRODUCT-C-L1/3-P1/3"],
+          pageNumberRegion: "bottom-right",
+          forbiddenText: ["PRODUCT-C-REPLACED-SLOT"],
+        },
+        {
+          role: "inserted-blank",
+          marker: "",
+          pageNumberLabels: ["PRODUCT-C-L2/3-P2/3"],
           pageNumberRegion: "bottom-right",
           forbiddenText: ["PRODUCT-C-REPLACED-SLOT"],
         },
         {
           role: "document-body",
           marker: "PRODUCT-C-BODY-2",
-          pageNumberLabels: ["PRODUCT-C-2/2"],
+          pageNumberLabels: ["PRODUCT-C-L3/3-P3/3"],
           pageNumberRegion: "bottom-right",
           forbiddenText: ["PRODUCT-C-REPLACED-SLOT"],
         },
       ],
-      pngPages: [1, 2],
+      pngPages: [1, 2, 3],
     },
     visualReviewRequired: ["font-family", "typography", "color", "separator", "stylesheet-cascade"],
+  },
+  {
+    id: "product-built-in-automatic-metadata-title",
+    purpose:
+      "Prove the built-in no-cover path keeps the automatic metadata title inside the body after the ToC while repeating configured header, footer, and four-token numbering on both page roles.",
+    required: true,
+    markdown: productAutomaticMetadataTitleMarkdown,
+    profile: productAutomaticMetadataTitleProfile,
+    expected: {
+      pageCount: 2,
+      sizeMillimeters: PORTRAIT_SIZE,
+      orientation: "portrait",
+      pages: [
+        {
+          role: "table-of-contents",
+          marker: "PRODUCT-D-BODY-1",
+          pageNumberLabels: ["PRODUCT-D-L1/2-P1/2"],
+          pageNumberRegion: "bottom-center",
+          requiredText: ["PRODUCT-D-HEADER", "PRODUCT-D-FOOTER"],
+          forbiddenText: ["PRODUCT-D-METADATA-TITLE"],
+        },
+        {
+          role: "document-body",
+          marker: "PRODUCT-D-BODY-1",
+          pageNumberLabels: ["PRODUCT-D-L2/2-P2/2"],
+          pageNumberRegion: "bottom-center",
+          requiredText: ["PRODUCT-D-METADATA-TITLE", "PRODUCT-D-HEADER", "PRODUCT-D-FOOTER"],
+        },
+      ],
+      pngPages: [1, 2],
+    },
+    visualReviewRequired: ["typography"],
   },
 ];

@@ -60,6 +60,42 @@ describe("Markdown PDF renderer evidence orchestration", () => {
     expect(onePassExperiment?.html).toContain("PH14.5-TOC");
     expect(onePassExperiment?.css).toContain(".document-body { page: body; }");
     expect(onePassExperiment?.css).not.toContain(".body-page");
+
+    expect(PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.map((scenario) => scenario.id)).toEqual([
+      "product-built-in-document-origin",
+      "product-explicit-body-origin",
+      "product-custom-stylesheet-precedence",
+      "product-built-in-automatic-metadata-title",
+    ]);
+    for (const scenario of PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS) {
+      expect(scenario.profile).toContain("{page}");
+      expect(scenario.profile).toContain("{pages}");
+      expect(scenario.profile).toContain("{pdfPage}");
+      expect(scenario.profile).toContain("{pdfPages}");
+    }
+    expect(PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS[1]?.authoring).toEqual(
+      expect.objectContaining({
+        mode: "base-profile-only",
+        baseProfile: expect.stringContaining("PROJECT-BASE-L{page}/{pages}-P{pdfPage}/{pdfPages}"),
+      }),
+    );
+
+    const customTemplate = PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS[1];
+    expect(customTemplate?.profile).toContain("pageBreak: none");
+    expect(customTemplate?.profile).toContain("start: 5");
+    expect(customTemplate?.expected.pages.map((page) => page.pageNumberLabels)).toEqual([
+      [],
+      ["PRODUCT-B-L5/9-P2/4"],
+      ["PRODUCT-B-L7/9-P3/4"],
+      ["PRODUCT-B-L9/9-P4/4"],
+    ]);
+
+    const insertedBlank = PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS[2];
+    expect(insertedBlank?.expected.pages.map((page) => page.role)).toEqual([
+      "document-body",
+      "inserted-blank",
+      "document-body",
+    ]);
   });
 
   test("keeps stable harness metadata and uses bounded timed command requests", async () => {

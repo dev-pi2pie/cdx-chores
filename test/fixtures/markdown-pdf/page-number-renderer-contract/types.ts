@@ -55,6 +55,7 @@ export interface ExpectedPhysicalPage {
   marker: string;
   pageNumberLabels: readonly string[];
   pageNumberRegion?: PageNumberRegion;
+  requiredText?: readonly string[];
   forbiddenText?: readonly string[];
   counterValues?: ExpectedCounterValues;
 }
