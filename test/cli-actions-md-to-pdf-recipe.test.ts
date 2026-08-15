@@ -5,6 +5,9 @@ import {
   normalizeMarkdownPdfOptions,
   normalizeMarkdownPdfProfile,
 } from "../src/cli/markdown-pdf";
+import { MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME } from "../src/cli/markdown-pdf/profile/page-number-format";
+
+const logicalCurrent = `counter(${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME})`;
 
 describe("markdown PDF recipe generation", () => {
   test("keeps the automatic metadata title inside the single body after the ToC", () => {
@@ -185,7 +188,7 @@ describe("markdown PDF recipe generation", () => {
     expect(recipe.styleCss).toContain('@top-left {\n    content: "Example Co.";');
     expect(recipe.styleCss).toContain('@top-right {\n    content: "Quarterly Report";');
     expect(recipe.styleCss).toContain('@bottom-left {\n    content: "Noname";');
-    expect(recipe.styleCss).toContain('@bottom-center {\n    content: "Page " counter(page);');
+    expect(recipe.styleCss).toContain(`@bottom-center {\n    content: "Page " ${logicalCurrent};`);
     expect(recipe.styleCss).toContain("@page toc");
     expect(recipe.styleCss).not.toContain("counter(pages)");
   });
@@ -220,7 +223,7 @@ describe("markdown PDF recipe generation", () => {
       profile: normalizedProfile.profile,
     });
 
-    expect(recipe.styleCss).not.toContain("counter(page)");
+    expect(recipe.styleCss).not.toContain(logicalCurrent);
     expect(recipe.styleCss).not.toContain("@bottom-center");
   });
 
@@ -238,8 +241,8 @@ describe("markdown PDF recipe generation", () => {
       profile: normalizedProfile.profile,
     });
 
-    expect(recipe.styleCss).toContain("@top-right {\n    content: counter(page);");
-    expect(recipe.styleCss).not.toContain("@bottom-center {\n    content: counter(page);");
+    expect(recipe.styleCss).toContain(`@top-right {\n    content: ${logicalCurrent};`);
+    expect(recipe.styleCss).not.toContain(`@bottom-center {\n    content: ${logicalCurrent};`);
   });
 
   test("generates plain cover HTML and cover page CSS", () => {

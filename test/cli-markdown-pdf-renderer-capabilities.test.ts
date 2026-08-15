@@ -81,7 +81,7 @@ function runnerWithWeasyPrintVersion(version: string): {
 } {
   const calls: Array<{ command: string; args: string[] }> = [];
   const { runner: baseRunner } = createPdfRunner({
-    html: "<html><body>Report</body></html>",
+    html: '<html><body><main class="document-body">Report</main></body></html>',
   });
   return {
     calls,

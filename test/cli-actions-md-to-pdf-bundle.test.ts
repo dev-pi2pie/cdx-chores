@@ -898,4 +898,49 @@ describe("Markdown PDF render bundle action integration", () => {
       expectNoStderr();
     });
   });
+
+  test("finalizes logical page totals for a bundle-resolved Project profile and Template", async () => {
+    await withTempFixtureDir("md-pdf-render-bundle-logical-total", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "report.pdf");
+      const htmlOutput = join(fixtureDir, "report.html");
+      const bundleDirectory = join(fixtureDir, "bundle");
+      await mkdir(bundleDirectory);
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(
+        join(bundleDirectory, "profile.yml"),
+        [
+          "pageNumbers:",
+          "  enabled: true",
+          "  scope: body",
+          "  countFrom: body",
+          '  format: "{page} / {pages}"',
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await writeFile(
+        join(bundleDirectory, "template.html"),
+        '<html><body><main class="document-body">$body$</main></body></html>\n',
+        "utf8",
+      );
+      await writeFile(join(bundleDirectory, "style.css"), "body { color: black; }\n", "utf8");
+      const { runner } = createPdfRunner({
+        html: '<html><body><main class="document-body">Report</main></body></html>',
+      });
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        bundle: toRepoRelativePath(bundleDirectory),
+        htmlOutput: toRepoRelativePath(htmlOutput),
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        runner,
+      });
+
+      expect(await readFile(htmlOutput, "utf8")).toContain('id="cdx-markdown-pdf-logical-final"');
+      expect(await readFile(outputPath, "utf8")).toContain("%PDF");
+      expectNoStderr();
+    });
+  });
 });

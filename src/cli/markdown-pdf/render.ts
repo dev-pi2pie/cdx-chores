@@ -6,17 +6,20 @@ import { CliError } from "../errors";
 import { readTextFileRequired, writeBufferFileSafe, writeTextFileSafe } from "../file-io";
 import { execCommand, type ExecCommandResult } from "../process";
 import { highlightMarkdownPdfCodeBlocks } from "./code-highlight";
-import type { EffectiveMarkdownPdfCodeOptions } from "./profile";
+import { finalizeMarkdownPdfPageNumberHtml } from "./page-number-html";
+import type { EffectiveMarkdownPdfCodeOptions, NormalizedMarkdownPdfPageNumbers } from "./profile";
 import {
   rejectRemoteMarkdownPdfAssetsWhenDisabled,
   rewriteMarkdownPdfTemplateLocalAssets,
 } from "./template-assets";
+import type { MarkdownPdfTemplateCompatibilityResult } from "./template-compatibility";
 import type { NormalizedMarkdownPdfOptions } from "./validation";
 
 export type MarkdownPdfProcessRunner = typeof execCommand;
 export type MarkdownPdfCodeHighlighter = typeof highlightMarkdownPdfCodeBlocks;
 
 export interface RenderMarkdownPdfInput {
+  bodyBoundary: MarkdownPdfTemplateCompatibilityResult["bodyBoundary"];
   inputPath: string;
   outputPath: string;
   templateHtml: string;
@@ -27,6 +30,7 @@ export interface RenderMarkdownPdfInput {
   htmlOutputPath?: string;
   overwrite?: boolean;
   options: NormalizedMarkdownPdfOptions;
+  pageNumbers: NormalizedMarkdownPdfPageNumbers;
   code?: EffectiveMarkdownPdfCodeOptions;
   runner?: MarkdownPdfProcessRunner;
   codeHighlighter?: MarkdownPdfCodeHighlighter;
@@ -66,9 +70,14 @@ async function createFinalHtml(
   pandocHtmlPath: string,
 ): Promise<string> {
   const pandocHtml = await readTextFileRequired(pandocHtmlPath);
-  return input.code?.highlight
+  const highlightedHtml = input.code?.highlight
     ? await (input.codeHighlighter ?? highlightMarkdownPdfCodeBlocks)(pandocHtml, input.code)
     : pandocHtml;
+  return finalizeMarkdownPdfPageNumberHtml({
+    bodyBoundary: input.bodyBoundary,
+    html: highlightedHtml,
+    pageNumbers: input.pageNumbers,
+  });
 }
 
 async function createCustomTemplateRenderFile(input: {

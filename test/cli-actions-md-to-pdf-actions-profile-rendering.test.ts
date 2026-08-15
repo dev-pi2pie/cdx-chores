@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { actionMdToPdf } from "../src/cli/actions";
 import type { MarkdownPdfProcessRunner } from "../src/cli/markdown-pdf";
+import { MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME } from "../src/cli/markdown-pdf/profile/page-number-format";
 import { synthesizeMdPdfTemplateCodex } from "../src/cli/markdown-pdf/template-codex";
 import { createPdfRunner } from "./cli-actions-md-to-pdf.helpers";
 import {
@@ -35,7 +36,9 @@ describe("cli action modules: md to-pdf profile rendering", () => {
       if (scenario.profileSource) {
         await writeFile(profilePath, scenario.profileSource, "utf8");
       }
-      const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { runner } = createPdfRunner({
+        html: '<html><body><main class="document-body">Report</main></body></html>',
+      });
       const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
         if (command === "weasyprint" && !args.includes("--info")) {
           const stylesheetIndexes = args
@@ -61,10 +64,14 @@ describe("cli action modules: md to-pdf profile rendering", () => {
       });
 
       expect(renderedStyles).toHaveLength(1);
-      expect(renderedStyles[0]).toContain("counter-increment: page 1;");
-      expect(renderedStyles[0]).toContain("counter(page)");
+      expect(renderedStyles[0]).toContain(
+        `counter-increment: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} 1;`,
+      );
+      expect(renderedStyles[0]).toContain(`counter(${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME})`);
       if (scenario.profileSource) {
-        expect(renderedStyles[0]).toContain('content: "Page " counter(page);');
+        expect(renderedStyles[0]).toContain(
+          `content: "Page " counter(${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME});`,
+        );
       }
       expect(await readFile(outputPath, "utf8")).toContain("%PDF");
       expectNoStderr();

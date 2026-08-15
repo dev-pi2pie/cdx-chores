@@ -37,6 +37,7 @@ export const MARKDOWN_PDF_PAGE_NUMBER_FORMAT_TOKENS =
   MARKDOWN_PDF_PAGE_NUMBER_FORMAT_TOKEN_DEFINITIONS.map(({ token }) => token);
 
 export const MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME = "cdx-markdown-pdf-logical-page";
+export const MARKDOWN_PDF_LOGICAL_FINAL_TARGET_ID = "cdx-markdown-pdf-logical-final";
 
 export type MarkdownPdfPageNumberFormatSegment =
   | { kind: "text"; value: string }

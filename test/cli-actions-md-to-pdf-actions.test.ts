@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 import { actionMdToPdf } from "../src/cli/actions";
 import { CliError } from "../src/cli/errors";
 import type { MarkdownPdfProcessRunner } from "../src/cli/markdown-pdf";
+import { MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME } from "../src/cli/markdown-pdf/profile/page-number-format";
 import { createPdfRunner, ok } from "./cli-actions-md-to-pdf.helpers";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
@@ -293,7 +294,9 @@ describe("cli action modules: md to-pdf rendering", () => {
         "utf8",
       );
 
-      const { runner } = createPdfRunner({ html: "<html><body></body></html>" });
+      const { runner } = createPdfRunner({
+        html: '<html><body><main class="document-body"></main></body></html>',
+      });
       const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
         if (command === "weasyprint" && !args.includes("--info")) {
           const stylesheetIndexes = args
@@ -322,7 +325,9 @@ describe("cli action modules: md to-pdf rendering", () => {
       expect(combinedCss).toContain("margin: 12mm 12mm 12mm 12mm");
       expect(combinedCss).toContain('@top-left {\n    content: "Example Co.";');
       expect(combinedCss).toContain('@top-right {\n    content: "Quarterly Report";');
-      expect(combinedCss).toContain('@bottom-center {\n    content: "Page " counter(page);');
+      expect(combinedCss).toContain(
+        `@bottom-center {\n    content: "Page " counter(${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME});`,
+      );
       expect(stdout.text).toContain("Wrote PDF:");
       expectNoStderr();
     });
@@ -817,6 +822,57 @@ describe("cli action modules: md to-pdf rendering", () => {
       ).toBe(false);
       expect(await readFile(outputPath, "utf8")).toBe("existing-pdf");
       expect(await readFile(htmlOutput, "utf8")).toBe("existing-html");
+    });
+  });
+
+  test("rejects a reserved logical-final target before HTML output or WeasyPrint rendering", async () => {
+    await withTempFixtureDir("md-to-pdf-logical-target-conflict", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "profile.yml");
+      const outputPath = join(fixtureDir, "report.pdf");
+      const htmlOutput = join(fixtureDir, "report.render.html");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(
+        profilePath,
+        [
+          "pageNumbers:",
+          "  enabled: true",
+          "  scope: body",
+          "  countFrom: body",
+          '  format: "{page} / {pages}"',
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      const { calls, runner } = createPdfRunner({
+        html: [
+          "<html><body>",
+          '<main class="document-body">Report</main>',
+          '<span id="cdx-markdown-pdf-logical-final"></span>',
+          "</body></html>",
+        ].join(""),
+      });
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expect(
+        actionMdToPdf(runtime, {
+          htmlOutput: toRepoRelativePath(htmlOutput),
+          input: toRepoRelativePath(inputPath),
+          output: toRepoRelativePath(outputPath),
+          profile: toRepoRelativePath(profilePath),
+          runner,
+        }),
+      ).rejects.toMatchObject({
+        code: "MARKDOWN_PDF_LOGICAL_TARGET_CONFLICT",
+        exitCode: 2,
+      });
+
+      expect(
+        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+      ).toBe(false);
+      await expect(readFile(outputPath)).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(readFile(htmlOutput)).rejects.toMatchObject({ code: "ENOENT" });
+      expectNoOutput();
     });
   });
 });

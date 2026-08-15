@@ -7,6 +7,11 @@ import {
   planMarkdownPdfRender,
   prepareMarkdownPdfRender,
 } from "../src/cli/actions";
+import type { MarkdownPdfProcessRunner } from "../src/cli/markdown-pdf";
+import {
+  MARKDOWN_PDF_LOGICAL_FINAL_TARGET_ID,
+  MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME,
+} from "../src/cli/markdown-pdf/profile";
 import { createPdfRunner } from "./cli-actions-md-to-pdf.helpers";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
@@ -71,7 +76,9 @@ describe("Markdown PDF prepared render service", () => {
       expect(prepared.pageNumberConfiguration.effective).not.toBe(
         prepared.normalizedProfile.pageNumbers,
       );
-      expect(prepared.recipe.styleCss.includes("counter(page)")).toBe(expected);
+      expect(
+        prepared.recipe.styleCss.includes(`counter(${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME})`),
+      ).toBe(expected);
     });
   });
 
@@ -227,6 +234,75 @@ describe("Markdown PDF prepared render service", () => {
         "weasyprint",
       ]);
       expect(await readFile(outputPath, "utf8")).toContain("%PDF");
+    });
+  });
+
+  test("finalizes the effective CLI override after highlighting and shares one HTML artifact", async () => {
+    await withTempFixtureDir("md-to-pdf-prepared-page-number-finalize", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "profile.yml");
+      const outputPath = join(fixtureDir, "report.pdf");
+      const htmlOutputPath = join(fixtureDir, "report.html");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(
+        profilePath,
+        [
+          "code:",
+          "  highlight: true",
+          "pageNumbers:",
+          "  enabled: false",
+          "  scope: body",
+          "  countFrom: body",
+          '  format: "{page} / {pages}"',
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      const { runtime } = createActionTestRuntime();
+      const prepared = await prepareMarkdownPdfRender(runtime, {
+        input: toRepoRelativePath(inputPath),
+        pageNumbers: true,
+        profile: toRepoRelativePath(profilePath),
+      });
+      const plan = await planMarkdownPdfRender(runtime, prepared, {
+        htmlOutput: toRepoRelativePath(htmlOutputPath),
+        output: toRepoRelativePath(outputPath),
+      });
+      const { runner } = createPdfRunner({
+        html: '<html><body><main class="document-body">Report</main></body></html>',
+      });
+      const weasyprintInputs: string[] = [];
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "weasyprint" && !args.includes("--info")) {
+          const htmlPath = args.at(-2);
+          if (htmlPath) {
+            weasyprintInputs.push(await readFile(htmlPath, "utf8"));
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const highlighterInputs: string[] = [];
+
+      await executePlannedMarkdownPdfRender(runtime, plan, {
+        codeHighlighter: async (html) => {
+          highlighterInputs.push(html);
+          return html.replace("Report", '<p data-highlighted="true">Report</p>');
+        },
+        runner: capturingRunner,
+      });
+
+      const htmlOutput = await readFile(htmlOutputPath, "utf8");
+      expect(prepared.pageNumberConfiguration).toMatchObject({
+        effective: { enabled: true, format: "{page} / {pages}" },
+        override: true,
+        profileEnabled: false,
+        source: "direct-override",
+      });
+      expect(highlighterInputs).toHaveLength(1);
+      expect(highlighterInputs[0]).not.toContain(MARKDOWN_PDF_LOGICAL_FINAL_TARGET_ID);
+      expect(htmlOutput).toContain('data-highlighted="true"');
+      expect(htmlOutput).toContain(`id="${MARKDOWN_PDF_LOGICAL_FINAL_TARGET_ID}"`);
+      expect(weasyprintInputs).toEqual([htmlOutput]);
     });
   });
 });

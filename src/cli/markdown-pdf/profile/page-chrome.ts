@@ -3,6 +3,11 @@ import type {
   NormalizedMarkdownPdfPageChromeStyle,
   NormalizedMarkdownPdfProfile,
 } from "./types";
+import {
+  MARKDOWN_PDF_LOGICAL_FINAL_TARGET_ID,
+  MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME,
+  parseMarkdownPdfPageNumberFormat,
+} from "./page-number-format";
 
 export type MarkdownPdfPageChromeBodyBoundary =
   | "not-required"
@@ -18,35 +23,27 @@ function cssString(value: string): string {
 }
 
 function cssContentFromTemplate(value: string, metadata: Record<string, string>): string {
-  const tokens: string[] = [];
-  let cursor = 0;
-
-  for (const match of value.matchAll(/\{(pages?|[A-Za-z][A-Za-z0-9_.-]*)\}/g)) {
-    const index = match.index ?? 0;
-    const before = value.slice(cursor, index);
-    if (before) {
-      tokens.push(cssString(before));
+  const tokens = parseMarkdownPdfPageNumberFormat(value).flatMap((segment) => {
+    if (segment.kind === "text") {
+      return segment.value ? [cssString(segment.value)] : [];
     }
-
-    const key = match[1] ?? "";
-    if (key === "page") {
-      tokens.push("counter(page)");
-    } else if (key === "pages") {
-      tokens.push("counter(pages)");
-    } else {
-      const replacement = metadata[key] ?? "";
-      if (replacement) {
-        tokens.push(cssString(replacement));
-      }
+    if (segment.kind === "metadata") {
+      const replacement = metadata[segment.key] ?? "";
+      return replacement ? [cssString(replacement)] : [];
     }
-
-    cursor = index + match[0].length;
-  }
-
-  const after = value.slice(cursor);
-  if (after) {
-    tokens.push(cssString(after));
-  }
+    switch (segment.token) {
+      case "page":
+        return [`counter(${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME})`];
+      case "pages":
+        return [
+          `target-counter(url("#${MARKDOWN_PDF_LOGICAL_FINAL_TARGET_ID}"), ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME})`,
+        ];
+      case "pdfPage":
+        return ["counter(page)"];
+      case "pdfPages":
+        return ["counter(pages)"];
+    }
+  });
 
   return tokens.length > 0 ? tokens.join(" ") : cssString("");
 }
@@ -201,7 +198,7 @@ export function createMarkdownPdfPageChromeCss(
 
   const genericDeclarations =
     pageNumbers.enabled && pageNumbers.countFrom === "document"
-      ? [`counter-increment: page ${pageNumbers.increment};`]
+      ? [`counter-increment: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} ${pageNumbers.increment};`]
       : [];
   const generatedRules: string[] = [];
 
@@ -213,7 +210,9 @@ export function createMarkdownPdfPageChromeCss(
     generatedRules.push(
       pageRule(
         ":nth(1)",
-        [`counter-reset: page ${pageNumbers.start - pageNumbers.increment};`],
+        [
+          `counter-reset: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} ${pageNumbers.start - pageNumbers.increment};`,
+        ],
         [],
       ),
     );
@@ -222,7 +221,7 @@ export function createMarkdownPdfPageChromeCss(
   if (usesProvenBodyVisibility || (pageNumbers.enabled && pageNumbers.countFrom === "body")) {
     const bodyDeclarations =
       pageNumbers.enabled && pageNumbers.countFrom === "body"
-        ? [`counter-increment: page ${pageNumbers.increment};`]
+        ? [`counter-increment: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} ${pageNumbers.increment};`]
         : [];
     const bodyMarginBoxes =
       usesProvenBodyVisibility && numberTarget
@@ -242,7 +241,9 @@ export function createMarkdownPdfPageChromeCss(
       generatedRules.push(
         pageRule(
           "body:nth(1 of body)",
-          [`counter-reset: page ${pageNumbers.start - pageNumbers.increment};`],
+          [
+            `counter-reset: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} ${pageNumbers.start - pageNumbers.increment};`,
+          ],
           [],
         ),
       );

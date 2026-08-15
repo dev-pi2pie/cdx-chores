@@ -376,6 +376,7 @@ export async function executePlannedMarkdownPdfRender(
   });
 
   const result = await renderMarkdownPdf({
+    bodyBoundary: plan.prepared.templateCompatibility.bodyBoundary,
     inputPath: plan.prepared.inputPath,
     outputPath: plan.outputPath,
     templateHtml: plan.prepared.recipe.templateHtml,
@@ -386,6 +387,7 @@ export async function executePlannedMarkdownPdfRender(
     htmlOutputPath: plan.htmlOutputPath,
     overwrite: plan.overwrite,
     options: plan.prepared.options,
+    pageNumbers: plan.prepared.pageNumberConfiguration.effective,
     code: plan.prepared.code,
     runner,
     codeHighlighter: options.codeHighlighter,

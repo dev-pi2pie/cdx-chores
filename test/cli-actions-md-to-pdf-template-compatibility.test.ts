@@ -9,6 +9,7 @@ import {
   MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_WARNING,
   type MarkdownPdfProcessRunner,
 } from "../src/cli/markdown-pdf";
+import { MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME } from "../src/cli/markdown-pdf/profile/page-number-format";
 import { createPdfRunner } from "./cli-actions-md-to-pdf.helpers";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
@@ -67,7 +68,10 @@ describe("Markdown PDF selected-template compatibility", () => {
       });
 
       expect(prepared.templateCompatibility.bodyBoundary).toBe("legacy-document-origin-fallback");
-      expect(prepared.recipe.styleCss).toContain("counter-increment: page 1;");
+      expect(prepared.recipe.styleCss).toContain(
+        `counter-increment: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} 1;`,
+      );
+      expect(prepared.recipe.styleCss).not.toContain("counter-increment: page");
       expect(prepared.recipe.styleCss).toContain("@page toc {");
       expect(prepared.recipe.styleCss).not.toContain("@page body");
       expect(prepared.recipe.styleCss).not.toContain(".document-body {\n  page: body;");
@@ -102,7 +106,9 @@ describe("Markdown PDF selected-template compatibility", () => {
         "utf8",
       );
       await writeFile(templatePath, customTemplate, "utf8");
-      const { calls, runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { calls, runner } = createPdfRunner({
+        html: '<html><body><main class="document-body">Report</main></body></html>',
+      });
       let selectedTemplate = "";
       const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
         if (command === "pandoc" && !args.includes("--version")) {
@@ -165,7 +171,9 @@ describe("Markdown PDF selected-template compatibility", () => {
       const outputPath = join(fixtureDir, "report.pdf");
       await writeFile(inputPath, "# Report\n", "utf8");
       await writeFile(profilePath, BODY_ORIGIN_PROFILE, "utf8");
-      const { calls, runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { calls, runner } = createPdfRunner({
+        html: '<html><body><main class="document-body">Report</main></body></html>',
+      });
       const { runtime, expectNoStderr } = createActionTestRuntime();
 
       await actionMdToPdf(runtime, {
@@ -187,18 +195,22 @@ describe("Markdown PDF selected-template compatibility", () => {
       const profilePath = join(fixtureDir, "profile.yml");
       const templatePath = join(fixtureDir, "template.html");
       const outputPath = join(fixtureDir, "report.pdf");
+      const htmlOutputPath = join(fixtureDir, "report.html");
       await writeFile(inputPath, "# Report\n", "utf8");
-      await writeFile(profilePath, BODY_ORIGIN_PROFILE, "utf8");
+      await writeFile(profilePath, `${BODY_ORIGIN_PROFILE}  format: "{pages}"\n`, "utf8");
       await writeFile(
         templatePath,
         '<html><body><main class="document-body">$body$</main></body></html>\n',
         "utf8",
       );
-      const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { runner } = createPdfRunner({
+        html: '<html><body><main class="document-body">Report</main></body></html>',
+      });
       const { runtime, expectNoStderr } = createActionTestRuntime();
 
       await actionMdToPdf(runtime, {
         input: toRepoRelativePath(inputPath),
+        htmlOutput: toRepoRelativePath(htmlOutputPath),
         output: toRepoRelativePath(outputPath),
         profile: toRepoRelativePath(profilePath),
         template: toRepoRelativePath(templatePath),
@@ -206,6 +218,9 @@ describe("Markdown PDF selected-template compatibility", () => {
       });
 
       expect(await readFile(outputPath, "utf8")).toContain("%PDF");
+      expect(await readFile(htmlOutputPath, "utf8")).toContain(
+        'id="cdx-markdown-pdf-logical-final"',
+      );
       expectNoStderr();
     });
   });

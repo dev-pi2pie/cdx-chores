@@ -6,6 +6,13 @@ import {
   normalizeMarkdownPdfOptions,
   normalizeMarkdownPdfProfile,
 } from "../src/cli/markdown-pdf";
+import {
+  MARKDOWN_PDF_LOGICAL_FINAL_TARGET_ID,
+  MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME,
+} from "../src/cli/markdown-pdf/profile/page-number-format";
+
+const logicalCurrent = `counter(${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME})`;
+const logicalFinal = `target-counter(url("#${MARKDOWN_PDF_LOGICAL_FINAL_TARGET_ID}"), ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME})`;
 
 function pageChromeCss(
   pageNumbers: Record<string, unknown>,
@@ -72,22 +79,111 @@ describe("Markdown PDF page-chrome sequence and visibility", () => {
       format: "PN-{page}",
     });
 
-    expect(css).toContain("counter-increment: page 2;");
-    expect(css).toContain("@page:nth(1) {\n  counter-reset: page -2;");
+    expect(css).toContain(`counter-increment: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} 2;`);
+    expect(css).toContain(
+      `@page:nth(1) {\n  counter-reset: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} -2;`,
+    );
     expect(css).not.toContain("@page body");
     expect(css).not.toContain(".document-body");
+    expect(css).not.toContain("counter-increment: page");
+    expect(css).not.toContain("counter-reset: page");
   });
 
-  test("maps the historical pages token to the physical CSS pages counter", () => {
+  test("maps every exact page-number token to its logical or physical CSS counter", () => {
     const css = pageChromeCss({
       enabled: true,
       scope: "document",
       countFrom: "document",
-      format: "Page {page} of {pages}",
+      format: "Logical {page}/{pages}; PDF {pdfPage}/{pdfPages}",
     });
 
-    expect(css).toContain('content: "Page " counter(page) " of " counter(pages);');
+    expect(css).toContain(
+      `content: "Logical " ${logicalCurrent} "/" ${logicalFinal} "; PDF " counter(page) "/" counter(pages);`,
+    );
+    expect(
+      css.match(new RegExp(`counter\\(${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME}\\)`, "g")),
+    ).toHaveLength(2);
+    expect(css.match(/target-counter\(/g)).toHaveLength(2);
+    expect(css.match(/counter\(page\)/g)).toHaveLength(2);
     expect(css.match(/counter\(pages\)/g)).toHaveLength(2);
+  });
+
+  test("preserves adjacent and repeated tokens, escaped literals, and metadata replacements", () => {
+    const author = 'Ada "A"\\Labs\nSecond line';
+    const css = pageChromeCss(
+      {
+        enabled: true,
+        scope: "document",
+        countFrom: "document",
+        format: 'A"{page}{page}\\{pages}{pdfPage}{pdfPages}{author}{missing}{Page}Z',
+      },
+      {},
+      {
+        metadata: {
+          Page: "metadata page",
+          author,
+        },
+      },
+    );
+    const expectedContent = [
+      JSON.stringify('A"'),
+      logicalCurrent,
+      logicalCurrent,
+      JSON.stringify("\\"),
+      logicalFinal,
+      "counter(page)",
+      "counter(pages)",
+      JSON.stringify(author),
+      JSON.stringify("metadata page"),
+      JSON.stringify("Z"),
+    ].join(" ");
+
+    expect(css).toContain(`content: ${expectedContent};`);
+    expect(css).not.toContain("{missing}");
+    expect(css.split(`content: ${expectedContent};`)).toHaveLength(3);
+  });
+
+  test("emits empty content when a label contains only missing metadata", () => {
+    const css = pageChromeCss({
+      enabled: true,
+      scope: "document",
+      countFrom: "document",
+      format: "{missing}",
+    });
+
+    const ordinaryRule = css.slice(css.indexOf("@page {"), css.indexOf("@page:nth(1)"));
+    expect(ordinaryRule).toContain('@bottom-center {\n    content: "";');
+  });
+
+  test("keeps every valid scope and origin combination on the private logical counter", () => {
+    const cases = [
+      { countFrom: "document", scope: "document", sequenceRule: "@page {" },
+      { countFrom: "document", scope: "body", sequenceRule: "@page {" },
+      { countFrom: "body", scope: "body", sequenceRule: "@page body {" },
+    ] as const;
+
+    for (const { countFrom, scope, sequenceRule } of cases) {
+      const css = pageChromeCss(
+        {
+          enabled: true,
+          scope,
+          countFrom,
+          start: 5,
+          increment: 2,
+          format: "{page}/{pages} [{pdfPage}/{pdfPages}]",
+        },
+        { bodyBoundary: "proven" },
+      );
+      const sequenceStart = css.indexOf(sequenceRule);
+      const sequenceRuleCss = css.slice(sequenceStart, css.indexOf("}", sequenceStart));
+
+      expect(sequenceStart).toBeGreaterThanOrEqual(0);
+      expect(sequenceRuleCss).toContain(
+        `counter-increment: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} 2;`,
+      );
+      expect(css).toContain(`counter-reset: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} 3;`);
+      expect(css).not.toMatch(/counter-(?:increment|reset):\s+pages?(?:\s|;)/);
+    }
   });
 
   test("uses the proven first-body page group for body-origin arithmetic", () => {
@@ -103,11 +199,19 @@ describe("Markdown PDF page-chrome sequence and visibility", () => {
       { bodyBoundary: "proven" },
     );
 
-    expect(css).toContain("@page body {\n  counter-increment: page 2;");
-    expect(css).toContain("@page body:nth(1 of body) {\n  counter-reset: page -2;");
+    expect(css).toContain(
+      `@page body {\n  counter-increment: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} 2;`,
+    );
+    expect(css).toContain(
+      `@page body:nth(1 of body) {\n  counter-reset: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} -2;`,
+    );
     expect(css).toContain(".document-body {\n  page: body;");
-    expect(css.indexOf("counter-increment: page 2;")).toBeGreaterThan(css.indexOf("@page body"));
+    expect(
+      css.indexOf(`counter-increment: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} 2;`),
+    ).toBeGreaterThan(css.indexOf("@page body"));
     expect(css).not.toContain("@page:nth(1)");
+    expect(css).not.toContain("counter-increment: page");
+    expect(css).not.toContain("counter-reset: page");
   });
 
   test("rejects an impossible legacy fallback for body-origin arithmetic", () => {
@@ -145,10 +249,12 @@ describe("Markdown PDF page-chrome sequence and visibility", () => {
     const genericRule = css.slice(css.indexOf("@page {"), css.indexOf("@page:nth(1)"));
     const bodyRule = namedPageRule(css, "body");
     const tocRule = namedPageRule(css, "toc");
-    expect(genericRule).toContain("counter-increment: page 1;");
+    expect(genericRule).toContain(
+      `counter-increment: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} 1;`,
+    );
     expect(genericRule).not.toContain("PN-");
     expect(genericRule).not.toContain("Original footer");
-    expect(bodyRule).toContain('@bottom-right {\n    content: "PN-" counter(page);');
+    expect(bodyRule).toContain(`@bottom-right {\n    content: "PN-" ${logicalCurrent};`);
     expect(tocRule).not.toContain("PN-");
   });
 
@@ -166,8 +272,8 @@ describe("Markdown PDF page-chrome sequence and visibility", () => {
 
     const genericRule = css.slice(css.indexOf("@page {"), css.indexOf("@page:nth(1)"));
     const tocRule = namedPageRule(css, "toc");
-    expect(genericRule).toContain('@top-left {\n    content: "PN-" counter(page);');
-    expect(tocRule).toContain('@top-left {\n    content: "PN-" counter(page);');
+    expect(genericRule).toContain(`@top-left {\n    content: "PN-" ${logicalCurrent};`);
+    expect(tocRule).toContain(`@top-left {\n    content: "PN-" ${logicalCurrent};`);
     expect(css).not.toContain("@page body");
     expect(css).not.toContain(".document-body");
   });
@@ -191,7 +297,7 @@ describe("Markdown PDF page-chrome sequence and visibility", () => {
     const tocRule = namedPageRule(css, "toc");
     expect(tocRule).toContain("@top-left {\n    content: none;");
     expect(tocRule).toContain("@bottom-left {\n    content: none;");
-    expect(tocRule).toContain('@bottom-center {\n    content: "Page " counter(page);');
+    expect(tocRule).toContain(`@bottom-center {\n    content: "Page " ${logicalCurrent};`);
     expect(tocRule).toContain('content: "Private header";');
     expect(tocRule).toContain('content: "Private right";');
     expect(tocRule).toContain('content: "Private footer";');
@@ -259,10 +365,16 @@ describe("Markdown PDF page-chrome sequence and visibility", () => {
       profile: bodyOrigin,
     }).styleCss;
 
-    expect(documentCss).toContain("@page {\n  counter-increment: page 2;");
-    expect(documentCss).toContain("@page:nth(1) {\n  counter-reset: page -2;");
+    expect(documentCss).toContain(
+      `@page {\n  counter-increment: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} 2;`,
+    );
+    expect(documentCss).toContain(
+      `@page:nth(1) {\n  counter-reset: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} -2;`,
+    );
     expect(bodyCss).not.toContain("@page:nth(1)");
-    expect(bodyCss).toContain("@page body {\n  counter-increment: page 2;");
+    expect(bodyCss).toContain(
+      `@page body {\n  counter-increment: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} 2;`,
+    );
     for (const css of [documentCss, bodyCss]) {
       const coverRule = namedPageRule(css, "cover");
       expect(coverRule).toContain("@bottom-center {\n    content: none;");
@@ -308,7 +420,7 @@ describe("Markdown PDF page-chrome area styling", () => {
         },
       );
       const ordinaryRule = css.slice(css.indexOf("@page {"), css.indexOf("@page:nth(1)"));
-      const selectedBox = `@${cssArea}-${slot} {\n    content: "PN-" counter(page);`;
+      const selectedBox = `@${cssArea}-${slot} {\n    content: "PN-" ${logicalCurrent};`;
       const sameAreaSiblings =
         cssArea === "top"
           ? ([
@@ -498,14 +610,14 @@ describe("Markdown PDF page-chrome area styling", () => {
     const bodyTocRule = namedPageRule(bodyCss, "toc");
     const tocRule = namedPageRule(documentCss, "toc");
     expect(bodyRule).toContain(
-      '@top-right {\n    content: "Body " counter(page);\n    font-weight: 700;\n    padding-bottom: 2mm;\n  }',
+      `@top-right {\n    content: "Body " ${logicalCurrent};\n    font-weight: 700;\n    padding-bottom: 2mm;\n  }`,
     );
     expect(bodyTocRule).toContain("@top-right {\n    content: none;");
     expect(bodyTocRule).not.toContain("Body ");
     expect(bodyTocRule).not.toContain("font-weight: 700;");
     expect(bodyTocRule).not.toContain("padding-bottom: 2mm;");
     expect(tocRule).toContain(
-      '@bottom-left {\n    content: "Document " counter(page);\n    color: #345678;\n    border-top-width: 1pt;\n  }',
+      `@bottom-left {\n    content: "Document " ${logicalCurrent};\n    color: #345678;\n    border-top-width: 1pt;\n  }`,
     );
   });
 
@@ -536,19 +648,25 @@ describe("Markdown PDF page-chrome area styling", () => {
       bodyBoundary: "proven",
       profile: normalizedProfile,
     }).styleCss;
-    const genericStart = css.indexOf("@page {\n  counter-increment: page 2;");
+    const genericStart = css.indexOf(
+      `@page {\n  counter-increment: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} 2;`,
+    );
     const genericRule = css.slice(genericStart, css.indexOf("@page:nth(1)", genericStart));
     const bodyRule = namedPageRule(css, "body");
     const tocRule = namedPageRule(css, "toc");
     const coverRule = namedPageRule(css, "cover");
 
     expect(genericStart).toBeGreaterThanOrEqual(0);
-    expect(genericRule).toContain("counter-increment: page 2;");
+    expect(genericRule).toContain(
+      `counter-increment: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} 2;`,
+    );
     expect(genericRule).not.toContain("Body-visible");
     expect(genericRule).not.toContain("font-size: 9pt;");
-    expect(css).toContain("@page:nth(1) {\n  counter-reset: page -2;");
+    expect(css).toContain(
+      `@page:nth(1) {\n  counter-reset: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} -2;`,
+    );
     expect(bodyRule).toContain(
-      '@top-right {\n    content: "Body-visible " counter(page);\n    font-size: 9pt;\n    color: #2468AC;\n    border-bottom-style: solid;\n    padding-bottom: 1.5mm;\n  }',
+      `@top-right {\n    content: "Body-visible " ${logicalCurrent};\n    font-size: 9pt;\n    color: #2468AC;\n    border-bottom-style: solid;\n    padding-bottom: 1.5mm;\n  }`,
     );
     expect(tocRule).not.toContain("Body-visible");
     expect(tocRule).not.toContain("font-size: 9pt;");
