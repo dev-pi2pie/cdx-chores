@@ -210,6 +210,49 @@ describe("text inline prompt controller", () => {
     await expect(prompt).resolves.toBe("{page}");
   });
 
+  test("Markdown PDF page-label completion cycles through logical and physical tokens in registry order", async () => {
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    const prompt = promptTextInlineGhost({
+      message: "Page-number label",
+      ghostText: "Page {page} of {pages}",
+      completionKind: "markdown-pdf-page-label",
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: (value) => (value === "{pdfPages}" ? true : "Select {pdfPages}"),
+    });
+
+    await nextRenderTick();
+    stdin.emit("keypress", "{", { name: "{" });
+    stdin.emit("keypress", "p", { name: "p" });
+    await nextRenderTick();
+    expect(stdout.text).toContain("\x1b[2mage}\x1b[22m");
+
+    stdin.emit("keypress", "", { name: "down" });
+    await nextRenderTick();
+    expect(stdout.text).toContain("\x1b[2mages}\x1b[22m");
+
+    stdin.emit("keypress", "", { name: "down" });
+    await nextRenderTick();
+    expect(stdout.text).toContain("\x1b[2mdfPage}\x1b[22m");
+
+    stdin.emit("keypress", "", { name: "down" });
+    await nextRenderTick();
+    expect(stdout.text).toContain("\x1b[2mdfPages}\x1b[22m");
+
+    stdin.emit("keypress", "", { name: "down" });
+    await nextRenderTick();
+    expect(stdout.text).toContain("\x1b[2mage}\x1b[22m");
+
+    stdin.emit("keypress", "", { name: "up" });
+    await nextRenderTick();
+    expect(stdout.text).toContain("\x1b[2mdfPages}\x1b[22m");
+
+    stdin.emit("keypress", "\t", { name: "tab" });
+    stdin.emit("keypress", "\r", { name: "return" });
+    await expect(prompt).resolves.toBe("{pdfPages}");
+  });
+
   test("Markdown PDF completion cycles only within its active context", async () => {
     const stdin = new FakePromptReadStream();
     const stdout = new FakePromptWriteStream();
@@ -634,7 +677,12 @@ describe("text inline prompt controller", () => {
     const stdout = new FakePromptWriteStream();
     const result = await promptTextWithGhost({
       message: "Page-number label",
-      helpLines: ["{page}: current logical page number"],
+      helpLines: [
+        "{page}: current logical page number",
+        "{pages}: final logical page number in the selected countFrom domain",
+        "{pdfPage}: current physical PDF page",
+        "{pdfPages}: total physical PDF pages",
+      ],
       ghostHintLabel: "Page-number label suggestion",
       ghostText: "Page {page} of {pages}",
       initialValue: "Page {page}",
@@ -661,6 +709,11 @@ describe("text inline prompt controller", () => {
     expect(result).toBe("Page {page}");
     expect(receivedDefault).toBe("Page {page}");
     expect(stdout.text).toContain("{page}: current logical page number");
+    expect(stdout.text).toContain(
+      "{pages}: final logical page number in the selected countFrom domain",
+    );
+    expect(stdout.text).toContain("{pdfPage}: current physical PDF page");
+    expect(stdout.text).toContain("{pdfPages}: total physical PDF pages");
     expect(stdout.text).not.toContain("Page-number label suggestion");
   });
 
@@ -668,7 +721,12 @@ describe("text inline prompt controller", () => {
     const stdout = new FakePromptWriteStream();
     const result = await promptTextWithGhost({
       message: "Page-number label",
-      helpLines: ["{page}: current logical page number"],
+      helpLines: [
+        "{page}: current logical page number",
+        "{pages}: final logical page number in the selected countFrom domain",
+        "{pdfPage}: current physical PDF page",
+        "{pdfPages}: total physical PDF pages",
+      ],
       ghostHintLabel: "Page-number label suggestion",
       ghostText: "Page {page} of {pages}",
       completionKind: "markdown-pdf-page-label",
@@ -693,6 +751,11 @@ describe("text inline prompt controller", () => {
 
     expect(result).toBe("Page {page}");
     expect(stdout.text).toContain("{page}: current logical page number");
+    expect(stdout.text).toContain(
+      "{pages}: final logical page number in the selected countFrom domain",
+    );
+    expect(stdout.text).toContain("{pdfPage}: current physical PDF page");
+    expect(stdout.text).toContain("{pdfPages}: total physical PDF pages");
     expect(stdout.text).toContain("Page-number label suggestion: Page {page} of {pages}");
   });
 });

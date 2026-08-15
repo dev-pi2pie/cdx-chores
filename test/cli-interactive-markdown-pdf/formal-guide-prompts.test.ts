@@ -199,18 +199,33 @@ describe("interactive Markdown PDF formal-guide prompt adapter", () => {
 
   test("validates custom page-number labels and preserves a revision initial value", async () => {
     queue(state.selects, "Page-number label", "custom");
-    queue(state.inputs, "Custom page-number label", "Page one", "Page {page} of {pages}");
+    queue(
+      state.inputs,
+      "Custom page-number label",
+      "",
+      "Total {pages}",
+      "Total {pdfPages}",
+      "PDF {pdfPage} of {pdfPages}",
+    );
 
     const result = await createMarkdownPdfFormalGuidePrompts().pageNumberLabel({
       current: "{company} - Page {page}",
     });
 
-    expect(result).toBe("Page {page} of {pages}");
+    expect(result).toBe("PDF {pdfPage} of {pdfPages}");
     expect(state.defaults.get("Custom page-number label")).toEqual(["{company} - Page {page}"]);
     expect(state.rejected.get("Custom page-number label")).toEqual([
       {
-        error: "Page-number label must include the {page} placeholder",
-        value: "Page one",
+        error: "Page-number label is required",
+        value: "",
+      },
+      {
+        error: "Page-number label must include the {page} or {pdfPage} placeholder",
+        value: "Total {pages}",
+      },
+      {
+        error: "Page-number label must include the {page} or {pdfPage} placeholder",
+        value: "Total {pdfPages}",
       },
     ]);
     expect(state.ghostPrompts.get("Custom page-number label")?.[0]).toMatchObject({
@@ -219,11 +234,27 @@ describe("interactive Markdown PDF formal-guide prompt adapter", () => {
       ghostText: "Page {page} of {pages}",
       helpLines: [
         "{page}: current logical page number",
-        "{pages}: total physical PDF pages",
+        "{pages}: final logical page number in the selected countFrom domain",
+        "{pdfPage}: current physical PDF page",
+        "{pdfPages}: total physical PDF pages",
         "Literal text, punctuation, and digits are allowed; a literal total can become stale.",
       ],
       initialValue: "{company} - Page {page}",
     });
+  });
+
+  test("preserves a revised physical custom label as the editable initial value", async () => {
+    const physicalLabel = "PDF {pdfPage} of {pdfPages}";
+    queue(state.selects, "Page-number label", "custom");
+    queue(state.inputs, "Custom page-number label", physicalLabel);
+
+    await expect(
+      createMarkdownPdfFormalGuidePrompts().pageNumberLabel({ current: physicalLabel }),
+    ).resolves.toBe(physicalLabel);
+    expect(state.defaults.get("Custom page-number label")).toEqual([physicalLabel]);
+    expect(state.ghostPrompts.get("Custom page-number label")?.[0]?.initialValue).toBe(
+      physicalLabel,
+    );
   });
 
   test("passes the fresh custom page-label ghost contract without an initial value", async () => {
@@ -239,7 +270,9 @@ describe("interactive Markdown PDF formal-guide prompt adapter", () => {
       ghostText: "Page {page} of {pages}",
       helpLines: [
         "{page}: current logical page number",
-        "{pages}: total physical PDF pages",
+        "{pages}: final logical page number in the selected countFrom domain",
+        "{pdfPage}: current physical PDF page",
+        "{pdfPages}: total physical PDF pages",
         "Literal text, punctuation, and digits are allowed; a literal total can become stale.",
       ],
     });

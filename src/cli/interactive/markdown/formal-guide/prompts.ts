@@ -15,6 +15,7 @@ import {
   DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
   MARKDOWN_PDF_CODE_THEMES,
   MARKDOWN_PDF_PAGE_CHROME_POSITIONS,
+  markdownPdfPageNumberFormatTokens,
   type MarkdownPdfCodeTheme,
   type MarkdownPdfPageChromePosition,
 } from "../../../markdown-pdf/profile";
@@ -84,7 +85,10 @@ function validatePageNumberLabel(value: string): true | string {
   if (!value.trim()) {
     return "Page-number label is required";
   }
-  return value.includes("{page}") ? true : "Page-number label must include the {page} placeholder";
+  const tokens = markdownPdfPageNumberFormatTokens(value);
+  return tokens.includes("page") || tokens.includes("pdfPage")
+    ? true
+    : "Page-number label must include the {page} or {pdfPage} placeholder";
 }
 
 function validateMargin(value: string, label: string): true | string {
@@ -171,7 +175,9 @@ export function createMarkdownPdfFormalGuidePrompts(
         message: "Custom page-number label",
         helpLines: [
           "{page}: current logical page number",
-          "{pages}: total physical PDF pages",
+          "{pages}: final logical page number in the selected countFrom domain",
+          "{pdfPage}: current physical PDF page",
+          "{pdfPages}: total physical PDF pages",
           "Literal text, punctuation, and digits are allowed; a literal total can become stale.",
         ],
         ghostHintLabel: "Page-number label suggestion (Right arrow to accept)",

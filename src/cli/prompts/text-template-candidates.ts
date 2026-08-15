@@ -1,3 +1,5 @@
+import { MARKDOWN_PDF_PAGE_NUMBER_FORMAT_TOKENS } from "../markdown-pdf/profile/page-number-format";
+
 export type TemplateCompletionKind =
   | "rename-template"
   | "markdown-pdf-page-label"
@@ -39,7 +41,9 @@ const TIMESTAMP_TEMPLATE_CANDIDATES = [
 
 const DATE_TEMPLATE_CANDIDATES = ["{date}", "{date_local}", "{date_utc}"] as const;
 
-const MARKDOWN_PDF_PAGE_LABEL_CANDIDATES = ["{page}", "{pages}"] as const;
+const MARKDOWN_PDF_PAGE_LABEL_CANDIDATES = MARKDOWN_PDF_PAGE_NUMBER_FORMAT_TOKENS.map(
+  (token) => `{${token}}`,
+);
 
 const MARKDOWN_PDF_REPEATING_CONTENT_CANDIDATES = [
   "{title}",

@@ -47,11 +47,25 @@ describe("text template candidates", () => {
 
   test("keeps page-label candidates isolated from rename and metadata tokens", () => {
     expect(resolveTemplateCompletionMatch("Page {p", "markdown-pdf-page-label")).toEqual({
-      candidates: ["{page}", "{pages}"],
+      candidates: ["{page}", "{pages}", "{pdfPage}", "{pdfPages}"],
       fragment: "{p",
       fragmentStart: 5,
       scope: "page-label",
       scopeKey: "page-label:{p",
+    });
+    expect(resolveTemplateCompletionMatch("{pa", "markdown-pdf-page-label")).toEqual({
+      candidates: ["{page}", "{pages}"],
+      fragment: "{pa",
+      fragmentStart: 0,
+      scope: "page-label",
+      scopeKey: "page-label:{pa",
+    });
+    expect(resolveTemplateCompletionMatch("{pdfP", "markdown-pdf-page-label")).toEqual({
+      candidates: ["{pdfPage}", "{pdfPages}"],
+      fragment: "{pdfP",
+      fragmentStart: 0,
+      scope: "page-label",
+      scopeKey: "page-label:{pdfP",
     });
     expect(resolveTemplateCompletionMatch("{timestamp", "markdown-pdf-page-label")).toBeUndefined();
     expect(resolveTemplateCompletionMatch("{title", "markdown-pdf-page-label")).toBeUndefined();
@@ -69,12 +83,16 @@ describe("text template candidates", () => {
       resolveTemplateCompletionMatch("{page", "markdown-pdf-repeating-content"),
     ).toBeUndefined();
     expect(
+      resolveTemplateCompletionMatch("{pdfPage", "markdown-pdf-repeating-content"),
+    ).toBeUndefined();
+    expect(
       resolveTemplateCompletionMatch("{timestamp", "markdown-pdf-repeating-content"),
     ).toBeUndefined();
   });
 
   test("preserves rename-template resolution as the default completion context", () => {
     expect(resolveTemplateCompletionMatch("{page")).toBeUndefined();
+    expect(resolveTemplateCompletionMatch("{pdfPage")).toBeUndefined();
     expect(resolveTemplateCompletionMatch("{t")).toEqual(
       resolveTemplateCompletionMatch("{t", "rename-template"),
     );
