@@ -6,6 +6,7 @@ import type {
 } from "../../../markdown-pdf/validation";
 import type {
   MarkdownPdfCodeTheme,
+  MarkdownPdfCoverStyle,
   MarkdownPdfPageChromeFontWeight,
   MarkdownPdfPageChromePosition,
   MarkdownPdfPageChromeSeparatorStyle,
@@ -17,6 +18,7 @@ export type MarkdownPdfFormalGuideSharedGroup = "layout" | "margins" | "toc";
 
 export type MarkdownPdfProfileFormalGuideGroup =
   | MarkdownPdfFormalGuideSharedGroup
+  | "cover"
   | "code"
   | "page-chrome"
   | "page-numbers";
@@ -59,6 +61,18 @@ export interface MarkdownPdfFormalGuideCodeAnswers {
   theme: MarkdownPdfCodeTheme;
   lineNumbers: boolean;
   transformerNotation: boolean;
+}
+
+export interface MarkdownPdfFormalGuideCoverAnswers {
+  enabled: boolean;
+  style: MarkdownPdfCoverStyle;
+  fields: {
+    title: string;
+    subtitle: string;
+    author: string;
+    company: string;
+    date: string;
+  };
 }
 
 export interface MarkdownPdfFormalGuidePageNumberDetails {
@@ -112,6 +126,7 @@ export interface MarkdownPdfFormalGuideAnswers {
 }
 
 export interface MarkdownPdfProfileFormalGuideAnswers extends MarkdownPdfFormalGuideAnswers {
+  cover: MarkdownPdfFormalGuideCoverAnswers;
   code: MarkdownPdfFormalGuideCodeAnswers;
   pageChrome: MarkdownPdfFormalGuidePageChromeAnswers;
   pageNumbers: MarkdownPdfFormalGuidePageNumberAnswers;
@@ -147,6 +162,9 @@ export interface MarkdownPdfFormalGuideOccupiedPositionPromptContext {
 export type MarkdownPdfFormalGuidePromptResult<T> = T | Promise<T>;
 
 export interface MarkdownPdfFormalGuidePrompts {
+  coverEnabled(
+    context: MarkdownPdfFormalGuidePromptContext<boolean>,
+  ): MarkdownPdfFormalGuidePromptResult<boolean>;
   codeHighlight(
     context: MarkdownPdfFormalGuidePromptContext<boolean>,
   ): MarkdownPdfFormalGuidePromptResult<boolean>;

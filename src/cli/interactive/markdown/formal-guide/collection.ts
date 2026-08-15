@@ -11,6 +11,7 @@ import {
 import type {
   MarkdownPdfFormalGuideAnswers,
   MarkdownPdfFormalGuideCodeAnswers,
+  MarkdownPdfFormalGuideCoverAnswers,
   MarkdownPdfFormalGuideLayoutAnswers,
   MarkdownPdfFormalGuideMarginAnswers,
   MarkdownPdfFormalGuidePageChromeAnswers,
@@ -23,6 +24,18 @@ import type {
 } from "./types";
 
 const DEFAULT_CODE_THEME = DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.code.theme;
+
+async function collectCover(
+  prompts: MarkdownPdfFormalGuidePrompts,
+  current?: Readonly<MarkdownPdfFormalGuideCoverAnswers>,
+): Promise<MarkdownPdfFormalGuideCoverAnswers> {
+  const retained = current ?? DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.cover;
+  return {
+    enabled: await prompts.coverEnabled({ current: current?.enabled }),
+    style: retained.style,
+    fields: { ...retained.fields },
+  };
+}
 
 async function collectCode(
   prompts: MarkdownPdfFormalGuidePrompts,
@@ -252,14 +265,30 @@ export async function collectMarkdownPdfFormalGuideAnswers(
 export async function collectMarkdownPdfProfileFormalGuideAnswers(
   prompts: MarkdownPdfFormalGuidePrompts,
 ): Promise<MarkdownPdfProfileFormalGuideAnswers> {
-  const shared = await collectMarkdownPdfFormalGuideAnswers(prompts);
+  const layout = await collectLayout(prompts);
+  const margins = await collectMargins(prompts, layout);
+  const cover = await collectCover(prompts);
+  const toc = await collectToc(prompts);
   const code = await collectCode(prompts);
   const pageNumbers = await collectPageNumbers(prompts);
   return {
-    ...shared,
+    layout,
+    margins,
+    cover,
+    toc,
     code,
     pageNumbers,
     pageChrome: await collectPageChrome(prompts, pageNumbers),
+  };
+}
+
+export async function reviseMarkdownPdfFormalGuideCover(
+  answers: Readonly<MarkdownPdfProfileFormalGuideAnswers>,
+  prompts: MarkdownPdfFormalGuidePrompts,
+): Promise<MarkdownPdfProfileFormalGuideAnswers> {
+  return {
+    ...answers,
+    cover: await collectCover(prompts, answers.cover),
   };
 }
 

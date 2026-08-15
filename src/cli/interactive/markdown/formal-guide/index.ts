@@ -2,6 +2,7 @@ export {
   collectMarkdownPdfFormalGuideAnswers,
   collectMarkdownPdfProfileFormalGuideAnswers,
   reviseMarkdownPdfFormalGuideCode,
+  reviseMarkdownPdfFormalGuideCover,
   reviseMarkdownPdfFormalGuidePageChrome,
   reviseMarkdownPdfFormalGuidePageNumbers,
   reviseMarkdownPdfFormalGuideLayout,
@@ -10,6 +11,7 @@ export {
 } from "./collection";
 export {
   compileMarkdownPdfFormalGuideCode,
+  compileMarkdownPdfFormalGuideCover,
   compileMarkdownPdfFormalGuideOptions,
   compileMarkdownPdfFormalGuidePageChrome,
   compileMarkdownPdfFormalGuidePageNumbers,
@@ -19,6 +21,7 @@ export { createMarkdownPdfFormalGuidePrompts } from "./prompts";
 export type {
   MarkdownPdfFormalGuideAnswers,
   MarkdownPdfFormalGuideCodeAnswers,
+  MarkdownPdfFormalGuideCoverAnswers,
   MarkdownPdfFormalGuideCustomMargins,
   MarkdownPdfFormalGuideGroup,
   MarkdownPdfFormalGuideLayoutAnswers,

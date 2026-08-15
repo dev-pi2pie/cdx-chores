@@ -85,7 +85,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
       ],
       inputQueue: ["15mm", "10mm", "11mm", "12mm", "13mm"],
       requiredPathQueue: ["recipes/formal.json"],
-      confirmQueue: [true, true, false, false, false, false, true, true],
+      confirmQueue: [false, true, true, false, false, false, false, true, true],
     });
 
     expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(2);
@@ -122,6 +122,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
       "Page orientation",
       "Page margins",
       "Uniform page margin",
+      "Add a cover page?",
       "Include a table of contents?",
       "Table of contents depth",
       "Table of contents page break",
@@ -144,6 +145,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
       "Page orientation",
       "Page margins",
       "Uniform page margin",
+      "Add a cover page?",
       "Include a table of contents?",
       "Table of contents depth",
       "Table of contents page break",
@@ -156,6 +158,9 @@ describe("interactive Markdown PDF deterministic authoring", () => {
       "Right margin",
       "Bottom margin",
       "Left margin",
+    ]);
+    expect(result.promptCalls.filter((call) => call.message === "Add a cover page?")).toEqual([
+      { kind: "confirm", message: "Add a cover page?" },
     ]);
     expect(
       result.selectChoicesByMessage["Page orientation"]?.map((choice) => choice.value),
@@ -196,7 +201,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
         "revise-code",
         "cancel",
       ],
-      confirmQueue: [false, true, true, true, false, false, false],
+      confirmQueue: [false, false, true, true, true, false, false, false],
     });
 
     expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(2);
@@ -224,6 +229,56 @@ describe("interactive Markdown PDF deterministic authoring", () => {
     ).toContain("revise-code");
   });
 
+  test("collects and revises Profile-only cover page state without exposing advanced fields", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...RECIPES_ENTRY,
+        "profile",
+        "formal-guide",
+        "article",
+        "A4",
+        "preset-default",
+        "preset-default",
+        "revise-cover",
+        "cancel",
+      ],
+      confirmQueue: [false, false, false, false, false, true],
+    });
+
+    expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(2);
+    const initial = result.markdownPdfDeterministicPrepareCalls[0]?.formalGuideAnswers as Record<
+      string,
+      unknown
+    >;
+    const revised = result.markdownPdfDeterministicPrepareCalls[1]?.formalGuideAnswers as Record<
+      string,
+      unknown
+    >;
+    expect(initial.cover).toEqual({
+      enabled: false,
+      style: "plain",
+      fields: {
+        title: "{title}",
+        subtitle: "{subtitle}",
+        author: "{author}",
+        company: "{company}",
+        date: "{date}",
+      },
+    });
+    expect(revised.cover).toEqual({ ...(initial.cover as object), enabled: true });
+    for (const group of ["layout", "margins", "toc", "code", "pageNumbers", "pageChrome"]) {
+      expect(revised[group]).toEqual(initial[group]);
+    }
+    expect(result.stderr).toContain("Reusable Profile cover page:");
+    expect(
+      result.selectChoicesByMessage["Recipe review next step"]?.map((choice) => choice.value),
+    ).toContain("revise-cover");
+    expect(result.promptCalls.map((call) => call.message)).not.toContain("Cover style");
+    expect(result.promptCalls.map((call) => call.message)).not.toContain("Cover title");
+  });
+
   test("reviews and revises normalized Profile page policy with advisory requirements", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -249,7 +304,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
       checkboxQueue: [["top-left"]],
       inputQueue: ["Page {page} for {company}", "Existing header", "Page {page} of {pages}"],
       requiredPathQueue: ["recipes/page-policy.yml"],
-      confirmQueue: [false, false, true, true, true, false, true],
+      confirmQueue: [false, false, false, true, true, true, false, true],
     });
 
     expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(2);
@@ -377,7 +432,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
         "{author}",
         "{date}",
       ],
-      confirmQueue: [false, false, false, true, true],
+      confirmQueue: [false, false, false, false, true, true],
     });
 
     expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(2);

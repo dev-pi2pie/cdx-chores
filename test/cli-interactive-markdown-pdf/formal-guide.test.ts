@@ -6,11 +6,13 @@ import {
   collectMarkdownPdfFormalGuideAnswers,
   collectMarkdownPdfProfileFormalGuideAnswers,
   compileMarkdownPdfFormalGuideCode,
+  compileMarkdownPdfFormalGuideCover,
   compileMarkdownPdfFormalGuideOptions,
   compileMarkdownPdfFormalGuidePageChrome,
   compileMarkdownPdfFormalGuidePageNumbers,
   compileMarkdownPdfFormalGuideProfile,
   reviseMarkdownPdfFormalGuideCode,
+  reviseMarkdownPdfFormalGuideCover,
   reviseMarkdownPdfFormalGuideLayout,
   reviseMarkdownPdfFormalGuideMargins,
   reviseMarkdownPdfFormalGuidePageChrome,
@@ -33,6 +35,17 @@ const BASE_ANSWERS: MarkdownPdfFormalGuideAnswers = {
 
 const BASE_PROFILE_ANSWERS: MarkdownPdfProfileFormalGuideAnswers = {
   ...BASE_ANSWERS,
+  cover: {
+    enabled: false,
+    style: "plain",
+    fields: {
+      title: "{title}",
+      subtitle: "{subtitle}",
+      author: "{author}",
+      company: "{company}",
+      date: "{date}",
+    },
+  },
   code: {
     highlight: false,
     theme: "github-light",
@@ -58,6 +71,7 @@ function createPrompts(
   overrides: Partial<MarkdownPdfFormalGuidePrompts> = {},
 ): MarkdownPdfFormalGuidePrompts {
   return {
+    coverEnabled: () => false,
     codeHighlight: () => true,
     codeTheme: () => "github-light",
     codeLineNumbers: () => false,
@@ -137,6 +151,64 @@ describe("interactive Markdown PDF formal-guide answers", () => {
       lineNumbers: false,
       transformerNotation: false,
     });
+  });
+
+  test("collects a disabled cover with the complete normalized defaults before ToC", async () => {
+    const calls: string[] = [];
+    const answers = await collectMarkdownPdfProfileFormalGuideAnswers(
+      createPrompts({
+        layout: () => {
+          calls.push("layout");
+          return BASE_ANSWERS.layout;
+        },
+        margins: () => {
+          calls.push("margins");
+          return BASE_ANSWERS.margins;
+        },
+        coverEnabled: ({ current }) => {
+          expect(current).toBeUndefined();
+          calls.push("cover");
+          return false;
+        },
+        tocEnabled: () => {
+          calls.push("toc");
+          return false;
+        },
+      }),
+    );
+
+    expect(calls).toEqual(["layout", "margins", "cover", "toc"]);
+    expect(answers.cover).toEqual(BASE_PROFILE_ANSWERS.cover);
+  });
+
+  test("revises cover enablement without replacing advanced style or field values", async () => {
+    const answers: MarkdownPdfProfileFormalGuideAnswers = {
+      ...BASE_PROFILE_ANSWERS,
+      cover: {
+        enabled: false,
+        style: "report",
+        fields: {
+          title: "Report: {title}",
+          subtitle: "Prepared for {company}",
+          author: "{author}",
+          company: "{company}",
+          date: "{date}",
+        },
+      },
+    };
+
+    const revised = await reviseMarkdownPdfFormalGuideCover(
+      answers,
+      createPrompts({
+        coverEnabled: ({ current }) => {
+          expect(current).toBe(false);
+          return true;
+        },
+      }),
+    );
+
+    expect(revised.cover).toEqual({ ...answers.cover, enabled: true });
+    expect(revised.pageNumbers).toBe(answers.pageNumbers);
   });
 
   test("collects layout, margins, and disabled ToC without requesting ToC details", async () => {
@@ -723,6 +795,12 @@ describe("interactive Markdown PDF formal-guide answers", () => {
     expect(BASE_ANSWERS).not.toHaveProperty("pageChrome");
   });
 
+  test("compiles the complete Profile cover state", () => {
+    expect(compileMarkdownPdfFormalGuideCover(BASE_PROFILE_ANSWERS.cover)).toEqual(
+      BASE_PROFILE_ANSWERS.cover,
+    );
+  });
+
   test("compiles every shared page-number position and preserves false and start zero", () => {
     for (const position of MARKDOWN_PDF_PAGE_CHROME_POSITIONS) {
       expect(
@@ -800,6 +878,7 @@ describe("interactive Markdown PDF formal-guide answers", () => {
     expect(compileMarkdownPdfFormalGuidePageChrome(answers.pageChrome)).toEqual(answers.pageChrome);
     expect(compileMarkdownPdfFormalGuideProfile(answers)).toEqual({
       code: answers.code,
+      cover: answers.cover,
       pageNumbers: answers.pageNumbers,
       header: answers.pageChrome.header,
       footer: answers.pageChrome.footer,

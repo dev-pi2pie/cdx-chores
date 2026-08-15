@@ -112,6 +112,13 @@ export function createMarkdownPdfFormalGuidePrompts(
   pathPromptContext?: InteractivePathPromptContext,
 ): MarkdownPdfFormalGuidePrompts {
   return {
+    async coverEnabled({ current }) {
+      return await confirm({
+        message: "Add a cover page?",
+        default: current ?? DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.cover.enabled,
+      });
+    },
+
     async codeHighlight({ current }) {
       return await confirm({
         message: "Enable code highlighting in this Profile?",

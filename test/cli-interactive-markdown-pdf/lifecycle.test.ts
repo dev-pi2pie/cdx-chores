@@ -293,7 +293,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
       ],
       requiredPathQueue: ["fixtures/report.md"],
       inputQueue: ["", "", "", "", "", ""],
-      confirmQueue: [false, true, true, true, false, false, false, false, false],
+      confirmQueue: [false, false, true, true, true, false, false, false, false, false],
     });
 
     expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(2);

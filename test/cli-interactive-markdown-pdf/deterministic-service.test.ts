@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import {
@@ -24,6 +24,20 @@ import {
 } from "../../src/cli/markdown-pdf/profile";
 import { createActionTestRuntime } from "../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
+
+function baseCover(enabled = false) {
+  return {
+    enabled,
+    style: "plain" as const,
+    fields: {
+      title: "{title}",
+      subtitle: "{subtitle}",
+      author: "{author}",
+      company: "{company}",
+      date: "{date}",
+    },
+  };
+}
 
 describe("interactive Markdown PDF deterministic service", () => {
   test("prepares and writes the exact accepted Profile through an explicit destination", async () => {
@@ -64,11 +78,13 @@ describe("interactive Markdown PDF deterministic service", () => {
         lineNumbers: true,
         transformerNotation: false,
       };
+      const cover = baseCover(true);
       const candidate = prepareMarkdownPdfDeterministicRecipe({
         artifact: "profile",
         preparation: "formal-guide",
         formalGuideAnswers: {
           code,
+          cover,
           layout: {
             preset: "article",
             pageSize: "A4",
@@ -101,6 +117,7 @@ describe("interactive Markdown PDF deterministic service", () => {
         throw new Error("Expected a prepared Profile candidate.");
       }
       expect(candidate.prepared.profile.code).toEqual(code);
+      expect(candidate.prepared.profile.cover).toEqual(cover);
       expect(candidate.prepared.profile.pageNumbers).toEqual({
         enabled: true,
         scope: "body",
@@ -126,6 +143,7 @@ describe("interactive Markdown PDF deterministic service", () => {
       expect(written).toContain("theme: light-plus");
       expect(written).toContain("lineNumbers: true");
       expect(written).toContain("transformerNotation: false");
+      expect(written).toContain("cover:");
       expect(written).toContain("countFrom: body");
       expect(written).toContain("start: 0");
       expect(written).toContain("increment: 2");
@@ -142,6 +160,7 @@ describe("interactive Markdown PDF deterministic service", () => {
         position: "top-right",
         format: "Page {page}",
       });
+      expect(reloaded.cover).toEqual(cover);
       expect(reloaded.header).toEqual({
         left: "{company}",
         center: "",
@@ -188,6 +207,7 @@ describe("interactive Markdown PDF deterministic service", () => {
           artifact: "profile",
           preparation: "formal-guide",
           formalGuideAnswers: {
+            cover: baseCover(),
             layout: {
               preset: "article",
               pageSize: "A4",
@@ -246,6 +266,72 @@ describe("interactive Markdown PDF deterministic service", () => {
     );
   });
 
+  test("warns only when a reviewed cover remains empty after frontmatter and Profile metadata resolution", async () => {
+    await withTempFixtureDir("md-pdf-interactive-cover-review-metadata", async (fixtureDir) => {
+      const createCoverCandidate = () =>
+        prepareMarkdownPdfDeterministicRecipe({
+          artifact: "profile",
+          preparation: "formal-guide",
+          formalGuideAnswers: {
+            layout: {
+              preset: "article",
+              pageSize: "A4",
+              orientation: { mode: "preset-default" },
+            },
+            margins: { mode: "preset-default" },
+            toc: { enabled: false },
+            cover: baseCover(true),
+            code: {
+              highlight: false,
+              theme: "github-light",
+              lineNumbers: false,
+              transformerNotation: false,
+            },
+            pageNumbers: {
+              enabled: false,
+              scope: "body",
+              countFrom: "document",
+              start: 1,
+              increment: 1,
+              position: "bottom-center",
+              format: "{page}",
+            },
+            pageChrome: {
+              header: { left: "", center: "", right: "" },
+              footer: { left: "", center: "", right: "" },
+            },
+          },
+        });
+      const markdownPath = join(fixtureDir, "report.md");
+      const { runtime, stderr } = createActionTestRuntime({ cwd: fixtureDir });
+
+      await writeFile(markdownPath, "# Untitled\n", "utf8");
+      await renderDeterministicRecipeReview(runtime, createCoverCandidate(), "report.md");
+      expect(stderr.text).toContain(
+        "- Body metadata title: auto (suppressed while the cover page is enabled)",
+      );
+      expect(stderr.text).toContain(
+        "- Document order: cover page (first, chrome-free) → document body",
+      );
+      expect(stderr.text).toContain("Warning: The cover page is enabled");
+
+      stderr.text = "";
+      await writeFile(markdownPath, "---\ntitle: Frontmatter title\n---\n# Report\n", "utf8");
+      await renderDeterministicRecipeReview(runtime, createCoverCandidate(), "report.md");
+      expect(stderr.text).not.toContain("Warning: The cover page is enabled");
+
+      stderr.text = "";
+      const profileMetadataCandidate = createCoverCandidate();
+      if (profileMetadataCandidate.artifact !== "profile") {
+        throw new Error("Expected a Profile candidate.");
+      }
+      profileMetadataCandidate.prepared.profile.metadata = { title: "Profile title" };
+      await writeFile(markdownPath, "# Report\n", "utf8");
+      await renderDeterministicRecipeReview(runtime, profileMetadataCandidate, "report.md");
+      expect(stderr.text).not.toContain("Warning: The cover page is enabled");
+    });
+  });
+
   test("prepares and writes both accepted Template bundle files", async () => {
     await withTempFixtureDir("md-pdf-interactive-template", async (fixtureDir) => {
       const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
@@ -280,6 +366,7 @@ describe("interactive Markdown PDF deterministic service", () => {
       await withTempFixtureDir(`md-pdf-interactive-guided-${outcome}`, async (fixtureDir) => {
         const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
         const answers = await collectMarkdownPdfProfileFormalGuideAnswers({
+          coverEnabled: () => false,
           layout: () => ({
             preset: "article",
             pageSize: "A4",
@@ -369,6 +456,7 @@ describe("interactive Markdown PDF deterministic service", () => {
         artifact: "profile",
         preparation: "formal-guide",
         formalGuideAnswers: {
+          cover: baseCover(),
           layout: {
             preset: "article",
             pageSize: "A4",
@@ -398,7 +486,7 @@ describe("interactive Markdown PDF deterministic service", () => {
         },
       });
 
-      renderDeterministicRecipeReview(runtime, candidate);
+      await renderDeterministicRecipeReview(runtime, candidate);
       expect(stderr.text).toContain("Reusable Profile page numbering:");
       expect(stderr.text).toContain("- Enabled: no");
       expect(stderr.text).not.toContain("- Start: 0");
@@ -420,6 +508,7 @@ describe("interactive Markdown PDF deterministic service", () => {
       async (fixtureDir) => {
         const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
         const answers = await collectMarkdownPdfProfileFormalGuideAnswers({
+          coverEnabled: () => false,
           layout: () => ({
             preset: "article",
             pageSize: "A4",
@@ -496,6 +585,7 @@ describe("interactive Markdown PDF deterministic service", () => {
     await withTempFixtureDir("md-pdf-interactive-revised-page-policy", async (fixtureDir) => {
       const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
       const initial: MarkdownPdfProfileFormalGuideAnswers = {
+        cover: baseCover(),
         layout: {
           preset: "article",
           pageSize: "A4",

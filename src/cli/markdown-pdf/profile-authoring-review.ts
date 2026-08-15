@@ -46,8 +46,12 @@ export function collectMarkdownPdfProfileAuthoringCapabilityRequirements(
 
 export function collectMarkdownPdfProfileAuthoringReview(
   profile: Record<string, unknown>,
+  input: { frontmatter?: Record<string, unknown> | null } = {},
 ): MarkdownPdfProfileAuthoringReview {
-  const normalizedProfile = normalizeMarkdownPdfProfile({ profile }).profile;
+  const normalizedProfile = normalizeMarkdownPdfProfile({
+    profile,
+    ...(input.frontmatter !== undefined ? { frontmatter: input.frontmatter } : {}),
+  }).profile;
   const capabilityRequirements =
     collectMarkdownPdfProfileAuthoringCapabilityRequirements(normalizedProfile);
   return { normalizedProfile, capabilityRequirements };
@@ -82,7 +86,20 @@ export function formatMarkdownPdfProfileAuthoringReview(
   review: Readonly<MarkdownPdfProfileAuthoringReview>,
 ): string[] {
   const pageNumbers = review.normalizedProfile.pageNumbers;
+  const { cover, titleBlock } = review.normalizedProfile;
   const lines = [
+    "Reusable Profile cover page:",
+    `- Enabled: ${cover.enabled ? "yes" : "no"}`,
+    `- Style: ${cover.style}`,
+    `- Fields: title=${JSON.stringify(cover.fields.title)}, subtitle=${JSON.stringify(cover.fields.subtitle)}, author=${JSON.stringify(cover.fields.author)}, company=${JSON.stringify(cover.fields.company)}, date=${JSON.stringify(cover.fields.date)}`,
+    `- Body metadata title: ${titleBlock.metadataTitle}${
+      titleBlock.metadataTitle === "auto"
+        ? cover.enabled
+          ? " (suppressed while the cover page is enabled)"
+          : " (shown when metadata supplies a title)"
+        : ""
+    }`,
+    "",
     "Reusable Profile page numbering:",
     `- Enabled: ${pageNumbers.enabled ? "yes" : "no"}`,
     ...(pageNumbers.enabled

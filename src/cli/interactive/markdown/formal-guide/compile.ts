@@ -6,12 +6,14 @@ import {
 import {
   normalizeMarkdownPdfProfile,
   type NormalizedMarkdownPdfCode,
+  type NormalizedMarkdownPdfCover,
   type NormalizedMarkdownPdfPageChromeArea,
   type NormalizedMarkdownPdfPageNumbers,
   type NormalizedMarkdownPdfProfile,
 } from "../../../markdown-pdf/profile";
 import type {
   MarkdownPdfFormalGuideAnswers,
+  MarkdownPdfFormalGuideCoverAnswers,
   MarkdownPdfFormalGuideMarginAnswers,
   MarkdownPdfFormalGuidePageChromeAreaAnswers,
   MarkdownPdfFormalGuidePageChromeAnswers,
@@ -77,6 +79,20 @@ export function compileMarkdownPdfFormalGuideCode(
     lineNumbers: answers.code.highlight ? answers.code.lineNumbers : false,
     transformerNotation: answers.code.highlight ? answers.code.transformerNotation : false,
   };
+}
+
+export function compileMarkdownPdfFormalGuideCover(
+  answers: Readonly<MarkdownPdfFormalGuideCoverAnswers>,
+): NormalizedMarkdownPdfCover {
+  return normalizeMarkdownPdfProfile({
+    profile: {
+      cover: {
+        enabled: answers.enabled,
+        style: answers.style,
+        fields: answers.fields,
+      },
+    },
+  }).profile.cover;
 }
 
 export function compileMarkdownPdfFormalGuidePageNumbers(
@@ -150,12 +166,14 @@ export function compileMarkdownPdfFormalGuidePageChrome(
 
 export function compileMarkdownPdfFormalGuideProfile(
   answers: Readonly<MarkdownPdfProfileFormalGuideAnswers>,
-): Pick<NormalizedMarkdownPdfProfile, "code" | "header" | "footer" | "pageNumbers"> {
+): Pick<NormalizedMarkdownPdfProfile, "code" | "cover" | "header" | "footer" | "pageNumbers"> {
   const pageChrome = compileMarkdownPdfFormalGuidePageChrome(answers.pageChrome);
   const pageNumbers = compileMarkdownPdfFormalGuidePageNumbers(answers.pageNumbers);
+  const cover = compileMarkdownPdfFormalGuideCover(answers.cover);
   const profile = normalizeMarkdownPdfProfile({
     profile: {
       code: compileMarkdownPdfFormalGuideCode(answers),
+      cover,
       header: pageChrome.header,
       footer: pageChrome.footer,
       pageNumbers,
@@ -164,6 +182,7 @@ export function compileMarkdownPdfFormalGuideProfile(
 
   return {
     code: profile.code,
+    cover: profile.cover,
     header: profile.header,
     footer: profile.footer,
     pageNumbers: profile.pageNumbers,

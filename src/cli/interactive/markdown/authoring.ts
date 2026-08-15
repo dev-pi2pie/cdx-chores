@@ -32,6 +32,7 @@ import {
   compileMarkdownPdfFormalGuideOptions,
   createMarkdownPdfFormalGuidePrompts,
   reviseMarkdownPdfFormalGuideCode,
+  reviseMarkdownPdfFormalGuideCover,
   reviseMarkdownPdfFormalGuideLayout,
   reviseMarkdownPdfFormalGuideMargins,
   reviseMarkdownPdfFormalGuidePageChrome,
@@ -154,6 +155,9 @@ async function reviseCandidate(
     }
     let revised;
     switch (group) {
+      case "cover":
+        revised = await reviseMarkdownPdfFormalGuideCover(answers, prompts);
+        break;
       case "code":
         revised = await reviseMarkdownPdfFormalGuideCode(answers, prompts);
         break;
@@ -181,7 +185,13 @@ async function reviseCandidate(
     });
   }
   const answers = candidate.formalGuideAnswers;
-  if (!answers || group === "code" || group === "page-numbers" || group === "page-chrome") {
+  if (
+    !answers ||
+    group === "cover" ||
+    group === "code" ||
+    group === "page-numbers" ||
+    group === "page-chrome"
+  ) {
     return candidate;
   }
   const revised =
@@ -221,7 +231,7 @@ async function reviewCandidate(
       }
     | undefined;
   while (true) {
-    renderDeterministicRecipeReview(runtime, candidate, markdownInput);
+    await renderDeterministicRecipeReview(runtime, candidate, markdownInput);
     const action = await select<MarkdownPdfCandidateReviewAction>({
       message: "Recipe review next step",
       choices: markdownPdfCandidateReviewChoices(entry, candidate),
@@ -302,11 +312,13 @@ async function reviewCandidate(
           ? "margins"
           : action === "revise-toc"
             ? "toc"
-            : action === "revise-page-numbers"
-              ? "page-numbers"
-              : action === "revise-page-chrome"
-                ? "page-chrome"
-                : "code",
+            : action === "revise-cover"
+              ? "cover"
+              : action === "revise-page-numbers"
+                ? "page-numbers"
+                : action === "revise-page-chrome"
+                  ? "page-chrome"
+                  : "code",
       pathPromptContext,
     );
   }

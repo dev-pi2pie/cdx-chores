@@ -30,13 +30,16 @@ export interface BoundMarkdownPdfProfileInitDestination {
 export function prepareMarkdownPdfProfileInit(
   normalizedOptions: NormalizedMarkdownPdfOptions,
   input: Partial<
-    Pick<NormalizedMarkdownPdfProfile, "code" | "footer" | "header" | "pageNumbers">
+    Pick<NormalizedMarkdownPdfProfile, "code" | "cover" | "footer" | "header" | "pageNumbers">
   > = {},
 ): PreparedMarkdownPdfProfileInit {
   const acceptedOptions = structuredClone(normalizedOptions);
   const profile = structuredClone(createMarkdownPdfProfileConfig(acceptedOptions));
   if (input.code !== undefined) {
     profile.code = structuredClone(input.code);
+  }
+  if (input.cover !== undefined) {
+    profile.cover = structuredClone(input.cover);
   }
   if (input.header !== undefined) {
     profile.header = structuredClone(input.header);

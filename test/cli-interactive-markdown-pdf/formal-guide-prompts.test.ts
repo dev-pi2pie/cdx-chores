@@ -152,6 +152,17 @@ beforeEach(() => {
 });
 
 describe("interactive Markdown PDF formal-guide prompt adapter", () => {
+  test("offers a no-cover default and retains the current cover decision during revision", async () => {
+    queue(state.confirms, "Add a cover page?", false, true);
+
+    await expect(createMarkdownPdfFormalGuidePrompts().coverEnabled({})).resolves.toBe(false);
+    await expect(
+      createMarkdownPdfFormalGuidePrompts().coverEnabled({ current: true }),
+    ).resolves.toBe(true);
+
+    expect(state.defaults.get("Add a cover page?")).toEqual([false, true]);
+  });
+
   test("offers the two guided numbering outcomes with body as the fresh default", async () => {
     queue(state.selects, "Number which pages?", "body");
 
