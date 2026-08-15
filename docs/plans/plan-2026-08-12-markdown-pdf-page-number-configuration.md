@@ -1625,11 +1625,11 @@ Completed checkpoint:
 
 Tasks:
 
-- [ ] Create and activate a Phase 14.6 job record from the reviewed planning
-      checkpoint. Link
-      [Interactive Cover Page Authoring][interactive-cover-research] and
-      freeze the permanent-file boundary, meaningful commit checkpoints,
-      exact review range, renderer evidence, and closeout verdict.
+- [x] Create and activate the [Phase 14.6 job record][phase-14-6-job] from the
+      reviewed planning checkpoint. Link
+      [Interactive Cover Page Authoring][interactive-cover-research] and freeze
+      the permanent-file boundary, meaningful commit checkpoints, exact review
+      range, renderer evidence, and closeout verdict.
 - [ ] Freeze the current Profile Formal Guide prompt order, disabled-cover
       output, built-in cover HTML/CSS, automatic metadata-title behavior, and
       cover/ToC/body rendering before changing authoring.
@@ -1773,4 +1773,5 @@ Phase checkpoint:
 [project-helper]: ../guides/markdown-pdf-codex-project-helper.md
 [reopened-phase-14-job]: jobs/2026-08-15-markdown-pdf-page-number-phase-14-reopened-interactive-ux.md
 [phase-14-5-job]: jobs/2026-08-15-markdown-pdf-page-number-phase-14-5-page-roles-and-counters.md
+[phase-14-6-job]: jobs/2026-08-15-markdown-pdf-page-number-phase-14-6-interactive-cover-page-authoring.md
 [template-helper]: ../guides/markdown-pdf-codex-template-helper.md
