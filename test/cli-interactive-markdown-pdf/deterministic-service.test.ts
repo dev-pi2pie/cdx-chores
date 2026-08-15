@@ -179,6 +179,73 @@ describe("interactive Markdown PDF deterministic service", () => {
     });
   });
 
+  test("materializes, writes, and reloads the disabled normalized cover defaults for a fresh Formal Guide Profile", async () => {
+    await withTempFixtureDir(
+      "md-pdf-interactive-formal-guide-cover-default",
+      async (fixtureDir) => {
+        const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+        const candidate = prepareMarkdownPdfDeterministicRecipe({
+          artifact: "profile",
+          preparation: "formal-guide",
+          formalGuideAnswers: {
+            layout: {
+              preset: "article",
+              pageSize: "A4",
+              orientation: { mode: "preset-default" },
+            },
+            margins: { mode: "preset-default" },
+            toc: { enabled: false },
+            code: {
+              highlight: false,
+              theme: "github-light",
+              lineNumbers: false,
+              transformerNotation: false,
+            },
+            pageNumbers: {
+              enabled: false,
+              scope: "body",
+              countFrom: "document",
+              start: 1,
+              increment: 1,
+              position: "bottom-center",
+              format: "{page}",
+            },
+            pageChrome: {
+              header: { left: "", center: "", right: "" },
+              footer: { left: "", center: "", right: "" },
+            },
+          },
+        });
+
+        if (candidate.artifact !== "profile") {
+          throw new Error("Expected a prepared Profile candidate.");
+        }
+        expect(candidate.prepared.profile.schemaVersion).toBe(3);
+        const bound = await bindMarkdownPdfDeterministicRecipeDestination(runtime, candidate, {
+          output: "formal-guide-cover.yml",
+        });
+        await writeBoundMarkdownPdfDeterministicRecipe(bound);
+
+        const persisted = await readMarkdownPdfProfileFile(
+          join(fixtureDir, "formal-guide-cover.yml"),
+        );
+        expect(persisted.schemaVersion).toBe(3);
+        const reloaded = normalizeMarkdownPdfProfile({ profile: persisted }).profile;
+        expect(reloaded.cover).toEqual({
+          enabled: false,
+          style: "plain",
+          fields: {
+            title: "{title}",
+            subtitle: "{subtitle}",
+            author: "{author}",
+            company: "{company}",
+            date: "{date}",
+          },
+        });
+      },
+    );
+  });
+
   test("prepares and writes both accepted Template bundle files", async () => {
     await withTempFixtureDir("md-pdf-interactive-template", async (fixtureDir) => {
       const { runtime } = createActionTestRuntime({ cwd: fixtureDir });

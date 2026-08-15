@@ -1630,7 +1630,7 @@ Tasks:
       [Interactive Cover Page Authoring][interactive-cover-research] and freeze
       the permanent-file boundary, meaningful commit checkpoints, exact review
       range, renderer evidence, and closeout verdict.
-- [ ] Freeze the current Profile Formal Guide prompt order, disabled-cover
+- [x] Freeze the current Profile Formal Guide prompt order, disabled-cover
       output, built-in cover HTML/CSS, automatic metadata-title behavior, and
       cover/ToC/body rendering before changing authoring.
 - [ ] Implement the settled cover compatibility matrix: support the built-in

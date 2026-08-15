@@ -31,6 +31,58 @@ async function expectMissing(path: string): Promise<void> {
 }
 
 describe("Markdown PDF selected-template compatibility", () => {
+  test("allows an arbitrary Template to omit an enabled built-in cover when numbering needs no body hook", async () => {
+    await withTempFixtureDir("md-pdf-template-compat-cover-baseline", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "profile.yml");
+      const templatePath = join(fixtureDir, "custom-template.html");
+      const outputPath = join(fixtureDir, "report.pdf");
+      let selectedTemplate = "";
+      await writeFile(
+        inputPath,
+        ["---", "title: Cover title", "---", "# Report", ""].join("\n"),
+        "utf8",
+      );
+      await writeFile(profilePath, "cover:\n  enabled: true\n", "utf8");
+      await writeFile(
+        templatePath,
+        '<html><body><article class="custom-document">$body$</article></body></html>\n',
+        "utf8",
+      );
+      const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "pandoc" && !args.includes("--version")) {
+          const selectedTemplatePath = args[args.indexOf("--template") + 1];
+          if (selectedTemplatePath) {
+            selectedTemplate = await readFile(selectedTemplatePath, "utf8");
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      const prepared = await prepareMarkdownPdfRender(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        template: toRepoRelativePath(templatePath),
+      });
+      expect(prepared.templateCompatibility).toEqual({ bodyBoundary: "not-required" });
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        profile: toRepoRelativePath(profilePath),
+        template: toRepoRelativePath(templatePath),
+        runner: capturingRunner,
+      });
+
+      expect(selectedTemplate).toContain('<article class="custom-document">$body$</article>');
+      expect(selectedTemplate).not.toContain('class="pdf-cover');
+      expect(await readFile(outputPath, "utf8")).toContain("%PDF");
+      expectNoStderr();
+    });
+  });
+
   test("regenerates built-in CSS from the proven body boundary", async () => {
     await withTempFixtureDir("md-pdf-template-compat-built-in-css", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");

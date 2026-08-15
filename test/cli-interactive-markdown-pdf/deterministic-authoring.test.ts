@@ -433,6 +433,7 @@ describe("interactive Markdown PDF deterministic authoring", () => {
     expect(result.stderr).not.toContain("Reusable Profile settings:");
     expect(result.stderr).not.toContain("Reusable Profile page numbering:");
     expect(result.stderr).not.toContain("Advisory renderer capability requirements:");
+    expect(result.promptCalls.map((call) => call.message)).not.toContain("Add a cover page?");
     expect(
       result.selectChoicesByMessage["Recipe review next step"]?.map((choice) => choice.value),
     ).not.toContain("revise-code");
@@ -442,6 +443,9 @@ describe("interactive Markdown PDF deterministic authoring", () => {
     expect(
       result.selectChoicesByMessage["Recipe review next step"]?.map((choice) => choice.value),
     ).not.toContain("revise-page-chrome");
+    expect(
+      result.selectChoicesByMessage["Recipe review next step"]?.map((choice) => choice.name),
+    ).not.toContain("Revise cover page");
   });
 
   test("changes durable output without preparing the candidate again", () => {

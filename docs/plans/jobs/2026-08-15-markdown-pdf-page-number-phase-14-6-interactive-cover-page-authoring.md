@@ -92,7 +92,7 @@ cleanup status, commit checkpoints, and review outcomes.
 - [x] Establish the clean `82241026` starting and review boundary, activate
       this job, link the parent plan and research, and freeze the scope and
       evidence gates.
-- [ ] Freeze current Formal Guide order, disabled-cover output, built-in cover
+- [x] Freeze current Formal Guide order, disabled-cover output, built-in cover
       HTML/CSS, metadata-title behavior, compatibility outcomes, and
       cover/ToC/body rendering before production changes.
 - [ ] Implement and verify fresh and revision cover-page authoring while
@@ -143,10 +143,18 @@ complete the renderer evidence gate.
 ## Evidence Ledger
 
 - Starting and exact review base: `82241026`.
-- Activation: the worktree was clean; the parent plan and cover-page research
-  define the settled contract; this record freezes the execution boundary and
-  evidence gates.
-- Current-behavior baseline: pending.
+- Activation checkpoint: `aa547f1a`.
+- Activation evidence: the worktree was clean; the parent plan and cover-page
+  research define the settled contract; this record freezes the execution
+  boundary and evidence gates.
+- Current-behavior baseline: 79 tests passed with 485 assertions across six
+  focused Interactive, Profile-rendering, Template-compatibility,
+  no-default-CSS, and diagnostic suites. The characterization freezes revision
+  `3`, normalized disabled cover defaults, save/reload behavior, Template
+  isolation, built-in cover order/chrome/title behavior, duplicate company
+  output, permissive arbitrary-Template behavior, cover-only
+  `--no-default-css`, and the existing page-number hard-error matrix before
+  production changes.
 - Implementation checkpoints: pending.
 - Renderer evidence: pending.
 - Exact-range review: pending.

@@ -158,6 +158,30 @@ describe("Markdown PDF page numbers with no default CSS", () => {
     });
   });
 
+  test("renders a cover-only Profile without generated CSS or a cover-layout warning", async () => {
+    await withTempFixtureDir("md-to-pdf-no-default-css-cover-baseline", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "profile.yml");
+      const outputPath = join(fixtureDir, "report.pdf");
+      await writeFile(inputPath, "---\ntitle: Cover title\n---\n# Report\n", "utf8");
+      await writeFile(profilePath, "cover:\n  enabled: true\n", "utf8");
+      const { calls, runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        profile: toRepoRelativePath(profilePath),
+        noDefaultCss: true,
+        runner,
+      });
+
+      expect(calls.some((call) => call.command === "weasyprint")).toBe(true);
+      expect(await readFile(outputPath, "utf8")).toContain("%PDF");
+      expectNoStderr();
+    });
+  });
+
   test.each([
     {
       bundleProfile: undefined,

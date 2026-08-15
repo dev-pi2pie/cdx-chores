@@ -168,6 +168,7 @@ describe("cli action modules: md to-pdf profile rendering", () => {
         input: toRepoRelativePath(inputPath),
         profile: toRepoRelativePath(profilePath),
         htmlOutput: toRepoRelativePath(htmlOutput),
+        toc: true,
         runner: capturingRunner,
       });
 
@@ -179,7 +180,20 @@ describe("cli action modules: md to-pdf profile rendering", () => {
       expect(renderedTemplate).toContain('class="pdf-cover pdf-cover--report"');
       expect(renderedTemplate).toContain("Mixed Language Report");
       expect(renderedTemplate).toContain("Runtime Notes");
+      expect(renderedTemplate.indexOf('class="pdf-cover pdf-cover--report"')).toBeLessThan(
+        renderedTemplate.indexOf('<nav id="TOC" role="doc-toc">'),
+      );
+      expect(renderedTemplate.indexOf('<nav id="TOC" role="doc-toc">')).toBeLessThan(
+        renderedTemplate.indexOf('<main class="document-body">'),
+      );
+      expect(renderedTemplate).not.toContain('class="document-title"');
+      expect(renderedTemplate.match(/Example Co\./g)).toHaveLength(2);
+      expect(renderedTemplate).toContain('<p class="pdf-cover__company">Example Co.</p>');
+      expect(renderedTemplate).toContain('<p class="pdf-cover__meta">Noname | Example Co.</p>');
       expect(combinedCss).toContain("@page cover");
+      const coverCss = combinedCss.slice(combinedCss.indexOf("@page cover"));
+      expect(coverCss).toContain("@top-left {\n    content: none;");
+      expect(coverCss).toContain("@bottom-center {\n    content: none;");
       expect(combinedCss).toContain(".pdf-cover--report .pdf-cover__content");
       expect(combinedCss).toContain("min-height: 297mm;");
       expect(combinedCss).not.toContain("\n  height: 297mm;");
