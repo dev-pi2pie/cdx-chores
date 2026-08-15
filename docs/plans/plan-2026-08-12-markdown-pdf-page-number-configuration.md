@@ -1722,50 +1722,89 @@ Completed checkpoint:
 
 Tasks:
 
-- [ ] Update [Markdown PDF Usage][markdown-pdf-usage] with the direct toggle,
-      Profile fields, defaults, compatibility behavior, and examples.
-- [ ] Update [Markdown PDF Codex Profile Helper][profile-helper] with durable
-      authoring and ownership guidance.
+- [ ] Create and activate a Phase 15 guidance-closeout job record with the exact
+      starting commit, permanent documentation boundary, current-guide and
+      CLI-help inventory, validation results, documentation-review range, and
+      final lifecycle decisions at
+      `jobs/2026-08-16-markdown-pdf-page-number-phase-15-guidance-closeout.md`.
+      After creating it, add the job-record link to this plan and the parent
+      page-number research.
+- [ ] Make [Markdown PDF Usage][markdown-pdf-usage] the canonical guide for the
+      shipped Profile schema, defaults, four logical/physical page-number
+      terms, migration and collision diagnostics, renderer capability
+      requirements, page roles, metadata-based cover behavior, custom-Template
+      compatibility, `--no-default-css` boundaries, and direct render-only
+      toggle. Keep its YAML and command examples concise and complete.
+- [ ] Update [Interactive Markdown PDF Usage][interactive-markdown-pdf-usage]
+      with the cover-before-ToC decision and independent revision, simplified
+      page-number and repeating-content flow, ghost-guided label/content input,
+      transient one-render choice, disabled-value retention, and Project-bundle
+      handoff. Keep Project on its Codex Assistant route rather than implying a
+      deterministic Project `formal-guide`.
+- [ ] Update [Markdown PDF Codex Profile Helper][profile-helper] to distinguish
+      bounded Codex patches from common Formal Guide authoring and the complete
+      advanced Profile YAML/JSON contract. Do not imply that Codex Assistant
+      receives or authors every page-number, page-chrome, or cover field.
 - [ ] Update [Markdown PDF Codex Project Helper][project-helper] with the
-      Profile-owned page-number contract, Profile/Template compatibility,
-      generated-bundle review, `--bundle` rendering, explicit-role equivalent,
-      and validation behavior.
+      Profile-owned page-number and metadata-cover contract,
+      Profile/Template compatibility, generated-bundle review, `--bundle`
+      rendering, explicit-role equivalent, validation behavior, and final
+      schema-revision materialization.
 - [ ] Update [Markdown PDF Codex Template Helper][template-helper] with the
-      stable body hook and CSS ownership boundary: permit cover/ToC and layout
-      presentation plus deliberate later user CSS, while keeping ordinary
-      page-number sequence/content policy Profile-owned.
-- [ ] Update Interactive Markdown PDF usage with the one-render choice,
-      metadata-based cover-page decision and revision, and simplified
-      page-number/repeating-content flow. Update Project-bundle descriptions
-      for durable Profile authoring and handoff.
-- [ ] Update `md pdf-profile init` examples and verify direct CLI help examples
-      agree with the Phase 14 render-only toggle wording.
-- [ ] Document `{page}` and `{pages}` as the current and final logical values,
-      `{pdfPage}` and `{pdfPages}` as physical PDF values, and the explicit
-      revision-1/revision-2 `{pages}` migration warning.
-- [ ] Document capability-specific renderer requirements without presenting one
-      local development environment as the public baseline.
-- [ ] Publish the concise placeholder handoff required by the cross-feature
-      language research without expanding this plan into namespace or escaping
-      work.
-- [ ] Verify every guide example against the implemented command and schema.
-- [ ] Record final validation and renderer evidence in public-safe wording.
-- [ ] Link the completed implementation records from this plan and the related
-      research.
-- [ ] Change plan and research lifecycle status only after implementation,
-      validation, review, documentation, and evidence links are complete.
+      stable body and managed-cover hooks plus the CSS ownership boundary:
+      allow cover/ToC and layout presentation plus deliberate later user CSS,
+      while keeping ordinary page-number sequence/content policy
+      Profile-owned. Document that an arbitrary custom Template cannot silently
+      discard an enabled Profile metadata cover.
+- [ ] Verify `md pdf-profile init` output, direct CLI help, bundle and
+      explicit-role render commands, and every changed YAML or shell example
+      against the implemented command, schema, diagnostics, and generated
+      artifacts. Record any discovered implementation mismatch in the Phase 15
+      job record and link a new job, plan, or research item when follow-up is
+      required instead of documenting unshipped behavior. Do not close the
+      parent plan or research while a mismatch invalidates the shipped contract
+      or their completion claims.
+- [ ] Publish the concise settled Markdown PDF placeholder handoff in the
+      [page-number research][page-number-research], then link it from the
+      [cross-feature language research][pattern-language-research]. Do not
+      implement the repository-wide language guide, placeholder namespaces, or
+      literal-brace escaping in this plan.
+- [ ] Record the already-proven renderer versions, capability baselines,
+      extracted-page results, visual conclusions, and cleanup in public-safe
+      wording. Reuse the completed renderer evidence unless documentation
+      verification exposes a behavior mismatch or Phase 15 changes production
+      code.
+- [ ] Run focused help/schema/example tests, Markdown formatting and link
+      checks, `git diff --check`, and an exact-range documentation review.
+      Resolve accepted findings, re-run the affected gates, and record the
+      widened reviewed range in the Phase 15 job record.
+- [ ] Link the completed Phase 13 through Phase 15 implementation records and
+      their completion evidence from this plan and the parent research. Only
+      then mark the parent page-number research `completed` and this plan
+      `completed`; keep the completed follow-up research completed, keep the
+      cross-feature language research `draft`, keep current guides `completed`
+      with updated `modified-date` values, and perform no archive move in this
+      phase.
 
 Phase checkpoint:
 
 - Current guides describe only implemented and validated behavior.
+- Markdown PDF Usage owns the canonical contract; the Interactive and helper
+  guides explain their surface-specific workflows and link back instead of
+  duplicating the full schema.
 - Profile and Project helper guides agree on ownership, bundle resolution, and
   the `md to-pdf` render boundary.
 - Template guidance distinguishes required structural/presentation support from
-  Profile-owned ordinary page-number policy and deliberate user overrides.
+  Profile-owned ordinary page-number and metadata-cover policy plus deliberate
+  user overrides.
+- Codex Assistant guidance describes its bounded authority and leaves advanced
+  Profile-only values to YAML/JSON rather than presenting deferred future-canary
+  work as shipped.
 - Public records contain reproducible versions, results, and conclusions but no
   local activation commands, environment names, or resolved machine paths.
-- The research and plan satisfy the repository's evidence requirements before
-  either is marked `completed`.
+- The parent page-number research and plan satisfy the repository's evidence
+  requirements before either is marked `completed`; the cross-feature language
+  research remains a separate draft and no document is archived in this phase.
 
 ## Related Research
 
@@ -1779,11 +1818,13 @@ Phase checkpoint:
 ## Related Guides
 
 - [Markdown PDF Usage][markdown-pdf-usage]
+- [Interactive Markdown PDF Usage][interactive-markdown-pdf-usage]
 - [Markdown PDF Codex Profile Helper][profile-helper]
 - [Markdown PDF Codex Project Helper][project-helper]
 - [Markdown PDF Codex Template Helper][template-helper]
 
 [markdown-pdf-usage]: ../guides/markdown-pdf-usage.md
+[interactive-markdown-pdf-usage]: ../guides/markdown-pdf-interactive-usage.md
 [interactive-cover-research]: ../researches/research-2026-08-15-markdown-pdf-interactive-cover-page-authoring.md
 [interactive-page-number-ux]: ../researches/research-2026-08-14-markdown-pdf-interactive-page-number-and-page-chrome-ux.md
 [page-number-research]: ../researches/research-2026-08-11-markdown-pdf-page-number-configuration.md
