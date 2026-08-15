@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number Phase 14.6 interactive cover page authoring"
 created-date: 2026-08-15
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-08-12-markdown-pdf-page-number-configuration.md
 ---
@@ -95,24 +95,24 @@ cleanup status, commit checkpoints, and review outcomes.
 - [x] Freeze current Formal Guide order, disabled-cover output, built-in cover
       HTML/CSS, metadata-title behavior, compatibility outcomes, and
       cover/ToC/body rendering before production changes.
-- [ ] Implement and verify fresh and revision cover-page authoring while
+- [x] Implement and verify fresh and revision cover-page authoring while
       preserving advanced values and revision `3`.
-- [ ] Implement and verify review wording, document order, metadata-title
+- [x] Implement and verify review wording, document order, metadata-title
       behavior, and empty-cover diagnostics.
-- [ ] Enforce the custom-Template, managed Project, and `--no-default-css`
+- [x] Enforce the custom-Template, managed Project, and `--no-default-css`
       compatibility matrix with warning, error, and no-output coverage.
-- [ ] Correct and verify single-occurrence company rendering.
-- [ ] Verify cover chrome suppression, logical origins, physical tokens, and
+- [x] Correct and verify single-occurrence company rendering.
+- [x] Verify cover chrome suppression, logical origins, physical tokens, and
       ToC/body repeating-content invariants.
-- [ ] Run focused and broad Interactive, Markdown PDF, Project, renderer
+- [x] Run focused and broad Interactive, Markdown PDF, Project, renderer
       evidence, full repository, TypeScript, lint, format, build, worktree, and
       exact-range diff gates.
-- [ ] Run the guarded renderer matrix, inspect representative pages, record
+- [x] Run the guarded renderer matrix, inspect representative pages, record
       public-safe evidence, and confirm temporary-artifact cleanup.
-- [ ] Review the exact `82241026..<implementation-and-evidence-tip>` range for
+- [x] Review the exact `82241026..0ea0d621` range for
       maintainability and test quality, resolve accepted findings, and re-run
       the widened review when fixes land.
-- [ ] Review the completed job, research, and parent checklist, then commit the
+- [x] Review the completed job, research, and parent checklist, then commit the
       documentation closeout before Phase 15.
 
 ## Validation Plan
@@ -133,7 +133,7 @@ bun run lint
 bun run format:check
 bun run build
 git diff --check
-git diff --check 82241026..<implementation-and-evidence-tip>
+git diff --check 82241026..0ea0d621
 ```
 
 Renderer-sensitive checkpoints additionally require extracted real-PDF values
@@ -155,10 +155,48 @@ complete the renderer evidence gate.
   output, permissive arbitrary-Template behavior, cover-only
   `--no-default-css`, and the existing page-number hard-error matrix before
   production changes.
-- Implementation checkpoints: pending.
-- Renderer evidence: pending.
-- Exact-range review: pending.
-- Closeout verdict: pending.
+- Implementation checkpoints:
+  - `c33f80b7` enforces cover rendering, compatibility, diagnostics, and
+    single-company output.
+  - `26923d52` adds Profile Formal Guide cover authoring, revision, review, and
+    persistence.
+  - `73d19609` extends the existing renderer evidence contract with
+    single-occurrence extracted cover text.
+  - `7a0153b3` aligns the command-layer Project failure contract with the
+    managed cover-hook validation.
+  - `0ea0d621` resolves the accepted exact-range review findings by sharing the
+    cover hook and adding the missing retention and escaping regressions.
+- Focused implementation evidence: 142 render, diagnostic, compatibility, and
+  Project tests passed with 791 assertions; 346 Interactive and shared Profile
+  review tests passed with 1,551 assertions; and 32 renderer-evidence and
+  Project-contract tests passed with 1,207 assertions.
+- Integrated repository evidence: 2,349 tests passed with 14,055 assertions;
+  TypeScript, lint, formatting, build, worktree, and diff checks passed.
+- Built-CLI smoke: fresh Profile Formal Guide asked `Add a cover page?` after
+  margins and before ToC, exposed `Revise cover page`, and saved a revision-3
+  Profile with the complete normalized cover contract. The rendered six-page
+  A4 PDF showed a chrome-free cover, ToC second, and body numbering ending at
+  logical `Page 4` on physical page 6 without clipping or overlap.
+- Guarded renderer evidence: WeasyPrint `65.1`, `68.0`, and `69.0` passed the
+  cover -> ToC -> body product and Project matrix. Extracted text proved the
+  company marker occurs exactly once on the cover, body-scoped labels remain
+  absent from cover and ToC pages, document/body counter origins remain
+  correct, and metadata titles stay body-owned. Representative cover, ToC,
+  body, custom-style, blank-page, and Project pages passed visual inspection.
+- Evidence identities: catalog digest
+  `cd39b69a1bb41ff3a1140304ec1e779e81f686870af0dfc750271ffccb116061`;
+  harness digest
+  `dbf41562c71ee837861b4e68507fa295613ed98df840c0a4ef90b65ced8718d8`.
+- Cleanup: the guarded laboratories closed successfully, and temporary smoke
+  Profiles, PDFs, PNGs, and raw reports were removed.
+- Exact-range review: the initial `82241026..7a0153b3` review found one shared-
+  hook maintainability issue and two lower-priority regression gaps. All three
+  were accepted and fixed in `0ea0d621`; the widened
+  `82241026..0ea0d621` maintainability and test-quality re-review found no
+  remaining actionable findings.
+- Closeout verdict: **Continue** to Phase 15. Phase 14.6 is complete, Profile
+  `schemaVersion` remains `3`, and the parent plan remains active only for the
+  final guidance and lifecycle closeout.
 
 ## Related Research
 

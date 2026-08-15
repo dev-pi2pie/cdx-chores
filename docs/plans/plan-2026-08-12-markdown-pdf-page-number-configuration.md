@@ -1633,7 +1633,7 @@ Tasks:
 - [x] Freeze the current Profile Formal Guide prompt order, disabled-cover
       output, built-in cover HTML/CSS, automatic metadata-title behavior, and
       cover/ToC/body rendering before changing authoring.
-- [ ] Implement the settled cover compatibility matrix: support the built-in
+- [x] Implement the settled cover compatibility matrix: support the built-in
       Template with generated CSS; reject arbitrary custom Templates without a
       proven cover hook before output; require managed Project compatibility
       validation; and allow `--no-default-css` only as an advanced override
@@ -1641,42 +1641,42 @@ Tasks:
       Preserve the existing hard error when any effective page-number request,
       whether Profile-sourced or directly enabled for one render, is combined
       with `--no-default-css`; prove that both paths produce no final output.
-- [ ] Add one Profile-specific `Add a cover page?` choice after
+- [x] Add one Profile-specific `Add a cover page?` choice after
       layout and margins but before ToC. Use concrete metadata-cover wording,
       default fresh authoring to disabled, and avoid cover style, individual
       field, or image questions in the common terminal path.
-- [ ] Compile the choice through the existing Profile `cover` contract without
+- [x] Compile the choice through the existing Profile `cover` contract without
       changing `schemaVersion: 3`, normalized defaults, Template Formal Guide,
       Project preparation, or Codex Assistant cover authority.
-- [ ] Add an independent `Revise cover page` recipe-review action that
+- [x] Add an independent `Revise cover page` recipe-review action that
       re-asks only the cover decision. Preserve valid advanced `cover.style`
       and `cover.fields` values while disabled and restore them on re-enable;
       do not claim a saved-Profile-to-Interactive revision entry point.
-- [ ] Update review to show cover state, resolved document order, metadata
+- [x] Update review to show cover state, resolved document order, metadata
       source expectations, and the interaction with
       `titleBlock.metadataTitle`. Preserve automatic suppression under a cover
       while making explicit `show` visible as a deliberate repeated body title.
-- [ ] Emit one non-blocking review/render warning when every configured cover
+- [x] Emit one non-blocking review/render warning when every configured cover
       field resolves to empty text after effective metadata precedence. Keep
       structured diagnostics plain, print terminal warnings through stderr,
       continue rendering, and preserve the source Profile.
-- [ ] Correct the built-in duplicate company output: render company exactly
+- [x] Correct the built-in duplicate company output: render company exactly
       once in its dedicated line, keep only author and date in the compact
       metadata line, and prove the result with HTML and extracted-PDF text.
-- [ ] Verify that generated CSS keeps the visible cover chrome-free and that
+- [x] Verify that generated CSS keeps the visible cover chrome-free and that
       `--no-default-css` makes equivalent custom styling user-owned;
       document-origin numbering includes the cover in logical arithmetic
       without printing its label; body-origin numbering excludes cover and
       ToC; physical tokens retain PDF positions; and ToC/body repeating content
       remains unchanged.
-- [ ] Add focused prompt-order, fresh enabled/disabled, revision transition,
+- [x] Add focused prompt-order, fresh enabled/disabled, revision transition,
       inert-value retention, compilation, review, metadata, save/reload,
       custom-Template compatibility, Project-boundary, and lifecycle tests.
-- [ ] Run a bounded built-CLI smoke and real-PDF inspection covering
+- [x] Run a bounded built-CLI smoke and real-PDF inspection covering
       cover -> ToC -> body with page numbers and repeating content. Record only
       public-safe conclusions and keep local launch details and scratch
       artifacts out of durable documentation.
-- [ ] Run focused and broad Interactive/Markdown PDF tests plus the full test,
+- [x] Run focused and broad Interactive/Markdown PDF tests plus the full test,
       TypeScript, lint, format, build, worktree, and exact-range diff gates.
       Review the exact Phase 14.6 range for maintainability and test quality,
       resolve accepted findings, re-review the widened range, and commit a
@@ -1696,6 +1696,27 @@ Phase checkpoint:
   page-role matrix, and Advanced-YAML boundary remain unchanged.
 - Real-PDF evidence, exact-range review, and the Phase 14.6 job record are
   complete before Phase 15 publishes the final guidance.
+
+Completed checkpoint:
+
+- Phase 14.6 is `completed`; Phase 15 remains pending, so this plan remains
+  `active`.
+- Profile `schemaVersion` remains `3`; the common Formal Guide adds only the
+  existing metadata-based cover decision and preserves advanced YAML values.
+- The reviewed implementation and evidence range is
+  `82241026..0ea0d621`. Three accepted review findings were fixed at the tip,
+  and the widened maintainability and test-quality re-review found no
+  remaining actionable findings.
+- WeasyPrint `65.1`, `68.0`, and `69.0` passed the final guarded cover, ToC,
+  body, counter, custom-style, blank-page, and Project matrix. The catalog
+  digest is
+  `cd39b69a1bb41ff3a1140304ec1e779e81f686870af0dfc750271ffccb116061`;
+  the harness digest remains
+  `dbf41562c71ee837861b4e68507fa295613ed98df840c0a4ef90b65ced8718d8`.
+- The [Phase 14.6 job record][phase-14-6-job] and
+  [Interactive Cover Page Authoring research][interactive-cover-research]
+  contain the public-safe implementation, validation, visual-review, cleanup,
+  and exact-range review evidence.
 
 ### Phase 15: Guidance And Lifecycle Closeout
 

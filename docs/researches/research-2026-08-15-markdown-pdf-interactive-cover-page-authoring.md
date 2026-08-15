@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Interactive Cover Page Authoring"
 created-date: 2026-08-15
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -51,11 +51,11 @@ remain outside the common terminal path. Revision changes only
 | advanced style and field templates remain YAML | settled             |
 | same-session inert-value preservation          | settled             |
 | empty-cover metadata warning                   | settled             |
-| duplicate company rendering                    | requires correction |
-| arbitrary custom-Template compatibility        | settled direction   |
+| duplicate company rendering                    | implemented         |
+| arbitrary custom-Template compatibility        | implemented         |
 
-The research remains `in-progress` until the settled metadata, renderer, and
-compatibility boundaries are implemented and Phase 14.6 records their evidence.
+The research is `completed`. The settled metadata, renderer, and compatibility
+boundaries are implemented, and the Phase 14.6 job records their evidence.
 
 ## Why This Follow-Up Exists
 
@@ -216,12 +216,10 @@ metadata. The PDF may contain an empty cover page. Add title, subtitle, author,
 company, or date metadata; customize cover.fields; or disable the cover page.
 ```
 
-The built-in renderer currently places company in its dedicated company line
-and again in the author/company/date metadata line. Phase 14.6 must render
-company exactly once in the dedicated company line; the compact metadata line
-must contain author and date only. HTML assertions and extracted real-PDF text
-must prove that the company value occurs once before the common authoring path
-promotes `{company}` as a cover source.
+The built-in renderer now places company exactly once in its dedicated company
+line. The compact metadata line contains author and date only. HTML assertions
+and extracted real-PDF text prove the single occurrence before the common
+authoring path promotes `{company}` as a cover source.
 
 ## Template And CSS Boundary
 
@@ -256,12 +254,12 @@ layout and chrome-clearing rules are absent. This does not weaken the existing
 hard error when any effective page-number request, whether Profile-sourced or
 directly enabled for one render, is combined with `--no-default-css`; that
 incompatibility takes precedence when both features are active. No-output tests
-must cover both page-number sources. The remaining outcomes require direct,
-Interactive, bundle, and no-output regression coverage.
+cover both page-number sources, and direct, Interactive, bundle, and no-output
+regressions cover the remaining outcomes.
 
 Managed image covers remain Template/Project-owned. The Formal Guide question
-must say that it creates a metadata-based cover page, not imply image selection
-or Template composition.
+says that it creates a metadata-based cover page without implying image
+selection or Template composition.
 
 ## Page-Number And Repeating-Content Interaction
 
@@ -280,28 +278,28 @@ The cover question therefore belongs before ToC, while page-number and
 repeating-content questions remain later. The resulting document roles are
 known before the user chooses body or document numbering.
 
-## Phase 14.6 Implementation Direction
+## Implemented Phase 14.6 Scope
 
-Phase 14.6 should:
+Phase 14.6:
 
-1. freeze the current disabled-cover Formal Guide output and built-in cover
-   rendering before changes
-2. implement the settled custom-Template and `--no-default-css` compatibility
-   matrix
-3. add a Profile-specific normalized cover answer and prompt before ToC
-4. compile the choice without changing schema or advanced cover defaults
-5. add independent cover revision with inert-value preservation
-6. correct duplicate company rendering and add metadata-readiness review
-7. verify cover/ToC/body order, automatic and explicit metadata-title behavior,
-   and page-number arithmetic
-8. run focused, broad Interactive/Markdown PDF, full repository, static, build,
-   format, and exact-range review gates
-9. render and inspect a bounded real PDF with cover, ToC, body, page numbers,
-   and repeating content before closing the phase
+1. froze the disabled-cover Formal Guide output and built-in cover rendering
+   before production changes
+2. implemented the settled custom-Template and `--no-default-css`
+   compatibility matrix
+3. added a Profile-specific normalized cover answer and prompt before ToC
+4. compiled the choice without changing schema or advanced cover defaults
+5. added independent cover revision with inert-value preservation
+6. corrected duplicate company rendering and added metadata-readiness review
+7. verified cover/ToC/body order, automatic and explicit metadata-title
+   behavior, and page-number arithmetic
+8. passed focused, broad Interactive/Markdown PDF, full repository, static,
+   build, format, and exact-range review gates
+9. rendered and inspected bounded real PDFs with cover, ToC, body, page
+   numbers, and repeating content before closeout
 
 ## Completion Criteria
 
-This research can become `completed` only when:
+This research is `completed` because:
 
 - the custom-Template and `--no-default-css` compatibility matrix is enforced
 - fresh and revision cover behavior is implemented and proven
@@ -309,6 +307,25 @@ This research can become `completed` only when:
 - metadata readiness and company rendering are resolved
 - a real PDF proves cover -> ToC -> body order and page-number interaction
 - the Phase 14.6 implementation and exact-range review record is linked
+
+## Implementation Evidence
+
+- The reviewed implementation and evidence range is
+  `82241026..0ea0d621`.
+- Fresh authoring, same-session revision, advanced-value retention, revision-3
+  persistence, review wording, and metadata-aware empty-cover diagnostics are
+  covered by focused and full-repository tests.
+- Built-in, arbitrary custom, managed Project, `--no-default-css`, and
+  page-number conflict outcomes are enforced before unsafe final output.
+- WeasyPrint `65.1`, `68.0`, and `69.0` passed the guarded cover -> ToC -> body
+  matrix. Extracted text proved company occurs once on the cover, and visual
+  inspection confirmed chrome suppression, body numbering, repeating-content
+  behavior, and metadata-title placement without clipping or overlap.
+- The widened maintainability and test-quality re-review found no remaining
+  actionable findings after the accepted fixes.
+- The completed [Phase 14.6 job record][phase-14-6-job] contains the detailed
+  public-safe validation, evidence identities, cleanup result, and checkpoint
+  history.
 
 ## Related Research
 
@@ -325,4 +342,5 @@ This research can become `completed` only when:
 [page-number-plan]: ../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md
 [page-number-research]: research-2026-08-11-markdown-pdf-page-number-configuration.md
 [page-role-counter-research]: research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md
+[phase-14-6-job]: ../plans/jobs/2026-08-15-markdown-pdf-page-number-phase-14-6-interactive-cover-page-authoring.md
 [profile-cover-research]: research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md
