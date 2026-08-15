@@ -1605,7 +1605,7 @@ Phase checkpoint:
 
 Completed checkpoint:
 
-- Phase 14.5 is `completed`; Phase 15 remains pending.
+- Phase 14.5 is `completed`; Phase 14.6 and Phase 15 remain pending.
 - Profile `schemaVersion` remains `3`.
 - The reviewed implementation and evidence range is
   `6b1b9bba..d0961278`. Two accepted evidence gaps were fixed at the tip, and
@@ -1620,6 +1620,82 @@ Completed checkpoint:
   [Page Roles And Counter Semantics research][page-role-counter-research]
   contain the public-safe implementation, validation, visual-review, and
   cleanup evidence.
+
+### Phase 14.6: Interactive Cover Page Authoring
+
+Tasks:
+
+- [ ] Create and activate a Phase 14.6 job record from the reviewed planning
+      checkpoint. Link
+      [Interactive Cover Page Authoring][interactive-cover-research] and
+      freeze the permanent-file boundary, meaningful commit checkpoints,
+      exact review range, renderer evidence, and closeout verdict.
+- [ ] Freeze the current Profile Formal Guide prompt order, disabled-cover
+      output, built-in cover HTML/CSS, automatic metadata-title behavior, and
+      cover/ToC/body rendering before changing authoring.
+- [ ] Implement the settled cover compatibility matrix: support the built-in
+      Template with generated CSS; reject arbitrary custom Templates without a
+      proven cover hook before output; require managed Project compatibility
+      validation; and allow `--no-default-css` only as an advanced override
+      with a warning that custom CSS owns the cover page break and chrome reset.
+      Preserve the existing hard error when any effective page-number request,
+      whether Profile-sourced or directly enabled for one render, is combined
+      with `--no-default-css`; prove that both paths produce no final output.
+- [ ] Add one Profile-specific `Add a cover page?` choice after
+      layout and margins but before ToC. Use concrete metadata-cover wording,
+      default fresh authoring to disabled, and avoid cover style, individual
+      field, or image questions in the common terminal path.
+- [ ] Compile the choice through the existing Profile `cover` contract without
+      changing `schemaVersion: 3`, normalized defaults, Template Formal Guide,
+      Project preparation, or Codex Assistant cover authority.
+- [ ] Add an independent `Revise cover page` recipe-review action that
+      re-asks only the cover decision. Preserve valid advanced `cover.style`
+      and `cover.fields` values while disabled and restore them on re-enable;
+      do not claim a saved-Profile-to-Interactive revision entry point.
+- [ ] Update review to show cover state, resolved document order, metadata
+      source expectations, and the interaction with
+      `titleBlock.metadataTitle`. Preserve automatic suppression under a cover
+      while making explicit `show` visible as a deliberate repeated body title.
+- [ ] Emit one non-blocking review/render warning when every configured cover
+      field resolves to empty text after effective metadata precedence. Keep
+      structured diagnostics plain, print terminal warnings through stderr,
+      continue rendering, and preserve the source Profile.
+- [ ] Correct the built-in duplicate company output: render company exactly
+      once in its dedicated line, keep only author and date in the compact
+      metadata line, and prove the result with HTML and extracted-PDF text.
+- [ ] Verify that generated CSS keeps the visible cover chrome-free and that
+      `--no-default-css` makes equivalent custom styling user-owned;
+      document-origin numbering includes the cover in logical arithmetic
+      without printing its label; body-origin numbering excludes cover and
+      ToC; physical tokens retain PDF positions; and ToC/body repeating content
+      remains unchanged.
+- [ ] Add focused prompt-order, fresh enabled/disabled, revision transition,
+      inert-value retention, compilation, review, metadata, save/reload,
+      custom-Template compatibility, Project-boundary, and lifecycle tests.
+- [ ] Run a bounded built-CLI smoke and real-PDF inspection covering
+      cover -> ToC -> body with page numbers and repeating content. Record only
+      public-safe conclusions and keep local launch details and scratch
+      artifacts out of durable documentation.
+- [ ] Run focused and broad Interactive/Markdown PDF tests plus the full test,
+      TypeScript, lint, format, build, worktree, and exact-range diff gates.
+      Review the exact Phase 14.6 range for maintainability and test quality,
+      resolve accepted findings, re-review the widened range, and commit a
+      reviewed documentation closeout before Phase 15.
+
+Phase checkpoint:
+
+- Fresh Profile Formal Guide asks about a metadata-based cover page before ToC
+  and keeps the ordinary disabled default.
+- Cover revision is independent and cannot erase advanced YAML-owned values.
+- Review describes Cover -> ToC -> Body ownership and metadata-title effects
+  without requiring users to understand internal renderer terms.
+- Built-in, arbitrary custom, managed Project, and `--no-default-css`
+  boundaries have explicit warning/error behavior and never silently drop
+  cover intent.
+- The existing schema revision, image-cover ownership, counter semantics,
+  page-role matrix, and Advanced-YAML boundary remain unchanged.
+- Real-PDF evidence, exact-range review, and the Phase 14.6 job record are
+  complete before Phase 15 publishes the final guidance.
 
 ### Phase 15: Guidance And Lifecycle Closeout
 
@@ -1637,9 +1713,10 @@ Tasks:
       stable body hook and CSS ownership boundary: permit cover/ToC and layout
       presentation plus deliberate later user CSS, while keeping ordinary
       page-number sequence/content policy Profile-owned.
-- [ ] Update Interactive Markdown PDF usage with the one-render choice and
-      update the simplified formal-guide and Project-bundle descriptions for
-      durable Profile authoring and handoff.
+- [ ] Update Interactive Markdown PDF usage with the one-render choice,
+      metadata-based cover-page decision and revision, and simplified
+      page-number/repeating-content flow. Update Project-bundle descriptions
+      for durable Profile authoring and handoff.
 - [ ] Update `md pdf-profile init` examples and verify direct CLI help examples
       agree with the Phase 14 render-only toggle wording.
 - [ ] Document `{page}` and `{pages}` as the current and final logical values,
@@ -1675,6 +1752,7 @@ Phase checkpoint:
 - [Markdown PDF Profile Revision And Feature Compatibility][profile-revision-research]
 - [Markdown PDF Interactive Page Numbers And Repeating Page Content UX][interactive-page-number-ux]
 - [Markdown PDF Page Roles And Counter Semantics][page-role-counter-research]
+- [Markdown PDF Interactive Cover Page Authoring][interactive-cover-research]
 - [Pattern, Placeholder, and Template Language Guide research][pattern-language-research]
 
 ## Related Guides
@@ -1685,6 +1763,7 @@ Phase checkpoint:
 - [Markdown PDF Codex Template Helper][template-helper]
 
 [markdown-pdf-usage]: ../guides/markdown-pdf-usage.md
+[interactive-cover-research]: ../researches/research-2026-08-15-markdown-pdf-interactive-cover-page-authoring.md
 [interactive-page-number-ux]: ../researches/research-2026-08-14-markdown-pdf-interactive-page-number-and-page-chrome-ux.md
 [page-number-research]: ../researches/research-2026-08-11-markdown-pdf-page-number-configuration.md
 [page-role-counter-research]: ../researches/research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md

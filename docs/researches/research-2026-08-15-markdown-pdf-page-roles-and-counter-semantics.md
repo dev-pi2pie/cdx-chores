@@ -81,13 +81,12 @@ The metadata title therefore looks like a cover or title page, but it is not
 owned by `cover.enabled`. It receives generic repeating content while the ToC
 clears that content. Body-scoped page numbers are correctly absent from both
 pre-body pages, but `{pages}` still reports the physical PDF total on body
-pages. These effects are individually explainable from the current recipe and
-CSS; together they are not a clear authoring contract.[^recipe-source]
+pages. These effects were individually explainable from the then-current
+recipe and CSS; together they were not a clear authoring contract.[^recipe-source]
 
-The bounded smoke is discovery evidence, not the permanent renderer proof for
-this research. Phase 14.5 must convert the finding into deterministic fixtures,
-extracted PDF text, representative page images, and a recorded renderer
-matrix.
+The bounded smoke was discovery evidence rather than permanent renderer proof.
+Phase 14.5 converted the finding into deterministic fixtures, extracted PDF
+text, representative page images, and the recorded renderer matrix below.
 
 ## Historical Page-Role Baseline
 
@@ -382,6 +381,26 @@ body-owned automatic metadata title. PDF page-label metadata remained the
 default physical sequence. Every retained laboratory was closed through the
 guarded cleanup path.
 
+## Interactive Cover Page Authoring Follow-Up
+
+This research settles how an enabled cover renders, but Profile Formal Guide
+does not currently offer a cover choice. It always starts from
+`cover.enabled: false`, even though the built-in renderer can already produce
+the settled cover -> ToC -> body order from a manually edited Profile.
+
+Phase 14.6 is an authoring follow-up rather than a page-role change. It places
+one metadata-cover decision after layout and margins but before ToC, adds an
+independent same-session cover revision action, and keeps advanced cover style
+and field templates in YAML. It must also state the honest boundary for an
+arbitrary custom Template, because selecting custom `template.html` replaces
+the built-in cover markup even when generated Profile cover CSS remains.
+
+The detailed interaction, retention, metadata-readiness, and compatibility
+questions belong to
+[Markdown PDF Interactive Cover Page Authoring][interactive-cover-research].
+This completed research remains the renderer contract that Phase 14.6 must
+preserve.
+
 ## Phase 14.5 Implementation Record
 
 Phase 14.5 completed in this order:
@@ -419,6 +438,7 @@ This research is `completed` because:
 - [Markdown PDF Profile Revision And Feature Compatibility][profile-revision-research]
 - [Profiles, Fonts, And Page Chrome][profile-page-chrome-research]
 - [Pattern, Placeholder, And Template Language Guide][pattern-language-research]
+- [Markdown PDF Interactive Cover Page Authoring][interactive-cover-research]
 
 ## Related Plans
 
@@ -432,6 +452,7 @@ This research is `completed` because:
 [^recipe-source]: [Built-in Markdown PDF recipe](../../src/cli/markdown-pdf/recipe.ts) and [page-chrome CSS generator](../../src/cli/markdown-pdf/profile/page-chrome.ts)
 
 [interactive-research]: research-2026-08-14-markdown-pdf-interactive-page-number-and-page-chrome-ux.md
+[interactive-cover-research]: research-2026-08-15-markdown-pdf-interactive-cover-page-authoring.md
 [phase-14-5-job]: ../plans/jobs/2026-08-15-markdown-pdf-page-number-phase-14-5-page-roles-and-counters.md
 [page-number-plan]: ../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md
 [page-number-research]: research-2026-08-11-markdown-pdf-page-number-configuration.md

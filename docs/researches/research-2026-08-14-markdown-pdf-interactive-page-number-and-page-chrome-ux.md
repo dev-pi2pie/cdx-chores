@@ -19,12 +19,13 @@ Direct and Interactive rendering retain the existing one-render enablement
 override, and Codex-assisted page-number intent remains a separate future
 design problem.
 
-> **Post-implementation follow-up:** Phase 14 completed against the placeholder
-> and page-role contract implemented at that checkpoint. A later renderer smoke
-> exposed an implicit metadata-title page, hidden ToC repeating content, and a
-> logical-versus-physical `{pages}` mismatch. The current direction is owned by
-> [Markdown PDF Page Roles And Counter Semantics][page-role-counter-research]
-> and plan Phase 14.5; the completed interaction and lifecycle evidence in this
+> **Post-implementation follow-up:** Phase 14 completed the page-number and
+> repeating-content interaction contract. Phase 14.5 subsequently completed
+> the page-role and logical/physical counter contract. A remaining Profile
+> authoring gap—choosing the already-supported metadata-based cover page before
+> ToC collection—is now owned by
+> [Markdown PDF Interactive Cover Page Authoring][interactive-cover-research]
+> and plan Phase 14.6. The completed interaction and lifecycle evidence in this
 > document remains valid.
 
 ## Why This Follow-Up Exists
@@ -526,7 +527,7 @@ coverage findings were resolved before the widened range was re-reviewed with
 no remaining material findings. The [reopened Phase 14 job][reopened-phase-14-job]
 records the detailed evidence.
 
-## Post-Implementation Page-Role And Counter Follow-Up — 2026-08-15
+## Completed Page-Role And Counter Follow-Up — 2026-08-15
 
 A bounded live render after Phase 14 showed that an automatic metadata title
 can occupy a cover-like first physical page without being the dedicated cover.
@@ -535,9 +536,9 @@ clears configured header/footer content. With body-origin numbering, the first
 body page then displays logical number `1` while the Phase 14 `{pages}` token
 still reports the physical PDF total.
 
-These findings do not invalidate the completed formal-guide, ghost-input,
-repeating-content, persistence, or lifecycle work. They establish a new
-renderer and template-language boundary. The follow-up research owns:
+These findings did not invalidate the completed formal-guide, ghost-input,
+repeating-content, persistence, or lifecycle work. Phase 14.5 established and
+implemented the resulting renderer and template-language boundary:
 
 - cover, metadata-title, ToC, body, and blank-page roles
 - `toc.pageBreak` behavior across named-page transitions
@@ -546,8 +547,23 @@ renderer and template-language boundary. The follow-up research owns:
 - physical `{pdfPage}` and `{pdfPages}` values
 - the revision-1/revision-2 `{pages}` migration warning
 
-Phase 14 remains `completed`. Phase 14.5 must settle and implement that contract
-before Phase 15 publishes final guidance.
+Phase 14 and Phase 14.5 remain `completed`. Their implementation and real-PDF
+evidence are recorded by the page-role research and Phase 14.5 job.
+
+## Cover Page Authoring Follow-Up — 2026-08-15
+
+With the rendered order now settled as cover -> ToC -> body, Profile Formal
+Guide still has no way to choose the existing metadata-based cover. It always
+emits the disabled default and requires a manual YAML edit to set
+`cover.enabled: true`.
+
+Phase 14.6 adds one Profile-specific cover decision after layout and margins
+but before ToC. It also adds an independent `Revise cover page` action,
+preserves advanced style and field templates as inert values, and keeps image
+covers in the Template/Project boundary. The cover-page follow-up research owns
+metadata readiness, duplicate company rendering, and arbitrary custom-Template
+compatibility. This document remains completed because its page-number and
+repeating-content question is unchanged.
 
 ## Related Research
 
@@ -556,6 +572,7 @@ before Phase 15 publishes final guidance.
 - [Pattern, Placeholder, and Template Language Guide][pattern-language-research]
 - [Markdown PDF Interactive Code Highlighting][interactive-code-research]
 - [Markdown PDF Page Roles And Counter Semantics][page-role-counter-research]
+- [Markdown PDF Interactive Cover Page Authoring][interactive-cover-research]
 
 ## Related Plans
 
@@ -577,6 +594,7 @@ before Phase 15 publishes final guidance.
 [^command]: [Markdown command registration](../../src/cli/commands/markdown.ts) and [Profile initializer](../../src/cli/actions/markdown/pdf-profile-init.ts)
 
 [first-phase-14-job]: ../plans/jobs/2026-08-14-markdown-pdf-page-number-phase-14-interactive-ux.md
+[interactive-cover-research]: research-2026-08-15-markdown-pdf-interactive-cover-page-authoring.md
 [interactive-code-research]: research-2026-07-23-markdown-pdf-interactive-code-highlighting.md
 [page-number-plan]: ../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md
 [page-number-research]: research-2026-08-11-markdown-pdf-page-number-configuration.md

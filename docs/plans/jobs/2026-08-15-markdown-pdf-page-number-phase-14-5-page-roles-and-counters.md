@@ -258,20 +258,24 @@ accepted from CSS string assertions alone.
   label. `d0961278` added both cases; real renderer evidence passed, and the
   widened `6b1b9bba..d0961278` re-review found no material findings.
 - Documentation closeout: this reviewed job, the completed research, and the
-  parent Phase 14.5 checklist record the accepted contract. Phase 15 remains
+  parent Phase 14.5 checklist record the accepted contract. Subsequent planning
+  inserted Phase 14.6 cover-page authoring before Phase 15; both remain
   pending. The documentation-only commit containing these changes is the
-  durable completion boundary; no implementation or evidence work remains.
+  durable Phase 14.5 completion boundary; no Phase 14.5 implementation or
+  evidence work remains.
 
 ## Verdict
 
 **Continue; Phase 14.5 completed.** The one-pass mechanism, page-role policy,
 four-token contract, migration warning, Interactive teaching, renderer matrix,
 and exact-range reviews are complete. The parent plan remains active because
-Phase 15 guidance and lifecycle closeout are still pending.
+Phase 14.6 cover-page authoring and Phase 15 guidance closeout are still
+pending.
 
 ## Related Research
 
 - [Markdown PDF Page Roles And Counter Semantics](../../researches/research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md)
+- [Markdown PDF Interactive Cover Page Authoring](../../researches/research-2026-08-15-markdown-pdf-interactive-cover-page-authoring.md)
 - [Markdown PDF Page-Number Configuration](../../researches/research-2026-08-11-markdown-pdf-page-number-configuration.md)
 
 ## Related Plans
