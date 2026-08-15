@@ -213,6 +213,78 @@ physical-document meaning. A future logical or numbered-body total would need
 separate renderer and template-language research rather than overloading the
 current token.[^placeholder-contract]
 
+## Shared Ghost Interaction Contract
+
+Markdown PDF should reuse the shared `promptTextWithGhost` interaction used by
+custom rename templates.[^ghost-prompt] It should add Markdown-PDF-specific
+completion contexts rather than interpreting page-content tokens through the
+rename-template candidate resolver.
+
+In an advanced terminal, the interaction is:
+
+```text
+Custom page-number label
+> Page {page} of {pages}
+  ---------------------- dimmed suggestion
+
+Tab / Right arrow   accept the visible suggestion
+Up / Down arrow     cycle candidates when the current fragment has alternatives
+typing              update or dismiss the suggestion
+Enter               validate and submit only the actual input value
+Escape / Ctrl-C     retain the shared cancellation behavior
+```
+
+An unaccepted ghost is never the submitted value. `Enter` on an empty custom
+label therefore fails validation even while a suggestion is visible.
+
+The shared helper should gain an optional `initialValue`. Advanced mode starts
+with that real editable value; simple mode passes it as the ordinary input
+default. A ghost remains secondary guidance and must not overwrite a revision
+value.
+
+| Context                            | Initial value  | Empty-input ghost and fragment candidates                                                                    | Validation                                                        |
+| ---------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| Fresh custom page-number label     | empty          | Full ghost `Page {page} of {pages}`; `{page}` and `{pages}` fragment candidates                              | Nonempty and contains `{page}`                                    |
+| Revised custom page-number label   | stored format  | No replacement full ghost over the initial value; page-token candidates when editing a matching fragment     | Same custom-label validation                                      |
+| Fresh repeating-content position   | empty          | Slot-aware full ghost; `{title}`, `{company}`, `{author}`, and `{date}` fragment candidates                  | Nonempty for a selected position                                  |
+| Revised repeating-content position | stored content | No replacement full ghost over the initial value; metadata-token candidates when editing a matching fragment | Preserve unless edited or the position is deliberately unselected |
+
+When a typed fragment has multiple candidates, Up and Down cycle them and Tab
+or Right arrow accepts the visible suffix. Static full ghosts continue to use
+Tab or Right arrow acceptance without implying a stored default.
+
+Fresh simple mode prints the same help and suggestion, then uses ordinary input
+with the same validation:
+
+```text
+Page-number label suggestion: Page {page} of {pages}
+{page}: current logical page number
+{pages}: total physical PDF pages
+
+Custom page-number label:
+```
+
+During revision, simple mode uses the stored value as the ordinary input
+default and prints the token help, but suppresses the fresh full suggestion so
+it cannot appear to be an alternate default. Any other explanatory example is
+never serialized unless the user enters it.
+
+The same rule applies to repeating content: fresh simple input may print its
+slot-aware suggestion and metadata-token help, while revision uses stored
+content as the default, retains the token help, and suppresses the fresh
+slot-aware suggestion.
+
+Simple mode does not promise raw-key acceptance or candidate cycling. This is
+an interaction fallback only; it must compile the same answer as advanced
+mode.
+
+The current `formal-guide` prompt factory has no runtime prompt context even
+though `runMarkdownPdfAuthoring` already receives it. Fresh preparation and
+recipe revision should pass that existing context into the prompt factory so
+the shared helper can select advanced or simple behavior consistently. This
+plumbing must not create another runtime-config source or change existing Back,
+Cancel, Escape, and Ctrl-C semantics.
+
 ## Disabled Page-Number Flow
 
 Disabling page numbers should remove all page-number-dependent questions but
@@ -375,9 +447,14 @@ The reopened Phase 14 work should prove:
    placeholders through Profile save and reload
 8. ghost suggestions do not become values without deliberate acceptance and
    do not replace revision initial values
-9. revision preserves advanced styles, inactive values, and occupied-content
-   collision diagnostics
-10. direct, Interactive render-time, Project, Template, schema, and renderer
+9. advanced mode accepts and cycles Markdown-PDF-specific candidates with the
+   shared keys, while simple mode prints equivalent help and returns the same
+   compiled answer
+10. fresh preparation and revision receive the existing prompt runtime context
+    without changing navigation or cancellation behavior
+11. revision preserves advanced styles, inactive values, and occupied-content
+    collision diagnostics
+12. direct, Interactive render-time, Project, Template, schema, and renderer
     ownership remain unchanged
 
 Focused prompt, collection, compilation, persistence, review, and lifecycle
@@ -445,6 +522,8 @@ usability refinement before Phase 15 guidance closeout.
 [^placeholder-contract]: [Current page-number placeholder contract](research-2026-08-11-markdown-pdf-page-number-configuration.md) and [Markdown PDF usage guide](../guides/markdown-pdf-usage.md)
 
 [^metadata]: [Profile metadata precedence and header/footer placeholder guidance](../guides/markdown-pdf-usage.md)
+
+[^ghost-prompt]: [Shared inline ghost prompt](../../src/cli/prompts/text-inline.ts) and [custom rename-template usage](../../src/cli/interactive/rename/pattern.ts)
 
 [^render-choice]: [Interactive one-render page-number choice](../../src/cli/interactive/markdown/render-page-numbers.ts) and [effective review](../../src/cli/interactive/markdown/page-number-review.ts)
 

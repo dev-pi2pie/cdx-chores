@@ -48,6 +48,17 @@ override, artifact ownership, or Codex Assistant signal contract.
 - Compile the presets to `Page {page}` and `{page}` without changing the
   existing Profile contract.
 - Use shared ghost-input behavior for custom labels and repeating content.
+- Add separate Markdown PDF page-label and repeating-content completion
+  contexts; do not reinterpret their tokens through rename-template
+  candidates.
+- Preserve shared advanced-terminal controls: Tab or Right arrow accepts the
+  ghost, Up and Down cycle fragment candidates, typing updates the suggestion,
+  and Enter validates only actual input.
+- Preserve simple mode by printing equivalent help and using ordinary input
+  with the same initial value and validation. Fresh input may show the full
+  page-label or slot-aware suggestion; revision uses the stored default and
+  relevant token help without showing that fresh suggestion as an alternate
+  default.
 - Teach `{page}` as the logical number, `{pages}` as the physical PDF total,
   and useful existing metadata placeholders without persisting a ghost value
   automatically.
@@ -59,6 +70,8 @@ override, artifact ownership, or Codex Assistant signal contract.
   revision replaces advanced sequence values it cannot represent.
 - Keep existing metadata placeholders compatible in custom labels while
   teaching only `{page}`, `{pages}`, and literal label text in the common help.
+- Thread the existing Interactive path prompt context into fresh and revision
+  prompt factories; add no parallel runtime configuration.
 
 ### Boundaries
 
@@ -76,6 +89,9 @@ override, artifact ownership, or Codex Assistant signal contract.
       checkpoint or its evidence.
 - [ ] Inventory the shared ghost prompt and current formal-guide state and
       revision seams before editing production code.
+- [ ] Extend the shared ghost helper and candidate resolver with initial-value,
+      Markdown PDF completion-context, advanced-key, and simple-fallback
+      regressions while preserving rename behavior.
 - [ ] Implement and validate user-facing terminology and the shared
       six-position selection model.
 - [ ] Implement and validate page-number label presets plus custom ghost input.
@@ -102,7 +118,9 @@ and lifecycle behavior. Broader validation covers Interactive Markdown PDF,
 the Markdown PDF suite, and then the repository:
 
 ```bash
-bun test test/cli-interactive-markdown-pdf/formal-guide.test.ts \
+bun test test/cli-text-inline.test.ts \
+  test/cli-text-template-candidates.test.ts \
+  test/cli-interactive-markdown-pdf/formal-guide.test.ts \
   test/cli-interactive-markdown-pdf/formal-guide-prompts.test.ts \
   test/cli-interactive-markdown-pdf/deterministic-authoring.test.ts \
   test/cli-interactive-markdown-pdf/deterministic-service.test.ts \
@@ -129,6 +147,9 @@ CSS, scenario inputs, or evidence acceptance changes.
 - Reopened base: `0294b4ad`.
 - Research and planning refinement: the activation checkpoint containing this
   job record and its linked research and parent-plan updates.
+- Shared ghost interaction: the reviewed documentation checkpoint defining
+  completion contexts, advanced and simple behavior, revision defaults,
+  runtime-context plumbing, and focused validation ownership.
 - Implementation, validation, smoke, review, and closeout evidence: pending.
 
 ## Related Research

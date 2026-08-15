@@ -1457,16 +1457,29 @@ Tasks:
       label routes compiling to `Page {page}`, `{page}`, and validated custom
       `pageNumbers.format` input.
 - [ ] Extend the shared inline ghost prompt with an optional editable initial
-      value. Teach `{page}` as the logical number and `{pages}` as the physical
-      PDF total without persisting a ghost suggestion automatically or adding
-      a new logical-total token. Keep existing metadata placeholders compatible
+      value in advanced and simple modes. Thread the existing Interactive path
+      prompt context through fresh `formal-guide` preparation and revision
+      rather than creating another runtime-config source.
+- [ ] Add separate Markdown PDF page-label and repeating-content completion
+      contexts to the shared ghost interaction. Preserve rename-template
+      semantics: Tab or Right arrow accepts the visible suggestion, Up and Down
+      cycle fragment candidates, typing updates the ghost, and Enter validates
+      only the actual value. In simple mode, print equivalent help and use
+      ordinary input with the same initial value and validation. Show the full
+      page-label or slot-aware suggestion for fresh input; during revision, use
+      the stored input default and relevant token help without presenting the
+      fresh suggestion as an alternate default.
+- [ ] Teach `{page}` as the logical number and `{pages}` as the physical PDF
+      total without persisting a ghost suggestion automatically or adding a
+      new logical-total token. Keep existing metadata placeholders compatible
       in revised custom labels without promoting them as additional common
       page-number concepts.
 - [ ] Replace the `Header`, `Footer`, or `Both` gate with direct selection of
       available repeating-content positions. Provide slot-aware ghost examples
       such as `{title}`, `{company}`, `{author}`, and `{date}`, and explain that
       values may come from CLI metadata, Markdown frontmatter, or Profile
-      metadata.
+      metadata. Require deliberate acceptance or entry for selected positions;
+      never serialize an unaccepted ghost.
 - [ ] Preserve same-session inert page-number values, revision initial values,
       advanced header/footer styles, and occupied-slot collision diagnostics.
       Ordinary disabled review should not present inactive sequence details as
@@ -1477,9 +1490,11 @@ Tasks:
 - [ ] Keep direct and Interactive render-time overrides, Project and Template
       ownership, the Profile schema, normalization, renderer behavior, and
       Codex Assistant signal contracts unchanged.
-- [ ] Add focused ghost-input, formal-guide, enabled/disabled branch, label,
-      slot ownership, revision, persistence, review, command-boundary, and
-      lifecycle regressions.
+- [ ] Add focused shared-helper and completion-candidate regressions covering
+      initial values, static acceptance, fragment cycling, actual-value
+      validation, simple fallback, and unchanged cancellation. Add
+      formal-guide enabled/disabled branch, label, slot ownership, revision,
+      persistence, review, command-boundary, and lifecycle regressions.
 - [ ] Run focused and broad Interactive/Markdown PDF tests plus the full test,
       TypeScript, lint, format, build, and diff gates. Run bounded save-only
       smokes for enabled custom-label and disabled repeating-content paths, and
