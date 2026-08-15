@@ -1519,7 +1519,8 @@ Reopened checkpoint:
 
 Tasks:
 
-- [ ] Create and activate a Phase 14.5 job record from the reviewed Phase 14
+- [x] Create and activate a
+      [Phase 14.5 job record][phase-14-5-job] from the reviewed Phase 14
       closeout boundary. Link the
       [Page Roles And Counter Semantics research][page-role-counter-research]
       and freeze the permanent-file boundary, renderer evidence matrix,
@@ -1674,4 +1675,5 @@ Phase checkpoint:
 [profile-helper]: ../guides/markdown-pdf-codex-profile-helper.md
 [project-helper]: ../guides/markdown-pdf-codex-project-helper.md
 [reopened-phase-14-job]: jobs/2026-08-15-markdown-pdf-page-number-phase-14-reopened-interactive-ux.md
+[phase-14-5-job]: jobs/2026-08-15-markdown-pdf-page-number-phase-14-5-page-roles-and-counters.md
 [template-helper]: ../guides/markdown-pdf-codex-template-helper.md
