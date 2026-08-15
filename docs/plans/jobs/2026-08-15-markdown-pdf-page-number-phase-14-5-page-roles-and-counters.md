@@ -112,9 +112,9 @@ facts, visual conclusions, cleanup status, and review results.
 - [x] Establish the clean `6b1b9bba` starting and review boundary, activate
       this job, link the parent plan and research, and freeze the execution
       scope and evidence gates.
-- [ ] Freeze current page-role, page-break, repeating-content, and counter
+- [x] Freeze current page-role, page-break, repeating-content, and counter
       behavior before production changes.
-- [ ] Extend and validate the existing renderer evidence catalog, extraction,
+- [x] Extend and validate the existing renderer evidence catalog, extraction,
       visual-review boundary, and guarded cleanup for Phase 14.5 scenarios.
 - [ ] Run the renderer experiment and record an accepted one-pass or bounded
       two-pass counter mechanism plus an explicit Continue, Constrain, or Stop
@@ -169,9 +169,18 @@ accepted from CSS string assertions alone.
 ## Evidence Ledger
 
 - Starting and exact review base: `6b1b9bba`.
-- Activation checkpoint: this documentation-only boundary; record its commit
-  identifier after it lands.
-- Current-behavior baseline: pending.
+- Activation checkpoint: `08399c47`.
+- Current-behavior baseline: the built-in role order, metadata-title state,
+  ToC break CSS, ordinary ToC repeating-content suppression, page-number
+  visibility, and historical physical-`{pages}` mapping are frozen without
+  production changes. The existing renderer catalog now records explicit
+  physical-page roles and a non-gating one-pass four-counter experiment with
+  contract-owned extraction and all-field assessment.
+- Baseline validation: 38 recipe/page-chrome tests passed with 199 assertions;
+  33 evidence-harness tests passed with 1,078 assertions; two deterministic
+  Project contract tests also passed. TypeScript, scoped lint and formatting,
+  and diff integrity passed. Pre-commit maintainability and test-quality
+  re-review found no remaining material concerns.
 - Renderer mechanism verdict: pending.
 - Page-role implementation: pending.
 - Counter implementation: pending.

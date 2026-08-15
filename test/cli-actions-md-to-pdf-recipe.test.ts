@@ -7,6 +7,43 @@ import {
 } from "../src/cli/markdown-pdf";
 
 describe("markdown PDF recipe generation", () => {
+  test("keeps the built-in cover, metadata title, ToC, and body blocks in document order", () => {
+    const normalizedProfile = normalizeMarkdownPdfProfile({
+      profile: {
+        cover: {
+          enabled: true,
+          style: "plain",
+        },
+        titleBlock: {
+          metadataTitle: "auto",
+        },
+      },
+      frontmatter: {
+        title: "Current Role Order",
+      },
+    });
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions({ toc: true }), {
+      profile: normalizedProfile.profile,
+      titleSignals: {
+        frontmatterTitle: { present: true, charCount: "Current Role Order".length },
+        firstH1: { present: false, charCount: 0 },
+        normalizedTitleMatch: false,
+        duplicateVisibleTitleRisk: false,
+      },
+    });
+
+    const roleMarkers = [
+      'class="pdf-cover pdf-cover--plain"',
+      'class="document-title"',
+      '<nav id="TOC" role="doc-toc">',
+      '<main class="document-body">',
+    ];
+    const roleIndexes = roleMarkers.map((marker) => recipe.templateHtml.indexOf(marker));
+
+    expect(roleIndexes.every((index) => index >= 0)).toBe(true);
+    expect(roleIndexes).toEqual([...roleIndexes].sort((left, right) => left - right));
+  });
+
   test("generates report ToC page break CSS by default", () => {
     const recipe = createMarkdownPdfRecipe(
       normalizeMarkdownPdfOptions({ preset: "report", toc: true }),
@@ -25,6 +62,50 @@ describe("markdown PDF recipe generation", () => {
     );
 
     expect(recipe.styleCss).not.toContain("break-after: page");
+  });
+
+  test.each([
+    {
+      expected: [] as string[],
+      label: "disabled ToC ignores an explicit both transition",
+      options: { preset: "report" as const, toc: false, tocPageBreak: "both" as const },
+    },
+    {
+      expected: [],
+      label: "none",
+      options: { preset: "report" as const, toc: true, tocPageBreak: "none" as const },
+    },
+    {
+      expected: ["break-before: page;"],
+      label: "before",
+      options: { preset: "report" as const, toc: true, tocPageBreak: "before" as const },
+    },
+    {
+      expected: ["break-after: page;"],
+      label: "after",
+      options: { preset: "article" as const, toc: true, tocPageBreak: "after" as const },
+    },
+    {
+      expected: ["break-before: page;", "break-after: page;"],
+      label: "both",
+      options: { preset: "wide-table" as const, toc: true, tocPageBreak: "both" as const },
+    },
+    {
+      expected: ["break-after: page;"],
+      label: "report auto",
+      options: { preset: "report" as const, toc: true, tocPageBreak: "auto" as const },
+    },
+    {
+      expected: [],
+      label: "non-report auto",
+      options: { preset: "wide-table" as const, toc: true, tocPageBreak: "auto" as const },
+    },
+  ])("keeps the current named-page transition for $label", ({ expected, options }) => {
+    const recipe = createMarkdownPdfRecipe(normalizeMarkdownPdfOptions(options));
+    const transitions = Array.from(recipe.styleCss.match(/break-(?:before|after): page;/g) ?? []);
+
+    expect(recipe.styleCss).toContain("#TOC {\n  page: toc;");
+    expect(transitions).toEqual(Array.from(expected));
   });
 
   test("generates profile page chrome and page numbers", () => {

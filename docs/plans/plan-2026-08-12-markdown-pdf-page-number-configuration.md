@@ -1525,7 +1525,7 @@ Tasks:
       [Page Roles And Counter Semantics research][page-role-counter-research]
       and freeze the permanent-file boundary, renderer evidence matrix,
       meaningful commit checkpoints, exact review range, and closeout verdict.
-- [ ] Freeze the built-in recipe's current cover, automatic metadata-title,
+- [x] Freeze the built-in recipe's current cover, automatic metadata-title,
       ToC, body, and renderer-inserted blank-page behavior in deterministic
       tests before changing page composition or CSS.
 - [ ] Complete the research evidence needed to settle whether the metadata

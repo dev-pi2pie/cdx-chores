@@ -5,6 +5,7 @@ export const PAGE_NUMBER_LAB_MARKER_CONTENT =
 export const PAGE_NUMBER_AUTOMATED_EVIDENCE = [
   "candidate-selected CLI launch",
   "physical page count and order",
+  "page role by physical page",
   "page-number text and visibility",
   "page dimensions and orientation",
   "page-number margin-box region",

@@ -10,6 +10,7 @@ import {
   PAGE_NUMBER_LAB_MARKER_CONTENT,
   PAGE_NUMBER_LAB_MARKER_NAME,
 } from "./constants";
+import { PAGE_NUMBER_COUNTER_EXPERIMENTS } from "./counter-experiments";
 import { PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS } from "./product-scenarios";
 import { PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS } from "./project-scenarios";
 import { PAGE_NUMBER_RENDERER_SCENARIOS } from "./renderer-scenarios";
@@ -23,6 +24,7 @@ function stableCatalogPayload(launchMarkdown: string, launchProfile: string) {
   return JSON.stringify({
     candidates: WEASYPRINT_CANDIDATES,
     scenarios: PAGE_NUMBER_RENDERER_SCENARIOS,
+    counterExperiments: PAGE_NUMBER_COUNTER_EXPERIMENTS,
     productScenarios: PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS,
     projectScenarios: PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS,
     evidenceBoundary: {
@@ -74,6 +76,7 @@ export async function materializePageNumberRendererContract(
     .digest("hex");
   const fixtureRoot = join(labRoot, "fixtures");
   const scenarioDirectories: Record<string, string> = {};
+  const counterExperimentDirectories: Record<string, string> = {};
   const bodyHookPaths: Record<string, string> = {};
   const productLaunches: Record<
     string,
@@ -110,6 +113,18 @@ export async function materializePageNumberRendererContract(
     scenarioDirectories[scenario.id] = scenarioDirectory;
   }
 
+  const counterExperimentRoot = join(fixtureRoot, "counter-experiments");
+  await mkdir(counterExperimentRoot);
+  for (const scenario of PAGE_NUMBER_COUNTER_EXPERIMENTS) {
+    const scenarioDirectory = join(counterExperimentRoot, scenario.id);
+    await mkdir(scenarioDirectory);
+    await Promise.all([
+      writeFile(join(scenarioDirectory, "input.html"), scenario.html, "utf8"),
+      writeFile(join(scenarioDirectory, "style.css"), scenario.css, "utf8"),
+    ]);
+    counterExperimentDirectories[scenario.id] = scenarioDirectory;
+  }
+
   const bodyHookDirectory = join(fixtureRoot, "body-hooks");
   await mkdir(bodyHookDirectory);
   for (const bodyHookCase of PAGE_NUMBER_BODY_HOOK_CASES) {
@@ -132,6 +147,9 @@ export async function materializePageNumberRendererContract(
           catalogDigest,
           candidates: WEASYPRINT_CANDIDATES,
           scenarios: PAGE_NUMBER_RENDERER_SCENARIOS.map(
+            ({ html: _html, css: _css, ...scenario }) => scenario,
+          ),
+          counterExperiments: PAGE_NUMBER_COUNTER_EXPERIMENTS.map(
             ({ html: _html, css: _css, ...scenario }) => scenario,
           ),
           productScenarios: PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.map(
@@ -243,6 +261,7 @@ export async function materializePageNumberRendererContract(
     fixtureRoot,
     bodyHookPaths,
     scenarioDirectories,
+    counterExperimentDirectories,
     launch: { markdownPath, profilePath },
     productLaunches,
     projectLaunches,

@@ -64,8 +64,8 @@ export const PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS: readonly ProjectRendererSce
       sizeMillimeters: [210, 297],
       orientation: "portrait",
       pages: [
-        { marker: "PROJECT-NO-BASE-COVER", pageNumberLabels: [] },
-        { marker: "PROJECT-NO-BASE-BODY-1", pageNumberLabels: [] },
+        { role: "cover", marker: "PROJECT-NO-BASE-COVER", pageNumberLabels: [] },
+        { role: "document-body", marker: "PROJECT-NO-BASE-BODY-1", pageNumberLabels: [] },
       ],
       pngPages: [1, 2],
     },
@@ -91,11 +91,13 @@ export const PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS: readonly ProjectRendererSce
       orientation: "portrait",
       pages: [
         {
+          role: "document-body",
           marker: "PROJECT-BASE-BODY-1",
           pageNumberLabels: ["PROJECT-BASE-0/2"],
           pageNumberRegion: "bottom-center",
         },
         {
+          role: "document-body",
           marker: "PROJECT-BASE-BODY-2",
           pageNumberLabels: ["PROJECT-BASE-2/2"],
           pageNumberRegion: "bottom-center",

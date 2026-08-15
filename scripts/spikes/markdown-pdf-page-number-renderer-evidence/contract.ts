@@ -4,9 +4,12 @@ import { fileURLToPath } from "node:url";
 import {
   PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS,
   PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS,
+  PAGE_NUMBER_COUNTER_EXPERIMENTS,
   WEASYPRINT_CANDIDATES,
 } from "../../../test/fixtures/markdown-pdf/page-number-renderer-contract";
 import type {
+  ExpectedCounterValues,
+  PhysicalPageRole,
   materializePageNumberRendererContract,
   WeasyPrintCandidate,
 } from "../../../test/fixtures/markdown-pdf/page-number-renderer-contract";
@@ -19,6 +22,7 @@ export const commandTimeoutMs = 120_000;
 
 const harnessContract = {
   candidates: WEASYPRINT_CANDIDATES.map((candidate) => candidate.id),
+  counterExperiments: PAGE_NUMBER_COUNTER_EXPERIMENTS.map((scenario) => scenario.id),
   productScenarios: PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.map((scenario) => scenario.id),
   projectScenarios: PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS.map((scenario) => scenario.id),
   stages: [
@@ -110,6 +114,7 @@ export interface CandidateEvidence {
   weasyPrintVersion: string;
   environment?: Record<string, string>;
   scenarios: ScenarioEvidence[];
+  counterExperiments: CounterExperimentEvidence[];
   doctorPassed: boolean;
   actualLaunchPassed: boolean;
   actualLaunchExtraction?: PdfExtractionSummary;
@@ -121,6 +126,8 @@ export interface PdfExtractionSummary {
   pageCount: number;
   dimensionsMillimeters: Array<{ width: number; height: number }>;
   labelsByPhysicalPage: string[][];
+  pageRolesByPhysicalPage: Array<PhysicalPageRole | "unidentified">;
+  counterValuesByPhysicalPage: Array<ExpectedCounterValues | null>;
   pageLabelState: PdfEvidence["pageLabelState"];
 }
 
@@ -128,6 +135,21 @@ export interface ScenarioEvidence {
   id: string;
   passed: boolean;
   extraction?: PdfExtractionSummary;
+}
+
+export interface OnePassCounterAssessment {
+  mechanism: "one-pass";
+  expectedPhysicalPages: number[];
+  matchingPhysicalPages: number[];
+  allCounterValuesMatch: boolean;
+  /** Evidence-only result; the Phase 14.5 production verdict remains a separate review decision. */
+  evidencePassed: boolean;
+  mismatches: string[];
+}
+
+export interface CounterExperimentEvidence extends ScenarioEvidence {
+  mechanism: "one-pass";
+  assessment?: OnePassCounterAssessment;
 }
 
 export interface TemporaryImageEvidence {

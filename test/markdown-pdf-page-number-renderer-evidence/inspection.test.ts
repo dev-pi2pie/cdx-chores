@@ -3,12 +3,18 @@ import { stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import {
+  assessOnePassCounterEvidence,
   closeRetainedEvidenceLaboratory,
+  extractionSummary,
   inspectPdf,
+  publicEvidenceReport,
   runRendererEvidence,
 } from "../../scripts/spikes/markdown-pdf-page-number-renderer-evidence";
 import type { PdfEvidence } from "../../scripts/spikes/markdown-pdf-page-number-renderer-evidence";
-import { PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS } from "../fixtures/markdown-pdf/page-number-renderer-contract";
+import {
+  PAGE_NUMBER_COUNTER_EXPERIMENTS,
+  PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS,
+} from "../fixtures/markdown-pdf/page-number-renderer-contract";
 import {
   createMockExecution,
   evidenceRun,
@@ -19,6 +25,184 @@ import {
 } from "./support";
 
 describe("Markdown PDF renderer evidence inspection and validation", () => {
+  test("reports page roles and one-pass four-counter evidence without replacing the historical baseline", async () => {
+    await withEvidenceRoot(async (temporaryRoot) => {
+      const mock = createMockExecution();
+      const report = await runRendererEvidence({
+        temporaryRoot,
+        uniqueId: "phase-14-5-one-pass-report",
+        runner: mock.runner,
+        inspectPdf: mock.inspectPdf,
+      });
+      const experimentId = PAGE_NUMBER_COUNTER_EXPERIMENTS[0]?.id;
+      expect(experimentId).toBe("phase-14-5-one-pass-four-counters");
+      for (const candidate of report.candidates) {
+        const historical = candidate.scenarios.find(
+          (scenario) => scenario.id === "document-origin-visibility",
+        );
+        expect(historical?.extraction?.labelsByPhysicalPage).toEqual([
+          [],
+          [],
+          ["PN-DOC-3/7"],
+          ["PN-DOC-4/7"],
+          ["PN-DOC-5/7"],
+          ["PN-DOC-6/7"],
+          ["PN-DOC-7/7"],
+        ]);
+        expect(historical?.extraction?.pageRolesByPhysicalPage).toEqual([
+          "cover",
+          "cover",
+          "metadata-title",
+          "table-of-contents",
+          "table-of-contents",
+          "document-body",
+          "document-body",
+        ]);
+
+        const experiment = candidate.counterExperiments.find(
+          (scenario) => scenario.id === experimentId,
+        );
+        expect(experiment?.extraction?.pageRolesByPhysicalPage).toEqual([
+          "cover",
+          "table-of-contents",
+          "document-body",
+          "document-body",
+          "document-body",
+        ]);
+        expect(experiment?.extraction?.counterValuesByPhysicalPage).toEqual([
+          null,
+          null,
+          { page: 5, pages: 9, pdfPage: 3, pdfPages: 5 },
+          { page: 7, pages: 9, pdfPage: 4, pdfPages: 5 },
+          { page: 9, pages: 9, pdfPage: 5, pdfPages: 5 },
+        ]);
+        expect(experiment?.assessment).toEqual({
+          mechanism: "one-pass",
+          expectedPhysicalPages: [3, 4, 5],
+          matchingPhysicalPages: [3, 4, 5],
+          allCounterValuesMatch: true,
+          evidencePassed: true,
+          mismatches: [],
+        });
+      }
+      expect(publicEvidenceReport(report).candidates[0]?.counterExperiments[0]?.assessment).toEqual(
+        report.candidates[0]?.counterExperiments[0]?.assessment,
+      );
+      await expect(stat(report.labPath)).rejects.toThrow();
+    });
+  });
+
+  test("extracts contract-driven negative logical values and compares all four counters", () => {
+    const expectedPages = [
+      {
+        role: "document-body" as const,
+        marker: "NEGATIVE-COUNTER-PAGE",
+        pageNumberLabels: [],
+        counterValues: { page: -5, pages: -1, pdfPage: 1, pdfPages: 1 },
+      },
+    ];
+    const evidence: PdfEvidence = {
+      pageCount: 1,
+      pages: [
+        {
+          text: "NEGATIVE-COUNTER-PAGE ALT-COUNTERS<page=-5,pages=-1,pdfPage=1,pdfPages=1>",
+          runs: [],
+          widthMillimeters: 148,
+          heightMillimeters: 210,
+        },
+      ],
+      pageLabelState: "default-physical",
+    };
+    const extraction = extractionSummary(evidence, expectedPages, {
+      marker: "ALT-COUNTERS",
+      source: String.raw`ALT-COUNTERS<page=(?<page>-?\d+),pages=(?<pages>-?\d+),pdfPage=(?<pdfPage>\d+),pdfPages=(?<pdfPages>\d+)>`,
+    });
+    expect(extraction.counterValuesByPhysicalPage).toEqual([
+      { page: -5, pages: -1, pdfPage: 1, pdfPages: 1 },
+    ]);
+    expect(assessOnePassCounterEvidence(extraction, expectedPages)).toEqual({
+      mechanism: "one-pass",
+      expectedPhysicalPages: [1],
+      matchingPhysicalPages: [1],
+      allCounterValuesMatch: true,
+      evidencePassed: true,
+      mismatches: [],
+    });
+
+    const wrongExtraction = {
+      ...extraction,
+      counterValuesByPhysicalPage: [{ page: -4, pages: -2, pdfPage: 2, pdfPages: 3 }],
+    };
+    expect(assessOnePassCounterEvidence(wrongExtraction, expectedPages)).toEqual(
+      expect.objectContaining({
+        evidencePassed: false,
+        allCounterValuesMatch: false,
+        mismatches: [
+          "physical page 1 page expected -5, received -4",
+          "physical page 1 pages expected -1, received -2",
+          "physical page 1 pdfPage expected 1, received 2",
+          "physical page 1 pdfPages expected 1, received 3",
+        ],
+      }),
+    );
+  });
+
+  test("retains failed optional counter evidence without failing the required outcome", async () => {
+    await withEvidenceRoot(async (temporaryRoot) => {
+      const experiment = PAGE_NUMBER_COUNTER_EXPERIMENTS[0];
+      expect(experiment).toBeDefined();
+      const expectedLabel = experiment?.expected.pages[2]?.pageNumberLabels[0];
+      expect(expectedLabel).toBeDefined();
+      const wrongLabel = expectedLabel?.replace("page=5", "page=6") ?? "";
+      const mock = createMockExecution({
+        inspect: (path, evidence) =>
+          experiment && pathHasSegment(path, experiment.id)
+            ? {
+                ...evidence,
+                pages: evidence.pages.map((page, index) =>
+                  index === 2 && expectedLabel
+                    ? {
+                        ...page,
+                        text: page.text.replace(expectedLabel, wrongLabel),
+                        runs: page.runs.map((run) =>
+                          run.text === expectedLabel ? { ...run, text: wrongLabel } : run,
+                        ),
+                      }
+                    : page,
+                ),
+              }
+            : evidence,
+      });
+      const report = await runRendererEvidence({
+        temporaryRoot,
+        uniqueId: "optional-counter-experiment-failure",
+        runner: mock.runner,
+        inspectPdf: mock.inspectPdf,
+      });
+
+      expect(report.outcome).toBe("passed");
+      expect(report.retained).toBe(true);
+      expect(report.failures).toContainEqual(
+        expect.objectContaining({
+          scenarioId: experiment?.id,
+          classification: "contract-failure",
+        }),
+      );
+      expect(
+        report.candidates.every((candidate) => {
+          const evidence = candidate.counterExperiments.find((item) => item.id === experiment?.id);
+          return evidence?.passed === false && evidence.assessment?.evidencePassed === false;
+        }),
+      ).toBe(true);
+      expect(
+        publicEvidenceReport(report).candidates[0]?.counterExperiments[0]?.assessment
+          ?.evidencePassed,
+      ).toBe(false);
+      expect((await stat(report.labPath)).isDirectory()).toBe(true);
+      await closeRetainedEvidenceLaboratory(report.labPath, temporaryRoot);
+    });
+  });
+
   test("extracts text and A5 dimensions through the real PDF inspector", async () => {
     await withEvidenceRoot(async (temporaryRoot) => {
       const pdfPath = join(temporaryRoot, "inspector.pdf");

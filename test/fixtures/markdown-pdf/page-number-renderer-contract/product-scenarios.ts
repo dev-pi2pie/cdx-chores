@@ -201,29 +201,34 @@ export const PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS: readonly ProductRendererSce
       orientation: "portrait",
       pages: [
         {
+          role: "cover",
           marker: "PRODUCTACOVER",
           pageNumberLabels: [],
           forbiddenText: ["PRODUCT-A-REPLACED-SLOT"],
         },
         {
+          role: "table-of-contents",
           marker: "PRODUCT-A-BODY-1",
           pageNumberLabels: ["PRODUCT-A-2/5"],
           pageNumberRegion: "bottom-center",
           forbiddenText: ["PRODUCT-A-REPLACED-SLOT"],
         },
         {
+          role: "document-body",
           marker: "PRODUCT-A-BODY-1",
           pageNumberLabels: ["PRODUCT-A-4/5"],
           pageNumberRegion: "bottom-center",
           forbiddenText: ["PRODUCT-A-REPLACED-SLOT"],
         },
         {
+          role: "document-body",
           marker: "PRODUCT-A-BODY-2",
           pageNumberLabels: ["PRODUCT-A-6/5"],
           pageNumberRegion: "bottom-center",
           forbiddenText: ["PRODUCT-A-REPLACED-SLOT"],
         },
         {
+          role: "document-body",
           marker: "PRODUCT-A-BODY-3",
           pageNumberLabels: ["PRODUCT-A-8/5"],
           pageNumberRegion: "bottom-center",
@@ -248,23 +253,27 @@ export const PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS: readonly ProductRendererSce
       orientation: "portrait",
       pages: [
         {
+          role: "table-of-contents",
           marker: "PRODUCT-B-PREBODY",
           pageNumberLabels: [],
           forbiddenText: ["PRODUCT-B-REPLACED-SLOT"],
         },
         {
+          role: "document-body",
           marker: "PRODUCT-B-BODY-1",
           pageNumberLabels: ["PRODUCT-B-0/4"],
           pageNumberRegion: "top-right",
           forbiddenText: ["PRODUCT-B-REPLACED-SLOT"],
         },
         {
+          role: "document-body",
           marker: "PRODUCT-B-BODY-2",
           pageNumberLabels: ["PRODUCT-B-2/4"],
           pageNumberRegion: "top-right",
           forbiddenText: ["PRODUCT-B-REPLACED-SLOT"],
         },
         {
+          role: "document-body",
           marker: "PRODUCT-B-BODY-3",
           pageNumberLabels: ["PRODUCT-B-4/4"],
           pageNumberRegion: "top-right",
@@ -289,12 +298,14 @@ export const PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS: readonly ProductRendererSce
       orientation: "portrait",
       pages: [
         {
+          role: "document-body",
           marker: "PRODUCT-C-BODY-1",
           pageNumberLabels: ["PRODUCT-C-1/2"],
           pageNumberRegion: "bottom-right",
           forbiddenText: ["PRODUCT-C-REPLACED-SLOT"],
         },
         {
+          role: "document-body",
           marker: "PRODUCT-C-BODY-2",
           pageNumberLabels: ["PRODUCT-C-2/2"],
           pageNumberRegion: "bottom-right",

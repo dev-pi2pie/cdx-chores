@@ -14,6 +14,7 @@ export { PAGE_NUMBER_RENDERER_HARNESS_DIGEST } from "./markdown-pdf-page-number-
 export type {
   BodyHookEvidence,
   CandidateEvidence,
+  CounterExperimentEvidence,
   CommandRequest,
   CommandResult,
   CommandRunner,
@@ -25,6 +26,7 @@ export type {
   PdfInspector,
   PdfPageEvidence,
   PdfTextRunEvidence,
+  OnePassCounterAssessment,
   RendererEvidenceReport,
   RunRendererEvidenceOptions,
   ScenarioEvidence,
@@ -36,6 +38,8 @@ export {
   initializeEvidenceLaboratory,
 } from "./markdown-pdf-page-number-renderer-evidence/laboratory";
 export {
+  assessOnePassCounterEvidence,
+  extractionSummary,
   inspectBodyHookCases,
   inspectPdf,
   publicSafeText,

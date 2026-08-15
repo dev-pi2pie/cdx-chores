@@ -66,6 +66,18 @@ describe("Markdown PDF page-chrome sequence and visibility", () => {
     expect(css).not.toContain(".document-body");
   });
 
+  test("maps the historical pages token to the physical CSS pages counter", () => {
+    const css = pageChromeCss({
+      enabled: true,
+      scope: "document",
+      countFrom: "document",
+      format: "Page {page} of {pages}",
+    });
+
+    expect(css).toContain('content: "Page " counter(page) " of " counter(pages);');
+    expect(css.match(/counter\(pages\)/g)).toHaveLength(2);
+  });
+
   test("uses the proven first-body page group for body-origin arithmetic", () => {
     const css = pageChromeCss(
       {

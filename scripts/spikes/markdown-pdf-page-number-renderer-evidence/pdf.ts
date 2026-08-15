@@ -3,12 +3,16 @@ import { readFile } from "node:fs/promises";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 
 import type {
+  CounterEvidencePattern,
+  ExpectedCounterValues,
   ExpectedPdfDocument,
+  ExpectedPhysicalPage,
   PageNumberRegion,
   PageOrientation,
 } from "../../../test/fixtures/markdown-pdf/page-number-renderer-contract";
 import type {
   BodyHookEvidence,
+  OnePassCounterAssessment,
   PdfEvidence,
   PdfExtractionSummary,
   PdfInspector,
@@ -210,6 +214,12 @@ export function validatePdfEvidence(
     for (const forbidden of expected.forbiddenText ?? [])
       if (page.text.includes(forbidden))
         mismatches.push(`physical page ${index + 1} contains forbidden text ${forbidden}`);
+    const allMarkers = scenario.expected.pages
+      .map((item) => item.marker)
+      .filter((marker) => marker.length > 0);
+    for (const unexpected of allMarkers.filter((marker) => marker !== expected.marker))
+      if (page.text.includes(unexpected))
+        mismatches.push(`physical page ${index + 1} contains out-of-order marker ${unexpected}`);
     const allLabels = scenario.expected.pages.flatMap((item) => item.pageNumberLabels);
     for (const unexpected of allLabels.filter(
       (label) => !expected.pageNumberLabels.includes(label),
@@ -233,12 +243,12 @@ export function validatePdfEvidence(
 export const actualLaunchExpected = {
   pageCount: 3,
   pages: [
-    { marker: "LAUNCH-PAGE-1", label: "LAUNCH-PN-1/3" },
-    { marker: "LAUNCH-PAGE-2", label: "LAUNCH-PN-2/3" },
-    { marker: "LAUNCH-PAGE-3", label: "LAUNCH-PN-3/3" },
+    { role: "document-body", marker: "LAUNCH-PAGE-1", label: "LAUNCH-PN-1/3" },
+    { role: "document-body", marker: "LAUNCH-PAGE-2", label: "LAUNCH-PN-2/3" },
+    { role: "document-body", marker: "LAUNCH-PAGE-3", label: "LAUNCH-PN-3/3" },
   ],
   sizeMillimeters: [148, 210] as const,
-};
+} as const;
 
 export function validateActualLaunch(evidence: PdfEvidence): string[] {
   const mismatches: string[] = [];
@@ -269,8 +279,10 @@ export function validateActualLaunch(evidence: PdfEvidence): string[] {
 
 export function extractionSummary(
   evidence: PdfEvidence,
-  expectedLabels: readonly (readonly string[])[],
+  expectedPages: readonly ExpectedPhysicalPage[],
+  counterEvidencePattern?: CounterEvidencePattern,
 ): PdfExtractionSummary {
+  const scenarioMarkers = expectedPages.map((page) => page.marker).filter(Boolean);
   return {
     pageCount: evidence.pageCount,
     dimensionsMillimeters: evidence.pages.map((page) => ({
@@ -278,8 +290,92 @@ export function extractionSummary(
       height: Number(page.heightMillimeters.toFixed(3)),
     })),
     labelsByPhysicalPage: evidence.pages.map((page, index) =>
-      [...(expectedLabels[index] ?? [])].filter((label) => findContiguousLabelRun(page, label)),
+      [...(expectedPages[index]?.pageNumberLabels ?? [])].filter((label) =>
+        findContiguousLabelRun(page, label),
+      ),
+    ),
+    pageRolesByPhysicalPage: evidence.pages.map((page, index) => {
+      const expected = expectedPages[index];
+      if (!expected) return "unidentified";
+      if (expected.marker)
+        return page.text.includes(expected.marker) ? expected.role : "unidentified";
+      return scenarioMarkers.some((marker) => page.text.includes(marker))
+        ? "unidentified"
+        : expected.role;
+    }),
+    counterValuesByPhysicalPage: evidence.pages.map((page) =>
+      extractCounterValues(page.text, counterEvidencePattern),
     ),
     pageLabelState: evidence.pageLabelState,
+  };
+}
+
+function extractCounterValues(
+  text: string,
+  pattern?: CounterEvidencePattern,
+): ExpectedCounterValues | null {
+  if (!pattern) return null;
+  const normalizedText = text.replace(/\s+/gu, "");
+  if (!normalizedText.includes(pattern.marker)) return null;
+  const groups = new RegExp(pattern.source, "u").exec(normalizedText)?.groups;
+  const page = groups?.page;
+  const pages = groups?.pages;
+  const pdfPage = groups?.pdfPage;
+  const pdfPages = groups?.pdfPages;
+  if (page === undefined || pages === undefined || pdfPage === undefined || pdfPages === undefined)
+    return null;
+  return {
+    page: Number.parseInt(page, 10),
+    pages: Number.parseInt(pages, 10),
+    pdfPage: Number.parseInt(pdfPage, 10),
+    pdfPages: Number.parseInt(pdfPages, 10),
+  };
+}
+
+export function assessOnePassCounterEvidence(
+  extraction: PdfExtractionSummary,
+  expectedPages: readonly ExpectedPhysicalPage[],
+  tokenAssertionsPassed = true,
+): OnePassCounterAssessment {
+  const expectedPhysicalPages = expectedPages.flatMap((page, index) =>
+    page.counterValues ? [index + 1] : [],
+  );
+  const matchingPhysicalPages: number[] = [];
+  const mismatches: string[] = [];
+  const fields = ["page", "pages", "pdfPage", "pdfPages"] as const;
+  for (const [index, expectedPage] of expectedPages.entries()) {
+    const physicalPage = index + 1;
+    const expected = expectedPage.counterValues;
+    const actual = extraction.counterValuesByPhysicalPage[index];
+    if (!expected) {
+      if (actual) mismatches.push(`physical page ${physicalPage} has unexpected counter evidence`);
+      continue;
+    }
+    if (!actual) {
+      mismatches.push(`physical page ${physicalPage} is missing counter evidence`);
+      continue;
+    }
+    const pageMismatches = fields.flatMap((field) =>
+      actual[field] === expected[field]
+        ? []
+        : [
+            `physical page ${physicalPage} ${field} expected ${expected[field]}, received ${actual[field]}`,
+          ],
+    );
+    if (pageMismatches.length === 0) matchingPhysicalPages.push(physicalPage);
+    else mismatches.push(...pageMismatches);
+  }
+  if (!tokenAssertionsPassed) mismatches.push("rendered label assertions failed");
+  const allCounterValuesMatch =
+    expectedPhysicalPages.length > 0 &&
+    matchingPhysicalPages.length === expectedPhysicalPages.length &&
+    mismatches.length === 0;
+  return {
+    mechanism: "one-pass",
+    expectedPhysicalPages,
+    matchingPhysicalPages,
+    allCounterValuesMatch,
+    evidencePassed: allCounterValuesMatch,
+    mismatches,
   };
 }

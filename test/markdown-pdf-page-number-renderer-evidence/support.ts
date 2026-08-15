@@ -9,6 +9,7 @@ import type {
   PdfTextRunEvidence,
 } from "../../scripts/spikes/markdown-pdf-page-number-renderer-evidence";
 import {
+  PAGE_NUMBER_COUNTER_EXPERIMENTS,
   PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS,
   PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS,
   PAGE_NUMBER_RENDERER_SCENARIOS,
@@ -168,6 +169,7 @@ export function createMockExecution(options: MockExecutionOptions = {}) {
   const inspectPdf = async (path: string): Promise<PdfEvidence> => {
     const scenario = [
       ...PAGE_NUMBER_RENDERER_SCENARIOS,
+      ...PAGE_NUMBER_COUNTER_EXPERIMENTS,
       ...PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS,
       ...PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS,
     ].find((item) => pathHasSegment(path, item.id));

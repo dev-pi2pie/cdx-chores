@@ -13,6 +13,25 @@ export type RendererCapability =
 
 export type PageOrientation = "landscape" | "portrait";
 export type PageNumberRegion = "bottom-center" | "bottom-right" | "top-right";
+export type PhysicalPageRole =
+  | "cover"
+  | "metadata-title"
+  | "table-of-contents"
+  | "document-body"
+  | "inserted-blank"
+  | "other";
+
+export interface ExpectedCounterValues {
+  page: number;
+  pages: number;
+  pdfPage: number;
+  pdfPages: number;
+}
+
+export interface CounterEvidencePattern {
+  marker: string;
+  source: string;
+}
 
 export type VisualReviewAssertion =
   | "color"
@@ -32,10 +51,12 @@ export interface WeasyPrintCandidate {
 }
 
 export interface ExpectedPhysicalPage {
+  role: PhysicalPageRole;
   marker: string;
   pageNumberLabels: readonly string[];
   pageNumberRegion?: PageNumberRegion;
   forbiddenText?: readonly string[];
+  counterValues?: ExpectedCounterValues;
 }
 
 export interface ExpectedPdfDocument {
@@ -54,6 +75,12 @@ export interface RendererContractScenario {
   html: string;
   css: string;
   expected: ExpectedPdfDocument;
+}
+
+export interface CounterExperimentScenario extends RendererContractScenario {
+  required: false;
+  mechanism: "one-pass";
+  counterEvidencePattern: CounterEvidencePattern;
 }
 
 export interface ProductRendererScenario {
@@ -104,6 +131,7 @@ export interface MaterializedRendererContract {
   fixtureRoot: string;
   bodyHookPaths: Readonly<Record<string, string>>;
   scenarioDirectories: Readonly<Record<string, string>>;
+  counterExperimentDirectories: Readonly<Record<string, string>>;
   launch: {
     markdownPath: string;
     profilePath: string;

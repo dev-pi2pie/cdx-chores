@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import {
   materializePageNumberRendererContract,
   PAGE_NUMBER_AUTOMATED_EVIDENCE,
+  PAGE_NUMBER_COUNTER_EXPERIMENTS,
   PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS,
   PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS,
   PAGE_NUMBER_RENDERER_SCENARIOS,
@@ -16,6 +17,7 @@ import type {
 } from "../../../test/fixtures/markdown-pdf/page-number-renderer-contract";
 import type {
   CandidateEvidence,
+  CounterExperimentEvidence,
   EvidenceFailure,
   PdfExtractionSummary,
   RendererEvidenceReport,
@@ -27,6 +29,7 @@ import { PAGE_NUMBER_RENDERER_HARNESS_DIGEST, reportName } from "./contract";
 import { closeRetainedEvidenceLaboratory, initializeEvidenceLaboratory } from "./laboratory";
 import {
   actualLaunchExpected,
+  assessOnePassCounterEvidence,
   extractionSummary,
   inspectBodyHookCases,
   inspectPdf,
@@ -89,6 +92,7 @@ async function runRendererEvidenceInLaboratory(
       candidateId: candidate.id,
       weasyPrintVersion: candidate.weasyPrintVersion,
       scenarios: [],
+      counterExperiments: [],
       doctorPassed: false,
       actualLaunchPassed: false,
       productScenarios: [],
@@ -173,16 +177,51 @@ async function runRendererEvidenceInLaboratory(
         renderArgv: (pdfPath) => [weasyprint, join(scenarioDirectory, "input.html"), pdfPath],
         pngPages: scenario.expected.pngPages,
         validate: (evidence) => validatePdfEvidence(scenario, evidence),
-        summarize: (evidence) =>
-          extractionSummary(
-            evidence,
-            scenario.expected.pages.map((page) => page.pageNumberLabels),
-          ),
+        summarize: (evidence) => extractionSummary(evidence, scenario.expected.pages),
         temporaryImages,
         onExtraction: (summary) => {
           scenarioEvidence.extraction = summary;
         },
       });
+    }
+
+    for (const scenario of PAGE_NUMBER_COUNTER_EXPERIMENTS) {
+      const scenarioDirectory = contract.counterExperimentDirectories[scenario.id];
+      if (!scenarioDirectory)
+        throw new Error(`Missing materialized counter experiment ${scenario.id}.`);
+      const scenarioEvidence: CounterExperimentEvidence = {
+        id: scenario.id,
+        passed: false,
+        mechanism: scenario.mechanism,
+      };
+      candidateResult.counterExperiments.push(scenarioEvidence);
+      let experimentExtraction: PdfExtractionSummary | undefined;
+      scenarioEvidence.passed = await runRenderedScenarioEvidence({
+        runner,
+        pdfInspector,
+        failures,
+        candidateId: candidate.id,
+        scenarioId: scenario.id,
+        outputDirectory: join(labRoot, "results", candidate.id, "counter-experiments", scenario.id),
+        renderStage: "contract-render",
+        extractionStage: "contract-extraction",
+        renderArgv: (pdfPath) => [weasyprint, join(scenarioDirectory, "input.html"), pdfPath],
+        pngPages: scenario.expected.pngPages,
+        validate: (evidence) => validatePdfEvidence(scenario, evidence),
+        summarize: (evidence) =>
+          extractionSummary(evidence, scenario.expected.pages, scenario.counterEvidencePattern),
+        temporaryImages,
+        onExtraction: (summary) => {
+          scenarioEvidence.extraction = summary;
+          experimentExtraction = summary;
+        },
+      });
+      if (experimentExtraction)
+        scenarioEvidence.assessment = assessOnePassCounterEvidence(
+          experimentExtraction,
+          scenario.expected.pages,
+          scenarioEvidence.passed,
+        );
     }
 
     const selectedEnvironment = safeSubprocessEnvironment(dirname(weasyprint));
@@ -249,7 +288,11 @@ async function runRendererEvidenceInLaboratory(
         const mismatches = validateActualLaunch(evidence);
         candidateResult.actualLaunchExtraction = extractionSummary(
           evidence,
-          actualLaunchExpected.pages.map((page) => [page.label]),
+          actualLaunchExpected.pages.map((page) => ({
+            role: page.role,
+            marker: page.marker,
+            pageNumberLabels: [page.label],
+          })),
         );
         candidateResult.actualLaunchPassed = mismatches.length === 0;
         if (mismatches.length > 0)
@@ -297,11 +340,7 @@ async function runRendererEvidenceInLaboratory(
         ],
         pngPages: scenario.expected.pngPages,
         validate: (evidence) => validatePdfEvidence(scenario, evidence),
-        summarize: (evidence) =>
-          extractionSummary(
-            evidence,
-            scenario.expected.pages.map((page) => page.pageNumberLabels),
-          ),
+        summarize: (evidence) => extractionSummary(evidence, scenario.expected.pages),
         temporaryImages,
         onExtraction: (summary) => {
           scenarioEvidence.extraction = summary;
@@ -386,11 +425,7 @@ async function runRendererEvidenceInLaboratory(
           ],
           pngPages: scenario.expected.pngPages,
           validate: (evidence) => validatePdfEvidence(scenario, evidence),
-          summarize: (evidence) =>
-            extractionSummary(
-              evidence,
-              scenario.expected.pages.map((page) => page.pageNumberLabels),
-            ),
+          summarize: (evidence) => extractionSummary(evidence, scenario.expected.pages),
           temporaryImages,
           onExtraction: (summary) => {
             scenarioEvidence.extraction = summary;
@@ -449,7 +484,10 @@ async function runRendererEvidenceInLaboratory(
     : hasEnvironmentFailure
       ? "inconclusive"
       : "passed";
-  const retained = options.keep === true || outcome !== "passed";
+  const hasFailedCounterExperiment = candidates.some((candidate) =>
+    candidate.counterExperiments.some((experiment) => !experiment.passed),
+  );
+  const retained = options.keep === true || outcome !== "passed" || hasFailedCounterExperiment;
   const report: RendererEvidenceReport = {
     catalogDigest: contract.catalogDigest,
     harnessDigest: PAGE_NUMBER_RENDERER_HARNESS_DIGEST,
