@@ -94,6 +94,7 @@ describe("cli action modules: md to-pdf profile rendering", () => {
           "subtitle: Runtime Notes",
           "author: Noname",
           "company: Example Co.",
+          "date: 2026-08-15",
           "pdf:",
           "  content-langs:",
           "    - zh-Hant",
@@ -187,9 +188,9 @@ describe("cli action modules: md to-pdf profile rendering", () => {
         renderedTemplate.indexOf('<main class="document-body">'),
       );
       expect(renderedTemplate).not.toContain('class="document-title"');
-      expect(renderedTemplate.match(/Example Co\./g)).toHaveLength(2);
+      expect(renderedTemplate.match(/Example Co\./g)).toHaveLength(1);
       expect(renderedTemplate).toContain('<p class="pdf-cover__company">Example Co.</p>');
-      expect(renderedTemplate).toContain('<p class="pdf-cover__meta">Noname | Example Co.</p>');
+      expect(renderedTemplate).toContain('<p class="pdf-cover__meta">Noname | 2026-08-15</p>');
       expect(combinedCss).toContain("@page cover");
       const coverCss = combinedCss.slice(combinedCss.indexOf("@page cover"));
       expect(coverCss).toContain("@top-left {\n    content: none;");

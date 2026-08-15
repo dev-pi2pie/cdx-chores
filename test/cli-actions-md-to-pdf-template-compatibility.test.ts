@@ -31,13 +31,12 @@ async function expectMissing(path: string): Promise<void> {
 }
 
 describe("Markdown PDF selected-template compatibility", () => {
-  test("allows an arbitrary Template to omit an enabled built-in cover when numbering needs no body hook", async () => {
+  test("rejects an arbitrary Template that cannot prove enabled cover ownership before probes or output", async () => {
     await withTempFixtureDir("md-pdf-template-compat-cover-baseline", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
       const profilePath = join(fixtureDir, "profile.yml");
       const templatePath = join(fixtureDir, "custom-template.html");
       const outputPath = join(fixtureDir, "report.pdf");
-      let selectedTemplate = "";
       await writeFile(
         inputPath,
         ["---", "title: Cover title", "---", "# Report", ""].join("\n"),
@@ -49,37 +48,28 @@ describe("Markdown PDF selected-template compatibility", () => {
         '<html><body><article class="custom-document">$body$</article></body></html>\n',
         "utf8",
       );
-      const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
-      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
-        if (command === "pandoc" && !args.includes("--version")) {
-          const selectedTemplatePath = args[args.indexOf("--template") + 1];
-          if (selectedTemplatePath) {
-            selectedTemplate = await readFile(selectedTemplatePath, "utf8");
-          }
-        }
-        return runner(command, args, runnerOptions);
-      };
-      const { runtime, expectNoStderr } = createActionTestRuntime();
+      const { calls, runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { runtime, expectNoOutput } = createActionTestRuntime();
 
-      const prepared = await prepareMarkdownPdfRender(runtime, {
-        input: toRepoRelativePath(inputPath),
-        profile: toRepoRelativePath(profilePath),
-        template: toRepoRelativePath(templatePath),
-      });
-      expect(prepared.templateCompatibility).toEqual({ bodyBoundary: "not-required" });
+      await expectCliError(
+        () =>
+          actionMdToPdf(runtime, {
+            input: toRepoRelativePath(inputPath),
+            output: toRepoRelativePath(outputPath),
+            profile: toRepoRelativePath(profilePath),
+            template: toRepoRelativePath(templatePath),
+            runner,
+          }),
+        {
+          code: "MARKDOWN_PDF_COVER_BOUNDARY_REQUIRED",
+          exitCode: 2,
+          messageIncludes: "selected custom Template has no supported cover hook",
+        },
+      );
 
-      await actionMdToPdf(runtime, {
-        input: toRepoRelativePath(inputPath),
-        output: toRepoRelativePath(outputPath),
-        profile: toRepoRelativePath(profilePath),
-        template: toRepoRelativePath(templatePath),
-        runner: capturingRunner,
-      });
-
-      expect(selectedTemplate).toContain('<article class="custom-document">$body$</article>');
-      expect(selectedTemplate).not.toContain('class="pdf-cover');
-      expect(await readFile(outputPath, "utf8")).toContain("%PDF");
-      expectNoStderr();
+      expect(calls).toHaveLength(0);
+      await expectMissing(outputPath);
+      expectNoOutput();
     });
   });
 
@@ -568,5 +558,55 @@ describe("Markdown PDF selected-template compatibility", () => {
         ].join("\n"),
       }),
     ).toThrow("selected managed Markdown PDF template requires exactly one .document-body");
+  });
+
+  test("requires managed identity and exactly one live cover element", () => {
+    const coverProfile = {
+      ...DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
+      cover: {
+        ...DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.cover,
+        enabled: true,
+      },
+    };
+    const managedMarker =
+      "<!-- cdx-chores md pdf-template codex | bundle=test | family=editorial-report -->";
+
+    expect(
+      assessMarkdownPdfTemplateCompatibility({
+        builtIn: true,
+        profile: coverProfile,
+        templateHtml: '<section class="pdf-cover"></section><main>$body$</main>',
+      }),
+    ).toEqual({ bodyBoundary: "not-required", coverBoundary: "built-in" });
+
+    expect(() =>
+      assessMarkdownPdfTemplateCompatibility({
+        builtIn: false,
+        profile: coverProfile,
+        templateHtml: '<section class="pdf-cover"></section><main>$body$</main>',
+      }),
+    ).toThrow("selected custom Template has no supported cover hook");
+
+    for (const covers of [
+      "",
+      '<template><section class="pdf-cover"></section></template>',
+      '<section class="pdf-cover"></section><section class="pdf-cover"></section>',
+    ]) {
+      expect(() =>
+        assessMarkdownPdfTemplateCompatibility({
+          builtIn: false,
+          profile: coverProfile,
+          templateHtml: `${managedMarker}${covers}<main>$body$</main>`,
+        }),
+      ).toThrow("requires exactly one live .pdf-cover element");
+    }
+
+    expect(
+      assessMarkdownPdfTemplateCompatibility({
+        builtIn: false,
+        profile: coverProfile,
+        templateHtml: `${managedMarker}<section class="pdf-cover"></section><main>$body$</main>`,
+      }),
+    ).toEqual({ bodyBoundary: "not-required", coverBoundary: "managed-proven" });
   });
 });

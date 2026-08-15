@@ -28,7 +28,12 @@ import type {
   MarkdownPdfProjectCodexOutputPlan,
   NormalizedMdPdfProjectCodexCommandState,
 } from "./types";
-import type { MarkdownPdfTemplateCompatibilityResult } from "../template-compatibility";
+import {
+  assessMarkdownPdfTemplateCoverCompatibility,
+  type MarkdownPdfTemplateCompatibilityResult,
+} from "../template-compatibility";
+
+const MD_PDF_PROJECT_CODEX_COVER_COMPATIBILITY_VALIDATION_NAME = "profile-cover-compatibility";
 
 export type MarkdownPdfProjectCodexValidationStatus = "passed" | "failed" | "skipped";
 
@@ -303,6 +308,21 @@ function collectProjectValidationResults(
   }
 
   if (normalizedProfile && input.templatePhase.phase.decisionMode !== "no-usable-project") {
+    if (normalizedProfile.profile.cover.enabled) {
+      try {
+        assessMarkdownPdfTemplateCoverCompatibility({
+          builtIn: false,
+          profile: normalizedProfile.profile,
+          templateHtml: input.templatePhase.synthesis.templateHtml,
+        });
+        results.push(passedValidation(MD_PDF_PROJECT_CODEX_COVER_COMPATIBILITY_VALIDATION_NAME));
+      } catch (error) {
+        results.push(
+          failedValidation(MD_PDF_PROJECT_CODEX_COVER_COMPATIBILITY_VALIDATION_NAME, error),
+        );
+      }
+    }
+
     try {
       templateCompatibility = assessMdPdfProjectCodexProfileBodyCompatibility({
         profile: normalizedProfile.profile,

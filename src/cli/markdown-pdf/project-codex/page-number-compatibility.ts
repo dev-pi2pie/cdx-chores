@@ -4,10 +4,7 @@ import {
   type NormalizedMarkdownPdfProfile,
 } from "../profile";
 import { inspectMarkdownPdfTemplateBody } from "../template-body";
-import {
-  assessMarkdownPdfTemplateCompatibility,
-  type MarkdownPdfTemplateCompatibilityResult,
-} from "../template-compatibility";
+import type { MarkdownPdfTemplateCompatibilityResult } from "../template-compatibility";
 
 export const MD_PDF_PROJECT_CODEX_PAGE_NUMBER_VALIDATION_NAMES = {
   profileBodyCompatibility: "profile-body-page-number-compatibility",
@@ -425,9 +422,5 @@ export function assessMdPdfProjectCodexProfileBodyCompatibility(input: {
       },
     );
   }
-  return assessMarkdownPdfTemplateCompatibility({
-    builtIn: false,
-    profile: input.profile,
-    templateHtml: input.templateHtml,
-  });
+  return { bodyBoundary: "proven", inspection };
 }

@@ -5,10 +5,13 @@ import { join } from "node:path";
 import { actionMdToPdf, prepareMarkdownPdfRender } from "../src/cli/actions";
 import { resolveCliColorEnabled } from "../src/cli/colors";
 import {
+  assessMarkdownPdfCoverVisibility,
   assessMarkdownPdfProfileRevision,
+  collectMarkdownPdfEmptyCoverDiagnostic,
   collectMarkdownPdfDiagnostics,
   DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
   MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS,
+  MARKDOWN_PDF_EMPTY_COVER_WARNING,
   MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_WARNING,
 } from "../src/cli/markdown-pdf";
 import type {
@@ -203,6 +206,137 @@ describe("Markdown PDF structured diagnostics", () => {
         templateCompatibility: { bodyBoundary: "legacy-document-origin-fallback" },
       }),
     ).toEqual({ conditions: [] });
+  });
+
+  test("collects an empty-cover warning without requiring page numbers", () => {
+    const profile: NormalizedMarkdownPdfProfile = {
+      ...DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
+      metadata: { title: "  ", company: "Visible company" },
+      cover: {
+        ...DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.cover,
+        enabled: true,
+        fields: {
+          title: "{title}",
+          subtitle: "{missing}",
+          author: "",
+          company: "{missingCompany}",
+          date: "   ",
+        },
+      },
+    };
+
+    expect(assessMarkdownPdfCoverVisibility(profile)).toEqual({
+      fields: {
+        title: "  ",
+        subtitle: "",
+        author: "",
+        company: "",
+        date: "   ",
+      },
+      hasVisibleMetadata: false,
+      visibleFields: [],
+    });
+    const emptyCoverDiagnostic = collectMarkdownPdfEmptyCoverDiagnostic(profile);
+    expect(emptyCoverDiagnostic).toEqual({
+      conditionId: MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.coverFieldsEmpty,
+      severity: "warning",
+      message: MARKDOWN_PDF_EMPTY_COVER_WARNING,
+      context: { kind: "empty-cover-fields" },
+    });
+    const conditions = collectMarkdownPdfDiagnostics({
+      profile,
+      pageNumbers: profile.pageNumbers,
+      templateCompatibility: { bodyBoundary: "not-required", coverBoundary: "built-in" },
+    }).conditions;
+    expect(conditions).toHaveLength(1);
+    expect(conditions[0]).toEqual(emptyCoverDiagnostic);
+
+    const noDefaultCssDiagnostics = collectMarkdownPdfDiagnostics({
+      profile,
+      pageNumbers: profile.pageNumbers,
+      templateCompatibility: { bodyBoundary: "not-required", coverBoundary: "built-in" },
+      noDefaultCss: true,
+    });
+    expect(noDefaultCssDiagnostics.conditions.map(({ conditionId }) => conditionId)).toEqual([
+      MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.coverFieldsEmpty,
+      MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.coverDefaultCssDisabled,
+    ]);
+    expect(JSON.stringify(noDefaultCssDiagnostics)).not.toContain("\u001b");
+  });
+
+  test("evaluates cover visibility after Profile, frontmatter, and CLI metadata precedence", async () => {
+    await withTempFixtureDir("md-pdf-diagnostics-cover-metadata", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "profile.yml");
+      const originalProfile = [
+        "metadata:",
+        "  coverLabel: Profile label",
+        "cover:",
+        "  enabled: true",
+        "  fields:",
+        '    title: "{coverLabel}"',
+        '    subtitle: ""',
+        '    author: ""',
+        '    company: ""',
+        '    date: ""',
+        "",
+      ].join("\n");
+      await writeFile(inputPath, "---\ncoverLabel: Frontmatter label\n---\n# Report\n", "utf8");
+      await writeFile(profilePath, originalProfile, "utf8");
+      const { runtime } = createActionTestRuntime();
+
+      const visible = await prepareMarkdownPdfRender(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+      });
+      expect(visible.normalizedProfile.metadata.coverLabel).toBe("Frontmatter label");
+      expect(
+        visible.diagnostics.conditions.some(
+          ({ conditionId }) =>
+            conditionId === MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.coverFieldsEmpty,
+        ),
+      ).toBeFalse();
+
+      const empty = await prepareMarkdownPdfRender(runtime, {
+        input: toRepoRelativePath(inputPath),
+        profile: toRepoRelativePath(profilePath),
+        meta: ["coverLabel=   "],
+      });
+      expect(empty.normalizedProfile.metadata.coverLabel).toBe("   ");
+      expect(empty.diagnostics.conditions).toContainEqual(
+        expect.objectContaining({
+          conditionId: MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.coverFieldsEmpty,
+          context: { kind: "empty-cover-fields" },
+        }),
+      );
+      expect(await readFile(profilePath, "utf8")).toBe(originalProfile);
+      expect(JSON.stringify(empty.diagnostics)).not.toContain("\u001b");
+    });
+  });
+
+  test("prints one empty-cover warning and continues rendering without rewriting the Profile", async () => {
+    await withTempFixtureDir("md-pdf-diagnostics-empty-cover-render", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "profile.yml");
+      const outputPath = join(fixtureDir, "report.pdf");
+      const originalProfile = "cover:\n  enabled: true\n";
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(profilePath, originalProfile, "utf8");
+      const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { runtime, stderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        profile: toRepoRelativePath(profilePath),
+        runner,
+      });
+
+      expect(await readFile(outputPath, "utf8")).toContain("%PDF");
+      expect(stderr.text.match(new RegExp(MARKDOWN_PDF_EMPTY_COVER_WARNING, "g"))).toHaveLength(1);
+      expect(stderr.text).not.toContain("\u001b");
+      expect(await readFile(profilePath, "utf8")).toBe(originalProfile);
+    });
   });
 
   test("uses the direct effective disable during preparation", async () => {

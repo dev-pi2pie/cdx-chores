@@ -9,7 +9,32 @@ import {
 
 export interface MarkdownPdfTemplateCompatibilityResult {
   bodyBoundary: "not-required" | "proven" | "legacy-document-origin-fallback";
+  coverBoundary?: "built-in" | "managed-proven";
   inspection?: MarkdownPdfTemplateBodyInspection;
+}
+
+const COVER_CLASS = "pdf-cover";
+
+type Parse5Node = DefaultTreeAdapterTypes.Node;
+type Parse5Element = DefaultTreeAdapterTypes.Element;
+
+function isElement(node: Parse5Node): node is Parse5Element {
+  return "tagName" in node;
+}
+
+function hasClass(node: Parse5Element, className: string): boolean {
+  const value = node.attrs.find((attribute) => attribute.name === "class")?.value;
+  return value?.split(/\s+/u).includes(className) === true;
+}
+
+function countLiveCoverHooks(node: Parse5Node): number {
+  const current = isElement(node) && hasClass(node, COVER_CLASS) ? 1 : 0;
+  return (
+    current +
+    ("childNodes" in node
+      ? node.childNodes.reduce((count, childNode) => count + countLiveCoverHooks(childNode), 0)
+      : 0)
+  );
 }
 
 function isManagedTemplateNode(node: DefaultTreeAdapterTypes.Node): boolean {
@@ -32,6 +57,42 @@ function isManagedTemplateNode(node: DefaultTreeAdapterTypes.Node): boolean {
 
 function isManagedTemplate(templateHtml: string, builtIn: boolean): boolean {
   return builtIn || isManagedTemplateNode(parse(templateHtml));
+}
+
+export function assessMarkdownPdfTemplateCoverCompatibility(input: {
+  builtIn: boolean;
+  profile: NormalizedMarkdownPdfProfile;
+  templateHtml: string;
+}): Pick<MarkdownPdfTemplateCompatibilityResult, "coverBoundary"> {
+  if (!input.profile.cover.enabled) {
+    return {};
+  }
+  if (input.builtIn) {
+    return { coverBoundary: "built-in" };
+  }
+
+  const parsedTemplate = parse(input.templateHtml);
+  if (!isManagedTemplateNode(parsedTemplate)) {
+    throw new CliError(
+      "An enabled Profile cover requires the built-in Markdown PDF template or a validated managed Project Template; the selected custom Template has no supported cover hook.",
+      {
+        code: "MARKDOWN_PDF_COVER_BOUNDARY_REQUIRED",
+        exitCode: 2,
+      },
+    );
+  }
+
+  const hookCount = countLiveCoverHooks(parsedTemplate);
+  if (hookCount !== 1) {
+    throw new CliError(
+      `The selected managed Markdown PDF template requires exactly one live .pdf-cover element when the Profile cover is enabled (found ${hookCount}).`,
+      {
+        code: "MARKDOWN_PDF_COVER_BOUNDARY_REQUIRED",
+        exitCode: 2,
+      },
+    );
+  }
+  return { coverBoundary: "managed-proven" };
 }
 
 function bodyBoundaryError(input: {
@@ -62,20 +123,22 @@ export function assessMarkdownPdfTemplateCompatibility(input: {
   profile: NormalizedMarkdownPdfProfile;
   templateHtml: string;
 }): MarkdownPdfTemplateCompatibilityResult {
+  const cover = assessMarkdownPdfTemplateCoverCompatibility(input);
   const pageNumbers = input.profile.pageNumbers;
   if (!pageNumbers.enabled || pageNumbers.scope === "document") {
-    return { bodyBoundary: "not-required" };
+    return { bodyBoundary: "not-required", ...cover };
   }
 
   const inspection = inspectMarkdownPdfTemplateBody(input.templateHtml);
   if (inspection.status === "proven") {
-    return { bodyBoundary: "proven", inspection };
+    return { bodyBoundary: "proven", ...cover, inspection };
   }
 
   const managed = isManagedTemplate(input.templateHtml, input.builtIn);
   if (pageNumbers.countFrom === "document" && !managed && inspection.status === "missing-hook") {
     return {
       bodyBoundary: "legacy-document-origin-fallback",
+      ...cover,
       inspection,
     };
   }

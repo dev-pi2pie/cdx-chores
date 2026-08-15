@@ -1259,9 +1259,56 @@ describe("cli action modules: md pdf-project codex validation", () => {
       });
 
       expectNoUsableValidationFailure(validation, {
-        name: "profile-template-compatibility",
-        messageIncludes: "profile-owned text cover",
+        name: "profile-cover-compatibility",
+        messageIncludes: "exactly one live .pdf-cover",
       });
+    });
+  });
+
+  test("projects empty Profile cover fields through managed Project diagnostics", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-validation-empty-cover", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "cover.png"), minimalPng(1200, 800));
+      await writeFile(
+        join(fixtureDir, "base.yml"),
+        [
+          "cover:",
+          "  enabled: true",
+          "  fields:",
+          '    title: ""',
+          '    subtitle: ""',
+          '    author: ""',
+          '    company: ""',
+          '    date: ""',
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const { outputPlan, profilePhase, runtime, state, validation } = await runValidationFixture(
+        fixtureDir,
+        {
+          baseProfile: "base.yml",
+          coverImage: "cover.png",
+        },
+      );
+
+      expect(validation.decisionMode).toBe("deterministic");
+      expect(validation.diagnostics.conditions).toEqual([
+        expect.objectContaining({
+          conditionId: "MARKDOWN_PDF_COVER_FIELDS_EMPTY",
+          context: { kind: "empty-cover-fields" },
+          severity: "warning",
+        }),
+      ]);
+      expect(
+        createMdPdfProjectCodexHandoffProjection({
+          outputPlan,
+          profilePhase,
+          runtime,
+          state,
+          validation,
+        }).diagnostics,
+      ).toEqual(validation.diagnostics.conditions);
     });
   });
 
@@ -1280,6 +1327,10 @@ describe("cli action modules: md pdf-project codex validation", () => {
           "    default: Profile Body",
           "  heading:",
           "    default: Profile Heading",
+          "cover:",
+          "  enabled: true",
+          "  fields:",
+          "    title: Project Cover",
           "",
         ].join("\n"),
         "utf8",
@@ -1291,6 +1342,17 @@ describe("cli action modules: md pdf-project codex validation", () => {
       });
 
       expect(validation.decisionMode).toBe("deterministic");
+      expect(
+        templatePhase.synthesis.templateHtml.match(/<section class="pdf-cover\b/g),
+      ).toHaveLength(1);
+      expect(validation.results).toContainEqual({
+        name: "profile-cover-compatibility",
+        status: "passed",
+      });
+      expect(validation.results).toContainEqual({
+        name: "profile-body-page-number-compatibility",
+        status: "passed",
+      });
       expect(templatePhase.synthesis.styleCss).toContain(
         "font: 700 22pt/1.15 var(--template-heading-font);",
       );

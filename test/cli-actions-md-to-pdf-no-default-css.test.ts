@@ -8,6 +8,7 @@ import {
   MARKDOWN_PDF_PAGE_NUMBERS_REQUIRE_DEFAULT_CSS_REASON,
 } from "../src/cli/actions/markdown/to-pdf-service";
 import { resolveMarkdownPdfPageNumberConfiguration } from "../src/cli/markdown-pdf";
+import { MARKDOWN_PDF_COVER_DEFAULT_CSS_DISABLED_WARNING } from "../src/cli/markdown-pdf";
 import { DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE } from "../src/cli/markdown-pdf/profile";
 import { createPdfRunner } from "./cli-actions-md-to-pdf.helpers";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
@@ -158,7 +159,7 @@ describe("Markdown PDF page numbers with no default CSS", () => {
     });
   });
 
-  test("renders a cover-only Profile without generated CSS or a cover-layout warning", async () => {
+  test("renders a cover-only Profile with one custom-CSS ownership warning", async () => {
     await withTempFixtureDir("md-to-pdf-no-default-css-cover-baseline", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");
       const profilePath = join(fixtureDir, "profile.yml");
@@ -166,7 +167,7 @@ describe("Markdown PDF page numbers with no default CSS", () => {
       await writeFile(inputPath, "---\ntitle: Cover title\n---\n# Report\n", "utf8");
       await writeFile(profilePath, "cover:\n  enabled: true\n", "utf8");
       const { calls, runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
-      const { runtime, expectNoStderr } = createActionTestRuntime();
+      const { runtime, stderr } = createActionTestRuntime();
 
       await actionMdToPdf(runtime, {
         input: toRepoRelativePath(inputPath),
@@ -178,7 +179,46 @@ describe("Markdown PDF page numbers with no default CSS", () => {
 
       expect(calls.some((call) => call.command === "weasyprint")).toBe(true);
       expect(await readFile(outputPath, "utf8")).toContain("%PDF");
-      expectNoStderr();
+      expect(
+        stderr.text.match(new RegExp(MARKDOWN_PDF_COVER_DEFAULT_CSS_DISABLED_WARNING, "g")),
+      ).toHaveLength(1);
+      expect(stderr.text).not.toContain("\u001b");
+    });
+  });
+
+  test("keeps the page-number hard error authoritative when cover and page numbers are enabled", async () => {
+    await withTempFixtureDir("md-to-pdf-no-default-css-cover-page-numbers", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const profilePath = join(fixtureDir, "profile.yml");
+      const outputPath = join(fixtureDir, "report.pdf");
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(
+        profilePath,
+        "cover:\n  enabled: true\npageNumbers:\n  enabled: true\n",
+        "utf8",
+      );
+      const { calls, runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionMdToPdf(runtime, {
+            input: toRepoRelativePath(inputPath),
+            output: toRepoRelativePath(outputPath),
+            profile: toRepoRelativePath(profilePath),
+            noDefaultCss: true,
+            runner,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "Effective page numbers require the generated default stylesheet",
+        },
+      );
+
+      expect(calls).toHaveLength(0);
+      await expectMissing(outputPath);
+      expectNoOutput();
     });
   });
 

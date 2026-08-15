@@ -200,6 +200,28 @@ function legacyFallbackDiagnostic(
   };
 }
 
+function coverDiagnostic(
+  diagnostic: Record<string, unknown>,
+  input: {
+    conditionId: "MARKDOWN_PDF_COVER_FIELDS_EMPTY" | "MARKDOWN_PDF_COVER_DEFAULT_CSS_DISABLED";
+    kind: "empty-cover-fields" | "cover-default-css-disabled";
+  },
+): MarkdownPdfProjectCodexHandoffDiagnostic {
+  const context = plainObject(diagnostic.context, "Project handoff diagnostic context");
+  assertExactKeys(context, ["kind"], "Project handoff diagnostic context");
+  if (context.kind !== input.kind) {
+    return invalidProjection("Project handoff cover diagnostic context is unsupported.");
+  }
+  return {
+    conditionId: input.conditionId,
+    severity: "warning",
+    context: { kind: input.kind },
+    message: sanitizeMdPdfProjectCodexReportText(
+      stringValue(diagnostic.message, "Project handoff diagnostic message"),
+    ),
+  };
+}
+
 function missingBodyBoundaryDiagnostic(
   diagnostic: Record<string, unknown>,
 ): MarkdownPdfProjectCodexHandoffDiagnostic {
@@ -294,6 +316,22 @@ function projectDiagnostic(value: unknown): MarkdownPdfProjectCodexHandoffDiagno
         return invalidProjection("Project handoff diagnostic severity is unsupported.");
       }
       return legacyFallbackDiagnostic(diagnostic);
+    case "MARKDOWN_PDF_COVER_FIELDS_EMPTY":
+      if (diagnostic.severity !== "warning") {
+        return invalidProjection("Project handoff diagnostic severity is unsupported.");
+      }
+      return coverDiagnostic(diagnostic, {
+        conditionId: diagnostic.conditionId,
+        kind: "empty-cover-fields",
+      });
+    case "MARKDOWN_PDF_COVER_DEFAULT_CSS_DISABLED":
+      if (diagnostic.severity !== "warning") {
+        return invalidProjection("Project handoff diagnostic severity is unsupported.");
+      }
+      return coverDiagnostic(diagnostic, {
+        conditionId: diagnostic.conditionId,
+        kind: "cover-default-css-disabled",
+      });
     case "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED":
       if (diagnostic.severity !== "error") {
         return invalidProjection("Project handoff diagnostic severity is unsupported.");

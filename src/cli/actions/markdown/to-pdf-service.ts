@@ -272,6 +272,7 @@ export async function prepareMarkdownPdfRender(
     profileRevision: normalizedProfile.revisionAssessment,
     pageNumbers: pageNumberConfiguration.effective,
     templateCompatibility,
+    noDefaultCss: input.noDefaultCss,
   });
   const rendererCapabilityRequests = collectMarkdownPdfRendererCapabilityRequests({
     profile: normalizedProfile.profile,

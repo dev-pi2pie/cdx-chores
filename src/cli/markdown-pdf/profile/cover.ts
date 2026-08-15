@@ -3,6 +3,20 @@ import { createMarkdownPdfEmptyMarginBoxesCss } from "./page-chrome";
 import type { MarkdownPdfOrientation, MarkdownPdfPageSize } from "../validation";
 import type { NormalizedMarkdownPdfProfile } from "./types";
 
+export interface ResolvedMarkdownPdfCoverFields {
+  title: string;
+  subtitle: string;
+  author: string;
+  company: string;
+  date: string;
+}
+
+export interface MarkdownPdfCoverVisibilityAssessment {
+  fields: ResolvedMarkdownPdfCoverFields;
+  hasVisibleMetadata: boolean;
+  visibleFields: Array<keyof ResolvedMarkdownPdfCoverFields>;
+}
+
 export interface MarkdownPdfCoverCssInput {
   orientation?: MarkdownPdfOrientation;
   pageSize?: MarkdownPdfPageSize;
@@ -34,6 +48,35 @@ function coverField(value: string, profile: NormalizedMarkdownPdfProfile): strin
   return htmlEscape(resolveMarkdownPdfPlaceholderText(value, profile.metadata));
 }
 
+export function resolveMarkdownPdfCoverFields(
+  profile: NormalizedMarkdownPdfProfile,
+): ResolvedMarkdownPdfCoverFields {
+  return {
+    title: resolveMarkdownPdfPlaceholderText(profile.cover.fields.title, profile.metadata),
+    subtitle: resolveMarkdownPdfPlaceholderText(profile.cover.fields.subtitle, profile.metadata),
+    author: resolveMarkdownPdfPlaceholderText(profile.cover.fields.author, profile.metadata),
+    company: resolveMarkdownPdfPlaceholderText(profile.cover.fields.company, profile.metadata),
+    date: resolveMarkdownPdfPlaceholderText(profile.cover.fields.date, profile.metadata),
+  };
+}
+
+/** Resolves configured cover fields after effective metadata precedence. */
+export function assessMarkdownPdfCoverVisibility(
+  profile: NormalizedMarkdownPdfProfile,
+): MarkdownPdfCoverVisibilityAssessment {
+  const fields = resolveMarkdownPdfCoverFields(profile);
+  const visibleFields = (
+    Object.entries(fields) as Array<[keyof ResolvedMarkdownPdfCoverFields, string]>
+  )
+    .filter(([, value]) => value.trim().length > 0)
+    .map(([field]) => field);
+  return {
+    fields,
+    hasVisibleMetadata: visibleFields.length > 0,
+    visibleFields,
+  };
+}
+
 export function createMarkdownPdfCoverHtml(
   profile: NormalizedMarkdownPdfProfile | undefined,
 ): string {
@@ -46,7 +89,7 @@ export function createMarkdownPdfCoverHtml(
   const author = coverField(profile.cover.fields.author, profile);
   const company = coverField(profile.cover.fields.company, profile);
   const date = coverField(profile.cover.fields.date, profile);
-  const metaParts = [author, company, date].filter((value) => value.length > 0);
+  const metaParts = [author, date].filter((value) => value.length > 0);
 
   return `<section class="pdf-cover pdf-cover--${profile.cover.style}">
   <div class="pdf-cover__content">

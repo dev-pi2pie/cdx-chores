@@ -3,7 +3,11 @@ import type {
   NormalizedMarkdownPdfPageNumbers,
   NormalizedMarkdownPdfProfile,
 } from "./profile";
-import { markdownPdfPageNumberFormatTokens, resolveMarkdownPdfPageNumberSlot } from "./profile";
+import {
+  assessMarkdownPdfCoverVisibility,
+  markdownPdfPageNumberFormatTokens,
+  resolveMarkdownPdfPageNumberSlot,
+} from "./profile";
 import type { MarkdownPdfTemplateCompatibilityResult } from "./template-compatibility";
 
 export const MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS = {
@@ -18,6 +22,8 @@ export const MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS = {
   profileSchemaVersionInvalid: "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_INVALID",
   profileSchemaVersionStale: "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_STALE",
   profileSchemaVersionForward: "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_FORWARD",
+  coverFieldsEmpty: "MARKDOWN_PDF_COVER_FIELDS_EMPTY",
+  coverDefaultCssDisabled: "MARKDOWN_PDF_COVER_DEFAULT_CSS_DISABLED",
 } as const;
 
 export type MarkdownPdfDiagnosticConditionId =
@@ -29,10 +35,18 @@ export type MarkdownPdfWarningConditionId =
   | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.legacyBodyVisibilityFallback
   | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.profileSchemaVersionInvalid
   | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.profileSchemaVersionStale
-  | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.profileSchemaVersionForward;
+  | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.profileSchemaVersionForward
+  | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.coverFieldsEmpty
+  | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.coverDefaultCssDisabled;
 
 export const MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_WARNING =
   "Selected legacy Markdown PDF template has no provable .document-body boundary; body-scoped page-number visibility will use document-origin fallback behavior.";
+
+export const MARKDOWN_PDF_EMPTY_COVER_WARNING =
+  "The cover page is enabled, but its configured fields resolve to no visible metadata. The PDF may contain an empty cover page. Add title, subtitle, author, company, or date metadata; customize cover.fields; or disable the cover page.";
+
+export const MARKDOWN_PDF_COVER_DEFAULT_CSS_DISABLED_WARNING =
+  "The cover page is enabled with --no-default-css. Custom CSS owns the cover page break, layout, and header, footer, and page-number reset for this render.";
 
 export interface MarkdownPdfDiagnostic {
   conditionId: MarkdownPdfWarningConditionId;
@@ -60,6 +74,12 @@ export interface MarkdownPdfDiagnostic {
         declaredRevision?: number;
         inferredRevision: number;
         currentRevision: number;
+      }
+    | {
+        kind: "empty-cover-fields";
+      }
+    | {
+        kind: "cover-default-css-disabled";
       };
 }
 
@@ -133,16 +153,56 @@ export function collectMarkdownPdfOccupiedPageNumberSlotDiagnostic(input: {
   };
 }
 
+export function collectMarkdownPdfEmptyCoverDiagnostic(
+  profile: NormalizedMarkdownPdfProfile,
+): MarkdownPdfDiagnostic | undefined {
+  if (!profile.cover.enabled || assessMarkdownPdfCoverVisibility(profile).hasVisibleMetadata) {
+    return undefined;
+  }
+  return {
+    conditionId: MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.coverFieldsEmpty,
+    severity: "warning",
+    message: MARKDOWN_PDF_EMPTY_COVER_WARNING,
+    context: { kind: "empty-cover-fields" },
+  };
+}
+
+export function collectMarkdownPdfCoverDefaultCssDisabledDiagnostic(input: {
+  noDefaultCss?: boolean;
+  profile: NormalizedMarkdownPdfProfile;
+}): MarkdownPdfDiagnostic | undefined {
+  if (!input.profile.cover.enabled || input.noDefaultCss !== true) {
+    return undefined;
+  }
+  return {
+    conditionId: MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.coverDefaultCssDisabled,
+    severity: "warning",
+    message: MARKDOWN_PDF_COVER_DEFAULT_CSS_DISABLED_WARNING,
+    context: { kind: "cover-default-css-disabled" },
+  };
+}
+
 export function collectMarkdownPdfDiagnostics(input: {
   profile: NormalizedMarkdownPdfProfile;
   profileRevision?: MarkdownPdfProfileRevisionAssessment;
   pageNumbers: NormalizedMarkdownPdfPageNumbers;
   templateCompatibility: MarkdownPdfTemplateCompatibilityResult;
+  noDefaultCss?: boolean;
 }): MarkdownPdfDiagnostics {
   const conditions: MarkdownPdfDiagnostic[] = [];
   const revisionDiagnostic = profileRevisionDiagnostic(input.profileRevision);
   if (revisionDiagnostic) {
     conditions.push(revisionDiagnostic);
+  }
+
+  const emptyCover = collectMarkdownPdfEmptyCoverDiagnostic(input.profile);
+  if (emptyCover) {
+    conditions.push(emptyCover);
+  }
+
+  const coverDefaultCssDisabled = collectMarkdownPdfCoverDefaultCssDisabledDiagnostic(input);
+  if (coverDefaultCssDisabled) {
+    conditions.push(coverDefaultCssDisabled);
   }
 
   if (!input.pageNumbers.enabled) {

@@ -49,7 +49,13 @@ export {
   isMarkdownPdfPageChromeSeparatorStyle,
   isMarkdownPdfPageChromeSeparatorWidth,
 } from "./page-number-domains";
-export { createMarkdownPdfCoverCss, createMarkdownPdfCoverHtml } from "./cover";
+export {
+  assessMarkdownPdfCoverVisibility,
+  createMarkdownPdfCoverCss,
+  createMarkdownPdfCoverHtml,
+  resolveMarkdownPdfCoverFields,
+} from "./cover";
+export type { MarkdownPdfCoverVisibilityAssessment, ResolvedMarkdownPdfCoverFields } from "./cover";
 export { createMarkdownPdfFontCss } from "./fonts";
 export { normalizeMarkdownPdfProfileIdentity } from "./identity";
 export { createMarkdownPdfProfileConfig } from "./materialize";

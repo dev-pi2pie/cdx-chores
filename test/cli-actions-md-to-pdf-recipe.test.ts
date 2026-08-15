@@ -268,7 +268,9 @@ describe("markdown PDF recipe generation", () => {
     expect(recipe.templateHtml).toContain('class="pdf-cover pdf-cover--plain"');
     expect(recipe.templateHtml).toContain("Quarterly Report");
     expect(recipe.templateHtml).toContain("Runtime Notes");
-    expect(recipe.templateHtml).toContain("Noname | Example Co. | 2026-05-07");
+    expect(recipe.templateHtml.match(/Example Co\./g)).toHaveLength(1);
+    expect(recipe.templateHtml).toContain('<p class="pdf-cover__company">Example Co.</p>');
+    expect(recipe.templateHtml).toContain("Noname | 2026-05-07");
     expect(recipe.styleCss).toContain("@page cover");
     expect(recipe.styleCss).toContain("@top-left {\n    content: none;");
     expect(recipe.styleCss).toContain("@bottom-center {\n    content: none;");

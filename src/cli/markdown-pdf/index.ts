@@ -5,12 +5,19 @@ export type {
   MarkdownPdfTemplateBodyInspection,
   MarkdownPdfTemplateBodyStatus,
 } from "./template-body";
-export { assessMarkdownPdfTemplateCompatibility } from "./template-compatibility";
+export {
+  assessMarkdownPdfTemplateCompatibility,
+  assessMarkdownPdfTemplateCoverCompatibility,
+} from "./template-compatibility";
 export type { MarkdownPdfTemplateCompatibilityResult } from "./template-compatibility";
 export {
+  collectMarkdownPdfCoverDefaultCssDisabledDiagnostic,
   collectMarkdownPdfDiagnostics,
+  collectMarkdownPdfEmptyCoverDiagnostic,
   markdownPdfDiagnosticWarnings,
+  MARKDOWN_PDF_COVER_DEFAULT_CSS_DISABLED_WARNING,
   MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS,
+  MARKDOWN_PDF_EMPTY_COVER_WARNING,
   MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_WARNING,
 } from "./diagnostics";
 export {
@@ -91,6 +98,7 @@ export {
   MARKDOWN_PDF_PROFILE_FEATURE_REGISTRY,
   MARKDOWN_PDF_PROFILE_ROOT_KEYS,
   MARKDOWN_PDF_PROFILE_SUPPORTED_SCHEMA_SUMMARY,
+  assessMarkdownPdfCoverVisibility,
   createMarkdownPdfCoverCss,
   createMarkdownPdfCoverHtml,
   createMarkdownPdfFontCss,
@@ -112,6 +120,7 @@ export {
   markdownPdfProfileRendererCapabilityFields,
   normalizeMarkdownPdfProfile,
   readMarkdownPdfProfileFile,
+  resolveMarkdownPdfCoverFields,
   resolveMarkdownPdfCodeOptions,
   resolveMarkdownPdfPageNumberConfiguration,
   serializeMarkdownPdfProfile,
@@ -144,6 +153,7 @@ export type {
   MarkdownPdfProfileNormalizationRoute,
   MarkdownPdfProfileRevisionAssessment,
   MarkdownPdfProfileRevisionState,
+  MarkdownPdfCoverVisibilityAssessment,
   NormalizedMarkdownPdfCode,
   NormalizedMarkdownPdfCover,
   NormalizedMarkdownPdfFonts,
@@ -154,6 +164,7 @@ export type {
   NormalizedMarkdownPdfTitleBlock,
   NormalizedMarkdownPdfProfile,
   ResolvedMarkdownPdfPageNumberConfiguration,
+  ResolvedMarkdownPdfCoverFields,
 } from "./profile";
 export type {
   CreateMarkdownPdfPageChromeCssInput,
