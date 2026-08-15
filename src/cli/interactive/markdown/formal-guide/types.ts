@@ -76,8 +76,6 @@ export interface MarkdownPdfFormalGuidePageNumberAnswers extends MarkdownPdfForm
 
 export type MarkdownPdfFormalGuidePageNumberOutcome = "body" | "document";
 
-export type MarkdownPdfFormalGuidePageChromeSelection = "none" | "header" | "footer" | "both";
-
 export type MarkdownPdfFormalGuidePageChromeSlot = "left" | "center" | "right";
 
 export interface MarkdownPdfFormalGuidePageChromeSeparatorAnswers {
@@ -130,9 +128,20 @@ export interface MarkdownPdfFormalGuideMarginPromptContext extends MarkdownPdfFo
 export type MarkdownPdfFormalGuideTocDetailsPromptContext =
   MarkdownPdfFormalGuidePromptContext<MarkdownPdfFormalGuideTocDetails>;
 
-export interface MarkdownPdfFormalGuidePageChromeAreaPromptContext extends MarkdownPdfFormalGuidePromptContext<MarkdownPdfFormalGuidePageChromeAreaAnswers> {
-  area: "header" | "footer";
-  slots: readonly MarkdownPdfFormalGuidePageChromeSlot[];
+export interface MarkdownPdfFormalGuideRepeatingContentPositionsPromptContext extends MarkdownPdfFormalGuidePromptContext<
+  readonly MarkdownPdfPageChromePosition[]
+> {
+  available: readonly MarkdownPdfPageChromePosition[];
+  reserved?: MarkdownPdfPageChromePosition;
+}
+
+export interface MarkdownPdfFormalGuideRepeatingContentPromptContext extends MarkdownPdfFormalGuidePromptContext<string> {
+  position: MarkdownPdfPageChromePosition;
+}
+
+export interface MarkdownPdfFormalGuideOccupiedPositionPromptContext {
+  current: string;
+  position: MarkdownPdfPageChromePosition;
 }
 
 export type MarkdownPdfFormalGuidePromptResult<T> = T | Promise<T>;
@@ -156,15 +165,24 @@ export interface MarkdownPdfFormalGuidePrompts {
   pageNumberOutcome(
     context: MarkdownPdfFormalGuidePromptContext<MarkdownPdfFormalGuidePageNumberOutcome>,
   ): MarkdownPdfFormalGuidePromptResult<MarkdownPdfFormalGuidePageNumberOutcome>;
+  pageNumberLabel(
+    context: MarkdownPdfFormalGuidePromptContext<string>,
+  ): MarkdownPdfFormalGuidePromptResult<string>;
   pageNumberPosition(
     context: MarkdownPdfFormalGuidePromptContext<MarkdownPdfPageChromePosition>,
   ): MarkdownPdfFormalGuidePromptResult<MarkdownPdfPageChromePosition>;
-  pageChromeSelection(
-    context: MarkdownPdfFormalGuidePromptContext<MarkdownPdfFormalGuidePageChromeSelection>,
-  ): MarkdownPdfFormalGuidePromptResult<MarkdownPdfFormalGuidePageChromeSelection>;
-  pageChromeArea(
-    context: MarkdownPdfFormalGuidePageChromeAreaPromptContext,
-  ): MarkdownPdfFormalGuidePromptResult<MarkdownPdfFormalGuidePageChromeAreaAnswers>;
+  repeatingContentEnabled(
+    context: MarkdownPdfFormalGuidePromptContext<boolean>,
+  ): MarkdownPdfFormalGuidePromptResult<boolean>;
+  repeatingContentPositions(
+    context: MarkdownPdfFormalGuideRepeatingContentPositionsPromptContext,
+  ): MarkdownPdfFormalGuidePromptResult<readonly MarkdownPdfPageChromePosition[]>;
+  repeatingContent(
+    context: MarkdownPdfFormalGuideRepeatingContentPromptContext,
+  ): MarkdownPdfFormalGuidePromptResult<string>;
+  clearOccupiedPageNumberPosition(
+    context: MarkdownPdfFormalGuideOccupiedPositionPromptContext,
+  ): MarkdownPdfFormalGuidePromptResult<boolean>;
   layout(
     context: MarkdownPdfFormalGuidePromptContext<MarkdownPdfFormalGuideLayoutAnswers>,
   ): MarkdownPdfFormalGuidePromptResult<MarkdownPdfFormalGuideLayoutAnswers>;

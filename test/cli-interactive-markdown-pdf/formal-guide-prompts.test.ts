@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 interface PromptChoice {
+  checked?: boolean;
+  description?: string;
+  disabled?: boolean | string;
   name?: string;
   value: unknown;
 }
@@ -22,9 +25,12 @@ interface ConfirmOptions {
   default?: boolean;
 }
 
+type CheckboxOptions = SelectOptions;
+
 interface PromptState {
   calls: string[];
   choices: Map<string, PromptChoice[]>;
+  checkboxes: Map<string, unknown[][]>;
   confirms: Map<string, boolean[]>;
   defaults: Map<string, unknown[]>;
   inputs: Map<string, string[]>;
@@ -36,6 +42,7 @@ function createPromptState(): PromptState {
   return {
     calls: [],
     choices: new Map(),
+    checkboxes: new Map(),
     confirms: new Map(),
     defaults: new Map(),
     inputs: new Map(),
@@ -59,6 +66,15 @@ function shift<T>(values: Map<string, T[]>, message: string): T {
 }
 
 mock.module("@inquirer/prompts", () => ({
+  async checkbox(options: CheckboxOptions): Promise<unknown[]> {
+    state.calls.push(`checkbox:${options.message}`);
+    state.choices.set(options.message, options.choices);
+    const value = shift(state.checkboxes, options.message);
+    if (!value.every((item) => options.choices.some((choice) => choice.value === item))) {
+      throw new Error(`Mocked checkbox value is not offered for ${options.message}`);
+    }
+    return value;
+  },
   async confirm(options: ConfirmOptions): Promise<boolean> {
     state.calls.push(`confirm:${options.message}`);
     const defaults = state.defaults.get(options.message) ?? [];
@@ -132,51 +148,89 @@ describe("interactive Markdown PDF formal-guide prompt adapter", () => {
     ]);
   });
 
-  test("offers one concise page-chrome gate", async () => {
-    queue(state.selects, "Add repeating header or footer text?", "both");
+  test("maps recommended and compact page-number label choices", async () => {
+    queue(state.selects, "Page-number label", "page", "compact");
 
+    await expect(createMarkdownPdfFormalGuidePrompts().pageNumberLabel({})).resolves.toBe(
+      "Page {page}",
+    );
     await expect(
-      createMarkdownPdfFormalGuidePrompts().pageChromeSelection({ current: "header" }),
-    ).resolves.toBe("both");
-    expect(state.defaults.get("Add repeating header or footer text?")).toEqual(["header"]);
-    expect(state.choices.get("Add repeating header or footer text?")).toEqual([
-      { name: "No", value: "none" },
-      { name: "Header", value: "header" },
-      { name: "Footer", value: "footer" },
-      { name: "Both", value: "both" },
+      createMarkdownPdfFormalGuidePrompts().pageNumberLabel({ current: "{page}" }),
+    ).resolves.toBe("{page}");
+    expect(state.defaults.get("Page-number label")).toEqual(["page", "compact"]);
+    expect(state.choices.get("Page-number label")).toEqual([
+      { name: "Page 1", value: "page", description: "Recommended" },
+      { name: "1", value: "compact", description: "Compact" },
+      { name: "Custom...", value: "custom", description: "Use page-label placeholders" },
     ]);
   });
 
-  test("prompts only selected page-chrome slots and preserves retained style", async () => {
-    queue(state.inputs, "Header left", "{company}");
-    queue(state.inputs, "Header right", "{title}");
-    const style = { fontSize: "8pt", separator: { width: "0.5pt" } } as const;
+  test("validates custom page-number labels and preserves a revision initial value", async () => {
+    queue(state.selects, "Page-number label", "custom");
+    queue(state.inputs, "Custom page-number label", "Page one", "Page {page} of {pages}");
 
-    const result = await createMarkdownPdfFormalGuidePrompts().pageChromeArea({
-      area: "header",
-      current: { left: "Old", center: "Owned", right: "Old", style },
-      slots: ["left", "right"],
+    const result = await createMarkdownPdfFormalGuidePrompts().pageNumberLabel({
+      current: "{company} - Page {page}",
     });
 
-    expect(result).toEqual({
-      left: "{company}",
-      center: "Owned",
-      right: "{title}",
-      style,
-    });
-    expect(state.calls).toEqual(["input:Header left", "input:Header right"]);
+    expect(result).toBe("Page {page} of {pages}");
+    expect(state.defaults.get("Custom page-number label")).toEqual(["{company} - Page {page}"]);
+    expect(state.rejected.get("Custom page-number label")).toEqual([
+      {
+        error: "Page-number label must include the {page} placeholder",
+        value: "Page one",
+      },
+    ]);
   });
 
-  test("prompts every page-chrome slot when all are available", async () => {
-    queue(state.inputs, "Footer left", "{author}");
-    queue(state.inputs, "Footer center", "");
-    queue(state.inputs, "Footer right", "{date}");
-    const result = await createMarkdownPdfFormalGuidePrompts().pageChromeArea({
-      area: "footer",
-      slots: ["left", "center", "right"],
+  test("selects repeating-content positions from only the available layout", async () => {
+    const message = "Repeating-content positions (page number uses footer center)";
+    queue(state.checkboxes, message, ["top-left", "bottom-right"]);
+    const result = await createMarkdownPdfFormalGuidePrompts().repeatingContentPositions({
+      available: ["top-left", "top-center", "top-right", "bottom-left", "bottom-right"],
+      current: ["bottom-left"],
+      reserved: "bottom-center",
     });
 
-    expect(result).toEqual({ left: "{author}", center: "", right: "{date}" });
-    expect(state.calls).toEqual(["input:Footer left", "input:Footer center", "input:Footer right"]);
+    expect(result).toEqual(["top-left", "bottom-right"]);
+    expect(state.choices.get(message)).toEqual([
+      { name: "Header left", value: "top-left", checked: false },
+      { name: "Header center", value: "top-center", checked: false },
+      { name: "Header right", value: "top-right", checked: false },
+      { name: "Footer left", value: "bottom-left", checked: true },
+      {
+        name: "Footer center - Page number",
+        value: "bottom-center",
+        disabled: "Page-number position",
+      },
+      { name: "Footer right", value: "bottom-right", checked: false },
+    ]);
+  });
+
+  test("uses slot-aware repeating-content input and an explicit conflict-clear default", async () => {
+    queue(state.inputs, "Footer left content", "", "{author}");
+    queue(
+      state.confirms,
+      "Clear existing footer center content that conflicts with page numbering?",
+      false,
+    );
+
+    await expect(
+      createMarkdownPdfFormalGuidePrompts().repeatingContent({ position: "bottom-left" }),
+    ).resolves.toBe("{author}");
+    await expect(
+      createMarkdownPdfFormalGuidePrompts().clearOccupiedPageNumberPosition({
+        current: "Existing",
+        position: "bottom-center",
+      }),
+    ).resolves.toBe(false);
+    expect(state.rejected.get("Footer left content")).toEqual([
+      { error: "Repeating content is required", value: "" },
+    ]);
+    expect(
+      state.defaults.get(
+        "Clear existing footer center content that conflicts with page numbering?",
+      ),
+    ).toEqual([false]);
   });
 });

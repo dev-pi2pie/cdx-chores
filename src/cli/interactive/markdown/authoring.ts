@@ -117,11 +117,12 @@ async function promptPreparationMode(): Promise<
 async function prepareCandidate(
   artifact: MarkdownPdfDeterministicArtifact,
   preparation: MarkdownPdfDeterministicPreparation,
+  pathPromptContext: InteractivePathPromptContext,
 ): Promise<PreparedMarkdownPdfDeterministicRecipe> {
   if (preparation === "starter") {
     return prepareMarkdownPdfDeterministicRecipe({ artifact, preparation });
   }
-  const prompts = createMarkdownPdfFormalGuidePrompts();
+  const prompts = createMarkdownPdfFormalGuidePrompts(pathPromptContext);
   if (artifact === "profile") {
     const formalGuideAnswers = await collectMarkdownPdfProfileFormalGuideAnswers(prompts);
     return prepareMarkdownPdfDeterministicRecipe({
@@ -143,8 +144,9 @@ async function prepareCandidate(
 async function reviseCandidate(
   candidate: PreparedMarkdownPdfDeterministicRecipe,
   group: MarkdownPdfProfileFormalGuideGroup,
+  pathPromptContext: InteractivePathPromptContext,
 ): Promise<PreparedMarkdownPdfDeterministicRecipe> {
-  const prompts = createMarkdownPdfFormalGuidePrompts();
+  const prompts = createMarkdownPdfFormalGuidePrompts(pathPromptContext);
   if (candidate.artifact === "profile") {
     const answers = candidate.formalGuideAnswers;
     if (!answers) {
@@ -305,6 +307,7 @@ async function reviewCandidate(
               : action === "revise-page-chrome"
                 ? "page-chrome"
                 : "code",
+      pathPromptContext,
     );
   }
 }
@@ -388,7 +391,7 @@ export async function runMarkdownPdfAuthoring(
         }
         continue;
       }
-      const candidate = await prepareCandidate(artifact, preparation);
+      const candidate = await prepareCandidate(artifact, preparation, pathPromptContext);
       const outcome = await reviewCandidate(
         runtime,
         pathPromptContext,

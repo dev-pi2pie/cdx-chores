@@ -93,12 +93,12 @@ override, artifact ownership, or Codex Assistant signal contract.
 - [x] Extend the shared ghost helper and candidate resolver with initial-value,
       Markdown PDF completion-context, advanced-key, and simple-fallback
       regressions while preserving rename behavior.
-- [ ] Implement and validate user-facing terminology and the shared
+- [x] Implement and validate user-facing terminology and the shared
       six-position selection model.
-- [ ] Implement and validate page-number label presets plus custom ghost input.
-- [ ] Implement and validate repeating-content metadata hints for enabled and
+- [x] Implement and validate page-number label presets plus custom ghost input.
+- [x] Implement and validate repeating-content metadata hints for enabled and
       disabled page-number branches.
-- [ ] Preserve revision defaults, inert values, advanced styles, and occupied
+- [x] Preserve revision defaults, inert values, advanced styles, and occupied
       slot diagnostics.
 - [ ] Complete focused, broad, full, static, formatting, build, and diff
       validation.
@@ -148,7 +148,10 @@ CSS, scenario inputs, or evidence acceptance changes.
 - Reopened base: `0294b4ad`.
 - Research and planning refinement: the activation checkpoint containing this
   job record and its linked research and parent-plan updates.
-- Shared ghost interaction: the reviewed documentation checkpoint defining
+- Shared ghost interaction: `d6946f63`, implementing optional initial values,
+  isolated Markdown PDF completion contexts, fresh static ghosts, revision
+  fragment completion, simple fallback, cycle reset, and cancellation cleanup.
+- Shared ghost interaction contract: the reviewed documentation checkpoint defining
   completion contexts, advanced and simple behavior, revision defaults,
   runtime-context plumbing, and focused validation ownership.
 - Implementation inventory: shared prompt changes are isolated to the inline
@@ -163,6 +166,17 @@ CSS, scenario inputs, or evidence acceptance changes.
   advanced-key behavior, simple fallback, cycle reset, and cancellation cleanup
   passed 28 focused tests with 85 assertions plus TypeScript, scoped lint and
   formatting, and diff integrity.
+- Guided Profile implementation: the formal-guide prompt and collection path
+  now offers label presets and validated custom labels, uses one six-position
+  repeating-content layout, visibly reserves an enabled page-number position,
+  exposes all six positions when numbering is disabled, preserves styles and
+  occupied reserved content during revision, and replaces user-facing page
+  chrome wording without changing stored Profile keys.
+- Focused implementation evidence: 269 tests passed with 1,434 assertions
+  across shared ghost behavior, formal-guide prompts and collection,
+  deterministic save/reload and lifecycle paths, review formatting, and Codex
+  boundary regressions. TypeScript, scoped lint and formatting, and diff
+  integrity also passed.
 - Saved Profile coverage remains persistence verification. Interactive does not
   load an arbitrary persisted Profile into `formal-guide` revision, and this
   phase adds no such entry point.

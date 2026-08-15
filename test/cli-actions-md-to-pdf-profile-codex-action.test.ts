@@ -193,14 +193,14 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(profile.profile).toMatchObject({ basedOn: "default", source: "codex" });
       expect(stdout.text).toContain(
         [
-          "Reusable Profile page numbers:",
+          "Reusable Profile page numbering:",
           "- Enabled: yes",
           "- Scope: body",
           "- Count from: body",
           "- Start: 0",
           "- Increment: 2",
           "- Position: top-right",
-          '- Format: "Page {page} of {pages}"',
+          '- Label: "Page {page} of {pages}"',
         ].join("\n"),
       );
       expect(stdout.text).toContain(
@@ -244,7 +244,7 @@ describe("cli action modules: md pdf-profile codex", () => {
 
       expect(stdout.text).not.toContain(escape);
       expect(stdout.text).not.toContain(bell);
-      expect(stdout.text).toContain('Format: "Page \\u001b]8;;https://example.invalid\\u0007link');
+      expect(stdout.text).toContain('Label: "Page \\u001b]8;;https://example.invalid\\u0007link');
     });
   });
 
@@ -313,7 +313,7 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect((profile.pageNumbers as Record<string, unknown>).style).toBeUndefined();
       expect(stdout.text).toContain(
         [
-          "Reusable Profile page chrome:",
+          "Reusable Profile repeating page content:",
           '- Header: left="Base header", center="", right=""',
           "- Header style: fontSize=8.5pt, fontWeight=default, lineHeight=default, color=default",
           "- Header separator: width=default, style=default, color=default, gap=0",
@@ -974,14 +974,14 @@ describe("cli action modules: md pdf-profile codex", () => {
 
       expect(stdout.text).toContain(
         [
-          "Reusable Profile page numbers:",
+          "Reusable Profile page numbering:",
           "- Enabled: yes",
           "- Scope: body",
           "- Count from: body",
           "- Start: 0",
           "- Increment: 2",
           "- Position: top-right",
-          '- Format: "Page {page} of {pages}"',
+          '- Label: "Page {page} of {pages}"',
         ].join("\n"),
       );
       expect(stdout.text).toContain(
@@ -1403,16 +1403,7 @@ describe("cli action modules: md pdf-profile codex", () => {
       expect(codexCalls).toBe(0);
       expect(stdout.text).toContain("Signal mode: base-only-deterministic");
       expect(stdout.text).toContain(
-        [
-          "Reusable Profile page numbers:",
-          "- Enabled: no",
-          "- Scope: body",
-          "- Count from: body",
-          "- Start: 0",
-          "- Increment: 3",
-          "- Position: top-left",
-          '- Format: "Page {page} of {pages}"',
-        ].join("\n"),
+        ["Reusable Profile page numbering:", "- Enabled: no"].join("\n"),
       );
       expect(stdout.text).not.toContain("Advisory renderer capability requirements:");
       expect(stdout.text).not.toMatch(

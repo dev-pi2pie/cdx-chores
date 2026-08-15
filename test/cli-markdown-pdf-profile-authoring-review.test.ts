@@ -63,9 +63,33 @@ describe("Markdown PDF shared Profile authoring review", () => {
 
     expect(formatted).not.toContain(escape);
     expect(formatted).not.toContain(bell);
-    expect(formatted).toContain('Format: "Page \\u001b]8;;https://example.invalid\\u0007');
+    expect(formatted).toContain('Label: "Page \\u001b]8;;https://example.invalid\\u0007');
     expect(formatted).toContain('left="\\u001b[31mred\\u001b[0m"');
     expect(formatted).toContain('center="\\u001b]0;title\\u0007"');
+  });
+
+  test("summarizes disabled page numbering without presenting inert sequence details", () => {
+    const lines = formatMarkdownPdfProfileAuthoringReview(
+      collectMarkdownPdfProfileAuthoringReview({
+        pageNumbers: {
+          enabled: false,
+          scope: "document",
+          countFrom: "document",
+          start: 7,
+          increment: 2,
+          position: "top-right",
+          format: "Page {page} of {pages}",
+        },
+      }),
+    );
+
+    expect(lines).toContain("Reusable Profile page numbering:");
+    expect(lines).toContain("- Enabled: no");
+    expect(lines).toContain("Reusable Profile repeating page content:");
+    expect(lines).not.toContain("- Scope: document");
+    expect(lines).not.toContain("- Start: 7");
+    expect(lines).not.toContain("- Position: top-right");
+    expect(lines).not.toContain('- Label: "Page {page} of {pages}"');
   });
 
   test("aggregates every capability in matrix order across header and footer", () => {

@@ -998,7 +998,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
       }),
     ]);
     expect(result.stderr).toContain("Unable to save recipe: Output already exists");
-    expect(result.stderr.match(/Reusable Profile page numbers:/g)).toHaveLength(2);
+    expect(result.stderr.match(/Reusable Profile page numbering:/g)).toHaveLength(2);
     expect(result.stderr).toContain("- Start: 0");
     expect(result.stderr).toContain("- Increment: 2");
     expect(result.stderr).toContain("- capabilityId: pageNumbers.countFrom.body");
@@ -1034,7 +1034,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
     expect(result.stderr).not.toContain(escape);
     expect(result.stderr).not.toContain(bell);
     expect(result.stderr).toContain(
-      'Format: "Page \\u001b]8;;https://example.invalid\\u0007link {page}"',
+      'Label: "Page \\u001b]8;;https://example.invalid\\u0007link {page}"',
     );
     expect(result.stderr).toContain('left="\\u001b[31mred\\u001b[0m"');
     expect(result.stderr).toContain('center="\\u001b]0;title\\u0007"');

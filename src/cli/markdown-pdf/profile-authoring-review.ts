@@ -83,16 +83,20 @@ export function formatMarkdownPdfProfileAuthoringReview(
 ): string[] {
   const pageNumbers = review.normalizedProfile.pageNumbers;
   const lines = [
-    "Reusable Profile page numbers:",
+    "Reusable Profile page numbering:",
     `- Enabled: ${pageNumbers.enabled ? "yes" : "no"}`,
-    `- Scope: ${pageNumbers.scope}`,
-    `- Count from: ${pageNumbers.countFrom}`,
-    `- Start: ${pageNumbers.start}`,
-    `- Increment: ${pageNumbers.increment}`,
-    `- Position: ${pageNumbers.position}`,
-    `- Format: ${JSON.stringify(pageNumbers.format)}`,
+    ...(pageNumbers.enabled
+      ? [
+          `- Scope: ${pageNumbers.scope}`,
+          `- Count from: ${pageNumbers.countFrom}`,
+          `- Start: ${pageNumbers.start}`,
+          `- Increment: ${pageNumbers.increment}`,
+          `- Position: ${pageNumbers.position}`,
+          `- Label: ${JSON.stringify(pageNumbers.format)}`,
+        ]
+      : []),
     "",
-    "Reusable Profile page chrome:",
+    "Reusable Profile repeating page content:",
     ...formatPageChromeArea("Header", review.normalizedProfile.header),
     ...formatPageChromeArea("Footer", review.normalizedProfile.footer),
   ];

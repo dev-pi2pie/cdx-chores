@@ -1444,23 +1444,23 @@ Tasks:
       as `in-progress`, preserve the first checkpoint evidence, and activate a
       separate [reopened Phase 14 job record][reopened-phase-14-job] from the
       clean `0294b4ad` boundary.
-- [ ] Replace user-facing `page chrome` wording with `repeating page content`,
+- [x] Replace user-facing `page chrome` wording with `repeating page content`,
       `header/footer position`, and `revise repeating page content` while
       retaining internal Profile and TypeScript names where they remain useful.
-- [ ] Present one six-position header/footer layout. When page numbering is
+- [x] Present one six-position header/footer layout. When page numbering is
       enabled, reserve its selected position and offer the other five for
       repeating content; when disabled, offer all six positions. Use a
       single-choice page-number position followed by a checkbox selection for
       repeating content. Preserve an occupied reserved position by default and
       expose a deliberate conflict-clear action during revision.
-- [ ] Add `Page 1` (recommended), `1` (compact), and `Custom...` page-number
+- [x] Add `Page 1` (recommended), `1` (compact), and `Custom...` page-number
       label routes compiling to `Page {page}`, `{page}`, and validated custom
       `pageNumbers.format` input.
-- [ ] Extend the shared inline ghost prompt with an optional editable initial
+- [x] Extend the shared inline ghost prompt with an optional editable initial
       value in advanced and simple modes. Thread the existing Interactive path
       prompt context through fresh `formal-guide` preparation and revision
       rather than creating another runtime-config source.
-- [ ] Add separate Markdown PDF page-label and repeating-content completion
+- [x] Add separate Markdown PDF page-label and repeating-content completion
       contexts to the shared ghost interaction. Preserve rename-template
       semantics: Tab or Right arrow accepts the visible suggestion, Up and Down
       cycle fragment candidates, typing updates the ghost, and Enter validates
@@ -1469,28 +1469,28 @@ Tasks:
       page-label or slot-aware suggestion for fresh input; during revision, use
       the stored input default and relevant token help without presenting the
       fresh suggestion as an alternate default.
-- [ ] Teach `{page}` as the logical number and `{pages}` as the physical PDF
+- [x] Teach `{page}` as the logical number and `{pages}` as the physical PDF
       total without persisting a ghost suggestion automatically or adding a
       new logical-total token. Keep existing metadata placeholders compatible
       in revised custom labels without promoting them as additional common
       page-number concepts.
-- [ ] Replace the `Header`, `Footer`, or `Both` gate with direct selection of
+- [x] Replace the `Header`, `Footer`, or `Both` gate with direct selection of
       available repeating-content positions. Provide slot-aware ghost examples
       such as `{title}`, `{company}`, `{author}`, and `{date}`, and explain that
       values may come from CLI metadata, Markdown frontmatter, or Profile
       metadata. Require deliberate acceptance or entry for selected positions;
       never serialize an unaccepted ghost.
-- [ ] Preserve same-session inert page-number values, revision initial values,
+- [x] Preserve same-session inert page-number values, revision initial values,
       advanced header/footer styles, and occupied-slot collision diagnostics.
       Ordinary disabled review should not present inactive sequence details as
       effective output. On guided enablement or re-enablement, compile
       `start: 1` and `increment: 1`, default representable outcome, label, and
       position choices from retained values, and deliberately replace advanced
       sequence combinations the guided flow cannot represent.
-- [ ] Keep direct and Interactive render-time overrides, Project and Template
+- [x] Keep direct and Interactive render-time overrides, Project and Template
       ownership, the Profile schema, normalization, renderer behavior, and
       Codex Assistant signal contracts unchanged.
-- [ ] Add focused shared-helper and completion-candidate regressions covering
+- [x] Add focused shared-helper and completion-candidate regressions covering
       initial values, static acceptance, fragment cycling, actual-value
       validation, simple fallback, and unchanged cancellation. Add
       formal-guide enabled/disabled branch, label, slot ownership, revision,

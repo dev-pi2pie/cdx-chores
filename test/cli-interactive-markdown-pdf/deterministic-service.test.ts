@@ -235,13 +235,27 @@ describe("interactive Markdown PDF deterministic service", () => {
           },
           pageNumbersEnabled: () => true,
           pageNumberOutcome: () => outcome,
-          pageNumberPosition: () => "top-right",
-          pageChromeSelection: () => "header",
-          pageChromeArea: ({ area, current, slots }) => {
-            expect(area).toBe("header");
+          pageNumberLabel: ({ current }) => {
             expect(current).toBeUndefined();
-            expect(slots).toEqual(["left", "center"]);
-            return { left: "Report", center: "{title}", right: "" };
+            return outcome === "body" ? "Page {page}" : "Page {page} for {company}";
+          },
+          pageNumberPosition: () => "top-right",
+          repeatingContentEnabled: ({ current }) => {
+            expect(current).toBeUndefined();
+            return true;
+          },
+          repeatingContentPositions: ({ available, current, reserved }) => {
+            expect(current).toBeUndefined();
+            expect(reserved).toBe("top-right");
+            expect(available).not.toContain("top-right");
+            return ["top-left", "top-center"];
+          },
+          repeatingContent: ({ current, position }) => {
+            expect(current).toBeUndefined();
+            return position === "top-left" ? "Report" : "{title}";
+          },
+          clearOccupiedPageNumberPosition: () => {
+            throw new Error("Fresh page-number position must not require conflict clearing");
           },
         });
         const candidate = prepareMarkdownPdfDeterministicRecipe({
@@ -265,7 +279,7 @@ describe("interactive Markdown PDF deterministic service", () => {
           start: 1,
           increment: 1,
           position: "top-right",
-          format: "{page}",
+          format: outcome === "body" ? "Page {page}" : "Page {page} for {company}",
         } as const;
         const expectedHeader = {
           left: "Report",
@@ -318,9 +332,9 @@ describe("interactive Markdown PDF deterministic service", () => {
       });
 
       renderDeterministicRecipeReview(runtime, candidate);
-      expect(stderr.text).toContain("Reusable Profile page numbers:");
+      expect(stderr.text).toContain("Reusable Profile page numbering:");
       expect(stderr.text).toContain("- Enabled: no");
-      expect(stderr.text).toContain("- Start: 0");
+      expect(stderr.text).not.toContain("- Start: 0");
 
       const bound = await bindMarkdownPdfDeterministicRecipeDestination(runtime, candidate, {
         output: "disabled.yml",
@@ -331,6 +345,84 @@ describe("interactive Markdown PDF deterministic service", () => {
       expect(reloaded.pageNumbers.enabled).toBe(false);
       expect(reloaded.pageNumbers.start).toBe(0);
     });
+  });
+
+  test("offers all repeating-content positions when page numbering is disabled and reloads them", async () => {
+    await withTempFixtureDir(
+      "md-pdf-interactive-disabled-repeating-content",
+      async (fixtureDir) => {
+        const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+        const answers = await collectMarkdownPdfProfileFormalGuideAnswers({
+          layout: () => ({
+            preset: "article",
+            pageSize: "A4",
+            orientation: { mode: "preset-default" },
+          }),
+          margins: () => ({ mode: "preset-default" }),
+          tocEnabled: () => false,
+          tocDetails: () => {
+            throw new Error("ToC details must not be prompted");
+          },
+          codeHighlight: () => false,
+          codeTheme: () => {
+            throw new Error("Code theme must not be prompted");
+          },
+          codeLineNumbers: () => {
+            throw new Error("Code line numbers must not be prompted");
+          },
+          codeTransformerNotation: () => {
+            throw new Error("Transformer notation must not be prompted");
+          },
+          pageNumbersEnabled: () => false,
+          pageNumberOutcome: () => {
+            throw new Error("Page-number outcome must not be prompted");
+          },
+          pageNumberLabel: () => {
+            throw new Error("Page-number label must not be prompted");
+          },
+          pageNumberPosition: () => {
+            throw new Error("Page-number position must not be prompted");
+          },
+          repeatingContentEnabled: () => true,
+          repeatingContentPositions: ({ available, reserved }) => {
+            expect(available).toEqual([
+              "top-left",
+              "top-center",
+              "top-right",
+              "bottom-left",
+              "bottom-center",
+              "bottom-right",
+            ]);
+            expect(reserved).toBeUndefined();
+            return ["top-left", "bottom-center"];
+          },
+          repeatingContent: ({ position }) =>
+            position === "top-left" ? "{company}" : "Page-free footer",
+          clearOccupiedPageNumberPosition: () => {
+            throw new Error("Disabled page numbering must not require conflict clearing");
+          },
+        });
+        const candidate = prepareMarkdownPdfDeterministicRecipe({
+          artifact: "profile",
+          preparation: "formal-guide",
+          formalGuideAnswers: answers,
+          options: compileMarkdownPdfFormalGuideOptions(answers),
+        });
+        const bound = await bindMarkdownPdfDeterministicRecipeDestination(runtime, candidate, {
+          output: "disabled-repeating-content.yml",
+        });
+
+        await writeBoundMarkdownPdfDeterministicRecipe(bound);
+
+        const persisted = await readMarkdownPdfProfileFile(
+          join(fixtureDir, "disabled-repeating-content.yml"),
+        );
+        const reloaded = normalizeMarkdownPdfProfile({ profile: persisted }).profile;
+        expect(reloaded.pageNumbers.enabled).toBe(false);
+        expect(reloaded.header.left).toBe("{company}");
+        expect(reloaded.footer.center).toBe("Page-free footer");
+      },
+    );
   });
 
   test("revises page numbers and chrome before exact bind, write, and reload", async () => {
@@ -367,21 +459,37 @@ describe("interactive Markdown PDF deterministic service", () => {
       const revisedNumbers = await reviseMarkdownPdfFormalGuidePageNumbers(initial, {
         pageNumbersEnabled: () => true,
         pageNumberOutcome: () => "body",
+        pageNumberLabel: ({
+          current,
+        }: Parameters<MarkdownPdfFormalGuidePrompts["pageNumberLabel"]>[0]) => {
+          expect(current).toBe("{page}");
+          return "Page {page}";
+        },
         pageNumberPosition: () => "top-right",
       } as unknown as MarkdownPdfFormalGuidePrompts);
       const revised = await reviseMarkdownPdfFormalGuidePageChrome(revisedNumbers, {
-        pageChromeSelection: () => "both",
-        pageChromeArea: ({
-          area,
-          slots,
-        }: Parameters<MarkdownPdfFormalGuidePrompts["pageChromeArea"]>[0]) =>
-          area === "header"
-            ? {
-                left: "{company}",
-                center: "",
-                right: slots.includes("right") ? "{title}" : "",
-              }
-            : { left: "{author}", center: "", right: "{date}" },
+        repeatingContentEnabled: () => true,
+        repeatingContentPositions: ({
+          available,
+          reserved,
+        }: Parameters<MarkdownPdfFormalGuidePrompts["repeatingContentPositions"]>[0]) => {
+          expect(available).not.toContain("top-right");
+          expect(reserved).toBe("top-right");
+          return ["top-left", "bottom-left", "bottom-right"];
+        },
+        repeatingContent: ({
+          current,
+          position,
+        }: Parameters<MarkdownPdfFormalGuidePrompts["repeatingContent"]>[0]) => {
+          expect(current).toBe(position === "bottom-left" ? undefined : "Old");
+          if (position === "top-left") {
+            return "{company}";
+          }
+          return position === "bottom-left" ? "{author}" : "{date}";
+        },
+        clearOccupiedPageNumberPosition: () => {
+          throw new Error("The revised page-number position is not occupied");
+        },
       } as unknown as MarkdownPdfFormalGuidePrompts);
       const candidate = prepareMarkdownPdfDeterministicRecipe({
         artifact: "profile",

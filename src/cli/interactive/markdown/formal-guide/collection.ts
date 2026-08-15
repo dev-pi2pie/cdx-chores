@@ -1,6 +1,8 @@
 import {
   DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
+  MARKDOWN_PDF_PAGE_CHROME_POSITIONS,
   resolveMarkdownPdfPageNumberSlot,
+  type MarkdownPdfPageChromePosition,
 } from "../../../markdown-pdf/profile";
 import {
   compileMarkdownPdfFormalGuidePageChrome,
@@ -13,8 +15,6 @@ import type {
   MarkdownPdfFormalGuideMarginAnswers,
   MarkdownPdfFormalGuidePageChromeAnswers,
   MarkdownPdfFormalGuidePageChromeAreaAnswers,
-  MarkdownPdfFormalGuidePageChromeSelection,
-  MarkdownPdfFormalGuidePageChromeSlot,
   MarkdownPdfFormalGuidePageNumberAnswers,
   MarkdownPdfFormalGuidePrompts,
   MarkdownPdfProfileFormalGuideAnswers,
@@ -73,53 +73,34 @@ async function collectPageNumbers(
     return answers;
   }
 
-  const outcome = await prompts.pageNumberOutcome({ current: retained.scope });
+  const currentOutcome = retained.scope === retained.countFrom ? retained.scope : undefined;
+  const outcome = await prompts.pageNumberOutcome({ current: currentOutcome });
   const answers: MarkdownPdfFormalGuidePageNumberAnswers = {
     enabled: true,
     scope: outcome,
     countFrom: outcome,
     start: 1,
     increment: 1,
+    format: await prompts.pageNumberLabel({ current: current?.format }),
     position: await prompts.pageNumberPosition({ current: retained.position }),
-    format: "{page}",
   };
   compileMarkdownPdfFormalGuidePageNumbers(answers);
   return answers;
 }
 
-const PAGE_CHROME_SLOTS = ["left", "center", "right"] as const;
-
 function pageChromeAreaHasContent(
   area: Readonly<MarkdownPdfFormalGuidePageChromeAreaAnswers>,
 ): boolean {
-  return PAGE_CHROME_SLOTS.some((slot) => area[slot].trim().length > 0);
+  return (["left", "center", "right"] as const).some((slot) => area[slot].trim().length > 0);
 }
 
-function pageChromeSelectionFrom(
+function pageChromeHasContent(
   current: Readonly<MarkdownPdfFormalGuidePageChromeAnswers> | undefined,
-): MarkdownPdfFormalGuidePageChromeSelection | undefined {
-  if (!current) {
-    return undefined;
-  }
-  const header = pageChromeAreaHasContent(current.header);
-  const footer = pageChromeAreaHasContent(current.footer);
-  if (header && footer) {
-    return "both";
-  }
-  if (header) {
-    return "header";
-  }
-  if (footer) {
-    return "footer";
-  }
-  return "none";
-}
-
-function pageChromeSelectionIncludes(
-  selection: MarkdownPdfFormalGuidePageChromeSelection,
-  area: "header" | "footer",
 ): boolean {
-  return selection === "both" || selection === area;
+  return Boolean(
+    current &&
+    (pageChromeAreaHasContent(current.header) || pageChromeAreaHasContent(current.footer)),
+  );
 }
 
 function clearedPageChromeArea(
@@ -133,45 +114,31 @@ function clearedPageChromeArea(
   };
 }
 
-function pageChromeSlotsToPrompt(input: {
-  area: "header" | "footer";
-  current: Readonly<MarkdownPdfFormalGuidePageChromeAreaAnswers> | undefined;
-  pageNumbers: Readonly<MarkdownPdfFormalGuidePageNumberAnswers>;
-}): readonly MarkdownPdfFormalGuidePageChromeSlot[] {
-  if (!input.pageNumbers.enabled) {
-    return PAGE_CHROME_SLOTS;
+function pageChromeContentAt(
+  current: Readonly<MarkdownPdfFormalGuidePageChromeAnswers> | undefined,
+  position: MarkdownPdfPageChromePosition,
+): string {
+  if (!current) {
+    return "";
   }
-
-  const target = resolveMarkdownPdfPageNumberSlot(input.pageNumbers.position);
-  if (target.area !== input.area || input.current?.[target.slot].trim()) {
-    return PAGE_CHROME_SLOTS;
-  }
-  return PAGE_CHROME_SLOTS.filter((slot) => slot !== target.slot);
+  const target = resolveMarkdownPdfPageNumberSlot(position);
+  return current[target.area][target.slot];
 }
 
-async function collectPageChromeArea(input: {
-  area: "header" | "footer";
-  current: Readonly<MarkdownPdfFormalGuidePageChromeAreaAnswers> | undefined;
-  pageNumbers: Readonly<MarkdownPdfFormalGuidePageNumberAnswers>;
-  prompts: MarkdownPdfFormalGuidePrompts;
-}): Promise<MarkdownPdfFormalGuidePageChromeAreaAnswers> {
-  const slots = pageChromeSlotsToPrompt(input);
-  const prompted = await input.prompts.pageChromeArea({
-    area: input.area,
-    current: input.current,
-    slots,
-  });
-  const promptedSlots = new Set(slots);
-  return {
-    left: promptedSlots.has("left") ? prompted.left : (input.current?.left ?? ""),
-    center: promptedSlots.has("center") ? prompted.center : (input.current?.center ?? ""),
-    right: promptedSlots.has("right") ? prompted.right : (input.current?.right ?? ""),
-    ...(input.current?.style
-      ? { style: input.current.style }
-      : prompted.style
-        ? { style: prompted.style }
-        : {}),
-  };
+function setPageChromeContent(
+  answers: MarkdownPdfFormalGuidePageChromeAnswers,
+  position: MarkdownPdfPageChromePosition,
+  value: string,
+): void {
+  const target = resolveMarkdownPdfPageNumberSlot(position);
+  answers[target.area][target.slot] = value;
+}
+
+function selectedPageChromePositions(
+  current: Readonly<MarkdownPdfFormalGuidePageChromeAnswers> | undefined,
+  available: readonly MarkdownPdfPageChromePosition[],
+): MarkdownPdfPageChromePosition[] {
+  return available.filter((position) => pageChromeContentAt(current, position).trim());
 }
 
 async function collectPageChrome(
@@ -179,27 +146,50 @@ async function collectPageChrome(
   pageNumbers: Readonly<MarkdownPdfFormalGuidePageNumberAnswers>,
   current?: Readonly<MarkdownPdfFormalGuidePageChromeAnswers>,
 ): Promise<MarkdownPdfFormalGuidePageChromeAnswers> {
-  const selection = await prompts.pageChromeSelection({
-    current: pageChromeSelectionFrom(current),
+  const enabled = await prompts.repeatingContentEnabled({
+    current: current ? pageChromeHasContent(current) : undefined,
   });
+  const reservedPosition = pageNumbers.enabled ? pageNumbers.position : undefined;
+  const reservedContent = reservedPosition ? pageChromeContentAt(current, reservedPosition) : "";
+  const clearReserved =
+    reservedPosition && reservedContent.trim()
+      ? await prompts.clearOccupiedPageNumberPosition({
+          current: reservedContent,
+          position: reservedPosition,
+        })
+      : false;
+  const available = MARKDOWN_PDF_PAGE_CHROME_POSITIONS.filter(
+    (position) => position !== reservedPosition,
+  );
   const answers: MarkdownPdfFormalGuidePageChromeAnswers = {
-    header: pageChromeSelectionIncludes(selection, "header")
-      ? await collectPageChromeArea({
-          area: "header",
-          current: current?.header,
-          pageNumbers,
-          prompts,
-        })
-      : clearedPageChromeArea(current?.header),
-    footer: pageChromeSelectionIncludes(selection, "footer")
-      ? await collectPageChromeArea({
-          area: "footer",
-          current: current?.footer,
-          pageNumbers,
-          prompts,
-        })
-      : clearedPageChromeArea(current?.footer),
+    header: clearedPageChromeArea(current?.header),
+    footer: clearedPageChromeArea(current?.footer),
   };
+  if (reservedPosition && reservedContent && !clearReserved) {
+    setPageChromeContent(answers, reservedPosition, reservedContent);
+  }
+  if (enabled) {
+    const positions = await prompts.repeatingContentPositions({
+      available,
+      current: current ? selectedPageChromePositions(current, available) : undefined,
+      ...(reservedPosition ? { reserved: reservedPosition } : {}),
+    });
+    const availablePositions = new Set(available);
+    for (const position of positions) {
+      if (!availablePositions.has(position)) {
+        throw new Error(`Repeating-content position is not available: ${position}`);
+      }
+      const currentContent = pageChromeContentAt(current, position);
+      setPageChromeContent(
+        answers,
+        position,
+        await prompts.repeatingContent({
+          position,
+          ...(currentContent ? { current: currentContent } : {}),
+        }),
+      );
+    }
+  }
   compileMarkdownPdfFormalGuidePageChrome(answers);
   return answers;
 }

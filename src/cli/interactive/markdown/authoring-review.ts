@@ -131,7 +131,7 @@ export function markdownPdfCandidateReviewChoices(
     candidate.preparation === "formal-guide" && candidate.artifact === "profile"
       ? ([
           { name: "Revise page numbers", value: "revise-page-numbers" },
-          { name: "Revise page chrome", value: "revise-page-chrome" },
+          { name: "Revise repeating page content", value: "revise-page-chrome" },
         ] as const)
       : [];
   return [
