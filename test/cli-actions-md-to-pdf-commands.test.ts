@@ -798,7 +798,9 @@ describe("cli command: md pdf-project codex", () => {
         expect(result.stdout).toContain("Codex report:");
         expect(result.stdout).toContain(toRepoRelativePath(reportPath));
         expect(result.stdout).not.toContain(fixtureDir);
-        expect(result.stderr).toContain("profile-owned text cover");
+        expect(result.stderr).toContain(
+          "requires exactly one live .pdf-cover element when the Profile cover is enabled",
+        );
         expect(await pathExists(join(outputPath, "profile.yml"))).toBe(false);
         expect(await pathExists(join(outputPath, "template.html"))).toBe(false);
         expect(await pathExists(join(outputPath, "style.css"))).toBe(false);
@@ -815,7 +817,7 @@ describe("cli command: md pdf-project codex", () => {
         expect(report.project).toMatchObject({
           decisionMode: "no-usable-project",
           fallbackReason:
-            "Project template would defeat the profile-owned text cover; disable the profile cover or provide a compatible cover template.",
+            "The selected managed Markdown PDF template requires exactly one live .pdf-cover element when the Profile cover is enabled (found 0).",
         });
         expect(report.input.baseProfile.basename).toBe("base.yml");
         expect(report.files.map((file) => file.role)).toEqual(["project-report"]);
