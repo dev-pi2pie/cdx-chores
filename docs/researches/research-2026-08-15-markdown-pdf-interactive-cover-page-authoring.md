@@ -278,9 +278,11 @@ The cover question therefore belongs before ToC, while page-number and
 repeating-content questions remain later. The resulting document roles are
 known before the user chooses body or document numbering.
 
-## Implemented Phase 14.6 Scope
+## Implemented Cover-Page Authoring Contract
 
-Phase 14.6:
+Phase 14.6 of the
+[Markdown PDF Page-Number Configuration Implementation][page-number-plan]
+implemented the following:
 
 1. froze the disabled-cover Formal Guide output and built-in cover rendering
    before production changes
