@@ -868,6 +868,17 @@ documentation review, and lifecycle closure. Its evidence belongs in the
 this parent research remains `in-progress`; the cross-feature language research
 remains `draft`, and no archive move occurs.
 
+## Implementation Records
+
+The later implementation and refinement evidence is recorded without repeating
+its validation ledgers here:
+
+- [Phase 13 Contract Normalization][phase-13-job]
+- [Phase 14 Reopened Interactive UX][phase-14-job]
+- [Phase 14.5 Page Roles And Counters][phase-14-5-job]
+- [Phase 14.6 Interactive Cover Page Authoring][phase-14-6-job]
+- [Phase 15 Guidance Closeout][phase-15-job]
+
 ## Interactive UX Follow-Up
 
 The durable page-number contract is intentionally more expressive than the
@@ -927,6 +938,10 @@ to a future canary design.
 [markdown-pdf-usage]: ../guides/markdown-pdf-usage.md
 [interactive-page-number-ux]: research-2026-08-14-markdown-pdf-interactive-page-number-and-page-chrome-ux.md
 [page-number-plan]: ../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md
+[phase-13-job]: ../plans/jobs/2026-08-14-markdown-pdf-phase-13-contract-normalization.md
+[phase-14-job]: ../plans/jobs/2026-08-15-markdown-pdf-page-number-phase-14-reopened-interactive-ux.md
+[phase-14-5-job]: ../plans/jobs/2026-08-15-markdown-pdf-page-number-phase-14-5-page-roles-and-counters.md
+[phase-14-6-job]: ../plans/jobs/2026-08-15-markdown-pdf-page-number-phase-14-6-interactive-cover-page-authoring.md
 [phase-15-job]: ../plans/jobs/2026-08-15-markdown-pdf-page-number-phase-15-guidance-closeout.md
 [page-role-counter-research]: research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md
 [pattern-language-research]: research-2026-08-11-pattern-placeholder-and-template-language-guide.md
