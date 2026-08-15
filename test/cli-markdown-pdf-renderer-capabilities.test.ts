@@ -16,6 +16,10 @@ import {
   MARKDOWN_PDF_RENDERER_CAPABILITY_IDS,
   MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX,
 } from "../src/cli/markdown-pdf";
+import {
+  markdownPdfProfileRendererCapabilities,
+  markdownPdfProfileRendererCapabilityFields,
+} from "../src/cli/markdown-pdf/profile";
 import type {
   MarkdownPdfProcessRunner,
   MarkdownPdfRendererCapabilityId,
@@ -125,7 +129,7 @@ const CAPABILITY_FIELD_CASES = MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX.flatMap((
 
 describe("Markdown PDF renderer capability matrix", () => {
   test("records every advanced field against the 65.1 evidence baseline", () => {
-    expect(MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX).toHaveLength(12);
+    expect(MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX).toHaveLength(15);
     expect(
       MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX.map(({ id, minimumVersion }) => [id, minimumVersion]),
     ).toEqual([
@@ -133,6 +137,9 @@ describe("Markdown PDF renderer capability matrix", () => {
       [MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberIncrement, "65.1"],
       [MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberDocumentScope, "65.1"],
       [MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberBodyOrigin, "65.1"],
+      [MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberLogicalFinal, "65.1"],
+      [MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberPhysicalCurrent, "65.1"],
+      [MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberPhysicalTotal, "65.1"],
       [MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeFontSize, "65.1"],
       [MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeFontWeight, "65.1"],
       [MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeLineHeight, "65.1"],
@@ -148,6 +155,9 @@ describe("Markdown PDF renderer capability matrix", () => {
         ...(definition.rendererCapability ? [definition.rendererCapability] : []),
         ...(definition.values?.flatMap((value) =>
           value.rendererCapability ? [value.rendererCapability] : [],
+        ) ?? []),
+        ...(definition.tokens?.flatMap((token) =>
+          token.rendererCapability ? [token.rendererCapability] : [],
         ) ?? []),
       ]),
     );
@@ -238,6 +248,69 @@ describe("Markdown PDF renderer capability matrix", () => {
       capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberDocumentScope,
       requestedBy: ["pageNumbers.scope"],
     });
+  });
+
+  test("collects token capabilities only from an enabled effective format", () => {
+    const profile = profileWithAdvancedControls();
+    const pageNumbers = {
+      ...profile.pageNumbers,
+      format: "{page}/{pages} ({pdfPage}/{pdfPages}) {pages} {Page} {pdfPagesx}",
+    };
+    const requests = collectMarkdownPdfRendererCapabilityRequests({ profile, pageNumbers });
+    expect(
+      requests.filter(({ requestedBy }) => requestedBy.includes("pageNumbers.format")),
+    ).toEqual([
+      {
+        capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberLogicalFinal,
+        requestedBy: ["pageNumbers.format"],
+      },
+      {
+        capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberPhysicalCurrent,
+        requestedBy: ["pageNumbers.format"],
+      },
+      {
+        capabilityId: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberPhysicalTotal,
+        requestedBy: ["pageNumbers.format"],
+      },
+    ]);
+
+    expect(
+      collectMarkdownPdfRendererCapabilityRequests({
+        profile,
+        pageNumbers: { ...pageNumbers, enabled: false },
+      }).some(({ requestedBy }) => requestedBy.includes("pageNumbers.format")),
+    ).toBe(false);
+    expect(
+      collectMarkdownPdfRendererCapabilityRequests({
+        profile,
+        pageNumbers: { ...pageNumbers, format: "{page} {Page} {pdfPagesx}" },
+      }).some(({ requestedBy }) => requestedBy.includes("pageNumbers.format")),
+    ).toBe(false);
+  });
+
+  test.each([
+    ["{page}", []],
+    ["{pages}", [MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberLogicalFinal]],
+    ["{pdfPage}", [MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberPhysicalCurrent]],
+    ["{pdfPages}", [MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberPhysicalTotal]],
+    ["{Page}", []],
+    ["{pagesx}", []],
+    ["{pdfpage}", []],
+    ["{pdfPages.more}", []],
+  ] as const)("maps exact format token %s to its registered capability", (format, expected) => {
+    expect(markdownPdfProfileRendererCapabilities("pageNumbers.format", format)).toEqual(expected);
+  });
+
+  test("maps every format capability back to the shared Profile field", () => {
+    for (const capabilityId of [
+      MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberLogicalFinal,
+      MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberPhysicalCurrent,
+      MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberPhysicalTotal,
+    ]) {
+      expect(markdownPdfProfileRendererCapabilityFields(capabilityId)).toEqual([
+        "pageNumbers.format",
+      ]);
+    }
   });
 
   test("gates styles only for occupied areas or the enabled page-number target", () => {
@@ -444,6 +517,82 @@ describe("Markdown PDF renderer capability matrix", () => {
 });
 
 describe("Markdown PDF renderer capability gate", () => {
+  test.each([
+    ["pdfPage", MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberPhysicalCurrent],
+    ["pdfPages", MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberPhysicalTotal],
+  ] as const)(
+    "rejects a format-only {%s} capability on WeasyPrint 65.0 before outputs",
+    async (token, capabilityId) => {
+      await withTempFixtureDir(`md-pdf-capability-${token}-reject`, async (fixtureDir) => {
+        const inputPath = join(fixtureDir, "report.md");
+        const profilePath = join(fixtureDir, "profile.yml");
+        const outputPath = join(fixtureDir, "report.pdf");
+        const htmlOutputPath = join(fixtureDir, "report.html");
+        await writeFile(inputPath, "# Report\n", "utf8");
+        await writeFile(
+          profilePath,
+          `pageNumbers:\n  enabled: true\n  format: "{${token}}"\n`,
+          "utf8",
+        );
+        const { calls, runner } = runnerWithWeasyPrintVersion("65.0");
+        const { runtime, expectNoOutput } = createActionTestRuntime();
+
+        await expectCliError(
+          () =>
+            actionMdToPdf(runtime, {
+              input: toRepoRelativePath(inputPath),
+              profile: toRepoRelativePath(profilePath),
+              output: toRepoRelativePath(outputPath),
+              htmlOutput: toRepoRelativePath(htmlOutputPath),
+              runner,
+            }),
+          {
+            code: MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.rendererCapabilityUnsupported,
+            exitCode: 2,
+            messageIncludes: `${capabilityId} (pageNumbers.format; minimum 65.1)`,
+          },
+        );
+
+        expect(calls).toEqual([
+          { command: "pandoc", args: ["--version"] },
+          { command: "weasyprint", args: ["--info"] },
+        ]);
+        await expectMissing(outputPath);
+        await expectMissing(htmlOutputPath);
+        expectNoOutput();
+      });
+    },
+  );
+
+  test.each(["pdfPage", "pdfPages"] as const)(
+    "renders a format-only {%s} capability at the WeasyPrint 65.1 baseline",
+    async (token) => {
+      await withTempFixtureDir(`md-pdf-capability-${token}-accept`, async (fixtureDir) => {
+        const inputPath = join(fixtureDir, "report.md");
+        const profilePath = join(fixtureDir, "profile.yml");
+        const outputPath = join(fixtureDir, "report.pdf");
+        await writeFile(inputPath, "# Report\n", "utf8");
+        await writeFile(
+          profilePath,
+          `pageNumbers:\n  enabled: true\n  format: "{${token}}"\n`,
+          "utf8",
+        );
+        const { runner } = runnerWithWeasyPrintVersion("65.1");
+        const { runtime, expectNoStderr } = createActionTestRuntime();
+
+        await actionMdToPdf(runtime, {
+          input: toRepoRelativePath(inputPath),
+          profile: toRepoRelativePath(profilePath),
+          output: toRepoRelativePath(outputPath),
+          runner,
+        });
+
+        expect(await readFile(outputPath, "utf8")).toContain("%PDF");
+        expectNoStderr();
+      });
+    },
+  );
+
   test.each(["65.0", "custom-build"])(
     "keeps the basic render path on WeasyPrint %s when no advanced control is effective",
     async (version) => {

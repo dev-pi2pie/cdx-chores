@@ -55,6 +55,8 @@ describe("Markdown PDF Project Codex Template page-number CSS ownership", () => 
       "@page { --folio: counter(pages); @bottom-center { content: var(--folio); } }",
       "body { --folio: c\\6f unter(p\\61 ge); }",
       'main { marker: c\\6f unters(pages, "."); }',
+      "section { --folio: counter(cdx-markdown-pdf-logical-page); }",
+      "section { --folio: counter(CDX-MARKDOWN-PDF-LOGICAL-PAGE); }",
       "aside { --folio: counter(var(--folio)); }",
       "footer { marker: counters(calc(1 + 1), '.'); }",
     ]) {
@@ -71,6 +73,8 @@ describe("Markdown PDF Project Codex Template page-number CSS ownership", () => 
       "counter-\\73 et: page 5",
       "counter-reset: pages 0",
       "counter-increment: p\\61 ges 2",
+      "counter-set: cdx-markdown-pdf-logical-page 7",
+      "counter-reset: cdx-markdown-pdf-logical-p\\61 ge 0",
     ]) {
       expect(() =>
         validateMdPdfProjectCodexTemplatePageNumberCssOwnership(
@@ -84,6 +88,19 @@ describe("Markdown PDF Project Codex Template page-number CSS ownership", () => 
         "@page cover { counter-increment: page 1; margin: 0; }",
       ),
     ).toThrow("must not mutate Profile-owned page counters");
+  });
+
+  test("rejects target-counter functions before Template CSS can bypass Profile ownership", () => {
+    for (const css of [
+      "a::after { content: target-counter(attr(href), page); }",
+      'a::after { content: t\\61 rget-counter(url("#end"), cdx-markdown-pdf-logical-page); }',
+      'a::after { content: target-counters(attr(href), section, "."); }',
+      'a::after { --folio: target-counters(url("#end"), pages, "."); }',
+    ]) {
+      expect(() => validateMdPdfProjectCodexTemplatePageNumberCssOwnership(css)).toThrow(
+        "must not reference Profile-owned or indeterminate counters",
+      );
+    }
   });
 
   test("rejects page-counter mutation in every Template selector and nesting level", () => {

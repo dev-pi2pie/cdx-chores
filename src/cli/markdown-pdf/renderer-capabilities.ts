@@ -10,6 +10,7 @@ import type {
   NormalizedMarkdownPdfProfile,
 } from "./profile";
 import {
+  markdownPdfProfileRendererCapabilities,
   markdownPdfProfileRendererCapability,
   markdownPdfProfileRendererCapabilityFields,
 } from "./profile";
@@ -96,6 +97,25 @@ export const MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX: readonly MarkdownPdfRender
       fields: registryCapabilityFields(MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberBodyOrigin),
     },
     {
+      id: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberLogicalFinal,
+      minimumVersion: MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
+      fields: registryCapabilityFields(MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberLogicalFinal),
+    },
+    {
+      id: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberPhysicalCurrent,
+      minimumVersion: MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
+      fields: registryCapabilityFields(
+        MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberPhysicalCurrent,
+      ),
+    },
+    {
+      id: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberPhysicalTotal,
+      minimumVersion: MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
+      fields: registryCapabilityFields(
+        MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageNumberPhysicalTotal,
+      ),
+    },
+    {
       id: MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeFontSize,
       minimumVersion: MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
       fields: registryCapabilityFields(MARKDOWN_PDF_RENDERER_CAPABILITY_IDS.pageChromeFontSize),
@@ -176,6 +196,16 @@ function appendProfileFeatureRequest(
   }
 }
 
+function appendProfileFeatureRequests(
+  requests: Map<MarkdownPdfRendererCapabilityId, MarkdownPdfRendererCapabilityField[]>,
+  field: MarkdownPdfRendererCapabilityField,
+  value?: unknown,
+): void {
+  for (const capabilityId of markdownPdfProfileRendererCapabilities(field, value)) {
+    appendRequest(requests, capabilityId, field);
+  }
+}
+
 function collectAreaStyleRequests(input: {
   area: "header" | "footer";
   profile: NormalizedMarkdownPdfProfile;
@@ -210,6 +240,7 @@ export function collectMarkdownPdfRendererCapabilityRequests(input: {
   const requests = new Map<MarkdownPdfRendererCapabilityId, MarkdownPdfRendererCapabilityField[]>();
 
   if (input.pageNumbers.enabled) {
+    appendProfileFeatureRequests(requests, "pageNumbers.format", input.pageNumbers.format);
     if (input.pageNumbers.start !== 1) {
       appendProfileFeatureRequest(requests, "pageNumbers.start", input.pageNumbers.start);
     }

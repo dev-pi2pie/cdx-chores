@@ -124,12 +124,49 @@ describe("Markdown PDF Profile revision compatibility", () => {
       { header: { style: { fontSize: "8pt" } } },
       { header: { style: { separator: { width: "1pt" } } } },
       { footer: { style: { color: "#123456" } } },
+      { pageNumbers: { format: "{pdfPage}" } },
+      { pageNumbers: { format: "{pdfPages}" } },
     ];
 
     for (const profile of revision3Profiles) {
       expect(inferMarkdownPdfProfileRevision(profile)).toBe(3);
       expect(normalizeMarkdownPdfProfile({ profile }).revisionAssessment.inferredRevision).toBe(3);
     }
+  });
+
+  test("infers format-token revisions from the serialized Profile only", () => {
+    for (const format of ["{page}", "{pages}", "{Page}", "{pdfpages}", "{pdfPagesx}"]) {
+      expect(inferMarkdownPdfProfileRevision({ pageNumbers: { format } })).toBe(2);
+    }
+    expect(
+      inferMarkdownPdfProfileRevision({
+        pageNumbers: { format: "{page}{pdfPage}{pdfPage}{pdfPages}" },
+      }),
+    ).toBe(3);
+    expect(inferMarkdownPdfProfileRevision({ metadata: { label: "{pdfPages}" } })).toBe(2);
+    expect(inferMarkdownPdfProfileRevision({ footer: { center: "{pdfPages}" } })).toBe(2);
+
+    expect(
+      MARKDOWN_PDF_PROFILE_FEATURE_REGISTRY.find(({ path }) => path === "pageNumbers.format")
+        ?.tokens,
+    ).toEqual([
+      { introducedIn: 2, token: "page" },
+      {
+        introducedIn: 2,
+        rendererCapability: "pageNumbers.logicalFinal",
+        token: "pages",
+      },
+      {
+        introducedIn: 3,
+        rendererCapability: "pageNumbers.physicalCurrent",
+        token: "pdfPage",
+      },
+      {
+        introducedIn: 3,
+        rendererCapability: "pageNumbers.physicalTotal",
+        token: "pdfPages",
+      },
+    ]);
   });
 
   test("classifies missing, supported, stale, and forward declarations", () => {

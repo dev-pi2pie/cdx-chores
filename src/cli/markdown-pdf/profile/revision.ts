@@ -4,6 +4,7 @@ import {
   MARKDOWN_PDF_PROFILE_FEATURE_COMBINATION_RULES,
   markdownPdfProfileFeatureAtPath,
 } from "./feature-registry";
+import { markdownPdfPageNumberFormatTokens } from "./page-number-format";
 
 export type MarkdownPdfProfileRevisionState =
   | "forward"
@@ -67,6 +68,14 @@ function inferObjectRevision(
       const matchingValue = definition.values?.find((candidate) => candidate.value === value);
       if (matchingValue) {
         revision = Math.max(revision, matchingValue.introducedIn);
+      }
+      if (typeof value === "string" && definition.tokens) {
+        const activeTokens = new Set(markdownPdfPageNumberFormatTokens(value));
+        for (const token of definition.tokens) {
+          if (activeTokens.has(token.token)) {
+            revision = Math.max(revision, token.introducedIn);
+          }
+        }
       }
     }
     if (definition.kind === "object" && isPlainObject(value)) {

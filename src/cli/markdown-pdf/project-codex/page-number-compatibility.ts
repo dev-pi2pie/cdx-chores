@@ -1,5 +1,8 @@
 import { CliError } from "../../errors";
-import type { NormalizedMarkdownPdfProfile } from "../profile";
+import {
+  MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME,
+  type NormalizedMarkdownPdfProfile,
+} from "../profile";
 import { inspectMarkdownPdfTemplateBody } from "../template-body";
 import {
   assessMarkdownPdfTemplateCompatibility,
@@ -209,7 +212,19 @@ function isAllowedNamedPage(prelude: string): boolean {
   return name === "cover" || name === "toc";
 }
 
+function isProfileOwnedCounterName(name: string): boolean {
+  const normalizedName = name.toLowerCase();
+  return (
+    normalizedName === "page" ||
+    normalizedName === "pages" ||
+    normalizedName === MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME
+  );
+}
+
 function referencesProfileOrIndeterminateCounter(value: string): boolean {
+  if (/\btarget-counters?\s*\(/iu.test(value)) {
+    return true;
+  }
   const callPattern = /\bcounters?\s*\(\s*/giu;
   for (const match of value.matchAll(callPattern)) {
     const argumentStart = (match.index ?? 0) + match[0].length;
@@ -222,8 +237,7 @@ function referencesProfileOrIndeterminateCounter(value: string): boolean {
     if (
       !firstArgument ||
       (followingSyntax !== ")" && followingSyntax !== ",") ||
-      firstArgument === "page" ||
-      firstArgument === "pages"
+      isProfileOwnedCounterName(firstArgument)
     ) {
       return true;
     }
@@ -267,12 +281,12 @@ function mutationValueTokens(value: string): string[] | undefined {
 function isStaticUnrelatedCounterName(token: string): boolean {
   const literalName = token.match(/^[-_A-Za-z][-_A-Za-z0-9]*$/u)?.[0]?.toLowerCase();
   if (literalName) {
-    return literalName !== "page" && literalName !== "pages";
+    return !isProfileOwnedCounterName(literalName);
   }
   const reversedName = token
     .match(/^reversed\(\s*([-_A-Za-z][-_A-Za-z0-9]*)\s*\)$/iu)?.[1]
     ?.toLowerCase();
-  return Boolean(reversedName && reversedName !== "page" && reversedName !== "pages");
+  return Boolean(reversedName && !isProfileOwnedCounterName(reversedName));
 }
 
 function isStaticCounterNumericValue(token: string): boolean {

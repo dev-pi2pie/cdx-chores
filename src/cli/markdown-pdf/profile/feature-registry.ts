@@ -3,6 +3,11 @@ import {
   type MarkdownPdfRendererCapabilityField,
   type MarkdownPdfRendererCapabilityId,
 } from "../renderer-capability-contract";
+import {
+  MARKDOWN_PDF_PAGE_NUMBER_FORMAT_TOKEN_DEFINITIONS,
+  markdownPdfPageNumberFormatTokens,
+  type MarkdownPdfPageNumberFormatTokenDefinition,
+} from "./page-number-format";
 
 export const MARKDOWN_PDF_PROFILE_BASELINE_REVISION = 2;
 export const MARKDOWN_PDF_PROFILE_CURRENT_REVISION = 3;
@@ -52,6 +57,8 @@ export interface MarkdownPdfProfileFeatureValue {
   rendererCapability?: MarkdownPdfRendererCapabilityId;
 }
 
+export type MarkdownPdfProfileFeatureToken = MarkdownPdfPageNumberFormatTokenDefinition;
+
 export interface MarkdownPdfProfileFeatureDefinition {
   introducedIn: number;
   kind: MarkdownPdfProfileFeatureKind;
@@ -59,6 +66,7 @@ export interface MarkdownPdfProfileFeatureDefinition {
   path: string;
   rendererCapability?: MarkdownPdfRendererCapabilityId;
   revisionContribution?: boolean;
+  tokens?: readonly MarkdownPdfProfileFeatureToken[];
   values?: readonly MarkdownPdfProfileFeatureValue[];
 }
 
@@ -199,7 +207,9 @@ export const MARKDOWN_PDF_PROFILE_FEATURE_REGISTRY = [
       value,
     })),
   }),
-  feature("pageNumbers.format", "page-numbers"),
+  feature("pageNumbers.format", "page-numbers", {
+    tokens: MARKDOWN_PDF_PAGE_NUMBER_FORMAT_TOKEN_DEFINITIONS,
+  }),
   feature("pageNumbers.scope", "page-numbers", {
     values: [
       { introducedIn: 2, value: "body" },
@@ -277,6 +287,12 @@ export function markdownPdfProfileFeatureValues(
   return markdownPdfProfileFeatureAtPath(path)?.values ?? [];
 }
 
+export function markdownPdfProfileFeatureTokens(
+  path: string,
+): readonly MarkdownPdfProfileFeatureToken[] {
+  return markdownPdfProfileFeatureAtPath(path)?.tokens ?? [];
+}
+
 export function isMarkdownPdfProfileFeatureValue(path: string, value: unknown): boolean {
   return markdownPdfProfileFeatureValues(path).some((candidate) => candidate.value === value);
 }
@@ -292,13 +308,38 @@ export function markdownPdfProfileRendererCapability(
   );
 }
 
+export function markdownPdfProfileRendererCapabilities(
+  path: string,
+  value?: unknown,
+): readonly MarkdownPdfRendererCapabilityId[] {
+  const definition = markdownPdfProfileFeatureAtPath(path);
+  if (!definition) {
+    return [];
+  }
+  const capabilities = new Set<MarkdownPdfRendererCapabilityId>();
+  const directCapability = markdownPdfProfileRendererCapability(path, value);
+  if (directCapability) {
+    capabilities.add(directCapability);
+  }
+  if (typeof value === "string" && definition.tokens) {
+    const activeTokens = new Set(markdownPdfPageNumberFormatTokens(value));
+    for (const token of definition.tokens) {
+      if (activeTokens.has(token.token) && token.rendererCapability) {
+        capabilities.add(token.rendererCapability);
+      }
+    }
+  }
+  return [...capabilities];
+}
+
 export function markdownPdfProfileRendererCapabilityFields(
   capabilityId: MarkdownPdfRendererCapabilityId,
 ): readonly MarkdownPdfRendererCapabilityField[] {
   return MARKDOWN_PDF_PROFILE_FEATURE_REGISTRY.flatMap((definition) => {
     const ownsCapability =
       definition.rendererCapability === capabilityId ||
-      definition.values?.some((value) => value.rendererCapability === capabilityId);
+      definition.values?.some((value) => value.rendererCapability === capabilityId) ||
+      definition.tokens?.some((token) => token.rendererCapability === capabilityId);
     if (!ownsCapability) {
       return [];
     }

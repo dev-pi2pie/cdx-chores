@@ -12,7 +12,10 @@ import {
   rebindMdPdfProjectCodexPreparedArtifact,
   writePreparedMdPdfProjectCodexBundle,
 } from "../../src/cli/markdown-pdf/project-codex";
-import type { MarkdownPdfProcessRunner } from "../../src/cli/markdown-pdf";
+import type {
+  MarkdownPdfProcessRunner,
+  MarkdownPdfRendererCapabilityRequest,
+} from "../../src/cli/markdown-pdf";
 import { ok } from "../cli-actions-md-to-pdf.helpers";
 import { createActionTestRuntime } from "../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
@@ -27,9 +30,21 @@ const PROJECT_PROFILE = [
   "  start: 0",
   "  increment: 2",
   "  position: top-center",
-  '  format: "Page {page} of {pages}"',
+  '  format: "Page {page} of {pages} (PDF {pdfPage} of {pdfPages})"',
   "",
 ].join("\n");
+
+const EXPECTED_CAPABILITY_REQUESTS = [
+  { capabilityId: "pageNumbers.start", requestedBy: ["pageNumbers.start"] },
+  { capabilityId: "pageNumbers.increment", requestedBy: ["pageNumbers.increment"] },
+  {
+    capabilityId: "pageNumbers.countFrom.body",
+    requestedBy: ["pageNumbers.countFrom"],
+  },
+  { capabilityId: "pageNumbers.logicalFinal", requestedBy: ["pageNumbers.format"] },
+  { capabilityId: "pageNumbers.physicalCurrent", requestedBy: ["pageNumbers.format"] },
+  { capabilityId: "pageNumbers.physicalTotal", requestedBy: ["pageNumbers.format"] },
+] satisfies MarkdownPdfRendererCapabilityRequest[];
 
 function adaptedProfileResponse(): string {
   return JSON.stringify({
@@ -196,8 +211,16 @@ test("canonical Project bundle and explicit roles produce an equivalent render h
       "MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE",
     ]);
     expect(
-      bundlePrepared.rendererCapabilityRequests.map(({ capabilityId }) => capabilityId),
-    ).toEqual(["pageNumbers.start", "pageNumbers.increment", "pageNumbers.countFrom.body"]);
+      bundlePrepared.rendererCapabilityRequests.map(({ capabilityId, requestedBy }) => ({
+        capabilityId,
+        requestedBy,
+      })),
+    ).toEqual(EXPECTED_CAPABILITY_REQUESTS);
+    expect(
+      writtenProject.binding.validation.capabilityRequirements.map(
+        ({ capabilityId, requestedBy }) => ({ capabilityId, requestedBy }),
+      ),
+    ).toEqual(EXPECTED_CAPABILITY_REQUESTS);
     expect(bundlePrepared.templateCompatibility).toMatchObject({ bodyBoundary: "proven" });
     expect(bundlePrepared.recipe.styleCss).toContain("@page body:nth(1 of body)");
     expect(bundlePrepared.recipe.styleCss).toContain("counter-increment: page 2;");
@@ -280,12 +303,7 @@ test("canonical Project bundle and explicit roles produce an equivalent render h
         capabilityId,
         requestedBy,
       })),
-    ).toEqual(
-      bundlePrepared.rendererCapabilityRequests.map(({ capabilityId, requestedBy }) => ({
-        capabilityId,
-        requestedBy,
-      })),
-    );
+    ).toEqual(EXPECTED_CAPABILITY_REQUESTS);
     expect(serializedReport).not.toContain(fixtureDir);
     expect(JSON.stringify(report)).not.toContain(fixtureDir);
   });

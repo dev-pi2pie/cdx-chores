@@ -6,17 +6,33 @@ export {
   MARKDOWN_PDF_PROFILE_FEATURE_REGISTRY,
   markdownPdfProfileFeatureAtPath,
   markdownPdfProfileFeatureKeys,
+  markdownPdfProfileFeatureTokens,
   markdownPdfProfileFeatureValues,
   markdownPdfProfileRendererCapability,
+  markdownPdfProfileRendererCapabilities,
   markdownPdfProfileRendererCapabilityFields,
 } from "./feature-registry";
 export type {
   MarkdownPdfProfileFeatureCombinationRule,
   MarkdownPdfProfileFeatureDefinition,
   MarkdownPdfProfileFeatureKind,
+  MarkdownPdfProfileFeatureToken,
   MarkdownPdfProfileFeatureValue,
   MarkdownPdfProfileNormalizationRoute,
 } from "./feature-registry";
+export {
+  isMarkdownPdfPageNumberFormatToken,
+  MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME,
+  MARKDOWN_PDF_PAGE_NUMBER_FORMAT_TOKEN_DEFINITIONS,
+  MARKDOWN_PDF_PAGE_NUMBER_FORMAT_TOKENS,
+  markdownPdfPageNumberFormatTokens,
+  parseMarkdownPdfPageNumberFormat,
+} from "./page-number-format";
+export type {
+  MarkdownPdfPageNumberFormatSegment,
+  MarkdownPdfPageNumberFormatToken,
+  MarkdownPdfPageNumberFormatTokenDefinition,
+} from "./page-number-format";
 export { assessMarkdownPdfProfileRevision, inferMarkdownPdfProfileRevision } from "./revision";
 export type {
   MarkdownPdfProfileRevisionAssessment,
