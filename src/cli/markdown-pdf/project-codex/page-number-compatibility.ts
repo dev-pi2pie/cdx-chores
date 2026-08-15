@@ -1,4 +1,5 @@
 import { CliError } from "../../errors";
+import { normalizeCssForInspection } from "../css-inspection";
 import {
   MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME,
   type NormalizedMarkdownPdfProfile,
@@ -22,95 +23,6 @@ const PAGE_MARGIN_BOX_PATTERN =
 const MAX_TEMPLATE_CSS_INSPECTION_CHARS = 100_000;
 const MAX_TEMPLATE_CSS_BLOCKS = 2_000;
 const MAX_TEMPLATE_CSS_NESTING_DEPTH = 24;
-
-function decodeCssEscape(css: string, index: number): { nextIndex: number; value: string } {
-  const next = css[index + 1];
-  if (next === "\n" || next === "\f") {
-    return { nextIndex: index + 1, value: "" };
-  }
-  if (next === "\r") {
-    return {
-      nextIndex: css[index + 2] === "\n" ? index + 2 : index + 1,
-      value: "",
-    };
-  }
-  const hex = css.slice(index + 1).match(/^[0-9a-f]{1,6}/iu)?.[0];
-  if (hex) {
-    const codePoint = Number.parseInt(hex, 16);
-    let nextIndex = index + hex.length;
-    const trailingWhitespace = css[nextIndex + 1];
-    if (trailingWhitespace && /[ \t\r\n\f]/u.test(trailingWhitespace)) {
-      nextIndex += trailingWhitespace === "\r" && css[nextIndex + 2] === "\n" ? 2 : 1;
-    }
-    return {
-      nextIndex,
-      value: codePoint > 0 && codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : "\uFFFD",
-    };
-  }
-  return next ? { nextIndex: index + 1, value: next } : { nextIndex: index, value: "\\" };
-}
-
-/**
- * Removes comments and masks string contents before structural inspection.
- * CSS escapes outside strings are decoded so escaped at-rules, properties,
- * functions, and counter names cannot bypass the ownership contract.
- */
-function normalizeCssForInspection(css: string): string {
-  let result = "";
-  let quote: '"' | "'" | undefined;
-
-  for (let index = 0; index < css.length; index += 1) {
-    const char = css[index];
-    const next = css[index + 1];
-    if (!char) {
-      break;
-    }
-
-    if (quote) {
-      if (char === "\\") {
-        const escape = decodeCssEscape(css, index);
-        result += " ";
-        index = escape.nextIndex;
-        continue;
-      }
-      if (char === quote) {
-        quote = undefined;
-      }
-      result += " ";
-      continue;
-    }
-
-    if (char === '"' || char === "'") {
-      quote = char;
-      result += " ";
-      continue;
-    }
-
-    if (char === "/" && next === "*") {
-      const commentEnd = css.indexOf("*/", index + 2);
-      if (commentEnd < 0) {
-        throw new Error("Generated Template stylesheet contains an unterminated comment.");
-      }
-      result += " ";
-      index = commentEnd + 1;
-      continue;
-    }
-
-    if (char === "\\") {
-      const escape = decodeCssEscape(css, index);
-      result += escape.value;
-      index = escape.nextIndex;
-      continue;
-    }
-
-    result += char;
-  }
-
-  if (quote) {
-    throw new Error("Generated Template stylesheet contains an unterminated string.");
-  }
-  return result;
-}
 
 function matchingBrace(css: string, openIndex: number): number {
   let depth = 1;
@@ -376,7 +288,18 @@ export function validateMdPdfProjectCodexTemplatePageNumberCssOwnership(
   if (templateStyleCss.length > MAX_TEMPLATE_CSS_INSPECTION_CHARS) {
     throw new Error("Generated Template stylesheet exceeds the supported inspection size.");
   }
-  const normalizedCss = normalizeCssForInspection(templateStyleCss);
+  const inspection = normalizeCssForInspection(templateStyleCss, {
+    commentReplacement: " ",
+    lowercase: false,
+    maskStrings: true,
+  });
+  if (inspection.issue === "unterminated-comment") {
+    throw new Error("Generated Template stylesheet contains an unterminated comment.");
+  }
+  if (inspection.issue === "unterminated-string") {
+    throw new Error("Generated Template stylesheet contains an unterminated string.");
+  }
+  const normalizedCss = inspection.css;
   const blocks = cssBlocks(normalizedCss);
   if (blocks.length > MAX_TEMPLATE_CSS_BLOCKS) {
     throw new Error("Generated Template stylesheet exceeds the supported rule count.");

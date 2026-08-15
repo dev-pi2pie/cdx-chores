@@ -211,4 +211,13 @@ describe("Markdown PDF Project Codex Template page-number CSS ownership", () => 
       `),
     ).not.toThrow();
   });
+
+  test("preserves exact diagnostics for unterminated comments and strings", () => {
+    expect(() =>
+      validateMdPdfProjectCodexTemplatePageNumberCssOwnership("body {} /* tail"),
+    ).toThrow("Generated Template stylesheet contains an unterminated comment.");
+    expect(() =>
+      validateMdPdfProjectCodexTemplatePageNumberCssOwnership('body { content: "tail; }'),
+    ).toThrow("Generated Template stylesheet contains an unterminated string.");
+  });
 });
