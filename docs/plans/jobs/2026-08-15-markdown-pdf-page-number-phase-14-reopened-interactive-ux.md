@@ -100,9 +100,9 @@ override, artifact ownership, or Codex Assistant signal contract.
       disabled page-number branches.
 - [x] Preserve revision defaults, inert values, advanced styles, and occupied
       slot diagnostics.
-- [ ] Complete focused, broad, full, static, formatting, build, and diff
+- [x] Complete focused, broad, full, static, formatting, build, and diff
       validation.
-- [ ] Run bounded save-only Interactive smokes for enabled custom-label and
+- [x] Run bounded save-only Interactive smokes for enabled custom-label and
       disabled repeating-content paths, then remove their scoped scratch data.
 - [ ] Review the exact reopened implementation range for maintainability and
       test quality, resolve accepted findings, and re-review any widened range.
@@ -177,10 +177,30 @@ CSS, scenario inputs, or evidence acceptance changes.
   deterministic save/reload and lifecycle paths, review formatting, and Codex
   boundary regressions. TypeScript, scoped lint and formatting, and diff
   integrity also passed.
+- Broad validation: all 331 Interactive Markdown PDF tests passed with 1,458
+  assertions; all 1,179 Markdown PDF tests passed with 8,442 assertions; and
+  the full repository passed 2,246 tests with 13,385 assertions.
+- Static validation: TypeScript, repository lint, repository formatting,
+  package build, and diff integrity passed.
+- Enabled save-only smoke: the built CLI's `md -> pdf-recipes -> Profile ->
+formal-guide` route accepted the custom ghost `Page {page} of {pages}`,
+  reserved `bottom-center` for page numbering, accepted header-left `{title}`
+  repeating content, saved a revision-3 YAML Profile, and reloaded the expected
+  normalized values.
+- Disabled save-only smoke: the same built Interactive route exposed all six
+  repeating-content positions, accepted footer-center `{author}`, saved a
+  revision-3 YAML Profile with page numbering disabled, and reloaded the
+  expected normalized values.
+- Smoke cleanup: both generated Profiles and their scoped
+  `examples/playground/phase14-interactive-page-content-smoke/` directory were
+  removed after inspection.
+- The live renderer matrix was not repeated because this phase did not change
+  the Profile schema, normalization, renderer CSS, renderer scenarios, or
+  evidence acceptance.
 - Saved Profile coverage remains persistence verification. Interactive does not
   load an arbitrary persisted Profile into `formal-guide` revision, and this
   phase adds no such entry point.
-- Implementation, validation, smoke, review, and closeout evidence: pending.
+- Review and closeout evidence: pending.
 
 ## Related Research
 

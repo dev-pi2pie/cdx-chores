@@ -1495,7 +1495,7 @@ Tasks:
       validation, simple fallback, and unchanged cancellation. Add
       formal-guide enabled/disabled branch, label, slot ownership, revision,
       persistence, review, command-boundary, and lifecycle regressions.
-- [ ] Run focused and broad Interactive/Markdown PDF tests plus the full test,
+- [x] Run focused and broad Interactive/Markdown PDF tests plus the full test,
       TypeScript, lint, format, build, and diff gates. Run bounded save-only
       smokes for enabled custom-label and disabled repeating-content paths, and
       remove their scoped scratch data.
