@@ -6,6 +6,7 @@ import {
   planMarkdownPdfRender,
   type PlannedMarkdownPdfRender,
 } from "../../actions/markdown/to-pdf-service";
+import { printMarkdownPdfRenderWarnings } from "../../actions/markdown/render-warnings";
 import { displayPath, printLine } from "../../actions/shared";
 import { validateMdPdfProjectBundleCompleteness } from "../../markdown-pdf/project-codex/project-bundle-completeness";
 import { formatDefaultOutputPathHint, promptRequiredPathWithConfig } from "../../prompts/path";
@@ -330,12 +331,7 @@ async function handlePreparedMarkdownPdfRender(
       }
 
       const result = await executePlannedMarkdownPdfRender(runtime, plan);
-      if (result.warnings.length > 0) {
-        printLine(runtime.stderr, "Markdown PDF render warnings:");
-        for (const warning of result.warnings) {
-          printLine(runtime.stderr, `- ${warning}`);
-        }
-      }
+      printMarkdownPdfRenderWarnings(runtime, result.warnings);
       renderMarkdownPdfRendererCapabilityAssessment(
         runtime,
         result.rendererCapabilities,

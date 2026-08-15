@@ -12,6 +12,7 @@ import {
   rebindMdPdfProjectCodexPreparedArtifact,
   writePreparedMdPdfProjectCodexBundle,
 } from "../../src/cli/markdown-pdf/project-codex";
+import { MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME } from "../../src/cli/markdown-pdf/profile/page-number-format";
 import type {
   MarkdownPdfProcessRunner,
   MarkdownPdfRendererCapabilityRequest,
@@ -208,7 +209,6 @@ test("canonical Project bundle and explicit roles produce an equivalent render h
     });
     expect(bundlePrepared.diagnostics.conditions.map(({ conditionId }) => conditionId)).toEqual([
       "MARKDOWN_PDF_PAGE_NUMBER_SLOT_OCCUPIED",
-      "MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE",
     ]);
     expect(
       bundlePrepared.rendererCapabilityRequests.map(({ capabilityId, requestedBy }) => ({
@@ -223,7 +223,9 @@ test("canonical Project bundle and explicit roles produce an equivalent render h
     ).toEqual(EXPECTED_CAPABILITY_REQUESTS);
     expect(bundlePrepared.templateCompatibility).toMatchObject({ bodyBoundary: "proven" });
     expect(bundlePrepared.recipe.styleCss).toContain("@page body:nth(1 of body)");
-    expect(bundlePrepared.recipe.styleCss).toContain("counter-increment: page 2;");
+    expect(bundlePrepared.recipe.styleCss).toContain(
+      `counter-increment: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} 2;`,
+    );
 
     const bundleCapture: CapturedRender = { html: [], stylesheets: [] };
     const explicitCapture: CapturedRender = { html: [], stylesheets: [] };

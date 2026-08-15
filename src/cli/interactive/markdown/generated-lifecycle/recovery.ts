@@ -7,6 +7,7 @@ import {
   type PlannedMarkdownPdfRender,
   type ResolvedMarkdownPdfRenderOutput,
 } from "../../../actions/markdown/to-pdf-service";
+import { printMarkdownPdfRenderWarnings } from "../../../actions/markdown/render-warnings";
 import { displayPath, printLine } from "../../../actions/shared";
 import type { CliRuntime } from "../../../types";
 import type { MarkdownPdfGeneratedLifecycleSelection } from "../codex-types";
@@ -27,16 +28,6 @@ type DurableRecoveryStage = "materialization" | "renderer-preparation";
 
 export interface DurableMaterializationWriteState {
   isWritten: boolean;
-}
-
-function printRenderWarnings(runtime: CliRuntime, warnings: readonly string[]): void {
-  if (warnings.length === 0) {
-    return;
-  }
-  printLine(runtime.stderr, "Markdown PDF render warnings:");
-  for (const warning of warnings) {
-    printLine(runtime.stderr, `- ${warning}`);
-  }
 }
 
 export function printRetainedSession(runtime: CliRuntime, session: OwnedMarkdownPdfSession): void {
@@ -118,7 +109,7 @@ export async function executeRenderWithRecovery(
   while (true) {
     try {
       const result = await executePlannedMarkdownPdfRender(runtime, plan);
-      printRenderWarnings(runtime, result.warnings);
+      printMarkdownPdfRenderWarnings(runtime, result.warnings);
       printLine(runtime.stdout, `Wrote PDF: ${displayPath(runtime, plan.outputPath)}`);
       if (materialization.kind === "temporary") {
         try {

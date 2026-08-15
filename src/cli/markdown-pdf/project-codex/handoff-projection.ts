@@ -139,20 +139,27 @@ function occupiedSlotDiagnostic(
   };
 }
 
-function physicalTotalDiagnostic(
+function legacyPagesMigrationDiagnostic(
   diagnostic: Record<string, unknown>,
 ): MarkdownPdfProjectCodexHandoffDiagnostic {
   const context = plainObject(diagnostic.context, "Project handoff diagnostic context");
   assertExactKeys(
     context,
-    ["kind", "countFrom", "start", "increment"],
+    ["kind", "countFrom", "declaredRevision"],
     "Project handoff diagnostic context",
   );
-  if (context.kind !== "physical-page-total-with-logical-sequence") {
+  if (context.kind !== "legacy-pages-token-migration") {
     return invalidProjection("Project handoff diagnostic context kind is unsupported.");
   }
+  const declaredRevision = safeInteger(context.declaredRevision, {
+    label: "Project handoff declared Profile revision",
+    minimum: 1,
+  });
+  if (declaredRevision !== 1 && declaredRevision !== 2) {
+    return invalidProjection("Project handoff declared Profile revision is unsupported.");
+  }
   return {
-    conditionId: "MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE",
+    conditionId: "MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION",
     severity: "warning",
     context: {
       kind: context.kind,
@@ -161,14 +168,7 @@ function physicalTotalDiagnostic(
         PAGE_NUMBER_COUNT_ORIGINS,
         "Project handoff diagnostic count origin",
       ) as "document" | "body",
-      start: safeInteger(context.start, {
-        label: "Project handoff diagnostic start",
-        minimum: 0,
-      }),
-      increment: safeInteger(context.increment, {
-        label: "Project handoff diagnostic increment",
-        minimum: 1,
-      }),
+      declaredRevision,
     },
     message: sanitizeMdPdfProjectCodexReportText(
       stringValue(diagnostic.message, "Project handoff diagnostic message"),
@@ -284,11 +284,11 @@ function projectDiagnostic(value: unknown): MarkdownPdfProjectCodexHandoffDiagno
         return invalidProjection("Project handoff diagnostic severity is unsupported.");
       }
       return occupiedSlotDiagnostic(diagnostic);
-    case "MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE":
+    case "MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION":
       if (diagnostic.severity !== "warning") {
         return invalidProjection("Project handoff diagnostic severity is unsupported.");
       }
-      return physicalTotalDiagnostic(diagnostic);
+      return legacyPagesMigrationDiagnostic(diagnostic);
     case "MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_FALLBACK":
       if (diagnostic.severity !== "warning") {
         return invalidProjection("Project handoff diagnostic severity is unsupported.");

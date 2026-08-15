@@ -807,15 +807,14 @@ describe("interactive Markdown PDF Codex authoring", () => {
             message: privateDiagnostic,
           },
           {
-            conditionId: "MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE",
+            conditionId: "MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION",
             severity: "warning",
             context: {
-              kind: "physical-page-total-with-logical-sequence",
+              kind: "legacy-pages-token-migration",
               countFrom: "body",
-              start: 0,
-              increment: 2,
+              declaredRevision: 2,
             },
-            message: `Physical total ${escape}[31mwarning${escape}[0m${bell}`,
+            message: `Migration ${escape}[31mwarning${escape}[0m${bell}`,
           },
         ],
         capabilityRequirements: [
@@ -852,10 +851,8 @@ describe("interactive Markdown PDF Codex authoring", () => {
     expect(result.stderr).toContain("Follow-up render usability: planned");
     expect(result.stderr).toContain("MARKDOWN_PDF_PAGE_NUMBER_SLOT_OCCUPIED");
     expect(result.stderr.match(/MARKDOWN_PDF_PAGE_NUMBER_SLOT_OCCUPIED/g)).toHaveLength(1);
-    expect(result.stderr).toContain("MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE");
-    expect(
-      result.stderr.match(/MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE/g),
-    ).toHaveLength(1);
+    expect(result.stderr).toContain("MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION");
+    expect(result.stderr.match(/MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION/g)).toHaveLength(1);
     expect(result.stderr).toContain("Follow-up render: cdx-chores");
     expect(result.stderr).not.toContain("--enable-page-numbers");
     expect(result.stderr).not.toContain("--disable-page-numbers");

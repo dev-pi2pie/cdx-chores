@@ -3,12 +3,12 @@ import type {
   NormalizedMarkdownPdfPageNumbers,
   NormalizedMarkdownPdfProfile,
 } from "./profile";
-import { resolveMarkdownPdfPageNumberSlot } from "./profile";
+import { markdownPdfPageNumberFormatTokens, resolveMarkdownPdfPageNumberSlot } from "./profile";
 import type { MarkdownPdfTemplateCompatibilityResult } from "./template-compatibility";
 
 export const MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS = {
   occupiedPageNumberSlot: "MARKDOWN_PDF_PAGE_NUMBER_SLOT_OCCUPIED",
-  physicalPageTotalWithLogicalSequence: "MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE",
+  legacyPagesTokenMigration: "MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION",
   legacyBodyVisibilityFallback: "MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_FALLBACK",
   rendererCapabilityMissing: "MARKDOWN_PDF_RENDERER_CAPABILITY_MISSING",
   rendererCapabilityUnsupported: "MARKDOWN_PDF_RENDERER_CAPABILITY_UNSUPPORTED",
@@ -25,7 +25,7 @@ export type MarkdownPdfDiagnosticConditionId =
 
 export type MarkdownPdfWarningConditionId =
   | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.occupiedPageNumberSlot
-  | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.physicalPageTotalWithLogicalSequence
+  | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.legacyPagesTokenMigration
   | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.legacyBodyVisibilityFallback
   | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.profileSchemaVersionInvalid
   | typeof MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.profileSchemaVersionStale
@@ -46,10 +46,9 @@ export interface MarkdownPdfDiagnostic {
         slot: "left" | "center" | "right";
       }
     | {
-        kind: "physical-page-total-with-logical-sequence";
+        kind: "legacy-pages-token-migration";
         countFrom: NormalizedMarkdownPdfPageNumbers["countFrom"];
-        start: number;
-        increment: number;
+        declaredRevision: 1 | 2;
       }
     | {
         kind: "legacy-body-visibility-fallback";
@@ -155,22 +154,19 @@ export function collectMarkdownPdfDiagnostics(input: {
     conditions.push(occupiedSlot);
   }
 
+  const declaredRevision = input.profileRevision?.declaredRevision;
   if (
-    input.pageNumbers.format.includes("{pages}") &&
-    (input.pageNumbers.start !== 1 ||
-      input.pageNumbers.increment !== 1 ||
-      input.pageNumbers.countFrom === "body")
+    (declaredRevision === 1 || declaredRevision === 2) &&
+    markdownPdfPageNumberFormatTokens(input.pageNumbers.format).includes("pages")
   ) {
     conditions.push({
-      conditionId: MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.physicalPageTotalWithLogicalSequence,
+      conditionId: MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS.legacyPagesTokenMigration,
       severity: "warning",
-      message:
-        "The {pages} placeholder remains the physical PDF page count when page-number arithmetic or body-origin numbering changes the logical sequence.",
+      message: `This Profile declares schemaVersion ${declaredRevision}. {pages} now means the final logical page number for countFrom: ${input.pageNumbers.countFrom}. To show the rendered PDF page count, replace {pages} with {pdfPages}.`,
       context: {
-        kind: "physical-page-total-with-logical-sequence",
+        kind: "legacy-pages-token-migration",
         countFrom: input.pageNumbers.countFrom,
-        start: input.pageNumbers.start,
-        increment: input.pageNumbers.increment,
+        declaredRevision,
       },
     });
   }

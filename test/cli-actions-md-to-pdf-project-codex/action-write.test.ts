@@ -12,6 +12,7 @@ import {
   createMdPdfProjectCodexReportArtifact,
   normalizeMdPdfProjectCodexCommandState,
   planMdPdfProjectCodexOutput,
+  printMdPdfProjectCodexSummary,
   runMdPdfProjectCodexProfilePhase,
   runMdPdfProjectCodexTemplatePhase,
   validateMdPdfProjectBundleCompleteness,
@@ -330,14 +331,7 @@ describe("cli action modules: md pdf-project codex action writes", () => {
       expect(
         stdout.text.match(/Project warning \[MARKDOWN_PDF_PAGE_NUMBER_SLOT_OCCUPIED\]/g),
       ).toHaveLength(1);
-      expect(stdout.text).toContain(
-        "Project warning [MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE]",
-      );
-      expect(
-        stdout.text.match(
-          /Project warning \[MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE\]/g,
-        ),
-      ).toHaveLength(1);
+      expect(stdout.text).not.toContain("MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION");
       expect(stdout.text).toContain("Follow-up render: cdx-chores");
       expect(stdout.text).not.toContain("--enable-page-numbers");
       expect(stdout.text).not.toContain("--disable-page-numbers");
@@ -391,6 +385,151 @@ describe("cli action modules: md pdf-project codex action writes", () => {
         expect(stdout.text).not.toContain(forbiddenFlag);
       }
     });
+  });
+
+  test("prints real legacy validation diagnostics once in Project summary order", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-action-migration-summary",
+      async (fixtureDir) => {
+        const { outputPlan, profilePhase, runtime, signals, state, templatePhase } =
+          await prepareWriteValidationFixture(fixtureDir, BASE_PROFILE, { report: false });
+        const legacyProfilePhase = {
+          ...profilePhase,
+          finalProfile: {
+            ...profilePhase.finalProfile,
+            schemaVersion: 1,
+            pageNumbers: {
+              enabled: true,
+              format: "Page {page} of {pages}",
+            },
+          },
+        };
+        const validation = validateMdPdfProjectCodexProject({
+          outputPlan,
+          profilePhase: legacyProfilePhase,
+          runtime,
+          state,
+          templatePhase,
+        });
+        const reportArtifact = createMdPdfProjectCodexReportArtifact({
+          outputPlan,
+          profilePhase: legacyProfilePhase,
+          runtime,
+          signals,
+          state,
+          templatePhase,
+          validation,
+        });
+
+        printMdPdfProjectCodexSummary(runtime, {
+          outputPlan,
+          profilePhase: legacyProfilePhase,
+          reportArtifact,
+          state,
+        });
+
+        const stdout = (runtime.stdout as NodeJS.WritableStream & { text: string }).text;
+        const stale = "Project warning [MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_STALE]";
+        const migration = "Project warning [MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION]";
+        expect(stdout.match(/MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_STALE/g)).toHaveLength(1);
+        expect(stdout.match(/MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION/g)).toHaveLength(1);
+        expect(stdout.indexOf(stale)).toBeGreaterThanOrEqual(0);
+        expect(stdout.indexOf(migration)).toBeGreaterThan(stdout.indexOf(stale));
+        expect(stdout).toContain("declares schemaVersion 1");
+        expect(stdout).toContain("countFrom: document");
+      },
+    );
+  });
+
+  test("writes real legacy validation diagnostics through the requested Project report", async () => {
+    for (const declaredRevision of [1, 2] as const) {
+      await withTempFixtureDir(
+        `md-pdf-project-codex-action-migration-report-r${declaredRevision}`,
+        async (fixtureDir) => {
+          const { outputPlan, profilePhase, runtime, signals, state, templatePhase } =
+            await prepareWriteValidationFixture(fixtureDir, BASE_PROFILE);
+          const inferredRevision = declaredRevision === 1 ? 2 : 3;
+          const legacyProfilePhase = {
+            ...profilePhase,
+            finalProfile: {
+              ...profilePhase.finalProfile,
+              schemaVersion: declaredRevision,
+              pageNumbers: {
+                enabled: true,
+                format: "Page {page} of {pages}",
+                ...(declaredRevision === 2 ? { start: 0 } : {}),
+              },
+            },
+          };
+          const validation = validateMdPdfProjectCodexProject({
+            outputPlan,
+            profilePhase: legacyProfilePhase,
+            runtime,
+            state,
+            templatePhase,
+          });
+
+          await writeMdPdfProjectCodexReportIfRequested({
+            outputPlan,
+            profilePhase: legacyProfilePhase,
+            runtime,
+            signals,
+            state,
+            templatePhase,
+            validation,
+          });
+
+          if (!outputPlan.report) {
+            throw new Error("expected a requested Project report");
+          }
+          const report = JSON.parse(await readFile(outputPlan.report.path, "utf8")) as {
+            handoff: {
+              diagnostics: Array<{
+                conditionId: string;
+                context: Record<string, unknown>;
+                message: string;
+                severity: string;
+              }>;
+            };
+          };
+          const expectedMigrationMessage = `This Profile declares schemaVersion ${declaredRevision}. {pages} now means the final logical page number for countFrom: document. To show the rendered PDF page count, replace {pages} with {pdfPages}.`;
+          expect(report.handoff.diagnostics).toEqual([
+            {
+              conditionId: "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_STALE",
+              severity: "warning",
+              message: `Profile schemaVersion ${declaredRevision} is below inferred Profile revision ${inferredRevision}. Supported Profile content will continue to render.`,
+              context: {
+                kind: "profile-schema-version",
+                state: "stale",
+                declaredRevision,
+                inferredRevision,
+                currentRevision: 3,
+              },
+            },
+            {
+              conditionId: "MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION",
+              severity: "warning",
+              message: expectedMigrationMessage,
+              context: {
+                kind: "legacy-pages-token-migration",
+                countFrom: "document",
+                declaredRevision,
+              },
+            },
+          ]);
+          expect(
+            report.handoff.diagnostics.filter(
+              ({ conditionId }) => conditionId === "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_STALE",
+            ),
+          ).toHaveLength(1);
+          expect(
+            report.handoff.diagnostics.filter(
+              ({ conditionId }) => conditionId === "MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION",
+            ),
+          ).toHaveLength(1);
+        },
+      );
+    }
   });
 
   test("writes only requested advisory reports during dry runs", async () => {
@@ -1921,15 +2060,14 @@ describe("cli action modules: md pdf-project codex action writes", () => {
                 message: SENSITIVE_DIAGNOSTIC_TEXT,
               },
               {
-                conditionId: "MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE",
+                conditionId: "MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION",
                 severity: "warning",
                 context: {
-                  kind: "physical-page-total-with-logical-sequence",
+                  kind: "legacy-pages-token-migration",
                   countFrom: "body",
-                  start: 4,
-                  increment: 2,
+                  declaredRevision: 2,
                 },
-                message: "Physical total uses the PDF page count.",
+                message: "Legacy pages token needs migration guidance.",
               },
               {
                 conditionId: "MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_FALLBACK",
@@ -1964,7 +2102,7 @@ describe("cli action modules: md pdf-project codex action writes", () => {
       expectRedactedReportText(report.handoff.diagnostics[0]?.message ?? "");
       expect(report.handoff.diagnostics.map((diagnostic) => diagnostic.conditionId)).toEqual([
         "MARKDOWN_PDF_PAGE_NUMBER_SLOT_OCCUPIED",
-        "MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE",
+        "MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION",
         "MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_FALLBACK",
       ]);
       expect(report.handoff.render).toMatchObject({
@@ -2102,23 +2240,22 @@ describe("cli action modules: md pdf-project codex action writes", () => {
           },
         },
         {
-          label: "unbounded page-number arithmetic",
-          expected: "Project handoff diagnostic start must be a bounded integer.",
+          label: "unsupported migration revision",
+          expected: "Project handoff declared Profile revision is unsupported.",
           validation: {
             ...validation,
             diagnostics: {
               conditions: [
                 {
-                  conditionId: "MARKDOWN_PDF_PHYSICAL_PAGE_TOTAL_WITH_LOGICAL_SEQUENCE",
+                  conditionId: "MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION",
                   severity: "warning",
                   context: {
-                    kind: "physical-page-total-with-logical-sequence",
+                    kind: "legacy-pages-token-migration",
                     countFrom: "document",
-                    start: Number.MAX_SAFE_INTEGER + 1,
-                    increment: 1,
+                    declaredRevision: 3,
                   },
-                  message: "Physical page total uses logical arithmetic.",
-                },
+                  message: "Legacy pages token needs migration guidance.",
+                } as never,
               ],
             },
           },

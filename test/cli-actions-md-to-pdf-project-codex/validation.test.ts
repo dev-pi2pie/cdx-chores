@@ -329,6 +329,68 @@ describe("cli action modules: md pdf-project codex validation", () => {
     );
   });
 
+  test("derives the pages-token migration from real legacy Profile validation", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-validation-pages-migration",
+      async (fixtureDir) => {
+        await writeFile(join(fixtureDir, "base.yml"), "pageNumbers:\n  enabled: false\n", "utf8");
+        const { outputPlan, profilePhase, runtime, state, templatePhase } =
+          await runValidationFixture(fixtureDir, { baseProfile: "base.yml" });
+
+        for (const declaredRevision of [1, 2] as const) {
+          const legacyProfilePhase = {
+            ...profilePhase,
+            finalProfile: {
+              ...profilePhase.finalProfile,
+              schemaVersion: declaredRevision,
+              pageNumbers: {
+                enabled: true,
+                format: "Page {page} of {pages}",
+              },
+            },
+          };
+          const validation = validateMdPdfProjectCodexProject({
+            outputPlan,
+            profilePhase: legacyProfilePhase,
+            runtime,
+            state,
+            templatePhase,
+          });
+
+          const conditionIds = validation.diagnostics.conditions.map(
+            ({ conditionId }) => conditionId,
+          );
+          if (declaredRevision === 1) {
+            expect(conditionIds).toEqual([
+              "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_STALE",
+              "MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION",
+            ]);
+          } else {
+            expect(conditionIds).toEqual(["MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION"]);
+          }
+          expect(validation.diagnostics.conditions.at(-1)).toMatchObject({
+            conditionId: "MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION",
+            context: {
+              kind: "legacy-pages-token-migration",
+              countFrom: "document",
+              declaredRevision,
+            },
+            severity: "warning",
+          });
+
+          const handoff = createMdPdfProjectCodexHandoffProjection({
+            outputPlan,
+            profilePhase: legacyProfilePhase,
+            runtime,
+            state,
+            validation,
+          });
+          expect(handoff.diagnostics).toEqual(validation.diagnostics.conditions);
+        }
+      },
+    );
+  });
+
   test("keeps render command input replayable without absolute local paths", async () => {
     await withTempFixtureDir("md-pdf-project-codex-validation-input", async (fixtureDir) => {
       await writeFile(join(fixtureDir, "report.md"), "# Report\n\nPlain body.\n", "utf8");
