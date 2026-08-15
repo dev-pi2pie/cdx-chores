@@ -67,7 +67,9 @@ describe("Markdown PDF renderer evidence orchestration", () => {
       "product-custom-stylesheet-precedence",
       "product-built-in-automatic-metadata-title",
     ]);
-    for (const scenario of PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS) {
+    for (const scenario of PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS.filter(
+      (item) => item.id !== "product-custom-stylesheet-precedence",
+    )) {
       expect(scenario.profile).toContain("{page}");
       expect(scenario.profile).toContain("{pages}");
       expect(scenario.profile).toContain("{pdfPage}");
@@ -91,10 +93,29 @@ describe("Markdown PDF renderer evidence orchestration", () => {
     ]);
 
     const insertedBlank = PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS[2];
+    expect(insertedBlank?.profile).toContain("PRODUCT-C-P{pdfPage}/{pdfPages}");
+    expect(insertedBlank?.profile).not.toContain("{page}");
+    expect(insertedBlank?.profile).not.toContain("{pages}");
     expect(insertedBlank?.expected.pages.map((page) => page.role)).toEqual([
       "document-body",
       "inserted-blank",
       "document-body",
+    ]);
+    expect(insertedBlank?.expected.pages.map((page) => page.pageNumberLabels)).toEqual([
+      ["PRODUCT-C-P1/3"],
+      ["PRODUCT-C-P2/3"],
+      ["PRODUCT-C-P3/3"],
+    ]);
+
+    const bodyVisibleDocumentOrigin = PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS[0];
+    expect(bodyVisibleDocumentOrigin?.profile).toContain("scope: body");
+    expect(bodyVisibleDocumentOrigin?.profile).toContain("countFrom: document");
+    expect(bodyVisibleDocumentOrigin?.expected.pages.map((page) => page.pageNumberLabels)).toEqual([
+      [],
+      [],
+      ["PRODUCT-A-L4/8-P3/5"],
+      ["PRODUCT-A-L6/8-P4/5"],
+      ["PRODUCT-A-L8/8-P5/5"],
     ]);
   });
 

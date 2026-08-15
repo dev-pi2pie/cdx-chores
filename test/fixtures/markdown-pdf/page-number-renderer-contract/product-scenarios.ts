@@ -50,7 +50,7 @@ pageNumbers:
   enabled: true
   position: bottom-center
   format: "PRODUCT-A-L{page}/{pages}-P{pdfPage}/{pdfPages}"
-  scope: document
+  scope: body
   countFrom: document
   start: 0
   increment: 2
@@ -171,7 +171,7 @@ footer:
 pageNumbers:
   enabled: true
   position: bottom-right
-  format: "PRODUCT-C-L{page}/{pages}-P{pdfPage}/{pdfPages}"
+  format: "PRODUCT-C-P{pdfPage}/{pdfPages}"
   scope: document
   countFrom: document
   start: 1
@@ -236,7 +236,7 @@ export const PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS: readonly ProductRendererSce
   {
     id: "product-built-in-document-origin",
     purpose:
-      "Automate the built-in Profile path through cover and ToC participation, automatic-title suppression, unreserved repeating content, selected-slot replacement, document-origin arithmetic, and bottom-center placement.",
+      "Automate the built-in Profile path through automatic-title suppression, unreserved repeating content, selected-slot replacement, body-only visibility, document-origin arithmetic, and bottom-center placement across cover, ToC, and body roles.",
     required: true,
     markdown: productDocumentOriginMarkdown,
     profile: productDocumentOriginProfile,
@@ -254,8 +254,7 @@ export const PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS: readonly ProductRendererSce
         {
           role: "table-of-contents",
           marker: "PRODUCT-A-BODY-1",
-          pageNumberLabels: ["PRODUCT-A-L2/8-P2/5"],
-          pageNumberRegion: "bottom-center",
+          pageNumberLabels: [],
           requiredText: ["PRODUCT-A-HEADER"],
           forbiddenText: ["PRODUCTACOVER", "PRODUCT-A-REPLACED-SLOT"],
         },
@@ -340,7 +339,7 @@ export const PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS: readonly ProductRendererSce
   {
     id: "product-custom-stylesheet-precedence",
     purpose:
-      "Automate later-stylesheet launch, an inserted blank page, four-token Profile-owned content, and bottom-right placement; visual review covers font ownership and the presentation cascade.",
+      "Automate later-stylesheet launch, an inserted blank page, physical-only Profile-owned content without a logical-final target, and bottom-right placement; visual review covers font ownership and the presentation cascade.",
     required: true,
     markdown: productStylesheetPrecedenceMarkdown,
     profile: productStylesheetPrecedenceProfile,
@@ -353,21 +352,21 @@ export const PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS: readonly ProductRendererSce
         {
           role: "document-body",
           marker: "PRODUCT-C-BODY-1",
-          pageNumberLabels: ["PRODUCT-C-L1/3-P1/3"],
+          pageNumberLabels: ["PRODUCT-C-P1/3"],
           pageNumberRegion: "bottom-right",
           forbiddenText: ["PRODUCT-C-REPLACED-SLOT"],
         },
         {
           role: "inserted-blank",
           marker: "",
-          pageNumberLabels: ["PRODUCT-C-L2/3-P2/3"],
+          pageNumberLabels: ["PRODUCT-C-P2/3"],
           pageNumberRegion: "bottom-right",
           forbiddenText: ["PRODUCT-C-REPLACED-SLOT"],
         },
         {
           role: "document-body",
           marker: "PRODUCT-C-BODY-2",
-          pageNumberLabels: ["PRODUCT-C-L3/3-P3/3"],
+          pageNumberLabels: ["PRODUCT-C-P3/3"],
           pageNumberRegion: "bottom-right",
           forbiddenText: ["PRODUCT-C-REPLACED-SLOT"],
         },
