@@ -467,7 +467,7 @@ Tasks:
       content, and detailed-section completeness.
 - [x] Run focused tests, CLI UX tests, the full suite, TypeScript, lint,
       formatting, build, and diff checks.
-- [ ] Review the exact Phase 4 range for maintainability, test quality, and
+- [x] Review the exact Phase 4 range for maintainability, test quality, and
       public-safety regressions.
 
 Phase checkpoint:

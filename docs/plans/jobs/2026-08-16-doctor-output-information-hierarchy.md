@@ -181,9 +181,17 @@ default human view while preserving detailed and JSON views.
 
 ## Phase 4: Compact And Detailed Human Views
 
-Status: `in-progress`
+Status: `completed`
 
 Starting commit: `291f62b7`
+
+Implementation commits:
+
+- `8cbeea89` — added compact and detailed renderers, view selection, parser
+  conflict handling, complete routing/safety coverage, and Phase 4 validation
+  records
+- `9e8bb9e1` — added the accepted Interactive compact integration and compact/
+  detailed operational-failure coverage
 
 Implemented view boundary:
 
@@ -205,10 +213,10 @@ Validation:
 
 ```text
 bun test test/cli-command-doctor.test.ts test/cli-action-doctor.test.ts test/cli-doctor-workflow.test.ts test/cli-actions-doctor-markdown-video-deferred.test.ts test/cli-ux.test.ts test/cli-interactive-menu.test.ts test/cli-interactive-routing.test.ts
-145 pass, 0 fail
+149 pass, 0 fail
 
 bun test
-2413 pass, 0 fail
+2417 pass, 0 fail
 
 bunx tsc --noEmit
 bun run lint
@@ -224,9 +232,24 @@ remediation; action order; TTY/redirection content parity; detailed-section
 completeness; parser help and exit `1`; zero action/inspection on conflicts;
 health exit `0`; and operational failure exit `2`.
 
-Exact committed-range maintainability, test-quality, and public-safety review
-remains pending before this phase can close.
+Review range:
+
+```text
+291f62b7..9e8bb9e1
+```
+
+The first maintainability, CLI-compatibility, and public-safety reviews were
+clean. The first test review found missing Interactive compact-default evidence
+and missing compact/detailed operational-failure coverage. Both findings were
+accepted and fixed in `9e8bb9e1`; the widened maintainability, test-quality,
+CLI-compatibility, and public-safety reviews then passed with no material
+findings.
+
+Decision gate: `Continue`. Compact, detailed, and JSON views agree on one
+inspection pass; view conflicts stop before probes; compact output remains
+public-safe; and Phase 5 may proceed with integrated guidance and lifecycle
+closeout.
 
 ## Phase 5: Integrated Validation, Guidance, And Lifecycle Closeout
 
-Status: `pending Phase 4 Continue`
+Status: `ready`
