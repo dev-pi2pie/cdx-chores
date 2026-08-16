@@ -23,7 +23,7 @@ describe("interactive mode routing: top-level smoke", () => {
         description: "Workflow readiness and recommended actions",
       },
       {
-        name: "Detailed evidence",
+        name: "Details",
         value: "details",
         description: "Versions, checks, and capability evidence",
       },
@@ -33,7 +33,7 @@ describe("interactive mode routing: top-level smoke", () => {
     expect(result.pathCalls).toHaveLength(0);
   });
 
-  test("routes the doctor Detailed evidence choice", () => {
+  test("routes the doctor Details choice", () => {
     const result = runInteractiveHarness({
       mode: "run",
       selectQueue: ["doctor", "details"],

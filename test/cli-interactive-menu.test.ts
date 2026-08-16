@@ -189,7 +189,7 @@ describe("interactive command menu wiring", () => {
     });
   });
 
-  test("runInteractiveMode renders detailed doctor output from Detailed evidence", async () => {
+  test("runInteractiveMode renders detailed doctor output from Details", async () => {
     const { runtime, stdout, stderr } = createRuntime();
     const fixture = createDoctorFixture();
 

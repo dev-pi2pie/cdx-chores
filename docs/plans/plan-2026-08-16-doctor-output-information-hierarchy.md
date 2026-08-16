@@ -15,7 +15,7 @@ doctor             -> compact human workflow summary
 doctor --details   -> detailed human evidence
 doctor --json      -> existing machine-readable evidence
 
-Interactive doctor -> Summary / Detailed evidence / JSON
+Interactive doctor -> Summary / Details / JSON
 ```
 
 The implementation must preserve the current probes, JSON field meanings,
@@ -142,7 +142,7 @@ selection made before the action runs:
 ```text
 Choose doctor output
   Summary            -> compact human output
-  Detailed evidence  -> detailed human output
+  Details            -> detailed human output
   JSON                -> structured JSON output
 ```
 
@@ -520,9 +520,9 @@ Tasks:
 - [x] Replace the Interactive `Output as JSON?` confirmation with one
       `Choose doctor output` selection.
 - [x] Present Summary first with workflow-readiness and action guidance,
-      Detailed evidence second with versions and capability evidence, and JSON
-      third with machine-readable evidence.
-- [x] Route Summary to compact output, Detailed evidence to the existing
+      Details second with versions and capability evidence, and JSON third with
+      machine-readable evidence.
+- [x] Route Summary to compact output, Details to the existing
       detailed projection, and JSON to the unchanged structured projection.
 - [x] Keep the selection exclusive by construction, invoke `actionDoctor`
       exactly once after selection, and run one inspection pass with every
@@ -542,7 +542,7 @@ Phase checkpoint:
 
 - Interactive doctor exposes all three existing views through one prompt.
 - Summary remains the first and default-highlighted choice.
-- Detailed evidence and JSON reuse their existing projections without a second
+- Details and JSON reuse their existing projections without a second
   inspection or a new output contract.
 - Direct CLI behavior remains unchanged.
 
@@ -554,6 +554,12 @@ Decision gate:
   cannot preserve prompt streams or deterministic routing.
 - **Stop** — do not advance to lifecycle closeout if Interactive routing can
   combine views, duplicate inspection, or change existing projection content.
+
+Follow-up:
+
+- [ ] Shorten the Interactive detailed-view label from Detailed evidence to
+      Details, preserve its `details` route and description, and update the
+      research contract plus deterministic choice tests.
 
 ### Phase 5: Integrated Validation, Guidance, And Lifecycle Closeout
 
@@ -626,7 +632,7 @@ Interactive routing scenarios:
 | Interactive choice | Action selection | Expected projection        |
 | ------------------ | ---------------- | -------------------------- |
 | Summary            | compact          | compact workflow summary   |
-| Detailed evidence  | details          | complete human evidence    |
+| Details            | details          | complete human evidence    |
 | JSON               | JSON             | unchanged structured facts |
 
 Focused commands expected during implementation:

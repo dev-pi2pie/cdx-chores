@@ -317,6 +317,19 @@ views through one exclusive prompt, Summary is explicitly default-highlighted,
 and every route preserves one action invocation and one inspection pass. Phase
 5 may proceed with integrated validation, guidance, and lifecycle closeout.
 
+### Follow-up: Concise Details Label
+
+Status: `in-progress`
+
+Starting commit: `27f76e47`
+
+Scope:
+
+- shorten the Interactive detailed-view label from Detailed evidence to Details
+- preserve the `details` route, description, output projection, and direct CLI
+  behavior
+- update the research and plan contracts plus deterministic choice tests
+
 ## Phase 5: Integrated Validation, Guidance, And Lifecycle Closeout
 
-Status: `ready`
+Status: `pending Phase 4.5 follow-up Continue`

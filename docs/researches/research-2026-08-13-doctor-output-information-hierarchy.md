@@ -16,7 +16,7 @@ The settled direction is a compact default view, a detailed human view, and the
 existing structured JSON view. All three project the same inspected evidence
 without forcing human-oriented summary states into the JSON contract. Direct
 CLI use selects these views with no flag, `--details`, or `--json`; Interactive
-mode presents Summary, Detailed evidence, and JSON as one exclusive selection.
+mode presents Summary, Details, and JSON as one exclusive selection.
 The Phase 1 evidence below closes the research gate and authorizes the linked
 active plan.
 
@@ -155,7 +155,7 @@ Choose doctor output
       |-- Summary -----------> compact human output
       |                        workflow readiness + actions
       |
-      |-- Detailed evidence -> detailed human output
+      |-- Details -----------> detailed human output
       |                        versions + capability evidence
       |
       `-- JSON --------------> structured JSON output
@@ -163,8 +163,8 @@ Choose doctor output
 ```
 
 The selector is one closed choice made before the doctor action or any probe
-runs. Summary is the first and default-highlighted choice. Detailed evidence
-maps to the same detailed projection as direct `doctor --details`, and JSON maps
+runs. Summary is the first and default-highlighted choice. Details maps to the
+same detailed projection as direct `doctor --details`, and JSON maps
 to the unchanged automation projection. Because one choice determines the
 view, Interactive routing cannot request detailed and JSON output together and
 does not need to reproduce Commander's flag-conflict handling.
@@ -860,8 +860,8 @@ The current direction is:
   by `--details`
 - reject `--details` with `--json` as an ambiguous view combination
 - keep `doctor --json` unchanged as the automation surface
-- replace Interactive mode's JSON confirmation with one Summary, Detailed
-  evidence, or JSON selector that routes to the same three projections
+- replace Interactive mode's JSON confirmation with one Summary, Details, or
+  JSON selector that routes to the same three projections
 - summarize fully satisfied workflows rather than broad technical families
 - distinguish workflow availability from recommended or required actions
 - group repeated low-level limitations by their underlying condition while

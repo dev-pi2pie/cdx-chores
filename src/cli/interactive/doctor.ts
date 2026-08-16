@@ -29,7 +29,7 @@ const DOCTOR_OUTPUT_CHOICES: readonly DoctorOutputChoice[] = [
     description: "Workflow readiness and recommended actions",
   },
   {
-    name: "Detailed evidence",
+    name: "Details",
     value: "details",
     description: "Versions, checks, and capability evidence",
   },
