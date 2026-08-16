@@ -91,6 +91,21 @@ const ACTION_CLASS_ORDER: Record<DoctorActionClass, number> = {
   required: 0,
   recommended: 1,
 };
+const EXTENSION_PROJECTION = {
+  sqlite: {
+    actionId: "data.query.extension.sqlite.install",
+    conditionId: "data.query.extension.sqlite.unavailable",
+    label: "SQLite",
+  },
+  excel: {
+    actionId: "data.query.extension.excel.install",
+    conditionId: "data.query.extension.excel.unavailable",
+    label: "Excel",
+  },
+} satisfies Record<
+  "sqlite" | "excel",
+  { actionId: DoctorActionId; conditionId: DoctorConditionId; label: string }
+>;
 
 interface MutableProjection {
   actions: Map<DoctorActionId, DoctorAction>;
@@ -314,24 +329,23 @@ function projectExtension(
   if (format.loadability) {
     return;
   }
-  const label = name === "sqlite" ? "SQLite" : "Excel";
-  const conditionId = `data.query.extension.${name}.unavailable` as DoctorConditionId;
+  const metadata = EXTENSION_PROJECTION[name];
   const message =
     format.installability === true
-      ? `${label} query support is unavailable but installable`
+      ? `${metadata.label} query support is unavailable but installable`
       : format.installability === false
-        ? `${label} query support is unavailable in this environment`
-        : `${label} query support could not be verified`;
+        ? `${metadata.label} query support is unavailable in this environment`
+        : `${metadata.label} query support could not be verified`;
   addCondition(
     projection,
-    { id: conditionId, message, affectedWorkflowIds: ["data.query"] },
+    { id: metadata.conditionId, message, affectedWorkflowIds: ["data.query"] },
     "limited",
   );
   if (format.installability === true) {
     addAction(projection, {
-      id: `data.query.extension.${name}.install` as DoctorActionId,
+      id: metadata.actionId,
       class: "required",
-      message: `Install the DuckDB ${label} extension`,
+      message: `Install the DuckDB ${metadata.label} extension`,
       command: createDuckDbExtensionInstallCommand(name),
       affectedWorkflowIds: ["data.query"],
     });

@@ -3,7 +3,9 @@ import { describe, expect, test } from "bun:test";
 import {
   DOCTOR_WORKFLOWS,
   projectDoctorWorkflows,
+  type DoctorAction,
   type DoctorActionId,
+  type DoctorCondition,
   type DoctorConditionId,
   type DoctorWorkflowId,
   type DoctorWorkflowProjection,
@@ -41,6 +43,134 @@ const readyStates = Object.fromEntries(
   DOCTOR_WORKFLOWS.map((workflow) => [workflow.id, "ready"]),
 ) as Record<DoctorWorkflowId, DoctorWorkflowState>;
 
+const CONDITION_CONTRACT = {
+  "dependency.pandoc.missing": {
+    affectedWorkflowIds: ["markdown.docx", "markdown.pdf"],
+    message: "Pandoc is missing",
+  },
+  "dependency.pandoc.unsupported": {
+    affectedWorkflowIds: ["markdown.pdf"],
+    message: "Pandoc does not meet the required 2.0 minimum",
+  },
+  "dependency.pandoc.unverified": {
+    affectedWorkflowIds: ["markdown.pdf"],
+    message: "Pandoc 2.0 or newer could not be verified",
+  },
+  "dependency.weasyprint.missing": {
+    affectedWorkflowIds: ["markdown.pdf"],
+    message: "WeasyPrint is missing",
+  },
+  "dependency.ffmpeg.missing": {
+    affectedWorkflowIds: ["video"],
+    message: "FFmpeg is missing",
+  },
+  "dependency.fontconfig.discovery.missing": {
+    affectedWorkflowIds: ["font.discovery"],
+    message: "Fontconfig discovery is unavailable",
+  },
+  "dependency.fontconfig.coverage.missing": {
+    affectedWorkflowIds: ["font.coverage"],
+    message: "Fontconfig coverage is unavailable",
+  },
+  "markdown.pdf.renderer.capability.unsupported": {
+    affectedWorkflowIds: ["markdown.pdf"],
+    message: "Advanced Markdown PDF features require WeasyPrint 65.1 or newer",
+  },
+  "markdown.pdf.renderer.capability.unverified": {
+    affectedWorkflowIds: ["markdown.pdf"],
+    message: "Advanced Markdown PDF compatibility could not be verified",
+  },
+  "data.query.runtime.unavailable": {
+    affectedWorkflowIds: ["data.query", "data.query.codex"],
+    message: "DuckDB runtime is unavailable",
+  },
+  "data.query.extension.sqlite.unavailable": {
+    affectedWorkflowIds: ["data.query"],
+    message: "SQLite query support is unavailable but installable",
+  },
+  "data.query.extension.excel.unavailable": {
+    affectedWorkflowIds: ["data.query"],
+    message: "Excel query support is unavailable in this environment",
+  },
+  "data.query.codex.unconfigured": {
+    affectedWorkflowIds: ["data.query.codex"],
+    message: "Codex support is not configured",
+  },
+  "data.query.codex.unauthenticated": {
+    affectedWorkflowIds: ["data.query.codex"],
+    message: "No Codex authentication session is available",
+  },
+} satisfies Record<DoctorConditionId, Omit<DoctorCondition, "id">>;
+
+const ACTION_CONTRACT = {
+  "dependency.pandoc.install": {
+    affectedWorkflowIds: ["markdown.docx", "markdown.pdf"],
+    class: "required",
+    command: "brew install pandoc",
+    message: "Install Pandoc",
+  },
+  "dependency.pandoc.upgrade": {
+    affectedWorkflowIds: ["markdown.pdf"],
+    class: "required",
+    message: "Upgrade Pandoc to 2.0 or newer",
+  },
+  "dependency.pandoc.verify": {
+    affectedWorkflowIds: ["markdown.pdf"],
+    class: "recommended",
+    message: "Verify Pandoc 2.0 or newer",
+  },
+  "dependency.weasyprint.install": {
+    affectedWorkflowIds: ["markdown.pdf"],
+    class: "required",
+    command: "brew install weasyprint",
+    message: "Install WeasyPrint",
+  },
+  "dependency.weasyprint.upgrade": {
+    affectedWorkflowIds: ["markdown.pdf"],
+    class: "recommended",
+    message: "Upgrade WeasyPrint to 65.1 or newer",
+  },
+  "dependency.weasyprint.verify": {
+    affectedWorkflowIds: ["markdown.pdf"],
+    class: "recommended",
+    message: "Verify WeasyPrint 65.1 or newer",
+  },
+  "dependency.ffmpeg.install": {
+    affectedWorkflowIds: ["video"],
+    class: "required",
+    command: "brew install ffmpeg",
+    message: "Install FFmpeg",
+  },
+  "dependency.fontconfig.install": {
+    affectedWorkflowIds: ["font.discovery"],
+    class: "required",
+    command: "brew install fontconfig",
+    message: "Install Fontconfig",
+  },
+  "data.query.extension.sqlite.install": {
+    affectedWorkflowIds: ["data.query"],
+    class: "required",
+    command: "cdx-chores data duckdb extension install sqlite",
+    message: "Install the DuckDB SQLite extension",
+  },
+  "data.query.extension.excel.install": {
+    affectedWorkflowIds: ["data.query"],
+    class: "required",
+    command: "cdx-chores data duckdb extension install excel",
+    message: "Install the DuckDB Excel extension",
+  },
+  "data.query.codex.configure": {
+    affectedWorkflowIds: ["data.query.codex"],
+    class: "required",
+    message: "Configure Codex support",
+  },
+  "data.query.codex.authenticate": {
+    affectedWorkflowIds: ["data.query.codex"],
+    class: "required",
+    message: "Sign in to Codex or provide CODEX_API_KEY",
+  },
+} satisfies Record<DoctorActionId, Omit<DoctorAction, "id">>;
+
 describe("doctor workflow projection", () => {
   test("projects the all-ready fixture into seven ordered ready workflows", () => {
     const projection = project(createDoctorFixture());
@@ -57,6 +187,7 @@ describe("doctor workflow projection", () => {
 
   const cases: Array<{
     actions: DoctorActionId[];
+    conditionMessages?: Partial<Record<DoctorConditionId, string>>;
     conditions: DoctorConditionId[];
     create: () => ReturnType<typeof createDoctorFixture>;
     name: string;
@@ -73,6 +204,22 @@ describe("doctor workflow projection", () => {
       states: { "markdown.docx": "unavailable", "markdown.pdf": "unavailable" },
       conditions: ["dependency.pandoc.missing"],
       actions: ["dependency.pandoc.install"],
+    },
+    {
+      name: "weasyprint-missing",
+      create: () =>
+        createDoctorFixture({
+          commands: {
+            weasyprint: {
+              ...DOCTOR_FIXTURE_COMMANDS.weasyprint,
+              available: false,
+              version: null,
+            },
+          },
+        }),
+      states: { "markdown.pdf": "unavailable" },
+      conditions: ["dependency.weasyprint.missing"],
+      actions: ["dependency.weasyprint.install"],
     },
     {
       name: "weasyprint-old",
@@ -166,6 +313,9 @@ describe("doctor workflow projection", () => {
         }),
       states: { "data.query": "limited" },
       conditions: ["data.query.extension.sqlite.unavailable"],
+      conditionMessages: {
+        "data.query.extension.sqlite.unavailable": "SQLite query support could not be verified",
+      },
       actions: [],
     },
     {
@@ -264,8 +414,16 @@ describe("doctor workflow projection", () => {
       const projection = project(fixtureCase.create());
 
       expect(states(projection)).toEqual({ ...readyStates, ...fixtureCase.states });
-      expect(conditionIds(projection)).toEqual(fixtureCase.conditions);
-      expect(actionIds(projection)).toEqual(fixtureCase.actions);
+      expect(projection.conditions).toEqual(
+        fixtureCase.conditions.map((id) => ({
+          id,
+          ...CONDITION_CONTRACT[id],
+          message: fixtureCase.conditionMessages?.[id] ?? CONDITION_CONTRACT[id].message,
+        })),
+      );
+      expect(projection.actions).toEqual(
+        fixtureCase.actions.map((id) => ({ id, ...ACTION_CONTRACT[id] })),
+      );
       expect(projection.issueCount).toBe(fixtureCase.conditions.length);
       expect(projection.actionCount).toBe(fixtureCase.actions.length);
     });
@@ -472,7 +630,9 @@ describe("doctor workflow projection", () => {
       "data.query.runtime.unavailable",
       "data.query.codex.unauthenticated",
     ]);
-    expect(actionIds(projection)).toEqual(["data.query.codex.authenticate"]);
+    expect(projection.actions).toEqual([
+      { id: "data.query.codex.authenticate", ...ACTION_CONTRACT["data.query.codex.authenticate"] },
+    ]);
   });
 });
 
