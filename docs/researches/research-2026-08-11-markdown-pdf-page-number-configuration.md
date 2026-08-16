@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Page-Number Configuration"
 created-date: 2026-08-11
-modified-date: 2026-08-15
+modified-date: 2026-08-16
 status: completed
 agent: codex
 ---
@@ -95,8 +95,8 @@ This research does not:
 - promise a body-only total-page counter without renderer or second-pass proof
 - own the repository-wide pattern and template language guide
 
-The cross-feature language inventory and new guide are owned by
-[Pattern, Placeholder, and Template Language Guide][pattern-language-research].
+Current cross-feature language guidance lives in
+[Patterns, Placeholders, and Templates][pattern-language-guide].
 
 ## Historical Pre-Implementation Baseline
 
@@ -835,15 +835,14 @@ The feature work updates:
 - Profile examples produced by `md pdf-profile init`
 - CLI option help for direct overrides
 
-The Markdown PDF guides own current feature behavior. The future cross-feature
-guide should link to them for advanced PDF details rather than duplicate the
-renderer contract.
+The Markdown PDF guides own current feature behavior. The cross-feature
+language guide links to them for advanced PDF details rather than duplicating
+the renderer contract.
 
 ## Settled Placeholder Handoff
 
-This is the stable input for the separate
-[Pattern, Placeholder, and Template Language Guide][pattern-language-research]
-work:
+This is the stable input summarized by the
+[Patterns, Placeholders, and Templates][pattern-language-guide] guide:
 
 | Contract area         | Shipped handoff                                                                                                                                                                                                                       |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -857,8 +856,8 @@ work:
 | renderer              | Effectively requested advanced counter and repeating-content capabilities require WeasyPrint `65.1`; unsupported active capabilities fail before rendering                                                                            |
 
 The [Markdown PDF Usage guide][markdown-pdf-usage] is the canonical operational
-reference. This handoff deliberately does not introduce the repository-wide
-guide, namespaces, or escaping syntax.
+reference. The cross-feature guide summarizes this handoff without introducing
+namespaces or escaping syntax.
 
 ## Phase 15 Guidance Traceability
 
@@ -866,8 +865,8 @@ Phase 15 completed final guide alignment, example and help verification,
 exact-range documentation review, and whole-plan review. Its public-safe
 evidence and final verdict are recorded in the
 [Phase 15 Guidance Closeout][phase-15-job] record. This research is now
-`completed`; the cross-feature language research remains `draft`, and no
-archive move occurred.
+`completed`; the later cross-feature documentation refactor is recorded in its
+[job record][pattern-language-job].
 
 ## Implementation Records
 
@@ -897,12 +896,15 @@ to a future canary design.
 - [Markdown PDF Profile Revision And Feature Compatibility][profile-revision-research]
 - [Markdown PDF Interactive Page-Number And Page-Chrome UX][interactive-page-number-ux]
 - [Markdown PDF Page Roles And Counter Semantics][page-role-counter-research]
-- [Pattern, Placeholder, And Template Language Guide][pattern-language-research]
 
 ## Related Plans
 
 - [Markdown PDF Page-Number Configuration Implementation][page-number-plan]
 - [Phase 15 Guidance Closeout][phase-15-job]
+
+## Related Guides
+
+- [Patterns, Placeholders, and Templates][pattern-language-guide]
 
 ## References
 
@@ -945,7 +947,8 @@ to a future canary design.
 [phase-14-6-job]: ../plans/jobs/2026-08-15-markdown-pdf-page-number-phase-14-6-interactive-cover-page-authoring.md
 [phase-15-job]: ../plans/jobs/2026-08-15-markdown-pdf-page-number-phase-15-guidance-closeout.md
 [page-role-counter-research]: research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md
-[pattern-language-research]: research-2026-08-11-pattern-placeholder-and-template-language-guide.md
+[pattern-language-guide]: ../guides/patterns-placeholders-and-templates.md
+[pattern-language-job]: ../plans/jobs/2026-08-16-pattern-placeholder-template-guide-refactor.md
 [profile-helper]: ../guides/markdown-pdf-codex-profile-helper.md
 [profile-page-chrome-research]: research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md
 [profile-revision-research]: research-2026-08-14-markdown-pdf-profile-revision-and-feature-compatibility.md

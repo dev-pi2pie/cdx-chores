@@ -569,7 +569,6 @@ repeating-content question is unchanged.
 
 - [Markdown PDF Page-Number Configuration][page-number-research]
 - [Markdown PDF Profile Revision And Feature Compatibility][profile-revision-research]
-- [Pattern, Placeholder, and Template Language Guide][pattern-language-research]
 - [Markdown PDF Interactive Code Highlighting][interactive-code-research]
 - [Markdown PDF Page Roles And Counter Semantics][page-role-counter-research]
 - [Markdown PDF Interactive Cover Page Authoring][interactive-cover-research]
@@ -599,6 +598,5 @@ repeating-content question is unchanged.
 [page-number-plan]: ../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md
 [page-number-research]: research-2026-08-11-markdown-pdf-page-number-configuration.md
 [page-role-counter-research]: research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md
-[pattern-language-research]: research-2026-08-11-pattern-placeholder-and-template-language-guide.md
 [profile-revision-research]: research-2026-08-14-markdown-pdf-profile-revision-and-feature-compatibility.md
 [reopened-phase-14-job]: ../plans/jobs/2026-08-15-markdown-pdf-page-number-phase-14-reopened-interactive-ux.md

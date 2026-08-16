@@ -437,7 +437,6 @@ This research is `completed` because:
 - [Markdown PDF Interactive Page Numbers And Repeating Page Content UX][interactive-research]
 - [Markdown PDF Profile Revision And Feature Compatibility][profile-revision-research]
 - [Profiles, Fonts, And Page Chrome][profile-page-chrome-research]
-- [Pattern, Placeholder, And Template Language Guide][pattern-language-research]
 - [Markdown PDF Interactive Cover Page Authoring][interactive-cover-research]
 
 ## Related Plans
@@ -456,6 +455,5 @@ This research is `completed` because:
 [phase-14-5-job]: ../plans/jobs/2026-08-15-markdown-pdf-page-number-phase-14-5-page-roles-and-counters.md
 [page-number-plan]: ../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md
 [page-number-research]: research-2026-08-11-markdown-pdf-page-number-configuration.md
-[pattern-language-research]: research-2026-08-11-pattern-placeholder-and-template-language-guide.md
 [profile-page-chrome-research]: research-2026-05-07-markdown-to-pdf-profiles-fonts-and-page-chrome.md
 [profile-revision-research]: research-2026-08-14-markdown-pdf-profile-revision-and-feature-compatibility.md

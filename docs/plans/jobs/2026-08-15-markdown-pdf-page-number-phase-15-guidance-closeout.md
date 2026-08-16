@@ -1,6 +1,7 @@
 ---
 title: "Markdown PDF page-number Phase 15 guidance closeout"
 created-date: 2026-08-15
+modified-date: 2026-08-16
 status: completed
 agent: codex
 plan: ../plan-2026-08-12-markdown-pdf-page-number-configuration.md
@@ -170,8 +171,12 @@ the shipped contract or their completion claims.
 ## Related Research
 
 - [Markdown PDF Page-Number Configuration](../../researches/research-2026-08-11-markdown-pdf-page-number-configuration.md)
-- [Pattern, Placeholder, And Template Language Guide](../../researches/research-2026-08-11-pattern-placeholder-and-template-language-guide.md)
 
 ## Related Plans
 
 - [Markdown PDF Page-Number Configuration Implementation](../plan-2026-08-12-markdown-pdf-page-number-configuration.md)
+
+## Later Documentation Refactor
+
+- [Pattern, placeholder, and template language guide refactor](2026-08-16-pattern-placeholder-template-guide-refactor.md)
+- [Patterns, Placeholders, and Templates](../../guides/patterns-placeholders-and-templates.md)

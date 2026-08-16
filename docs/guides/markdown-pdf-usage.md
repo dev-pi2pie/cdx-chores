@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-08-15
+modified-date: 2026-08-16
 status: completed
 agent: codex
 ---
@@ -996,6 +996,7 @@ cdx-chores md to-pdf --input ./report.md --allow-remote-assets
 
 ## Related Docs
 
+- `docs/guides/patterns-placeholders-and-templates.md`
 - `docs/guides/markdown-pdf-codex-profile-helper.md`
 - `docs/guides/markdown-pdf-codex-template-helper.md`
 - `docs/guides/markdown-pdf-codex-project-helper.md`

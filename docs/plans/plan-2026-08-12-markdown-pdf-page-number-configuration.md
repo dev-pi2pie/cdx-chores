@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF page-number configuration implementation"
 created-date: 2026-08-12
-modified-date: 2026-08-15
+modified-date: 2026-08-16
 status: completed
 agent: codex
 ---
@@ -1762,10 +1762,10 @@ Tasks:
       parent plan or research while a mismatch invalidates the shipped contract
       or their completion claims.
 - [x] Publish the concise settled Markdown PDF placeholder handoff in the
-      [page-number research][page-number-research], then link it from the
-      [cross-feature language research][pattern-language-research]. Do not
-      implement the repository-wide language guide, placeholder namespaces, or
-      literal-brace escaping in this plan.
+      [page-number research][page-number-research] for later use by the
+      [cross-feature language guide][pattern-language-guide]. Do not implement
+      that guide, placeholder namespaces, or literal-brace escaping in this
+      plan.
 - [x] Record the already-proven renderer versions, capability baselines,
       extracted-page results, visual conclusions, and cleanup in public-safe
       wording. Reuse the completed renderer evidence unless documentation
@@ -1822,8 +1822,8 @@ Completed checkpoint:
   no renderer behavior.
 - The [Phase 15 job record][phase-15-job] contains the final public-safe
   validation, review, cleanup, and lifecycle evidence. The parent research and
-  this plan are `completed`; the cross-feature language research remains
-  `draft`, and no archive move is performed.
+  this plan are `completed`. A later documentation refactor delivered the
+  cross-feature language guide without changing this plan's outcome.
 
 ## Related Research
 
@@ -1832,10 +1832,10 @@ Completed checkpoint:
 - [Markdown PDF Interactive Page Numbers And Repeating Page Content UX][interactive-page-number-ux]
 - [Markdown PDF Page Roles And Counter Semantics][page-role-counter-research]
 - [Markdown PDF Interactive Cover Page Authoring][interactive-cover-research]
-- [Pattern, Placeholder, and Template Language Guide research][pattern-language-research]
 
 ## Related Guides
 
+- [Patterns, Placeholders, and Templates][pattern-language-guide]
 - [Markdown PDF Usage][markdown-pdf-usage]
 - [Interactive Markdown PDF Usage][interactive-markdown-pdf-usage]
 - [Markdown PDF Codex Profile Helper][profile-helper]
@@ -1848,7 +1848,7 @@ Completed checkpoint:
 [interactive-page-number-ux]: ../researches/research-2026-08-14-markdown-pdf-interactive-page-number-and-page-chrome-ux.md
 [page-number-research]: ../researches/research-2026-08-11-markdown-pdf-page-number-configuration.md
 [page-role-counter-research]: ../researches/research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md
-[pattern-language-research]: ../researches/research-2026-08-11-pattern-placeholder-and-template-language-guide.md
+[pattern-language-guide]: ../guides/patterns-placeholders-and-templates.md
 [profile-revision-research]: ../researches/research-2026-08-14-markdown-pdf-profile-revision-and-feature-compatibility.md
 [profile-helper]: ../guides/markdown-pdf-codex-profile-helper.md
 [project-helper]: ../guides/markdown-pdf-codex-project-helper.md

@@ -47,14 +47,14 @@ Runtime requirement:
 
 ## Command Overview
 
-| Command group | Important subcommands | Purpose | Capability notes |
-| ------------- | --------------------- | ------- | ---------------- |
-| `doctor` | `doctor`, `doctor --json` | Inspect current tool and feature readiness | Run this first on a new machine or after environment changes |
-| `data` | `preview`, `extract`, `query`, `query codex`, `stack`, `stack replay`, `parquet preview`, `duckdb doctor`, `duckdb extension install`, `(conversion actions)` | Tabular conversion, preview, extraction, multi-source stacking, DuckDB-backed SQL query, and Codex SQL drafting | lightweight `csv` / `tsv` / `json` preview and conversion stay on the in-memory PapaParse-backed path; `extract` is best suited to shaping one clean table, `stack` assembles many matching local sources before later work, and `query` is the expressive lane for filtering, projection, and output selection |
-| `md` | `to-docx`, `to-pdf`, `pdf-profile init`, `pdf-profile codex`, `pdf-template init`, `pdf-template codex`, `pdf-project codex`, `frontmatter-to-json` | Markdown conversion, PDF profile/template/project generation, and metadata extraction | `to-docx` requires `pandoc`; `to-pdf` requires Pandoc 2.0+ and `weasyprint` |
-| `rename` | `file`, `batch`, `cleanup`, `apply` | Safe rename previews, cleanup flows, and replayable apply runs | Codex analyzer routes are optional, not required for standard rename usage |
-| `video` | `convert`, `resize`, `gif` | `ffmpeg`-backed video wrappers | Requires `ffmpeg` |
-| `interactive` | `interactive` or no args | Guided menu flow for supported command groups | Requires a TTY |
+| Command group | Important subcommands                                                                                                                                         | Purpose                                                                                                         | Capability notes                                                                                                                                                                                                                                                                                                |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `doctor`      | `doctor`, `doctor --json`                                                                                                                                     | Inspect current tool and feature readiness                                                                      | Run this first on a new machine or after environment changes                                                                                                                                                                                                                                                    |
+| `data`        | `preview`, `extract`, `query`, `query codex`, `stack`, `stack replay`, `parquet preview`, `duckdb doctor`, `duckdb extension install`, `(conversion actions)` | Tabular conversion, preview, extraction, multi-source stacking, DuckDB-backed SQL query, and Codex SQL drafting | lightweight `csv` / `tsv` / `json` preview and conversion stay on the in-memory PapaParse-backed path; `extract` is best suited to shaping one clean table, `stack` assembles many matching local sources before later work, and `query` is the expressive lane for filtering, projection, and output selection |
+| `md`          | `to-docx`, `to-pdf`, `pdf-profile init`, `pdf-profile codex`, `pdf-template init`, `pdf-template codex`, `pdf-project codex`, `frontmatter-to-json`           | Markdown conversion, PDF profile/template/project generation, and metadata extraction                           | `to-docx` requires `pandoc`; `to-pdf` requires Pandoc 2.0+ and `weasyprint`                                                                                                                                                                                                                                     |
+| `rename`      | `file`, `batch`, `cleanup`, `apply`                                                                                                                           | Safe rename previews, cleanup flows, and replayable apply runs                                                  | Codex analyzer routes are optional, not required for standard rename usage                                                                                                                                                                                                                                      |
+| `video`       | `convert`, `resize`, `gif`                                                                                                                                    | `ffmpeg`-backed video wrappers                                                                                  | Requires `ffmpeg`                                                                                                                                                                                                                                                                                               |
+| `interactive` | `interactive` or no args                                                                                                                                      | Guided menu flow for supported command groups                                                                   | Requires a TTY                                                                                                                                                                                                                                                                                                  |
 
 Data notes:
 
@@ -69,15 +69,15 @@ The npm package installs the CLI and its Node.js dependencies, but not every com
 
 Use `cdx-chores doctor` before relying on a command in a script, a CI job, or a fresh machine setup.
 
-| Area | What ships with `cdx-chores` | Additional requirement | How to verify or repair |
-| ---- | ---------------------------- | ---------------------- | ----------------------- |
-| `md to-docx` | Markdown-to-DOCX command wrapper | `pandoc` must be installed on `PATH` | Run `cdx-chores doctor` |
-| `md to-pdf` | Markdown-to-PDF command wrapper and default HTML/CSS recipe | Pandoc 2.0+ and `weasyprint` must be installed on `PATH` | Run `cdx-chores doctor` |
-| `video convert`, `video resize`, `video gif` | Video command wrappers | `ffmpeg` must be installed on `PATH` | Run `cdx-chores doctor` |
-| `data extract`, `data query` for `csv`, `tsv`, `parquet` | Extract and query command surfaces plus DuckDB integration | DuckDB runtime must be available in the current install/runtime | Run `cdx-chores doctor` |
-| `data extract`, `data query` for `sqlite`, `excel` | Extract and query command surfaces | Required DuckDB extension must be loadable for the current DuckDB runtime | Run `cdx-chores doctor`, then `cdx-chores data duckdb doctor` or `cdx-chores data duckdb extension install <name>` |
-| `data extract` reviewed suggestions, `data query codex` | Codex-assisted source shaping, semantic header review, and natural-language SQL drafting | Codex support must be configured and an auth/session signal must be available | Run `cdx-chores doctor` |
-| `md pdf-profile codex`, `md pdf-template codex`, `md pdf-project codex` | Codex-assisted Markdown PDF profile, template, and coordinated project drafting | Codex support must be configured for Codex-assisted decisions; deterministic fallback paths remain available where documented | Run `cdx-chores doctor` |
+| Area                                                                    | What ships with `cdx-chores`                                                             | Additional requirement                                                                                                        | How to verify or repair                                                                                            |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `md to-docx`                                                            | Markdown-to-DOCX command wrapper                                                         | `pandoc` must be installed on `PATH`                                                                                          | Run `cdx-chores doctor`                                                                                            |
+| `md to-pdf`                                                             | Markdown-to-PDF command wrapper and default HTML/CSS recipe                              | Pandoc 2.0+ and `weasyprint` must be installed on `PATH`                                                                      | Run `cdx-chores doctor`                                                                                            |
+| `video convert`, `video resize`, `video gif`                            | Video command wrappers                                                                   | `ffmpeg` must be installed on `PATH`                                                                                          | Run `cdx-chores doctor`                                                                                            |
+| `data extract`, `data query` for `csv`, `tsv`, `parquet`                | Extract and query command surfaces plus DuckDB integration                               | DuckDB runtime must be available in the current install/runtime                                                               | Run `cdx-chores doctor`                                                                                            |
+| `data extract`, `data query` for `sqlite`, `excel`                      | Extract and query command surfaces                                                       | Required DuckDB extension must be loadable for the current DuckDB runtime                                                     | Run `cdx-chores doctor`, then `cdx-chores data duckdb doctor` or `cdx-chores data duckdb extension install <name>` |
+| `data extract` reviewed suggestions, `data query codex`                 | Codex-assisted source shaping, semantic header review, and natural-language SQL drafting | Codex support must be configured and an auth/session signal must be available                                                 | Run `cdx-chores doctor`                                                                                            |
+| `md pdf-profile codex`, `md pdf-template codex`, `md pdf-project codex` | Codex-assisted Markdown PDF profile, template, and coordinated project drafting          | Codex support must be configured for Codex-assisted decisions; deterministic fallback paths remain available where documented | Run `cdx-chores doctor`                                                                                            |
 
 Codex SDK baseline for `v0.1.7-canary.1`: `0.147.0`
 
@@ -312,30 +312,14 @@ cdx-chores rename file ./images/IMG_1024.JPG --pattern "{uid}-{stem}" --dry-run
 
 Template notes:
 
-- available placeholders include `{prefix}`, `{timestamp}`, `{timestamp_local}`, `{timestamp_utc}`, `{timestamp_local_iso}`, `{timestamp_utc_iso}`, `{timestamp_local_12h}`, `{timestamp_utc_12h}`, `{date}`, `{date_local}`, `{date_utc}`, `{stem}`, `{uid}`, and `{serial...}`
+- placeholder families cover prefixes, stems, UIDs, dates, timestamps, and serials
 - `--prefix` is optional
 - `--codex` is the common smart-routing flag for CLI mode
 - `--codex-images` and `--codex-docs` are explicit analyzer overrides
 - `{uid}` renders a deterministic `uid-<token>` fragment
 - `{serial...}` enables serial controls
 - `--serial-width` uses a digit count such as `2` or `4`, not `#`
-
-Timestamp placeholder notes:
-
-- `{timestamp}` uses UTC as the backward-compatible default
-- `{timestamp_local}` uses local time explicitly
-- `{timestamp_utc}` uses UTC explicitly
-- `{timestamp_local_iso}` uses local time with a numeric offset such as `+0800`
-- `{timestamp_utc_iso}` uses UTC with `Z`
-- `{timestamp_local_12h}` and `{timestamp_utc_12h}` use compact `12hr` output with `AM` or `PM`
-- `--timestamp-timezone local|utc` overrides `{timestamp}` only
-
-Route A examples:
-
-```bash
-cdx-chores rename file ./images/IMG_1024.JPG --pattern "{timestamp_utc_iso}-{stem}" --dry-run
-cdx-chores rename batch ./images --pattern "{timestamp_local_12h}-{stem}" --dry-run
-```
+- use `docs/guides/rename-common-usage.md` for the complete template contract
 
 Cleanup notes:
 
@@ -349,12 +333,12 @@ Cleanup notes:
 
 Cleanup option comparison:
 
-| Surface | Current role | Current values / scope |
-| ------- | ------------ | ---------------------- |
-| `--hint` | Choose fragment families to clean | `date`, `timestamp`, `serial`, `uid` |
-| `--style` | Format surviving text after cleanup | `preserve`, `slug` |
-| `--timestamp-action` | Keep or remove matched timestamp text | `keep`, `remove` with `--hint timestamp` |
-| `--conflict-strategy` | Resolve collisions only when the cleaned target conflicts | `skip`, `number`, `uid-suffix` |
+| Surface               | Current role                                              | Current values / scope                   |
+| --------------------- | --------------------------------------------------------- | ---------------------------------------- |
+| `--hint`              | Choose fragment families to clean                         | `date`, `timestamp`, `serial`, `uid`     |
+| `--style`             | Format surviving text after cleanup                       | `preserve`, `slug`                       |
+| `--timestamp-action`  | Keep or remove matched timestamp text                     | `keep`, `remove` with `--hint timestamp` |
+| `--conflict-strategy` | Resolve collisions only when the cleaned target conflicts | `skip`, `number`, `uid-suffix`           |
 
 ### Video
 
@@ -395,6 +379,10 @@ cdx-chores video resize -i ./clip.mp4 -o ./clip-720p.mp4 --width 1280 --height 7
 ```
 
 ## Guides
+
+Cross-feature:
+
+- `docs/guides/patterns-placeholders-and-templates.md`
 
 Rename:
 

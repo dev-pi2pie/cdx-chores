@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Template Helper"
 created-date: 2026-06-25
-modified-date: 2026-08-15
+modified-date: 2026-08-16
 status: completed
 agent: codex
 ---
@@ -338,6 +338,7 @@ read an existing `template.html` or `style.css` as a refinement input.
 
 ## Related Docs
 
+- [Patterns, Placeholders, and Templates](patterns-placeholders-and-templates.md)
 - [Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md)
 - [Markdown PDF Usage](markdown-pdf-usage.md)
 - [Markdown PDF Codex Profile Helper](markdown-pdf-codex-profile-helper.md)

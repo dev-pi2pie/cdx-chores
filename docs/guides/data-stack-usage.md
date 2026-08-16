@@ -1,7 +1,7 @@
 ---
 title: "Data Stack Usage"
 created-date: 2026-04-24
-modified-date: 2026-04-28
+modified-date: 2026-08-16
 status: completed
 agent: codex
 ---
@@ -259,27 +259,35 @@ Current implemented interactive flow:
 10. If union-by-name is selected, optionally enter exact column/key exclusions.
 11. Choose output format.
 12. Choose destination style:
-   - use generated default output path
-   - custom output path
+
+- use generated default output path
+- custom output path
+
 13. Review the deterministic status preview:
-   - input discovery
-   - schema analysis
-   - matched files and bounded sample
-   - duplicate/key diagnostics
-   - output target
-   - stack-plan and advisory-report status
+
+- input discovery
+- schema analysis
+- matched files and bounded sample
+- duplicate/key diagnostics
+- output target
+- stack-plan and advisory-report status
+
 14. If diagnostics show useful signals, choose one Codex-powered analysis checkpoint action:
-   - analyze with Codex
-   - continue without Codex
-   - revise stack setup
-   - cancel
+
+- analyze with Codex
+- continue without Codex
+- revise stack setup
+- cancel
+
 15. If Codex recommendations are accepted or edited, review the refreshed deterministic status preview.
 16. At the write boundary, choose one of:
-   - write now
-   - dry-run plan only
-   - change destination
-   - revise stack setup
-   - cancel
+
+- write now
+- dry-run plan only
+- change destination
+- revise stack setup
+- cancel
+
 17. If `dry-run plan only` is selected, write only the stack-plan artifact and choose whether to keep it.
 18. If `write now` succeeds, choose whether to keep the applied stack plan.
 19. If advisory reports exist, answer their retention prompt separately from the stack-plan retention prompt.
@@ -340,3 +348,7 @@ Guarded clean behavior:
 - the generator refuses to delete the default tracked fixture root with `clean`
 - use `reset` for the committed playground tree
 - use `clean --output-dir <path>` only for alternate generated fixture roots under `examples/playground/.tmp-tests/`
+
+## Related Guides
+
+- [Patterns, Placeholders, and Templates](patterns-placeholders-and-templates.md)
