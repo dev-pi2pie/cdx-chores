@@ -25,6 +25,8 @@ Check the local environment before using the command in scripts or CI:
 cdx-chores doctor
 ```
 
+Use `cdx-chores doctor --details` for complete human-readable evidence.
+
 For machine-readable checks:
 
 ```bash

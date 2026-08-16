@@ -567,15 +567,15 @@ Tasks:
 
 - [x] Update the Phase 5 section of the plan-level execution record with the
       exact implementation, review, and documentation ranges.
-- [ ] Run the complete deterministic view matrix for compact, detailed, and JSON
+- [x] Run the complete deterministic view matrix for compact, detailed, and JSON
       output across all Phase 1 fixtures.
 - [ ] Run bounded built-CLI smoke checks for default, `--details`, `--json`, flag
       conflict, missing dependencies, and an all-ready environment where the
       current machine can supply it.
-- [ ] Verify README command tables and examples, top-level help, Markdown PDF
+- [x] Verify README command tables and examples, top-level help, Markdown PDF
       guidance, data-query guidance, data-query Codex guidance, and DuckDB
       guidance against the implemented views.
-- [ ] Document human-output compatibility: compact is the default, `--details`
+- [x] Document human-output compatibility: compact is the default, `--details`
       is the evidence view, and `--json` remains the automation surface.
 - [ ] Keep public records free of machine-specific paths, secrets, raw errors,
       and local setup commands.

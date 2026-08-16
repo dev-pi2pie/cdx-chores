@@ -41,6 +41,9 @@ Start interactive mode (default when no args are provided in a TTY):
 cdx-chores
 ```
 
+For doctor checks in Interactive mode, choose `doctor`, then select `Summary`,
+`Details`, or `JSON`.
+
 Runtime requirement:
 
 - Node.js `>= 22.23.0`
@@ -49,7 +52,7 @@ Runtime requirement:
 
 | Command group | Important subcommands                                                                                                                                         | Purpose                                                                                                         | Capability notes                                                                                                                                                                                                                                                                                                |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `doctor`      | `doctor`, `doctor --json`                                                                                                                                     | Inspect current tool and feature readiness                                                                      | Run this first on a new machine or after environment changes                                                                                                                                                                                                                                                    |
+| `doctor`      | `doctor`, `doctor --details`, `doctor --json`                                                                                                                 | Inspect current tool and feature readiness                                                                      | Run this first on a new machine or after environment changes                                                                                                                                                                                                                                                    |
 | `data`        | `preview`, `extract`, `query`, `query codex`, `stack`, `stack replay`, `parquet preview`, `duckdb doctor`, `duckdb extension install`, `(conversion actions)` | Tabular conversion, preview, extraction, multi-source stacking, DuckDB-backed SQL query, and Codex SQL drafting | lightweight `csv` / `tsv` / `json` preview and conversion stay on the in-memory PapaParse-backed path; `extract` is best suited to shaping one clean table, `stack` assembles many matching local sources before later work, and `query` is the expressive lane for filtering, projection, and output selection |
 | `md`          | `to-docx`, `to-pdf`, `pdf-profile init`, `pdf-profile codex`, `pdf-template init`, `pdf-template codex`, `pdf-project codex`, `frontmatter-to-json`           | Markdown conversion, PDF profile/template/project generation, and metadata extraction                           | `to-docx` requires `pandoc`; `to-pdf` requires Pandoc 2.0+ and `weasyprint`                                                                                                                                                                                                                                     |
 | `rename`      | `file`, `batch`, `cleanup`, `apply`                                                                                                                           | Safe rename previews, cleanup flows, and replayable apply runs                                                  | Codex analyzer routes are optional, not required for standard rename usage                                                                                                                                                                                                                                      |
@@ -86,7 +89,11 @@ helpers remain available as direct CLI flows. Interactive mode also provides
 `md -> to-pdf` for guided rendering and `md -> pdf-recipes` for durable recipe
 authoring with an optional render handoff.
 
-For automation or machine-readable checks, use:
+The default doctor view is a compact workflow summary with detected actions.
+Use `--details` for complete human-readable evidence and `--json` for
+automation or machine-readable checks.
+
+Machine-readable check:
 
 ```bash
 cdx-chores doctor --json
@@ -96,13 +103,19 @@ cdx-chores doctor --json
 
 ### Doctor
 
-Text output:
+Compact workflow summary:
 
 ```bash
 cdx-chores doctor
 ```
 
-JSON output:
+Detailed human evidence:
+
+```bash
+cdx-chores doctor --details
+```
+
+Machine-readable evidence:
 
 ```bash
 cdx-chores doctor --json

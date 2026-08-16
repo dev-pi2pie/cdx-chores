@@ -1,7 +1,7 @@
 ---
 title: "Interactive Markdown PDF Usage"
 created-date: 2026-07-22
-modified-date: 2026-08-15
+modified-date: 2026-08-16
 status: completed
 agent: codex
 ---
@@ -38,6 +38,9 @@ capabilities with:
 ```bash
 cdx-chores doctor
 ```
+
+From Interactive mode, choose `doctor`, then select `Summary`, `Details`, or
+`JSON` for the same three doctor projections.
 
 ## Choose An Entry Goal
 
