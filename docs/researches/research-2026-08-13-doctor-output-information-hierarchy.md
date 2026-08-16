@@ -1,7 +1,8 @@
 ---
 title: "Doctor Output Information Hierarchy"
 created-date: 2026-08-13
-status: draft
+modified-date: 2026-08-16
+status: in-progress
 agent: codex
 ---
 
@@ -11,24 +12,22 @@ Research a clearer human-output hierarchy for `cdx-chores doctor` without
 hiding actionable remediation, weakening existing probes, or destabilizing
 machine-readable output.
 
-The likely direction is a compact default view, a detailed human view, and the
-existing structured JSON view. This document records an initial product shape;
-it does not authorize implementation yet.
+The current direction is a compact default view, a detailed human view, and the
+existing structured JSON view. All three should project the same inspected
+evidence without forcing human-oriented summary states into the JSON contract.
+This document does not authorize implementation yet.
 
-## Scheduling Boundary
+## Prior Dependency
 
-The active [Markdown PDF page-number configuration plan][page-number-plan]
-remains the current implementation priority. Its later phases still use
-`doctor --json` as renderer evidence and must finish against a stable doctor
-contract.
+The [Markdown PDF page-number configuration plan][page-number-plan] is complete
+and no longer blocks this research. Its only continuing constraint here is that
+the existing `doctor --json` field meanings remain stable while the human
+information hierarchy changes.
 
-Therefore:
-
-- this research may be refined while that plan remains active
-- doctor implementation work should not begin until the active plan is closed
-- no new doctor implementation plan is created from this first draft
-- a later plan should be created only after this research settles the human
-  views, advisory rules, compatibility boundary, and verification matrix
+This doctor research owns the new structure. It remains `in-progress` until its
+current-output inventory, visibility mapping, public-safety audit, and
+representative fixtures are complete; no implementation plan should begin
+before that evidence is recorded.
 
 ## Current Behavior
 
@@ -44,6 +43,11 @@ The human command currently prints:
 
 This is useful diagnostic evidence, but successful runs are long. Routine
 success can obscure the few lines that require user attention.
+
+The current view can repeat one detected condition across the tool,
+top-level-capability, and detailed-capability sections. Those lines are useful
+evidence, but a compact view should express the workflow impact once and render
+one relevant action.
 
 The current implementation also has behavior that must not be lost in a
 compact view:
@@ -61,17 +65,36 @@ the default view easier to scan while preserving every actionable condition.
 ## Design Principle
 
 ```text
-Compact output hides routine evidence, not actionable information.
+Compact output hides routine evidence, never workflow impact, action, or
+uncertainty.
 ```
 
-A successful low-level probe may be collapsed into a feature-family summary.
-A warning, blocker, unknown result, install opportunity, or state-derived
-remediation must remain visible in the compact view.
+A successful low-level probe may be collapsed into a workflow summary. A
+limitation, unavailable workflow, unknown result, install opportunity, or
+state-derived remediation must remain visible in the compact view.
 
-This distinction matters for DuckDB extensions. If SQLite or Excel support is
-not loadable but the missing extension is installable, the compact result must
-show the exact supported install command even when the wider data-query system
-is usable.
+This distinction applies whenever a base workflow remains usable while a
+supported child capability is limited, or when one missing dependency affects
+several workflows. Compact output must preserve the affected workflow states
+and actions without repeating the same underlying condition for every
+low-level capability.
+
+The information layers are:
+
+```text
+inspection facts
+  -> normalized internal doctor report
+     |-> legacy JSON evidence projection
+     |-> detailed human evidence projection
+     `-> workflow impacts + typed actions -> compact human projection
+```
+
+Inspection facts remain authoritative. The normalized internal report may add
+derived workflow impacts and typed actions, but the first JSON projection owns
+only the already-inventoried evidence fields. Human views derive their hierarchy
+from the internal report; they do not parse rendered strings or become a
+replacement source of truth. Shape-preservation tests must prove that extracting
+the internal report does not add, remove, or reinterpret JSON fields.
 
 ## Candidate View Model
 
@@ -79,38 +102,42 @@ is usable.
 
 The default view should answer three questions quickly:
 
-1. Can the main feature families run?
-2. Is anything degraded, blocked, or unknown?
-3. Is there a concrete action that improves the current environment?
+1. Which user workflows are available, limited, unavailable, or unknown?
+2. Which non-ready conditions affect the user rather than only internal
+   evidence?
+3. Which detected actions can improve the current environment?
 
 Possible shape:
 
 ```text
 cdx-chores doctor
 
-Status: Ready with 1 recommendation
+1 issue · 1 action
 
-- Markdown: ready
-- Video: ready
-- Data query: ready with recommendation
-- Fonts: ready
-- Codex: ready
+Markdown
+  DOCX: ready
+  PDF: unavailable — WeasyPrint is missing
 
-Recommendation:
-- SQLite queries need the DuckDB sqlite extension.
-  Try: cdx-chores data duckdb extension install sqlite
+Video: ready
+Data query: ready
+Fonts: ready
+Codex-assisted data query: ready
 
-Use the future detailed human view for versions and capability details.
+Actions:
+  Install WeasyPrint: brew install weasyprint
+
+Run `cdx-chores doctor --details` for versions and capability evidence.
 ```
 
-This example is directional rather than settled copy. In particular, research
-must decide whether an installable missing extension is described as
-`ready with recommendation`, `attention`, or `degraded`. It must not be reduced
-to an unqualified `ready` state.
+This example is directional copy, but its hierarchy is intentional. It avoids a
+global `Ready` or `Blocked` judgment because doctor does not know which workflow
+the user intends to run. It also keeps Markdown DOCX separate from Markdown PDF
+and describes the inspected Codex state as data-query-specific rather than
+claiming global Codex readiness.
 
 ### Detailed human view
 
-A proposed detailed view could carry forward the current evidence-oriented
+The detailed view should carry forward the current evidence-oriented
 information, including:
 
 - platform and runtime versions
@@ -123,14 +150,25 @@ information, including:
 - install suggestions and other remediation
 
 No detailed-view flag exists today; the root command currently exposes only
-`--json`. `--verbose` is one candidate because it communicates expanded human
-detail, but the name and behavior must be checked against repository-wide CLI
-conventions before a plan freezes it.
+`--json`. The current command inventory has no shared `--verbose`, `--details`,
+or other root-level human-detail convention. Rename preview uses `detailed` only
+as a value of its feature-specific `--preview-skips` option. This research
+therefore selects `--details`: it describes a deliberate information view
+rather than debug logging or internal execution verbosity.
 
-Research must also decide how a future detailed flag interacts with `--json`:
-reject the combination as mutually exclusive, let JSON take precedence, or
-define another explicit rule. Help and usage guides should change only after
-that command contract is accepted.
+The intended help entry is `--details  Output detailed human-readable
+evidence`. `--details` and `--json` are mutually exclusive. The parser should
+reject the combination before running probes, write the standard option error
+and help to stderr, and exit `1`, consistent with existing command-line parser
+errors. Silently choosing one view would make an ambiguous command appear
+successful.
+
+Detailed output semantically preserves every current human evidence category
+and its stable ordering; it does not promise byte-for-byte compatibility. It
+must also render every already-computed section when DuckDB is unavailable
+instead of retaining the current early return that suppresses data-query Codex
+evidence. Help and usage guides should change only after implementation accepts
+this command contract.
 
 ### Structured JSON view
 
@@ -142,28 +180,63 @@ facts, Codex readiness, font probes, and the flat capability map.
 Before claiming compatibility, research must inventory the exact nested fields,
 booleans, status values, optional details, and tests. A human-output redesign
 should not silently rename, remove, regroup, or reinterpret those existing
-values. In particular, a future family-health taxonomy must not change the
-meaning of current capability booleans or renderer statuses.
+values. In particular, human workflow states must not change the meaning of
+current capability booleans or renderer statuses.
 
-If later research finds that the JSON model cannot represent compact-view
-severity or advisories without inference, any additive fields need their own
-compatibility review. Human rendering should not become the source of truth.
+The first implementation should leave the JSON payload unchanged. If future
+automation needs normalized workflow summaries or advisory objects, those
+additive fields need their own compatibility and versioning review. Compact
+rendering does not justify expanding the automation contract by itself.
 
-## Candidate Status Taxonomy
+Field ownership for the first implementation is:
 
-One shared model should drive compact, detailed, and JSON rendering. The first
-taxonomy to evaluate is:
+| Owner                     | Data                                                                                 |
+| ------------------------- | ------------------------------------------------------------------------------------ |
+| inspection layer          | existing tool, requirement, renderer, query, Codex, font, and capability facts       |
+| internal projection layer | derived workflow state, typed conditions, typed actions, and affected-workflow links |
+| legacy JSON serializer    | only the current JSON evidence fields and meanings                                   |
+| detailed human renderer   | all current evidence categories plus existing remediation                            |
+| compact human renderer    | workflow state, sanitized condition summaries, and deduplicated actions              |
 
-| Status               | Meaning                                                                               | Compact behavior                                         |
-| -------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `ready`              | The feature family is usable and has no current action                                | Show one collapsed success line                          |
-| `ready-with-actions` | The primary feature works, but a detected optional or scoped improvement is available | Show the family and every actionable recommendation      |
-| `degraded`           | Part of the supported feature family is unavailable                                   | Show the affected capability and remediation             |
-| `blocked`            | A primary workflow cannot run                                                         | Show the blocker prominently                             |
-| `unknown`            | Availability or compatibility could not be determined                                 | Show the uncertainty and the safest next diagnostic step |
+## Workflow State And Action Model
 
-The names are provisional. The important contract is that an actionable state
-cannot collapse into ordinary success.
+Availability and action are separate dimensions.
+
+| Workflow state | Meaning                                                               | Compact behavior                                     |
+| -------------- | --------------------------------------------------------------------- | ---------------------------------------------------- |
+| `ready`        | The inspected workflow is usable without a detected limitation        | Collapse to one success line                         |
+| `limited`      | The base workflow is usable, but a supported scoped capability is not | Show the affected capability and relevant action     |
+| `unavailable`  | The inspected workflow cannot run                                     | Show the unavailable workflow and required action    |
+| `unknown`      | Availability or compatibility could not be determined                 | Show the uncertainty and safest next diagnostic step |
+
+Actions are separately classified as:
+
+| Action class  | Meaning                                                           |
+| ------------- | ----------------------------------------------------------------- |
+| `recommended` | The workflow remains usable, but a detected improvement is useful |
+| `required`    | The action is necessary for the affected workflow to run          |
+
+No action object is needed when the state is self-explanatory and there is no
+safe next step. Multiple workflow impacts may reference one typed condition and
+one deduplicated action.
+
+Workflow composition follows these rules:
+
+- `unavailable` when a base workflow precondition is missing or unsupported
+- `unknown` when base workflow availability cannot be established safely
+- `limited` when the base workflow is ready but at least one inspected,
+  supported child capability is unavailable or unverified
+- `ready` when the base workflow and every inspected supported child capability
+  are ready
+
+Group headings such as `Markdown` do not receive a synthetic state. Their child
+workflow lines carry the state. This prevents a ready DOCX path from hiding an
+unavailable PDF path.
+
+`blocked` is not a default environment-wide state. A missing dependency can
+make one workflow unavailable without blocking unrelated workflows or the CLI
+as a whole. A future explicit health-check contract may introduce broader
+policy, but compact presentation should not imply it.
 
 ## Advisory And Remediation Rules
 
@@ -184,60 +257,91 @@ Always retain in compact output:
 Do not add generic advice that is unrelated to detected state. Doctor should
 not become a tips carousel.
 
-When several checks lead to the same command, compact output should deduplicate
-the recommendation while preserving the affected feature names. Detailed and
-JSON views may retain the individual evidence entries.
+Compact output is workflow-first: render workflows in the stable order defined
+below, then render one `Actions` section. Each action has a stable action ID,
+class, sanitized message, optional public command, and affected workflow IDs.
+Deduplicate by action ID rather than rendered text or command text, merging the
+affected workflows. When one action affects several workflows, list those
+workflow names once under that action.
 
-## Feature-Family Aggregation
+Required actions sort before recommended actions. Within each class, sort by
+the first affected workflow's stable order and then by action ID. The headline
+issue count is the number of unique typed conditions that remain visible in
+compact output; the action count is the number of deduplicated user-visible
+action records. Detailed and JSON views may retain every individual evidence
+entry.
 
-Compact output should aggregate evidence at a user-facing feature boundary,
-not simply truncate the current list.
+## Workflow Aggregation
+
+Compact output should aggregate evidence at a user-facing workflow boundary,
+not simply truncate the current list or group everything that shares a tool.
 
 Initial grouping to evaluate:
 
-| Compact family | Evidence that may be collapsed when successful                                           | Evidence that must expand                                                                                 |
-| -------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Markdown       | Pandoc, WeasyPrint, DOCX/PDF readiness, renderer capability matrix                       | Missing/unsupported tools, unverified renderer state, unavailable required capability                     |
-| Video          | FFmpeg-backed convert, resize, and GIF capabilities                                      | Missing FFmpeg or a future operation-specific limitation                                                  |
-| Data query     | Core formats, extension formats, DuckDB runtime, Codex drafting readiness where relevant | Missing/unloadable extensions, install commands, unavailable runtime, authentication/configuration action |
-| Fonts          | Discovery and coverage probes                                                            | Missing selected support, degraded discovery, unknown coverage state                                      |
-| Codex          | Configured support and authenticated session                                             | Configuration, authentication, or environment action                                                      |
+| Compact workflow            | Evidence that may collapse when successful                         | Evidence that must expand                                                     |
+| --------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| Markdown DOCX               | Pandoc availability                                                | Missing Pandoc and its installation action                                    |
+| Markdown PDF                | Pandoc, WeasyPrint, and satisfied renderer capability groups       | Base unavailability, advanced limitations, unknown state, and relevant action |
+| Video                       | FFmpeg-backed convert, resize, and GIF operations                  | Missing FFmpeg or an operation-specific limitation                            |
+| Data query                  | Core formats, DuckDB runtime, and loadable extension formats       | Unavailable runtime, unloadable formats, and extension installation actions   |
+| Codex-assisted data query   | Configured support, session availability, and data-query readiness | Configuration, authentication, environment, or underlying data-query action   |
+| Font discovery and coverage | Available fontconfig probes                                        | Missing selected support or unknown coverage                                  |
 
-The final grouping must avoid double-reporting one condition under multiple
-families. For example, data-query Codex readiness may be summarized under Data
-query while a general Codex family explains the shared configuration problem.
+The final mapping must avoid double-reporting one condition under multiple
+workflows. One detected issue may list several affected workflows, but compact
+output should render its remediation once. A general `Codex` summary remains
+out of scope until doctor assesses all Codex-backed workflows rather than only
+data-query drafting readiness.
+
+### Initial composition matrix
+
+This doctor-level matrix settles how common evidence shapes compose. The exact
+feature fixtures remain a research closeout requirement.
+
+| Evidence shape                                   | Compact result                                             | Action behavior                                     | Detailed and JSON behavior               |
+| ------------------------------------------------ | ---------------------------------------------------------- | --------------------------------------------------- | ---------------------------------------- |
+| Base workflow and supported children satisfied   | Workflow `ready`                                           | No action                                           | Preserve complete evidence               |
+| Base dependency missing or unsupported           | Affected workflow `unavailable`                            | One required action when a safe step exists         | Preserve the exact dependency evidence   |
+| Base workflow cannot be verified                 | Affected workflow `unknown`                                | Show the safest diagnostic step when one exists     | Preserve the unverified evidence         |
+| Base workflow ready; supported child non-ready   | Parent workflow `limited`; affected child shown separately | Action applies only to the affected child           | Preserve each child capability result    |
+| Optional scoped workflow missing but installable | Parent `limited`; scoped workflow `unavailable`            | One required install action for the scoped workflow | Preserve installability and command      |
+| One upstream condition affects several workflows | Each affected workflow keeps its own state                 | Render one shared issue and deduplicated action     | Preserve every underlying evidence entry |
+| Configuration or session missing                 | Only the dependent workflow becomes `unavailable`          | Required configuration or sign-in action            | Preserve independent readiness facts     |
+
+Feature-specific matrices should be recorded as fixtures and visibility maps,
+not expanded into this structural contract.
 
 ## Exit-Code Boundary
 
 The current doctor action reports detected missing, unsupported, and unknown
 states in its output but does not derive a nonzero exit code from those health
 states. Nonzero behavior currently comes from ordinary command-level failures,
-not from a `ready`/`degraded`/`blocked` taxonomy.
+not from workflow availability states.
 
-This research must decide whether presentation-only work preserves that
-behavior or whether status-driven exit codes are a separate compatibility
-change. The default direction is to preserve current exit behavior unless
-evidence shows scripts need a new explicit health-check contract. Any change
-would require focused CLI tests for every status and documentation for shell
-automation; it must not arrive implicitly with compact rendering.
+Presentation-only work should preserve that behavior. Inspected unavailable,
+limited, and unknown workflows remain report data and do not themselves produce
+a nonzero exit code. Probe or command-level failures retain the existing
+failure behavior. A future status-driven health check would be a separate CLI
+compatibility contract with focused exit-code tests and shell-automation
+documentation; it must not arrive implicitly with compact rendering.
 
 ## TTY And Redirected Output
 
-The first implementation should prefer one deterministic compact human format
-for TTY and redirected output. Automatically switching detail based on TTY can
-make captured logs differ from an interactive run and complicate support.
+The first implementation should use one deterministic compact human format for
+TTY and redirected output. Automatically switching detail based on TTY can make
+captured logs differ from an interactive run and complicate support.
 
 Color may continue to depend on terminal capabilities, but information content
-should remain stable unless later evidence justifies a separate non-interactive
-contract. Research must define whether redirected output is textually stable
-apart from color before a plan makes byte-stability claims.
+should remain stable. This is content stability, not a promise that whitespace,
+ordering, or every byte of human output is a permanent automation contract.
+`doctor --json` remains the intended automation surface.
 
 ## Compatibility Boundary
 
 The redesign should preserve:
 
 - the existing probe implementations and dependency-selection rules
-- one structured source of truth for readiness and remediation
+- one structured evidence report with typed workflow impacts and remediation
 - the meaning of inventoried `doctor --json` fields unless an additive or
   breaking change is separately reviewed
 - current public install commands, including DuckDB extension installation
@@ -251,16 +355,39 @@ The redesign should avoid:
 - deriving compact status by parsing already-rendered strings
 - treating optional recommendations as invisible success
 - turning every optional tool into a global warning
+- claiming global readiness for a broad family when only one workflow was
+  assessed
 - silently changing exit codes as a side effect of presentation work
 - introducing a general notification framework solely for doctor output
 
 Existing public-safety behavior needs an explicit audit rather than a blanket
 compatibility claim. Current detail fields may carry environment-derived paths
-or raw error text from Codex and DuckDB inspection. Research must decide whether
-the redesign preserves those details only in existing detailed/JSON surfaces,
-sanitizes new compact advisories, or proposes a separately reviewed redaction
-change. Tests should cover secrets, override paths, raw errors, and public
-install commands for every changed surface.
+or raw error text from Codex and DuckDB inspection. New compact advisories must
+use typed, sanitized messages and commands instead of forwarding raw detail
+strings. Whether existing detailed and JSON fields should be redacted is a
+separate compatibility decision. Tests should cover secrets, override paths,
+raw errors, and public install commands for every changed surface.
+
+The current fields requiring that audit are:
+
+- `query.detail`, which can contain a raw DuckDB runtime error
+- `query.formats.sqlite.detail` and `query.formats.excel.detail`, which can
+  contain raw extension load, permission, cache, or network errors
+- `queryCodex.detail`, which can contain SDK import errors, authentication
+  guidance, or a resolved Codex override path
+
+The first redesign applies sanitization only to the new compact projection.
+Detailed output preserves the current detail behavior, and JSON remains
+unchanged. Any redaction of those existing surfaces requires a separate
+compatibility review. Compact tests must prove that secrets, resolved paths, and
+raw errors do not pass through, while approved public install commands and
+state-derived guidance remain visible.
+
+The current human implementation also exits its rendering path early when the
+DuckDB runtime is unavailable, so the later data-query Codex section is not
+printed even though JSON construction has already recorded that state. The
+visibility inventory must classify this as existing behavior and decide whether
+the detailed projection preserves it or fixes the omission deliberately.
 
 ## Research Evidence Needed
 
@@ -270,64 +397,65 @@ Before this research can become an implementation plan, record:
   and tests
 - a public-safety audit of current Codex and DuckDB detail fields
 - the exact existing DuckDB installability states and remediation commands
-- representative compact output for all-ready, ready-with-actions, degraded,
-  blocked, and unknown environments
+- representative compact output for all-ready, limited, unavailable, and
+  unknown workflows, including multiple impacts from one condition
 - a mapping from each current human line to compact, detailed, and JSON
   visibility
-- a mapping from low-level conditions to feature-family status without
+- validation and completion of the initial condition-to-workflow matrix without
   duplicate or contradictory messages
-- flag-name consistency with other CLI commands
-- the interaction between the proposed detailed flag and `--json`
+- representative action grouping, stable ordering, and headline counts for one
+  condition affecting several workflows and for several independent actions
 - compatibility expectations for scripts that currently consume human output,
   even though JSON is the intended automation surface
 - focused tests proving actionable install tips remain visible in compact mode
+- focused tests proving base workflow readiness remains distinct from scoped
+  capability limitations
 
 ## Possible Implementation Shape After Research
 
 If the direction is accepted, a later plan will likely separate:
 
-1. a shared doctor health and advisory model
-2. compact human rendering
-3. detailed human rendering
-4. DuckDB and dependency remediation preservation
-5. Markdown PDF capability aggregation
-6. JSON compatibility and additive-schema decisions, if any
-7. tests, guide updates, and lifecycle closeout
+1. extraction of the current structured evidence report without changing JSON
+2. typed workflow-impact and remediation projection
+3. compact human rendering
+4. detailed human rendering
+5. workflow aggregation and shared-condition deduplication
+6. JSON shape-preservation tests
+7. public-safety tests, guide updates, and lifecycle closeout
 
 That plan should use focused checkpoints and exact commit-range review. It
-should not be appended to the active Markdown PDF plan.
+should remain separate from the completed Markdown PDF plan.
 
-## Current Leaning
+## Revised Direction
 
-The current leaning is:
+The current direction is:
 
 - make compact human output the eventual default
-- provide the current evidence categories through a proposed detailed human
-  view after its flag and combination rules are settled
-- keep `doctor --json` as the automation surface and preserve inventoried field
-  meanings
-- summarize fully satisfied capability families
-- always display detected remediation, including DuckDB extension install
-  commands, in compact output
+- provide the current evidence categories through a detailed human view selected
+  by `--details`
+- reject `--details` with `--json` as an ambiguous view combination
+- keep `doctor --json` unchanged as the automation surface
+- summarize fully satisfied workflows rather than broad technical families
+- distinguish workflow availability from recommended or required actions
+- group repeated low-level limitations by their underlying condition while
+  retaining full evidence in detailed and JSON views
+- always display detected remediation, including dependency and DuckDB
+  extension install commands, once in compact output
 - use state-derived recommendations rather than generic advice
-- finish the active Markdown PDF plan before implementing this redesign
+- preserve current health-state exit behavior and deterministic human content
+  across TTY and redirected output
+- keep raw environment details out of new compact advisories
 
-These are research hypotheses, not committed implementation requirements. The
-document should remain `draft` until the output taxonomy, compatibility rules,
-and evidence matrix are reviewed.
+These are research conclusions awaiting their evidence inventory and
+representative fixtures. The document remains `in-progress`; no implementation
+plan should begin until those records are present and the contract receives a
+focused documentation review.
 
 ## Related Plans
 
-- [Markdown PDF page-number configuration plan][page-number-plan] — current
-  scheduling dependency. Finish its remaining `doctor --json` validation before
-  implementing this redesign.
-
-## Related Research
-
-- [Markdown PDF page-number configuration research][page-number-research] —
-  discovery context. Its renderer capability matrix demonstrated how detailed
-  feature evidence can make the top-level human doctor output difficult to
-  scan.
+- [Markdown PDF page-number configuration plan][page-number-plan] — completed
+  prior dependency. It no longer governs this research beyond the stable
+  `doctor --json` compatibility boundary.
 
 ## Guides Potentially Affected
 
@@ -352,7 +480,6 @@ because this research proposes changing that command.
 - [Documentation Policy](../../DOCUMENTATION_POLICY.md)
 
 [page-number-plan]: ../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md
-[page-number-research]: ./research-2026-08-11-markdown-pdf-page-number-configuration.md
 [markdown-pdf-usage]: ../guides/markdown-pdf-usage.md
 [markdown-pdf-interactive-usage]: ../guides/markdown-pdf-interactive-usage.md
 [data-query-usage]: ../guides/data-query-usage.md
