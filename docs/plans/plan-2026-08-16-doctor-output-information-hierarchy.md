@@ -565,11 +565,11 @@ Follow-up:
 
 Tasks:
 
-- [x] Update the Phase 5 section of the plan-level execution record with the
+- [ ] Update the Phase 5 section of the plan-level execution record with the
       exact implementation, review, and documentation ranges.
 - [x] Run the complete deterministic view matrix for compact, detailed, and JSON
       output across all Phase 1 fixtures.
-- [ ] Run bounded built-CLI smoke checks for default, `--details`, `--json`, flag
+- [x] Run bounded built-CLI smoke checks for default, `--details`, `--json`, flag
       conflict, missing dependencies, and an all-ready environment where the
       current machine can supply it.
 - [x] Verify README command tables and examples, top-level help, Markdown PDF
@@ -577,9 +577,9 @@ Tasks:
       guidance against the implemented views.
 - [x] Document human-output compatibility: compact is the default, `--details`
       is the evidence view, and `--json` remains the automation surface.
-- [ ] Keep public records free of machine-specific paths, secrets, raw errors,
+- [x] Keep public records free of machine-specific paths, secrets, raw errors,
       and local setup commands.
-- [ ] Run focused doctor and CLI UX tests, the full repository suite,
+- [x] Run focused doctor and CLI UX tests, the full repository suite,
       `bunx tsc --noEmit`, lint, format check, build, and `git diff --check`.
 - [ ] Review the complete implementation range for maintainability, test
       quality, and trust-boundary findings; resolve accepted findings and rerun

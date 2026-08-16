@@ -370,3 +370,44 @@ and direct CLI behavior. Phase 5 may proceed.
 Status: `in-progress`
 
 Starting commit: `77ca2f1e`
+
+Candidate commits:
+
+- `51484c23` — extend the frozen Phase 1 fixtures through compact, detailed,
+  and exact JSON integration coverage
+- `ccda1f8b` — align the README and usage guides with compact, detailed, JSON,
+  and Interactive output selection
+
+Integrated candidate:
+
+- every frozen evidence fixture now runs through all three deterministic views
+- the built CLI exposes one compact default, one detailed evidence view, one
+  machine-readable view, and a pre-inspection conflict failure
+- README and guide references use the shipped Summary, Details, and JSON
+  hierarchy without duplicating raw diagnostic evidence
+
+Validation:
+
+```text
+built CLI structural smoke
+compact, detailed, JSON, and flag conflict passed
+
+bun test test/cli-command-doctor.test.ts test/cli-action-doctor.test.ts test/cli-doctor-workflow.test.ts test/cli-actions-doctor-markdown-video-deferred.test.ts test/cli-ux.test.ts test/cli-interactive-menu.test.ts test/cli-interactive-routing.test.ts
+174 pass, 0 fail
+
+bun test
+2442 pass, 0 fail
+
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+git diff --check
+passed
+```
+
+The built-artifact smoke exercised one non-ready environment without recording
+machine details. Controlled fixtures provide the complementary all-ready and
+missing-dependency evidence.
+
+Whole-plan review: pending an exact committed tip.
