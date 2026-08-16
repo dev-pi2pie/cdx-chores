@@ -2,7 +2,7 @@
 title: "Doctor Output Information Hierarchy"
 created-date: 2026-08-13
 modified-date: 2026-08-16
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -12,10 +12,10 @@ Research a clearer human-output hierarchy for `cdx-chores doctor` without
 hiding actionable remediation, weakening existing probes, or destabilizing
 machine-readable output.
 
-The current direction is a compact default view, a detailed human view, and the
-existing structured JSON view. All three should project the same inspected
-evidence without forcing human-oriented summary states into the JSON contract.
-This document does not authorize implementation yet.
+The settled direction is a compact default view, a detailed human view, and the
+existing structured JSON view. All three project the same inspected evidence
+without forcing human-oriented summary states into the JSON contract. The Phase
+1 evidence below closes the research gate and authorizes the linked active plan.
 
 ## Prior Dependency
 
@@ -24,11 +24,10 @@ and no longer blocks this research. Its only continuing constraint here is that
 the existing `doctor --json` field meanings remain stable while the human
 information hierarchy changes.
 
-This doctor research owns the new structure. The
-[draft implementation plan][doctor-plan] may organize evidence closure, but no
-production implementation phase should begin until the current-output
-inventory, visibility mapping, public-safety audit, and representative fixtures
-are complete.
+This doctor research owns the new structure. Phase 1 of the
+[implementation plan][doctor-plan] completed the current-output inventory,
+visibility mapping, public-safety audit, representative fixtures, and focused
+documentation review before production implementation began.
 
 ## Current Behavior
 
@@ -457,9 +456,10 @@ an accidental rendering cutoff rather than a compatibility guarantee: the
 detailed projection should deliberately render the already-computed data-query
 Codex section while preserving its evidence meaning and stable section order.
 
-## Research Evidence Needed
+## Research Evidence Requirements
 
-Before the draft plan may activate production implementation, record:
+Phase 1 recorded the following evidence before activating production
+implementation:
 
 - an inventory of current doctor JSON fields, human sections, exit behavior,
   and tests
@@ -830,16 +830,16 @@ The current direction is:
   across TTY and redirected output
 - keep raw environment details out of new compact advisories
 
-These are research conclusions awaiting their evidence inventory and
-representative fixtures. The document remains `in-progress`; no implementation
-phase should begin until those records are present and the contract receives a
-focused documentation review.
+These conclusions are supported by the Phase 1 inventory, controlled fixture
+contract, baseline validation, and focused documentation review. The research
+is `completed`; the active implementation plan owns the remaining production
+work.
 
 ## Related Plans
 
-- [Doctor output information hierarchy implementation][doctor-plan] — draft
-  execution plan. Its first phase closes this research's evidence gate before
-  production implementation may begin.
+- [Doctor output information hierarchy implementation][doctor-plan] — active
+  execution plan. Its completed first phase closed this research's evidence
+  gate before production implementation began.
 - [Markdown PDF page-number configuration plan][page-number-plan] — completed
   prior dependency. It no longer governs this research beyond the stable
   `doctor --json` compatibility boundary.

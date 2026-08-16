@@ -1,7 +1,7 @@
 ---
 title: "Doctor output information hierarchy implementation"
 created-date: 2026-08-16
-status: draft
+status: active
 agent: codex
 ---
 
@@ -22,19 +22,14 @@ human view shorter and easier to scan.
 
 ## Planning Boundary
 
-This plan is `draft`. Phase 1 records and freezes the evidence that the research
-still requires. It does not change production code or public command behavior.
-The plan-level execution record may become `in-progress` for this evidence work
-while the plan remains `draft`.
+This plan is `active`. Phase 1 recorded and froze the evidence that the research
+required without changing production code or public command behavior. Its
+`Continue` gate now permits Phase 2 production work.
 
-Production implementation must not begin until the Phase 1 decision gate records
-a `Continue` verdict. Until then:
-
-- the research remains `in-progress`
-- this plan remains `draft`
-- no Phase 2 or later production task should begin
-- unresolved JSON, safety, or workflow-composition findings must constrain or
-  stop the later phases rather than being deferred silently
+The Phase 1 decision gate recorded `Continue` after the evidence contract and
+exact committed range passed focused documentation review. Later unresolved
+JSON, safety, or workflow-composition findings must still constrain or stop the
+affected phase rather than being deferred silently.
 
 ## Execution Record Strategy
 
@@ -299,36 +294,36 @@ compatibility; Bun-specific globals must not enter production modules.
 
 Tasks:
 
-- [ ] Create and activate the plan-level execution record defined above. In its
+- [x] Create and activate the plan-level execution record defined above. In its
       Phase 1 section, record the exact starting commit, evidence boundary,
       review range, and decision gate while this plan remains `draft`.
-- [ ] Inventory every current `doctor --json` field, nested field, status value,
+- [x] Inventory every current `doctor --json` field, nested field, status value,
       optional field, null value, and flat capability key.
-- [ ] Inventory every current human section, line family, remediation path,
+- [x] Inventory every current human section, line family, remediation path,
       early return, and health-state versus command-failure exit behavior.
-- [ ] Map each current human line and JSON field to compact, detailed, and JSON
+- [x] Map each current human line and JSON field to compact, detailed, and JSON
       visibility.
-- [ ] Audit `query.detail`, SQLite and Excel detail, and `queryCodex.detail` for
+- [x] Audit `query.detail`, SQLite and Excel detail, and `queryCodex.detail` for
       paths, secrets, raw errors, install commands, and safe compact equivalents.
-- [ ] Record the exact DuckDB runtime, loadability, installability, and
+- [x] Record the exact DuckDB runtime, loadability, installability, and
       remediation states used by the top-level doctor.
-- [ ] Define representative deterministic fixtures for all-ready, limited,
+- [x] Define representative deterministic fixtures for all-ready, limited,
       unavailable, unknown, one-condition/multiple-workflow, and multiple-action
       environments.
-- [ ] Complete the condition-to-workflow matrix for Markdown DOCX, Markdown PDF,
+- [x] Complete the condition-to-workflow matrix for Markdown DOCX, Markdown PDF,
       Video, Data query, Codex-assisted data query, font discovery, and font
       coverage.
-- [ ] Freeze stable workflow, condition, and action IDs; state precedence;
+- [x] Freeze stable workflow, condition, and action IDs; state precedence;
       ordering; deduplication; issue/action counts; and representative compact
       output.
-- [ ] Confirm `--details` help and command-registration ownership of mutual
+- [x] Confirm `--details` help and command-registration ownership of mutual
       exclusion, parser error, no-action, no-inspector, and exit-`1` behavior
       against current Commander conventions.
-- [ ] Review the proposed test-injection boundary for dependency, DuckDB, Codex,
+- [x] Review the proposed test-injection boundary for dependency, DuckDB, Codex,
       font, and renderer inspection without changing probe semantics.
-- [ ] Update the research with the completed inventory and evidence. Mark it
+- [x] Update the research with the completed inventory and evidence. Mark it
       `completed` only if the recorded evidence supports the settled contract.
-- [ ] Run Markdown formatting, link, and diff checks and obtain a focused
+- [x] Run Markdown formatting, link, and diff checks and obtain a focused
       documentation review of the exact Phase 1 range.
 
 Phase checkpoint:
