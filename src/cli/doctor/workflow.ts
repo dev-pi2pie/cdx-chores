@@ -407,6 +407,7 @@ function projectFonts(projection: MutableProjection, report: DoctorReport): void
   const fontconfig = [
     {
       available: report.font.discovery.fontconfig.available,
+      command: report.font.discovery.fontconfig.command,
       conditionId: "dependency.fontconfig.discovery.missing" as const,
       installHint: report.remediation.fontconfigInstallHints.discovery,
       message: "Fontconfig discovery is unavailable",
@@ -414,6 +415,7 @@ function projectFonts(projection: MutableProjection, report: DoctorReport): void
     },
     {
       available: report.font.coverage.fontconfig.available,
+      command: report.font.coverage.fontconfig.command,
       conditionId: "dependency.fontconfig.coverage.missing" as const,
       installHint: report.remediation.fontconfigInstallHints.coverage,
       message: "Fontconfig coverage is unavailable",
@@ -439,6 +441,7 @@ function projectFonts(projection: MutableProjection, report: DoctorReport): void
   }
 
   const installHints = [...new Set(missingProbes.map((probe) => probe.installHint))];
+  const missingCommands = missingProbes.map((probe) => probe.command).join(" and ");
   addAction(projection, {
     id: "dependency.fontconfig.install",
     class: "required",
@@ -446,7 +449,7 @@ function projectFonts(projection: MutableProjection, report: DoctorReport): void
     command:
       installHints.length === 1
         ? installHints[0]
-        : "Install fontconfig and ensure fc-list and fc-query are on PATH",
+        : `Install fontconfig and ensure ${missingCommands} are on PATH`,
     affectedWorkflowIds: missingProbes.map((probe) => probe.workflowId),
   });
 }
