@@ -319,9 +319,11 @@ and every route preserves one action invocation and one inspection pass. Phase
 
 ### Follow-up: Concise Details Label
 
-Status: `in-progress`
+Status: `completed`
 
 Starting commit: `27f76e47`
+
+Implementation commit: `2cac8147`
 
 Scope:
 
@@ -330,6 +332,39 @@ Scope:
   behavior
 - update the research and plan contracts plus deterministic choice tests
 
+Validation:
+
+```text
+bun test test/cli-interactive-menu.test.ts test/cli-interactive-routing.test.ts test/cli-action-doctor.test.ts test/cli-command-doctor.test.ts
+55 pass, 0 fail
+
+bun test
+2420 pass, 0 fail
+
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+git diff --check
+passed
+```
+
+Review range:
+
+```text
+27f76e47..2cac8147
+```
+
+The exact follow-up range passed maintainability, test-quality, Interactive UX
+compatibility, and documentation-lifecycle review with no implementation or
+test findings. The test review identified the still-open checklist and job
+status as the remaining closeout action; this documentation checkpoint closes
+them.
+
+Decision gate: `Continue`. Interactive doctor now uses the concise Details
+label while preserving the `details` route, description, detailed projection,
+and direct CLI behavior. Phase 5 may proceed.
+
 ## Phase 5: Integrated Validation, Guidance, And Lifecycle Closeout
 
-Status: `pending Phase 4.5 follow-up Continue`
+Status: `ready`

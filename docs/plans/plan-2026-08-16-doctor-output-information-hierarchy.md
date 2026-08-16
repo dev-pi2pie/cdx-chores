@@ -557,7 +557,7 @@ Decision gate:
 
 Follow-up:
 
-- [ ] Shorten the Interactive detailed-view label from Detailed evidence to
+- [x] Shorten the Interactive detailed-view label from Detailed evidence to
       Details, preserve its `details` route and description, and update the
       research contract plus deterministic choice tests.
 
