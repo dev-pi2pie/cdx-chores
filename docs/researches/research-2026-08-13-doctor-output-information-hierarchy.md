@@ -24,10 +24,11 @@ and no longer blocks this research. Its only continuing constraint here is that
 the existing `doctor --json` field meanings remain stable while the human
 information hierarchy changes.
 
-This doctor research owns the new structure. It remains `in-progress` until its
-current-output inventory, visibility mapping, public-safety audit, and
-representative fixtures are complete; no implementation plan should begin
-before that evidence is recorded.
+This doctor research owns the new structure. The
+[draft implementation plan][doctor-plan] may organize evidence closure, but no
+production implementation phase should begin until the current-output
+inventory, visibility mapping, public-safety audit, and representative fixtures
+are complete.
 
 ## Current Behavior
 
@@ -195,10 +196,10 @@ rather than debug logging or internal execution verbosity.
 
 The intended help entry is `--details  Output detailed human-readable
 evidence`. `--details` and `--json` are mutually exclusive. The parser should
-reject the combination before running probes, write the standard option error
-and help to stderr, and exit `1`, consistent with existing command-line parser
-errors. Silently choosing one view would make an ambiguous command appear
-successful.
+reject the combination in the command-registration layer before invoking the
+doctor action or running probes, write the standard option error and help to
+stderr, and exit `1`, consistent with existing command-line parser errors.
+Silently choosing one view would make an ambiguous command appear successful.
 
 Detailed output semantically preserves every current human evidence category
 and its stable ordering; it does not promise byte-for-byte compatibility. It
@@ -224,6 +225,15 @@ The first implementation should leave the JSON payload unchanged. If future
 automation needs normalized workflow summaries or advisory objects, those
 additive fields need their own compatibility and versioning review. Compact
 rendering does not justify expanding the automation contract by itself.
+
+Compatibility should be proven with controlled inspector fixtures and a fixed
+`runtime.now()` value. Tests should compare the complete structure and meaning,
+including field presence, nesting, optional-field omission, nullability, status
+values, and serialized key order only where the current contract asserts it.
+Host facts sourced directly from the running process should be compared with
+explicit runtime expectations unless Phase 1 selects an injection boundary.
+This avoids treating the intentionally dynamic `generatedAt` value or detected
+host facts as literal cross-run byte equality.
 
 Field ownership for the first implementation is:
 
@@ -442,12 +452,14 @@ state-derived guidance remain visible.
 The current human implementation also exits its rendering path early when the
 DuckDB runtime is unavailable, so the later data-query Codex section is not
 printed even though JSON construction has already recorded that state. The
-visibility inventory must classify this as existing behavior and decide whether
-the detailed projection preserves it or fixes the omission deliberately.
+visibility inventory must classify this as existing behavior. The omission is
+an accidental rendering cutoff rather than a compatibility guarantee: the
+detailed projection should deliberately render the already-computed data-query
+Codex section while preserving its evidence meaning and stable section order.
 
 ## Research Evidence Needed
 
-Before this research can become an implementation plan, record:
+Before the draft plan may activate production implementation, record:
 
 - an inventory of current doctor JSON fields, human sections, exit behavior,
   and tests
@@ -463,13 +475,14 @@ Before this research can become an implementation plan, record:
   condition affecting several workflows and for several independent actions
 - compatibility expectations for scripts that currently consume human output,
   even though JSON is the intended automation surface
-- focused tests proving actionable install tips remain visible in compact mode
-- focused tests proving base workflow readiness remains distinct from scoped
-  capability limitations
+- focused test requirements that preserve actionable install tips in compact
+  mode
+- focused test requirements that keep base workflow readiness distinct from
+  scoped capability limitations
 
-## Possible Implementation Shape After Research
+## Implementation Shape
 
-If the direction is accepted, a later plan will likely separate:
+The [draft implementation plan][doctor-plan] separates:
 
 1. extraction of the current structured evidence report without changing JSON
 2. typed workflow-impact and remediation projection
@@ -479,8 +492,9 @@ If the direction is accepted, a later plan will likely separate:
 6. JSON shape-preservation tests
 7. public-safety tests, guide updates, and lifecycle closeout
 
-That plan should use focused checkpoints and exact commit-range review. It
-should remain separate from the completed Markdown PDF plan.
+The plan begins with a documentation-only evidence gate and requires a
+Continue/Constrain/Stop verdict before production work. It remains separate from
+the completed Markdown PDF plan.
 
 ## Revised Direction
 
@@ -504,11 +518,14 @@ The current direction is:
 
 These are research conclusions awaiting their evidence inventory and
 representative fixtures. The document remains `in-progress`; no implementation
-plan should begin until those records are present and the contract receives a
+phase should begin until those records are present and the contract receives a
 focused documentation review.
 
 ## Related Plans
 
+- [Doctor output information hierarchy implementation][doctor-plan] — draft
+  execution plan. Its first phase closes this research's evidence gate before
+  production implementation may begin.
 - [Markdown PDF page-number configuration plan][page-number-plan] — completed
   prior dependency. It no longer governs this research beyond the stable
   `doctor --json` compatibility boundary.
@@ -536,6 +553,7 @@ because this research proposes changing that command.
 - [Documentation Policy](../../DOCUMENTATION_POLICY.md)
 
 [page-number-plan]: ../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md
+[doctor-plan]: ../plans/plan-2026-08-16-doctor-output-information-hierarchy.md
 [markdown-pdf-usage]: ../guides/markdown-pdf-usage.md
 [markdown-pdf-interactive-usage]: ../guides/markdown-pdf-interactive-usage.md
 [data-query-usage]: ../guides/data-query-usage.md
