@@ -1,8 +1,20 @@
 import type { DoctorReport } from "./report";
 
-export interface DoctorJsonPayload extends DoctorReport {
+type DoctorLegacyJsonFields = Pick<
+  DoctorReport,
+  | "platform"
+  | "nodeVersion"
+  | "tools"
+  | "markdownPdf"
+  | "query"
+  | "queryCodex"
+  | "font"
+  | "capabilities"
+>;
+
+export type DoctorJsonPayload = DoctorLegacyJsonFields & {
   generatedAt: string;
-}
+};
 
 export function createDoctorJsonPayload(
   report: DoctorReport,

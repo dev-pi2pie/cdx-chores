@@ -6,7 +6,13 @@ import {
   assessMarkdownPdfRequirements,
 } from "../src/cli/markdown-pdf";
 import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
-import { createDoctorFixture } from "./helpers/doctor-test-fixtures";
+import {
+  DOCTOR_FIXTURE_COMMANDS,
+  DOCTOR_FIXTURE_QUERY,
+  createDoctorFixture,
+  createExpectedAllReadyDoctorHumanOutput,
+  createExpectedDoctorJsonPayload,
+} from "./helpers/doctor-test-fixtures";
 
 describe("doctor evidence report and legacy JSON projection", () => {
   test("preserves the complete all-ready legacy JSON contract under controlled inspectors", async () => {
@@ -180,6 +186,7 @@ describe("doctor evidence report and legacy JSON projection", () => {
     const fixture = createDoctorFixture();
     let nowCalls = 0;
     const { runtime, stdout, expectNoStderr } = createActionTestRuntime({
+      colorEnabled: false,
       now: () => {
         nowCalls += 1;
         return new Date("2026-08-16T00:00:00.000Z");
@@ -191,7 +198,194 @@ describe("doctor evidence report and legacy JSON projection", () => {
 
     expectNoStderr();
     expect(nowCalls).toBe(0);
-    expect(stdout.text).toContain("Capabilities:");
-    expect(stdout.text).toContain("Data query Codex:");
+    expect(stdout.text).toBe(createExpectedAllReadyDoctorHumanOutput(fixture));
   });
+
+  const fixtureCases: Array<{
+    create: () => ReturnType<typeof createDoctorFixture>;
+    name: string;
+  }> = [
+    {
+      name: "pandoc-missing",
+      create: () =>
+        createDoctorFixture({
+          commands: {
+            pandoc: { ...DOCTOR_FIXTURE_COMMANDS.pandoc, available: false, version: null },
+          },
+        }),
+    },
+    {
+      name: "weasyprint-old",
+      create: () =>
+        createDoctorFixture({
+          commands: {
+            weasyprint: { ...DOCTOR_FIXTURE_COMMANDS.weasyprint, version: "65.0" },
+          },
+        }),
+    },
+    {
+      name: "pandoc-unverified",
+      create: () =>
+        createDoctorFixture({
+          commands: {
+            pandoc: { ...DOCTOR_FIXTURE_COMMANDS.pandoc, version: "custom-build" },
+          },
+        }),
+    },
+    {
+      name: "sqlite-installable",
+      create: () =>
+        createDoctorFixture({
+          query: {
+            ...DOCTOR_FIXTURE_QUERY,
+            sqlite: {
+              installed: false,
+              loaded: false,
+              loadable: false,
+              installable: true,
+              detail: "HOST_URL https://private.invalid",
+            },
+          },
+        }),
+    },
+    {
+      name: "excel-constrained",
+      create: () =>
+        createDoctorFixture({
+          query: {
+            ...DOCTOR_FIXTURE_QUERY,
+            excel: {
+              installed: false,
+              loaded: false,
+              loadable: false,
+              installable: false,
+              detail: "permission denied /Users/alice/cache",
+            },
+          },
+        }),
+    },
+    {
+      name: "sqlite-unknown",
+      create: () =>
+        createDoctorFixture({
+          query: {
+            ...DOCTOR_FIXTURE_QUERY,
+            sqlite: {
+              installed: false,
+              loaded: false,
+              loadable: false,
+              installable: null,
+              detail: "UNCLASSIFIED_SECRET",
+            },
+          },
+        }),
+    },
+    {
+      name: "codex-unconfigured",
+      create: () =>
+        createDoctorFixture({
+          codex: {
+            configuredSupport: false,
+            authSessionAvailable: true,
+            detail: "OVERRIDE /Users/alice/codex",
+          },
+        }),
+    },
+    {
+      name: "font-discovery-missing",
+      create: () =>
+        createDoctorFixture({
+          commands: {
+            "fc-list": { ...DOCTOR_FIXTURE_COMMANDS["fc-list"], available: false, version: null },
+          },
+        }),
+    },
+    {
+      name: "multiple-actions evidence",
+      create: () =>
+        createDoctorFixture({
+          commands: {
+            pandoc: { ...DOCTOR_FIXTURE_COMMANDS.pandoc, available: false, version: null },
+            ffmpeg: { ...DOCTOR_FIXTURE_COMMANDS.ffmpeg, available: false, version: null },
+          },
+          query: {
+            ...DOCTOR_FIXTURE_QUERY,
+            sqlite: {
+              installed: false,
+              loaded: false,
+              loadable: false,
+              installable: true,
+              detail: "install it first",
+            },
+          },
+        }),
+    },
+    {
+      name: "duckdb-and-codex-unconfigured",
+      create: () =>
+        createDoctorFixture({
+          query: { available: false, detail: "runtime unavailable" },
+          codex: {
+            configuredSupport: false,
+            authSessionAvailable: false,
+            detail: "Codex import unavailable",
+          },
+        }),
+    },
+    {
+      name: "pandoc-missing-and-weasyprint-old",
+      create: () =>
+        createDoctorFixture({
+          commands: {
+            pandoc: { ...DOCTOR_FIXTURE_COMMANDS.pandoc, available: false, version: null },
+            weasyprint: { ...DOCTOR_FIXTURE_COMMANDS.weasyprint, version: "65.0" },
+          },
+        }),
+    },
+  ];
+
+  for (const fixtureCase of fixtureCases) {
+    test(`preserves complete serialized JSON for ${fixtureCase.name}`, async () => {
+      const fixture = fixtureCase.create();
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime({
+        now: () => new Date("2026-08-16T00:00:00.000Z"),
+      });
+      runtime.platform = "darwin";
+
+      await actionDoctor(runtime, { json: true, inspectors: fixture.inspectors });
+
+      expectNoStderr();
+      expect(stdout.text).toBe(
+        `${JSON.stringify(createExpectedDoctorJsonPayload(fixture), null, 2)}\n`,
+      );
+    });
+  }
+
+  test.each(["query", "Codex"] as const)(
+    "emits no partial output when the injected %s inspector rejects",
+    async (boundary) => {
+      const fixture = createDoctorFixture();
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      const inspectors = {
+        ...fixture.inspectors,
+        ...(boundary === "query"
+          ? {
+              inspectDataQueryExtensions: async () => {
+                throw new Error("query inspection failed");
+              },
+            }
+          : {
+              inspectCodexEnvironment: async () => {
+                throw new Error("Codex inspection failed");
+              },
+            }),
+      };
+
+      await expect(actionDoctor(runtime, { json: true, inspectors })).rejects.toThrow(
+        `${boundary} inspection failed`,
+      );
+      expect(stdout.text).toBe("");
+      expectNoStderr();
+    },
+  );
 });
