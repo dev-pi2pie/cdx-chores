@@ -565,7 +565,7 @@ Follow-up:
 
 Tasks:
 
-- [ ] Update the Phase 5 section of the plan-level execution record with the
+- [x] Update the Phase 5 section of the plan-level execution record with the
       exact implementation, review, and documentation ranges.
 - [ ] Run the complete deterministic view matrix for compact, detailed, and JSON
       output across all Phase 1 fixtures.

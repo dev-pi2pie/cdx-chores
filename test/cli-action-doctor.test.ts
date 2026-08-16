@@ -448,11 +448,28 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
   });
 
   const fixtureCases: Array<{
+    compact: { absent?: string[]; expected: string[] };
     create: () => ReturnType<typeof createDoctorFixture>;
+    detailed: { absent?: string[]; expected: string[] };
     name: string;
   }> = [
     {
       name: "pandoc-missing",
+      compact: {
+        expected: [
+          "  DOCX: unavailable",
+          "  PDF: unavailable",
+          "Pandoc is missing",
+          "- Install Pandoc [required]",
+        ],
+      },
+      detailed: {
+        expected: [
+          "- pandoc: missing",
+          "Install suggestion: brew install pandoc",
+          "- md.to-pdf: unavailable (Pandoc is missing)",
+        ],
+      },
       create: () =>
         createDoctorFixture({
           commands: {
@@ -462,6 +479,20 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
     },
     {
       name: "weasyprint-old",
+      compact: {
+        expected: [
+          "  PDF: limited",
+          "Advanced Markdown PDF features require WeasyPrint 65.1 or newer",
+          "- Upgrade WeasyPrint to 65.1 or newer [recommended]",
+        ],
+      },
+      detailed: {
+        expected: [
+          "- weasyprint: available (65.0)",
+          "Markdown PDF renderer capabilities:",
+          "unsupported, minimum=65.1, diagnostic=",
+        ],
+      },
       create: () =>
         createDoctorFixture({
           commands: {
@@ -471,6 +502,19 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
     },
     {
       name: "pandoc-unverified",
+      compact: {
+        expected: [
+          "  PDF: unknown",
+          "Pandoc 2.0 or newer could not be verified",
+          "- Verify Pandoc 2.0 or newer [recommended]",
+        ],
+      },
+      detailed: {
+        expected: [
+          "- pandoc: available (custom-build)",
+          "- md.to-pdf: unverified (Pandoc 2.0 or newer could not be verified)",
+        ],
+      },
       create: () =>
         createDoctorFixture({
           commands: {
@@ -480,6 +524,22 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
     },
     {
       name: "sqlite-installable",
+      compact: {
+        expected: [
+          "Data query: limited",
+          "SQLite query support is unavailable but installable",
+          "- Install the DuckDB SQLite extension [required]",
+          "Command: cdx-chores data duckdb extension install sqlite",
+        ],
+        absent: ["HOST_URL", "private.invalid"],
+      },
+      detailed: {
+        expected: [
+          "- sqlite: detected support=yes, loadability=no, installability=yes",
+          "HOST_URL https://private.invalid",
+          "Try: cdx-chores data duckdb extension install sqlite",
+        ],
+      },
       create: () =>
         createDoctorFixture({
           query: {
@@ -496,6 +556,21 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
     },
     {
       name: "excel-constrained",
+      compact: {
+        expected: [
+          "Data query: limited",
+          "Excel query support is unavailable in this environment",
+          "1 issue · 0 actions",
+        ],
+        absent: ["Actions:", "permission denied", "/Users/alice/cache"],
+      },
+      detailed: {
+        expected: [
+          "- excel: detected support=yes, loadability=no, installability=no",
+          "permission denied /Users/alice/cache",
+        ],
+        absent: ["Try: cdx-chores data duckdb extension install excel"],
+      },
       create: () =>
         createDoctorFixture({
           query: {
@@ -512,6 +587,20 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
     },
     {
       name: "sqlite-unknown",
+      compact: {
+        expected: [
+          "Data query: limited",
+          "SQLite query support could not be verified",
+          "1 issue · 0 actions",
+        ],
+        absent: ["Actions:", "UNCLASSIFIED_SECRET"],
+      },
+      detailed: {
+        expected: [
+          "- sqlite: detected support=yes, loadability=no, installability=unknown",
+          "UNCLASSIFIED_SECRET",
+        ],
+      },
       create: () =>
         createDoctorFixture({
           query: {
@@ -528,6 +617,20 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
     },
     {
       name: "codex-unconfigured",
+      compact: {
+        expected: [
+          "Codex-assisted data query: unavailable",
+          "Codex support is not configured",
+          "- Configure Codex support [required]",
+        ],
+        absent: ["OVERRIDE", "/Users/alice/codex"],
+      },
+      detailed: {
+        expected: [
+          "configured support=no, auth/session=yes, ready-to-draft=no",
+          "OVERRIDE /Users/alice/codex",
+        ],
+      },
       create: () =>
         createDoctorFixture({
           codex: {
@@ -539,6 +642,17 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
     },
     {
       name: "font-discovery-missing",
+      compact: {
+        expected: [
+          "  Discovery: unavailable",
+          "Fontconfig discovery is unavailable",
+          "- Install Fontconfig [required]",
+          "Command: brew install fontconfig",
+        ],
+      },
+      detailed: {
+        expected: ["- fontconfig discovery: unavailable", "- fontconfig coverage: available"],
+      },
       create: () =>
         createDoctorFixture({
           commands: {
@@ -548,6 +662,23 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
     },
     {
       name: "multiple-actions evidence",
+      compact: {
+        expected: [
+          "3 issues · 3 actions",
+          "- Install Pandoc [required]",
+          "- Install FFmpeg [required]",
+          "- Install the DuckDB SQLite extension [required]",
+        ],
+        absent: ["install it first"],
+      },
+      detailed: {
+        expected: [
+          "- pandoc: missing",
+          "- ffmpeg: missing",
+          "- sqlite: detected support=yes, loadability=no, installability=yes",
+          "install it first",
+        ],
+      },
       create: () =>
         createDoctorFixture({
           commands: {
@@ -568,6 +699,24 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
     },
     {
       name: "duckdb-and-codex-unconfigured",
+      compact: {
+        expected: [
+          "2 issues · 1 action",
+          "Data query: unavailable",
+          "Codex-assisted data query: unavailable",
+          "DuckDB runtime is unavailable",
+          "Codex support is not configured",
+          "- Configure Codex support [required]",
+        ],
+        absent: ["runtime unavailable", "Codex import unavailable"],
+      },
+      detailed: {
+        expected: [
+          "- duckdb: unavailable (runtime unavailable)",
+          "configured support=no, auth/session=no, ready-to-draft=no",
+          "Codex import unavailable",
+        ],
+      },
       create: () =>
         createDoctorFixture({
           query: { available: false, detail: "runtime unavailable" },
@@ -580,6 +729,24 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
     },
     {
       name: "pandoc-missing-and-weasyprint-old",
+      compact: {
+        expected: [
+          "1 issue · 1 action",
+          "  DOCX: unavailable",
+          "  PDF: unavailable",
+          "Pandoc is missing",
+          "- Install Pandoc [required]",
+        ],
+        absent: ["Upgrade WeasyPrint"],
+      },
+      detailed: {
+        expected: [
+          "- pandoc: missing",
+          "- weasyprint: available (65.0)",
+          "- md.to-pdf: unavailable (Pandoc is missing)",
+          "unsupported, minimum=65.1, diagnostic=",
+        ],
+      },
       create: () =>
         createDoctorFixture({
           commands: {
@@ -591,6 +758,36 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
   ];
 
   for (const fixtureCase of fixtureCases) {
+    test(`renders compact view for ${fixtureCase.name}`, async () => {
+      const fixture = fixtureCase.create();
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime({
+        colorEnabled: false,
+      });
+
+      await actionDoctor(runtime, { inspectors: fixture.inspectors });
+
+      expectNoStderr();
+      for (const text of fixtureCase.compact.expected) expect(stdout.text).toContain(text);
+      for (const text of fixtureCase.compact.absent ?? []) {
+        expect(stdout.text).not.toContain(text);
+      }
+    });
+
+    test(`renders detailed view for ${fixtureCase.name}`, async () => {
+      const fixture = fixtureCase.create();
+      const { runtime, stdout, expectNoStderr } = createActionTestRuntime({
+        colorEnabled: false,
+      });
+
+      await actionDoctor(runtime, { details: true, inspectors: fixture.inspectors });
+
+      expectNoStderr();
+      for (const text of fixtureCase.detailed.expected) expect(stdout.text).toContain(text);
+      for (const text of fixtureCase.detailed.absent ?? []) {
+        expect(stdout.text).not.toContain(text);
+      }
+    });
+
     test(`preserves complete serialized JSON for ${fixtureCase.name}`, async () => {
       const fixture = fixtureCase.create();
       const { runtime, stdout, expectNoStderr } = createActionTestRuntime({
