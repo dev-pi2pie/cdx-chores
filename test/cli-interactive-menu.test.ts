@@ -1,10 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { EventEmitter } from "node:events";
 
+import { actionDoctor } from "../src/cli/actions";
 import { runInteractiveMode } from "../src/cli/interactive";
 import { selectInteractiveAction } from "../src/cli/interactive/menu";
 import type { SelectInteractiveMenuChoiceOptions } from "../src/cli/interactive/menu-prompt";
 import type { CliRuntime } from "../src/cli/types";
+import { createDoctorFixture } from "./helpers/doctor-test-fixtures";
 
 class FakePromptReadStream extends EventEmitter {
   isTTY = true;
@@ -161,5 +163,27 @@ describe("interactive command menu wiring", () => {
         output: stdout as unknown as NodeJS.WritableStream,
       },
     ]);
+  });
+
+  test("runInteractiveMode routes a declined JSON prompt to compact doctor output", async () => {
+    const { runtime, stdout, stderr } = createRuntime();
+    const fixture = createDoctorFixture();
+
+    await runInteractiveMode(runtime, {
+      selectInteractiveActionImpl: async () => "doctor",
+      confirmImpl: async () => false,
+      actionDoctorImpl: async (doctorRuntime, options) => {
+        await actionDoctor(doctorRuntime, { ...options, inspectors: fixture.inspectors });
+      },
+    });
+
+    expect(stderr.text).toBe("");
+    expect(stdout.text).toContain("Workflows:");
+    expect(stdout.text).not.toContain("Platform:");
+    expect(fixture.calls).toEqual({
+      commands: ["pandoc", "ffmpeg", "weasyprint", "fc-list", "fc-query"],
+      query: 1,
+      codex: 1,
+    });
   });
 });

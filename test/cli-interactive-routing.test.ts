@@ -18,6 +18,21 @@ describe("interactive mode routing: top-level smoke", () => {
     expect(result.pathCalls).toHaveLength(0);
   });
 
+  test("routes a declined doctor JSON prompt to the compact-default action branch", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: ["doctor"],
+      confirmQueue: [false],
+    });
+
+    expect(result.actionCalls).toEqual([{ name: "doctor", options: { json: false } }]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "confirm:Output as JSON?",
+    ]);
+    expect(result.pathCalls).toHaveLength(0);
+  });
+
   test("shows the broadened data menu copy and includes data stack plus query and extract", () => {
     const result = runInteractiveHarness({
       mode: "run",

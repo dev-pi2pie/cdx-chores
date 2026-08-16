@@ -1,11 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
 import { actionDoctor } from "../src/cli/actions";
+import { CliError } from "../src/cli/errors";
 import {
   assessMarkdownPdfRendererCapabilities,
   assessMarkdownPdfRequirements,
 } from "../src/cli/markdown-pdf";
-import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
+import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import {
   DOCTOR_FIXTURE_COMMANDS,
   DOCTOR_FIXTURE_QUERY,
@@ -419,6 +420,31 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
     expect(pandoc).toBeGreaterThan(-1);
     expect(ffmpeg).toBeGreaterThan(pandoc);
     expect(sqlite).toBeGreaterThan(ffmpeg);
+  });
+
+  test.each([
+    ["compact", {}],
+    ["detailed", { details: true }],
+  ] as const)("preserves operational failure exit 2 before %s output", async (_view, options) => {
+    const fixture = createDoctorFixture();
+    const inspectors = {
+      ...fixture.inspectors,
+      inspectDataQueryExtensions: async () => {
+        throw new CliError("Controlled query inspection failure", {
+          code: "DATA_QUERY_INSPECTION_FAILED",
+          exitCode: 2,
+        });
+      },
+    };
+    const { runtime, expectNoOutput } = createActionTestRuntime({ colorEnabled: false });
+
+    await expectCliError(() => actionDoctor(runtime, { ...options, inspectors }), {
+      code: "DATA_QUERY_INSPECTION_FAILED",
+      exitCode: 2,
+      messageIncludes: "Controlled query inspection failure",
+    });
+
+    expectNoOutput();
   });
 
   const fixtureCases: Array<{
