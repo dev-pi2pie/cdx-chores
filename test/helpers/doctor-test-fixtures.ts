@@ -112,6 +112,7 @@ export function createDoctorFixture(
 export function createExpectedDoctorJsonPayload(
   fixture: ReturnType<typeof createDoctorFixture>,
   generatedAt = "2026-08-16T00:00:00.000Z",
+  platform: NodeJS.Platform = "darwin",
 ): DoctorJsonPayload {
   const queryFormats = {
     csv: { kind: "core" as const, detectedSupport: fixture.query.available },
@@ -155,7 +156,7 @@ export function createExpectedDoctorJsonPayload(
 
   return {
     generatedAt,
-    platform: "darwin",
+    platform,
     nodeVersion: process.version,
     tools: {
       pandoc: fixture.commands.pandoc,
@@ -207,9 +208,10 @@ export function createExpectedDoctorJsonPayload(
 
 export function createDoctorReportFromFixture(
   fixture: ReturnType<typeof createDoctorFixture>,
+  platform: NodeJS.Platform = "darwin",
 ): DoctorReport {
   return buildDoctorReport(
-    { platform: "darwin", nodeVersion: process.version },
+    { platform, nodeVersion: process.version },
     {
       codexEnvironment: fixture.codex,
       ffmpeg: fixture.commands.ffmpeg,

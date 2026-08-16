@@ -452,6 +452,7 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
     create: () => ReturnType<typeof createDoctorFixture>;
     detailed: { absent?: string[]; expected: string[] };
     name: string;
+    platform?: NodeJS.Platform;
   }> = [
     {
       name: "pandoc-missing",
@@ -661,6 +662,37 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
         }),
     },
     {
+      name: "font-coverage-missing-windows",
+      platform: "win32",
+      compact: {
+        expected: [
+          "  Coverage: unavailable",
+          "Fontconfig coverage is unavailable",
+          "- Install Fontconfig [required]",
+          "Command: Install fontconfig and ensure fc-query is on PATH",
+        ],
+        absent: ["ensure fc-list is on PATH"],
+      },
+      detailed: {
+        expected: ["- fontconfig discovery: available", "- fontconfig coverage: unavailable"],
+      },
+      create: () =>
+        createDoctorFixture({
+          commands: {
+            "fc-list": {
+              ...DOCTOR_FIXTURE_COMMANDS["fc-list"],
+              installHint: "Install fontconfig and ensure fc-list is on PATH",
+            },
+            "fc-query": {
+              ...DOCTOR_FIXTURE_COMMANDS["fc-query"],
+              available: false,
+              version: null,
+              installHint: "Install fontconfig and ensure fc-query is on PATH",
+            },
+          },
+        }),
+    },
+    {
       name: "multiple-actions evidence",
       compact: {
         expected: [
@@ -763,6 +795,7 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
       const { runtime, stdout, expectNoStderr } = createActionTestRuntime({
         colorEnabled: false,
       });
+      runtime.platform = fixtureCase.platform ?? "darwin";
 
       await actionDoctor(runtime, { inspectors: fixture.inspectors });
 
@@ -778,6 +811,7 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
       const { runtime, stdout, expectNoStderr } = createActionTestRuntime({
         colorEnabled: false,
       });
+      runtime.platform = fixtureCase.platform ?? "darwin";
 
       await actionDoctor(runtime, { details: true, inspectors: fixture.inspectors });
 
@@ -793,13 +827,21 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
       const { runtime, stdout, expectNoStderr } = createActionTestRuntime({
         now: () => new Date("2026-08-16T00:00:00.000Z"),
       });
-      runtime.platform = "darwin";
+      runtime.platform = fixtureCase.platform ?? "darwin";
 
       await actionDoctor(runtime, { json: true, inspectors: fixture.inspectors });
 
       expectNoStderr();
       expect(stdout.text).toBe(
-        `${JSON.stringify(createExpectedDoctorJsonPayload(fixture), null, 2)}\n`,
+        `${JSON.stringify(
+          createExpectedDoctorJsonPayload(
+            fixture,
+            "2026-08-16T00:00:00.000Z",
+            fixtureCase.platform,
+          ),
+          null,
+          2,
+        )}\n`,
       );
     });
   }

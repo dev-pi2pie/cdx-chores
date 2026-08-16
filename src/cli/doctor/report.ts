@@ -87,7 +87,10 @@ export interface DoctorReport {
     readyToDraft: boolean;
   };
   remediation: {
-    fontconfigInstallHint: string;
+    fontconfigInstallHints: {
+      coverage: string;
+      discovery: string;
+    };
   };
   tools: {
     pandoc: CommandStatus;
@@ -190,7 +193,10 @@ export function buildDoctorReport(
     },
     queryCodex,
     remediation: {
-      fontconfigInstallHint: inspection.fontconfigDiscovery.installHint,
+      fontconfigInstallHints: {
+        coverage: inspection.fontconfigCoverage.installHint,
+        discovery: inspection.fontconfigDiscovery.installHint,
+      },
     },
     font: {
       discovery: {

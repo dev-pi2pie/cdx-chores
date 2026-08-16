@@ -19,8 +19,11 @@ import {
   createDoctorReportFromFixture,
 } from "./helpers/doctor-test-fixtures";
 
-function project(fixture: ReturnType<typeof createDoctorFixture>): DoctorWorkflowProjection {
-  return projectDoctorWorkflows(createDoctorReportFromFixture(fixture));
+function project(
+  fixture: ReturnType<typeof createDoctorFixture>,
+  platform: NodeJS.Platform = "darwin",
+): DoctorWorkflowProjection {
+  return projectDoctorWorkflows(createDoctorReportFromFixture(fixture, platform));
 }
 
 function states(
@@ -473,6 +476,38 @@ describe("doctor workflow projection", () => {
       command: "brew install fontconfig",
       affectedWorkflowIds: ["font.discovery", "font.coverage"],
     });
+  });
+
+  test("uses one complete Windows hint when both Fontconfig probes are missing", () => {
+    const projection = project(
+      createDoctorFixture({
+        commands: {
+          "fc-list": {
+            ...DOCTOR_FIXTURE_COMMANDS["fc-list"],
+            available: false,
+            version: null,
+            installHint: "Install fontconfig and ensure fc-list is on PATH",
+          },
+          "fc-query": {
+            ...DOCTOR_FIXTURE_COMMANDS["fc-query"],
+            available: false,
+            version: null,
+            installHint: "Install fontconfig and ensure fc-query is on PATH",
+          },
+        },
+      }),
+      "win32",
+    );
+
+    expect(projection.actions).toEqual([
+      {
+        id: "dependency.fontconfig.install",
+        class: "required",
+        message: "Install Fontconfig",
+        command: "Install fontconfig and ensure fc-list and fc-query are on PATH",
+        affectedWorkflowIds: ["font.discovery", "font.coverage"],
+      },
+    ]);
   });
 
   test("orders required actions before earlier-workflow recommendations", () => {
