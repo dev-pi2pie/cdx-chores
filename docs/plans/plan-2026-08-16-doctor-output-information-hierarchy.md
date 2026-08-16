@@ -348,29 +348,29 @@ Decision gate:
 
 Tasks:
 
-- [ ] Update the Phase 2 section of the plan-level execution record from the
+- [x] Update the Phase 2 section of the plan-level execution record from the
       accepted Phase 1 checkpoint.
-- [ ] Extract normalized report construction from `actionDoctor` without
+- [x] Extract normalized report construction from `actionDoctor` without
       changing probe order, concurrency, dependency policy, or result meaning.
-- [ ] Introduce one internal inspector bundle with production defaults and
+- [x] Introduce one internal inspector bundle with production defaults and
       deterministic test replacements for every external inspection boundary.
-- [ ] Preserve a single inspection pass for all three projections.
-- [ ] Extract a legacy JSON serializer that reproduces the complete Phase 1
+- [x] Preserve a single inspection pass for all three projections.
+- [x] Extract a legacy JSON serializer that reproduces the complete Phase 1
       inventory, including optional omission, nullability, ordering where
       asserted, and `generatedAt` behavior.
-- [ ] Keep the current human output as the active default during this phase.
-- [ ] Preserve command-level failure behavior, including no partial stdout on a
+- [x] Keep the current human output as the active default during this phase.
+- [x] Preserve command-level failure behavior, including no partial stdout on a
       failed inspection.
-- [ ] Add complete JSON compatibility tests for every Phase 1 fixture under
+- [x] Add complete JSON compatibility tests for every Phase 1 fixture under
       controlled inspector inputs and a fixed `runtime.now()` value. Compare
       the exact field set, nesting, optional omission, nullability, status
       meanings, and serialized key order only where explicitly asserted. Assert
       direct process facts against explicit runtime expectations unless Phase 1
       selects an injection boundary; also add regression tests proving probes
       execute once.
-- [ ] Run focused doctor tests, TypeScript, lint, formatting, build, and diff
+- [x] Run focused doctor tests, TypeScript, lint, formatting, build, and diff
       checks.
-- [ ] Review the exact Phase 2 range for maintainability and test quality.
+- [x] Review the exact Phase 2 range for maintainability and test quality.
 
 Phase checkpoint:
 

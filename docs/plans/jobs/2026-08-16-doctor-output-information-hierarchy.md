@@ -75,11 +75,52 @@ and Phase 2 production work may begin.
 
 ## Phase 2: Shared Evidence Report And JSON Parity
 
-Status: `ready`
+Status: `completed`
+
+Starting commit: `94e9c944`
+
+Implementation commits:
+
+- `8670a428` — extracted the shared inspector bundle, normalized evidence
+  report, explicit legacy JSON projection, controlled fixtures, and canonical
+  compatibility tests
+- `639747a7` — decoupled the legacy JSON type from future report fields and
+  closed the accepted fixture, ordering, human-default, and rejection-path test
+  findings
+
+Validation:
+
+```text
+bun test test/cli-action-doctor.test.ts test/cli-actions-doctor-markdown-video-deferred.test.ts
+52 pass, 0 fail
+
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+git diff --check
+passed
+```
+
+Review range:
+
+```text
+94e9c944..639747a7
+```
+
+The first maintainability and test reviews found an implicit JSON-type coupling
+and incomplete frozen-fixture, ordering, and exact-human-output coverage. The
+accepted fixes landed in `639747a7`; the widened range then passed both reviews
+with no remaining material findings. Inspector overrides remain on the internal
+CLI action surface and are not package-root exports.
+
+Decision gate: `Continue`. The shared report preserves one inspection pass,
+complete controlled JSON compatibility, the existing human default, and
+command failure behavior.
 
 ## Phase 3: Workflow, Condition, Action, And Safety Projection
 
-Status: `pending Phase 2 Continue`
+Status: `ready`
 
 ## Phase 4: Compact And Detailed Human Views
 
