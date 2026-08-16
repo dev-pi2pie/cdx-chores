@@ -1,7 +1,7 @@
 ---
 title: "Doctor output information hierarchy implementation"
 created-date: 2026-08-16
-status: active
+status: completed
 agent: codex
 ---
 
@@ -24,14 +24,10 @@ human view shorter and easier to scan.
 
 ## Planning Boundary
 
-This plan is `active`. Phase 1 recorded and froze the evidence that the research
-required without changing production code or public command behavior. Its
-`Continue` gate now permits Phase 2 production work.
-
-The Phase 1 decision gate recorded `Continue` after the evidence contract and
-exact committed range passed focused documentation review. Later unresolved
-JSON, safety, or workflow-composition findings must still constrain or stop the
-affected phase rather than being deferred silently.
+This plan is `completed`. Phase 1 froze the evidence contract, Phases 2 through
+4 implemented and exposed the three output views, Phase 4.5 aligned Interactive
+mode, and Phase 5 closed validation, guidance, and review. Every decision gate
+recorded `Continue`; no archive move is part of this closeout.
 
 ## Execution Record Strategy
 
@@ -565,7 +561,7 @@ Follow-up:
 
 Tasks:
 
-- [ ] Update the Phase 5 section of the plan-level execution record with the
+- [x] Update the Phase 5 section of the plan-level execution record with the
       exact implementation, review, and documentation ranges.
 - [x] Run the complete deterministic view matrix for compact, detailed, and JSON
       output across all Phase 1 fixtures.
@@ -581,13 +577,13 @@ Tasks:
       and local setup commands.
 - [x] Run focused doctor and CLI UX tests, the full repository suite,
       `bunx tsc --noEmit`, lint, format check, build, and `git diff --check`.
-- [ ] Review the complete implementation range for maintainability, test
+- [x] Review the complete implementation range for maintainability, test
       quality, and trust-boundary findings; resolve accepted findings and rerun
       affected validation.
-- [ ] Record exact public-safe validation evidence and the final Continue/
+- [x] Record exact public-safe validation evidence and the final Continue/
       Constrain/Stop outcome in the Phase 5 section of the plan-level execution
       record.
-- [ ] Update the research and this plan with reciprocal implementation evidence.
+- [x] Update the research and this plan with reciprocal implementation evidence.
       Mark this plan `completed` only when all completion criteria are proven;
       perform no archive move as part of this closeout.
 
@@ -607,6 +603,11 @@ Decision gate:
   remediation aggregation without overstating support.
 - **Stop** — do not mark the plan complete while compatibility, safety, or
   actionable-information findings remain unresolved.
+
+Outcome: `Continue`. The final implementation range `81c36c47..0f84fb40`
+passed maintainability, test-quality, CLI/Interactive compatibility, and
+public-safety review with no unresolved findings. The plan-level execution
+record owns the detailed commit and validation evidence.
 
 ## Validation Matrix
 

@@ -875,13 +875,17 @@ The current direction is:
 
 These conclusions are supported by the Phase 1 inventory, controlled fixture
 contract, baseline validation, and focused documentation review. The research
-remains `completed`; the active implementation plan owns the remaining work.
+remains `completed`.
+
+Implementation now matches the researched hierarchy: compact output is the
+default, `--details` preserves complete human evidence, `--json` remains the
+automation surface, and Interactive mode offers Summary, Details, or JSON. The
+completed plan and execution record contain the validation and review evidence.
 
 ## Related Plans
 
-- [Doctor output information hierarchy implementation][doctor-plan] — active
-  execution plan. Its completed first phase closed this research's evidence
-  gate before production implementation began.
+- [Doctor output information hierarchy implementation][doctor-plan] — completed
+  execution plan for the three-view hierarchy and Interactive selection.
 - [Markdown PDF page-number configuration plan][page-number-plan] — completed
   prior dependency. It no longer governs this research beyond the stable
   `doctor --json` compatibility boundary.

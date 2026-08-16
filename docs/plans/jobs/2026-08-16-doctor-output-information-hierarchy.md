@@ -1,7 +1,7 @@
 ---
 title: "Doctor output information hierarchy implementation"
 created-date: 2026-08-16
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -367,7 +367,7 @@ and direct CLI behavior. Phase 5 may proceed.
 
 ## Phase 5: Integrated Validation, Guidance, And Lifecycle Closeout
 
-Status: `in-progress`
+Status: `completed`
 
 Starting commit: `77ca2f1e`
 
@@ -377,6 +377,11 @@ Candidate commits:
   and exact JSON integration coverage
 - `ccda1f8b` — align the README and usage guides with compact, detailed, JSON,
   and Interactive output selection
+- `360988ae` — record the integrated validation candidate before whole-plan
+  review
+- `78effb19` — preserve matching cross-platform Fontconfig remediation for
+  discovery-only, coverage-only, and shared failures
+- `0f84fb40` — derive shared Fontconfig guidance from closed probe metadata
 
 Integrated candidate:
 
@@ -393,10 +398,10 @@ built CLI structural smoke
 compact, detailed, JSON, and flag conflict passed
 
 bun test test/cli-command-doctor.test.ts test/cli-action-doctor.test.ts test/cli-doctor-workflow.test.ts test/cli-actions-doctor-markdown-video-deferred.test.ts test/cli-ux.test.ts test/cli-interactive-menu.test.ts test/cli-interactive-routing.test.ts
-174 pass, 0 fail
+178 pass, 0 fail
 
 bun test
-2442 pass, 0 fail
+2446 pass, 0 fail
 
 bunx tsc --noEmit
 bun run lint
@@ -410,4 +415,23 @@ The built-artifact smoke exercised one non-ready environment without recording
 machine details. Controlled fixtures provide the complementary all-ready and
 missing-dependency evidence.
 
-Whole-plan review: pending an exact committed tip.
+Phase 5 ranges:
+
+```text
+integrated coverage: 77ca2f1e..51484c23
+public guidance: 51484c23..ccda1f8b
+validation record: ccda1f8b..360988ae
+accepted review fixes: 360988ae..0f84fb40
+whole-plan implementation review: 81c36c47..0f84fb40
+```
+
+The first whole-plan review found one Windows coverage-only Fontconfig action
+using the discovery probe's hint. The accepted fix retained both hints, added
+coverage-only and shared-failure regressions, and derived combined guidance
+from closed probe metadata. All four review lenses then passed the widened
+range with no unresolved maintainability, test-quality, CLI/Interactive
+compatibility, or public-safety finding.
+
+Decision gate: `Continue`. Compact, detailed, JSON, and Interactive projections
+share one inspection pass; public guidance matches the shipped views; and all
+completion criteria are proven. The lifecycle closes without an archive move.
