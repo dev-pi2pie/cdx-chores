@@ -14,6 +14,8 @@ Implement the three-view `cdx-chores doctor` contract defined by
 doctor             -> compact human workflow summary
 doctor --details   -> detailed human evidence
 doctor --json      -> existing machine-readable evidence
+
+Interactive doctor -> Summary / Detailed evidence / JSON
 ```
 
 The implementation must preserve the current probes, JSON field meanings,
@@ -90,7 +92,9 @@ Current implementation seams:
   `queryCodex.detail`; the compact view does not yet have a typed sanitization
   boundary.
 - Interactive `doctor` invokes the same default action and will therefore adopt
-  the compact human view when the default changes.
+  the compact human view when the default changes. Phase 4 implemented that
+  baseline; Phase 4.5 will replace its legacy JSON confirmation with one
+  three-view selector.
 
 ## Product Contract
 
@@ -131,6 +135,21 @@ Health findings remain report data; completed inspection exits 0.
 by the Commander command-registration layer before `actionDoctor` or any
 inspector runs, using the existing parser-error behavior on stderr with exit
 `1`. The action therefore receives only one valid selected view.
+
+Interactive mode presents the same view contract through one exclusive
+selection made before the action runs:
+
+```text
+Choose doctor output
+  Summary            -> compact human output
+  Detailed evidence  -> detailed human output
+  JSON                -> structured JSON output
+```
+
+Summary is the first and default-highlighted choice. The selector replaces the
+legacy `Output as JSON?` confirmation; it must not add a second details prompt.
+Each choice invokes `actionDoctor` once, and no inspector runs before the
+selection is complete.
 
 ### Evidence ownership
 
@@ -258,7 +277,6 @@ guidance.
 - deriving nonzero exit codes from workflow health states
 - changing `data duckdb doctor`
 - claiming general Codex readiness beyond currently assessed workflows
-- adding an Interactive choice for compact versus detailed doctor output
 - installing dependencies or mutating user configuration
 - changing information content automatically by TTY state
 - introducing a repository-wide notification or health framework
@@ -489,6 +507,54 @@ Decision gate:
 - **Stop** — do not switch the default if actionable information, JSON parity,
   exit behavior, or safety guarantees regress.
 
+Phase 4 completed its accepted scope. The later Phase 4.5 refinement below
+supersedes only the Interactive no-new-selector boundary; it does not reopen the
+completed renderer, direct CLI, JSON, or parser-conflict work.
+
+### Phase 4.5: Interactive Doctor View Selection
+
+Tasks:
+
+- [ ] Update the Phase 4.5 section of the plan-level execution record from the
+      accepted Phase 4 checkpoint and this research refinement.
+- [ ] Replace the Interactive `Output as JSON?` confirmation with one
+      `Choose doctor output` selection.
+- [ ] Present Summary first with workflow-readiness and action guidance,
+      Detailed evidence second with versions and capability evidence, and JSON
+      third with machine-readable evidence.
+- [ ] Route Summary to compact output, Detailed evidence to the existing
+      detailed projection, and JSON to the unchanged structured projection.
+- [ ] Keep the selection exclusive by construction, invoke `actionDoctor`
+      exactly once after selection, and run one inspection pass with every
+      inspector invoked exactly once.
+- [ ] Preserve Interactive runtime input/output stream wiring and leave direct
+      CLI flags, help, conflicts, exit behavior, and view content unchanged.
+- [ ] Add deterministic Interactive routing tests for all three choices,
+      selection copy and order, Summary as the initial default-highlighted
+      value, selected action options, prompt streams, and rendered compact,
+      detailed, and JSON integration paths.
+- [ ] Run focused doctor and Interactive tests, the full repository suite,
+      TypeScript, lint, formatting, build, and `git diff --check`.
+- [ ] Review the exact Phase 4.5 range for maintainability, test quality,
+      Interactive UX compatibility, and public-safety regressions.
+
+Phase checkpoint:
+
+- Interactive doctor exposes all three existing views through one prompt.
+- Summary remains the first and default-highlighted choice.
+- Detailed evidence and JSON reuse their existing projections without a second
+  inspection or a new output contract.
+- Direct CLI behavior remains unchanged.
+
+Decision gate:
+
+- **Continue** — all three Interactive choices route once to the matching view,
+  focused and full validation pass, and the exact committed range is clean.
+- **Constrain** — retain the legacy confirmation if the three-choice selector
+  cannot preserve prompt streams or deterministic routing.
+- **Stop** — do not advance to lifecycle closeout if Interactive routing can
+  combine views, duplicate inspection, or change existing projection content.
+
 ### Phase 5: Integrated Validation, Guidance, And Lifecycle Closeout
 
 Tasks:
@@ -555,9 +621,18 @@ Minimum deterministic scenarios:
 | `--details --json`                         | no output view; parser error, exit 1          | no probes                                  | no payload                      |
 | operational probe failure                  | command failure, exit 2                       | no partial report                          | no partial payload              |
 
+Interactive routing scenarios:
+
+| Interactive choice | Action selection | Expected projection        |
+| ------------------ | ---------------- | -------------------------- |
+| Summary            | compact          | compact workflow summary   |
+| Detailed evidence  | details          | complete human evidence    |
+| JSON               | JSON             | unchanged structured facts |
+
 Focused commands expected during implementation:
 
 ```bash
+bun test test/cli-interactive-menu.test.ts test/cli-interactive-routing.test.ts
 bun test test/cli-actions-doctor-markdown-video-deferred.test.ts
 bun test test/cli-ux.test.ts
 bun test

@@ -14,8 +14,11 @@ machine-readable output.
 
 The settled direction is a compact default view, a detailed human view, and the
 existing structured JSON view. All three project the same inspected evidence
-without forcing human-oriented summary states into the JSON contract. The Phase
-1 evidence below closes the research gate and authorizes the linked active plan.
+without forcing human-oriented summary states into the JSON contract. Direct
+CLI use selects these views with no flag, `--details`, or `--json`; Interactive
+mode presents Summary, Detailed evidence, and JSON as one exclusive selection.
+The Phase 1 evidence below closes the research gate and authorizes the linked
+active plan.
 
 ## Prior Dependency
 
@@ -108,7 +111,7 @@ the internal report does not add, remove, or reinterpret JSON fields.
 
 ## Candidate View Model
 
-### View selection and exit behavior
+### Direct CLI view selection and exit behavior
 
 ```text
 cdx-chores doctor
@@ -134,6 +137,41 @@ validate requested view
 
 Health findings remain report data; completed inspection exits 0.
 ```
+
+### Interactive view selection
+
+Interactive mode should expose the same three projections without translating
+the decision into multiple boolean questions:
+
+```text
+Interactive mode
+      |
+      v
+select doctor
+      |
+      v
+Choose doctor output
+      |
+      |-- Summary -----------> compact human output
+      |                        workflow readiness + actions
+      |
+      |-- Detailed evidence -> detailed human output
+      |                        versions + capability evidence
+      |
+      `-- JSON --------------> structured JSON output
+                               machine-readable evidence
+```
+
+The selector is one closed choice made before the doctor action or any probe
+runs. Summary is the first and default-highlighted choice. Detailed evidence
+maps to the same detailed projection as direct `doctor --details`, and JSON maps
+to the unchanged automation projection. Because one choice determines the
+view, Interactive routing cannot request detailed and JSON output together and
+does not need to reproduce Commander's flag-conflict handling.
+
+This replaces the earlier two-state `Output as JSON?` confirmation. Adding a
+second confirmation for details would make one three-way decision harder to
+scan and would leave the modes asymmetrical.
 
 ### Default compact view
 
@@ -792,11 +830,13 @@ dependency-failure exit `2`, and invalid Codex override evidence. Phase 2 must
 add complete canonical JSON fixtures and inspector call counts. Phase 3 must add
 the workflow and hostile-detail matrices. Phase 4 must add detailed
 section-completeness, view routing, flag-conflict, no-inspector, redirected
-content, and Interactive default coverage.
+content, and Interactive default coverage. Phase 4.5 must replace the legacy
+Interactive boolean confirmation with the closed three-view selector and prove
+all three routes.
 
 ## Implementation Shape
 
-The [draft implementation plan][doctor-plan] separates:
+The [active implementation plan][doctor-plan] separates:
 
 1. extraction of the current structured evidence report without changing JSON
 2. typed workflow-impact and remediation projection
@@ -804,7 +844,8 @@ The [draft implementation plan][doctor-plan] separates:
 4. detailed human rendering
 5. workflow aggregation and shared-condition deduplication
 6. JSON shape-preservation tests
-7. public-safety tests, guide updates, and lifecycle closeout
+7. one-choice Interactive routing across all three existing projections
+8. public-safety tests, guide updates, and lifecycle closeout
 
 The plan begins with a documentation-only evidence gate and requires a
 Continue/Constrain/Stop verdict before production work. It remains separate from
@@ -819,6 +860,8 @@ The current direction is:
   by `--details`
 - reject `--details` with `--json` as an ambiguous view combination
 - keep `doctor --json` unchanged as the automation surface
+- replace Interactive mode's JSON confirmation with one Summary, Detailed
+  evidence, or JSON selector that routes to the same three projections
 - summarize fully satisfied workflows rather than broad technical families
 - distinguish workflow availability from recommended or required actions
 - group repeated low-level limitations by their underlying condition while
@@ -832,8 +875,7 @@ The current direction is:
 
 These conclusions are supported by the Phase 1 inventory, controlled fixture
 contract, baseline validation, and focused documentation review. The research
-is `completed`; the active implementation plan owns the remaining production
-work.
+remains `completed`; the active implementation plan owns the remaining work.
 
 ## Related Plans
 

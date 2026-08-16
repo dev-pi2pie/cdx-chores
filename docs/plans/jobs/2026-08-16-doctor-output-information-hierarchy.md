@@ -247,9 +247,24 @@ findings.
 
 Decision gate: `Continue`. Compact, detailed, and JSON views agree on one
 inspection pass; view conflicts stop before probes; compact output remains
-public-safe; and Phase 5 may proceed with integrated guidance and lifecycle
-closeout.
+public-safe; and Phase 4 completed its accepted scope. A later research
+refinement inserted Phase 4.5 before lifecycle closeout so Interactive mode can
+expose all three existing projections through one selection.
+
+## Phase 4.5: Interactive Doctor View Selection
+
+Status: `ready`
+
+Scope refinement:
+
+- replace the legacy Interactive `Output as JSON?` confirmation with one closed
+  Summary, Detailed evidence, or JSON selection
+- reuse the compact, detailed, and structured projections completed in Phase 4
+- preserve direct CLI behavior and prove one action invocation and one
+  inspection pass for every Interactive route
+- record focused and full validation plus the exact committed-range review
+  before Phase 5 begins
 
 ## Phase 5: Integrated Validation, Guidance, And Lifecycle Closeout
 
-Status: `ready`
+Status: `pending Phase 4.5 Continue`
