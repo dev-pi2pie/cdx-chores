@@ -393,27 +393,27 @@ Decision gate:
 
 Tasks:
 
-- [ ] Update the Phase 3 section of the plan-level execution record from the
+- [x] Update the Phase 3 section of the plan-level execution record from the
       accepted Phase 2 checkpoint.
-- [ ] Add closed workflow-state, action-class, workflow-ID, condition-ID, and
+- [x] Add closed workflow-state, action-class, workflow-ID, condition-ID, and
       action-ID types from the Phase 1 contract.
-- [ ] Derive workflow state from normalized evidence rather than rendered text.
-- [ ] Implement parent/child workflow composition without assigning synthetic
+- [x] Derive workflow state from normalized evidence rather than rendered text.
+- [x] Implement parent/child workflow composition without assigning synthetic
       state to display-only group headings.
-- [ ] Implement shared-condition linking when one upstream fact affects several
+- [x] Implement shared-condition linking when one upstream fact affects several
       workflows.
-- [ ] Deduplicate actions by stable action ID and merge affected workflow IDs.
-- [ ] Implement stable workflow order, required-before-recommended action order,
+- [x] Deduplicate actions by stable action ID and merge affected workflow IDs.
+- [x] Implement stable workflow order, required-before-recommended action order,
       and deterministic issue/action counts.
-- [ ] Map public install commands through existing helpers rather than
+- [x] Map public install commands through existing helpers rather than
       reconstructing command strings.
-- [ ] Add typed compact messages that never forward raw query, extension, Codex,
+- [x] Add typed compact messages that never forward raw query, extension, Codex,
       path, secret, or error detail.
-- [ ] Add table-driven unit tests for every Phase 1 workflow matrix row,
+- [x] Add table-driven unit tests for every Phase 1 workflow matrix row,
       deduplication case, ordering rule, and no-safe-action state.
-- [ ] Add trust-boundary tests proving compact projection sanitization while
+- [x] Add trust-boundary tests proving compact projection sanitization while
       JSON and detailed evidence remain unchanged.
-- [ ] Run focused tests, TypeScript, lint, formatting, build, and diff checks.
+- [x] Run focused tests, TypeScript, lint, formatting, build, and diff checks.
 - [ ] Review the exact Phase 3 range for maintainability, test quality, and
       public-safety risks.
 

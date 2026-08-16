@@ -86,6 +86,9 @@ export interface DoctorReport {
     detail?: string;
     readyToDraft: boolean;
   };
+  remediation: {
+    fontconfigInstallHint: string;
+  };
   tools: {
     pandoc: CommandStatus;
     ffmpeg: CommandStatus;
@@ -186,6 +189,9 @@ export function buildDoctorReport(
       runtimeVersion: queryExtensions.runtimeVersion,
     },
     queryCodex,
+    remediation: {
+      fontconfigInstallHint: inspection.fontconfigDiscovery.installHint,
+    },
     font: {
       discovery: {
         fontconfig: {

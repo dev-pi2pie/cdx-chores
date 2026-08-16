@@ -2,6 +2,7 @@ import type { CodexEnvironmentInspection } from "../../src/adapters/codex/shared
 import type { CommandStatus, DependencyCommand } from "../../src/cli/deps";
 import type { DoctorInspectorOverrides, DoctorQueryInspection } from "../../src/cli/doctor/inspect";
 import type { DoctorJsonPayload } from "../../src/cli/doctor/json";
+import { buildDoctorReport, type DoctorReport } from "../../src/cli/doctor/report";
 import {
   assessMarkdownPdfRendererCapabilities,
   assessMarkdownPdfRequirements,
@@ -202,6 +203,23 @@ export function createExpectedDoctorJsonPayload(
       "font.coverage.fontconfig": fixture.commands["fc-query"].available,
     },
   };
+}
+
+export function createDoctorReportFromFixture(
+  fixture: ReturnType<typeof createDoctorFixture>,
+): DoctorReport {
+  return buildDoctorReport(
+    { platform: "darwin", nodeVersion: process.version },
+    {
+      codexEnvironment: fixture.codex,
+      ffmpeg: fixture.commands.ffmpeg,
+      fontconfigCoverage: fixture.commands["fc-query"],
+      fontconfigDiscovery: fixture.commands["fc-list"],
+      pandoc: fixture.commands.pandoc,
+      queryExtensions: fixture.query,
+      weasyprint: fixture.commands.weasyprint,
+    },
+  );
 }
 
 export function createExpectedAllReadyDoctorHumanOutput(

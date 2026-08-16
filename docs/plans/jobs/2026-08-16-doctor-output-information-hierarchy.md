@@ -120,7 +120,44 @@ command failure behavior.
 
 ## Phase 3: Workflow, Condition, Action, And Safety Projection
 
-Status: `ready`
+Status: `in-progress`
+
+Starting commit: `c24e7c13`
+
+Implemented projection boundary:
+
+- one pure projection derives the seven frozen leaf workflows from the
+  normalized evidence report without parsing rendered text
+- closed workflow, state, condition, action, and action-class identities
+- base-state precedence, subordinate-condition suppression, shared-condition
+  linking, stable ordering, deterministic counts, and action deduplication
+- typed compact-safe condition and action copy with existing install hints and
+  the closed DuckDB extension command helper as the only public remediation
+  sources
+- internal fontconfig remediation evidence outside the explicit legacy JSON
+  projection
+
+Validation:
+
+```text
+bun test test/cli-doctor-workflow.test.ts test/cli-action-doctor.test.ts test/cli-actions-doctor-markdown-video-deferred.test.ts
+77 pass, 0 fail
+
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+git diff --check
+passed
+```
+
+The frozen fixtures cover ready, limited, unavailable, and unknown states;
+shared and deduplicated conditions/actions; base and child precedence; safe and
+unavailable remediation; required-before-recommended ordering; hostile raw
+detail; and unchanged JSON/detailed evidence paths.
+
+Exact committed-range maintainability, test-quality, and public-safety review
+remains pending before this phase can close.
 
 ## Phase 4: Compact And Detailed Human Views
 
