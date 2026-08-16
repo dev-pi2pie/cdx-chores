@@ -414,7 +414,7 @@ Tasks:
 - [x] Add trust-boundary tests proving compact projection sanitization while
       JSON and detailed evidence remain unchanged.
 - [x] Run focused tests, TypeScript, lint, formatting, build, and diff checks.
-- [ ] Review the exact Phase 3 range for maintainability, test quality, and
+- [x] Review the exact Phase 3 range for maintainability, test quality, and
       public-safety risks.
 
 Phase checkpoint:

@@ -120,9 +120,16 @@ command failure behavior.
 
 ## Phase 3: Workflow, Condition, Action, And Safety Projection
 
-Status: `in-progress`
+Status: `completed`
 
 Starting commit: `c24e7c13`
+
+Implementation commits:
+
+- `fb02f15b` — added the pure workflow projection, safe remediation evidence,
+  frozen matrix tests, and Phase 3 validation records
+- `9ff9b30d` — replaced extension-ID casts with typed metadata and strengthened
+  isolated dependency plus full condition/action contract coverage
 
 Implemented projection boundary:
 
@@ -141,7 +148,7 @@ Validation:
 
 ```text
 bun test test/cli-doctor-workflow.test.ts test/cli-action-doctor.test.ts test/cli-actions-doctor-markdown-video-deferred.test.ts
-77 pass, 0 fail
+78 pass, 0 fail
 
 bunx tsc --noEmit
 bun run lint
@@ -156,12 +163,25 @@ shared and deduplicated conditions/actions; base and child precedence; safe and
 unavailable remediation; required-before-recommended ordering; hostile raw
 detail; and unchanged JSON/detailed evidence paths.
 
-Exact committed-range maintainability, test-quality, and public-safety review
-remains pending before this phase can close.
+Review range:
+
+```text
+c24e7c13..9ff9b30d
+```
+
+The first maintainability review found that template-built extension IDs were
+cast into closed unions, and the first test review found missing isolated
+WeasyPrint coverage plus incomplete typed-record assertions. All findings were
+accepted and fixed in `9ff9b30d`. The widened maintainability, test-quality,
+and public-safety reviews then passed with no material findings.
+
+Decision gate: `Continue`. The compact-safe projection is deterministic,
+actionable, and free of raw environment detail, so Phase 4 may expose it as the
+default human view while preserving detailed and JSON views.
 
 ## Phase 4: Compact And Detailed Human Views
 
-Status: `pending Phase 3 Continue`
+Status: `ready`
 
 ## Phase 5: Integrated Validation, Guidance, And Lifecycle Closeout
 
