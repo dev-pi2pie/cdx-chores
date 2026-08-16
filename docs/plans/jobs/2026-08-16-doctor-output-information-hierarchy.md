@@ -253,9 +253,11 @@ expose all three existing projections through one selection.
 
 ## Phase 4.5: Interactive Doctor View Selection
 
-Status: `in-progress`
+Status: `completed`
 
 Starting commit: `fb9c1646`
+
+Implementation commit: `5dad5588`
 
 Scope refinement:
 
@@ -297,9 +299,24 @@ passed
 The focused matrix covers exact choice copy and order, the explicit Summary
 default, exclusive action options, selector-before-action ordering, prompt
 streams, one inspection pass per route, all three rendered projections, and
-unchanged direct CLI routing and conflicts. Exact committed-range review remains
-pending before this phase can close.
+unchanged direct CLI routing and conflicts.
+
+Review range:
+
+```text
+fb9c1646..5dad5588
+```
+
+The exact committed range passed maintainability, test-quality, Interactive UX
+compatibility, and public-safety review with no material findings. Direct CLI
+registration, flags, help, conflicts, actions, and renderers are unchanged in
+the range.
+
+Decision gate: `Continue`. Interactive doctor now exposes all three existing
+views through one exclusive prompt, Summary is explicitly default-highlighted,
+and every route preserves one action invocation and one inspection pass. Phase
+5 may proceed with integrated validation, guidance, and lifecycle closeout.
 
 ## Phase 5: Integrated Validation, Guidance, And Lifecycle Closeout
 
-Status: `pending Phase 4.5 Continue`
+Status: `ready`
