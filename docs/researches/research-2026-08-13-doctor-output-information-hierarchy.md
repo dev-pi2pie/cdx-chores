@@ -79,14 +79,24 @@ several workflows. Compact output must preserve the affected workflow states
 and actions without repeating the same underlying condition for every
 low-level capability.
 
-The information layers are:
+### Evidence ownership flow
 
 ```text
-inspection facts
-  -> normalized internal doctor report
-     |-> legacy JSON evidence projection
-     |-> detailed human evidence projection
-     `-> workflow impacts + typed actions -> compact human projection
+existing probes
+      |
+      v
+normalized internal doctor report
+      |
+      |-- inspection facts --------> legacy JSON projection
+      |                              existing fields and meanings
+      |
+      |-- inspection facts --------> detailed human projection
+      |                              complete evidence categories
+      |
+      `-- workflow impacts
+          +-- typed conditions
+          `-- typed actions -------> compact human projection
+                                     states + safe actions
 ```
 
 Inspection facts remain authoritative. The normalized internal report may add
@@ -97,6 +107,33 @@ replacement source of truth. Shape-preservation tests must prove that extracting
 the internal report does not add, remove, or reinterpret JSON fields.
 
 ## Candidate View Model
+
+### View selection and exit behavior
+
+```text
+cdx-chores doctor
+      |
+      v
+validate requested view
+      |
+      |-- --details + --json ------> parser error + help
+      |                              no probes, exit 1
+      |
+      `-- no flag / --details / --json
+                    |
+                    v
+             run inspection once
+                    |
+                    |-- operational failure --> command error, exit 2
+                    |
+                    `-- inspection complete
+                              |
+                              |-- no flag ----> compact human output
+                              |-- --details --> detailed human output
+                              `-- --json -----> structured JSON output
+
+Health findings remain report data; completed inspection exits 0.
+```
 
 ### Default compact view
 
@@ -202,6 +239,34 @@ Field ownership for the first implementation is:
 
 Availability and action are separate dimensions.
 
+### Compact composition flow
+
+```text
+inspection facts
+      |
+      v
+map evidence to user workflows
+      |
+      v
+compose workflow state
+      |
+      |-- ready -------------------> collapse routine success
+      |
+      `-- limited / unavailable / unknown
+                    |
+                    v
+             create typed issue
+                    |
+                    v
+          attach a safe action when one exists
+                    |
+                    v
+       deduplicate -> sanitize -> order -> count
+                    |
+                    v
+             compact doctor output
+```
+
 | Workflow state | Meaning                                                               | Compact behavior                                     |
 | -------------- | --------------------------------------------------------------------- | ---------------------------------------------------- |
 | `ready`        | The inspected workflow is usable without a detected limitation        | Collapse to one success line                         |
@@ -219,15 +284,6 @@ Actions are separately classified as:
 No action object is needed when the state is self-explanatory and there is no
 safe next step. Multiple workflow impacts may reference one typed condition and
 one deduplicated action.
-
-Workflow composition follows these rules:
-
-- `unavailable` when a base workflow precondition is missing or unsupported
-- `unknown` when base workflow availability cannot be established safely
-- `limited` when the base workflow is ready but at least one inspected,
-  supported child capability is unavailable or unverified
-- `ready` when the base workflow and every inspected supported child capability
-  are ready
 
 Group headings such as `Markdown` do not receive a synthetic state. Their child
 workflow lines carry the state. This prevents a ready DOCX path from hiding an
