@@ -1,21 +1,20 @@
-import { inspectCodexEnvironment } from "../../adapters/codex/shared";
 import { getCliColors } from "../colors";
-import { inspectCommand } from "../deps";
 import type { DependencyCommandRunner } from "../deps";
+import { inspectDoctor, type DoctorInspectorOverrides } from "../doctor/inspect";
+import { serializeDoctorJson } from "../doctor/json";
+import { buildDoctorReport, type DoctorReport } from "../doctor/report";
 import { createDuckDbExtensionInstallCommand } from "../duckdb/extensions";
-import { inspectDataQueryExtensions } from "../duckdb/query";
-import { assessMarkdownPdfRendererCapabilities } from "../markdown-pdf/renderer-capabilities";
-import { assessMarkdownPdfRequirements } from "../markdown-pdf/requirements";
 import type { CliRuntime } from "../types";
 import { printLine } from "./shared";
 
 export interface DoctorOptions {
   json?: boolean;
   dependencyRunner?: DependencyCommandRunner;
+  inspectors?: DoctorInspectorOverrides;
 }
 
 function markdownPdfCapabilityStatus(
-  requirements: ReturnType<typeof assessMarkdownPdfRequirements>,
+  requirements: DoctorReport["markdownPdf"],
 ): "available" | "unavailable" | "unsupported" | "unverified" {
   if (requirements.ready) {
     return "available";
@@ -30,7 +29,7 @@ function markdownPdfCapabilityStatus(
 }
 
 function markdownPdfCapabilityDetail(
-  requirements: ReturnType<typeof assessMarkdownPdfRequirements>,
+  requirements: DoctorReport["markdownPdf"],
 ): string | undefined {
   const details: string[] = [];
   const pandoc = requirements.requirements.pandoc;
@@ -57,132 +56,33 @@ export async function actionDoctor(
   options: DoctorOptions = {},
 ): Promise<void> {
   const pc = getCliColors(runtime);
-  const [
-    pandoc,
-    ffmpeg,
-    weasyprint,
-    fontconfigDiscovery,
-    fontconfigCoverage,
-    queryExtensions,
-    codexEnvironment,
-  ] = await Promise.all([
-    inspectCommand("pandoc", runtime.platform, options.dependencyRunner),
-    inspectCommand("ffmpeg", runtime.platform, options.dependencyRunner),
-    inspectCommand("weasyprint", runtime.platform, options.dependencyRunner),
-    inspectCommand("fc-list", runtime.platform, options.dependencyRunner),
-    inspectCommand("fc-query", runtime.platform, options.dependencyRunner),
-    inspectDataQueryExtensions(),
-    inspectCodexEnvironment(),
-  ]);
-
-  const queryFormats = {
-    csv: {
-      kind: "core" as const,
-      detectedSupport: queryExtensions.available,
-    },
-    tsv: {
-      kind: "core" as const,
-      detectedSupport: queryExtensions.available,
-    },
-    parquet: {
-      kind: "core" as const,
-      detectedSupport: queryExtensions.available,
-    },
-    duckdb: {
-      kind: "core" as const,
-      detectedSupport: queryExtensions.available,
-    },
-    sqlite: {
-      kind: "extension" as const,
-      detectedSupport: queryExtensions.available,
-      loadability: queryExtensions.sqlite?.loadable ?? false,
-      installability: queryExtensions.sqlite?.installable ?? null,
-      detail: queryExtensions.sqlite?.detail,
-    },
-    excel: {
-      kind: "extension" as const,
-      detectedSupport: queryExtensions.available,
-      loadability: queryExtensions.excel?.loadable ?? false,
-      installability: queryExtensions.excel?.installable ?? null,
-      detail: queryExtensions.excel?.detail,
-    },
-  };
-
-  const queryCodex = {
-    configuredSupport: codexEnvironment.configuredSupport,
-    authSessionAvailable: codexEnvironment.authSessionAvailable,
-    readyToDraft:
-      codexEnvironment.configuredSupport &&
-      codexEnvironment.authSessionAvailable &&
-      queryExtensions.available,
-    detail:
-      codexEnvironment.detail ?? (queryExtensions.available ? undefined : queryExtensions.detail),
-  };
-
-  const markdownPdfRequirements = assessMarkdownPdfRequirements(pandoc, weasyprint);
-  const rendererCapabilities = assessMarkdownPdfRendererCapabilities({ renderer: weasyprint });
-  const markdownPdf = {
-    ...markdownPdfRequirements,
-    rendererCapabilities,
-  };
-  const capabilities = {
-    "md.to-docx": pandoc.available,
-    "md.to-pdf": markdownPdf.ready,
-    "video.convert": ffmpeg.available,
-    "video.resize": ffmpeg.available,
-    "video.gif": ffmpeg.available,
-    "data.query.csv": queryFormats.csv.detectedSupport,
-    "data.query.tsv": queryFormats.tsv.detectedSupport,
-    "data.query.parquet": queryFormats.parquet.detectedSupport,
-    "data.query.duckdb": queryFormats.duckdb.detectedSupport,
-    "data.query.sqlite": queryFormats.sqlite.loadability,
-    "data.query.excel": queryFormats.excel.loadability,
-    "data.query.codex": queryCodex.readyToDraft,
-    "font.discovery.fontconfig": fontconfigDiscovery.available,
-    "font.coverage.fontconfig": fontconfigCoverage.available,
-  };
-
-  const font = {
-    discovery: {
-      fontconfig: {
-        command: "fc-list",
-        available: fontconfigDiscovery.available,
-        version: fontconfigDiscovery.version,
-      },
-    },
-    coverage: {
-      fontconfig: {
-        command: "fc-query",
-        available: fontconfigCoverage.available,
-        version: fontconfigCoverage.version,
-      },
-    },
-  };
+  const inspection = await inspectDoctor(runtime, options);
+  const report = buildDoctorReport(
+    { platform: runtime.platform, nodeVersion: process.version },
+    inspection,
+  );
 
   if (options.json) {
-    const payload = {
-      generatedAt: runtime.now().toISOString(),
-      platform: runtime.platform,
-      nodeVersion: process.version,
-      tools: { pandoc, ffmpeg, weasyprint },
-      markdownPdf,
-      query: {
-        available: queryExtensions.available,
-        detail: queryExtensions.detail,
-        formats: queryFormats,
-        runtimeVersion: queryExtensions.runtimeVersion,
-      },
-      queryCodex,
-      font,
-      capabilities,
-    };
-    printLine(runtime.stdout, JSON.stringify(payload, null, 2));
+    printLine(runtime.stdout, serializeDoctorJson(report, runtime.now().toISOString()));
     return;
   }
 
+  const {
+    capabilities,
+    font,
+    markdownPdf,
+    query: queryExtensions,
+    queryCodex,
+    tools: { ffmpeg, pandoc, weasyprint },
+  } = report;
+  const { formats: queryFormats } = queryExtensions;
+  const fontconfigDiscovery = font.discovery.fontconfig;
+  const fontconfigCoverage = font.coverage.fontconfig;
+  const rendererCapabilities = markdownPdf.rendererCapabilities;
+
   printLine(runtime.stdout, pc.bold(pc.cyan("cdx-chores doctor")));
-  printLine(runtime.stdout, `${pc.dim("Platform:")} ${pc.white(runtime.platform)}`);
-  printLine(runtime.stdout, `${pc.dim("Node.js:")} ${pc.white(process.version)}`);
+  printLine(runtime.stdout, `${pc.dim("Platform:")} ${pc.white(report.platform)}`);
+  printLine(runtime.stdout, `${pc.dim("Node.js:")} ${pc.white(report.nodeVersion)}`);
   printLine(runtime.stdout);
 
   for (const item of [pandoc, ffmpeg, weasyprint]) {
