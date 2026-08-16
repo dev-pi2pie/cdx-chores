@@ -138,40 +138,42 @@ describe("interactive command menu wiring", () => {
     expect(stdout.text).toContain("\nCancelled.\n");
   });
 
-  test("runInteractiveMode passes runtime streams into the doctor confirm prompt", async () => {
+  test("runInteractiveMode passes runtime streams into the doctor output selector", async () => {
     const { runtime, stdin, stdout } = createRuntime();
-    const confirmCalls: Array<{
-      input: NodeJS.ReadableStream | undefined;
-      output: NodeJS.WritableStream | undefined;
+    const selectCalls: Array<{
+      input: NodeJS.ReadStream;
+      output: NodeJS.WritableStream;
     }> = [];
+    const callOrder: string[] = [];
 
     await runInteractiveMode(runtime, {
       selectInteractiveActionImpl: async () => "doctor",
-      confirmImpl: async (_options, context) => {
-        confirmCalls.push({
-          input: context?.input,
-          output: context?.output,
-        });
-        return false;
+      selectInteractiveDoctorOutputImpl: async (options) => {
+        callOrder.push("select");
+        selectCalls.push(options);
+        return "summary";
       },
-      actionDoctorImpl: async () => {},
+      actionDoctorImpl: async () => {
+        callOrder.push("action");
+      },
     });
 
-    expect(confirmCalls).toEqual([
+    expect(selectCalls).toEqual([
       {
         input: stdin as unknown as NodeJS.ReadStream,
         output: stdout as unknown as NodeJS.WritableStream,
       },
     ]);
+    expect(callOrder).toEqual(["select", "action"]);
   });
 
-  test("runInteractiveMode routes a declined JSON prompt to compact doctor output", async () => {
+  test("runInteractiveMode renders compact doctor output from Summary", async () => {
     const { runtime, stdout, stderr } = createRuntime();
     const fixture = createDoctorFixture();
 
     await runInteractiveMode(runtime, {
       selectInteractiveActionImpl: async () => "doctor",
-      confirmImpl: async () => false,
+      selectInteractiveDoctorOutputImpl: async () => "summary",
       actionDoctorImpl: async (doctorRuntime, options) => {
         await actionDoctor(doctorRuntime, { ...options, inspectors: fixture.inspectors });
       },
@@ -180,6 +182,52 @@ describe("interactive command menu wiring", () => {
     expect(stderr.text).toBe("");
     expect(stdout.text).toContain("Workflows:");
     expect(stdout.text).not.toContain("Platform:");
+    expect(fixture.calls).toEqual({
+      commands: ["pandoc", "ffmpeg", "weasyprint", "fc-list", "fc-query"],
+      query: 1,
+      codex: 1,
+    });
+  });
+
+  test("runInteractiveMode renders detailed doctor output from Detailed evidence", async () => {
+    const { runtime, stdout, stderr } = createRuntime();
+    const fixture = createDoctorFixture();
+
+    await runInteractiveMode(runtime, {
+      selectInteractiveActionImpl: async () => "doctor",
+      selectInteractiveDoctorOutputImpl: async () => "details",
+      actionDoctorImpl: async (doctorRuntime, options) => {
+        await actionDoctor(doctorRuntime, { ...options, inspectors: fixture.inspectors });
+      },
+    });
+
+    expect(stderr.text).toBe("");
+    expect(stdout.text).toContain("Platform:");
+    expect(stdout.text).not.toContain("Workflows:");
+    expect(fixture.calls).toEqual({
+      commands: ["pandoc", "ffmpeg", "weasyprint", "fc-list", "fc-query"],
+      query: 1,
+      codex: 1,
+    });
+  });
+
+  test("runInteractiveMode renders structured doctor output from JSON", async () => {
+    const { runtime, stdout, stderr } = createRuntime();
+    const fixture = createDoctorFixture();
+
+    await runInteractiveMode(runtime, {
+      selectInteractiveActionImpl: async () => "doctor",
+      selectInteractiveDoctorOutputImpl: async () => "json",
+      actionDoctorImpl: async (doctorRuntime, options) => {
+        await actionDoctor(doctorRuntime, { ...options, inspectors: fixture.inspectors });
+      },
+    });
+
+    expect(stderr.text).toBe("");
+    expect(JSON.parse(stdout.text)).toMatchObject({
+      platform: runtime.platform,
+      query: { available: true },
+    });
     expect(fixture.calls).toEqual({
       commands: ["pandoc", "ffmpeg", "weasyprint", "fc-list", "fc-query"],
       query: 1,

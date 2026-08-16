@@ -253,7 +253,9 @@ expose all three existing projections through one selection.
 
 ## Phase 4.5: Interactive Doctor View Selection
 
-Status: `ready`
+Status: `in-progress`
+
+Starting commit: `fb9c1646`
 
 Scope refinement:
 
@@ -264,6 +266,39 @@ Scope refinement:
   inspection pass for every Interactive route
 - record focused and full validation plus the exact committed-range review
   before Phase 5 begins
+
+Implemented candidate:
+
+- added one doctor-specific Interactive selector with Summary, Detailed
+  evidence, and JSON choices plus an explicit Summary default
+- replaced the legacy JSON confirmation with exclusive option mapping into the
+  existing doctor action
+- preserved runtime prompt streams, one action invocation, one inspection pass,
+  and the existing compact, detailed, and structured projections
+- retained direct CLI flags, help, conflict handling, and view behavior
+
+Validation:
+
+```text
+bun test test/cli-interactive-menu.test.ts test/cli-interactive-routing.test.ts test/cli-action-doctor.test.ts test/cli-command-doctor.test.ts
+55 pass, 0 fail
+
+bun test
+2420 pass, 0 fail
+
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+git diff --check
+passed
+```
+
+The focused matrix covers exact choice copy and order, the explicit Summary
+default, exclusive action options, selector-before-action ordering, prompt
+streams, one inspection pass per route, all three rendered projections, and
+unchanged direct CLI routing and conflicts. Exact committed-range review remains
+pending before this phase can close.
 
 ## Phase 5: Integrated Validation, Guidance, And Lifecycle Closeout
 

@@ -515,25 +515,25 @@ completed renderer, direct CLI, JSON, or parser-conflict work.
 
 Tasks:
 
-- [ ] Update the Phase 4.5 section of the plan-level execution record from the
+- [x] Update the Phase 4.5 section of the plan-level execution record from the
       accepted Phase 4 checkpoint and this research refinement.
-- [ ] Replace the Interactive `Output as JSON?` confirmation with one
+- [x] Replace the Interactive `Output as JSON?` confirmation with one
       `Choose doctor output` selection.
-- [ ] Present Summary first with workflow-readiness and action guidance,
+- [x] Present Summary first with workflow-readiness and action guidance,
       Detailed evidence second with versions and capability evidence, and JSON
       third with machine-readable evidence.
-- [ ] Route Summary to compact output, Detailed evidence to the existing
+- [x] Route Summary to compact output, Detailed evidence to the existing
       detailed projection, and JSON to the unchanged structured projection.
-- [ ] Keep the selection exclusive by construction, invoke `actionDoctor`
+- [x] Keep the selection exclusive by construction, invoke `actionDoctor`
       exactly once after selection, and run one inspection pass with every
       inspector invoked exactly once.
-- [ ] Preserve Interactive runtime input/output stream wiring and leave direct
+- [x] Preserve Interactive runtime input/output stream wiring and leave direct
       CLI flags, help, conflicts, exit behavior, and view content unchanged.
-- [ ] Add deterministic Interactive routing tests for all three choices,
+- [x] Add deterministic Interactive routing tests for all three choices,
       selection copy and order, Summary as the initial default-highlighted
       value, selected action options, prompt streams, and rendered compact,
       detailed, and JSON integration paths.
-- [ ] Run focused doctor and Interactive tests, the full repository suite,
+- [x] Run focused doctor and Interactive tests, the full repository suite,
       TypeScript, lint, formatting, build, and `git diff --check`.
 - [ ] Review the exact Phase 4.5 range for maintainability, test quality,
       Interactive UX compatibility, and public-safety regressions.
