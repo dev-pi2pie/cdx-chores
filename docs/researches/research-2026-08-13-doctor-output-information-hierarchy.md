@@ -480,6 +480,320 @@ Before the draft plan may activate production implementation, record:
 - focused test requirements that keep base workflow readiness distinct from
   scoped capability limitations
 
+## Phase 1 Evidence Closure
+
+The current source and focused tests now provide the evidence required to close
+the research gate. This section freezes the compatibility and projection
+contract that the implementation plan must follow.
+
+### Current JSON contract inventory
+
+The legacy JSON projection keeps this top-level key order:
+
+```text
+generatedAt
+platform
+nodeVersion
+tools
+markdownPdf
+query
+queryCodex
+font
+capabilities
+```
+
+The complete nested ownership is:
+
+| Path                                            | Required shape and meaning                                                                                                                                 |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `generatedAt`                                   | ISO string from `runtime.now()`                                                                                                                            |
+| `platform`                                      | `runtime.platform`                                                                                                                                         |
+| `nodeVersion`                                   | direct `process.version` string                                                                                                                            |
+| `tools.pandoc`, `.ffmpeg`, `.weasyprint`        | `{ name, available, version, installHint }`; `version` is `string \| null`                                                                                 |
+| `markdownPdf.ready`                             | basic Pandoc and WeasyPrint readiness, independent of advanced renderer capabilities                                                                       |
+| `markdownPdf.requirements.pandoc`               | `{ status, available, version, minimumVersion }`; status is `satisfied`, `missing`, `unsupported`, or `unverified`; minimum is `2.0`                       |
+| `markdownPdf.requirements.weasyprint`           | `{ status, available, version }`; status is `satisfied` or `missing`                                                                                       |
+| `markdownPdf.rendererCapabilities.renderer`     | `{ name: "weasyprint", available, version }`                                                                                                               |
+| `markdownPdf.rendererCapabilities.capabilities` | 15 matrix-ordered entries with `{ id, minimumVersion, fields, status }`; non-satisfied entries also carry `diagnosticConditionId`; `requestedBy` is absent |
+| `query.available`                               | DuckDB runtime availability                                                                                                                                |
+| `query.detail`                                  | optional raw DuckDB runtime detail; omitted when undefined                                                                                                 |
+| `query.formats`                                 | stable order: `csv`, `tsv`, `parquet`, `duckdb`, `sqlite`, `excel`                                                                                         |
+| core query formats                              | `{ kind: "core", detectedSupport }`; no loadability, installability, or detail fields                                                                      |
+| extension query formats                         | `{ kind: "extension", detectedSupport, loadability, installability, detail? }`; installability is `boolean \| null`                                        |
+| `query.runtimeVersion`                          | optional string; omitted when unavailable                                                                                                                  |
+| `queryCodex`                                    | `{ configuredSupport, authSessionAvailable, readyToDraft, detail? }`; readiness also requires DuckDB                                                       |
+| `font.discovery.fontconfig`                     | `{ command: "fc-list", available, version }`                                                                                                               |
+| `font.coverage.fontconfig`                      | `{ command: "fc-query", available, version }`                                                                                                              |
+
+The flat `capabilities` object keeps these 14 ordered boolean keys and current
+meanings:
+
+```text
+md.to-docx
+md.to-pdf
+video.convert
+video.resize
+video.gif
+data.query.csv
+data.query.tsv
+data.query.parquet
+data.query.duckdb
+data.query.sqlite
+data.query.excel
+data.query.codex
+font.discovery.fontconfig
+font.coverage.fontconfig
+```
+
+`md.to-docx` follows Pandoc availability. `md.to-pdf` follows basic Pandoc and
+WeasyPrint requirements. Core query keys follow DuckDB runtime availability;
+SQLite and Excel follow extension loadability; Codex-assisted query follows
+`readyToDraft`. Extraction must preserve those meanings rather than deriving
+them from the new workflow model.
+
+### Current human visibility inventory
+
+The detailed order remains heading, platform and Node.js, three tool lines,
+flat capabilities, Markdown PDF renderer capabilities, font support, data-query
+formats, and data-query Codex. Missing tools add their current install hints.
+Installable DuckDB extensions add their current generated `Try:` command.
+
+| Existing evidence                        | Compact view                             | Detailed view                            | JSON view                 |
+| ---------------------------------------- | ---------------------------------------- | ---------------------------------------- | ------------------------- |
+| Platform and Node.js                     | omit                                     | preserve                                 | preserve                  |
+| Tool success and versions                | collapse into workflow state             | preserve                                 | preserve                  |
+| Tool failure and install hint            | typed issue and deduplicated action      | preserve                                 | preserve under `tools`    |
+| Flat capabilities                        | replace with workflow projection         | preserve                                 | preserve                  |
+| Satisfied renderer entries               | collapse                                 | preserve                                 | preserve                  |
+| Non-ready renderer entries               | typed PDF limitation or uncertainty      | preserve                                 | preserve                  |
+| Font discovery and coverage              | separate workflow states                 | preserve                                 | preserve                  |
+| DuckDB runtime and core formats          | aggregate                                | preserve                                 | preserve                  |
+| Extension states                         | retain scoped limitation and safe action | preserve                                 | preserve                  |
+| Codex configuration, auth, and readiness | Codex-assisted workflow                  | preserve even when DuckDB is unavailable | preserve                  |
+| Raw detail strings                       | forbid                                   | preserve current behavior                | preserve current behavior |
+
+The DuckDB-unavailable early return is an accidental detailed-rendering cutoff.
+The corrected detailed view prints the unavailable runtime line and continues to
+the already-computed Codex section.
+
+### Public-safety audit
+
+Compact output must not forward these existing raw sources:
+
+- `query.detail`, which may contain runtime, path, permission, or network text
+- `query.formats.sqlite.detail` and `.excel.detail`, which may contain extension
+  load, cache, permission, download, DNS, or connection text
+- `queryCodex.detail`, which may contain SDK errors, resolved override paths,
+  authentication guidance, or fallback DuckDB detail
+- detected tool and DuckDB version strings when constructing remediation copy
+
+Safe remediation sources are the repository-owned dependency install hints and
+the closed SQLite/Excel DuckDB install-command helper. Compact safety fixtures
+must inject secret-like values, absolute paths, URLs, permission errors, and
+command-looking strings into every raw detail field and prove they do not enter
+the projection, while approved hints and commands remain visible.
+
+### DuckDB state and remediation inventory
+
+| Runtime     | Extension loadability | Installability   | Compact action                           |
+| ----------- | --------------------- | ---------------- | ---------------------------------------- |
+| unavailable | `false` default       | `null` default   | no invented install action               |
+| available   | `true`                | `true` or `null` | none                                     |
+| available   | `false`               | `true`           | generated extension install command      |
+| available   | `false`               | `false`          | no command; typed environment constraint |
+| available   | `false`               | `null`           | no command; typed unknown condition      |
+
+The top-level doctor does not expose lower-level installed/loaded distinctions.
+Permission, cache, read-only, download, network, and DNS failures constrain
+installability; unclassified failures remain unknown.
+
+### Frozen workflow and identity model
+
+Workflows render in this order:
+
+| Workflow ID        | Label                     |
+| ------------------ | ------------------------- |
+| `markdown.docx`    | Markdown DOCX             |
+| `markdown.pdf`     | Markdown PDF              |
+| `video`            | Video                     |
+| `data.query`       | Data query                |
+| `data.query.codex` | Codex-assisted data query |
+| `font.discovery`   | Font discovery            |
+| `font.coverage`    | Font coverage             |
+
+Closed condition IDs are:
+
+```text
+dependency.pandoc.missing
+dependency.pandoc.unsupported
+dependency.pandoc.unverified
+dependency.weasyprint.missing
+dependency.ffmpeg.missing
+dependency.fontconfig.discovery.missing
+dependency.fontconfig.coverage.missing
+markdown.pdf.renderer.capability.unsupported
+markdown.pdf.renderer.capability.unverified
+data.query.runtime.unavailable
+data.query.extension.sqlite.unavailable
+data.query.extension.excel.unavailable
+data.query.codex.unconfigured
+data.query.codex.unauthenticated
+```
+
+Closed action IDs are:
+
+```text
+dependency.pandoc.install
+dependency.pandoc.upgrade
+dependency.pandoc.verify
+dependency.weasyprint.install
+dependency.weasyprint.upgrade
+dependency.weasyprint.verify
+dependency.ffmpeg.install
+dependency.fontconfig.install
+data.query.extension.sqlite.install
+data.query.extension.excel.install
+data.query.codex.configure
+data.query.codex.authenticate
+```
+
+One condition may affect several workflows. One action may merge affected
+workflow IDs. Required actions sort before recommended actions; within a class,
+the first affected workflow order and then action ID determine order. Issue
+count is the number of unique visible condition IDs; action count is the number
+of deduplicated visible action IDs. Visible conditions sort by the first
+affected workflow's stable order and then by condition ID.
+
+Base unavailability takes precedence over unknown, limited, and ready states.
+An unknown base requirement takes precedence over child limitations. A
+non-ready optional or advanced child makes an otherwise usable workflow
+`limited`, while the affected child condition remains visible.
+
+### Condition-to-workflow and action contract
+
+Safe messages below are typed copy. Values in raw detail fields and detected
+version strings must not be interpolated into them.
+
+| Condition ID and evidence                              | Affected workflow state                           | Action                                | Class       | Safe condition/action source                                                      |
+| ------------------------------------------------------ | ------------------------------------------------- | ------------------------------------- | ----------- | --------------------------------------------------------------------------------- |
+| `dependency.pandoc.missing`                            | DOCX and PDF `unavailable`                        | `dependency.pandoc.install`           | required    | `Pandoc is missing`; repository-owned platform install hint                       |
+| `dependency.pandoc.unsupported`                        | PDF `unavailable`; DOCX remains `ready`           | `dependency.pandoc.upgrade`           | required    | `Pandoc does not meet the required 2.0 minimum`; requirement minimum              |
+| `dependency.pandoc.unverified`                         | PDF `unknown`; DOCX remains `ready`               | `dependency.pandoc.verify`            | recommended | `Pandoc 2.0 or newer could not be verified`; no command                           |
+| `dependency.weasyprint.missing`                        | PDF `unavailable`                                 | `dependency.weasyprint.install`       | required    | `WeasyPrint is missing`; repository-owned platform install hint                   |
+| `dependency.ffmpeg.missing`                            | Video `unavailable`                               | `dependency.ffmpeg.install`           | required    | `FFmpeg is missing`; repository-owned platform install hint                       |
+| `dependency.fontconfig.discovery.missing`              | Font discovery `unavailable`                      | `dependency.fontconfig.install`       | required    | `Fontconfig discovery is unavailable`; repository-owned platform install hint     |
+| `dependency.fontconfig.coverage.missing`               | Font coverage `unavailable`                       | `dependency.fontconfig.install`       | required    | `Fontconfig coverage is unavailable`; repository-owned platform install hint      |
+| `markdown.pdf.renderer.capability.unsupported`         | PDF `limited`                                     | `dependency.weasyprint.upgrade`       | recommended | `Advanced Markdown PDF features require WeasyPrint 65.1 or newer`; matrix minimum |
+| `markdown.pdf.renderer.capability.unverified`          | PDF `limited`                                     | `dependency.weasyprint.verify`        | recommended | `Advanced Markdown PDF compatibility could not be verified`; no command           |
+| `data.query.runtime.unavailable`                       | Data query and Codex-assisted query `unavailable` | none                                  | —           | `DuckDB runtime is unavailable`; never forward runtime detail                     |
+| `data.query.extension.sqlite.unavailable`, installable | Data query `limited`                              | `data.query.extension.sqlite.install` | required    | `SQLite query support is unavailable but installable`; closed helper command      |
+| `data.query.extension.sqlite.unavailable`, constrained | Data query `limited`                              | none                                  | —           | `SQLite query support is unavailable in this environment`                         |
+| `data.query.extension.sqlite.unavailable`, unknown     | Data query `limited`                              | none                                  | —           | `SQLite query support could not be verified`                                      |
+| `data.query.extension.excel.unavailable`, installable  | Data query `limited`                              | `data.query.extension.excel.install`  | required    | `Excel query support is unavailable but installable`; closed helper command       |
+| `data.query.extension.excel.unavailable`, constrained  | Data query `limited`                              | none                                  | —           | `Excel query support is unavailable in this environment`                          |
+| `data.query.extension.excel.unavailable`, unknown      | Data query `limited`                              | none                                  | —           | `Excel query support could not be verified`                                       |
+| `data.query.codex.unconfigured`                        | Codex-assisted query `unavailable`                | `data.query.codex.configure`          | required    | `Codex support is not configured`; no command                                     |
+| `data.query.codex.unauthenticated`                     | Codex-assisted query `unavailable`                | `data.query.codex.authenticate`       | required    | `No Codex authentication session is available`; no command                        |
+
+When both fontconfig probes are missing, the two conditions remain visible but
+their shared `dependency.fontconfig.install` action is rendered once with both
+affected workflow IDs.
+
+### Combined-condition precedence
+
+Compact projection preserves independent actionable conditions while
+suppressing subordinate evidence that cannot change the current next step.
+
+| Combination                                                            | Visible workflow states                           | Visible conditions and actions                                                                                     |
+| ---------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| DuckDB unavailable; Codex otherwise ready                              | Data query and Codex-assisted query `unavailable` | one runtime condition, zero actions                                                                                |
+| DuckDB unavailable; Codex unconfigured                                 | both workflows `unavailable`                      | runtime plus unconfigured conditions; configure action; 2 issues, 1 action                                         |
+| DuckDB unavailable; Codex configured but unauthenticated               | both workflows `unavailable`                      | runtime plus unauthenticated conditions; authenticate action; 2 issues, 1 action                                   |
+| DuckDB unavailable; Codex both unconfigured and unauthenticated        | both workflows `unavailable`                      | runtime plus unconfigured conditions; unauthenticated is suppressed until configuration exists; 2 issues, 1 action |
+| DuckDB unavailable with default extension values                       | Data query `unavailable`                          | extension conditions are suppressed because loadability was not independently assessed                             |
+| Pandoc missing; WeasyPrint present but advanced capabilities non-ready | DOCX and PDF `unavailable`                        | Pandoc missing only; subordinate renderer conditions and actions are suppressed; 1 issue, 1 action                 |
+| Pandoc and WeasyPrint both missing                                     | DOCX and PDF `unavailable`                        | both missing conditions and both required install actions; 2 issues, 2 actions                                     |
+| Pandoc unverified; renderer capability non-ready                       | DOCX `ready`, PDF `unknown`                       | Pandoc unverified only; subordinate renderer condition is suppressed; 1 issue, 1 recommended verify action         |
+| Base PDF requirements ready; renderer capability non-ready             | PDF `limited`                                     | one renderer condition and one recommended upgrade or verify action                                                |
+| DuckDB ready; extension non-ready                                      | Data query `limited`                              | one condition per non-ready extension; action only when installability is `true`                                   |
+| Codex configured support is false and auth is false                    | Codex-assisted query `unavailable`                | unconfigured condition and configure action only; authentication is suppressed                                     |
+
+### Controlled fixture contract
+
+Fixtures use a fixed runtime of `platform: "darwin"`,
+`now: 2026-08-16T00:00:00.000Z`, and direct `nodeVersion: process.version`.
+Unless overridden, controlled inspectors return:
+
+```text
+pandoc: available 3.1, install hint "brew install pandoc"
+ffmpeg: available 8.0.1, install hint "brew install ffmpeg"
+weasyprint: available 68.0, install hint "brew install weasyprint"
+fc-list and fc-query: available 2.15.0, install hint "brew install fontconfig"
+DuckDB: available, runtime 1.5.0, SQLite and Excel loadable/installable
+Codex: configured support and auth session available
+```
+
+An available extension input is
+`{ installed: true, loaded: true, loadable: true, installable: true }`.
+An unavailable extension explicitly sets all four booleans/null values and may
+carry a controlled `detail` string. These are inspector inputs; report
+construction must retain their JSON-visible values exactly.
+
+| Fixture ID and controlled override                                                                                                                | Exact projection assertions                                                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `all-ready` — no overrides                                                                                                                        | seven workflows `ready`; issue IDs `[]`; action IDs `[]`; complete canonical legacy JSON equals the controlled report projection                                     |
+| `pandoc-missing` — Pandoc `{ available:false, version:null }`                                                                                     | DOCX and PDF `unavailable`; issue IDs `[dependency.pandoc.missing]`; required action IDs `[dependency.pandoc.install]` affecting both workflows                      |
+| `weasyprint-old` — WeasyPrint version `65.0`                                                                                                      | PDF `limited`; one renderer-unsupported issue; one recommended WeasyPrint-upgrade action; the 15 detailed/JSON capability entries remain individually unsupported    |
+| `pandoc-unverified` — Pandoc version `custom-build`                                                                                               | DOCX `ready`, PDF `unknown`; one Pandoc-unverified issue; one recommended verify action                                                                              |
+| `duckdb-unavailable` — `{ available:false, detail:"HOST_PATH /Users/alice/private.db TOKEN_ABC" }`; Codex otherwise ready                         | Data query and Codex-assisted query `unavailable`; one runtime issue, zero actions; forbidden tokens absent from compact projection                                  |
+| `sqlite-installable` — SQLite `{ installed:false, loaded:false, loadable:false, installable:true, detail:"HOST_URL https://private.invalid" }`    | Data query `limited`; one SQLite issue; one required install action whose command is exactly `cdx-chores data duckdb extension install sqlite`; forbidden URL absent |
+| `excel-constrained` — Excel `{ installed:false, loaded:false, loadable:false, installable:false, detail:"permission denied /Users/alice/cache" }` | Data query `limited`; one Excel issue, zero actions; path and raw error absent                                                                                       |
+| `sqlite-unknown` — SQLite `{ installed:false, loaded:false, loadable:false, installable:null, detail:"UNCLASSIFIED_SECRET" }`                     | Data query `limited`; one SQLite issue with the typed unknown message; zero actions; secret absent                                                                   |
+| `codex-unconfigured` — Codex `{ configuredSupport:false, authSessionAvailable:true, detail:"OVERRIDE /Users/alice/codex" }`                       | only Codex-assisted query `unavailable`; one unconfigured issue; one required configure action; path absent                                                          |
+| `font-discovery-missing` — `fc-list` unavailable, coverage ready                                                                                  | Font discovery `unavailable`, coverage `ready`; one discovery issue; one required fontconfig install action                                                          |
+| `multiple-actions` — Pandoc and FFmpeg unavailable; SQLite installable                                                                            | DOCX, PDF, and Video `unavailable`; Data query `limited`; issue count `3`; required actions in order Pandoc install, FFmpeg install, SQLite install                  |
+| `duckdb-and-codex-unconfigured` — DuckDB unavailable and Codex configured/auth both false                                                         | both data workflows `unavailable`; issue IDs are runtime then unconfigured; configure is the only action                                                             |
+| `pandoc-missing-and-weasyprint-old`                                                                                                               | DOCX and PDF `unavailable`; renderer limitation suppressed; one issue and one required Pandoc-install action                                                         |
+
+Phase 1 freezes these inputs and assertions but does not claim their tests have
+already been implemented. Phase 2 implements exact normalized-report and JSON
+fixtures, Phase 3 implements compact projection and forbidden-token assertions,
+and Phase 4 implements detailed and routing assertions. Detailed and JSON
+fixtures must preserve every supplied raw detail exactly; compact fixtures must
+contain none of the controlled hostile tokens.
+
+### Injection and module boundary
+
+The proposed Phase 2 split keeps `actionDoctor` as the public orchestration
+facade and introduces five internal modules under `src/cli/doctor/`:
+
+- `inspect.ts` — default inspector bundle and one concurrent inspection pass
+- `report.ts` — normalized evidence types and pure report construction
+- `json.ts` — legacy JSON projection
+- `workflow.ts` — closed workflow, condition, action, and compact-safety model
+- `render.ts` — detailed and compact human rendering
+
+The inspector bundle owns dependency, DuckDB, and Codex inspection. Markdown
+PDF requirement and renderer assessment stay as pure report construction. The
+existing `dependencyRunner` option remains supported. `runtime.now()` and
+`runtime.platform` remain runtime-owned; `process.version` is asserted against
+the running process rather than adding an unnecessary production injection.
+
+Tests should separate action/JSON integration, pure workflow projection, and
+Commander routing. Existing action exports remain stable; internal doctor
+modules do not become new public package exports.
+
+### Baseline validation evidence
+
+Before production changes, the focused doctor, CLI UX, and Interactive routing
+baseline passed 87 tests with zero failures. Existing tests cover broad JSON and
+human output, Markdown PDF state mapping, renderer-capability parity,
+dependency-failure exit `2`, and invalid Codex override evidence. Phase 2 must
+add complete canonical JSON fixtures and inspector call counts. Phase 3 must add
+the workflow and hostile-detail matrices. Phase 4 must add detailed
+section-completeness, view routing, flag-conflict, no-inspector, redirected
+content, and Interactive default coverage.
+
 ## Implementation Shape
 
 The [draft implementation plan][doctor-plan] separates:
