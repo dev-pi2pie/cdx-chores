@@ -1,4 +1,4 @@
-import type { Command } from "commander";
+import { Option, type Command } from "commander";
 
 import { actionDoctor } from "../actions";
 import { runInteractiveMode } from "../interactive";
@@ -9,7 +9,16 @@ import { registerMarkdownCommands } from "./markdown";
 import { registerRenameCommands } from "./rename";
 import { registerVideoCommands } from "./video";
 
-export function registerCliCommands(program: Command, runtime: CliRuntime): void {
+interface RegisterCliCommandsImpls {
+  actionDoctorImpl?: typeof actionDoctor;
+}
+
+export function registerCliCommands(
+  program: Command,
+  runtime: CliRuntime,
+  impls: RegisterCliCommandsImpls = {},
+): void {
+  const actionDoctorImpl = impls.actionDoctorImpl ?? actionDoctor;
   program
     .command("interactive")
     .description("Start interactive mode")
@@ -21,8 +30,9 @@ export function registerCliCommands(program: Command, runtime: CliRuntime): void
     .command("doctor")
     .description("Check tool availability and current feature capabilities")
     .option("--json", "Output machine-readable JSON", false)
-    .action(async (options: { json?: boolean }) => {
-      await actionDoctor(runtime, { json: options.json });
+    .addOption(new Option("--details", "Output detailed human-readable evidence").conflicts("json"))
+    .action(async (options: { details?: boolean; json?: boolean }) => {
+      await actionDoctorImpl(runtime, { details: Boolean(options.details), json: options.json });
     });
 
   registerDataCommands(program, runtime);

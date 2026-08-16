@@ -181,7 +181,51 @@ default human view while preserving detailed and JSON views.
 
 ## Phase 4: Compact And Detailed Human Views
 
-Status: `ready`
+Status: `in-progress`
+
+Starting commit: `291f62b7`
+
+Implemented view boundary:
+
+- extracted the existing human evidence report into a detailed renderer and
+  preserved its section order, versions, capability entries, raw detail, and
+  remediation evidence
+- removed the detailed DuckDB-unavailable rendering cutoff so the already-
+  inspected Codex section remains visible
+- added a deterministic compact default with seven workflow states, unique
+  issues, headline counts, and one ordered deduplicated Actions section
+- added `--details`, retained the legacy `--json` projection, and rejected both
+  flags in either order through Commander before the action or inspectors run
+- kept TTY-dependent color presentation while proving identical plain-text
+  information content for redirected output
+- retained the existing Interactive JSON confirmation; its false branch now
+  reaches the compact action default without a new view-selection prompt
+
+Validation:
+
+```text
+bun test test/cli-command-doctor.test.ts test/cli-action-doctor.test.ts test/cli-doctor-workflow.test.ts test/cli-actions-doctor-markdown-video-deferred.test.ts test/cli-ux.test.ts test/cli-interactive-menu.test.ts test/cli-interactive-routing.test.ts
+145 pass, 0 fail
+
+bun test
+2413 pass, 0 fail
+
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+git diff --check
+passed
+```
+
+The action and built-CLI matrix covers compact, detailed, and JSON routing;
+ready, limited, unavailable, and unknown workflow states; safe and unavailable
+remediation; action order; TTY/redirection content parity; detailed-section
+completeness; parser help and exit `1`; zero action/inspection on conflicts;
+health exit `0`; and operational failure exit `2`.
+
+Exact committed-range maintainability, test-quality, and public-safety review
+remains pending before this phase can close.
 
 ## Phase 5: Integrated Validation, Guidance, And Lifecycle Closeout
 

@@ -172,7 +172,7 @@ describe("cli action modules: doctor", () => {
   test("actionDoctor emits human-readable text report", async () => {
     const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
 
-    await actionDoctor(runtime);
+    await actionDoctor(runtime, { details: true });
 
     expectNoStderr();
     expect(stdout.text).toContain("cdx-chores doctor");
@@ -204,6 +204,7 @@ describe("cli action modules: doctor", () => {
     const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
 
     await actionDoctor(runtime, {
+      details: true,
       dependencyRunner: doctorDependencyRunner({
         pandoc: ok("pandoc 3.9\n"),
         ffmpeg: ok("ffmpeg version 8.0.1\n"),
@@ -415,6 +416,7 @@ describe("cli action modules: doctor", () => {
     async (_label, version, rendererText, readinessText, capabilityText, hasDiagnostic) => {
       const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
       await actionDoctor(runtime, {
+        details: true,
         dependencyRunner: doctorDependencyRunner({
           pandoc: ok("pandoc 3.9\n"),
           ffmpeg: ok("ffmpeg version 8.0.1\n"),
@@ -451,6 +453,7 @@ describe("cli action modules: doctor", () => {
       dependencyRunner: doctorDependencyRunner(statuses),
     });
     await actionDoctor(humanRuntime.runtime, {
+      details: true,
       dependencyRunner: doctorDependencyRunner(statuses),
     });
 
@@ -514,6 +517,7 @@ describe("cli action modules: doctor", () => {
       const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
 
       await actionDoctor(runtime, {
+        details: true,
         dependencyRunner: doctorDependencyRunner({
           pandoc: ok(scenario.pandoc),
           ffmpeg: ok("ffmpeg version 8.0.1\n"),

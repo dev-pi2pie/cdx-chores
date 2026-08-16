@@ -440,32 +440,32 @@ Decision gate:
 
 Tasks:
 
-- [ ] Update the Phase 4 section of the plan-level execution record from the
+- [x] Update the Phase 4 section of the plan-level execution record from the
       accepted Phase 3 checkpoint.
-- [ ] Extract the current human report into a detailed renderer that preserves
+- [x] Extract the current human report into a detailed renderer that preserves
       its evidence categories and stable order.
-- [ ] Remove the DuckDB-unavailable early return from detailed rendering so all
+- [x] Remove the DuckDB-unavailable early return from detailed rendering so all
       already-computed sections are shown.
-- [ ] Implement the compact renderer with workflow-first output, collapsed
+- [x] Implement the compact renderer with workflow-first output, collapsed
       routine success, expanded non-ready child states, headline issue/action
       counts, and one ordered Actions section.
-- [ ] Preserve terminal-dependent color while keeping information content stable
+- [x] Preserve terminal-dependent color while keeping information content stable
       between TTY and redirected output.
-- [ ] Add `--details` with the accepted help text and register its conflict with
+- [x] Add `--details` with the accepted help text and register its conflict with
       `--json` in the Commander command-registration layer.
-- [ ] Reject `--details --json` before `actionDoctor` is invoked, with parser
+- [x] Reject `--details --json` before `actionDoctor` is invoked, with parser
       help on stderr and exit `1`; prove that no member of the injected
       inspector bundle runs.
-- [ ] Route no flag to compact, `--details` to detailed, and `--json` to the
+- [x] Route no flag to compact, `--details` to detailed, and `--json` to the
       unchanged legacy projection.
-- [ ] Confirm Interactive `doctor` uses the compact default without adding a new
+- [x] Confirm Interactive `doctor` uses the compact default without adding a new
       Interactive view-selection prompt.
-- [ ] Preserve health findings at exit `0` and operational probe failures at
+- [x] Preserve health findings at exit `0` and operational probe failures at
       exit `2`.
-- [ ] Add action-level and built-CLI tests for view routing, help, conflict,
+- [x] Add action-level and built-CLI tests for view routing, help, conflict,
       no-probe conflict behavior, all workflow states, deterministic redirected
       content, and detailed-section completeness.
-- [ ] Run focused tests, CLI UX tests, the full suite, TypeScript, lint,
+- [x] Run focused tests, CLI UX tests, the full suite, TypeScript, lint,
       formatting, build, and diff checks.
 - [ ] Review the exact Phase 4 range for maintainability, test quality, and
       public-safety regressions.
