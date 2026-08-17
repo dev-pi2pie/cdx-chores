@@ -1,7 +1,7 @@
 ---
 title: "Rename Common Usage"
 created-date: 2026-02-27
-modified-date: 2026-03-12
+modified-date: 2026-08-16
 status: completed
 agent: codex
 ---
@@ -152,23 +152,23 @@ Notes:
 
 ### Cleanup Option Roles
 
-| Surface | What it controls | Current values / scope | What it does not control |
-| ------- | ---------------- | ---------------------- | ------------------------ |
-| `--hint` | Which cleanup fragments are matched and cleaned | `date`, `timestamp`, `serial`, `uid` | Text formatting or conflict handling |
-| `--style` | How surviving text is formatted after cleanup | `preserve`, `slug` | Matching fragments, generating fresh names, resolving conflicts |
-| `--timestamp-action` | Whether matched timestamp text is kept or removed | `keep`, `remove` with `--hint timestamp` | Non-timestamp cleanup behavior |
-| `--conflict-strategy` | What happens only when cleaned results collide | `skip`, `number`, `uid-suffix` | Matching or normal text formatting |
+| Surface               | What it controls                                  | Current values / scope                   | What it does not control                                        |
+| --------------------- | ------------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------- |
+| `--hint`              | Which cleanup fragments are matched and cleaned   | `date`, `timestamp`, `serial`, `uid`     | Text formatting or conflict handling                            |
+| `--style`             | How surviving text is formatted after cleanup     | `preserve`, `slug`                       | Matching fragments, generating fresh names, resolving conflicts |
+| `--timestamp-action`  | Whether matched timestamp text is kept or removed | `keep`, `remove` with `--hint timestamp` | Non-timestamp cleanup behavior                                  |
+| `--conflict-strategy` | What happens only when cleaned results collide    | `skip`, `number`, `uid-suffix`           | Matching or normal text formatting                              |
 
 ### Cleanup Intent Map
 
-| If you want to... | Use... | Example |
-| ----------------- | ------ | ------- |
-| remove serial fragments from existing names | `--hint serial` | `cdx-chores rename cleanup ./logs --hint serial --dry-run` |
-| remove uid fragments but keep surrounding text | `--hint uid` | `cdx-chores rename cleanup ./captures --hint uid --dry-run` |
-| keep readable surviving text | `--style preserve` | `cdx-chores rename cleanup ./captures --hint uid --style preserve --dry-run` |
-| slugify surviving text | `--style slug` | `cdx-chores rename cleanup ./captures --hint serial --style slug --dry-run` |
-| remove timestamp text entirely | `--hint timestamp --timestamp-action remove` | `cdx-chores rename cleanup ./captures --hint timestamp --timestamp-action remove --dry-run` |
-| change how conflicts are resolved | `--conflict-strategy skip|number|uid-suffix` | `cdx-chores rename cleanup ./logs --hint serial --conflict-strategy number --dry-run` |
+| If you want to...                              | Use...                                       | Example                                                                                     |
+| ---------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| remove serial fragments from existing names    | `--hint serial`                              | `cdx-chores rename cleanup ./logs --hint serial --dry-run`                                  |
+| remove uid fragments but keep surrounding text | `--hint uid`                                 | `cdx-chores rename cleanup ./captures --hint uid --dry-run`                                 |
+| keep readable surviving text                   | `--style preserve`                           | `cdx-chores rename cleanup ./captures --hint uid --style preserve --dry-run`                |
+| slugify surviving text                         | `--style slug`                               | `cdx-chores rename cleanup ./captures --hint serial --style slug --dry-run`                 |
+| remove timestamp text entirely                 | `--hint timestamp --timestamp-action remove` | `cdx-chores rename cleanup ./captures --hint timestamp --timestamp-action remove --dry-run` |
+| change how conflicts are resolved              | `--conflict-strategy skip                    | number                                                                                      | uid-suffix` | `cdx-chores rename cleanup ./logs --hint serial --conflict-strategy number --dry-run` |
 
 ### Advanced: Cleanup First, Then Mark the Clean Winner
 
@@ -314,6 +314,7 @@ Interactive mode now asks once for assistant enablement, then one scope selector
 
 ## Related Guides
 
+- `docs/guides/patterns-placeholders-and-templates.md`
 - `docs/guides/rename-timestamp-format-matrix.md`
 - `docs/guides/rename-scope-and-codex-capability-guide.md`
 - `docs/guides/rename-plan-csv-schema.md`

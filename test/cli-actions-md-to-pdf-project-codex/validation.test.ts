@@ -7,6 +7,7 @@ import type { MarkdownPdfCodexProfileRunner } from "../../src/adapters/codex/mar
 import type { MarkdownPdfTemplateCodexRunner } from "../../src/adapters/codex/markdown-pdf-template";
 import {
   collectMdPdfProjectCodexSignals,
+  createMdPdfProjectCodexHandoffProjection,
   createMdPdfProjectCodexRenderCommand,
   normalizeMdPdfProjectCodexCommandState,
   planMdPdfProjectCodexOutput,
@@ -36,10 +37,11 @@ function adaptedProfileRunner(
     unmatchedDirections?: string[];
   } = {},
 ) {
-  return async () =>
+  return async ({ prompt }: { prompt: string }) =>
     JSON.stringify({
       decision_mode: "adapted",
-      selected_candidate_id: input.candidateId ?? "article",
+      selected_candidate_id:
+        input.candidateId ?? (prompt.includes('"id": "base-profile"') ? "base-profile" : "article"),
       accepted_patches: input.patches ?? [{ op: "replace", path: "/toc/enabled", value: true }],
       accepted_font_patches: [],
       reasoning: "The project profile should adapt to the document signals.",
@@ -51,6 +53,7 @@ function adaptedProfileRunner(
 
 function templateResponse(input: {
   coverEnabled?: boolean;
+  cssBlocks?: Array<{ css: string; slot: "spacing" }>;
   decisionMode?: string;
   recipePreset?: string;
   recipeSource?: string;
@@ -88,7 +91,7 @@ function templateResponse(input: {
       typography: { scale: "standard" },
       colors: { palette: "neutral" },
     },
-    css_blocks: [],
+    css_blocks: input.cssBlocks ?? [],
     font_decisions: [],
     managed_assets: coverEnabled
       ? [{ bundle_path: "assets/cover.png", source_label: "cover.png" }]
@@ -230,6 +233,8 @@ describe("cli action modules: md pdf-project codex validation", () => {
           { name: "profile-shape", status: "passed" },
           { name: "profile-normalization", status: "passed" },
           { name: "template-static-validation", status: "passed" },
+          { name: "profile-body-page-number-compatibility", status: "passed" },
+          { name: "template-page-number-css-ownership", status: "passed" },
           { name: "artifact-boundaries", status: "passed" },
           { name: "managed-asset-bindings", status: "passed" },
           { name: "profile-template-compatibility", status: "passed" },
@@ -250,6 +255,138 @@ describe("cli action modules: md pdf-project codex validation", () => {
         });
         expect(validation.renderCommand?.display).not.toContain(fixtureDir);
         await expectNoPlannedProjectArtifacts(outputPlan);
+      },
+    );
+  });
+
+  test("projects Profile revision advisories through validation and the planned handoff", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-validation-profile-revision",
+      async (fixtureDir) => {
+        await writeFile(join(fixtureDir, "base.yml"), "pageNumbers:\n  enabled: false\n", "utf8");
+        const { outputPlan, profilePhase, runtime, state, templatePhase } =
+          await runValidationFixture(fixtureDir, { baseProfile: "base.yml" });
+        const cases = [
+          {
+            conditionId: "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_INVALID",
+            declaration: "3",
+            pageNumbers: { enabled: false },
+            state: "invalid",
+          },
+          {
+            conditionId: "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_STALE",
+            declaration: 2,
+            pageNumbers: { enabled: false, start: 0 },
+            state: "stale",
+          },
+          {
+            conditionId: "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_FORWARD",
+            declaration: 4,
+            pageNumbers: { enabled: false },
+            state: "forward",
+          },
+        ] as const;
+
+        for (const diagnosticCase of cases) {
+          const advisoryProfilePhase = {
+            ...profilePhase,
+            finalProfile: {
+              ...profilePhase.finalProfile,
+              schemaVersion: diagnosticCase.declaration,
+              pageNumbers: diagnosticCase.pageNumbers,
+            },
+          };
+          const validation = validateMdPdfProjectCodexProject({
+            outputPlan,
+            profilePhase: advisoryProfilePhase,
+            runtime,
+            state,
+            templatePhase,
+          });
+
+          expect(validation.diagnostics.conditions).toEqual([
+            expect.objectContaining({
+              conditionId: diagnosticCase.conditionId,
+              context: expect.objectContaining({
+                currentRevision: 3,
+                kind: "profile-schema-version",
+                state: diagnosticCase.state,
+              }),
+            }),
+          ]);
+
+          const handoff = createMdPdfProjectCodexHandoffProjection({
+            outputPlan,
+            profilePhase: advisoryProfilePhase,
+            runtime,
+            state,
+            validation,
+          });
+          expect(handoff.diagnostics).toEqual(validation.diagnostics.conditions);
+          expect(handoff.diagnostics[0]?.conditionId).toBe(diagnosticCase.conditionId);
+        }
+      },
+    );
+  });
+
+  test("derives the pages-token migration from real legacy Profile validation", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-validation-pages-migration",
+      async (fixtureDir) => {
+        await writeFile(join(fixtureDir, "base.yml"), "pageNumbers:\n  enabled: false\n", "utf8");
+        const { outputPlan, profilePhase, runtime, state, templatePhase } =
+          await runValidationFixture(fixtureDir, { baseProfile: "base.yml" });
+
+        for (const declaredRevision of [1, 2] as const) {
+          const legacyProfilePhase = {
+            ...profilePhase,
+            finalProfile: {
+              ...profilePhase.finalProfile,
+              schemaVersion: declaredRevision,
+              pageNumbers: {
+                enabled: true,
+                format: "Page {page} of {pages}",
+              },
+            },
+          };
+          const validation = validateMdPdfProjectCodexProject({
+            outputPlan,
+            profilePhase: legacyProfilePhase,
+            runtime,
+            state,
+            templatePhase,
+          });
+
+          const conditionIds = validation.diagnostics.conditions.map(
+            ({ conditionId }) => conditionId,
+          );
+          if (declaredRevision === 1) {
+            expect(conditionIds).toEqual([
+              "MARKDOWN_PDF_PROFILE_SCHEMA_VERSION_STALE",
+              "MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION",
+            ]);
+          } else {
+            expect(conditionIds).toEqual(["MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION"]);
+          }
+          expect(validation.diagnostics.conditions.at(-1)).toMatchObject({
+            conditionId: "MARKDOWN_PDF_LEGACY_PAGES_TOKEN_MIGRATION",
+            context: {
+              kind: "legacy-pages-token-migration",
+              countFrom: "document",
+              declaredRevision,
+            },
+            severity: "warning",
+          });
+
+          const handoff = createMdPdfProjectCodexHandoffProjection({
+            outputPlan,
+            profilePhase: legacyProfilePhase,
+            runtime,
+            state,
+            validation,
+          });
+          expect(handoff.diagnostics).toEqual(validation.diagnostics.conditions);
+        }
       },
     );
   });
@@ -288,6 +425,8 @@ describe("cli action modules: md pdf-project codex validation", () => {
         { name: "profile-shape", status: "passed" },
         { name: "profile-normalization", status: "passed" },
         { name: "template-static-validation", status: "skipped" },
+        { name: "profile-body-page-number-compatibility", status: "skipped" },
+        { name: "template-page-number-css-ownership", status: "skipped" },
         { name: "artifact-boundaries", status: "passed" },
         { name: "managed-asset-bindings", status: "skipped" },
         { name: "profile-template-compatibility", status: "skipped" },
@@ -602,6 +741,198 @@ describe("cli action modules: md pdf-project codex validation", () => {
     });
   });
 
+  test("returns a typed failure for Template-owned ordinary page-counter CSS", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-validation-page-counter-css",
+      async (fixtureDir) => {
+        await writeFile(
+          join(fixtureDir, "base.yml"),
+          "profile:\n  id: md-pdf-profile-20260101T000000Z-ba5e0001\n  source: deterministic\n  createdAt: 2026-01-01T00:00:00Z\n",
+          "utf8",
+        );
+        const { outputPlan, profilePhase, runtime, state, templatePhase } =
+          await runValidationFixture(fixtureDir, { baseProfile: "base.yml" });
+        const invalidTemplatePhase = {
+          ...templatePhase,
+          synthesis: {
+            ...templatePhase.synthesis,
+            styleCss: `${templatePhase.synthesis.styleCss}\n@page { @bottom-center { content: counter(page); } }\n`,
+          },
+        };
+
+        const validation = validateMdPdfProjectCodexProject({
+          outputPlan,
+          profilePhase,
+          runtime,
+          state,
+          templatePhase: invalidTemplatePhase,
+        });
+
+        expectNoUsableValidationFailure(validation, {
+          name: "template-page-number-css-ownership",
+          messageIncludes: "must not reference Profile-owned or indeterminate counters",
+        });
+      },
+    );
+  });
+
+  test("rejects page-counter mutation received through a Codex Template CSS block", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-validation-codex-counter-css",
+      async (fixtureDir) => {
+        await writeFile(join(fixtureDir, "report.md"), "# Report\n\nPlain body.\n", "utf8");
+        const { validation, templatePhase } = await runValidationFixture(fixtureDir, {
+          input: "report.md",
+          intent: "apply custom CSS",
+          profileCodexRunner: adaptedProfileRunner(),
+          templateCodexRunner: async () =>
+            templateResponse({
+              cssBlocks: [
+                {
+                  css: "body { --folio: page 7; counter-set: var(--folio); }",
+                  slot: "spacing",
+                },
+              ],
+            }),
+        });
+
+        expect(templatePhase.codexResult?.decision.cssBlocks).toEqual([
+          {
+            css: "body { --folio: page 7; counter-set: var(--folio); }",
+            slot: "spacing",
+          },
+        ]);
+        expect(templatePhase.synthesis.styleCss).toContain("counter-set: var(--folio)");
+        expectNoUsableValidationFailure(validation, {
+          name: "template-page-number-css-ownership",
+          messageIncludes: "indeterminate counter mutation",
+        });
+      },
+    );
+  });
+
+  test("rejects indeterminate counter references received through a Codex Template CSS block", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-validation-codex-counter-reference",
+      async (fixtureDir) => {
+        await writeFile(join(fixtureDir, "report.md"), "# Report\n\nPlain body.\n", "utf8");
+        const { validation, templatePhase } = await runValidationFixture(fixtureDir, {
+          input: "report.md",
+          intent: "apply custom CSS",
+          profileCodexRunner: adaptedProfileRunner(),
+          templateCodexRunner: async () =>
+            templateResponse({
+              cssBlocks: [{ css: "body { --folio: counter(var(--folio)); }", slot: "spacing" }],
+            }),
+        });
+
+        expect(templatePhase.synthesis.styleCss).toContain("counter(var(--folio))");
+        expectNoUsableValidationFailure(validation, {
+          name: "template-page-number-css-ownership",
+          messageIncludes: "must not reference Profile-owned or indeterminate counters",
+        });
+      },
+    );
+  });
+
+  test("rejects typed attr counter mutation received through a Codex Template CSS block", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-validation-codex-attr-counter-mutation",
+      async (fixtureDir) => {
+        await writeFile(join(fixtureDir, "report.md"), "# Report\n\nPlain body.\n", "utf8");
+        const { validation, templatePhase } = await runValidationFixture(fixtureDir, {
+          input: "report.md",
+          intent: "apply custom CSS",
+          profileCodexRunner: adaptedProfileRunner(),
+          templateCodexRunner: async () =>
+            templateResponse({
+              cssBlocks: [
+                {
+                  css: "body { counter-reset: attr(data-counter type(<custom-ident>)); }",
+                  slot: "spacing",
+                },
+              ],
+            }),
+        });
+
+        expect(templatePhase.synthesis.styleCss).toContain(
+          "counter-reset: attr(data-counter type(<custom-ident>))",
+        );
+        expectNoUsableValidationFailure(validation, {
+          name: "template-page-number-css-ownership",
+          messageIncludes: "indeterminate counter mutation",
+        });
+      },
+    );
+  });
+
+  test("names final Profile and actual generated body incompatibility", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-validation-profile-body-compatibility",
+      async (fixtureDir) => {
+        await writeFile(
+          join(fixtureDir, "base.yml"),
+          [
+            "profile:",
+            "  id: md-pdf-profile-20260101T000000Z-ba5e0001",
+            "  source: deterministic",
+            "  createdAt: 2026-01-01T00:00:00Z",
+            "pageNumbers:",
+            "  enabled: true",
+            "  scope: body",
+            "  countFrom: body",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+        const { outputPlan, profilePhase, runtime, state, templatePhase } =
+          await runValidationFixture(fixtureDir, { baseProfile: "base.yml" });
+        const invalidTemplatePhase = {
+          ...templatePhase,
+          synthesis: {
+            ...templatePhase.synthesis,
+            templateHtml: templatePhase.synthesis.templateHtml.replace(
+              "document-body",
+              "article-body",
+            ),
+          },
+        };
+
+        const validation = validateMdPdfProjectCodexProject({
+          outputPlan,
+          profilePhase,
+          runtime,
+          state,
+          templatePhase: invalidTemplatePhase,
+        });
+
+        expect(validation).toMatchObject({
+          decisionMode: "no-usable-project",
+          renderCommand: undefined,
+        });
+        expect(
+          validation.results.find(
+            (result) => result.name === "profile-body-page-number-compatibility",
+          ),
+        ).toMatchObject({
+          name: "profile-body-page-number-compatibility",
+          status: "failed",
+          message: expect.stringContaining(
+            "generated Project Template requires exactly one .document-body element",
+          ),
+        });
+        expect(validation.diagnostics.conditions).toContainEqual({
+          conditionId: "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED",
+          context: { kind: "missing-body-boundary" },
+          message: expect.stringContaining(
+            "generated Project Template requires exactly one .document-body element",
+          ),
+          severity: "error",
+        });
+      },
+    );
+  });
+
   test("rejects stylesheet ownership conflicts without relying on font decisions", async () => {
     await withTempFixtureDir(
       "md-pdf-project-codex-validation-font-css-conflict",
@@ -686,8 +1017,9 @@ describe("cli action modules: md pdf-project codex validation", () => {
           await runValidationFixture(fixtureDir, {
             baseProfile: "base.yml",
             input: "report.md",
-            profileCodexRunner: adaptedProfileRunner({ candidateId: "wide-table" }),
-            templateCodexRunner: async () => templateResponse({ recipePreset: "wide-table" }),
+            profileCodexRunner: adaptedProfileRunner(),
+            templateCodexRunner: async () =>
+              templateResponse({ recipePreset: "wide-table", recipeSource: "document-signal" }),
           });
         expect(templatePhase.codexResult).toBeDefined();
         const invalidTemplatePhase = {
@@ -927,9 +1259,56 @@ describe("cli action modules: md pdf-project codex validation", () => {
       });
 
       expectNoUsableValidationFailure(validation, {
-        name: "profile-template-compatibility",
-        messageIncludes: "profile-owned text cover",
+        name: "profile-cover-compatibility",
+        messageIncludes: "exactly one live .pdf-cover",
       });
+    });
+  });
+
+  test("projects empty Profile cover fields through managed Project diagnostics", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-validation-empty-cover", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "cover.png"), minimalPng(1200, 800));
+      await writeFile(
+        join(fixtureDir, "base.yml"),
+        [
+          "cover:",
+          "  enabled: true",
+          "  fields:",
+          '    title: ""',
+          '    subtitle: ""',
+          '    author: ""',
+          '    company: ""',
+          '    date: ""',
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const { outputPlan, profilePhase, runtime, state, validation } = await runValidationFixture(
+        fixtureDir,
+        {
+          baseProfile: "base.yml",
+          coverImage: "cover.png",
+        },
+      );
+
+      expect(validation.decisionMode).toBe("deterministic");
+      expect(validation.diagnostics.conditions).toEqual([
+        expect.objectContaining({
+          conditionId: "MARKDOWN_PDF_COVER_FIELDS_EMPTY",
+          context: { kind: "empty-cover-fields" },
+          severity: "warning",
+        }),
+      ]);
+      expect(
+        createMdPdfProjectCodexHandoffProjection({
+          outputPlan,
+          profilePhase,
+          runtime,
+          state,
+          validation,
+        }).diagnostics,
+      ).toEqual(validation.diagnostics.conditions);
     });
   });
 
@@ -948,6 +1327,10 @@ describe("cli action modules: md pdf-project codex validation", () => {
           "    default: Profile Body",
           "  heading:",
           "    default: Profile Heading",
+          "cover:",
+          "  enabled: true",
+          "  fields:",
+          "    title: Project Cover",
           "",
         ].join("\n"),
         "utf8",
@@ -959,6 +1342,17 @@ describe("cli action modules: md pdf-project codex validation", () => {
       });
 
       expect(validation.decisionMode).toBe("deterministic");
+      expect(
+        templatePhase.synthesis.templateHtml.match(/<section class="pdf-cover\b/g),
+      ).toHaveLength(1);
+      expect(validation.results).toContainEqual({
+        name: "profile-cover-compatibility",
+        status: "passed",
+      });
+      expect(validation.results).toContainEqual({
+        name: "profile-body-page-number-compatibility",
+        status: "passed",
+      });
       expect(templatePhase.synthesis.styleCss).toContain(
         "font: 700 22pt/1.15 var(--template-heading-font);",
       );

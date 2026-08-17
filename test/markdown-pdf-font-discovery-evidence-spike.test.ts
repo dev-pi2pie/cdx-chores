@@ -150,7 +150,7 @@ describe("Markdown PDF font discovery evidence spike", () => {
     );
 
     expect(maxInFlight).toBe(1);
-    expect(report.schemaVersion).toBe(2);
+    expect(report).not.toHaveProperty("schemaVersion");
     expect(report.environment).toMatchObject({
       platform: process.platform,
       arch: process.arch,
@@ -223,7 +223,7 @@ describe("Markdown PDF font discovery evidence spike", () => {
     expect(serialized).not.toContain("raw command error");
   });
 
-  test("keeps unsuccessful first runs out of schema v2 success summaries", async () => {
+  test("keeps unsuccessful first runs out of success summaries", async () => {
     const clock = [0, 5, 5, 15];
     let clockIndex = 0;
     let callIndex = 0;

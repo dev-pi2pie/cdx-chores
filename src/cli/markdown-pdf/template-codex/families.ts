@@ -8,6 +8,7 @@ import type {
 export const MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT = {
   html: {
     bodyPlaceholder: "$body$",
+    documentBodyClass: "document-body",
     coverMediaClass: "pdf-cover-media",
     titleConditional: "$if(title)$",
     tocConditional: "$if(toc)$",
@@ -27,6 +28,7 @@ function requiredHook(id: string, marker: string): MarkdownPdfTemplateCodexRequi
 
 const REQUIRED_DOCUMENT_TEMPLATE_HOOKS = [
   requiredHook("body-placeholder", MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.bodyPlaceholder),
+  requiredHook("document-body", MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.documentBodyClass),
   requiredHook("title-conditional", MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.titleConditional),
   requiredHook("toc-conditional", MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocConditional),
   requiredHook("toc-placeholder", MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocPlaceholder),

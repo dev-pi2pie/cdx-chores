@@ -6,7 +6,7 @@ import type { NormalizedMarkdownPdfOptions } from "../validation";
 import { createMarkdownPdfProfileConfig } from "./materialize";
 import { inferMarkdownPdfProfileFormat } from "./schema";
 import { serializeMarkdownPdfProfile } from "./serialize";
-import type { MarkdownPdfProfileFormat, NormalizedMarkdownPdfCode } from "./types";
+import type { MarkdownPdfProfileFormat, NormalizedMarkdownPdfProfile } from "./types";
 
 export interface PreparedMarkdownPdfProfileInit {
   normalizedOptions: NormalizedMarkdownPdfOptions;
@@ -29,12 +29,26 @@ export interface BoundMarkdownPdfProfileInitDestination {
 
 export function prepareMarkdownPdfProfileInit(
   normalizedOptions: NormalizedMarkdownPdfOptions,
-  input: { code?: NormalizedMarkdownPdfCode } = {},
+  input: Partial<
+    Pick<NormalizedMarkdownPdfProfile, "code" | "cover" | "footer" | "header" | "pageNumbers">
+  > = {},
 ): PreparedMarkdownPdfProfileInit {
   const acceptedOptions = structuredClone(normalizedOptions);
   const profile = structuredClone(createMarkdownPdfProfileConfig(acceptedOptions));
-  if (input.code) {
+  if (input.code !== undefined) {
     profile.code = structuredClone(input.code);
+  }
+  if (input.cover !== undefined) {
+    profile.cover = structuredClone(input.cover);
+  }
+  if (input.header !== undefined) {
+    profile.header = structuredClone(input.header);
+  }
+  if (input.footer !== undefined) {
+    profile.footer = structuredClone(input.footer);
+  }
+  if (input.pageNumbers !== undefined) {
+    profile.pageNumbers = structuredClone(input.pageNumbers);
   }
   return {
     normalizedOptions: acceptedOptions,

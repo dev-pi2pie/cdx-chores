@@ -2,12 +2,14 @@ import { mock } from "bun:test";
 import { extname, resolve } from "node:path";
 
 import { CliError } from "../../../../src/cli/errors";
+import { MARKDOWN_PDF_PROFILE_CURRENT_REVISION } from "../../../../src/cli/markdown-pdf/profile/feature-registry";
 import type { HarnessRunnerContext } from "../context";
 import {
   fontDiscoveryModuleUrl,
   markdownPdfCodexServiceModuleUrl,
   markdownPdfDeterministicAuthoringModuleUrl,
   markdownPdfLifecycleModuleUrl,
+  markdownPdfProjectBundleCompletenessModuleUrl,
   markdownPdfRenderBundleModuleUrl,
   markdownPdfRenderServiceModuleUrl,
 } from "../module-urls";
@@ -183,7 +185,9 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
             ? { kind: "no-usable-profile" }
             : {
                 decisionMode: "generated",
-                finalProfile: { code: GENERATED_CODE },
+                finalProfile: context.scenario.markdownPdfCodexFinalProfile ?? {
+                  code: GENERATED_CODE,
+                },
                 kind: "profile",
                 signalMode: setup.sample ? "document-informed" : "intent-only",
                 suggestedOutputPath: suggestedOutput,
@@ -218,7 +222,58 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
                     styleCss: { path: resolve(suggestedOutput, "style.css") },
                     templateHtml: { path: resolve(suggestedOutput, "template.html") },
                   },
-                  reportArtifact: { unsupportedDirections: [] },
+                  reportArtifact: {
+                    handoff: context.scenario.markdownPdfCodexProjectHandoff ?? {
+                      profile: {
+                        id: "md-pdf-profile-20260101T000000Z-abc12345",
+                        bundlePath: "profile.yml",
+                      },
+                      artifacts: { availability: unusable ? "unavailable" : "planned" },
+                      render: unusable
+                        ? { usability: "unavailable" }
+                        : {
+                            usability: "planned",
+                            command: {
+                              executable: "cdx-chores",
+                              args: [
+                                "md",
+                                "to-pdf",
+                                "--input",
+                                "fixtures/report.md",
+                                "--bundle",
+                                suggestedOutput,
+                                "--output",
+                                "<output.pdf>",
+                              ],
+                              display: `cdx-chores 'md' 'to-pdf' '--input' 'fixtures/report.md' '--bundle' '${suggestedOutput}' '--output' '<output.pdf>'`,
+                            },
+                          },
+                      diagnostics: [],
+                      capabilityRequirements: [],
+                    },
+                    managedAssets: [],
+                    files: unusable
+                      ? []
+                      : [
+                          { role: "profile", bundlePath: "profile.yml", planned: true },
+                          {
+                            role: "template-html",
+                            bundlePath: "template.html",
+                            planned: true,
+                          },
+                          { role: "style-css", bundlePath: "style.css", planned: true },
+                        ],
+                    phases: {
+                      profile: { decisionMode: "generated" },
+                      template: { decisionMode: "generated" },
+                    },
+                    project: {
+                      decisionMode: unusable ? "no-usable-project" : "generated",
+                      signalMode: setup.sample ? "document-informed" : "intent-only",
+                    },
+                    unsupportedDirections: [],
+                    validationResults: [{ name: "profile-normalization", status: "passed" }],
+                  },
                   validation: {
                     decisionMode: unusable ? "no-usable-project" : "generated",
                     results: [{ name: "profile-normalization", status: "passed" }],
@@ -230,7 +285,11 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
                   styleCss: { bundlePath: "style.css" },
                   templateHtml: { bundlePath: "template.html" },
                 },
-                profilePhase: { finalProfile: { code: GENERATED_CODE } },
+                profilePhase: {
+                  finalProfile: context.scenario.markdownPdfCodexFinalProfile ?? {
+                    code: GENERATED_CODE,
+                  },
+                },
                 signals: { modes: { project: setup.sample ? "document-informed" : "intent-only" } },
                 templatePhase: { synthesis: { fontDecisions: [] } },
               };
@@ -329,8 +388,25 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
             ? {
                 normalizedOptions,
                 profile: {
+                  schemaVersion: MARKDOWN_PDF_PROFILE_CURRENT_REVISION,
                   code: formalGuideAnswers.code ?? DEFAULT_CODE,
-                  page: normalizedOptions,
+                  ...(formalGuideAnswers.pageChrome as Record<string, unknown> | undefined),
+                  ...(formalGuideAnswers.pageNumbers
+                    ? { pageNumbers: formalGuideAnswers.pageNumbers }
+                    : {}),
+                  page: {
+                    size: normalizedOptions.pageSize,
+                    orientation: normalizedOptions.orientation,
+                    marginTop: normalizedOptions.margins.top,
+                    marginRight: normalizedOptions.margins.right,
+                    marginBottom: normalizedOptions.margins.bottom,
+                    marginLeft: normalizedOptions.margins.left,
+                  },
+                  toc: {
+                    enabled: normalizedOptions.toc,
+                    depth: normalizedOptions.tocDepth,
+                    pageBreak: normalizedOptions.tocPageBreak,
+                  },
                 },
               }
             : {
@@ -445,6 +521,22 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
     },
   }));
 
+  mock.module(markdownPdfProjectBundleCompletenessModuleUrl, () => ({
+    validateMdPdfProjectBundleCompleteness: async (directory: string) => {
+      if (context.scenario.markdownPdfProjectCompletenessErrorMessage) {
+        throw new Error(context.scenario.markdownPdfProjectCompletenessErrorMessage);
+      }
+      return {
+        assets: [],
+        css: resolve(directory, "style.css"),
+        directory,
+        profile: resolve(directory, "profile.yml"),
+        reports: [],
+        template: resolve(directory, "template.html"),
+      };
+    },
+  }));
+
   mock.module(markdownPdfRenderServiceModuleUrl, () => ({
     prepareMarkdownPdfRender: async (_runtime: unknown, input: Record<string, unknown>) => {
       preparedCount += 1;
@@ -484,6 +576,18 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
       };
       const resolvedProfile = rolePath("profile");
       const reusableCode = resolvedProfile ? GENERATED_CODE : DEFAULT_CODE;
+      const profilePageNumbersEnabled = resolvedProfile
+        ? (context.scenario.markdownPdfProfilePageNumbersEnabled ?? false)
+        : false;
+      const pageNumberOverride =
+        typeof input.pageNumbers === "boolean" ? input.pageNumbers : undefined;
+      const effectivePageNumbersEnabled = pageNumberOverride ?? profilePageNumbersEnabled;
+      if (context.scenario.markdownPdfNoDefaultCss && effectivePageNumbersEnabled) {
+        throw new CliError(
+          "Effective page numbers require the generated default stylesheet; remove --no-default-css or disable page numbers for this render.",
+          { code: "INVALID_INPUT", exitCode: 2 },
+        );
+      }
       return {
         __harnessPreparedId: preparedId,
         inputPath,
@@ -496,8 +600,28 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
         },
         options: DEFAULT_OPTIONS,
         code: effectiveCodeOptions(reusableCode, input.codeHighlight),
-        noDefaultCss: false,
+        noDefaultCss: context.scenario.markdownPdfNoDefaultCss ?? false,
         normalizedProfile: { code: reusableCode },
+        pageNumberConfiguration: {
+          effective: {
+            enabled: effectivePageNumbersEnabled,
+            scope: "document",
+            countFrom: "document",
+            start: 1,
+            increment: 1,
+            position: "bottom-center",
+            format: "{page}",
+          },
+          ...(pageNumberOverride === undefined ? {} : { override: pageNumberOverride }),
+          profileEnabled: profilePageNumbersEnabled,
+          source:
+            pageNumberOverride === undefined
+              ? resolvedProfile
+                ? "profile"
+                : "default"
+              : "direct-override",
+        },
+        rendererCapabilityRequests: context.scenario.markdownPdfRendererCapabilityRequests ?? [],
         recipe: { templateHtml: "<main>$body$</main>", styleCss: "body {}" },
         titleSignals: { duplicateVisibleTitleRisk: false },
       };
@@ -559,6 +683,17 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
       }
       return {
         outputPath: plan.outputPath,
+        rendererCapabilities: context.scenario.markdownPdfRendererCapabilities ?? {
+          renderer: { name: "weasyprint", available: true, version: "69.0" },
+          capabilities: [
+            {
+              id: "pageNumbers.start",
+              fields: ["pageNumbers.start"],
+              minimumVersion: "65.1",
+              status: "satisfied",
+            },
+          ],
+        },
         warnings: context.scenario.markdownPdfRenderWarnings ?? [],
       };
     },

@@ -6,7 +6,9 @@ import {
   planMarkdownPdfRender,
   type PlannedMarkdownPdfRender,
 } from "../../actions/markdown/to-pdf-service";
+import { printMarkdownPdfRenderWarnings } from "../../actions/markdown/render-warnings";
 import { displayPath, printLine } from "../../actions/shared";
+import { validateMdPdfProjectBundleCompleteness } from "../../markdown-pdf/project-codex/project-bundle-completeness";
 import { formatDefaultOutputPathHint, promptRequiredPathWithConfig } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
 import type { InteractiveNavigationOutcome, InteractivePathPromptContext } from "../shared";
@@ -28,16 +30,22 @@ import {
   type MarkdownPdfInteractiveSelectedRenderSource,
 } from "./render-source";
 import { renderMarkdownPdfRecipeReview } from "./review";
-import { promptMarkdownPdfRenderCodeHighlightChoice } from "./render-code-highlighting";
+import {
+  promptMarkdownPdfRenderCodeHighlightChoice,
+  type MarkdownPdfRenderCodeHighlightChoice,
+} from "./render-code-highlighting";
+import { promptMarkdownPdfRenderPageNumberChoice } from "./render-page-numbers";
 import {
   formatEffectiveMarkdownPdfCodeReview,
   formatMarkdownPdfRenderOverrideReview,
   formatReusableMarkdownPdfCodeReview,
 } from "./code-highlighting-review";
+import { formatMarkdownPdfPageNumberReview } from "./page-number-review";
 
 type MarkdownPdfOutputSelection =
   | { kind: "plan"; plan: PlannedMarkdownPdfRender }
   | { kind: "change-code-highlighting" }
+  | { kind: "change-page-numbers" }
   | { kind: "change-source" }
   | { kind: "cancel" };
 
@@ -49,7 +57,12 @@ async function promptMarkdownPdfOutput(
   while (true) {
     const defaultHint = formatDefaultOutputPathHint(runtime, selection.prepared.inputPath, ".pdf");
     const destination = await select<
-      "default" | "custom" | "change-code-highlighting" | "change-source" | "cancel"
+      | "default"
+      | "custom"
+      | "change-code-highlighting"
+      | "change-page-numbers"
+      | "change-source"
+      | "cancel"
     >({
       message: "PDF output destination",
       choices: [
@@ -67,12 +80,16 @@ async function promptMarkdownPdfOutput(
           name: "Change code highlighting",
           value: "change-code-highlighting",
         },
+        ...(selection.pageNumbers === undefined
+          ? []
+          : [{ name: "Change page numbers", value: "change-page-numbers" as const }]),
         { name: "Change recipe source", value: "change-source" },
         { name: "Cancel", value: "cancel" },
       ],
     });
     if (
       destination === "change-code-highlighting" ||
+      destination === "change-page-numbers" ||
       destination === "change-source" ||
       destination === "cancel"
     ) {
@@ -129,16 +146,33 @@ function renderMarkdownPdfFinalReview(
   for (const line of formatEffectiveMarkdownPdfCodeReview(selection.prepared.code)) {
     printLine(runtime.stderr, line);
   }
+  if (selection.pageNumbers !== undefined) {
+    printLine(runtime.stderr, "");
+    for (const line of formatMarkdownPdfPageNumberReview(selection.prepared)) {
+      printLine(runtime.stderr, line);
+    }
+  }
 }
 
-async function promptDeclinedRenderAction(): Promise<
-  "change-output" | "change-code-highlighting" | "change-source" | "cancel"
+async function promptDeclinedRenderAction(
+  pageNumberChangeAvailable: boolean,
+): Promise<
+  "change-output" | "change-code-highlighting" | "change-page-numbers" | "change-source" | "cancel"
 > {
-  return await select<"change-output" | "change-code-highlighting" | "change-source" | "cancel">({
+  return await select<
+    | "change-output"
+    | "change-code-highlighting"
+    | "change-page-numbers"
+    | "change-source"
+    | "cancel"
+  >({
     message: "Final render next step",
     choices: [
       { name: "Change PDF output", value: "change-output" },
       { name: "Change code highlighting", value: "change-code-highlighting" },
+      ...(pageNumberChangeAvailable
+        ? [{ name: "Change page numbers", value: "change-page-numbers" as const }]
+        : []),
       { name: "Change recipe source", value: "change-source" },
       { name: "Cancel", value: "cancel" },
     ],
@@ -158,7 +192,60 @@ async function changePreparedMarkdownPdfCodeHighlighting(
   if (choice === source.codeHighlight) {
     return source;
   }
-  return await prepareMarkdownPdfRenderSource(runtime, source.selected, choice);
+  return await prepareMarkdownPdfRenderSource(runtime, source.selected, choice, source.pageNumbers);
+}
+
+async function changePreparedMarkdownPdfPageNumbers(
+  runtime: CliRuntime,
+  source: MarkdownPdfInteractivePreparedRenderSource,
+): Promise<MarkdownPdfInteractivePreparedRenderSource | "back" | "cancel"> {
+  if (source.pageNumbers === undefined) {
+    return source;
+  }
+  const choice = await promptMarkdownPdfRenderPageNumberChoice(source.pageNumbers);
+  if (choice === "back" || choice === "cancel") {
+    return choice;
+  }
+  if (choice === source.pageNumbers) {
+    return source;
+  }
+  return await prepareMarkdownPdfRenderSource(
+    runtime,
+    source.selected,
+    source.codeHighlight,
+    choice,
+  );
+}
+
+function renderMarkdownPdfRendererCapabilityAssessment(
+  runtime: CliRuntime,
+  assessment: Awaited<ReturnType<typeof executePlannedMarkdownPdfRender>>["rendererCapabilities"],
+  requests: MarkdownPdfInteractivePreparedRenderSource["prepared"]["rendererCapabilityRequests"],
+): void {
+  const requestedCapabilityIds = new Set(requests.map((request) => request.capabilityId));
+  const capabilities = assessment.capabilities.filter((capability) =>
+    requestedCapabilityIds.has(capability.id),
+  );
+  if (capabilities.length === 0) {
+    return;
+  }
+  printLine(runtime.stderr, "Markdown PDF renderer capability assessment:");
+  const rendererStatus =
+    assessment.renderer.available === true
+      ? `installed (${assessment.renderer.version ?? "unknown version"})`
+      : assessment.renderer.available === false
+        ? "missing"
+        : "unverified";
+  printLine(runtime.stderr, `- ${assessment.renderer.name}: ${rendererStatus}`);
+  for (const capability of capabilities) {
+    const diagnostic = capability.diagnosticConditionId
+      ? `, diagnostic=${capability.diagnosticConditionId}`
+      : "";
+    printLine(
+      runtime.stderr,
+      `- ${capability.id}: ${capability.status}, minimum=${capability.minimumVersion}${diagnostic}`,
+    );
+  }
 }
 
 async function handlePreparedMarkdownPdfRender(
@@ -186,12 +273,22 @@ async function handlePreparedMarkdownPdfRender(
       }
       continue;
     }
+    if (output.kind === "change-page-numbers") {
+      const changed = await changePreparedMarkdownPdfPageNumbers(runtime, source);
+      if (changed === "cancel") {
+        return "done";
+      }
+      if (changed !== "back") {
+        source = changed;
+      }
+      continue;
+    }
 
     let plan = output.plan;
     while (true) {
       renderMarkdownPdfFinalReview(runtime, source, plan);
       if (!(await confirm({ message: "Render this PDF?", default: true }))) {
-        const next = await promptDeclinedRenderAction();
+        const next = await promptDeclinedRenderAction(source.pageNumbers !== undefined);
         if (next === "cancel") {
           return "done";
         }
@@ -214,31 +311,86 @@ async function handlePreparedMarkdownPdfRender(
           });
           continue;
         }
+        if (next === "change-page-numbers") {
+          const changed = await changePreparedMarkdownPdfPageNumbers(runtime, source);
+          if (changed === "cancel") {
+            return "done";
+          }
+          if (changed === "back") {
+            continue;
+          }
+          source = changed;
+          plan = bindResolvedMarkdownPdfRenderOutput(source.prepared, {
+            htmlOutputPath: plan.htmlOutputPath,
+            outputPath: plan.outputPath,
+            overwrite: plan.overwrite,
+          });
+          continue;
+        }
         break;
       }
 
       const result = await executePlannedMarkdownPdfRender(runtime, plan);
-      if (result.warnings.length > 0) {
-        printLine(runtime.stderr, "Markdown PDF render warnings:");
-        for (const warning of result.warnings) {
-          printLine(runtime.stderr, `- ${warning}`);
-        }
-      }
+      printMarkdownPdfRenderWarnings(runtime, result.warnings);
+      renderMarkdownPdfRendererCapabilityAssessment(
+        runtime,
+        result.rendererCapabilities,
+        source.prepared.rendererCapabilityRequests,
+      );
       printLine(runtime.stdout, `Wrote PDF: ${displayPath(runtime, plan.outputPath)}`);
       return "done";
     }
   }
 }
 
-async function promptAndPrepareMarkdownPdfRenderSource(
+async function promptAndPrepareSavedMarkdownPdfRenderSource(
+  runtime: CliRuntime,
+  selected: MarkdownPdfInteractiveSelectedRenderSource,
+  saved: MarkdownPdfSavedRecipe,
+): Promise<MarkdownPdfInteractivePreparedRenderSource | "back" | "cancel"> {
+  let currentCodeHighlight: MarkdownPdfRenderCodeHighlightChoice = "inherit";
+  while (true) {
+    const codeHighlight = await promptMarkdownPdfRenderCodeHighlightChoice(currentCodeHighlight);
+    if (codeHighlight === "back" || codeHighlight === "cancel") {
+      return codeHighlight;
+    }
+    currentCodeHighlight = codeHighlight;
+    const pageNumbers = await promptMarkdownPdfRenderPageNumberChoice();
+    if (pageNumbers === "cancel") {
+      return "cancel";
+    }
+    if (pageNumbers === "back") {
+      continue;
+    }
+    if (saved.artifact === "project-bundle") {
+      await validateMdPdfProjectBundleCompleteness(saved.outputPath, {
+        displayDirectory: displayPath(runtime, saved.outputPath),
+      });
+    }
+    return await prepareMarkdownPdfRenderSource(runtime, selected, codeHighlight, pageNumbers);
+  }
+}
+
+async function promptAndPrepareDirectMarkdownPdfRenderSource(
   runtime: CliRuntime,
   selected: MarkdownPdfInteractiveSelectedRenderSource,
 ): Promise<MarkdownPdfInteractivePreparedRenderSource | "back" | "cancel"> {
-  const choice = await promptMarkdownPdfRenderCodeHighlightChoice();
-  if (choice === "back" || choice === "cancel") {
-    return choice;
+  let currentCodeHighlight: MarkdownPdfRenderCodeHighlightChoice = "inherit";
+  while (true) {
+    const codeHighlight = await promptMarkdownPdfRenderCodeHighlightChoice(currentCodeHighlight);
+    if (codeHighlight === "back" || codeHighlight === "cancel") {
+      return codeHighlight;
+    }
+    currentCodeHighlight = codeHighlight;
+    const pageNumbers = await promptMarkdownPdfRenderPageNumberChoice();
+    if (pageNumbers === "cancel") {
+      return "cancel";
+    }
+    if (pageNumbers === "back") {
+      continue;
+    }
+    return await prepareMarkdownPdfRenderSource(runtime, selected, codeHighlight, pageNumbers);
   }
-  return await prepareMarkdownPdfRenderSource(runtime, selected, choice);
 }
 
 export async function handleMarkdownPdfToPdfInteractiveAction(
@@ -288,7 +440,11 @@ export async function runMarkdownPdfToPdfInteractiveFlow(
           options.savedRecipe,
         );
         const selected = selectSavedMarkdownPdfRenderSource(input, options.savedRecipe);
-        const prepared = await promptAndPrepareMarkdownPdfRenderSource(runtime, selected);
+        const prepared = await promptAndPrepareSavedMarkdownPdfRenderSource(
+          runtime,
+          selected,
+          options.savedRecipe,
+        );
         if (prepared === "back") {
           continue;
         }
@@ -346,7 +502,7 @@ export async function runMarkdownPdfToPdfInteractiveFlow(
         return outcome;
       }
 
-      const prepared = await promptAndPrepareMarkdownPdfRenderSource(runtime, source);
+      const prepared = await promptAndPrepareDirectMarkdownPdfRenderSource(runtime, source);
       if (prepared === "back") {
         continue;
       }

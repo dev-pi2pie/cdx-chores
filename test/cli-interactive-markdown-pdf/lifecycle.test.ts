@@ -12,6 +12,7 @@ function temporaryProfileSelections(...recovery: string[]) {
     "starter",
     "temporary-render",
     "inherit",
+    "inherit",
     "default",
     ...recovery,
   ];
@@ -39,6 +40,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
           "starter",
           lifecycle,
           choice,
+          "inherit",
           ...(durable ? ["custom"] : []),
           "default",
         ],
@@ -63,6 +65,49 @@ describe("interactive Markdown PDF generated lifecycle", () => {
       expect(result.markdownPdfExecuteCalls).toHaveLength(1);
     },
   );
+
+  test.each(
+    (["profile", "template-bundle"] as const).flatMap((artifact) =>
+      (["inherit", "enable", "disable"] as const).map((choice) => [artifact, choice] as const),
+    ),
+  )("passes deterministic %s page numbers %s to the materialized artifact", (artifact, choice) => {
+    const compiled = choice === "inherit" ? undefined : choice === "enable";
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        artifact,
+        "starter",
+        "temporary-render",
+        "inherit",
+        choice,
+        "default",
+      ],
+      requiredPathQueue: ["fixtures/report.md"],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.markdownPdfDeterministicPrepareCalls).toEqual([
+      expect.objectContaining({ artifact, candidateId: "deterministic-1" }),
+    ]);
+    expect(result.markdownPdfDeterministicBindCalls).toEqual([
+      expect.objectContaining({ artifact, candidateId: "deterministic-1" }),
+    ]);
+    expect(result.markdownPdfPrepareCalls).toHaveLength(1);
+    if (compiled !== undefined) {
+      expect(result.markdownPdfPrepareCalls[0]).toEqual(
+        expect.objectContaining({ pageNumbers: compiled }),
+      );
+    }
+    if (compiled === undefined) {
+      expect(result.markdownPdfPrepareCalls[0]).not.toHaveProperty("pageNumbers");
+    }
+    expect(result.markdownPdfDeterministicWriteCalls).toEqual([
+      { artifact, candidateId: "deterministic-1" },
+    ]);
+  });
 
   test.each(["back", "cancel"] as const)(
     "handles initial code-highlighting %s before output selection or materialization",
@@ -94,6 +139,36 @@ describe("interactive Markdown PDF generated lifecycle", () => {
     },
   );
 
+  test.each(["back", "cancel"] as const)(
+    "handles initial page-number %s before output selection or materialization",
+    (action) => {
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        selectQueue: [
+          ...TO_PDF_ENTRY,
+          "generated",
+          "profile",
+          "starter",
+          "temporary-render",
+          "inherit",
+          action,
+          ...(action === "back" ? ["back", "cancel"] : []),
+        ],
+        requiredPathQueue: ["fixtures/report.md"],
+      });
+
+      expect(result.promptCalls.some((call) => call.message === "PDF output destination")).toBe(
+        false,
+      );
+      expect(result.markdownPdfDeterministicBindCalls).toEqual([]);
+      expect(result.markdownPdfDeterministicWriteCalls).toEqual([]);
+      expect(result.markdownPdfPrepareCalls).toEqual([]);
+      expect(result.markdownPdfPlanCalls).toEqual([]);
+      expect(result.markdownPdfSessionCreateCalls).toEqual([]);
+    },
+  );
+
   test("retains an override while returning to the same candidate lifecycle", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -105,9 +180,11 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "starter",
         "temporary-render",
         "enable",
+        "inherit",
         "default",
         "review",
         "temporary-render",
+        "enable",
         "cancel",
       ],
       requiredPathQueue: ["fixtures/report.md"],
@@ -122,6 +199,70 @@ describe("interactive Markdown PDF generated lifecycle", () => {
     expect(result.markdownPdfDeterministicBindCalls).toEqual([]);
     expect(result.markdownPdfDeterministicWriteCalls).toEqual([]);
     expect(result.markdownPdfExecuteCalls).toEqual([]);
+  });
+
+  test("retains both overrides while returning to the same candidate lifecycle", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "profile",
+        "starter",
+        "temporary-render",
+        "enable",
+        "disable",
+        "default",
+        "review",
+        "temporary-render",
+        "enable",
+        "cancel",
+      ],
+      requiredPathQueue: ["fixtures/report.md"],
+      confirmQueue: [false, false],
+    });
+
+    expect(result.selectDefaultsByMessage["Code highlighting for this PDF"]).toEqual([
+      "inherit",
+      "enable",
+    ]);
+    expect(result.selectDefaultsByMessage["Page numbers for this PDF"]).toEqual([
+      "inherit",
+      "disable",
+    ]);
+    expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfDeterministicWriteCalls).toEqual([]);
+  });
+
+  test("changes generated final-review page numbers without rebinding or rewriting", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...TO_PDF_ENTRY,
+        "generated",
+        "template-bundle",
+        "starter",
+        "save-and-render",
+        "inherit",
+        "inherit",
+        "custom",
+        "default",
+        "change-page-numbers",
+        "enable",
+      ],
+      requiredPathQueue: ["fixtures/report.md", "recipes/durable-template"],
+      confirmQueue: [false, false, false, true],
+    });
+
+    expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfDeterministicBindCalls).toHaveLength(1);
+    expect(result.markdownPdfDeterministicWriteCalls).toHaveLength(1);
+    expect(result.markdownPdfPrepareCalls).toEqual([
+      expect.objectContaining({ pageNumbers: true }),
+    ]);
+    expect(result.markdownPdfExecuteCalls).toHaveLength(1);
   });
 
   test("resets an override after revising a deterministic candidate", () => {
@@ -140,6 +281,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "light-plus",
         "temporary-render",
         "enable",
+        "inherit",
         "default",
         "review",
         "revise-layout",
@@ -150,7 +292,8 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "cancel",
       ],
       requiredPathQueue: ["fixtures/report.md"],
-      confirmQueue: [false, true, true, true, false, false],
+      inputQueue: ["", "", "", "", "", ""],
+      confirmQueue: [false, false, true, true, true, false, false, false, false, false],
     });
 
     expect(result.markdownPdfDeterministicPrepareCalls).toHaveLength(2);
@@ -173,6 +316,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "starter",
         "temporary-render",
         "enable",
+        "inherit",
         "default",
         "review",
         "change-artifact",
@@ -206,6 +350,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "starter",
         "temporary-render",
         "enable",
+        "inherit",
         "default",
         "review",
         "change-mode",
@@ -218,7 +363,8 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "cancel",
       ],
       requiredPathQueue: ["fixtures/report.md"],
-      confirmQueue: [false, false, false, false],
+      inputQueue: ["", "", "", "", "", ""],
+      confirmQueue: [false, false, false, false, false, false, false],
     });
 
     expect(result.markdownPdfDeterministicPrepareCalls.map((call) => call.preparation)).toEqual([
@@ -293,6 +439,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "starter",
         "temporary-render",
         "enable",
+        "inherit",
         "default",
         "review",
         "temporary-render",
@@ -388,6 +535,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "starter",
         "temporary-render",
         "inherit",
+        "inherit",
         "custom",
         "delete",
       ],
@@ -413,6 +561,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "profile",
         "starter",
         "save-and-render",
+        "inherit",
         "inherit",
         "custom",
         "custom",
@@ -445,6 +594,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "starter",
         "save-and-render",
         "inherit",
+        "inherit",
         "custom",
         "custom",
         "review",
@@ -475,6 +625,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "starter",
         "save-and-render",
         "inherit",
+        "inherit",
         "custom",
         "custom",
         "review",
@@ -500,6 +651,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "project-bundle",
         "continue",
         "save-and-render",
+        "inherit",
         "inherit",
         "with-artifact",
         "suggested",
@@ -532,6 +684,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "continue",
         "temporary-render",
         "inherit",
+        "inherit",
         "external",
         "custom",
         "review",
@@ -559,6 +712,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "profile",
         "starter",
         "temporary-render",
+        "inherit",
         "inherit",
         "default",
         "custom",
@@ -600,6 +754,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "starter",
         "save-and-render",
         "inherit",
+        "inherit",
         "custom",
         "default",
         "retry",
@@ -625,6 +780,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "template-bundle",
         "starter",
         "save-and-render",
+        "inherit",
         "inherit",
         "custom",
         "default",
@@ -653,6 +809,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "starter",
         "save-and-render",
         "inherit",
+        "inherit",
         "custom",
         "default",
         "review",
@@ -680,11 +837,13 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "starter",
         "save-and-render",
         "enable",
+        "inherit",
         "custom",
         "default",
         "review",
         "save-and-render",
         "disable",
+        "inherit",
       ],
       requiredPathQueue: ["fixtures/report.md", "recipes/durable-template"],
       confirmQueue: [false, false, true, true],
@@ -712,10 +871,12 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "starter",
         "save-and-render",
         "inherit",
+        "inherit",
         "custom",
         "default",
         "review",
         "save-and-render",
+        "inherit",
         "inherit",
         "outputs",
         "custom",
@@ -753,10 +914,12 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "starter",
         "save-and-render",
         "inherit",
+        "inherit",
         "custom",
         "default",
         "review",
         "save-and-render",
+        "inherit",
         "inherit",
         "outputs",
         "custom",
@@ -795,6 +958,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
         "template-bundle",
         "starter",
         "save-and-render",
+        "inherit",
         "inherit",
         "custom",
         "default",

@@ -1268,6 +1268,21 @@ describe("Markdown PDF template Codex adapter", () => {
     }
   });
 
+  test("keeps the tolerant scanner-issue inspection policy", () => {
+    const block = {
+      css: "body { color: red; } /* unfinished generated note",
+      slot: "colors" as const,
+    };
+
+    expect(validateMarkdownPdfTemplateCodexCssBlock(block)).toEqual(block);
+    expect(() =>
+      validateMarkdownPdfTemplateCodexCssBlock({
+        css: 'body { content: "unfinished',
+        slot: "colors",
+      }),
+    ).toThrow("has unbalanced braces");
+  });
+
   test("allows non-family typography declarations and Template font variable reads", () => {
     expect(
       validateMarkdownPdfTemplateCodexCssBlock({

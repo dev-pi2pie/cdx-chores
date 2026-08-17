@@ -582,7 +582,6 @@ function createPlan(
   }));
 
   return {
-    schemaVersion: 1,
     fontHints,
     input: inputPath,
     profile: profilePath,

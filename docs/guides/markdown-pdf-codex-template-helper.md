@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Template Helper"
 created-date: 2026-06-25
-modified-date: 2026-07-28
+modified-date: 2026-08-16
 status: completed
 agent: codex
 ---
@@ -170,8 +170,8 @@ cdx-chores md to-pdf \
 does not replace or deprecate the direct options. Either form makes the renderer
 use the custom template and apply the helper stylesheet after the built-in
 default stylesheet. This layered render keeps built-in renderer behavior,
-profile-derived page chrome, and newer code highlighting hooks available unless
-the custom template intentionally replaces that structure.
+profile-derived repeating content, and newer code-highlighting hooks available
+when the managed structural compatibility rules below remain satisfied.
 
 The direct form remains fully supported. It is especially useful when the files
 live in different directories, when the selected paths should be visible in the
@@ -189,6 +189,34 @@ cdx-chores md to-pdf \
 
 In that posture, the custom stylesheet owns all print, font, page, cover, and
 code-block styling.
+
+### Managed Hooks And Profile Compatibility
+
+Generated Template bundles are managed artifacts with stable structural hooks.
+They contain exactly one `.document-body` element that owns the single live
+Pandoc `$body$` insertion point. This boundary lets a selected base Profile use
+body-scoped visibility and body-origin numbering without copying page-number
+policy into the Template.
+
+When a selected base Profile enables its metadata cover, the generated managed
+Template must preserve exactly one live `.pdf-cover` element. An arbitrary
+custom Template is not treated as a compatible substitute: `md to-pdf` rejects
+it rather than silently discarding the enabled Profile cover. Use the built-in
+Template or a validated managed Template that retains the cover hook.
+
+The Template owns HTML structure, cover and ToC presentation, document layout,
+and its later stylesheet layer. Ordinary page-number enablement, visibility,
+sequence, label content, position, and repeating header/footer policy remain
+Profile-owned. For the canonical Profile fields and renderer behavior, see
+[Markdown PDF Usage](markdown-pdf-usage.md).
+
+The default layered render keeps generated Profile page chrome active and
+applies Template CSS afterward. `--no-default-css` deliberately transfers CSS
+ownership to the custom stylesheet: an enabled Profile cover produces a
+warning that custom CSS now owns its page break, layout, and chrome reset, while
+effectively enabled Profile page numbers are rejected because their generated
+stylesheet has been disabled. Custom counters remain possible when Profile page
+numbers are disabled.
 
 ## Cover Images
 
@@ -310,6 +338,7 @@ read an existing `template.html` or `style.css` as a refinement input.
 
 ## Related Docs
 
+- [Patterns, Placeholders, and Templates](patterns-placeholders-and-templates.md)
 - [Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md)
 - [Markdown PDF Usage](markdown-pdf-usage.md)
 - [Markdown PDF Codex Profile Helper](markdown-pdf-codex-profile-helper.md)

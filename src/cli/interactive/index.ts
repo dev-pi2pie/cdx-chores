@@ -1,9 +1,8 @@
-import { confirm } from "@inquirer/prompts";
-
 import { actionDoctor } from "../actions";
 import { resolvePathPromptRuntimeConfig } from "../prompts/path-config";
 import type { CliRuntime } from "../types";
 import { handleDataInteractiveAction } from "./data";
+import { selectInteractiveDoctorOutput } from "./doctor";
 import { handleMarkdownInteractiveAction } from "./markdown";
 import { selectInteractiveAction } from "./menu";
 import { handleRenameInteractiveAction } from "./rename";
@@ -12,7 +11,7 @@ import { handleVideoInteractiveAction } from "./video";
 
 interface RunInteractiveModeImpls {
   selectInteractiveActionImpl?: typeof selectInteractiveAction;
-  confirmImpl?: typeof confirm;
+  selectInteractiveDoctorOutputImpl?: typeof selectInteractiveDoctorOutput;
   actionDoctorImpl?: typeof actionDoctor;
 }
 
@@ -27,7 +26,8 @@ export async function runInteractiveMode(
     stdout: runtime.stdout,
   };
   const selectInteractiveActionImpl = impls.selectInteractiveActionImpl ?? selectInteractiveAction;
-  const confirmImpl = impls.confirmImpl ?? confirm;
+  const selectInteractiveDoctorOutputImpl =
+    impls.selectInteractiveDoctorOutputImpl ?? selectInteractiveDoctorOutput;
   const actionDoctorImpl = impls.actionDoctorImpl ?? actionDoctor;
   let initialGroup: "md" | undefined;
   while (true) {
@@ -44,14 +44,14 @@ export async function runInteractiveMode(
     }
 
     if (action === "doctor") {
-      const asJson = await confirmImpl(
-        { message: "Output as JSON?", default: false },
-        {
-          input: runtime.stdin,
-          output: runtime.stdout,
-        },
-      );
-      await actionDoctorImpl(runtime, { json: asJson });
+      const output = await selectInteractiveDoctorOutputImpl({
+        input: runtime.stdin,
+        output: runtime.stdout,
+      });
+      await actionDoctorImpl(runtime, {
+        details: output === "details",
+        json: output === "json",
+      });
       return;
     }
 

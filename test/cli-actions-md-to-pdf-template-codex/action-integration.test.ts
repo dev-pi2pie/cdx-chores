@@ -7,6 +7,7 @@ import type { CodexProgressPresenter } from "../../src/cli/actions/codex-progres
 import { prepareMdPdfTemplateCodex } from "../../src/cli/actions/markdown/pdf-template-codex";
 import type { MarkdownPdfTemplateCodexRunner } from "../../src/adapters/codex/markdown-pdf-template";
 import type { MarkdownPdfProcessRunner } from "../../src/cli/markdown-pdf";
+import { MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME } from "../../src/cli/markdown-pdf/profile/page-number-format";
 import {
   bindPreparedMdPdfTemplateCodexOutput,
   writePreparedMdPdfTemplateCodexBundle,
@@ -269,6 +270,7 @@ describe("cli action modules: md pdf-template codex integration", () => {
         files: Array<{ role: string }>;
       };
       expect(report.artifactType).toBe("markdown-pdf-codex-template-report");
+      expect(report).not.toHaveProperty("version");
       expect(report.decision.cover).toMatchObject({
         enabled: false,
         byline: "none",
@@ -888,6 +890,7 @@ describe("cli action modules: md pdf-template codex integration", () => {
       expect(report.managedAssets).toEqual([]);
       expect(report.validationResults).toEqual([
         { name: "static-template-validation", status: "skipped" },
+        { name: "document-body-boundary", status: "skipped" },
       ]);
       expect(report.followUpRenderCommand).toBeUndefined();
     });
@@ -1118,7 +1121,9 @@ describe("cli action modules: md pdf-template codex integration", () => {
         expect(templateCss).not.toContain("counter(page)");
         expect(templateCss).not.toContain("@bottom-center");
 
-        const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
+        const { runner } = createPdfRunner({
+          html: '<html><body><main class="document-body">Report</main></body></html>',
+        });
         const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
           if (command === "weasyprint" && !args.includes("--info")) {
             const stylesheetIndexes = args
@@ -1144,8 +1149,53 @@ describe("cli action modules: md pdf-template codex integration", () => {
 
         const combinedCss = renderedStyles.join("\n");
         expect(combinedCss).toContain("@bottom-center");
-        expect(combinedCss).toContain("counter(page)");
+        expect(combinedCss).toContain(`counter(${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME})`);
       },
     );
+  });
+
+  test("keeps document- and body-origin base Profiles external to generated bundles", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-origin-profile-compat", async (fixtureDir) => {
+      for (const countFrom of ["document", "body"] as const) {
+        const profilePath = join(fixtureDir, `${countFrom}.yml`);
+        const outputPath = join(fixtureDir, `${countFrom}-template`);
+        await writeFile(
+          profilePath,
+          [
+            "header:",
+            "  style:",
+            "    color: '#123ABC'",
+            "    fontSize: 11pt",
+            "pageNumbers:",
+            "  enabled: true",
+            "  scope: body",
+            `  countFrom: ${countFrom}`,
+            "  start: 17",
+            "  increment: 3",
+            "  position: top-right",
+            "  format: 'Confidential {page}'",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+
+        const { runtime, stdout } = createActionTestRuntime({ cwd: fixtureDir });
+        await actionMdPdfTemplateCodex(runtime, {
+          baseProfile: `${countFrom}.yml`,
+          output: `${countFrom}-template`,
+        });
+
+        const templateHtml = await readFile(join(outputPath, "template.html"), "utf8");
+        const styleCss = await readFile(join(outputPath, "style.css"), "utf8");
+        expect(templateHtml).toContain('<main class="document-body">');
+        expect(templateHtml).not.toContain("Confidential");
+        expect(styleCss).not.toContain("Confidential");
+        expect(styleCss).not.toContain("#123ABC");
+        expect(styleCss).not.toContain("counter(page)");
+        expect(styleCss).not.toContain("@top-right");
+        expect(await pathExists(join(outputPath, "profile.yml"))).toBe(false);
+        expect(stdout.text).toContain(`--profile '${countFrom}.yml'`);
+      }
+    });
   });
 });

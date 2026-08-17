@@ -29,7 +29,14 @@ export type {
   MarkdownPdfProjectCodexTemplatePhaseSignalMode,
   MarkdownPdfProjectCodexTemplatePhaseSummary,
 } from "./types-phase";
-export type { MarkdownPdfProjectCodexReportArtifact } from "./types-report";
+export type {
+  MarkdownPdfProjectCodexHandoffArtifactAvailability,
+  MarkdownPdfProjectCodexHandoffCapabilityRequirement,
+  MarkdownPdfProjectCodexHandoffDiagnostic,
+  MarkdownPdfProjectCodexHandoffProjection,
+  MarkdownPdfProjectCodexHandoffRenderUsability,
+  MarkdownPdfProjectCodexReportArtifact,
+} from "./types-report";
 export type { MarkdownPdfProjectCodexRenderCommand } from "./render-command";
 export type {
   MarkdownPdfProjectCodexValidationResult,

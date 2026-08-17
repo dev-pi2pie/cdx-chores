@@ -135,7 +135,6 @@ export function createSynthesisSignals(
               traits: {
                 cover: false,
                 toc: false,
-                pageNumbers: false,
                 codeHighlight: true,
                 lineNumbers: false,
                 density: "standard",

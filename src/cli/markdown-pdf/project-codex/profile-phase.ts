@@ -104,6 +104,7 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
   const signalMode = input.signals.modes.profile;
   const orchestrationContext = createMarkdownPdfCodexProfileOrchestrationContext({
     baseProfileCandidate: input.signals.profile.baseProfile.candidate,
+    baseProfileRole: "authoritative",
     createdAt: input.outputPlan.identity.createdAt,
     documentSignals: input.signals.shared.document,
     fontHints: input.signals.profile.fonts.hints,

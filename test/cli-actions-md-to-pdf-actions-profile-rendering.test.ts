@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { actionMdToPdf } from "../src/cli/actions";
 import type { MarkdownPdfProcessRunner } from "../src/cli/markdown-pdf";
+import { MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME } from "../src/cli/markdown-pdf/profile/page-number-format";
 import { synthesizeMdPdfTemplateCodex } from "../src/cli/markdown-pdf/template-codex";
 import { createPdfRunner } from "./cli-actions-md-to-pdf.helpers";
 import {
@@ -14,6 +15,69 @@ import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
 describe("cli action modules: md to-pdf profile rendering", () => {
+  test.each([
+    {
+      directOverride: true,
+      label: "direct enable",
+      profileSource: undefined,
+    },
+    {
+      directOverride: undefined,
+      label: "Profile enable",
+      profileSource: "pageNumbers:\n  enabled: true\n  format: Page {page}\n",
+    },
+  ])("passes effective page-number CSS to the renderer for $label", async (scenario) => {
+    await withTempFixtureDir("md-to-pdf-effective-page-number-render", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const outputPath = join(fixtureDir, "report.pdf");
+      const profilePath = join(fixtureDir, "profile.yml");
+      const renderedStyles: string[] = [];
+      await writeFile(inputPath, "# Report\n", "utf8");
+      if (scenario.profileSource) {
+        await writeFile(profilePath, scenario.profileSource, "utf8");
+      }
+      const { runner } = createPdfRunner({
+        html: '<html><body><main class="document-body">Report</main></body></html>',
+      });
+      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+        if (command === "weasyprint" && !args.includes("--info")) {
+          const stylesheetIndexes = args
+            .map((argument, index) => (argument === "--stylesheet" ? index : -1))
+            .filter((index) => index >= 0);
+          for (const index of stylesheetIndexes) {
+            const stylesheetPath = args[index + 1];
+            if (stylesheetPath) {
+              renderedStyles.push(await readFile(stylesheetPath, "utf8"));
+            }
+          }
+        }
+        return runner(command, args, runnerOptions);
+      };
+      const { runtime, expectNoStderr } = createActionTestRuntime();
+
+      await actionMdToPdf(runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(outputPath),
+        profile: scenario.profileSource ? toRepoRelativePath(profilePath) : undefined,
+        pageNumbers: scenario.directOverride,
+        runner: capturingRunner,
+      });
+
+      expect(renderedStyles).toHaveLength(1);
+      expect(renderedStyles[0]).toContain(
+        `counter-increment: ${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME} 1;`,
+      );
+      expect(renderedStyles[0]).toContain(`counter(${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME})`);
+      if (scenario.profileSource) {
+        expect(renderedStyles[0]).toContain(
+          `content: "Page " counter(${MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME});`,
+        );
+      }
+      expect(await readFile(outputPath, "utf8")).toContain("%PDF");
+      expectNoStderr();
+    });
+  });
+
   test("loads cover and font profile settings into generated recipe files", async () => {
     await withTempFixtureDir("md-to-pdf-profile-action", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "mixed-report.md");
@@ -30,6 +94,7 @@ describe("cli action modules: md to-pdf profile rendering", () => {
           "subtitle: Runtime Notes",
           "author: Noname",
           "company: Example Co.",
+          "date: 2026-08-15",
           "pdf:",
           "  content-langs:",
           "    - zh-Hant",
@@ -104,6 +169,7 @@ describe("cli action modules: md to-pdf profile rendering", () => {
         input: toRepoRelativePath(inputPath),
         profile: toRepoRelativePath(profilePath),
         htmlOutput: toRepoRelativePath(htmlOutput),
+        toc: true,
         runner: capturingRunner,
       });
 
@@ -115,7 +181,20 @@ describe("cli action modules: md to-pdf profile rendering", () => {
       expect(renderedTemplate).toContain('class="pdf-cover pdf-cover--report"');
       expect(renderedTemplate).toContain("Mixed Language Report");
       expect(renderedTemplate).toContain("Runtime Notes");
+      expect(renderedTemplate.indexOf('class="pdf-cover pdf-cover--report"')).toBeLessThan(
+        renderedTemplate.indexOf('<nav id="TOC" role="doc-toc">'),
+      );
+      expect(renderedTemplate.indexOf('<nav id="TOC" role="doc-toc">')).toBeLessThan(
+        renderedTemplate.indexOf('<main class="document-body">'),
+      );
+      expect(renderedTemplate).not.toContain('class="document-title"');
+      expect(renderedTemplate.match(/Example Co\./g)).toHaveLength(1);
+      expect(renderedTemplate).toContain('<p class="pdf-cover__company">Example Co.</p>');
+      expect(renderedTemplate).toContain('<p class="pdf-cover__meta">Noname | 2026-08-15</p>');
       expect(combinedCss).toContain("@page cover");
+      const coverCss = combinedCss.slice(combinedCss.indexOf("@page cover"));
+      expect(coverCss).toContain("@top-left {\n    content: none;");
+      expect(coverCss).toContain("@bottom-center {\n    content: none;");
       expect(combinedCss).toContain(".pdf-cover--report .pdf-cover__content");
       expect(combinedCss).toContain("min-height: 297mm;");
       expect(combinedCss).not.toContain("\n  height: 297mm;");
@@ -159,11 +238,20 @@ describe("cli action modules: md to-pdf profile rendering", () => {
           "    default: Profile Code",
           "  pageChrome:",
           "    default: Profile Chrome",
+          "header:",
+          "  left: Profile header",
+          "  style:",
+          "    fontSize: 8.5pt",
+          '    color: "#123456"',
           "",
         ].join("\n"),
         "utf8",
       );
-      await writeFile(templateCssPath, synthesis.styleCss, "utf8");
+      await writeFile(
+        templateCssPath,
+        `${synthesis.styleCss}\n@page {\n  @top-left {\n    font-size: 12pt;\n    color: #abcdef;\n  }\n}\n`,
+        "utf8",
+      );
 
       const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
       const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
@@ -200,12 +288,20 @@ describe("cli action modules: md to-pdf profile rendering", () => {
       expect(renderedStyles[0]).toContain('font-family: "Profile Heading", sans-serif;');
       expect(renderedStyles[0]).toContain('font-family: "Profile Code", monospace;');
       expect(renderedStyles[0]).toContain('@page {\n  font-family: "Profile Chrome", sans-serif;');
+      expect(renderedStyles[0]).toContain(
+        '@top-left {\n    content: "Profile header";\n    font-size: 8.5pt;\n    color: #123456;',
+      );
+      const profileCss = renderedStyles[0] ?? "";
+      expect(profileCss.indexOf('font-family: "Profile Chrome", sans-serif;')).toBeGreaterThan(
+        profileCss.indexOf("font-size: 8.5pt;"),
+      );
       expect(renderedStyles[1]).toContain('--template-body-font: "Noto Serif", "Georgia", serif;');
       expect(renderedStyles[1]).toContain("font-size: 10.5pt;");
       expect(renderedStyles[1]).toContain("line-height: 1.5;");
       expect(renderedStyles[1]).toContain("font-family: var(--template-body-font);");
       expect(renderedStyles[1]).not.toContain("Profile Japanese");
       expect(renderedStyles[1]).not.toContain("Profile Chrome");
+      expect(renderedStyles[1]).toContain("@top-left {\n    font-size: 12pt;\n    color: #abcdef;");
       expectNoStderr();
     });
   });

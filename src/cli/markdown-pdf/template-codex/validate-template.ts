@@ -1,6 +1,8 @@
 import { dirname, isAbsolute, relative } from "node:path";
 
 import { CliError } from "../../errors";
+import { assessMarkdownPdfTemplateCompatibility } from "../template-compatibility";
+import { inspectMarkdownPdfTemplateBody } from "../template-body";
 import {
   MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT,
   MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES,
@@ -9,6 +11,7 @@ import type {
   MarkdownPdfTemplateCodexOutputPlan,
   MarkdownPdfTemplateCodexSynthesisResult,
 } from "./types";
+import type { NormalizedMarkdownPdfProfile } from "../profile";
 
 const REMOTE_REFERENCE_PATTERN = /\b(?:https?|ftp):\/\/|\/\/[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/iu;
 const FILE_URL_PATTERN = /\bfile:\/\//iu;
@@ -151,6 +154,8 @@ function assertBundlePathInsideOutput(input: {
 }
 
 export function validateMdPdfTemplateCodexSynthesis(input: {
+  compatibilityProfile?: NormalizedMarkdownPdfProfile;
+  deferBodyBoundaryValidationToProject?: boolean;
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
   synthesis: MarkdownPdfTemplateCodexSynthesisResult;
 }): void {
@@ -190,12 +195,27 @@ export function validateMdPdfTemplateCodexSynthesis(input: {
     return;
   }
 
-  assertContains(
-    input.synthesis.templateHtml,
-    MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.bodyPlaceholder,
-    "Pandoc body placeholder",
-    "template.html",
-  );
+  if (!input.deferBodyBoundaryValidationToProject) {
+    assertContains(
+      input.synthesis.templateHtml,
+      MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.bodyPlaceholder,
+      "Pandoc body placeholder",
+      "template.html",
+    );
+    const bodyInspection = inspectMarkdownPdfTemplateBody(input.synthesis.templateHtml);
+    if (bodyInspection.status !== "proven") {
+      validationError(
+        `template.html must contain exactly one .document-body element owning the single live $body$ insertion point (found ${bodyInspection.status}).`,
+      );
+    }
+  }
+  if (input.compatibilityProfile) {
+    assessMarkdownPdfTemplateCompatibility({
+      builtIn: false,
+      profile: input.compatibilityProfile,
+      templateHtml: input.synthesis.templateHtml,
+    });
+  }
   assertTocRegion(input.synthesis.templateHtml);
   assertFamilyHooks(input);
 

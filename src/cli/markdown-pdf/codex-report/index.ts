@@ -87,7 +87,9 @@ function changedTopLevelFields(
   if (!baseProfile || !profile) {
     return [];
   }
-  return MARKDOWN_PDF_PROFILE_ROOT_KEYS.filter((field) => field !== "profile")
+  return MARKDOWN_PDF_PROFILE_ROOT_KEYS.filter(
+    (field) => field !== "profile" && field !== "schemaVersion",
+  )
     .filter((field) => Object.hasOwn(baseProfile, field) || Object.hasOwn(profile, field))
     .filter((field) => !isDeepStrictEqual(baseProfile[field], profile[field]))
     .sort();

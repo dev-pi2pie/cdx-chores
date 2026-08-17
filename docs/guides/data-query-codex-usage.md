@@ -1,7 +1,7 @@
 ---
 title: "Data Query Codex Usage"
 created-date: 2026-03-10
-modified-date: 2026-07-10
+modified-date: 2026-08-16
 status: completed
 agent: codex
 ---
@@ -161,5 +161,8 @@ The doctor report exposes `data query codex` separately from DuckDB format capab
 - configured support
 - auth/session availability
 - ready-to-draft availability
+
+Use `cdx-chores doctor --details` for complete human-readable evidence and
+`cdx-chores doctor --json` for automation.
 
 `ready-to-draft` is true only when both Codex drafting signals and DuckDB introspection support are available in the current environment.

@@ -10,6 +10,7 @@ export type {
 export type {
   MdPdfTemplateCodexSignalCollection,
   MarkdownPdfTemplateCodexBaseProfileSignals,
+  MarkdownPdfTemplateCodexBaseProfileSummary,
   MarkdownPdfTemplateCodexCoverImageDimensions,
   MarkdownPdfTemplateCodexCoverImageSignals,
   MarkdownPdfTemplateCodexFitPressure,

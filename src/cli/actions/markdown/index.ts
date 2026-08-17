@@ -20,6 +20,7 @@ export {
 } from "./to-pdf-service";
 export type {
   ExecutePlannedMarkdownPdfRenderOptions,
+  MarkdownPdfRenderExecutionResult,
   MarkdownPdfRenderOutputInput,
   PlannedMarkdownPdfRender,
   PreparedMarkdownPdfRender,

@@ -18,13 +18,16 @@ describe("interactive Markdown PDF render sources", () => {
       value: "generated",
       description: "Prepare a Profile, Template bundle, or Project bundle",
     });
+    expect(
+      result.promptCalls.filter((call) => call.message === "Page numbers for this PDF"),
+    ).toEqual([]);
   });
 
   test("prepares, reviews, plans, and renders the built-in recipe once", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
-      selectQueue: [...ENTRY_SELECTIONS, "built-in", "inherit", "default"],
+      selectQueue: [...ENTRY_SELECTIONS, "built-in", "inherit", "inherit", "default"],
       requiredPathQueue: ["fixtures/report.md"],
       confirmQueue: [false, true],
     });
@@ -54,7 +57,7 @@ describe("interactive Markdown PDF render sources", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
-      selectQueue: [...ENTRY_SELECTIONS, "existing-profile", "inherit", "default"],
+      selectQueue: [...ENTRY_SELECTIONS, "existing-profile", "inherit", "inherit", "default"],
       requiredPathQueue: ["fixtures/report.md", "fixtures/profile.yml"],
       confirmQueue: [false, true],
     });
@@ -72,7 +75,7 @@ describe("interactive Markdown PDF render sources", () => {
       const result = runInteractiveHarness({
         mode: "run",
         markdownPdfMocks: true,
-        selectQueue: [...ENTRY_SELECTIONS, "existing-profile", choice, "cancel"],
+        selectQueue: [...ENTRY_SELECTIONS, "existing-profile", choice, "inherit", "cancel"],
         requiredPathQueue: ["fixtures/report.md", "fixtures/profile.yml"],
       });
 
@@ -104,7 +107,7 @@ describe("interactive Markdown PDF render sources", () => {
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfBundleRoles: ["template"],
-      selectQueue: [...ENTRY_SELECTIONS, "existing-bundle", "enable", "cancel"],
+      selectQueue: [...ENTRY_SELECTIONS, "existing-bundle", "enable", "inherit", "cancel"],
       requiredPathQueue: ["fixtures/report.md", "fixtures/template-bundle"],
     });
 
@@ -115,6 +118,63 @@ describe("interactive Markdown PDF render sources", () => {
     expect(result.stderr).toContain("- Code highlighting theme: github-light");
     expect(result.stderr).toContain("- Line numbers: disabled");
   });
+
+  test.each([
+    { choice: "enable", expected: true },
+    { choice: "disable", expected: false },
+  ] as const)(
+    "applies the $choice page-number override to a Template/CSS-only bundle without inventing Profile state",
+    ({ choice, expected }) => {
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        markdownPdfBundleRoles: ["template", "css"],
+        selectQueue: [...ENTRY_SELECTIONS, "existing-bundle", "inherit", choice, "cancel"],
+        requiredPathQueue: ["fixtures/report.md", "fixtures/template-css-bundle"],
+      });
+
+      expect(result.markdownPdfPrepareCalls[0]).toMatchObject({
+        bundle: "fixtures/template-css-bundle",
+        input: "fixtures/report.md",
+        pageNumbers: expected,
+      });
+      expect(result.stderr).not.toContain("reusable Profile");
+      expect(result.stderr).toContain("normalized default");
+      expect(result.stderr).toContain(
+        `- One-render override: ${expected ? "enable" : "disable"} for this PDF`,
+      );
+    },
+  );
+
+  test.each([
+    { choice: "inherit", expectedOverride: undefined, effective: true },
+    { choice: "disable", expectedOverride: false, effective: false },
+    { choice: "enable", expectedOverride: true, effective: true },
+  ] as const)(
+    "resolves a complete bundle Profile with $choice page numbers",
+    ({ choice, effective, expectedOverride }) => {
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        markdownPdfBundleRoles: ["profile", "template", "css"],
+        markdownPdfProfilePageNumbersEnabled: true,
+        selectQueue: [...ENTRY_SELECTIONS, "existing-bundle", "inherit", choice, "cancel"],
+        requiredPathQueue: ["fixtures/report.md", "fixtures/complete-bundle"],
+      });
+
+      expect(result.markdownPdfPrepareCalls[0]).toMatchObject({
+        bundle: "fixtures/complete-bundle",
+        input: "fixtures/report.md",
+      });
+      if (expectedOverride === undefined) {
+        expect(result.markdownPdfPrepareCalls[0]).not.toHaveProperty("pageNumbers");
+      } else {
+        expect(result.markdownPdfPrepareCalls[0]).toHaveProperty("pageNumbers", expectedOverride);
+      }
+      expect(result.stderr).toContain("- Recipe setting: enabled (reusable Profile)");
+      expect(result.stderr).toContain(`- Effective result: ${effective ? "enabled" : "disabled"}`);
+    },
+  );
 
   test("offers the complete render-override decision before authoritative preparation", () => {
     const result = runInteractiveHarness({
@@ -159,7 +219,7 @@ describe("interactive Markdown PDF render sources", () => {
       markdownPdfMocks: true,
       markdownPdfBundleRoles: ["profile", "template", "css"],
       markdownPdfIgnoredBundleFiles: ["notes.yml"],
-      selectQueue: [...ENTRY_SELECTIONS, "existing-bundle", "inherit", "default"],
+      selectQueue: [...ENTRY_SELECTIONS, "existing-bundle", "inherit", "inherit", "default"],
       requiredPathQueue: ["fixtures/report.md", "fixtures/report-bundle"],
       confirmQueue: [false, true],
     });
@@ -175,7 +235,14 @@ describe("interactive Markdown PDF render sources", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
-      selectQueue: [...ENTRY_SELECTIONS, "custom-inputs", "explicit", "inherit", "default"],
+      selectQueue: [
+        ...ENTRY_SELECTIONS,
+        "custom-inputs",
+        "explicit",
+        "inherit",
+        "inherit",
+        "default",
+      ],
       checkboxQueue: [["profile", "css"]],
       requiredPathQueue: ["fixtures/report.md", "fixtures/profile.yml", "fixtures/print.css"],
       confirmQueue: [false, true],
@@ -198,6 +265,7 @@ describe("interactive Markdown PDF render sources", () => {
         "custom-inputs",
         "bundle-with-explicit",
         "inherit",
+        "inherit",
         "default",
       ],
       checkboxQueue: [["template"]],
@@ -217,6 +285,60 @@ describe("interactive Markdown PDF render sources", () => {
     expect(result.stderr).toContain("Bundle provides: Profile, Template, Stylesheet");
     expect(result.stderr).toContain("custom.html (explicit)");
     expect(result.stderr).toContain("profile.yml (bundle)");
+  });
+
+  test("propagates a page-number choice through Custom explicit inputs", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...ENTRY_SELECTIONS,
+        "custom-inputs",
+        "explicit",
+        "inherit",
+        "enable",
+        "cancel",
+      ],
+      checkboxQueue: [["profile", "css"]],
+      requiredPathQueue: ["fixtures/report.md", "fixtures/profile.yml", "fixtures/print.css"],
+    });
+
+    expect(result.markdownPdfPrepareCalls[0]).toMatchObject({
+      input: "fixtures/report.md",
+      profile: "fixtures/profile.yml",
+      css: "fixtures/print.css",
+      pageNumbers: true,
+    });
+    expect(result.markdownPdfPrepareCalls[0]).not.toHaveProperty("template");
+    expect(result.stderr).toContain("- One-render override: enable for this PDF");
+  });
+
+  test("propagates page numbers through Custom bundle inputs without weakening explicit precedence", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfBundleRoles: ["profile", "template", "css"],
+      selectQueue: [
+        ...ENTRY_SELECTIONS,
+        "custom-inputs",
+        "bundle-with-explicit",
+        "inherit",
+        "disable",
+        "cancel",
+      ],
+      checkboxQueue: [["template"]],
+      requiredPathQueue: ["fixtures/report.md", "fixtures/report-bundle", "fixtures/custom.html"],
+    });
+
+    expect(result.markdownPdfPrepareCalls[0]).toMatchObject({
+      bundle: "fixtures/report-bundle",
+      input: "fixtures/report.md",
+      pageNumbers: false,
+      template: "fixtures/custom.html",
+    });
+    expect(result.stderr).toContain("custom.html (explicit)");
+    expect(result.stderr).toContain("profile.yml (bundle)");
+    expect(result.stderr).toContain("- One-render override: disable for this PDF");
   });
 
   test("rejects an empty explicit-role selection before preparation", () => {
@@ -240,7 +362,15 @@ describe("interactive Markdown PDF render sources", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
-      selectQueue: [...ENTRY_SELECTIONS, "custom-inputs", "back", "built-in", "inherit", "default"],
+      selectQueue: [
+        ...ENTRY_SELECTIONS,
+        "custom-inputs",
+        "back",
+        "built-in",
+        "inherit",
+        "inherit",
+        "default",
+      ],
       requiredPathQueue: ["fixtures/report.md"],
       confirmQueue: [false, true],
     });
@@ -265,6 +395,7 @@ describe("interactive Markdown PDF render sources", () => {
         "back",
         "built-in",
         "enable",
+        "inherit",
         "cancel",
       ],
       checkboxQueue: [["template"]],
@@ -289,6 +420,7 @@ describe("interactive Markdown PDF render sources", () => {
       selectQueue: [
         ...ENTRY_SELECTIONS,
         "built-in",
+        "inherit",
         "inherit",
         "change-code-highlighting",
         "enable",
@@ -319,6 +451,7 @@ describe("interactive Markdown PDF render sources", () => {
         ...ENTRY_SELECTIONS,
         "built-in",
         "inherit",
+        "inherit",
         "change-code-highlighting",
         "inherit",
         "cancel",
@@ -339,6 +472,7 @@ describe("interactive Markdown PDF render sources", () => {
       selectQueue: [
         ...ENTRY_SELECTIONS,
         "existing-profile",
+        "inherit",
         "inherit",
         "default",
         "change-code-highlighting",
@@ -377,6 +511,7 @@ describe("interactive Markdown PDF render sources", () => {
           ...ENTRY_SELECTIONS,
           "built-in",
           "inherit",
+          "inherit",
           "default",
           "change-code-highlighting",
           action,
@@ -393,6 +528,23 @@ describe("interactive Markdown PDF render sources", () => {
     });
   }
 
+  test("retains code highlighting when backing from the initial page-number decision", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [...ENTRY_SELECTIONS, "built-in", "enable", "back", "cancel"],
+      requiredPathQueue: ["fixtures/report.md"],
+    });
+
+    expect(result.markdownPdfPrepareCalls).toEqual([]);
+    expect(result.markdownPdfPlanCalls).toEqual([]);
+    expect(result.markdownPdfExecuteCalls).toEqual([]);
+    expect(result.selectDefaultsByMessage["Code highlighting for this PDF"]).toEqual([
+      "inherit",
+      "enable",
+    ]);
+  });
+
   test("keeps the prepared plan when final review reselects the current override", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -400,6 +552,7 @@ describe("interactive Markdown PDF render sources", () => {
       selectQueue: [
         ...ENTRY_SELECTIONS,
         "built-in",
+        "inherit",
         "inherit",
         "default",
         "change-code-highlighting",
@@ -429,6 +582,7 @@ describe("interactive Markdown PDF render sources", () => {
         ...ENTRY_SELECTIONS,
         "built-in",
         "inherit",
+        "inherit",
         "default",
         "change-output",
         "custom",
@@ -456,7 +610,7 @@ describe("interactive Markdown PDF render sources", () => {
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfOutputErrorMessages: ["Output already exists"],
-      selectQueue: [...ENTRY_SELECTIONS, "built-in", "inherit", "default", "custom"],
+      selectQueue: [...ENTRY_SELECTIONS, "built-in", "inherit", "inherit", "default", "custom"],
       requiredPathQueue: ["fixtures/report.md", "output/recovered.pdf"],
       confirmQueue: [false, true, true],
     });
@@ -471,7 +625,7 @@ describe("interactive Markdown PDF render sources", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
-      selectQueue: [...ENTRY_SELECTIONS, "built-in", "inherit", "custom"],
+      selectQueue: [...ENTRY_SELECTIONS, "built-in", "inherit", "inherit", "custom"],
       requiredPathQueue: ["fixtures/report.md", "output/custom.pdf"],
       confirmQueue: [true, true],
     });
@@ -495,8 +649,10 @@ describe("interactive Markdown PDF render sources", () => {
         ...ENTRY_SELECTIONS,
         "built-in",
         "inherit",
+        "inherit",
         "change-source",
         "existing-profile",
+        "inherit",
         "inherit",
         "default",
       ],
@@ -523,7 +679,7 @@ describe("interactive Markdown PDF render sources", () => {
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfRenderWarnings: ["Fallback font used", "Cover image was resized"],
-      selectQueue: [...ENTRY_SELECTIONS, "built-in", "inherit", "default"],
+      selectQueue: [...ENTRY_SELECTIONS, "built-in", "inherit", "inherit", "default"],
       requiredPathQueue: ["fixtures/report.md"],
       confirmQueue: [false, true],
     });
@@ -538,7 +694,7 @@ describe("interactive Markdown PDF render sources", () => {
     const result = runInteractiveHarness({
       mode: "run",
       markdownPdfMocks: true,
-      selectQueue: [...ENTRY_SELECTIONS, "built-in", "inherit", "default", "cancel"],
+      selectQueue: [...ENTRY_SELECTIONS, "built-in", "inherit", "inherit", "default", "cancel"],
       requiredPathQueue: ["fixtures/report.md"],
       confirmQueue: [false, false],
     });
@@ -554,7 +710,7 @@ describe("interactive Markdown PDF render sources", () => {
         mode: "run",
         markdownPdfMocks: true,
         markdownPdfPrepareErrorMessage: "Bundle has unresolved Profile candidates.",
-        selectQueue: [...ENTRY_SELECTIONS, "existing-bundle", "inherit"],
+        selectQueue: [...ENTRY_SELECTIONS, "existing-bundle", "inherit", "inherit"],
         requiredPathQueue: ["fixtures/report.md", "fixtures/ambiguous-bundle"],
       },
       { allowFailure: true },
@@ -578,5 +734,408 @@ describe("interactive Markdown PDF render sources", () => {
     expect(result.markdownPdfPlanCalls).toEqual([]);
     expect(result.markdownPdfExecuteCalls).toEqual([]);
     expect(result.removedPaths).toEqual([]);
+  });
+
+  for (const action of ["back", "cancel"] as const) {
+    test(`${action}s from the initial page-number decision without doing render work`, () => {
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        selectQueue:
+          action === "back"
+            ? [...ENTRY_SELECTIONS, "built-in", "inherit", "back", "cancel"]
+            : [...ENTRY_SELECTIONS, "built-in", "inherit", "cancel"],
+        requiredPathQueue: ["fixtures/report.md"],
+      });
+
+      expect(result.markdownPdfPrepareCalls).toEqual([]);
+      expect(result.markdownPdfPlanCalls).toEqual([]);
+      expect(result.markdownPdfExecuteCalls).toEqual([]);
+      expect(result.removedPaths).toEqual([]);
+      expect(
+        result.promptCalls.filter((call) => call.message === "Page numbers for this PDF"),
+      ).toHaveLength(1);
+    });
+  }
+
+  test.each([
+    { choice: "inherit", expected: undefined },
+    { choice: "enable", expected: true },
+    { choice: "disable", expected: false },
+  ] as const)(
+    "maps the $choice page-number choice after direct source selection",
+    ({ choice, expected }) => {
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        selectQueue: [...ENTRY_SELECTIONS, "built-in", "inherit", choice, "cancel"],
+        requiredPathQueue: ["fixtures/report.md"],
+      });
+
+      if (expected === undefined) {
+        expect(result.markdownPdfPrepareCalls[0]).not.toHaveProperty("pageNumbers");
+      } else {
+        expect(result.markdownPdfPrepareCalls[0]).toHaveProperty("pageNumbers", expected);
+      }
+      expect(result.stderr).toContain(
+        expected === undefined
+          ? "- One-render override: use recipe setting"
+          : expected
+            ? "- One-render override: enable for this PDF"
+            : "- One-render override: disable for this PDF",
+      );
+    },
+  );
+
+  test("changes page numbers from recipe review while preserving code highlighting", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...ENTRY_SELECTIONS,
+        "built-in",
+        "enable",
+        "inherit",
+        "change-page-numbers",
+        "enable",
+        "cancel",
+      ],
+      requiredPathQueue: ["fixtures/report.md"],
+    });
+
+    expect(result.markdownPdfPrepareCalls).toEqual([
+      { input: "fixtures/report.md", codeHighlight: true, preparedId: "prepared-1" },
+      {
+        input: "fixtures/report.md",
+        codeHighlight: true,
+        pageNumbers: true,
+        preparedId: "prepared-2",
+      },
+    ]);
+    expect(result.markdownPdfPlanCalls).toEqual([]);
+    expect(result.stderr).toContain("- Effective result: enabled");
+  });
+
+  test("changes code highlighting while preserving the page-number choice", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...ENTRY_SELECTIONS,
+        "built-in",
+        "inherit",
+        "enable",
+        "change-code-highlighting",
+        "enable",
+        "cancel",
+      ],
+      requiredPathQueue: ["fixtures/report.md"],
+    });
+
+    expect(result.markdownPdfPrepareCalls).toEqual([
+      { input: "fixtures/report.md", pageNumbers: true, preparedId: "prepared-1" },
+      {
+        input: "fixtures/report.md",
+        codeHighlight: true,
+        pageNumbers: true,
+        preparedId: "prepared-2",
+      },
+    ]);
+  });
+
+  test("keeps one prepared source when page-number review reselects the current choice", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...ENTRY_SELECTIONS,
+        "built-in",
+        "inherit",
+        "inherit",
+        "change-page-numbers",
+        "inherit",
+        "cancel",
+      ],
+      requiredPathQueue: ["fixtures/report.md"],
+    });
+
+    expect(result.markdownPdfPrepareCalls).toEqual([
+      { input: "fixtures/report.md", preparedId: "prepared-1" },
+    ]);
+    expect(result.markdownPdfPlanCalls).toEqual([]);
+  });
+
+  test("reprepares and rebinds the existing plan after a final-review page-number change", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...ENTRY_SELECTIONS,
+        "built-in",
+        "inherit",
+        "inherit",
+        "default",
+        "change-page-numbers",
+        "disable",
+      ],
+      requiredPathQueue: ["fixtures/report.md"],
+      confirmQueue: [false, false, true],
+    });
+
+    expect(result.markdownPdfPrepareCalls).toEqual([
+      { input: "fixtures/report.md", preparedId: "prepared-1" },
+      { input: "fixtures/report.md", pageNumbers: false, preparedId: "prepared-2" },
+    ]);
+    expect(result.markdownPdfPlanCalls).toHaveLength(1);
+    expect(result.markdownPdfExecuteCalls).toEqual([
+      {
+        outputPath: expect.stringMatching(/fixtures\/report\.pdf$/),
+        preparedId: "prepared-2",
+      },
+    ]);
+  });
+
+  test.each(["back", "cancel", "inherit"] as const)(
+    "handles final-review page-number %s without unintended preparation or planning",
+    (pageNumberAction) => {
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        selectQueue: [
+          ...ENTRY_SELECTIONS,
+          "built-in",
+          "inherit",
+          "inherit",
+          "default",
+          "change-page-numbers",
+          pageNumberAction,
+        ],
+        requiredPathQueue: ["fixtures/report.md"],
+        confirmQueue: pageNumberAction === "cancel" ? [false, false] : [false, false, true],
+      });
+
+      expect(result.markdownPdfPrepareCalls).toEqual([
+        { input: "fixtures/report.md", preparedId: "prepared-1" },
+      ]);
+      expect(result.markdownPdfPlanCalls).toHaveLength(1);
+      expect(result.markdownPdfExecuteCalls).toEqual(
+        pageNumberAction === "cancel"
+          ? []
+          : [
+              {
+                outputPath: expect.stringMatching(/fixtures\/report\.pdf$/),
+                preparedId: "prepared-1",
+              },
+            ],
+      );
+    },
+  );
+
+  test("resets page-number state when changing the selected recipe source", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [
+        ...ENTRY_SELECTIONS,
+        "built-in",
+        "inherit",
+        "enable",
+        "change-source",
+        "existing-profile",
+        "inherit",
+        "inherit",
+        "cancel",
+      ],
+      requiredPathQueue: ["fixtures/report.md", "fixtures/profile.yml"],
+    });
+
+    expect(result.markdownPdfPrepareCalls[0]).toHaveProperty("pageNumbers", true);
+    expect(result.markdownPdfPrepareCalls[1]).not.toHaveProperty("pageNumbers");
+    expect(result.selectDefaultsByMessage["Page numbers for this PDF"]).toEqual([
+      "inherit",
+      "inherit",
+    ]);
+  });
+
+  test("keeps review free of warnings and prints requested actual capability posture once", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfRenderWarnings: ["Page-number diagnostic warning"],
+      markdownPdfRendererCapabilityRequests: [
+        { capabilityId: "pageNumbers.start", requestedBy: ["pageNumbers.start"] },
+      ],
+      selectQueue: [...ENTRY_SELECTIONS, "existing-profile", "inherit", "inherit", "default"],
+      requiredPathQueue: ["fixtures/report.md", "fixtures/profile.yml"],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.stderr.match(/Page-number diagnostic warning/g)).toHaveLength(1);
+    expect(result.stderr.match(/Markdown PDF renderer capability assessment:/g)).toHaveLength(1);
+    expect(result.stderr).toContain("- weasyprint: installed (69.0)");
+    expect(result.stderr).toContain("- pageNumbers.start: satisfied, minimum=65.1");
+    expect(result.stderr.indexOf("Final render review")).toBeLessThan(
+      result.stderr.indexOf("Page-number diagnostic warning"),
+    );
+  });
+
+  test("prints one accurate unsupported requested capability result only after execution", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfRendererCapabilityRequests: [
+        { capabilityId: "pageNumbers.start", requestedBy: ["pageNumbers.start"] },
+      ],
+      markdownPdfRendererCapabilities: {
+        renderer: { name: "weasyprint", available: true, version: "64.0" },
+        capabilities: [
+          {
+            id: "pageNumbers.start",
+            fields: ["pageNumbers.start"],
+            minimumVersion: "65.1",
+            status: "unsupported",
+            diagnosticConditionId: "MARKDOWN_PDF_RENDERER_CAPABILITY_UNSUPPORTED",
+          },
+        ],
+      },
+      selectQueue: [...ENTRY_SELECTIONS, "existing-profile", "inherit", "inherit", "default"],
+      requiredPathQueue: ["fixtures/report.md", "fixtures/profile.yml"],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.stderr.match(/Markdown PDF renderer capability assessment:/g)).toHaveLength(1);
+    expect(result.stderr).toContain("- weasyprint: installed (64.0)");
+    expect(result.stderr).toContain(
+      "- pageNumbers.start: unsupported, minimum=65.1, diagnostic=MARKDOWN_PDF_RENDERER_CAPABILITY_UNSUPPORTED",
+    );
+    expect(result.stderr.lastIndexOf("Final render review")).toBeLessThan(
+      result.stderr.indexOf("Markdown PDF renderer capability assessment:"),
+    );
+  });
+
+  test("emits warnings and requested capability posture once after final-review backtracking", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfRenderWarnings: ["Page-number diagnostic warning"],
+      markdownPdfRendererCapabilityRequests: [
+        { capabilityId: "pageNumbers.start", requestedBy: ["pageNumbers.start"] },
+      ],
+      selectQueue: [
+        ...ENTRY_SELECTIONS,
+        "built-in",
+        "inherit",
+        "inherit",
+        "default",
+        "change-page-numbers",
+        "enable",
+      ],
+      requiredPathQueue: ["fixtures/report.md"],
+      confirmQueue: [false, false, true],
+    });
+
+    expect(result.markdownPdfPrepareCalls).toEqual([
+      { input: "fixtures/report.md", preparedId: "prepared-1" },
+      { input: "fixtures/report.md", pageNumbers: true, preparedId: "prepared-2" },
+    ]);
+    expect(result.selectChoicesByMessage["Final render next step"]).toContainEqual({
+      name: "Change page numbers",
+      value: "change-page-numbers",
+    });
+    expect(result.markdownPdfExecuteCalls).toEqual([
+      {
+        outputPath: expect.stringMatching(/fixtures\/report\.pdf$/),
+        preparedId: "prepared-2",
+      },
+    ]);
+    expect(result.stderr.match(/Page-number diagnostic warning/g)).toHaveLength(1);
+    expect(result.stderr.match(/Markdown PDF renderer capability assessment:/g)).toHaveLength(1);
+    expect(result.stderr.match(/Final render review/g)).toHaveLength(2);
+    expect(result.stderr.lastIndexOf("Final render review")).toBeLessThan(
+      result.stderr.indexOf("Page-number diagnostic warning"),
+    );
+    expect(result.stderr.lastIndexOf("Final render review")).toBeLessThan(
+      result.stderr.indexOf("Markdown PDF renderer capability assessment:"),
+    );
+  });
+
+  test("keeps code and non-inherited page state through recoverable output planning", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfOutputErrorMessages: ["Output already exists"],
+      selectQueue: [...ENTRY_SELECTIONS, "built-in", "enable", "disable", "default", "custom"],
+      requiredPathQueue: ["fixtures/report.md", "output/recovered.pdf"],
+      confirmQueue: [false, true, true],
+    });
+
+    expect(result.markdownPdfPrepareCalls).toEqual([
+      {
+        input: "fixtures/report.md",
+        codeHighlight: true,
+        pageNumbers: false,
+        preparedId: "prepared-1",
+      },
+    ]);
+    expect(result.markdownPdfPlanCalls).toHaveLength(2);
+    expect(result.markdownPdfPlanCalls.map((call) => call.preparedId)).toEqual([
+      "prepared-1",
+      "prepared-1",
+    ]);
+    expect(result.markdownPdfExecuteCalls).toEqual([
+      {
+        outputPath: expect.stringMatching(/output\/recovered\.pdf$/),
+        preparedId: "prepared-1",
+      },
+    ]);
+    expect(result.stderr).toContain("Render override:\n- Enable for this render");
+    expect(result.stderr).toContain("- One-render override: disable for this PDF");
+  });
+
+  test("rejects effective page numbers when the selected render disables default CSS", () => {
+    const result = runInteractiveHarness(
+      {
+        mode: "run",
+        markdownPdfMocks: true,
+        markdownPdfNoDefaultCss: true,
+        selectQueue: [...ENTRY_SELECTIONS, "built-in", "inherit", "enable"],
+        requiredPathQueue: ["fixtures/report.md"],
+      },
+      { allowFailure: true },
+    );
+
+    expect(result.error).toContain(
+      "Effective page numbers require the generated default stylesheet",
+    );
+    expect(result.markdownPdfPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfPlanCalls).toEqual([]);
+    expect(result.markdownPdfExecuteCalls).toEqual([]);
+  });
+
+  test("rejects inherited enabled Profile page numbers when default CSS is disabled", () => {
+    const result = runInteractiveHarness(
+      {
+        mode: "run",
+        markdownPdfMocks: true,
+        markdownPdfNoDefaultCss: true,
+        markdownPdfProfilePageNumbersEnabled: true,
+        selectQueue: [...ENTRY_SELECTIONS, "existing-profile", "inherit", "inherit"],
+        requiredPathQueue: ["fixtures/report.md", "fixtures/profile.yml"],
+      },
+      { allowFailure: true },
+    );
+
+    expect(result.error).toContain(
+      "Effective page numbers require the generated default stylesheet",
+    );
+    expect(result.markdownPdfPrepareCalls).toEqual([
+      {
+        input: "fixtures/report.md",
+        profile: "fixtures/profile.yml",
+        preparedId: "prepared-1",
+      },
+    ]);
+    expect(result.markdownPdfPlanCalls).toEqual([]);
+    expect(result.markdownPdfExecuteCalls).toEqual([]);
   });
 });

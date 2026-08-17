@@ -1,7 +1,7 @@
 ---
 title: "Data Query Usage"
 created-date: 2026-03-10
-modified-date: 2026-07-10
+modified-date: 2026-08-16
 status: completed
 agent: codex
 ---
@@ -295,6 +295,9 @@ The report distinguishes:
 - built-in formats that work when DuckDB itself is available
 - extension-backed formats that also depend on DuckDB extension loadability
 - whether extension installability appears blocked by the current environment
+
+Use `cdx-chores doctor --details` for complete human-readable evidence and
+`cdx-chores doctor --json` for automation.
 
 For extension-backed formats, `detected support=yes` does not mean the format is queryable right now. The capability line turns green only when the required DuckDB extension is currently loadable.
 

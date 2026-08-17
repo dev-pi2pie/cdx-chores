@@ -32,16 +32,23 @@ import {
   compileMarkdownPdfFormalGuideOptions,
   createMarkdownPdfFormalGuidePrompts,
   reviseMarkdownPdfFormalGuideCode,
+  reviseMarkdownPdfFormalGuideCover,
   reviseMarkdownPdfFormalGuideLayout,
   reviseMarkdownPdfFormalGuideMargins,
+  reviseMarkdownPdfFormalGuidePageChrome,
+  reviseMarkdownPdfFormalGuidePageNumbers,
   reviseMarkdownPdfFormalGuideToc,
-  type MarkdownPdfFormalGuideGroup,
+  type MarkdownPdfProfileFormalGuideGroup,
 } from "./formal-guide";
 import type { MarkdownPdfInteractiveEntry } from "./types";
 import {
   promptMarkdownPdfRenderCodeHighlightChoice,
   type MarkdownPdfRenderCodeHighlightChoice,
 } from "./render-code-highlighting";
+import {
+  promptMarkdownPdfRenderPageNumberChoice,
+  type MarkdownPdfRenderPageNumberChoice,
+} from "./render-page-numbers";
 
 export type MarkdownPdfAuthoringOutcome =
   | InteractiveNavigationOutcome
@@ -111,11 +118,12 @@ async function promptPreparationMode(): Promise<
 async function prepareCandidate(
   artifact: MarkdownPdfDeterministicArtifact,
   preparation: MarkdownPdfDeterministicPreparation,
+  pathPromptContext: InteractivePathPromptContext,
 ): Promise<PreparedMarkdownPdfDeterministicRecipe> {
   if (preparation === "starter") {
     return prepareMarkdownPdfDeterministicRecipe({ artifact, preparation });
   }
-  const prompts = createMarkdownPdfFormalGuidePrompts();
+  const prompts = createMarkdownPdfFormalGuidePrompts(pathPromptContext);
   if (artifact === "profile") {
     const formalGuideAnswers = await collectMarkdownPdfProfileFormalGuideAnswers(prompts);
     return prepareMarkdownPdfDeterministicRecipe({
@@ -136,9 +144,10 @@ async function prepareCandidate(
 
 async function reviseCandidate(
   candidate: PreparedMarkdownPdfDeterministicRecipe,
-  group: MarkdownPdfFormalGuideGroup,
+  group: MarkdownPdfProfileFormalGuideGroup,
+  pathPromptContext: InteractivePathPromptContext,
 ): Promise<PreparedMarkdownPdfDeterministicRecipe> {
-  const prompts = createMarkdownPdfFormalGuidePrompts();
+  const prompts = createMarkdownPdfFormalGuidePrompts(pathPromptContext);
   if (candidate.artifact === "profile") {
     const answers = candidate.formalGuideAnswers;
     if (!answers) {
@@ -146,6 +155,9 @@ async function reviseCandidate(
     }
     let revised;
     switch (group) {
+      case "cover":
+        revised = await reviseMarkdownPdfFormalGuideCover(answers, prompts);
+        break;
       case "code":
         revised = await reviseMarkdownPdfFormalGuideCode(answers, prompts);
         break;
@@ -158,6 +170,12 @@ async function reviseCandidate(
       case "toc":
         revised = await reviseMarkdownPdfFormalGuideToc(answers, prompts);
         break;
+      case "page-numbers":
+        revised = await reviseMarkdownPdfFormalGuidePageNumbers(answers, prompts);
+        break;
+      case "page-chrome":
+        revised = await reviseMarkdownPdfFormalGuidePageChrome(answers, prompts);
+        break;
     }
     return prepareMarkdownPdfDeterministicRecipe({
       artifact: "profile",
@@ -167,7 +185,13 @@ async function reviseCandidate(
     });
   }
   const answers = candidate.formalGuideAnswers;
-  if (!answers || group === "code") {
+  if (
+    !answers ||
+    group === "cover" ||
+    group === "code" ||
+    group === "page-numbers" ||
+    group === "page-chrome"
+  ) {
     return candidate;
   }
   const revised =
@@ -203,10 +227,11 @@ async function reviewCandidate(
     | {
         candidate: PreparedMarkdownPdfDeterministicRecipe;
         codeHighlight: MarkdownPdfRenderCodeHighlightChoice;
+        pageNumbers: MarkdownPdfRenderPageNumberChoice;
       }
     | undefined;
   while (true) {
-    renderDeterministicRecipeReview(runtime, candidate, markdownInput);
+    await renderDeterministicRecipeReview(runtime, candidate, markdownInput);
     const action = await select<MarkdownPdfCandidateReviewAction>({
       message: "Recipe review next step",
       choices: markdownPdfCandidateReviewChoices(entry, candidate),
@@ -220,29 +245,49 @@ async function reviewCandidate(
     if (action === "temporary-render" || action === "save-and-render") {
       const currentCodeHighlight =
         renderContext?.candidate === candidate ? renderContext.codeHighlight : "inherit";
-      const codeHighlight = await promptMarkdownPdfRenderCodeHighlightChoice(currentCodeHighlight);
-      if (codeHighlight === "back") {
-        continue;
+      let codeHighlight = currentCodeHighlight;
+      let pageNumbers =
+        renderContext?.candidate === candidate ? renderContext.pageNumbers : "inherit";
+      while (true) {
+        const codeChoice = await promptMarkdownPdfRenderCodeHighlightChoice(codeHighlight);
+        if (codeChoice === "back") {
+          break;
+        }
+        if (codeChoice === "cancel") {
+          return "complete";
+        }
+        codeHighlight = codeChoice;
+        const pageChoice = await promptMarkdownPdfRenderPageNumberChoice(pageNumbers);
+        if (pageChoice === "cancel") {
+          return "complete";
+        }
+        if (pageChoice === "back") {
+          continue;
+        }
+        pageNumbers = pageChoice;
+        const selection: MarkdownPdfGeneratedLifecycleSelection = {
+          candidate: { kind: "deterministic", candidate },
+          codeHighlight,
+          kind: "generated-lifecycle",
+          lifecycle: action,
+          markdownInput: markdownInput!,
+          pageNumbers,
+          report: { kind: "none" },
+        };
+        if (!onGeneratedLifecycle) {
+          return selection;
+        }
+        const outcome = await onGeneratedLifecycle(selection);
+        if (outcome.kind === "complete") {
+          return "complete";
+        }
+        renderContext = {
+          candidate,
+          codeHighlight: outcome.codeHighlight,
+          pageNumbers: outcome.pageNumbers,
+        };
+        break;
       }
-      if (codeHighlight === "cancel") {
-        return "complete";
-      }
-      const selection: MarkdownPdfGeneratedLifecycleSelection = {
-        candidate: { kind: "deterministic", candidate },
-        codeHighlight,
-        kind: "generated-lifecycle",
-        lifecycle: action,
-        markdownInput: markdownInput!,
-        report: { kind: "none" },
-      };
-      if (!onGeneratedLifecycle) {
-        return selection;
-      }
-      const outcome = await onGeneratedLifecycle(selection);
-      if (outcome.kind === "complete") {
-        return "complete";
-      }
-      renderContext = { candidate, codeHighlight: outcome.codeHighlight };
       continue;
     }
     if (action === "save") {
@@ -267,7 +312,14 @@ async function reviewCandidate(
           ? "margins"
           : action === "revise-toc"
             ? "toc"
-            : "code",
+            : action === "revise-cover"
+              ? "cover"
+              : action === "revise-page-numbers"
+                ? "page-numbers"
+                : action === "revise-page-chrome"
+                  ? "page-chrome"
+                  : "code",
+      pathPromptContext,
     );
   }
 }
@@ -351,7 +403,7 @@ export async function runMarkdownPdfAuthoring(
         }
         continue;
       }
-      const candidate = await prepareCandidate(artifact, preparation);
+      const candidate = await prepareCandidate(artifact, preparation, pathPromptContext);
       const outcome = await reviewCandidate(
         runtime,
         pathPromptContext,

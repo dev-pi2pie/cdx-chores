@@ -8,6 +8,12 @@ export {
   type MdPdfProjectCodexOutputWriteMode,
 } from "./output-plan";
 export {
+  assertMdPdfProjectBundleWritePreflight,
+  validateMdPdfProjectBundleCompleteness,
+  type MarkdownPdfProjectBundleCompleteness,
+  type ValidateMdPdfProjectBundleCompletenessOptions,
+} from "./project-bundle-completeness";
+export {
   classifyMdPdfProjectCodexProfileSignalMode,
   classifyMdPdfProjectCodexSignalMode,
   classifyMdPdfProjectCodexSignalModes,
@@ -40,7 +46,14 @@ export {
   type MarkdownPdfProjectCodexRenderCommand,
 } from "./render-command";
 export {
+  assessMdPdfProjectCodexProfileBodyCompatibility,
+  MD_PDF_PROJECT_CODEX_PAGE_NUMBER_VALIDATION_NAMES,
+  validateMdPdfProjectCodexTemplatePageNumberCssOwnership,
+} from "./page-number-compatibility";
+export {
   validateMdPdfProjectCodexProject,
+  type MarkdownPdfProjectCodexBodyBoundaryDiagnostic,
+  type MarkdownPdfProjectCodexValidationDiagnostics,
   type MarkdownPdfProjectCodexValidationResult,
   type MarkdownPdfProjectCodexValidationStatus,
   type MarkdownPdfProjectCodexValidationSummary,
@@ -50,6 +63,7 @@ export {
   serializeMdPdfProjectCodexReportArtifact,
   writeMdPdfProjectCodexReportArtifact,
 } from "./report";
+export { createMdPdfProjectCodexHandoffProjection } from "./handoff-projection";
 export { MARKDOWN_PDF_PROJECT_CODEX_REPORT_ARTIFACT_TYPE } from "./types-report";
 export { printMdPdfProjectCodexSummary } from "./summary";
 export {
@@ -76,6 +90,11 @@ export type {
   MarkdownPdfProjectCodexProfileBasisSignals,
   MarkdownPdfProjectCodexProfilePhaseSummary,
   MarkdownPdfProjectCodexProfilePhaseSignalMode,
+  MarkdownPdfProjectCodexHandoffArtifactAvailability,
+  MarkdownPdfProjectCodexHandoffCapabilityRequirement,
+  MarkdownPdfProjectCodexHandoffDiagnostic,
+  MarkdownPdfProjectCodexHandoffProjection,
+  MarkdownPdfProjectCodexHandoffRenderUsability,
   MarkdownPdfProjectCodexReportArtifact,
   MarkdownPdfProjectCodexSignalMode,
   MarkdownPdfProjectCodexTemplateOwnedDocumentDirection,

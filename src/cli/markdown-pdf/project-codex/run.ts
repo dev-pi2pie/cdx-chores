@@ -8,14 +8,18 @@ import {
   writePreparedMdPdfProjectCodexReportIfRequested,
 } from "./prepared";
 import type { MdPdfProjectCodexOptions } from "./types";
+import { createMdPdfProjectCodexReportArtifact } from "./report";
 import { printMdPdfProjectCodexSummary } from "./summary";
-import { sanitizeMdPdfProjectCodexReportText } from "./report-redaction";
+import {
+  escapeMdPdfProjectCodexTerminalText,
+  sanitizeMdPdfProjectCodexTerminalText,
+} from "./report-redaction";
 import type { MarkdownPdfProjectCodexValidationSummary } from "./validate-project";
 
 function throwNoUsableProject(validation: MarkdownPdfProjectCodexValidationSummary): never {
   throw new CliError(
     validation.fallbackReason
-      ? sanitizeMdPdfProjectCodexReportText(validation.fallbackReason)
+      ? sanitizeMdPdfProjectCodexTerminalText(validation.fallbackReason)
       : "No usable Markdown PDF project path is available for the provided signals.",
     {
       code: "NO_USABLE_PROJECT",
@@ -25,7 +29,9 @@ function throwNoUsableProject(validation: MarkdownPdfProjectCodexValidationSumma
 }
 
 function publicProjectPath(runtime: CliRuntime, path: string): string {
-  return publicPathDisplay(runtime, path)?.display ?? publicPathBasename(path);
+  return escapeMdPdfProjectCodexTerminalText(
+    publicPathDisplay(runtime, path)?.display ?? publicPathBasename(path),
+  );
 }
 
 export async function actionMdPdfProjectCodex(
@@ -36,14 +42,12 @@ export async function actionMdPdfProjectCodex(
   const preflight = {
     outputPlan: prepared.binding.outputPlan,
     profilePhase: prepared.profilePhase,
-    signals: prepared.signals,
+    reportArtifact: prepared.binding.reportArtifact,
     state: prepared.binding.state,
-    templatePhase: prepared.binding.templatePhase,
     validation: prepared.binding.validation,
   };
-  printMdPdfProjectCodexSummary(runtime, preflight);
-
   if (preflight.state.dryRun) {
+    printMdPdfProjectCodexSummary(runtime, preflight);
     await writePreparedMdPdfProjectCodexReportIfRequested(runtime, prepared);
     if (preflight.validation.decisionMode === "no-usable-project") {
       throwNoUsableProject(preflight.validation);
@@ -53,6 +57,7 @@ export async function actionMdPdfProjectCodex(
 
   await writePreparedMdPdfProjectCodexBundle(runtime, prepared);
   if (preflight.validation.decisionMode === "no-usable-project") {
+    printMdPdfProjectCodexSummary(runtime, preflight);
     if (preflight.outputPlan.report) {
       printLine(
         runtime.stderr,
@@ -61,6 +66,19 @@ export async function actionMdPdfProjectCodex(
     }
     throwNoUsableProject(preflight.validation);
   }
+  printMdPdfProjectCodexSummary(runtime, {
+    ...preflight,
+    reportArtifact: createMdPdfProjectCodexReportArtifact({
+      outputPlan: preflight.outputPlan,
+      profilePhase: preflight.profilePhase,
+      projectArtifactsWritten: true,
+      runtime,
+      signals: prepared.signals,
+      state: preflight.state,
+      templatePhase: prepared.binding.templatePhase,
+      validation: preflight.validation,
+    }),
+  });
   printLine(
     runtime.stderr,
     `Wrote Markdown PDF project bundle: ${publicProjectPath(runtime, preflight.outputPlan.outputDirectory)}`,

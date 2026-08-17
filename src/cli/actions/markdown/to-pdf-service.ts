@@ -18,8 +18,10 @@ import {
   normalizeMarkdownPdfProfile,
   readMarkdownPdfProfileFile,
   resolveMarkdownPdfCodeOptions,
+  resolveMarkdownPdfPageNumberConfiguration,
   type EffectiveMarkdownPdfCodeOptions,
   type NormalizedMarkdownPdfProfile,
+  type ResolvedMarkdownPdfPageNumberConfiguration,
 } from "../../markdown-pdf/profile";
 import {
   collectMarkdownPdfTitleSignals,
@@ -33,10 +35,24 @@ import {
 } from "../../markdown-pdf/render";
 import { MARKDOWN_PDF_MINIMUM_PANDOC_VERSION } from "../../markdown-pdf/requirements";
 import {
+  collectMarkdownPdfDiagnostics,
+  markdownPdfDiagnosticWarnings,
+  type MarkdownPdfDiagnostics,
+} from "../../markdown-pdf/diagnostics";
+import {
+  assertMarkdownPdfRendererCapabilities,
+  assessMarkdownPdfRendererCapabilities,
+  collectMarkdownPdfRendererCapabilityRequests,
+  type MarkdownPdfRendererCapabilityAssessment,
+  type MarkdownPdfRendererCapabilityRequest,
+} from "../../markdown-pdf/renderer-capabilities";
+import {
   normalizeMarkdownPdfOptions,
   type NormalizeMarkdownPdfOptionsInput,
   type NormalizedMarkdownPdfOptions,
 } from "../../markdown-pdf/validation";
+import { assessMarkdownPdfTemplateCompatibility } from "../../markdown-pdf/template-compatibility";
+import type { MarkdownPdfTemplateCompatibilityResult } from "../../markdown-pdf/template-compatibility";
 
 export interface PrepareMarkdownPdfRenderInput extends NormalizeMarkdownPdfOptionsInput {
   input: string;
@@ -47,6 +63,7 @@ export interface PrepareMarkdownPdfRenderInput extends NormalizeMarkdownPdfOptio
   css?: string;
   noDefaultCss?: boolean;
   codeHighlight?: boolean;
+  pageNumbers?: boolean;
 }
 
 export interface PreparedMarkdownPdfRender {
@@ -54,14 +71,18 @@ export interface PreparedMarkdownPdfRender {
   code: EffectiveMarkdownPdfCodeOptions;
   customCssPath?: string;
   customTemplatePath?: string;
+  diagnostics: MarkdownPdfDiagnostics;
   ignoredBundleProfileFiles: string[];
   inputPath: string;
   noDefaultCss?: boolean;
   normalizedProfile: NormalizedMarkdownPdfProfile;
   options: NormalizedMarkdownPdfOptions;
+  pageNumberConfiguration: ResolvedMarkdownPdfPageNumberConfiguration;
+  rendererCapabilityRequests: MarkdownPdfRendererCapabilityRequest[];
   recipe: MarkdownPdfRecipe;
   resolvedInputs: MarkdownPdfRenderBundleResolvedInputs;
   resolvedBundle?: MarkdownPdfRenderBundleResolvedInputs;
+  templateCompatibility: MarkdownPdfTemplateCompatibilityResult;
   titleSignals: MarkdownPdfTitleSignals;
 }
 
@@ -87,6 +108,70 @@ export interface ResolvedMarkdownPdfRenderOutput {
 export interface ExecutePlannedMarkdownPdfRenderOptions {
   runner?: MarkdownPdfProcessRunner;
   codeHighlighter?: MarkdownPdfCodeHighlighter;
+}
+
+export interface MarkdownPdfRenderExecutionResult extends RenderMarkdownPdfResult {
+  diagnostics: MarkdownPdfDiagnostics;
+  rendererCapabilities: MarkdownPdfRendererCapabilityAssessment;
+}
+
+async function requireMarkdownPdfRenderer(
+  requests: readonly MarkdownPdfRendererCapabilityRequest[],
+  platform: NodeJS.Platform,
+  runner: MarkdownPdfProcessRunner,
+) {
+  try {
+    return await requireCommandAvailable("weasyprint", platform, runner);
+  } catch (error) {
+    if (!(error instanceof CliError) || requests.length === 0) {
+      throw error;
+    }
+
+    if (error.code === "DEPENDENCY_CHECK_FAILED") {
+      assertMarkdownPdfRendererCapabilities({
+        assessment: assessMarkdownPdfRendererCapabilities({ probeFailed: true }),
+        requests,
+      });
+    }
+    if (error.code === "DEPENDENCY_MISSING") {
+      assertMarkdownPdfRendererCapabilities({
+        assessment: assessMarkdownPdfRendererCapabilities({
+          renderer: {
+            name: "weasyprint",
+            available: false,
+            version: null,
+            installHint: "",
+          },
+        }),
+        requests,
+      });
+    }
+
+    throw error;
+  }
+}
+
+export const MARKDOWN_PDF_PAGE_NUMBERS_REQUIRE_DEFAULT_CSS_REASON =
+  "page-numbers-require-generated-default-css";
+
+export interface MarkdownPdfRenderConfigurationConflict {
+  reason: typeof MARKDOWN_PDF_PAGE_NUMBERS_REQUIRE_DEFAULT_CSS_REASON;
+  noDefaultCss: true;
+  pageNumbers: ResolvedMarkdownPdfPageNumberConfiguration;
+}
+
+export function findMarkdownPdfRenderConfigurationConflict(input: {
+  noDefaultCss?: boolean;
+  pageNumbers: ResolvedMarkdownPdfPageNumberConfiguration;
+}): MarkdownPdfRenderConfigurationConflict | undefined {
+  if (input.noDefaultCss !== true || !input.pageNumbers.effective.enabled) {
+    return undefined;
+  }
+  return {
+    reason: MARKDOWN_PDF_PAGE_NUMBERS_REQUIRE_DEFAULT_CSS_REASON,
+    noDefaultCss: true,
+    pageNumbers: input.pageNumbers,
+  };
 }
 
 export async function prepareMarkdownPdfRender(
@@ -142,9 +227,28 @@ export async function prepareMarkdownPdfRender(
     profile: normalizedProfile.profile.code,
     cliHighlight: input.codeHighlight,
   });
+  const pageNumberConfiguration = resolveMarkdownPdfPageNumberConfiguration({
+    profile: normalizedProfile.profile.pageNumbers,
+    profileSource: profilePath ? "profile" : "default",
+    override: input.pageNumbers,
+  });
+  const renderConfigurationConflict = findMarkdownPdfRenderConfigurationConflict({
+    noDefaultCss: input.noDefaultCss,
+    pageNumbers: pageNumberConfiguration,
+  });
+  if (renderConfigurationConflict) {
+    throw new CliError(
+      "Effective page numbers require the generated default stylesheet; remove --no-default-css or disable page numbers for this render.",
+      { code: "INVALID_INPUT", exitCode: 2 },
+    );
+  }
+  const effectiveProfile: NormalizedMarkdownPdfProfile = {
+    ...normalizedProfile.profile,
+    pageNumbers: pageNumberConfiguration.effective,
+  };
   const titleSignals = collectMarkdownPdfTitleSignals(parsedMarkdown.content, parsedMarkdown.data);
-  const recipe = createMarkdownPdfRecipe(options, {
-    profile: normalizedProfile.profile,
+  const initialRecipe = createMarkdownPdfRecipe(options, {
+    profile: effectiveProfile,
     titleSignals,
   });
 
@@ -154,6 +258,31 @@ export async function prepareMarkdownPdfRender(
   if (customCssPath) {
     await ensureExistingFile(customCssPath, "CSS");
   }
+
+  const selectedTemplateHtml = customTemplatePath
+    ? await readTextFileRequired(customTemplatePath)
+    : initialRecipe.templateHtml;
+  const templateCompatibility = assessMarkdownPdfTemplateCompatibility({
+    builtIn: customTemplatePath === undefined,
+    profile: effectiveProfile,
+    templateHtml: selectedTemplateHtml,
+  });
+  const diagnostics = collectMarkdownPdfDiagnostics({
+    profile: normalizedProfile.profile,
+    profileRevision: normalizedProfile.revisionAssessment,
+    pageNumbers: pageNumberConfiguration.effective,
+    templateCompatibility,
+    noDefaultCss: input.noDefaultCss,
+  });
+  const rendererCapabilityRequests = collectMarkdownPdfRendererCapabilityRequests({
+    profile: normalizedProfile.profile,
+    pageNumbers: pageNumberConfiguration.effective,
+  });
+  const recipe = createMarkdownPdfRecipe(options, {
+    bodyBoundary: templateCompatibility.bodyBoundary,
+    profile: effectiveProfile,
+    titleSignals,
+  });
 
   const resolvedInputs =
     resolvedBundle ??
@@ -168,14 +297,18 @@ export async function prepareMarkdownPdfRender(
     code,
     customCssPath,
     customTemplatePath,
+    diagnostics,
     ignoredBundleProfileFiles,
     inputPath,
     noDefaultCss: input.noDefaultCss,
     normalizedProfile: normalizedProfile.profile,
     options,
+    pageNumberConfiguration,
     recipe,
+    rendererCapabilityRequests,
     resolvedInputs,
     resolvedBundle,
+    templateCompatibility,
     titleSignals,
   };
 }
@@ -228,13 +361,23 @@ export async function executePlannedMarkdownPdfRender(
   runtime: CliRuntime,
   plan: PlannedMarkdownPdfRender,
   options: ExecutePlannedMarkdownPdfRenderOptions = {},
-): Promise<RenderMarkdownPdfResult> {
+): Promise<MarkdownPdfRenderExecutionResult> {
   const runner = options.runner ?? execCommand;
   const pandoc = await requireCommandAvailable("pandoc", runtime.platform, runner);
   requireCommandMinimumVersion(pandoc, MARKDOWN_PDF_MINIMUM_PANDOC_VERSION, "md to-pdf");
-  await requireCommandAvailable("weasyprint", runtime.platform, runner);
+  const weasyprint = await requireMarkdownPdfRenderer(
+    plan.prepared.rendererCapabilityRequests,
+    runtime.platform,
+    runner,
+  );
+  const rendererCapabilities = assessMarkdownPdfRendererCapabilities({ renderer: weasyprint });
+  assertMarkdownPdfRendererCapabilities({
+    assessment: rendererCapabilities,
+    requests: plan.prepared.rendererCapabilityRequests,
+  });
 
-  return renderMarkdownPdf({
+  const result = await renderMarkdownPdf({
+    bodyBoundary: plan.prepared.templateCompatibility.bodyBoundary,
     inputPath: plan.prepared.inputPath,
     outputPath: plan.outputPath,
     templateHtml: plan.prepared.recipe.templateHtml,
@@ -245,8 +388,15 @@ export async function executePlannedMarkdownPdfRender(
     htmlOutputPath: plan.htmlOutputPath,
     overwrite: plan.overwrite,
     options: plan.prepared.options,
+    pageNumbers: plan.prepared.pageNumberConfiguration.effective,
     code: plan.prepared.code,
     runner,
     codeHighlighter: options.codeHighlighter,
   });
+  return {
+    ...result,
+    diagnostics: plan.prepared.diagnostics,
+    rendererCapabilities,
+    warnings: [...markdownPdfDiagnosticWarnings(plan.prepared.diagnostics), ...result.warnings],
+  };
 }

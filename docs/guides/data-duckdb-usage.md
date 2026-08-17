@@ -1,7 +1,7 @@
 ---
 title: "Data DuckDB Usage"
 created-date: 2026-03-12
-modified-date: 2026-07-10
+modified-date: 2026-08-16
 status: completed
 agent: codex
 ---
@@ -50,6 +50,9 @@ cdx-chores data duckdb extension install --all-supported
 - per-extension loadability
 - per-extension installability
 - per-extension cache path information reported by DuckDB when available
+
+This backend view is separate from top-level `cdx-chores doctor`, which reports
+workflow-level capability impact.
 
 User-facing cache paths are sanitized to use `$HOME/.duckdb/...` instead of revealing machine-specific absolute home paths.
 

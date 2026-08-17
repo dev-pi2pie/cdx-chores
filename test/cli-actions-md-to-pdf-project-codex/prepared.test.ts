@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
@@ -29,7 +29,7 @@ const BASE_PROFILE = [
 function adaptedProfileResponse(): string {
   return JSON.stringify({
     decision_mode: "adapted",
-    selected_candidate_id: "article",
+    selected_candidate_id: "base-profile",
     accepted_patches: [{ op: "replace", path: "/toc/enabled", value: true }],
     accepted_font_patches: [],
     reasoning: "Adapt the project profile to the document.",
@@ -45,7 +45,7 @@ function adaptedTemplateResponse(): string {
     template_family: "document-layered",
     recipe_preset: "article",
     slots: {
-      recipe_preset: { preset: "article", source: "base-profile" },
+      recipe_preset: { preset: "article", source: "renderer-default" },
       cover: {
         enabled: true,
         byline: "none",
@@ -75,6 +75,159 @@ function adaptedTemplateResponse(): string {
 }
 
 describe("cli action modules: md pdf-project codex prepared artifact", () => {
+  test("stops injected progress as error when typed Project validation rejects cover incompatibility", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-progress-validation-error",
+      async (fixtureDir) => {
+        await writeFile(
+          join(fixtureDir, "base.yml"),
+          [
+            "profile:",
+            "  id: md-pdf-profile-20260101T000000Z-ba5e0001",
+            "  source: deterministic",
+            "  createdAt: 2026-01-01T00:00:00Z",
+            "cover:",
+            "  enabled: true",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+        await writeFile(join(fixtureDir, "report.md"), "# Report\n\nBody.\n", "utf8");
+        const events: string[] = [];
+        const codexProgressPresenter: CodexProgressPresenter = {
+          start: (label) => events.push(`start:${label}`),
+          update: (label) => events.push(`update:${label}`),
+          stop: (status) => events.push(`stop:${status}`),
+        };
+        const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+
+        const prepared = await prepareMdPdfProjectCodex(runtime, {
+          baseProfile: "base.yml",
+          codexProgressPresenter,
+          dryRun: true,
+          input: "report.md",
+          intent: "Create a custom layout.",
+          output: "project-output",
+          profileCodexRunner: async () => adaptedProfileResponse(),
+          templateCodexRunner: async () => {
+            const response = JSON.parse(adaptedTemplateResponse()) as {
+              managed_assets: unknown[];
+              slots: { cover: { enabled: boolean; style: string } };
+            };
+            response.slots.cover.enabled = false;
+            response.slots.cover.style = "none";
+            response.managed_assets = [];
+            return JSON.stringify(response);
+          },
+        });
+
+        expect(prepared.binding.validation.decisionMode).toBe("no-usable-project");
+        expect(prepared.binding.validation.renderCommand).toBeUndefined();
+        expect(prepared.binding.validation.results).toContainEqual(
+          expect.objectContaining({
+            message: expect.stringContaining("profile-owned text cover"),
+            name: "profile-template-compatibility",
+            status: "failed",
+          }),
+        );
+        expect(prepared.binding.outputPlan.report).toBeUndefined();
+        expect(prepared.binding.reportArtifact.handoff).toMatchObject({
+          artifacts: { availability: "unavailable" },
+          render: { usability: "unavailable" },
+        });
+        expect(prepared.binding.reportArtifact.handoff.render).not.toHaveProperty("command");
+        expect(events).toEqual([
+          "start:Requesting Codex Markdown PDF project profile recommendation",
+          "update:Requesting Codex Markdown PDF project template recommendation",
+          "stop:error",
+        ]);
+        expect(await pathExists(join(fixtureDir, "project-output"))).toBe(false);
+      },
+    );
+  });
+
+  test("projects shared diagnostics and capability requirements into a planned handoff", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-prepared-page-validation",
+      async (fixtureDir) => {
+        await writeFile(
+          join(fixtureDir, "base.yml"),
+          [
+            "header:",
+            "  center: Existing page chrome",
+            "pageNumbers:",
+            "  enabled: true",
+            "  scope: document",
+            "  countFrom: document",
+            "  start: 4",
+            "  increment: 1",
+            "  position: top-center",
+            "  format: '{page}'",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+        const filesBefore = await readdir(fixtureDir);
+        const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+
+        const prepared = await prepareMdPdfProjectCodex(runtime, {
+          baseProfile: "base.yml",
+          dryRun: true,
+          output: "project-output",
+        });
+
+        expect(prepared.binding.validation.diagnostics.conditions).toEqual([
+          expect.objectContaining({
+            conditionId: "MARKDOWN_PDF_PAGE_NUMBER_SLOT_OCCUPIED",
+            context: expect.objectContaining({ area: "header", slot: "center" }),
+          }),
+        ]);
+        expect(prepared.binding.validation.capabilityRequirements).toEqual([
+          {
+            capabilityId: "pageNumbers.start",
+            minimumVersion: "65.1",
+            requestedBy: ["pageNumbers.start"],
+          },
+          {
+            capabilityId: "pageNumbers.scope.document",
+            minimumVersion: "65.1",
+            requestedBy: ["pageNumbers.scope"],
+          },
+        ]);
+        const renderCommand = prepared.binding.validation.renderCommand;
+        expect(renderCommand).toBeDefined();
+        if (!renderCommand) {
+          throw new Error("expected planned Project render command");
+        }
+        expect(prepared.binding.reportArtifact.handoff).toEqual({
+          profile: {
+            id: prepared.binding.outputPlan.identity.profileId,
+            bundlePath: "profile.yml",
+          },
+          artifacts: { availability: "planned" },
+          render: {
+            usability: "planned",
+            command: renderCommand,
+          },
+          diagnostics: prepared.binding.validation.diagnostics.conditions,
+          capabilityRequirements: prepared.binding.validation.capabilityRequirements,
+        });
+        expect(prepared.binding.reportArtifact.handoff).not.toHaveProperty("pageNumbers");
+        expect(prepared.binding.reportArtifact.handoff).not.toHaveProperty("renderer");
+        expect(
+          prepared.binding.reportArtifact.handoff.capabilityRequirements.map((requirement) =>
+            Object.keys(requirement).sort(),
+          ),
+        ).toEqual([
+          ["capabilityId", "minimumVersion", "requestedBy"],
+          ["capabilityId", "minimumVersion", "requestedBy"],
+        ]);
+        expect(await readdir(fixtureDir)).toEqual(filesBefore);
+        expect(await pathExists(join(fixtureDir, "project-output"))).toBe(false);
+      },
+    );
+  });
+
   test("uses one injected presenter across the Profile and Template Codex stages", async () => {
     await withTempFixtureDir("md-pdf-project-codex-progress-shared", async (fixtureDir) => {
       await writeFile(join(fixtureDir, "base.yml"), BASE_PROFILE, "utf8");
@@ -228,7 +381,11 @@ describe("cli action modules: md pdf-project codex prepared artifact", () => {
       ).toBe(originalCover.toString("base64"));
       const report = JSON.parse(
         await readFile(join(fixtureDir, "accepted-project", "project.codex-report.json"), "utf8"),
-      ) as { followUpRenderCommand: { args: string[] }; identities: Record<string, string> };
+      ) as {
+        followUpRenderCommand: { args: string[] };
+        handoff: { artifacts: { availability: string }; render: { usability: string } };
+        identities: Record<string, string>;
+      };
       expect(report.identities).toEqual({
         projectBundleId: prepared.identity.projectBundleId,
         profileId: prepared.identity.profileId,
@@ -236,6 +393,14 @@ describe("cli action modules: md pdf-project codex prepared artifact", () => {
         createdAt: prepared.identity.createdAt,
       });
       expect(report.followUpRenderCommand.args).toContain("accepted-project");
+      expect(report.handoff).toMatchObject({
+        artifacts: { availability: "written" },
+        render: { usability: "usable" },
+      });
+      expect(rebound.binding.reportArtifact.handoff).toMatchObject({
+        artifacts: { availability: "planned" },
+        render: { usability: "planned" },
+      });
 
       await expectCliError(
         () =>

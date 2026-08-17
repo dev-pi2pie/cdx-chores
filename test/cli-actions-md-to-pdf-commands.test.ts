@@ -147,13 +147,22 @@ async function createFakeMarkdownPdfDependencies(binDir: string, html: string): 
 }
 
 describe("cli command: md to-pdf", () => {
-  test("lists bundle and code highlight flags in help", () => {
+  test("lists bundle, code highlight, and page-number flags in help", () => {
     const result = runCli(["md", "to-pdf", "--help"]);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("--bundle <directory>");
     expect(result.stdout).toContain("--code-highlight");
     expect(result.stdout).toContain("--no-code-highlight");
+    expect(result.stdout).toContain(
+      [
+        "--page-numbers            Enable page numbers for this render using",
+        "                            Profile/default details",
+      ].join("\n"),
+    );
+    expect(result.stdout).toContain(
+      "--no-page-numbers         Disable page numbers for this render",
+    );
     expect(result.stderr).toBe("");
   });
 
@@ -485,6 +494,7 @@ describe("cli command: md pdf-template codex", () => {
       expect(result.stdout).toContain(`Codex report: ${toRepoRelativePath(reportPath)}`);
       expect(result.stdout).toContain("Follow-up render: cdx-chores md to-pdf");
       expect(result.stdout).toContain(`--bundle '${toRepoRelativePath(outputPath)}'`);
+      expect(result.stdout).toContain(`--profile '${toRepoRelativePath(baseProfilePath)}'`);
       expect(result.stdout).not.toContain("--template");
       expect(result.stdout).not.toContain("--css");
       expect(result.stderr).toContain("Wrote Markdown PDF template bundle:");
@@ -494,6 +504,7 @@ describe("cli command: md pdf-template codex", () => {
         artifactType: string;
         decision: { mode: string };
         files: Array<{ bundlePath: string }>;
+        followUpRenderCommand: string;
       };
       expect(report.artifactType).toBe("markdown-pdf-codex-template-report");
       expect(report.decision.mode).toBe("deterministic");
@@ -501,6 +512,10 @@ describe("cli command: md pdf-template codex", () => {
         "template.html",
         "style.css",
       ]);
+      expect(report.followUpRenderCommand).toContain(
+        `--profile '${toRepoRelativePath(baseProfilePath)}'`,
+      );
+      expect(await pathExists(join(outputPath, "profile.yml"))).toBe(false);
     });
   });
 
@@ -726,12 +741,7 @@ describe("cli command: md pdf-project codex", () => {
           signalMode: "deterministic",
         },
       });
-      expect(report.files.map((file) => file.role)).toEqual([
-        "profile",
-        "template-html",
-        "style-css",
-        "project-report",
-      ]);
+      expect(report.files.map((file) => file.role)).toEqual(["project-report"]);
       expect(report.files.find((file) => file.role === "project-report")).toMatchObject({
         bundlePath: "project.codex-report.json",
       });
@@ -788,7 +798,9 @@ describe("cli command: md pdf-project codex", () => {
         expect(result.stdout).toContain("Codex report:");
         expect(result.stdout).toContain(toRepoRelativePath(reportPath));
         expect(result.stdout).not.toContain(fixtureDir);
-        expect(result.stderr).toContain("profile-owned text cover");
+        expect(result.stderr).toContain(
+          "requires exactly one live .pdf-cover element when the Profile cover is enabled",
+        );
         expect(await pathExists(join(outputPath, "profile.yml"))).toBe(false);
         expect(await pathExists(join(outputPath, "template.html"))).toBe(false);
         expect(await pathExists(join(outputPath, "style.css"))).toBe(false);
@@ -805,7 +817,7 @@ describe("cli command: md pdf-project codex", () => {
         expect(report.project).toMatchObject({
           decisionMode: "no-usable-project",
           fallbackReason:
-            "Project template would defeat the profile-owned text cover; disable the profile cover or provide a compatible cover template.",
+            "The selected managed Markdown PDF template requires exactly one live .pdf-cover element when the Profile cover is enabled (found 0).",
         });
         expect(report.input.baseProfile.basename).toBe("base.yml");
         expect(report.files.map((file) => file.role)).toEqual(["project-report"]);

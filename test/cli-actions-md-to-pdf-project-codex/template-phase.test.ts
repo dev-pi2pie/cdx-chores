@@ -257,12 +257,10 @@ describe("cli action modules: md pdf-project codex template phase", () => {
             key: "symbols",
             role: "code",
           }),
-          expect.objectContaining({
-            family: "Profile Chrome",
-            key: "default",
-            role: "pageChrome",
-          }),
         ]),
+      );
+      expect(templatePhase.signals.fonts.profileFonts.families).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ role: "pageChrome" })]),
       );
       expect(profilePhase.finalProfile).toMatchObject({
         fonts: {
@@ -358,6 +356,174 @@ describe("cli action modules: md pdf-project codex template phase", () => {
       );
       await expectNoPlannedProjectArtifacts(outputPlan);
     });
+  });
+
+  test("keeps final-profile page numbers and page chrome private to Template coordination", async () => {
+    await withTempFixtureDir(
+      "md-pdf-project-codex-template-private-page-profile",
+      async (fixtureDir) => {
+        await writeFile(
+          join(fixtureDir, "report.md"),
+          "# Report\n\n```ts\nconst ok = true;\n```\n",
+          "utf8",
+        );
+        await writeFile(join(fixtureDir, "cover.png"), minimalPng(1200, 800));
+        await writeFile(
+          join(fixtureDir, "base.yml"),
+          [
+            "page:",
+            "  size: Letter",
+            "toc:",
+            "  enabled: false",
+            "code:",
+            "  highlight: true",
+            "  theme: github-light",
+            "  lineNumbers: true",
+            "  transformerNotation: false",
+            "titleBlock:",
+            "  metadataTitle: show",
+            "header:",
+            "  left: Private project header",
+            "  style:",
+            "    fontSize: 7.5pt",
+            "    color: '#123ABC'",
+            "    separator:",
+            "      width: 0.7pt",
+            "      style: solid",
+            "      color: '#456DEF'",
+            "      gap: 3mm",
+            "footer:",
+            "  right: Private project footer",
+            "pageNumbers:",
+            "  enabled: true",
+            "  scope: body",
+            "  countFrom: body",
+            "  start: 17",
+            "  increment: 3",
+            "  position: top-right",
+            "  format: 'Confidential {page} / {pages}'",
+            "fonts:",
+            "  body:",
+            "    default: Private Body Font",
+            "  code:",
+            "    default: Private Code Font",
+            "  pageChrome:",
+            "    default: Private Chrome Font",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+
+        let capturedFacts: Record<string, unknown> | undefined;
+        const { outputPlan, profilePhase, templatePhase } = await runTemplatePhaseFixture(
+          fixtureDir,
+          {
+            baseProfile: "base.yml",
+            coverImage: "cover.png",
+            input: "report.md",
+            intent: "use a restrained cover treatment",
+            profileCodexRunner: adaptedProfileRunner("base-profile"),
+            templateCodexRunner: async ({ prompt }) => {
+              capturedFacts = templatePromptFacts(prompt);
+              return templateResponse({
+                coverEnabled: true,
+                recipePreset: "article",
+                recipeSource: "renderer-default",
+                templateFamily: "cover-media-layered",
+              });
+            },
+          },
+        );
+
+        expect(profilePhase.finalProfile).toMatchObject({
+          header: {
+            left: "Private project header",
+            style: {
+              color: "#123ABC",
+              fontSize: "7.5pt",
+              separator: {
+                color: "#456DEF",
+                gap: "3mm",
+                style: "solid",
+                width: "0.7pt",
+              },
+            },
+          },
+          footer: { right: "Private project footer" },
+          fonts: {
+            body: { default: "Source Serif 4" },
+            code: { default: "Private Code Font" },
+            pageChrome: { default: "Private Chrome Font" },
+          },
+          pageNumbers: {
+            countFrom: "body",
+            enabled: true,
+            format: "Confidential {page} / {pages}",
+            increment: 3,
+            position: "top-right",
+            scope: "body",
+            start: 17,
+          },
+        });
+        expect(templatePhase.signals.baseProfile.summary?.fields).not.toContain("pageNumbers");
+        expect(templatePhase.signals.baseProfile.summary?.traits).not.toHaveProperty("pageNumbers");
+        expect(templatePhase.signals.baseProfile.summary?.traits).toMatchObject({
+          codeHighlight: true,
+          lineNumbers: true,
+          toc: false,
+        });
+        expect(templatePhase.signals.recipe.effectiveOptions.toc).toBe(true);
+        expect(templatePhase.signals.coverImage.available).toBe(true);
+        expect(templatePhase.signals.fonts.profileFonts.families).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              family: "Source Serif 4",
+              key: "default",
+              role: "body",
+            }),
+            expect.objectContaining({
+              family: "Private Code Font",
+              key: "default",
+              role: "code",
+            }),
+          ]),
+        );
+        expect(templatePhase.signals.fonts.profileFonts.families).not.toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              family: "Private Chrome Font",
+              role: "pageChrome",
+            }),
+          ]),
+        );
+
+        const serializedFacts = JSON.stringify(capturedFacts);
+        const generatedTemplate = [
+          templatePhase.synthesis.templateHtml,
+          templatePhase.synthesis.styleCss,
+        ].join("\n");
+        for (const privateValue of [
+          "pageNumbers",
+          "Private project header",
+          "Private project footer",
+          "Confidential {page} / {pages}",
+          "#123ABC",
+          "#456DEF",
+          "7.5pt",
+          "0.7pt",
+          "Private Chrome Font",
+        ]) {
+          expect(serializedFacts).not.toContain(privateValue);
+          expect(generatedTemplate).not.toContain(privateValue);
+        }
+        expect(templatePhase.synthesis.managedAssets).toEqual([
+          { role: "cover-image", bundlePath: "assets/cover.png", sourceBasename: "cover.png" },
+        ]);
+        expect(templatePhase.synthesis.templateHtml).toContain("$toc$");
+        expect(templatePhase.synthesis.styleCss).toContain(".cdx-code-line");
+        await expectNoPlannedProjectArtifacts(outputPlan);
+      },
+    );
   });
 
   test("uses full canonical ownership for overflow body languages and the combined code stack", async () => {

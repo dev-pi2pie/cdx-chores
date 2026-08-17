@@ -8,8 +8,15 @@ export interface InteractiveHarnessScenario {
   markdownPdfDeterministicBindErrorMessage?: string;
   markdownPdfDeterministicWriteErrorMessages?: string[];
   markdownPdfCodexBindErrorMessage?: string;
+  markdownPdfCodexFinalProfile?: Record<string, unknown>;
+  markdownPdfCodexProjectHandoff?: Record<string, unknown>;
   markdownPdfCodexUnusableArtifacts?: Array<"profile" | "template-bundle" | "project-bundle">;
+  markdownPdfProjectCompletenessErrorMessage?: string;
   markdownPdfRenderWarnings?: string[];
+  markdownPdfNoDefaultCss?: boolean;
+  markdownPdfProfilePageNumbersEnabled?: boolean;
+  markdownPdfRendererCapabilityRequests?: Array<Record<string, unknown>>;
+  markdownPdfRendererCapabilities?: Record<string, unknown>;
   markdownPdfRenderErrorMessages?: string[];
   markdownPdfOutputErrorMessages?: string[];
   markdownPdfCleanupErrorMessage?: string;

@@ -27,6 +27,7 @@ import type {
   NormalizedMdPdfProjectCodexCommandState,
 } from "./types";
 import { sanitizeMdPdfProjectCodexReportText } from "./report-redaction";
+import { assertMdPdfProjectBundleWritePreflight } from "./project-bundle-completeness";
 
 const PROJECT_CODEX_OUTPUT_RETRY_LIMIT = 10;
 const PROFILE_BUNDLE_PATH = "profile.yml";
@@ -314,13 +315,16 @@ export async function validateMdPdfProjectCodexOutputWritability(input: {
 }): Promise<void> {
   const writeMode = input.writeMode ?? "bundle";
   const displayPath = publicProjectPathDisplay(input.runtime);
-  await assertUsableProjectCodexOutputDirectory(input.plan.outputDirectory, {
-    allowExistingContents: writeMode === "report-only",
-    displayPath,
-    overwrite: input.state.overwrite,
-    parentRootDirectory: input.runtime.cwd,
-    sanitizeMessage: sanitizeMdPdfProjectCodexReportText,
-  });
+  const outputDirectoryState = await assertUsableProjectCodexOutputDirectory(
+    input.plan.outputDirectory,
+    {
+      allowExistingContents: writeMode === "report-only",
+      displayPath,
+      overwrite: input.state.overwrite,
+      parentRootDirectory: input.runtime.cwd,
+      sanitizeMessage: sanitizeMdPdfProjectCodexReportText,
+    },
+  );
   const plannedTargets = collectPlannedPathTargets(input.plan, input.runtime, writeMode);
   for (const target of plannedTargets) {
     if (!target.path || !target.requireInsideOutputDirectory) {
@@ -366,6 +370,11 @@ export async function validateMdPdfProjectCodexOutputWritability(input: {
         }),
       ),
   );
+  if (writeMode === "bundle" && input.state.overwrite && outputDirectoryState === "existing") {
+    await assertMdPdfProjectBundleWritePreflight(input.plan.outputDirectory, {
+      displayDirectory: displayPath(input.plan.outputDirectory),
+    });
+  }
 }
 
 export async function validateMdPdfProjectCodexReportWritability(input: {

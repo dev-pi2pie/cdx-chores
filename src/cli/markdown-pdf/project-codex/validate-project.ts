@@ -1,6 +1,11 @@
 import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
+import { collectMarkdownPdfDiagnostics, type MarkdownPdfDiagnostic } from "../diagnostics";
 import { normalizeMarkdownPdfProfile, validateMarkdownPdfProfileShape } from "../profile";
+import {
+  collectMarkdownPdfProfileAuthoringCapabilityRequirements,
+  type MarkdownPdfProfileAuthoringCapabilityRequirement,
+} from "../profile-authoring-review";
 import {
   deriveMdPdfTemplateCodexFontOwnership,
   mdPdfTemplateCodexOwnsFontSlot,
@@ -9,6 +14,11 @@ import {
   validateMdPdfTemplateCodexSynthesis,
 } from "../template-codex";
 import { assertProjectCodexBundlePathInsideOutput } from "./path-collisions";
+import {
+  assessMdPdfProjectCodexProfileBodyCompatibility,
+  MD_PDF_PROJECT_CODEX_PAGE_NUMBER_VALIDATION_NAMES,
+  validateMdPdfProjectCodexTemplatePageNumberCssOwnership,
+} from "./page-number-compatibility";
 import { createMdPdfProjectCodexRenderCommand } from "./render-command";
 import type { MarkdownPdfProjectCodexRenderCommand } from "./render-command";
 import type { MdPdfProjectCodexProfilePhaseResult } from "./profile-phase";
@@ -18,8 +28,25 @@ import type {
   MarkdownPdfProjectCodexOutputPlan,
   NormalizedMdPdfProjectCodexCommandState,
 } from "./types";
+import {
+  assessMarkdownPdfTemplateCoverCompatibility,
+  type MarkdownPdfTemplateCompatibilityResult,
+} from "../template-compatibility";
+
+const MD_PDF_PROJECT_CODEX_COVER_COMPATIBILITY_VALIDATION_NAME = "profile-cover-compatibility";
 
 export type MarkdownPdfProjectCodexValidationStatus = "passed" | "failed" | "skipped";
+
+export interface MarkdownPdfProjectCodexBodyBoundaryDiagnostic {
+  conditionId: "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED";
+  context: { kind: "missing-body-boundary" };
+  message: string;
+  severity: "error";
+}
+
+export interface MarkdownPdfProjectCodexValidationDiagnostics {
+  conditions: Array<MarkdownPdfDiagnostic | MarkdownPdfProjectCodexBodyBoundaryDiagnostic>;
+}
 
 export interface MarkdownPdfProjectCodexValidationResult {
   name: string;
@@ -28,7 +55,9 @@ export interface MarkdownPdfProjectCodexValidationResult {
 }
 
 export interface MarkdownPdfProjectCodexValidationSummary {
+  capabilityRequirements: MarkdownPdfProfileAuthoringCapabilityRequirement[];
   decisionMode: MarkdownPdfProjectCodexDecisionMode;
+  diagnostics: MarkdownPdfProjectCodexValidationDiagnostics;
   results: MarkdownPdfProjectCodexValidationResult[];
   renderCommand?: MarkdownPdfProjectCodexRenderCommand;
   fallbackReason?: string;
@@ -45,6 +74,8 @@ interface MarkdownPdfProjectCodexValidationInput {
 }
 
 interface CollectedProjectValidation {
+  capabilityRequirements: MarkdownPdfProfileAuthoringCapabilityRequirement[];
+  diagnostics: MarkdownPdfProjectCodexValidationDiagnostics;
   normalizedProfile?: NormalizedProjectProfile;
   results: MarkdownPdfProjectCodexValidationResult[];
 }
@@ -239,6 +270,8 @@ function collectProjectValidationResults(
 ): CollectedProjectValidation {
   const results: MarkdownPdfProjectCodexValidationResult[] = [];
   let normalizedProfile: NormalizedProjectProfile | undefined;
+  let templateCompatibility: MarkdownPdfTemplateCompatibilityResult | undefined;
+  let bodyBoundaryDiagnostic: MarkdownPdfProjectCodexBodyBoundaryDiagnostic | undefined;
 
   try {
     validateMarkdownPdfProfileShape(input.profilePhase.finalProfile);
@@ -258,6 +291,7 @@ function collectProjectValidationResults(
 
   try {
     validateMdPdfTemplateCodexSynthesis({
+      deferBodyBoundaryValidationToProject: true,
       outputPlan: input.templatePhase.outputPlan,
       synthesis: input.templatePhase.synthesis,
     });
@@ -271,6 +305,84 @@ function collectProjectValidationResults(
     );
   } catch (error) {
     results.push(failedValidation("template-static-validation", error));
+  }
+
+  if (normalizedProfile && input.templatePhase.phase.decisionMode !== "no-usable-project") {
+    if (normalizedProfile.profile.cover.enabled) {
+      try {
+        assessMarkdownPdfTemplateCoverCompatibility({
+          builtIn: false,
+          profile: normalizedProfile.profile,
+          templateHtml: input.templatePhase.synthesis.templateHtml,
+        });
+        results.push(passedValidation(MD_PDF_PROJECT_CODEX_COVER_COMPATIBILITY_VALIDATION_NAME));
+      } catch (error) {
+        results.push(
+          failedValidation(MD_PDF_PROJECT_CODEX_COVER_COMPATIBILITY_VALIDATION_NAME, error),
+        );
+      }
+    }
+
+    try {
+      templateCompatibility = assessMdPdfProjectCodexProfileBodyCompatibility({
+        profile: normalizedProfile.profile,
+        templateHtml: input.templatePhase.synthesis.templateHtml,
+      });
+      results.push(
+        passedValidation(
+          MD_PDF_PROJECT_CODEX_PAGE_NUMBER_VALIDATION_NAMES.profileBodyCompatibility,
+        ),
+      );
+    } catch (error) {
+      if (error instanceof CliError && error.code === "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED") {
+        bodyBoundaryDiagnostic = {
+          conditionId: "MARKDOWN_PDF_BODY_BOUNDARY_REQUIRED",
+          context: { kind: "missing-body-boundary" },
+          message: error.message,
+          severity: "error",
+        };
+      }
+      results.push(
+        failedValidation(
+          MD_PDF_PROJECT_CODEX_PAGE_NUMBER_VALIDATION_NAMES.profileBodyCompatibility,
+          error,
+        ),
+      );
+    }
+  } else {
+    results.push(
+      skippedValidation(
+        MD_PDF_PROJECT_CODEX_PAGE_NUMBER_VALIDATION_NAMES.profileBodyCompatibility,
+        "Skipped because an earlier validation step produced no usable final Profile or Template.",
+      ),
+    );
+  }
+
+  if (input.templatePhase.phase.decisionMode !== "no-usable-project") {
+    try {
+      // This is the Template contribution only. Profile renderer CSS and later
+      // user stylesheets are outside this Project-generation boundary.
+      validateMdPdfProjectCodexTemplatePageNumberCssOwnership(
+        input.templatePhase.synthesis.styleCss,
+      );
+      results.push(
+        passedValidation(MD_PDF_PROJECT_CODEX_PAGE_NUMBER_VALIDATION_NAMES.templateCssOwnership),
+      );
+    } catch (error) {
+      results.push(
+        failedValidation(
+          MD_PDF_PROJECT_CODEX_PAGE_NUMBER_VALIDATION_NAMES.templateCssOwnership,
+          error,
+        ),
+      );
+    }
+  } else {
+    results.push(
+      skippedValidation(
+        MD_PDF_PROJECT_CODEX_PAGE_NUMBER_VALIDATION_NAMES.templateCssOwnership,
+        "Skipped because the template phase produced no generated stylesheet.",
+      ),
+    );
   }
 
   try {
@@ -318,7 +430,26 @@ function collectProjectValidationResults(
     );
   }
 
-  return { normalizedProfile, results };
+  const capabilityRequirements = normalizedProfile
+    ? collectMarkdownPdfProfileAuthoringCapabilityRequirements(normalizedProfile.profile)
+    : [];
+  const sharedDiagnostics =
+    normalizedProfile && templateCompatibility
+      ? collectMarkdownPdfDiagnostics({
+          pageNumbers: normalizedProfile.profile.pageNumbers,
+          profile: normalizedProfile.profile,
+          profileRevision: normalizedProfile.revisionAssessment,
+          templateCompatibility,
+        })
+      : { conditions: [] };
+  const diagnostics: MarkdownPdfProjectCodexValidationDiagnostics = {
+    conditions: [
+      ...sharedDiagnostics.conditions,
+      ...(bodyBoundaryDiagnostic ? [bodyBoundaryDiagnostic] : []),
+    ],
+  };
+
+  return { capabilityRequirements, diagnostics, normalizedProfile, results };
 }
 
 function resolveProjectValidationSummary(
@@ -354,7 +485,9 @@ function resolveProjectValidationSummary(
   });
 
   return {
+    capabilityRequirements: input.capabilityRequirements,
     decisionMode,
+    diagnostics: input.diagnostics,
     results,
     renderCommand,
     ...(fallbackReason ? { fallbackReason } : {}),

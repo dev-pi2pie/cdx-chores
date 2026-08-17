@@ -1,5 +1,8 @@
 import type { MarkdownPdfCodexProfileRequest } from "./types";
-import { MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS } from "./value-domains";
+import {
+  MARKDOWN_PDF_CODEX_PATCH_VALUE_CONSTRAINTS,
+  MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS,
+} from "./value-domains";
 import { buildMarkdownPdfTableLayoutSignal } from "../../../cli/markdown-pdf/profile/layout-policy";
 import {
   hasExplicitHideMetadataTitleIntent,
@@ -107,6 +110,21 @@ const MARKDOWN_PDF_CODEX_TITLE_BLOCK_CONTRACT = {
   ],
 };
 
+const MARKDOWN_PDF_CODEX_PAGE_NUMBER_CONTRACT = {
+  countingFields: {
+    countFrom: ["document", "body"],
+    increment: "positive integer",
+    scope: ["document", "body"],
+    start: "non-negative integer; 0 is valid",
+  },
+  rules: [
+    "scope document cannot be combined with countFrom body.",
+    "Header and footer style fields affect their own page-chrome areas.",
+    "Page-number text inherits page-chrome styling; pageNumbers.style is not a supported field or patch path.",
+    "Use only the accepted header/style and footer/style patch paths described by patchValueDomains and patchValueConstraints.",
+  ],
+};
+
 function hasExplicitNoCoverIntent(intent: string): boolean {
   return /\b(no|without|skip|disable|avoid)\s+(a\s+)?(cover|cover page|title page|title-page)\b/i.test(
     intent,
@@ -172,6 +190,8 @@ export function buildMarkdownPdfProfileCodexPrompt(
     fontPatchContract: MARKDOWN_PDF_CODEX_FONT_PATCH_CONTRACT,
     fontSignals: request.fontSignals,
     intent: request.intent ?? "",
+    pageNumberContract: MARKDOWN_PDF_CODEX_PAGE_NUMBER_CONTRACT,
+    patchValueConstraints: MARKDOWN_PDF_CODEX_PATCH_VALUE_CONSTRAINTS,
     selectedBaseProfileSummary: request.selectedBaseProfileSummary,
     patchValueDomains: MARKDOWN_PDF_CODEX_PATCH_VALUE_DOMAINS,
     signalMode: request.signalMode,
@@ -191,7 +211,7 @@ export function buildMarkdownPdfProfileCodexPrompt(
     "- Do not write YAML, CSS, HTML, file paths, or raw Markdown snippets.",
     "- Use accepted_patches for small replace patches against allowed Markdown PDF profile paths.",
     "- Use accepted_font_patches for all font writes; never put /fonts/... paths in accepted_patches.",
-    "- For paths listed in patchValueDomains, use only those exact values.",
+    "- For paths listed in patchValueDomains, use only those exact values; for paths listed in patchValueConstraints, satisfy the stated requirement.",
     "- Do not return profile objects or arbitrary nested fields.",
     "- Prefer small adaptations over broad rewrites.",
     "- Follow styleDecisionPolicy when deciding cover, ToC, page-number, code, and renderer-compatible changes.",

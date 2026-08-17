@@ -40,7 +40,6 @@ interface MdPdfTemplateCodexReportManagedAsset {
 
 export interface MdPdfTemplateCodexReportArtifact {
   artifactType: typeof MARKDOWN_PDF_TEMPLATE_CODEX_REPORT_ARTIFACT_TYPE;
-  version: 1;
   advisoryOnly: true;
   reportId: string;
   templateBundleId: string;
@@ -209,6 +208,13 @@ function followUpRenderCommand(input: {
   return createMdPdfTemplateCodexRenderCommand({
     bundlePath: "<template-bundle>",
     inputPath,
+    ...(input.state.baseProfilePath
+      ? {
+          profilePath:
+            publicPathDisplay(input.runtime, input.state.baseProfilePath)?.display ??
+            "<base-profile.yml>",
+        }
+      : {}),
   });
 }
 
@@ -221,7 +227,6 @@ export function createMdPdfTemplateCodexReportArtifact(input: {
 }): MdPdfTemplateCodexReportArtifact {
   return {
     artifactType: MARKDOWN_PDF_TEMPLATE_CODEX_REPORT_ARTIFACT_TYPE,
-    version: 1,
     advisoryOnly: true,
     reportId: reportArtifactId(input.outputPlan.bundleId),
     templateBundleId: input.outputPlan.bundleId,
@@ -273,6 +278,10 @@ export function createMdPdfTemplateCodexReportArtifact(input: {
     validationResults: [
       {
         name: "static-template-validation",
+        status: input.synthesis.decisionMode === "no-usable-template" ? "skipped" : "passed",
+      },
+      {
+        name: "document-body-boundary",
         status: input.synthesis.decisionMode === "no-usable-template" ? "skipped" : "passed",
       },
     ],

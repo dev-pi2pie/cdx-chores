@@ -1,7 +1,7 @@
 ---
 title: "Markdown to PDF Profiles, Fonts, and Page Chrome"
 created-date: 2026-05-07
-modified-date: 2026-07-29
+modified-date: 2026-08-15
 status: completed
 agent: codex
 ---
@@ -11,6 +11,19 @@ agent: codex
 Extend the Markdown-to-PDF design discussion beyond the first WeasyPrint implementation by defining a deterministic PDF profile direction for fonts, mixed-language content, cover pages, headers, footers, and page numbers.
 
 This research is completed. The related implementation plan and job records now provide evidence for the profile, font, mixed-language, page chrome, and documentation slices.
+
+## Later Page-Role And Counter Follow-Up
+
+This document's `{pages}` physical-total and chrome-free ToC recommendations
+record the first implemented Profile direction. A later Interactive render
+exposed an implicit metadata-title page, hidden ToC repeating content, and a
+logical-versus-physical total mismatch. The current investigation is
+[Markdown PDF Page Roles And Counter Semantics][page-role-counter-research].
+
+That follow-up does not invalidate the completed Profile, font, cover, or page
+chrome implementation evidence here. It supersedes only the current guidance
+for page-role composition, ToC repeating content, and logical versus physical
+page-counter placeholders.
 
 ## Why This Research
 
@@ -639,6 +652,7 @@ Completed first-slice recommendations:
 - [Markdown to PDF with WeasyPrint](research-2026-05-06-markdown-to-pdf-weasyprint.md) - completed first-lane research for deterministic Markdown-to-PDF rendering through Pandoc HTML and WeasyPrint.
 - [Font Command Discovery Options](research-2026-05-07-font-command-discovery-options.md) - follow-up research for `font list` diagnostics, discovery selection, and platform-specific adapter behavior.
 - [Font Inspect and Check Commands](research-2026-05-07-font-inspect-and-check-commands.md) - draft checkpoint for adding `font inspect` and `font check` before Codex Helper font assistance.
+- [Markdown PDF Page Roles And Counter Semantics][page-role-counter-research] - current follow-up for metadata-title, ToC, logical-counter, and physical-counter behavior.
 - [PDF Backend Comparison for Merge, Split, and Image Workflows](archive/research-2026-02-25-pdf-backend-comparison-for-merge-split-and-image-workflows.md) - cancelled historical backend comparison for an unadopted PDF-native route; future work requires fresh research.
 
 ## Related Plans
@@ -655,3 +669,5 @@ Completed first-slice recommendations:
 - [Markdown to PDF Profile Phase 8 Docs](../plans/jobs/2026-05-07-markdown-to-pdf-profile-phase-8-docs.md) - public profile guide, README alignment, status closeout, and final validation evidence.
 - [Markdown to PDF WeasyPrint Phases 1-5](../plans/jobs/2026-05-06-markdown-to-pdf-weasyprint-phases-1-5.md) - implementation, renderer, asset policy, tests, and `doctor` evidence for the first deterministic Markdown-to-PDF lane.
 - [Markdown to PDF WeasyPrint Phase 6 Docs](../plans/jobs/2026-05-06-markdown-to-pdf-weasyprint-phase-6-docs.md) - public guide, README alignment, status closeout, and final validation evidence for the first lane.
+
+[page-role-counter-research]: research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md

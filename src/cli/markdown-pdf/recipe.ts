@@ -5,6 +5,7 @@ import {
   createMarkdownPdfCoverHtml,
   createMarkdownPdfFontCss,
   createMarkdownPdfPageChromeCss,
+  type MarkdownPdfPageChromeBodyBoundary,
   type NormalizedMarkdownPdfProfile,
 } from "./profile";
 import type { MarkdownPdfTitleSignals } from "./profile/signals";
@@ -15,6 +16,7 @@ export interface MarkdownPdfRecipe {
 }
 
 export interface CreateMarkdownPdfRecipeInput {
+  bodyBoundary?: MarkdownPdfPageChromeBodyBoundary;
   profile?: NormalizedMarkdownPdfProfile;
   titleSignals?: MarkdownPdfTitleSignals;
 }
@@ -77,7 +79,9 @@ export function createMarkdownPdfTemplate(input: CreateMarkdownPdfRecipeInput = 
   const metadataTitleMode = input.profile?.titleBlock.metadataTitle ?? "auto";
   const shouldRenderMetadataTitle =
     metadataTitleMode === "show" ||
-    (metadataTitleMode === "auto" && !input.titleSignals?.duplicateVisibleTitleRisk);
+    (metadataTitleMode === "auto" &&
+      !input.profile?.cover.enabled &&
+      !input.titleSignals?.duplicateVisibleTitleRisk);
   const metadataTitleHtml = shouldRenderMetadataTitle
     ? `$if(title)$
 <header class="document-title">
@@ -99,13 +103,14 @@ $endif$`
   <title>$if(title)$$title$$else$Markdown PDF$endif$</title>
 </head>
 <body>
-${coverHtml}${metadataTitleHtml}
+${coverHtml}
 $if(toc)$
 <nav id="TOC" role="doc-toc">
 $toc$
 </nav>
 $endif$
-<main>
+<main class="document-body">
+${metadataTitleHtml}
 $body$
 </main>
 </body>
@@ -239,7 +244,7 @@ blockquote {
   overflow-wrap: anywhere;
 }
 ${tocPageBreakCss(options)}
-${createMarkdownPdfPageChromeCss(input.profile)}
+${createMarkdownPdfPageChromeCss(input.profile, { bodyBoundary: input.bodyBoundary })}
 ${PRESET_CSS[options.preset]}
 ${createMarkdownPdfCoverCss(input.profile, {
   orientation: options.orientation,

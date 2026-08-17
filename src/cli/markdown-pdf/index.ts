@@ -1,5 +1,57 @@
 export { createMarkdownPdfCss, createMarkdownPdfRecipe, createMarkdownPdfTemplate } from "./recipe";
 export type { CreateMarkdownPdfRecipeInput, MarkdownPdfRecipe } from "./recipe";
+export { inspectMarkdownPdfTemplateBody } from "./template-body";
+export type {
+  MarkdownPdfTemplateBodyInspection,
+  MarkdownPdfTemplateBodyStatus,
+} from "./template-body";
+export {
+  assessMarkdownPdfTemplateCompatibility,
+  assessMarkdownPdfTemplateCoverCompatibility,
+} from "./template-compatibility";
+export type { MarkdownPdfTemplateCompatibilityResult } from "./template-compatibility";
+export {
+  collectMarkdownPdfCoverDefaultCssDisabledDiagnostic,
+  collectMarkdownPdfDiagnostics,
+  collectMarkdownPdfEmptyCoverDiagnostic,
+  markdownPdfDiagnosticWarnings,
+  MARKDOWN_PDF_COVER_DEFAULT_CSS_DISABLED_WARNING,
+  MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS,
+  MARKDOWN_PDF_EMPTY_COVER_WARNING,
+  MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_WARNING,
+} from "./diagnostics";
+export {
+  assertMarkdownPdfRendererCapabilities,
+  assessMarkdownPdfRendererCapabilities,
+  collectMarkdownPdfRendererCapabilityRequests,
+  MARKDOWN_PDF_ADVANCED_WEASYPRINT_MINIMUM_VERSION,
+  MARKDOWN_PDF_RENDERER_CAPABILITY_IDS,
+  MARKDOWN_PDF_RENDERER_CAPABILITY_MATRIX,
+} from "./renderer-capabilities";
+export {
+  collectMarkdownPdfProfileAuthoringCapabilityRequirements,
+  collectMarkdownPdfProfileAuthoringReview,
+  formatMarkdownPdfProfileAuthoringReview,
+} from "./profile-authoring-review";
+export type {
+  MarkdownPdfProfileAuthoringCapabilityRequirement,
+  MarkdownPdfProfileAuthoringReview,
+} from "./profile-authoring-review";
+export type {
+  MarkdownPdfRendererCapabilityAssessment,
+  MarkdownPdfRendererCapabilityDefinition,
+  MarkdownPdfRendererCapabilityField,
+  MarkdownPdfRendererCapabilityId,
+  MarkdownPdfRendererCapabilityRequest,
+  MarkdownPdfRendererCapabilityResult,
+  MarkdownPdfRendererCapabilityStatus,
+} from "./renderer-capabilities";
+export type {
+  MarkdownPdfDiagnostic,
+  MarkdownPdfDiagnosticConditionId,
+  MarkdownPdfDiagnostics,
+  MarkdownPdfWarningConditionId,
+} from "./diagnostics";
 export type { MarkdownPdfCodexReportBinding } from "./codex-report-binding";
 export { renderMarkdownPdf } from "./render";
 export type {
@@ -36,20 +88,45 @@ export {
   DEFAULT_MARKDOWN_PDF_PROFILE,
   DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
   MARKDOWN_PDF_CODE_THEMES,
+  MARKDOWN_PDF_PAGE_CHROME_FONT_WEIGHTS,
+  MARKDOWN_PDF_PAGE_CHROME_SEPARATOR_STYLES,
+  MARKDOWN_PDF_PAGE_NUMBER_COUNT_ORIGINS,
+  MARKDOWN_PDF_PAGE_NUMBER_SCOPES,
+  MARKDOWN_PDF_PROFILE_BASELINE_REVISION,
+  MARKDOWN_PDF_PROFILE_CURRENT_REVISION,
+  MARKDOWN_PDF_PROFILE_FEATURE_COMBINATION_RULES,
+  MARKDOWN_PDF_PROFILE_FEATURE_REGISTRY,
   MARKDOWN_PDF_PROFILE_ROOT_KEYS,
   MARKDOWN_PDF_PROFILE_SUPPORTED_SCHEMA_SUMMARY,
+  assessMarkdownPdfCoverVisibility,
   createMarkdownPdfCoverCss,
   createMarkdownPdfCoverHtml,
   createMarkdownPdfFontCss,
   createMarkdownPdfPageChromeCss,
   createMarkdownPdfProfileConfig,
   inferMarkdownPdfProfileFormat,
+  isMarkdownPdfPageChromeColor,
+  isMarkdownPdfPageChromeFontSize,
+  isMarkdownPdfPageChromeFontWeight,
+  isMarkdownPdfPageChromeLineHeight,
+  isMarkdownPdfPageChromeSeparatorGap,
+  isMarkdownPdfPageChromeSeparatorStyle,
+  isMarkdownPdfPageChromeSeparatorWidth,
   markdownPdfProfileToRecipeOptions,
+  markdownPdfProfileFeatureAtPath,
+  markdownPdfProfileFeatureKeys,
+  markdownPdfProfileFeatureValues,
+  markdownPdfProfileRendererCapability,
+  markdownPdfProfileRendererCapabilityFields,
   normalizeMarkdownPdfProfile,
   readMarkdownPdfProfileFile,
+  resolveMarkdownPdfCoverFields,
   resolveMarkdownPdfCodeOptions,
+  resolveMarkdownPdfPageNumberConfiguration,
   serializeMarkdownPdfProfile,
   validateMarkdownPdfProfileShape,
+  assessMarkdownPdfProfileRevision,
+  inferMarkdownPdfProfileRevision,
 } from "./profile";
 export type {
   EffectiveMarkdownPdfCodeOptions,
@@ -59,17 +136,39 @@ export type {
   MarkdownPdfFontConfig,
   MarkdownPdfFontRole,
   MarkdownPdfMetadataTitleBlockMode,
+  MarkdownPdfPageChromeFontWeight,
   MarkdownPdfPageChromePosition,
+  MarkdownPdfPageChromeSeparatorStyle,
   MarkdownPdfPageChromeSlots,
+  MarkdownPdfPageNumberCountOrigin,
+  MarkdownPdfPageNumberConfigurationSource,
+  MarkdownPdfPageNumberScope,
   MarkdownPdfProfileFormat,
   MarkdownPdfProfileLoadResult,
   MarkdownPdfProfileMergeInput,
+  MarkdownPdfProfileFeatureCombinationRule,
+  MarkdownPdfProfileFeatureDefinition,
+  MarkdownPdfProfileFeatureKind,
+  MarkdownPdfProfileFeatureValue,
+  MarkdownPdfProfileNormalizationRoute,
+  MarkdownPdfProfileRevisionAssessment,
+  MarkdownPdfProfileRevisionState,
+  MarkdownPdfCoverVisibilityAssessment,
   NormalizedMarkdownPdfCode,
   NormalizedMarkdownPdfCover,
   NormalizedMarkdownPdfFonts,
+  NormalizedMarkdownPdfPageChromeArea,
+  NormalizedMarkdownPdfPageChromeSeparator,
+  NormalizedMarkdownPdfPageChromeStyle,
   NormalizedMarkdownPdfPageNumbers,
   NormalizedMarkdownPdfTitleBlock,
   NormalizedMarkdownPdfProfile,
+  ResolvedMarkdownPdfPageNumberConfiguration,
+  ResolvedMarkdownPdfCoverFields,
+} from "./profile";
+export type {
+  CreateMarkdownPdfPageChromeCssInput,
+  MarkdownPdfPageChromeBodyBoundary,
 } from "./profile";
 export type {
   MarkdownPdfOrientation,

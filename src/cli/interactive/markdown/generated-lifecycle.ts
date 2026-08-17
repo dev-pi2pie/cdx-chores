@@ -44,6 +44,11 @@ import {
   promptMarkdownPdfRenderCodeHighlightChoice,
   type MarkdownPdfRenderCodeHighlightChoice,
 } from "./render-code-highlighting";
+import {
+  compileMarkdownPdfRenderPageNumberChoice,
+  promptMarkdownPdfRenderPageNumberChoice,
+  type MarkdownPdfRenderPageNumberChoice,
+} from "./render-page-numbers";
 
 interface DurableGeneratedLifecycleResume extends DurableMaterializationWriteState {
   candidate: MarkdownPdfGeneratedLifecycleSelection["candidate"];
@@ -103,6 +108,7 @@ async function materializeTemporaryAndRender(
   pdfOutput: ResolvedMarkdownPdfRenderOutput,
   materialization: BoundMarkdownPdfGeneratedMaterialization,
   codeHighlight?: boolean,
+  pageNumbers?: boolean,
 ): Promise<GeneratedLifecycleOutcome> {
   assertPdfOutputDoesNotCollide(runtime, pdfOutput.outputPath, materialization, selection.report);
   await writeBoundMarkdownPdfGeneratedCandidate(materialization);
@@ -116,6 +122,7 @@ async function materializeTemporaryAndRender(
     input: selection.markdownInput,
     ...materialization.rendererSource,
     ...(codeHighlight === undefined ? {} : { codeHighlight }),
+    ...(pageNumbers === undefined ? {} : { pageNumbers }),
   });
   return await executeRenderWithRecovery(runtime, { ...pdfOutput, prepared }, materialization);
 }
@@ -123,8 +130,11 @@ async function materializeTemporaryAndRender(
 function toGeneratedLifecycleHandlerOutcome(
   outcome: GeneratedLifecycleOutcome,
   codeHighlight: MarkdownPdfRenderCodeHighlightChoice,
+  pageNumbers: MarkdownPdfRenderPageNumberChoice,
 ): MarkdownPdfGeneratedLifecycleHandlerOutcome {
-  return outcome === "review" ? { codeHighlight, kind: "review" } : { kind: "complete" };
+  return outcome === "review"
+    ? { codeHighlight, kind: "review", pageNumbers }
+    : { kind: "complete" };
 }
 
 async function promptGeneratedPdfOutputForMaterialization(
@@ -162,6 +172,7 @@ export async function handleMarkdownPdfGeneratedLifecycle(
   session: MarkdownPdfGeneratedLifecycleSession = createMarkdownPdfGeneratedLifecycleSession(),
 ): Promise<MarkdownPdfGeneratedLifecycleHandlerOutcome> {
   let codeHighlight = selection.codeHighlight;
+  let pageNumbers = selection.pageNumbers;
   let resume = matchingDurableResume(session, selection);
 
   while (true) {
@@ -171,7 +182,7 @@ export async function handleMarkdownPdfGeneratedLifecycle(
         ? await promptArtifactDestination(runtime, pathPromptContext, selection)
         : undefined;
     if (artifactDestination?.kind === "review") {
-      return { codeHighlight, kind: "review" };
+      return { codeHighlight, kind: "review", pageNumbers };
     }
     if (artifactDestination?.kind === "cancel") {
       session.durableResume = undefined;
@@ -181,7 +192,7 @@ export async function handleMarkdownPdfGeneratedLifecycle(
       ? { kind: "output" as const, output: resume.pdf }
       : await promptGeneratedPdfOutput(runtime, pathPromptContext, selection.markdownInput);
     if (pdf.kind === "review") {
-      return { codeHighlight, kind: "review" };
+      return { codeHighlight, kind: "review", pageNumbers };
     }
     if (pdf.kind === "cancel") {
       session.durableResume = undefined;
@@ -223,13 +234,20 @@ export async function handleMarkdownPdfGeneratedLifecycle(
     }
 
     while (true) {
-      renderGeneratedFinalReview(runtime, selection, pdfOutput, durable, codeHighlight);
+      renderGeneratedFinalReview(
+        runtime,
+        selection,
+        pdfOutput,
+        durable,
+        codeHighlight,
+        pageNumbers,
+      );
       if (!(await confirm({ message: "Render this PDF?", default: true }))) {
         const next = await promptGeneratedFinalRenderNextStep({
           durableRecipeWritten: resume?.isWritten === true,
         });
         if (next === "review") {
-          return { codeHighlight, kind: "review" };
+          return { codeHighlight, kind: "review", pageNumbers };
         }
         if (next === "cancel") {
           session.durableResume = undefined;
@@ -246,6 +264,17 @@ export async function handleMarkdownPdfGeneratedLifecycle(
           }
           continue;
         }
+        if (next === "change-page-numbers") {
+          const changed = await promptMarkdownPdfRenderPageNumberChoice(pageNumbers);
+          if (changed === "cancel") {
+            session.durableResume = undefined;
+            return { kind: "complete" };
+          }
+          if (changed !== "back") {
+            pageNumbers = changed;
+          }
+          continue;
+        }
         if (resume?.isWritten && durable) {
           const changedPdf = await promptGeneratedPdfOutputForMaterialization(
             runtime,
@@ -254,7 +283,7 @@ export async function handleMarkdownPdfGeneratedLifecycle(
             durable,
           );
           if (changedPdf.kind === "review") {
-            return { codeHighlight, kind: "review" };
+            return { codeHighlight, kind: "review", pageNumbers };
           }
           if (changedPdf.kind === "cancel") {
             session.durableResume = undefined;
@@ -270,6 +299,7 @@ export async function handleMarkdownPdfGeneratedLifecycle(
       }
 
       const compiledCodeHighlight = compileMarkdownPdfRenderCodeHighlightChoice(codeHighlight);
+      const compiledPageNumbers = compileMarkdownPdfRenderPageNumberChoice(pageNumbers);
       if (durable) {
         assertPdfOutputDoesNotCollide(runtime, pdfOutput.outputPath, durable, selection.report);
         const durableState: DurableGeneratedLifecycleResume = resume ?? {
@@ -287,10 +317,11 @@ export async function handleMarkdownPdfGeneratedLifecycle(
           durable,
           durableState,
           compiledCodeHighlight,
+          compiledPageNumbers,
         );
         session.durableResume =
           outcome === "review" && durableState.isWritten ? durableState : undefined;
-        return toGeneratedLifecycleHandlerOutcome(outcome, codeHighlight);
+        return toGeneratedLifecycleHandlerOutcome(outcome, codeHighlight, pageNumbers);
       }
 
       const temporarySession = await createOwnedMarkdownPdfSession();
@@ -313,8 +344,10 @@ export async function handleMarkdownPdfGeneratedLifecycle(
             pdfOutput,
             temporary,
             compiledCodeHighlight,
+            compiledPageNumbers,
           ),
           codeHighlight,
+          pageNumbers,
         );
       } catch (error) {
         printLine(
@@ -325,7 +358,7 @@ export async function handleMarkdownPdfGeneratedLifecycle(
         const recovered = await recoverRetainedSession(runtime, temporarySession, false);
         return recovered === "retry"
           ? { kind: "complete" }
-          : toGeneratedLifecycleHandlerOutcome(recovered, codeHighlight);
+          : toGeneratedLifecycleHandlerOutcome(recovered, codeHighlight, pageNumbers);
       }
     }
   }

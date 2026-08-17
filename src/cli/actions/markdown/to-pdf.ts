@@ -12,6 +12,7 @@ import {
   planMarkdownPdfRender,
   prepareMarkdownPdfRender,
 } from "./to-pdf-service";
+import { printMarkdownPdfRenderWarnings } from "./render-warnings";
 
 export interface MdToPdfOptions extends NormalizeMarkdownPdfOptionsInput {
   input: string;
@@ -24,6 +25,7 @@ export interface MdToPdfOptions extends NormalizeMarkdownPdfOptionsInput {
   noDefaultCss?: boolean;
   htmlOutput?: string;
   codeHighlight?: boolean;
+  pageNumbers?: boolean;
   overwrite?: boolean;
   runner?: MarkdownPdfProcessRunner;
   codeHighlighter?: MarkdownPdfCodeHighlighter;
@@ -80,12 +82,7 @@ export async function actionMdToPdf(runtime: CliRuntime, options: MdToPdfOptions
     codeHighlighter: options.codeHighlighter,
   });
 
-  if (result.warnings.length > 0) {
-    printLine(runtime.stderr, "Markdown PDF render warnings:");
-    for (const warning of result.warnings) {
-      printLine(runtime.stderr, `- ${warning}`);
-    }
-  }
+  printMarkdownPdfRenderWarnings(runtime, result.warnings);
 
   printLine(runtime.stdout, `Wrote PDF: ${displayPath(runtime, plan.outputPath)}`);
 }

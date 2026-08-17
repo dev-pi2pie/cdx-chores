@@ -39,7 +39,7 @@ export function createPdfRunner(options: {
       return ok("pandoc 3.1\n");
     }
     if (command === "weasyprint" && args.includes("--info")) {
-      return ok("System: test\nWeasyPrint 68.0\n");
+      return ok("WeasyPrint version 68.0\n");
     }
     if (command === "pandoc") {
       if (options.failPandoc) {
