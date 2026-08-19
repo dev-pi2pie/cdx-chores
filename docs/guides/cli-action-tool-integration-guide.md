@@ -1,7 +1,7 @@
 ---
 title: "CLI Action Tool Integration Guide"
 created-date: 2026-02-25
-modified-date: 2026-08-09
+modified-date: 2026-08-19
 status: completed
 agent: codex
 ---
@@ -62,7 +62,7 @@ Avoid direct SDK/tool-client complexity inside action modules when an adapter bo
 
 ## Codex SDK Integration Guidance (Current + Planned)
 
-Codex SDK baseline for `v0.1.7-canary.1`: `0.147.0`
+Codex SDK baseline for `v0.1.7-canary.3`: `0.148.0`
 
 `@openai/codex-sdk` is used in runtime code through `src/adapters/codex/shared.ts`, with feature-specific adapters for rename suggestions, document rename analysis, Markdown PDF profile suggestions, and data workflow Codex assistance.
 
