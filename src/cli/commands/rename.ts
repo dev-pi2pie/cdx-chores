@@ -251,12 +251,11 @@ function prepareRenameCodexTimeouts(
 ): Pick<RenameFileOptions, "codexTimeoutMs" | "codexImagesTimeoutMs" | "codexDocsTimeoutMs"> {
   const resolved = resolveRenameCodexTimeouts(options);
   if (resolved.notice) {
-    runtime.stderr.write(
-      resolved.notice.replace(
-        "Warning:",
-        styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:"),
-      ),
-    );
+    const warningLabel = "Warning:";
+    const notice = resolved.notice.startsWith(warningLabel)
+      ? `${styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", warningLabel)}${resolved.notice.slice(warningLabel.length)}`
+      : resolved.notice;
+    runtime.stderr.write(notice);
   }
   return resolved.timeouts;
 }

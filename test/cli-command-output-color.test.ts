@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { Command } from "commander";
 
 import { configureCliProgramOutput, styleCommanderErrorOutput } from "../src/cli/program/output";
+import { getFormattedVersionLabel } from "../src/cli/program/version";
 import type { CliRuntime } from "../src/cli/types";
 import { createCapturedRuntime, runCli } from "./helpers/cli-test-utils";
 
@@ -30,6 +31,7 @@ function createProgram(runtime: CliRuntime): Command {
     .description("CLI chores toolkit for file/media/document workflow helpers")
     .showHelpAfterError()
     .exitOverride()
+    .version(getFormattedVersionLabel(runtime))
     .option("--known", "Known option");
   return program;
 }
@@ -55,6 +57,21 @@ describe("CLI Commander output presentation", () => {
     expect(stdout.text).toContain("Usage: cdx-chores [options]");
     expect(stdout.text).toContain("--known");
     expect(stderr.text).toBe("");
+  });
+
+  test("uses injected stdout eligibility for version presentation", async () => {
+    const eligible = createRuntime({ stderrIsTTY: false, stdoutIsTTY: true });
+    await expect(
+      createProgram(eligible.runtime).parseAsync(["node", "cdx-chores", "--version"]),
+    ).rejects.toMatchObject({ code: "commander.version", exitCode: 0 });
+    expect(eligible.stdout.text).toMatch(ANSI_PATTERN);
+
+    const redirected = createRuntime({ stderrIsTTY: true, stdoutIsTTY: false });
+    await expect(
+      createProgram(redirected.runtime).parseAsync(["node", "cdx-chores", "--version"]),
+    ).rejects.toMatchObject({ code: "commander.version", exitCode: 0 });
+    expect(redirected.stdout.text).not.toMatch(ANSI_PATTERN);
+    expect(redirected.stderr.text).toBe("");
   });
 
   test("routes parser errors and help-after-error to injected stderr", async () => {
