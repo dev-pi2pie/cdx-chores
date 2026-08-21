@@ -264,26 +264,25 @@ Recommended behavior:
 - keep report-schema changes separate unless an existing report cannot explain
   the failure without them
 
-### Smallest First Implementation Wave
+### Staged Implementation Recommendation
 
-The smallest coherent first plan should:
+Keep adoption layers independently reviewable:
 
-1. add a shared duration parser, validation contract, and effective-timeout
-   resolver
-2. expose `--codex-timeout`, `--codex-images-timeout`, and
-   `--codex-docs-timeout` on rename
-3. preserve the legacy rename flags with the documented precedence and
-   deprecation notices
-4. normalize timeout-specific user-facing failures
-5. test duration parsing, precedence, legacy conflicts, one-notice behavior,
-   retry multiplication, and multi-analyzer routing
+1. add a shared duration parser, validation contract, and pure resolver
+2. expose shared and scoped duration options on rename while preserving legacy
+   compatibility and workflow-owned retry behavior
+3. add the narrow shared timeout classifier and prove it through rename
+4. add the shared option to the selected explicit data and Markdown commands
+5. add one session-owned timeout to explicit Interactive mode and thread it
+   through current Interactive Codex request paths
+6. close public documentation and research only after the complete staged
+   contract is verified
 
-After that foundation is verified, a follow-up plan can add the shared option to
-selected non-rename direct Codex commands without also globalizing retry.
+Do not globalize retry while broadening timeout configuration.
 
-## Deferred Decisions
+## Contract Non-Goals
 
-The first timeout plan should not introduce:
+The current timeout contract and implementation plan do not include:
 
 - a repository-wide config-file system
 - an environment-variable timeout source
@@ -291,39 +290,58 @@ The first timeout plan should not introduce:
 - generic retry configuration
 - automatic retry for interactive regeneration
 - timeout source metadata in every report schema
+- a root-level global CLI option
+- Markdown PDF phase-specific timeout overrides
+- default timeout changes
+- removal of the legacy rename millisecond flags
 
-If config or environment sources are considered later, the design must separate
-source precedence from scope precedence. An explicit CLI value should not be
+These exclusions are not scheduled follow-up work. Later research may reconsider
+one only when concrete operational evidence justifies reopening it.
+
+If later research introduces config or environment sources, it must separate
+source precedence from scope precedence. An explicit CLI value must not be
 silently overridden by a less visible configuration source, while an explicit
-scoped value should remain more specific than a shared value from the same
-source.
+scoped value remains more specific than a shared value from the same source.
 
-## Open Questions
+## Planning Recommendations
 
-- What maximum accepted duration prevents accidental multi-hour waits while
-  allowing legitimate slow local workflows?
-- Should the initial duration grammar remain limited to positive integer
-  `ms`, `s`, and `m` values, or is an additional unit needed?
-- Which non-rename direct Codex commands should receive
-  `--codex-timeout <duration>` in the first follow-up wave?
-- Should `md pdf-project codex` use one shared value independently for every
-  profile, template, and repair request, or eventually expose phase overrides?
-- At which approved release boundary may the legacy rename millisecond flags be
-  removed?
-- Which existing failure result types can preserve a timeout-specific cause
-  without broadening the first plan into a full Codex error taxonomy rewrite?
+The implementation-plan review resolves the earlier open questions as follows:
 
-## Non-Goals
+- cap one Codex request attempt at 10 minutes (`600_000ms`); this is a
+  validation bound, not a whole-command SLA
+- accept positive integer `ms`, `s`, and `m` values only; do not add hours,
+  decimals, compounds, bare numbers, or case-insensitive aliases
+- add the first non-rename direct option to `data query codex`,
+  `data stack --codex-assist`, `md pdf-profile codex`,
+  `md pdf-template codex`, and `md pdf-project codex`
+- apply one Markdown PDF project value independently to every profile,
+  template, and repair request attempt; defer phase-specific overrides
+- retain the legacy rename millisecond flags for at least one stable
+  compatibility release and remove them only through a separately approved
+  breaking release
+- introduce one narrow internal `timeout | aborted | other` classifier without
+  rewriting all public Codex result or report schemas
+- add one session-owned `interactive --codex-timeout <duration>` value and use
+  rename as the reference helper contract for Interactive data and Markdown
+  Codex paths: reuse the shared parser, resolver, 30-second default, numeric
+  `timeoutMs` seams, per-request-attempt meaning, and narrow failure classifier
+  without helper-local fixed timeout constants, per-workflow prompts, or
+  automatic retry
 
-This research does not implement:
+These recommendations are adopted by the draft
+[Codex request timeout implementation plan](../plans/plan-2026-08-21-codex-request-timeout-contract.md).
+They remain proposed behavior until implementation and verification evidence is
+recorded, so this research remains `in-progress`.
+
+## Research Document Boundary
+
+This research records the timeout contract and planning evidence. It does not
+itself implement:
 
 - timeout flag wiring or duration parsing
 - legacy-option warnings
 - retry or batch-size changes
-- config-file or environment-variable behavior
-- total command budgets
-- report schema changes
-- default timeout changes
+- Codex request execution or failure handling
 - Markdown PDF rendering changes
 
 This research also does not reopen the completed Markdown PDF project-helper
@@ -340,4 +358,5 @@ reviewed.
 
 ## Related Plans
 
+- [Codex request timeout contract implementation](../plans/plan-2026-08-21-codex-request-timeout-contract.md)
 - [Markdown PDF project Codex helper implementation](../plans/plan-2026-07-04-markdown-pdf-project-codex-helper.md)
