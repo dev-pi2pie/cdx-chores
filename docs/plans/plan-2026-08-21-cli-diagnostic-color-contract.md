@@ -446,7 +446,7 @@ Gate:
 
 Apply the shared contract to parser errors and the approved warning inventory.
 
-Status: not started.
+Status: in progress.
 
 Tasks:
 

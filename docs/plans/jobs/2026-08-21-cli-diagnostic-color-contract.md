@@ -281,3 +281,14 @@ Decision gate: `Continue`. Phase 2 is complete. Every runtime
 default is removed, the five mismatch functions use stderr eligibility, and
 real parser, warning, and tip semantic adoption remains deferred to Phases 3
 and 4.
+
+## Phase 3: Parser Error And Warning Adoption
+
+Status: in progress.
+
+Starting commit: `6b85f7866dab60206264dff1944ab0c3b8383f65`
+
+Phase 3 routes the existing Commander `error:` label and nine approved warning
+families through the shared semantic-label seam. Plain wording, help layout,
+warning emission behavior, exit behavior, structured diagnostics, and machine
+outputs remain unchanged.
