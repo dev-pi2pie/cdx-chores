@@ -231,7 +231,7 @@ or test code changed in this phase.
 
 ## Phase 2: Shared Stream-Aware Presentation Foundation
 
-Status: in progress.
+Status: completed.
 
 Starting commit: `998a525a64c633d43e4a5332def2edd5dedd11a2`
 
@@ -240,3 +240,44 @@ target streams for runtime color acquisition, fixes the five recorded
 function-level stream mismatches across four renderer modules, and preserves
 all domain-owned semantics. Parser, warning, and tip consumers remain assigned
 to Phases 3 and 4.
+
+### Validation
+
+```text
+bun test test/cli-diagnostic-color.test.ts test/cli-color.test.ts test/cli-interactive-notice.test.ts test/cli-interactive-data-stack/dry-run-write.test.ts test/cli-interactive-routing-data-stack.test.ts test/cli-interactive-routing-data-query-review.test.ts test/cli-interactive-routing-data-query-source-shape.test.ts test/cli-interactive-routing-data-query-headers.test.ts test/cli-action-doctor.test.ts test/cli-command-doctor.test.ts test/cli-actions-data-preview/rendering.test.ts test/cli-actions-data-preview/highlighting.test.ts test/cli-actions-data-query.test.ts test/cli-actions-data-query-codex.test.ts test/cli-actions-data-query-workspace.test.ts test/cli-command-data-query-duckdb-lifecycle.test.ts test/fonts-cli-list.test.ts test/fonts-cli-inspect-output.test.ts test/fonts-cli-inspect-debug.test.ts test/fonts-cli-check-output.test.ts test/cli-markdown-pdf-warning-output.test.ts
+177 pass, 0 fail
+
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+git diff --check
+passed
+```
+
+The focused suite covers the semantic helper, independently eligible streams,
+all five recorded mismatch functions, explicit stdout callers, domain-owned
+report regressions, machine-output separation, runtime color disabling,
+`NO_COLOR`, `--no-color`, and ANSI-stripped canonical text.
+
+### Review And Gate
+
+Implementation commit:
+
+- `fecd314d` — added the shared semantic-label seam, required explicit streams,
+  migrated all runtime callers, fixed stderr eligibility, and added independent
+  stream regressions
+
+Review range:
+
+```text
+998a525a64c633d43e4a5332def2edd5dedd11a2..fecd314d4dc69b8ce90cf0877bba6b2cd141c270
+```
+
+Correctness, test-quality, and maintainability reviews passed with no material
+findings. No review-fix commit or widened range was required.
+
+Decision gate: `Continue`. Phase 2 is complete. Every runtime
+`getCliColors(...)` call names its actual target stream, the implicit stdout
+default is removed, the five mismatch functions use stderr eligibility, and
+real parser, warning, and tip semantic adoption remains deferred to Phases 3
+and 4.

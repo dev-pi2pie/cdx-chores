@@ -399,47 +399,47 @@ Add the shared semantic-label seam and complete explicit-stream migration for
 existing color-helper callers. Defer semantic diagnostic adoption by consumer
 family to Phases 3 and 4.
 
-Status: in progress.
+Status: completed.
 
 Tasks:
 
-- [ ] Add one shared diagnostic-label or heading presentation helper.
-- [ ] Reuse `picocolors` and the existing runtime color setting; do not add a
+- [x] Add one shared diagnostic-label or heading presentation helper.
+- [x] Reuse `picocolors` and the existing runtime color setting; do not add a
       dependency or raw ANSI literals.
-- [ ] Require the actual target stream for the new presentation helper.
-- [ ] Migrate shared `getCliColors(...)` callers to explicit stdout or stderr
+- [x] Require the actual target stream for the new presentation helper.
+- [x] Migrate shared `getCliColors(...)` callers to explicit stdout or stderr
       arguments.
-- [ ] Correct known stdout-derived styling for content already written to
+- [x] Correct known stdout-derived styling for content already written to
       stderr while making those call sites explicit.
-- [ ] Treat the explicit-stream migration as stream ownership only; do not
+- [x] Treat the explicit-stream migration as stream ownership only; do not
       adopt parser-error, warning, notice, or tip consumers through the shared
       semantic helper until Phase 3 or Phase 4.
-- [ ] Remove the compatibility stdout default only after all call sites are
+- [x] Remove the compatibility stdout default only after all call sites are
       explicit.
-- [ ] Keep pure diagnostic data and option-resolution formatters ANSI-free.
-- [ ] Preserve explicitly deferred `getProcessColors(...)`, analyzer-status,
+- [x] Keep pure diagnostic data and option-resolution formatters ANSI-free.
+- [x] Preserve explicitly deferred `getProcessColors(...)`, analyzer-status,
       and terminal-control paths under their recorded owners.
-- [ ] Add focused tests for red error, yellow warning, cyan notice/tip, and
+- [x] Add focused tests for red error, yellow warning, cyan notice/tip, and
       unchanged message bodies at the shared-helper boundary.
 
 Verification:
 
-- [ ] Assert stdout TTY and stderr TTY eligibility independently.
-- [ ] Assert redirected target streams remain plain even when the other stream
+- [x] Assert stdout TTY and stderr TTY eligibility independently.
+- [x] Assert redirected target streams remain plain even when the other stream
       is a TTY.
-- [ ] Assert every known stderr renderer derives eligibility from stderr after
+- [x] Assert every known stderr renderer derives eligibility from stderr after
       the explicit-stream migration.
-- [ ] Confirm real parser, warning, notice, and tip consumer-adoption tests
+- [x] Confirm real parser, warning, notice, and tip consumer-adoption tests
       remain assigned to Phase 3 or Phase 4.
-- [ ] Assert `NO_COLOR`, `--no-color`, and disabled runtime color remain plain.
-- [ ] Assert stripping ANSI from styled output returns the exact canonical
+- [x] Assert `NO_COLOR`, `--no-color`, and disabled runtime color remain plain.
+- [x] Assert stripping ANSI from styled output returns the exact canonical
       plain text.
-- [ ] Run typecheck, lint, formatting, and focused color tests.
-- [ ] Record the exact Phase 2 review range and gate decision.
+- [x] Run typecheck, lint, formatting, and focused color tests.
+- [x] Record the exact Phase 2 review range and gate decision.
 
 Gate:
 
-- [ ] Continue only when the shared seam is stream-correct and does not change
+- [x] Continue only when the shared seam is stream-correct and does not change
       existing plain output.
 
 ### Phase 3: Parser Error And Warning Adoption
