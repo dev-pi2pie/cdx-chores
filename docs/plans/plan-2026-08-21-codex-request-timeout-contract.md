@@ -1,7 +1,6 @@
 ---
 title: "Codex request timeout contract implementation"
 created-date: 2026-08-21
-modified-date: 2026-08-22
 status: active
 agent: codex
 ---
@@ -845,11 +844,45 @@ Gate:
 
 Update public documentation only after behavior and help output are verified.
 
+This phase resumes after the separate
+[CLI diagnostic color contract plan](plan-2026-08-21-cli-diagnostic-color-contract.md)
+is completed. That intervening plan owns presentation only: it may style the
+existing legacy timeout `Warning:` label, but it does not own timeout semantics,
+canonical warning wording, migration guidance, or this phase's public timeout
+documentation.
+
+After the final diagnostic-color closeout commit is integrated into the branch
+used for timeout Phase 7, record its full SHA and integration method in the
+Phase 7 job record and name it `COLOR_TIP`. Confirm that `COLOR_TIP` is an
+ancestor of the Phase 7 tip. The integration must use fast-forward or a
+non-rewriting merge so the reviewed `COLOR_TIP` SHA remains unchanged; do not
+squash, cherry-pick, or rebase it after final color review.
+
+Because the diagnostic-color commits intervene between timeout implementation
+and timeout documentation, Phase 7 must preserve two exact Git review ranges:
+
+```text
+original timeout implementation slice
+  -> TIMEOUT_IMPL_BASE..TIMEOUT_PHASE6_TIP
+
+Phase 7 documentation and closeout slice
+  -> COLOR_TIP..TIMEOUT_PHASE7_TIP
+```
+
+The Phase 7 range intentionally excludes `COLOR_TIP` and all earlier
+diagnostic-color changes. Record full SHAs for all four boundaries. Do not
+present diagnostic-color commits as timeout implementation commits.
+
 Status: not started.
 
 Tasks:
 
 - [ ] Create the Phase 7 validation and closeout job record.
+- [ ] Record the integrated final diagnostic-color closeout commit as
+      `COLOR_TIP`, including its full SHA and integration method.
+- [ ] Confirm `COLOR_TIP` is an ancestor of the branch used for timeout Phase 7.
+- [ ] Confirm the integration preserved the reviewed `COLOR_TIP` SHA through a
+      fast-forward or non-rewriting merge.
 - [ ] Create `docs/guides/codex-timeouts-retries-and-recovery.md` as the
       canonical comparison-first guide for shared/scoped timeout, workflow-owned
       retry, semantic repair, and user-triggered regeneration.
@@ -878,7 +911,13 @@ Tasks:
 - [ ] Run the cumulative focused suite, lint, format check, full tests, and
       build.
 - [ ] Inspect final command help for all three direct rename surfaces.
-- [ ] Perform a final named-range review of the complete implementation slice.
+- [ ] Reconfirm the original timeout implementation range as
+      `TIMEOUT_IMPL_BASE..TIMEOUT_PHASE6_TIP` using the full SHAs recorded by
+      the phase job records.
+- [ ] Review the exact Phase 7 documentation and closeout range as
+      `COLOR_TIP..TIMEOUT_PHASE7_TIP`.
+- [ ] Keep intervening diagnostic-color commits outside the timeout
+      implementation range and describe them only as presentation context.
 - [ ] Mark this plan `completed` only after every completion criterion is
       satisfied and recorded.
 
@@ -894,11 +933,19 @@ Verification:
       smoke details.
 - [ ] Confirm release-note wording describes deprecation without claiming that
       legacy removal is already scheduled.
+- [ ] Confirm the styled legacy warning strips to the canonical plain text
+      documented by the timeout contract.
+- [ ] Confirm the timeout guide and CLI output/color guide retain distinct
+      semantic and presentation ownership.
+- [ ] Confirm `COLOR_TIP..TIMEOUT_PHASE7_TIP` excludes the diagnostic-color
+      commits and contains only the resumed timeout documentation and closeout
+      slice.
 
 Gate:
 
 - [ ] Do not close the plan or research until implementation, validation, help,
-      public documentation, and traceability evidence agree.
+      public documentation, both named review ranges, and traceability evidence
+      agree.
 
 ## Test Plan
 

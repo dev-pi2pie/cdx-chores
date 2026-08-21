@@ -23,12 +23,34 @@ The implementation should:
 
 ## Planning Boundary
 
-This plan is `draft`. It is a separate follow-up to the active
-[Codex request timeout contract plan](plan-2026-08-21-codex-request-timeout-contract.md)
-and must not extend that plan's Phase 7 scope.
+This plan is `draft`. It is a separate CLI-wide presentation plan from the
+active
+[Codex request timeout contract plan](plan-2026-08-21-codex-request-timeout-contract.md).
 
-Implementation should begin only after the timeout plan's documentation and
-closeout phase is complete. The intended implementation branch is:
+The agreed execution order is:
+
+1. complete this CLI diagnostic color contract
+2. integrate its final reviewed closeout commit into the branch that will own
+   timeout Phase 7
+3. resume Phase 7 of the Codex request timeout contract
+
+This ordering allows the timeout documentation and final built-output
+inspection to use the completed diagnostic presentation contract. It is not a
+timeout-semantic dependency.
+
+The color implementation may change the ANSI presentation boundary of the
+legacy Codex timeout warning, but it must not change that warning's canonical
+plain text, deprecation behavior, replacement guidance, timeout semantics, or
+exit behavior. Timeout guides, release notes, research closeout, and Phase 7
+records remain owned by the timeout plan.
+
+The timeout Phase 7 job record will name the integrated final diagnostic-color
+closeout commit `COLOR_TIP`, record its full SHA and integration method, and
+confirm that it is an ancestor of the timeout Phase 7 tip. Use fast-forward or
+a non-rewriting merge so the reviewed `COLOR_TIP` full SHA remains in history.
+Do not squash, cherry-pick, or rebase the final color closeout after review.
+
+The intended implementation branch is:
 
 ```text
 codex/cli-diagnostic-color-contract
@@ -326,8 +348,13 @@ Status: not started.
 
 Tasks:
 
-- [ ] Confirm the timeout contract plan is completed before implementation
-      begins.
+- [ ] Record the agreed execution order: complete this plan before resuming
+      timeout Phase 7.
+- [ ] Confirm the color migration does not modify timeout semantics, canonical
+      warning wording, timeout guides, release notes, or timeout closeout
+      records.
+- [ ] Record the current timeout Phase 6 implementation tip and preserve it as
+      the end of the original timeout implementation review slice.
 - [ ] Create the execution job record and record the clean starting commit.
 - [ ] Inventory every `getCliColors(...)`, `getProcessColors(...)`, and direct
       `createColors(...)` call and record its actual output stream.
@@ -368,8 +395,9 @@ Gate:
 
 ### Phase 2: Shared Stream-Aware Presentation Foundation
 
-Add the reusable semantic-label seam and make stream ownership explicit without
-migrating all consumers in the same commit.
+Add the shared semantic-label seam and complete explicit-stream migration for
+existing color-helper callers. Defer semantic diagnostic adoption by consumer
+family to Phases 3 and 4.
 
 Status: not started.
 
@@ -381,19 +409,28 @@ Tasks:
 - [ ] Require the actual target stream for the new presentation helper.
 - [ ] Migrate shared `getCliColors(...)` callers to explicit stdout or stderr
       arguments.
+- [ ] Correct known stdout-derived styling for content already written to
+      stderr while making those call sites explicit.
+- [ ] Treat the explicit-stream migration as stream ownership only; do not
+      adopt parser-error, warning, notice, or tip consumers through the shared
+      semantic helper until Phase 3 or Phase 4.
 - [ ] Remove the compatibility stdout default only after all call sites are
       explicit.
 - [ ] Keep pure diagnostic data and option-resolution formatters ANSI-free.
 - [ ] Preserve explicitly deferred `getProcessColors(...)`, analyzer-status,
       and terminal-control paths under their recorded owners.
 - [ ] Add focused tests for red error, yellow warning, cyan notice/tip, and
-      unchanged message bodies.
+      unchanged message bodies at the shared-helper boundary.
 
 Verification:
 
 - [ ] Assert stdout TTY and stderr TTY eligibility independently.
 - [ ] Assert redirected target streams remain plain even when the other stream
       is a TTY.
+- [ ] Assert every known stderr renderer derives eligibility from stderr after
+      the explicit-stream migration.
+- [ ] Confirm real parser, warning, notice, and tip consumer-adoption tests
+      remain assigned to Phase 3 or Phase 4.
 - [ ] Assert `NO_COLOR`, `--no-color`, and disabled runtime color remain plain.
 - [ ] Assert stripping ANSI from styled output returns the exact canonical
       plain text.
@@ -446,21 +483,21 @@ Gate:
 - [ ] Continue only when all approved first-wave errors and warnings use the
       shared contract without behavioral or plain-text drift.
 
-### Phase 4: Informational Presentation And Stream Alignment
+### Phase 4: Informational Diagnostic Adoption
 
-Adopt the notice/tip contract where semantically appropriate and repair known
-stdout/stderr eligibility mismatches.
+Adopt the notice/tip contract after Phase 2 has completed stream alignment.
+Phase 4 verifies stream correctness but does not repeat the stream migration.
 
 Status: not started.
 
 Tasks:
 
-- [ ] Route Interactive `Tip:` styling through stderr eligibility.
-- [ ] Route Interactive stack replay-tip styling through stderr eligibility.
-- [ ] Route Interactive data-query review and source-introspection styling
-      through stderr eligibility.
+- [ ] Route Interactive `Tip:` labels through the shared cyan notice style,
+      using the explicit stderr target established in Phase 2.
 - [ ] Apply the cyan notice style only to true ancillary notices approved in
       Phase 1.
+- [ ] Verify that Interactive stack replay, data-query review, and source
+      introspection remain stderr-correct after Phase 2.
 - [ ] Preserve font `Info:` report rows and other stdout report fields under
       their current renderer ownership.
 - [ ] Preserve doctor, SQL, table, and progress-specific visual semantics.
@@ -468,8 +505,8 @@ Tasks:
 
 Verification:
 
-- [ ] Test stdout-TTY/stderr-redirected and stdout-redirected/stderr-TTY cases
-      for every repaired renderer family.
+- [ ] Re-run stdout-TTY/stderr-redirected and stdout-redirected/stderr-TTY cases
+      for every adopted informational renderer family.
 - [ ] Assert tips and notices remain on their existing stream.
 - [ ] Assert machine-readable stdout remains free of ANSI and ancillary text.
 - [ ] Assert Interactive prompt order and workflow behavior are unchanged.
@@ -479,8 +516,9 @@ Verification:
 
 Gate:
 
-- [ ] Continue only when every adopted stderr surface derives styling from
-      stderr and report-owned presentation remains unchanged.
+- [ ] Continue only when true notices use the shared style, every adopted
+      stderr surface remains stream-correct, and report-owned presentation is
+      unchanged.
 
 ### Phase 5: Documentation, Full Validation, And Closeout
 
@@ -498,6 +536,14 @@ Tasks:
 - [ ] Record the final adopted-surface matrix and deferred domain presentation
       in the job record.
 - [ ] Link the completed guide from the final job-record closeout section.
+- [ ] Record that timeout Phase 7 resumes after this plan and must retain the
+      original timeout implementation review boundary through Phase 6.
+- [ ] Record the handoff requirement that the timeout Phase 7 job capture the
+      integrated final color closeout commit as `COLOR_TIP`, including its full
+      SHA, integration method, and ancestry evidence.
+- [ ] Require fast-forward or non-rewriting merge integration so the reviewed
+      `COLOR_TIP` remains unchanged; do not squash, cherry-pick, or rebase it
+      after final review.
 - [ ] Inspect built CLI unknown-option, warning, help, and no-color output.
 - [ ] Run the full test suite and repository static checks.
 - [ ] Review the complete implementation range from the plan's starting commit
