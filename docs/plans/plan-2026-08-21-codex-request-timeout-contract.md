@@ -14,7 +14,7 @@ Implement the first coherent Codex request-timeout contract for `cdx-chores`:
 - expose the shared `--codex-timeout <duration>` option on rename commands
 - add duration-based image and document timeout overrides for rename
 - preserve the existing millisecond-only rename flags during a compatibility
-  period with exact migration notices
+  period with one migration notice and exact replacements when valid
 - classify exhausted request timeouts clearly without changing rename's current
   retry, partial-result, fallback, or exit behavior
 - add the shared option to the first explicit non-rename Codex command wave
@@ -87,7 +87,7 @@ regeneration creates another request with another timeout window.
 
 | Research question | Recommendation adopted by this draft plan |
 | --- | --- |
-| Maximum accepted duration | Use a 10-minute (`600_000ms`) per-attempt maximum. This is a validation bound, not a whole-command SLA. Revisit only with evidence from legitimate bounded workflows. |
+| Maximum accepted duration | Apply a 10-minute (`600_000ms`) per-attempt maximum to new duration-based CLI options. This is not a whole-command SLA and is not applied retroactively to deprecated rename millisecond flags during compatibility. Revisit only with evidence from legitimate bounded workflows. |
 | Initial duration grammar | Accept positive integer `ms`, `s`, and `m` only. Do not add hours, decimals, compound values, bare numbers, or case-insensitive aliases. |
 | First non-rename direct wave | Add `--codex-timeout <duration>` to `data query codex`, `data stack --codex-assist`, `md pdf-profile codex`, `md pdf-template codex`, and `md pdf-project codex`. Keep embedded suggestion flags default-only in this plan. |
 | Markdown PDF project semantics | Apply one shared value independently to every profile, template, and repair request attempt. Do not add phase-specific timeout flags without later evidence. |
@@ -144,10 +144,15 @@ Examples:
 10m
 ```
 
-The initial maximum is 10 minutes (`600_000ms`). This gives bounded local Codex
-requests substantially more room than the current default without allowing one
-request attempt to wait for hours. A later evidence-backed plan may change that
+The initial maximum for new duration-based CLI options is 10 minutes
+(`600_000ms`). This gives bounded local Codex requests substantially more room
+than the current default without allowing one request attempt configured through
+the new options to wait for hours. A later evidence-backed plan may change that
 maximum.
+
+This parser maximum is not a universal runtime cap. During the compatibility
+period, it does not retroactively restrict the deprecated rename millisecond
+flags or existing internal numeric timeout inputs.
 
 Reject:
 
@@ -230,6 +235,11 @@ When a user explicitly supplies either legacy CLI flag:
   reduced or normalized before using the duration-based flag
 - do not print again for each analyzer batch or retry attempt
 - do not announce a removal release yet
+
+The 10-minute maximum for new duration options must not be applied to a legacy
+millisecond value merely because the command also emits a deprecation notice.
+Legacy values keep their existing numeric behavior until the separately
+approved removal boundary.
 
 Example for one legacy flag:
 
@@ -572,7 +582,8 @@ Tasks:
       action.
 - [x] Build one consolidated stderr notice for one or both explicitly supplied
       legacy flags.
-- [x] Include exact duration-based replacements in the notice.
+- [x] Include exact duration-based replacements when valid and a non-exact
+      migration explanation otherwise.
 - [x] Normalize accepted public values to numeric milliseconds before action
       execution.
 - [x] Resolve the shared and scoped CLI values at the command boundary and map
@@ -1150,10 +1161,13 @@ The plan is complete when:
 
 - [ ] All three new duration options are available on every direct rename
       command surface and alias in scope.
-- [ ] Strict duration validation and the 10-minute cap are verified.
+- [ ] Strict duration validation and the 10-minute cap are verified for the new
+      duration-based CLI options without retroactively restricting legacy
+      rename millisecond inputs.
 - [ ] Scoped-over-shared precedence is verified for both analyzers.
 - [ ] Same-analyzer new/legacy conflicts fail before action execution.
-- [ ] Legacy flags retain behavior and emit one exact migration notice.
+- [ ] Legacy flags retain behavior and emit one consolidated migration notice,
+      with exact replacements only when values satisfy the new contract.
 - [ ] Timeout flags do not enable Codex analysis.
 - [ ] Retry behavior and per-attempt timeout forwarding remain unchanged.
 - [ ] Exhausted timeouts receive safe, specific fallback information.

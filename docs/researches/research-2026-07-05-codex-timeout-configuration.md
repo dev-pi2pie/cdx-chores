@@ -30,10 +30,10 @@ completed and verified.
 - Establish a rename-specific timeout standard with
   `--codex-images-timeout <duration>` and
   `--codex-docs-timeout <duration>` overriding the shared value.
-- Replace the existing millisecond-only rename flags with exact duration-based
-  equivalents over a compatibility period. Keep the old flags working, emit one
-  deprecation notice when used, and do not schedule removal until a release
-  boundary is chosen.
+- Introduce duration-based rename equivalents over a compatibility period. Keep
+  the old millisecond flags working, emit one deprecation notice when used,
+  provide exact replacements when values satisfy the new contract, and do not
+  schedule removal until a release boundary is chosen.
 - Define timeout as applying to each Codex request attempt. Batches, retries,
   repair requests, phases, and user-triggered regeneration can make the total
   command duration longer.
@@ -226,6 +226,11 @@ value is a positive integer within the new 10-minute bound:
   -> --codex-docs-timeout 30000ms
 ```
 
+The 10-minute maximum is a validation rule for the new duration-based options.
+It is not a retroactive restriction on the deprecated rename millisecond flags
+during their compatibility period or on existing internal numeric timeout
+inputs.
+
 During the compatibility phase:
 
 - keep both legacy flags functional with their current semantics
@@ -310,8 +315,10 @@ scoped value remains more specific than a shared value from the same source.
 
 The implementation-plan review resolves the earlier open questions as follows:
 
-- cap one Codex request attempt at 10 minutes (`600_000ms`); this is a
-  validation bound, not a whole-command SLA
+- cap values accepted through the new duration-based CLI options at 10 minutes
+  (`600_000ms`) per request attempt; this is not a whole-command SLA and does
+  not retroactively cap the deprecated rename millisecond flags during their
+  compatibility period
 - accept positive integer `ms`, `s`, and `m` values only; do not add hours,
   decimals, compounds, bare numbers, or case-insensitive aliases
 - add the first non-rename direct option to `data query codex`,
