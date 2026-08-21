@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
+import { resolveCliColorEnabled } from "../src/cli/colors";
 import { getInteractiveAbortNotice, writeInteractiveTip } from "../src/cli/interactive/notice";
 import type { CliRuntime } from "../src/cli/types";
+
+const ANSI_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
 
 class CaptureStream {
   public text = "";
@@ -15,6 +18,7 @@ class CaptureStream {
 }
 
 function createRuntime(options: {
+  colorEnabled?: boolean;
   columns?: number;
   isTTY?: boolean;
   stderrIsTTY?: boolean;
@@ -26,7 +30,7 @@ function createRuntime(options: {
   stderr.isTTY = options.stderrIsTTY;
   return {
     cwd: process.cwd(),
-    colorEnabled: true,
+    colorEnabled: options.colorEnabled ?? true,
     now: () => new Date("2026-03-30T00:00:00.000Z"),
     platform: process.platform,
     stdout: stdout as unknown as NodeJS.WritableStream,
@@ -77,5 +81,31 @@ describe("interactive notice helpers", () => {
     const text = (runtime.stderr as unknown as CaptureStream).text;
     expect(text).toContain("\u001b[36mTip:\u001b[39m");
     expect(text).toContain("\u001b[2mReview this output.\u001b[22m");
+    expect(text.replace(ANSI_PATTERN, "")).toBe("\nTip: Review this output.\n\n");
+    expect((runtime.stdout as unknown as CaptureStream).text).toBe("");
+  });
+
+  test("keeps a stderr tip plain when runtime color is disabled", () => {
+    const runtime = createRuntime({ colorEnabled: false, isTTY: true, stderrIsTTY: true });
+
+    writeInteractiveTip(runtime, "Review this output.");
+
+    expect((runtime.stderr as unknown as CaptureStream).text).toBe(
+      "\nTip: Review this output.\n\n",
+    );
+  });
+
+  test("keeps a stderr tip plain when runtime resolution sees NO_COLOR", () => {
+    const runtime = createRuntime({
+      colorEnabled: resolveCliColorEnabled({ env: { NO_COLOR: "1" } }),
+      isTTY: true,
+      stderrIsTTY: true,
+    });
+
+    writeInteractiveTip(runtime, "Review this output.");
+
+    expect((runtime.stderr as unknown as CaptureStream).text).toBe(
+      "\nTip: Review this output.\n\n",
+    );
   });
 });

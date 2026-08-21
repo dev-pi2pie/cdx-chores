@@ -343,3 +343,13 @@ nine approved warning families use the shared semantic style while plain text,
 stream routing, warning cardinality, structured data, help output, and exit
 behavior remain unchanged. Phase 4 may adopt the existing Interactive `Tip:`
 family.
+
+## Phase 4: Informational Diagnostic Adoption
+
+Status: in progress.
+
+Starting commit: `b78dfaed88ec31ba0414c17f04d747e1636c953c`
+
+Phase 4 routes the existing Interactive `Tip:` label through the shared cyan
+notice role. It re-verifies the Phase 2 stream boundary without reopening that
+migration and does not invent a new `Info:` diagnostic family.

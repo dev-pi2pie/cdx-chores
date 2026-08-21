@@ -488,7 +488,7 @@ Gate:
 Adopt the notice/tip contract after Phase 2 has completed stream alignment.
 Phase 4 verifies stream correctness but does not repeat the stream migration.
 
-Status: not started.
+Status: in progress.
 
 Tasks:
 
