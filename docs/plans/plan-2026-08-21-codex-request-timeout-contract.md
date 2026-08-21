@@ -555,7 +555,7 @@ Gate:
 Add the new options and deprecation path to `rename file`, `rename batch`, and
 `batch-rename`.
 
-Status: in progress.
+Status: completed.
 
 Tasks:
 
@@ -593,11 +593,11 @@ Verification:
 - [x] Assert one or both legacy flags produce exactly one stderr notice without
       changing the exit status.
 - [x] Inspect `rename file`, `rename batch`, and `batch-rename` help output.
-- [ ] Record focused results and the Phase 2 review range in the job record.
+- [x] Record focused results and the Phase 2 review range in the job record.
 
 Gate:
 
-- [ ] All three command surfaces expose a functional shared/scoped contract and
+- [x] All three command surfaces expose a functional shared/scoped contract and
       preserve the legacy compatibility path before the shared action seam is
       introduced in Phase 3.
 

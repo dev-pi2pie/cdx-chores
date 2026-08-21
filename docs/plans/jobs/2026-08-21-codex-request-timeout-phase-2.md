@@ -1,7 +1,7 @@
 ---
 title: "Codex request timeout Phase 2"
 created-date: 2026-08-21
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -52,5 +52,26 @@ used for this command-boundary phase.
 
 ## Review
 
-Pending. The completed Phase 2 commit range will be recorded after validation
-and exact-range review.
+Implementation commits:
+
+- `16e37f03` — added the shared/scoped rename timeout options, legacy notices,
+  command-boundary routing, help parity, focused coverage, and execution record
+- `af9da6bf` — made option names explicit and separated pure timeout/notice
+  resolution from the stderr-writing command boundary
+
+Review range:
+
+```text
+b7811d218534debb3128e7d0f92717969311ebdf..af9da6bf
+```
+
+The first correctness and test-quality reviews found no material gaps. The
+first maintainability review found that option names were derived from
+Commander syntax strings and that timeout resolution, migration construction,
+and stderr output were too closely coupled. Both findings were accepted and
+fixed in `af9da6bf`. The widened correctness, test-quality, and maintainability
+reviews then passed with no remaining material findings.
+
+Decision gate: `Continue`. Phase 2 is complete. The three rename surfaces have
+a functional shared/scoped duration contract and retain the legacy
+compatibility path; Phase 3 may introduce the shared numeric action seam.
