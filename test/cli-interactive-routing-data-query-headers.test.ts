@@ -6,7 +6,7 @@ describe("interactive mode routing: data query headers", () => {
   test("accepts all interactive header suggestions and re-inspects before SQL authoring", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      codexTimeoutMs: 45_000,
+      captureCodexTimeouts: true,
       selectQueue: ["data", "data:query", "accept", "manual", "table"],
       requiredPathQueue: ["fixtures/query.csv"],
       inputQueue: ["select id, status from file order by id", "10"],
@@ -42,7 +42,7 @@ describe("interactive mode routing: data query headers", () => {
         options: {
           format: "csv",
           selectedSource: undefined,
-          timeoutMs: 45_000,
+          timeoutMs: 30_000,
         },
       },
       {
@@ -73,6 +73,9 @@ describe("interactive mode routing: data query headers", () => {
     expect(result.stderr).toContain(
       "Accepted header mappings. Re-inspecting shaped source before SQL authoring.",
     );
+    expect(
+      result.promptCalls.every((call) => !call.message.toLowerCase().includes("timeout")),
+    ).toBe(true);
   });
 
   test("supports editing one interactive header suggestion before acceptance", () => {

@@ -262,7 +262,10 @@ export function createStackActionMocks(context: HarnessRunnerContext) {
       });
     },
     suggestDataStackWithCodex: async (options: { timeoutMs?: unknown }) => {
-      if (context.scenario.codexTimeoutMs !== undefined) {
+      if (
+        context.scenario.codexTimeoutMs !== undefined ||
+        context.scenario.captureCodexTimeouts === true
+      ) {
         context.recordAction("data:stack:codex-suggest", {
           timeoutMs: options.timeoutMs,
         });

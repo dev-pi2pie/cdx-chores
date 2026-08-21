@@ -6,6 +6,7 @@ describe("interactive mode routing: data query Codex single source", () => {
   test("routes Codex Assistant through the default single-line intent prompt", () => {
     const result = runInteractiveHarness({
       mode: "run",
+      captureCodexTimeouts: true,
       selectQueue: ["data", "data:query", "Codex Assistant", "json"],
       requiredPathQueue: ["fixtures/query.csv"],
       confirmQueue: [true, false, false, true, false],
@@ -24,6 +25,7 @@ describe("interactive mode routing: data query Codex single source", () => {
           format: "csv",
           intent: "count rows by status",
           selectedSource: undefined,
+          timeoutMs: 30_000,
         },
       },
       {
@@ -47,6 +49,9 @@ describe("interactive mode routing: data query Codex single source", () => {
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toContain(
       "input:Describe the query intent:",
     );
+    expect(
+      result.promptCalls.every((call) => !call.message.toLowerCase().includes("timeout")),
+    ).toBe(true);
   });
 
   test("supports checkpoint regenerate from codex sql review", () => {

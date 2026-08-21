@@ -18,7 +18,10 @@ export function installDataQueryCodexMock(context: HarnessRunnerContext): void {
       context.recordAction("data:query:codex-draft", {
         format: options.format,
         intent: options.intent,
-        ...(context.scenario.codexTimeoutMs !== undefined ? { timeoutMs: options.timeoutMs } : {}),
+        ...(context.scenario.codexTimeoutMs !== undefined ||
+        context.scenario.captureCodexTimeouts === true
+          ? { timeoutMs: options.timeoutMs }
+          : {}),
         ...(typeof options.introspection === "object" &&
         options.introspection !== null &&
         "selectedHeaderRow" in options.introspection &&

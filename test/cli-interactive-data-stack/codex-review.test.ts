@@ -5,6 +5,7 @@ import { runDataStackInteractiveHarness, stripAnsi } from "./helpers";
 describe("interactive data stack codex review", () => {
   test("reviews and accepts interactive data stack Codex recommendations before writing", () => {
     const result = runDataStackInteractiveHarness({
+      captureCodexTimeouts: true,
       selectQueue: [
         "data",
         "data:stack",
@@ -48,6 +49,10 @@ describe("interactive data stack codex review", () => {
     });
     expect(result.actionCalls).toEqual([
       {
+        name: "data:stack:codex-suggest",
+        options: { timeoutMs: 30_000 },
+      },
+      {
         name: "data:stack",
         options: expect.objectContaining({
           uniqueBy: ["id"],
@@ -61,6 +66,9 @@ describe("interactive data stack codex review", () => {
         (call) => call.kind === "select" && call.message === "Stack plan action",
       ),
     ).toHaveLength(1);
+    expect(
+      result.promptCalls.every((call) => !call.message.toLowerCase().includes("timeout")),
+    ).toBe(true);
     expect(
       result.promptCalls.filter(
         (call) => call.kind === "select" && call.message === "Codex-powered analysis checkpoint",

@@ -21,7 +21,7 @@ describe("interactive rename routing", () => {
   test("forwards the session Codex timeout without enabling rename analyzers", () => {
     const result = runInteractiveHarness({
       mode: "run",
-      codexTimeoutMs: 30_000,
+      captureCodexTimeouts: true,
       selectQueue: ["rename", "rename:file", "default", "utc"],
       requiredPathQueue: ["README.md"],
       inputQueue: [""],
@@ -36,6 +36,9 @@ describe("interactive rename routing", () => {
         codexTimeoutMs: 30_000,
       }),
     });
+    expect(
+      result.promptCalls.every((call) => !call.message.toLowerCase().includes("timeout")),
+    ).toBe(true);
   });
 
   test("forwards a configured session timeout to batch rename analyzers", () => {

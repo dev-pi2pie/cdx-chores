@@ -83,7 +83,8 @@ export function createRenameActionMocks(context: HarnessRunnerContext) {
     actionRenameBatch: async (_runtime: unknown, options: Record<string, unknown>) => {
       context.recordAction(
         "rename:batch",
-        context.scenario.codexTimeoutMs === undefined
+        context.scenario.codexTimeoutMs === undefined &&
+          context.scenario.captureCodexTimeouts !== true
           ? Object.fromEntries(Object.entries(options).filter(([key]) => key !== "codexTimeoutMs"))
           : options,
       );
@@ -96,7 +97,8 @@ export function createRenameActionMocks(context: HarnessRunnerContext) {
     actionRenameFile: async (_runtime: unknown, options: Record<string, unknown>) => {
       context.recordAction(
         "rename:file",
-        context.scenario.codexTimeoutMs === undefined
+        context.scenario.codexTimeoutMs === undefined &&
+          context.scenario.captureCodexTimeouts !== true
           ? Object.fromEntries(Object.entries(options).filter(([key]) => key !== "codexTimeoutMs"))
           : options,
       );
@@ -188,7 +190,8 @@ export function createRenameActionMocks(context: HarnessRunnerContext) {
                 examples: group.examples,
               }))
             : [],
-          ...(context.scenario.codexTimeoutMs !== undefined
+          ...(context.scenario.codexTimeoutMs !== undefined ||
+          context.scenario.captureCodexTimeouts === true
             ? { timeoutMs: options.timeoutMs }
             : {}),
         });

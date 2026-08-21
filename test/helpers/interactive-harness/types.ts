@@ -1,6 +1,7 @@
 export interface InteractiveHarnessScenario {
   mode: "run" | "invalid-data-action";
   codexTimeoutMs?: number;
+  captureCodexTimeouts?: boolean;
   markdownPdfMocks?: boolean;
   markdownPdfBundleRoles?: Array<"profile" | "template" | "css">;
   markdownPdfIgnoredBundleFiles?: string[];
