@@ -6,7 +6,7 @@ import {
   executeBatchesWithRetries,
   parseFilenameTitleSuggestions,
   startCodexReadOnlyThread,
-  summarizeBatchErrors,
+  summarizeCodexBatchFailures,
 } from "./shared";
 
 export interface CodexImageRenameSuggestion {
@@ -86,21 +86,28 @@ export async function suggestImageRenameTitlesWithCodex(
   }
 
   try {
+    const timeoutMs = options.timeoutMs ?? 30_000;
     const batchSize = Math.max(1, Math.trunc(options.batchSize ?? options.imagePaths.length));
     const retries = Math.max(0, Math.trunc(options.retries ?? 0));
     const batches = chunkItems(options.imagePaths, batchSize);
-    const { suggestions, batchErrors } = await executeBatchesWithRetries({
+    const { suggestions, batchErrors, batchFailures } = await executeBatchesWithRetries({
       batches,
       retries,
       runBatch: async (batch) =>
         suggestSingleBatch({
           imagePaths: batch,
           workingDirectory: options.workingDirectory,
-          timeoutMs: options.timeoutMs,
+          timeoutMs,
         }),
     });
 
-    const errorSummary = summarizeBatchErrors(batchErrors, suggestions.length > 0);
+    const errorSummary = summarizeCodexBatchFailures({
+      batchErrors,
+      batchFailures,
+      hasSuggestions: suggestions.length > 0,
+      requestLabel: "Codex image-title request",
+      timeoutMs,
+    });
     if (!errorSummary) {
       return { suggestions };
     }

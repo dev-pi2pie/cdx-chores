@@ -8,6 +8,7 @@ import {
   parseFilenameTitleSuggestions,
   runCodexPromptOnly,
   summarizeBatchErrors,
+  summarizeCodexBatchFailures,
 } from "../src/adapters/codex/shared";
 
 describe("codex shared adapter helpers", () => {
@@ -65,6 +66,9 @@ describe("codex shared adapter helpers", () => {
       { batch: "b", title: "beta" },
     ]);
     expect(result.batchErrors).toEqual(["partial error"]);
+    expect(result.batchFailures).toEqual([
+      { kind: "other", message: "partial error", attemptsUsed: 1 },
+    ]);
   });
 
   test("executeBatchesWithRetries retries thrown errors and succeeds", async () => {
@@ -84,6 +88,88 @@ describe("codex shared adapter helpers", () => {
     expect(calls).toBe(2);
     expect(result.suggestions).toEqual([{ ok: true }]);
     expect(result.batchErrors).toEqual([]);
+    expect(result.batchFailures).toEqual([]);
+  });
+
+  test("retains partial results with timeout-specific exhausted batch metadata", async () => {
+    const result = await executeBatchesWithRetries({
+      batches: ["success", "timeout"],
+      retries: 0,
+      runBatch: async (batch) => {
+        if (batch === "success") {
+          return { suggestions: [{ batch, title: "kept" }] };
+        }
+        throw new DOMException("request deadline reached", "TimeoutError");
+      },
+    });
+
+    expect(result.suggestions).toEqual([{ batch: "success", title: "kept" }]);
+    expect(result.batchErrors).toEqual(["request deadline reached"]);
+    expect(result.batchFailures).toEqual([
+      { kind: "timeout", message: "request deadline reached", attemptsUsed: 1 },
+    ]);
+    expect(
+      summarizeCodexBatchFailures({
+        batchErrors: result.batchErrors,
+        batchFailures: result.batchFailures,
+        hasSuggestions: true,
+        requestLabel: "Codex image-title request",
+        timeoutMs: 30_000,
+      }),
+    ).toBe(
+      "Partial Codex suggestions. Codex image-title request timed out after the 30s per-attempt limit.",
+    );
+  });
+
+  test("records attempt exhaustion after multiple timeout retries", async () => {
+    let calls = 0;
+    const result = await executeBatchesWithRetries({
+      batches: ["timeout"],
+      retries: 2,
+      runBatch: async () => {
+        calls += 1;
+        throw new DOMException("request deadline reached", "TimeoutError");
+      },
+    });
+
+    expect(calls).toBe(3);
+    expect(result.batchFailures).toEqual([
+      { kind: "timeout", message: "request deadline reached", attemptsUsed: 3 },
+    ]);
+    expect(
+      summarizeCodexBatchFailures({
+        batchErrors: result.batchErrors,
+        batchFailures: result.batchFailures,
+        hasSuggestions: false,
+        requestLabel: "Codex document-title request",
+        timeoutMs: 120_000,
+      }),
+    ).toBe(
+      "Codex title generation failed. Codex document-title request timed out after the 2m per-attempt limit; 3 attempts were exhausted.",
+    );
+  });
+
+  test("keeps ordinary abort failures on the generic summary path", async () => {
+    const result = await executeBatchesWithRetries({
+      batches: ["abort"],
+      retries: 0,
+      runBatch: async () => {
+        throw new DOMException("request cancelled", "AbortError");
+      },
+    });
+
+    expect(result.batchFailures).toEqual([
+      { kind: "aborted", message: "request cancelled", attemptsUsed: 1 },
+    ]);
+    expect(
+      summarizeCodexBatchFailures({
+        batchErrors: result.batchErrors,
+        batchFailures: result.batchFailures,
+        hasSuggestions: false,
+        requestLabel: "Codex image-title request",
+        timeoutMs: 30_000,
+      }),
+    ).toBe("Codex title generation failed. request cancelled");
   });
 
   test("runCodexPromptOnly runs work in an empty disposable directory", async () => {

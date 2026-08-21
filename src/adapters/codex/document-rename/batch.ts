@@ -7,7 +7,7 @@ import {
   executeBatchesWithRetries,
   parseFilenameTitleSuggestions,
   startCodexReadOnlyThread,
-  summarizeBatchErrors,
+  summarizeCodexBatchFailures,
 } from "../shared";
 import {
   DOC_DOCX_EXTENSIONS,
@@ -165,6 +165,7 @@ export async function suggestDocumentRenameTitlesWithCodex(
   }
 
   try {
+    const timeoutMs = options.timeoutMs ?? 30_000;
     const evidenceItems = createPromptEvidenceItems({
       evidences: extractedItems,
       workingDirectory: options.workingDirectory,
@@ -172,18 +173,24 @@ export async function suggestDocumentRenameTitlesWithCodex(
     const batchSize = Math.max(1, Math.trunc(options.batchSize ?? evidenceItems.length));
     const retries = Math.max(0, Math.trunc(options.retries ?? 0));
     const batches = chunkItems(evidenceItems, batchSize);
-    const { suggestions, batchErrors } = await executeBatchesWithRetries({
+    const { suggestions, batchErrors, batchFailures } = await executeBatchesWithRetries({
       batches,
       retries,
       runBatch: async (batch) =>
         suggestSingleBatch({
           evidences: batch,
           workingDirectory: options.workingDirectory,
-          timeoutMs: options.timeoutMs,
+          timeoutMs,
         }),
     });
 
-    const errorSummary = summarizeBatchErrors(batchErrors, suggestions.length > 0);
+    const errorSummary = summarizeCodexBatchFailures({
+      batchErrors,
+      batchFailures,
+      hasSuggestions: suggestions.length > 0,
+      requestLabel: "Codex document-title request",
+      timeoutMs,
+    });
     if (!errorSummary) {
       return { suggestions, reasons };
     }

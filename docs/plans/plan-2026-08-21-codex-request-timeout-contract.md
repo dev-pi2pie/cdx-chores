@@ -672,11 +672,11 @@ Gate:
 
 Add bounded timeout-cause recognition and use it in rename analyzer summaries.
 
-Status: not started.
+Status: in progress.
 
 Tasks:
 
-- [ ] Create the Phase 4 job record.
+- [x] Create the Phase 4 job record.
 - [ ] Define the narrow internal failure kinds `timeout`, `aborted`, and
       `other` without changing public report schemas.
 - [ ] Add a bounded shared timeout classifier that recognizes a preserved
