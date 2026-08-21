@@ -321,6 +321,51 @@ describe("cli action modules: rename file", () => {
     });
   });
 
+  test("actionRenameFile forwards the shared timeout and document tuning options", async () => {
+    await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
+      const { runtime, stderr } = createCapturedRuntime();
+      const { filePath: docPath } = await createRenameFileFixture(
+        fixtureDir,
+        "rename-file-codex-shared-timeout",
+        "project notes.md",
+        {
+          content: "# Project Notes\n\nCurrent decisions.\n",
+        },
+      );
+
+      const calls: Array<{
+        timeoutMs?: number;
+        retries?: number;
+        batchSize?: number;
+      }> = [];
+      const result = await actionRenameFile(runtime, {
+        path: toRepoRelativePath(docPath),
+        dryRun: true,
+        codex: true,
+        codexTimeoutMs: 45_000,
+        codexDocsRetries: 2,
+        codexDocsBatchSize: 1,
+        codexDocsTitleSuggester: async (options) => {
+          calls.push({
+            timeoutMs: options.timeoutMs,
+            retries: options.retries,
+            batchSize: options.batchSize,
+          });
+          return {
+            suggestions: options.documentPaths.map((path) => ({
+              path,
+              title: "project notes",
+            })),
+          };
+        },
+      });
+      trackPlanCsv(result.planCsvPath);
+
+      expect(stderr.text).toBe("");
+      expect(calls).toEqual([{ timeoutMs: 45_000, retries: 2, batchSize: 1 }]);
+    });
+  });
+
   test("actionRenameFile codex auto reports unsupported files without analyzer calls", async () => {
     await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
       const { runtime, stdout, stderr } = createCapturedRuntime();
