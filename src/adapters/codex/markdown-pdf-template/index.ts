@@ -1,4 +1,6 @@
 import { startCodexReadOnlyThread } from "../shared";
+import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../../utils/codex-timeout";
+import { classifyCodexRequestFailure, formatCodexTimeoutFailure } from "../failure";
 import {
   resolveMdPdfTemplateCodexSlots,
   type MarkdownPdfTemplateCodexDecision,
@@ -15,7 +17,7 @@ import type {
   MarkdownPdfTemplateCodexRunner,
 } from "./types";
 
-export const MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS = 30_000;
+export const MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS = DEFAULT_CODEX_REQUEST_TIMEOUT_MS;
 const MARKDOWN_PDF_TEMPLATE_CODEX_APPLICATION_REPAIR_ATTEMPTS = 1;
 
 export type MarkdownPdfTemplateCodexFailureKind =
@@ -54,6 +56,23 @@ export function classifyMarkdownPdfTemplateCodexFailure(
 
 function fallbackReasonForFailure(kind: MarkdownPdfTemplateCodexFailureKind): string {
   return `Codex template decision failed: ${kind}.`;
+}
+
+function fallbackReasonForRequestFailure(input: {
+  error: unknown;
+  requestLabel: string;
+  timeoutMs: number;
+}): string {
+  if (classifyCodexRequestFailure(input.error) === "timeout") {
+    return formatCodexTimeoutFailure({
+      attemptsUsed: 1,
+      requestLabel: input.requestLabel,
+      timeoutMs: input.timeoutMs,
+    });
+  }
+  return fallbackReasonForFailure(
+    isCodexStructuredOutputSchemaError(input.error) ? "structured-output-schema" : "unavailable",
+  );
 }
 
 function summarizeApplicationError(error: unknown): string {
@@ -129,6 +148,7 @@ function noUsableTemplateResult(input: {
 async function suggestMarkdownPdfTemplateWithPrompt(input: {
   request: Omit<MarkdownPdfTemplateCodexRequest, "workingDirectory">;
   runPrompt: (options: { prompt: string }) => Promise<string>;
+  timeoutMs: number;
 }): Promise<MarkdownPdfTemplateCodexResult> {
   const basePrompt = buildMarkdownPdfTemplateCodexPrompt(input.request);
   let prompt = basePrompt;
@@ -142,9 +162,14 @@ async function suggestMarkdownPdfTemplateWithPrompt(input: {
       finalResponse = await input.runPrompt({ prompt });
     } catch (error) {
       return noUsableTemplateResult({
-        reason: fallbackReasonForFailure(
-          isCodexStructuredOutputSchemaError(error) ? "structured-output-schema" : "unavailable",
-        ),
+        reason: fallbackReasonForRequestFailure({
+          error,
+          requestLabel:
+            attempt === 0
+              ? "Codex Markdown PDF template request"
+              : "Codex Markdown PDF template application-repair request",
+          timeoutMs: input.timeoutMs,
+        }),
         request: input.request,
       });
     }
@@ -193,6 +218,7 @@ export async function suggestMarkdownPdfTemplateWithCodex(
   const runner = request.runner ?? runMarkdownPdfTemplateCodexPrompt;
   return suggestMarkdownPdfTemplateWithPrompt({
     request,
+    timeoutMs: request.timeoutMs ?? MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS,
     runPrompt: ({ prompt }) =>
       runner({
         prompt,

@@ -141,6 +141,7 @@ async function suggestProjectTemplateWithCodexProgress(input: {
   runtime: CliRuntime;
   signals: MdPdfTemplateCodexSignalCollection;
   templateCodexRunner?: MarkdownPdfTemplateCodexRunner;
+  timeoutMs?: number;
 }): Promise<MarkdownPdfTemplateCodexResult> {
   const ownsProgressSession = !input.progressSession;
   const codexProgress =
@@ -157,12 +158,14 @@ async function suggestProjectTemplateWithCodexProgress(input: {
           outputPlan: input.outputPlan,
           runner: input.templateCodexRunner,
           signals: input.signals,
+          timeoutMs: input.timeoutMs,
           workingDirectory: input.runtime.cwd,
         })
       : await suggestMarkdownPdfTemplateWithCodex({
           intent: input.intent,
           outputPlan: input.outputPlan,
           signals: input.signals,
+          timeoutMs: input.timeoutMs,
           workingDirectory: input.runtime.cwd,
         });
     codexProgressStatus =
@@ -187,6 +190,7 @@ export async function runMdPdfProjectCodexTemplatePhase(input: {
   signals: MdPdfProjectCodexSignalCollection;
   state: NormalizedMdPdfProjectCodexCommandState;
   templateCodexRunner?: MarkdownPdfTemplateCodexRunner;
+  timeoutMs?: number;
 }): Promise<MdPdfProjectCodexTemplatePhaseResult> {
   const forwardedProfileDirections = input.profilePhase.unmatchedProfileDirections;
   const shouldRunCodex =
@@ -215,6 +219,7 @@ export async function runMdPdfProjectCodexTemplatePhase(input: {
         runtime: input.runtime,
         signals,
         templateCodexRunner: input.templateCodexRunner,
+        timeoutMs: input.timeoutMs,
       })
     : undefined;
   const synthesis = codexResult

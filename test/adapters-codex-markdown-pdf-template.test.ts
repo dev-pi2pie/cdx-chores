@@ -940,6 +940,64 @@ describe("Markdown PDF template Codex adapter", () => {
     ]);
   });
 
+  test("reuses one configured timeout for the initial and application-repair requests", async () => {
+    const timeoutCalls: Array<number | undefined> = [];
+    let callCount = 0;
+    const result = await suggestMarkdownPdfTemplateWithCodex({
+      ...requestBase(),
+      timeoutMs: 120_000,
+      runner: async ({ timeoutMs }) => {
+        timeoutCalls.push(timeoutMs);
+        callCount += 1;
+        return callCount === 1
+          ? responseFromDecision({
+              coverEnabled: false,
+              managedAssets: [
+                {
+                  bundle_path: "/workspace/client/private-cover.png",
+                  source_label: "cover.png",
+                },
+              ],
+              templateFamily: "document-layered",
+            })
+          : responseFromDecision({
+              coverEnabled: false,
+              templateFamily: "document-layered",
+            });
+      },
+    });
+
+    expect(result.decision.decisionMode).toBe("adapted");
+    expect(timeoutCalls).toEqual([120_000, 120_000]);
+  });
+
+  test("formats only structurally preserved template timeouts as timeout failures", async () => {
+    const timeoutError = new Error("private transport details");
+    timeoutError.name = "TimeoutError";
+    const timeoutResult = await suggestMarkdownPdfTemplateWithCodex({
+      ...requestBase(),
+      timeoutMs: 120_000,
+      runner: async () => {
+        throw timeoutError;
+      },
+    });
+    const genericResult = await suggestMarkdownPdfTemplateWithCodex({
+      ...requestBase(),
+      timeoutMs: 120_000,
+      runner: async () => {
+        throw new Error("request timed out after two minutes");
+      },
+    });
+
+    expect(timeoutResult.decision.fallbackReason).toBe(
+      "Codex Markdown PDF template request timed out after the 2m per-attempt limit.",
+    );
+    expect(timeoutResult.decision.fallbackReason).not.toContain("private transport details");
+    expect(genericResult.decision.fallbackReason).toBe(
+      "Codex template decision failed: unavailable.",
+    );
+  });
+
   test("completes omitted profile-style font-hint role keys locally", async () => {
     const result = await suggestMarkdownPdfTemplateWithCodex({
       ...requestBase({

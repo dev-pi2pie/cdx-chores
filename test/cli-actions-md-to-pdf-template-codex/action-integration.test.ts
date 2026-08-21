@@ -176,6 +176,28 @@ async function expectTemplateBundleFeedsMdToPdf(input: {
 }
 
 describe("cli action modules: md pdf-template codex integration", () => {
+  test("forwards an injected per-request timeout through template preparation", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-timeout", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n\nBody.\n", "utf8");
+      const timeoutCalls: Array<number | undefined> = [];
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+
+      await actionMdPdfTemplateCodex(runtime, {
+        codexRunner: async (options) => {
+          timeoutCalls.push(options.timeoutMs);
+          return codexTemplateResponse();
+        },
+        dryRun: true,
+        input: "report.md",
+        intent: "Create an article template.",
+        output: "pdf-template",
+        timeoutMs: 120_000,
+      });
+
+      expect(timeoutCalls).toEqual([120_000]);
+    });
+  });
+
   test("prepares once, rebinds the destination, and writes the accepted artifact", async () => {
     await withTempFixtureDir("md-pdf-template-codex-prepared-rebind", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");

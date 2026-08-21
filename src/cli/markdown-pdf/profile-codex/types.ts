@@ -12,6 +12,7 @@ export interface MdPdfProfileCodexOptions {
   keepCodexReport?: boolean;
   codexReportOutput?: string;
   overwrite?: boolean;
+  timeoutMs?: number;
   codexRunner?: MarkdownPdfCodexProfileRunner;
   codexProgressPresenter?: CodexProgressPresenter;
   profileUidFactory?: (now: Date) => string;
@@ -19,5 +20,7 @@ export interface MdPdfProfileCodexOptions {
 
 export type MdPdfProfileCodexCliOptions = Omit<
   MdPdfProfileCodexOptions,
-  "codexProgressPresenter" | "codexRunner" | "profileUidFactory"
->;
+  "codexProgressPresenter" | "codexRunner" | "profileUidFactory" | "timeoutMs"
+> & {
+  codexTimeout?: number;
+};
