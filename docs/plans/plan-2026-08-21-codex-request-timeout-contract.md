@@ -712,11 +712,11 @@ Gate:
 
 Apply the stable shared contract to the selected non-rename direct commands.
 
-Status: not started.
+Status: in progress.
 
 Tasks:
 
-- [ ] Create the Phase 5 job record.
+- [x] Create the Phase 5 job record.
 - [ ] Reuse the shared duration option helper in the data and Markdown command
       registrations; do not copy parsing or maximum logic.
 - [ ] Add `--codex-timeout <duration>` to `data query codex` and thread the

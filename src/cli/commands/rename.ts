@@ -1,4 +1,4 @@
-import { Option, type Command } from "commander";
+import type { Command } from "commander";
 
 import {
   actionRenameApply,
@@ -12,12 +12,9 @@ import type {
   RenameCleanupTimestampAction,
   RenameFileOptions,
 } from "../actions/rename";
-import {
-  formatLegacyCodexTimeoutNotice,
-  parseUniqueCodexTimeoutDuration,
-  resolveCodexTimeout,
-} from "../options/codex-timeout";
+import { formatLegacyCodexTimeoutNotice, resolveCodexTimeout } from "../options/codex-timeout";
 import type { LegacyCodexTimeoutMigration } from "../options/codex-timeout";
+import { createCodexTimeoutDurationOption } from "../options/codex-timeout-option";
 import { applyRenameTemplateOptions } from "../options/common";
 import {
   collectCsvListOption,
@@ -79,17 +76,11 @@ const defaultRenameCommandActions: RenameCommandActions = {
   actionRenameFile,
 };
 
-function createCodexTimeoutOption(optionName: string, description: string): Option {
-  return new Option(`${optionName} <duration>`, description).argParser<number | undefined>(
-    (value, previous) => parseUniqueCodexTimeoutDuration(value, previous, optionName),
-  );
-}
-
 function applyRenameCodexOptions(command: Command): Command {
   return command
     .option("--codex", "Auto-route eligible files to Codex analyzers by file type", false)
     .addOption(
-      createCodexTimeoutOption(
+      createCodexTimeoutDurationOption(
         "--codex-timeout",
         "Timeout for each Codex request attempt (for example: 30s, 2m)",
       ),
@@ -100,7 +91,7 @@ function applyRenameCodexOptions(command: Command): Command {
       false,
     )
     .addOption(
-      createCodexTimeoutOption(
+      createCodexTimeoutDurationOption(
         "--codex-images-timeout",
         "Override the per-attempt timeout for Codex image-title requests",
       ).conflicts("codexImagesTimeoutMs"),
@@ -126,7 +117,7 @@ function applyRenameCodexOptions(command: Command): Command {
       false,
     )
     .addOption(
-      createCodexTimeoutOption(
+      createCodexTimeoutDurationOption(
         "--codex-docs-timeout",
         "Override the per-attempt timeout for Codex document-title requests",
       ).conflicts("codexDocsTimeoutMs"),
