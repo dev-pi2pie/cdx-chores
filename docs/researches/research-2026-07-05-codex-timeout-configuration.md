@@ -166,6 +166,34 @@ cdx md pdf-profile codex ./document.md --codex-timeout 2m
 
 Commands that do not use Codex should not advertise the option.
 
+### Interactive Entry And Discoverability Boundary
+
+Interactive timeout configuration belongs to the explicit `interactive`
+command rather than the root command or individual workflow prompts:
+
+```text
+cdx-chores
+  -> Interactive mode with the shared 30-second default
+
+cdx-chores interactive --codex-timeout 2m
+  -> Interactive mode with one 2-minute per-attempt session value
+
+cdx-chores --codex-timeout 2m
+  -> unsupported root-level spelling
+```
+
+The explicit session value should be parsed once, retained through menu routing,
+backtracking, revision, and user-triggered regeneration, and forwarded only when
+a selected workflow invokes Codex. It must not add a timeout setup prompt to the
+Interactive entry or to each Codex-assisted workflow.
+
+Discoverability should come from `interactive --help`, timeout-specific
+remediation when appropriate, and one canonical cross-feature guide. The guide
+should compare timeout, scoped timeout, retry, semantic repair, and
+user-triggered regeneration before linking to workflow-specific rename, data,
+Markdown, and Interactive guidance. Workflow guides should keep only their local
+examples and behavior instead of duplicating the shared contract.
+
 ### Rename Timeout Standard
 
 Rename needs scoped duration overrides because image and document analysis can
@@ -283,8 +311,9 @@ Keep adoption layers independently reviewable:
 4. add the shared option to the selected explicit data and Markdown commands
 5. add one session-owned timeout to explicit Interactive mode and thread it
    through current Interactive Codex request paths
-6. close public documentation and research only after the complete staged
-   contract is verified
+6. create one canonical cross-feature timeout/retry/recovery guide, link local
+   workflow guidance to it, and close public documentation and research only
+   after the complete staged contract is verified
 
 Do not globalize retry while broadening timeout configuration.
 
@@ -337,6 +366,12 @@ The implementation-plan review resolves the earlier open questions as follows:
   `timeoutMs` seams, per-request-attempt meaning, and narrow failure classifier
   without helper-local fixed timeout constants, per-workflow prompts, or
   automatic retry
+- keep `cdx-chores --codex-timeout <duration>` unsupported; custom Interactive
+  configuration requires the explicit
+  `cdx-chores interactive --codex-timeout <duration>` spelling
+- use `docs/guides/codex-timeouts-retries-and-recovery.md` as the canonical
+  comparison-first public guide, with the README and workflow-specific guides
+  linking to it rather than repeating the complete shared contract
 
 These recommendations are adopted by the draft
 [Codex request timeout implementation plan](../plans/plan-2026-08-21-codex-request-timeout-contract.md).

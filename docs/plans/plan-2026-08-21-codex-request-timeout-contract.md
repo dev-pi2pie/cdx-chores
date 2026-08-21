@@ -432,6 +432,21 @@ Rules:
 Register `--codex-timeout <duration>` on the explicit `interactive` command in
 `src/cli/commands/index.ts`. Do not introduce a root-level option or a new prompt.
 
+The accepted custom-session spelling is:
+
+```text
+cdx-chores interactive --codex-timeout 2m
+```
+
+The root-level shorthand remains unsupported:
+
+```text
+cdx-chores --codex-timeout 2m
+```
+
+Plain `cdx-chores` and `cdx-chores interactive` continue to enter Interactive
+mode with the shared 30-second default.
+
 Extend the Interactive entry contract with one normalized optional
 `codexTimeoutMs` value and carry it as session state. Prefer an explicit
 Interactive session/options object over placing timeout state inside path-prompt
@@ -760,6 +775,8 @@ Tasks:
 - [ ] Keep the no-argument Interactive entry on the 30-second built-in default.
 - [ ] Do not add a root-level option or a timeout prompt inside individual
       workflows.
+- [ ] Reject `cdx-chores --codex-timeout <duration>` as an unsupported
+      root-level spelling without starting Interactive mode.
 - [ ] Extend the Interactive entry contract with one normalized optional
       `codexTimeoutMs` session value while preserving existing implementation
       injection seams used by tests.
@@ -795,6 +812,10 @@ Verification:
 - [ ] Add `interactive --help` and duration-parser integration tests.
 - [ ] Assert explicit Interactive mode stores and forwards the normalized value.
 - [ ] Assert the no-argument Interactive entry retains the default.
+- [ ] Assert the root-level shorthand is rejected before Interactive entry or
+      workflow routing begins.
+- [ ] Assert default and configured sessions add no timeout setup prompt to any
+      workflow.
 - [ ] Assert one session value resolves to the same milliseconds in rename,
       data, and Markdown helper requests.
 - [ ] Assert omitted session values use the same shared 30-second constant rather
@@ -807,6 +828,9 @@ Verification:
 - [ ] Assert Markdown PDF project requests receive independent timeout windows.
 - [ ] Assert timeout-specific messages preserve each workflow's existing
       fallback, return, or retry choices.
+- [ ] Assert Interactive timeout remediation, when shown, uses the explicit
+      `interactive --codex-timeout <duration>` spelling and does not imply a
+      root-global option.
 - [ ] Run the cumulative Interactive suites plus direct-command regression tests.
 - [ ] Record focused results and the Phase 6 review range in the job record.
 
@@ -826,17 +850,22 @@ Status: not started.
 Tasks:
 
 - [ ] Create the Phase 7 validation and closeout job record.
-- [ ] Update `README.md` rename examples and flag notes.
+- [ ] Create `docs/guides/codex-timeouts-retries-and-recovery.md` as the
+      canonical comparison-first guide for shared/scoped timeout, workflow-owned
+      retry, semantic repair, and user-triggered regeneration.
+- [ ] Update `README.md` with the canonical guide link, rename examples, and flag
+      notes.
 - [ ] Update `docs/guides/rename-common-usage.md` with shared and scoped timeout
-      examples.
+      examples and a link to the canonical guide.
 - [ ] Update `docs/guides/rename-scope-and-codex-capability-guide.md` with the
-      timeout precedence and analyzer-routing boundary.
+      timeout precedence, analyzer-routing boundary, and canonical guide link.
 - [ ] Update the relevant data-query and data-stack guides with the shared
-      direct-command option and per-attempt meaning.
+      direct-command option, local behavior, and canonical guide link.
 - [ ] Update Markdown PDF direct-helper guides with shared profile, template,
-      project, and repair semantics.
+      project, repair semantics, and canonical guide links.
 - [ ] Update Interactive guidance with the session-owned option, default,
-      backtracking, regeneration, and no-automatic-retry behavior.
+      explicit-command-only spelling, backtracking, regeneration,
+      no-automatic-retry behavior, and canonical guide link.
 - [ ] Document per-request-attempt meaning and batch/retry runtime
       multiplication.
 - [ ] Document exact legacy replacements and compatibility-period behavior.
@@ -857,6 +886,10 @@ Verification:
 
 - [ ] Record exact focused and repository-wide validation commands and results.
 - [ ] Confirm guides describe shipped behavior rather than plan-only syntax.
+- [ ] Confirm the canonical guide owns the shared definitions while workflow
+      guides retain only local examples, behavior, and links.
+- [ ] Confirm the README and relevant rename, data, Markdown, and Interactive
+      guides link to the canonical guide.
 - [ ] Confirm public records contain no machine-specific paths or local-only
       smoke details.
 - [ ] Confirm release-note wording describes deprecation without claiming that
@@ -956,6 +989,8 @@ Assert:
 
 - explicit `interactive --codex-timeout` creates one normalized session value
 - the no-argument entry retains the default
+- root-level `--codex-timeout` is rejected before Interactive mode starts
+- neither default nor configured sessions add a timeout setup prompt
 - every current Interactive Codex path receives the session value
 - rename, data, and Markdown helpers receive the same normalized milliseconds
   through optional numeric `timeoutMs` seams
@@ -1127,6 +1162,16 @@ can make common Interactive paths noisy and inconsistent.
 Mitigation: use one option on the explicit `interactive` command, retain the
 default for the no-argument entry, and add no timeout prompts in this plan.
 
+### Quiet Interactive Discoverability
+
+Risk: avoiding a timeout setup prompt can make the session option difficult to
+discover or make users assume the root command accepts the same option.
+
+Mitigation: document the option in `interactive --help`, keep the root-level
+spelling explicitly unsupported, link one canonical cross-feature guide from
+the README and workflow guides, and use contextual timeout remediation without
+adding routine prompts.
+
 ### Accidental Persistence
 
 Risk: session-level timeout state can leak into recipe identity, reports, or
@@ -1183,11 +1228,14 @@ The plan is complete when:
 - [ ] No superseded helper-local Interactive timeout constant remains where the
       shared session contract owns the value.
 - [ ] The no-argument Interactive entry preserves the 30-second default.
+- [ ] The root-level `--codex-timeout` shorthand is rejected before Interactive
+      mode starts, while the explicit `interactive --codex-timeout` form works.
 - [ ] Interactive backtracking and regeneration preserve the value without
       adding automatic retry or persistent artifact fields.
 - [ ] Focused tests, full tests, lint, format check, and build pass.
-- [ ] Public help and rename, data, Markdown PDF, and Interactive guides
-      describe the shipped contract.
+- [ ] Public help and the canonical timeout/retry/recovery guide describe the
+      shipped shared contract; rename, data, Markdown PDF, and Interactive guides
+      link to it and document their local behavior.
 - [ ] Release-note impact and the future legacy-removal boundary are recorded.
 - [ ] Phase job records contain exact validation receipts and review ranges.
 - [ ] The related research is updated with implementation evidence and an
