@@ -344,7 +344,7 @@ it `active` only when the first production or test implementation change begins.
 Complete the user-facing output inventory and confirm the migration boundary
 before changing presentation code.
 
-Status: in progress.
+Status: completed.
 
 Tasks:
 
@@ -381,16 +381,16 @@ Verification:
       owner.
 - [x] Confirm no JSON, CSV, SQL-only, or stored-artifact output is in the
       migration list.
-- [ ] Record the inventory and gate decision in the job record.
-- [ ] Commit the Phase 1 plan/job inventory checkpoint.
-- [ ] Review the exact Phase 1 starting-commit-to-checkpoint range for plan
+- [x] Record the inventory and gate decision in the job record.
+- [x] Commit the Phase 1 plan/job inventory checkpoint.
+- [x] Review the exact Phase 1 starting-commit-to-checkpoint range for plan
       clarity, inventory completeness, and public-safe evidence.
-- [ ] Record the Phase 1 commit, review range, findings, and decision in the job
+- [x] Record the Phase 1 commit, review range, findings, and decision in the job
       record before implementation begins.
 
 Gate:
 
-- [ ] Continue only when error, warning, notice/tip, report, and domain-owned
+- [x] Continue only when error, warning, notice/tip, report, and domain-owned
       presentation boundaries are unambiguous.
 
 ### Phase 2: Shared Stream-Aware Presentation Foundation

@@ -33,7 +33,7 @@ records.
 
 ## Phase 1: Diagnostic Inventory And Contract Freeze
 
-Status: in progress.
+Status: completed.
 
 Phase 1 inventories color-producing paths and user-facing diagnostic surfaces
 before any production or test implementation change. Its gate freezes the
@@ -190,5 +190,41 @@ eligibility follows the stderr write target.
   structured diagnostics, JSON, artifacts, SQL-only output, and domain-owned
   presentation remain unchanged.
 
-Phase 1 review and gate decision remain pending until the inventory checkpoint
-is committed and reviewed over its exact range.
+### Review And Gate
+
+Phase 1 commits:
+
+- `4ec9c8f6` — opened the execution record, froze the first adopted/deferred
+  surface matrix, recorded inventory evidence, and updated evidenced checklist
+  items
+- `490b6c94` — added the complete per-call-site appendix, canonical semantic
+  baselines, exact stream-mismatch map, concrete test ownership, and separate
+  TUI presentation/control classifications
+- `164d349b` — corrected the warning-family count, distinguished planned tests
+  from existing evidence, and added the Phase 2 stream-only baseline
+
+Final widened review range:
+
+```text
+3a846d175c627e8e4ed059d00944ba0b9036e56a..164d349b
+```
+
+The first source-contract and documentation reviews found grouped call-site
+ownership, incomplete canonical baselines, an unreproducible mismatch summary,
+and a conflated TUI dim/control classification. The first test review also
+found that future test owners were unnamed. Those findings were accepted and
+addressed in `490b6c94`.
+
+The widened documentation review then found an incorrect warning-family count,
+an unstated boundary between semantic and stream-only baselines, and planned
+test owners presented as existing evidence. Those findings were accepted and
+addressed in `164d349b`.
+
+Final widened source-contract, test-quality, and documentation reviews passed
+with no remaining material findings.
+
+Decision gate: `Continue`. Phase 1 is complete. The first migration wave is
+unambiguous: Phase 2 owns the semantic helper and every explicit stream
+argument, Phase 3 owns Commander plus nine warning families, and Phase 4 owns
+the existing `Tip:` family without inventing an `Info:` consumer. No production
+or test code changed in this phase.
