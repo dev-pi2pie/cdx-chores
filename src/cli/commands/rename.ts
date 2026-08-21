@@ -1,4 +1,4 @@
-import type { Command } from "commander";
+import { Option, type Command } from "commander";
 
 import {
   actionRenameApply,
@@ -10,7 +10,13 @@ import type {
   RenameCleanupConflictStrategy,
   RenameCleanupStyle,
   RenameCleanupTimestampAction,
+  RenameFileOptions,
 } from "../actions/rename";
+import {
+  formatLegacyCodexTimeoutNotice,
+  parseUniqueCodexTimeoutDuration,
+  resolveCodexTimeout,
+} from "../options/codex-timeout";
 import { applyRenameTemplateOptions } from "../options/common";
 import {
   collectCsvListOption,
@@ -21,158 +27,228 @@ import {
 import type { CliRuntime } from "../types";
 import type { RenameSerialOrder, RenameSerialScope, TimestampTimezone } from "../rename-template";
 
+interface RenameCodexCommandOptions {
+  codex?: boolean;
+  codexTimeout?: number;
+  codexImages?: boolean;
+  codexImagesTimeout?: number;
+  codexImagesTimeoutMs?: number;
+  codexImagesRetries?: number;
+  codexImagesBatchSize?: number;
+  codexDocs?: boolean;
+  codexDocsTimeout?: number;
+  codexDocsTimeoutMs?: number;
+  codexDocsRetries?: number;
+  codexDocsBatchSize?: number;
+}
+
+interface RenameFileCommandOptions extends RenameCodexCommandOptions {
+  prefix?: string;
+  pattern?: string;
+  serialOrder?: RenameSerialOrder;
+  serialStart?: number;
+  serialWidth?: number;
+  serialScope?: RenameSerialScope;
+  timestampTimezone?: TimestampTimezone;
+  dryRun?: boolean;
+}
+
+interface RenameBatchCommandOptions extends RenameFileCommandOptions {
+  profile?: string;
+  previewSkips?: "summary" | "detailed";
+  recursive?: boolean;
+  maxDepth?: number;
+  matchRegex?: string;
+  skipRegex?: string;
+  ext?: string[];
+  skipExt?: string[];
+}
+
+interface RenameCommandActions {
+  actionRenameApply: typeof actionRenameApply;
+  actionRenameBatch: typeof actionRenameBatch;
+  actionRenameCleanup: typeof actionRenameCleanup;
+  actionRenameFile: typeof actionRenameFile;
+}
+
+const defaultRenameCommandActions: RenameCommandActions = {
+  actionRenameApply,
+  actionRenameBatch,
+  actionRenameCleanup,
+  actionRenameFile,
+};
+
+function createCodexTimeoutOption(flags: string, description: string): Option {
+  const optionName = flags.slice(0, flags.indexOf(" "));
+  return new Option(flags, description).argParser<number | undefined>((value, previous) =>
+    parseUniqueCodexTimeoutDuration(value, previous, optionName),
+  );
+}
+
+function applyRenameCodexOptions(command: Command): Command {
+  return command
+    .option("--codex", "Auto-route eligible files to Codex analyzers by file type", false)
+    .addOption(
+      createCodexTimeoutOption(
+        "--codex-timeout <duration>",
+        "Timeout for each Codex request attempt (for example: 30s, 2m)",
+      ),
+    )
+    .option(
+      "--codex-images",
+      "Use only the Codex image analyzer for supported static image files",
+      false,
+    )
+    .addOption(
+      createCodexTimeoutOption(
+        "--codex-images-timeout <duration>",
+        "Override the per-attempt timeout for Codex image-title requests",
+      ).conflicts("codexImagesTimeoutMs"),
+    )
+    .option(
+      "--codex-images-timeout-ms <ms>",
+      "Deprecated millisecond-only image timeout; use --codex-images-timeout",
+      (value) => Number(value),
+    )
+    .option(
+      "--codex-images-retries <count>",
+      "Retry count after the initial Codex image-title request, per batch",
+      (value) => Number(value),
+    )
+    .option(
+      "--codex-images-batch-size <count>",
+      "Number of images per Codex image-title request batch",
+      (value) => Number(value),
+    )
+    .option(
+      "--codex-docs",
+      "Use only the Codex document analyzer for supported docs (.md, .txt, .json, .yaml, .toml, .xml, .html, .pdf, ...)",
+      false,
+    )
+    .addOption(
+      createCodexTimeoutOption(
+        "--codex-docs-timeout <duration>",
+        "Override the per-attempt timeout for Codex document-title requests",
+      ).conflicts("codexDocsTimeoutMs"),
+    )
+    .option(
+      "--codex-docs-timeout-ms <ms>",
+      "Deprecated millisecond-only document timeout; use --codex-docs-timeout",
+      (value) => Number(value),
+    )
+    .option(
+      "--codex-docs-retries <count>",
+      "Retry count after the initial Codex document-title request, per batch",
+      (value) => Number(value),
+    )
+    .option(
+      "--codex-docs-batch-size <count>",
+      "Number of documents per Codex document-title request batch",
+      (value) => Number(value),
+    );
+}
+
 function configureRenameFileCommand(command: Command): Command {
   return applyRenameTemplateOptions(
-    command
-      .command("file")
-      .description("Rename a single file")
-      .argument("<path>", "Target file path")
-      .option("--prefix <value>", "Filename prefix (optional)")
-      .option("--dry-run", "Preview rename plan only", false)
-      .option("--codex", "Auto-route eligible files to Codex analyzers by file type", false)
-      .option(
-        "--codex-images",
-        "Use only the Codex image analyzer for supported static image files",
-        false,
-      )
-      .option(
-        "--codex-images-timeout-ms <ms>",
-        "Codex image-title generation timeout per request in milliseconds",
-        (value) => Number(value),
-      )
-      .option(
-        "--codex-images-retries <count>",
-        "Retry failed Codex image-title requests",
-        (value) => Number(value),
-      )
-      .option(
-        "--codex-images-batch-size <count>",
-        "Number of images per Codex image-title request batch",
-        (value) => Number(value),
-      )
-      .option(
-        "--codex-docs",
-        "Use only the Codex document analyzer for supported docs (.md, .txt, .json, .yaml, .toml, .xml, .html, .pdf, ...)",
-        false,
-      )
-      .option(
-        "--codex-docs-timeout-ms <ms>",
-        "Codex document-title generation timeout per request in milliseconds",
-        (value) => Number(value),
-      )
-      .option(
-        "--codex-docs-retries <count>",
-        "Retry failed Codex document-title requests",
-        (value) => Number(value),
-      )
-      .option(
-        "--codex-docs-batch-size <count>",
-        "Number of documents per Codex document-title request batch",
-        (value) => Number(value),
-      ),
+    applyRenameCodexOptions(
+      command
+        .command("file")
+        .description("Rename a single file")
+        .argument("<path>", "Target file path")
+        .option("--prefix <value>", "Filename prefix (optional)")
+        .option("--dry-run", "Preview rename plan only", false),
+    ),
   );
 }
 
 function configureRenameBatchLikeCommand(command: Command): Command {
   return applyRenameTemplateOptions(
-    command
-      .argument("<directory>", "Target directory")
-      .option("--prefix <value>", "Filename prefix (optional)")
-      .option("--profile <name>", "Preset file profile: all, images, media, docs")
-      .option("--dry-run", "Preview rename plan only", false)
-      .option("--preview-skips <mode>", "Skipped-item preview mode: summary or detailed")
-      .option("--recursive", "Traverse subdirectories recursively", false)
-      .option("--max-depth <value>", "Maximum recursive depth (root=0)", (value) => Number(value))
-      .option("--match-regex <pattern>", "Only include files whose basename matches the regex")
-      .option("--skip-regex <pattern>", "Exclude files whose basename matches the regex")
-      .option(
-        "--ext <value>",
-        "Only include file extensions (repeatable or comma-separated)",
-        collectCsvListOption,
-        [],
-      )
-      .option(
-        "--skip-ext <value>",
-        "Exclude file extensions (repeatable or comma-separated)",
-        collectCsvListOption,
-        [],
-      )
-      .option("--codex", "Auto-route eligible files to Codex analyzers by file type", false)
-      .option(
-        "--codex-images",
-        "Use only the Codex image analyzer for supported static image files",
-        false,
-      )
-      .option(
-        "--codex-images-timeout-ms <ms>",
-        "Codex image-title generation timeout per request in milliseconds",
-        (value) => Number(value),
-      )
-      .option(
-        "--codex-images-retries <count>",
-        "Retry failed Codex image-title requests (per batch)",
-        (value) => Number(value),
-      )
-      .option(
-        "--codex-images-batch-size <count>",
-        "Number of images per Codex image-title request batch",
-        (value) => Number(value),
-      )
-      .option(
-        "--codex-docs",
-        "Use only the Codex document analyzer for supported docs (.md, .txt, .json, .yaml, .toml, .xml, .html, .pdf, ...)",
-        false,
-      )
-      .option(
-        "--codex-docs-timeout-ms <ms>",
-        "Codex document-title generation timeout per request in milliseconds",
-        (value) => Number(value),
-      )
-      .option(
-        "--codex-docs-retries <count>",
-        "Retry failed Codex document-title requests (per batch)",
-        (value) => Number(value),
-      )
-      .option(
-        "--codex-docs-batch-size <count>",
-        "Number of documents per Codex document-title request batch",
-        (value) => Number(value),
-      ),
+    applyRenameCodexOptions(
+      command
+        .argument("<directory>", "Target directory")
+        .option("--prefix <value>", "Filename prefix (optional)")
+        .option("--profile <name>", "Preset file profile: all, images, media, docs")
+        .option("--dry-run", "Preview rename plan only", false)
+        .option("--preview-skips <mode>", "Skipped-item preview mode: summary or detailed")
+        .option("--recursive", "Traverse subdirectories recursively", false)
+        .option("--max-depth <value>", "Maximum recursive depth (root=0)", (value) => Number(value))
+        .option("--match-regex <pattern>", "Only include files whose basename matches the regex")
+        .option("--skip-regex <pattern>", "Exclude files whose basename matches the regex")
+        .option(
+          "--ext <value>",
+          "Only include file extensions (repeatable or comma-separated)",
+          collectCsvListOption,
+          [],
+        )
+        .option(
+          "--skip-ext <value>",
+          "Exclude file extensions (repeatable or comma-separated)",
+          collectCsvListOption,
+          [],
+        ),
+    ),
   );
+}
+
+function prepareRenameCodexTimeouts(
+  runtime: CliRuntime,
+  options: RenameCodexCommandOptions,
+): Pick<RenameFileOptions, "codexImagesTimeoutMs" | "codexDocsTimeoutMs"> {
+  const imageTimeout = resolveCodexTimeout({
+    sharedTimeoutMs: options.codexTimeout,
+    sharedOptionName: "--codex-timeout",
+    scopedTimeoutMs: options.codexImagesTimeout,
+    scopedOptionName: "--codex-images-timeout",
+    legacyScopedTimeoutMs: options.codexImagesTimeoutMs,
+    legacyScopedOptionName: "--codex-images-timeout-ms",
+  });
+  const documentTimeout = resolveCodexTimeout({
+    sharedTimeoutMs: options.codexTimeout,
+    sharedOptionName: "--codex-timeout",
+    scopedTimeoutMs: options.codexDocsTimeout,
+    scopedOptionName: "--codex-docs-timeout",
+    legacyScopedTimeoutMs: options.codexDocsTimeoutMs,
+    legacyScopedOptionName: "--codex-docs-timeout-ms",
+  });
+  const notice = formatLegacyCodexTimeoutNotice([
+    ...(options.codexImagesTimeoutMs === undefined
+      ? []
+      : [
+          {
+            legacyOptionName: "--codex-images-timeout-ms",
+            replacementOptionName: "--codex-images-timeout",
+            timeoutMs: options.codexImagesTimeoutMs,
+          },
+        ]),
+    ...(options.codexDocsTimeoutMs === undefined
+      ? []
+      : [
+          {
+            legacyOptionName: "--codex-docs-timeout-ms",
+            replacementOptionName: "--codex-docs-timeout",
+            timeoutMs: options.codexDocsTimeoutMs,
+          },
+        ]),
+  ]);
+  if (notice) {
+    runtime.stderr.write(notice);
+  }
+
+  return {
+    codexImagesTimeoutMs: imageTimeout.source === "default" ? undefined : imageTimeout.timeoutMs,
+    codexDocsTimeoutMs:
+      documentTimeout.source === "default" ? undefined : documentTimeout.timeoutMs,
+  };
 }
 
 async function handleRenameBatchAction(
   runtime: CliRuntime,
   directory: string,
-  options: {
-    prefix?: string;
-    pattern?: string;
-    serialOrder?: RenameSerialOrder;
-    serialStart?: number;
-    serialWidth?: number;
-    serialScope?: RenameSerialScope;
-    timestampTimezone?: TimestampTimezone;
-    profile?: string;
-    dryRun?: boolean;
-    previewSkips?: "summary" | "detailed";
-    recursive?: boolean;
-    maxDepth?: number;
-    matchRegex?: string;
-    skipRegex?: string;
-    ext?: string[];
-    skipExt?: string[];
-    codex?: boolean;
-    codexImages?: boolean;
-    codexImagesTimeoutMs?: number;
-    codexImagesRetries?: number;
-    codexImagesBatchSize?: number;
-    codexDocs?: boolean;
-    codexDocsTimeoutMs?: number;
-    codexDocsRetries?: number;
-    codexDocsBatchSize?: number;
-  },
+  options: RenameBatchCommandOptions,
+  action: typeof actionRenameBatch,
 ): Promise<void> {
-  await actionRenameBatch(runtime, {
+  const timeouts = prepareRenameCodexTimeouts(runtime, options);
+  await action(runtime, {
     directory,
     prefix: options.prefix,
     pattern: options.pattern,
@@ -192,43 +268,27 @@ async function handleRenameBatchAction(
     skipExt: options.skipExt,
     codex: options.codex,
     codexImages: options.codexImages,
-    codexImagesTimeoutMs: options.codexImagesTimeoutMs,
+    codexImagesTimeoutMs: timeouts.codexImagesTimeoutMs,
     codexImagesRetries: options.codexImagesRetries,
     codexImagesBatchSize: options.codexImagesBatchSize,
     codexDocs: options.codexDocs,
-    codexDocsTimeoutMs: options.codexDocsTimeoutMs,
+    codexDocsTimeoutMs: timeouts.codexDocsTimeoutMs,
     codexDocsRetries: options.codexDocsRetries,
     codexDocsBatchSize: options.codexDocsBatchSize,
   });
 }
 
-export function registerRenameCommands(program: Command, runtime: CliRuntime): void {
+export function registerRenameCommands(
+  program: Command,
+  runtime: CliRuntime,
+  actions: RenameCommandActions = defaultRenameCommandActions,
+): void {
   const renameCommand = program.command("rename").description("Rename helpers");
 
   configureRenameFileCommand(renameCommand).action(
-    async (
-      path: string,
-      options: {
-        prefix?: string;
-        pattern?: string;
-        serialOrder?: RenameSerialOrder;
-        serialStart?: number;
-        serialWidth?: number;
-        serialScope?: RenameSerialScope;
-        timestampTimezone?: TimestampTimezone;
-        dryRun?: boolean;
-        codex?: boolean;
-        codexImages?: boolean;
-        codexImagesTimeoutMs?: number;
-        codexImagesRetries?: number;
-        codexImagesBatchSize?: number;
-        codexDocs?: boolean;
-        codexDocsTimeoutMs?: number;
-        codexDocsRetries?: number;
-        codexDocsBatchSize?: number;
-      },
-    ) => {
-      await actionRenameFile(runtime, {
+    async (path: string, options: RenameFileCommandOptions) => {
+      const timeouts = prepareRenameCodexTimeouts(runtime, options);
+      await actions.actionRenameFile(runtime, {
         path,
         prefix: options.prefix,
         pattern: options.pattern,
@@ -240,11 +300,11 @@ export function registerRenameCommands(program: Command, runtime: CliRuntime): v
         dryRun: options.dryRun,
         codex: options.codex,
         codexImages: options.codexImages,
-        codexImagesTimeoutMs: options.codexImagesTimeoutMs,
+        codexImagesTimeoutMs: timeouts.codexImagesTimeoutMs,
         codexImagesRetries: options.codexImagesRetries,
         codexImagesBatchSize: options.codexImagesBatchSize,
         codexDocs: options.codexDocs,
-        codexDocsTimeoutMs: options.codexDocsTimeoutMs,
+        codexDocsTimeoutMs: timeouts.codexDocsTimeoutMs,
         codexDocsRetries: options.codexDocsRetries,
         codexDocsBatchSize: options.codexDocsBatchSize,
       });
@@ -253,8 +313,8 @@ export function registerRenameCommands(program: Command, runtime: CliRuntime): v
 
   configureRenameBatchLikeCommand(
     renameCommand.command("batch").description("Batch rename files in a directory"),
-  ).action(async (directory: string, options: Parameters<typeof handleRenameBatchAction>[2]) => {
-    await handleRenameBatchAction(runtime, directory, options);
+  ).action(async (directory: string, options: RenameBatchCommandOptions) => {
+    await handleRenameBatchAction(runtime, directory, options, actions.actionRenameBatch);
   });
 
   renameCommand
@@ -325,7 +385,7 @@ export function registerRenameCommands(program: Command, runtime: CliRuntime): v
           skipExt?: string[];
         },
       ) => {
-        await actionRenameCleanup(runtime, {
+        await actions.actionRenameCleanup(runtime, {
           path,
           hints: [...(options.hint ?? []), ...(options.hints ?? [])],
           style: options.style,
@@ -349,12 +409,12 @@ export function registerRenameCommands(program: Command, runtime: CliRuntime): v
     .argument("<csv>", "Rename plan CSV path")
     .option("--auto-clean", "Delete the plan CSV after a successful apply", false)
     .action(async (csv: string, options: { autoClean?: boolean }) => {
-      await actionRenameApply(runtime, { csv, autoClean: options.autoClean });
+      await actions.actionRenameApply(runtime, { csv, autoClean: options.autoClean });
     });
 
   configureRenameBatchLikeCommand(
     program.command("batch-rename").description("Alias for `rename batch`"),
-  ).action(async (directory: string, options: Parameters<typeof handleRenameBatchAction>[2]) => {
-    await handleRenameBatchAction(runtime, directory, options);
+  ).action(async (directory: string, options: RenameBatchCommandOptions) => {
+    await handleRenameBatchAction(runtime, directory, options, actions.actionRenameBatch);
   });
 }

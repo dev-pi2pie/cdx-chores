@@ -555,44 +555,44 @@ Gate:
 Add the new options and deprecation path to `rename file`, `rename batch`, and
 `batch-rename`.
 
-Status: not started.
+Status: in progress.
 
 Tasks:
 
-- [ ] Create the Phase 2 job record.
-- [ ] Register `--codex-timeout <duration>` on `rename file`, `rename batch`,
+- [x] Create the Phase 2 job record.
+- [x] Register `--codex-timeout <duration>` on `rename file`, `rename batch`,
       and `batch-rename` through one shared command-option helper.
-- [ ] Register `--codex-images-timeout <duration>` and
+- [x] Register `--codex-images-timeout <duration>` and
       `--codex-docs-timeout <duration>` on the same surfaces.
-- [ ] Keep `--codex-images-timeout-ms` and `--codex-docs-timeout-ms`
+- [x] Keep `--codex-images-timeout-ms` and `--codex-docs-timeout-ms`
       functional and label both as deprecated in help.
-- [ ] Preserve distinct raw new and legacy scoped values until conflict checks
+- [x] Preserve distinct raw new and legacy scoped values until conflict checks
       and notice construction finish.
-- [ ] Reject new/legacy conflicts for the same analyzer before invoking an
+- [x] Reject new/legacy conflicts for the same analyzer before invoking an
       action.
-- [ ] Build one consolidated stderr notice for one or both explicitly supplied
+- [x] Build one consolidated stderr notice for one or both explicitly supplied
       legacy flags.
-- [ ] Include exact duration-based replacements in the notice.
-- [ ] Normalize accepted public values to numeric milliseconds before action
+- [x] Include exact duration-based replacements in the notice.
+- [x] Normalize accepted public values to numeric milliseconds before action
       execution.
-- [ ] Resolve the shared and scoped CLI values at the command boundary and map
+- [x] Resolve the shared and scoped CLI values at the command boundary and map
       the effective image/document values into the existing scoped numeric
       action fields so the new flags are functional in this phase.
-- [ ] Clarify both retry help descriptions as counts after the initial attempt,
+- [x] Clarify both retry help descriptions as counts after the initial attempt,
       per batch.
-- [ ] Keep `rename batch` and `batch-rename` help and routing in parity.
+- [x] Keep `rename batch` and `batch-rename` help and routing in parity.
 
 Verification:
 
-- [ ] Add command-registration tests for accepted, invalid, repeated, and
+- [x] Add command-registration tests for accepted, invalid, repeated, and
       conflicting timeout options.
-- [ ] Assert invalid and conflicting invocations do not call the action.
-- [ ] Assert legacy-only invocations retain their prior effective numeric value.
-- [ ] Assert shared-only and scoped-over-shared invocations reach the existing
+- [x] Assert invalid and conflicting invocations do not call the action.
+- [x] Assert legacy-only invocations retain their prior effective numeric value.
+- [x] Assert shared-only and scoped-over-shared invocations reach the existing
       image/document numeric action fields with effective values.
-- [ ] Assert one or both legacy flags produce exactly one stderr notice without
+- [x] Assert one or both legacy flags produce exactly one stderr notice without
       changing the exit status.
-- [ ] Inspect `rename file`, `rename batch`, and `batch-rename` help output.
+- [x] Inspect `rename file`, `rename batch`, and `batch-rename` help output.
 - [ ] Record focused results and the Phase 2 review range in the job record.
 
 Gate:
