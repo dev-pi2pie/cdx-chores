@@ -1,7 +1,7 @@
 ---
 title: "Codex request timeout contract implementation"
 created-date: 2026-08-21
-modified-date: 2026-08-21
+modified-date: 2026-08-22
 status: active
 agent: codex
 ---
@@ -765,78 +765,78 @@ Gate:
 Add one session-owned timeout to explicit Interactive mode and thread it through
 all current Interactive Codex request paths.
 
-Status: in progress.
+Status: completed.
 
 Tasks:
 
 - [x] Create the Phase 6 job record.
-- [ ] Add `--codex-timeout <duration>` to the explicit `interactive` command
+- [x] Add `--codex-timeout <duration>` to the explicit `interactive` command
       through the shared option helper.
-- [ ] Keep the no-argument Interactive entry on the 30-second built-in default.
-- [ ] Do not add a root-level option or a timeout prompt inside individual
+- [x] Keep the no-argument Interactive entry on the 30-second built-in default.
+- [x] Do not add a root-level option or a timeout prompt inside individual
       workflows.
-- [ ] Reject `cdx-chores --codex-timeout <duration>` as an unsupported
+- [x] Reject `cdx-chores --codex-timeout <duration>` as an unsupported
       root-level spelling without starting Interactive mode.
-- [ ] Extend the Interactive entry contract with one normalized optional
+- [x] Extend the Interactive entry contract with one normalized optional
       `codexTimeoutMs` session value while preserving existing implementation
       injection seams used by tests.
-- [ ] Introduce a narrow Interactive session/options object rather than storing
+- [x] Introduce a narrow Interactive session/options object rather than storing
       timeout state in path-prompt configuration or mutating `CliRuntime`.
-- [ ] Pass the session value through data, Markdown, and rename Interactive
+- [x] Pass the session value through data, Markdown, and rename Interactive
       handler boundaries.
-- [ ] Use the rename action/analyzer `timeoutMs` forwarding shape as the
+- [x] Use the rename action/analyzer `timeoutMs` forwarding shape as the
       reference for data and Markdown helper seams; do not create another parser
       or resolver inside Interactive modules.
-- [ ] Thread the value to rename image/document analysis and rename-cleanup
+- [x] Thread the value to rename image/document analysis and rename-cleanup
       suggestions.
-- [ ] Thread the value to data-query drafting and replace the fixed data-stack
+- [x] Thread the value to data-query drafting and replace the fixed data-stack
       Interactive timeout with the session value plus the shared default.
-- [ ] Thread the value to header-mapping and source-shape suggestions.
-- [ ] Thread the value to Markdown PDF profile, template, and project candidate
+- [x] Thread the value to header-mapping and source-shape suggestions.
+- [x] Thread the value to Markdown PDF profile, template, and project candidate
       preparation.
-- [ ] Remove helper-local Interactive timeout constants wherever the shared
+- [x] Remove helper-local Interactive timeout constants wherever the shared
       default and session value now own the same behavior.
-- [ ] Keep optional numeric `timeoutMs` seams consistent across rename, data,
+- [x] Keep optional numeric `timeoutMs` seams consistent across rename, data,
       and Markdown helpers.
-- [ ] Apply the same value independently to every Markdown PDF phase and repair
+- [x] Apply the same value independently to every Markdown PDF phase and repair
       request.
-- [ ] Preserve the value through review, revision, backtracking, and
+- [x] Preserve the value through review, revision, backtracking, and
       user-triggered regeneration.
-- [ ] Keep regeneration user-controlled and do not add automatic retry.
-- [ ] Keep the timeout out of saved recipe identity and generated artifacts.
-- [ ] Reuse timeout-specific failure information within each workflow's current
+- [x] Keep regeneration user-controlled and do not add automatic retry.
+- [x] Keep the timeout out of saved recipe identity and generated artifacts.
+- [x] Reuse timeout-specific failure information within each workflow's current
       recovery posture instead of inventing one universal recovery menu.
 
 Verification:
 
-- [ ] Add `interactive --help` and duration-parser integration tests.
-- [ ] Assert explicit Interactive mode stores and forwards the normalized value.
-- [ ] Assert the no-argument Interactive entry retains the default.
-- [ ] Assert the root-level shorthand is rejected before Interactive entry or
+- [x] Add `interactive --help` and duration-parser integration tests.
+- [x] Assert explicit Interactive mode stores and forwards the normalized value.
+- [x] Assert the no-argument Interactive entry retains the default.
+- [x] Assert the root-level shorthand is rejected before Interactive entry or
       workflow routing begins.
-- [ ] Assert default and configured sessions add no timeout setup prompt to any
+- [x] Assert default and configured sessions add no timeout setup prompt to any
       workflow.
-- [ ] Assert one session value resolves to the same milliseconds in rename,
+- [x] Assert one session value resolves to the same milliseconds in rename,
       data, and Markdown helper requests.
-- [ ] Assert omitted session values use the same shared 30-second constant rather
+- [x] Assert omitted session values use the same shared 30-second constant rather
       than helper-local defaults.
-- [ ] Extend Interactive harness coverage for rename, cleanup, data query, data
+- [x] Extend Interactive harness coverage for rename, cleanup, data query, data
       stack, header mapping, source shape, and Markdown PDF authoring.
-- [ ] Assert backtracking and revision preserve the session value.
-- [ ] Assert regeneration creates a new request with the same per-attempt value
+- [x] Assert backtracking and revision preserve the session value.
+- [x] Assert regeneration creates a new request with the same per-attempt value
       and no automatic retry.
-- [ ] Assert Markdown PDF project requests receive independent timeout windows.
-- [ ] Assert timeout-specific messages preserve each workflow's existing
+- [x] Assert Markdown PDF project requests receive independent timeout windows.
+- [x] Assert timeout-specific messages preserve each workflow's existing
       fallback, return, or retry choices.
-- [ ] Assert Interactive timeout remediation, when shown, uses the explicit
+- [x] Assert Interactive timeout remediation, when shown, uses the explicit
       `interactive --codex-timeout <duration>` spelling and does not imply a
       root-global option.
-- [ ] Run the cumulative Interactive suites plus direct-command regression tests.
-- [ ] Record focused results and the Phase 6 review range in the job record.
+- [x] Run the cumulative Interactive suites plus direct-command regression tests.
+- [x] Record focused results and the Phase 6 review range in the job record.
 
 Gate:
 
-- [ ] Every current Interactive Codex request path uses the session value or the
+- [x] Every current Interactive Codex request path uses the session value or the
       shared default through the rename-reference helper contract, with
       backtracking and recovery behavior verified, before public documentation
       closeout.
