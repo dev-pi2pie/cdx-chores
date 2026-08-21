@@ -1,7 +1,7 @@
 ---
 title: "Codex request timeout Phase 1"
 created-date: 2026-08-21
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -57,5 +57,24 @@ that the module does not depend on Bun runtime globals.
 
 ## Review
 
-Pending. The completed Phase 1 commit range will be recorded after validation
-and exact-range review.
+Implementation commits:
+
+- `4416256c` — added the timeout contract module, focused tests, compatibility
+  clarification, and initial execution record
+- `268c3c1d` — derived validation and migration limit wording from the shared
+  maximum constant
+
+Review range:
+
+```text
+6636a88bb962946c9e51defbf144c1a7bcd4b995..268c3c1d
+```
+
+The first correctness and test-quality reviews found no material gaps. The
+first maintainability review found that two user-facing messages hardcoded the
+10-minute maximum separately from the enforcing constant. The finding was
+accepted and fixed in `268c3c1d`. The widened correctness, test-quality, and
+maintainability reviews then passed with no remaining material findings.
+
+Decision gate: `Continue`. Phase 1 is complete, and rename command registration
+may begin in Phase 2.

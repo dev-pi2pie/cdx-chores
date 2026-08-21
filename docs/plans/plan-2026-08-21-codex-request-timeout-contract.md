@@ -516,7 +516,7 @@ explicit Interactive command
 Implement and unit-test the shared timeout module before changing command
 registration.
 
-Status: in progress.
+Status: completed.
 
 Tasks:
 
@@ -542,12 +542,12 @@ Verification:
 - [x] Run `bun test test/cli-options-codex-timeout.test.ts`.
 - [x] Confirm the parser and resolver use Node-compatible APIs and do not depend
       on Bun runtime globals.
-- [ ] Record the focused command, result, and Phase 1 review range in the job
+- [x] Record the focused command, result, and Phase 1 review range in the job
       record.
 
 Gate:
 
-- [ ] Parser and resolver tests pass before any rename command registration is
+- [x] Parser and resolver tests pass before any rename command registration is
       changed.
 
 ### Phase 2: Rename Command Surface And Compatibility
