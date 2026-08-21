@@ -136,16 +136,16 @@ not global severity colors.
 
 The Phase 1 inventory starts with these observed surfaces:
 
-| Surface | Current behavior | Intended treatment |
-| --- | --- | --- |
-| Commander parser errors | plain `error:` line followed by help | color only the existing `error:` label on eligible stderr |
-| legacy Codex timeout notice | plain multiline `Warning:` notice | color only the first existing warning label |
-| Markdown PDF render warnings | yellow grouped heading | retain as the reference warning-heading behavior |
-| font discovery warnings | plain `Warning:` lines | use the shared warning-label style |
-| data-stack compatibility and replay warnings | plain `Warning:` lines | use the shared warning-label style |
-| Interactive tips | cyan label, but stdout-based eligibility | retain cyan and use stderr eligibility |
-| Interactive data-query review rendering | writes stderr with stdout-based eligibility | use stderr eligibility without changing domain colors |
-| Interactive stack replay tip | writes stderr with stdout-based eligibility | use stderr eligibility without changing its wording |
+| Surface                                      | Current behavior                            | Intended treatment                                        |
+| -------------------------------------------- | ------------------------------------------- | --------------------------------------------------------- |
+| Commander parser errors                      | plain `error:` line followed by help        | color only the existing `error:` label on eligible stderr |
+| legacy Codex timeout notice                  | plain multiline `Warning:` notice           | color only the first existing warning label               |
+| Markdown PDF render warnings                 | yellow grouped heading                      | retain as the reference warning-heading behavior          |
+| font discovery warnings                      | plain `Warning:` lines                      | use the shared warning-label style                        |
+| data-stack compatibility and replay warnings | plain `Warning:` lines                      | use the shared warning-label style                        |
+| Interactive tips                             | cyan label, but stdout-based eligibility    | retain cyan and use stderr eligibility                    |
+| Interactive data-query review rendering      | writes stderr with stdout-based eligibility | use stderr eligibility without changing domain colors     |
+| Interactive stack replay tip                 | writes stderr with stdout-based eligibility | use stderr eligibility without changing its wording       |
 
 Phase 1 must complete the source inventory before migration begins. The
 inventory should distinguish true diagnostics from headings, report fields,
@@ -173,14 +173,14 @@ The first implementation does not change:
 
 Use restrained standard terminal colors for existing labels:
 
-| Semantic role | Existing label examples | Style on an eligible target stream |
-| --- | --- | --- |
-| parser error | `error:` | red label only |
-| warning | `Warning:` | yellow label only |
-| grouped warning | `Markdown PDF render warnings:` | yellow heading only |
-| informational notice | `Info:`, when it is a true notice | cyan label only |
-| contextual tip | `Tip:` | cyan label only |
-| supporting detail | existing detail text | retain existing local dim styling where owned by that view |
+| Semantic role        | Existing label examples           | Style on an eligible target stream                         |
+| -------------------- | --------------------------------- | ---------------------------------------------------------- |
+| parser error         | `error:`                          | red label only                                             |
+| warning              | `Warning:`                        | yellow label only                                          |
+| grouped warning      | `Markdown PDF render warnings:`   | yellow heading only                                        |
+| informational notice | `Info:`, when it is a true notice | cyan label only                                            |
+| contextual tip       | `Tip:`                            | cyan label only                                            |
+| supporting detail    | existing detail text              | retain existing local dim styling where owned by that view |
 
 The explanation after a diagnostic label remains in the terminal's normal
 foreground color. Do not color a whole error or warning sentence merely because
@@ -446,41 +446,41 @@ Gate:
 
 Apply the shared contract to parser errors and the approved warning inventory.
 
-Status: in progress.
+Status: completed.
 
 Tasks:
 
-- [ ] Configure Commander `writeOut` and `writeErr` to use the injected CLI
+- [x] Configure Commander `writeOut` and `writeErr` to use the injected CLI
       runtime streams.
-- [ ] Configure Commander `outputError` to style only the existing leading
+- [x] Configure Commander `outputError` to style only the existing leading
       `error:` label.
-- [ ] Preserve help-after-error output as normal foreground text.
-- [ ] Apply the warning-label style to the legacy Codex timeout compatibility
+- [x] Preserve help-after-error output as normal foreground text.
+- [x] Apply the warning-label style to the legacy Codex timeout compatibility
       notice at its stderr presentation boundary.
-- [ ] Migrate approved font, data-stack, Markdown, and Interactive warning
+- [x] Migrate approved font, data-stack, Markdown, and Interactive warning
       surfaces from the Phase 1 inventory.
-- [ ] Retain the existing Markdown PDF grouped-warning behavior through the
+- [x] Retain the existing Markdown PDF grouped-warning behavior through the
       shared presentation seam.
-- [ ] Preserve warning wording, grouping, count, remediation, and exit behavior.
-- [ ] Keep structured diagnostic severity and messages ANSI-free.
+- [x] Preserve warning wording, grouping, count, remediation, and exit behavior.
+- [x] Keep structured diagnostic severity and messages ANSI-free.
 
 Verification:
 
-- [ ] Assert an unknown root option renders only `error:` in red on eligible
+- [x] Assert an unknown root option renders only `error:` in red on eligible
       stderr.
-- [ ] Assert parser output and help use injected runtime streams rather than
+- [x] Assert parser output and help use injected runtime streams rather than
       bypassing them through process-owned defaults.
-- [ ] Assert the invalid option text and following help remain unstyled.
-- [ ] Assert the legacy timeout notice renders one yellow warning label and
+- [x] Assert the invalid option text and following help remain unstyled.
+- [x] Assert the legacy timeout notice renders one yellow warning label and
       unchanged migration lines.
-- [ ] Assert repeated or grouped warnings retain their existing emission count.
-- [ ] Assert plain and stripped styled outputs match existing snapshots.
-- [ ] Run focused parser, timeout, font, data-stack, and Markdown warning tests.
-- [ ] Record the exact Phase 3 review range and gate decision.
+- [x] Assert repeated or grouped warnings retain their existing emission count.
+- [x] Assert plain and stripped styled outputs match existing snapshots.
+- [x] Run focused parser, timeout, font, data-stack, and Markdown warning tests.
+- [x] Record the exact Phase 3 review range and gate decision.
 
 Gate:
 
-- [ ] Continue only when all approved first-wave errors and warnings use the
+- [x] Continue only when all approved first-wave errors and warnings use the
       shared contract without behavioral or plain-text drift.
 
 ### Phase 4: Informational Diagnostic Adoption
