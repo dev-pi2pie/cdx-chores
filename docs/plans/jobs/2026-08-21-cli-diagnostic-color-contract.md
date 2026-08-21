@@ -61,13 +61,13 @@ No production or test code changed in Phase 1.
 
 | Source owner | Stream | Role | Focused test owner | Structured-output risk | Phase |
 | --- | --- | --- | --- | --- | --- |
-| `src/cli/colors.ts` | caller-selected | shared color eligibility and semantic-label foundation | `test/cli-color.test.ts`; new `test/cli-diagnostic-color.test.ts` | helper must never enter stored data | 2 |
+| `src/cli/colors.ts` | caller-selected | shared color eligibility and semantic-label foundation | existing `test/cli-color.test.ts`; planned `test/cli-diagnostic-color.test.ts` | helper must never enter stored data | 2 |
 | aligned `getCliColors(...)` stdout consumers in doctor, preview, query, DuckDB, font, and debug renderers | stdout | domain-owned human presentation | existing doctor, preview, query, DuckDB, and font suites | JSON and other machine payloads must remain plain | 2 for explicit stream; semantic presentation deferred |
 | `src/cli/interactive/data/stack/artifacts.ts` | stderr | domain-owned replay guidance | `test/cli-interactive-data-stack/dry-run-write.test.ts`; `test/cli-interactive-routing-data-stack.test.ts` | no stack-plan or report change | 2 for stream fix; Phase 4 regression only |
 | `src/cli/interactive/data-query/execution.ts` | stderr | domain-owned SQL review | data-query review, formal, and manual routing suites | SQL-only and machine output excluded | 2 for stream fix; semantic presentation deferred |
 | `src/cli/interactive/data-query/source-shape/introspection-rendering.ts` | stderr | domain-owned source/schema review | source-shape and header-routing suites | introspection data remains plain | 2 for stream fix; semantic presentation deferred |
 | `src/cli/interactive/notice.ts` | stderr | contextual `Tip:` | `test/cli-interactive-notice.test.ts`; contextual-tip and routing suites | Interactive-only; prompt order must remain stable | 2 for stream fix; 4 for semantic adoption |
-| `src/command.ts` Commander output | stderr | parser `error:` | new `test/cli-command-output-color.test.ts`; CLI UX and Interactive timeout regressions | help/version routing must not affect machine output | 3 |
+| `src/command.ts` Commander output | stderr | parser `error:` | planned `test/cli-command-output-color.test.ts`; existing CLI UX and Interactive timeout regressions | help/version routing must not affect machine output | 3 |
 | `src/cli/commands/rename.ts` with plain formatter in `src/cli/options/codex-timeout.ts` | stderr | legacy timeout compatibility `Warning:` | timeout option and rename command suites | formatter and timeout semantics remain plain and unchanged | 3 |
 | `src/cli/actions/font.ts`; `src/cli/actions/font-check.ts` warning writers | stderr | discovery `Warning:` | font list, inspect-debug, and check-output suites | JSON warning arrays remain plain and suppress text-mode warning loop | 3 |
 | `src/cli/actions/data-stack/reporting.ts` | stderr | compatibility `Warning:` | `test/cli-command-data-stack/options.test.ts` | stack data and plan artifacts unchanged | 3 |
@@ -78,7 +78,7 @@ No production or test code changed in Phase 1.
 | `src/cli/interactive/data-query/source-shape/index.ts` | stderr | suspicious-sheet warning heading | source-shape routing suite | source-shape data remains plain | 3 |
 | `src/cli/interactive/markdown/review.ts` | stderr | bundle warning heading | Interactive Markdown render-sources suite | pure review-line formatter remains ANSI-free | 3 |
 
-The new `test/cli-diagnostic-color.test.ts` owner must cover label-only
+The planned `test/cli-diagnostic-color.test.ts` owner must cover label-only
 red/yellow/cyan styling, independently eligible and ineligible target streams,
 ANSI-stripped canonical text, `NO_COLOR`, and disabled runtime color.
 
@@ -86,7 +86,7 @@ ANSI-stripped canonical text, `NO_COLOR`, and disabled runtime color.
 
 | Source call site or function | Helper | Actual target | Phase 2 assignment or deferral | Exact focused test owner |
 | --- | --- | --- | --- | --- |
-| `src/cli/colors.ts:getCliColors` | `createColors(...)` | caller-selected stream; currently defaults to stdout | require target stream; remove default after migration | `test/cli-color.test.ts`; new `test/cli-diagnostic-color.test.ts` |
+| `src/cli/colors.ts:getCliColors` | `createColors(...)` | caller-selected stream; currently defaults to stdout | require target stream; remove default after migration | existing `test/cli-color.test.ts`; planned `test/cli-diagnostic-color.test.ts` |
 | `src/cli/colors.ts:getProcessColors` | `createColors(...)` | process stdout | defer as process-owned version presentation | `test/cli-ux.test.ts` |
 | `src/cli/doctor/render.ts:renderCompactDoctorReport` | `getCliColors(runtime)` | stdout | pass `runtime.stdout`; retain doctor semantics | `test/cli-action-doctor.test.ts`; `test/cli-command-doctor.test.ts` |
 | `src/cli/doctor/render.ts:renderDetailedDoctorReport` | `getCliColors(runtime)` | stdout | pass `runtime.stdout`; retain doctor semantics | `test/cli-action-doctor.test.ts`; `test/cli-command-doctor.test.ts` |
@@ -116,7 +116,7 @@ ANSI-stripped canonical text, `NO_COLOR`, and disabled runtime color.
 
 | Adopted family | Canonical plain text or shape | Emission and exit baseline | Exact focused test owner |
 | --- | --- | --- | --- |
-| Commander parser error | lowercase `error: <message>`, blank line, then help | one parser error; parse stops with exit `1` | new `test/cli-command-output-color.test.ts`; `test/cli-command-interactive-timeout.test.ts`; `test/cli-ux.test.ts` |
+| Commander parser error | lowercase `error: <message>`, blank line, then help | one parser error; parse stops with exit `1` | planned `test/cli-command-output-color.test.ts`; existing `test/cli-command-interactive-timeout.test.ts`; `test/cli-ux.test.ts` |
 | legacy timeout compatibility | singular/plural `Warning: legacy Codex timeout ... deprecated.` followed by migration and compatibility lines | one multiline block per invocation; command behavior and exit remain action-owned | `test/cli-options-codex-timeout.test.ts`; `test/cli-command-rename-timeout.test.ts` |
 | font discovery | `Warning: ${warning}` | one line per discovery warning in text mode; JSON retains plain warning arrays; exit remains command-owned | `test/fonts-cli-list.test.ts`; `test/fonts-cli-inspect-debug.test.ts`; `test/fonts-cli-check-output.test.ts` |
 | data-stack alias | `Warning: --union-by-name is a canary compatibility alias. Use --schema-mode union-by-name.` | exactly once when alias is used; operation continues | `test/cli-command-data-stack/options.test.ts` |
@@ -127,6 +127,25 @@ ANSI-stripped canonical text, `NO_COLOR`, and disabled runtime color.
 | suspicious sheet shape | `Sheet shape warning: current Excel sheet shape looks suspicious.` plus explanation/reasons | one heading for suspicious shape followed by a user choice; no exit effect | `test/cli-interactive-routing-data-query-source-shape.test.ts` |
 | Interactive bundle warnings | `Bundle warnings:` plus `- Ignored unclassified YAML or JSON file: ${filename}` | one grouped section when applicable; workflow continues | `test/cli-interactive-markdown-pdf/render-sources.test.ts` |
 | Interactive tip | blank line, `Tip: ${message}`, blank line | at most one selected tip on supported flow entry; no exit effect | `test/cli-interactive-notice.test.ts`; `test/cli-interactive-contextual-tip.test.ts`; `test/cli-interactive-routing-data-query-review.test.ts`; `test/cli-interactive-routing-data-stack.test.ts`; `test/cli-interactive-routing-data-extract-core.test.ts` |
+
+The canonical baseline appendix covers semantic consumers adopted in Phases 3
+and 4. The following Phase 2 callers receive stream arguments only; their
+wording, emission, exit behavior, and domain colors remain unchanged and are
+protected by existing focused tests.
+
+### Phase 2 Stream-Only Baseline
+
+| Caller family | Canonical behavior retained | Existing focused protection |
+| --- | --- | --- |
+| doctor compact/detailed reports | same stdout headings, states, issue/action sections, and exit behavior | `test/cli-action-doctor.test.ts`; `test/cli-command-doctor.test.ts` |
+| data preview table and summary | same stdout summary labels, table cells, highlighting, and result behavior | `test/cli-actions-data-preview/rendering.test.ts`; `test/cli-actions-data-preview/highlighting.test.ts`; `test/cli-color.test.ts` |
+| data query table, report, and Codex draft view | same stdout schema, rows, SQL/report labels, and machine-output separation | `test/cli-actions-data-query.test.ts`; `test/cli-actions-data-query-workspace.test.ts`; `test/cli-actions-data-query-codex.test.ts` |
+| DuckDB human reports | same stdout probe, doctor, cache, and remediation presentation | `test/cli-command-data-query-duckdb-lifecycle.test.ts`; `test/cli-actions-doctor-markdown-video-deferred.test.ts` |
+| font list/inspect/check/debug reports | same stdout report fields, dim `Info:` rows, JSON separation, and command-owned exit behavior | `test/fonts-cli-list.test.ts`; `test/fonts-cli-inspect-output.test.ts`; `test/fonts-cli-inspect-debug.test.ts`; `test/fonts-cli-check-output.test.ts` |
+| Interactive stack replay guidance | same stderr `Replay later:` wording, plan-retention condition, and workflow result | `test/cli-interactive-data-stack/dry-run-write.test.ts`; `test/cli-interactive-routing-data-stack.test.ts` |
+| Interactive data-query review | same stderr SQL, SQL-limit, and table-preview labels plus unchanged prompt/execution behavior | `test/cli-interactive-routing-data-query-review.test.ts` |
+| Interactive source-shape summary | same stderr input, format, schema, and sample-row review before unchanged choices | `test/cli-interactive-routing-data-query-source-shape.test.ts`; `test/cli-interactive-routing-data-query-headers.test.ts` |
+| existing Markdown warning renderer | same explicit stderr eligibility, yellow heading, plain bullets, and empty-list behavior | `test/cli-markdown-pdf-warning-output.test.ts` |
 
 ### Reproducible Stream-Mismatch Map
 
@@ -163,7 +182,7 @@ eligibility follows the stderr write target.
 - Phase 2 owns the shared semantic-label seam, explicit streams for every
   `getCliColors(...)` caller, removal of the stdout default, and the four known
   stderr mismatch fixes.
-- Phase 3 owns Commander parser errors and the ten warning families listed in
+- Phase 3 owns Commander parser errors and the nine warning families listed in
   the adopted-surface matrix.
 - Phase 4 owns only the existing Interactive `Tip:` semantic family. It does
   not invent an `Info:` consumer or repeat stream migration.
