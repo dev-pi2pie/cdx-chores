@@ -168,7 +168,7 @@ export async function actionFontList(
     return;
   }
 
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stdout);
   printLine(runtime.stdout, pc.bold(pc.cyan("cdx-chores font list")));
   printLine(runtime.stdout, `${pc.dim("Discovery:")} ${discovery.discovery}`);
   printLine(runtime.stdout, `${pc.dim("Adapter:")} ${discovery.adapter}`);
@@ -210,7 +210,7 @@ function groupFacesByFamily(faces: FontFace[]): Array<{ family: string; faces: F
 }
 
 function printInspectFace(runtime: CliRuntime, face: FontFace): void {
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stdout);
   printLine(runtime.stdout, `- ${face.fullName}`);
   for (const [label, value] of fontFaceDetailEntries(face)) {
     printLine(runtime.stdout, `  ${pc.dim(`${label}:`)} ${value}`);
@@ -261,7 +261,7 @@ export async function actionFontInspect(
     return;
   }
 
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stdout);
   printLine(runtime.stdout, pc.bold(pc.cyan("cdx-chores font inspect")));
   printLine(runtime.stdout, `${pc.dim("Family:")} ${family}`);
   printLine(runtime.stdout, `${pc.dim("Discovery:")} ${discovery.discovery}`);

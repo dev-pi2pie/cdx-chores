@@ -32,7 +32,7 @@ export function isInteractiveTipSlotAvailable(runtime: CliRuntime): boolean {
 }
 
 export function writeInteractiveTip(runtime: CliRuntime, message: string): void {
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stderr);
   printLine(runtime.stderr, "");
   printLine(runtime.stderr, `${pc.cyan("Tip:")} ${pc.dim(message)}`);
   printLine(runtime.stderr, "");

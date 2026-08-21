@@ -21,6 +21,7 @@ async function runHarnessScenario(
 
   const { runtime, stdout, stderr } = createHarnessRuntime({
     nowIsoString: scenario.nowIsoString,
+    stderrIsTTY: scenario.stderrIsTTY,
     stdoutColumns: scenario.stdoutColumns,
     stdoutIsTTY: scenario.stdoutIsTTY,
   });

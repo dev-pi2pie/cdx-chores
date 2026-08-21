@@ -11,7 +11,7 @@ export function renderIntrospectionSummary(
     introspection: DataQuerySourceIntrospection;
   },
 ): void {
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stderr);
   const lines = [
     `${pc.bold(pc.cyan("Input"))}: ${pc.white(displayPath(runtime, options.inputPath))}`,
     `${pc.bold(pc.cyan("Format"))}: ${pc.white(options.format)}`,

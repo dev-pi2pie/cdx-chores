@@ -8,7 +8,7 @@ export function printFontDebugAttempts(runtime: CliRuntime, discovery: DiscoverF
     return;
   }
 
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stdout);
   printLine(runtime.stdout, "");
   printLine(runtime.stdout, pc.bold("Debug:"));
   for (const attempt of discovery.attempts) {

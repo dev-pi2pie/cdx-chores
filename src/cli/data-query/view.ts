@@ -1,4 +1,4 @@
-import { getCliColors } from "../colors";
+import type { getCliColors } from "../colors";
 import type {
   DataQueryInputFormat,
   DataQuerySourceIntrospection,

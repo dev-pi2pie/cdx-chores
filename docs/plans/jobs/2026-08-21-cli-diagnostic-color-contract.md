@@ -228,3 +228,15 @@ unambiguous: Phase 2 owns the semantic helper and every explicit stream
 argument, Phase 3 owns Commander plus nine warning families, and Phase 4 owns
 the existing `Tip:` family without inventing an `Info:` consumer. No production
 or test code changed in this phase.
+
+## Phase 2: Shared Stream-Aware Presentation Foundation
+
+Status: in progress.
+
+Starting commit: `998a525a64c633d43e4a5332def2edd5dedd11a2`
+
+Phase 2 adds the shared semantic-label presentation seam, requires explicit
+target streams for runtime color acquisition, fixes the five recorded
+function-level stream mismatches across four renderer modules, and preserves
+all domain-owned semantics. Parser, warning, and tip consumers remain assigned
+to Phases 3 and 4.

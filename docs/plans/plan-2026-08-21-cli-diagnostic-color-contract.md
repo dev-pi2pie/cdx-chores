@@ -1,7 +1,7 @@
 ---
 title: "CLI diagnostic color contract"
 created-date: 2026-08-21
-status: draft
+status: active
 agent: codex
 ---
 
@@ -399,7 +399,7 @@ Add the shared semantic-label seam and complete explicit-stream migration for
 existing color-helper callers. Defer semantic diagnostic adoption by consumer
 family to Phases 3 and 4.
 
-Status: not started.
+Status: in progress.
 
 Tasks:
 

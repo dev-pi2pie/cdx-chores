@@ -198,7 +198,7 @@ function printDiscoveryWarnings(runtime: CliRuntime, warnings: string[]): void {
 }
 
 function printFontCheckTextOutput(runtime: CliRuntime, output: FontCheckOutput): void {
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stdout);
   printLine(runtime.stdout, pc.bold(pc.cyan("cdx-chores font check")));
   printLine(runtime.stdout, `${pc.dim("Family:")} ${output.family}`);
   printLine(runtime.stdout, `${pc.dim("Discovery:")} ${output.discovery}`);

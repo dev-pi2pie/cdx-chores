@@ -50,6 +50,7 @@ export interface InteractiveHarnessScenario {
   dataStackWriteExistingPaths?: string[];
   stdoutColumns?: number;
   stdoutIsTTY?: boolean;
+  stderrIsTTY?: boolean;
   dataQueryActionErrorMessage?: string;
   dataQueryActionErrorCode?: string;
   dataQueryActionStderr?: string;

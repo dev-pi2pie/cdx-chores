@@ -19,6 +19,8 @@ describe("interactive mode routing: data query review", () => {
       inputQueue: ["select id from file", "all", "", "", "", "5"],
       confirmQueue: [true, false, false, false, true],
       dataQueryDetectedFormat: "csv",
+      stdoutIsTTY: true,
+      stderrIsTTY: false,
     });
 
     expect(result.actionCalls).toEqual([
@@ -45,6 +47,31 @@ describe("interactive mode routing: data query review", () => {
     );
     expect(result.stderr).toContain("Table preview rows:");
     expect(result.stderr).toContain("5");
+    expect(result.stderr).not.toContain("\u001b[");
+  });
+
+  test("colors candidate and output review on stderr eligibility rather than stdout", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      selectQueue: [
+        "data",
+        "data:query",
+        "manual",
+        "change-mode",
+        "formal-guide",
+        "count",
+        "table",
+      ],
+      requiredPathQueue: ["fixtures/query.csv"],
+      inputQueue: ["select id from file", "all", "", "", "", "5"],
+      confirmQueue: [true, false, false, false, true],
+      dataQueryDetectedFormat: "csv",
+      stdoutIsTTY: false,
+      stderrIsTTY: true,
+    });
+
+    expect(result.stderr).toContain("\u001b[32mSQL\u001b[39m");
+    expect(result.stderr).toContain("\u001b[36mTable preview rows\u001b[39m");
   });
 
   test("writes the tty abort notice for interactive data query startup", () => {

@@ -10,12 +10,18 @@ export class CaptureStream {
 }
 
 export function createHarnessRuntime(
-  options: { nowIsoString?: string; stdoutColumns?: number; stdoutIsTTY?: boolean } = {},
+  options: {
+    nowIsoString?: string;
+    stderrIsTTY?: boolean;
+    stdoutColumns?: number;
+    stdoutIsTTY?: boolean;
+  } = {},
 ) {
   const stdout = new CaptureStream();
   const stderr = new CaptureStream();
   stdout.columns = options.stdoutColumns;
   stdout.isTTY = options.stdoutIsTTY;
+  stderr.isTTY = options.stderrIsTTY;
   const runtime = {
     cwd: process.cwd(),
     colorEnabled: true,
