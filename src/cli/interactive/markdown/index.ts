@@ -15,11 +15,13 @@ import {
 } from "../shared";
 import { handleMarkdownPdfRecipesInteractiveAction } from "./pdf-recipes";
 import { handleMarkdownPdfToPdfInteractiveAction } from "./to-pdf";
+import { createInteractiveSession, type InteractiveSession } from "../session";
 
 export async function handleMarkdownInteractiveAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   action: MarkdownInteractiveActionKey,
+  _session: InteractiveSession = createInteractiveSession(),
 ): Promise<InteractiveNavigationOutcome> {
   if (action === "md:to-pdf") {
     return await handleMarkdownPdfToPdfInteractiveAction(runtime, pathPromptContext);

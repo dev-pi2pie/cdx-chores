@@ -765,11 +765,11 @@ Gate:
 Add one session-owned timeout to explicit Interactive mode and thread it through
 all current Interactive Codex request paths.
 
-Status: not started.
+Status: in progress.
 
 Tasks:
 
-- [ ] Create the Phase 6 job record.
+- [x] Create the Phase 6 job record.
 - [ ] Add `--codex-timeout <duration>` to the explicit `interactive` command
       through the shared option helper.
 - [ ] Keep the no-argument Interactive entry on the 30-second built-in default.
