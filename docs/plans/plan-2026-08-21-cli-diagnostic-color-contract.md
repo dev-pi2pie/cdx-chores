@@ -488,35 +488,35 @@ Gate:
 Adopt the notice/tip contract after Phase 2 has completed stream alignment.
 Phase 4 verifies stream correctness but does not repeat the stream migration.
 
-Status: in progress.
+Status: completed.
 
 Tasks:
 
-- [ ] Route Interactive `Tip:` labels through the shared cyan notice style,
+- [x] Route Interactive `Tip:` labels through the shared cyan notice style,
       using the explicit stderr target established in Phase 2.
-- [ ] Apply the cyan notice style only to true ancillary notices approved in
+- [x] Apply the cyan notice style only to true ancillary notices approved in
       Phase 1.
-- [ ] Verify that Interactive stack replay, data-query review, and source
+- [x] Verify that Interactive stack replay, data-query review, and source
       introspection remain stderr-correct after Phase 2.
-- [ ] Preserve font `Info:` report rows and other stdout report fields under
+- [x] Preserve font `Info:` report rows and other stdout report fields under
       their current renderer ownership.
-- [ ] Preserve doctor, SQL, table, and progress-specific visual semantics.
-- [ ] Avoid adding new informational chatter to non-interactive commands.
+- [x] Preserve doctor, SQL, table, and progress-specific visual semantics.
+- [x] Avoid adding new informational chatter to non-interactive commands.
 
 Verification:
 
-- [ ] Re-run stdout-TTY/stderr-redirected and stdout-redirected/stderr-TTY cases
+- [x] Re-run stdout-TTY/stderr-redirected and stdout-redirected/stderr-TTY cases
       for every adopted informational renderer family.
-- [ ] Assert tips and notices remain on their existing stream.
-- [ ] Assert machine-readable stdout remains free of ANSI and ancillary text.
-- [ ] Assert Interactive prompt order and workflow behavior are unchanged.
-- [ ] Run focused Interactive notice, data-query, data-stack, font, and color
+- [x] Assert tips and notices remain on their existing stream.
+- [x] Assert machine-readable stdout remains free of ANSI and ancillary text.
+- [x] Assert Interactive prompt order and workflow behavior are unchanged.
+- [x] Run focused Interactive notice, data-query, data-stack, font, and color
       regression tests.
-- [ ] Record the exact Phase 4 review range and gate decision.
+- [x] Record the exact Phase 4 review range and gate decision.
 
 Gate:
 
-- [ ] Continue only when true notices use the shared style, every adopted
+- [x] Continue only when true notices use the shared style, every adopted
       stderr surface remains stream-correct, and report-owned presentation is
       unchanged.
 

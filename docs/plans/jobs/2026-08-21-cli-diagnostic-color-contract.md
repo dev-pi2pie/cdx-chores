@@ -346,10 +346,47 @@ family.
 
 ## Phase 4: Informational Diagnostic Adoption
 
-Status: in progress.
+Status: completed.
 
 Starting commit: `b78dfaed88ec31ba0414c17f04d747e1636c953c`
 
 Phase 4 routes the existing Interactive `Tip:` label through the shared cyan
 notice role. It re-verifies the Phase 2 stream boundary without reopening that
 migration and does not invent a new `Info:` diagnostic family.
+
+Implementation checkpoint:
+
+- `37c875a3ca267c761b8c19e19f8e92df63026006` — routed only the existing
+  Interactive `Tip:` label through the shared notice role and added focused
+  stream, color-disable, canonical-text, and framing regressions.
+
+Validation evidence:
+
+- The focused Phase 4 regression selection passed 72 tests across 12 files
+  with no failures. It covered Interactive notices and contextual tips,
+  data-query review and source introspection, data-stack replay, data-extract
+  routing, font reports, and the shared diagnostic helper.
+- Type checking, linting, formatting, the production build, and
+  `git diff --check` passed.
+- Independent stdout/stderr TTY cases confirmed that stdout still owns tip-slot
+  availability while stderr owns the color eligibility of the emitted label
+  and dim body.
+- Styled output strips to the canonical `Tip:` text and blank-line framing;
+  disabled runtime color and `NO_COLOR` remain plain.
+- Interactive routing regressions retained prompt order and workflow behavior,
+  and the notice writer emitted no stdout content.
+
+Review range:
+
+```text
+b78dfaed88ec31ba0414c17f04d747e1636c953c..37c875a3ca267c761b8c19e19f8e92df63026006
+```
+
+Correctness, test-quality, and maintainability reviews passed with no material
+findings. No review-fix commit or widened range was required.
+
+Decision gate: `Continue`. Phase 4 is complete. The existing Interactive
+`Tip:` family uses the shared cyan notice role on eligible stderr, while its
+canonical text, layout, stream, availability rule, and workflow behavior remain
+unchanged. Font `Info:` rows and all report-, SQL-, table-, doctor-, and
+progress-owned presentation remain outside the semantic diagnostic migration.
