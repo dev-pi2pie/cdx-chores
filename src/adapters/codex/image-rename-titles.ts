@@ -1,4 +1,5 @@
 import { basename } from "node:path";
+import type { Thread } from "@openai/codex-sdk";
 
 import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../utils/codex-timeout";
 import {
@@ -48,12 +49,13 @@ function buildPrompt(imagePaths: string[]): string {
 
 async function suggestSingleBatch(
   options: SuggestImageTitlesOptions,
+  startThread: StartCodexRenameThread = startCodexReadOnlyThread,
 ): Promise<CodexImageRenameResult> {
   if (options.imagePaths.length === 0) {
     return { suggestions: [] };
   }
 
-  const thread = await startCodexReadOnlyThread(options.workingDirectory);
+  const thread = await startThread(options.workingDirectory);
 
   const input = [
     { type: "text", text: buildPrompt(options.imagePaths) } as const,
@@ -80,6 +82,7 @@ async function suggestSingleBatch(
 }
 
 type SuggestImageBatch = (options: SuggestImageTitlesOptions) => Promise<CodexImageRenameResult>;
+type StartCodexRenameThread = (workingDirectory: string) => Promise<Pick<Thread, "run">>;
 
 async function suggestImageRenameTitles(
   options: SuggestImageTitlesOptions,
@@ -94,7 +97,7 @@ async function suggestImageRenameTitles(
     const batchSize = Math.max(1, Math.trunc(options.batchSize ?? options.imagePaths.length));
     const retries = Math.max(0, Math.trunc(options.retries ?? 0));
     const batches = chunkItems(options.imagePaths, batchSize);
-    const { suggestions, batchErrors, batchFailures } = await executeBatchesWithRetries({
+    const { suggestions, batchFailures } = await executeBatchesWithRetries({
       batches,
       retries,
       runBatch: async (batch) =>
@@ -106,7 +109,6 @@ async function suggestImageRenameTitles(
     });
 
     const errorSummary = summarizeCodexBatchFailures({
-      batchErrors,
       batchFailures,
       hasSuggestions: suggestions.length > 0,
       requestLabel: "Codex image-title request",
@@ -134,4 +136,13 @@ export async function __testOnlySuggestImageRenameTitlesWithBatch(
   suggestBatch: SuggestImageBatch,
 ): Promise<CodexImageRenameResult> {
   return suggestImageRenameTitles(options, suggestBatch);
+}
+
+export async function __testOnlySuggestImageRenameTitlesWithThread(
+  options: SuggestImageTitlesOptions,
+  startThread: StartCodexRenameThread,
+): Promise<CodexImageRenameResult> {
+  return suggestImageRenameTitles(options, (batchOptions) =>
+    suggestSingleBatch(batchOptions, startThread),
+  );
 }

@@ -163,11 +163,9 @@ export async function executeBatchesWithRetries<TBatch, TSuggestion>(options: {
   runBatch: (batch: TBatch) => Promise<CodexFilenameTitleSuggestionResult<TSuggestion>>;
 }): Promise<{
   suggestions: TSuggestion[];
-  batchErrors: string[];
   batchFailures: CodexBatchFailure[];
 }> {
   const suggestions: TSuggestion[] = [];
-  const batchErrors: string[] = [];
   const batchFailures: CodexBatchFailure[] = [];
 
   for (const batch of options.batches) {
@@ -200,7 +198,6 @@ export async function executeBatchesWithRetries<TBatch, TSuggestion>(options: {
       suggestions.push(...batchResult.suggestions);
     }
     if (lastError) {
-      batchErrors.push(lastError);
       batchFailures.push({
         kind: lastFailureKind,
         message: lastError,
@@ -209,7 +206,7 @@ export async function executeBatchesWithRetries<TBatch, TSuggestion>(options: {
     }
   }
 
-  return { suggestions, batchErrors, batchFailures };
+  return { suggestions, batchFailures };
 }
 
 export function summarizeBatchErrors(
@@ -224,7 +221,6 @@ export function summarizeBatchErrors(
 }
 
 export function summarizeCodexBatchFailures(options: {
-  batchErrors: string[];
   batchFailures: CodexBatchFailure[];
   hasSuggestions: boolean;
   requestLabel: string;
@@ -232,7 +228,10 @@ export function summarizeCodexBatchFailures(options: {
 }): string | undefined {
   const timeoutFailure = options.batchFailures.find((failure) => failure.kind === "timeout");
   if (!timeoutFailure) {
-    return summarizeBatchErrors(options.batchErrors, options.hasSuggestions);
+    return summarizeBatchErrors(
+      options.batchFailures.map((failure) => failure.message),
+      options.hasSuggestions,
+    );
   }
 
   const prefix = options.hasSuggestions

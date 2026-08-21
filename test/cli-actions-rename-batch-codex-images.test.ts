@@ -83,7 +83,6 @@ describe("cli action modules: rename batch codex images", () => {
       await writeFile(imageB, "fakepng", "utf8");
 
       const timeoutMessage = summarizeCodexBatchFailures({
-        batchErrors: ["request deadline reached"],
         batchFailures: [
           {
             kind: "timeout",

@@ -1,5 +1,6 @@
 import { extname } from "node:path";
 import { readFile } from "node:fs/promises";
+import type { Thread } from "@openai/codex-sdk";
 
 import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../../utils/codex-timeout";
 import {
@@ -97,16 +98,19 @@ async function extractEvidenceForPath(path: string): Promise<ExtractedDocumentTi
   return { reason: "doc_unsupported_type" };
 }
 
-async function suggestSingleBatch(options: {
-  evidences: Array<{ path: string; promptFilename: string; evidence: DocumentTitleEvidence }>;
-  workingDirectory: string;
-  timeoutMs?: number;
-}): Promise<CodexDocumentRenameResult> {
+async function suggestSingleBatch(
+  options: {
+    evidences: Array<{ path: string; promptFilename: string; evidence: DocumentTitleEvidence }>;
+    workingDirectory: string;
+    timeoutMs?: number;
+  },
+  startThread: StartCodexRenameThread = startCodexReadOnlyThread,
+): Promise<CodexDocumentRenameResult> {
   if (options.evidences.length === 0) {
     return { suggestions: [] };
   }
 
-  const thread = await startCodexReadOnlyThread(options.workingDirectory);
+  const thread = await startThread(options.workingDirectory);
   const turn = await thread.run(
     [
       {
@@ -145,6 +149,7 @@ type SuggestDocumentBatch = (options: {
   workingDirectory: string;
   timeoutMs?: number;
 }) => Promise<CodexDocumentRenameResult>;
+type StartCodexRenameThread = (workingDirectory: string) => Promise<Pick<Thread, "run">>;
 
 async function suggestDocumentRenameTitles(
   options: SuggestDocumentTitlesOptions,
@@ -181,7 +186,7 @@ async function suggestDocumentRenameTitles(
     const batchSize = Math.max(1, Math.trunc(options.batchSize ?? evidenceItems.length));
     const retries = Math.max(0, Math.trunc(options.retries ?? 0));
     const batches = chunkItems(evidenceItems, batchSize);
-    const { suggestions, batchErrors, batchFailures } = await executeBatchesWithRetries({
+    const { suggestions, batchFailures } = await executeBatchesWithRetries({
       batches,
       retries,
       runBatch: async (batch) =>
@@ -193,7 +198,6 @@ async function suggestDocumentRenameTitles(
     });
 
     const errorSummary = summarizeCodexBatchFailures({
-      batchErrors,
       batchFailures,
       hasSuggestions: suggestions.length > 0,
       requestLabel: "Codex document-title request",
@@ -221,6 +225,15 @@ export async function __testOnlySuggestDocumentRenameTitlesWithBatch(
   suggestBatch: SuggestDocumentBatch,
 ): Promise<CodexDocumentRenameResult> {
   return suggestDocumentRenameTitles(options, suggestBatch);
+}
+
+export async function __testOnlySuggestDocumentRenameTitlesWithThread(
+  options: SuggestDocumentTitlesOptions,
+  startThread: StartCodexRenameThread,
+): Promise<CodexDocumentRenameResult> {
+  return suggestDocumentRenameTitles(options, (batchOptions) =>
+    suggestSingleBatch(batchOptions, startThread),
+  );
 }
 
 export async function extractDocumentTitleEvidenceForPath(

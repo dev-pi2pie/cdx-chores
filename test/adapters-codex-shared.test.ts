@@ -65,7 +65,6 @@ describe("codex shared adapter helpers", () => {
       { batch: "a", title: "alpha" },
       { batch: "b", title: "beta" },
     ]);
-    expect(result.batchErrors).toEqual(["partial error"]);
     expect(result.batchFailures).toEqual([
       { kind: "other", message: "partial error", attemptsUsed: 1 },
     ]);
@@ -87,7 +86,6 @@ describe("codex shared adapter helpers", () => {
 
     expect(calls).toBe(2);
     expect(result.suggestions).toEqual([{ ok: true }]);
-    expect(result.batchErrors).toEqual([]);
     expect(result.batchFailures).toEqual([]);
   });
 
@@ -104,13 +102,11 @@ describe("codex shared adapter helpers", () => {
     });
 
     expect(result.suggestions).toEqual([{ batch: "success", title: "kept" }]);
-    expect(result.batchErrors).toEqual(["request deadline reached"]);
     expect(result.batchFailures).toEqual([
       { kind: "timeout", message: "request deadline reached", attemptsUsed: 1 },
     ]);
     expect(
       summarizeCodexBatchFailures({
-        batchErrors: result.batchErrors,
         batchFailures: result.batchFailures,
         hasSuggestions: true,
         requestLabel: "Codex image-title request",
@@ -138,7 +134,6 @@ describe("codex shared adapter helpers", () => {
     ]);
     expect(
       summarizeCodexBatchFailures({
-        batchErrors: result.batchErrors,
         batchFailures: result.batchFailures,
         hasSuggestions: false,
         requestLabel: "Codex document-title request",
@@ -163,7 +158,6 @@ describe("codex shared adapter helpers", () => {
     ]);
     expect(
       summarizeCodexBatchFailures({
-        batchErrors: result.batchErrors,
         batchFailures: result.batchFailures,
         hasSuggestions: false,
         requestLabel: "Codex image-title request",
@@ -186,7 +180,6 @@ describe("codex shared adapter helpers", () => {
     ]);
     expect(
       summarizeCodexBatchFailures({
-        batchErrors: result.batchErrors,
         batchFailures: result.batchFailures,
         hasSuggestions: false,
         requestLabel: "Codex image-title request",
@@ -210,7 +203,6 @@ describe("codex shared adapter helpers", () => {
     expect(result.batchFailures.map((failure) => failure.kind)).toEqual(["timeout", "other"]);
     expect(
       summarizeCodexBatchFailures({
-        batchErrors: result.batchErrors,
         batchFailures: result.batchFailures,
         hasSuggestions: false,
         requestLabel: "Codex image-title request",
