@@ -2,7 +2,7 @@
 title: "Codex request timeout contract implementation"
 created-date: 2026-08-21
 modified-date: 2026-08-21
-status: draft
+status: active
 agent: codex
 ---
 
@@ -224,7 +224,10 @@ When a user explicitly supplies either legacy CLI flag:
 - emit exactly one consolidated notice per command invocation
 - write the notice to stderr
 - preserve the command's normal exit status and fallback behavior
-- include an exact duration-based replacement
+- include an exact duration-based replacement when the legacy value satisfies
+  the new duration grammar and maximum
+- otherwise explain that the legacy value cannot migrate unchanged and must be
+  reduced or normalized before using the duration-based flag
 - do not print again for each analyzer batch or retry attempt
 - do not announce a removal release yet
 
@@ -513,29 +516,31 @@ explicit Interactive command
 Implement and unit-test the shared timeout module before changing command
 registration.
 
-Status: not started.
+Status: in progress.
 
 Tasks:
 
-- [ ] Create the Phase 1 job record and mark this plan `active` when
+- [x] Create the Phase 1 job record and mark this plan `active` when
       implementation begins.
-- [ ] Add `src/cli/options/codex-timeout.ts` as the side-effect-free timeout
+- [x] Add `src/cli/options/codex-timeout.ts` as the side-effect-free timeout
       contract module.
-- [ ] Define the 30-second default and proposed 10-minute maximum constants.
-- [ ] Implement strict positive-integer `ms`, `s`, and `m` parsing.
-- [ ] Normalize accepted durations to safe integer milliseconds.
-- [ ] Reject missing units, zero, negatives, decimals, whitespace, uppercase or
+- [x] Define the 30-second default and proposed 10-minute maximum constants.
+- [x] Implement strict positive-integer `ms`, `s`, and `m` parsing.
+- [x] Normalize accepted durations to safe integer milliseconds.
+- [x] Reject missing units, zero, negatives, decimals, whitespace, uppercase or
       unknown units, compound durations, overflow, and above-maximum values.
-- [ ] Add repeated-option detection without relying on last-value-wins behavior.
-- [ ] Implement pure shared/scoped/legacy resolution with source metadata.
-- [ ] Implement exact legacy replacement formatting.
-- [ ] Add focused unit tests for accepted values, rejected categories,
+- [x] Add repeated-option detection without relying on last-value-wins behavior.
+- [x] Implement pure shared/scoped/legacy resolution with source metadata.
+- [x] Implement exact legacy replacement formatting.
+- [x] Preserve legacy numeric input semantics outside the new grammar and cap;
+      produce a non-exact migration explanation for those values.
+- [x] Add focused unit tests for accepted values, rejected categories,
       boundaries, precedence, conflicts, source metadata, and replacement text.
 
 Verification:
 
-- [ ] Run `bun test test/cli-options-codex-timeout.test.ts`.
-- [ ] Confirm the parser and resolver use Node-compatible APIs and do not depend
+- [x] Run `bun test test/cli-options-codex-timeout.test.ts`.
+- [x] Confirm the parser and resolver use Node-compatible APIs and do not depend
       on Bun runtime globals.
 - [ ] Record the focused command, result, and Phase 1 review range in the job
       record.
@@ -570,6 +575,9 @@ Tasks:
 - [ ] Include exact duration-based replacements in the notice.
 - [ ] Normalize accepted public values to numeric milliseconds before action
       execution.
+- [ ] Resolve the shared and scoped CLI values at the command boundary and map
+      the effective image/document values into the existing scoped numeric
+      action fields so the new flags are functional in this phase.
 - [ ] Clarify both retry help descriptions as counts after the initial attempt,
       per batch.
 - [ ] Keep `rename batch` and `batch-rename` help and routing in parity.
@@ -580,6 +588,8 @@ Verification:
       conflicting timeout options.
 - [ ] Assert invalid and conflicting invocations do not call the action.
 - [ ] Assert legacy-only invocations retain their prior effective numeric value.
+- [ ] Assert shared-only and scoped-over-shared invocations reach the existing
+      image/document numeric action fields with effective values.
 - [ ] Assert one or both legacy flags produce exactly one stderr notice without
       changing the exit status.
 - [ ] Inspect `rename file`, `rename batch`, and `batch-rename` help output.
@@ -587,8 +597,9 @@ Verification:
 
 Gate:
 
-- [ ] All three command surfaces expose the same shared/scoped contract and
-      preserve the legacy compatibility path before action routing changes.
+- [ ] All three command surfaces expose a functional shared/scoped contract and
+      preserve the legacy compatibility path before the shared action seam is
+      introduced in Phase 3.
 
 ### Phase 3: Action Routing And Retry Preservation
 

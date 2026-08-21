@@ -215,8 +215,8 @@ command should reject an ambiguous invocation such as:
 
 ### Legacy Rename Flag Transition
 
-The duration-based scoped flags provide exact replacements for the existing
-millisecond-only flags:
+The duration-based scoped flags provide exact replacements when the legacy
+value is a positive integer within the new 10-minute bound:
 
 ```text
 --codex-images-timeout-ms 30000
@@ -232,7 +232,10 @@ During the compatibility phase:
 - emit one deprecation notice per command invocation when either legacy flag was
   explicitly supplied
 - write the notice to stderr without changing the success exit status
-- show the exact duration-based replacement
+- show the exact duration-based replacement when the legacy value satisfies the
+  new duration grammar and maximum
+- otherwise explain that the current value cannot migrate unchanged and must be
+  reduced or normalized before using the duration-based flag
 - do not emit the notice once per batch or retry attempt
 - do not announce a removal release until that release boundary is approved
 
