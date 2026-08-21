@@ -2,6 +2,8 @@ import { describe, expect, test } from "bun:test";
 
 import { runInteractiveHarness } from "../cli-interactive-routing.helpers";
 
+const ANSI_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
+
 const ENTRY_SELECTIONS = ["md", "md:to-pdf"];
 
 describe("interactive Markdown PDF render sources", () => {
@@ -216,6 +218,7 @@ describe("interactive Markdown PDF render sources", () => {
   test("reviews discovered bundle roles and ignored-file warnings", () => {
     const result = runInteractiveHarness({
       mode: "run",
+      stderrIsTTY: true,
       markdownPdfMocks: true,
       markdownPdfBundleRoles: ["profile", "template", "css"],
       markdownPdfIgnoredBundleFiles: ["notes.yml"],
@@ -228,7 +231,26 @@ describe("interactive Markdown PDF render sources", () => {
       bundle: "fixtures/report-bundle",
     });
     expect(result.stderr).toContain("(bundle)");
+    expect(result.stderr).toContain("\u001b[33mBundle warnings:\u001b[39m");
+    expect(result.stderr.replace(ANSI_PATTERN, "")).toContain(
+      "Bundle warnings:\n- Ignored unclassified YAML or JSON file: notes.yml",
+    );
     expect(result.stderr).toContain("Ignored unclassified YAML or JSON file: notes.yml");
+
+    const redirected = runInteractiveHarness({
+      mode: "run",
+      stderrIsTTY: false,
+      markdownPdfMocks: true,
+      markdownPdfBundleRoles: ["profile", "template", "css"],
+      markdownPdfIgnoredBundleFiles: ["notes.yml"],
+      selectQueue: [...ENTRY_SELECTIONS, "existing-bundle", "inherit", "inherit", "default"],
+      requiredPathQueue: ["fixtures/report.md", "fixtures/report-bundle"],
+      confirmQueue: [false, true],
+    });
+    expect(redirected.stderr).toContain(
+      "Bundle warnings:\n- Ignored unclassified YAML or JSON file: notes.yml",
+    );
+    expect(redirected.stderr).not.toContain(String.fromCharCode(27));
   });
 
   test("collects only selected explicit Custom roles", () => {

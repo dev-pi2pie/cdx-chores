@@ -4,6 +4,7 @@ import { displayPath, printLine } from "../../actions/shared";
 import { readTextFileRequired } from "../../file-io";
 import { resolveFromCwd } from "../../path-utils";
 import type { CliRuntime } from "../../types";
+import { styleCliDiagnosticLabel } from "../../diagnostic-color";
 import type {
   MarkdownPdfDeterministicArtifact,
   PreparedMarkdownPdfDeterministicRecipe,
@@ -104,7 +105,10 @@ export async function renderDeterministicRecipeReview(
         ? collectMarkdownPdfEmptyCoverDiagnostic(review.normalizedProfile)
         : undefined;
     if (emptyCover) {
-      printLine(runtime.stderr, `Warning: ${emptyCover.message}`);
+      printLine(
+        runtime.stderr,
+        `${styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:")} ${emptyCover.message}`,
+      );
     }
     const occupiedSlot = collectMarkdownPdfOccupiedPageNumberSlotDiagnostic({
       profile: review.normalizedProfile,
@@ -112,7 +116,10 @@ export async function renderDeterministicRecipeReview(
     });
     if (occupiedSlot) {
       printLine(runtime.stderr, "");
-      printLine(runtime.stderr, `Warning: ${occupiedSlot.message}`);
+      printLine(
+        runtime.stderr,
+        `${styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:")} ${occupiedSlot.message}`,
+      );
     }
   }
   printLine(runtime.stderr, "");

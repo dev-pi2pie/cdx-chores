@@ -10,6 +10,7 @@ import {
 import { formatSourceShapeFlags } from "../../../data-workflows/source-shape-flow";
 import { collectXlsxSheetSnapshot } from "../../../duckdb/xlsx-sources";
 import type { CliRuntime } from "../../../types";
+import { styleCliDiagnosticLabel } from "../../../diagnostic-color";
 import type { InteractiveContinuationLabels, InteractiveSourceShapeState } from "../types";
 import { QUERY_CONTINUATION_LABELS } from "../types";
 import { collectCodexSourceShapeReview } from "./codex-shape";
@@ -98,7 +99,7 @@ export async function collectInteractiveIntrospection(options: {
     printLine(options.runtime.stderr, "");
     printLine(
       options.runtime.stderr,
-      "Sheet shape warning: current Excel sheet shape looks suspicious.",
+      `${styleCliDiagnosticLabel(options.runtime, options.runtime.stderr, "warning", "Sheet shape warning:")} current Excel sheet shape looks suspicious.`,
     );
     printLine(
       options.runtime.stderr,

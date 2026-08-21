@@ -6,6 +6,7 @@ import {
 } from "../../fonts";
 import { inspectFontFaces, matchesFontFamily, uniqueFontFaces } from "../../fonts/matching";
 import { getCliColors } from "../colors";
+import { styleCliDiagnosticLabel } from "../diagnostic-color";
 import { CliError } from "../errors";
 import type { CliRuntime } from "../types";
 import { fontDiscoveryInfo, printFontDebugAttempts } from "./font-common";
@@ -180,7 +181,10 @@ export async function actionFontList(
   }
   if (discovery.warnings.length > 0) {
     for (const warning of discovery.warnings) {
-      printLine(runtime.stderr, `Warning: ${warning}`);
+      printLine(
+        runtime.stderr,
+        `${styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:")} ${warning}`,
+      );
     }
   }
   if (faces.length === 0) {
@@ -274,7 +278,10 @@ export async function actionFontInspect(
   }
   if (discovery.warnings.length > 0) {
     for (const warning of discovery.warnings) {
-      printLine(runtime.stderr, `Warning: ${warning}`);
+      printLine(
+        runtime.stderr,
+        `${styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:")} ${warning}`,
+      );
     }
   }
 

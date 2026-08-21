@@ -5,6 +5,9 @@ import { renderIntrospectionSummary } from "../src/cli/interactive/data-query/so
 import { createCapturedRuntime } from "./helpers/cli-test-utils";
 import { runInteractiveHarness } from "./cli-interactive-routing.helpers";
 
+const ANSI_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
+const ANSI_START = `${String.fromCharCode(27)}[`;
+
 function setTty(stream: NodeJS.WritableStream, isTTY: boolean): void {
   (stream as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = isTTY;
 }
@@ -73,6 +76,7 @@ describe("interactive mode routing: data query source shape", () => {
   test("warns about suspicious raw Excel schemas before SQL authoring and supports manual range recovery", () => {
     const result = runInteractiveHarness({
       mode: "run",
+      stderrIsTTY: true,
       selectQueue: ["data", "data:query", "Summary", "range", "manual", "table"],
       requiredPathQueue: ["fixtures/query.xlsx"],
       inputQueue: ["", "A1:B3", "select * from file order by id", "10"],
@@ -123,8 +127,15 @@ describe("interactive mode routing: data query source shape", () => {
       "input:Excel range (required, e.g. A1:Z99)",
     );
     expect(result.stderr).toContain(
+      "\u001b[33mSheet shape warning:\u001b[39m current Excel sheet shape looks suspicious.",
+    );
+    expect(result.stderr.replace(ANSI_PATTERN, "")).toContain(
       "Sheet shape warning: current Excel sheet shape looks suspicious.",
     );
+    const warningLine = result.stderr
+      .split("\n")
+      .find((line) => line.includes(" current Excel sheet shape"));
+    expect(warningLine?.slice(warningLine.indexOf(" current Excel"))).not.toContain(ANSI_START);
     expect(result.stderr).toContain("Accepted source shape: --range A1:B3");
     expect(result.stderr).toContain("Re-inspecting shaped source before SQL authoring.");
   });
@@ -233,6 +244,10 @@ describe("interactive mode routing: data query source shape", () => {
     expect(result.stderr).toContain(
       "Whole-sheet inspection collapsed a merged or multi-column worksheet into one visible column.",
     );
+    expect(result.stderr).toContain(
+      "Sheet shape warning: current Excel sheet shape looks suspicious.",
+    );
+    expect(result.stderr).not.toContain(ANSI_START);
     expect(result.actionCalls).toEqual([]);
   });
 });

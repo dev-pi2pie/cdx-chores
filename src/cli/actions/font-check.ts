@@ -19,6 +19,7 @@ import {
 import { selectFontFaceForCheck, type FontCheckFaceSelectionReason } from "../../fonts/matching";
 import type { FontCoverageInconclusiveReason, FontCoverageProviderResult } from "../../fonts/types";
 import { getCliColors } from "../colors";
+import { styleCliDiagnosticLabel } from "../diagnostic-color";
 import { CliError } from "../errors";
 import { resolveFromCwd } from "../path-utils";
 import type { CliRuntime } from "../types";
@@ -193,7 +194,10 @@ function checkedFaceName(face: FontFace | undefined): string | null {
 
 function printDiscoveryWarnings(runtime: CliRuntime, warnings: string[]): void {
   for (const warning of warnings) {
-    printLine(runtime.stderr, `Warning: ${warning}`);
+    printLine(
+      runtime.stderr,
+      `${styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:")} ${warning}`,
+    );
   }
 }
 

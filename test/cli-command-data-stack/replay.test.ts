@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
@@ -7,12 +7,21 @@ import {
   createDataStackCodexReportArtifact,
   serializeDataStackCodexReportArtifact,
 } from "../../src/cli/data-stack/codex-report";
+import { actionDataStackReplay } from "../../src/cli/actions/data-stack-replay";
 import { computeDataStackDiagnostics } from "../../src/cli/data-stack/diagnostics";
 import {
   readDataStackPlanArtifact,
   serializeDataStackPlanArtifact,
 } from "../../src/cli/data-stack/plan";
-import { runCli, toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
+import {
+  createCapturedRuntime,
+  runCli,
+  toRepoRelativePath,
+  withTempFixtureDir,
+} from "../helpers/cli-test-utils";
+
+const ANSI_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
+const ANSI_START = `${String.fromCharCode(27)}[`;
 
 describe("CLI data stack command replay", () => {
   test("replays a dry-run stack plan", async () => {
@@ -235,11 +244,49 @@ describe("CLI data stack command replay", () => {
       expect(dryRun.exitCode).toBe(0);
       await writeFile(sourcePath, "id,status\n1,active\n2,paused\n", "utf8");
 
+      const { runtime, stderr } = createCapturedRuntime();
+      (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
+      await actionDataStackReplay(runtime, { record: toRepoRelativePath(planPath) });
+
+      expect(stderr.text).toContain("\u001b[33mWarning:\u001b[39m source fingerprint changed");
+      expect(stderr.text.replace(ANSI_PATTERN, "")).toContain(
+        "Warning: source fingerprint changed",
+      );
+      expect(stderr.text.slice(stderr.text.indexOf(" source fingerprint"))).not.toContain(
+        ANSI_START,
+      );
+      expect(await readFile(outputPath, "utf8")).toBe("id,status\n1,active\n2,paused\n");
+    });
+  });
+
+  test("replay warns when a fingerprinted source stat cannot be checked", async () => {
+    await withTempFixtureDir("data-stack-cli-replay-stat-failure", async (fixtureDir) => {
+      const sourcePath = join(fixtureDir, "a.csv");
+      const planPath = join(fixtureDir, "stack-plan.json");
+      const outputPath = join(fixtureDir, "merged.csv");
+      await writeFile(sourcePath, "id,status\n1,active\n", "utf8");
+
+      const dryRun = runCli([
+        "data",
+        "stack",
+        toRepoRelativePath(sourcePath),
+        "--dry-run",
+        "--plan-output",
+        toRepoRelativePath(planPath),
+        "--output",
+        toRepoRelativePath(outputPath),
+        "--overwrite",
+      ]);
+      expect(dryRun.exitCode).toBe(0);
+      await rm(sourcePath);
+
       const replay = runCli(["data", "stack", "replay", toRepoRelativePath(planPath)]);
 
-      expect(replay.exitCode).toBe(0);
-      expect(replay.stderr).toContain("Warning: source fingerprint changed");
-      expect(await readFile(outputPath, "utf8")).toBe("id,status\n1,active\n2,paused\n");
+      expect(replay.exitCode).toBe(2);
+      expect(replay.stderr).toContain(
+        `Warning: source fingerprint could not be checked for ${toRepoRelativePath(sourcePath)}`,
+      );
+      expect(replay.stderr).not.toContain(ANSI_START);
     });
   });
 

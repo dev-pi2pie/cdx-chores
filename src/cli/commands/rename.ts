@@ -16,6 +16,7 @@ import { formatLegacyCodexTimeoutNotice, resolveCodexTimeout } from "../options/
 import type { LegacyCodexTimeoutMigration } from "../options/codex-timeout";
 import { createCodexTimeoutDurationOption } from "../options/codex-timeout-option";
 import { applyRenameTemplateOptions } from "../options/common";
+import { styleCliDiagnosticLabel } from "../diagnostic-color";
 import {
   collectCsvListOption,
   parseRenameCleanupConflictStrategyOption,
@@ -250,7 +251,12 @@ function prepareRenameCodexTimeouts(
 ): Pick<RenameFileOptions, "codexTimeoutMs" | "codexImagesTimeoutMs" | "codexDocsTimeoutMs"> {
   const resolved = resolveRenameCodexTimeouts(options);
   if (resolved.notice) {
-    runtime.stderr.write(resolved.notice);
+    runtime.stderr.write(
+      resolved.notice.replace(
+        "Warning:",
+        styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:"),
+      ),
+    );
   }
   return resolved.timeouts;
 }

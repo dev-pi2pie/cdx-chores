@@ -4,9 +4,33 @@ import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
 import { readDataStackPlanArtifact } from "../../src/cli/data-stack/plan";
-import { runCli, toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
+import { renderDataStackUnionByNameAliasWarning } from "../../src/cli/actions/data-stack/reporting";
+import {
+  createCapturedRuntime,
+  runCli,
+  toRepoRelativePath,
+  withTempFixtureDir,
+} from "../helpers/cli-test-utils";
+
+const ANSI_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
+const ANSI_START = `${String.fromCharCode(27)}[`;
 
 describe("CLI data stack command options", () => {
+  test("colors only the canary-alias warning label on eligible stderr", () => {
+    const { runtime, stderr } = createCapturedRuntime();
+    (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
+
+    renderDataStackUnionByNameAliasWarning(runtime);
+
+    expect(stderr.text).toBe(
+      "\u001b[33mWarning:\u001b[39m --union-by-name is a canary compatibility alias. Use --schema-mode union-by-name.\n",
+    );
+    expect(stderr.text.replace(ANSI_PATTERN, "")).toBe(
+      "Warning: --union-by-name is a canary compatibility alias. Use --schema-mode union-by-name.\n",
+    );
+    expect(stderr.text.slice(stderr.text.indexOf(" --union"))).not.toContain(ANSI_START);
+  });
+
   test("supports --union-by-name and --exclude-columns from the command layer", async () => {
     await withTempFixtureDir("data-stack-cli-union", async (fixtureDir) => {
       const sourceDir = join(fixtureDir, "parts");
@@ -79,6 +103,10 @@ describe("CLI data stack command options", () => {
       ]);
 
       expect(result.exitCode).toBe(0);
+      expect(result.stderr).toContain(
+        "Warning: --union-by-name is a canary compatibility alias. Use --schema-mode union-by-name.",
+      );
+      expect(result.stderr).not.toContain(ANSI_START);
       expect(result.stderr).toContain("Use --schema-mode union-by-name");
       expect(await readFile(outputPath, "utf8")).toBe("id,name,status\n1,Ada,\n2,,active\n");
     });

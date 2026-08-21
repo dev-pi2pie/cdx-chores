@@ -25,6 +25,9 @@ import {
 import { createActionTestRuntime } from "../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
 
+const ANSI_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
+const ANSI_START = `${String.fromCharCode(27)}[`;
+
 function baseCover(enabled = false) {
   return {
     enabled,
@@ -304,6 +307,7 @@ describe("interactive Markdown PDF deterministic service", () => {
         });
       const markdownPath = join(fixtureDir, "report.md");
       const { runtime, stderr } = createActionTestRuntime({ cwd: fixtureDir });
+      (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
 
       await writeFile(markdownPath, "# Untitled\n", "utf8");
       await renderDeterministicRecipeReview(runtime, createCoverCandidate(), "report.md");
@@ -313,12 +317,25 @@ describe("interactive Markdown PDF deterministic service", () => {
       expect(stderr.text).toContain(
         "- Document order: cover page (first, chrome-free) → document body",
       );
-      expect(stderr.text).toContain("Warning: The cover page is enabled");
+      expect(stderr.text).toContain("\u001b[33mWarning:\u001b[39m The cover page is enabled");
+      expect(stderr.text.replace(ANSI_PATTERN, "")).toContain("Warning: The cover page is enabled");
+      expect(stderr.text.slice(stderr.text.indexOf(" The cover page"))).not.toContain(ANSI_START);
+
+      const redirected = createActionTestRuntime({ cwd: fixtureDir });
+      await renderDeterministicRecipeReview(
+        redirected.runtime,
+        createCoverCandidate(),
+        "report.md",
+      );
+      expect(redirected.stderr.text).toContain("Warning: The cover page is enabled");
+      expect(redirected.stderr.text).not.toContain(ANSI_START);
 
       stderr.text = "";
       await writeFile(markdownPath, "---\ntitle: Frontmatter title\n---\n# Report\n", "utf8");
       await renderDeterministicRecipeReview(runtime, createCoverCandidate(), "report.md");
-      expect(stderr.text).not.toContain("Warning: The cover page is enabled");
+      expect(stderr.text.replace(ANSI_PATTERN, "")).not.toContain(
+        "Warning: The cover page is enabled",
+      );
 
       stderr.text = "";
       const profileMetadataCandidate = createCoverCandidate();
@@ -328,7 +345,9 @@ describe("interactive Markdown PDF deterministic service", () => {
       profileMetadataCandidate.prepared.profile.metadata = { title: "Profile title" };
       await writeFile(markdownPath, "# Report\n", "utf8");
       await renderDeterministicRecipeReview(runtime, profileMetadataCandidate, "report.md");
-      expect(stderr.text).not.toContain("Warning: The cover page is enabled");
+      expect(stderr.text.replace(ANSI_PATTERN, "")).not.toContain(
+        "Warning: The cover page is enabled",
+      );
     });
   });
 

@@ -11,6 +11,9 @@ import type { RenameBatchOptions, RenameFileOptions } from "../src/cli/actions/r
 import { registerRenameCommands } from "../src/cli/commands/rename";
 import { createCapturedRuntime, runCli } from "./helpers/cli-test-utils";
 
+const ANSI_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
+const ANSI_START = `${String.fromCharCode(27)}[`;
+
 interface RenameCommandHarness {
   batchCalls: RenameBatchOptions[];
   fileCalls: RenameFileOptions[];
@@ -19,8 +22,13 @@ interface RenameCommandHarness {
   stdout: { text: string };
 }
 
-function createRenameCommandHarness(): RenameCommandHarness {
-  const { runtime, stdout, stderr } = createCapturedRuntime({ colorEnabled: false });
+function createRenameCommandHarness(
+  options: { colorEnabled?: boolean; stderrIsTTY?: boolean } = {},
+): RenameCommandHarness {
+  const { runtime, stdout, stderr } = createCapturedRuntime({
+    colorEnabled: options.colorEnabled ?? false,
+  });
+  (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = options.stderrIsTTY;
   const batchCalls: RenameBatchOptions[] = [];
   const fileCalls: RenameFileOptions[] = [];
   const actionRenameBatchImpl: typeof actionRenameBatch = async (_runtime, options) => {
@@ -163,6 +171,27 @@ describe("rename Codex timeout command routing", () => {
 });
 
 describe("rename legacy Codex timeout compatibility", () => {
+  test("colors only the warning label on eligible stderr", async () => {
+    const harness = createRenameCommandHarness({ colorEnabled: true, stderrIsTTY: true });
+
+    await harness.parse(["rename", "file", "sample.md", "--codex-docs-timeout-ms", "30000"]);
+
+    expect(harness.stderr.text).toStartWith(
+      "\u001b[33mWarning:\u001b[39m legacy Codex timeout option is deprecated.\n",
+    );
+    expect(harness.stderr.text.replace(ANSI_PATTERN, "")).toBe(
+      [
+        "Warning: legacy Codex timeout option is deprecated.",
+        "Use --codex-docs-timeout 30000ms instead of --codex-docs-timeout-ms.",
+        "The legacy option remains supported during the current compatibility phase.",
+        "",
+      ].join("\n"),
+    );
+    expect(harness.stderr.text.slice(harness.stderr.text.indexOf(" legacy Codex"))).not.toContain(
+      ANSI_START,
+    );
+  });
+
   test("preserves one legacy value and writes one exact notice", async () => {
     const harness = createRenameCommandHarness();
 
