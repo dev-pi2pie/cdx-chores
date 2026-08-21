@@ -1,19 +1,20 @@
 ---
 title: "Codex Timeout Configuration"
 created-date: 2026-07-05
-modified-date: 2026-07-05
-status: draft
+modified-date: 2026-08-21
+status: in-progress
 agent: codex
 ---
 
 ## Goal
 
-Research whether Codex-backed CLI flows should expose a consistent timeout
-configuration contract.
+Define a consistent timeout override contract for every Codex-backed direct and
+interactive flow.
 
-This is early-stage research. It records the current implementation shape,
-recent Markdown PDF timeout evidence, and the design questions that should be
-answered before creating an implementation plan.
+The direction is tentatively chosen: keep the current 30-second per-request
+default, expose one unit-aware override, and normalize the effective value to
+milliseconds inside the application. Implementation and verification evidence
+is still required before this research can be completed.
 
 ## Why This Research
 
@@ -80,12 +81,12 @@ contract except as naming collision context.
 
 The repo needs a timeout policy that answers:
 
-- which Codex-backed commands should expose user-tunable timeouts
-- whether the override should be command-specific, global, or both
-- whether timeout values should be milliseconds or duration strings
+- how one override reaches all Codex-backed direct and interactive flows
+- where the generic override is registered in the command hierarchy
+- how the generic override coexists with existing analyzer-specific flags
+- which duration units and fractional values are accepted
 - how to validate unsafe values such as zero, negative numbers, decimals, and
   very large numbers
-- whether timeout override details should be recorded in reports
 - how timeout failures should be classified and surfaced to users
 - whether retries and batch size should stay separate from timeout controls
 
@@ -108,10 +109,6 @@ through existing generic Codex failure paths such as unavailable, failed, or
 suggestion failed. The code does not yet provide one normalized
 `timeout`-specific classification across adapters.
 
-Reporting is not standardized either. Existing Markdown PDF and data-stack Codex
-reports do not record the effective timeout value or whether it came from a
-flag, a default, a future config source, or an environment variable.
-
 Finally, timeout wiring is duplicated. Several adapters call
 `AbortSignal.timeout(...)` directly instead of using one shared resolver for
 effective timeout defaults, validation, and failure classification.
@@ -131,6 +128,12 @@ A 30-second per-request timeout can therefore allow a longer wall-clock command
 without violating the timeout contract. That behavior is acceptable only if it
 is documented and intentional.
 
+Each retry receives a fresh request timeout. Each batch and each Markdown PDF
+phase also receives its own request timeout. Repeated interactive requests do
+not share a cumulative timeout budget. User cancellation should abort the active
+request promptly and remain distinguishable from timeout expiration; when safe,
+the surrounding interactive workflow should remain available.
+
 Before implementation, decide whether each command needs:
 
 - only a per-request timeout
@@ -145,110 +148,124 @@ Do not add total-budget flags until a concrete command needs them.
 Keep `md pdf-project codex` explicit that the timeout applies per Codex phase.
 ```
 
-## Candidate Direction To Evaluate
+## Tentative Direction
 
-Start narrow:
+Use one unit-aware public override:
 
 - Keep 30 seconds as the default for Codex-backed CLI requests.
-- Prefer direct CLI flags before introducing a repository-wide config file.
-- Add public timeout flags only to commands where live Codex latency is a real
-  user-facing concern.
-- Use one generic flag name on single-Codex-command surfaces:
-  `--codex-timeout-ms <ms>`.
-- Keep analyzer-specific names where the command already has separate analyzer
-  lanes, such as rename images versus rename docs.
+- Use `--codex-timeout <duration>` as the generic public form.
+- Require an explicit unit on the generic flag; bare numbers are ambiguous and
+  should fail before Codex work begins.
+- Accept integer milliseconds and integer or fractional seconds and minutes.
+- Normalize every accepted value to a positive whole number of milliseconds.
+- Preserve the existing analyzer-specific millisecond flags for compatibility.
+- Resolve analyzer-specific flags before the generic override when both are
+  supplied.
+- Register the generic option through one shared helper on Codex-capable direct
+  commands and the explicit `interactive` command.
+- Keep zero-argument interactive mode on the built-in 30-second default.
 - Preserve internal `timeoutMs` seams for tests and service composition.
-- Validate timeout values with shared positive-integer parsing before any Codex
-  work begins.
-- Treat rename's existing raw numeric parsing as an alignment question: either
-  grandfather it for compatibility or migrate it to the shared validation rule.
-- Keep timeout classification/reporting changes separate unless a first-wave
-  command needs them to explain user-visible failures clearly.
+- Keep the timeout scoped to one Codex request, not the total wall-clock command
+  or interactive session.
+- Normalize timeout failures separately from malformed output, unavailable
+  Codex support, and user cancellation.
 - Do not record raw local environment details in timeout evidence or reports.
 
-This direction is not settled. It is a starting hypothesis because it matches
-existing rename flags while avoiding a broad config-file system before the repo
-has one.
+Examples:
 
-## Config File Question
+```text
+--codex-timeout 500ms  -> 500 milliseconds
+--codex-timeout 1.5s   -> 1,500 milliseconds
+--codex-timeout 0.5m   -> 30,000 milliseconds
+--codex-timeout 2m     -> 120,000 milliseconds
+--codex-timeout 30     -> invalid because the unit is missing
+```
+
+Fractional parsing should preserve millisecond precision without relying on
+floating-point rounding. Millisecond input must be an integer. Fractional
+seconds or minutes are valid only when they resolve exactly to a whole
+millisecond. For example, `1.234s` is valid and `1.2345s` is not.
+
+The normative input grammar should be:
+
+```text
+duration = number unit
+number   = digits | digits "." digits
+unit     = "ms" | "s" | "m"
+```
+
+Units are lowercase and no internal whitespace is accepted. The parser may trim
+surrounding whitespace, but a leading zero is required for fractional values:
+`0.5s` is valid and `.5s` is not. Decimal milliseconds, unsupported units such
+as `us`, non-finite values, zero, negative values, unsafe integers, and values
+that do not resolve exactly to a whole millisecond are invalid. Conversion must
+not round. The accepted range after exact conversion is 1 millisecond through
+30 minutes.
+
+Invalid input should identify the supplied value and show valid examples without
+starting Codex work:
+
+```text
+Invalid --codex-timeout "30": include a unit, such as 500ms, 30s, or 2m.
+```
+
+The generic precedence for the first implementation should be:
+
+```text
+existing analyzer-specific timeout override
+  -> generic --codex-timeout override
+  -> built-in 30-second request default
+```
+
+Future model and reasoning configuration may add an effort-aware default
+between the explicit override and built-in fallback. That later research must
+not change the duration syntax or allow an inferred default to override an
+explicit user value.
+
+### Direct And Interactive Parity
+
+Interactive data stack currently passes a fixed 30-second constant, while
+several other interactive helpers rely on adapter defaults. The explicit
+`interactive` command should accept the shared timeout option and pass it to
+Codex-backed interactive actions. Zero-argument interactive mode should retain
+the 30-second default rather than introducing a root-option configuration path.
+
+A timed-out Codex request should return control to the interactive workflow when
+that workflow can safely continue. It should not terminate the entire session
+or discard deterministic state merely because an advisory request expired.
+
+This timeout remains Codex-specific. It must not affect unrelated interactive
+deadlines such as installed-font discovery soft waits and hard ceilings.
+
+## Config File Boundary
 
 No dedicated repo-wide config-file flow is currently established for these CLI
 helpers.
 
-A config file could eventually support shared defaults, but it would raise
-larger questions:
+The timeout implementation should not introduce one. Config-file discovery,
+precedence, schema versioning, and privacy rules are broader repository concerns
+that are not required for the command-scoped override.
 
-- discovery path and precedence
-- local-only versus committed config
-- interaction with CLI flags
-- schema versioning
-- privacy expectations for generated reports
-- migration behavior for existing scripts
+## Environment Variable Boundary
 
-Because this is broader than timeout alone, the first timeout plan should avoid
-introducing a config-file system unless later evidence shows that per-command
-flags are not enough.
-
-## Environment Variable Question
-
-A timeout environment variable would be easy to add, but it is less explicit
-than a flag and can make command behavior harder to replay from logs or job
-records.
-
-If an environment variable is considered later, the research should decide:
-
-- whether it applies globally or only to Codex-backed commands
-- whether public reports should include the effective timeout value
-- whether CLI flags always override environment values
-- whether hidden environment behavior is acceptable for replayable workflows
-
-Initial leaning:
-
-```text
-CLI flag first.
-Environment variable only if repeated operational use proves a need.
-```
-
-## Precedence Model To Evaluate
-
-If the repo later supports more than one timeout configuration source, the
-likely precedence should be:
-
-```text
-explicit CLI flag
-  -> command-scoped config, if a config system exists
-  -> global config, if a config system exists
-  -> environment variable, if accepted
-  -> built-in default
-```
-
-This is only a candidate model. It should not be documented as shipped behavior
-until implemented and verified.
+A timeout environment variable is not part of this research. It would introduce
+hidden precedence and replay behavior without an established repository-wide
+environment configuration contract.
 
 ## Reporting And Replay
 
-Timeout configuration should support replay without leaking local environment
-details.
+The first implementation should not change advisory report schemas. The command
+invocation remains the replayable source for an explicit timeout override.
 
-Recommended reporting questions:
+When a request times out, transient terminal output should include the effective
+duration, for example:
 
-- Should diagnostic reports store the effective timeout value?
-- Should reports store whether the value came from a flag, config, environment,
-  or default?
-- Should timeout values appear in follow-up commands?
-- Should failed timeout reports classify the failure separately from generic
-  Codex unavailability?
+```text
+Codex request timed out after 30s.
+```
 
-Initial leaning:
-
-- record the effective numeric timeout in advisory reports when reports already
-  exist
-- treat that as a future report-schema change because no current Codex report
-  stores timeout source metadata
-- avoid recording environment variable names or local configuration paths unless
-  the future config contract explicitly requires it
-- prefer replayable follow-up commands that include explicit flags only when the
-  user supplied them
+Reports should not store timeout source metadata, environment details, or local
+configuration paths.
 
 ## Failure Semantics
 
@@ -260,34 +277,26 @@ Timeouts should fail in the same safety posture as other Codex failures:
 - user-facing messages should distinguish timeout from malformed output,
   validation failure, and missing Codex availability when practical
 
-This is desired behavior, not current uniform behavior. Current adapters mostly
-route timeout or abort failures through generic failure classifications. A
-future plan should decide whether timeout classification is part of the first
-implementation wave or a separate cleanup.
+Current adapters mostly route timeout or abort failures through generic failure
+classifications. The first implementation should normalize timeout detection
+and its user-facing message only. Existing unavailable, malformed-output, and
+safe-fallback behavior should remain unchanged.
 
 Markdown PDF project behavior should stay especially strict because one project
 can involve multiple Codex phases. A timeout in either phase should not leave a
 half-written project bundle.
 
-## Open Questions
+## Recommended First Implementation
 
-- Should Markdown PDF direct helpers expose `--codex-timeout-ms` on
-  `md pdf-profile codex`, `md pdf-template codex`, and `md pdf-project codex`?
-- Should project helper timeout apply independently to each Codex phase, or
-  should there also be a project-level total budget?
-- Should `data query codex` and `data stack --codex-assist` expose the same
-  public flag name?
-- Should `data extract --codex-suggest-shape`, `data query --codex-suggest-headers`,
-  and `data extract --codex-suggest-headers` expose timeout flags, or stay
-  default-only until evidence appears?
-- Should existing rename timeout flags remain analyzer-specific forever, or
-  should a generic parent-level timeout alias be added later?
-- Should timeout validation allow only milliseconds, or support duration strings
-  such as `30s` and `2m`?
-- What upper bound prevents accidental multi-hour hangs while still allowing
-  slow but legitimate local workflows?
-- Should timeout values be stored in advisory reports as part of request facts?
-- Should timeout classification be normalized across all Codex adapters?
+- Register `--codex-timeout <duration>` through one shared option helper on
+  Codex-capable direct commands and the explicit `interactive` command.
+- Keep zero-argument interactive mode on the 30-second default.
+- Do not add root, environment, or config-file timeout settings.
+- Accept exact durations from 1 millisecond through 30 minutes.
+- Keep existing analyzer-specific millisecond flags. A specific override wins
+  over the generic option.
+- Do not change advisory report schemas.
+- Normalize timeout failures only; preserve other Codex fallback behavior.
 
 ## Non-Goals
 
@@ -300,6 +309,9 @@ This research does not implement:
 - retry or batch-size changes
 - report schema changes
 - Markdown PDF rendering changes
+- model or provider overrides
+- reasoning-effort configuration
+- Codex session persistence changes
 
 This research also does not reopen the completed Markdown PDF project-helper
 plan. Any implementation should happen in a new focused plan after this research
@@ -309,18 +321,24 @@ is reviewed.
 
 Before implementation planning, review:
 
-- all Codex-backed command surfaces and their current default timeout values
-- existing public timeout/retry/batch-size flags in rename
-- whether data and Markdown PDF commands should share one flag name
-- whether timeout should be included in diagnostic report schemas
-- whether per-phase versus total-budget semantics matter for project-style
-  commands
-- whether first-wave work should only thread existing seams or also normalize
-  failure classification and report metadata
+- the complete direct and interactive Codex call-site inventory
+- existing public timeout/retry/batch-size flags and compatibility tests in
+  rename
+- the shared option helper and routing seam for direct commands and the explicit
+  `interactive` command
+- timeout, user cancellation, retry, and batch failure classification
+- a bounded duration parser test matrix, including fractional values
+- direct and interactive parity tests for precedence, retries, batches,
+  multi-phase helpers, timeout failure classification, and cancellation
 
-The smallest likely first plan would only add validated `--codex-timeout-ms`
-flags to selected direct Codex commands and thread them through existing
-`timeoutMs` seams.
+The first implementation plan should centralize duration parsing and runtime
+policy resolution before adding the generic flag to public help. That prevents
+the new option from shipping while interactive or multi-phase paths still
+bypass it.
+
+## Related Research
+
+- [Codex execution configuration](./research-2026-08-21-codex-execution-configuration.md)
 
 ## Related Docs
 
