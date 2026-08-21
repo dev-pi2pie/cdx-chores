@@ -163,7 +163,11 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
   }));
 
   mock.module(markdownPdfCodexServiceModuleUrl, () => ({
-    prepareMarkdownPdfCodexCandidate: async (_runtime: unknown, setup: Record<string, unknown>) => {
+    prepareMarkdownPdfCodexCandidate: async (
+      _runtime: unknown,
+      setup: Record<string, unknown>,
+      options: { timeoutMs?: number } = {},
+    ) => {
       const artifact = setup.artifact as CodexArtifact;
       codexPreparedCounts[artifact] += 1;
       const artifactCount = codexPreparedCounts[artifact];
@@ -177,6 +181,7 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
         artifactCount,
         candidateId,
         suggestedOutput,
+        timeoutMs: options.timeoutMs,
         unusable,
       });
       const prepared =

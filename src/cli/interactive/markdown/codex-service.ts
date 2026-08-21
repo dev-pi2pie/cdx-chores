@@ -90,6 +90,7 @@ function generatedOutputCollisionMessage(artifact: MarkdownPdfCodexArtifact): st
 export async function prepareMarkdownPdfCodexCandidate(
   runtime: CliRuntime,
   setup: MarkdownPdfCodexSetup,
+  options: { timeoutMs?: number } = {},
 ): Promise<PreparedMarkdownPdfCodexCandidate> {
   const common = {
     input: setup.sample,
@@ -98,6 +99,7 @@ export async function prepareMarkdownPdfCodexCandidate(
     baseProfile: setup.baseProfile,
     dryRun: true,
     keepCodexReport: false,
+    timeoutMs: options.timeoutMs,
     codexProgressPresenter: createMarkdownPdfInteractiveCodexProgressPresenter(
       runtime,
       setup.artifact,

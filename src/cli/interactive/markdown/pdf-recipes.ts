@@ -1,6 +1,7 @@
 import { select } from "@inquirer/prompts";
 
 import type { CliRuntime } from "../../types";
+import { createInteractiveSession, type InteractiveSession } from "../session";
 import type { InteractiveNavigationOutcome, InteractivePathPromptContext } from "../shared";
 import { runMarkdownPdfAuthoring } from "./authoring";
 import { MARKDOWN_PDF_CODEX_ARTIFACT_LABELS } from "./codex-review";
@@ -10,13 +11,15 @@ import { runMarkdownPdfToPdfInteractiveFlow } from "./to-pdf";
 export async function handleMarkdownPdfRecipesInteractiveAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
+  session: InteractiveSession = createInteractiveSession(),
 ): Promise<InteractiveNavigationOutcome> {
-  const session = createMarkdownPdfInteractiveCodexSession(runtime);
+  const codexSession = createMarkdownPdfInteractiveCodexSession(runtime);
   try {
     while (true) {
       const outcome = await runMarkdownPdfAuthoring(runtime, pathPromptContext, {
+        codexTimeoutMs: session.codexTimeoutMs,
         entry: "pdf-recipes",
-        fontHintEditor: session.fontHintEditor,
+        fontHintEditor: codexSession.fontHintEditor,
       });
       if (outcome.kind === "change-source") {
         return { kind: "open-submenu", group: "md" };
@@ -33,6 +36,7 @@ export async function handleMarkdownPdfRecipesInteractiveAction(
         });
         if (next === "render") {
           return await runMarkdownPdfToPdfInteractiveFlow(runtime, pathPromptContext, {
+            interactiveSession: session,
             savedRecipe: outcome,
           });
         }
@@ -47,6 +51,6 @@ export async function handleMarkdownPdfRecipesInteractiveAction(
       return outcome;
     }
   } finally {
-    session.cancel();
+    codexSession.cancel();
   }
 }

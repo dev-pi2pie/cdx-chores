@@ -51,12 +51,13 @@ async function promptDeclinedConsentAction(): Promise<"setup" | "artifact" | "ca
 async function prepareWithConsent(
   runtime: CliRuntime,
   setup: MarkdownPdfCodexSetup,
+  timeoutMs: number,
 ): Promise<PreparedMarkdownPdfCodexCandidate | "revise" | "change-artifact" | "cancel"> {
   if (!(await confirmMarkdownPdfCodexConsent(runtime, setup))) {
     const next = await promptDeclinedConsentAction();
     return next === "setup" ? "revise" : next === "artifact" ? "change-artifact" : "cancel";
   }
-  return await prepareMarkdownPdfCodexCandidate(runtime, setup);
+  return await prepareMarkdownPdfCodexCandidate(runtime, setup, { timeoutMs });
 }
 
 function sameCodexSetup(left: MarkdownPdfCodexSetup, right: MarkdownPdfCodexSetup): boolean {
@@ -77,6 +78,7 @@ export async function runMarkdownPdfCodexAuthoring(
   input: {
     artifact: MarkdownPdfCodexArtifact;
     backToMode: boolean;
+    codexTimeoutMs: number;
     entry: MarkdownPdfInteractiveEntry;
     fontHintEditor: MarkdownPdfInteractiveFontHintEditorSession;
     onGeneratedLifecycle?: MarkdownPdfGeneratedLifecycleHandler;
@@ -111,7 +113,7 @@ export async function runMarkdownPdfCodexAuthoring(
     let prepared =
       acceptedCandidate && sameCodexSetup(acceptedCandidate.setup, setup)
         ? acceptedCandidate
-        : await prepareWithConsent(runtime, setup);
+        : await prepareWithConsent(runtime, setup, input.codexTimeoutMs);
     if (prepared === "cancel") {
       return { kind: "complete" };
     }
@@ -136,7 +138,7 @@ export async function runMarkdownPdfCodexAuthoring(
         break;
       }
       if (action === "regenerate") {
-        const regenerated = await prepareWithConsent(runtime, setup);
+        const regenerated = await prepareWithConsent(runtime, setup, input.codexTimeoutMs);
         if (regenerated === "cancel") {
           return { kind: "complete" };
         }

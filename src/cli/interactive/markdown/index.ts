@@ -8,6 +8,7 @@ import {
 } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
 import type { MarkdownInteractiveActionKey } from "../menu";
+import { createInteractiveSession, type InteractiveSession } from "../session";
 import {
   assertNeverInteractiveAction,
   type InteractiveNavigationOutcome,
@@ -15,20 +16,19 @@ import {
 } from "../shared";
 import { handleMarkdownPdfRecipesInteractiveAction } from "./pdf-recipes";
 import { handleMarkdownPdfToPdfInteractiveAction } from "./to-pdf";
-import { createInteractiveSession, type InteractiveSession } from "../session";
 
 export async function handleMarkdownInteractiveAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   action: MarkdownInteractiveActionKey,
-  _session: InteractiveSession = createInteractiveSession(),
+  session: InteractiveSession = createInteractiveSession(),
 ): Promise<InteractiveNavigationOutcome> {
   if (action === "md:to-pdf") {
-    return await handleMarkdownPdfToPdfInteractiveAction(runtime, pathPromptContext);
+    return await handleMarkdownPdfToPdfInteractiveAction(runtime, pathPromptContext, session);
   }
 
   if (action === "md:pdf-recipes") {
-    return await handleMarkdownPdfRecipesInteractiveAction(runtime, pathPromptContext);
+    return await handleMarkdownPdfRecipesInteractiveAction(runtime, pathPromptContext, session);
   }
 
   if (action === "md:to-docx") {
