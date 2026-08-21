@@ -632,40 +632,40 @@ Gate:
 Thread the shared numeric timeout through file and batch actions and resolve
 effective analyzer values.
 
-Status: in progress.
+Status: completed.
 
 Tasks:
 
 - [x] Create the Phase 3 job record.
-- [ ] Add the optional normalized `codexTimeoutMs` seam to rename file and batch
+- [x] Add the optional normalized `codexTimeoutMs` seam to rename file and batch
       action options.
-- [ ] Preserve the existing numeric `codexImagesTimeoutMs` and
+- [x] Preserve the existing numeric `codexImagesTimeoutMs` and
       `codexDocsTimeoutMs` action fields for programmatic callers.
-- [ ] Resolve image timeout as scoped value, then shared value, then the
+- [x] Resolve image timeout as scoped value, then shared value, then the
       30-second default.
-- [ ] Resolve document timeout through the same scoped/shared/default order.
-- [ ] Resolve values only for enabled analyzer routes; timeout options must not
+- [x] Resolve document timeout through the same scoped/shared/default order.
+- [x] Resolve values only for enabled analyzer routes; timeout options must not
       enable Codex analysis.
-- [ ] Pass each effective timeout through `runRenameCodexAnalysis` to the image
+- [x] Pass each effective timeout through `runRenameCodexAnalysis` to the image
       and document suggesters.
-- [ ] Preserve the same resolved timeout on every retry attempt for one batch.
-- [ ] Add mixed image/document coverage with shared and differing scoped values.
-- [ ] Verify `batch-rename` routes the same normalized values as `rename batch`.
+- [x] Preserve the same resolved timeout on every retry attempt for one batch.
+- [x] Add mixed image/document coverage with shared and differing scoped values.
+- [x] Verify `batch-rename` routes the same normalized values as `rename batch`.
 
 Verification:
 
-- [ ] Run focused rename file, image, document, and auto-routing tests.
-- [ ] Assert shared-only values reach both enabled analyzers.
-- [ ] Assert each scoped value overrides only its own analyzer.
-- [ ] Assert action-level numeric scoped inputs remain warning-free and valid.
-- [ ] Assert timeout flags without a Codex routing flag do not run an analyzer.
-- [ ] Assert retry count, delay, batch order, partial suggestions, and fallback
+- [x] Run focused rename file, image, document, and auto-routing tests.
+- [x] Assert shared-only values reach both enabled analyzers.
+- [x] Assert each scoped value overrides only its own analyzer.
+- [x] Assert action-level numeric scoped inputs remain warning-free and valid.
+- [x] Assert timeout flags without a Codex routing flag do not run an analyzer.
+- [x] Assert retry count, delay, batch order, partial suggestions, and fallback
       behavior remain unchanged.
-- [ ] Record focused results and the Phase 3 review range in the job record.
+- [x] Record focused results and the Phase 3 review range in the job record.
 
 Gate:
 
-- [ ] Existing rename behavior is unchanged except for the new resolved timeout
+- [x] Existing rename behavior is unchanged except for the new resolved timeout
       inputs and already-approved command notices.
 
 ### Phase 4: Timeout-Specific Fallback Information
