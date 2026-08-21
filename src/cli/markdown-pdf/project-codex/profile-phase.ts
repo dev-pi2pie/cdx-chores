@@ -7,7 +7,7 @@ import {
 import {
   classifyCodexRequestFailure,
   formatCodexTimeoutFailure,
-} from "../../../adapters/codex/failure";
+} from "../../../utils/codex-request-failure";
 import { type MarkdownPdfProfileCandidate } from "../profile/candidates";
 import {
   createMarkdownPdfCodexProfileOrchestrationContext,

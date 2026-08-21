@@ -1,4 +1,4 @@
-import type { CodexRequestFailureKind } from "../../adapters/codex/failure";
+import type { CodexRequestFailureKind } from "../../utils/codex-request-failure";
 
 export interface DataQueryCodexDraft {
   reasoningSummary: string;

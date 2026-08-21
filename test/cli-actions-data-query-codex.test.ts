@@ -25,7 +25,8 @@ describe("cli action modules: data query codex single-source", () => {
     await actionDataQueryCodex(runtime, {
       input: "test/fixtures/data-query/basic.csv",
       intent: "show id and name ordered by id",
-      runner: async ({ prompt }) => {
+      runner: async ({ prompt, timeoutMs }) => {
+        expect(timeoutMs).toBe(30_000);
         expect(prompt).toContain("User intent: show id and name ordered by id");
         expect(prompt).toContain("Detected format: csv");
         expect(prompt).toContain("1. id: BIGINT");

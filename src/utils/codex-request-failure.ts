@@ -1,4 +1,4 @@
-import { formatCodexTimeoutDuration } from "../../utils/codex-timeout";
+import { formatCodexTimeoutDuration } from "./codex-timeout";
 
 export type CodexRequestFailureKind = "timeout" | "aborted" | "other";
 

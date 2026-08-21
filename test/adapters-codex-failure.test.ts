@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   classifyCodexRequestFailure,
   formatCodexTimeoutFailure,
-} from "../src/adapters/codex/failure";
+} from "../src/utils/codex-request-failure";
 
 function withCause(name: string, cause?: unknown): Error & { cause?: unknown } {
   const error = new Error(name) as Error & { cause?: unknown };

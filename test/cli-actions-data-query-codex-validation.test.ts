@@ -139,6 +139,25 @@ describe("cli action modules: data query codex validation", () => {
     );
   });
 
+  test("actionDataQueryCodex keeps ordinary aborts on the generic failure path", async () => {
+    const { runtime } = createActionTestRuntime();
+
+    try {
+      await actionDataQueryCodex(runtime, {
+        input: "test/fixtures/data-query/basic.csv",
+        intent: "show active rows",
+        runner: async () => {
+          throw new DOMException("request cancelled", "AbortError");
+        },
+      });
+      throw new Error("Expected data-query Codex drafting to fail");
+    } catch (error) {
+      expect(error).toHaveProperty("code", "DATA_QUERY_CODEX_FAILED");
+      expect(error).toHaveProperty("message", "Codex drafting failed: request cancelled");
+      expect(error instanceof Error ? error.message : String(error)).not.toContain("timed out");
+    }
+  });
+
   test("actionDataQueryCodex reports source ambiguity for SQLite inputs", async () => {
     if (!sqliteReady) {
       return;

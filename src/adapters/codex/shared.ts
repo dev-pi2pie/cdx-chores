@@ -8,7 +8,7 @@ import {
   classifyCodexRequestFailure,
   formatCodexTimeoutFailure,
   type CodexRequestFailureKind,
-} from "./failure";
+} from "../../utils/codex-request-failure";
 
 export interface CodexEnvironmentInspection {
   authSessionAvailable: boolean;

@@ -1,5 +1,5 @@
-import { classifyCodexRequestFailure } from "../../adapters/codex/failure";
 import { startCodexReadOnlyThread } from "../../adapters/codex/shared";
+import { classifyCodexRequestFailure } from "../../utils/codex-request-failure";
 import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../utils/codex-timeout";
 import type { DataQueryInputFormat } from "../duckdb/query";
 import { parseDataQueryCodexDraft, type DataQueryCodexDraftResult } from "./parse";
@@ -49,6 +49,7 @@ export async function draftDataQueryWithCodex(options: {
 }): Promise<DataQueryCodexDraftResult> {
   try {
     const runner = options.runner ?? runDataQueryCodexPrompt;
+    const timeoutMs = options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS;
     const normalizedIntent = normalizeDataQueryCodexIntent(options.intent);
     const finalResponse = await runner({
       prompt: buildDataQueryCodexPrompt({
@@ -57,7 +58,7 @@ export async function draftDataQueryWithCodex(options: {
         introspection: options.introspection,
       }),
       workingDirectory: options.workingDirectory,
-      timeoutMs: options.timeoutMs,
+      timeoutMs,
     });
     return {
       draft: parseDataQueryCodexDraft(finalResponse),

@@ -10,7 +10,7 @@ import {
 import {
   classifyCodexRequestFailure,
   formatCodexTimeoutFailure,
-} from "../../../adapters/codex/failure";
+} from "../../../utils/codex-request-failure";
 import type { MarkdownPdfCodexSignalMode } from "../../../adapters/codex/markdown-pdf-profile/types";
 import { formatUtcFileDateTimeISO } from "../../../utils/datetime";
 import { assertNonEmpty, printLine } from "../../actions/shared";

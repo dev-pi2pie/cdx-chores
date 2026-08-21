@@ -1,6 +1,9 @@
 import { startCodexReadOnlyThread } from "../shared";
 import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../../utils/codex-timeout";
-import { classifyCodexRequestFailure, formatCodexTimeoutFailure } from "../failure";
+import {
+  classifyCodexRequestFailure,
+  formatCodexTimeoutFailure,
+} from "../../../utils/codex-request-failure";
 import {
   resolveMdPdfTemplateCodexSlots,
   type MarkdownPdfTemplateCodexDecision,

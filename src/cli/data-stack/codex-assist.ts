@@ -233,7 +233,7 @@ export async function suggestDataStackWithCodex(
       diagnostics: options.diagnostics,
       plan: options.plan,
     }),
-    timeoutMs: options.timeoutMs,
+    timeoutMs: options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS,
     workingDirectory: options.workingDirectory,
   });
   return createDataStackCodexReportArtifact({

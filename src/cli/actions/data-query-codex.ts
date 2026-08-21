@@ -1,4 +1,4 @@
-import { formatCodexTimeoutFailure } from "../../adapters/codex/failure";
+import { formatCodexTimeoutFailure } from "../../utils/codex-request-failure";
 import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../utils/codex-timeout";
 import {
   collectDataQuerySourceIntrospection,

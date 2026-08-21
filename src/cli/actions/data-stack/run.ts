@@ -1,7 +1,7 @@
 import {
   classifyCodexRequestFailure,
   formatCodexTimeoutFailure,
-} from "../../../adapters/codex/failure";
+} from "../../../utils/codex-request-failure";
 import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../../utils/codex-timeout";
 import { readTextFileRequired } from "../../file-io";
 import { resolveFromCwd } from "../../path-utils";

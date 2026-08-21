@@ -153,6 +153,32 @@ describe("cli action modules: md pdf-profile codex", () => {
     });
   });
 
+  test("keeps an ordinary profile abort on the existing unavailable path", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-abort-failure", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n\nBody.\n", "utf8");
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+
+      const prepared = await prepareMarkdownPdfProfileCodex(runtime, {
+        codexRunner: async () => {
+          throw new DOMException("request cancelled", "AbortError");
+        },
+        dryRun: true,
+        input: "report.md",
+        intent: "Create an article profile.",
+        output: "profile.yml",
+      });
+
+      expect(prepared.kind).toBe("failed");
+      if (prepared.kind !== "failed") {
+        throw new Error("Expected profile preparation to fail");
+      }
+      expect(prepared.failureMessage).toBe(
+        "Codex Markdown PDF profile helper is unavailable. request cancelled",
+      );
+      expect(prepared.failureMessage).not.toContain("timed out");
+    });
+  });
+
   test("writes a generated profile with Codex identity and optional report", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-action", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");

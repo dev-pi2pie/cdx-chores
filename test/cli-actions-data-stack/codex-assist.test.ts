@@ -85,7 +85,7 @@ describe("cli action modules: data stack Codex assist", () => {
     });
   });
 
-  test("actionDataStack surfaces malformed Codex assist responses", async () => {
+  test("actionDataStack uses the shared timeout default and surfaces malformed responses", async () => {
     await withTempFixtureDir("data-stack-action-codex-malformed", async (fixtureDir) => {
       await writeFile(join(fixtureDir, "a.csv"), "id,status\n1,active\n", "utf8");
 
@@ -94,7 +94,10 @@ describe("cli action modules: data stack Codex assist", () => {
         () =>
           actionDataStack(runtime, {
             codexAssist: true,
-            codexRunner: async () => "not json",
+            codexRunner: async ({ timeoutMs }) => {
+              expect(timeoutMs).toBe(30_000);
+              return "not json";
+            },
             dryRun: true,
             output: "merged.csv",
             planOutput: "stack-plan.json",
