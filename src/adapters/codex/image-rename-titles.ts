@@ -1,5 +1,6 @@
 import { basename } from "node:path";
 
+import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../utils/codex-timeout";
 import {
   CODEX_FILENAME_TITLE_OUTPUT_SCHEMA,
   chunkItems,
@@ -61,7 +62,7 @@ async function suggestSingleBatch(
 
   const turn = await thread.run(input, {
     outputSchema: CODEX_FILENAME_TITLE_OUTPUT_SCHEMA,
-    signal: AbortSignal.timeout(options.timeoutMs ?? 30_000),
+    signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
   });
   const suggestionsByFilename = parseFilenameTitleSuggestions(turn.finalResponse);
 
@@ -78,15 +79,18 @@ async function suggestSingleBatch(
   return { suggestions };
 }
 
-export async function suggestImageRenameTitlesWithCodex(
+type SuggestImageBatch = (options: SuggestImageTitlesOptions) => Promise<CodexImageRenameResult>;
+
+async function suggestImageRenameTitles(
   options: SuggestImageTitlesOptions,
+  suggestBatch: SuggestImageBatch,
 ): Promise<CodexImageRenameResult> {
   if (options.imagePaths.length === 0) {
     return { suggestions: [] };
   }
 
   try {
-    const timeoutMs = options.timeoutMs ?? 30_000;
+    const timeoutMs = options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS;
     const batchSize = Math.max(1, Math.trunc(options.batchSize ?? options.imagePaths.length));
     const retries = Math.max(0, Math.trunc(options.retries ?? 0));
     const batches = chunkItems(options.imagePaths, batchSize);
@@ -94,7 +98,7 @@ export async function suggestImageRenameTitlesWithCodex(
       batches,
       retries,
       runBatch: async (batch) =>
-        suggestSingleBatch({
+        suggestBatch({
           imagePaths: batch,
           workingDirectory: options.workingDirectory,
           timeoutMs,
@@ -117,4 +121,17 @@ export async function suggestImageRenameTitlesWithCodex(
     const message = error instanceof Error ? error.message : String(error);
     return { suggestions: [], errorMessage: message };
   }
+}
+
+export async function suggestImageRenameTitlesWithCodex(
+  options: SuggestImageTitlesOptions,
+): Promise<CodexImageRenameResult> {
+  return suggestImageRenameTitles(options, suggestSingleBatch);
+}
+
+export async function __testOnlySuggestImageRenameTitlesWithBatch(
+  options: SuggestImageTitlesOptions,
+  suggestBatch: SuggestImageBatch,
+): Promise<CodexImageRenameResult> {
+  return suggestImageRenameTitles(options, suggestBatch);
 }

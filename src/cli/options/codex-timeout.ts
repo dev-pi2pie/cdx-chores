@@ -1,7 +1,15 @@
 import { InvalidArgumentError } from "commander";
 
-export const DEFAULT_CODEX_REQUEST_TIMEOUT_MS = 30_000;
-export const MAX_CODEX_REQUEST_TIMEOUT_MS = 600_000;
+import {
+  DEFAULT_CODEX_REQUEST_TIMEOUT_MS,
+  formatCodexTimeoutDuration,
+  MAX_CODEX_REQUEST_TIMEOUT_MS,
+} from "../../utils/codex-timeout";
+
+export {
+  DEFAULT_CODEX_REQUEST_TIMEOUT_MS,
+  MAX_CODEX_REQUEST_TIMEOUT_MS,
+} from "../../utils/codex-timeout";
 
 const CODEX_TIMEOUT_DURATION_PATTERN = /^([1-9][0-9]*)(ms|s|m)$/u;
 
@@ -29,19 +37,9 @@ export interface LegacyCodexTimeoutMigration {
   timeoutMs: number;
 }
 
-function formatDurationMilliseconds(timeoutMs: number): string {
-  if (timeoutMs % 60_000 === 0) {
-    return `${timeoutMs / 60_000}m`;
-  }
-  if (timeoutMs % 1_000 === 0) {
-    return `${timeoutMs / 1_000}s`;
-  }
-  return `${timeoutMs}ms`;
-}
-
 function durationError(optionName: string): InvalidArgumentError {
   return new InvalidArgumentError(
-    `${optionName} must be a positive integer duration using ms, s, or m (maximum ${formatDurationMilliseconds(MAX_CODEX_REQUEST_TIMEOUT_MS)}).`,
+    `${optionName} must be a positive integer duration using ms, s, or m (maximum ${formatCodexTimeoutDuration(MAX_CODEX_REQUEST_TIMEOUT_MS)}).`,
   );
 }
 
@@ -146,7 +144,7 @@ export function formatLegacyCodexTimeoutNotice(
     }
 
     lines.push(
-      `${migration.legacyOptionName} value ${formatLegacyValue(migration.timeoutMs)} cannot migrate unchanged to ${migration.replacementOptionName}; use a positive integer duration of ${formatDurationMilliseconds(MAX_CODEX_REQUEST_TIMEOUT_MS)} or less.`,
+      `${migration.legacyOptionName} value ${formatLegacyValue(migration.timeoutMs)} cannot migrate unchanged to ${migration.replacementOptionName}; use a positive integer duration of ${formatCodexTimeoutDuration(MAX_CODEX_REQUEST_TIMEOUT_MS)} or less.`,
     );
   }
 

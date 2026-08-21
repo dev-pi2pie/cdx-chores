@@ -172,6 +172,55 @@ describe("codex shared adapter helpers", () => {
     ).toBe("Codex title generation failed. request cancelled");
   });
 
+  test("keeps an exhausted unknown failure on the unchanged generic summary path", async () => {
+    const result = await executeBatchesWithRetries({
+      batches: ["unknown"],
+      retries: 0,
+      runBatch: async () => {
+        throw new Error("SDK unavailable");
+      },
+    });
+
+    expect(result.batchFailures).toEqual([
+      { kind: "other", message: "SDK unavailable", attemptsUsed: 1 },
+    ]);
+    expect(
+      summarizeCodexBatchFailures({
+        batchErrors: result.batchErrors,
+        batchFailures: result.batchFailures,
+        hasSuggestions: false,
+        requestLabel: "Codex image-title request",
+        timeoutMs: 30_000,
+      }),
+    ).toBe("Codex title generation failed. SDK unavailable");
+  });
+
+  test("reports additional non-timeout batches without overclassifying them", async () => {
+    const result = await executeBatchesWithRetries({
+      batches: ["timeout", "unknown"],
+      retries: 0,
+      runBatch: async (batch) => {
+        if (batch === "timeout") {
+          throw new DOMException("request deadline reached", "TimeoutError");
+        }
+        throw new Error("SDK unavailable");
+      },
+    });
+
+    expect(result.batchFailures.map((failure) => failure.kind)).toEqual(["timeout", "other"]);
+    expect(
+      summarizeCodexBatchFailures({
+        batchErrors: result.batchErrors,
+        batchFailures: result.batchFailures,
+        hasSuggestions: false,
+        requestLabel: "Codex image-title request",
+        timeoutMs: 30_000,
+      }),
+    ).toBe(
+      "Codex title generation failed. Codex image-title request timed out after the 30s per-attempt limit. 1 additional non-timeout batch failure(s) occurred.",
+    );
+  });
+
   test("runCodexPromptOnly runs work in an empty disposable directory", async () => {
     let workingDirectory = "";
     const result = await runCodexPromptOnly({

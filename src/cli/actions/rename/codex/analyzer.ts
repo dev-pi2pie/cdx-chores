@@ -6,8 +6,8 @@ import {
   suggestImageRenameTitlesWithCodex,
   type CodexImageRenameResult,
 } from "../../../../adapters/codex/image-rename-titles";
+import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../../../utils/codex-timeout";
 import type { PlannedRename, CliRuntime } from "../../../types";
-import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../../options/codex-timeout";
 import {
   selectCodexDocumentTextCandidates,
   selectCodexStaticImageCandidates,

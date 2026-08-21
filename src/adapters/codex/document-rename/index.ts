@@ -1,4 +1,5 @@
 export {
+  __testOnlySuggestDocumentRenameTitlesWithBatch,
   suggestDocumentRenameTitlesWithCodex,
   extractDocumentTitleEvidenceForPath as __testOnlyExtractDocumentTitleEvidenceForPath,
 } from "./batch";

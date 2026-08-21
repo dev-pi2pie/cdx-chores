@@ -1,3 +1,5 @@
+import { formatCodexTimeoutDuration } from "../../utils/codex-timeout";
+
 export type CodexRequestFailureKind = "timeout" | "aborted" | "other";
 
 const MAX_CODEX_FAILURE_CAUSE_DEPTH = 8;
@@ -39,18 +41,6 @@ export function classifyCodexRequestFailure(error: unknown): CodexRequestFailure
   return sawAbort ? "aborted" : "other";
 }
 
-function formatTimeoutDuration(timeoutMs: number): string {
-  if (Number.isSafeInteger(timeoutMs) && timeoutMs > 0) {
-    if (timeoutMs % 60_000 === 0) {
-      return `${timeoutMs / 60_000}m`;
-    }
-    if (timeoutMs % 1_000 === 0) {
-      return `${timeoutMs / 1_000}s`;
-    }
-  }
-  return `${timeoutMs}ms`;
-}
-
 export function formatCodexTimeoutFailure(options: {
   requestLabel: string;
   timeoutMs: number;
@@ -58,5 +48,5 @@ export function formatCodexTimeoutFailure(options: {
 }): string {
   const attemptContext =
     options.attemptsUsed > 1 ? `; ${options.attemptsUsed} attempts were exhausted` : "";
-  return `${options.requestLabel} timed out after the ${formatTimeoutDuration(options.timeoutMs)} per-attempt limit${attemptContext}.`;
+  return `${options.requestLabel} timed out after the ${formatCodexTimeoutDuration(options.timeoutMs)} per-attempt limit${attemptContext}.`;
 }

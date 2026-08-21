@@ -1,6 +1,7 @@
 import { extname } from "node:path";
 import { readFile } from "node:fs/promises";
 
+import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../../utils/codex-timeout";
 import {
   CODEX_FILENAME_TITLE_OUTPUT_SCHEMA,
   chunkItems,
@@ -121,7 +122,7 @@ async function suggestSingleBatch(options: {
     ],
     {
       outputSchema: CODEX_FILENAME_TITLE_OUTPUT_SCHEMA,
-      signal: AbortSignal.timeout(options.timeoutMs ?? 30_000),
+      signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
     },
   );
 
@@ -139,8 +140,15 @@ async function suggestSingleBatch(options: {
   return { suggestions };
 }
 
-export async function suggestDocumentRenameTitlesWithCodex(
+type SuggestDocumentBatch = (options: {
+  evidences: Array<{ path: string; promptFilename: string; evidence: DocumentTitleEvidence }>;
+  workingDirectory: string;
+  timeoutMs?: number;
+}) => Promise<CodexDocumentRenameResult>;
+
+async function suggestDocumentRenameTitles(
   options: SuggestDocumentTitlesOptions,
+  suggestBatch: SuggestDocumentBatch,
 ): Promise<CodexDocumentRenameResult> {
   if (options.documentPaths.length === 0) {
     return { suggestions: [] };
@@ -165,7 +173,7 @@ export async function suggestDocumentRenameTitlesWithCodex(
   }
 
   try {
-    const timeoutMs = options.timeoutMs ?? 30_000;
+    const timeoutMs = options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS;
     const evidenceItems = createPromptEvidenceItems({
       evidences: extractedItems,
       workingDirectory: options.workingDirectory,
@@ -177,7 +185,7 @@ export async function suggestDocumentRenameTitlesWithCodex(
       batches,
       retries,
       runBatch: async (batch) =>
-        suggestSingleBatch({
+        suggestBatch({
           evidences: batch,
           workingDirectory: options.workingDirectory,
           timeoutMs,
@@ -200,6 +208,19 @@ export async function suggestDocumentRenameTitlesWithCodex(
     const message = error instanceof Error ? error.message : String(error);
     return { suggestions: [], reasons, errorMessage: message };
   }
+}
+
+export async function suggestDocumentRenameTitlesWithCodex(
+  options: SuggestDocumentTitlesOptions,
+): Promise<CodexDocumentRenameResult> {
+  return suggestDocumentRenameTitles(options, suggestSingleBatch);
+}
+
+export async function __testOnlySuggestDocumentRenameTitlesWithBatch(
+  options: SuggestDocumentTitlesOptions,
+  suggestBatch: SuggestDocumentBatch,
+): Promise<CodexDocumentRenameResult> {
+  return suggestDocumentRenameTitles(options, suggestBatch);
 }
 
 export async function extractDocumentTitleEvidenceForPath(
