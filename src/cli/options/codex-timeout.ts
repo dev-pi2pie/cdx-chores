@@ -29,9 +29,19 @@ export interface LegacyCodexTimeoutMigration {
   timeoutMs: number;
 }
 
+function formatDurationMilliseconds(timeoutMs: number): string {
+  if (timeoutMs % 60_000 === 0) {
+    return `${timeoutMs / 60_000}m`;
+  }
+  if (timeoutMs % 1_000 === 0) {
+    return `${timeoutMs / 1_000}s`;
+  }
+  return `${timeoutMs}ms`;
+}
+
 function durationError(optionName: string): InvalidArgumentError {
   return new InvalidArgumentError(
-    `${optionName} must be a positive integer duration using ms, s, or m (maximum 10m).`,
+    `${optionName} must be a positive integer duration using ms, s, or m (maximum ${formatDurationMilliseconds(MAX_CODEX_REQUEST_TIMEOUT_MS)}).`,
   );
 }
 
@@ -136,7 +146,7 @@ export function formatLegacyCodexTimeoutNotice(
     }
 
     lines.push(
-      `${migration.legacyOptionName} value ${formatLegacyValue(migration.timeoutMs)} cannot migrate unchanged to ${migration.replacementOptionName}; use a positive integer duration of 10m or less.`,
+      `${migration.legacyOptionName} value ${formatLegacyValue(migration.timeoutMs)} cannot migrate unchanged to ${migration.replacementOptionName}; use a positive integer duration of ${formatDurationMilliseconds(MAX_CODEX_REQUEST_TIMEOUT_MS)} or less.`,
     );
   }
 
