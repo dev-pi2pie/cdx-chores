@@ -632,11 +632,11 @@ Gate:
 Thread the shared numeric timeout through file and batch actions and resolve
 effective analyzer values.
 
-Status: not started.
+Status: in progress.
 
 Tasks:
 
-- [ ] Create the Phase 3 job record.
+- [x] Create the Phase 3 job record.
 - [ ] Add the optional normalized `codexTimeoutMs` seam to rename file and batch
       action options.
 - [ ] Preserve the existing numeric `codexImagesTimeoutMs` and

@@ -7,6 +7,7 @@ import {
   type CodexImageRenameResult,
 } from "../../../../adapters/codex/image-rename-titles";
 import type { PlannedRename, CliRuntime } from "../../../types";
+import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../../options/codex-timeout";
 import {
   selectCodexDocumentTextCandidates,
   selectCodexStaticImageCandidates,
@@ -32,6 +33,7 @@ export type CodexDocumentRenameTitleSuggester = (options: {
 
 export interface RenameCodexCliOptions {
   codex?: boolean;
+  codexTimeoutMs?: number;
   codexImages?: boolean;
   codexImagesTimeoutMs?: number;
   codexImagesRetries?: number;
@@ -97,6 +99,13 @@ export interface RenameCodexAnalysisResult {
   doc?: RenameCodexChannelResult;
   titlesByPath: Map<string, string>;
   reasonBySourcePath: Map<string, string>;
+}
+
+function resolveRenameAnalyzerTimeoutMs(
+  scopedTimeoutMs: number | undefined,
+  sharedTimeoutMs: number | undefined,
+): number {
+  return scopedTimeoutMs ?? sharedTimeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS;
 }
 
 function createCodexStaticImageTitleAnalyzer(options: {
@@ -230,7 +239,10 @@ export async function runRenameCodexAnalysis(
       titleSuggester: options.cli.codexImagesTitleSuggester,
     });
     const run = await runRenameTitleAnalyzer(runtime, plans, analyzer, {
-      timeoutMs: options.cli.codexImagesTimeoutMs,
+      timeoutMs: resolveRenameAnalyzerTimeoutMs(
+        options.cli.codexImagesTimeoutMs,
+        options.cli.codexTimeoutMs,
+      ),
       retries: options.cli.codexImagesRetries,
       batchSize: options.cli.codexImagesBatchSize,
     });
@@ -252,7 +264,10 @@ export async function runRenameCodexAnalysis(
       titleSuggester: options.cli.codexDocsTitleSuggester,
     });
     const run = await runRenameTitleAnalyzer(runtime, plans, analyzer, {
-      timeoutMs: options.cli.codexDocsTimeoutMs,
+      timeoutMs: resolveRenameAnalyzerTimeoutMs(
+        options.cli.codexDocsTimeoutMs,
+        options.cli.codexTimeoutMs,
+      ),
       retries: options.cli.codexDocsRetries,
       batchSize: options.cli.codexDocsBatchSize,
     });

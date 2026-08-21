@@ -196,15 +196,12 @@ interface ResolvedRenameAnalyzerCodexTimeout {
 }
 
 function resolveRenameAnalyzerCodexTimeout(options: {
-  sharedTimeoutMs?: number;
   scopedTimeoutMs?: number;
   scopedOptionName: string;
   legacyScopedTimeoutMs?: number;
   legacyScopedOptionName: string;
 }): ResolvedRenameAnalyzerCodexTimeout {
   const resolved = resolveCodexTimeout({
-    sharedTimeoutMs: options.sharedTimeoutMs,
-    sharedOptionName: "--codex-timeout",
     scopedTimeoutMs: options.scopedTimeoutMs,
     scopedOptionName: options.scopedOptionName,
     legacyScopedTimeoutMs: options.legacyScopedTimeoutMs,
@@ -224,18 +221,19 @@ function resolveRenameAnalyzerCodexTimeout(options: {
 }
 
 function resolveRenameCodexTimeouts(options: RenameCodexCommandOptions): {
-  timeouts: Pick<RenameFileOptions, "codexImagesTimeoutMs" | "codexDocsTimeoutMs">;
+  timeouts: Pick<
+    RenameFileOptions,
+    "codexTimeoutMs" | "codexImagesTimeoutMs" | "codexDocsTimeoutMs"
+  >;
   notice?: string;
 } {
   const image = resolveRenameAnalyzerCodexTimeout({
-    sharedTimeoutMs: options.codexTimeout,
     scopedTimeoutMs: options.codexImagesTimeout,
     scopedOptionName: "--codex-images-timeout",
     legacyScopedTimeoutMs: options.codexImagesTimeoutMs,
     legacyScopedOptionName: "--codex-images-timeout-ms",
   });
   const document = resolveRenameAnalyzerCodexTimeout({
-    sharedTimeoutMs: options.codexTimeout,
     scopedTimeoutMs: options.codexDocsTimeout,
     scopedOptionName: "--codex-docs-timeout",
     legacyScopedTimeoutMs: options.codexDocsTimeoutMs,
@@ -247,6 +245,7 @@ function resolveRenameCodexTimeouts(options: RenameCodexCommandOptions): {
 
   return {
     timeouts: {
+      codexTimeoutMs: options.codexTimeout,
       codexImagesTimeoutMs: image.actionTimeoutMs,
       codexDocsTimeoutMs: document.actionTimeoutMs,
     },
@@ -257,7 +256,7 @@ function resolveRenameCodexTimeouts(options: RenameCodexCommandOptions): {
 function prepareRenameCodexTimeouts(
   runtime: CliRuntime,
   options: RenameCodexCommandOptions,
-): Pick<RenameFileOptions, "codexImagesTimeoutMs" | "codexDocsTimeoutMs"> {
+): Pick<RenameFileOptions, "codexTimeoutMs" | "codexImagesTimeoutMs" | "codexDocsTimeoutMs"> {
   const resolved = resolveRenameCodexTimeouts(options);
   if (resolved.notice) {
     runtime.stderr.write(resolved.notice);
@@ -291,6 +290,7 @@ async function handleRenameBatchAction(
     ext: options.ext,
     skipExt: options.skipExt,
     codex: options.codex,
+    codexTimeoutMs: timeouts.codexTimeoutMs,
     codexImages: options.codexImages,
     codexImagesTimeoutMs: timeouts.codexImagesTimeoutMs,
     codexImagesRetries: options.codexImagesRetries,
@@ -323,6 +323,7 @@ export function registerRenameCommands(
         timestampTimezone: options.timestampTimezone,
         dryRun: options.dryRun,
         codex: options.codex,
+        codexTimeoutMs: timeouts.codexTimeoutMs,
         codexImages: options.codexImages,
         codexImagesTimeoutMs: timeouts.codexImagesTimeoutMs,
         codexImagesRetries: options.codexImagesRetries,

@@ -107,26 +107,78 @@ describe("cli action modules: rename batch codex auto", () => {
       await writeFile(imagePath, "fakepng", "utf8");
       await writeFile(docPath, "# Project Plan\n\nDraft.\n", "utf8");
 
+      const imageTimeouts: Array<number | undefined> = [];
+      const docTimeouts: Array<number | undefined> = [];
       const result = await actionRenameBatch(runtime, {
         directory: toRepoRelativePath(dirPath),
         prefix: "asset",
         dryRun: true,
         codex: true,
-        codexImagesTitleSuggester: async (options) => ({
-          suggestions: options.imagePaths.map((path) => ({ path, title: "cover photo" })),
-        }),
-        codexDocsTitleSuggester: async (options) => ({
-          suggestions: options.documentPaths.map((path) => ({ path, title: "project plan" })),
-        }),
+        codexTimeoutMs: 45_000,
+        codexImagesTimeoutMs: 120_000,
+        codexImagesRetries: 2,
+        codexDocsRetries: 1,
+        codexImagesTitleSuggester: async (options) => {
+          imageTimeouts.push(options.timeoutMs);
+          expect(options.retries).toBe(2);
+          return {
+            suggestions: options.imagePaths.map((path) => ({ path, title: "cover photo" })),
+          };
+        },
+        codexDocsTitleSuggester: async (options) => {
+          docTimeouts.push(options.timeoutMs);
+          expect(options.retries).toBe(1);
+          return {
+            suggestions: options.documentPaths.map((path) => ({ path, title: "project plan" })),
+          };
+        },
       });
       planCsvPath = result.planCsvPath;
 
       expect(stderr.text).toBe("");
       expect(result.totalCount).toBe(2);
+      expect(imageTimeouts).toEqual([120_000]);
+      expect(docTimeouts).toEqual([45_000]);
       expect(stdout.text).toContain("Codex image titles: 1/1 image file(s) suggested");
       expect(stdout.text).toContain("Codex doc titles: 1/1 document file(s) suggested");
       expect(stdout.text).toContain("cover-photo");
       expect(stdout.text).toContain("project-plan");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch does not enable analyzers from the shared timeout alone", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-codex-timeout-only");
+      await mkdir(dirPath, { recursive: true });
+      await writeFile(join(dirPath, "cover.png"), "fakepng", "utf8");
+      await writeFile(join(dirPath, "notes.md"), "# Notes\n", "utf8");
+
+      let imageCalls = 0;
+      let docCalls = 0;
+      const result = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        dryRun: true,
+        codexTimeoutMs: 120_000,
+        codexImagesTitleSuggester: async () => {
+          imageCalls += 1;
+          return { suggestions: [] };
+        },
+        codexDocsTitleSuggester: async () => {
+          docCalls += 1;
+          return { suggestions: [] };
+        },
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(imageCalls).toBe(0);
+      expect(docCalls).toBe(0);
     } finally {
       await removeIfPresent(planCsvPath);
       await rm(fixtureDir, { recursive: true, force: true });

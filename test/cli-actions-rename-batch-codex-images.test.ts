@@ -133,7 +133,7 @@ describe("cli action modules: rename batch codex images", () => {
         directory: toRepoRelativePath(dirPath),
         dryRun: true,
         codexImages: true,
-        codexImagesTimeoutMs: 12345,
+        codexImagesTimeoutMs: 900_000,
         codexImagesRetries: 2,
         codexImagesBatchSize: 1,
         codexImagesTitleSuggester: async (options) => {
@@ -146,7 +146,7 @@ describe("cli action modules: rename batch codex images", () => {
       expect(stderr.text).toBe("");
       expect(calls).toHaveLength(1);
       expect(calls[0]?.workingDirectory).toBe(REPO_ROOT);
-      expect(calls[0]?.timeoutMs).toBe(12345);
+      expect(calls[0]?.timeoutMs).toBe(900_000);
       expect(calls[0]?.retries).toBe(2);
       expect(calls[0]?.batchSize).toBe(1);
       expect(calls[0]?.imagePaths).toHaveLength(2);

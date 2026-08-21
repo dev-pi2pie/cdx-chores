@@ -283,6 +283,7 @@ describe("cli action modules: rename file", () => {
 
       let imageCalls = 0;
       let docCalls = 0;
+      const docTimeouts: Array<number | undefined> = [];
       const result = await actionRenameFile(runtime, {
         path: toRepoRelativePath(docPath),
         prefix: "doc",
@@ -294,6 +295,7 @@ describe("cli action modules: rename file", () => {
         },
         codexDocsTitleSuggester: async (options) => {
           docCalls += 1;
+          docTimeouts.push(options.timeoutMs);
           return {
             suggestions: options.documentPaths.map((path) => ({
               path,
@@ -308,6 +310,7 @@ describe("cli action modules: rename file", () => {
       expect(result.changed).toBe(true);
       expect(imageCalls).toBe(0);
       expect(docCalls).toBe(1);
+      expect(docTimeouts).toEqual([30_000]);
       expect(stdout.text).toContain("Codex: analyzing 1 document file(s)...");
       expect(stdout.text).toContain("Codex doc titles: 1/1 document file(s) suggested");
       expect(stdout.text).toContain("- weekly notes.md -> doc-");

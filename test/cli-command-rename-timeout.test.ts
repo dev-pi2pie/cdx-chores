@@ -115,11 +115,12 @@ describe("rename Codex timeout command routing", () => {
     expect(calls).toHaveLength(1);
     expect(calls[0]).toMatchObject({
       codex: false,
+      codexTimeoutMs: 45_000,
       codexImages: false,
       codexImagesTimeoutMs: 120_000,
       codexDocs: false,
-      codexDocsTimeoutMs: 45_000,
     });
+    expect(calls[0]?.codexDocsTimeoutMs).toBeUndefined();
     expect(
       scenario.callKind === "file"
         ? (calls[0] as RenameFileOptions).path
