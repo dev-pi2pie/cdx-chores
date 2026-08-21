@@ -17,6 +17,7 @@ import {
   parseUniqueCodexTimeoutDuration,
   resolveCodexTimeout,
 } from "../options/codex-timeout";
+import type { LegacyCodexTimeoutMigration } from "../options/codex-timeout";
 import { applyRenameTemplateOptions } from "../options/common";
 import {
   collectCsvListOption,
@@ -78,10 +79,9 @@ const defaultRenameCommandActions: RenameCommandActions = {
   actionRenameFile,
 };
 
-function createCodexTimeoutOption(flags: string, description: string): Option {
-  const optionName = flags.slice(0, flags.indexOf(" "));
-  return new Option(flags, description).argParser<number | undefined>((value, previous) =>
-    parseUniqueCodexTimeoutDuration(value, previous, optionName),
+function createCodexTimeoutOption(optionName: string, description: string): Option {
+  return new Option(`${optionName} <duration>`, description).argParser<number | undefined>(
+    (value, previous) => parseUniqueCodexTimeoutDuration(value, previous, optionName),
   );
 }
 
@@ -90,7 +90,7 @@ function applyRenameCodexOptions(command: Command): Command {
     .option("--codex", "Auto-route eligible files to Codex analyzers by file type", false)
     .addOption(
       createCodexTimeoutOption(
-        "--codex-timeout <duration>",
+        "--codex-timeout",
         "Timeout for each Codex request attempt (for example: 30s, 2m)",
       ),
     )
@@ -101,7 +101,7 @@ function applyRenameCodexOptions(command: Command): Command {
     )
     .addOption(
       createCodexTimeoutOption(
-        "--codex-images-timeout <duration>",
+        "--codex-images-timeout",
         "Override the per-attempt timeout for Codex image-title requests",
       ).conflicts("codexImagesTimeoutMs"),
     )
@@ -127,7 +127,7 @@ function applyRenameCodexOptions(command: Command): Command {
     )
     .addOption(
       createCodexTimeoutOption(
-        "--codex-docs-timeout <duration>",
+        "--codex-docs-timeout",
         "Override the per-attempt timeout for Codex document-title requests",
       ).conflicts("codexDocsTimeoutMs"),
     )
@@ -190,55 +190,79 @@ function configureRenameBatchLikeCommand(command: Command): Command {
   );
 }
 
-function prepareRenameCodexTimeouts(
-  runtime: CliRuntime,
-  options: RenameCodexCommandOptions,
-): Pick<RenameFileOptions, "codexImagesTimeoutMs" | "codexDocsTimeoutMs"> {
-  const imageTimeout = resolveCodexTimeout({
-    sharedTimeoutMs: options.codexTimeout,
+interface ResolvedRenameAnalyzerCodexTimeout {
+  actionTimeoutMs?: number;
+  migration?: LegacyCodexTimeoutMigration;
+}
+
+function resolveRenameAnalyzerCodexTimeout(options: {
+  sharedTimeoutMs?: number;
+  scopedTimeoutMs?: number;
+  scopedOptionName: string;
+  legacyScopedTimeoutMs?: number;
+  legacyScopedOptionName: string;
+}): ResolvedRenameAnalyzerCodexTimeout {
+  const resolved = resolveCodexTimeout({
+    sharedTimeoutMs: options.sharedTimeoutMs,
     sharedOptionName: "--codex-timeout",
+    scopedTimeoutMs: options.scopedTimeoutMs,
+    scopedOptionName: options.scopedOptionName,
+    legacyScopedTimeoutMs: options.legacyScopedTimeoutMs,
+    legacyScopedOptionName: options.legacyScopedOptionName,
+  });
+  return {
+    actionTimeoutMs: resolved.source === "default" ? undefined : resolved.timeoutMs,
+    migration:
+      options.legacyScopedTimeoutMs === undefined
+        ? undefined
+        : {
+            legacyOptionName: options.legacyScopedOptionName,
+            replacementOptionName: options.scopedOptionName,
+            timeoutMs: options.legacyScopedTimeoutMs,
+          },
+  };
+}
+
+function resolveRenameCodexTimeouts(options: RenameCodexCommandOptions): {
+  timeouts: Pick<RenameFileOptions, "codexImagesTimeoutMs" | "codexDocsTimeoutMs">;
+  notice?: string;
+} {
+  const image = resolveRenameAnalyzerCodexTimeout({
+    sharedTimeoutMs: options.codexTimeout,
     scopedTimeoutMs: options.codexImagesTimeout,
     scopedOptionName: "--codex-images-timeout",
     legacyScopedTimeoutMs: options.codexImagesTimeoutMs,
     legacyScopedOptionName: "--codex-images-timeout-ms",
   });
-  const documentTimeout = resolveCodexTimeout({
+  const document = resolveRenameAnalyzerCodexTimeout({
     sharedTimeoutMs: options.codexTimeout,
-    sharedOptionName: "--codex-timeout",
     scopedTimeoutMs: options.codexDocsTimeout,
     scopedOptionName: "--codex-docs-timeout",
     legacyScopedTimeoutMs: options.codexDocsTimeoutMs,
     legacyScopedOptionName: "--codex-docs-timeout-ms",
   });
-  const notice = formatLegacyCodexTimeoutNotice([
-    ...(options.codexImagesTimeoutMs === undefined
-      ? []
-      : [
-          {
-            legacyOptionName: "--codex-images-timeout-ms",
-            replacementOptionName: "--codex-images-timeout",
-            timeoutMs: options.codexImagesTimeoutMs,
-          },
-        ]),
-    ...(options.codexDocsTimeoutMs === undefined
-      ? []
-      : [
-          {
-            legacyOptionName: "--codex-docs-timeout-ms",
-            replacementOptionName: "--codex-docs-timeout",
-            timeoutMs: options.codexDocsTimeoutMs,
-          },
-        ]),
-  ]);
-  if (notice) {
-    runtime.stderr.write(notice);
-  }
+  const migrations = [image.migration, document.migration].filter(
+    (migration): migration is LegacyCodexTimeoutMigration => migration !== undefined,
+  );
 
   return {
-    codexImagesTimeoutMs: imageTimeout.source === "default" ? undefined : imageTimeout.timeoutMs,
-    codexDocsTimeoutMs:
-      documentTimeout.source === "default" ? undefined : documentTimeout.timeoutMs,
+    timeouts: {
+      codexImagesTimeoutMs: image.actionTimeoutMs,
+      codexDocsTimeoutMs: document.actionTimeoutMs,
+    },
+    notice: formatLegacyCodexTimeoutNotice(migrations),
   };
+}
+
+function prepareRenameCodexTimeouts(
+  runtime: CliRuntime,
+  options: RenameCodexCommandOptions,
+): Pick<RenameFileOptions, "codexImagesTimeoutMs" | "codexDocsTimeoutMs"> {
+  const resolved = resolveRenameCodexTimeouts(options);
+  if (resolved.notice) {
+    runtime.stderr.write(resolved.notice);
+  }
+  return resolved.timeouts;
 }
 
 async function handleRenameBatchAction(
