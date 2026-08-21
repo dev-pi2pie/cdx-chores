@@ -11,20 +11,20 @@ export async function handleRenameInteractiveAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   action: RenameInteractiveActionKey,
-  _session: InteractiveSession = createInteractiveSession(),
+  session: InteractiveSession = createInteractiveSession(),
 ): Promise<void> {
   if (action === "rename:batch") {
-    await handleRenameBatchInteractiveAction(runtime, pathPromptContext);
+    await handleRenameBatchInteractiveAction(runtime, pathPromptContext, session.codexTimeoutMs);
     return;
   }
 
   if (action === "rename:cleanup") {
-    await handleRenameCleanupInteractiveAction(runtime, pathPromptContext);
+    await handleRenameCleanupInteractiveAction(runtime, pathPromptContext, session.codexTimeoutMs);
     return;
   }
 
   if (action === "rename:file") {
-    await handleRenameFileInteractiveAction(runtime, pathPromptContext);
+    await handleRenameFileInteractiveAction(runtime, pathPromptContext, session.codexTimeoutMs);
     return;
   }
 

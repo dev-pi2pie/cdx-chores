@@ -261,9 +261,18 @@ export function createStackActionMocks(context: HarnessRunnerContext) {
         report: options.report as never,
       });
     },
-    suggestDataStackWithCodex: async () => {
+    suggestDataStackWithCodex: async (options: { timeoutMs?: unknown }) => {
+      if (context.scenario.codexTimeoutMs !== undefined) {
+        context.recordAction("data:stack:codex-suggest", {
+          timeoutMs: options.timeoutMs,
+        });
+      }
       if (context.scenario.dataStackCodexErrorMessage) {
-        throw new Error(context.scenario.dataStackCodexErrorMessage);
+        const error = new Error(context.scenario.dataStackCodexErrorMessage);
+        if (context.scenario.dataStackCodexErrorName) {
+          error.name = context.scenario.dataStackCodexErrorName;
+        }
+        throw error;
       }
       return {
         facts: {},

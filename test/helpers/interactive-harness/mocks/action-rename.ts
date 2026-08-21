@@ -30,6 +30,7 @@ interface RenameCleanupCollectOptions {
 }
 
 interface RenameCleanupSuggestOptions {
+  timeoutMs?: unknown;
   evidence?: {
     targetKind?: unknown;
     totalCandidateCount?: unknown;
@@ -80,7 +81,12 @@ function createDefaultRenameCleanupEvidence(inputPath: string): RenameCleanupEvi
 export function createRenameActionMocks(context: HarnessRunnerContext) {
   return {
     actionRenameBatch: async (_runtime: unknown, options: Record<string, unknown>) => {
-      context.recordAction("rename:batch", options);
+      context.recordAction(
+        "rename:batch",
+        context.scenario.codexTimeoutMs === undefined
+          ? Object.fromEntries(Object.entries(options).filter(([key]) => key !== "codexTimeoutMs"))
+          : options,
+      );
       return {
         changedCount: 0,
         totalCount: 0,
@@ -88,7 +94,12 @@ export function createRenameActionMocks(context: HarnessRunnerContext) {
       };
     },
     actionRenameFile: async (_runtime: unknown, options: Record<string, unknown>) => {
-      context.recordAction("rename:file", options);
+      context.recordAction(
+        "rename:file",
+        context.scenario.codexTimeoutMs === undefined
+          ? Object.fromEntries(Object.entries(options).filter(([key]) => key !== "codexTimeoutMs"))
+          : options,
+      );
       return {
         changed: false,
         filePath: context.resolveHarnessPath(options.path),
@@ -177,6 +188,9 @@ export function createRenameActionMocks(context: HarnessRunnerContext) {
                 examples: group.examples,
               }))
             : [],
+          ...(context.scenario.codexTimeoutMs !== undefined
+            ? { timeoutMs: options.timeoutMs }
+            : {}),
         });
       }
 

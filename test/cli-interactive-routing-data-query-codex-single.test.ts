@@ -52,6 +52,7 @@ describe("interactive mode routing: data query Codex single source", () => {
   test("supports checkpoint regenerate from codex sql review", () => {
     const result = runInteractiveHarness({
       mode: "run",
+      codexTimeoutMs: 120_000,
       selectQueue: ["data", "data:query", "Codex Assistant", "regenerate", "table"],
       requiredPathQueue: ["fixtures/query.csv"],
       confirmQueue: [true, false, false, false, true],
@@ -64,9 +65,16 @@ describe("interactive mode routing: data query Codex single source", () => {
       },
     });
 
-    expect(
-      result.actionCalls.filter((call) => call.name === "data:query:codex-draft"),
-    ).toHaveLength(2);
+    expect(result.actionCalls.filter((call) => call.name === "data:query:codex-draft")).toEqual([
+      {
+        name: "data:query:codex-draft",
+        options: expect.objectContaining({ timeoutMs: 120_000 }),
+      },
+      {
+        name: "data:query:codex-draft",
+        options: expect.objectContaining({ timeoutMs: 120_000 }),
+      },
+    ]);
     expect(result.actionCalls).toContainEqual({
       name: "data:query",
       options: {
@@ -87,6 +95,29 @@ describe("interactive mode routing: data query Codex single source", () => {
     expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).not.toContain(
       "editor:Describe the query intent:",
     );
+  });
+
+  test("keeps the current recovery choices after a structurally classified timeout", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      codexTimeoutMs: 120_000,
+      selectQueue: ["data", "data:query", "Codex Assistant", "cancel"],
+      requiredPathQueue: ["fixtures/query.csv"],
+      confirmQueue: [true, false, false],
+      inputQueue: ["count rows by status"],
+      dataQueryDetectedFormat: "csv",
+      dataQueryCodexErrorMessage: "opaque timeout transport detail",
+      dataQueryCodexFailureKind: "timeout",
+    });
+
+    expect(result.stderr).toContain(
+      "Codex data-query drafting request timed out after the 2m per-attempt limit.",
+    );
+    expect(result.stderr).toContain("cdx-chores interactive --codex-timeout <duration>");
+    expect(result.stderr).not.toContain("opaque timeout transport detail");
+    expect(
+      result.selectChoicesByMessage["Codex Assistant next step"]?.map((choice) => choice.value),
+    ).toEqual(["regenerate", "revise", "cancel"]);
   });
 
   test("reopens codex intent entry directly when sql review chooses revise", () => {

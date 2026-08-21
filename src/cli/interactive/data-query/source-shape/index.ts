@@ -29,6 +29,7 @@ export async function collectInteractiveIntrospection(options: {
   labels?: InteractiveContinuationLabels;
   runtime: CliRuntime;
   selectedSource?: string;
+  timeoutMs: number;
 }): Promise<{
   introspection: DataQuerySourceIntrospection;
   sourceShape: InteractiveSourceShapeState;
@@ -157,6 +158,7 @@ export async function collectInteractiveIntrospection(options: {
       runtime: options.runtime,
       selectedSource: options.selectedSource,
       sourceShape,
+      timeoutMs: options.timeoutMs,
     });
     if (suggestionReview.kind === "return-current") {
       return { introspection, sourceShape };

@@ -28,6 +28,7 @@ export async function collectCodexSourceShapeReview(options: {
   runtime: CliRuntime;
   selectedSource: string | undefined;
   sourceShape: InteractiveSourceShapeState;
+  timeoutMs: number;
 }): Promise<CodexSourceShapeReviewResult> {
   const selectedSource = options.selectedSource?.trim();
   if (!selectedSource) {
@@ -53,6 +54,7 @@ export async function collectCodexSourceShapeReview(options: {
       currentHeaderRow: options.sourceShape.selectedHeaderRow,
       currentBodyStartRow: options.sourceShape.selectedBodyStartRow,
       currentRange: options.sourceShape.selectedRange,
+      timeoutMs: options.timeoutMs,
       workingDirectory: options.runtime.cwd,
     });
   } finally {

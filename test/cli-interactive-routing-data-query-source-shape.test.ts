@@ -94,6 +94,7 @@ describe("interactive mode routing: data query source shape", () => {
   test("warns about suspicious raw Excel schemas before SQL authoring and supports reviewed Codex shape recovery", () => {
     const result = runInteractiveHarness({
       mode: "run",
+      codexTimeoutMs: 90_000,
       selectQueue: ["data", "data:query", "Summary", "suggest", "accept", "manual", "table"],
       requiredPathQueue: ["fixtures/query.xlsx"],
       inputQueue: ["", "select * from file order by id", "10"],
@@ -133,6 +134,7 @@ describe("interactive mode routing: data query source shape", () => {
       options: {
         selectedSource: "Summary",
         sheetName: "Summary",
+        timeoutMs: 90_000,
       },
     });
     expect(result.actionCalls).toContainEqual({

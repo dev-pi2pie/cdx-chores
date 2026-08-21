@@ -16,6 +16,7 @@ export interface DataQueryIntrospection {
 export interface DataQueryCodexDraftOptions {
   format?: unknown;
   intent?: unknown;
+  timeoutMs?: unknown;
   introspection?:
     | {
         selectedHeaderRow?: unknown;
@@ -30,6 +31,7 @@ export interface DataQueryCodexDraftOptions {
 
 export interface HeaderSuggestionOptions {
   format?: unknown;
+  timeoutMs?: unknown;
   introspection?: {
     selectedHeaderRow?: unknown;
     selectedRange?: unknown;
@@ -48,6 +50,7 @@ export interface DataQueryWorkspaceRelationScenario {
 export interface SourceShapeSuggestionOptions {
   currentHeaderRow?: unknown;
   currentRange?: unknown;
+  timeoutMs?: unknown;
   context?: {
     currentIntrospection?: { selectedSource?: unknown };
     sheetSnapshot?: { sheetName?: unknown };

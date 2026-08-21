@@ -182,14 +182,22 @@ describe("interactive rename routing", () => {
   test("falls back to manual cleanup settings when analyzer suggestion fails", () => {
     const result = runInteractiveHarness({
       mode: "run",
+      codexTimeoutMs: 60_000,
       selectQueue: ["rename", "rename:cleanup", "date", "done", "preserve", "skip"],
       checkboxQueue: [["timestamp", "date", "serial", "uid"]],
       requiredPathQueue: ["README.md"],
       confirmQueue: [true, true],
       cleanupAnalyzerErrorMessage: "mocked analyzer failure",
+      captureCleanupSuggestInput: true,
     });
 
     expect(result.actionCalls).toEqual([
+      {
+        name: "rename:cleanup:codex-suggest",
+        options: expect.objectContaining({
+          timeoutMs: 60_000,
+        }),
+      },
       {
         name: "rename:cleanup",
         options: {

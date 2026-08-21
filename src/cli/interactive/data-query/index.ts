@@ -61,6 +61,7 @@ async function runInteractiveModeLoop(options: {
 }
 
 async function prepareInteractiveQueryScopeContext(options: {
+  codexTimeoutMs: number;
   connection: Awaited<ReturnType<typeof createDuckDbConnection>>;
   format: Awaited<ReturnType<typeof promptInteractiveInputFormat>>;
   input: string;
@@ -80,6 +81,7 @@ async function prepareInteractiveQueryScopeContext(options: {
 }
 
 async function prepareWorkspaceQueryScopeContext(options: {
+  codexTimeoutMs: number;
   connection: Awaited<ReturnType<typeof createDuckDbConnection>>;
   format: Awaited<ReturnType<typeof promptInteractiveInputFormat>>;
   input: string;
@@ -119,11 +121,13 @@ async function prepareWorkspaceQueryScopeContext(options: {
             introspection: workspaceIntrospection,
             mode: "workspace",
             relations,
+            timeoutMs: options.codexTimeoutMs,
           }),
   };
 }
 
 async function prepareSingleSourceQueryScopeContext(options: {
+  codexTimeoutMs: number;
   connection: Awaited<ReturnType<typeof createDuckDbConnection>>;
   format: Awaited<ReturnType<typeof promptInteractiveInputFormat>>;
   input: string;
@@ -145,6 +149,7 @@ async function prepareSingleSourceQueryScopeContext(options: {
     labels: QUERY_CONTINUATION_LABELS,
     runtime: options.runtime,
     selectedSource,
+    timeoutMs: options.codexTimeoutMs,
   });
   const reviewedHeaders = await reviewInteractiveHeaderMappings({
     connection: options.connection,
@@ -158,6 +163,7 @@ async function prepareSingleSourceQueryScopeContext(options: {
     selectedNoHeader: sourceShape.selectedNoHeader,
     selectedRange: sourceShape.selectedRange,
     selectedSource,
+    timeoutMs: options.codexTimeoutMs,
   });
 
   return {
@@ -197,6 +203,7 @@ async function prepareSingleSourceQueryScopeContext(options: {
               selectedNoHeader: sourceShape.selectedNoHeader,
               selectedRange: sourceShape.selectedRange,
               selectedSource,
+              timeoutMs: options.codexTimeoutMs,
             }),
   };
 }
@@ -204,6 +211,7 @@ async function prepareSingleSourceQueryScopeContext(options: {
 export async function runInteractiveDataQuery(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
+  codexTimeoutMs: number,
 ): Promise<void> {
   writeInteractiveFlowTip(runtime, "data-query");
   const input = await promptRequiredPathWithConfig("Input data file", {
@@ -220,6 +228,7 @@ export async function runInteractiveDataQuery(
     const sources = await listDataQuerySources(connection, inputPath, format);
     const scope = await promptInteractiveQueryScope(format, sources);
     const scopeContext = await prepareInteractiveQueryScopeContext({
+      codexTimeoutMs,
       connection,
       format,
       input,

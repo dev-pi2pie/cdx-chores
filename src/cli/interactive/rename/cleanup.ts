@@ -5,6 +5,7 @@ import type { InteractivePathPromptContext } from "../shared";
 export async function handleRenameCleanupInteractiveAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
+  codexTimeoutMs: number,
 ): Promise<void> {
-  await runInteractiveRenameCleanup(runtime, pathPromptContext);
+  await runInteractiveRenameCleanup(runtime, pathPromptContext, codexTimeoutMs);
 }

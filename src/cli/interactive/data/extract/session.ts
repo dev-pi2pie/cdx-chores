@@ -23,6 +23,7 @@ export async function collectInteractiveExtractSessionState(options: {
   inputPath: string;
   runtime: CliRuntime;
   sources: Awaited<ReturnType<typeof listDataQuerySources>>;
+  timeoutMs: number;
 }): Promise<InteractiveExtractSessionState> {
   const noHeader = await promptDelimitedHeaderMode(options.format);
   const selectedSource = await promptOptionalSourceSelection(options.format, options.sources);
@@ -34,6 +35,7 @@ export async function collectInteractiveExtractSessionState(options: {
     labels: EXTRACT_CONTINUATION_LABELS,
     runtime: options.runtime,
     selectedSource,
+    timeoutMs: options.timeoutMs,
   });
   const reviewedHeaders = await reviewInteractiveHeaderMappings({
     connection: options.connection,
@@ -47,6 +49,7 @@ export async function collectInteractiveExtractSessionState(options: {
     selectedNoHeader: sourceShape.selectedNoHeader,
     selectedRange: sourceShape.selectedRange,
     selectedSource,
+    timeoutMs: options.timeoutMs,
   });
 
   return {

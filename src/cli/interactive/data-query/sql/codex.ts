@@ -11,6 +11,7 @@ import {
 import type { DataHeaderMappingEntry } from "../../../duckdb/header-mapping";
 import type { DataQueryInputFormat, DataQueryRelationBinding } from "../../../duckdb/query";
 import type { CliRuntime } from "../../../types";
+import { formatCodexTimeoutFailure } from "../../../../utils/codex-request-failure";
 import { createInteractiveAnalyzerStatus } from "../../analyzer-status";
 import type { InteractivePathPromptContext } from "../../shared";
 import { executeInteractiveCandidate } from "../execution";
@@ -36,6 +37,7 @@ export async function runCodexInteractiveQuery(
     selectedNoHeader?: boolean;
     selectedRange?: string;
     selectedSource?: string;
+    timeoutMs: number;
   },
 ): Promise<InteractiveQueryRunResult> {
   let lastIntent = "";
@@ -102,15 +104,31 @@ export async function runCodexInteractiveQuery(
           format: options.format,
           intent,
           introspection: options.introspection,
+          timeoutMs: options.timeoutMs,
           workingDirectory: runtime.cwd,
         });
         status.stop();
 
         if (!draftResult.draft) {
-          printLine(
-            runtime.stderr,
-            `Codex drafting failed: ${draftResult.errorMessage ?? "Unknown error."}`,
-          );
+          if (draftResult.failureKind === "timeout") {
+            printLine(
+              runtime.stderr,
+              formatCodexTimeoutFailure({
+                attemptsUsed: 1,
+                requestLabel: "Codex data-query drafting request",
+                timeoutMs: options.timeoutMs,
+              }),
+            );
+            printLine(
+              runtime.stderr,
+              "Regenerate this request, revise the intent, or restart with a longer limit: cdx-chores interactive --codex-timeout <duration>.",
+            );
+          } else {
+            printLine(
+              runtime.stderr,
+              `Codex drafting failed: ${draftResult.errorMessage ?? "Unknown error."}`,
+            );
+          }
         } else {
           const executionResult = await executeInteractiveCandidate(runtime, pathPromptContext, {
             format: options.format,

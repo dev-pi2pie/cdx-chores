@@ -28,7 +28,9 @@ async function runHarnessScenario(
   try {
     if (scenario.mode === "run") {
       const interactiveModule = await import(interactiveIndexUrl);
-      await interactiveModule.runInteractiveMode(runtime);
+      await interactiveModule.runInteractiveMode(runtime, undefined, {
+        codexTimeoutMs: scenario.codexTimeoutMs,
+      });
     } else {
       const interactiveDataModule = await import(interactiveDataUrl);
       await interactiveDataModule.handleDataInteractiveAction(

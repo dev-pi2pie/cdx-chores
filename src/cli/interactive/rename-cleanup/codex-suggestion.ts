@@ -54,6 +54,7 @@ export async function promptCleanupSettingsFromSuggestion(
     path: string;
     analyzerFamilies: RenameCleanupHint[];
     scope: RenameCleanupScopeOptions;
+    timeoutMs: number;
   },
 ): Promise<{
   settings?: InteractiveCleanupSettings;
@@ -101,6 +102,7 @@ export async function promptCleanupSettingsFromSuggestion(
     status.wait("Waiting for Codex cleanup suggestions...");
     const result = await suggestRenameCleanupWithCodex({
       evidence,
+      timeoutMs: options.timeoutMs,
       workingDirectory: runtime.cwd,
     });
     status.stop();
