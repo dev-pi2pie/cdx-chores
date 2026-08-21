@@ -672,40 +672,40 @@ Gate:
 
 Add bounded timeout-cause recognition and use it in rename analyzer summaries.
 
-Status: in progress.
+Status: completed.
 
 Tasks:
 
 - [x] Create the Phase 4 job record.
-- [ ] Define the narrow internal failure kinds `timeout`, `aborted`, and
+- [x] Define the narrow internal failure kinds `timeout`, `aborted`, and
       `other` without changing public report schemas.
-- [ ] Add a bounded shared timeout classifier that recognizes a preserved
+- [x] Add a bounded shared timeout classifier that recognizes a preserved
       `TimeoutError` through an error/cause chain.
-- [ ] Keep ordinary `AbortError` and unknown SDK errors out of timeout-specific
+- [x] Keep ordinary `AbortError` and unknown SDK errors out of timeout-specific
       classification.
-- [ ] Avoid arbitrary SDK message string matching.
-- [ ] Include the analyzer and effective per-attempt duration in exhausted
+- [x] Avoid arbitrary SDK message string matching.
+- [x] Include the analyzer and effective per-attempt duration in exhausted
       timeout fallback information.
-- [ ] Include attempt-exhaustion context when retries were configured.
-- [ ] Preserve the current generic failure summary when the cause is unknown.
-- [ ] Preserve partial suggestions from successful batches when another batch
+- [x] Include attempt-exhaustion context when retries were configured.
+- [x] Preserve the current generic failure summary when the cause is unknown.
+- [x] Preserve partial suggestions from successful batches when another batch
       exhausts its timeout attempts.
-- [ ] Keep classifier wording and metadata reusable by later direct and
+- [x] Keep classifier wording and metadata reusable by later direct and
       Interactive phases rather than embedding rename-only policy in the shared
       helper.
 
 Verification:
 
-- [ ] Add focused direct, wrapped-cause, abort, and generic error tests.
-- [ ] Test exhausted timeout behavior with zero and multiple retries.
-- [ ] Test partial-result retention alongside one exhausted timeout batch.
-- [ ] Assert output artifacts, deterministic fallback, and exit behavior are
+- [x] Add focused direct, wrapped-cause, abort, and generic error tests.
+- [x] Test exhausted timeout behavior with zero and multiple retries.
+- [x] Test partial-result retention alongside one exhausted timeout batch.
+- [x] Assert output artifacts, deterministic fallback, and exit behavior are
       unchanged.
-- [ ] Record focused results and the Phase 4 review range in the job record.
+- [x] Record focused results and the Phase 4 review range in the job record.
 
 Gate:
 
-- [ ] Timeout-specific information is reliable and bounded without becoming a
+- [x] Timeout-specific information is reliable and bounded without becoming a
       repository-wide Codex error taxonomy rewrite.
 
 ### Phase 5: Explicit Direct Command Adoption
