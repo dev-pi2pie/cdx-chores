@@ -54,6 +54,25 @@ describe("cli action modules: data query codex single-source", () => {
     expect(stdout.text).toContain("SQL:\nselect id, name from file order by id");
   });
 
+  test("actionDataQueryCodex forwards a configured per-request timeout", async () => {
+    const { runtime, expectNoStderr } = createActionTestRuntime();
+
+    await actionDataQueryCodex(runtime, {
+      input: "test/fixtures/data-query/basic.csv",
+      intent: "show id and name ordered by id",
+      runner: async ({ timeoutMs }) => {
+        expect(timeoutMs).toBe(120_000);
+        return JSON.stringify({
+          sql: "select id, name from file order by id",
+          reasoning_summary: "Projects the requested columns.",
+        });
+      },
+      timeoutMs: 120_000,
+    });
+
+    expectNoStderr();
+  });
+
   test("actionDataQueryCodex supports schema-qualified DuckDB single-source drafting", async () => {
     if (!duckdbReady) {
       return;

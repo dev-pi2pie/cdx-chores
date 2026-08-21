@@ -95,6 +95,50 @@ describe("cli action modules: data query codex validation", () => {
     expectNoOutput();
   });
 
+  test("actionDataQueryCodex reports a structurally identified timeout with its limit", async () => {
+    const { runtime } = createActionTestRuntime();
+    const timeout = new Error("request stopped");
+    timeout.name = "TimeoutError";
+
+    await expectCliError(
+      () =>
+        actionDataQueryCodex(runtime, {
+          input: "test/fixtures/data-query/basic.csv",
+          intent: "show active rows",
+          runner: async () => {
+            throw timeout;
+          },
+          timeoutMs: 120_000,
+        }),
+      {
+        code: "DATA_QUERY_CODEX_FAILED",
+        exitCode: 2,
+        messageIncludes:
+          "Codex data-query drafting request timed out after the 2m per-attempt limit.",
+      },
+    );
+  });
+
+  test("actionDataQueryCodex does not infer timeout from arbitrary error text", async () => {
+    const { runtime } = createActionTestRuntime();
+
+    await expectCliError(
+      () =>
+        actionDataQueryCodex(runtime, {
+          input: "test/fixtures/data-query/basic.csv",
+          intent: "show active rows",
+          runner: async () => {
+            throw new Error("request timed out after 30 seconds");
+          },
+        }),
+      {
+        code: "DATA_QUERY_CODEX_FAILED",
+        exitCode: 2,
+        messageIncludes: "Codex drafting failed: request timed out after 30 seconds",
+      },
+    );
+  });
+
   test("actionDataQueryCodex reports source ambiguity for SQLite inputs", async () => {
     if (!sqliteReady) {
       return;

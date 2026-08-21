@@ -7,9 +7,24 @@ import {
   parseDataQueryInputFormatOption,
   parsePositiveIntegerOption,
 } from "../../options/parsers";
+import { createCodexTimeoutDurationOption } from "../../options/codex-timeout-option";
 import type { CliRuntime } from "../../types";
 
-export function registerDataQueryCommands(dataCommand: Command, runtime: CliRuntime): void {
+interface DataQueryCommandActions {
+  actionDataQuery: typeof actionDataQuery;
+  actionDataQueryCodex: typeof actionDataQueryCodex;
+}
+
+const defaultDataQueryCommandActions: DataQueryCommandActions = {
+  actionDataQuery,
+  actionDataQueryCodex,
+};
+
+export function registerDataQueryCommands(
+  dataCommand: Command,
+  runtime: CliRuntime,
+  actions: DataQueryCommandActions = defaultDataQueryCommandActions,
+): void {
   function resolveCommandRelationBindings(
     localRelations: Array<{ alias: string; source: string }> | undefined,
     parentRelations: Array<{ alias: string; source: string }> | undefined,
@@ -100,7 +115,7 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
           writeHeaderMapping?: string;
         },
       ) => {
-        await actionDataQuery(runtime, {
+        await actions.actionDataQuery(runtime, {
           bodyStartRow: options.bodyStartRow,
           codexSuggestHeaders: options.codexSuggestHeaders,
           headerMapping: options.headerMapping,
@@ -129,6 +144,12 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
     .description("Draft SQL from natural-language intent using bounded introspection")
     .argument("<input>", "Input data file")
     .requiredOption("--intent <text>", "Natural-language query intent for Codex drafting")
+    .addOption(
+      createCodexTimeoutDurationOption(
+        "--codex-timeout",
+        "Timeout for each Codex drafting request attempt (for example: 30s, 2m)",
+      ),
+    )
     .option(
       "--input-format <format>",
       `Override detected input format (${DATA_QUERY_INPUT_FORMAT_VALUES.join(", ")})`,
@@ -161,6 +182,7 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
         input: string,
         options: {
           bodyStartRow?: number;
+          codexTimeout?: number;
           inputFormat?: DataQueryInputFormat;
           intent: string;
           headerRow?: number;
@@ -180,7 +202,7 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
           source?: string;
         }>();
         const relations = resolveCommandRelationBindings(options.relation, parentOptions?.relation);
-        await actionDataQueryCodex(runtime, {
+        await actions.actionDataQueryCodex(runtime, {
           bodyStartRow: options.bodyStartRow ?? parentOptions?.bodyStartRow,
           headerRow: options.headerRow ?? parentOptions?.headerRow,
           input,
@@ -191,6 +213,7 @@ export function registerDataQueryCommands(dataCommand: Command, runtime: CliRunt
           range: options.range ?? parentOptions?.range,
           relations,
           source: options.source ?? parentOptions?.source,
+          timeoutMs: options.codexTimeout,
         });
       },
     );

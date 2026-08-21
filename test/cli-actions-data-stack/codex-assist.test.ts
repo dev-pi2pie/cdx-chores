@@ -36,14 +36,16 @@ describe("cli action modules: data stack Codex assist", () => {
       const planPath = join(fixtureDir, "stack-plan.json");
       const reportPath = join(fixtureDir, "codex-report.json");
       const outputPath = join(fixtureDir, "merged.csv");
+      const receivedTimeouts: Array<number | undefined> = [];
       await writeFile(join(fixtureDir, "a.csv"), "id,status\n1,active\n2,paused\n", "utf8");
 
       const { runtime, stderr, expectNoStdout } = createActionTestRuntime({ cwd: fixtureDir });
       await actionDataStack(runtime, {
         codexAssist: true,
         codexReportOutput: "codex-report.json",
-        codexRunner: async () =>
-          JSON.stringify({
+        codexRunner: async ({ timeoutMs }) => {
+          receivedTimeouts.push(timeoutMs);
+          return JSON.stringify({
             recommendations: [
               {
                 confidence: 0.92,
@@ -53,7 +55,9 @@ describe("cli action modules: data stack Codex assist", () => {
                 title: "Use id as unique key",
               },
             ],
-          }),
+          });
+        },
+        codexTimeoutMs: 120_000,
         dryRun: true,
         output: "merged.csv",
         planOutput: "stack-plan.json",
@@ -76,6 +80,8 @@ describe("cli action modules: data stack Codex assist", () => {
       expect(report.recommendations.map((recommendation) => recommendation.id)).toEqual([
         "rec_unique_id",
       ]);
+      expect(receivedTimeouts).toEqual([120_000]);
+      expect(report).not.toHaveProperty("timeoutMs");
     });
   });
 
@@ -98,6 +104,61 @@ describe("cli action modules: data stack Codex assist", () => {
           code: "DATA_STACK_CODEX_FAILED",
           exitCode: 2,
           messageIncludes: "Codex stack assist failed",
+        },
+      );
+    });
+  });
+
+  test("actionDataStack reports a structurally identified timeout with its limit", async () => {
+    await withTempFixtureDir("data-stack-action-codex-timeout", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "a.csv"), "id,status\n1,active\n", "utf8");
+      const timeout = new Error("request stopped");
+      timeout.name = "TimeoutError";
+
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            codexAssist: true,
+            codexRunner: async () => {
+              throw timeout;
+            },
+            codexTimeoutMs: 45_000,
+            dryRun: true,
+            output: "merged.csv",
+            planOutput: "stack-plan.json",
+            sources: ["a.csv"],
+          }),
+        {
+          code: "DATA_STACK_CODEX_FAILED",
+          exitCode: 2,
+          messageIncludes: "Codex stack assist request timed out after the 45s per-attempt limit.",
+        },
+      );
+    });
+  });
+
+  test("actionDataStack does not infer timeout from arbitrary error text", async () => {
+    await withTempFixtureDir("data-stack-action-codex-timeout-text", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "a.csv"), "id,status\n1,active\n", "utf8");
+
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      await expectCliError(
+        () =>
+          actionDataStack(runtime, {
+            codexAssist: true,
+            codexRunner: async () => {
+              throw new Error("request timed out after 30 seconds");
+            },
+            dryRun: true,
+            output: "merged.csv",
+            planOutput: "stack-plan.json",
+            sources: ["a.csv"],
+          }),
+        {
+          code: "DATA_STACK_CODEX_FAILED",
+          exitCode: 2,
+          messageIncludes: "Codex stack assist failed: request timed out after 30 seconds",
         },
       );
     });
