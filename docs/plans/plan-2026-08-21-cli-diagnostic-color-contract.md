@@ -344,42 +344,42 @@ it `active` only when the first production or test implementation change begins.
 Complete the user-facing output inventory and confirm the migration boundary
 before changing presentation code.
 
-Status: not started.
+Status: in progress.
 
 Tasks:
 
-- [ ] Record the agreed execution order: complete this plan before resuming
+- [x] Record the agreed execution order: complete this plan before resuming
       timeout Phase 7.
-- [ ] Confirm the color migration does not modify timeout semantics, canonical
+- [x] Confirm the color migration does not modify timeout semantics, canonical
       warning wording, timeout guides, release notes, or timeout closeout
       records.
-- [ ] Record the current timeout Phase 6 implementation tip and preserve it as
+- [x] Record the current timeout Phase 6 implementation tip and preserve it as
       the end of the original timeout implementation review slice.
-- [ ] Create the execution job record and record the clean starting commit.
-- [ ] Inventory every `getCliColors(...)`, `getProcessColors(...)`, and direct
+- [x] Create the execution job record and record the clean starting commit.
+- [x] Inventory every `getCliColors(...)`, `getProcessColors(...)`, and direct
       `createColors(...)` call and record its actual output stream.
-- [ ] Inventory raw ANSI sequences and distinguish semantic color from
+- [x] Inventory raw ANSI sequences and distinguish semantic color from
       terminal-control behavior such as transient-line clearing.
-- [ ] Inventory user-facing `error:`, `Warning:`, `Info:`, and `Tip:` labels and
+- [x] Inventory user-facing `error:`, `Warning:`, `Info:`, and `Tip:` labels and
       grouped warning headings.
-- [ ] Classify each candidate as parser diagnostic, operational diagnostic,
+- [x] Classify each candidate as parser diagnostic, operational diagnostic,
       compatibility notice, informational notice, contextual tip, report field,
       progress, prompt, or domain presentation.
-- [ ] Record stdout/stderr ownership, current wording, exit behavior, and
+- [x] Record stdout/stderr ownership, current wording, exit behavior, and
       structured-output implications for each adopted surface.
-- [ ] Confirm which stderr renderers currently derive color eligibility from
+- [x] Confirm which stderr renderers currently derive color eligibility from
       stdout.
-- [ ] Freeze the first migration list and explicitly defer unclassified or
+- [x] Freeze the first migration list and explicitly defer unclassified or
       domain-owned presentation.
-- [ ] Record the adopted-surface matrix in the job record with source owner,
+- [x] Record the adopted-surface matrix in the job record with source owner,
       stream, role, focused test owner, structured-output risk, and migration
       phase or deferral.
 
 Verification:
 
-- [ ] Confirm every first-wave surface has one source owner and focused test
+- [x] Confirm every first-wave surface has one source owner and focused test
       owner.
-- [ ] Confirm no JSON, CSV, SQL-only, or stored-artifact output is in the
+- [x] Confirm no JSON, CSV, SQL-only, or stored-artifact output is in the
       migration list.
 - [ ] Record the inventory and gate decision in the job record.
 - [ ] Commit the Phase 1 plan/job inventory checkpoint.
