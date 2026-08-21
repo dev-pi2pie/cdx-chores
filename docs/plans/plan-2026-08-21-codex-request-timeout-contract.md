@@ -712,51 +712,51 @@ Gate:
 
 Apply the stable shared contract to the selected non-rename direct commands.
 
-Status: in progress.
+Status: completed.
 
 Tasks:
 
 - [x] Create the Phase 5 job record.
-- [ ] Reuse the shared duration option helper in the data and Markdown command
+- [x] Reuse the shared duration option helper in the data and Markdown command
       registrations; do not copy parsing or maximum logic.
-- [ ] Add `--codex-timeout <duration>` to `data query codex` and thread the
+- [x] Add `--codex-timeout <duration>` to `data query codex` and thread the
       normalized value through the existing action/runner seam.
-- [ ] Add `--codex-timeout <duration>` to `data stack` for
+- [x] Add `--codex-timeout <duration>` to `data stack` for
       `--codex-assist` requests without implying or enabling assist mode.
-- [ ] Add `--codex-timeout <duration>` to `md pdf-profile codex` and thread it
+- [x] Add `--codex-timeout <duration>` to `md pdf-profile codex` and thread it
       through the prepared profile request.
-- [ ] Add `--codex-timeout <duration>` to `md pdf-template codex` and apply the
+- [x] Add `--codex-timeout <duration>` to `md pdf-template codex` and apply the
       same value to the initial request and any application-repair request.
-- [ ] Add `--codex-timeout <duration>` to `md pdf-project codex` and apply the
+- [x] Add `--codex-timeout <duration>` to `md pdf-project codex` and apply the
       same value independently to profile, template, and repair requests.
-- [ ] Keep all existing 30-second defaults when the option is omitted.
-- [ ] Keep embedded header-mapping and source-shape suggestion flags out of the
+- [x] Keep all existing 30-second defaults when the option is omitted.
+- [x] Keep embedded header-mapping and source-shape suggestion flags out of the
       direct-command wave.
-- [ ] Keep existing action/prepared-service numeric `timeoutMs` injection seams
+- [x] Keep existing action/prepared-service numeric `timeoutMs` injection seams
       supported and warning-free.
-- [ ] Reuse the shared timeout classifier for direct user-facing failures where
+- [x] Reuse the shared timeout classifier for direct user-facing failures where
       the preserved cause is reliable.
-- [ ] Avoid adding timeout fields to diagnostic report schemas in this phase.
+- [x] Avoid adding timeout fields to diagnostic report schemas in this phase.
 
 Verification:
 
-- [ ] Add command/help tests for all five direct surfaces.
-- [ ] Assert invalid duration values fail before source inspection, Codex work,
+- [x] Add command/help tests for all five direct surfaces.
+- [x] Assert invalid duration values fail before source inspection, Codex work,
       or artifact planning.
-- [ ] Use injected runners to assert each direct action receives the normalized
+- [x] Use injected runners to assert each direct action receives the normalized
       millisecond value.
-- [ ] Assert `data stack --codex-timeout` does not enable `--codex-assist`.
-- [ ] Assert Markdown PDF template repair reuses the same per-attempt value.
-- [ ] Assert Markdown PDF project profile, template, and repair requests each
+- [x] Assert `data stack --codex-timeout` does not enable `--codex-assist`.
+- [x] Assert Markdown PDF template repair reuses the same per-attempt value.
+- [x] Assert Markdown PDF project profile, template, and repair requests each
       receive the same shared value without sharing one total budget.
-- [ ] Run focused data-query, data-stack, Markdown profile/template/project, and
+- [x] Run focused data-query, data-stack, Markdown profile/template/project, and
       shared timeout regression tests.
-- [ ] Inspect direct command help after a Node-target build.
-- [ ] Record focused results and the Phase 5 review range in the job record.
+- [x] Inspect direct command help after a Node-target build.
+- [x] Record focused results and the Phase 5 review range in the job record.
 
 Gate:
 
-- [ ] Every selected direct command uses the same parser, default, maximum,
+- [x] Every selected direct command uses the same parser, default, maximum,
       per-attempt meaning, and reliable failure classification before
       Interactive session threading begins.
 
