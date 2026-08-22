@@ -393,7 +393,7 @@ progress-owned presentation remain outside the semantic diagnostic migration.
 
 ## Phase 4.5: Diagnostic Label Emphasis Calibration
 
-Status: in progress.
+Status: completed.
 
 Starting commit: `e8dbff19efbf146bedc4334e21a31a9408a7c16e`
 
@@ -401,3 +401,41 @@ Phase 4.5 adds bold emphasis only to the shared error and warning semantic
 roles. Notice/tip presentation remains non-bold, and canonical text, stream
 ownership, warning cardinality, help, machine output, and workflow behavior
 remain unchanged.
+
+Implementation checkpoint:
+
+- `e5dab1b1c7bd3e36063e4117fce0d5d49cdc6383` — added bold standard-red
+  error labels and bold standard-yellow warning labels or headings through the
+  shared presentation helper, with exact reset-boundary regressions across all
+  adopted diagnostic families.
+
+Validation evidence:
+
+- The implementation-focused selection passed 313 tests across 18 files with
+  no failures and 1,191 assertions.
+- An independent affected-family selection passed 248 tests across 16 files
+  with no failures and 1,013 assertions.
+- Type checking, linting, source and documentation formatting, the production
+  build, and `git diff --check` passed.
+- Built eligible-TTY inspection confirmed bold plus standard red for the parser
+  `error:` label and bold plus standard yellow for the legacy timeout
+  `Warning:` label, with color and bold both reset before each body.
+- Built `--no-color` inspection remained plain, and focused tests retained
+  redirected, `NO_COLOR`, disabled-runtime, and independent-stream behavior.
+- No explicit bright-red or bright-yellow variant or consumer-local production
+  emphasis was introduced.
+
+Review range:
+
+```text
+e8dbff19efbf146bedc4334e21a31a9408a7c16e..e5dab1b1c7bd3e36063e4117fce0d5d49cdc6383
+```
+
+Correctness, test-quality, and maintainability reviews passed with no material
+findings. No review-fix commit or widened range was required.
+
+Decision gate: `Continue`. Phase 4.5 is complete. Errors and warnings gain
+label-only bold emphasis through the shared semantic helper, notices remain
+non-bold cyan, and canonical text, streams, warning cardinality, help,
+machine-output safety, and workflows remain unchanged. Phase 5 may document and
+perform the final plan closeout.

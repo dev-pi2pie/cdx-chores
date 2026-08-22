@@ -534,44 +534,44 @@ Refine the completed semantic-label palette by adding bold emphasis to error
 and warning labels or warning headings. Keep notice/tip presentation restrained
 and preserve every established text, stream, and behavior boundary.
 
-Status: in progress.
+Status: completed.
 
 Tasks:
 
-- [ ] Update the shared diagnostic presentation helper so the error role uses
+- [x] Update the shared diagnostic presentation helper so the error role uses
       bold standard red and the warning role uses bold standard yellow.
-- [ ] Keep the notice role cyan without bold.
-- [ ] Apply emphasis only through the shared helper; do not add consumer-local
+- [x] Keep the notice role cyan without bold.
+- [x] Apply emphasis only through the shared helper; do not add consumer-local
       bold styling or migrate excluded domain presentation.
-- [ ] Keep error and warning message bodies, help output, remediation lines,
+- [x] Keep error and warning message bodies, help output, remediation lines,
       warning bullets, and supporting detail free of inherited bold or severity
       color.
-- [ ] Preserve redirected output, `NO_COLOR`, `--no-color`, and disabled-runtime
+- [x] Preserve redirected output, `NO_COLOR`, `--no-color`, and disabled-runtime
       output as canonical plain text.
-- [ ] Avoid explicit bright-red or bright-yellow palette variants.
+- [x] Avoid explicit bright-red or bright-yellow palette variants.
 
 Verification:
 
-- [ ] Assert the shared error label has nested bold and standard-red ANSI styles
+- [x] Assert the shared error label has nested bold and standard-red ANSI styles
       on eligible target streams.
-- [ ] Assert warning labels and grouped warning headings have nested bold and
+- [x] Assert warning labels and grouped warning headings have nested bold and
       standard-yellow ANSI styles on eligible target streams.
-- [ ] Assert the notice role remains cyan without a bold ANSI style.
-- [ ] Assert message bodies, remediation text, bullets, help, and tip detail do
+- [x] Assert the notice role remains cyan without a bold ANSI style.
+- [x] Assert message bodies, remediation text, bullets, help, and tip detail do
       not inherit the diagnostic label's bold or severity color.
-- [ ] Assert ANSI-stripped output remains byte-for-byte equal to canonical plain
+- [x] Assert ANSI-stripped output remains byte-for-byte equal to canonical plain
       output.
-- [ ] Re-run independent stdout/stderr TTY, redirected, `NO_COLOR`,
+- [x] Re-run independent stdout/stderr TTY, redirected, `NO_COLOR`,
       `--no-color`, and disabled-runtime cases.
-- [ ] Run focused shared-helper, Commander parser, timeout, font, data-stack,
+- [x] Run focused shared-helper, Commander parser, timeout, font, data-stack,
       Markdown warning, and Interactive notice tests.
-- [ ] Inspect built CLI output for one parser error, one warning family, and
+- [x] Inspect built CLI output for one parser error, one warning family, and
       global color-disable behavior.
-- [ ] Record the exact Phase 4.5 review range and gate decision.
+- [x] Record the exact Phase 4.5 review range and gate decision.
 
 Gate:
 
-- [ ] Continue only when errors and warnings gain label-only bold emphasis with
+- [x] Continue only when errors and warnings gain label-only bold emphasis with
       no canonical-text, stream, cardinality, help, machine-output, or workflow
       drift.
 
