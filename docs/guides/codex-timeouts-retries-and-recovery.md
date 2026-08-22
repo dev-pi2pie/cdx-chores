@@ -1,7 +1,7 @@
 ---
 title: "Codex Timeouts, Retries, And Recovery"
 created-date: 2026-08-22
-status: draft
+status: completed
 agent: codex
 ---
 

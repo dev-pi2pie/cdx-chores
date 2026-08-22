@@ -898,50 +898,50 @@ Tasks:
 - [x] Create the Phase 7 public-documentation and integration job record.
 - [x] Record `COLOR_TIP`, `TIMEOUT_PHASE7_BASE`, the fast-forward integration
       method, and ancestry evidence using their full SHAs.
-- [ ] Create `docs/guides/codex-timeouts-retries-and-recovery.md` as the
+- [x] Create `docs/guides/codex-timeouts-retries-and-recovery.md` as the
       canonical comparison-first guide for shared/scoped timeout, workflow-owned
       retry, semantic repair, and user-triggered regeneration.
-- [ ] Update `README.md` with the canonical guide link, rename examples, and flag
+- [x] Update `README.md` with the canonical guide link, rename examples, and flag
       notes.
-- [ ] Update `docs/guides/rename-common-usage.md` with shared and scoped timeout
+- [x] Update `docs/guides/rename-common-usage.md` with shared and scoped timeout
       examples and a link to the canonical guide.
-- [ ] Update `docs/guides/rename-scope-and-codex-capability-guide.md` with the
+- [x] Update `docs/guides/rename-scope-and-codex-capability-guide.md` with the
       timeout precedence, analyzer-routing boundary, and canonical guide link.
-- [ ] Update the relevant data-query and data-stack guides with the shared
+- [x] Update the relevant data-query and data-stack guides with the shared
       direct-command option, local behavior, and canonical guide link.
-- [ ] Update Markdown PDF direct-helper guides with shared profile, template,
+- [x] Update Markdown PDF direct-helper guides with shared profile, template,
       project, repair semantics, and canonical guide links.
-- [ ] Update Interactive guidance with the session-owned option, default,
+- [x] Update Interactive guidance with the session-owned option, default,
       explicit-command-only spelling, backtracking, regeneration,
       no-automatic-retry behavior, and canonical guide link.
-- [ ] Document per-request-attempt meaning and batch/retry runtime
+- [x] Document per-request-attempt meaning and batch/retry runtime
       multiplication.
-- [ ] Document exact legacy replacements and compatibility-period behavior.
-- [ ] State explicitly that timeout flags do not enable Codex analysis.
-- [ ] Record release-note impact. Update a changelog only when the implementation
+- [x] Document exact legacy replacements and compatibility-period behavior.
+- [x] State explicitly that timeout flags do not enable Codex analysis.
+- [x] Record release-note impact. Update a changelog only when the implementation
       release has been selected; otherwise record an explicit release handoff
       without inventing a release target.
-- [ ] Inspect built command help for every documented option spelling, default,
+- [x] Inspect built command help for every documented option spelling, default,
       and command-local boundary before documentation review.
 - [ ] Review `TIMEOUT_PHASE7_BASE..TIMEOUT_PHASE7_TIP` as the exact Phase 7
       public-documentation range.
 - [ ] Resolve accepted findings and re-review the widened range from the same
       base.
-- [ ] Keep the plan and related research active until Phase 8 validation and
+- [x] Keep the plan and related research active until Phase 8 validation and
       closeout pass.
 
 Verification:
 
-- [ ] Confirm guides describe shipped behavior rather than plan-only syntax.
-- [ ] Confirm the canonical guide owns the shared definitions while workflow
+- [x] Confirm guides describe shipped behavior rather than plan-only syntax.
+- [x] Confirm the canonical guide owns the shared definitions while workflow
       guides retain only local examples, behavior, and links.
-- [ ] Confirm the README and relevant rename, data, Markdown, and Interactive
+- [x] Confirm the README and relevant rename, data, Markdown, and Interactive
       guides link to the canonical guide.
-- [ ] Run focused documentation formatting, repository-relative link, and
+- [x] Run focused documentation formatting, repository-relative link, and
       public-safety checks.
-- [ ] Confirm release-note wording describes deprecation without claiming that
+- [x] Confirm release-note wording describes deprecation without claiming that
       legacy removal is already scheduled.
-- [ ] Confirm the timeout guide and CLI output/color guide retain distinct
+- [x] Confirm the timeout guide and CLI output/color guide retain distinct
       semantic and presentation ownership.
 
 Gate:
