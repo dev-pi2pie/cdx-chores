@@ -1,7 +1,7 @@
 ---
 title: "Codex request timeout Phase 8"
 created-date: 2026-08-22
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -161,8 +161,8 @@ git diff --check
 passed
 ```
 
-The final working-tree result will be recorded after the lifecycle text is
-complete.
+The lifecycle candidate had no unexpected generated changes. Final status and
+link validation were clean before the containing closeout commit.
 
 ## Review
 
@@ -184,8 +184,20 @@ ac66254a2fbc14f2f6857cc859db10ba2cd2ae18
 
 Focused correctness and test re-reviews found no remaining actionable findings.
 The Phase 8 candidate documentation review also found no actionable findings.
-Exact Phase 8 and final composite plan reviews remain pending until the
-closeout tip is immutable.
+Correctness, test, maintainability, documentation, and general contract reviews
+then found no actionable findings across:
+
+```text
+6636a88bb962946c9e51defbf144c1a7bcd4b995..efca21ea364d4765d1b780abb5e42cd3e499196f
+efca21ea364d4765d1b780abb5e42cd3e499196f..7a634fd43312aabb6713254b27830ae0560423a4
+24ddbfe0dd383677e5c3d6db61d572a6ae7e7815..2668e03d8e64fdcd4fbd4043f7397bfd14dcf6e9
+365a7d40dcc85b133c8316a20eb21cd0c642b0ea..2668e03d8e64fdcd4fbd4043f7397bfd14dcf6e9
+```
+
+The commit containing this completed record defines `TIMEOUT_PHASE8_TIP` and
+contains only lifecycle closeout changes after the reviewed candidate. Its
+immutable post-commit range result belongs in the final handoff because a
+commit cannot record its own identifier.
 
 ## Release Handoff
 
@@ -193,4 +205,7 @@ No implementation release is selected. The Phase 7 release-note handoff remains
 the current release record; this closeout will confirm it without inventing a
 target changelog.
 
-Decision gate: pending.
+Decision gate: passed. The compatibility options remain available, no removal
+release is scheduled, and the next selected release should summarize the new
+duration options, legacy migration warning, per-attempt semantics, Interactive
+scope, and timeout-specific recovery information.

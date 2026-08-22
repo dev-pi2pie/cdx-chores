@@ -2,7 +2,7 @@
 title: "cdx-chores Codex Request Timeout Contract"
 created-date: 2026-07-05
 modified-date: 2026-08-22
-status: in-progress
+status: completed
 agent: codex
 ---
 

@@ -2,7 +2,7 @@
 title: "Codex request timeout contract implementation"
 created-date: 2026-08-21
 modified-date: 2026-08-22
-status: active
+status: completed
 agent: codex
 ---
 
@@ -956,7 +956,7 @@ findings, update the research from proposals to implementation evidence, and
 close the plan only after all recorded boundaries and public documentation
 agree.
 
-Status: in progress.
+Status: completed.
 
 Tasks:
 
@@ -976,14 +976,14 @@ Tasks:
 - [x] Resolve accepted cumulative-review findings for shared Interactive
       defaults, per-attempt retry signals, and timeout-specific fallback
       information, then rerun focused and repository-wide validation.
-- [ ] Complete the plan-wide completion checklist only from recorded evidence.
-- [ ] Review `TIMEOUT_PHASE7_TIP..TIMEOUT_PHASE8_TIP` as the exact Phase 8
+- [x] Complete the plan-wide completion checklist only from recorded evidence.
+- [x] Review `TIMEOUT_PHASE7_TIP..TIMEOUT_PHASE8_TIP` as the exact Phase 8
       validation-and-closeout range.
-- [ ] Review `TIMEOUT_PHASE7_BASE..TIMEOUT_PHASE8_TIP` as the final holistic
+- [x] Review `TIMEOUT_PHASE7_BASE..TIMEOUT_PHASE8_TIP` as the final holistic
       resumed-timeout range.
-- [ ] Resolve accepted findings and re-review each widened range from its
+- [x] Resolve accepted findings and re-review each widened range from its
       original base.
-- [ ] Mark this plan and the related research `completed` only after every
+- [x] Mark this plan and the related research `completed` only after every
       completion criterion is satisfied and recorded.
 
 Verification:
@@ -997,16 +997,16 @@ Verification:
       recorded without claiming that removal is scheduled.
 - [x] Confirm final built help and the canonical guide describe the same shipped
       option scope, grammar, precedence, defaults, and compatibility behavior.
-- [ ] Confirm `TIMEOUT_PHASE7_BASE..TIMEOUT_PHASE7_TIP` contains only Phase 7
+- [x] Confirm `TIMEOUT_PHASE7_BASE..TIMEOUT_PHASE7_TIP` contains only Phase 7
       public documentation and integration records.
-- [ ] Confirm `TIMEOUT_PHASE7_TIP..TIMEOUT_PHASE8_TIP` contains only Phase 8
+- [x] Confirm `TIMEOUT_PHASE7_TIP..TIMEOUT_PHASE8_TIP` contains only Phase 8
       validation, accepted final-review corrections, research, traceability,
       and closeout work.
-- [ ] Confirm the final working tree and documentation links are clean.
+- [x] Confirm the final working tree and documentation links are clean.
 
 Gate:
 
-- [ ] Do not close the plan or research until implementation, validation, help,
+- [x] Do not close the plan or research until implementation, validation, help,
       public documentation, all named review ranges, and traceability evidence
       agree.
 
@@ -1317,41 +1317,41 @@ This plan does not implement:
 
 The plan is complete when:
 
-- [ ] All three new duration options are available on every direct rename
+- [x] All three new duration options are available on every direct rename
       command surface and alias in scope.
-- [ ] Strict duration validation and the 10-minute cap are verified for the new
+- [x] Strict duration validation and the 10-minute cap are verified for the new
       duration-based CLI options without retroactively restricting legacy
       rename millisecond inputs.
-- [ ] Scoped-over-shared precedence is verified for both analyzers.
-- [ ] Same-analyzer new/legacy conflicts fail before action execution.
-- [ ] Legacy flags retain behavior and emit one consolidated migration notice,
+- [x] Scoped-over-shared precedence is verified for both analyzers.
+- [x] Same-analyzer new/legacy conflicts fail before action execution.
+- [x] Legacy flags retain behavior and emit one consolidated migration notice,
       with exact replacements only when values satisfy the new contract.
-- [ ] Timeout flags do not enable Codex analysis.
-- [ ] Retry behavior and per-attempt timeout forwarding remain unchanged.
-- [ ] Exhausted timeouts receive safe, specific fallback information.
-- [ ] The five selected explicit direct commands expose the shared option and
+- [x] Timeout flags do not enable Codex analysis.
+- [x] Retry behavior and per-attempt timeout forwarding remain unchanged.
+- [x] Exhausted timeouts receive safe, specific fallback information.
+- [x] The five selected explicit direct commands expose the shared option and
       preserve their existing defaults when it is omitted.
-- [ ] Markdown PDF profile, template, project, and repair requests use the same
+- [x] Markdown PDF profile, template, project, and repair requests use the same
       configured value as independent per-attempt windows.
-- [ ] Explicit Interactive mode owns one session timeout and every current
+- [x] Explicit Interactive mode owns one session timeout and every current
       Interactive Codex request path receives it.
-- [ ] Interactive rename, data, and Markdown helpers use the same normalized
+- [x] Interactive rename, data, and Markdown helpers use the same normalized
       numeric timeout seam, shared default, per-attempt meaning, and narrow
       failure classifier.
-- [ ] No superseded helper-local Interactive timeout constant remains where the
+- [x] No superseded helper-local Interactive timeout constant remains where the
       shared session contract owns the value.
-- [ ] The no-argument Interactive entry preserves the 30-second default.
-- [ ] The root-level `--codex-timeout` shorthand is rejected before Interactive
+- [x] The no-argument Interactive entry preserves the 30-second default.
+- [x] The root-level `--codex-timeout` shorthand is rejected before Interactive
       mode starts, while the explicit `interactive --codex-timeout` form works.
-- [ ] Interactive backtracking and regeneration preserve the value without
+- [x] Interactive backtracking and regeneration preserve the value without
       adding automatic retry or persistent artifact fields.
-- [ ] Focused tests, full tests, lint, format check, and build pass.
-- [ ] Public help and the canonical timeout/retry/recovery guide describe the
+- [x] Focused tests, full tests, lint, format check, and build pass.
+- [x] Public help and the canonical timeout/retry/recovery guide describe the
       shipped shared contract; rename, data, Markdown PDF, and Interactive guides
       link to it and document their local behavior.
-- [ ] Release-note impact and the future legacy-removal boundary are recorded.
-- [ ] Phase job records contain exact validation receipts and review ranges.
-- [ ] The related research is updated with implementation evidence and an
+- [x] Release-note impact and the future legacy-removal boundary are recorded.
+- [x] Phase job records contain exact validation receipts and review ranges.
+- [x] The related research is updated with implementation evidence and an
       accurate final status.
 
 ## Related Research
