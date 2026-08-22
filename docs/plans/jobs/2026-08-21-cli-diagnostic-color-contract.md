@@ -1,7 +1,7 @@
 ---
 title: "CLI diagnostic color contract"
 created-date: 2026-08-21
-status: active
+status: completed
 agent: codex
 ---
 
@@ -442,7 +442,7 @@ perform the final plan closeout.
 
 ## Phase 5: Documentation, Full Validation, And Closeout
 
-Status: in progress.
+Status: completed.
 
 Starting commit: `f86dc1903aa2cfbfc9c3f4077996bca12e9e9514`
 
@@ -481,3 +481,62 @@ ancestry evidence in its job record. Integration must preserve the reviewed
 commit identity through a fast-forward or another non-rewriting merge. Do not
 squash, cherry-pick, rebase, or otherwise rewrite `COLOR_TIP` after final
 review.
+
+### Documentation Checkpoint
+
+- `a0909ea1abb561545fae6161e51a74c730883c94` — published the steady-state
+  [CLI Output And Color](../../guides/cli-output-and-color.md) guide, linked it
+  from the README, opened Phase 5, and recorded the final retained-surface and
+  timeout handoff contracts.
+
+Documentation review range:
+
+```text
+f86dc1903aa2cfbfc9c3f4077996bca12e9e9514..a0909ea1abb561545fae6161e51a74c730883c94
+```
+
+The exact-range documentation review passed with no material findings. The
+guide, README discovery link, final matrix, timeout review boundary, and
+`COLOR_TIP` integration requirements are accurate, complete, publicly safe,
+and link-clean.
+
+### Final Validation Evidence
+
+- The focused color and diagnostic selection passed 206 tests across 14 files
+  with 0 failures and 735 assertions.
+- The full repository suite passed 2,604 tests across 264 files with 0 failures
+  and 14,940 assertions.
+- `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
+  `bun run build`, and `git diff --check` passed.
+- Focused documentation formatting passed, and all relative documentation
+  links touched by Phase 5 resolved.
+- Built eligible-TTY inspection confirmed a bold standard-red `error:` label
+  and bold standard-yellow `Warning:` label, with complete color and bold
+  resets before their canonical bodies and help.
+- Built `--no-color` and redirected-output inspection retained canonical plain
+  text without ANSI presentation. Structured and machine-oriented output
+  remained outside the diagnostic rendering path.
+
+### Complete Implementation Review And Gate
+
+Complete implementation review range:
+
+```text
+3a846d175c627e8e4ed059d00944ba0b9036e56a..e5dab1b1c7bd3e36063e4117fce0d5d49cdc6383
+```
+
+Correctness, test-quality, and maintainability reviews passed with no material
+findings. An independent cross-phase selection passed 255 tests across 16
+files with no failures. No accepted finding, review-fix commit, or widened
+range was required.
+
+Decision gate: `Complete`. Styled TTY output, plain redirected output, global
+color disabling, machine-output safety, focused and full validation, exact
+implementation review, and exact documentation review all passed. This plan is
+complete, and timeout Phase 7 may resume under the recorded non-rewriting
+handoff.
+
+The commit containing this final closeout becomes `COLOR_TIP`. Its full SHA can
+exist only after this record is committed, so the timeout Phase 7 job must
+capture that SHA together with integration and ancestry evidence before it
+closes.

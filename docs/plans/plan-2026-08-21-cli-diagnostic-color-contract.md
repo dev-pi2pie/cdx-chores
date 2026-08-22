@@ -1,7 +1,7 @@
 ---
 title: "CLI diagnostic color contract"
 created-date: 2026-08-21
-status: active
+status: completed
 agent: codex
 ---
 
@@ -580,49 +580,49 @@ Gate:
 Document the steady-state contract and close the plan only after Phase 4.5,
 built CLI inspection, and the full regression suite are verified.
 
-Status: in progress.
+Status: completed.
 
 Tasks:
 
-- [ ] Create `docs/guides/cli-output-and-color.md` as the current guide for
+- [x] Create `docs/guides/cli-output-and-color.md` as the current guide for
       global color controls, diagnostic labels, and stdout/stderr behavior.
-- [ ] Document that plain text is canonical and color is TTY-only enhancement.
-- [ ] Document that error and warning labels or warning headings use bold
+- [x] Document that plain text is canonical and color is TTY-only enhancement.
+- [x] Document that error and warning labels or warning headings use bold
       emphasis, while notice/tip labels remain non-bold.
-- [ ] Document `NO_COLOR` and `--no-color` examples.
-- [ ] Record the final adopted-surface matrix and deferred domain presentation
+- [x] Document `NO_COLOR` and `--no-color` examples.
+- [x] Record the final adopted-surface matrix and deferred domain presentation
       in the job record.
-- [ ] Link the completed guide from the final job-record closeout section.
-- [ ] Record that timeout Phase 7 resumes after this plan and must retain the
+- [x] Link the completed guide from the final job-record closeout section.
+- [x] Record that timeout Phase 7 resumes after this plan and must retain the
       original timeout implementation review boundary through Phase 6.
-- [ ] Record the handoff requirement that the timeout Phase 7 job capture the
+- [x] Record the handoff requirement that the timeout Phase 7 job capture the
       integrated final color closeout commit as `COLOR_TIP`, including its full
       SHA, integration method, and ancestry evidence.
-- [ ] Require fast-forward or non-rewriting merge integration so the reviewed
+- [x] Require fast-forward or non-rewriting merge integration so the reviewed
       `COLOR_TIP` remains unchanged; do not squash, cherry-pick, or rebase it
       after final review.
-- [ ] Inspect built CLI unknown-option, warning, help, bold-boundary, and
+- [x] Inspect built CLI unknown-option, warning, help, bold-boundary, and
       no-color output.
-- [ ] Run the full test suite and repository static checks.
-- [ ] Review the complete implementation range from the plan's starting commit
+- [x] Run the full test suite and repository static checks.
+- [x] Review the complete implementation range from the plan's starting commit
       through the final implementation fix.
-- [ ] Resolve accepted findings, then re-review the widened range.
-- [ ] Mark phase checklists and plan status only from recorded evidence.
+- [x] Resolve accepted findings, then re-review the widened range.
+- [x] Mark phase checklists and plan status only from recorded evidence.
 
 Verification:
 
-- [ ] Run focused color and diagnostic suites.
-- [ ] Run `bun test`.
-- [ ] Run `bunx tsc --noEmit`.
-- [ ] Run `bun run lint`.
-- [ ] Run `bun run format:check`.
-- [ ] Run `bun run build`.
-- [ ] Run `git diff --check`.
-- [ ] Confirm the final working tree and documentation links are clean.
+- [x] Run focused color and diagnostic suites.
+- [x] Run `bun test`.
+- [x] Run `bunx tsc --noEmit`.
+- [x] Run `bun run lint`.
+- [x] Run `bun run format:check`.
+- [x] Run `bun run build`.
+- [x] Run `git diff --check`.
+- [x] Confirm the final working tree and documentation links are clean.
 
 Gate:
 
-- [ ] Complete the plan only when styled TTY output, plain redirected output,
+- [x] Complete the plan only when styled TTY output, plain redirected output,
       global color disabling, machine-output safety, and exact-range review all
       pass.
 
