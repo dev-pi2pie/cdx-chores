@@ -1,7 +1,7 @@
 ---
 title: "Codex request timeout Phase 7"
 created-date: 2026-08-22
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -132,11 +132,22 @@ The finding was accepted and resolved by marking the verified guide
 review checked the same range against source and focused tests and found no
 actionable mismatch.
 
-The commit containing the accepted lifecycle fix and this widened validation
-record defines `TIMEOUT_PHASE7_TIP`. Its final post-commit review must run
-before Phase 8 begins. The Phase 8 opening record will cite the immutable full
-SHA and review outcome so this record does not attempt to cite its own commit
-identifier.
+Final Phase 7 boundary:
+
+```text
+TIMEOUT_PHASE7_BASE
+365a7d40dcc85b133c8316a20eb21cd0c642b0ea
+
+TIMEOUT_PHASE7_TIP
+24ddbfe0dd383677e5c3d6db61d572a6ae7e7815
+```
+
+The initial exact-range documentation review found one guide-lifecycle
+inconsistency, which was accepted and fixed. A later landed-range review found
+that the recorded public-safety pattern matched its own machine-specific token;
+that receipt defect was accepted and fixed at the final tip. Documentation and
+shipped-contract reviews of the final widened range then passed with no
+remaining actionable findings.
 
 ## Release Handoff
 
@@ -156,6 +167,6 @@ legacy options remain supported for at least one stable compatibility release;
 removal requires a separately approved breaking boundary with migration
 evidence.
 
-Decision gate: pending the final landed
-`TIMEOUT_PHASE7_BASE..TIMEOUT_PHASE7_TIP` review. Phase 8 may begin only after
-that exact range passes and the result is recorded at the phase transition.
+Decision gate: `Continue`. Phase 7 public documentation, integration evidence,
+release handoff, validation, and the final exact-range review agree. Phase 8 may
+run final validation and lifecycle closeout.

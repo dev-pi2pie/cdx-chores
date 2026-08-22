@@ -891,7 +891,7 @@ Record full SHAs for every symbolic boundary. Do not broaden the original
 timeout implementation range with diagnostic-color commits or resumed
 documentation work.
 
-Status: in progress.
+Status: completed.
 
 Tasks:
 
@@ -923,9 +923,9 @@ Tasks:
       without inventing a release target.
 - [x] Inspect built command help for every documented option spelling, default,
       and command-local boundary before documentation review.
-- [ ] Review `TIMEOUT_PHASE7_BASE..TIMEOUT_PHASE7_TIP` as the exact Phase 7
+- [x] Review `TIMEOUT_PHASE7_BASE..TIMEOUT_PHASE7_TIP` as the exact Phase 7
       public-documentation range.
-- [ ] Resolve accepted findings and re-review the widened range from the same
+- [x] Resolve accepted findings and re-review the widened range from the same
       base.
 - [x] Keep the plan and related research active until Phase 8 validation and
       closeout pass.
@@ -946,7 +946,7 @@ Verification:
 
 Gate:
 
-- [ ] Continue only when the canonical guide, local workflow guides, README,
+- [x] Continue only when the canonical guide, local workflow guides, README,
       release handoff, integration evidence, and exact Phase 7 review agree.
 
 ### Phase 8: Final Validation And Lifecycle Closeout
@@ -955,11 +955,11 @@ Validate the cumulative shipped contract, update the research from proposals to
 implementation evidence, and close the plan only after all recorded boundaries
 and public documentation agree.
 
-Status: not started.
+Status: in progress.
 
 Tasks:
 
-- [ ] Create the Phase 8 validation and closeout job record.
+- [x] Create the Phase 8 validation and closeout job record.
 - [ ] Run the cumulative focused suite, type checking, lint, format check, full
       tests, and build.
 - [ ] Inspect final built help for all three rename surfaces, the five selected
