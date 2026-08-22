@@ -103,7 +103,8 @@ extract Markdown link targets, skip empty anchors and http/https/mailto targets,
 resolve each remaining target from its source document directory, and fail on a missing path
 passed
 
-rg -n '/Users/nakolus|subagent|auto_commit_notification|sandbox-exec|BUN_INSTALL_CACHE_DIR|TMPDIR=' <the same 14 files>
+public-safety scan over the same 14 files for real home-directory paths,
+local orchestration attribution, sandbox-only details, and task-local cache settings
 passed with no matches
 
 git diff --check
