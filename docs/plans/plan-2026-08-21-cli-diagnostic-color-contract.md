@@ -23,7 +23,7 @@ The implementation should:
 
 ## Planning Boundary
 
-This plan is `draft`. It is a separate CLI-wide presentation plan from the
+This plan is `active`. It is a separate CLI-wide presentation plan from the
 active
 [Codex request timeout contract plan](plan-2026-08-21-codex-request-timeout-contract.md).
 
@@ -171,13 +171,13 @@ The first implementation does not change:
 
 ### Diagnostic Label Palette
 
-Use restrained standard terminal colors for existing labels:
+Use restrained standard terminal colors and emphasis for existing labels:
 
 | Semantic role        | Existing label examples           | Style on an eligible target stream                         |
 | -------------------- | --------------------------------- | ---------------------------------------------------------- |
-| parser error         | `error:`                          | red label only                                             |
-| warning              | `Warning:`                        | yellow label only                                          |
-| grouped warning      | `Markdown PDF render warnings:`   | yellow heading only                                        |
+| parser error         | `error:`                          | bold red label only                                        |
+| warning              | `Warning:`                        | bold yellow label only                                     |
+| grouped warning      | `Markdown PDF render warnings:`   | bold yellow heading only                                   |
 | informational notice | `Info:`, when it is a true notice | cyan label only                                            |
 | contextual tip       | `Tip:`                            | cyan label only                                            |
 | supporting detail    | existing detail text              | retain existing local dim styling where owned by that view |
@@ -185,6 +185,11 @@ Use restrained standard terminal colors for existing labels:
 The explanation after a diagnostic label remains in the terminal's normal
 foreground color. Do not color a whole error or warning sentence merely because
 it contains a diagnostic label.
+
+Bold is reserved for error and warning labels or grouped warning headings. Use
+standard red or yellow nested with bold rather than explicit bright-color
+variants. Informational notices and contextual tips remain cyan without bold,
+and supporting detail retains only the local styling already owned by its view.
 
 Preserve current label casing. In particular, this plan does not rename
 Commander's lowercase `error:` or existing uppercase `Warning:`, `Info:`, and
@@ -228,6 +233,9 @@ heading through the shared color helper. It must:
 - return or write presentation text without embedding ANSI in domain data,
   structured diagnostics, stored reports, or pure option-resolution results
 - leave unknown or unclassified text unchanged
+- compose bold with standard red for the error role and standard yellow for the
+  warning role
+- keep the cyan notice role non-bold
 
 Keep message construction separate from presentation. For example, the legacy
 Codex timeout migration formatter should remain testable as plain text; its
@@ -520,10 +528,57 @@ Gate:
       stderr surface remains stream-correct, and report-owned presentation is
       unchanged.
 
+### Phase 4.5: Diagnostic Label Emphasis Calibration
+
+Refine the completed semantic-label palette by adding bold emphasis to error
+and warning labels or warning headings. Keep notice/tip presentation restrained
+and preserve every established text, stream, and behavior boundary.
+
+Status: not started.
+
+Tasks:
+
+- [ ] Update the shared diagnostic presentation helper so the error role uses
+      bold standard red and the warning role uses bold standard yellow.
+- [ ] Keep the notice role cyan without bold.
+- [ ] Apply emphasis only through the shared helper; do not add consumer-local
+      bold styling or migrate excluded domain presentation.
+- [ ] Keep error and warning message bodies, help output, remediation lines,
+      warning bullets, and supporting detail free of inherited bold or severity
+      color.
+- [ ] Preserve redirected output, `NO_COLOR`, `--no-color`, and disabled-runtime
+      output as canonical plain text.
+- [ ] Avoid explicit bright-red or bright-yellow palette variants.
+
+Verification:
+
+- [ ] Assert the shared error label has nested bold and standard-red ANSI styles
+      on eligible target streams.
+- [ ] Assert warning labels and grouped warning headings have nested bold and
+      standard-yellow ANSI styles on eligible target streams.
+- [ ] Assert the notice role remains cyan without a bold ANSI style.
+- [ ] Assert message bodies, remediation text, bullets, help, and tip detail do
+      not inherit the diagnostic label's bold or severity color.
+- [ ] Assert ANSI-stripped output remains byte-for-byte equal to canonical plain
+      output.
+- [ ] Re-run independent stdout/stderr TTY, redirected, `NO_COLOR`,
+      `--no-color`, and disabled-runtime cases.
+- [ ] Run focused shared-helper, Commander parser, timeout, font, data-stack,
+      Markdown warning, and Interactive notice tests.
+- [ ] Inspect built CLI output for one parser error, one warning family, and
+      global color-disable behavior.
+- [ ] Record the exact Phase 4.5 review range and gate decision.
+
+Gate:
+
+- [ ] Continue only when errors and warnings gain label-only bold emphasis with
+      no canonical-text, stream, cardinality, help, machine-output, or workflow
+      drift.
+
 ### Phase 5: Documentation, Full Validation, And Closeout
 
-Document the steady-state contract and close the plan only after the built CLI
-and full regression suite are verified.
+Document the steady-state contract and close the plan only after Phase 4.5,
+built CLI inspection, and the full regression suite are verified.
 
 Status: not started.
 
@@ -532,6 +587,8 @@ Tasks:
 - [ ] Create `docs/guides/cli-output-and-color.md` as the current guide for
       global color controls, diagnostic labels, and stdout/stderr behavior.
 - [ ] Document that plain text is canonical and color is TTY-only enhancement.
+- [ ] Document that error and warning labels or warning headings use bold
+      emphasis, while notice/tip labels remain non-bold.
 - [ ] Document `NO_COLOR` and `--no-color` examples.
 - [ ] Record the final adopted-surface matrix and deferred domain presentation
       in the job record.
@@ -544,7 +601,8 @@ Tasks:
 - [ ] Require fast-forward or non-rewriting merge integration so the reviewed
       `COLOR_TIP` remains unchanged; do not squash, cherry-pick, or rebase it
       after final review.
-- [ ] Inspect built CLI unknown-option, warning, help, and no-color output.
+- [ ] Inspect built CLI unknown-option, warning, help, bold-boundary, and
+      no-color output.
 - [ ] Run the full test suite and repository static checks.
 - [ ] Review the complete implementation range from the plan's starting commit
       through the final implementation fix.
