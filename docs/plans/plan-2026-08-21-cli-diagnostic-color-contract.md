@@ -580,7 +580,7 @@ Gate:
 Document the steady-state contract and close the plan only after Phase 4.5,
 built CLI inspection, and the full regression suite are verified.
 
-Status: not started.
+Status: in progress.
 
 Tasks:
 

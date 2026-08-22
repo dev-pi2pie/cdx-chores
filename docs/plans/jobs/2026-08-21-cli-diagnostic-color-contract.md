@@ -439,3 +439,45 @@ label-only bold emphasis through the shared semantic helper, notices remain
 non-bold cyan, and canonical text, streams, warning cardinality, help,
 machine-output safety, and workflows remain unchanged. Phase 5 may document and
 perform the final plan closeout.
+
+## Phase 5: Documentation, Full Validation, And Closeout
+
+Status: in progress.
+
+Starting commit: `f86dc1903aa2cfbfc9c3f4077996bca12e9e9514`
+
+Phase 5 publishes the steady-state reader guide, verifies the complete color
+implementation, and closes this plan only after exact-range review and full
+repository validation pass.
+
+### Final Adopted And Retained Surface Matrix
+
+| Surface family                                                                                  | Final ownership             | Steady-state presentation                                             |
+| ----------------------------------------------------------------------------------------------- | --------------------------- | --------------------------------------------------------------------- |
+| Commander parser failures                                                                       | shared error role           | label-only bold standard red on eligible stderr                       |
+| legacy timeout, font discovery, data-stack, Markdown, and Interactive authoring warnings        | shared warning role         | label or warning-heading-only bold standard yellow on eligible stderr |
+| Interactive `Tip:` notices                                                                      | shared notice role          | label-only standard cyan without bold on eligible stderr              |
+| help, diagnostic bodies, remediation text, and bullets                                          | canonical plain content     | no inherited severity color or bold emphasis                          |
+| structured data and generated artifacts                                                         | owning serializer or writer | plain data without ANSI presentation                                  |
+| version branding, transient progress, TUI presentation and controls                             | domain-owned presentation   | retained without global diagnostic recoloring                         |
+| doctor reports, tables, SQL review, font `Info:` rows, highlights, and `Replay later:` guidance | domain-owned presentation   | retained without global diagnostic recoloring                         |
+| raw unlabeled operational failures                                                              | existing error path         | retained without a newly invented semantic prefix                     |
+
+The completed reader contract is published in
+[CLI Output And Color](../../guides/cli-output-and-color.md) and is discoverable
+from the README guide index.
+
+### Timeout Phase 7 Handoff
+
+After this color plan closes, Phase 7 of the
+[Codex request timeout contract](../plan-2026-08-21-codex-request-timeout-contract.md)
+may resume. Its original implementation review boundary remains the recorded
+Phase 6 tip `efca21ea364d4765d1b780abb5e42cd3e499196f`; color presentation commits do
+not broaden or replace that timeout review slice.
+
+The final reviewed closeout commit of this color plan becomes `COLOR_TIP`.
+Timeout Phase 7 must record that commit's full SHA, the integration method, and
+ancestry evidence in its job record. Integration must preserve the reviewed
+commit identity through a fast-forward or another non-rewriting merge. Do not
+squash, cherry-pick, rebase, or otherwise rewrite `COLOR_TIP` after final
+review.

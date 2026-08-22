@@ -395,6 +395,7 @@ cdx-chores video resize -i ./clip.mp4 -o ./clip-720p.mp4 --width 1280 --height 7
 
 Cross-feature:
 
+- `docs/guides/cli-output-and-color.md`
 - `docs/guides/patterns-placeholders-and-templates.md`
 
 Rename:
