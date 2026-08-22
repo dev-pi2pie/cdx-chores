@@ -20,6 +20,12 @@ const SAMPLE_EVIDENCE: RenameCleanupAnalyzerEvidence = {
   ],
 };
 
+function wrapFailure(error: Error): Error & { cause: Error } {
+  const wrapped = new Error("SDK request failed") as Error & { cause: Error };
+  wrapped.cause = error;
+  return wrapped;
+}
+
 describe("cli action modules: rename cleanup codex suggestions", () => {
   test("normalizes a structured Codex cleanup suggestion", async () => {
     const result = await suggestRenameCleanupWithCodex({
@@ -76,6 +82,49 @@ describe("cli action modules: rename cleanup codex suggestions", () => {
     expect(result).toEqual({
       errorMessage: "mocked codex failure",
     });
+  });
+
+  test("formats a direct cleanup timeout with the configured per-attempt limit", async () => {
+    const result = await suggestRenameCleanupWithCodex({
+      evidence: SAMPLE_EVIDENCE,
+      timeoutMs: 45_000,
+      workingDirectory: process.cwd(),
+      runner: async () => {
+        throw new DOMException("request deadline reached", "TimeoutError");
+      },
+    });
+
+    expect(result).toEqual({
+      errorMessage:
+        "Codex rename-cleanup suggestion request timed out after the 45s per-attempt limit.",
+    });
+  });
+
+  test("formats a wrapped cleanup timeout with the shared default", async () => {
+    const result = await suggestRenameCleanupWithCodex({
+      evidence: SAMPLE_EVIDENCE,
+      workingDirectory: process.cwd(),
+      runner: async () => {
+        throw wrapFailure(new DOMException("request deadline reached", "TimeoutError"));
+      },
+    });
+
+    expect(result).toEqual({
+      errorMessage:
+        "Codex rename-cleanup suggestion request timed out after the 30s per-attempt limit.",
+    });
+  });
+
+  test("preserves the cleanup message for an ordinary abort", async () => {
+    const result = await suggestRenameCleanupWithCodex({
+      evidence: SAMPLE_EVIDENCE,
+      workingDirectory: process.cwd(),
+      runner: async () => {
+        throw new DOMException("request cancelled", "AbortError");
+      },
+    });
+
+    expect(result).toEqual({ errorMessage: "request cancelled" });
   });
 
   test("bounds prompt payload when evidence contains oversized samples and grouped examples", async () => {

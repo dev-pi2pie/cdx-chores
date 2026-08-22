@@ -50,3 +50,20 @@ export function formatCodexTimeoutFailure(options: {
     options.attemptsUsed > 1 ? `; ${options.attemptsUsed} attempts were exhausted` : "";
   return `${options.requestLabel} timed out after the ${formatCodexTimeoutDuration(options.timeoutMs)} per-attempt limit${attemptContext}.`;
 }
+
+export function formatCodexRequestFailure(options: {
+  error: unknown;
+  requestLabel: string;
+  timeoutMs: number;
+  attemptsUsed: number;
+}): string {
+  if (classifyCodexRequestFailure(options.error) === "timeout") {
+    return formatCodexTimeoutFailure({
+      attemptsUsed: options.attemptsUsed,
+      requestLabel: options.requestLabel,
+      timeoutMs: options.timeoutMs,
+    });
+  }
+
+  return options.error instanceof Error ? options.error.message : String(options.error);
+}
