@@ -951,27 +951,31 @@ Gate:
 
 ### Phase 8: Final Validation And Lifecycle Closeout
 
-Validate the cumulative shipped contract, update the research from proposals to
-implementation evidence, and close the plan only after all recorded boundaries
-and public documentation agree.
+Validate the cumulative shipped contract, resolve accepted final-review
+findings, update the research from proposals to implementation evidence, and
+close the plan only after all recorded boundaries and public documentation
+agree.
 
 Status: in progress.
 
 Tasks:
 
 - [x] Create the Phase 8 validation and closeout job record.
-- [ ] Run the cumulative focused suite, type checking, lint, format check, full
+- [x] Run the cumulative focused suite, type checking, lint, format check, full
       tests, and build.
-- [ ] Inspect final built help for all three rename surfaces, the five selected
+- [x] Inspect final built help for all three rename surfaces, the five selected
       direct commands, and explicit Interactive mode.
-- [ ] Reconfirm the original timeout implementation range as
+- [x] Reconfirm the original timeout implementation range as
       `TIMEOUT_IMPL_BASE..TIMEOUT_PHASE6_TIP` using the full SHAs recorded by
       the phase job records.
-- [ ] Reconfirm `COLOR_TIP` ancestry without including diagnostic-color commits
+- [x] Reconfirm `COLOR_TIP` ancestry without including diagnostic-color commits
       in the original timeout implementation range.
-- [ ] Link all phase job records from the plan or final closeout record.
-- [ ] Update the related research with implementation evidence, plan/job links,
+- [x] Link all phase job records from the plan or final closeout record.
+- [x] Update the related research with implementation evidence, plan/job links,
       and an evidence-backed final status.
+- [x] Resolve accepted cumulative-review findings for shared Interactive
+      defaults, per-attempt retry signals, and timeout-specific fallback
+      information, then rerun focused and repository-wide validation.
 - [ ] Complete the plan-wide completion checklist only from recorded evidence.
 - [ ] Review `TIMEOUT_PHASE7_TIP..TIMEOUT_PHASE8_TIP` as the exact Phase 8
       validation-and-closeout range.
@@ -984,19 +988,20 @@ Tasks:
 
 Verification:
 
-- [ ] Record exact focused and repository-wide validation commands and results.
-- [ ] Confirm public records contain no machine-specific paths or local-only
+- [x] Record exact focused and repository-wide validation commands and results.
+- [x] Confirm public records contain no machine-specific paths or local-only
       smoke details.
-- [ ] Confirm the styled legacy warning strips to the canonical plain text
+- [x] Confirm the styled legacy warning strips to the canonical plain text
       documented by the timeout contract.
-- [ ] Confirm release-note impact and the future legacy-removal boundary are
+- [x] Confirm release-note impact and the future legacy-removal boundary are
       recorded without claiming that removal is scheduled.
-- [ ] Confirm final built help and the canonical guide describe the same shipped
+- [x] Confirm final built help and the canonical guide describe the same shipped
       option scope, grammar, precedence, defaults, and compatibility behavior.
 - [ ] Confirm `TIMEOUT_PHASE7_BASE..TIMEOUT_PHASE7_TIP` contains only Phase 7
       public documentation and integration records.
 - [ ] Confirm `TIMEOUT_PHASE7_TIP..TIMEOUT_PHASE8_TIP` contains only Phase 8
-      validation, research, traceability, and closeout work.
+      validation, accepted final-review corrections, research, traceability,
+      and closeout work.
 - [ ] Confirm the final working tree and documentation links are clean.
 
 Gate:
