@@ -119,6 +119,60 @@ describe("Codex rename adapter timeout summaries", () => {
     });
   });
 
+  test("image production retries create a fresh timeout signal for each attempt", async () => {
+    const originalTimeout = AbortSignal.timeout;
+    const timeoutDelays: number[] = [];
+    const createdSignals: AbortSignal[] = [];
+    const receivedSignals: AbortSignal[] = [];
+
+    AbortSignal.timeout = ((delay: number) => {
+      timeoutDelays.push(delay);
+      const signal = new AbortController().signal;
+      createdSignals.push(signal);
+      return signal;
+    }) as typeof AbortSignal.timeout;
+
+    try {
+      let attempt = 0;
+      const result = await __testOnlySuggestImageRenameTitlesWithThread(
+        {
+          imagePaths: ["/fixtures/cover.png"],
+          workingDirectory: "/fixtures",
+          timeoutMs: 45_000,
+          retries: 1,
+        },
+        async () => ({
+          run: async (_input, options) => {
+            attempt += 1;
+            if (options?.signal) {
+              receivedSignals.push(options.signal);
+            }
+            if (attempt === 1) {
+              throw new DOMException("request deadline reached", "TimeoutError");
+            }
+            return {
+              items: [],
+              finalResponse: JSON.stringify({
+                suggestions: [{ filename: "cover.png", title: "Cover Photo" }],
+              }),
+              usage: null,
+            };
+          },
+        }),
+      );
+
+      expect(timeoutDelays).toEqual([45_000, 45_000]);
+      expect(createdSignals).toHaveLength(2);
+      expect(createdSignals[0]).not.toBe(createdSignals[1]);
+      expect(receivedSignals).toEqual(createdSignals);
+      expect(result).toEqual({
+        suggestions: [{ path: "/fixtures/cover.png", title: "Cover Photo" }],
+      });
+    } finally {
+      AbortSignal.timeout = originalTimeout;
+    }
+  });
+
   test("document adapter uses the shared default and recognizes a wrapped timeout", async () => {
     const fixtureDir = await createTempFixtureDir("codex-timeout");
     try {
