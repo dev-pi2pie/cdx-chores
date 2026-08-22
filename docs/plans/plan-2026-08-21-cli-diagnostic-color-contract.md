@@ -23,13 +23,13 @@ The implementation should:
 
 ## Planning Boundary
 
-This plan is `active`. It is a separate CLI-wide presentation plan from the
-active
+This plan is `completed`. It remains a separate CLI-wide presentation plan from
+the active
 [Codex request timeout contract plan](plan-2026-08-21-codex-request-timeout-contract.md).
 
-The agreed execution order is:
+The agreed execution order remains:
 
-1. complete this CLI diagnostic color contract
+1. complete this CLI diagnostic color contract (completed)
 2. integrate its final reviewed closeout commit into the branch that will own
    timeout Phase 7
 3. resume Phase 7 of the Codex request timeout contract
