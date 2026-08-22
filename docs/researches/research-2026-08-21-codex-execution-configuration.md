@@ -1,6 +1,7 @@
 ---
 title: "Codex Execution Configuration"
 created-date: 2026-08-21
+modified-date: 2026-08-22
 status: draft
 agent: codex
 ---
@@ -10,21 +11,24 @@ agent: codex
 Research one configuration contract for Codex helper model selection, provider
 selection, reasoning effort, and timeout integration.
 
-This research depends on the separate timeout research. Keep this document in
-`draft` and review it again after that timeout contract is completed; the final
-timeout decisions may change the implementation boundary described here.
+The separate timeout contract is implemented and documented. This draft treats
+that shipped behavior as an existing integration boundary while it continues to
+research model, provider, and reasoning-effort overrides.
 
 ## Current State
 
 All current helpers use the shared read-only thread factory in
 `src/adapters/codex/shared.ts`.
 
-| Setting | Current behavior |
-| --- | --- |
-| Model | Inherited from Codex configuration |
-| Provider | Inherited from Codex configuration |
-| Reasoning effort | Forced to `low` for every helper |
-| Request timeout | Usually 30 seconds through duplicated helper seams |
+| Setting          | Current behavior                                                                          |
+| ---------------- | ----------------------------------------------------------------------------------------- |
+| Model            | Inherited from Codex configuration                                                        |
+| Provider         | Inherited from Codex configuration                                                        |
+| Reasoning effort | Forced to `low` for every helper                                                          |
+| Request timeout  | Shared 30-second per-request-attempt default; CLI overrides on supported command surfaces |
+
+Embedded suggestion paths without an adopted timeout option retain the shared
+default.
 
 The repository currently uses `@openai/codex-sdk` 0.149.0. Its thread options
 support per-thread model and reasoning-effort selection. Supported reasoning
@@ -40,7 +44,7 @@ model compatibility remain owned by Codex configuration.[^providers]
 model: inherit
 provider: inherit
 reasoning effort: low
-timeout: shared Codex timeout policy
+timeout: existing shared Codex timeout policy
 ```
 
 Candidate explicit overrides:
@@ -49,10 +53,12 @@ Candidate explicit overrides:
 --codex-model <model>
 --codex-provider <provider-id>
 --codex-reasoning-effort <effort>
---codex-timeout <duration>
 ```
 
-These names describe the research direction, not shipped behavior.
+These three names describe the research direction, not shipped behavior.
+`--codex-timeout <duration>` already ships on the command surfaces owned by the
+separate timeout contract; it is not a candidate option introduced by this
+research.
 
 ## Configuration Boundaries
 
@@ -73,30 +79,41 @@ These names describe the research direction, not shipped behavior.
 - Keep advanced effort values explicit-only.
 - Do not classify task complexity or raise effort automatically.
 
-## Timeout Dependency
+## Shipped Timeout Boundary
 
-The timeout research remains the source of truth for duration syntax,
-precedence, validation, per-request semantics, and direct/interactive
-propagation.
+The completed timeout research and the
+[public timeout guide](../guides/codex-timeouts-retries-and-recovery.md) remain
+the sources of truth for duration syntax, precedence, validation, per-request
+semantics, and direct/interactive propagation.
 
-This research currently assumes:
+Future execution-configuration work must preserve these shipped settings:
 
-- an explicit `--codex-timeout` always wins
-- all helpers consume the shared timeout policy
-- the shared 30-second fallback remains in place
-- no effort-derived or feature-specific timeout ladder is planned here
+- the shared fallback is 30 seconds for each request attempt
+- duration-based options accept one positive integer followed by lowercase `ms`,
+  `s`, or `m`, with a maximum of 10 minutes per attempt
+- `--codex-timeout <duration>` is command-local, including the explicit
+  `interactive` command, and is not a root-global option
+- rename image and document timeout options remain more specific than the shared
+  rename timeout
+- every Codex request attempt receives its own timeout window, including requests
+  issued during retries, repair phases, and user-triggered regeneration; these do
+  not share a whole-command budget
+- timeout options configure existing Codex requests and do not enable Codex
+- model, provider, reasoning effort, and feature type do not derive a different
+  timeout default or timeout ladder
 
-After the timeout research is completed, review these assumptions and re-audit
-all direct and interactive Codex request paths before creating an implementation
-plan.
+Any implementation plan for this research should re-audit the current direct and
+interactive request paths, then reuse the shipped parser, resolver, defaults, and
+numeric `timeoutMs` seams instead of introducing another timeout policy.
 
 ## Implementation Gates
 
-1. Complete and re-review the unified timeout research dependency.
-2. Resolve the candidate options once into a shared policy used by direct and
-   interactive entry points.
+1. Re-audit current direct and interactive Codex request paths before planning
+   implementation.
+2. Resolve the candidate model, provider, and reasoning-effort options once into
+   a shared execution policy while reusing the shipped timeout policy unchanged.
 3. Verify inherited defaults, explicit overrides, invalid runtime combinations,
-   and timeout precedence.
+   and preservation of timeout syntax, precedence, and per-attempt propagation.
 
 ## Non-Goals
 
@@ -112,7 +129,12 @@ plan.
 
 - [Codex timeout configuration](./research-2026-07-05-codex-timeout-configuration.md)
 
+## Related Plans
+
+- [Codex request timeout contract implementation](../plans/plan-2026-08-21-codex-request-timeout-contract.md)
+
 ## References
 
 [^reasoning]: [Reasoning effort](https://developers.openai.com/api/docs/guides/reasoning#reasoning-effort)
+
 [^providers]: [Custom model providers](https://learn.chatgpt.com/docs/config-file/config-advanced#custom-model-providers)
