@@ -231,7 +231,7 @@ describe("interactive Markdown PDF render sources", () => {
       bundle: "fixtures/report-bundle",
     });
     expect(result.stderr).toContain("(bundle)");
-    expect(result.stderr).toContain("\u001b[33mBundle warnings:\u001b[39m");
+    expect(result.stderr).toContain("\u001b[1m\u001b[33mBundle warnings:\u001b[39m\u001b[22m");
     expect(result.stderr.replace(ANSI_PATTERN, "")).toContain(
       "Bundle warnings:\n- Ignored unclassified YAML or JSON file: notes.yml",
     );

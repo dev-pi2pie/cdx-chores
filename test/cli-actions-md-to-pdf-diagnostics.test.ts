@@ -475,7 +475,9 @@ describe("Markdown PDF structured diagnostics", () => {
       });
 
       expect(stdout.text).toContain("Wrote PDF:");
-      expect(stderr.text).toStartWith("\u001b[33mMarkdown PDF render warnings:\u001b[39m\n");
+      expect(stderr.text).toStartWith(
+        "\u001b[1m\u001b[33mMarkdown PDF render warnings:\u001b[39m\u001b[22m\n",
+      );
       expect(stderr.text.match(/replace configured footer\.center content/g)).toHaveLength(1);
       expect(stderr.text.match(/replace \{pages\} with \{pdfPages\}/g)).toHaveLength(1);
     });

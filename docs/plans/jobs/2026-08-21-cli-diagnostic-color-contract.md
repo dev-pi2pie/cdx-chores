@@ -390,3 +390,14 @@ Decision gate: `Continue`. Phase 4 is complete. The existing Interactive
 canonical text, layout, stream, availability rule, and workflow behavior remain
 unchanged. Font `Info:` rows and all report-, SQL-, table-, doctor-, and
 progress-owned presentation remain outside the semantic diagnostic migration.
+
+## Phase 4.5: Diagnostic Label Emphasis Calibration
+
+Status: in progress.
+
+Starting commit: `e8dbff19efbf146bedc4334e21a31a9408a7c16e`
+
+Phase 4.5 adds bold emphasis only to the shared error and warning semantic
+roles. Notice/tip presentation remains non-bold, and canonical text, stream
+ownership, warning cardinality, help, machine output, and workflow behavior
+remain unchanged.

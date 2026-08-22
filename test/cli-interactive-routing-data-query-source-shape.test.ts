@@ -127,7 +127,7 @@ describe("interactive mode routing: data query source shape", () => {
       "input:Excel range (required, e.g. A1:Z99)",
     );
     expect(result.stderr).toContain(
-      "\u001b[33mSheet shape warning:\u001b[39m current Excel sheet shape looks suspicious.",
+      "\u001b[1m\u001b[33mSheet shape warning:\u001b[39m\u001b[22m current Excel sheet shape looks suspicious.",
     );
     expect(result.stderr.replace(ANSI_PATTERN, "")).toContain(
       "Sheet shape warning: current Excel sheet shape looks suspicious.",

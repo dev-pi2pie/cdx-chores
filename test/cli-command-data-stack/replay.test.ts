@@ -248,7 +248,9 @@ describe("CLI data stack command replay", () => {
       (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
       await actionDataStackReplay(runtime, { record: toRepoRelativePath(planPath) });
 
-      expect(stderr.text).toContain("\u001b[33mWarning:\u001b[39m source fingerprint changed");
+      expect(stderr.text).toContain(
+        "\u001b[1m\u001b[33mWarning:\u001b[39m\u001b[22m source fingerprint changed",
+      );
       expect(stderr.text.replace(ANSI_PATTERN, "")).toContain(
         "Warning: source fingerprint changed",
       );

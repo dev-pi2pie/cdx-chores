@@ -317,7 +317,9 @@ describe("interactive Markdown PDF deterministic service", () => {
       expect(stderr.text).toContain(
         "- Document order: cover page (first, chrome-free) → document body",
       );
-      expect(stderr.text).toContain("\u001b[33mWarning:\u001b[39m The cover page is enabled");
+      expect(stderr.text).toContain(
+        "\u001b[1m\u001b[33mWarning:\u001b[39m\u001b[22m The cover page is enabled",
+      );
       expect(stderr.text.replace(ANSI_PATTERN, "")).toContain("Warning: The cover page is enabled");
       expect(stderr.text.slice(stderr.text.indexOf(" The cover page"))).not.toContain(ANSI_START);
 

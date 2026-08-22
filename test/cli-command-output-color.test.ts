@@ -90,12 +90,14 @@ describe("CLI Commander output presentation", () => {
     expect(stderr.text).not.toMatch(ANSI_PATTERN);
   });
 
-  test("colors only the leading parser error label on eligible stderr", async () => {
+  test("bolds and colors only the leading parser error label on eligible stderr", async () => {
     const { runtime, stderr } = createRuntime({ stderrIsTTY: true, stdoutIsTTY: false });
 
     await parseUnknownOption(runtime);
 
-    expect(stderr.text).toStartWith("\u001b[31merror:\u001b[39m unknown option '--unknown'\n");
+    expect(stderr.text).toStartWith(
+      "\u001b[1m\u001b[31merror:\u001b[39m\u001b[22m unknown option '--unknown'\n",
+    );
     expect(stderr.text.replace(ANSI_PATTERN, "")).toStartWith(
       "error: unknown option '--unknown'\n",
     );

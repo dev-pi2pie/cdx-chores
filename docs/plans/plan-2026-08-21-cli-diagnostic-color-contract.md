@@ -534,7 +534,7 @@ Refine the completed semantic-label palette by adding bold emphasis to error
 and warning labels or warning headings. Keep notice/tip presentation restrained
 and preserve every established text, stream, and behavior boundary.
 
-Status: not started.
+Status: in progress.
 
 Tasks:
 

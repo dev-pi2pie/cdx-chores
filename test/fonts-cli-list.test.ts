@@ -190,7 +190,7 @@ describe("font CLI list", () => {
     expect(stderr.text).not.toContain("private timeout detail");
   });
 
-  test("colors only discovery warning labels on eligible stderr", async () => {
+  test("bolds and colors only discovery warning labels on eligible stderr", async () => {
     const { runtime, stderr } = createActionTestRuntime();
     runtime.platform = "linux";
     (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
@@ -200,7 +200,9 @@ describe("font CLI list", () => {
       runner: async () => ({ ok: false, stdout: "", stderr: "private failure detail" }),
     });
 
-    expect(stderr.text).toBe("\u001b[33mWarning:\u001b[39m fontconfig discovery failed.\n");
+    expect(stderr.text).toBe(
+      "\u001b[1m\u001b[33mWarning:\u001b[39m\u001b[22m fontconfig discovery failed.\n",
+    );
     expect(stderr.text.replace(ANSI_PATTERN, "")).toBe("Warning: fontconfig discovery failed.\n");
     expect(stderr.text.slice(stderr.text.indexOf(" fontconfig"))).not.toContain(ANSI_START);
   });

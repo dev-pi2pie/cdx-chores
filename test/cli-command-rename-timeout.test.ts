@@ -171,13 +171,13 @@ describe("rename Codex timeout command routing", () => {
 });
 
 describe("rename legacy Codex timeout compatibility", () => {
-  test("colors only the warning label on eligible stderr", async () => {
+  test("bolds and colors only the warning label on eligible stderr", async () => {
     const harness = createRenameCommandHarness({ colorEnabled: true, stderrIsTTY: true });
 
     await harness.parse(["rename", "file", "sample.md", "--codex-docs-timeout-ms", "30000"]);
 
     expect(harness.stderr.text).toStartWith(
-      "\u001b[33mWarning:\u001b[39m legacy Codex timeout option is deprecated.\n",
+      "\u001b[1m\u001b[33mWarning:\u001b[39m\u001b[22m legacy Codex timeout option is deprecated.\n",
     );
     expect(harness.stderr.text.replace(ANSI_PATTERN, "")).toBe(
       [

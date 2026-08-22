@@ -23,18 +23,18 @@ function createRuntime(options: {
 }
 
 describe("CLI diagnostic colors", () => {
-  test("styles only known semantic labels on their eligible target stream", () => {
+  test("styles and emphasizes only known semantic labels on their eligible target stream", () => {
     const runtime = createRuntime({ stderrIsTTY: true, stdoutIsTTY: true });
+    const notice = styleCliDiagnosticLabel(runtime, runtime.stderr, "notice", "Tip:");
 
     expect(styleCliDiagnosticLabel(runtime, runtime.stderr, "error", "error:")).toBe(
-      "\u001b[31merror:\u001b[39m",
+      "\u001b[1m\u001b[31merror:\u001b[39m\u001b[22m",
     );
     expect(styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:")).toBe(
-      "\u001b[33mWarning:\u001b[39m",
+      "\u001b[1m\u001b[33mWarning:\u001b[39m\u001b[22m",
     );
-    expect(styleCliDiagnosticLabel(runtime, runtime.stderr, "notice", "Tip:")).toBe(
-      "\u001b[36mTip:\u001b[39m",
-    );
+    expect(notice).toBe("\u001b[36mTip:\u001b[39m");
+    expect(notice).not.toContain("\u001b[1m");
     expect(
       styleCliDiagnosticLabel(runtime, runtime.stderr, "unclassified" as never, "Status:"),
     ).toBe("Status:");
@@ -55,7 +55,7 @@ describe("CLI diagnostic colors", () => {
     ).toBe("Info:");
     expect(
       styleCliDiagnosticLabel(stderrTtyRuntime, stderrTtyRuntime.stderr, "warning", "Warning:"),
-    ).toContain("\u001b[33m");
+    ).toBe("\u001b[1m\u001b[33mWarning:\u001b[39m\u001b[22m");
   });
 
   test("keeps labels plain when runtime color is disabled", () => {
@@ -93,6 +93,7 @@ describe("CLI diagnostic colors", () => {
     const body = " legacy option remains supported.";
     const rendered = `${styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:")}${body}`;
 
+    expect(rendered).toBe(`\u001b[1m\u001b[33mWarning:\u001b[39m\u001b[22m${body}`);
     expect(rendered.replace(ANSI_PATTERN, "")).toBe(`Warning:${body}`);
     expect(body).not.toMatch(ANSI_PATTERN);
   });

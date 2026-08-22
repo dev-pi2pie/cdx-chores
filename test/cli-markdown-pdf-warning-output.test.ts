@@ -28,10 +28,12 @@ function renderWarnings(input: {
 }
 
 describe("Markdown PDF warning output", () => {
-  test("uses yellow only for the heading when stderr is an eligible TTY", () => {
+  test("uses bold yellow only for the heading when stderr is an eligible TTY", () => {
     const output = renderWarnings({ stderrTty: true, stdoutTty: false });
 
-    expect(output).toStartWith("\u001b[33mMarkdown PDF render warnings:\u001b[39m\n");
+    expect(output).toStartWith(
+      "\u001b[1m\u001b[33mMarkdown PDF render warnings:\u001b[39m\u001b[22m\n",
+    );
     expect(output).toContain("- First warning\n- Second warning\n");
     expect(output.split("\n")[1]).not.toMatch(ANSI_PATTERN);
     expect(output.split("\n")[2]).not.toMatch(ANSI_PATTERN);

@@ -655,7 +655,7 @@ describe("Markdown PDF render bundle action integration", () => {
 
       expect(await pathExists(outputPath)).toBe(true);
       expect(stderr.text).toStartWith(
-        "\u001b[33mWarning:\u001b[39m ignored unclassified YAML or JSON bundle files:\n",
+        "\u001b[1m\u001b[33mWarning:\u001b[39m\u001b[22m ignored unclassified YAML or JSON bundle files:\n",
       );
       expect(stderr.text.replace(ANSI_PATTERN, "")).toBe(
         [

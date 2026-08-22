@@ -13,11 +13,11 @@ export function styleCliDiagnosticLabel(
 
   switch (role) {
     case "error":
-      return colors.red(label);
+      return colors.bold(colors.red(label));
     case "notice":
       return colors.cyan(label);
     case "warning":
-      return colors.yellow(label);
+      return colors.bold(colors.yellow(label));
     default:
       return label;
   }
