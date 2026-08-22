@@ -84,15 +84,15 @@ regeneration creates another request with another timeout window.
 
 ## Research Questions Resolved For This Plan
 
-| Research question | Recommendation adopted by this draft plan |
-| --- | --- |
-| Maximum accepted duration | Apply a 10-minute (`600_000ms`) per-attempt maximum to new duration-based CLI options. This is not a whole-command SLA and is not applied retroactively to deprecated rename millisecond flags during compatibility. Revisit only with evidence from legitimate bounded workflows. |
-| Initial duration grammar | Accept positive integer `ms`, `s`, and `m` only. Do not add hours, decimals, compound values, bare numbers, or case-insensitive aliases. |
-| First non-rename direct wave | Add `--codex-timeout <duration>` to `data query codex`, `data stack --codex-assist`, `md pdf-profile codex`, `md pdf-template codex`, and `md pdf-project codex`. Keep embedded suggestion flags default-only in this plan. |
-| Markdown PDF project semantics | Apply one shared value independently to every profile, template, and repair request attempt. Do not add phase-specific timeout flags without later evidence. |
-| Legacy rename removal boundary | Keep both legacy flags for at least one stable compatibility release. Remove them no earlier than a separately approved breaking release, such as the next accepted minor boundary, with migration evidence recorded first. |
-| Timeout failure preservation | Add one narrow internal `timeout | aborted | other` classifier. Do not redesign every existing public result or report schema. |
-| Interactive helper alignment | Use rename as the reference helper contract. Interactive data and Markdown helpers receive the same normalized session value through numeric `timeoutMs` seams, use the shared default and classifier, and retain workflow-owned retry or repair behavior. |
+| Research question              | Recommendation adopted by this draft plan                                                                                                                                                                                                                                          |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Maximum accepted duration      | Apply a 10-minute (`600_000ms`) per-attempt maximum to new duration-based CLI options. This is not a whole-command SLA and is not applied retroactively to deprecated rename millisecond flags during compatibility. Revisit only with evidence from legitimate bounded workflows. |
+| Initial duration grammar       | Accept positive integer `ms`, `s`, and `m` only. Do not add hours, decimals, compound values, bare numbers, or case-insensitive aliases.                                                                                                                                           |
+| First non-rename direct wave   | Add `--codex-timeout <duration>` to `data query codex`, `data stack --codex-assist`, `md pdf-profile codex`, `md pdf-template codex`, and `md pdf-project codex`. Keep embedded suggestion flags default-only in this plan.                                                        |
+| Markdown PDF project semantics | Apply one shared value independently to every profile, template, and repair request attempt. Do not add phase-specific timeout flags without later evidence.                                                                                                                       |
+| Legacy rename removal boundary | Keep both legacy flags for at least one stable compatibility release. Remove them no earlier than a separately approved breaking release, such as the next accepted minor boundary, with migration evidence recorded first.                                                        |
+| Timeout failure preservation   | Add one narrow internal `timeout \| aborted \| other` classifier. Do not redesign every existing public result or report schema.                                                                                                                                                   |
+| Interactive helper alignment   | Use rename as the reference helper contract. Interactive data and Markdown helpers receive the same normalized session value through numeric `timeoutMs` seams, use the shared default and classifier, and retain workflow-owned retry or repair behavior.                         |
 
 These decisions close the research questions for planning purposes. They remain
 proposed behavior until their owning phases are implemented and verified.
@@ -840,49 +840,63 @@ Gate:
       backtracking and recovery behavior verified, before public documentation
       closeout.
 
-### Phase 7: Documentation And Closeout
+### Phase 7: Public Documentation And Integration Record
 
-Update public documentation only after behavior and help output are verified.
+Publish the public timeout contract after the Phase 1–6 behavior and help
+surfaces are implemented and verified.
 
-This phase resumes after the separate
+The separate
 [CLI diagnostic color contract plan](plan-2026-08-21-cli-diagnostic-color-contract.md)
-is completed. That intervening plan owns presentation only: it may style the
-existing legacy timeout `Warning:` label, but it does not own timeout semantics,
-canonical warning wording, migration guidance, or this phase's public timeout
-documentation.
+is completed and integrated into `dev`. That plan owns presentation only: it
+styles the existing legacy timeout `Warning:` label but does not own timeout
+semantics, canonical warning wording, migration guidance, or the public timeout
+contract.
 
-After the final diagnostic-color closeout commit is integrated into the branch
-used for timeout Phase 7, record its full SHA and integration method in the
-Phase 7 job record and name it `COLOR_TIP`. Confirm that `COLOR_TIP` is an
-ancestor of the Phase 7 tip. The integration must use fast-forward or a
-non-rewriting merge so the reviewed `COLOR_TIP` SHA remains unchanged; do not
-squash, cherry-pick, or rebase it after final color review.
+The immutable diagnostic-color closeout boundary and the timeout documentation
+starting boundary are distinct:
 
-Because the diagnostic-color commits intervene between timeout implementation
-and timeout documentation, Phase 7 must preserve two exact Git review ranges:
+```text
+COLOR_TIP
+  -> 3dfadaff2ceeb0314aeca907608cf4c3cbec9c97
+
+post-closeout color-guide clarification
+  -> 365a7d40dcc85b133c8316a20eb21cd0c642b0ea
+
+TIMEOUT_PHASE7_BASE
+  -> 365a7d40dcc85b133c8316a20eb21cd0c642b0ea
+```
+
+Record the fast-forward integration method and confirm that `COLOR_TIP` is an
+ancestor of `TIMEOUT_PHASE7_BASE`. The post-closeout color-guide clarification
+remains presentation-only context and must not be presented as timeout work.
+
+The remaining work preserves four review boundaries:
 
 ```text
 original timeout implementation slice
   -> TIMEOUT_IMPL_BASE..TIMEOUT_PHASE6_TIP
 
-Phase 7 documentation and closeout slice
-  -> COLOR_TIP..TIMEOUT_PHASE7_TIP
+Phase 7 public-documentation slice
+  -> TIMEOUT_PHASE7_BASE..TIMEOUT_PHASE7_TIP
+
+Phase 8 validation-and-closeout slice
+  -> TIMEOUT_PHASE7_TIP..TIMEOUT_PHASE8_TIP
+
+final resumed-timeout holistic slice
+  -> TIMEOUT_PHASE7_BASE..TIMEOUT_PHASE8_TIP
 ```
 
-The Phase 7 range intentionally excludes `COLOR_TIP` and all earlier
-diagnostic-color changes. Record full SHAs for all four boundaries. Do not
-present diagnostic-color commits as timeout implementation commits.
+Record full SHAs for every symbolic boundary. Do not broaden the original
+timeout implementation range with diagnostic-color commits or resumed
+documentation work.
 
 Status: not started.
 
 Tasks:
 
-- [ ] Create the Phase 7 validation and closeout job record.
-- [ ] Record the integrated final diagnostic-color closeout commit as
-      `COLOR_TIP`, including its full SHA and integration method.
-- [ ] Confirm `COLOR_TIP` is an ancestor of the branch used for timeout Phase 7.
-- [ ] Confirm the integration preserved the reviewed `COLOR_TIP` SHA through a
-      fast-forward or non-rewriting merge.
+- [ ] Create the Phase 7 public-documentation and integration job record.
+- [ ] Record `COLOR_TIP`, `TIMEOUT_PHASE7_BASE`, the fast-forward integration
+      method, and ancestry evidence using their full SHAs.
 - [ ] Create `docs/guides/codex-timeouts-retries-and-recovery.md` as the
       canonical comparison-first guide for shared/scoped timeout, workflow-owned
       retry, semantic repair, and user-triggered regeneration.
@@ -903,48 +917,91 @@ Tasks:
       multiplication.
 - [ ] Document exact legacy replacements and compatibility-period behavior.
 - [ ] State explicitly that timeout flags do not enable Codex analysis.
-- [ ] Update the relevant release note or changelog selected for the
-      implementation release; do not invent a release target in this plan.
-- [ ] Link all phase job records from the plan or final closeout record.
-- [ ] Update the related research with implementation evidence, plan/job links,
-      and an evidence-backed final status.
-- [ ] Run the cumulative focused suite, lint, format check, full tests, and
-      build.
-- [ ] Inspect final command help for all three direct rename surfaces.
-- [ ] Reconfirm the original timeout implementation range as
-      `TIMEOUT_IMPL_BASE..TIMEOUT_PHASE6_TIP` using the full SHAs recorded by
-      the phase job records.
-- [ ] Review the exact Phase 7 documentation and closeout range as
-      `COLOR_TIP..TIMEOUT_PHASE7_TIP`.
-- [ ] Keep intervening diagnostic-color commits outside the timeout
-      implementation range and describe them only as presentation context.
-- [ ] Mark this plan `completed` only after every completion criterion is
-      satisfied and recorded.
+- [ ] Record release-note impact. Update a changelog only when the implementation
+      release has been selected; otherwise record an explicit release handoff
+      without inventing a release target.
+- [ ] Inspect built command help for every documented option spelling, default,
+      and command-local boundary before documentation review.
+- [ ] Review `TIMEOUT_PHASE7_BASE..TIMEOUT_PHASE7_TIP` as the exact Phase 7
+      public-documentation range.
+- [ ] Resolve accepted findings and re-review the widened range from the same
+      base.
+- [ ] Keep the plan and related research active until Phase 8 validation and
+      closeout pass.
 
 Verification:
 
-- [ ] Record exact focused and repository-wide validation commands and results.
 - [ ] Confirm guides describe shipped behavior rather than plan-only syntax.
 - [ ] Confirm the canonical guide owns the shared definitions while workflow
       guides retain only local examples, behavior, and links.
 - [ ] Confirm the README and relevant rename, data, Markdown, and Interactive
       guides link to the canonical guide.
-- [ ] Confirm public records contain no machine-specific paths or local-only
-      smoke details.
+- [ ] Run focused documentation formatting, repository-relative link, and
+      public-safety checks.
 - [ ] Confirm release-note wording describes deprecation without claiming that
       legacy removal is already scheduled.
-- [ ] Confirm the styled legacy warning strips to the canonical plain text
-      documented by the timeout contract.
 - [ ] Confirm the timeout guide and CLI output/color guide retain distinct
       semantic and presentation ownership.
-- [ ] Confirm `COLOR_TIP..TIMEOUT_PHASE7_TIP` excludes the diagnostic-color
-      commits and contains only the resumed timeout documentation and closeout
-      slice.
+
+Gate:
+
+- [ ] Continue only when the canonical guide, local workflow guides, README,
+      release handoff, integration evidence, and exact Phase 7 review agree.
+
+### Phase 8: Final Validation And Lifecycle Closeout
+
+Validate the cumulative shipped contract, update the research from proposals to
+implementation evidence, and close the plan only after all recorded boundaries
+and public documentation agree.
+
+Status: not started.
+
+Tasks:
+
+- [ ] Create the Phase 8 validation and closeout job record.
+- [ ] Run the cumulative focused suite, type checking, lint, format check, full
+      tests, and build.
+- [ ] Inspect final built help for all three rename surfaces, the five selected
+      direct commands, and explicit Interactive mode.
+- [ ] Reconfirm the original timeout implementation range as
+      `TIMEOUT_IMPL_BASE..TIMEOUT_PHASE6_TIP` using the full SHAs recorded by
+      the phase job records.
+- [ ] Reconfirm `COLOR_TIP` ancestry without including diagnostic-color commits
+      in the original timeout implementation range.
+- [ ] Link all phase job records from the plan or final closeout record.
+- [ ] Update the related research with implementation evidence, plan/job links,
+      and an evidence-backed final status.
+- [ ] Complete the plan-wide completion checklist only from recorded evidence.
+- [ ] Review `TIMEOUT_PHASE7_TIP..TIMEOUT_PHASE8_TIP` as the exact Phase 8
+      validation-and-closeout range.
+- [ ] Review `TIMEOUT_PHASE7_BASE..TIMEOUT_PHASE8_TIP` as the final holistic
+      resumed-timeout range.
+- [ ] Resolve accepted findings and re-review each widened range from its
+      original base.
+- [ ] Mark this plan and the related research `completed` only after every
+      completion criterion is satisfied and recorded.
+
+Verification:
+
+- [ ] Record exact focused and repository-wide validation commands and results.
+- [ ] Confirm public records contain no machine-specific paths or local-only
+      smoke details.
+- [ ] Confirm the styled legacy warning strips to the canonical plain text
+      documented by the timeout contract.
+- [ ] Confirm release-note impact and the future legacy-removal boundary are
+      recorded without claiming that removal is scheduled.
+- [ ] Confirm final built help and the canonical guide describe the same shipped
+      option scope, grammar, precedence, defaults, and compatibility behavior.
+- [ ] Confirm `TIMEOUT_PHASE7_BASE..TIMEOUT_PHASE7_TIP` contains only Phase 7
+      public documentation and integration records.
+- [ ] Confirm `TIMEOUT_PHASE7_TIP..TIMEOUT_PHASE8_TIP` contains only Phase 8
+      validation, research, traceability, and closeout work.
+- [ ] Confirm the final working tree and documentation links are clean.
 
 Gate:
 
 - [ ] Do not close the plan or research until implementation, validation, help,
-      public documentation, both named review ranges, and traceability evidence
+      public documentation, all named review ranges, and traceability evidence
       agree.
 
 ## Test Plan
@@ -1117,7 +1174,10 @@ Keep phases independently reviewable:
 4. timeout classification and fallback summaries
 5. explicit data and Markdown direct-command adoption
 6. Interactive session ownership, propagation, and recovery validation
-7. guides, release note, research closeout, and final validation receipt
+7. public guides, workflow documentation, integration evidence, and release
+   handoff
+8. cumulative validation, research closeout, final traceability, and completion
+   receipt
 
 At each checkpoint:
 
