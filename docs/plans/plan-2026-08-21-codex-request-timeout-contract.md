@@ -1,6 +1,7 @@
 ---
 title: "Codex request timeout contract implementation"
 created-date: 2026-08-21
+modified-date: 2026-08-22
 status: active
 agent: codex
 ---
@@ -890,12 +891,12 @@ Record full SHAs for every symbolic boundary. Do not broaden the original
 timeout implementation range with diagnostic-color commits or resumed
 documentation work.
 
-Status: not started.
+Status: in progress.
 
 Tasks:
 
-- [ ] Create the Phase 7 public-documentation and integration job record.
-- [ ] Record `COLOR_TIP`, `TIMEOUT_PHASE7_BASE`, the fast-forward integration
+- [x] Create the Phase 7 public-documentation and integration job record.
+- [x] Record `COLOR_TIP`, `TIMEOUT_PHASE7_BASE`, the fast-forward integration
       method, and ancestry evidence using their full SHAs.
 - [ ] Create `docs/guides/codex-timeouts-retries-and-recovery.md` as the
       canonical comparison-first guide for shared/scoped timeout, workflow-owned

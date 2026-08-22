@@ -299,6 +299,17 @@ Codex-assisted batch rename preview:
 cdx-chores rename batch ./images --prefix gallery --codex --dry-run
 ```
 
+Give every Codex request attempt a two-minute deadline, with a shorter image
+analyzer override:
+
+```bash
+cdx-chores rename batch ./images \
+  --codex \
+  --codex-timeout 2m \
+  --codex-images-timeout 45s \
+  --dry-run
+```
+
 Apply an exact dry-run snapshot later:
 
 ```bash
@@ -329,6 +340,14 @@ Template notes:
 - `--prefix` is optional
 - `--codex` is the common smart-routing flag for CLI mode
 - `--codex-images` and `--codex-docs` are explicit analyzer overrides
+- `--codex-timeout` sets one per-request-attempt value, while
+  `--codex-images-timeout` and `--codex-docs-timeout` override only their own
+  analyzer
+- timeout flags configure enabled Codex requests; they do not enable an
+  analyzer
+- the legacy `--codex-images-timeout-ms` and `--codex-docs-timeout-ms` flags
+  remain supported during the current compatibility phase and print migration
+  guidance when used
 - `{uid}` renders a deterministic `uid-<token>` fragment
 - `{serial...}` enables serial controls
 - `--serial-width` uses a digit count such as `2` or `4`, not `#`
@@ -396,6 +415,7 @@ cdx-chores video resize -i ./clip.mp4 -o ./clip-720p.mp4 --width 1280 --height 7
 Cross-feature:
 
 - `docs/guides/cli-output-and-color.md`
+- `docs/guides/codex-timeouts-retries-and-recovery.md`
 - `docs/guides/patterns-placeholders-and-templates.md`
 
 Rename:

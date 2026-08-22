@@ -1,7 +1,7 @@
 ---
 title: "Rename Scope and Codex Capability Guide"
 created-date: 2026-02-26
-modified-date: 2026-08-16
+modified-date: 2026-08-22
 status: completed
 agent: codex
 ---
@@ -103,6 +103,45 @@ Important:
 - these flags affect analyzer routing, not file-selection scope
 - unsupported files still use deterministic rename behavior
 
+## Timeout and Analyzer Routing
+
+Timeout selection is separate from analyzer routing. A timeout flag changes the
+per-attempt limit only for an analyzer that `--codex`, `--codex-images`, or
+`--codex-docs` already enables; it does not enable Codex analysis by itself.
+
+For each enabled analyzer, rename resolves the effective value in this order:
+
+| Analyzer | Timeout precedence                                                                                          |
+| -------- | ----------------------------------------------------------------------------------------------------------- |
+| Image    | `--codex-images-timeout` -> deprecated `--codex-images-timeout-ms` -> `--codex-timeout` -> built-in default |
+| Document | `--codex-docs-timeout` -> deprecated `--codex-docs-timeout-ms` -> `--codex-timeout` -> built-in default     |
+
+A shared and scoped duration may be combined. For example, this gives image
+requests the shared value and document requests the scoped override:
+
+```bash
+cdx-chores rename batch ./mixed-folder \
+  --codex \
+  --codex-timeout 30s \
+  --codex-docs-timeout 2m \
+  --dry-run
+```
+
+Do not combine a current scoped duration with its legacy millisecond form for
+the same analyzer; the command rejects that ambiguous pairing. The legacy
+forms remain compatibility inputs and print migration guidance when used.
+
+Rename retry counts remain analyzer-specific. Each retry is an additional
+attempt for one batch, and every attempt receives that analyzer's effective
+timeout. With sequential batches, the approximate request-time multiplier is
+`batch count x (retries + 1) x per-attempt timeout`, plus retry delays and local
+processing.
+
+See
+[Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md)
+for the shared duration contract, legacy transition, and comparison with
+workflow-owned repair or user-triggered regeneration.
+
 ## Command Outcome Reference
 
 | Command shape                                  | Semantic behavior                                                                                      |
@@ -119,6 +158,7 @@ Important:
 
 ## Related Guides
 
+- `docs/guides/codex-timeouts-retries-and-recovery.md`
 - `docs/guides/rename-timestamp-format-matrix.md`
 - `docs/guides/rename-common-usage.md`
 - `README.md`
