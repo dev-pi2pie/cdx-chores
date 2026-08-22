@@ -93,11 +93,11 @@ workflow.
 
 Human-readable command results normally use stdout. Diagnostics, warnings,
 and Interactive tips use stderr when their owning command defines them there.
-Redirect the streams separately when a script needs command output without
-diagnostic text:
+Redirect stderr when you want to keep the command result visible while saving
+diagnostic text separately:
 
 ```bash
-cdx-chores rename batch ./photos --dry-run >preview.txt 2>diagnostics.log
+cdx-chores rename batch ./photos --dry-run 2> diagnostics.log
 ```
 
 Structured and machine-oriented output remains plain data and must not store
