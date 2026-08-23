@@ -3,8 +3,8 @@ import { join } from "node:path";
 
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
-import type { MarkdownPdfCodexProfileRunner } from "../../src/adapters/codex/markdown-pdf-profile";
-import type { MarkdownPdfTemplateCodexRunner } from "../../src/adapters/codex/markdown-pdf-template";
+import type { MarkdownPdfCodexProfileRunner } from "../../../src/adapters/codex/markdown-pdf-profile";
+import type { MarkdownPdfTemplateCodexRunner } from "../../../src/adapters/codex/markdown-pdf-template";
 import {
   collectMdPdfProjectCodexSignals,
   createMdPdfProjectCodexHandoffProjection,
@@ -15,12 +15,12 @@ import {
   runMdPdfProjectCodexTemplatePhase,
   validateMdPdfProjectCodexProject,
   type MdPdfProjectCodexOptions,
-} from "../../src/cli/markdown-pdf/project-codex";
-import type { MarkdownPdfProjectCodexOutputPlan } from "../../src/cli/markdown-pdf/project-codex/types";
-import { minimalPng } from "../markdown-pdf/actions/template-codex-fixtures";
-import { createActionTestRuntime } from "../helpers/cli-action-test-utils";
-import { withTempFixtureDir } from "../helpers/cli-test-utils";
-import { pathExists } from "../markdown-pdf/support/path-fixtures";
+} from "../../../src/cli/markdown-pdf/project-codex";
+import type { MarkdownPdfProjectCodexOutputPlan } from "../../../src/cli/markdown-pdf/project-codex/types";
+import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
+import { withTempFixtureDir } from "../../helpers/cli-test-utils";
+import { pathExists } from "../support/path-fixtures";
+import { minimalPng } from "./template-codex-fixtures";
 
 type ProjectValidationFixtureOptions = MdPdfProjectCodexOptions & {
   profileCodexRunner?: MarkdownPdfCodexProfileRunner;
