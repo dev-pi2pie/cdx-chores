@@ -1,6 +1,7 @@
 ---
 title: "Codex Timeouts, Retries, And Recovery"
 created-date: 2026-08-22
+modified-date: 2026-08-23
 status: completed
 agent: codex
 ---
@@ -42,20 +43,22 @@ surfaces:
 | `md pdf-project codex`      | each profile, template, and repair request independently         |
 | `interactive`               | every current Codex request in that explicit Interactive session |
 
-The option is not a root-global flag. Use:
+`--codex-timeout` belongs to the selected command; it is not a global option.
+
+✅ Correct:
 
 ```bash
 cdx-chores interactive --codex-timeout 2m
 ```
 
-Do not use:
+❌ Incorrect:
 
 ```bash
 cdx-chores --codex-timeout 2m
 ```
 
-The root-level spelling is rejected. Starting Interactive mode without this
-option keeps the 30-second default and does not add a timeout setup prompt.
+The root-level form is rejected. If the option is omitted, Interactive mode
+uses the 30-second default and does not prompt for timeout configuration.
 
 ## Duration Syntax
 
