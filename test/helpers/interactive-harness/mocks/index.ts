@@ -5,7 +5,7 @@ import { installDataExtractIntrospectionMocks } from "./data-query";
 import { installFsPromiseMocks } from "./fs";
 import { installPathPromptMocks } from "./path-prompts";
 import { installPromptMocks } from "./prompts";
-import { installMarkdownPdfMocks } from "./markdown-pdf";
+import { installMarkdownPdfMocks } from "../../../markdown-pdf/interactive/mock-action";
 
 function hasInteractiveDataCommand(
   context: HarnessRunnerContext,

@@ -1,9 +1,9 @@
 import { mock } from "bun:test";
 import { extname, resolve } from "node:path";
 
-import { CliError } from "../../../../src/cli/errors";
-import { MARKDOWN_PDF_PROFILE_CURRENT_REVISION } from "../../../../src/cli/markdown-pdf/profile/feature-registry";
-import type { HarnessRunnerContext } from "../context";
+import { CliError } from "../../../src/cli/errors";
+import { MARKDOWN_PDF_PROFILE_CURRENT_REVISION } from "../../../src/cli/markdown-pdf/profile/feature-registry";
+import type { HarnessRunnerContext } from "../../helpers/interactive-harness/context";
 import {
   fontDiscoveryModuleUrl,
   markdownPdfCodexServiceModuleUrl,
@@ -12,7 +12,7 @@ import {
   markdownPdfProjectBundleCompletenessModuleUrl,
   markdownPdfRenderBundleModuleUrl,
   markdownPdfRenderServiceModuleUrl,
-} from "../module-urls";
+} from "./module-urls";
 
 const DEFAULT_OPTIONS = {
   preset: "article",

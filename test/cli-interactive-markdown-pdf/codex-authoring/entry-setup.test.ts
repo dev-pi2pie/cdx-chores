@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
 import { runInteractiveHarness } from "../../cli-interactive-routing.helpers";
-import { RECIPES_ENTRY, TO_PDF_ENTRY, recipesCodexSelections } from "./fixtures";
+import {
+  RECIPES_ENTRY,
+  TO_PDF_ENTRY,
+  recipesCodexSelections,
+} from "../../markdown-pdf/interactive/codex-authoring-fixtures";
 
 describe("interactive Markdown PDF Codex authoring", () => {
   test.each(["profile", "template-bundle", "project-bundle"] as const)(

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { runInteractiveHarness } from "../../cli-interactive-routing.helpers";
-import { recipesCodexSelections } from "./fixtures";
+import { recipesCodexSelections } from "../../markdown-pdf/interactive/codex-authoring-fixtures";
 
 describe("interactive Markdown PDF Codex authoring", () => {
   test("adds and removes font hints and retains a Template cover choice", () => {
