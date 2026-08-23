@@ -383,9 +383,10 @@ reconciliation.
 
 ### Phase 6.14: Fonts
 
-The paths below were implemented and validated over `ba8a6cd7..4be23beb`.
-Phase 6.14 remains in review until the evidence checkpoint receives its exact
-range review; this reference stays `draft` through final reconciliation.
+The paths below were implemented and validated over `ba8a6cd7..4be23beb`, then
+reviewed over `ba8a6cd7..e4235892`. Phase 6.14 is completed with the decision
+`Continue with constraints`; this reference stays `draft` through final
+reconciliation.
 
 | Reference date | Historical path                                      | Transition | Current owner or owners                                                                                     | Migration range      | Job evidence                      |
 | -------------- | ---------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |

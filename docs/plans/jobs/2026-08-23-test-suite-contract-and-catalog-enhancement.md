@@ -383,7 +383,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.11 | Data Preview                                  | completed       | `7b840652` | `3d95eba5`         | `350b07ac`   | `7b840652..350b07ac` | Continue with constraints |
 | 6.12 | Data Stack                                    | completed       | `cf15f599` | `4ae50698`         | `6ee0d7b0`   | `cf15f599..6ee0d7b0` | Continue with constraints |
 | 6.13 | Data Conversion                               | completed       | `f2fb794b` | `f7f509ee`         | `a24c3bdd`   | `f2fb794b..a24c3bdd` | Continue with constraints |
-| 6.14 | Fonts                                         | in-review       | `ba8a6cd7` | `4be23beb`         | pending      | pending              | Pending exact review      |
+| 6.14 | Fonts                                         | completed       | `ba8a6cd7` | `4be23beb`         | `e4235892`   | `ba8a6cd7..e4235892` | Continue with constraints |
 | 6.15 | Rename                                        | pending         | -          | -                  | -            | -                    | -                         |
 | 6.16 | Codex adapter platform                        | matrix-required | -          | -                  | -            | -                    | -                         |
 | 6.17 | Document Rename                               | pending         | -          | -                  | -            | -                    | -                         |
@@ -1616,7 +1616,7 @@ Review gate:
 
 ### Phase 6.14: Fonts
 
-Status: `in-review`
+Status: `completed`
 
 Batch base: `ba8a6cd7`
 
@@ -1624,9 +1624,9 @@ Implementation tip: `4be23beb`
 
 Execution and path migration range: `ba8a6cd7..4be23beb`
 
-Evidence tip: pending
+Evidence tip: `e4235892`
 
-Exact batch review range: pending
+Exact batch review range: `ba8a6cd7..e4235892`
 
 The 21 selected suites moved to 11 action, one command, six adapter, and four
 direct owners. Three compound sources were decomposed into independently
@@ -1658,8 +1658,12 @@ inventory and plans retain dated commands; the current matrix records the
 executed splits, and correspondence records all 21 transitions over
 `ba8a6cd7..4be23beb`.
 
-Decision: pending exact-range test-quality, maintainability, and documentation
-review of the evidence checkpoint.
+Exact-range test-quality, maintainability, and documentation review found no
+material issue. This closeout records `e4235892` as the evidence tip.
+
+Decision: `Continue with constraints`. Preserve the decomposed declaration
+owners and their unchanged assertion inventory; do not reintroduce the empty
+wrapper, generic diagnostics label, or a feature-local helper layer.
 
 Review gate:
 
@@ -1669,8 +1673,8 @@ Review gate:
 - [x] remove only the empty wrapper and fix the diagnostics owner label
 - [x] complete focused, adjacent, full-suite, and repository validation
 - [x] record all 21 path transitions
-- [ ] create the evidence commit and review the exact batch range
-- [ ] record accepted review fixes and the continuation decision
+- [x] create the evidence commit and review the exact batch range
+- [x] record accepted review fixes and the continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
