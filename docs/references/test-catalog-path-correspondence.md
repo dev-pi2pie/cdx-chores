@@ -474,9 +474,10 @@ reconciliation.
 
 ### Phase 6.17: Document Rename
 
-The path below was implemented and validated over `91165757..111a67ea`.
-Phase 6.17 remains in review until the exact admission-to-evidence range is
-reviewed; this reference stays `draft` through final reconciliation.
+The path below was implemented and validated over `91165757..111a67ea`, then
+reviewed over `91165757..f97e3846`. Phase 6.17 is completed with the decision
+`Continue with constraints`; this reference stays `draft` through final
+reconciliation.
 
 | Reference date | Historical path                                             | Transition | Current owner or owners                                           | Migration range      | Job evidence                      |
 | -------------- | ----------------------------------------------------------- | ---------- | ----------------------------------------------------------------- | -------------------- | --------------------------------- |
