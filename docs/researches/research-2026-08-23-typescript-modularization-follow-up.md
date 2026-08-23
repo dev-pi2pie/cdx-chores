@@ -263,6 +263,7 @@ claim that every remaining file over 300 lines is a defect.
 
 ## Related Plans
 
+- `docs/plans/plan-2026-08-23-typescript-modularization-follow-up.md`
 - `docs/plans/plan-2026-05-09-typescript-size-refactor-implementation.md`
 - `docs/plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md`
 
