@@ -3,7 +3,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { runCli, toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
-import { pathExists } from "./fixtures";
+import { pathExists } from "../markdown-pdf/support/path-fixtures";
 
 describe("cli command: md pdf-project codex", () => {
   test("documents the project Codex helper options", () => {

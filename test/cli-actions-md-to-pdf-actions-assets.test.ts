@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 
 import { actionMdToPdf } from "../src/cli/actions";
 import { rewriteMarkdownPdfTemplateLocalAssets } from "../src/cli/markdown-pdf/template-assets";
-import { createPdfRunner, createRemoteInlineCssHtml } from "./cli-actions-md-to-pdf.helpers";
+import { createPdfRunner, createRemoteInlineCssHtml } from "./markdown-pdf/actions/render-support";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 

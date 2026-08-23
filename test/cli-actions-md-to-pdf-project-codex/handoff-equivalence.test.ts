@@ -17,7 +17,7 @@ import type {
   MarkdownPdfProcessRunner,
   MarkdownPdfRendererCapabilityRequest,
 } from "../../src/cli/markdown-pdf";
-import { ok } from "../cli-actions-md-to-pdf.helpers";
+import { ok } from "../markdown-pdf/actions/render-support";
 import { createActionTestRuntime } from "../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
 

@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import { actionMdToPdf } from "../../../src/cli/actions";
 import type { MarkdownPdfProcessRunner } from "../../../src/cli/markdown-pdf";
-import { createPdfRunner } from "../../cli-actions-md-to-pdf.helpers";
+import { createPdfRunner } from "./render-support";
 import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../../helpers/cli-test-utils";
 

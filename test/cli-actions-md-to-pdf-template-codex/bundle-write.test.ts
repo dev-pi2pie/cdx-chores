@@ -19,7 +19,8 @@ import {
   toRepoRelativePath,
   withTempFixtureDir,
 } from "../helpers/cli-test-utils";
-import { minimalPng, pathExists } from "./fixtures";
+import { pathExists } from "../markdown-pdf/support/path-fixtures";
+import { minimalPng } from "./fixtures";
 import { createSynthesisSignals } from "./synthesis-fixtures";
 
 function outputPlan(input: {

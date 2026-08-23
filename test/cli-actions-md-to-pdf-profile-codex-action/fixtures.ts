@@ -15,7 +15,7 @@ import { prepareMarkdownPdfProfileCodex } from "../../src/cli/markdown-pdf/profi
 import type { NormalizedMarkdownPdfProfileIdentity } from "../../src/cli/markdown-pdf/profile";
 import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
-import { pathExists } from "../cli-actions-md-to-pdf-template-codex/fixtures";
+import { pathExists } from "../markdown-pdf/support/path-fixtures";
 
 export { link, lstat, mkdir, readdir, readFile, symlink, writeFile };
 export { join };

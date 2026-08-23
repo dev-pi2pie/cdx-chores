@@ -2,8 +2,8 @@ import { test } from "bun:test";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
-import type { MarkdownPdfProcessRunner } from "../src/cli/markdown-pdf";
-import type { ExecCommandResult } from "../src/cli/process";
+import type { MarkdownPdfProcessRunner } from "../../../src/cli/markdown-pdf";
+import type { ExecCommandResult } from "../../../src/cli/process";
 
 export function ok(stdout = "", stderr = ""): ExecCommandResult {
   return {

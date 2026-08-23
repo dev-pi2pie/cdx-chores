@@ -17,9 +17,10 @@ import {
   type MdPdfProjectCodexOptions,
 } from "../../src/cli/markdown-pdf/project-codex";
 import type { MarkdownPdfProjectCodexOutputPlan } from "../../src/cli/markdown-pdf/project-codex/types";
-import { minimalPng, pathExists } from "../cli-actions-md-to-pdf-template-codex/fixtures";
+import { minimalPng } from "../cli-actions-md-to-pdf-template-codex/fixtures";
 import { createActionTestRuntime } from "../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
+import { pathExists } from "../markdown-pdf/support/path-fixtures";
 
 type ProjectValidationFixtureOptions = MdPdfProjectCodexOptions & {
   profileCodexRunner?: MarkdownPdfCodexProfileRunner;

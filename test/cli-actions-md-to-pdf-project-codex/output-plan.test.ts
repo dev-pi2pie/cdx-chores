@@ -11,7 +11,8 @@ import {
 } from "../../src/cli/markdown-pdf/project-codex";
 import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
-import { minimalPng, pathExists } from "../cli-actions-md-to-pdf-template-codex/fixtures";
+import { minimalPng } from "../cli-actions-md-to-pdf-template-codex/fixtures";
+import { pathExists } from "../markdown-pdf/support/path-fixtures";
 
 describe("cli action modules: md pdf-project codex output planning", () => {
   test("generates shared project, profile, and template identities", () => {

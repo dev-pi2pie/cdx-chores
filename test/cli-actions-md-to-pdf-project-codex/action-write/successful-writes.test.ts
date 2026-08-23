@@ -12,8 +12,9 @@ import {
 } from "../../../src/cli/markdown-pdf/project-codex";
 import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../../helpers/cli-test-utils";
-import { createPdfRunner } from "../../cli-actions-md-to-pdf.helpers";
-import { minimalPng, pathExists } from "../../cli-actions-md-to-pdf-template-codex/fixtures";
+import { createPdfRunner } from "../../markdown-pdf/actions/render-support";
+import { minimalPng } from "../../cli-actions-md-to-pdf-template-codex/fixtures";
+import { pathExists } from "../../markdown-pdf/support/path-fixtures";
 
 import {
   BASE_PROFILE,

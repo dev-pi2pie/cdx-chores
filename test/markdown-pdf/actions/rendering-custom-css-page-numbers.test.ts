@@ -10,7 +10,7 @@ import {
 import { resolveMarkdownPdfPageNumberConfiguration } from "../../../src/cli/markdown-pdf";
 import { MARKDOWN_PDF_COVER_DEFAULT_CSS_DISABLED_WARNING } from "../../../src/cli/markdown-pdf";
 import { DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE } from "../../../src/cli/markdown-pdf/profile";
-import { createPdfRunner } from "../../cli-actions-md-to-pdf.helpers";
+import { createPdfRunner } from "./render-support";
 import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../../helpers/cli-test-utils";
 

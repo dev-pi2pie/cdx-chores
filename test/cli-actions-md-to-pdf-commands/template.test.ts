@@ -3,7 +3,8 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { runCli, toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
-import { createTemplateCodexStub, minimalPng, pathExists } from "./fixtures";
+import { createTemplateCodexStub, minimalPng } from "../markdown-pdf/commands/fixtures";
+import { pathExists } from "../markdown-pdf/support/path-fixtures";
 
 describe("cli command: md pdf-template init", () => {
   test("writes a template recipe from the command layer", async () => {

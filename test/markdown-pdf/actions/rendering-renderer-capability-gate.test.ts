@@ -8,7 +8,7 @@ import {
   MARKDOWN_PDF_RENDERER_CAPABILITY_IDS,
 } from "../../../src/cli/markdown-pdf";
 import type { MarkdownPdfProcessRunner } from "../../../src/cli/markdown-pdf";
-import { createPdfRunner, failing, ok } from "../../cli-actions-md-to-pdf.helpers";
+import { createPdfRunner, failing, ok } from "./render-support";
 import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../../helpers/cli-test-utils";
 

@@ -25,11 +25,7 @@ import type {
   ProjectRendererScenario,
   WeasyPrintCandidate,
 } from "../../fixtures/markdown-pdf/page-number-renderer-contract";
-import {
-  createMockExecution,
-  pathHasSegment,
-  withEvidenceRoot,
-} from "../../markdown-pdf-page-number-renderer-evidence/support";
+import { createMockExecution, pathHasSegment, withEvidenceRoot } from "./page-number-support";
 
 describe("Markdown PDF renderer evidence orchestration", () => {
   test("keeps the tested catalog concrete while accepting future candidate identities", () => {

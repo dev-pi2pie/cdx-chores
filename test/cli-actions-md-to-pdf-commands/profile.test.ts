@@ -3,7 +3,8 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { runCli, toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
-import { createProfileCodexStub, pathExists } from "./fixtures";
+import { createProfileCodexStub } from "../markdown-pdf/commands/fixtures";
+import { pathExists } from "../markdown-pdf/support/path-fixtures";
 
 describe("cli command: md pdf-profile init", () => {
   test("writes a profile file from the command layer", async () => {

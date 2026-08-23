@@ -15,7 +15,10 @@ import {
   PAGE_NUMBER_LAB_MARKER_CONTENT,
   PAGE_NUMBER_LAB_MARKER_NAME,
 } from "../fixtures/markdown-pdf/page-number-renderer-contract";
-import { createMockExecution, withEvidenceRoot } from "./support";
+import {
+  createMockExecution,
+  withEvidenceRoot,
+} from "../markdown-pdf/evidence/page-number-support";
 
 describe("Markdown PDF renderer evidence laboratory and process safety", () => {
   test("cleans the laboratory after an unexpected orchestration error", async () => {

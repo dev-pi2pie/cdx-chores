@@ -1,14 +1,5 @@
-import { chmod, mkdir, stat, writeFile } from "node:fs/promises";
+import { chmod, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-
-export async function pathExists(path: string): Promise<boolean> {
-  try {
-    await stat(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 export function minimalPng(width: number, height: number): Buffer {
   const bytes = Buffer.alloc(24);

@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { actionMdPdfTemplateCodex } from "../../src/cli/actions/markdown";
 import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
-import { pathExists } from "./fixtures";
+import { pathExists } from "../markdown-pdf/support/path-fixtures";
 
 describe("cli action modules: md pdf-template codex action", () => {
   test("rejects low-signal runs before output planning without writing artifacts", async () => {

@@ -1,5 +1,3 @@
-import { stat } from "node:fs/promises";
-
 export function minimalPng(width: number, height: number): Buffer {
   const bytes = Buffer.alloc(24);
   bytes.set([0x89, 0x50, 0x4e, 0x47], 0);
@@ -72,13 +70,4 @@ export function minimalWebpVp8lLossless321By654(): Buffer {
   return minimalWebpWithChunks([
     { type: "VP8L", payload: Buffer.from([0x2f, 0x40, 0x41, 0xa3, 0]) },
   ]);
-}
-
-export async function pathExists(path: string): Promise<boolean> {
-  try {
-    await stat(path);
-    return true;
-  } catch {
-    return false;
-  }
 }

@@ -7,20 +7,20 @@ import type {
   CommandResult,
   PdfEvidence,
   PdfTextRunEvidence,
-} from "../../scripts/spikes/markdown-pdf-page-number-renderer-evidence";
+} from "../../../scripts/spikes/markdown-pdf-page-number-renderer-evidence";
 import {
   PAGE_NUMBER_COUNTER_EXPERIMENTS,
   PAGE_NUMBER_PRODUCT_RENDERER_SCENARIOS,
   PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS,
   PAGE_NUMBER_RENDERER_SCENARIOS,
   WEASYPRINT_CANDIDATES,
-} from "../fixtures/markdown-pdf/page-number-renderer-contract";
+} from "../../fixtures/markdown-pdf/page-number-renderer-contract";
 import type {
   ProductRendererScenario,
   ProjectRendererScenario,
   RendererContractScenario,
-} from "../fixtures/markdown-pdf/page-number-renderer-contract";
-import { withTempFixtureDir } from "../helpers/cli-test-utils";
+} from "../../fixtures/markdown-pdf/page-number-renderer-contract";
+import { withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 export interface MockExecutionOptions {
   fail?: (request: CommandRequest) => CommandResult | undefined;
