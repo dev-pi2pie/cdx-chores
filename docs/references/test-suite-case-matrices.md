@@ -189,11 +189,11 @@ suites.
 | 6.11  | `test/cli-actions-data-preview/helpers.ts`                                       | `test/data-preview/actions/support.ts`<br>`test/helpers/ansi.ts`                           | Executed: Preview runners and matchers moved to the action owner; only neutral `stripAnsi` moved to global support for independent consumers.        |
 | 6.11  | Data Preview behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | `test/data-preview/interactive/mock-action.ts`                                             | Executed: the two Preview actions and source loader moved; conversion and Markdown DOCX behavior remain in the mixed residual.                       |
 | 6.11  | `stripAnsi` in `test/cli-interactive-routing.helpers.ts`                         | `test/helpers/ansi.ts`                                                                     | Executed: the duplicate implementation became a temporary facade re-export; unrelated routing and Data Stack behavior kept its current owner.       |
-| 6.12  | `test/helpers/data-stack-test-utils.ts`                                          | `test/data-stack/direct/support.ts`                                                        | Move direct Data Stack fixture and plan support with its independent direct consumers.                                                              |
-| 6.12  | `test/cli-interactive-data-stack/helpers.ts`                                     | `test/data-stack/interactive/support.ts`                                                   | Move Interactive Data Stack support to the feature owner; consume neutral ANSI support and keep no Preview dependency.                              |
-| 6.12  | `test/helpers/interactive-harness/mocks/action-stack.ts`                         | `test/data-stack/interactive/mock-action.ts`                                               | Move only the Data Stack action mocks; the neutral harness composition remains under CLI foundations.                                               |
-| 6.12  | Data Stack fields in `test/helpers/interactive-harness/types.ts`                 | `test/data-stack/interactive/harness-contract.ts`                                          | Extract eight `dataStack*` scenario fields plus stack plan and Codex report writes; keep shared timeout fields neutral.                              |
-| 6.12  | Data Stack matcher in `test/cli-interactive-routing.helpers.ts`                  | `test/data-stack/interactive/support.ts`                                                   | Replace the matcher implementation with a temporary facade re-export; unrelated routing support stays in place for Phase 7.                         |
+| 6.12  | `test/helpers/data-stack-test-utils.ts`                                          | `test/data-stack/direct/support.ts`                                                        | Executed: direct Data Stack fixture and plan support moved with its independent direct consumers.                                                   |
+| 6.12  | `test/cli-interactive-data-stack/helpers.ts`                                     | `test/data-stack/interactive/support.ts`                                                   | Executed: Interactive Data Stack support moved to the feature owner and now consumes neutral ANSI support without a Preview dependency.             |
+| 6.12  | `test/helpers/interactive-harness/mocks/action-stack.ts`                         | `test/data-stack/interactive/mock-action.ts`                                               | Executed: only the Data Stack action mocks moved; the neutral harness composition remains under CLI foundations.                                    |
+| 6.12  | Data Stack fields in `test/helpers/interactive-harness/types.ts`                 | `test/data-stack/interactive/harness-contract.ts`                                          | Executed: eight `dataStack*` scenario fields plus stack plan and Codex report writes moved; shared timeout fields remain neutral.                    |
+| 6.12  | Data Stack matcher in `test/cli-interactive-routing.helpers.ts`                  | `test/data-stack/interactive/support.ts`                                                   | Executed: the matcher became a temporary facade re-export; unrelated routing support stays in place for Phase 7.                                    |
 
 ### Phase 3 Data Query Path Contract
 
@@ -2650,11 +2650,15 @@ strengthenings:
 | `test/data-stack-plan/parse-io.test.ts`                  | `test/data-stack/direct/plan/parse-io.test.ts`                         | Plan parsing and file I/O remain the paired direct plan subfamily.                                               |
 | `test/data-stack-fixture-generator.test.ts`              | `test/data-stack/evidence/fixture-generator.test.ts`                   | Deterministic fixture generation and safe cleanup are evidence contracts.                                       |
 
-The pre-move exact slice passes 181 tests with 798 assertions across 21
-source files. The adjacent Stack timeout, top-level Interactive routing, CLI
-UX, and contextual-tip slice passes 59 tests with 227 assertions across four
-files. The destination batch must reproduce both boundaries, preserve all 181
-titles, and keep the completed historical inventory and records unchanged.
+The pre-move exact slice passed 181 tests with 798 assertions across 21 source
+files. Phase 6.12 executed the admitted suite and support transitions over
+`cf15f599..4ae50698`; the 22 destination files pass all 181 cases with 804
+assertions. The six-assertion increase comes only from the four admitted
+strengthenings, and the extra owner comes only from the accepted reporting
+split. The adjacent Stack timeout, top-level Interactive routing, CLI UX, and
+contextual-tip slice remains 59 tests with 227 assertions across four files.
+All 181 titles remain represented once, and the completed historical inventory
+and records remain unchanged.
 
 ### Decision Summary
 

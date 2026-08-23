@@ -381,7 +381,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.9  | Data Sources                                  | completed       | `9458f888` | `a3a76f53`         | `e35eea80`   | `9458f888..e35eea80` | Continue with constraints |
 | 6.10 | Data Extract                                  | completed       | `733f27cb` | `d02bf761`         | `dbb5574e`   | `733f27cb..dbb5574e` | Continue with constraints |
 | 6.11 | Data Preview                                  | completed       | `7b840652` | `3d95eba5`         | `350b07ac`   | `7b840652..350b07ac` | Continue with constraints |
-| 6.12 | Data Stack                                    | pending         | -          | -                  | -            | -                    | -                         |
+| 6.12 | Data Stack                                    | in-review       | `cf15f599` | `4ae50698`         | pending      | pending              | Pending exact review      |
 | 6.13 | Data Conversion                               | pending         | -          | -                  | -            | -                    | -                         |
 | 6.14 | Fonts                                         | pending         | -          | -                  | -            | -                    | -                         |
 | 6.15 | Rename                                        | pending         | -          | -                  | -            | -                    | -                         |
@@ -1443,6 +1443,103 @@ Review gate:
 - [x] record current support dispositions and path correspondence
 - [x] create the evidence commit and review the exact batch range
 - [x] record accepted review fixes and the batch continuation decision
+
+### Phase 6.12: Data Stack
+
+Status: `in-review`
+
+Batch base: `cf15f599`
+
+Implementation tip: `4ae50698`
+
+Execution and path migration range: `cf15f599..4ae50698`
+
+Evidence tip: pending
+
+Exact batch review range: pending
+
+The 21 selected suites moved to five action, three command, nine direct,
+four Interactive, and one evidence owner. The reporting-renderer case split
+from command options into its direct production seam, producing 22 destination
+test files. Direct and Interactive support moved to feature owners; Data Stack
+harness fields and mocks moved locally while shared timeout fields and neutral
+composition remained global.
+
+Pre-move review found no vague, duplicate, or removable case. It retained all
+181 cases and accepted four focused strengthenings:
+
+- the generated default dry-run plan now proves the reported artifact parses
+  and no stack output is materialized
+- output/input conflict rejection now proves source bytes remain unchanged
+  with overwrite enabled
+- unknown unique-key diagnostics now prove the exact CLI error contract
+- signal-label formatting now proves all five accepted signal mappings
+
+Selector preservation and strengthening:
+
+| Check       | Owner files | Passed | Failed | Assertions |
+| ----------- | ----------: | -----: | -----: | ---------: |
+| Pre-change  |          21 |    181 |      0 |        798 |
+| Post-change |          22 |    181 |      0 |        804 |
+
+All 181 declarations and exact titles remain represented once. The one-file
+increase is the accepted direct reporting split; the six added runtime
+assertions come only from the four admitted strengthenings.
+
+The implementation checkpoint is:
+
+- `4ae50698` — migrate all 21 source suites, split the direct reporting case,
+  localize Data Stack support and harness contracts, and apply the four
+  accepted strengthenings
+
+Pre-commit test-quality and maintainability reviews found no material issue.
+They confirmed exact title preservation, the single admitted split, coherent
+feature ownership, neutral harness composition, narrow facade behavior, no
+cycle, and no shared fixture or unrelated mock drift.
+
+Validation evidence:
+
+| Boundary                              | Passed | Failed | Assertions | Files |
+| ------------------------------------- | -----: | -----: | ---------: | ----: |
+| Data Stack destinations               |    181 |      0 |        804 |    22 |
+| Exact adjacent safety set             |     59 |      0 |        227 |     4 |
+| Complete repository suite, final run  |  2,614 |      0 |     14,878 |   326 |
+
+The first complete-suite run had one unrelated failure in
+`test/cli-path-inline.test.ts` at the Tab-cycling case. That file immediately
+passed three consecutive focused reruns, and the complete suite then passed in
+full. No Data Stack case failed in either complete-suite run.
+
+Repository checks are clean:
+
+- `bun run format:check`
+- `bun run lint`
+- `bunx tsc --noEmit`
+- `bun run build`
+- `git diff --check`
+
+Documentation path scan:
+
+- no current guide names a historical Phase 6.12 suite or support path
+- the completed inventory and time-bounded records retain historical paths
+- the current admission and support dispositions record the executed owners
+- the correspondence reference records all 26 accepted path transitions over
+  `cf15f599..4ae50698`
+
+Decision: pending exact-range test-quality, maintainability, and documentation
+review of the evidence checkpoint.
+
+Review gate:
+
+- [x] reproduce the 21-source selector and 181-case baseline
+- [x] admit exact suite, split, support, harness, and facade boundaries
+- [x] migrate only the accepted Data Stack owners
+- [x] preserve all 181 declarations and apply four admitted strengthenings
+- [x] complete focused, adjacent, full-suite, and repository validation
+- [x] classify and clear the unrelated transient full-suite failure
+- [x] record current support dispositions and path correspondence
+- [ ] create the evidence commit and review the exact batch range
+- [ ] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,

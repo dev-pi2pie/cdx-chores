@@ -332,6 +332,41 @@ reconciliation.
 | 2026-08-23     | Data Preview behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | split      | `test/helpers/interactive-harness/mocks/action-misc.ts`<br>`test/data-preview/interactive/mock-action.ts`             | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
 | 2026-08-23     | `stripAnsi` in `test/cli-interactive-routing.helpers.ts`                        | split      | `test/cli-interactive-routing.helpers.ts`<br>`test/helpers/ansi.ts`                                                   | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
 
+### Phase 6.12: Data Stack
+
+The paths below were implemented and validated over `cf15f599..4ae50698`.
+Phase 6.12 remains in review until the evidence checkpoint receives its exact
+range review; this reference stays `draft` through final reconciliation.
+
+| Reference date | Historical path                                                        | Transition | Current owner or owners                                                                                          | Migration range      | Job evidence                      |
+| -------------- | ---------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |
+| 2026-08-23     | `test/cli-actions-data-stack/codex-assist.test.ts`                     | moved      | `test/data-stack/actions/codex-assist.test.ts`                                                                  | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/cli-actions-data-stack/dry-run-plan.test.ts`                     | moved      | `test/data-stack/actions/dry-run-plan.test.ts`                                                                  | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/cli-actions-data-stack/happy-paths.test.ts`                      | moved      | `test/data-stack/actions/materialization.test.ts`                                                               | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/cli-actions-data-stack/schema-modes.test.ts`                     | moved      | `test/data-stack/actions/schema-modes.test.ts`                                                                  | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/cli-actions-data-stack/validation.test.ts`                       | moved      | `test/data-stack/actions/validation.test.ts`                                                                    | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/cli-command-data-stack/direct-stack.test.ts`                     | moved      | `test/data-stack/commands/direct-stack.test.ts`                                                                 | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/cli-command-data-stack/options.test.ts`                          | split      | `test/data-stack/commands/options.test.ts`<br>`test/data-stack/direct/reporting.test.ts`                         | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/cli-command-data-stack/replay.test.ts`                           | moved      | `test/data-stack/commands/replay.test.ts`                                                                       | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/cli-interactive-data-stack/codex-review.test.ts`                 | moved      | `test/data-stack/interactive/codex-review.test.ts`                                                              | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/cli-interactive-data-stack/discovery.test.ts`                    | moved      | `test/data-stack/interactive/discovery.test.ts`                                                                 | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/cli-interactive-data-stack/dry-run-write.test.ts`                | moved      | `test/data-stack/interactive/dry-run-write.test.ts`                                                             | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/cli-interactive-routing-data-stack.test.ts`                      | moved      | `test/data-stack/interactive/routing.test.ts`                                                                   | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/data-stack-artifact-paths.test.ts`                               | moved      | `test/data-stack/direct/artifact-paths.test.ts`                                                                 | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/data-stack-codex-report/apply.test.ts`                           | moved      | `test/data-stack/direct/codex-report/apply.test.ts`                                                             | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/data-stack-codex-report/validation.test.ts`                      | moved      | `test/data-stack/direct/codex-report/validation.test.ts`                                                        | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/data-stack-codex-signals.test.ts`                                | moved      | `test/data-stack/direct/codex-signals.test.ts`                                                                  | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/data-stack-diagnostics.test.ts`                                  | moved      | `test/data-stack/direct/diagnostics.test.ts`                                                                    | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/data-stack-input-router.test.ts`                                 | moved      | `test/data-stack/direct/input-router.test.ts`                                                                   | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/data-stack-plan/identity-serialization.test.ts`                  | moved      | `test/data-stack/direct/plan/identity-serialization.test.ts`                                                    | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/data-stack-plan/parse-io.test.ts`                                | moved      | `test/data-stack/direct/plan/parse-io.test.ts`                                                                  | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/data-stack-fixture-generator.test.ts`                            | moved      | `test/data-stack/evidence/fixture-generator.test.ts`                                                            | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/helpers/data-stack-test-utils.ts`                                | moved      | `test/data-stack/direct/support.ts`                                                                             | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/cli-interactive-data-stack/helpers.ts`                           | moved      | `test/data-stack/interactive/support.ts`                                                                        | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | `test/helpers/interactive-harness/mocks/action-stack.ts`               | moved      | `test/data-stack/interactive/mock-action.ts`                                                                    | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | Data Stack fields in `test/helpers/interactive-harness/types.ts`       | split      | `test/helpers/interactive-harness/types.ts`<br>`test/data-stack/interactive/harness-contract.ts`                | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+| 2026-08-23     | Data Stack matcher in `test/cli-interactive-routing.helpers.ts`        | split      | `test/cli-interactive-routing.helpers.ts`<br>`test/data-stack/interactive/support.ts`                            | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
+
 [phase-3-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-3-data-query-migration-pilot
 [phase-4-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-4-doctor-ownership-migration-pilot
 [phase-5-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-5-bounded-markdown-pdf-migration-pilot
@@ -346,6 +381,7 @@ reconciliation.
 [phase-6-9-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-69-data-sources
 [phase-6-10-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-610-data-extract
 [phase-6-11-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-611-data-preview
+[phase-6-12-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-612-data-stack
 
 ## Completion Boundary
 
