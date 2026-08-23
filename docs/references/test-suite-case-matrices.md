@@ -2894,6 +2894,14 @@ slice passes 54 tests with 317 assertions across nine files. No overlap has the
 same trigger, result, layer, and cleanup lifecycle as these direct owners, so
 no duplicate removal qualifies.
 
+Phase 6.16 executed the two admitted transitions over
+`2f5d5a20..c69a9abc`. The four direct destinations pass 21 tests with 43
+assertions; the nine-file adjacent slice remains 54 tests with 317 assertions;
+and the complete suite passes 2,623 tests with 14,878 assertions across 336
+files. Both title clarifications and all three `ENOENT` strengthenings match the
+admission. Pre-commit test-quality and maintainability review found no material
+issue.
+
 ### Decision Summary
 
 - Audited suites: 10 of 10 assigned inventory rows.

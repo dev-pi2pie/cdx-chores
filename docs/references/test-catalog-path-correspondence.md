@@ -460,6 +460,17 @@ reconciliation.
 | 2026-08-23     | `test/helpers/interactive-harness/mocks/action-rename.ts`                   | moved      | `test/rename/interactive/mock-action.ts`                                                                                                                                                                                               | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
 | 2026-08-23     | Rename fields in `test/helpers/interactive-harness/types.ts`                | split      | `test/helpers/interactive-harness/types.ts`<br>`test/rename/interactive/harness-contract.ts`                                                                                                                                           | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
 
+### Phase 6.16: Codex Adapter Platform
+
+The paths below were implemented and validated over `2f5d5a20..c69a9abc`.
+Phase 6.16 remains in review until the exact admission-to-evidence range is
+reviewed; this reference stays `draft` through final reconciliation.
+
+| Reference date | Historical path                         | Transition | Current owner or owners                                                                                                                                                                                                    | Migration range      | Job evidence                      |
+| -------------- | --------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |
+| 2026-08-23     | `test/adapters-codex-failure.test.ts`   | moved      | `test/codex-adapters/direct/request-failure.test.ts`                                                                                                                                                                       | `2f5d5a20..c69a9abc` | [Phase 6.16][phase-6-16-evidence] |
+| 2026-08-23     | `test/adapters-codex-shared.test.ts`    | split      | `test/codex-adapters/direct/filename-title-primitives.test.ts`<br>`test/codex-adapters/direct/batch-retry-failures.test.ts`<br>`test/codex-adapters/direct/prompt-only-workspace.test.ts`                                   | `2f5d5a20..c69a9abc` | [Phase 6.16][phase-6-16-evidence] |
+
 [phase-3-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-3-data-query-migration-pilot
 [phase-4-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-4-doctor-ownership-migration-pilot
 [phase-5-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-5-bounded-markdown-pdf-migration-pilot
@@ -478,6 +489,7 @@ reconciliation.
 [phase-6-13-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-613-data-conversion
 [phase-6-14-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-614-fonts
 [phase-6-15-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-615-rename
+[phase-6-16-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-616-codex-adapter-platform
 
 ## Completion Boundary
 

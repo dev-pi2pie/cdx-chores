@@ -385,7 +385,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.13 | Data Conversion                               | completed       | `f2fb794b` | `f7f509ee`         | `a24c3bdd`   | `f2fb794b..a24c3bdd` | Continue with constraints |
 | 6.14 | Fonts                                         | completed       | `ba8a6cd7` | `4be23beb`         | `e4235892`   | `ba8a6cd7..e4235892` | Continue with constraints |
 | 6.15 | Rename                                        | completed       | `93e7a797` | `da247175`         | `c0659081`   | `93e7a797..c0659081` | Continue with constraints |
-| 6.16 | Codex adapter platform                        | pending         | -          | -                  | -            | -                    | -                         |
+| 6.16 | Codex adapter platform                        | in-review       | `2f5d5a20` | `c69a9abc`         | pending      | pending              | pending                   |
 | 6.17 | Document Rename                               | pending         | -          | -                  | -            | -                    | -                         |
 | 6.18 | DOCX                                          | pending         | -          | -                  | -            | -                    | -                         |
 | 6.19 | Markdown platform                             | pending         | -          | -                  | -            | -                    | -                         |
@@ -1740,6 +1740,58 @@ Review gate:
 - [x] record all 38 path and support transitions
 - [x] create the evidence commit and review the exact batch range
 - [x] record accepted review fixes and the continuation decision
+
+### Phase 6.16: Codex Adapter Platform
+
+Status: `in-review`
+
+Batch base: `2f5d5a20`
+
+Implementation tip: `c69a9abc`
+
+Execution and path migration range: `2f5d5a20..c69a9abc`
+
+Evidence tip: pending
+
+Exact batch review range: pending
+
+The two selected platform suites moved into four direct owners: request
+failure classification and formatting, filename-title primitives, batch retry
+and failure composition, and prompt-only workspace lifecycle. All 21 cases and
+43 assertions remain represented once.
+
+Two admitted titles now state their exact summary and successful-cleanup
+contracts. Three workspace cleanup checks now require `ENOENT`, proving actual
+directory removal while preserving the assertion count. No support or
+production file moved.
+
+| Boundary                         | Passed | Failed | Assertions | Files |
+| -------------------------------- | -----: | -----: | ---------: | ----: |
+| Codex adapter direct destinations |     21 |      0 |         43 |     4 |
+| Exact adjacent safety set         |     54 |      0 |        317 |     9 |
+| Complete repository suite         |  2,623 |      0 |     14,878 |   336 |
+
+Repository checks are clean: `bun run format:check`, `bun run lint`,
+`bunx tsc --noEmit`, `bun run build`, and `git diff --check`.
+
+Pre-commit test-quality and maintainability review found no material issue.
+No current guide names either historical source path. The matrix records the
+executed split, and correspondence records two transitions over
+`2f5d5a20..c69a9abc`.
+
+Decision: pending exact-range test-quality, maintainability, and documentation
+review.
+
+Review gate:
+
+- [x] complete the exact platform matrix before implementation
+- [x] migrate only the two admitted suites into four direct owners
+- [x] preserve all 21 cases and 43 assertions
+- [x] apply only two title clarifications and three `ENOENT` strengthenings
+- [x] complete focused, adjacent, full-suite, and repository validation
+- [x] record both path transitions
+- [ ] create the evidence commit and review the exact batch range
+- [ ] record accepted review fixes and the continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
