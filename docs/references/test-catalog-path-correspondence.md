@@ -485,9 +485,10 @@ reconciliation.
 
 ### Phase 6.18: DOCX
 
-The paths below were implemented and validated over `56624bef..0018929c`.
-Phase 6.18 remains in review until the exact admission-to-evidence range is
-reviewed; this reference stays `draft` through final reconciliation.
+The paths below were implemented and validated over `56624bef..0018929c`, then
+reviewed over `56624bef..3500991c`. Phase 6.18 is completed with the decision
+`Continue with constraints`; this reference stays `draft` through final
+reconciliation.
 
 | Reference date | Historical path                                                                    | Transition | Current owner or owners                                      | Migration range      | Job evidence                      |
 | -------------- | ---------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------ | -------------------- | --------------------------------- |
