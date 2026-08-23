@@ -5,7 +5,7 @@ import {
   formatLocalFileDateTimeISO,
   formatUtcFileDateTime12Hour,
   formatUtcFileDateTimeISO,
-} from "../src/utils/datetime";
+} from "../../src/utils/datetime";
 
 function formatExpectedLocalOffset(date: Date): string {
   const offsetMinutes = -date.getTimezoneOffset();
