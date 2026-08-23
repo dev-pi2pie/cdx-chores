@@ -106,13 +106,13 @@ record only if discovered work materially leaves this plan's scope.
 
 Tasks:
 
-- [ ] Split `test/cli-actions-md-to-pdf-profile-codex-action.test.ts` into
+- [x] Split `test/cli-actions-md-to-pdf-profile-codex-action.test.ts` into
       feature-local suites for request/progress, output and dry-run, signals and
       bases, reports and failures, and path/alias safety.
-- [ ] Preserve test names, assertions, setup ordering, and mocked request
+- [x] Preserve test names, assertions, setup ordering, and mocked request
       behavior.
-- [ ] Keep shared fixtures local to the Profile Codex action boundary.
-- [ ] Confirm no automation or documentation depends on the removed test path.
+- [x] Keep shared fixtures local to the Profile Codex action boundary.
+- [x] Confirm no automation or documentation depends on the removed test path.
 
 Observable contracts:
 

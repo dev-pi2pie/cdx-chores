@@ -29,34 +29,36 @@ modularization follow-up without duplicating the parent plan's checklists.
 
 ## Phase Summary
 
-| Phase | Boundary                                     | Status      | Review range | Decision |
-| ----: | -------------------------------------------- | ----------- | ------------ | -------- |
-|     1 | Profile Codex action test                    | in-progress | pending      | pending  |
-|     2 | Template asset handling                      | pending     | pending      | pending  |
-|     3 | Project Codex action-write test              | pending     | pending      | pending  |
-|     4 | Rename Codex option ownership                | pending     | pending      | pending  |
-|     5 | Doctor workflow projection                   | pending     | pending      | pending  |
-|     6 | Interactive Codex authoring test             | pending     | pending      | pending  |
-|     7 | Template synthesis test                      | pending     | pending      | pending  |
-|     8 | Profile adapter test                         | pending     | pending      | pending  |
-|     9 | Template adapter test                        | pending     | pending      | pending  |
-|    10 | Markdown PDF command-surface test            | pending     | pending      | pending  |
-|    11 | Interactive Markdown `to-pdf` decision gate  | pending     | pending      | pending  |
-|    12 | Cumulative validation and lifecycle closeout | pending     | pending      | pending  |
+| Phase | Boundary                                     | Status    | Review range         | Decision |
+| ----: | -------------------------------------------- | --------- | -------------------- | -------- |
+|     1 | Profile Codex action test                    | completed | `f81a68e5..909c8c50` | Continue |
+|     2 | Template asset handling                      | pending   | pending              | pending  |
+|     3 | Project Codex action-write test              | pending   | pending              | pending  |
+|     4 | Rename Codex option ownership                | pending   | pending              | pending  |
+|     5 | Doctor workflow projection                   | pending   | pending              | pending  |
+|     6 | Interactive Codex authoring test             | pending   | pending              | pending  |
+|     7 | Template synthesis test                      | pending   | pending              | pending  |
+|     8 | Profile adapter test                         | pending   | pending              | pending  |
+|     9 | Template adapter test                        | pending   | pending              | pending  |
+|    10 | Markdown PDF command-surface test            | pending   | pending              | pending  |
+|    11 | Interactive Markdown `to-pdf` decision gate  | pending   | pending              | pending  |
+|    12 | Cumulative validation and lifecycle closeout | pending   | pending              | pending  |
 
 ## Phase 1: Profile Codex Action Test
 
-Status: `in-progress`
+Status: `completed`
 
-Implementation range: pending activation checkpoint
+Implementation range: `f81a68e5..909c8c50`
 
-| Dimension          | Before                                                | After   |
-| ------------------ | ----------------------------------------------------- | ------- |
-| File topology      | one mixed-responsibility action test                  | pending |
-| Largest file       | 3,027 lines                                           | pending |
-| Focused validation | 66 passing tests across four files; 0 failures        | pending |
-| Production scope   | no production change                                  | pending |
-| Ownership          | request, output, signal, report, and path cases mixed | pending |
+Implementation commit: `909c8c50`
+
+| Dimension          | Before                                                | After                                                                                             |
+| ------------------ | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| File topology      | one mixed-responsibility action test                  | five behavior-owned test suites plus one local fixture module                                     |
+| Largest file       | 3,027 lines                                           | 757 lines                                                                                         |
+| Focused validation | 66 passing tests across four files; 0 failures        | 66 passing tests across eight files; 0 failures                                                   |
+| Production scope   | no production change                                  | no production change                                                                              |
+| Ownership          | request, output, signal, report, and path cases mixed | 11 request/progress, 11 output/dry-run, 16 signal/base, 14 report/failure, and 8 path/alias tests |
 
 Baseline validation:
 
@@ -66,4 +68,23 @@ bun test test/cli-actions-md-to-pdf-profile-codex-action.test.ts test/cli-action
 
 Result: 66 passed, 0 failed, 464 assertions across four files.
 
-Review and decision: pending.
+After validation:
+
+```bash
+bun test test/cli-actions-md-to-pdf-profile-codex-action test/cli-actions-md-to-pdf-profile-codex-command-wiring.test.ts test/cli-actions-md-to-pdf-profile-codex-helpers.test.ts test/cli-actions-md-to-pdf-profile-codex-prepared.test.ts
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+git diff --check
+```
+
+Result: 66 passed, 0 failed, 464 assertions across eight files. TypeScript,
+lint, formatting, and diff checks passed. The implementation range contains no
+`src/` changes, and all 60 action test names and bodies were preserved.
+
+Exact-range review found no material issues. A possible global mock concurrency
+concern was dismissed after confirming that the repository's standard Bun
+commands do not enable concurrent tests and that the affected globals are
+restored after each use.
+
+Decision: `Continue` to Phase 2.
