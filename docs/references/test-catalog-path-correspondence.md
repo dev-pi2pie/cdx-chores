@@ -497,9 +497,10 @@ reconciliation.
 
 ### Phase 6.19: Markdown Platform
 
-The path below was implemented and validated over `de108f7d..16020bd3`.
-Phase 6.19 remains in review until the exact admission-to-evidence range is
-reviewed; this reference stays `draft` through final reconciliation.
+The path below was implemented and validated over `de108f7d..16020bd3`, then
+reviewed over `de108f7d..bc1ed261`. Phase 6.19 is completed with the decision
+`Continue with constraints`; this reference stays `draft` through final
+reconciliation.
 
 | Reference date | Historical path                                           | Transition | Current owner or owners                              | Migration range      | Job evidence                      |
 | -------------- | --------------------------------------------------------- | ---------- | ---------------------------------------------------- | -------------------- | --------------------------------- |

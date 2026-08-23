@@ -388,7 +388,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.16 | Codex adapter platform                        | completed       | `2f5d5a20` | `c69a9abc`         | `e2e2cf34`   | `2f5d5a20..e2e2cf34` | Continue with constraints |
 | 6.17 | Document Rename                               | completed       | `91165757` | `111a67ea`         | `f97e3846`   | `91165757..f97e3846` | Continue with constraints |
 | 6.18 | DOCX                                          | completed       | `56624bef` | `0018929c`         | `3500991c`   | `56624bef..3500991c` | Continue with constraints |
-| 6.19 | Markdown platform                             | in-review       | `de108f7d` | `16020bd3`         | pending      | pending              | pending                   |
+| 6.19 | Markdown platform                             | completed       | `de108f7d` | `16020bd3`         | `bc1ed261`   | `de108f7d..bc1ed261` | Continue with constraints |
 | 6.20 | Utilities                                     | pending         | -          | -                  | -            | -                    | -                         |
 | 6.21 | CLI foundations and mixed-root decomposition  | pending         | -          | -                  | -            | -                    | -                         |
 
@@ -1904,7 +1904,7 @@ Review gate:
 
 ### Phase 6.19: Markdown Platform
 
-Status: `in-review`
+Status: `completed`
 
 Batch base: `de108f7d`
 
@@ -1912,9 +1912,9 @@ Implementation tip: `16020bd3`
 
 Execution and path migration range: `de108f7d..16020bd3`
 
-Evidence tip: pending
+Evidence tip: `bc1ed261`
 
-Exact batch review range: pending
+Exact batch review range: `de108f7d..bc1ed261`
 
 The Markdown Codex timeout command suite moved to
 `test/markdown/commands/codex-timeout.test.ts`. Only its two relative imports
@@ -1939,8 +1939,12 @@ issue.
 No current guide names the historical suite path. The matrix records the pure
 move, and correspondence records its transition over `de108f7d..16020bd3`.
 
-Decision: pending exact-range test-quality, maintainability, and documentation
-review.
+Exact-range test-quality, maintainability, and documentation review found no
+material issue. This closeout records `bc1ed261` as the evidence tip.
+
+Decision: `Continue with constraints`. Preserve the Markdown platform command
+owner and parameterized three-entry-point coverage; do not merge it into
+shared option, Interactive registration, or feature-command suites.
 
 Review gate:
 
@@ -1950,8 +1954,8 @@ Review gate:
 - [x] complete focused, adjacent, clean full-suite rerun, and repository checks
 - [x] record the initial interrupted run and the clean immediate rerun
 - [x] record the path transition
-- [ ] create the evidence commit and review the exact batch range
-- [ ] record accepted review fixes and the continuation decision
+- [x] create the evidence commit and review the exact batch range
+- [x] record accepted review fixes and the continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
