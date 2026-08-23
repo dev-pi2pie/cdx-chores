@@ -382,7 +382,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.10 | Data Extract                                  | completed       | `733f27cb` | `d02bf761`         | `dbb5574e`   | `733f27cb..dbb5574e` | Continue with constraints |
 | 6.11 | Data Preview                                  | completed       | `7b840652` | `3d95eba5`         | `350b07ac`   | `7b840652..350b07ac` | Continue with constraints |
 | 6.12 | Data Stack                                    | completed       | `cf15f599` | `4ae50698`         | `6ee0d7b0`   | `cf15f599..6ee0d7b0` | Continue with constraints |
-| 6.13 | Data Conversion                               | in-review       | `f2fb794b` | `f7f509ee`         | pending      | pending              | Pending exact review      |
+| 6.13 | Data Conversion                               | completed       | `f2fb794b` | `f7f509ee`         | `a24c3bdd`   | `f2fb794b..a24c3bdd` | Continue with constraints |
 | 6.14 | Fonts                                         | pending         | -          | -                  | -            | -                    | -                         |
 | 6.15 | Rename                                        | pending         | -          | -                  | -            | -                    | -                         |
 | 6.16 | Codex adapter platform                        | matrix-required | -          | -                  | -            | -                    | -                         |
@@ -1560,7 +1560,7 @@ Review gate:
 
 ### Phase 6.13: Data Conversion
 
-Status: `in-review`
+Status: `completed`
 
 Batch base: `f2fb794b`
 
@@ -1568,9 +1568,9 @@ Implementation tip: `f7f509ee`
 
 Execution and path migration range: `f2fb794b..f7f509ee`
 
-Evidence tip: pending
+Evidence tip: `a24c3bdd`
 
-Exact batch review range: pending
+Exact batch review range: `f2fb794b..a24c3bdd`
 
 The two selected suites moved to action and Interactive owners. Exactly six
 conversion action mocks left the mixed residual; `actionMdToDocx` remains
@@ -1596,8 +1596,12 @@ Documentation scan found no current guide using the historical suite or mock
 paths. The matrix records the executed support split, and the correspondence
 reference records three transitions over `f2fb794b..f7f509ee`.
 
-Decision: pending exact-range test-quality, maintainability, and documentation
-review of the evidence checkpoint.
+Exact-range test-quality, maintainability, and documentation review found no
+material issue. This closeout records `a24c3bdd` as the evidence tip.
+
+Decision: `Continue with constraints`. Keep command-level conversion cases for
+Phase 6.21, retain `actionMdToDocx` for Phase 6.18, and do not reintroduce a
+generic Data Conversion suite label or mixed conversion mock owner.
 
 Review gate:
 
@@ -1607,8 +1611,8 @@ Review gate:
 - [x] keep command cases and the DOCX residual in later phases
 - [x] complete focused, adjacent, full-suite, and repository validation
 - [x] record support disposition and path correspondence
-- [ ] create the evidence commit and review the exact batch range
-- [ ] record accepted review fixes and the continuation decision
+- [x] create the evidence commit and review the exact batch range
+- [x] record accepted review fixes and the continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,

@@ -370,9 +370,10 @@ through final reconciliation.
 
 ### Phase 6.13: Data Conversion
 
-The paths below were implemented and validated over `f2fb794b..f7f509ee`.
-Phase 6.13 remains in review until the evidence checkpoint receives its exact
-range review; this reference stays `draft` through final reconciliation.
+The paths below were implemented and validated over `f2fb794b..f7f509ee`, then
+reviewed over `f2fb794b..a24c3bdd`. Phase 6.13 is completed with the decision
+`Continue with constraints`; this reference stays `draft` through final
+reconciliation.
 
 | Reference date | Historical path                                                                    | Transition | Current owner or owners                                                                                                      | Migration range      | Job evidence                      |
 | -------------- | ---------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |
