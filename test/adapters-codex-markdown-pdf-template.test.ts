@@ -940,6 +940,32 @@ describe("Markdown PDF template Codex adapter", () => {
     ]);
   });
 
+  test("stops after one application repair attempt", async () => {
+    let callCount = 0;
+    const result = await suggestMarkdownPdfTemplateWithCodex({
+      ...requestBase(),
+      runner: async () => {
+        callCount += 1;
+        return responseFromDecision({
+          coverEnabled: false,
+          managedAssets: [
+            {
+              bundle_path: "/workspace/client/private-cover.png",
+              source_label: "cover.png",
+            },
+          ],
+          templateFamily: "document-layered",
+        });
+      },
+    });
+
+    expect(callCount).toBe(2);
+    expect(result.decision.decisionMode).toBe("no-usable-template");
+    expect(result.decision.fallbackReason).toBe(
+      "Codex template decision failed: invalid-application.",
+    );
+  });
+
   test("reuses one configured timeout for the initial and application-repair requests", async () => {
     const timeoutCalls: Array<number | undefined> = [];
     let callCount = 0;
