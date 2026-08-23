@@ -44,7 +44,7 @@ contract in the related research.
 
 ## Correspondence
 
-Current state: Phases 3 through 5 and Phase 6.1 through 6.6 have completed their
+Current state: Phases 3 through 5 and Phase 6.1 through 6.7 have completed their
 accepted path correspondences. The reference remains `draft` until the
 complete initial migration and final documentation reconciliation are
 finished.
@@ -233,9 +233,10 @@ migration and final reconciliation finish.
 
 ### Phase 6.7: Markdown Frontmatter
 
-The paths below were implemented and validated over `16966305..61df100e`.
-Exact-range review and the continuation decision remain pending. The reference
-stays `draft` until the initial migration and final reconciliation finish.
+The paths below were implemented and validated over `16966305..61df100e`, then
+reviewed over `16966305..16159a87`. Phase 6.7 is completed with the decision
+`Continue with constraints`; the reference stays `draft` until the initial
+migration and final reconciliation finish.
 
 | Reference date | Historical path                                         | Transition | Current owner or owners                                                                                                             | Migration range      | Job evidence                    |
 | -------------- | ------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------- |

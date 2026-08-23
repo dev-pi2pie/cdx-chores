@@ -376,7 +376,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.4  | Markdown PDF Project Codex                    | completed       | `54c24460` | `e5489182`         | `1627e953`   | `54c24460..1627e953` | Continue with constraints |
 | 6.5  | Markdown PDF Interactive and support closeout | completed       | `2b8151dd` | `b1d2c133`         | `70b71653`   | `2b8151dd..70b71653` | Continue with constraints |
 | 6.6  | Release tooling                               | completed       | `bb3d683a` | `608b0d2b`         | `d0b989a9`   | `bb3d683a..d0b989a9` | Continue with constraints |
-| 6.7  | Markdown Frontmatter                          | in-review       | `16966305` | `61df100e`         | pending      | pending              | pending                   |
+| 6.7  | Markdown Frontmatter                          | completed       | `16966305` | `61df100e`         | `16159a87`   | `16966305..16159a87` | Continue with constraints |
 | 6.8  | Video                                         | pending         | -          | -                  | -            | -                    | -                         |
 | 6.9  | Data Sources                                  | pending         | -          | -                  | -            | -                    | -                         |
 | 6.10 | Data Extract                                  | pending         | -          | -                  | -            | -                    | -                         |
@@ -977,7 +977,7 @@ Review gate:
 
 ### Phase 6.7: Markdown Frontmatter
 
-Status: `in-review`
+Status: `completed`
 
 Batch base: `16966305`
 
@@ -985,9 +985,9 @@ Implementation tip: `61df100e`
 
 Execution and path migration range: `16966305..61df100e`
 
-Evidence tip: pending
+Evidence tip: `16159a87`
 
-Exact batch review range: pending
+Exact batch review range: `16966305..16159a87`
 
 The single selected suite split into its six-case action owner and three-case
 command owner. Pre-move review found no vague, duplicated, or removable case:
@@ -1040,9 +1040,15 @@ Documentation path scan:
 - the correspondence reference records the selected suite and support split
   over `16966305..61df100e`
 
-Decision: pending the exact batch review. Phase 6.7 may close only after the
-documentation, test-quality, and maintainability reviews accept
-`16966305..<evidence-tip>` and the receipt records the continuation decision.
+Exact-range test-quality and maintainability review found no material issue in
+`16966305..16159a87`. Documentation review found that the evidence receipt
+could not name its own tip before commit; this closeout accepts the finding by
+recording `16159a87` and the exact reviewed range above.
+
+Decision: `Continue with constraints`. Phase 6.7 is complete because its one
+selected source was fully split into admitted action and command owners, and
+the feature mock moved without pulling the mixed routing owner forward from
+Phase 6.21. Continue to Phase 6.8 from this closeout tip.
 
 Review gate:
 
@@ -1052,8 +1058,8 @@ Review gate:
 - [x] preserve all nine declarations, 22 static assertions, and routing behavior
 - [x] complete focused, full-suite, and repository validation
 - [x] record correspondence and current support evidence
-- [ ] create the evidence commit and review the exact batch range
-- [ ] record accepted review fixes and the batch continuation decision
+- [x] create the evidence commit and review the exact batch range
+- [x] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
