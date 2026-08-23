@@ -7,7 +7,7 @@ const { promptTextWithGhost } = (await import(
   textInlineModuleId
 )) as typeof import("../../../src/cli/prompts/text-inline");
 
-describe("text inline prompt controller", () => {
+describe("text inline fallback", () => {
   test("promptTextWithGhost falls back to simple input when advanced prompt fails", async () => {
     const calls: string[] = [];
     const stdout = new FakePromptWriteStream();

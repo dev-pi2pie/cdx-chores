@@ -7,7 +7,7 @@ const { promptTextInlineGhost } = (await import(
   textInlineModuleId
 )) as typeof import("../../../src/cli/prompts/text-inline");
 
-describe("text inline prompt controller", () => {
+describe("text inline completion controller", () => {
   test("template completion starts only after an opening brace is typed", async () => {
     const stdin = new FakePromptReadStream();
     const stdout = new FakePromptWriteStream();
