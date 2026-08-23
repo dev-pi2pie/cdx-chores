@@ -5,7 +5,7 @@ import type { CliRuntime } from "../../src/cli/types";
 import {
   captureRenamePlanCsvSnapshotSync,
   cleanupRenamePlanCsvSinceSnapshotSync,
-} from "./rename-plan-test-utils";
+} from "../rename/support/plan-artifacts";
 
 export const REPO_ROOT = resolve(import.meta.dir, "../..");
 export const TMP_ROOT = join(REPO_ROOT, "examples", "playground", ".tmp-tests");

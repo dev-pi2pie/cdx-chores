@@ -4,6 +4,7 @@ import type {
   DataStackInteractiveHarnessResult,
   DataStackInteractiveHarnessScenario,
 } from "../../data-stack/interactive/harness-contract";
+import type { RenameInteractiveHarnessScenario } from "../../rename/interactive/harness-contract";
 
 export interface SourceShapeSuggestionOptions {
   currentHeaderRow?: unknown;
@@ -19,7 +20,8 @@ export interface InteractiveHarnessScenario
   extends
     DataExtractInteractiveHarnessScenario,
     DataQueryInteractiveHarnessScenario,
-    DataStackInteractiveHarnessScenario {
+    DataStackInteractiveHarnessScenario,
+    RenameInteractiveHarnessScenario {
   mode: "run" | "invalid-data-action";
   codexTimeoutMs?: number;
   captureCodexTimeouts?: boolean;
@@ -67,14 +69,6 @@ export interface InteractiveHarnessScenario
   stdoutColumns?: number;
   stdoutIsTTY?: boolean;
   stderrIsTTY?: boolean;
-  cleanupAnalyzerEvidence?: Record<string, unknown>;
-  cleanupAnalyzerSuggestion?: Record<string, unknown>;
-  cleanupAnalyzerErrorMessage?: string;
-  cleanupAnalyzerThrowMessage?: string;
-  cleanupAnalysisReportPath?: string;
-  captureCleanupSuggestInput?: boolean;
-  captureCleanupCollectInput?: boolean;
-  renameApplyErrorMessage?: string;
 }
 
 export interface InteractiveHarnessResult extends DataStackInteractiveHarnessResult {

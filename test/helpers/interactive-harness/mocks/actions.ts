@@ -9,9 +9,9 @@ import { createDataQueryActionMock } from "../../../data-query/interactive/mock-
 import { createStackActionMocks } from "../../../data-stack/interactive/mock-action";
 import { createDoctorActionMock } from "../../../doctor/interactive/mock-action";
 import { createMarkdownFrontmatterActionMock } from "../../../markdown-frontmatter/interactive/mock-action";
+import { createRenameActionMocks } from "../../../rename/interactive/mock-action";
 import { createVideoActionMocks } from "../../../video/interactive/mock-action";
 import { createMiscActionMocks } from "./action-misc";
-import { createRenameActionMocks } from "./action-rename";
 
 export function installActionMocks(context: HarnessRunnerContext): void {
   mock.module(actionsModuleUrl, () => ({
