@@ -289,6 +289,20 @@ Observable contracts:
 
 ### Phase 5: Migrate The Markdown PDF Catalog Pilot
 
+Admission boundary:
+
+- migrate exactly `test/cli-actions-md-to-pdf-bundle.test.ts` and
+  `test/cli-interactive-markdown-pdf/font-hints.test.ts`
+- apply only the accepted split and move decisions in the Phase 2 matrix
+- make no production change or test removal
+- leave shared Markdown PDF support and every other Markdown PDF suite at its
+  current path
+- land the Bundle and font-hints owners as separate implementation commits,
+  then land a separate evidence commit containing validation, correspondence,
+  and status evidence
+- review the complete phase-base-to-evidence-tip range; record the closeout
+  receipt only after that range is clean
+
 Tasks:
 
 - [ ] Apply the accepted matrix for the bounded Markdown PDF pilot selected in
@@ -315,10 +329,26 @@ Observable contracts:
 
 ### Phase 6: Migrate Remaining Feature And Platform Families
 
-Repeat this phase as one checkpoint per accepted inventory family. Likely
-families include Data Stack, Rename, the remaining Markdown PDF suites, CLI
-foundations, Codex adapters, Fonts, Video, release tooling, and utilities; the
-inventory owns the final list and order.
+Complete a docs-only batch manifest before the first Phase 6 test edit. Repeat
+this phase as one checkpoint per accepted manifest row; do not combine rows
+merely because they share a feature prefix.
+
+The manifest order is:
+
+1. remaining Markdown PDF slices
+2. release tooling, Markdown Frontmatter, and Video as separate small-family
+   checkpoints
+3. Data Sources fixtures, then Data Extract, Data Preview, Data Stack, and Data
+   Conversion or shared Data ownership
+4. Fonts
+5. Rename
+6. Codex adapter platform, Document Rename, DOCX, and utilities as separate
+   checkpoints
+7. CLI foundations
+
+The accepted inventory and case matrices own the exact source and destination
+paths within each row. CLI foundations is the final family migration; global
+support reconciliation remains Phase 7 work.
 
 Tasks for each batch:
 
@@ -329,6 +359,7 @@ Tasks for each batch:
 - [ ] Colocate feature-local support and preserve approved global imports.
 - [ ] Update executable references, current docs, and correspondence rows.
 - [ ] Run the complete focused owner set plus affected adjacent boundaries.
+- [ ] Run the complete suite and repository checks after the focused owner set.
 - [ ] Review the exact batch range and record a continue, constrain, defer, or
       stop decision.
 
@@ -340,6 +371,10 @@ Batch gate:
   becomes separate work; it is not folded silently into the batch.
 
 ### Phase 7: Close Global Support Ownership And Root Deferrals
+
+This is a post-family closure and reconciliation phase. It may finish only
+explicitly accepted residual support moves and root classifications; it must
+not introduce another unbounded feature or CLI-foundations migration.
 
 Tasks:
 

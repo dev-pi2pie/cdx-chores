@@ -42,6 +42,8 @@ references.
 |     2 | case matrices and catalog admission            | completed   | `34d080e9..0b8d59bd` | Continue with constraints |
 |     3 | Data Query migration pilot                     | completed   | `db9622cf..27ccab6e` | Continue with constraints |
 |     4 | Doctor ownership migration pilot               | completed   | `ff0f3d6f..837e5d95` | Continue with constraints |
+|     5 | bounded Markdown PDF migration pilot           | pending     | pending              | Admitted                  |
+|     6 | remaining accepted family batches              | pending     | per-batch             | Admitted                  |
 
 ## Phase 1: Refreshed Baseline And Complete File Inventory
 
@@ -279,3 +281,59 @@ feature-and-boundary catalog pattern, but do not treat the deferred non-Doctor
 Interactive cases or residual mixed action mocks as migrated. Keep those paths
 for Phase 6, keep the correspondence reference `draft`, and apply only the
 bounded Markdown PDF matrix admitted for the next pilot.
+
+## Phase 5: Bounded Markdown PDF Migration Pilot
+
+Status: `pending`
+
+The pilot is limited to these two pre-change owners:
+
+- `test/cli-actions-md-to-pdf-bundle.test.ts`
+- `test/cli-interactive-markdown-pdf/font-hints.test.ts`
+
+The Phase 2 matrix admits six destination owners under
+`test/markdown-pdf/actions/` and `test/markdown-pdf/interactive/`. It admits no
+test removal or production change. Shared Markdown PDF support and all other
+Markdown PDF suites remain outside this checkpoint.
+
+Execution receipt:
+
+- [ ] record the focused pre-change baseline
+- [ ] land the Bundle and font-hints owners as separate validated commits
+- [ ] run all six destination owners and the recorded adjacent safety set
+- [ ] run the complete suite, formatting check, lint, build, and diff check
+- [ ] land a separate evidence commit containing validation, correspondence,
+      and status evidence
+- [ ] review the complete phase-base-to-evidence-tip range
+- [ ] record the closeout receipt and continuation decision after clean review
+
+## Phase 6: Remaining Accepted Family Batches
+
+Status: `pending`
+
+Before the first test edit, expand each row below into its exact source and
+destination manifest from the completed inventory and case matrices. Each row
+is an independent checkpoint with its own base, focused evidence, complete
+suite and repository checks, exact review range, and decision.
+
+1. remaining Markdown PDF slices
+2. release tooling
+3. Markdown Frontmatter
+4. Video
+5. Data Sources fixtures
+6. Data Extract
+7. Data Preview
+8. Data Stack
+9. Data Conversion or shared Data ownership
+10. Fonts
+11. Rename
+12. Codex adapter platform
+13. Document Rename
+14. DOCX
+15. utilities
+16. CLI foundations
+
+An out-of-manifest finding returns to inventory or matrix review. Phase 7 owns
+global-helper neutrality, explicitly accepted residual support moves, and final
+root exception or deferral classification; it does not admit another broad
+family migration.
