@@ -14,7 +14,7 @@ import {
   test,
   withTempFixtureDir,
   writeFile,
-} from "./fixtures";
+} from "../markdown-pdf/actions/profile-codex-fixtures";
 
 describe("cli action modules: md pdf-profile codex", () => {
   test("accepts positional input as the Markdown sample signal", async () => {

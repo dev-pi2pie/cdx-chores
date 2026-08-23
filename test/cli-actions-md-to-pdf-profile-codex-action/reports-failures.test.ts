@@ -14,7 +14,7 @@ import {
   test,
   withTempFixtureDir,
   writeFile,
-} from "./fixtures";
+} from "../markdown-pdf/actions/profile-codex-fixtures";
 
 describe("cli action modules: md pdf-profile codex", () => {
   test("rejects Codex reports with unsupported artifact versions", async () => {

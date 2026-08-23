@@ -15,8 +15,8 @@ import {
   test,
   withTempFixtureDir,
   writeFile,
-} from "./fixtures";
-import type { NormalizedMarkdownPdfProfileIdentity } from "./fixtures";
+} from "../markdown-pdf/actions/profile-codex-fixtures";
+import type { NormalizedMarkdownPdfProfileIdentity } from "../markdown-pdf/actions/profile-codex-fixtures";
 
 describe("cli action modules: md pdf-profile codex", () => {
   test("writes a generated profile with Codex identity and optional report", async () => {
