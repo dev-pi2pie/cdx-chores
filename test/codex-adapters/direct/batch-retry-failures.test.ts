@@ -1,41 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import { readdir, writeFile } from "node:fs/promises";
 
 import {
-  chunkItems,
   executeBatchesWithRetries,
-  normalizeTitle,
-  parseFilenameTitleSuggestions,
-  runCodexPromptOnly,
   summarizeBatchErrors,
   summarizeCodexBatchFailures,
-} from "../src/adapters/codex/shared";
+} from "../../../src/adapters/codex/shared";
 
-describe("codex shared adapter helpers", () => {
-  test("normalizeTitle strips punctuation and collapses whitespace", () => {
-    expect(normalizeTitle('  "Quarterly: Revenue & Growth!"  ')).toBe("Quarterly Revenue Growth");
-  });
-
-  test("chunkItems groups arrays by chunk size", () => {
-    expect(chunkItems([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
-    expect(chunkItems([1, 2, 3], 0)).toEqual([[1, 2, 3]]);
-  });
-
-  test("parseFilenameTitleSuggestions normalizes titles and keeps latest duplicate filename", () => {
-    const response = JSON.stringify({
-      suggestions: [
-        { filename: " report.pdf ", title: ' "Q4: Results!" ' },
-        { filename: "image.png", title: "  " },
-        { filename: "report.pdf", title: "Q4 Summary" },
-        { filename: "", title: "ignored" },
-      ],
-    });
-
-    const map = parseFilenameTitleSuggestions(response);
-    expect([...map.entries()]).toEqual([["report.pdf", "Q4 Summary"]]);
-  });
-
-  test("summarizeBatchErrors returns consistent summary text", () => {
+describe("Codex batch retries and failure summaries", () => {
+  test("omits empty errors and deduplicates full or partial batch summaries", () => {
     expect(summarizeBatchErrors([], false)).toBeUndefined();
     expect(summarizeBatchErrors(["timeout"], false)).toBe("Codex title generation failed. timeout");
     expect(summarizeBatchErrors(["timeout", "timeout", "rate limit"], true)).toBe(
@@ -211,67 +183,5 @@ describe("codex shared adapter helpers", () => {
     ).toBe(
       "Codex title generation failed. Codex image-title request timed out after the 30s per-attempt limit. 1 additional non-timeout batch failure(s) occurred.",
     );
-  });
-
-  test("runCodexPromptOnly runs work in an empty disposable directory", async () => {
-    let workingDirectory = "";
-    const result = await runCodexPromptOnly({
-      outputSchema: { type: "object" },
-      prompt: "facts only",
-      timeoutMs: 1_000,
-      work: async (input) => {
-        workingDirectory = input.workingDirectory;
-        expect(await readdir(input.workingDirectory)).toEqual([]);
-        expect(input.prompt).toBe("facts only");
-        expect(input.outputSchema).toEqual({ type: "object" });
-        await writeFile(`${input.workingDirectory}/scratch.txt`, "temporary", "utf8");
-        return "ok";
-      },
-    });
-
-    expect(result).toBe("ok");
-    await expect(readdir(workingDirectory)).rejects.toThrow();
-  });
-
-  test("runCodexPromptOnly removes the disposable directory when work throws", async () => {
-    let workingDirectory = "";
-
-    await expect(
-      runCodexPromptOnly({
-        outputSchema: { type: "object" },
-        prompt: "facts only",
-        timeoutMs: 1_000,
-        work: async (input) => {
-          workingDirectory = input.workingDirectory;
-          await writeFile(`${input.workingDirectory}/scratch.txt`, "temporary", "utf8");
-          throw new Error("prompt failed");
-        },
-      }),
-    ).rejects.toThrow("prompt failed");
-
-    await expect(readdir(workingDirectory)).rejects.toThrow();
-  });
-
-  test("runCodexPromptOnly removes the disposable directory when the signal aborts", async () => {
-    let workingDirectory = "";
-
-    await expect(
-      runCodexPromptOnly({
-        outputSchema: { type: "object" },
-        prompt: "facts only",
-        timeoutMs: 1,
-        work: async (input) => {
-          workingDirectory = input.workingDirectory;
-          await writeFile(`${input.workingDirectory}/scratch.txt`, "temporary", "utf8");
-          return await new Promise((_resolve, reject) => {
-            input.signal.addEventListener("abort", () => {
-              reject(new Error("prompt aborted"));
-            });
-          });
-        },
-      }),
-    ).rejects.toThrow("prompt aborted");
-
-    await expect(readdir(workingDirectory)).rejects.toThrow();
   });
 });

@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   classifyCodexRequestFailure,
   formatCodexTimeoutFailure,
-} from "../src/utils/codex-request-failure";
+} from "../../../src/utils/codex-request-failure";
 
 function withCause(name: string, cause?: unknown): Error & { cause?: unknown } {
   const error = new Error(name) as Error & { cause?: unknown };
@@ -12,7 +12,7 @@ function withCause(name: string, cause?: unknown): Error & { cause?: unknown } {
   return error;
 }
 
-describe("Codex request failure classification", () => {
+describe("Codex request failure classification and timeout formatting", () => {
   test("recognizes a direct TimeoutError", () => {
     expect(classifyCodexRequestFailure(withCause("TimeoutError"))).toBe("timeout");
   });
