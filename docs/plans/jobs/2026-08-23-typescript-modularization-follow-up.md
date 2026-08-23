@@ -39,9 +39,9 @@ modularization follow-up without duplicating the parent plan's checklists.
 |     6 | Interactive Codex authoring test             | completed | `d2172ad8..e197efed` | Continue |
 |     7 | Template synthesis test                      | completed | `f74795e7..b68ed2d1` | Continue |
 |     8 | Profile adapter test                         | completed | `2e5fa5f1..8c7c6ae6` | Continue |
-|     9 | Template adapter test                        | pending   | pending              | pending  |
-|    10 | Markdown PDF command-surface test            | pending   | pending              | pending  |
-|    11 | Interactive Markdown `to-pdf` decision gate  | pending   | pending              | pending  |
+|     9 | Template adapter test                        | completed | `e9234ac0..c0b34c53` | Continue |
+|    10 | Markdown PDF command-surface test            | completed | `9d5a2d4d..d8cfc74c` | Continue |
+|    11 | Interactive Markdown `to-pdf` decision gate  | completed | `f10fdb8e..5f9aa9be` | Split    |
 |    12 | Cumulative validation and lifecycle closeout | pending   | pending              | pending  |
 
 ## Phase 1: Profile Codex Action Test
