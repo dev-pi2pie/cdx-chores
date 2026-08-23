@@ -72,21 +72,24 @@ Out of scope:
 - Keep production modules compatible with Node.js; do not introduce Bun-only
   runtime APIs.
 
-## Execution Records
+## Execution Record Strategy
 
-Create one concise job record for every executed phase:
+Use one plan-level execution record for the complete rollout:
 
 ```text
-docs/plans/jobs/YYYY-MM-DD-typescript-modularization-follow-up-phase-N.md
+docs/plans/jobs/YYYY-MM-DD-typescript-modularization-follow-up.md
 ```
 
-Each record should state the moved boundary, observable contracts, focused
+Create it when Phase 1 begins, using that execution date, and keep it
+`in-progress` through the rollout. Give every executed phase a concise section
+that states the moved or assessed boundary, observable contracts, focused
 validation results, exact review range, accepted constraints, and the decision
-to continue, constrain, or stop. The final phase record should link the earlier
-records rather than repeat their full content.
+to continue, constrain, or stop.
 
-Every executed phase requires a completed record, including a decision gate
-that defers its implementation boundary.
+The Phase 11 section is required even when its decision gate defers the
+Interactive `to-pdf` split. Complete the unified record only after Phase 12
+records cumulative validation and lifecycle closeout. Create a separate job
+record only if discovered work materially leaves this plan's scope.
 
 ## Phase Checklist
 
@@ -382,10 +385,11 @@ Tasks:
 - [ ] Review public imports and repository callers for accidental deep imports.
 - [ ] Review the resulting test layout for duplicated fixtures, scattered
       ownership, and obsolete compatibility loaders.
-- [ ] Update this checklist and every phase job record from actual evidence.
+- [ ] Update this checklist and every phase section in the unified job record
+      from actual evidence.
 - [ ] Update the research status only if its own policy-defined evidence bar is
       satisfied.
-- [ ] Review guides, research, plans, and job records for stale paths,
+- [ ] Review guides, research, plans, and the job record for stale paths,
       responsibility claims, and missing traceability.
 - [ ] Review the complete refactor range before marking this plan completed.
 
@@ -404,8 +408,8 @@ git diff --check
 
 This plan may be marked `completed` only when:
 
-- every executed phase, including a gate that defers implementation, has a
-  completed job record and evidence receipt
+- the unified job record contains a completed evidence receipt for every
+  executed phase, including a gate that defers implementation
 - every moved public boundary retains its names and caller import paths
 - focused and cumulative validation pass
 - the final inventory and remaining deferrals are recorded explicitly

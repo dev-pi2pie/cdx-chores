@@ -253,7 +253,8 @@ The final phase should include:
 - a fresh strict over-300-line inventory with explicit remaining deferrals
 - public-import and accidental-deep-import review
 - test-layout review for duplicated fixtures or scattered ownership
-- updates to the plan checklist and all phase job records from actual evidence
+- updates to the plan checklist and every phase section in the unified job
+  record from actual evidence
 - a final current-state documentation pass so guides, research, plans, and job
   records do not retain stale paths or responsibility claims
 - final review of the complete refactor range before lifecycle closeout
