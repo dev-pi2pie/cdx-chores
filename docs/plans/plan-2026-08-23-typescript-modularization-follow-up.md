@@ -1,7 +1,7 @@
 ---
 title: "TypeScript Modularization Follow-Up Implementation"
 created-date: 2026-08-23
-status: draft
+status: active
 agent: codex
 ---
 
@@ -15,8 +15,8 @@ compatibility.
 
 ## Planning Boundary
 
-This plan is `draft`: no implementation phase has started. Activate it only
-when Phase 1 begins.
+This plan is `active`. Phase 1 began from a clean focused-test baseline; later
+phases remain gated on reviewed completion of the preceding phase.
 
 The strict research inventory found 59 source files and 75 test files above 300
 lines. Those counts identify review candidates, not defects or completion
@@ -69,6 +69,10 @@ Out of scope:
   safe completion of the phase.
 - Run the phase's focused tests and review its exact diff before starting the
   next production slice.
+- Capture one committed implementation `base..tip` range per phase. If a review
+  fix lands, widen the tip and review the complete range again.
+- Update the unified job section and plan checklist only after focused
+  validation and exact-range review pass.
 - Keep production modules compatible with Node.js; do not introduce Bun-only
   runtime APIs.
 
@@ -85,6 +89,11 @@ Create it when Phase 1 begins, using that execution date, and keep it
 that states the moved or assessed boundary, observable contracts, focused
 validation results, exact review range, accepted constraints, and the decision
 to continue, constrain, or stop.
+
+Each phase section should include a compact before/after table covering file
+topology, responsibility, focused-test evidence, and public imports or
+production-diff scope where applicable. Line count is evidence, not a success
+criterion.
 
 The Phase 11 section is required even when its decision gate defers the
 Interactive `to-pdf` split. Complete the unified record only after Phase 12
@@ -130,6 +139,9 @@ Tasks:
       `src/cli/markdown-pdf/template-assets/local-rewrite.ts`.
 - [ ] Preserve `rejectRemoteMarkdownPdfAssetsWhenDisabled` and
       `rewriteMarkdownPdfTemplateLocalAssets` at the current import path.
+- [ ] Review the exact Phase 2 implementation range for Template reference
+      classification, remote rejection, and local rewriting security risks;
+      do not expand it into a whole-repository scan.
 
 Observable contracts:
 
@@ -346,11 +358,11 @@ Decision gate:
       10 using the research criteria and the now-focused Interactive tests.
 - [ ] Record whether source preparation, prepared-render handling, and output
       review remain independently owned responsibilities.
-- [ ] If the boundary is no longer clear, record the deferral and make no
-      production edit.
-- [ ] If the boundary remains clear, extract those responsibilities under
-      `src/cli/interactive/markdown/to-pdf/` while retaining cancellation and
-      backtracking orchestration plus both current exports in `to-pdf.ts`.
+- [ ] Execute and record one accepted outcome: defer the split with no
+      production edit when the boundary is no longer clear, or extract those
+      responsibilities under `src/cli/interactive/markdown/to-pdf/` while
+      retaining cancellation and backtracking orchestration plus both current
+      exports in `to-pdf.ts`.
 
 Observable contracts if the split proceeds:
 
