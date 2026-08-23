@@ -3094,8 +3094,10 @@ The destination projection is 42 test files. The two evidence-approved
 Markdown PDF routing removals reduce the focused result to 213 tests and 580
 assertions. The contextual-tip consolidation preserves all 12 runtime cases;
 its three flow values become rows of the two accepted table-driven owners.
-All other titles, bodies, and assertions remain unchanged except the accepted
-Video routing title and the path fallback filename.
+All other leaf titles, bodies, and assertions remain unchanged except the
+accepted Video routing title and the path fallback filename. Exact-range review
+also aligned the three split text-controller suite labels with their
+completion, terminal, and fallback owners.
 
 The exact Phase 2 title rows above remain the controlling case-level manifest.
 The tables below reconcile those historical rows to the three current
@@ -3154,13 +3156,16 @@ movement, `test/helpers/cli-test-utils.ts`, and compatibility-facade cleanup
 remain Phase 7 work.
 
 Phase 6.21 executed the CLI-foundations split over `10f7eeef..84c3d3b9`, the
-mixed-root split over `10f7eeef..337a677f`, and the prompt-isolation follow-up
-at `ef02de90`. The destination slice reproduces exactly 213 tests with 580
-assertions across 42 files, and the adjacent safety set reproduces 82 tests
-with 389 assertions across seven files. The complete suite passes 2,621 tests
-with 14,870 assertions across 354 files. `bunx tsc --noEmit`, `bun run lint`,
+mixed-root split over `10f7eeef..337a677f`, the prompt-isolation follow-up at
+`ef02de90`, and the reviewed suite-label alignment at `d5985314`. The
+destination slice reproduces exactly 213 tests with 580 assertions across 42
+files, and the adjacent safety set reproduces 82 tests with 389 assertions
+across seven files. The complete suite passes 2,621 tests with 14,870
+assertions across 354 files. `bunx tsc --noEmit`, `bun run lint`,
 `bun run format:check`, `bun run build`, and `git diff --check` are clean.
-Pre-commit test-quality and maintainability review found no material issue.
+Pre-commit test-quality and maintainability review found no material issue. The
+initial exact-range review's one maintainability finding is resolved without a
+leaf-contract change.
 
 ##### Phase 6.21 Focused Validation Commands
 

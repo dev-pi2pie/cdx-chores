@@ -2015,9 +2015,9 @@ Admission predecessor: `dd74aa3e`
 
 Batch base: `10f7eeef`
 
-Implementation tip: `ef02de90`
+Implementation tip: `d5985314`
 
-Execution and path migration range: `10f7eeef..ef02de90`
+Execution and path migration range: `10f7eeef..d5985314`
 
 Evidence tip: pending
 
@@ -2054,6 +2054,9 @@ Implementation used three semantic checkpoints:
 - `337a677f` split the mixed routing and command-UX roots into accepted owners
 - `ef02de90` isolated the moved prompt contracts from unrelated historical Bun
   module mocks without changing production code
+- `d5985314` applies the exact-range review fix by aligning the three
+  text-controller suite labels with their completion, terminal, and fallback
+  owners
 
 The two approved Markdown PDF routing cases are the only removals. All other
 admitted runtime cases and assertions are preserved, including the 12
@@ -2080,6 +2083,15 @@ Repository checks are clean: `bun run format:check`, `bun run lint`,
 `bunx tsc --noEmit`, `bun run build`, and `git diff --check`. Pre-commit
 test-quality and maintainability review found no material issue. Current-guide
 scanning found no historical path requiring an update.
+
+The pre-fix exact-range review over `10f7eeef..668e0deb` found one
+maintainability issue: the three text-controller destinations retained the
+same generic suite label. `d5985314` gives those owners distinct completion,
+terminal, and fallback labels without changing leaf titles, bodies, or
+assertions. Focused and full validation remained exact, and test-quality plus
+maintainability re-review of the fix found no follow-on issue. The canonical
+post-fix exact range remains pending until this refreshed evidence is
+committed.
 
 Review gate:
 
