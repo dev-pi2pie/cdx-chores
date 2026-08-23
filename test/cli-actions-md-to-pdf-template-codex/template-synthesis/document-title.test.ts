@@ -7,7 +7,10 @@ import {
   synthesizeMdPdfTemplateCodexFromDecision,
 } from "../../../src/cli/markdown-pdf/template-codex/synthesize";
 import type { MdPdfTemplateCodexSignalCollection } from "../../../src/cli/markdown-pdf/template-codex/types";
-import { createSynthesisOutputPlan, createSynthesisSignals } from "../synthesis-fixtures";
+import {
+  createSynthesisOutputPlan,
+  createSynthesisSignals,
+} from "../../markdown-pdf/actions/template-synthesis-fixtures";
 
 function createTemplateDecision(input: {
   cssBlocks?: MarkdownPdfTemplateCodexDecision["cssBlocks"];

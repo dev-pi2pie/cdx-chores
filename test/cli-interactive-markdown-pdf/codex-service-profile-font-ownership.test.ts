@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { prepareMarkdownPdfCodexCandidate } from "../../src/cli/interactive/markdown/codex-service";
 import { createActionTestRuntime } from "../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
-import { minimalPng } from "../cli-actions-md-to-pdf-template-codex/fixtures";
+import { minimalPng } from "../markdown-pdf/actions/template-codex-fixtures";
 
 const PROFILE_WITH_OWNED_FONTS = [
   "profile:",

@@ -11,7 +11,7 @@ import {
 import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
 import { pathExists } from "../markdown-pdf/support/path-fixtures";
-import { minimalPng } from "./fixtures";
+import { minimalPng } from "../markdown-pdf/actions/template-codex-fixtures";
 
 describe("cli action modules: md pdf-template codex output paths", () => {
   test("generates readable template bundle IDs", () => {

@@ -9,7 +9,11 @@ import {
 
 import { type MarkdownPdfTemplateCodexDecision } from "../../src/cli/markdown-pdf/template-codex";
 
-import { requestBase, responseFromDecision, createSynthesisSignals } from "./fixtures";
+import {
+  requestBase,
+  responseFromDecision,
+  createSynthesisSignals,
+} from "../markdown-pdf/adapters/template-codex-fixtures";
 
 describe("Markdown PDF template Codex adapter: decision parsing", () => {
   test("parses and applies an adapted decision with managed cover asset references", async () => {

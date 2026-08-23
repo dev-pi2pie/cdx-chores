@@ -1,8 +1,8 @@
-import type { MarkdownPdfTemplateCodexRequest } from "../../src/adapters/codex/markdown-pdf-template";
+import type { MarkdownPdfTemplateCodexRequest } from "../../../src/adapters/codex/markdown-pdf-template";
 import {
   createSynthesisOutputPlan,
   createSynthesisSignals,
-} from "../cli-actions-md-to-pdf-template-codex/synthesis-fixtures";
+} from "../actions/template-synthesis-fixtures";
 
 export { createSynthesisSignals };
 

@@ -2,7 +2,10 @@ import { describe, expect, test } from "bun:test";
 
 import { MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT } from "../../../src/cli/markdown-pdf/template-codex/families";
 import { synthesizeMdPdfTemplateCodex } from "../../../src/cli/markdown-pdf/template-codex/synthesize";
-import { createSynthesisOutputPlan, createSynthesisSignals } from "../synthesis-fixtures";
+import {
+  createSynthesisOutputPlan,
+  createSynthesisSignals,
+} from "../../markdown-pdf/actions/template-synthesis-fixtures";
 import { cssDeclarationBlocksForSelector } from "./css-assertions";
 
 function expectTocPageBreakCss(

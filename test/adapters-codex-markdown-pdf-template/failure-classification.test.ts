@@ -8,7 +8,11 @@ import {
 
 import { type MarkdownPdfTemplateCodexDecision } from "../../src/cli/markdown-pdf/template-codex";
 
-import { requestBase, responseFromDecision, noUsableResponse } from "./fixtures";
+import {
+  requestBase,
+  responseFromDecision,
+  noUsableResponse,
+} from "../markdown-pdf/adapters/template-codex-fixtures";
 
 describe("Markdown PDF template Codex adapter: failure classification", () => {
   test("turns invalid structured output into no-usable-template", async () => {

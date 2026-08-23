@@ -6,14 +6,14 @@ import {
   type MarkdownPdfPageSize,
   type MarkdownPdfPreset,
   type MarkdownPdfTocPageBreak,
-} from "../../src/cli/markdown-pdf/validation";
-import { buildMarkdownPdfTableLayoutSignal } from "../../src/cli/markdown-pdf/profile/layout-policy";
+} from "../../../src/cli/markdown-pdf/validation";
+import { buildMarkdownPdfTableLayoutSignal } from "../../../src/cli/markdown-pdf/profile/layout-policy";
 import type {
   MarkdownPdfTemplateCodexFitPressure,
   MarkdownPdfTemplateCodexOrientationBucket,
   MarkdownPdfTemplateCodexOutputPlan,
   MdPdfTemplateCodexSignalCollection,
-} from "../../src/cli/markdown-pdf/template-codex";
+} from "../../../src/cli/markdown-pdf/template-codex";
 
 interface CreateSynthesisSignalsInput {
   preset?: MarkdownPdfPreset;

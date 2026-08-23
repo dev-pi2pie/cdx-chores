@@ -6,7 +6,10 @@ import {
   suggestMarkdownPdfTemplateWithCodex,
 } from "../../src/adapters/codex/markdown-pdf-template";
 
-import { requestBase, responseFromDecision } from "./fixtures";
+import {
+  requestBase,
+  responseFromDecision,
+} from "../markdown-pdf/adapters/template-codex-fixtures";
 
 describe("Markdown PDF template Codex adapter: repair timeout", () => {
   afterEach(() => {

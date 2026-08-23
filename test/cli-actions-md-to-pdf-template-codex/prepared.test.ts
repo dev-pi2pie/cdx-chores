@@ -13,7 +13,7 @@ import { suggestedMarkdownPdfCodexOutputPath } from "../../src/cli/interactive/m
 import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
 import { pathExists } from "../markdown-pdf/support/path-fixtures";
-import { minimalPng } from "./fixtures";
+import { minimalPng } from "../markdown-pdf/actions/template-codex-fixtures";
 
 describe("Markdown PDF prepared Template Codex services", () => {
   test("rebinds content and snapshotted assets with destination-time report and overwrite policy", async () => {

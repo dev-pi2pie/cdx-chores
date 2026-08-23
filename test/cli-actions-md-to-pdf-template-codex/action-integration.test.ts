@@ -16,7 +16,11 @@ import { createPdfRunner } from "../markdown-pdf/actions/render-support";
 import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
 import { pathExists } from "../markdown-pdf/support/path-fixtures";
-import { minimalJpeg, minimalPng, minimalWebpVp8x1200By800 } from "./fixtures";
+import {
+  minimalJpeg,
+  minimalPng,
+  minimalWebpVp8x1200By800,
+} from "../markdown-pdf/actions/template-codex-fixtures";
 
 function codexTemplateResponse(
   input: {

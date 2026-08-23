@@ -10,7 +10,7 @@ import { createPdfRunner } from "./markdown-pdf/actions/render-support";
 import {
   createSynthesisOutputPlan,
   createSynthesisSignals,
-} from "./cli-actions-md-to-pdf-template-codex/synthesis-fixtures";
+} from "./markdown-pdf/actions/template-synthesis-fixtures";
 import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 

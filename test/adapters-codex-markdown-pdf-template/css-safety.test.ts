@@ -4,7 +4,10 @@ import { suggestMarkdownPdfTemplateWithCodex } from "../../src/adapters/codex/ma
 
 import { validateMarkdownPdfTemplateCodexCssBlock } from "../../src/cli/markdown-pdf/template-codex";
 
-import { requestBase, responseFromDecision } from "./fixtures";
+import {
+  requestBase,
+  responseFromDecision,
+} from "../markdown-pdf/adapters/template-codex-fixtures";
 
 describe("Markdown PDF template Codex adapter: css safety", () => {
   test("accepts conservative fallback decisions with bounded slot-owned CSS", async () => {

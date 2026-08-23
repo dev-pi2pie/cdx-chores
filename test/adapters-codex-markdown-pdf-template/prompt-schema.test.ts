@@ -5,7 +5,11 @@ import {
   MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA,
 } from "../../src/adapters/codex/markdown-pdf-template";
 
-import { requestBase, promptFacts, createSynthesisSignals } from "./fixtures";
+import {
+  requestBase,
+  promptFacts,
+  createSynthesisSignals,
+} from "../markdown-pdf/adapters/template-codex-fixtures";
 
 function assertStrictSchemaObjects(value: unknown, context = "schema"): void {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {

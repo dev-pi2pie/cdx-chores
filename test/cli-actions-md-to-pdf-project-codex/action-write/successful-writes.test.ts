@@ -13,7 +13,7 @@ import {
 import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../../helpers/cli-test-utils";
 import { createPdfRunner } from "../../markdown-pdf/actions/render-support";
-import { minimalPng } from "../../cli-actions-md-to-pdf-template-codex/fixtures";
+import { minimalPng } from "../../markdown-pdf/actions/template-codex-fixtures";
 import { pathExists } from "../../markdown-pdf/support/path-fixtures";
 
 import {

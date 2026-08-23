@@ -4,7 +4,10 @@ import {
   synthesizeMdPdfTemplateCodex,
   type MarkdownPdfTemplateCodexSynthesisResult,
 } from "../../src/cli/markdown-pdf/template-codex";
-import { createSynthesisOutputPlan, createSynthesisSignals } from "./synthesis-fixtures";
+import {
+  createSynthesisOutputPlan,
+  createSynthesisSignals,
+} from "../markdown-pdf/actions/template-synthesis-fixtures";
 
 function synthesize(
   input: {

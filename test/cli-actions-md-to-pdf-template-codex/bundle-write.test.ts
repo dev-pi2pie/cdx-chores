@@ -20,8 +20,8 @@ import {
   withTempFixtureDir,
 } from "../helpers/cli-test-utils";
 import { pathExists } from "../markdown-pdf/support/path-fixtures";
-import { minimalPng } from "./fixtures";
-import { createSynthesisSignals } from "./synthesis-fixtures";
+import { minimalPng } from "../markdown-pdf/actions/template-codex-fixtures";
+import { createSynthesisSignals } from "../markdown-pdf/actions/template-synthesis-fixtures";
 
 function outputPlan(input: {
   coverImagePath?: string;

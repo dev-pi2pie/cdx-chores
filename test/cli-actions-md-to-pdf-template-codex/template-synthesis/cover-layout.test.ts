@@ -7,7 +7,10 @@ import {
   synthesizeMdPdfTemplateCodex,
   synthesizeMdPdfTemplateCodexFromDecision,
 } from "../../../src/cli/markdown-pdf/template-codex/synthesize";
-import { createSynthesisOutputPlan, createSynthesisSignals } from "../synthesis-fixtures";
+import {
+  createSynthesisOutputPlan,
+  createSynthesisSignals,
+} from "../../markdown-pdf/actions/template-synthesis-fixtures";
 import { cssDeclarationsForSelector } from "./css-assertions";
 
 describe("cli action modules: md pdf-template codex template synthesis", () => {
