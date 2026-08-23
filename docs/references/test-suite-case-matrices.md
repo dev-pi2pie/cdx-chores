@@ -2900,7 +2900,8 @@ assertions; the nine-file adjacent slice remains 54 tests with 317 assertions;
 and the complete suite passes 2,623 tests with 14,878 assertions across 336
 files. Both title clarifications and all three `ENOENT` strengthenings match the
 admission. Pre-commit test-quality and maintainability review found no material
-issue.
+issue. Exact-range review over `2f5d5a20..e2e2cf34` found no material
+test-quality, maintainability, or documentation issue.
 
 ### Decision Summary
 

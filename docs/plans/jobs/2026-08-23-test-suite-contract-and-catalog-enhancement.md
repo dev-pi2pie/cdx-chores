@@ -385,7 +385,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.13 | Data Conversion                               | completed       | `f2fb794b` | `f7f509ee`         | `a24c3bdd`   | `f2fb794b..a24c3bdd` | Continue with constraints |
 | 6.14 | Fonts                                         | completed       | `ba8a6cd7` | `4be23beb`         | `e4235892`   | `ba8a6cd7..e4235892` | Continue with constraints |
 | 6.15 | Rename                                        | completed       | `93e7a797` | `da247175`         | `c0659081`   | `93e7a797..c0659081` | Continue with constraints |
-| 6.16 | Codex adapter platform                        | in-review       | `2f5d5a20` | `c69a9abc`         | pending      | pending              | pending                   |
+| 6.16 | Codex adapter platform                        | completed       | `2f5d5a20` | `c69a9abc`         | `e2e2cf34`   | `2f5d5a20..e2e2cf34` | Continue with constraints |
 | 6.17 | Document Rename                               | pending         | -          | -                  | -            | -                    | -                         |
 | 6.18 | DOCX                                          | pending         | -          | -                  | -            | -                    | -                         |
 | 6.19 | Markdown platform                             | pending         | -          | -                  | -            | -                    | -                         |
@@ -1743,7 +1743,7 @@ Review gate:
 
 ### Phase 6.16: Codex Adapter Platform
 
-Status: `in-review`
+Status: `completed`
 
 Batch base: `2f5d5a20`
 
@@ -1751,9 +1751,9 @@ Implementation tip: `c69a9abc`
 
 Execution and path migration range: `2f5d5a20..c69a9abc`
 
-Evidence tip: pending
+Evidence tip: `e2e2cf34`
 
-Exact batch review range: pending
+Exact batch review range: `2f5d5a20..e2e2cf34`
 
 The two selected platform suites moved into four direct owners: request
 failure classification and formatting, filename-title primitives, batch retry
@@ -1779,8 +1779,12 @@ No current guide names either historical source path. The matrix records the
 executed split, and correspondence records two transitions over
 `2f5d5a20..c69a9abc`.
 
-Decision: pending exact-range test-quality, maintainability, and documentation
-review.
+Exact-range test-quality, maintainability, and documentation review found no
+material issue. This closeout records `e2e2cf34` as the evidence tip.
+
+Decision: `Continue with constraints`. Preserve the four direct owners and
+exact cleanup proof; do not fold feature-adapter request wiring or shared
+support abstractions back into this platform slice.
 
 Review gate:
 
@@ -1790,8 +1794,8 @@ Review gate:
 - [x] apply only two title clarifications and three `ENOENT` strengthenings
 - [x] complete focused, adjacent, full-suite, and repository validation
 - [x] record both path transitions
-- [ ] create the evidence commit and review the exact batch range
-- [ ] record accepted review fixes and the continuation decision
+- [x] create the evidence commit and review the exact batch range
+- [x] record accepted review fixes and the continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
