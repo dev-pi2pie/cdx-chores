@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Contract And Catalog Enhancement Execution"
 created-date: 2026-08-23
-modified-date: 2026-08-23
+modified-date: 2026-08-24
 status: in-progress
 agent: codex
 ---
@@ -380,7 +380,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.8  | Video                                         | completed       | `5b362772` | `cf85a757`         | `7feac20a`   | `5b362772..7feac20a` | Continue with constraints |
 | 6.9  | Data Sources                                  | completed       | `9458f888` | `a3a76f53`         | `e35eea80`   | `9458f888..e35eea80` | Continue with constraints |
 | 6.10 | Data Extract                                  | completed       | `733f27cb` | `d02bf761`         | `dbb5574e`   | `733f27cb..dbb5574e` | Continue with constraints |
-| 6.11 | Data Preview                                  | pending         | -          | -                  | -            | -                    | -                         |
+| 6.11 | Data Preview                                  | in-review       | `7b840652` | `3d95eba5`         | pending      | pending              | Pending exact review      |
 | 6.12 | Data Stack                                    | pending         | -          | -                  | -            | -                    | -                         |
 | 6.13 | Data Conversion                               | pending         | -          | -                  | -            | -                    | -                         |
 | 6.14 | Fonts                                         | pending         | -          | -                  | -            | -                    | -                         |
@@ -1344,6 +1344,99 @@ Review gate:
 - [x] record current support dispositions and path correspondence
 - [x] create the evidence commit and review the exact batch range
 - [x] record accepted review fixes and the batch continuation decision
+
+### Phase 6.11: Data Preview
+
+Status: `in-review`
+
+Batch base: `7b840652`
+
+Implementation tip: `3d95eba5`
+
+Execution and path migration range: `7b840652..3d95eba5`
+
+Evidence tip: pending
+
+Exact batch review range: pending
+
+The six selected suites moved to four action and two Interactive owners.
+Preview-specific action support moved with its consumers, neutral ANSI
+stripping now has one global implementation, and the three Preview harness
+mocks left the mixed residual without moving conversion or Markdown DOCX
+behavior. The shared Parquet fixtures remained at their admitted root.
+
+Pre-move review found no vague, duplicate, or removable case. It retained all
+48 cases and accepted four bounded assertion edits:
+
+- the paired blank-filter failures now prove that neither path writes output
+- TTY styling checks now associate ANSI sequences with the `Input` label and
+  `name` header
+- the Parquet summary case drops a direct empty-stderr assertion duplicated by
+  `expectNoStderr()`
+- the scalar-array case drops a generic `value` containment check while
+  retaining the exact column summary and three row values
+
+Selector preservation and bounded edits:
+
+| Check       | Owner files | Passed | Failed | Assertions |
+| ----------- | ----------: | -----: | -----: | ---------: |
+| Pre-change  |           6 |     48 |      0 |        237 |
+| Post-change |           6 |     48 |      0 |        236 |
+
+All 48 declarations and exact titles remain represented once. Static
+`expect(` calls changed from 112 to 110 only through the admitted edits.
+
+The implementation checkpoint is:
+
+- `3d95eba5` — move all six suite owners, split feature-local and neutral
+  support, extract the Preview harness mocks, and apply the four admitted
+  assertion edits
+
+Pre-commit test-quality and maintainability reviews found no material issue.
+They confirmed exact title preservation, bounded assertion changes, coherent
+feature-local ownership, one neutral ANSI implementation, acyclic imports,
+and no fixture or unrelated mixed-mock drift.
+
+Validation evidence:
+
+| Boundary                              | Passed | Failed | Assertions | Files |
+| ------------------------------------- | -----: | -----: | ---------: | ----: |
+| Data Preview destinations             |     48 |      0 |        236 |     6 |
+| Exact adjacent safety set             |     82 |      0 |        398 |     7 |
+| Broader compatibility slice           |     97 |      0 |        449 |    16 |
+| Complete repository suite             |  2,614 |      0 |     14,872 |   325 |
+
+Repository checks are clean:
+
+- `bun run format:check`
+- `bun run lint`
+- `bunx tsc --noEmit`
+- `bun run build`
+- `git diff --check`
+
+Documentation path scan:
+
+- no current guide names a historical Phase 6.11 suite or support path
+- the completed inventory and time-bounded source records retain their
+  historical paths
+- the current exact admission and support dispositions record the executed
+  ownership
+- the correspondence reference records all nine accepted path transitions
+  over `7b840652..3d95eba5`
+
+Decision: pending exact-range test-quality, maintainability, and documentation
+review of the evidence checkpoint.
+
+Review gate:
+
+- [x] reproduce the six-source selector and 48-case baseline
+- [x] admit the exact suite, support, residual-mock, and fixture boundaries
+- [x] move only the accepted Data Preview suites and support
+- [x] preserve all 48 declarations and apply only four admitted assertion edits
+- [x] complete focused, adjacent, full-suite, and repository validation
+- [x] record current support dispositions and path correspondence
+- [ ] create the evidence commit and review the exact batch range
+- [ ] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,

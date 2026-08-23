@@ -1,7 +1,7 @@
 ---
 title: "Test Catalog Path Correspondence"
 created-date: 2026-08-23
-modified-date: 2026-08-23
+modified-date: 2026-08-24
 status: draft
 agent: codex
 ---
@@ -313,6 +313,24 @@ migration and final reconciliation finish.
 | 2026-08-23     | `test/helpers/interactive-harness/types.ts`                         | split      | `test/helpers/interactive-harness/types.ts`<br>`test/data-extract/interactive/harness-contract.ts`         | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
 | 2026-08-23     | `test/data-query/interactive/module-urls.ts`                        | split      | `test/data-query/interactive/module-urls.ts`<br>`test/data-extract/interactive/module-urls.ts`             | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
 
+### Phase 6.11: Data Preview
+
+The paths below were implemented and validated over `7b840652..3d95eba5`.
+Phase 6.11 remains in review until the evidence checkpoint receives its exact
+range review; this reference stays `draft` through final reconciliation.
+
+| Reference date | Historical path                                                                 | Transition | Current owner or owners                                                                                               | Migration range      | Job evidence                      |
+| -------------- | ------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |
+| 2026-08-23     | `test/cli-actions-data-parquet-preview.test.ts`                                 | moved      | `test/data-preview/actions/parquet.test.ts`                                                                           | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
+| 2026-08-23     | `test/cli-actions-data-preview/failures.test.ts`                                | moved      | `test/data-preview/actions/failures.test.ts`                                                                          | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
+| 2026-08-23     | `test/cli-actions-data-preview/highlighting.test.ts`                            | moved      | `test/data-preview/actions/highlighting.test.ts`                                                                      | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
+| 2026-08-23     | `test/cli-actions-data-preview/rendering.test.ts`                               | moved      | `test/data-preview/actions/rendering.test.ts`                                                                         | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
+| 2026-08-23     | `test/cli-interactive-routing-data-preview-filters.test.ts`                     | moved      | `test/data-preview/interactive/filters.test.ts`                                                                       | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
+| 2026-08-23     | `test/cli-interactive-routing-data-preview.test.ts`                             | moved      | `test/data-preview/interactive/routing.test.ts`                                                                       | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
+| 2026-08-23     | `test/cli-actions-data-preview/helpers.ts`                                      | split      | `test/data-preview/actions/support.ts`<br>`test/helpers/ansi.ts`                                                      | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
+| 2026-08-23     | Data Preview behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | split      | `test/helpers/interactive-harness/mocks/action-misc.ts`<br>`test/data-preview/interactive/mock-action.ts`             | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
+| 2026-08-23     | `stripAnsi` in `test/cli-interactive-routing.helpers.ts`                        | split      | `test/cli-interactive-routing.helpers.ts`<br>`test/helpers/ansi.ts`                                                   | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
+
 [phase-3-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-3-data-query-migration-pilot
 [phase-4-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-4-doctor-ownership-migration-pilot
 [phase-5-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-5-bounded-markdown-pdf-migration-pilot
@@ -326,6 +344,7 @@ migration and final reconciliation finish.
 [phase-6-8-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-68-video
 [phase-6-9-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-69-data-sources
 [phase-6-10-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-610-data-extract
+[phase-6-11-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-611-data-preview
 
 ## Completion Boundary
 

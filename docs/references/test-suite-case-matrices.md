@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Case Matrices And Catalog"
 created-date: 2026-08-23
-modified-date: 2026-08-23
+modified-date: 2026-08-24
 status: completed
 agent: codex
 ---
@@ -186,9 +186,9 @@ suites.
 | 6.10  | `test/helpers/interactive-harness/mocks/data-query/types.ts`                     | `test/data-query/interactive/mock-types.ts`<br>`test/helpers/interactive-harness/types.ts` | Phase 6.10 executed the corrected local and neutral type ownership split.                                                                           |
 | 6.10  | Data Extract fields in `test/helpers/interactive-harness/types.ts`               | `test/data-extract/interactive/harness-contract.ts`                                        | Phase 6.10 extracted only the four action error/stdout/stderr fields and kept shared introspection scenarios neutral.                               |
 | 6.10  | Data Extract use of `test/data-query/interactive/module-urls.ts`                 | `test/data-extract/interactive/module-urls.ts`                                             | Phase 6.10 localized the three Data Extract module URLs while Data Query retained its owner.                                                        |
-| 6.11  | `test/cli-actions-data-preview/helpers.ts`                                       | `test/data-preview/actions/support.ts`<br>`test/helpers/ansi.ts`                           | Move Preview runners and matchers to the action owner; extract only neutral `stripAnsi` for independent Preview, Data Stack, and routing consumers. |
-| 6.11  | Data Preview behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | `test/data-preview/interactive/mock-action.ts`                                             | Extract only the two Preview actions and source loader; conversion and Markdown DOCX behavior remain in the mixed residual.                         |
-| 6.11  | `stripAnsi` in `test/cli-interactive-routing.helpers.ts`                         | `test/helpers/ansi.ts`                                                                     | Replace the duplicate implementation with a temporary facade re-export; unrelated routing and Data Stack consumers keep their current owners.       |
+| 6.11  | `test/cli-actions-data-preview/helpers.ts`                                       | `test/data-preview/actions/support.ts`<br>`test/helpers/ansi.ts`                           | Executed: Preview runners and matchers moved to the action owner; only neutral `stripAnsi` moved to global support for independent consumers.        |
+| 6.11  | Data Preview behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | `test/data-preview/interactive/mock-action.ts`                                             | Executed: the two Preview actions and source loader moved; conversion and Markdown DOCX behavior remain in the mixed residual.                       |
+| 6.11  | `stripAnsi` in `test/cli-interactive-routing.helpers.ts`                         | `test/helpers/ansi.ts`                                                                     | Executed: the duplicate implementation became a temporary facade re-export; unrelated routing and Data Stack behavior kept its current owner.       |
 
 ### Phase 3 Data Query Path Contract
 
@@ -2590,6 +2590,14 @@ edit establishes another exact owner.
 | `test/cli-actions-data-preview/rendering.test.ts`           | `test/data-preview/actions/rendering.test.ts`    | Format detection, normalization, windowing, width, and scalar fallback form the core rendering owner.    |
 | `test/cli-interactive-routing-data-preview-filters.test.ts` | `test/data-preview/interactive/filters.test.ts`  | Repeated filter prompting and local malformed-filter recovery are Interactive contracts.                 |
 | `test/cli-interactive-routing-data-preview.test.ts`         | `test/data-preview/interactive/routing.test.ts`  | Source selection, preview execution, output routing, and summary presentation are Interactive contracts. |
+
+Phase 6.11 executed these six moves and three support splits over
+`7b840652..3d95eba5`. All 48 case titles remain represented once. The focused
+destination slice passed with 236 assertions; the exact adjacent slice passed
+82 tests with 398 assertions; the broader compatibility slice passed 97 tests
+with 449 assertions; and the complete suite passed 2,614 tests across 325
+files. The four admitted assertion edits were applied without moving the
+shared Parquet fixtures.
 
 ### Decision Summary
 
