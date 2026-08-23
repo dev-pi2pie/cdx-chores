@@ -3,8 +3,8 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import { resolveDataStackInputSources } from "../src/cli/data-stack/input-router";
-import { withTempFixtureDir } from "./helpers/cli-test-utils";
+import { resolveDataStackInputSources } from "../../../src/cli/data-stack/input-router";
+import { withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 describe("data stack input router", () => {
   test("normalizes mixed explicit files and directories in deterministic order", async () => {

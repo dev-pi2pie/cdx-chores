@@ -5,7 +5,7 @@ import {
   dataStackDefaultOutputMatcher,
   runDataStackInteractiveHarness,
   stripAnsi,
-} from "./helpers";
+} from "./support";
 
 describe("interactive data stack discovery", () => {
   test("lets interactive data stack recover through source discovery options before schema setup", () => {

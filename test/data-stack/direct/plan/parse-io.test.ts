@@ -7,13 +7,9 @@ import {
   readDataStackPlanArtifact,
   serializeDataStackPlanArtifact,
   writeDataStackPlanArtifact,
-} from "../../src/cli/data-stack/plan";
-import { withTempFixtureDir } from "../helpers/cli-test-utils";
-import {
-  createSampleDataStackPlan,
-  expectCliError,
-  expectRejectedCliError,
-} from "../helpers/data-stack-test-utils";
+} from "../../../../src/cli/data-stack/plan";
+import { withTempFixtureDir } from "../../../helpers/cli-test-utils";
+import { createSampleDataStackPlan, expectCliError, expectRejectedCliError } from "../support";
 
 describe("data stack plan artifact parsing and I/O", () => {
   test("readDataStackPlanArtifact round-trips a valid v1 artifact", async () => {

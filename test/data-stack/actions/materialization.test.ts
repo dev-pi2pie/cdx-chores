@@ -3,9 +3,9 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import { actionDataStack } from "../../src/cli/actions";
-import { createActionTestRuntime } from "../helpers/cli-action-test-utils";
-import { REPO_ROOT, withTempFixtureDir } from "../helpers/cli-test-utils";
+import { actionDataStack } from "../../../src/cli/actions";
+import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
+import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 describe("cli action modules: data stack happy paths", () => {
   test("actionDataStack writes CSV output from mixed explicit and directory sources", async () => {

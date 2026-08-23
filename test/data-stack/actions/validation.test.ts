@@ -3,9 +3,9 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import { actionDataStack } from "../../src/cli/actions";
-import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
-import { REPO_ROOT, withTempFixtureDir } from "../helpers/cli-test-utils";
+import { actionDataStack } from "../../../src/cli/actions";
+import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
+import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 describe("cli action modules: data stack validation", () => {
   test("actionDataStack rejects duplicate rows before writing when policy is reject", async () => {
@@ -650,6 +650,7 @@ describe("cli action modules: data stack validation", () => {
         },
       );
       expectNoOutput();
+      expect(await readFile(join(fixtureDir, "merged.csv"), "utf8")).toBe("id,name\n1,Ada\n");
     });
   });
 });

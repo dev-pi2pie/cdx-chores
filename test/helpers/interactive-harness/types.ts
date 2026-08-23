@@ -1,5 +1,9 @@
 import type { DataExtractInteractiveHarnessScenario } from "../../data-extract/interactive/harness-contract";
 import type { DataQueryInteractiveHarnessScenario } from "../../data-query/interactive/harness-contract";
+import type {
+  DataStackInteractiveHarnessResult,
+  DataStackInteractiveHarnessScenario,
+} from "../../data-stack/interactive/harness-contract";
 
 export interface SourceShapeSuggestionOptions {
   currentHeaderRow?: unknown;
@@ -12,7 +16,10 @@ export interface SourceShapeSuggestionOptions {
 }
 
 export interface InteractiveHarnessScenario
-  extends DataExtractInteractiveHarnessScenario, DataQueryInteractiveHarnessScenario {
+  extends
+    DataExtractInteractiveHarnessScenario,
+    DataQueryInteractiveHarnessScenario,
+    DataStackInteractiveHarnessScenario {
   mode: "run" | "invalid-data-action";
   codexTimeoutMs?: number;
   captureCodexTimeouts?: boolean;
@@ -57,14 +64,6 @@ export interface InteractiveHarnessScenario
   dataSourceShapeSuggestionErrorMessage?: string;
   dataQuerySources?: string[];
   xlsxSheetSnapshot?: Record<string, unknown>;
-  dataStackActionErrorMessage?: string;
-  dataStackActionErrorCode?: string;
-  dataStackActionStderr?: string;
-  dataStackActionStdout?: string;
-  dataStackCodexErrorMessage?: string;
-  dataStackCodexErrorName?: string;
-  dataStackCodexRecommendations?: Array<Record<string, unknown>>;
-  dataStackWriteExistingPaths?: string[];
   stdoutColumns?: number;
   stdoutIsTTY?: boolean;
   stderrIsTTY?: boolean;
@@ -78,7 +77,7 @@ export interface InteractiveHarnessScenario
   renameApplyErrorMessage?: string;
 }
 
-export interface InteractiveHarnessResult {
+export interface InteractiveHarnessResult extends DataStackInteractiveHarnessResult {
   promptCalls: Array<{
     kind: "select" | "checkbox" | "confirm" | "input" | "editor" | "search";
     message: string;
@@ -103,8 +102,6 @@ export interface InteractiveHarnessResult {
     nextExtension?: string;
   }>;
   actionCalls: Array<{ name: string; options: Record<string, unknown> }>;
-  stackPlanWrites: Array<{ path: string; options: Record<string, unknown> }>;
-  codexReportWrites: Array<{ path: string; options: Record<string, unknown> }>;
   removedPaths: string[];
   markdownPdfPrepareCalls: Array<Record<string, unknown>>;
   markdownPdfPlanCalls: Array<Record<string, unknown>>;

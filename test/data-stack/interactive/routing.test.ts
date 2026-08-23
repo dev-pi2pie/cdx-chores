@@ -4,7 +4,7 @@ import {
   dataStackDefaultOutputMatcher,
   runInteractiveHarness,
   stripAnsi,
-} from "./cli-interactive-routing.helpers";
+} from "../../cli-interactive-routing.helpers";
 
 describe("interactive mode routing: data stack", () => {
   test("routes interactive data stack through shared stack execution", () => {

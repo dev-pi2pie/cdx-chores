@@ -1,12 +1,12 @@
 import { expect } from "bun:test";
 
-import { runInteractiveHarness } from "../helpers/interactive-harness";
+import { runInteractiveHarness } from "../../helpers/interactive-harness";
 import type {
   InteractiveHarnessResult,
   InteractiveHarnessScenario,
-} from "../helpers/interactive-harness/types";
+} from "../../helpers/interactive-harness/types";
 
-export { stripAnsi } from "../helpers/ansi";
+export { stripAnsi } from "../../helpers/ansi";
 
 export const DEFAULT_DATA_STACK_TIMESTAMP = "20260225T000000Z";
 export const DEFAULT_DATA_STACK_SOURCE = "examples/playground/stack-cases/csv-matching-headers";

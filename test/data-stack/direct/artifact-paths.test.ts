@@ -2,10 +2,10 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import { resolveDataStackDryRunArtifactPaths } from "../src/cli/data-stack/artifact-paths";
-import { CliError } from "../src/cli/errors";
-import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
-import { withTempFixtureDir } from "./helpers/cli-test-utils";
+import { resolveDataStackDryRunArtifactPaths } from "../../../src/cli/data-stack/artifact-paths";
+import { CliError } from "../../../src/cli/errors";
+import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
+import { withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 function expectCliError(run: () => unknown, messageIncludes: string): void {
   try {

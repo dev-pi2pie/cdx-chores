@@ -1,15 +1,15 @@
 import { expect } from "bun:test";
 
-import { computeDataStackDiagnostics } from "../../src/cli/data-stack/diagnostics";
+import { computeDataStackDiagnostics } from "../../../src/cli/data-stack/diagnostics";
 import {
   createDataStackPlanArtifact,
   type DataStackPlanArtifact,
-} from "../../src/cli/data-stack/plan";
+} from "../../../src/cli/data-stack/plan";
 import {
   createDataStackCodexReportArtifact,
   type DataStackCodexReportArtifact,
-} from "../../src/cli/data-stack/codex-report";
-import { CliError } from "../../src/cli/errors";
+} from "../../../src/cli/data-stack/codex-report";
+import { CliError } from "../../../src/cli/errors";
 
 export function createSampleDataStackPlan(): DataStackPlanArtifact {
   return createDataStackPlanArtifact({

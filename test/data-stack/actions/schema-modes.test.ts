@@ -3,9 +3,9 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import { actionDataStack } from "../../src/cli/actions";
-import { createActionTestRuntime } from "../helpers/cli-action-test-utils";
-import { withTempFixtureDir } from "../helpers/cli-test-utils";
+import { actionDataStack } from "../../../src/cli/actions";
+import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
+import { withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 describe("cli action modules: data stack schema modes", () => {
   test("actionDataStack stacks union-by-name CSV inputs with explicit exclusions", async () => {

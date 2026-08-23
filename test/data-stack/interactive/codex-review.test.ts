@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { runDataStackInteractiveHarness, stripAnsi } from "./helpers";
+import { runDataStackInteractiveHarness, stripAnsi } from "./support";
 
 describe("interactive data stack codex review", () => {
   test("reviews and accepts interactive data stack Codex recommendations before writing", () => {

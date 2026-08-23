@@ -3,15 +3,15 @@ import { describe, expect, test } from "bun:test";
 import {
   applyDataStackCodexRecommendationDecisions,
   createDataStackCodexReportArtifact,
-} from "../../src/cli/data-stack/codex-report";
-import { computeDataStackDiagnostics } from "../../src/cli/data-stack/diagnostics";
-import type { DataStackPlanArtifact } from "../../src/cli/data-stack/plan";
+} from "../../../../src/cli/data-stack/codex-report";
+import { computeDataStackDiagnostics } from "../../../../src/cli/data-stack/diagnostics";
+import type { DataStackPlanArtifact } from "../../../../src/cli/data-stack/plan";
 import {
   createDataStackCodexTestPlan,
   createDataStackCodexTestReport,
   createDataStackCodexUnionModePlan,
   expectCliError,
-} from "../helpers/data-stack-test-utils";
+} from "../support";
 
 describe("data stack Codex report recommendation application", () => {
   test("applies schema exclusions to included names in derived plans", () => {

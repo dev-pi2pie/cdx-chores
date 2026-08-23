@@ -1,17 +1,17 @@
 import { describe, expect, test } from "bun:test";
 
-import { DATA_STACK_CODEX_OUTPUT_SCHEMA } from "../../src/cli/data-stack/codex-assist";
+import { DATA_STACK_CODEX_OUTPUT_SCHEMA } from "../../../../src/cli/data-stack/codex-assist";
 import {
   createDataStackCodexReportArtifact,
   validateDataStackCodexRecommendation,
-} from "../../src/cli/data-stack/codex-report";
-import { computeDataStackDiagnostics } from "../../src/cli/data-stack/diagnostics";
-import type { DataStackPlanArtifact } from "../../src/cli/data-stack/plan";
+} from "../../../../src/cli/data-stack/codex-report";
+import { computeDataStackDiagnostics } from "../../../../src/cli/data-stack/diagnostics";
+import type { DataStackPlanArtifact } from "../../../../src/cli/data-stack/plan";
 import {
   createDataStackCodexTestPlan,
   createDataStackCodexUnionModePlan,
   expectCliError,
-} from "../helpers/data-stack-test-utils";
+} from "../support";
 
 describe("data stack Codex report validation", () => {
   test("validates replace patches against supported stack-plan fields", () => {

@@ -6,19 +6,19 @@ import { describe, expect, test } from "bun:test";
 import {
   createDataStackCodexReportArtifact,
   serializeDataStackCodexReportArtifact,
-} from "../../src/cli/data-stack/codex-report";
-import { actionDataStackReplay } from "../../src/cli/actions/data-stack-replay";
-import { computeDataStackDiagnostics } from "../../src/cli/data-stack/diagnostics";
+} from "../../../src/cli/data-stack/codex-report";
+import { actionDataStackReplay } from "../../../src/cli/actions/data-stack-replay";
+import { computeDataStackDiagnostics } from "../../../src/cli/data-stack/diagnostics";
 import {
   readDataStackPlanArtifact,
   serializeDataStackPlanArtifact,
-} from "../../src/cli/data-stack/plan";
+} from "../../../src/cli/data-stack/plan";
 import {
   createCapturedRuntime,
   runCli,
   toRepoRelativePath,
   withTempFixtureDir,
-} from "../helpers/cli-test-utils";
+} from "../../helpers/cli-test-utils";
 
 const ANSI_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
 const ANSI_START = `${String.fromCharCode(27)}[`;

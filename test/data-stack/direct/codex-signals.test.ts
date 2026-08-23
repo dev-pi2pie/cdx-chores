@@ -3,8 +3,8 @@ import { describe, expect, test } from "bun:test";
 import {
   formatDataStackCodexAssistSignal,
   getDataStackCodexAssistSignals,
-} from "../src/cli/data-stack/codex-signals";
-import { computeDataStackDiagnostics } from "../src/cli/data-stack/diagnostics";
+} from "../../../src/cli/data-stack/codex-signals";
+import { computeDataStackDiagnostics } from "../../../src/cli/data-stack/diagnostics";
 
 describe("data stack Codex assist signals", () => {
   test("detects candidate unique keys from deterministic diagnostics", () => {
@@ -56,6 +56,22 @@ describe("data stack Codex assist signals", () => {
   });
 
   test("formats signal labels for interactive copy", () => {
-    expect(formatDataStackCodexAssistSignal("union-by-name-gaps")).toBe("union-by-name gaps");
+    expect(
+      (
+        [
+          "headerless-columns",
+          "union-by-name-gaps",
+          "duplicate-rows",
+          "candidate-unique-keys",
+          "selected-key-conflicts",
+        ] as const
+      ).map((signal) => [signal, formatDataStackCodexAssistSignal(signal)]),
+    ).toEqual([
+      ["headerless-columns", "headerless columns"],
+      ["union-by-name-gaps", "union-by-name gaps"],
+      ["duplicate-rows", "duplicate rows"],
+      ["candidate-unique-keys", "candidate unique keys"],
+      ["selected-key-conflicts", "selected-key conflicts"],
+    ]);
   });
 });

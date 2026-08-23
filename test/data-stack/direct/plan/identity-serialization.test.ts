@@ -5,8 +5,8 @@ import {
   generateDataStackPlanFileName,
   serializeDataStackPlanArtifact,
   type DataStackPlanArtifact,
-} from "../../src/cli/data-stack/plan";
-import { createSampleDataStackPlan } from "../helpers/data-stack-test-utils";
+} from "../../../../src/cli/data-stack/plan";
+import { createSampleDataStackPlan } from "../support";
 
 describe("data stack plan artifact identity and serialization", () => {
   test("createDataStackPlanIdentity uses the timestamp and uid artifact family", () => {

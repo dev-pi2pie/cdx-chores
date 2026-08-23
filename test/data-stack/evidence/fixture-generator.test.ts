@@ -3,8 +3,8 @@ import { createHash } from "node:crypto";
 import { access, readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { fixtureGeneratorInternals } from "../scripts/generate-data-stack-fixtures.mjs";
-import { REPO_ROOT, withTempFixtureDir } from "./helpers/cli-test-utils";
+import { fixtureGeneratorInternals } from "../../../scripts/generate-data-stack-fixtures.mjs";
+import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 function runGenerator(
   command: "seed" | "clean" | "reset",

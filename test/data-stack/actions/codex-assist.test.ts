@@ -3,10 +3,10 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import { actionDataStack } from "../../src/cli/actions";
-import { readDataStackPlanArtifact } from "../../src/cli/data-stack/plan";
-import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
-import { withTempFixtureDir } from "../helpers/cli-test-utils";
+import { actionDataStack } from "../../../src/cli/actions";
+import { readDataStackPlanArtifact } from "../../../src/cli/data-stack/plan";
+import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
+import { withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 describe("cli action modules: data stack Codex assist", () => {
   test("actionDataStack requires dry-run for Codex assist", async () => {

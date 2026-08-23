@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import { runCli, toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
+import { runCli, toRepoRelativePath, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 describe("CLI data stack command direct stack execution", () => {
   test("stacks matching-header CSV fixtures end to end", async () => {

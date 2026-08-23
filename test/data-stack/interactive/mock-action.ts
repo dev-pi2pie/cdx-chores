@@ -1,23 +1,23 @@
-import type { HarnessRunnerContext } from "../context";
+import type { HarnessRunnerContext } from "../../helpers/interactive-harness/context";
 import type {
   DataStackDuplicatePolicy,
   DataStackPlanArtifact,
   DataStackPlanMetadata,
-} from "../../../../src/cli/data-stack/plan";
+} from "../../../src/cli/data-stack/plan";
 import type {
   DataStackInputFormat,
   DataStackOutputFormat,
   DataStackSchemaMode,
-} from "../../../../src/cli/data-stack/types";
-import type { DataStackCodexPatch } from "../../../../src/cli/data-stack/codex-report";
-import { applyDataStackCodexRecommendationDecisions as applyRealDataStackCodexRecommendationDecisions } from "../../../../src/cli/data-stack/codex-report";
-import { formatDataStackCodexAssistFailure as formatRealDataStackCodexAssistFailure } from "../../../../src/cli/data-stack/codex-assist";
+} from "../../../src/cli/data-stack/types";
+import type { DataStackCodexPatch } from "../../../src/cli/data-stack/codex-report";
+import { applyDataStackCodexRecommendationDecisions as applyRealDataStackCodexRecommendationDecisions } from "../../../src/cli/data-stack/codex-report";
+import { formatDataStackCodexAssistFailure as formatRealDataStackCodexAssistFailure } from "../../../src/cli/data-stack/codex-assist";
 
 import {
   createOutputExistsError,
   resolveOutputPath,
   type ActionRuntimeLike,
-} from "../../../cli-foundations/interactive-harness/action-output";
+} from "../../cli-foundations/interactive-harness/action-output";
 
 interface MockStackPlanOptions {
   diagnostics?: { planDiagnostics?: { reportPath?: unknown; rowCount?: unknown } } | undefined;

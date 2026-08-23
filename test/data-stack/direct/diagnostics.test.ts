@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { computeDataStackDiagnostics } from "../src/cli/data-stack/diagnostics";
-import { CliError } from "../src/cli/errors";
+import { computeDataStackDiagnostics } from "../../../src/cli/data-stack/diagnostics";
+import { CliError } from "../../../src/cli/errors";
 
 describe("data stack diagnostics", () => {
   test("counts exact duplicate rows from normalized output rows", () => {
@@ -136,13 +136,20 @@ describe("data stack diagnostics", () => {
   });
 
   test("rejects unknown unique key columns", () => {
-    expect(() =>
+    try {
       computeDataStackDiagnostics({
         header: ["id"],
         matchedFileCount: 1,
         rows: [["1"]],
         uniqueBy: ["missing"],
-      }),
-    ).toThrow(CliError);
+      });
+      throw new Error("Expected computeDataStackDiagnostics to throw");
+    } catch (error) {
+      expect(error).toBeInstanceOf(CliError);
+      const cliError = error as CliError;
+      expect(cliError.code).toBe("INVALID_INPUT");
+      expect(cliError.exitCode).toBe(2);
+      expect(cliError.message).toBe("Unknown --unique-by names: missing.");
+    }
   });
 });

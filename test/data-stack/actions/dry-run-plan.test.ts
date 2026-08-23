@@ -3,10 +3,10 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import { actionDataStack } from "../../src/cli/actions";
-import { readDataStackPlanArtifact } from "../../src/cli/data-stack/plan";
-import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
-import { withTempFixtureDir } from "../helpers/cli-test-utils";
+import { actionDataStack } from "../../../src/cli/actions";
+import { readDataStackPlanArtifact } from "../../../src/cli/data-stack/plan";
+import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
+import { withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 describe("cli action modules: data stack dry-run plans", () => {
   test("actionDataStack writes a dry-run stack plan without materializing output", async () => {
@@ -43,6 +43,7 @@ describe("cli action modules: data stack dry-run plans", () => {
 
   test("actionDataStack generates a default dry-run plan path", async () => {
     await withTempFixtureDir("data-stack-action-dry-run-generated", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "merged.csv");
       await writeFile(join(fixtureDir, "a.csv"), "id,status\n1,active\n", "utf8");
 
       const { runtime, stderr } = createActionTestRuntime({
@@ -55,9 +56,14 @@ describe("cli action modules: data stack dry-run plans", () => {
         sources: ["a.csv"],
       });
 
-      expect(stderr.text).toMatch(
-        /Dry run: wrote stack plan data-stack-plan-20260425T120000Z-[0-9a-f]{8}\.json/,
-      );
+      const [, reportedPlanName = ""] =
+        stderr.text.match(
+          /Dry run: wrote stack plan (data-stack-plan-20260425T120000Z-[0-9a-f]{8}\.json)/,
+        ) ?? [];
+      expect(reportedPlanName).toMatch(/^data-stack-plan-20260425T120000Z-[0-9a-f]{8}\.json$/);
+      const plan = await readDataStackPlanArtifact(join(fixtureDir, reportedPlanName));
+      expect(plan.metadata.artifactType).toBe("data-stack-plan");
+      await expect(readFile(outputPath, "utf8")).rejects.toThrow();
     });
   });
 

@@ -6,7 +6,7 @@ import {
   dataStackDefaultPathPattern,
   runDataStackInteractiveHarness,
   stripAnsi,
-} from "./helpers";
+} from "./support";
 
 describe("interactive data stack dry run write", () => {
   test("lets interactive data stack stop before writing at the final review checkpoint", () => {
