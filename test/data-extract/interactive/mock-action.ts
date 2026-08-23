@@ -1,10 +1,10 @@
-import type { HarnessRunnerContext } from "../context";
+import type { HarnessRunnerContext } from "../../helpers/interactive-harness/context";
 
 import {
   createOutputExistsError,
   resolveOutputPath,
   type ActionRuntimeLike,
-} from "../../../cli-foundations/interactive-harness/action-output";
+} from "../../cli-foundations/interactive-harness/action-output";
 
 export function createDataExtractActionMock(context: HarnessRunnerContext) {
   return {

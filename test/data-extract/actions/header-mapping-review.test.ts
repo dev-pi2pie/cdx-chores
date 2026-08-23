@@ -19,7 +19,7 @@ import {
   TtyCaptureStream,
   duckdbReady,
   excelReady,
-} from "./cli-actions-data-extract.helpers";
+} from "./support";
 
 describe("cli action modules: data extract header artifacts", () => {
   test("actionDataExtract writes a reviewed header-mapping artifact and stops before materialization", async () => {

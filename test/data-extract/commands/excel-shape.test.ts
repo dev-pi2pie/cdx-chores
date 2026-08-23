@@ -13,7 +13,7 @@ import {
   fixturePath,
   duckdbReady,
   excelReady,
-} from "./cli-command-data-extract.helpers";
+} from "./support";
 
 describe("CLI data extract command Excel shape", () => {
   test("extracts an explicit Excel range end to end when the extension is ready", async () => {

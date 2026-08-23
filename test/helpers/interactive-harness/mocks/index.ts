@@ -1,7 +1,7 @@
 import type { HarnessRunnerContext } from "../context";
+import { installDataExtractIntrospectionMocks } from "../../../data-extract/interactive/mock-installation";
 import { installDataQueryMocks } from "../../../data-query/interactive/mock-installation";
 import { installActionMocks } from "./actions";
-import { installDataExtractIntrospectionMocks } from "./data-query";
 import { installFsPromiseMocks } from "./fs";
 import { installPathPromptMocks } from "./path-prompts";
 import { installPromptMocks } from "./prompts";

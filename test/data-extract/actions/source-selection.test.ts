@@ -19,7 +19,7 @@ import {
   TtyCaptureStream,
   duckdbReady,
   excelReady,
-} from "./cli-actions-data-extract.helpers";
+} from "./support";
 
 describe("cli action modules: data extract source selection", () => {
   test("actionDataExtract applies Excel range shaping before materialization", async () => {

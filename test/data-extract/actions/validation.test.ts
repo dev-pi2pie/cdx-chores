@@ -19,7 +19,7 @@ import {
   TtyCaptureStream,
   duckdbReady,
   excelReady,
-} from "./cli-actions-data-extract.helpers";
+} from "./support";
 
 describe("cli action modules: data extract validation", () => {
   test("actionDataExtract requires --output for materialization runs", async () => {
@@ -186,6 +186,7 @@ describe("cli action modules: data extract validation", () => {
           messageIncludes: "Output file already exists",
         },
       );
+      expect(await readFile(outputPath, "utf8")).toBe("existing\n");
     });
   });
 });

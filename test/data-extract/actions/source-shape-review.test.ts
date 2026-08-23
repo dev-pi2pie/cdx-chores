@@ -19,7 +19,7 @@ import {
   TtyCaptureStream,
   duckdbReady,
   excelReady,
-} from "./cli-actions-data-extract.helpers";
+} from "./support";
 
 describe("cli action modules: data extract source-shape review", () => {
   test("actionDataExtract writes a reviewed source-shape artifact and stops before materialization", async () => {

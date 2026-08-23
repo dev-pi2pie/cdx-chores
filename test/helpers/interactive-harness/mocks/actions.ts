@@ -2,11 +2,11 @@ import { mock } from "bun:test";
 
 import type { HarnessRunnerContext } from "../context";
 import { actionsModuleUrl } from "../module-urls";
+import { createDataExtractActionMock } from "../../../data-extract/interactive/mock-action";
 import { createDataQueryActionMock } from "../../../data-query/interactive/mock-action";
 import { createDoctorActionMock } from "../../../doctor/interactive/mock-action";
 import { createMarkdownFrontmatterActionMock } from "../../../markdown-frontmatter/interactive/mock-action";
 import { createVideoActionMocks } from "../../../video/interactive/mock-action";
-import { createDataExtractActionMock } from "./action-data";
 import { createMiscActionMocks } from "./action-misc";
 import { createRenameActionMocks } from "./action-rename";
 import { createStackActionMocks } from "./action-stack";

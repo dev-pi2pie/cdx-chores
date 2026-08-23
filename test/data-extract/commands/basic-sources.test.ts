@@ -13,7 +13,7 @@ import {
   fixturePath,
   duckdbReady,
   excelReady,
-} from "./cli-command-data-extract.helpers";
+} from "./support";
 
 describe("CLI data extract command basic sources", () => {
   test("extracts CSV input end to end", async () => {

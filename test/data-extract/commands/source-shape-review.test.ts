@@ -16,7 +16,7 @@ import {
   fixturePath,
   duckdbReady,
   excelReady,
-} from "./cli-command-data-extract.helpers";
+} from "./support";
 
 describe("CLI data extract command source-shape artifacts", () => {
   test("writes a reviewed source-shape artifact and stops before extraction", async () => {
@@ -216,7 +216,8 @@ process.stdout.write(JSON.stringify({
       "--codex-suggest-shape",
     ]);
 
-    expect(result.exitCode).not.toBe(0);
+    expect(result.exitCode).toBe(2);
+    expect(result.stdout).toBe("");
     expect(result.stderr).toContain(
       "--codex-suggest-shape cannot be used together with --header-row",
     );

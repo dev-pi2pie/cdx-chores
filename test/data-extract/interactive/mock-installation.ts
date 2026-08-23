@@ -1,6 +1,6 @@
-import type { HarnessRunnerContext } from "../../context";
-import { installDataExtractIntrospectionMock } from "./query";
-import { installDataExtractSourceShapeMocks } from "./source-shape";
+import type { HarnessRunnerContext } from "../../helpers/interactive-harness/context";
+import { installDataExtractIntrospectionMock } from "./mock-introspection";
+import { installDataExtractSourceShapeMocks } from "./mock-source-shape";
 
 function needsSourceShapeMocks(context: HarnessRunnerContext): boolean {
   return Boolean(

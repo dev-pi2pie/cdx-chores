@@ -31,4 +31,7 @@ export interface DataQueryWorkspaceRelationScenario {
   source?: unknown;
   truncated?: boolean;
 }
-import type { DataQueryIntrospectionColumn } from "../../helpers/interactive-harness/mocks/data-query/types";
+export interface DataQueryIntrospectionColumn {
+  name: string;
+  type: string;
+}

@@ -1,6 +1,18 @@
+import type { DataExtractInteractiveHarnessScenario } from "../../data-extract/interactive/harness-contract";
 import type { DataQueryInteractiveHarnessScenario } from "../../data-query/interactive/harness-contract";
 
-export interface InteractiveHarnessScenario extends DataQueryInteractiveHarnessScenario {
+export interface SourceShapeSuggestionOptions {
+  currentHeaderRow?: unknown;
+  currentRange?: unknown;
+  timeoutMs?: unknown;
+  context?: {
+    currentIntrospection?: { selectedSource?: unknown };
+    sheetSnapshot?: { sheetName?: unknown };
+  };
+}
+
+export interface InteractiveHarnessScenario
+  extends DataExtractInteractiveHarnessScenario, DataQueryInteractiveHarnessScenario {
   mode: "run" | "invalid-data-action";
   codexTimeoutMs?: number;
   captureCodexTimeouts?: boolean;
@@ -38,10 +50,6 @@ export interface InteractiveHarnessScenario extends DataQueryInteractiveHarnessS
   requiredPathQueue?: string[];
   statExistsQueue?: boolean[];
   optionalPathQueue?: Array<string | undefined>;
-  dataExtractActionErrorMessage?: string;
-  dataExtractActionErrorCode?: string;
-  dataExtractActionStderr?: string;
-  dataExtractActionStdout?: string;
   dataQueryDetectedFormat?: string;
   dataQueryIntrospection?: Record<string, unknown>;
   dataQueryIntrospectionQueue?: Record<string, unknown>[];

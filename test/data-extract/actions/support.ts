@@ -2,16 +2,16 @@ import { describe, expect, test } from "bun:test";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { actionDataExtract } from "../src/cli/actions";
-import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
-import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
+import { actionDataExtract } from "../../../src/cli/actions";
+import { inspectDataQueryExtensions } from "../../../src/cli/duckdb/query";
+import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
 import {
   seedDuckDbWorkspaceFixture,
   seedSingleTableDuckDbFixture,
-} from "./data-sources/fixtures/duckdb";
-import { seedStackedMergedBandFixture } from "./data-sources/fixtures/stacked-merged-band";
-import { seedDataExtractFixtures } from "./data-sources/fixtures/tabular";
-import { REPO_ROOT, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
+} from "../../data-sources/fixtures/duckdb";
+import { seedStackedMergedBandFixture } from "../../data-sources/fixtures/stacked-merged-band";
+import { seedDataExtractFixtures } from "../../data-sources/fixtures/tabular";
+import { REPO_ROOT, toRepoRelativePath, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 export function dataQueryFixturePath(name: string): string {
   return join(REPO_ROOT, "test", "data-sources", "fixtures", name);

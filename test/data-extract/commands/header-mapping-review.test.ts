@@ -14,7 +14,7 @@ import {
   fixturePath,
   duckdbReady,
   excelReady,
-} from "./cli-command-data-extract.helpers";
+} from "./support";
 
 describe("CLI data extract command review artifacts", () => {
   test("writes a reviewed header-mapping artifact and stops before extraction", async () => {

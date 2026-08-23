@@ -19,7 +19,7 @@ import {
   TtyCaptureStream,
   duckdbReady,
   excelReady,
-} from "./cli-actions-data-extract.helpers";
+} from "./support";
 
 describe("cli action modules: data extract source-shape reuse", () => {
   test("actionDataExtract reuses an accepted source-shape artifact when it matches exactly", async () => {

@@ -1,8 +1,8 @@
 import { mock } from "bun:test";
 
-import { getMultiObjectSourceDisplayLabel } from "../../../../../src/cli/duckdb/query";
-import type { HarnessRunnerContext } from "../../context";
-import { duckdbQueryModuleUrl } from "../../../../data-query/interactive/module-urls";
+import { getMultiObjectSourceDisplayLabel } from "../../../src/cli/duckdb/query";
+import type { HarnessRunnerContext } from "../../helpers/interactive-harness/context";
+import { duckdbQueryModuleUrl } from "./module-urls";
 
 function getScenarioIntrospection(
   context: HarnessRunnerContext,

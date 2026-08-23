@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { runInteractiveHarness, stripAnsi } from "./cli-interactive-routing.helpers";
+import { runInteractiveHarness, stripAnsi } from "../../cli-interactive-routing.helpers";
 
 describe("interactive mode routing: data extract checkpoints", () => {
   test("lets interactive data extract stop before materialization at the final write boundary", () => {
