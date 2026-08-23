@@ -3040,6 +3040,13 @@ file. The adjacent Rename template-rendering, timestamp-action, and direct
 template suites pass 35 tests with 107 assertions across three files. No
 support, title, assertion, or production change is admitted.
 
+Phase 6.20 executed the admitted pure move over `a48b30b1..60e3b5ce`. The
+destination remains four tests with seven assertions; the adjacent slice
+remains 35 tests with 107 assertions across three files; and the complete suite
+passes 2,623 tests with 14,878 assertions across 336 files. Only the production
+import depth changed. Pre-commit test-quality and maintainability review found
+no material issue.
+
 ### Decision Summary
 
 - Audited suites: 10 of 10 assigned inventory rows.
