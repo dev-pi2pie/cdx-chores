@@ -153,6 +153,19 @@ columns record the latest accepted disposition and current migration evidence.
   semantic evidence.
 - Accepted source-aligned exceptions among these 39 support paths: 0.
 
+#### Phase 6 Per-Batch Support Path Admissions
+
+The Phase 6 manifest may authorize a support boundary without naming the final
+file. These rows fix that exact path before implementation; they do not change
+the Phase 2 support-row count above or authorize movement of unresolved test
+suites.
+
+| Batch | Historical support path                                                        | Accepted exact target                                                        | Admission evidence                                                                                                                               |
+| ----- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 6.4   | `test/cli-actions-md-to-pdf-project-codex/action-write/fixtures.ts`            | `test/markdown-pdf/actions/project-codex-action-write-fixtures.ts`            | The five consumers are the Project Codex action-write family; the fixture contains only their Profile, Template, write, and renderer test setup. |
+| 6.5   | `test/helpers/interactive-harness/mocks/markdown-pdf.ts`                       | `test/markdown-pdf/interactive/mock-action.ts`                                | The mock installs only Markdown PDF action and lifecycle behavior; the neutral harness composition remains under CLI foundations for Phase 7.   |
+| 6.5   | `test/cli-interactive-markdown-pdf/codex-authoring/fixtures.ts`                | `test/markdown-pdf/interactive/codex-authoring-fixtures.ts`                   | The menu and artifact-selection sequences are consumed only by the five Markdown PDF Codex-authoring flows.                                     |
+
 ### Phase 3 Data Query Path Contract
 
 The mappings are suite-family contracts; literal case matrices still decide
