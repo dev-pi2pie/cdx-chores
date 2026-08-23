@@ -201,6 +201,7 @@ suites.
 | 6.15  | Rename fields in `test/helpers/interactive-harness/types.ts`                     | `test/rename/interactive/harness-contract.ts`                                          | Extract exactly eight Rename cleanup/apply scenario fields; shared runtime, timeout, prompt, path, and stream fields remain neutral.                  |
 | 6.15  | Shared fixtures in `test/cli-actions-rename-file.test.ts`                        | `test/rename/actions/file-support.ts`                                                  | Extract only file-action fixtures shared by the four admitted action owners.                                                                         |
 | 6.15  | Shared timeout fixture in `test/adapters-codex-rename-timeout.test.ts`            | `test/rename/adapters/title-suggester-support.ts`                                      | Extract the adapter timeout-signal fixture shared by image and document title suggesters.                                                            |
+| 6.18  | Markdown DOCX behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | `test/markdown-docx/interactive/mock-action.ts`                                       | Move the final feature residual, update neutral mock composition, and delete the empty catch-all; no harness scenario field moves.                    |
 
 ### Phase 3 Data Query Path Contract
 
@@ -2937,6 +2938,41 @@ destination remains nine tests with 42 assertions; the adjacent slice remains
 relative imports changed. Pre-commit test-quality and maintainability review
 found no material issue. Exact-range review over `91165757..f97e3846` found
 no material test-quality, maintainability, or documentation issue.
+
+#### Phase 6.18 Exact Suite Admission
+
+Phase 6.18 admits `test/adapters-docx-ooxml-metadata.test.ts` as a pure suite
+move to `test/markdown-docx/adapters/ooxml-metadata.test.ts`. All ten cases and
+28 assertions remain unchanged:
+
+1. `does not attempt runtime fetch for OOXML relationship identifiers`
+2. `reads core metadata from the metadata-rich fixture`
+3. `reads metadata from non-default part locations without relationship-type URI matching`
+4. `reads UTF-16 encoded core properties`
+5. `normalizes dot-segments in metadata relationship targets`
+6. `normalizes percent-escaped metadata part paths`
+7. `returns docx_metadata_unavailable when core properties are missing`
+8. `returns docx_metadata_unavailable for the alternate-editor textutil fixture`
+9. `returns docx_metadata_unavailable when core properties XML is malformed`
+10. `returns docx_extract_error for invalid zip bytes`
+
+ZIP and XML fixture builders remain local to the adapter suite. Missing core
+properties, alternate-editor metadata, malformed XML, and invalid ZIP bytes
+share parts of their outcome surface but protect distinct triggers and error
+classifications. The runtime-fetch prohibition is a unique compatibility
+boundary. Action rendering and Interactive routing do not duplicate metadata
+extraction, so no removal qualifies.
+
+The final `actionMdToDocx` residual moves from
+`test/helpers/interactive-harness/mocks/action-misc.ts` to
+`test/markdown-docx/interactive/mock-action.ts`. Neutral mock composition
+imports that feature owner, and the now-empty catch-all is deleted. No harness
+scenario field moves.
+
+The refreshed source slice passes ten tests with 28 assertions in one file.
+The adjacent Document Rename, DOCX action, and top-level Interactive slice
+passes 24 tests with 90 assertions across three files. No title, assertion, or
+production change is admitted.
 
 ### Decision Summary
 
