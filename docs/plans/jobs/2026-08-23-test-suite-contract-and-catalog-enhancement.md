@@ -386,7 +386,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.14 | Fonts                                         | completed       | `ba8a6cd7` | `4be23beb`         | `e4235892`   | `ba8a6cd7..e4235892` | Continue with constraints |
 | 6.15 | Rename                                        | completed       | `93e7a797` | `da247175`         | `c0659081`   | `93e7a797..c0659081` | Continue with constraints |
 | 6.16 | Codex adapter platform                        | completed       | `2f5d5a20` | `c69a9abc`         | `e2e2cf34`   | `2f5d5a20..e2e2cf34` | Continue with constraints |
-| 6.17 | Document Rename                               | pending         | -          | -                  | -            | -                    | -                         |
+| 6.17 | Document Rename                               | in-review       | `91165757` | `111a67ea`         | pending      | pending              | pending                   |
 | 6.18 | DOCX                                          | pending         | -          | -                  | -            | -                    | -                         |
 | 6.19 | Markdown platform                             | pending         | -          | -                  | -            | -                    | -                         |
 | 6.20 | Utilities                                     | pending         | -          | -                  | -            | -                    | -                         |
@@ -1796,6 +1796,51 @@ Review gate:
 - [x] record both path transitions
 - [x] create the evidence commit and review the exact batch range
 - [x] record accepted review fixes and the continuation decision
+
+### Phase 6.17: Document Rename
+
+Status: `in-review`
+
+Batch base: `91165757`
+
+Implementation tip: `111a67ea`
+
+Execution and path migration range: `91165757..111a67ea`
+
+Evidence tip: pending
+
+Exact batch review range: pending
+
+The single Document Rename suite moved to
+`test/document-rename/adapters/title-evidence.test.ts`. Only its two relative
+imports changed; all nine titles, bodies, fixtures, and 42 assertions remain
+unchanged. Checked-in PDF and DOCX fixtures stay shared.
+
+| Boundary                         | Passed | Failed | Assertions | Files |
+| -------------------------------- | -----: | -----: | ---------: | ----: |
+| Document Rename destination      |      9 |      0 |         42 |     1 |
+| Exact adjacent safety set        |     20 |      0 |         80 |     4 |
+| Complete repository suite        |  2,623 |      0 |     14,878 |   336 |
+
+Repository checks are clean: `bun run format:check`, `bun run lint`,
+`bunx tsc --noEmit`, `bun run build`, and `git diff --check`.
+
+Pre-commit test-quality and maintainability review found no material issue. No
+current guide names the historical suite path. The matrix records the pure
+move, and correspondence records its transition over `91165757..111a67ea`.
+
+Decision: pending exact-range test-quality, maintainability, and documentation
+review.
+
+Review gate:
+
+- [x] admit all nine cases before implementation
+- [x] move only the Document Rename adapter suite
+- [x] preserve all titles, bodies, fixtures, and 42 assertions
+- [x] complete focused, adjacent, full-suite, and repository validation
+- [x] record the path transition
+- [ ] create the evidence commit and review the exact batch range
+- [ ] record accepted review fixes and the continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,

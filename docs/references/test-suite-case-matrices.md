@@ -2930,6 +2930,13 @@ The adjacent DOCX metadata and Rename document-adapter/action slice passes 20
 tests with 80 assertions across four files. No support, title, assertion, or
 production change is admitted.
 
+Phase 6.17 executed the admitted pure move over `91165757..111a67ea`. The
+destination remains nine tests with 42 assertions; the adjacent slice remains
+20 tests with 80 assertions across four files; and the complete suite passes
+2,623 tests with 14,878 assertions across 336 files. Only the two required
+relative imports changed. Pre-commit test-quality and maintainability review
+found no material issue.
+
 ### Decision Summary
 
 - Audited suites: 10 of 10 assigned inventory rows.
