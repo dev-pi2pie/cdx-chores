@@ -378,7 +378,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.6  | Release tooling                               | completed       | `bb3d683a` | `608b0d2b`         | `d0b989a9`   | `bb3d683a..d0b989a9` | Continue with constraints |
 | 6.7  | Markdown Frontmatter                          | completed       | `16966305` | `61df100e`         | `16159a87`   | `16966305..16159a87` | Continue with constraints |
 | 6.8  | Video                                         | completed       | `5b362772` | `cf85a757`         | `7feac20a`   | `5b362772..7feac20a` | Continue with constraints |
-| 6.9  | Data Sources                                  | pending         | -          | -                  | -            | -                    | -                         |
+| 6.9  | Data Sources                                  | in-review       | `9458f888` | `a3a76f53`         | pending      | pending              | pending                   |
 | 6.10 | Data Extract                                  | pending         | -          | -                  | -            | -                    | -                         |
 | 6.11 | Data Preview                                  | pending         | -          | -                  | -            | -                    | -                         |
 | 6.12 | Data Stack                                    | pending         | -          | -                  | -            | -                    | -                         |
@@ -1149,6 +1149,92 @@ Review gate:
 - [x] record correspondence and current exact-path evidence
 - [x] create the evidence commit and review the exact batch range
 - [x] record accepted review fixes and the batch continuation decision
+
+### Phase 6.9: Data Sources
+
+Status: `in-review`
+
+Batch base: `9458f888`
+
+Implementation tip: `a3a76f53`
+
+Execution and path migration range: `9458f888..a3a76f53`
+
+Evidence tip: pending
+
+Exact batch review range: pending
+
+The five selected suites moved to shared Data Sources adapter, direct, and
+evidence owners. Reusable TypeScript fixture builders and the exact seven
+checked-in CSV, TSV, Parquet, SQLite, and XLSX artifacts moved to the shared
+`fixtures/` owner. No other directory entry was admitted or moved.
+
+Pre-move review found no vague or duplicate case. It retained all 30 cases and
+accepted one strengthening: the already-present DuckDB extension case now
+tracks install calls and proves that the path does not reinstall.
+
+Selector preservation and strengthening:
+
+| Check       | Owner files | Passed | Failed | Assertions |
+| ----------- | ----------: | -----: | -----: | ---------: |
+| Pre-change  |           5 |     30 |      0 |         95 |
+| Post-change |           5 |     30 |      0 |         96 |
+
+Static declarations and titles remain 30 of 30. Static `expect(` calls rose
+from 71 to 72 only for the accepted no-reinstall assertion.
+
+The implementation checkpoint is:
+
+- `a3a76f53` — move the five suite owners, three fixture helpers, and seven
+  checked-in source artifacts; update current consumers and the Data Query
+  guide; strengthen the DuckDB no-reinstall proof
+
+Pre-commit test-quality and maintainability reviews found no material issue.
+They confirmed coherent `adapters/`, `direct/`, `evidence/`, and `fixtures/`
+ownership, one-way Data Query and Data Extract dependencies on shared Data
+Sources support, exact title preservation, and no stale current-path import.
+
+Validation evidence:
+
+| Boundary                              | Passed | Failed | Assertions | Files |
+| ------------------------------------- | -----: | -----: | ---------: | ----: |
+| Data Sources destinations             |     30 |      0 |         96 |     5 |
+| Destinations plus adjacent safety set |    272 |      0 |      1,214 |    56 |
+| Complete repository suite             |  2,614 |      0 |     14,871 |   325 |
+
+Repository checks are clean:
+
+- `bun run format:check`
+- `bun run lint`
+- `bun run build`
+- `bunx tsc --noEmit`
+- `git diff --check`
+
+Documentation path scan:
+
+- the current Data Query guide now names `test/data-sources/fixtures/`
+- current test imports and literal fixture paths use the shared owner
+- the completed inventory and time-bounded historical records retain their
+  reference-date paths
+- the current matrix records the executed suite, helper, and exact artifact
+  admissions
+- the correspondence reference records all 15 accepted path changes over
+  `9458f888..a3a76f53`
+
+Decision: pending the exact batch review. Phase 6.9 may close only after the
+documentation, test-quality, and maintainability reviews accept
+`9458f888..<evidence-tip>` and the receipt records the continuation decision.
+
+Review gate:
+
+- [x] reproduce the five-source selector and adjacent safety baseline
+- [x] admit exact suite, helper, and seven-artifact targets
+- [x] move only the accepted Data Sources owners and current consumers
+- [x] preserve all 30 declarations and add one accepted safety assertion
+- [x] complete focused, full-suite, and repository validation
+- [x] update the current guide, matrix, and path correspondence
+- [ ] create the evidence commit and review the exact batch range
+- [ ] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,

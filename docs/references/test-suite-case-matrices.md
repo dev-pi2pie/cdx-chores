@@ -167,9 +167,9 @@ suites.
 | 6.5   | `test/cli-interactive-markdown-pdf/codex-authoring/fixtures.ts`                 | `test/markdown-pdf/interactive/codex-authoring-fixtures.ts`        | Phase 6.5 executed the move and preserved all five Markdown PDF Codex-authoring consumers.                                                         |
 | 6.7   | Frontmatter behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | `test/markdown-frontmatter/interactive/mock-action.ts`             | Phase 6.7 executed the one-action extraction; the mixed residual and neutral composition remain for later admitted batches and Phase 7.            |
 | 6.8   | Video behavior in `test/helpers/interactive-harness/mocks/action-misc.ts`       | `test/video/interactive/mock-action.ts`                            | Phase 6.8 executed the three-action extraction; the mixed residual and neutral composition remain for later admitted batches and Phase 7.          |
-| 6.9   | `test/helpers/data-extract-fixture-test-utils.ts`                               | `test/data-sources/fixtures/tabular.ts`                            | The helper builds reusable tabular fixtures for independent Data Query and Data Extract consumers.                                                 |
-| 6.9   | `test/helpers/data-query-duckdb-fixture-test-utils.ts`                          | `test/data-sources/fixtures/duckdb.ts`                             | The helper builds reusable DuckDB catalogs for independent Data Query and Data Extract consumers.                                                  |
-| 6.9   | `test/helpers/stacked-merged-band-fixture-test-utils.ts`                        | `test/data-sources/fixtures/stacked-merged-band.ts`                | Live consumers span the shared XLSX adapter plus Data Query and Data Extract support, so the helper is no longer suite-local.                      |
+| 6.9   | `test/helpers/data-extract-fixture-test-utils.ts`                               | `test/data-sources/fixtures/tabular.ts`                            | Phase 6.9 executed the move and preserved independent Data Query and Data Extract consumers.                                                       |
+| 6.9   | `test/helpers/data-query-duckdb-fixture-test-utils.ts`                          | `test/data-sources/fixtures/duckdb.ts`                             | Phase 6.9 executed the move and preserved independent Data Query and Data Extract consumers.                                                       |
+| 6.9   | `test/helpers/stacked-merged-band-fixture-test-utils.ts`                        | `test/data-sources/fixtures/stacked-merged-band.ts`                | Phase 6.9 executed the move for shared XLSX adapter, Data Query, and Data Extract consumers.                                                       |
 | 6.9   | `test/fixtures/data-query/basic.csv`                                            | `test/data-sources/fixtures/basic.csv`                             | This admitted artifact and the six rows below are the exact checked-in shared source set; no other directory entry is authorized.                  |
 | 6.9   | `test/fixtures/data-query/basic.parquet`                                        | `test/data-sources/fixtures/basic.parquet`                         | The checked-in Parquet source serves both Data Query and Data Extract consumers.                                                                   |
 | 6.9   | `test/fixtures/data-query/basic.tsv`                                            | `test/data-sources/fixtures/basic.tsv`                             | The checked-in TSV source serves both Data Query and Data Extract consumers.                                                                       |
@@ -197,7 +197,7 @@ case retention, rename, merge, or removal before the move.
 | `test/cli-options-parsers.test.ts`                                                                                  | `test/data-query/direct/relation-option-parser.test.ts`                                            | Rename to its actual relation-binding parser contract.                                                                                                                                                |
 | Data Query cases in `test/cli-command-data-codex-timeout.test.ts`                                                   | `test/data-query/commands/codex-timeout.test.ts`                                                   | Leave the Data Stack residue at the current root path until the Data Stack audit; its revisit event is the next Data Stack command edit or migration.                                                 |
 | Data Query cases in `test/cli-ux.test.ts`                                                                           | Accepted future Data Query command owner selected by the case matrix                               | Leave the non-Data residual root suite deferred until each named feature is audited; do not move Rename or Video in Phase 3.                                                                          |
-| `test/data-query-xlsx-sources.test.ts`, `test/fixtures/data-query/`, and shared Data Extract/DuckDB fixture helpers | Current paths temporarily; accepted future owner `test/data-sources/{adapters,fixtures}/`          | These have Data Extract consumers. Revisit in a dedicated Data Sources checkpoint or on the next source/fixture schema edit, rather than expanding Phase 3.                                           |
+| `test/data-query-xlsx-sources.test.ts`, `test/fixtures/data-query/`, and shared Data Extract/DuckDB fixture helpers | `test/data-sources/{adapters,fixtures}/`                                                           | Phase 6.9 executed the bounded shared Data Sources move after admitting five exact suites, three helpers, and seven checked-in fixture artifacts.                                                     |
 
 Focused commands:
 
@@ -206,7 +206,7 @@ Focused commands:
 bun test test/cli-actions-data-query*.test.ts test/cli-command-data-query*.test.ts test/cli-interactive-data-query*.test.ts test/cli-interactive-routing-data-query-*.test.ts test/data-query-*.test.ts test/cli-options-parsers.test.ts test/cli-command-data-codex-timeout.test.ts test/cli-ux.test.ts
 
 ## Post-change owners plus explicit temporary deferrals touched by the split
-bun test test/data-query test/cli-command-data-codex-timeout.test.ts test/cli-ux.test.ts test/data-query-xlsx-sources.test.ts
+bun test test/data-query test/cli-command-data-codex-timeout.test.ts test/cli-ux.test.ts test/data-sources/adapters/xlsx-sources.test.ts
 ```
 
 Run the full suite after the focused command. The pre-change command should be
@@ -2509,10 +2509,9 @@ path:
 
 #### Phase 6.9 Exact Suite Admission
 
-Phase 6.9 admits the five shared Data Sources suites and their exact catalog
-paths before implementation. Executable deterministic-generator contracts use
-`evidence/`; reusable builders and checked-in source artifacts use
-`fixtures/`.
+Phase 6.9 admitted and executed the five shared Data Sources suites at their
+exact catalog paths. Executable deterministic-generator contracts use
+`evidence/`; reusable builders and checked-in source artifacts use `fixtures/`.
 
 | Historical path                                      | Accepted exact target                                            | Admission evidence                                                                                                            |
 | ---------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |

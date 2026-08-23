@@ -256,6 +256,30 @@ migration and final reconciliation finish.
 | 2026-08-23     | `test/cli-interactive-routing-video.test.ts`            | moved      | `test/video/interactive/gif.test.ts`                                                               | `5b362772..cf85a757` | [Phase 6.8][phase-6-8-evidence] |
 | 2026-08-23     | `test/helpers/interactive-harness/mocks/action-misc.ts` | split      | `test/helpers/interactive-harness/mocks/action-misc.ts`<br>`test/video/interactive/mock-action.ts` | `5b362772..cf85a757` | [Phase 6.8][phase-6-8-evidence] |
 
+### Phase 6.9: Data Sources
+
+The paths below were implemented and validated over `9458f888..a3a76f53`.
+Exact-range review and the continuation decision remain pending. The reference
+stays `draft` until the initial migration and final reconciliation finish.
+
+| Reference date | Historical path                                          | Transition | Current owner or owners                                          | Migration range      | Job evidence                    |
+| -------------- | -------------------------------------------------------- | ---------- | ---------------------------------------------------------------- | -------------------- | ------------------------------- |
+| 2026-08-23     | `test/data-duckdb-extensions.test.ts`                    | moved      | `test/data-sources/adapters/duckdb-extensions.test.ts`           | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
+| 2026-08-23     | `test/data-extract-fixture-generator.test.ts`            | moved      | `test/data-sources/evidence/tabular-fixtures.test.ts`            | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
+| 2026-08-23     | `test/data-query-xlsx-sources.test.ts`                   | moved      | `test/data-sources/adapters/xlsx-sources.test.ts`                | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
+| 2026-08-23     | `test/data-source-shape.test.ts`                         | moved      | `test/data-sources/direct/source-shape.test.ts`                  | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
+| 2026-08-23     | `test/stacked-merged-band-fixture-generator.test.ts`     | moved      | `test/data-sources/evidence/stacked-merged-band-fixture.test.ts` | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
+| 2026-08-23     | `test/helpers/data-extract-fixture-test-utils.ts`        | moved      | `test/data-sources/fixtures/tabular.ts`                          | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
+| 2026-08-23     | `test/helpers/data-query-duckdb-fixture-test-utils.ts`   | moved      | `test/data-sources/fixtures/duckdb.ts`                           | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
+| 2026-08-23     | `test/helpers/stacked-merged-band-fixture-test-utils.ts` | moved      | `test/data-sources/fixtures/stacked-merged-band.ts`              | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
+| 2026-08-23     | `test/fixtures/data-query/basic.csv`                     | moved      | `test/data-sources/fixtures/basic.csv`                           | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
+| 2026-08-23     | `test/fixtures/data-query/basic.parquet`                 | moved      | `test/data-sources/fixtures/basic.parquet`                       | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
+| 2026-08-23     | `test/fixtures/data-query/basic.tsv`                     | moved      | `test/data-sources/fixtures/basic.tsv`                           | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
+| 2026-08-23     | `test/fixtures/data-query/large.csv`                     | moved      | `test/data-sources/fixtures/large.csv`                           | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
+| 2026-08-23     | `test/fixtures/data-query/large.parquet`                 | moved      | `test/data-sources/fixtures/large.parquet`                       | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
+| 2026-08-23     | `test/fixtures/data-query/multi.sqlite`                  | moved      | `test/data-sources/fixtures/multi.sqlite`                        | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
+| 2026-08-23     | `test/fixtures/data-query/multi.xlsx`                    | moved      | `test/data-sources/fixtures/multi.xlsx`                          | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
+
 [phase-3-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-3-data-query-migration-pilot
 [phase-4-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-4-doctor-ownership-migration-pilot
 [phase-5-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-5-bounded-markdown-pdf-migration-pilot
@@ -267,6 +291,7 @@ migration and final reconciliation finish.
 [phase-6-6-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-66-release-tooling
 [phase-6-7-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-67-markdown-frontmatter
 [phase-6-8-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-68-video
+[phase-6-9-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-69-data-sources
 
 ## Completion Boundary
 
