@@ -2984,6 +2984,31 @@ Pre-commit test-quality and maintainability review found no material issue.
 Exact-range review over `56624bef..3500991c` found no material test-quality,
 maintainability, or documentation issue.
 
+#### Phase 6.19 Exact Suite Admission
+
+Phase 6.19 admits `test/cli-command-markdown-codex-timeout.test.ts` as a pure
+move to `test/markdown/commands/codex-timeout.test.ts`. Five parameterized
+declarations produce 15 runtime tests and 42 assertions. Each declaration
+continues to cover `pdf-profile`, `pdf-template`, and `pdf-project`:
+
+1. `normalizes and forwards the timeout for md %s codex`
+2. `keeps the action timeout unset when md %s codex omits the option`
+3. `rejects an invalid duration before invoking md %s codex`
+4. `rejects a repeated duration before invoking md %s codex`
+5. `documents the per-attempt option for md %s codex`
+
+The local command harness and parse-failure helper remain local. Shared option
+tests retain duration parsing and precedence; Interactive retains session-entry
+registration; Markdown PDF command owners retain feature-specific behavior.
+This suite uniquely proves registration, normalization, omission, validation,
+and help across all three Markdown authoring entry points, so no removal
+qualifies.
+
+The refreshed source slice passes 15 runtime tests with 42 assertions in one
+file. The adjacent Interactive timeout, shared timeout-option, and three
+Markdown PDF command-owner suites pass 63 tests with 264 assertions across
+five files. No support, title, assertion, or production change is admitted.
+
 ### Decision Summary
 
 - Audited suites: 10 of 10 assigned inventory rows.
