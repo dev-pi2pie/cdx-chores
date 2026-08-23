@@ -9,12 +9,12 @@ import {
   actionJsonToTsv,
   actionTsvToCsv,
   actionTsvToJson,
-} from "../src/cli/actions";
-import { parseDelimited } from "../src/utils/delimited";
-import { createTempFixtureDir, toRepoRelativePath } from "./helpers/cli-test-utils";
-import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
+} from "../../../src/cli/actions";
+import { parseDelimited } from "../../../src/utils/delimited";
+import { createTempFixtureDir, toRepoRelativePath } from "../../helpers/cli-test-utils";
+import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
 
-describe("cli action modules: data", () => {
+describe("data conversion actions", () => {
   test("actionJsonToCsv writes CSV and reports relative output path", async () => {
     const fixtureDir = await createTempFixtureDir("actions");
     try {
@@ -31,8 +31,7 @@ describe("cli action modules: data", () => {
       expectNoStderr();
       expect(stdout.text).toContain(`Wrote CSV: ${toRepoRelativePath(outputPath)}`);
       expect(stdout.text).toContain("Rows: 1");
-      expect(csv).toContain("name,age");
-      expect(csv).toContain("Ada,36");
+      expect(csv).toBe("name,age\nAda,36\n");
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
@@ -174,12 +173,13 @@ describe("cli action modules: data", () => {
   });
 });
 
-describe("cli action modules: data failure modes", () => {
+describe("data conversion action failure modes", () => {
   test("actionJsonToCsv rejects invalid JSON input", async () => {
     const fixtureDir = await createTempFixtureDir("actions");
     try {
       const { runtime, expectNoOutput } = createActionTestRuntime();
       const inputPath = join(fixtureDir, "invalid.json");
+      const outputPath = inputPath.replace(/\.json$/i, ".csv");
       await writeFile(inputPath, '{"name": "Ada"\n', "utf8");
 
       const relativeInput = toRepoRelativePath(inputPath);
@@ -190,6 +190,7 @@ describe("cli action modules: data failure modes", () => {
       });
 
       expectNoOutput();
+      await expect(readFile(outputPath, "utf8")).rejects.toThrow();
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }

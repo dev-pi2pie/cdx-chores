@@ -2,6 +2,7 @@ import { mock } from "bun:test";
 
 import type { HarnessRunnerContext } from "../context";
 import { actionsModuleUrl } from "../module-urls";
+import { createDataConversionActionMocks } from "../../../data-conversion/interactive/mock-action";
 import { createDataExtractActionMock } from "../../../data-extract/interactive/mock-action";
 import { createDataPreviewActionMocks } from "../../../data-preview/interactive/mock-action";
 import { createDataQueryActionMock } from "../../../data-query/interactive/mock-action";
@@ -20,6 +21,7 @@ export function installActionMocks(context: HarnessRunnerContext): void {
       examplesPerGroup: 3,
     },
     ...createMiscActionMocks(context),
+    ...createDataConversionActionMocks(context),
     ...createDoctorActionMock(context),
     ...createMarkdownFrontmatterActionMock(context),
     ...createVideoActionMocks(context),

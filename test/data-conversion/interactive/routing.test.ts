@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { REPO_ROOT, runInteractiveHarness } from "./cli-interactive-routing.helpers";
+import { REPO_ROOT } from "../../helpers/cli-test-utils";
+import { runInteractiveHarness } from "../../helpers/interactive-harness";
 
 describe("interactive mode routing: data convert", () => {
   test("routes interactive data convert through shared path prompt context", () => {
