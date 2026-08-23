@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import { promptTextInlineGhost } from "../../../src/cli/prompts/text-inline";
 import { FakePromptReadStream, FakePromptWriteStream, nextRenderTick } from "./prompt-fixtures";
+
+const textInlineModuleId = "../../../src/cli/prompts/text-inline?cli-foundations-completion";
+const { promptTextInlineGhost } = (await import(
+  textInlineModuleId
+)) as typeof import("../../../src/cli/prompts/text-inline");
 
 describe("text inline prompt controller", () => {
   test("template completion starts only after an opening brace is typed", async () => {

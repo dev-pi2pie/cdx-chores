@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import { promptTextWithGhost } from "../../../src/cli/prompts/text-inline";
 import { FakePromptWriteStream } from "./prompt-fixtures";
+
+const textInlineModuleId = "../../../src/cli/prompts/text-inline?cli-foundations-fallback";
+const { promptTextWithGhost } = (await import(
+  textInlineModuleId
+)) as typeof import("../../../src/cli/prompts/text-inline");
 
 describe("text inline prompt controller", () => {
   test("promptTextWithGhost falls back to simple input when advanced prompt fails", async () => {

@@ -1,8 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
-import { promptTextInlineGhost } from "../../../src/cli/prompts/text-inline";
 import { VirtualTerminal, wrapAscii } from "../inline-rendering/virtual-terminal";
 import { FakePromptReadStream, FakePromptWriteStream, nextRenderTick } from "./prompt-fixtures";
+
+const textInlineModuleId = "../../../src/cli/prompts/text-inline?cli-foundations-terminal";
+const { promptTextInlineGhost } = (await import(
+  textInlineModuleId
+)) as typeof import("../../../src/cli/prompts/text-inline");
 
 describe("text inline prompt controller", () => {
   test("promptTextInlineGhost prints help lines once while rerendering only the input line", async () => {
