@@ -379,7 +379,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.7  | Markdown Frontmatter                          | completed       | `16966305` | `61df100e`         | `16159a87`   | `16966305..16159a87` | Continue with constraints |
 | 6.8  | Video                                         | completed       | `5b362772` | `cf85a757`         | `7feac20a`   | `5b362772..7feac20a` | Continue with constraints |
 | 6.9  | Data Sources                                  | completed       | `9458f888` | `a3a76f53`         | `e35eea80`   | `9458f888..e35eea80` | Continue with constraints |
-| 6.10 | Data Extract                                  | in-review       | `733f27cb` | `d02bf761`         | pending      | pending              | pending                   |
+| 6.10 | Data Extract                                  | completed       | `733f27cb` | `d02bf761`         | `dbb5574e`   | `733f27cb..dbb5574e` | Continue with constraints |
 | 6.11 | Data Preview                                  | pending         | -          | -                  | -            | -                    | -                         |
 | 6.12 | Data Stack                                    | pending         | -          | -                  | -            | -                    | -                         |
 | 6.13 | Data Conversion                               | pending         | -          | -                  | -            | -                    | -                         |
@@ -1244,7 +1244,7 @@ Review gate:
 
 ### Phase 6.10: Data Extract
 
-Status: `in-review`
+Status: `completed`
 
 Batch base: `733f27cb`
 
@@ -1252,9 +1252,9 @@ Implementation tip: `d02bf761`
 
 Execution and path migration range: `733f27cb..d02bf761`
 
-Evidence tip: pending
+Evidence tip: `dbb5574e`
 
-Exact batch review range: pending
+Exact batch review range: `733f27cb..dbb5574e`
 
 The 13 selected suites moved to six action, four command, and three
 Interactive owners. Feature-local action and command support moved with their
@@ -1324,9 +1324,15 @@ Documentation path scan:
 - the correspondence reference records all 22 accepted path transitions over
   `733f27cb..d02bf761`
 
-Decision: pending the exact batch review. Phase 6.10 may close only after the
-documentation, test-quality, and maintainability reviews accept
-`733f27cb..<evidence-tip>` and the receipt records the continuation decision.
+Exact-range test-quality and maintainability review found no material issue.
+Documentation review found only the expected self-tip gap; this closeout
+records `dbb5574e` as the evidence tip. The combined Data Extract and Data Query
+Interactive compatibility slice also passed 95 tests with 421 assertions.
+
+Decision: `Continue with constraints`. Keep shared introspection scenario
+fields and the temporary routing facade neutral until their later admitted
+cleanup. Do not recreate the deleted mixed Data Query residues or duplicate the
+shared source-shape request type in later feature mocks.
 
 Review gate:
 
@@ -1336,8 +1342,8 @@ Review gate:
 - [x] preserve all 55 declarations and add two accepted safety assertions
 - [x] complete focused, compatibility, full-suite, and repository validation
 - [x] record current support dispositions and path correspondence
-- [ ] create the evidence commit and review the exact batch range
-- [ ] record accepted review fixes and the batch continuation decision
+- [x] create the evidence commit and review the exact batch range
+- [x] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
