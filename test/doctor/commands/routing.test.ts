@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { Command } from "commander";
 
-import { actionDoctor } from "../src/cli/actions";
-import { registerCliCommands } from "../src/cli/commands";
-import type { DoctorOptions } from "../src/cli/actions/doctor";
-import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
-import { runCli } from "./helpers/cli-test-utils";
-import { createDoctorFixture } from "./helpers/doctor-test-fixtures";
+import { actionDoctor } from "../../../src/cli/actions";
+import type { DoctorOptions } from "../../../src/cli/actions/doctor";
+import { registerCliCommands } from "../../../src/cli/commands";
+import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
+import { runCli } from "../../helpers/cli-test-utils";
+import { createDoctorFixture } from "../fixtures";
 
 function createProgram(
   options: {

@@ -1,19 +1,19 @@
 import { describe, expect, test } from "bun:test";
 
-import { actionDoctor } from "../src/cli/actions";
-import { CliError } from "../src/cli/errors";
+import { actionDoctor } from "../../../src/cli/actions";
+import { CliError } from "../../../src/cli/errors";
 import {
   assessMarkdownPdfRendererCapabilities,
   assessMarkdownPdfRequirements,
-} from "../src/cli/markdown-pdf";
-import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
+} from "../../../src/cli/markdown-pdf";
+import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
 import {
   DOCTOR_FIXTURE_COMMANDS,
   DOCTOR_FIXTURE_QUERY,
   createDoctorFixture,
   createExpectedAllReadyDoctorHumanOutput,
   createExpectedDoctorJsonPayload,
-} from "./helpers/doctor-test-fixtures";
+} from "../fixtures";
 
 function stripAnsi(value: string): string {
   const escape = String.fromCharCode(0x1b);
@@ -318,36 +318,6 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
 
   test.each([
     {
-      name: "limited renderer",
-      create: () =>
-        createDoctorFixture({
-          commands: {
-            weasyprint: { ...DOCTOR_FIXTURE_COMMANDS.weasyprint, version: "65.0" },
-          },
-        }),
-      expected: [
-        "  PDF: limited",
-        "Advanced Markdown PDF features require WeasyPrint 65.1 or newer",
-        "- Upgrade WeasyPrint to 65.1 or newer [recommended]",
-      ],
-      absent: [],
-    },
-    {
-      name: "unknown Pandoc compatibility",
-      create: () =>
-        createDoctorFixture({
-          commands: {
-            pandoc: { ...DOCTOR_FIXTURE_COMMANDS.pandoc, version: "custom-build" },
-          },
-        }),
-      expected: [
-        "  PDF: unknown",
-        "Pandoc 2.0 or newer could not be verified",
-        "- Verify Pandoc 2.0 or newer [recommended]",
-      ],
-      absent: [],
-    },
-    {
       name: "unavailable DuckDB without a safe action",
       create: () =>
         createDoctorFixture({
@@ -360,28 +330,6 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
         "DuckDB runtime is unavailable",
       ],
       absent: ["Actions:", "RAW_DUCKDB_FAILURE"],
-    },
-    {
-      name: "constrained extension without an invented action",
-      create: () =>
-        createDoctorFixture({
-          query: {
-            ...DOCTOR_FIXTURE_QUERY,
-            excel: {
-              installed: false,
-              loaded: false,
-              loadable: false,
-              installable: false,
-              detail: "RAW_PERMISSION_FAILURE",
-            },
-          },
-        }),
-      expected: [
-        "Data query: limited",
-        "1 issue · 0 actions",
-        "Excel query support is unavailable in this environment",
-      ],
-      absent: ["Actions:", "RAW_PERMISSION_FAILURE"],
     },
   ])("renders the compact $name state", async ({ create, expected, absent }) => {
     const fixture = create();

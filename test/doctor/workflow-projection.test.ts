@@ -14,14 +14,14 @@ import {
   type DoctorWorkflowId,
   type DoctorWorkflowProjection,
   type DoctorWorkflowState,
-} from "../src/cli/doctor/workflow";
+} from "../../src/cli/doctor/workflow";
 import {
   DOCTOR_FIXTURE_CODEX,
   DOCTOR_FIXTURE_COMMANDS,
   DOCTOR_FIXTURE_QUERY,
   createDoctorFixture,
   createDoctorReportFromFixture,
-} from "./helpers/doctor-test-fixtures";
+} from "./fixtures";
 
 function project(
   fixture: ReturnType<typeof createDoctorFixture>,

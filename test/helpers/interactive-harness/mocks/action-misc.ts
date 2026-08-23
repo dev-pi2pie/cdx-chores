@@ -2,9 +2,6 @@ import type { HarnessRunnerContext } from "../context";
 
 export function createMiscActionMocks(context: HarnessRunnerContext) {
   return {
-    actionDoctor: async (_runtime: unknown, options: Record<string, unknown>) => {
-      context.recordAction("doctor", options);
-    },
     actionDataPreview: async (_runtime: unknown, options: Record<string, unknown>) => {
       context.recordAction("data:preview", options);
     },
