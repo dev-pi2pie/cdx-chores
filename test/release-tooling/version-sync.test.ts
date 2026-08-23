@@ -3,8 +3,8 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import { EMBEDDED_PACKAGE_VERSION } from "../src/cli/program/version-embedded";
-import { REPO_ROOT } from "./helpers/cli-test-utils";
+import { EMBEDDED_PACKAGE_VERSION } from "../../src/cli/program/version-embedded";
+import { REPO_ROOT } from "./fixtures";
 
 describe("embedded version sync", () => {
   test("embedded CLI version matches package.json", () => {
@@ -21,8 +21,11 @@ describe("embedded version sync", () => {
     const packageJson = JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "utf8")) as {
       scripts?: { build?: string };
     };
+    const buildScript = packageJson.scripts?.build ?? "";
+    const generatorIndex = buildScript.indexOf("node scripts/generate-embedded-version.mjs");
+    const tsdownIndex = buildScript.indexOf("tsdown");
 
-    expect(packageJson.scripts?.build).toContain("node scripts/generate-embedded-version.mjs");
-    expect(packageJson.scripts?.build).toContain("tsdown");
+    expect(generatorIndex).toBeGreaterThanOrEqual(0);
+    expect(tsdownIndex).toBeGreaterThan(generatorIndex);
   });
 });

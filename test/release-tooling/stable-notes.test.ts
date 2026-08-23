@@ -1,103 +1,15 @@
 import { describe, expect, test } from "bun:test";
-import { spawnSync } from "node:child_process";
 import { chmod, mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { REPO_ROOT, createTempFixtureDir } from "./helpers/cli-test-utils";
-
-type RunResult = {
-  status: number | null;
-  stdout: string;
-  stderr: string;
-};
-
-function stripBenignGitWarnings(stderr: string): string {
-  return stderr
-    .split("\n")
-    .filter(
-      (line) =>
-        line !==
-        "git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead",
-    )
-    .join("\n")
-    .trim();
-}
-
-function runCommand(
-  command: string,
-  args: string[],
-  options: {
-    cwd?: string;
-    env?: NodeJS.ProcessEnv;
-    input?: string;
-  } = {},
-): RunResult {
-  const result = spawnSync(command, args, {
-    cwd: options.cwd ?? REPO_ROOT,
-    env: options.env ?? process.env,
-    input: options.input,
-    encoding: "utf8",
-  });
-
-  return {
-    status: result.status,
-    stdout: result.stdout ?? "",
-    stderr: result.stderr ?? "",
-  };
-}
-
-function expectSuccess(result: RunResult): void {
-  expect(result.status).toBe(0);
-  expect(stripBenignGitWarnings(result.stderr)).toBe("");
-}
-
-function git(cwd: string, ...args: string[]): RunResult {
-  return runCommand("git", args, { cwd });
-}
-
-async function createReleaseFixtureRepo(prefix: string): Promise<string> {
-  const repoDir = await createTempFixtureDir(prefix);
-
-  expectSuccess(git(repoDir, "init", "-q"));
-  expectSuccess(git(repoDir, "config", "user.name", "Release Tester"));
-  expectSuccess(git(repoDir, "config", "user.email", "release.tester@example.com"));
-
-  await writeFile(join(repoDir, "notes.txt"), "initial\n", "utf8");
-  expectSuccess(git(repoDir, "add", "notes.txt"));
-  expectSuccess(git(repoDir, "commit", "-m", "chore: bootstrap release fixtures"));
-  expectSuccess(git(repoDir, "tag", "v0.1.0"));
-
-  return repoDir;
-}
-
-describe("release workflow helpers", () => {
-  test("filters allowed release branches by remote-prefix policy", () => {
-    const result = runCommand(
-      "bash",
-      [join(REPO_ROOT, "scripts", "filter-allowed-release-branches.sh")],
-      {
-        input: [
-          "origin/main",
-          "origin/beta",
-          "origin/alpha-release",
-          "origin/canary-nightly",
-          "origin/dev",
-          "origin/feature/devtools-cleanup",
-          "origin/hotfix/beta-roll-forward",
-          "origin/release/canary-checks",
-        ].join("\n"),
-      },
-    );
-
-    expectSuccess(result);
-    expect(result.stdout.trim().split("\n")).toEqual([
-      "origin/beta",
-      "origin/alpha-release",
-      "origin/canary-nightly",
-      "origin/dev",
-    ]);
-  });
-});
+import {
+  REPO_ROOT,
+  createReleaseFixtureRepo,
+  expectSuccess,
+  git,
+  runCommand,
+  stripBenignGitWarnings,
+} from "./fixtures";
 
 describe("stable release notes script", () => {
   test("uses CHANGELOGS override content when a matching stable release note exists", async () => {
