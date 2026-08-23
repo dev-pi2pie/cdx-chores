@@ -42,7 +42,7 @@ references.
 |     2 | case matrices and catalog admission            | completed   | `34d080e9..0b8d59bd` | Continue with constraints |
 |     3 | Data Query migration pilot                     | completed   | `db9622cf..27ccab6e` | Continue with constraints |
 |     4 | Doctor ownership migration pilot               | completed   | `ff0f3d6f..837e5d95` | Continue with constraints |
-|     5 | bounded Markdown PDF migration pilot           | in-review   | pending              | Evidence recorded         |
+|     5 | bounded Markdown PDF migration pilot           | completed   | `05a87d54..4cce415a` | Continue with constraints |
 |     6 | remaining accepted family batches              | pending     | per-batch             | Admitted                  |
 
 ## Phase 1: Refreshed Baseline And Complete File Inventory
@@ -284,13 +284,13 @@ bounded Markdown PDF matrix admitted for the next pilot.
 
 ## Phase 5: Bounded Markdown PDF Migration Pilot
 
-Status: `in-review`
+Status: `completed`
 
 Phase base: `05a87d54`
 
 Implementation range: `05a87d54..802d3b86`
 
-Review range: pending evidence-tip review
+Review range: `05a87d54..4cce415a`
 
 The pilot is limited to these two pre-change owners:
 
@@ -329,6 +329,11 @@ issue. They confirmed declaration and runtime preservation, safety and
 side-effect coverage, cancellation and keyboard behavior, local helper scope,
 and the absence of production or shared-support changes.
 
+The exact-range documentation, test-quality, and maintainability reviews found
+no material issue in `05a87d54..4cce415a`. They confirmed the implementation
+range, evidence tip, correspondence rows, preserved declarations, focused and
+adjacent behavior, helper ownership, and historical-link classification.
+
 Execution receipt:
 
 - [x] record the focused pre-change baseline
@@ -337,8 +342,14 @@ Execution receipt:
 - [x] run the complete suite, formatting check, lint, build, and diff check
 - [x] land a separate evidence commit containing validation, correspondence,
       and status evidence
-- [ ] review the complete phase-base-to-evidence-tip range
-- [ ] record the closeout receipt and continuation decision after clean review
+- [x] review the complete phase-base-to-evidence-tip range
+- [x] record the closeout receipt and continuation decision after clean review
+
+Decision: `Continue with constraints` to Phase 6. Reuse the accepted
+owner-boundary split, but require an exact manifest before each remaining
+family batch. Keep shared Markdown PDF support at its recorded path until its
+own accepted batch or Phase 7 closure, run the complete suite for every batch,
+and do not fold out-of-manifest findings into a migration checkpoint.
 
 ## Phase 6: Remaining Accepted Family Batches
 

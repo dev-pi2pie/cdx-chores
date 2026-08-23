@@ -317,7 +317,7 @@ Tasks:
       and update current documentation and correspondence rows.
 - [x] Run every recorded pre-change owner, destination owner, and adjacent
       Markdown PDF integration or evidence suite affected by shared support.
-- [ ] Review the exact phase range and decide whether the catalog pattern is
+- [x] Review the exact phase range and decide whether the catalog pattern is
       safe for the remaining large feature families.
 
 Observable contracts:
