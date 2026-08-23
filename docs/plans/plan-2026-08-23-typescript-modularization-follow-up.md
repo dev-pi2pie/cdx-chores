@@ -261,13 +261,13 @@ bun test test/cli-interactive-markdown-pdf/codex-authoring test/cli-interactive-
 
 Tasks:
 
-- [ ] Split
+- [x] Split
       `test/cli-actions-md-to-pdf-template-codex/template-synthesis.test.ts`
       into document and title structure, font ownership, cover layout, and ToC
       and CSS branch suites.
-- [ ] Preserve synthesis fixtures, decision inputs, generated structure, and
+- [x] Preserve synthesis fixtures, decision inputs, generated structure, and
       CSS assertions.
-- [ ] Avoid moving feature fixtures into a repository-wide helper.
+- [x] Avoid moving feature fixtures into a repository-wide helper.
 
 Observable contracts:
 

@@ -37,7 +37,7 @@ modularization follow-up without duplicating the parent plan's checklists.
 |     4 | Rename Codex option ownership                | completed | `a5ac3ed3..8df643e1` | Continue |
 |     5 | Doctor workflow projection                   | completed | `8a2f9136..e2c15629` | Continue |
 |     6 | Interactive Codex authoring test             | completed | `d2172ad8..e197efed` | Continue |
-|     7 | Template synthesis test                      | pending   | pending              | pending  |
+|     7 | Template synthesis test                      | completed | `f74795e7..b68ed2d1` | Continue |
 |     8 | Profile adapter test                         | pending   | pending              | pending  |
 |     9 | Template adapter test                        | pending   | pending              | pending  |
 |    10 | Markdown PDF command-surface test            | pending   | pending              | pending  |
@@ -338,3 +338,49 @@ review state transitions, so Phase 6 does not force a second split solely to
 cross the 300-line threshold.
 
 Decision: `Continue` to Phase 7.
+
+## Phase 7: Template Synthesis Test
+
+Status: `completed`
+
+Implementation range: `f74795e7..b68ed2d1`
+
+Implementation commit: `b68ed2d1`
+
+| Dimension          | Before                                         | After                                                                                     |
+| ------------------ | ---------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| File topology      | one 1,592-line Template synthesis suite        | four behavior-owned suites plus one feature-local CSS assertion helper                    |
+| Largest file       | 1,592 lines                                    | 875 lines                                                                                 |
+| Focused validation | 60 passing tests; 0 failures; 576 assertions   | 60 passing tests; 0 failures; 576 assertions                                              |
+| Production scope   | no production change                           | no production change                                                                      |
+| Ownership          | 31 structure, font, cover, and ToC cases mixed | 9 document/title, 15 font-ownership, 6 cover-layout, and 1 seven-scenario ToC branch test |
+
+Baseline validation:
+
+```bash
+bun test test/cli-actions-md-to-pdf-template-codex/template-synthesis.test.ts test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts test/cli-actions-md-to-pdf-template-codex/families.test.ts test/cli-actions-md-to-pdf-template-codex/font-ownership.test.ts
+```
+
+Result: 60 passed, 0 failed, 576 assertions across four files.
+
+After validation:
+
+```bash
+bun test test/cli-actions-md-to-pdf-template-codex/template-synthesis test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts test/cli-actions-md-to-pdf-template-codex/families.test.ts test/cli-actions-md-to-pdf-template-codex/font-ownership.test.ts
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+git diff --check
+```
+
+Result: 60 passed, 0 failed, 576 assertions across seven files. TypeScript,
+lint, formatting, and diff checks passed. All 31 test bodies and the feature-
+local CSS parser and assertions were preserved.
+
+Exact-range test and maintainability reviews found no material issues. A short
+decision fixture remains local to two suites rather than introducing a shared
+abstraction. The 875-line font-ownership suite is an explicit deferred
+concentration because its cases share the same ownership-mask, selector, and
+override contract.
+
+Decision: `Continue` to Phase 8.
