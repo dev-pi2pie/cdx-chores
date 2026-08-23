@@ -153,19 +153,19 @@ separate job only if discovered work materially leaves this plan's scope.
 
 Tasks:
 
-- [ ] Refresh the test count, discovered-file count, assertion count, topology,
+- [x] Refresh the test count, discovered-file count, assertion count, topology,
       and tracked baseline commit.
-- [ ] Create `docs/references/test-suite-audit-inventory.md` with `draft`
+- [x] Create `docs/references/test-suite-audit-inventory.md` with `draft`
       status and the schema accepted by the research.
-- [ ] Record every discovered `*.test.ts` file exactly once with its feature
+- [x] Record every discovered `*.test.ts` file exactly once with its feature
       owner, layer, tested boundary, representative contract, closest overlap,
       primary disposition, rationale, and matrix link when required.
-- [ ] Review support-only TypeScript files through their consuming suites and
+- [x] Review support-only TypeScript files through their consuming suites and
       add explicit support rows where ownership is itself uncertain.
-- [ ] Prove mechanically that the inventory has no missing or duplicate test
+- [x] Prove mechanically that the inventory has no missing or duplicate test
       paths; add a small validator only if a reproducible one-off comparison is
       insufficient.
-- [ ] Run the complete suite without changing tests and record the fresh
+- [x] Run the complete suite without changing tests and record the fresh
       baseline in the unified job.
 
 Validation:

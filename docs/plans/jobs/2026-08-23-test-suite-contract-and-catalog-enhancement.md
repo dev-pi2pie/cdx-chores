@@ -35,18 +35,20 @@ references.
 
 ## Phase Summary
 
-| Phase | Boundary                                       | Status      | Review range | Decision |
-| ----: | ---------------------------------------------- | ----------- | ------------ | -------- |
-|     1 | refreshed baseline and complete file inventory | in-progress | pending      | pending  |
-|     2 | case matrices and catalog admission            | pending     | —            | —        |
-|     3 | Data Query migration pilot                     | pending     | —            | —        |
-|     4 | Doctor ownership migration pilot               | pending     | —            | —        |
+| Phase | Boundary                                       | Status    | Review range         | Decision |
+| ----: | ---------------------------------------------- | --------- | -------------------- | -------- |
+|     1 | refreshed baseline and complete file inventory | completed | `2f3013ca..fae7d92b` | Continue |
+|     2 | case matrices and catalog admission            | pending   | —                    | —        |
+|     3 | Data Query migration pilot                     | pending   | —                    | —        |
+|     4 | Doctor ownership migration pilot               | pending   | —                    | —        |
 
 ## Phase 1: Refreshed Baseline And Complete File Inventory
 
-Status: `in-progress`
+Status: `completed`
 
 Phase base: `2f3013ca`
+
+Review range: `2f3013ca..fae7d92b`
 
 The phase populates the canonical file inventory, proves exact discovered-path
 coverage, and records a fresh full-suite baseline. File size, runtime, and
@@ -74,3 +76,26 @@ Result:
   `fixture/helper review`, and 2 `move-only review` dispositions
 - every `case audit` and `split review` row requires a Phase 2 matrix; no other
   disposition carries that marker
+
+Support validation compared the recorded support paths with the sorted
+manifest from `rg --files test -g '*.ts' -g '!*.test.ts'`.
+
+Result:
+
+- 66 support-only rows and 66 discovered paths
+- no missing, extra, or duplicate paths
+- five populated support fields for every row
+- 27 files owned through their consuming suites
+- 39 cross-feature, global, or leaking support boundaries deferred to Phase 2
+  ownership review
+
+The initial exact-range review found two non-resolvable closest-overlap cells.
+One was replaced with an em dash after a repository-wide symbol and text scan
+found no other test owner; the other now names the two concrete Data Query
+command validation suites. A later review required durable evidence for the
+support-only TypeScript audit, so the 66-row support inventory was added. The
+final documentation and test-quality review of `2f3013ca..fae7d92b` found no
+remaining material issues.
+
+Decision: `Continue` to Phase 2. The research and audit inventory remain
+`draft` until the Phase 2 matrices and catalog admission gate are complete.
