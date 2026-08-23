@@ -8,11 +8,11 @@ import {
   normalizeMdPdfProjectCodexCommandState,
   planMdPdfProjectCodexOutput,
   validateMdPdfProjectBundleCompleteness,
-} from "../../src/cli/markdown-pdf/project-codex";
-import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
-import { withTempFixtureDir } from "../helpers/cli-test-utils";
-import { minimalPng } from "../markdown-pdf/actions/template-codex-fixtures";
-import { pathExists } from "../markdown-pdf/support/path-fixtures";
+} from "../../../src/cli/markdown-pdf/project-codex";
+import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
+import { withTempFixtureDir } from "../../helpers/cli-test-utils";
+import { minimalPng } from "./template-codex-fixtures";
+import { pathExists } from "../support/path-fixtures";
 
 describe("cli action modules: md pdf-project codex output planning", () => {
   test("generates shared project, profile, and template identities", () => {
