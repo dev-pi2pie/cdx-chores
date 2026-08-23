@@ -484,3 +484,51 @@ and shared request and response construction remains adapter-local. The
 its cases share bounded decision parsing and application rules.
 
 Decision: `Continue` to Phase 10.
+
+## Phase 10: Markdown PDF Command-Surface Test
+
+Status: `completed`
+
+Implementation range: `9d5a2d4d..d8cfc74c`
+
+Implementation commit: `d8cfc74c`
+
+| Dimension          | Before                                                | After                                                            |
+| ------------------ | ----------------------------------------------------- | ---------------------------------------------------------------- |
+| File topology      | one 995-line command-surface suite                    | four surface-owned suites plus one 147-line local fixture module |
+| Largest file       | 995 lines                                             | 270 lines                                                        |
+| Focused validation | 35 passing tests; 0 failures; 259 assertions          | 35 passing tests; 0 failures; 259 assertions                     |
+| Production scope   | no production change                                  | no production change                                             |
+| Ownership          | 27 direct, Template, Project, and Profile cases mixed | 6 direct-render, 8 Template, 7 Project, and 6 Profile tests      |
+
+Baseline validation:
+
+```bash
+bun test test/cli-actions-md-to-pdf-commands.test.ts test/cli-actions-md-to-pdf-command-wiring.test.ts test/cli-actions-md-to-pdf-options.test.ts
+```
+
+Result: 35 passed, 0 failed, 259 assertions across three files. The moved
+command-surface boundary contributed 27 tests and 242 assertions.
+
+After validation:
+
+```bash
+bun test test/cli-actions-md-to-pdf-commands test/cli-actions-md-to-pdf-command-wiring.test.ts test/cli-actions-md-to-pdf-options.test.ts
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+git diff --check
+```
+
+Result: 35 passed, 0 failed, 259 assertions across six files. TypeScript,
+lint, formatting, and diff checks passed. All 27 original test bodies and their
+help, option-routing, validation, action-selection, exit, stdout, and stderr
+assertions were preserved.
+
+Exact-range test and maintainability reviews found no material issues. The
+shared CLI, Codex-stub, fake-dependency, PNG, and path helpers remain bounded to
+one feature-local fixture module. No separate cross-surface smoke suite was
+added because each surface already invokes the registered public CLI and owns
+its relevant help assertions.
+
+Decision: `Continue` to Phase 11.

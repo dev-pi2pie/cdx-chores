@@ -331,11 +331,11 @@ bun test test/adapters-codex-markdown-pdf-template test/cli-actions-md-to-pdf-te
 
 Tasks:
 
-- [ ] Split `test/cli-actions-md-to-pdf-commands.test.ts` into direct render,
+- [x] Split `test/cli-actions-md-to-pdf-commands.test.ts` into direct render,
       Profile, Template, and Project command-surface suites.
-- [ ] Preserve help, option routing, validation, action selection, and exit
+- [x] Preserve help, option routing, validation, action selection, and exit
       assertions.
-- [ ] Keep cross-surface smoke coverage only where it verifies shared command
+- [x] Keep cross-surface smoke coverage only where it verifies shared command
       registration.
 
 Observable contracts:
