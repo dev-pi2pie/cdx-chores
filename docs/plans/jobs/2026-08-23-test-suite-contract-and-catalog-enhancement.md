@@ -384,7 +384,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.12 | Data Stack                                    | completed       | `cf15f599` | `4ae50698`         | `6ee0d7b0`   | `cf15f599..6ee0d7b0` | Continue with constraints |
 | 6.13 | Data Conversion                               | completed       | `f2fb794b` | `f7f509ee`         | `a24c3bdd`   | `f2fb794b..a24c3bdd` | Continue with constraints |
 | 6.14 | Fonts                                         | completed       | `ba8a6cd7` | `4be23beb`         | `e4235892`   | `ba8a6cd7..e4235892` | Continue with constraints |
-| 6.15 | Rename                                        | pending         | -          | -                  | -            | -                    | -                         |
+| 6.15 | Rename                                        | in-review       | `93e7a797` | `da247175`         | pending      | pending              | pending                   |
 | 6.16 | Codex adapter platform                        | matrix-required | -          | -                  | -            | -                    | -                         |
 | 6.17 | Document Rename                               | pending         | -          | -                  | -            | -                    | -                         |
 | 6.18 | DOCX                                          | pending         | -          | -                  | -            | -                    | -                         |
@@ -1675,6 +1675,67 @@ Review gate:
 - [x] record all 21 path transitions
 - [x] create the evidence commit and review the exact batch range
 - [x] record accepted review fixes and the continuation decision
+
+### Phase 6.15: Rename
+
+Status: `in-review`
+
+Batch base: `93e7a797`
+
+Implementation tip: `da247175`
+
+Execution and path migration range: `93e7a797..da247175`
+
+Evidence tip: pending
+
+Exact batch review range: pending
+
+The 34 selected Rename suites moved into 41 action, adapter, Codex, command,
+direct, Interactive, planner, and presentation owners. Four historical suites
+split by production seam. One compound planner declaration became two
+independently failing cases, changing the focused count from 245 to 246 while
+preserving all 1,047 assertions.
+
+Six support boundaries moved or split with their consumers. Rename suites now
+import plan-artifact support directly, both global action-helper re-exports are
+gone, and only `runCli` retains the admitted internal synchronous cleanup
+import until Phase 7. Neutral harness composition remains global.
+
+| Boundary                   | Passed | Failed | Assertions | Files |
+| -------------------------- | -----: | -----: | ---------: | ----: |
+| Rename destinations        |    246 |      0 |      1,047 |    41 |
+| Exact adjacent safety set  |    112 |      0 |        333 |     7 |
+| Complete repository suite  |  2,623 |      0 |     14,878 |   334 |
+
+Repository checks are clean: `bun run format:check`, `bun run lint`,
+`bunx tsc --noEmit`, `bun run build`, and `git diff --check`.
+
+The two admitted title clarifications and the planner split are the only case
+title changes. Pre-commit test-quality review found no material issue.
+Maintainability review found six split owners with inherited generic
+`describe` labels; those labels now identify file core, automatic image and
+document routing, candidate selection, and analyzer progress without changing
+test titles or assertions. Re-review is clean.
+
+No current guide names the historical Rename suite or support paths. The
+matrix records the executed support boundaries, and the correspondence
+reference records 38 transitions over `93e7a797..da247175`.
+
+Decision: pending exact-range test-quality, maintainability, and documentation
+review.
+
+Review gate:
+
+- [x] reproduce the 34-source and adjacent baselines
+- [x] migrate only the admitted Rename suites and support boundaries
+- [x] preserve every scenario and all 1,047 assertions
+- [x] apply only the admitted title clarifications and planner split
+- [x] remove global Rename action-helper re-exports while retaining one bounded
+      `runCli` compatibility import
+- [x] complete focused, adjacent, full-suite, and repository validation
+- [x] record all 38 path and support transitions
+- [ ] create the evidence commit and review the exact batch range
+- [ ] record accepted review fixes and the continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,

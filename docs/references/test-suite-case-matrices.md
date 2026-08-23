@@ -2773,8 +2773,8 @@ Two vague titles are renamed without changing their bodies:
 - `actionRenameBatch codex-docs mode works with docs profile scoping` becomes
   `actionRenameBatch codex-docs mode selects Markdown and JSON while excluding PNG under the docs profile`
 
-The planner case `rejects unknown template placeholders and serial-order
-conflicts` splits into `rejects unknown template placeholders` and `rejects
+The planner case `rejects unknown placeholders and non-mtime alias order token`
+splits into `rejects unknown template placeholders` and `rejects
 serial-order aliases and multiple serial placeholders`, redistributing its
 existing assertions unchanged.
 
@@ -2825,6 +2825,15 @@ Rename re-exports from `test/helpers/cli-action-test-utils.ts`. The only allowed
 compatibility dependency is the internal `runCli` snapshot/cleanup import in
 `test/helpers/cli-test-utils.ts`; it serves existing built-CLI consumers and
 must be removed in Phase 7 when command cleanup becomes caller-owned.
+
+Phase 6.15 executed the 34 admitted suite transitions and six support
+boundaries over `93e7a797..da247175`. The destination slice passes 246 tests
+with 1,047 assertions across 41 files; the exact adjacent slice remains 112
+tests with 333 assertions across seven files. The complete suite passes 2,623
+tests with 14,878 assertions across 334 files. All scenarios remain
+represented once. Pre-commit review changed only six inherited `describe`
+labels so each split owner is identifiable in test output; test titles and
+assertions remain unchanged.
 
 ### Decision Summary
 
