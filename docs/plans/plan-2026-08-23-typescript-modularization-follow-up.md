@@ -237,13 +237,13 @@ bunx tsc --noEmit
 
 Tasks:
 
-- [ ] Split
+- [x] Split
       `test/cli-interactive-markdown-pdf/codex-authoring.test.ts` into entry and
       setup, font-hint editing, regeneration, Project handoff, and output and
       recovery lifecycle suites.
-- [ ] Preserve prompt order, mock lifecycle, cancellation, backtracking, and
+- [x] Preserve prompt order, mock lifecycle, cancellation, backtracking, and
       durable-versus-temporary artifact assertions.
-- [ ] Keep Interactive fixtures within the existing Markdown PDF harness.
+- [x] Keep Interactive fixtures within the existing Markdown PDF harness.
 
 Observable contracts:
 

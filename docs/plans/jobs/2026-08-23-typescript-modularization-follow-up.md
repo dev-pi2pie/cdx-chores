@@ -36,7 +36,7 @@ modularization follow-up without duplicating the parent plan's checklists.
 |     3 | Project Codex action-write test              | completed | `f1941d88..69aefb8e` | Continue |
 |     4 | Rename Codex option ownership                | completed | `a5ac3ed3..8df643e1` | Continue |
 |     5 | Doctor workflow projection                   | completed | `8a2f9136..e2c15629` | Continue |
-|     6 | Interactive Codex authoring test             | pending   | pending              | pending  |
+|     6 | Interactive Codex authoring test             | completed | `d2172ad8..e197efed` | Continue |
 |     7 | Template synthesis test                      | pending   | pending              | pending  |
 |     8 | Profile adapter test                         | pending   | pending              | pending  |
 |     9 | Template adapter test                        | pending   | pending              | pending  |
@@ -291,3 +291,50 @@ issues. The compact projection still excludes raw report detail, and extension
 command construction remains limited to the closed SQLite and Excel set.
 
 Decision: `Continue` to Phase 6.
+
+## Phase 6: Interactive Codex Authoring Test
+
+Status: `completed`
+
+Implementation range: `d2172ad8..e197efed`
+
+Implementation commit: `e197efed`
+
+| Dimension          | Before                                        | After                                                                                         |
+| ------------------ | --------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| File topology      | one 1,652-line Codex authoring suite          | five behavior-owned suites plus one 13-line local fixture module                              |
+| Largest file       | 1,652 lines                                   | 637 lines                                                                                     |
+| Focused validation | 153 passing tests; 0 failures; 715 assertions | 153 passing tests; 0 failures; 715 assertions                                                 |
+| Production scope   | no production change                          | no production change                                                                          |
+| Ownership          | 75 authoring and lifecycle cases mixed        | 15 entry/setup, 9 font-hint, 8 regeneration, 14 Project-handoff, and 29 output/recovery cases |
+
+Baseline validation:
+
+```bash
+bun test test/cli-interactive-markdown-pdf/codex-authoring.test.ts test/cli-interactive-markdown-pdf/handoff.test.ts test/cli-interactive-markdown-pdf/lifecycle.test.ts test/cli-interactive-markdown-pdf/materialization.test.ts
+```
+
+Result: 153 passed, 0 failed, 715 assertions across four files. The moved
+Codex authoring boundary contributed 75 tests and 371 runtime assertions.
+
+After validation:
+
+```bash
+bun test test/cli-interactive-markdown-pdf/codex-authoring test/cli-interactive-markdown-pdf/handoff.test.ts test/cli-interactive-markdown-pdf/lifecycle.test.ts test/cli-interactive-markdown-pdf/materialization.test.ts
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+git diff --check
+```
+
+Result: 153 passed, 0 failed, 715 assertions across eight files. TypeScript,
+lint, formatting, and diff checks passed. All 75 moved tests and 371 runtime
+assertions were preserved; scenarios remain isolated in child processes.
+
+Exact-range test and maintainability reviews found no material issues. The
+637-line output/recovery suite remains an explicit deferred concentration: its
+cases share output selection, report binding, rendering, recovery, and final-
+review state transitions, so Phase 6 does not force a second split solely to
+cross the 300-line threshold.
+
+Decision: `Continue` to Phase 7.
