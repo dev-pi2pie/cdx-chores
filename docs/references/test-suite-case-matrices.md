@@ -167,6 +167,16 @@ suites.
 | 6.5   | `test/cli-interactive-markdown-pdf/codex-authoring/fixtures.ts`                 | `test/markdown-pdf/interactive/codex-authoring-fixtures.ts`        | Phase 6.5 executed the move and preserved all five Markdown PDF Codex-authoring consumers.                                                         |
 | 6.7   | Frontmatter behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | `test/markdown-frontmatter/interactive/mock-action.ts`             | Phase 6.7 executed the one-action extraction; the mixed residual and neutral composition remain for later admitted batches and Phase 7.            |
 | 6.8   | Video behavior in `test/helpers/interactive-harness/mocks/action-misc.ts`       | `test/video/interactive/mock-action.ts`                            | Phase 6.8 executed the three-action extraction; the mixed residual and neutral composition remain for later admitted batches and Phase 7.          |
+| 6.9   | `test/helpers/data-extract-fixture-test-utils.ts`                               | `test/data-sources/fixtures/tabular.ts`                            | The helper builds reusable tabular fixtures for independent Data Query and Data Extract consumers.                                                 |
+| 6.9   | `test/helpers/data-query-duckdb-fixture-test-utils.ts`                          | `test/data-sources/fixtures/duckdb.ts`                             | The helper builds reusable DuckDB catalogs for independent Data Query and Data Extract consumers.                                                  |
+| 6.9   | `test/helpers/stacked-merged-band-fixture-test-utils.ts`                        | `test/data-sources/fixtures/stacked-merged-band.ts`                | Live consumers span the shared XLSX adapter plus Data Query and Data Extract support, so the helper is no longer suite-local.                      |
+| 6.9   | `test/fixtures/data-query/basic.csv`                                            | `test/data-sources/fixtures/basic.csv`                             | This admitted artifact and the six rows below are the exact checked-in shared source set; no other directory entry is authorized.                  |
+| 6.9   | `test/fixtures/data-query/basic.parquet`                                        | `test/data-sources/fixtures/basic.parquet`                         | The checked-in Parquet source serves both Data Query and Data Extract consumers.                                                                   |
+| 6.9   | `test/fixtures/data-query/basic.tsv`                                            | `test/data-sources/fixtures/basic.tsv`                             | The checked-in TSV source serves both Data Query and Data Extract consumers.                                                                       |
+| 6.9   | `test/fixtures/data-query/large.csv`                                            | `test/data-sources/fixtures/large.csv`                             | The checked-in large CSV source serves both Data Query and Data Extract consumers.                                                                 |
+| 6.9   | `test/fixtures/data-query/large.parquet`                                        | `test/data-sources/fixtures/large.parquet`                         | The checked-in large Parquet source serves both Data Query and Data Extract consumers.                                                             |
+| 6.9   | `test/fixtures/data-query/multi.sqlite`                                         | `test/data-sources/fixtures/multi.sqlite`                          | The checked-in SQLite source serves both Data Query and Data Extract consumers.                                                                    |
+| 6.9   | `test/fixtures/data-query/multi.xlsx`                                           | `test/data-sources/fixtures/multi.xlsx`                            | The checked-in XLSX source serves shared adapter, Data Query, and Data Extract consumers.                                                          |
 
 ### Phase 3 Data Query Path Contract
 
@@ -2496,6 +2506,21 @@ path:
 | Historical path                      | Accepted exact target            | Admission evidence                                                                                                   |
 | ------------------------------------ | -------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | `test/cli-actions-video-gif.test.ts` | `test/video/actions/gif.test.ts` | FFmpeg recipe execution, mode inference, option validation, and palette cleanup are cohesive Video action contracts. |
+
+#### Phase 6.9 Exact Suite Admission
+
+Phase 6.9 admits the five shared Data Sources suites and their exact catalog
+paths before implementation. Executable deterministic-generator contracts use
+`evidence/`; reusable builders and checked-in source artifacts use
+`fixtures/`.
+
+| Historical path                                      | Accepted exact target                                            | Admission evidence                                                                                                            |
+| ---------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `test/data-duckdb-extensions.test.ts`                | `test/data-sources/adapters/duckdb-extensions.test.ts`           | Managed extension installation, loading, and repair are shared DuckDB adapter contracts.                                      |
+| `test/data-extract-fixture-generator.test.ts`        | `test/data-sources/evidence/tabular-fixtures.test.ts`            | Deterministic generator execution proves the shared tabular fixture set rather than owning reusable fixture support.          |
+| `test/data-query-xlsx-sources.test.ts`               | `test/data-sources/adapters/xlsx-sources.test.ts`                | ZIP metadata parsing, sheet discovery, and merged anchors are shared XLSX adapter contracts.                                  |
+| `test/data-source-shape.test.ts`                     | `test/data-sources/direct/source-shape.test.ts`                  | Artifact compatibility, suggestion normalization, and exact-context reuse are direct shared shaping contracts.                |
+| `test/stacked-merged-band-fixture-generator.test.ts` | `test/data-sources/evidence/stacked-merged-band-fixture.test.ts` | Deterministic generator execution proves the shared spreadsheet artifact while reusable generation support stays in fixtures. |
 
 ### Decision Summary
 
