@@ -372,7 +372,7 @@ Data Extract and Data Stack destination folders to the established plural
 | ---- | --------------------------------------------- | --------------- | ---------- | ------------------ | ------------ | ------------ | -------- |
 | 6.1  | Markdown PDF general                          | completed       | `fca1204a` | `c55da02a`         | `870fef23`   | `fca1204a..870fef23` | Continue with constraints |
 | 6.2  | Markdown PDF Template Codex                   | completed       | `2af1ae7b` | `b74f6279`         | `ae3d717b`   | `2af1ae7b..ae3d717b` | Continue with constraints |
-| 6.3  | Markdown PDF Profile                          | pending         | -          | -                  | -            | -            | -        |
+| 6.3  | Markdown PDF Profile                          | in-review       | `171eec39` | `b66e1c35`         | pending      | pending      | pending  |
 | 6.4  | Markdown PDF Project Codex                    | pending         | -          | -                  | -            | -            | -        |
 | 6.5  | Markdown PDF Interactive and support closeout | pending         | -          | -                  | -            | -            | -        |
 | 6.6  | Release tooling                               | pending         | -          | -                  | -            | -            | -        |
@@ -582,6 +582,96 @@ Review gate:
 - [x] record correspondence and current support-decision updates
 - [x] create the evidence commit and review the exact batch range
 - [x] record accepted review fixes and the batch continuation decision
+
+### Phase 6.3: Markdown PDF Profile
+
+Status: `in-review`
+
+Batch base: `171eec39`
+
+Implementation tip: `b66e1c35`
+
+Execution and path migration range: `171eec39..b66e1c35`
+
+Evidence tip: pending
+
+Exact batch review range: pending
+
+The batch admitted four Profile suite sources into seven destination owners.
+The selector retained 16 additional suites at their recorded paths because
+their destination ownership remains unresolved; retention is an admitted
+deferral, not catalog approval.
+
+Selector preservation:
+
+| Check       | Owner files | Passed | Failed | Assertions |
+| ----------- | ----------: | -----: | -----: | ---------: |
+| Pre-change  |          20 |    189 |      0 |      1,451 |
+| Post-change |          23 |    189 |      0 |      1,451 |
+
+The Profile fixture source moved to
+`test/markdown-pdf/actions/profile-codex-fixtures.ts`. Its request consumer
+split into two owners, so the preserved consumer set grew from five to six
+files without changing its declarations or assertions:
+
+| Check       | Consumer files | Passed | Failed | Assertions |
+| ----------- | -------------: | -----: | -----: | ---------: |
+| Pre-change  |              5 |     60 |      0 |        428 |
+| Post-change |              6 |     60 |      0 |        428 |
+
+Implementation checkpoints:
+
+- `feb569e8` — move Profile rendering ownership
+- `7af78d9f` — split Profile initialization from the Codex command owner
+- `21ac7949` — move the Profile fixture and split request from progress
+- `b66e1c35` — split candidate construction from signal normalization
+
+Pre-commit maintainability review found broad `describe` titles in the four
+split action destinations. The request-lifecycle, progress, candidates, and
+signals suites received owner-specific titles before their commits; subsequent
+test-quality and maintainability review was clean.
+
+Validation evidence:
+
+| Boundary                     | Passed | Failed | Assertions | Files |
+| ---------------------------- | -----: | -----: | ---------: | ----: |
+| All destination suites       |     34 |      0 |        214 |     7 |
+| Profile-fixture consumer set |     60 |      0 |        428 |     6 |
+| Complete suite               |  2,614 |      0 |     14,866 |   321 |
+
+Repository checks are clean:
+
+- `bun run format:check`
+- `bun run lint`
+- `bun run build`
+- `bunx tsc --noEmit`
+- `git diff --check`
+
+Documentation path scan:
+
+- no current guide links name the migrated Phase 6.3 paths
+- the completed audit inventory and literal Phase 2 case sections remain dated
+  historical snapshots
+- the current support-decision table records the Profile fixture split
+  completed in Phase 6.3
+- the correspondence reference records four historical suite sources and one
+  support source over `171eec39..b66e1c35`
+
+The implementation and validation evidence is clean through `b66e1c35`.
+Phase 6.3 remains `in-review` until an evidence commit records its own tip, the
+exact base-to-evidence-tip range receives test-quality, maintainability, and
+documentation review, and the continuation decision is recorded.
+
+Review gate:
+
+- [x] preserve all selected declarations and assertions
+- [x] migrate the four admitted suite sources and retain the 16 unresolved
+  suites
+- [x] move the Profile fixture and validate all six consumer suites
+- [x] complete focused, full-suite, and repository validation
+- [x] record correspondence and current support-decision updates
+- [ ] create the evidence commit and review the exact batch range
+- [ ] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
