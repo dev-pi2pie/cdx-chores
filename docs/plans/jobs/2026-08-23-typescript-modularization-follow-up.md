@@ -38,7 +38,7 @@ modularization follow-up without duplicating the parent plan's checklists.
 |     5 | Doctor workflow projection                   | completed | `8a2f9136..e2c15629` | Continue |
 |     6 | Interactive Codex authoring test             | completed | `d2172ad8..e197efed` | Continue |
 |     7 | Template synthesis test                      | completed | `f74795e7..b68ed2d1` | Continue |
-|     8 | Profile adapter test                         | pending   | pending              | pending  |
+|     8 | Profile adapter test                         | completed | `2e5fa5f1..8c7c6ae6` | Continue |
 |     9 | Template adapter test                        | pending   | pending              | pending  |
 |    10 | Markdown PDF command-surface test            | pending   | pending              | pending  |
 |    11 | Interactive Markdown `to-pdf` decision gate  | pending   | pending              | pending  |
@@ -384,3 +384,51 @@ concentration because its cases share the same ownership-mask, selector, and
 override contract.
 
 Decision: `Continue` to Phase 8.
+
+## Phase 8: Profile Adapter Test
+
+Status: `completed`
+
+Implementation range: `2e5fa5f1..8c7c6ae6`
+
+Implementation commit: `8c7c6ae6`
+
+| Dimension          | Before                                            | After                                                                          |
+| ------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------ |
+| File topology      | one 1,440-line Profile adapter suite              | four behavior-owned suites plus one pure adapter fixture module                |
+| Largest file       | 1,440 lines                                       | 690 lines                                                                      |
+| Focused validation | 88 passing tests; 0 failures; 654 assertions      | 88 passing tests; 0 failures; 654 assertions                                   |
+| Production scope   | no production change                              | no production change                                                           |
+| Ownership          | 25 prompt, runner, patch, and failure tests mixed | 10 prompt/schema, 2 runner, 10 patch-application, and 3 fallback/failure tests |
+
+Baseline validation:
+
+```bash
+bun test test/adapters-codex-markdown-pdf-profile.test.ts test/cli-actions-md-to-pdf-profile-codex-action test/cli-actions-md-to-pdf-profile-codex-helpers.test.ts
+```
+
+Result: 88 passed, 0 failed, 654 assertions across seven files. The adapter
+boundary contributed 25 tests and 211 assertions.
+
+After validation:
+
+```bash
+bun test test/adapters-codex-markdown-pdf-profile/runner-behavior.test.ts
+bun test test/adapters-codex-markdown-pdf-profile test/cli-actions-md-to-pdf-profile-codex-action test/cli-actions-md-to-pdf-profile-codex-helpers.test.ts
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+git diff --check
+```
+
+Result: the runner suite passed 2 tests with 8 assertions, and the complete
+focused scope passed 88 tests with 654 assertions across ten files. TypeScript,
+lint, formatting, and diff checks passed. Module mocks and timeout restoration
+remain local to the sequential runner suite.
+
+Exact-range test and maintainability reviews found no material issues. The
+690-line patch-application suite is an explicit deferred concentration because
+its cases share bounded patch validation, nested materialization, page-number
+domains, page-chrome behavior, and immutability.
+
+Decision: `Continue` to Phase 9.

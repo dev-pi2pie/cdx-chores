@@ -285,12 +285,12 @@ bun test test/cli-actions-md-to-pdf-template-codex/template-synthesis test/cli-a
 
 Tasks:
 
-- [ ] Split `test/adapters-codex-markdown-pdf-profile.test.ts` into prompt and
+- [x] Split `test/adapters-codex-markdown-pdf-profile.test.ts` into prompt and
       schema, runner behavior, patch application, and fallback and failure
       classification suites.
-- [ ] Preserve request payload, parsing, timeout, abort, patch, and failure
+- [x] Preserve request payload, parsing, timeout, abort, patch, and failure
       assertions.
-- [ ] Keep adapter-specific fixtures with the Profile adapter suites.
+- [x] Keep adapter-specific fixtures with the Profile adapter suites.
 
 Observable contracts:
 
