@@ -32,7 +32,7 @@ modularization follow-up without duplicating the parent plan's checklists.
 | Phase | Boundary                                     | Status    | Review range         | Decision |
 | ----: | -------------------------------------------- | --------- | -------------------- | -------- |
 |     1 | Profile Codex action test                    | completed | `f81a68e5..909c8c50` | Continue |
-|     2 | Template asset handling                      | pending   | pending              | pending  |
+|     2 | Template asset handling                      | completed | `6ecd8597..7ecc882d` | Continue |
 |     3 | Project Codex action-write test              | pending   | pending              | pending  |
 |     4 | Rename Codex option ownership                | pending   | pending              | pending  |
 |     5 | Doctor workflow projection                   | pending   | pending              | pending  |
@@ -88,3 +88,54 @@ commands do not enable concurrent tests and that the affected globals are
 restored after each use.
 
 Decision: `Continue` to Phase 2.
+
+## Phase 2: Template Asset Handling
+
+Status: `completed`
+
+Implementation range: `6ecd8597..7ecc882d`
+
+Characterization commit: `4b9a8004`
+
+Implementation commit: `7ecc882d`
+
+| Dimension          | Before                                                     | After                                                                                             |
+| ------------------ | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| File topology      | one 540-line mixed Template asset module                   | 2-line facade plus 143-line reference, 230-line remote-policy, and 212-line local-rewrite modules |
+| Responsibility     | classification, scanning, containment, and rewriting mixed | shared grammar, remote rejection, and local rewriting have feature-local owners                   |
+| Focused validation | 103 passing tests; 0 failures; 417 assertions              | 105 passing tests; 0 failures; 425 assertions                                                     |
+| Public imports     | `render.ts` imports two functions from `template-assets`   | the same two facade imports; `render.ts` is unchanged                                             |
+
+Baseline validation:
+
+```bash
+bun test test/cli-actions-md-to-pdf-actions-assets.test.ts test/cli-actions-md-to-pdf-actions.test.ts test/cli-actions-md-to-pdf-bundle.test.ts test/cli-actions-md-to-pdf-options.test.ts test/cli-actions-md-to-pdf-prepared-render.test.ts
+```
+
+Result: 103 passed, 0 failed, 417 assertions across five files.
+
+Two characterization tests were added before movement: cyclic CSS imports
+terminate while retaining nested remote-asset detection, and an accepted
+in-root Template `file:` URL remains unchanged.
+
+After validation:
+
+```bash
+bun test test/cli-actions-md-to-pdf-actions-assets.test.ts test/cli-actions-md-to-pdf-actions.test.ts test/cli-actions-md-to-pdf-bundle.test.ts test/cli-actions-md-to-pdf-options.test.ts test/cli-actions-md-to-pdf-prepared-render.test.ts
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+git diff --check
+```
+
+Result: 105 passed, 0 failed, 425 assertions. TypeScript, lint, formatting,
+build, and diff checks passed.
+
+Exact-range security, maintainability, and test reviews found no material
+issues. The security diff review covered only the four changed production
+files in `6ecd8597..7ecc882d`, used `render.ts` and the characterization tests
+as supporting context, and recorded complete coverage with zero findings. No
+whole-repository security scan was performed.
+
+Decision: `Continue` to Phase 3.

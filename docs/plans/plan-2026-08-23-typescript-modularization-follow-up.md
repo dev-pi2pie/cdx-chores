@@ -130,16 +130,16 @@ bun test test/cli-actions-md-to-pdf-profile-codex-action test/cli-actions-md-to-
 
 Tasks:
 
-- [ ] Keep `src/cli/markdown-pdf/template-assets.ts` as the public facade.
-- [ ] Extract shared reference, URL, path, and `srcset` classification into
+- [x] Keep `src/cli/markdown-pdf/template-assets.ts` as the public facade.
+- [x] Extract shared reference, URL, path, and `srcset` classification into
       `src/cli/markdown-pdf/template-assets/reference.ts`.
-- [ ] Extract remote detection and rejection into
+- [x] Extract remote detection and rejection into
       `src/cli/markdown-pdf/template-assets/remote-policy.ts`.
-- [ ] Extract local resolution and file-URL rewriting into
+- [x] Extract local resolution and file-URL rewriting into
       `src/cli/markdown-pdf/template-assets/local-rewrite.ts`.
-- [ ] Preserve `rejectRemoteMarkdownPdfAssetsWhenDisabled` and
+- [x] Preserve `rejectRemoteMarkdownPdfAssetsWhenDisabled` and
       `rewriteMarkdownPdfTemplateLocalAssets` at the current import path.
-- [ ] Review the exact Phase 2 implementation range for Template reference
+- [x] Review the exact Phase 2 implementation range for Template reference
       classification, remote rejection, and local rewriting security risks;
       do not expand it into a whole-repository scan.
 
