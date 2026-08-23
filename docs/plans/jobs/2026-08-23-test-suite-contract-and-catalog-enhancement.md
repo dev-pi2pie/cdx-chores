@@ -44,7 +44,7 @@ references.
 |     3 | Data Query migration pilot                     | completed   | `db9622cf..27ccab6e` | Continue with constraints |
 |     4 | Doctor ownership migration pilot               | completed   | `ff0f3d6f..837e5d95` | Continue with constraints |
 |     5 | bounded Markdown PDF migration pilot           | completed   | `05a87d54..4cce415a` | Continue with constraints |
-|     6 | remaining accepted family batches              | in-progress | per-batch             | Continue with constraints |
+|     6 | remaining accepted family batches              | in-progress | per-batch            | Continue with constraints |
 
 ## Phase 1: Refreshed Baseline And Complete File Inventory
 
@@ -368,29 +368,29 @@ the recorded batch boundaries. The admission checkpoint also normalizes the
 Data Extract and Data Stack destination folders to the established plural
 `actions/commands` convention without changing any case decision.
 
-| ID   | Batch                                         | Status          | Batch base | Implementation tip | Evidence tip | Review range | Decision |
-| ---- | --------------------------------------------- | --------------- | ---------- | ------------------ | ------------ | ------------ | -------- |
+| ID   | Batch                                         | Status          | Batch base | Implementation tip | Evidence tip | Review range         | Decision                  |
+| ---- | --------------------------------------------- | --------------- | ---------- | ------------------ | ------------ | -------------------- | ------------------------- |
 | 6.1  | Markdown PDF general                          | completed       | `fca1204a` | `c55da02a`         | `870fef23`   | `fca1204a..870fef23` | Continue with constraints |
 | 6.2  | Markdown PDF Template Codex                   | completed       | `2af1ae7b` | `b74f6279`         | `ae3d717b`   | `2af1ae7b..ae3d717b` | Continue with constraints |
 | 6.3  | Markdown PDF Profile                          | completed       | `171eec39` | `b66e1c35`         | `4c13019d`   | `171eec39..4c13019d` | Continue with constraints |
 | 6.4  | Markdown PDF Project Codex                    | completed       | `54c24460` | `e5489182`         | `1627e953`   | `54c24460..1627e953` | Continue with constraints |
-| 6.5  | Markdown PDF Interactive and support closeout | pending         | -          | -                  | -            | -            | -        |
-| 6.6  | Release tooling                               | pending         | -          | -                  | -            | -            | -        |
-| 6.7  | Markdown Frontmatter                          | pending         | -          | -                  | -            | -            | -        |
-| 6.8  | Video                                         | pending         | -          | -                  | -            | -            | -        |
-| 6.9  | Data Sources                                  | pending         | -          | -                  | -            | -            | -        |
-| 6.10 | Data Extract                                  | pending         | -          | -                  | -            | -            | -        |
-| 6.11 | Data Preview                                  | pending         | -          | -                  | -            | -            | -        |
-| 6.12 | Data Stack                                    | pending         | -          | -                  | -            | -            | -        |
-| 6.13 | Data Conversion                               | pending         | -          | -                  | -            | -            | -        |
-| 6.14 | Fonts                                         | pending         | -          | -                  | -            | -            | -        |
-| 6.15 | Rename                                        | pending         | -          | -                  | -            | -            | -        |
-| 6.16 | Codex adapter platform                        | matrix-required | -          | -                  | -            | -            | -        |
-| 6.17 | Document Rename                               | pending         | -          | -                  | -            | -            | -        |
-| 6.18 | DOCX                                          | pending         | -          | -                  | -            | -            | -        |
-| 6.19 | Markdown platform                             | pending         | -          | -                  | -            | -            | -        |
-| 6.20 | Utilities                                     | pending         | -          | -                  | -            | -            | -        |
-| 6.21 | CLI foundations and mixed-root decomposition  | pending         | -          | -                  | -            | -            | -        |
+| 6.5  | Markdown PDF Interactive and support closeout | in-review       | `2b8151dd` | `b1d2c133`         | pending      | pending              | pending                   |
+| 6.6  | Release tooling                               | pending         | -          | -                  | -            | -                    | -                         |
+| 6.7  | Markdown Frontmatter                          | pending         | -          | -                  | -            | -                    | -                         |
+| 6.8  | Video                                         | pending         | -          | -                  | -            | -                    | -                         |
+| 6.9  | Data Sources                                  | pending         | -          | -                  | -            | -                    | -                         |
+| 6.10 | Data Extract                                  | pending         | -          | -                  | -            | -                    | -                         |
+| 6.11 | Data Preview                                  | pending         | -          | -                  | -            | -                    | -                         |
+| 6.12 | Data Stack                                    | pending         | -          | -                  | -            | -                    | -                         |
+| 6.13 | Data Conversion                               | pending         | -          | -                  | -            | -                    | -                         |
+| 6.14 | Fonts                                         | pending         | -          | -                  | -            | -                    | -                         |
+| 6.15 | Rename                                        | pending         | -          | -                  | -            | -                    | -                         |
+| 6.16 | Codex adapter platform                        | matrix-required | -          | -                  | -            | -                    | -                         |
+| 6.17 | Document Rename                               | pending         | -          | -                  | -            | -                    | -                         |
+| 6.18 | DOCX                                          | pending         | -          | -                  | -            | -                    | -                         |
+| 6.19 | Markdown platform                             | pending         | -          | -                  | -            | -                    | -                         |
+| 6.20 | Utilities                                     | pending         | -          | -                  | -            | -                    | -                         |
+| 6.21 | CLI foundations and mixed-root decomposition  | pending         | -          | -                  | -            | -                    | -                         |
 
 ### Phase 6.1: Markdown PDF General
 
@@ -415,9 +415,9 @@ that the flat paths are final.
 
 Selector preservation:
 
-| Check      | Owner files | Passed | Failed | Assertions |
-| ---------- | ----------: | -----: | -----: | ---------: |
-| Pre-change |          26 |    326 |      0 |      2,648 |
+| Check       | Owner files | Passed | Failed | Assertions |
+| ----------- | ----------: | -----: | -----: | ---------: |
+| Pre-change  |          26 |    326 |      0 |      2,648 |
 | Post-change |          34 |    326 |      0 |      2,648 |
 
 Implementation checkpoints:
@@ -438,11 +438,11 @@ Profile, Project, and Template consumers use
 
 Validation evidence:
 
-| Boundary                         | Passed | Failed | Assertions | Files |
-| -------------------------------- | -----: | -----: | ---------: | ----: |
-| Focused moved owners             |    181 |      0 |      1,927 |    18 |
-| Changed-support consumer set     |    756 |      0 |      6,599 |    77 |
-| Complete suite after `c55da02a`  |  2,614 |      0 |     14,866 |   317 |
+| Boundary                        | Passed | Failed | Assertions | Files |
+| ------------------------------- | -----: | -----: | ---------: | ----: |
+| Focused moved owners            |    181 |      0 |      1,927 |    18 |
+| Changed-support consumer set    |    756 |      0 |      6,599 |    77 |
+| Complete suite after `c55da02a` |  2,614 |      0 |     14,866 |   317 |
 
 The first complete-suite attempts reached the release-script fallback case but
 timed out while it could make a live `curl` request. The isolated release suite
@@ -673,7 +673,7 @@ Review gate:
 
 - [x] preserve all selected declarations and assertions
 - [x] migrate the four admitted suite sources and retain the 16 unresolved
-  suites
+      suites
 - [x] move the Profile fixture and validate all six consumer suites
 - [x] complete focused, full-suite, and repository validation
 - [x] record correspondence and current support-decision updates
@@ -775,13 +775,110 @@ Review gate:
 
 - [x] preserve all selected declarations and assertions
 - [x] migrate the four admitted suite sources and retain the 12 unresolved
-  suites
+      suites
 - [x] move the action-write fixture and validate all five consumer suites
 - [x] extract prepared support without adding another test owner
 - [x] complete focused, full-suite, and repository validation
 - [x] record correspondence and current support-admission evidence
 - [x] create the evidence commit and review the exact batch range
 - [x] record accepted review fixes and the batch continuation decision
+
+### Phase 6.5: Markdown PDF Interactive And Support Closeout
+
+Status: `in-review`
+
+Batch base: `2b8151dd`
+
+Implementation tip: `b1d2c133`
+
+Execution and path migration range: `2b8151dd..b1d2c133`
+
+Evidence tip: pending
+
+Exact batch review range: pending
+
+The batch selected 19 Interactive Markdown PDF suites. Seven admitted sources
+migrated into eight destination test owners; the remaining 12 unresolved
+suites stay at their recorded paths. Those retained paths are explicit
+deferrals, not catalog approval.
+
+Selector preservation:
+
+| Check       | Owner files | Passed | Failed | Assertions |
+| ----------- | ----------: | -----: | -----: | ---------: |
+| Pre-change  |          19 |    319 |      0 |      1,425 |
+| Post-change |          20 |    319 |      0 |      1,425 |
+
+The Formal Guide source split into answer-collection and compilation owners.
+Their two shared typed baselines moved to the feature-local
+`test/markdown-pdf/interactive/formal-guide-fixtures.ts` support file. The two
+Codex destinations also received owner-specific parent titles without changing
+their test bodies.
+
+Feature support moved before the suites:
+
+- Markdown PDF module URLs split from the neutral harness registry into
+  `test/markdown-pdf/interactive/module-urls.ts`
+- the Markdown PDF harness mock moved to
+  `test/markdown-pdf/interactive/mock-action.ts`
+- the five Codex-authoring flows now share
+  `test/markdown-pdf/interactive/codex-authoring-fixtures.ts`
+
+The neutral harness runner, composition, filesystem, prompt, context, runtime,
+and type contracts remain at their recorded paths for Phase 7.
+
+Implementation checkpoints:
+
+- `d4368a91` — localize the three admitted Interactive Markdown PDF support
+  contracts and rewire their consumers
+- `b1d2c133` — migrate seven admitted suites into eight exact matrix owners
+
+Pre-commit test-quality review confirmed exact parity: 128 literal titles, 133
+declarations, and 735 static assertions remain represented once. It found no
+vague, duplicated, weakened, or missing case. Maintainability review confirmed
+the feature-local support direction, Formal Guide fixture scope, owner names,
+and absence of cycles or compatibility shims.
+
+Validation evidence:
+
+| Boundary                    | Passed | Failed | Assertions | Files |
+| --------------------------- | -----: | -----: | ---------: | ----: |
+| Admitted destination suites |    221 |      0 |      1,047 |     8 |
+| Retained unresolved suites  |     98 |      0 |        378 |    12 |
+| Complete Phase 6.5 selector |    319 |      0 |      1,425 |    20 |
+| Complete repository suite   |  2,614 |      0 |     14,866 |   323 |
+
+Repository checks are clean:
+
+- `bun run format:check`
+- `bun run lint`
+- `bun run build`
+- `bunx tsc --noEmit`
+- `git diff --check`
+
+Documentation path scan:
+
+- no current guide links name the migrated Phase 6.5 paths
+- the completed inventory and literal case sections remain dated historical
+  evidence
+- the current support matrix now identifies the executed feature-local moves
+- the correspondence reference records seven suite sources and three support
+  transitions over `2b8151dd..b1d2c133`
+
+Decision: pending the exact batch review. Phase 6.5 may close only after the
+documentation, test-quality, and maintainability reviews accept
+`2b8151dd..<evidence-tip>` and the receipt records the continuation decision.
+
+Review gate:
+
+- [x] reproduce the 19-source selector and pre-change baseline
+- [x] migrate all seven admitted sources and retain the 12 unresolved suites
+- [x] split the Formal Guide owner without declaration or assertion loss
+- [x] localize the three admitted support contracts and preserve consumers
+- [x] complete focused, retained-selector, full-suite, and repository checks
+- [x] record correspondence and current support-matrix evidence
+- [ ] create the evidence commit and review the exact batch range
+- [ ] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
