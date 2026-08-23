@@ -2,17 +2,14 @@ import { describe, expect, test } from "bun:test";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { actionMdToPdf } from "../src/cli/actions";
-import type { MarkdownPdfProcessRunner } from "../src/cli/markdown-pdf";
-import { MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME } from "../src/cli/markdown-pdf/profile/page-number-format";
-import { synthesizeMdPdfTemplateCodex } from "../src/cli/markdown-pdf/template-codex";
-import { createPdfRunner } from "./markdown-pdf/actions/render-support";
-import {
-  createSynthesisOutputPlan,
-  createSynthesisSignals,
-} from "./markdown-pdf/actions/template-synthesis-fixtures";
-import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
-import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
+import { actionMdToPdf } from "../../../src/cli/actions";
+import type { MarkdownPdfProcessRunner } from "../../../src/cli/markdown-pdf";
+import { MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME } from "../../../src/cli/markdown-pdf/profile/page-number-format";
+import { synthesizeMdPdfTemplateCodex } from "../../../src/cli/markdown-pdf/template-codex";
+import { createPdfRunner } from "./render-support";
+import { createSynthesisOutputPlan, createSynthesisSignals } from "./template-synthesis-fixtures";
+import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
+import { toRepoRelativePath, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 describe("cli action modules: md to-pdf profile rendering", () => {
   test.each([
