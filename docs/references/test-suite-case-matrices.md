@@ -177,6 +177,15 @@ suites.
 | 6.9   | `test/fixtures/data-query/large.parquet`                                        | `test/data-sources/fixtures/large.parquet`                         | The checked-in large Parquet source serves both Data Query and Data Extract consumers.                                                             |
 | 6.9   | `test/fixtures/data-query/multi.sqlite`                                         | `test/data-sources/fixtures/multi.sqlite`                          | The checked-in SQLite source serves both Data Query and Data Extract consumers.                                                                    |
 | 6.9   | `test/fixtures/data-query/multi.xlsx`                                           | `test/data-sources/fixtures/multi.xlsx`                            | The checked-in XLSX source serves shared adapter, Data Query, and Data Extract consumers.                                                          |
+| 6.10  | `test/cli-actions-data-extract.helpers.ts`                                      | `test/data-extract/actions/support.ts`                             | Move the feature-local action runner and fixture access with its six action-suite consumers.                                                       |
+| 6.10  | `test/cli-command-data-extract.helpers.ts`                                      | `test/data-extract/commands/support.ts`                            | Move the feature-local command runner and fixture access with its four command-suite consumers.                                                    |
+| 6.10  | `test/helpers/interactive-harness/mocks/action-data.ts`                         | `test/data-extract/interactive/mock-action.ts`                     | The Phase 3 residual contains only Data Extract action behavior; neutral output support remains under CLI foundations.                             |
+| 6.10  | `test/helpers/interactive-harness/mocks/data-query/index.ts`                    | `test/data-extract/interactive/mock-installation.ts`               | The Phase 3 residual installs only Data Extract introspection and shape mocks.                                                                     |
+| 6.10  | `test/helpers/interactive-harness/mocks/data-query/query.ts`                    | `test/data-extract/interactive/mock-introspection.ts`              | The Phase 3 residual contains only Data Extract introspection behavior; Data Query already owns its separate mock.                                 |
+| 6.10  | `test/helpers/interactive-harness/mocks/data-query/source-shape.ts`             | `test/data-extract/interactive/mock-source-shape.ts`               | The Phase 3 residual contains only Data Extract XLSX and source-shape behavior; Data Query already owns its separate mock.                         |
+| 6.10  | `test/helpers/interactive-harness/mocks/data-query/types.ts`                    | `test/data-extract/interactive/mock-types.ts`                      | Move the residual Data Extract mock types; define the two Data Query-only imported types in the existing Data Query mock owner.                    |
+| 6.10  | Data Extract fields in `test/helpers/interactive-harness/types.ts`              | `test/data-extract/interactive/harness-contract.ts`                | Extract only the four action error/stdout/stderr fields; keep shared introspection scenario fields in the neutral harness residue.                 |
+| 6.10  | Data Extract use of `test/data-query/interactive/module-urls.ts`                | `test/data-extract/interactive/module-urls.ts`                     | Give the three Data Extract mocks local DuckDB-query, XLSX-source, and source-shape URLs while Data Query retains its own module URL owner.        |
 
 ### Phase 3 Data Query Path Contract
 
@@ -2520,6 +2529,30 @@ exact catalog paths. Executable deterministic-generator contracts use
 | `test/data-query-xlsx-sources.test.ts`               | `test/data-sources/adapters/xlsx-sources.test.ts`                | ZIP metadata parsing, sheet discovery, and merged anchors are shared XLSX adapter contracts.                                  |
 | `test/data-source-shape.test.ts`                     | `test/data-sources/direct/source-shape.test.ts`                  | Artifact compatibility, suggestion normalization, and exact-context reuse are direct shared shaping contracts.                |
 | `test/stacked-merged-band-fixture-generator.test.ts` | `test/data-sources/evidence/stacked-merged-band-fixture.test.ts` | Deterministic generator execution proves the shared spreadsheet artifact while reusable generation support stays in fixtures. |
+
+#### Phase 6.10 Exact Suite Admission
+
+Phase 6.10 admits all 13 Data Extract suites at exact action, command, and
+Interactive owners. The completed literal matrix already fixes six targets;
+this table makes the complete batch boundary executable before implementation.
+All 55 cases remain admitted. Two cases may receive only the separately
+reviewed assertion strengthening described by the Phase 6.10 job receipt.
+
+| Historical path                                                 | Accepted exact target                                      | Admission evidence                                                                                         |
+| --------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `test/cli-actions-data-extract-review.test.ts`                  | `test/data-extract/actions/header-mapping-review.test.ts`  | Reviewed header-mapping artifact creation and replay are Data Extract action contracts.                    |
+| `test/cli-actions-data-extract-source-shape-reuse.test.ts`      | `test/data-extract/actions/source-shape-reuse.test.ts`     | Accepted source-shape replay is a Data Extract action contract.                                            |
+| `test/cli-actions-data-extract-source-shape-review.test.ts`     | `test/data-extract/actions/source-shape-review.test.ts`    | Source-shape review and artifact writing are Data Extract action contracts.                                |
+| `test/cli-actions-data-extract-sources.test.ts`                 | `test/data-extract/actions/source-selection.test.ts`       | Excel and DuckDB source selection are Data Extract action contracts.                                       |
+| `test/cli-actions-data-extract-validation.test.ts`              | `test/data-extract/actions/validation.test.ts`             | Preconditions, option conflicts, and write safety are Data Extract action contracts.                       |
+| `test/cli-actions-data-extract.test.ts`                         | `test/data-extract/actions/materialization.test.ts`        | CSV, TSV, and JSON output materialization are Data Extract action contracts.                               |
+| `test/cli-command-data-extract-review.test.ts`                  | `test/data-extract/commands/header-mapping-review.test.ts` | Command registration, parsing, process output, and artifact bytes retain a separate executable seam.       |
+| `test/cli-command-data-extract-shape.test.ts`                   | `test/data-extract/commands/excel-shape.test.ts`           | Excel shape flag forwarding and end-to-end output are command contracts.                                   |
+| `test/cli-command-data-extract-source-shape.test.ts`            | `test/data-extract/commands/source-shape-review.test.ts`   | Source-shape parsing, process exit, guidance, and artifact output are command contracts.                   |
+| `test/cli-command-data-extract.test.ts`                         | `test/data-extract/commands/basic-sources.test.ts`         | Basic executable source selection, exit status, and output bytes are command contracts.                    |
+| `test/cli-interactive-routing-data-extract-checkpoints.test.ts` | `test/data-extract/interactive/checkpoints.test.ts`        | Final-write cancellation and setup backtracking are Interactive Data Extract contracts.                    |
+| `test/cli-interactive-routing-data-extract-core.test.ts`        | `test/data-extract/interactive/core.test.ts`               | Successful prompt routing and action forwarding are retained as the core Interactive owner.                |
+| `test/cli-interactive-routing-data-extract-revision.test.ts`    | `test/data-extract/interactive/revision.test.ts`           | Destination/setup revision, abort guidance, and shape-recovery routing are Interactive Data Extract seams. |
 
 ### Decision Summary
 
