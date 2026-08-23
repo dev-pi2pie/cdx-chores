@@ -47,6 +47,7 @@ async function suggestMdPdfTemplateWithCodexProgress(input: {
       outputPlan: input.outputPlan,
       runner: input.options.codexRunner,
       signals: input.signals,
+      timeoutMs: input.options.timeoutMs,
       workingDirectory: input.runtime.cwd,
     });
     codexProgressStatus =

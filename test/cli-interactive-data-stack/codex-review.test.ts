@@ -5,6 +5,7 @@ import { runDataStackInteractiveHarness, stripAnsi } from "./helpers";
 describe("interactive data stack codex review", () => {
   test("reviews and accepts interactive data stack Codex recommendations before writing", () => {
     const result = runDataStackInteractiveHarness({
+      captureCodexTimeouts: true,
       selectQueue: [
         "data",
         "data:stack",
@@ -48,6 +49,10 @@ describe("interactive data stack codex review", () => {
     });
     expect(result.actionCalls).toEqual([
       {
+        name: "data:stack:codex-suggest",
+        options: { timeoutMs: 30_000 },
+      },
+      {
         name: "data:stack",
         options: expect.objectContaining({
           uniqueBy: ["id"],
@@ -61,6 +66,9 @@ describe("interactive data stack codex review", () => {
         (call) => call.kind === "select" && call.message === "Stack plan action",
       ),
     ).toHaveLength(1);
+    expect(
+      result.promptCalls.every((call) => !call.message.toLowerCase().includes("timeout")),
+    ).toBe(true);
     expect(
       result.promptCalls.filter(
         (call) => call.kind === "select" && call.message === "Codex-powered analysis checkpoint",
@@ -341,6 +349,7 @@ describe("interactive data stack codex review", () => {
 
   test("keeps interactive data stack setup when Codex recommendations fail with plain text", () => {
     const result = runDataStackInteractiveHarness({
+      codexTimeoutMs: 150_000,
       selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "codex", "write"],
       optionalPathQueue: [undefined],
       confirmQueue: [false, true],
@@ -349,12 +358,36 @@ describe("interactive data stack codex review", () => {
     });
 
     expect(result.codexReportWrites).toHaveLength(0);
-    expect(result.actionCalls).toHaveLength(1);
+    expect(result.actionCalls).toContainEqual({
+      name: "data:stack:codex-suggest",
+      options: { timeoutMs: 150_000 },
+    });
+    expect(result.actionCalls).toHaveLength(2);
     expect(result.stdout.endsWith("\r\u001b[2K")).toBe(true);
     expect(stripAnsi(result.stderr)).toContain(
       "Codex stack recommendations unavailable. Review failed before recommendations were returned.",
     );
     expect(stripAnsi(result.stderr)).not.toContain("mocked Codex outage");
     expect(stripAnsi(result.stderr)).toContain("Keeping current deterministic stack setup.");
+  });
+
+  test("keeps deterministic stack recovery after a structurally classified timeout", () => {
+    const result = runDataStackInteractiveHarness({
+      codexTimeoutMs: 90_000,
+      selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "codex", "write"],
+      optionalPathQueue: [undefined],
+      confirmQueue: [false, true],
+      dataStackCodexErrorMessage: "opaque timeout transport detail",
+      dataStackCodexErrorName: "TimeoutError",
+      stdoutIsTTY: true,
+    });
+
+    expect(stripAnsi(result.stderr)).toContain(
+      "Codex data-stack recommendation request timed out after the 90s per-attempt limit.",
+    );
+    expect(stripAnsi(result.stderr)).toContain("cdx-chores interactive --codex-timeout <duration>");
+    expect(stripAnsi(result.stderr)).not.toContain("opaque timeout transport detail");
+    expect(stripAnsi(result.stderr)).toContain("Keeping current deterministic stack setup.");
+    expect(result.actionCalls.some((call) => call.name === "data:stack")).toBe(true);
   });
 });

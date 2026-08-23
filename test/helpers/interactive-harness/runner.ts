@@ -21,6 +21,7 @@ async function runHarnessScenario(
 
   const { runtime, stdout, stderr } = createHarnessRuntime({
     nowIsoString: scenario.nowIsoString,
+    stderrIsTTY: scenario.stderrIsTTY,
     stdoutColumns: scenario.stdoutColumns,
     stdoutIsTTY: scenario.stdoutIsTTY,
   });
@@ -28,7 +29,9 @@ async function runHarnessScenario(
   try {
     if (scenario.mode === "run") {
       const interactiveModule = await import(interactiveIndexUrl);
-      await interactiveModule.runInteractiveMode(runtime);
+      await interactiveModule.runInteractiveMode(runtime, undefined, {
+        codexTimeoutMs: scenario.codexTimeoutMs,
+      });
     } else {
       const interactiveDataModule = await import(interactiveDataUrl);
       await interactiveDataModule.handleDataInteractiveAction(

@@ -45,6 +45,7 @@ export interface RenameBatchOptions {
   ext?: string[];
   skipExt?: string[];
   codex?: boolean;
+  codexTimeoutMs?: number;
   codexImages?: boolean;
   codexImagesTimeoutMs?: number;
   codexImagesRetries?: number;
@@ -112,6 +113,7 @@ export async function actionRenameBatch(
     effectiveFlags: effectiveCodexFlags,
     cli: {
       codex: options.codex,
+      codexTimeoutMs: options.codexTimeoutMs,
       codexImages: options.codexImages,
       codexImagesTimeoutMs: options.codexImagesTimeoutMs,
       codexImagesRetries: options.codexImagesRetries,

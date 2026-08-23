@@ -7,6 +7,7 @@ import { handleMarkdownInteractiveAction } from "./markdown";
 import { selectInteractiveAction } from "./menu";
 import { handleRenameInteractiveAction } from "./rename";
 import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
+import { createInteractiveSession, type InteractiveSessionOptions } from "./session";
 import { handleVideoInteractiveAction } from "./video";
 
 interface RunInteractiveModeImpls {
@@ -18,7 +19,9 @@ interface RunInteractiveModeImpls {
 export async function runInteractiveMode(
   runtime: CliRuntime,
   impls: RunInteractiveModeImpls = {},
+  sessionOptions: InteractiveSessionOptions = {},
 ): Promise<void> {
+  const session = createInteractiveSession(sessionOptions);
   const pathPromptContext: InteractivePathPromptContext = {
     runtimeConfig: resolvePathPromptRuntimeConfig(),
     cwd: runtime.cwd,
@@ -68,14 +71,19 @@ export async function runInteractiveMode(
       case "data:csv-to-tsv":
       case "data:tsv-to-csv":
       case "data:tsv-to-json":
-        await handleDataInteractiveAction(runtime, pathPromptContext, action);
+        await handleDataInteractiveAction(runtime, pathPromptContext, action, session);
         return;
       case "md:to-pdf":
       case "md:pdf-recipes":
       case "md:to-docx":
       case "md:frontmatter-to-json":
         {
-          const outcome = await handleMarkdownInteractiveAction(runtime, pathPromptContext, action);
+          const outcome = await handleMarkdownInteractiveAction(
+            runtime,
+            pathPromptContext,
+            action,
+            session,
+          );
           if (outcome.kind === "open-submenu") {
             initialGroup = outcome.group;
             continue;
@@ -86,7 +94,7 @@ export async function runInteractiveMode(
       case "rename:batch":
       case "rename:cleanup":
       case "rename:apply":
-        await handleRenameInteractiveAction(runtime, pathPromptContext, action);
+        await handleRenameInteractiveAction(runtime, pathPromptContext, action, session);
         return;
       case "video:convert":
       case "video:resize":

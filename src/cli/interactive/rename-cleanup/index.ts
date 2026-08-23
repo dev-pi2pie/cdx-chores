@@ -17,6 +17,7 @@ import type { InteractivePathPromptContext } from "../shared";
 export async function runInteractiveRenameCleanup(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
+  codexTimeoutMs: number,
 ): Promise<void> {
   const path = await promptRequiredPathWithConfig("Target path", {
     kind: "path",
@@ -35,6 +36,7 @@ export async function runInteractiveRenameCleanup(
         path,
         analyzerFamilies: analyzerFamilies ?? ANALYZER_FAMILY_VALUES,
         scope,
+        timeoutMs: codexTimeoutMs,
       })
     : undefined;
   const cleanupSettings = suggestionResult?.settings ?? (await promptManualCleanupSettings());

@@ -15,6 +15,7 @@ import {
 export async function runInteractiveDataExtract(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
+  codexTimeoutMs: number,
 ): Promise<void> {
   writeInteractiveFlowTip(runtime, "data-extract");
   const input = await promptRequiredPathWithConfig("Input data file", {
@@ -36,6 +37,7 @@ export async function runInteractiveDataExtract(
         inputPath,
         runtime,
         sources,
+        timeoutMs: codexTimeoutMs,
       });
       const checkpointOutcome = await runInteractiveExtractCheckpointFlow(
         runtime,

@@ -1,4 +1,6 @@
 import { startCodexReadOnlyThread } from "../../../adapters/codex/shared";
+import { formatCodexRequestFailure } from "../../../utils/codex-request-failure";
+import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../../utils/codex-timeout";
 import { normalizeHeaderMappingTargetName } from "./normalize";
 import type {
   DataHeaderMappingEntry,
@@ -29,7 +31,6 @@ const DATA_HEADER_SUGGESTION_OUTPUT_SCHEMA = {
   additionalProperties: false,
 } as const;
 
-const DATA_HEADER_SUGGESTION_TIMEOUT_MS = 30_000;
 const DATA_HEADER_SUGGESTION_SAMPLE_LIMIT = 3;
 const DATA_HEADER_SUGGESTION_SAMPLE_VALUE_CHARS = 80;
 
@@ -167,7 +168,7 @@ async function runHeaderSuggestionPrompt(options: {
   const thread = await startCodexReadOnlyThread(options.workingDirectory);
   const turn = await thread.run([{ type: "text", text: options.prompt }], {
     outputSchema: DATA_HEADER_SUGGESTION_OUTPUT_SCHEMA,
-    signal: AbortSignal.timeout(options.timeoutMs ?? DATA_HEADER_SUGGESTION_TIMEOUT_MS),
+    signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
   });
   return turn.finalResponse;
 }
@@ -194,7 +195,12 @@ export async function suggestDataHeaderMappingsWithCodex(options: {
     };
   } catch (error) {
     return {
-      errorMessage: error instanceof Error ? error.message : String(error),
+      errorMessage: formatCodexRequestFailure({
+        attemptsUsed: 1,
+        error,
+        requestLabel: "Codex header-mapping suggestion request",
+        timeoutMs: options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS,
+      }),
       mappings: [],
     };
   }

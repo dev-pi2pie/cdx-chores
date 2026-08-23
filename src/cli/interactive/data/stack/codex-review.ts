@@ -21,11 +21,14 @@ import {
 import type { DataStackPlanArtifact } from "../../../data-stack/plan";
 import { resolveFromCwd } from "../../../path-utils";
 import type { CliRuntime } from "../../../types";
+import {
+  classifyCodexRequestFailure,
+  formatCodexTimeoutFailure,
+} from "../../../../utils/codex-request-failure";
 
 import { createInteractiveStackPlanArtifact, getInteractiveStackPlanMetadata } from "./artifacts";
 import { prepareInteractiveStackPreviewState } from "./review";
 import {
-  INTERACTIVE_DATA_STACK_CODEX_TIMEOUT_MS,
   INTERACTIVE_DATA_STACK_UNIQUE_BY,
   type InteractiveDataStackPreviewState,
   type InteractiveDataStackReviewedPlan,
@@ -219,6 +222,7 @@ async function reviewInteractiveCodexRecommendations(
 export async function requestInteractiveStackCodexReview(
   runtime: CliRuntime,
   state: InteractiveDataStackPreviewState,
+  codexTimeoutMs: number,
 ): Promise<InteractiveDataStackReviewedPlan | undefined> {
   const reportPath = resolveFromCwd(runtime, generateDataStackCodexReportFileName(runtime.now()));
   const diagnosticsWithReport = computeDataStackDiagnostics({
@@ -245,11 +249,26 @@ export async function requestInteractiveStackCodexReview(
       diagnostics: diagnosticsWithReport,
       now: runtime.now(),
       plan,
-      timeoutMs: INTERACTIVE_DATA_STACK_CODEX_TIMEOUT_MS,
+      timeoutMs: codexTimeoutMs,
       workingDirectory: runtime.cwd,
     });
   } catch (error) {
-    printLine(runtime.stderr, formatDataStackCodexAssistFailure(error));
+    if (classifyCodexRequestFailure(error) === "timeout") {
+      printLine(
+        runtime.stderr,
+        formatCodexTimeoutFailure({
+          attemptsUsed: 1,
+          requestLabel: "Codex data-stack recommendation request",
+          timeoutMs: codexTimeoutMs,
+        }),
+      );
+      printLine(
+        runtime.stderr,
+        "Restart Interactive mode with a longer limit if needed: cdx-chores interactive --codex-timeout <duration>.",
+      );
+    } else {
+      printLine(runtime.stderr, formatDataStackCodexAssistFailure(error));
+    }
     printLine(runtime.stderr, "Keeping current deterministic stack setup.");
     return undefined;
   } finally {

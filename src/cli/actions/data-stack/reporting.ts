@@ -7,6 +7,7 @@ import type { PreparedDataStackExecution } from "../../data-stack/prepare";
 import type { DataStackDuplicatePolicy } from "../../data-stack/plan";
 import type { DataStackOutputFormat } from "../../data-stack/types";
 import type { CliRuntime } from "../../types";
+import { styleCliDiagnosticLabel } from "../../diagnostic-color";
 import { displayPath, printLine } from "../shared";
 
 export function renderDataStackDiagnosticsSummary(
@@ -35,7 +36,7 @@ export function renderDataStackDiagnosticsSummary(
 export function renderDataStackUnionByNameAliasWarning(runtime: CliRuntime): void {
   printLine(
     runtime.stderr,
-    "Warning: --union-by-name is a canary compatibility alias. Use --schema-mode union-by-name.",
+    `${styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:")} --union-by-name is a canary compatibility alias. Use --schema-mode union-by-name.`,
   );
 }
 

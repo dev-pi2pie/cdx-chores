@@ -38,6 +38,8 @@ describe("interactive data stack dry run write", () => {
       selectQueue: ["data", "data:stack", "csv", "accept", "strict", "json", "continue", "dry-run"],
       optionalPathQueue: [undefined, undefined],
       confirmQueue: [false, true, true],
+      stdoutIsTTY: true,
+      stderrIsTTY: false,
     });
 
     expect(result.actionCalls).toEqual([]);
@@ -65,6 +67,7 @@ describe("interactive data stack dry run write", () => {
     expect(stripAnsi(result.stderr)).toMatch(
       /Replay later: cdx-chores data stack replay data-stack-plan-20260225T000000Z-[a-f0-9]{8}\.json/,
     );
+    expect(result.stderr).not.toContain("\u001b[");
   });
 
   test("rejects an interactive dry-run plan at the stack output path", () => {

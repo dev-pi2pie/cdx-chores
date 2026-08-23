@@ -1,8 +1,49 @@
 import { describe, expect, test } from "bun:test";
+import { join } from "node:path";
 
+import { renderIntrospectionSummary } from "../src/cli/interactive/data-query/source-shape";
+import { createCapturedRuntime } from "./helpers/cli-test-utils";
 import { runInteractiveHarness } from "./cli-interactive-routing.helpers";
 
+const ANSI_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
+const ANSI_START = `${String.fromCharCode(27)}[`;
+
+function setTty(stream: NodeJS.WritableStream, isTTY: boolean): void {
+  (stream as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = isTTY;
+}
+
 describe("interactive mode routing: data query source shape", () => {
+  test("uses stderr eligibility for source introspection presentation", () => {
+    const redirectedStderr = createCapturedRuntime();
+    setTty(redirectedStderr.runtime.stdout, true);
+    setTty(redirectedStderr.runtime.stderr, false);
+    const introspection = {
+      columns: [{ name: "id", type: "BIGINT" }],
+      sampleRows: [{ id: "1" }],
+      truncated: false,
+    };
+
+    renderIntrospectionSummary(redirectedStderr.runtime, {
+      format: "csv",
+      inputPath: join(redirectedStderr.runtime.cwd, "fixtures/query.csv"),
+      introspection,
+    });
+
+    expect(redirectedStderr.stderr.text).toContain("Input:");
+    expect(redirectedStderr.stderr.text).not.toContain("\u001b[");
+
+    const stderrTty = createCapturedRuntime();
+    setTty(stderrTty.runtime.stdout, false);
+    setTty(stderrTty.runtime.stderr, true);
+    renderIntrospectionSummary(stderrTty.runtime, {
+      format: "csv",
+      inputPath: join(stderrTty.runtime.cwd, "fixtures/query.csv"),
+      introspection,
+    });
+
+    expect(stderrTty.stderr.text).toContain("\u001b[36mInput\u001b[39m");
+  });
+
   test("prints DuckDB install remediation command for interactive query extension failures", () => {
     const result = runInteractiveHarness(
       {
@@ -35,6 +76,7 @@ describe("interactive mode routing: data query source shape", () => {
   test("warns about suspicious raw Excel schemas before SQL authoring and supports manual range recovery", () => {
     const result = runInteractiveHarness({
       mode: "run",
+      stderrIsTTY: true,
       selectQueue: ["data", "data:query", "Summary", "range", "manual", "table"],
       requiredPathQueue: ["fixtures/query.xlsx"],
       inputQueue: ["", "A1:B3", "select * from file order by id", "10"],
@@ -85,8 +127,15 @@ describe("interactive mode routing: data query source shape", () => {
       "input:Excel range (required, e.g. A1:Z99)",
     );
     expect(result.stderr).toContain(
+      "\u001b[1m\u001b[33mSheet shape warning:\u001b[39m\u001b[22m current Excel sheet shape looks suspicious.",
+    );
+    expect(result.stderr.replace(ANSI_PATTERN, "")).toContain(
       "Sheet shape warning: current Excel sheet shape looks suspicious.",
     );
+    const warningLine = result.stderr
+      .split("\n")
+      .find((line) => line.includes(" current Excel sheet shape"));
+    expect(warningLine?.slice(warningLine.indexOf(" current Excel"))).not.toContain(ANSI_START);
     expect(result.stderr).toContain("Accepted source shape: --range A1:B3");
     expect(result.stderr).toContain("Re-inspecting shaped source before SQL authoring.");
   });
@@ -94,6 +143,7 @@ describe("interactive mode routing: data query source shape", () => {
   test("warns about suspicious raw Excel schemas before SQL authoring and supports reviewed Codex shape recovery", () => {
     const result = runInteractiveHarness({
       mode: "run",
+      codexTimeoutMs: 90_000,
       selectQueue: ["data", "data:query", "Summary", "suggest", "accept", "manual", "table"],
       requiredPathQueue: ["fixtures/query.xlsx"],
       inputQueue: ["", "select * from file order by id", "10"],
@@ -133,6 +183,7 @@ describe("interactive mode routing: data query source shape", () => {
       options: {
         selectedSource: "Summary",
         sheetName: "Summary",
+        timeoutMs: 90_000,
       },
     });
     expect(result.actionCalls).toContainEqual({
@@ -193,6 +244,10 @@ describe("interactive mode routing: data query source shape", () => {
     expect(result.stderr).toContain(
       "Whole-sheet inspection collapsed a merged or multi-column worksheet into one visible column.",
     );
+    expect(result.stderr).toContain(
+      "Sheet shape warning: current Excel sheet shape looks suspicious.",
+    );
+    expect(result.stderr).not.toContain(ANSI_START);
     expect(result.actionCalls).toEqual([]);
   });
 });

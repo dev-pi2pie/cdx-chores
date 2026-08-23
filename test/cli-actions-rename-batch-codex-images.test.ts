@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdir, readFile, rm, utimes, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
+import { summarizeCodexBatchFailures } from "../src/adapters/codex/shared";
 import { actionRenameBatch } from "../src/cli/actions";
 import {
   createCapturedRuntime,
@@ -62,6 +63,69 @@ describe("cli action modules: rename batch codex images", () => {
       expect(stdout.text).toContain("Codex note: Codex unavailable in test");
       expect(stdout.text).toContain("- a.png -> img-");
       expect(stdout.text).toContain("Dry run only. No files were renamed.");
+    } finally {
+      await removeIfPresent(planCsvPath);
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("actionRenameBatch retains partial suggestions with timeout-specific fallback information", async () => {
+    const fixtureDir = await createTempFixtureDir("actions");
+    let planCsvPath: string | undefined;
+    try {
+      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const dirPath = join(fixtureDir, "rename-codex-timeout-partial");
+      await mkdir(dirPath, { recursive: true });
+
+      const imageA = join(dirPath, "a.png");
+      const imageB = join(dirPath, "b.png");
+      await writeFile(imageA, "fakepng", "utf8");
+      await writeFile(imageB, "fakepng", "utf8");
+
+      const timeoutMessage = summarizeCodexBatchFailures({
+        batchFailures: [
+          {
+            kind: "timeout",
+            message: "request deadline reached",
+            attemptsUsed: 3,
+          },
+        ],
+        hasSuggestions: true,
+        requestLabel: "Codex image-title request",
+        timeoutMs: 30_000,
+      });
+      if (!timeoutMessage) {
+        throw new Error("Expected timeout summary");
+      }
+
+      const result = await actionRenameBatch(runtime, {
+        directory: toRepoRelativePath(dirPath),
+        prefix: "img",
+        dryRun: true,
+        codexImages: true,
+        codexImagesTimeoutMs: 30_000,
+        codexImagesRetries: 2,
+        codexImagesBatchSize: 1,
+        codexImagesTitleSuggester: async () => ({
+          suggestions: [{ path: imageA, title: "cover photo" }],
+          errorMessage: timeoutMessage,
+        }),
+      });
+      planCsvPath = result.planCsvPath;
+
+      expect(stderr.text).toBe("");
+      expect(result.totalCount).toBe(2);
+      expect(result.changedCount).toBe(2);
+      expect(stdout.text).toContain(
+        "Codex image titles: 1/2 image file(s) suggested (fallback used for others)",
+      );
+      expect(stdout.text).toContain(`Codex note: ${timeoutMessage}`);
+      expect(stdout.text).toContain("cover-photo");
+      expect(stdout.text).toContain("Dry run only. No files were renamed.");
+
+      const csvText = await readFile(planCsvPath!, "utf8");
+      expect(csvText).toContain("cover photo");
+      expect(csvText).toContain("codex_fallback_error");
     } finally {
       await removeIfPresent(planCsvPath);
       await rm(fixtureDir, { recursive: true, force: true });
@@ -133,7 +197,7 @@ describe("cli action modules: rename batch codex images", () => {
         directory: toRepoRelativePath(dirPath),
         dryRun: true,
         codexImages: true,
-        codexImagesTimeoutMs: 12345,
+        codexImagesTimeoutMs: 900_000,
         codexImagesRetries: 2,
         codexImagesBatchSize: 1,
         codexImagesTitleSuggester: async (options) => {
@@ -146,7 +210,7 @@ describe("cli action modules: rename batch codex images", () => {
       expect(stderr.text).toBe("");
       expect(calls).toHaveLength(1);
       expect(calls[0]?.workingDirectory).toBe(REPO_ROOT);
-      expect(calls[0]?.timeoutMs).toBe(12345);
+      expect(calls[0]?.timeoutMs).toBe(900_000);
       expect(calls[0]?.retries).toBe(2);
       expect(calls[0]?.batchSize).toBe(1);
       expect(calls[0]?.imagePaths).toHaveLength(2);

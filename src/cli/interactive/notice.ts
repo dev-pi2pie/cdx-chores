@@ -1,5 +1,6 @@
 import { printLine } from "../actions/shared";
 import { getCliColors } from "../colors";
+import { styleCliDiagnosticLabel } from "../diagnostic-color";
 import type { CliRuntime } from "../types";
 
 export function resolveInteractiveNoticeWidth(runtime: CliRuntime): number | undefined {
@@ -32,8 +33,9 @@ export function isInteractiveTipSlotAvailable(runtime: CliRuntime): boolean {
 }
 
 export function writeInteractiveTip(runtime: CliRuntime, message: string): void {
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stderr);
+  const label = styleCliDiagnosticLabel(runtime, runtime.stderr, "notice", "Tip:");
   printLine(runtime.stderr, "");
-  printLine(runtime.stderr, `${pc.cyan("Tip:")} ${pc.dim(message)}`);
+  printLine(runtime.stderr, `${label} ${pc.dim(message)}`);
   printLine(runtime.stderr, "");
 }

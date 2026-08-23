@@ -1,5 +1,7 @@
 export interface InteractiveHarnessScenario {
   mode: "run" | "invalid-data-action";
+  codexTimeoutMs?: number;
+  captureCodexTimeouts?: boolean;
   markdownPdfMocks?: boolean;
   markdownPdfBundleRoles?: Array<"profile" | "template" | "css">;
   markdownPdfIgnoredBundleFiles?: string[];
@@ -43,16 +45,19 @@ export interface InteractiveHarnessScenario {
   dataStackActionStderr?: string;
   dataStackActionStdout?: string;
   dataStackCodexErrorMessage?: string;
+  dataStackCodexErrorName?: string;
   dataStackCodexRecommendations?: Array<Record<string, unknown>>;
   dataStackWriteExistingPaths?: string[];
   stdoutColumns?: number;
   stdoutIsTTY?: boolean;
+  stderrIsTTY?: boolean;
   dataQueryActionErrorMessage?: string;
   dataQueryActionErrorCode?: string;
   dataQueryActionStderr?: string;
   dataQueryActionStdout?: string;
   dataQueryCodexDraft?: { reasoningSummary?: string; sql: string };
   dataQueryCodexErrorMessage?: string;
+  dataQueryCodexFailureKind?: "timeout" | "aborted" | "other";
   dataQueryDetectedFormat?: string;
   dataQueryMocks?: boolean;
   dataQueryHeaderSuggestionErrorMessage?: string;

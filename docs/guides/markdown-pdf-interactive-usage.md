@@ -1,7 +1,7 @@
 ---
 title: "Interactive Markdown PDF Usage"
 created-date: 2026-07-22
-modified-date: 2026-08-16
+modified-date: 2026-08-22
 status: completed
 agent: codex
 ---
@@ -28,6 +28,18 @@ Start the guided CLI with:
 ```bash
 cdx-chores interactive
 ```
+
+To use a longer per-attempt deadline for Codex-backed work throughout this
+Interactive session, start the explicit command with:
+
+```bash
+cdx-chores interactive --codex-timeout 2m
+```
+
+The option belongs to `interactive`; the root spelling
+`cdx-chores --codex-timeout 2m` is unsupported. Omitting the option keeps the
+30-second default, and Interactive mode does not add a timeout setup prompt to
+the Markdown workflows.
 
 Choose `md`, then choose `to-pdf` or `pdf-recipes`.
 
@@ -201,6 +213,20 @@ configuration rather than Codex signals.
 The setup review shows the signals before consent. During the request,
 Interactive mode presents one artifact-specific waiting status and clears it
 before the next prompt.
+
+The session timeout is passed to Profile, Template, and Project preparation.
+Each Profile, Template, or validation-driven application-repair request receives
+an independent per-attempt window using the same session value; a Project does
+not share one total timeout budget across its phases. Backtracking, revising the
+setup, and returning to an accepted candidate preserve the session value.
+User-triggered regeneration creates a new request with the same per-attempt
+window, but Interactive mode does not retry a failed request automatically.
+The timeout remains session state and is not written into saved recipe identity
+or generated artifacts.
+
+For the shared duration grammar and the distinction between timeouts,
+workflow-owned retries, semantic repair, and user-triggered regeneration, see
+[Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md).
 
 ### Font hints
 
@@ -519,6 +545,7 @@ unchanged.
 
 ## Related Docs
 
+- [Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md)
 - [Markdown PDF Usage](markdown-pdf-usage.md)
 - [Markdown PDF Codex Profile Helper](markdown-pdf-codex-profile-helper.md)
 - [Markdown PDF Codex Template Helper](markdown-pdf-codex-template-helper.md)

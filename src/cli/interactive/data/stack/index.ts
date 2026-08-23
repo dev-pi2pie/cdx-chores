@@ -11,6 +11,7 @@ import { confirmInteractiveStackWrite, renderSkippedInteractiveStackWrite } from
 export async function runInteractiveDataStack(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
+  codexTimeoutMs: number,
 ): Promise<void> {
   writeInteractiveFlowTip(runtime, "data-stack");
 
@@ -20,7 +21,12 @@ export async function runInteractiveDataStack(
       renderSkippedInteractiveStackWrite(runtime);
       return;
     }
-    const outcome = await confirmInteractiveStackWrite(runtime, pathPromptContext, setup);
+    const outcome = await confirmInteractiveStackWrite(
+      runtime,
+      pathPromptContext,
+      setup,
+      codexTimeoutMs,
+    );
     if (outcome.kind === "cancel") {
       return;
     }

@@ -8,11 +8,73 @@ import {
   createHeaderMappingInputReference,
   generateDataHeaderMappingFileName,
   resolveReusableHeaderMappings,
+  suggestDataHeaderMappingsWithCodex,
   writeDataHeaderMappingArtifact,
 } from "../src/cli/duckdb/header-mapping";
 import { REPO_ROOT, withTempFixtureDir } from "./helpers/cli-test-utils";
 
+const HEADER_SUGGESTION_INTROSPECTION = {
+  columns: [{ name: "column_1", type: "VARCHAR" }],
+  sampleRows: [{ column_1: "Project name" }],
+  selectedSource: "Sheet1",
+  truncated: false,
+};
+
+function wrapFailure(error: Error): Error & { cause: Error } {
+  const wrapped = new Error("SDK request failed") as Error & { cause: Error };
+  wrapped.cause = error;
+  return wrapped;
+}
+
 describe("data header mapping artifacts", () => {
+  test("formats a direct header-mapping timeout with the configured per-attempt limit", async () => {
+    const result = await suggestDataHeaderMappingsWithCodex({
+      format: "excel",
+      introspection: HEADER_SUGGESTION_INTROSPECTION,
+      timeoutMs: 60_000,
+      workingDirectory: REPO_ROOT,
+      runner: async () => {
+        throw new DOMException("request deadline reached", "TimeoutError");
+      },
+    });
+
+    expect(result).toEqual({
+      errorMessage:
+        "Codex header-mapping suggestion request timed out after the 1m per-attempt limit.",
+      mappings: [],
+    });
+  });
+
+  test("formats a wrapped header-mapping timeout with the shared default", async () => {
+    const result = await suggestDataHeaderMappingsWithCodex({
+      format: "excel",
+      introspection: HEADER_SUGGESTION_INTROSPECTION,
+      workingDirectory: REPO_ROOT,
+      runner: async () => {
+        throw wrapFailure(new DOMException("request deadline reached", "TimeoutError"));
+      },
+    });
+
+    expect(result).toEqual({
+      errorMessage:
+        "Codex header-mapping suggestion request timed out after the 30s per-attempt limit.",
+      mappings: [],
+    });
+  });
+
+  test("preserves the header-mapping message for an ordinary abort", async () => {
+    const result = await suggestDataHeaderMappingsWithCodex({
+      format: "excel",
+      introspection: HEADER_SUGGESTION_INTROSPECTION,
+      workingDirectory: REPO_ROOT,
+      runner: async () => {
+        throw new DOMException("request cancelled", "AbortError");
+      },
+    });
+
+    expect(result).toEqual({ errorMessage: "request cancelled", mappings: [] });
+  });
+
   test("generateDataHeaderMappingFileName uses the shared filename family", () => {
     expect(generateDataHeaderMappingFileName()).toMatch(/^data-header-mapping-[0-9a-f]{10}\.json$/);
   });

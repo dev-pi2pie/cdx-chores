@@ -11,6 +11,7 @@ import { displayPath, printLine } from "../../actions/shared";
 import { validateMdPdfProjectBundleCompleteness } from "../../markdown-pdf/project-codex/project-bundle-completeness";
 import { formatDefaultOutputPathHint, promptRequiredPathWithConfig } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
+import { createInteractiveSession, type InteractiveSession } from "../session";
 import type { InteractiveNavigationOutcome, InteractivePathPromptContext } from "../shared";
 import { runMarkdownPdfAuthoring } from "./authoring";
 import { createMarkdownPdfInteractiveCodexSession } from "./codex-session";
@@ -396,8 +397,11 @@ async function promptAndPrepareDirectMarkdownPdfRenderSource(
 export async function handleMarkdownPdfToPdfInteractiveAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
+  session: InteractiveSession = createInteractiveSession(),
 ): Promise<InteractiveNavigationOutcome> {
-  return await runMarkdownPdfToPdfInteractiveFlow(runtime, pathPromptContext);
+  return await runMarkdownPdfToPdfInteractiveFlow(runtime, pathPromptContext, {
+    interactiveSession: session,
+  });
 }
 
 async function promptMarkdownPdfHandoffInput(
@@ -425,9 +429,13 @@ async function promptMarkdownPdfHandoffInput(
 export async function runMarkdownPdfToPdfInteractiveFlow(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
-  options: { savedRecipe?: MarkdownPdfSavedRecipe } = {},
+  options: {
+    interactiveSession?: InteractiveSession;
+    savedRecipe?: MarkdownPdfSavedRecipe;
+  } = {},
 ): Promise<InteractiveNavigationOutcome> {
-  const session = createMarkdownPdfInteractiveCodexSession(runtime);
+  const interactiveSession = options.interactiveSession ?? createInteractiveSession();
+  const codexSession = createMarkdownPdfInteractiveCodexSession(runtime);
   const generatedLifecycleSession = createMarkdownPdfGeneratedLifecycleSession();
   try {
     let input: string;
@@ -479,8 +487,9 @@ export async function runMarkdownPdfToPdfInteractiveFlow(
       }
       if (source.kind === "generated") {
         const outcome = await runMarkdownPdfAuthoring(runtime, pathPromptContext, {
+          codexTimeoutMs: interactiveSession.codexTimeoutMs,
           entry: "to-pdf",
-          fontHintEditor: session.fontHintEditor,
+          fontHintEditor: codexSession.fontHintEditor,
           markdownInput: input,
           onGeneratedLifecycle: async (selection) =>
             await handleMarkdownPdfGeneratedLifecycle(
@@ -516,6 +525,6 @@ export async function runMarkdownPdfToPdfInteractiveFlow(
       }
     }
   } finally {
-    session.cancel();
+    codexSession.cancel();
   }
 }

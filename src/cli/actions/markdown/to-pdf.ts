@@ -6,6 +6,7 @@ import {
   type NormalizeMarkdownPdfOptionsInput,
 } from "../../markdown-pdf";
 import type { CliRuntime } from "../../types";
+import { styleCliDiagnosticLabel } from "../../diagnostic-color";
 import { displayPath, printLine } from "../shared";
 import {
   executePlannedMarkdownPdfRender,
@@ -58,7 +59,10 @@ function printIgnoredRenderBundleFiles(runtime: CliRuntime, ignoredProfileFiles:
   if (ignoredProfileFiles.length === 0) {
     return;
   }
-  printLine(runtime.stderr, "Warning: ignored unclassified YAML or JSON bundle files:");
+  printLine(
+    runtime.stderr,
+    `${styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:")} ignored unclassified YAML or JSON bundle files:`,
+  );
   for (const filename of ignoredProfileFiles) {
     printLine(runtime.stderr, `- ${filename}`);
   }

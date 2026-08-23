@@ -1,6 +1,5 @@
-import { resolveFromCwd } from "../path-utils";
-import type { CliRuntime } from "../types";
-import { createInteractiveAnalyzerStatus } from "../interactive/analyzer-status";
+import { formatCodexTimeoutFailure } from "../../utils/codex-request-failure";
+import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../utils/codex-timeout";
 import {
   collectDataQuerySourceIntrospection,
   collectDataQueryWorkspaceIntrospection,
@@ -9,6 +8,9 @@ import {
   type DataQueryInputFormat,
   type DataQueryRelationBinding,
 } from "../duckdb/query";
+import { resolveFromCwd } from "../path-utils";
+import type { CliRuntime } from "../types";
+import { createInteractiveAnalyzerStatus } from "../interactive/analyzer-status";
 import {
   draftDataQueryWithCodex,
   normalizeDataQueryCodexIntent,
@@ -150,6 +152,19 @@ export async function actionDataQueryCodex(
     });
 
     if (!draftResult.draft) {
+      if (draftResult.failureKind === "timeout") {
+        throw new CliError(
+          formatCodexTimeoutFailure({
+            attemptsUsed: 1,
+            requestLabel: "Codex data-query drafting request",
+            timeoutMs: options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS,
+          }),
+          {
+            code: "DATA_QUERY_CODEX_FAILED",
+            exitCode: 2,
+          },
+        );
+      }
       const message = draftResult.errorMessage ?? "Unknown Codex drafting failure.";
       const failure = classifyCodexDraftingFailure(message);
       throw new CliError(`${failure.prefix}: ${message}`, {

@@ -203,7 +203,7 @@ function renderTable(
     return ["(no columns to display)"];
   }
 
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stdout);
   const widths = visibleColumns.map((column) => column.width);
   const highlightedColumns = new Set(resolveContainsFilterColumns(options.containsFilters));
   const header = visibleColumns
@@ -234,7 +234,7 @@ export function renderDataPreview(
   source: RenderDataPreviewSource,
   options: RenderDataPreviewOptions,
 ): RenderDataPreviewResult {
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stdout);
   const widthBudget = resolveRenderWidth(runtime);
   const selectedColumns = resolveRequestedColumns(source, options.columns);
   const rows = source.getWindow(options.offset, options.rowCount);

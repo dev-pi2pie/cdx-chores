@@ -1,4 +1,5 @@
 import { startCodexReadOnlyThread } from "../shared";
+import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../../utils/codex-timeout";
 import { buildMarkdownPdfProfileCodexPrompt } from "./prompt";
 import { applyMarkdownPdfCodexDecision, parseMarkdownPdfCodexDecision } from "./decision";
 import type {
@@ -8,7 +9,7 @@ import type {
 } from "./types";
 import { MARKDOWN_PDF_CODEX_FONT_PATCH_ROLES, MARKDOWN_PDF_CODEX_PATCH_PATHS } from "./types";
 
-export const MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS = 30_000;
+export const MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS = DEFAULT_CODEX_REQUEST_TIMEOUT_MS;
 
 export const MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA = {
   type: "object",

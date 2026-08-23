@@ -2,6 +2,7 @@ import { Option, type Command } from "commander";
 
 import { actionDoctor } from "../actions";
 import { runInteractiveMode } from "../interactive";
+import { createCodexTimeoutDurationOption } from "../options/codex-timeout-option";
 import type { CliRuntime } from "../types";
 import { registerDataCommands } from "./data";
 import { registerFontCommands } from "./font";
@@ -11,6 +12,7 @@ import { registerVideoCommands } from "./video";
 
 interface RegisterCliCommandsImpls {
   actionDoctorImpl?: typeof actionDoctor;
+  runInteractiveModeImpl?: typeof runInteractiveMode;
 }
 
 export function registerCliCommands(
@@ -19,11 +21,20 @@ export function registerCliCommands(
   impls: RegisterCliCommandsImpls = {},
 ): void {
   const actionDoctorImpl = impls.actionDoctorImpl ?? actionDoctor;
+  const runInteractiveModeImpl = impls.runInteractiveModeImpl ?? runInteractiveMode;
   program
     .command("interactive")
     .description("Start interactive mode")
-    .action(async () => {
-      await runInteractiveMode(runtime);
+    .addOption(
+      createCodexTimeoutDurationOption(
+        "--codex-timeout",
+        "Timeout for each Codex request attempt in this Interactive session",
+      ),
+    )
+    .action(async (options: { codexTimeout?: number }) => {
+      await runInteractiveModeImpl(runtime, undefined, {
+        codexTimeoutMs: options.codexTimeout,
+      });
     });
 
   program

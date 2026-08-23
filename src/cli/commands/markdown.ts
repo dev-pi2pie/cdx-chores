@@ -13,6 +13,7 @@ import {
 import type { MdPdfProfileCodexCliOptions, MdPdfProjectCodexCliOptions } from "../actions/markdown";
 import type { MdPdfTemplateCodexCliOptions } from "../actions/markdown/pdf-template-codex";
 import { applyCommonFileOptions } from "../options/common";
+import { createCodexTimeoutDurationOption } from "../options/codex-timeout-option";
 import { parsePositiveIntegerOption } from "../options/parsers";
 import type { CliRuntime } from "../types";
 
@@ -195,8 +196,19 @@ export function registerMarkdownCommands(
     .option("--keep-codex-report", "Write a diagnostic Codex report sidecar", false)
     .option("--codex-report-output <path>", "Write the diagnostic Codex report to this JSON path")
     .option("--overwrite", "Overwrite selected generated files if they already exist", false)
+    .addOption(
+      createCodexTimeoutDurationOption(
+        "--codex-timeout",
+        "Codex request timeout per attempt (for example, 30s or 2m)",
+      ),
+    )
     .action(async (input: string | undefined, options: MdPdfTemplateCodexCliOptions) => {
-      await actions.actionMdPdfTemplateCodex(runtime, { ...options, positionalInput: input });
+      const { codexTimeout, ...actionOptions } = options;
+      await actions.actionMdPdfTemplateCodex(runtime, {
+        ...actionOptions,
+        ...(codexTimeout !== undefined ? { timeoutMs: codexTimeout } : {}),
+        positionalInput: input,
+      });
     });
 
   const pdfProfileCommand = mdCommand
@@ -233,8 +245,19 @@ export function registerMarkdownCommands(
     .option("--keep-codex-report", "Write a diagnostic Codex report sidecar", false)
     .option("--codex-report-output <path>", "Write the diagnostic Codex report to this JSON path")
     .option("--overwrite", "Overwrite selected output artifacts if they already exist", false)
+    .addOption(
+      createCodexTimeoutDurationOption(
+        "--codex-timeout",
+        "Codex request timeout per attempt (for example, 30s or 2m)",
+      ),
+    )
     .action(async (input: string | undefined, options: MdPdfProfileCodexCliOptions) => {
-      await actions.actionMdPdfProfileCodex(runtime, { ...options, positionalInput: input });
+      const { codexTimeout, ...actionOptions } = options;
+      await actions.actionMdPdfProfileCodex(runtime, {
+        ...actionOptions,
+        ...(codexTimeout !== undefined ? { timeoutMs: codexTimeout } : {}),
+        positionalInput: input,
+      });
     });
 
   const pdfProjectCommand = mdCommand
@@ -263,8 +286,19 @@ export function registerMarkdownCommands(
     .option("--keep-codex-report", "Write a diagnostic project Codex report", false)
     .option("--codex-report-output <path>", "Write the diagnostic project report to this JSON path")
     .option("--overwrite", "Overwrite selected project-generated outputs if safe", false)
+    .addOption(
+      createCodexTimeoutDurationOption(
+        "--codex-timeout",
+        "Codex request timeout per attempt (for example, 30s or 2m)",
+      ),
+    )
     .action(async (input: string | undefined, options: MdPdfProjectCodexCliOptions) => {
-      await actions.actionMdPdfProjectCodex(runtime, { ...options, positionalInput: input });
+      const { codexTimeout, ...actionOptions } = options;
+      await actions.actionMdPdfProjectCodex(runtime, {
+        ...actionOptions,
+        ...(codexTimeout !== undefined ? { timeoutMs: codexTimeout } : {}),
+        positionalInput: input,
+      });
     });
 
   mdCommand

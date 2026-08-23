@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Template Helper"
 created-date: 2026-06-25
-modified-date: 2026-08-16
+modified-date: 2026-08-22
 status: completed
 agent: codex
 ---
@@ -35,6 +35,8 @@ Common options:
 - `--keep-codex-report`: write a diagnostic Codex report sidecar.
 - `--codex-report-output <path>`: explicit diagnostic report JSON path.
 - `--overwrite`: allow selected generated artifacts to be replaced.
+- `--codex-timeout <duration>`: command-local deadline for each Codex template
+  request attempt.
 
 Example:
 
@@ -42,8 +44,20 @@ Example:
 cdx-chores md pdf-template codex ./report.md \
   --intent "client report with a clean cover image and readable code blocks" \
   --cover-image ./cover.jpg \
+  --codex-timeout 2m \
   --output ./report-template
 ```
+
+The timeout option changes request timing only; it does not enable another
+Codex path. When omitted, Codex template requests keep the 30-second default.
+The initial template request and any validation-driven application-repair
+request each receive an independent per-attempt window using the same value.
+An application repair is semantic recovery, not a generic automatic retry of a
+failed request.
+
+For the shared duration grammar and the distinction between timeouts, retries,
+and recovery, see
+[Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md).
 
 Render by selecting the accepted template and stylesheet directly:
 
@@ -338,6 +352,7 @@ read an existing `template.html` or `style.css` as a refinement input.
 
 ## Related Docs
 
+- [Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md)
 - [Patterns, Placeholders, and Templates](patterns-placeholders-and-templates.md)
 - [Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md)
 - [Markdown PDF Usage](markdown-pdf-usage.md)

@@ -168,6 +168,7 @@ describe("interactive mode routing: data extract revision", () => {
   test("re-prompts the shape warning after a Codex source-shape failure instead of falling straight into extraction", () => {
     const result = runInteractiveHarness({
       mode: "run",
+      codexTimeoutMs: 75_000,
       selectQueue: ["data", "data:extract", "Sheet1", "suggest", "continue", "csv", "cancel"],
       requiredPathQueue: ["fixtures/query.xlsx"],
       inputQueue: [""],
@@ -196,6 +197,7 @@ describe("interactive mode routing: data extract revision", () => {
         options: {
           selectedSource: "Sheet1",
           sheetName: "Sheet1",
+          timeoutMs: 75_000,
         },
       },
     ]);

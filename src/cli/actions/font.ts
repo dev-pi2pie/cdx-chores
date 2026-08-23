@@ -6,6 +6,7 @@ import {
 } from "../../fonts";
 import { inspectFontFaces, matchesFontFamily, uniqueFontFaces } from "../../fonts/matching";
 import { getCliColors } from "../colors";
+import { styleCliDiagnosticLabel } from "../diagnostic-color";
 import { CliError } from "../errors";
 import type { CliRuntime } from "../types";
 import { fontDiscoveryInfo, printFontDebugAttempts } from "./font-common";
@@ -168,7 +169,7 @@ export async function actionFontList(
     return;
   }
 
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stdout);
   printLine(runtime.stdout, pc.bold(pc.cyan("cdx-chores font list")));
   printLine(runtime.stdout, `${pc.dim("Discovery:")} ${discovery.discovery}`);
   printLine(runtime.stdout, `${pc.dim("Adapter:")} ${discovery.adapter}`);
@@ -180,7 +181,10 @@ export async function actionFontList(
   }
   if (discovery.warnings.length > 0) {
     for (const warning of discovery.warnings) {
-      printLine(runtime.stderr, `Warning: ${warning}`);
+      printLine(
+        runtime.stderr,
+        `${styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:")} ${warning}`,
+      );
     }
   }
   if (faces.length === 0) {
@@ -210,7 +214,7 @@ function groupFacesByFamily(faces: FontFace[]): Array<{ family: string; faces: F
 }
 
 function printInspectFace(runtime: CliRuntime, face: FontFace): void {
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stdout);
   printLine(runtime.stdout, `- ${face.fullName}`);
   for (const [label, value] of fontFaceDetailEntries(face)) {
     printLine(runtime.stdout, `  ${pc.dim(`${label}:`)} ${value}`);
@@ -261,7 +265,7 @@ export async function actionFontInspect(
     return;
   }
 
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stdout);
   printLine(runtime.stdout, pc.bold(pc.cyan("cdx-chores font inspect")));
   printLine(runtime.stdout, `${pc.dim("Family:")} ${family}`);
   printLine(runtime.stdout, `${pc.dim("Discovery:")} ${discovery.discovery}`);
@@ -274,7 +278,10 @@ export async function actionFontInspect(
   }
   if (discovery.warnings.length > 0) {
     for (const warning of discovery.warnings) {
-      printLine(runtime.stderr, `Warning: ${warning}`);
+      printLine(
+        runtime.stderr,
+        `${styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:")} ${warning}`,
+      );
     }
   }
 

@@ -63,7 +63,7 @@ export function renderCompactDoctorReport(
   runtime: CliRuntime,
   projection: DoctorWorkflowProjection,
 ): void {
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stdout);
   const workflows = new Map(projection.workflows.map((workflow) => [workflow.id, workflow]));
   const state = (id: DoctorWorkflowId) => {
     const workflow = workflows.get(id);
@@ -127,7 +127,7 @@ export function renderCompactDoctorReport(
 }
 
 export function renderDetailedDoctorReport(runtime: CliRuntime, report: DoctorReport): void {
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stdout);
   const {
     capabilities,
     font,

@@ -82,7 +82,7 @@ Use `cdx-chores doctor` before relying on a command in a script, a CI job, or a 
 | `data extract` reviewed suggestions, `data query codex`                 | Codex-assisted source shaping, semantic header review, and natural-language SQL drafting | Codex support must be configured and an auth/session signal must be available                                                 | Run `cdx-chores doctor`                                                                                            |
 | `md pdf-profile codex`, `md pdf-template codex`, `md pdf-project codex` | Codex-assisted Markdown PDF profile, template, and coordinated project drafting          | Codex support must be configured for Codex-assisted decisions; deterministic fallback paths remain available where documented | Run `cdx-chores doctor`                                                                                            |
 
-Codex SDK baseline for `v0.1.7-canary.1`: `0.147.0`
+Codex SDK baseline for `v0.1.7-canary.3`: `0.149.0`
 
 Markdown PDF profile, template, and Codex-assisted profile/template/project
 helpers remain available as direct CLI flows. Interactive mode also provides
@@ -299,6 +299,17 @@ Codex-assisted batch rename preview:
 cdx-chores rename batch ./images --prefix gallery --codex --dry-run
 ```
 
+Give every Codex request attempt a two-minute deadline, with a shorter image
+analyzer override:
+
+```bash
+cdx-chores rename batch ./images \
+  --codex \
+  --codex-timeout 2m \
+  --codex-images-timeout 45s \
+  --dry-run
+```
+
 Apply an exact dry-run snapshot later:
 
 ```bash
@@ -329,6 +340,14 @@ Template notes:
 - `--prefix` is optional
 - `--codex` is the common smart-routing flag for CLI mode
 - `--codex-images` and `--codex-docs` are explicit analyzer overrides
+- `--codex-timeout` sets one per-request-attempt value, while
+  `--codex-images-timeout` and `--codex-docs-timeout` override only their own
+  analyzer
+- timeout flags configure enabled Codex requests; they do not enable an
+  analyzer
+- the legacy `--codex-images-timeout-ms` and `--codex-docs-timeout-ms` flags
+  remain supported during the current compatibility phase and print migration
+  guidance when used
 - `{uid}` renders a deterministic `uid-<token>` fragment
 - `{serial...}` enables serial controls
 - `--serial-width` uses a digit count such as `2` or `4`, not `#`
@@ -395,6 +414,8 @@ cdx-chores video resize -i ./clip.mp4 -o ./clip-720p.mp4 --width 1280 --height 7
 
 Cross-feature:
 
+- `docs/guides/cli-output-and-color.md`
+- `docs/guides/codex-timeouts-retries-and-recovery.md`
 - `docs/guides/patterns-placeholders-and-templates.md`
 
 Rename:

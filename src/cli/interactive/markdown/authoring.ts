@@ -341,6 +341,7 @@ export async function runMarkdownPdfAuthoring(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   input: {
+    codexTimeoutMs: number;
     entry: MarkdownPdfInteractiveEntry;
     fontHintEditor: MarkdownPdfInteractiveFontHintEditorSession;
     markdownInput?: string;
@@ -363,6 +364,7 @@ export async function runMarkdownPdfAuthoring(
       const outcome = await runMarkdownPdfCodexAuthoring(runtime, pathPromptContext, {
         artifact,
         backToMode: false,
+        codexTimeoutMs: input.codexTimeoutMs,
         entry: input.entry,
         fontHintEditor: input.fontHintEditor,
         markdownInput: input.markdownInput,
@@ -387,6 +389,7 @@ export async function runMarkdownPdfAuthoring(
         const outcome = await runMarkdownPdfCodexAuthoring(runtime, pathPromptContext, {
           artifact,
           backToMode: true,
+          codexTimeoutMs: input.codexTimeoutMs,
           entry: input.entry,
           fontHintEditor: input.fontHintEditor,
           markdownInput: input.markdownInput,

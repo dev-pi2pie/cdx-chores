@@ -17,6 +17,44 @@ function recipesCodexSelections(artifact: CodexArtifact): string[] {
 }
 
 describe("interactive Markdown PDF Codex authoring", () => {
+  test.each(["profile", "template-bundle", "project-bundle"] as const)(
+    "uses the configured Interactive timeout for %s preparation without adding a prompt",
+    (artifact) => {
+      const result = runInteractiveHarness({
+        codexTimeoutMs: 120_000,
+        mode: "run",
+        markdownPdfMocks: true,
+        selectQueue: [...recipesCodexSelections(artifact), "continue", "cancel"],
+        inputQueue: [""],
+        confirmQueue: [false, true],
+      });
+
+      expect(result.markdownPdfCodexPrepareCalls).toEqual([
+        expect.objectContaining({
+          artifact,
+          timeoutMs: 120_000,
+        }),
+      ]);
+      expect(
+        result.promptCalls.every((call) => !call.message.toLowerCase().includes("timeout")),
+      ).toBe(true);
+    },
+  );
+
+  test("uses the default Interactive timeout for omitted Markdown Codex configuration", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      selectQueue: [...recipesCodexSelections("profile"), "continue", "cancel"],
+      inputQueue: [""],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.markdownPdfCodexPrepareCalls).toEqual([
+      expect.objectContaining({ timeoutMs: 30_000 }),
+    ]);
+  });
+
   test("offers Profile, Template, and direct Project Codex authoring from pdf-recipes", () => {
     const result = runInteractiveHarness({
       mode: "run",
@@ -83,6 +121,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
     "reuses the selected to-pdf Markdown input for %s Codex preparation",
     (artifact) => {
       const result = runInteractiveHarness({
+        codexTimeoutMs: 120_000,
         mode: "run",
         markdownPdfMocks: true,
         requiredPathQueue: ["fixtures/report.md"],
@@ -103,6 +142,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
           artifact,
           intent: "Editorial report",
           sample: "fixtures/report.md",
+          timeoutMs: 120_000,
         }),
       ]);
       expect(
@@ -551,6 +591,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
 
   test("prepares a new stable candidate only after explicit regeneration", () => {
     const result = runInteractiveHarness({
+      codexTimeoutMs: 120_000,
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [...recipesCodexSelections("profile"), "continue", "regenerate", "cancel"],
@@ -563,11 +604,13 @@ describe("interactive Markdown PDF Codex authoring", () => {
         artifact: "profile",
         artifactCount: 1,
         candidateId: "codex-profile-1",
+        timeoutMs: 120_000,
       }),
       expect.objectContaining({
         artifact: "profile",
         artifactCount: 2,
         candidateId: "codex-profile-2",
+        timeoutMs: 120_000,
       }),
     ]);
     expect(result.markdownPdfCodexBindCalls).toEqual([]);
@@ -603,6 +646,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
 
   test("invalidates the candidate only after an accepted font-hint change", () => {
     const result = runInteractiveHarness({
+      codexTimeoutMs: 120_000,
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -621,6 +665,9 @@ describe("interactive Markdown PDF Codex authoring", () => {
     });
 
     expect(result.markdownPdfCodexPrepareCalls).toHaveLength(2);
+    expect(result.markdownPdfCodexPrepareCalls.map((call) => call.timeoutMs)).toEqual([
+      120_000, 120_000,
+    ]);
     expect(result.markdownPdfCodexPrepareCalls[1]?.fontHints).toEqual([
       "Prefer Inter for headings and titles",
     ]);
@@ -668,6 +715,9 @@ describe("interactive Markdown PDF Codex authoring", () => {
       expect(result.markdownPdfCodexWriteCalls[0]?.outputFiles).toEqual(
         expect.arrayContaining([expect.stringContaining("codex-report.json")]),
       );
+      expect(result.markdownPdfCodexPrepareCalls[0]).not.toHaveProperty("codexTimeoutMs");
+      expect(result.markdownPdfCodexBindCalls[0]).not.toHaveProperty("timeoutMs");
+      expect(result.markdownPdfCodexWriteCalls[0]).not.toHaveProperty("timeoutMs");
     },
   );
 

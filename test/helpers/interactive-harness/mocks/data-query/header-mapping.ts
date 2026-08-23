@@ -30,6 +30,10 @@ export function installDataQueryHeaderMappingMock(context: HarnessRunnerContext)
     suggestDataHeaderMappingsWithCodex: async (options: HeaderSuggestionOptions) => {
       context.recordAction("data:query:header-suggest", {
         format: options.format,
+        ...(context.scenario.codexTimeoutMs !== undefined ||
+        context.scenario.captureCodexTimeouts === true
+          ? { timeoutMs: options.timeoutMs }
+          : {}),
         ...(options.introspection?.selectedHeaderRow !== undefined
           ? { selectedHeaderRow: options.introspection.selectedHeaderRow }
           : {}),

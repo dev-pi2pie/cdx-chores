@@ -1,7 +1,7 @@
 ---
 title: "Data Query Codex Usage"
 created-date: 2026-03-10
-modified-date: 2026-08-16
+modified-date: 2026-08-22
 status: completed
 agent: codex
 ---
@@ -41,7 +41,7 @@ Current stable boundary:
 ### Command shape
 
 ```bash
-cdx-chores data query codex <input> --intent "<text>" [--input-format <format>] [--source <name>] [--relation <binding>] [--range <A1:Z99>] [--body-start-row <n>] [--header-row <n>] [--print-sql]
+cdx-chores data query codex <input> --intent "<text>" [--codex-timeout <duration>] [--input-format <format>] [--source <name>] [--relation <binding>] [--range <A1:Z99>] [--body-start-row <n>] [--header-row <n>] [--print-sql]
 ```
 
 Supported `--input-format` values:
@@ -67,6 +67,26 @@ cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --intent "show ids and names"
 cdx-chores data query codex ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --intent "show id, question, status, and notes ordered by id"
 ```
+
+### Request timeout
+
+Use the command-local shared option to change the per-attempt limit for the SQL
+drafting request:
+
+```bash
+cdx-chores data query codex ./examples/playground/data-query/basic.csv \
+  --intent "show id and name ordered by id" \
+  --codex-timeout 2m
+```
+
+`data query codex` does not issue a workflow retry after a failed drafting
+request. The value applies to the drafting request attempt and does not change
+source inspection, output mode, or the advisory-only execution boundary.
+
+See
+[Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md)
+for the shared duration grammar, default and maximum, and failure-recovery
+guidance.
 
 ### Execution split
 

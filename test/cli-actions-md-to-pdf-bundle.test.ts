@@ -15,6 +15,9 @@ import { expectCliError } from "./helpers/cli-action-test-utils";
 import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
+const ANSI_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
+const ANSI_START = `${String.fromCharCode(27)}[`;
+
 function candidateNames(input: Awaited<ReturnType<typeof discoverMarkdownPdfRenderBundle>>) {
   return {
     profile: input.profile.map((candidate) => candidate.basename),
@@ -641,6 +644,7 @@ describe("Markdown PDF render bundle action integration", () => {
       await writeFile(join(bundleDirectory, "a-broken.yml"), ":\n", "utf8");
       const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
       const { runtime, stderr } = createActionTestRuntime();
+      (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
 
       await actionMdToPdf(runtime, {
         input: toRepoRelativePath(inputPath),
@@ -650,7 +654,10 @@ describe("Markdown PDF render bundle action integration", () => {
       });
 
       expect(await pathExists(outputPath)).toBe(true);
-      expect(stderr.text).toBe(
+      expect(stderr.text).toStartWith(
+        "\u001b[1m\u001b[33mWarning:\u001b[39m\u001b[22m ignored unclassified YAML or JSON bundle files:\n",
+      );
+      expect(stderr.text.replace(ANSI_PATTERN, "")).toBe(
         [
           "Warning: ignored unclassified YAML or JSON bundle files:",
           "- a-broken.yml",
@@ -658,6 +665,29 @@ describe("Markdown PDF render bundle action integration", () => {
           "",
         ].join("\n"),
       );
+      expect(stderr.text.split("\n")[1]).not.toContain(ANSI_START);
+      expect(stderr.text.split("\n")[2]).not.toContain(ANSI_START);
+
+      const plainOutputPath = join(fixtureDir, "report-plain.pdf");
+      const plainRuntime = createActionTestRuntime();
+      const { runner: plainRunner } = createPdfRunner({
+        html: "<html><body>Plain report</body></html>",
+      });
+      await actionMdToPdf(plainRuntime.runtime, {
+        input: toRepoRelativePath(inputPath),
+        output: toRepoRelativePath(plainOutputPath),
+        bundle: toRepoRelativePath(bundleDirectory),
+        runner: plainRunner,
+      });
+      expect(plainRuntime.stderr.text).toBe(
+        [
+          "Warning: ignored unclassified YAML or JSON bundle files:",
+          "- a-broken.yml",
+          "- z-data.json",
+          "",
+        ].join("\n"),
+      );
+      expect(plainRuntime.stderr.text).not.toContain(ANSI_START);
     });
   });
 

@@ -1,7 +1,7 @@
 ---
 title: "Rename Common Usage"
 created-date: 2026-02-27
-modified-date: 2026-08-16
+modified-date: 2026-08-22
 status: completed
 agent: codex
 ---
@@ -295,14 +295,39 @@ cdx-chores rename batch ./docs --codex-docs --dry-run
 cdx-chores rename batch ./images --codex-images --dry-run
 ```
 
+Shared and analyzer-scoped timeout examples:
+
+```bash
+cdx-chores rename batch ./mixed-folder --codex --codex-timeout 45s --dry-run
+cdx-chores rename batch ./mixed-folder --codex --codex-timeout 30s --codex-docs-timeout 2m --dry-run
+cdx-chores rename batch ./images --codex-images --codex-images-timeout 90s --dry-run
+```
+
 Flag notes:
 
 - `--codex` is the CLI equivalent of interactive `auto`.
 - `--codex` routes eligible files by file type after normal rename filtering.
 - `--codex-images` and `--codex-docs` override `--codex` when combined.
+- `--codex-timeout` supplies a shared per-attempt value to each enabled analyzer.
+- `--codex-images-timeout` and `--codex-docs-timeout` override the shared value
+  only for their respective analyzers.
+- timeout options configure enabled analyzers; they do not enable `--codex`,
+  `--codex-images`, or `--codex-docs` by themselves.
+- `--codex-images-retries` and `--codex-docs-retries` count additional attempts
+  after the initial request, per batch. Total request time can therefore grow
+  with the number of batches and retries.
+- the deprecated `--codex-images-timeout-ms` and
+  `--codex-docs-timeout-ms` compatibility options print migration guidance;
+  use `--codex-images-timeout <duration>` and
+  `--codex-docs-timeout <duration>` for new invocations.
 - unsupported files remain deterministic rename only.
 - `--preview-skips summary` is the default compact dry-run preview mode.
 - `--preview-skips detailed` keeps the skipped summary and also shows a bounded per-item skipped section.
+
+See
+[Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md)
+for the shared duration grammar, default and maximum, legacy compatibility,
+per-attempt meaning, and cross-workflow recovery comparison.
 
 Interactive mode now asks once for assistant enablement, then one scope selector:
 
@@ -315,6 +340,7 @@ Interactive mode now asks once for assistant enablement, then one scope selector
 ## Related Guides
 
 - `docs/guides/patterns-placeholders-and-templates.md`
+- `docs/guides/codex-timeouts-retries-and-recovery.md`
 - `docs/guides/rename-timestamp-format-matrix.md`
 - `docs/guides/rename-scope-and-codex-capability-guide.md`
 - `docs/guides/rename-plan-csv-schema.md`

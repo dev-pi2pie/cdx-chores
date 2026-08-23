@@ -122,7 +122,7 @@ function renderTable(
     return ["(no columns to display)"];
   }
 
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stdout);
   const widths = visibleColumns.map((column) => column.width);
   const header = visibleColumns
     .map((column) => pc.bold(pc.cyan(truncateCell(column.name, column.width))))
@@ -145,7 +145,7 @@ export function renderDataQuery(
   runtime: CliRuntime,
   options: RenderDataQueryOptions,
 ): RenderDataQueryResult {
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stdout);
   const widthBudget = resolveRenderWidth(runtime);
   const visibleColumns = resolveVisibleColumns(options.columns, options.rows, widthBudget);
   const resultRowsLabel = options.truncated
@@ -182,7 +182,7 @@ export function renderDataQueryCodexDraft(options: {
   introspection: DataQueryCodexIntrospection;
   runtime: CliRuntime;
 }): void {
-  const pc = getCliColors(options.runtime);
+  const pc = getCliColors(options.runtime, options.runtime.stdout);
   const view = buildCodexIntrospectionView(options.introspection);
 
   const lines = [

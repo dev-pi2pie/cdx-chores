@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Profile Helper"
 created-date: 2026-06-16
-modified-date: 2026-08-15
+modified-date: 2026-08-22
 status: completed
 agent: codex
 ---
@@ -34,14 +34,26 @@ Common options:
 - `--keep-codex-report`: write a diagnostic Codex report sidecar.
 - `--codex-report-output <path>`: explicit diagnostic report JSON path.
 - `--overwrite`: allow selected output artifacts to be replaced.
+- `--codex-timeout <duration>`: command-local deadline for each Codex profile
+  request attempt.
 
 Example:
 
 ```bash
 cdx-chores md pdf-profile codex ./report.md \
   --intent "wide internal report with readable code blocks" \
+  --codex-timeout 2m \
   --output ./report-profile.yml
 ```
+
+The timeout option changes request timing only; it does not change whether the
+signal ladder calls Codex. When omitted, Codex profile requests keep the
+30-second default. Each request receives its own per-attempt window rather than
+sharing one command-wide budget.
+
+For the shared duration grammar and the distinction between timeouts, retries,
+and recovery, see
+[Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md).
 
 Render with the accepted profile:
 
@@ -374,6 +386,7 @@ template-only behavior.
 
 ## Related Docs
 
+- [Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md)
 - [Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md)
 - [Markdown PDF Usage](markdown-pdf-usage.md)
 - [Markdown PDF Codex Template Helper](markdown-pdf-codex-template-helper.md)

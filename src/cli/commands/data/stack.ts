@@ -12,8 +12,19 @@ import {
   type DataStackInputFormat,
   type DataStackSchemaModeOption,
 } from "../../data-stack/types";
+import { createCodexTimeoutDurationOption } from "../../options/codex-timeout-option";
 import { collectCsvListOption, parseNonNegativeIntegerOption } from "../../options/parsers";
 import type { CliRuntime } from "../../types";
+
+interface DataStackCommandActions {
+  actionDataStack: typeof actionDataStack;
+  actionDataStackReplay: typeof actionDataStackReplay;
+}
+
+const defaultDataStackCommandActions: DataStackCommandActions = {
+  actionDataStack,
+  actionDataStackReplay,
+};
 
 function parseDataStackInputFormatOption(value: string): DataStackInputFormat {
   const normalized = value.trim().toLowerCase();
@@ -45,7 +56,11 @@ function parseDataStackDuplicatePolicyOption(value: string): DataStackDuplicateP
   );
 }
 
-export function registerDataStackCommand(dataCommand: Command, runtime: CliRuntime): void {
+export function registerDataStackCommand(
+  dataCommand: Command,
+  runtime: CliRuntime,
+  actions: DataStackCommandActions = defaultDataStackCommandActions,
+): void {
   const stackCommand = dataCommand
     .command("stack")
     .description("Assemble one logical table from multiple input files and directories")
@@ -88,6 +103,12 @@ export function registerDataStackCommand(dataCommand: Command, runtime: CliRunti
       "--codex-assist",
       "Ask Codex for advisory stack recommendations and write a report (requires --dry-run)",
     )
+    .addOption(
+      createCodexTimeoutDurationOption(
+        "--codex-timeout",
+        "Timeout for each Codex assist request attempt (for example: 30s, 2m)",
+      ),
+    )
     .option("--codex-report-output <path>", "Write the Codex advisory report to a custom JSON path")
     .option("-o, --output <path>", "Write the stacked table to a .csv, .tsv, or .json file")
     .option("--overwrite", "Overwrite output file if it already exists", false)
@@ -108,6 +129,7 @@ export function registerDataStackCommand(dataCommand: Command, runtime: CliRunti
         options: {
           codexAssist?: boolean;
           codexReportOutput?: string;
+          codexTimeout?: number;
           columns?: string[];
           dryRun?: boolean;
           excludeColumns?: string[];
@@ -126,9 +148,10 @@ export function registerDataStackCommand(dataCommand: Command, runtime: CliRunti
           uniqueBy?: string[];
         },
       ) => {
-        await actionDataStack(runtime, {
+        await actions.actionDataStack(runtime, {
           codexAssist: options.codexAssist,
           codexReportOutput: options.codexReportOutput,
+          codexTimeoutMs: options.codexTimeout,
           columns: (options.columns?.length ?? 0) > 0 ? options.columns : undefined,
           dryRun: options.dryRun,
           excludeColumns:
@@ -164,7 +187,7 @@ export function registerDataStackCommand(dataCommand: Command, runtime: CliRunti
           output?: string;
         },
       ) => {
-        await actionDataStackReplay(runtime, {
+        await actions.actionDataStackReplay(runtime, {
           autoClean: options.autoClean,
           output: options.output ?? (stackCommand.opts<{ output?: string }>().output || undefined),
           record,

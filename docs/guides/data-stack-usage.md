@@ -1,7 +1,7 @@
 ---
 title: "Data Stack Usage"
 created-date: 2026-04-24
-modified-date: 2026-08-16
+modified-date: 2026-08-22
 status: completed
 agent: codex
 ---
@@ -45,7 +45,7 @@ Current command boundary:
 ### Command shape
 
 ```bash
-cdx-chores data stack <source...> --output <path> [--input-format <format>] [--pattern <glob>] [--recursive] [--max-depth <n>] [--no-header] [--columns <name,name,...>] [--schema-mode strict|union-by-name|auto] [--union-by-name] [--exclude-columns <name,name,...>] [--unique-by <name,name,...>] [--on-duplicate preserve|report|reject] [--dry-run] [--plan-output <path>] [--codex-assist] [--codex-report-output <path>] [--overwrite]
+cdx-chores data stack <source...> --output <path> [--input-format <format>] [--pattern <glob>] [--recursive] [--max-depth <n>] [--no-header] [--columns <name,name,...>] [--schema-mode strict|union-by-name|auto] [--union-by-name] [--exclude-columns <name,name,...>] [--unique-by <name,name,...>] [--on-duplicate preserve|report|reject] [--dry-run] [--plan-output <path>] [--codex-assist] [--codex-timeout <duration>] [--codex-report-output <path>] [--overwrite]
 cdx-chores data stack replay <record> [--output <path>] [--auto-clean]
 ```
 
@@ -144,6 +144,11 @@ Duplicate and unique-key behavior:
 Codex assist behavior:
 
 - direct `--codex-assist` is valid only with `--dry-run`
+- `--codex-timeout <duration>` changes the per-attempt limit for the direct
+  Codex assist request
+- `--codex-timeout` alone does not enable `--codex-assist`; without assist, the
+  deterministic stack flow remains unchanged
+- direct Codex assist does not automatically retry a failed request
 - `--codex-report-output <path>` writes the advisory report to a custom JSON path
 - interactive Codex review uses the same advisory report model, but it appears as a contextual checkpoint only when deterministic diagnostics show useful signals
 - Codex reports link to the analyzed stack plan through payload metadata
@@ -223,8 +228,13 @@ cdx-chores data stack ./examples/playground/stack-cases/csv-matching-headers --p
 Write an advisory Codex report during dry-run:
 
 ```bash
-cdx-chores data stack ./examples/playground/stack-cases/csv-union --pattern "*.csv" --schema-mode union-by-name --output ./examples/playground/.tmp-tests/union.stack.json --dry-run --codex-assist --codex-report-output ./examples/playground/.tmp-tests/union.codex-report.json
+cdx-chores data stack ./examples/playground/stack-cases/csv-union --pattern "*.csv" --schema-mode union-by-name --output ./examples/playground/.tmp-tests/union.stack.json --dry-run --codex-assist --codex-timeout 2m --codex-report-output ./examples/playground/.tmp-tests/union.codex-report.json
 ```
+
+See
+[Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md)
+for the shared duration grammar, default and maximum, and failure-recovery
+guidance.
 
 Recursive directory discovery:
 
@@ -351,4 +361,5 @@ Guarded clean behavior:
 
 ## Related Guides
 
+- [Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md)
 - [Patterns, Placeholders, and Templates](patterns-placeholders-and-templates.md)

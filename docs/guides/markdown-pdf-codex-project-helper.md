@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Project Helper"
 created-date: 2026-07-05
-modified-date: 2026-08-15
+modified-date: 2026-08-22
 status: completed
 agent: codex
 ---
@@ -38,6 +38,8 @@ Common options:
 - `--codex-report-output <path>`: explicit diagnostic report JSON path.
 - `--overwrite`: allow selected project-generated outputs to be replaced when
   safe.
+- `--codex-timeout <duration>`: command-local deadline for each Codex project
+  request attempt.
 
 Example:
 
@@ -45,9 +47,21 @@ Example:
 cdx-chores md pdf-project codex ./report.md \
   --intent "client report with a cover image, table of contents, readable code, and dense tables" \
   --cover-image ./cover.jpg \
+  --codex-timeout 2m \
   --output ./report-pdf-project \
   --keep-codex-report
 ```
+
+The timeout option changes request timing only; it does not enable another
+Codex path. When omitted, project Codex requests keep the 30-second default.
+The Profile phase, Template phase, and any validation-driven application-repair
+request each receive an independent per-attempt window using the same value;
+they do not consume one shared project-wide budget. An application repair is
+semantic recovery, not a generic automatic retry of a failed request.
+
+For the shared duration grammar and the distinction between timeouts, retries,
+and recovery, see
+[Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md).
 
 ## Generated Project
 
@@ -261,6 +275,7 @@ bundle-relative paths plus source basenames and metadata.
 
 ## Related Docs
 
+- [Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md)
 - [Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md)
 - [Markdown PDF Usage](markdown-pdf-usage.md)
 - [Markdown PDF Project Codex Helper Research](../researches/research-2026-07-03-markdown-pdf-project-codex-helper.md)

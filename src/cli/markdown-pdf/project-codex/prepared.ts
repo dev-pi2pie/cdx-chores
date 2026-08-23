@@ -314,6 +314,7 @@ export async function prepareMdPdfProjectCodex(
       runtime,
       signals,
       state,
+      timeoutMs: options.timeoutMs,
     });
     const completeTemplatePhase = await runMdPdfProjectCodexTemplatePhase({
       outputPlan,
@@ -323,6 +324,7 @@ export async function prepareMdPdfProjectCodex(
       signals,
       state,
       templateCodexRunner: options.templateCodexRunner,
+      timeoutMs: options.timeoutMs,
     });
     const completedPhaseProgressStatus = projectProgressStatus({
       profilePhase,

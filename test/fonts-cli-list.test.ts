@@ -2,6 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { actionFontList } from "../src/cli/actions";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 
+const ANSI_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
+const ANSI_START = `${String.fromCharCode(27)}[`;
+
 describe("font CLI list", () => {
   test("prints discovered fonts as JSON with an injected runner", async () => {
     const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
@@ -185,6 +188,23 @@ describe("font CLI list", () => {
     expect(stdout.text).not.toContain("private timeout detail");
     expect(stderr.text).toBe("Warning: fontconfig discovery failed.\n");
     expect(stderr.text).not.toContain("private timeout detail");
+  });
+
+  test("bolds and colors only discovery warning labels on eligible stderr", async () => {
+    const { runtime, stderr } = createActionTestRuntime();
+    runtime.platform = "linux";
+    (runtime.stderr as NodeJS.WritableStream & { isTTY?: boolean }).isTTY = true;
+
+    await actionFontList(runtime, {
+      discovery: "fontconfig",
+      runner: async () => ({ ok: false, stdout: "", stderr: "private failure detail" }),
+    });
+
+    expect(stderr.text).toBe(
+      "\u001b[1m\u001b[33mWarning:\u001b[39m\u001b[22m fontconfig discovery failed.\n",
+    );
+    expect(stderr.text.replace(ANSI_PATTERN, "")).toBe("Warning: fontconfig discovery failed.\n");
+    expect(stderr.text.slice(stderr.text.indexOf(" fontconfig"))).not.toContain(ANSI_START);
   });
 
   test("uses full names and removes duplicate display entries", async () => {

@@ -75,6 +75,78 @@ function adaptedTemplateResponse(): string {
 }
 
 describe("cli action modules: md pdf-project codex prepared artifact", () => {
+  test("reuses one timeout independently for profile, template, and repair requests", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-timeout", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "base.yml"), BASE_PROFILE, "utf8");
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n\nBody.\n", "utf8");
+      await writeFile(join(fixtureDir, "cover.png"), minimalPng(1200, 800));
+      const profileTimeouts: Array<number | undefined> = [];
+      const templateTimeouts: Array<number | undefined> = [];
+      let templateCallCount = 0;
+      const { runtime } = createActionTestRuntime({
+        cwd: fixtureDir,
+        now: () => new Date("2026-07-04T08:00:00.000Z"),
+      });
+
+      const prepared = await prepareMdPdfProjectCodex(runtime, {
+        baseProfile: "base.yml",
+        coverImage: "cover.png",
+        dryRun: true,
+        input: "report.md",
+        intent: "Create a cover-led project.",
+        output: "project-output",
+        profileCodexRunner: async (options) => {
+          profileTimeouts.push(options.timeoutMs);
+          return adaptedProfileResponse();
+        },
+        templateCodexRunner: async (options) => {
+          templateTimeouts.push(options.timeoutMs);
+          templateCallCount += 1;
+          return templateCallCount === 1
+            ? adaptedTemplateResponse().replace("assets/cover.png", "assets/other.png")
+            : adaptedTemplateResponse();
+        },
+        timeoutMs: 120_000,
+      });
+
+      expect(prepared.binding.validation.decisionMode).toBe("adapted");
+      expect(profileTimeouts).toEqual([120_000]);
+      expect(templateTimeouts).toEqual([120_000, 120_000]);
+    });
+  });
+
+  test("surfaces a structurally preserved project profile timeout", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-timeout-failure", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "base.yml"), BASE_PROFILE, "utf8");
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n\nBody.\n", "utf8");
+      const timeoutError = new Error("private transport details");
+      timeoutError.name = "TimeoutError";
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+
+      await expectCliError(
+        () =>
+          prepareMdPdfProjectCodex(runtime, {
+            baseProfile: "base.yml",
+            dryRun: true,
+            input: "report.md",
+            intent: "Create an article project.",
+            output: "project-output",
+            profileCodexRunner: async () => {
+              throw timeoutError;
+            },
+            timeoutMs: 120_000,
+          }),
+        {
+          code: "MARKDOWN_PDF_PROJECT_PROFILE_CODEX_FAILED",
+          exitCode: 1,
+          messageIncludes:
+            "Codex Markdown PDF project profile request timed out after the 2m per-attempt limit.",
+        },
+      );
+      expect(await pathExists(join(fixtureDir, "project-output"))).toBe(false);
+    });
+  });
+
   test("stops injected progress as error when typed Project validation rejects cover incompatibility", async () => {
     await withTempFixtureDir(
       "md-pdf-project-codex-progress-validation-error",

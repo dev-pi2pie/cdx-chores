@@ -283,6 +283,7 @@ describe("cli action modules: rename file", () => {
 
       let imageCalls = 0;
       let docCalls = 0;
+      const docTimeouts: Array<number | undefined> = [];
       const result = await actionRenameFile(runtime, {
         path: toRepoRelativePath(docPath),
         prefix: "doc",
@@ -294,6 +295,7 @@ describe("cli action modules: rename file", () => {
         },
         codexDocsTitleSuggester: async (options) => {
           docCalls += 1;
+          docTimeouts.push(options.timeoutMs);
           return {
             suggestions: options.documentPaths.map((path) => ({
               path,
@@ -308,6 +310,7 @@ describe("cli action modules: rename file", () => {
       expect(result.changed).toBe(true);
       expect(imageCalls).toBe(0);
       expect(docCalls).toBe(1);
+      expect(docTimeouts).toEqual([30_000]);
       expect(stdout.text).toContain("Codex: analyzing 1 document file(s)...");
       expect(stdout.text).toContain("Codex doc titles: 1/1 document file(s) suggested");
       expect(stdout.text).toContain("- weekly notes.md -> doc-");
@@ -315,6 +318,51 @@ describe("cli action modules: rename file", () => {
 
       const csvText = await readFile(result.planCsvPath!, "utf8");
       expect(csvText).toContain("weekly sync notes");
+    });
+  });
+
+  test("actionRenameFile forwards the shared timeout and document tuning options", async () => {
+    await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
+      const { runtime, stderr } = createCapturedRuntime();
+      const { filePath: docPath } = await createRenameFileFixture(
+        fixtureDir,
+        "rename-file-codex-shared-timeout",
+        "project notes.md",
+        {
+          content: "# Project Notes\n\nCurrent decisions.\n",
+        },
+      );
+
+      const calls: Array<{
+        timeoutMs?: number;
+        retries?: number;
+        batchSize?: number;
+      }> = [];
+      const result = await actionRenameFile(runtime, {
+        path: toRepoRelativePath(docPath),
+        dryRun: true,
+        codex: true,
+        codexTimeoutMs: 45_000,
+        codexDocsRetries: 2,
+        codexDocsBatchSize: 1,
+        codexDocsTitleSuggester: async (options) => {
+          calls.push({
+            timeoutMs: options.timeoutMs,
+            retries: options.retries,
+            batchSize: options.batchSize,
+          });
+          return {
+            suggestions: options.documentPaths.map((path) => ({
+              path,
+              title: "project notes",
+            })),
+          };
+        },
+      });
+      trackPlanCsv(result.planCsvPath);
+
+      expect(stderr.text).toBe("");
+      expect(calls).toEqual([{ timeoutMs: 45_000, retries: 2, batchSize: 1 }]);
     });
   });
 

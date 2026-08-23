@@ -11,6 +11,7 @@ import { actionMdPdfProfileCodex } from "../src/cli/actions";
 import type { CodexProgressPresenter } from "../src/cli/actions/codex-progress";
 import { readMarkdownPdfCodexReportArtifact } from "../src/cli/markdown-pdf/codex-report";
 import { readMarkdownPdfProfileFile } from "../src/cli/markdown-pdf";
+import { prepareMarkdownPdfProfileCodex } from "../src/cli/markdown-pdf/profile-codex";
 import type { NormalizedMarkdownPdfProfileIdentity } from "../src/cli/markdown-pdf/profile";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "./helpers/cli-test-utils";
@@ -101,6 +102,83 @@ function candidateSummaryIds(facts: Record<string, unknown>): string[] {
 }
 
 describe("cli action modules: md pdf-profile codex", () => {
+  test("forwards an injected per-request timeout through the prepared profile request", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-timeout", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n\nBody.\n", "utf8");
+      const timeoutCalls: Array<number | undefined> = [];
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+
+      await actionMdPdfProfileCodex(runtime, {
+        codexRunner: async (options) => {
+          timeoutCalls.push(options.timeoutMs);
+          return await adaptedRunner("article")();
+        },
+        dryRun: true,
+        input: "report.md",
+        intent: "Create an article profile.",
+        output: "profile.yml",
+        timeoutMs: 120_000,
+      });
+
+      expect(timeoutCalls).toEqual([120_000]);
+    });
+  });
+
+  test("surfaces a structurally preserved profile timeout with the configured duration", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-timeout-failure", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n\nBody.\n", "utf8");
+      const timeoutError = new Error("private transport details");
+      timeoutError.name = "TimeoutError";
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+
+      const prepared = await prepareMarkdownPdfProfileCodex(runtime, {
+        codexRunner: async () => {
+          throw timeoutError;
+        },
+        dryRun: true,
+        input: "report.md",
+        intent: "Create an article profile.",
+        output: "profile.yml",
+        timeoutMs: 120_000,
+      });
+
+      expect(prepared.kind).toBe("failed");
+      if (prepared.kind !== "failed") {
+        throw new Error("Expected profile preparation to fail");
+      }
+      expect(prepared.failureMessage).toBe(
+        "Codex Markdown PDF profile request timed out after the 2m per-attempt limit.",
+      );
+      expect(prepared.failureMessage).not.toContain("private transport details");
+    });
+  });
+
+  test("keeps an ordinary profile abort on the existing unavailable path", async () => {
+    await withTempFixtureDir("md-pdf-profile-codex-abort-failure", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "report.md"), "# Report\n\nBody.\n", "utf8");
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+
+      const prepared = await prepareMarkdownPdfProfileCodex(runtime, {
+        codexRunner: async () => {
+          throw new DOMException("request cancelled", "AbortError");
+        },
+        dryRun: true,
+        input: "report.md",
+        intent: "Create an article profile.",
+        output: "profile.yml",
+      });
+
+      expect(prepared.kind).toBe("failed");
+      if (prepared.kind !== "failed") {
+        throw new Error("Expected profile preparation to fail");
+      }
+      expect(prepared.failureMessage).toBe(
+        "Codex Markdown PDF profile helper is unavailable. request cancelled",
+      );
+      expect(prepared.failureMessage).not.toContain("timed out");
+    });
+  });
+
   test("writes a generated profile with Codex identity and optional report", async () => {
     await withTempFixtureDir("md-pdf-profile-codex-action", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "report.md");

@@ -60,7 +60,7 @@ function buildDuckDbDoctorPayload(
 }
 
 function renderDuckDbProbe(runtime: CliRuntime, probe: DuckDbManagedExtensionProbe): void {
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stdout);
   printLine(
     runtime.stdout,
     `- ${pc.bold(probe.name)}: installed=${probe.installed ? "yes" : "no"}, loadability=${probe.loadable ? "yes" : "no"}, installability=${formatInstallability(probe.installable)}`,
@@ -109,7 +109,7 @@ export async function actionDataDuckDbDoctor(
       return;
     }
 
-    const pc = getCliColors(runtime);
+    const pc = getCliColors(runtime, runtime.stdout);
     printLine(runtime.stdout, pc.bold(pc.cyan("cdx-chores data duckdb doctor")));
     printLine(runtime.stdout, `${pc.dim("Platform:")} ${pc.white(runtime.platform)}`);
     printLine(runtime.stdout, `${pc.dim("Node.js:")} ${pc.white(process.version)}`);

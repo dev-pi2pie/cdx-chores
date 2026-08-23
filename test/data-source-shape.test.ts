@@ -14,7 +14,83 @@ import {
 } from "../src/cli/duckdb/source-shape";
 import { REPO_ROOT, withTempFixtureDir } from "./helpers/cli-test-utils";
 
+const SOURCE_SHAPE_SUGGESTION_CONTEXT = {
+  currentIntrospection: {
+    columns: [{ name: "column_1", type: "VARCHAR" }],
+    sampleRows: [{ column_1: "Project name" }],
+    selectedSource: "Sheet1",
+    truncated: false,
+  },
+  sheetSnapshot: {
+    mergedRanges: [],
+    mergedRangesTruncated: false,
+    nonEmptyCellCount: 1,
+    nonEmptyRowCount: 1,
+    rows: [
+      {
+        cellCount: 1,
+        cells: [{ ref: "A1", value: "Project name" }],
+        firstRef: "A1",
+        lastRef: "A1",
+        rowNumber: 1,
+      },
+    ],
+    rowsTruncated: false,
+    sheetName: "Sheet1",
+    usedRange: "A1:A1",
+  },
+};
+
+function wrapFailure(error: Error): Error & { cause: Error } {
+  const wrapped = new Error("SDK request failed") as Error & { cause: Error };
+  wrapped.cause = error;
+  return wrapped;
+}
+
 describe("data source shape artifacts", () => {
+  test("formats a direct source-shape timeout with the configured per-attempt limit", async () => {
+    const result = await suggestDataSourceShapeWithCodex({
+      context: SOURCE_SHAPE_SUGGESTION_CONTEXT,
+      timeoutMs: 120_000,
+      workingDirectory: REPO_ROOT,
+      runner: async () => {
+        throw new DOMException("request deadline reached", "TimeoutError");
+      },
+    });
+
+    expect(result).toEqual({
+      errorMessage:
+        "Codex source-shape suggestion request timed out after the 2m per-attempt limit.",
+    });
+  });
+
+  test("formats a wrapped source-shape timeout with the shared default", async () => {
+    const result = await suggestDataSourceShapeWithCodex({
+      context: SOURCE_SHAPE_SUGGESTION_CONTEXT,
+      workingDirectory: REPO_ROOT,
+      runner: async () => {
+        throw wrapFailure(new DOMException("request deadline reached", "TimeoutError"));
+      },
+    });
+
+    expect(result).toEqual({
+      errorMessage:
+        "Codex source-shape suggestion request timed out after the 30s per-attempt limit.",
+    });
+  });
+
+  test("preserves the source-shape message for an ordinary abort", async () => {
+    const result = await suggestDataSourceShapeWithCodex({
+      context: SOURCE_SHAPE_SUGGESTION_CONTEXT,
+      workingDirectory: REPO_ROOT,
+      runner: async () => {
+        throw new DOMException("request cancelled", "AbortError");
+      },
+    });
+
+    expect(result).toEqual({ errorMessage: "request cancelled" });
+  });
+
   test("generateDataSourceShapeFileName uses the shared filename family", () => {
     expect(generateDataSourceShapeFileName()).toMatch(/^data-source-shape-[0-9a-f]{10}\.json$/);
   });

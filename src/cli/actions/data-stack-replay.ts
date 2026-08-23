@@ -11,6 +11,7 @@ import { normalizeDataStackOutputFormat } from "../data-stack/formats";
 import { readDataStackPlanArtifact, type DataStackPlanArtifact } from "../data-stack/plan";
 import { prepareDataStackExecution, type PreparedDataStackExecution } from "../data-stack/prepare";
 import { CliError } from "../errors";
+import { styleCliDiagnosticLabel } from "../diagnostic-color";
 import { displayPath, printLine } from "./shared";
 import { writePreparedDataStackOutput } from "./data-stack";
 
@@ -53,13 +54,13 @@ async function warnOnFingerprintDrift(
       ) {
         printLine(
           runtime.stderr,
-          `Warning: source fingerprint changed for ${displayPath(runtime, source.path)}`,
+          `${styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:")} source fingerprint changed for ${displayPath(runtime, source.path)}`,
         );
       }
     } catch {
       printLine(
         runtime.stderr,
-        `Warning: source fingerprint could not be checked for ${displayPath(runtime, source.path)}`,
+        `${styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:")} source fingerprint could not be checked for ${displayPath(runtime, source.path)}`,
       );
     }
   }

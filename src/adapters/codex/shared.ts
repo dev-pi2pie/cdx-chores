@@ -4,6 +4,11 @@ import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { sleep } from "../../utils/sleep";
+import {
+  classifyCodexRequestFailure,
+  formatCodexTimeoutFailure,
+  type CodexRequestFailureKind,
+} from "../../utils/codex-request-failure";
 
 export interface CodexEnvironmentInspection {
   authSessionAvailable: boolean;
@@ -42,6 +47,12 @@ function inspectCodexPathOverride(codexPathOverride: string): string | undefined
 export interface CodexFilenameTitleSuggestionResult<TSuggestion> {
   suggestions: TSuggestion[];
   errorMessage?: string;
+}
+
+export interface CodexBatchFailure {
+  kind: CodexRequestFailureKind;
+  message: string;
+  attemptsUsed: number;
 }
 
 export const CODEX_FILENAME_TITLE_OUTPUT_SCHEMA = {
@@ -150,23 +161,31 @@ export async function executeBatchesWithRetries<TBatch, TSuggestion>(options: {
   batches: TBatch[];
   retries: number;
   runBatch: (batch: TBatch) => Promise<CodexFilenameTitleSuggestionResult<TSuggestion>>;
-}): Promise<{ suggestions: TSuggestion[]; batchErrors: string[] }> {
+}): Promise<{
+  suggestions: TSuggestion[];
+  batchFailures: CodexBatchFailure[];
+}> {
   const suggestions: TSuggestion[] = [];
-  const batchErrors: string[] = [];
+  const batchFailures: CodexBatchFailure[] = [];
 
   for (const batch of options.batches) {
     let batchResult: CodexFilenameTitleSuggestionResult<TSuggestion> | null = null;
     let lastError = "";
+    let lastFailureKind: CodexRequestFailureKind = "other";
+    let attemptsUsed = 0;
 
     for (let attempt = 0; attempt <= options.retries; attempt += 1) {
+      attemptsUsed = attempt + 1;
       try {
         batchResult = await options.runBatch(batch);
         lastError = batchResult.errorMessage ?? "";
+        lastFailureKind = "other";
         if (!batchResult.errorMessage) {
           break;
         }
       } catch (error) {
         lastError = error instanceof Error ? error.message : String(error);
+        lastFailureKind = classifyCodexRequestFailure(error);
         batchResult = { suggestions: [], errorMessage: lastError };
       }
 
@@ -179,11 +198,15 @@ export async function executeBatchesWithRetries<TBatch, TSuggestion>(options: {
       suggestions.push(...batchResult.suggestions);
     }
     if (lastError) {
-      batchErrors.push(lastError);
+      batchFailures.push({
+        kind: lastFailureKind,
+        message: lastError,
+        attemptsUsed,
+      });
     }
   }
 
-  return { suggestions, batchErrors };
+  return { suggestions, batchFailures };
 }
 
 export function summarizeBatchErrors(
@@ -195,6 +218,39 @@ export function summarizeBatchErrors(
   }
   const uniqueErrors = [...new Set(batchErrors)];
   return `${hasSuggestions ? "Partial Codex suggestions." : "Codex title generation failed."} ${uniqueErrors[0]}${uniqueErrors.length > 1 ? ` (+${uniqueErrors.length - 1} more error variant(s))` : ""}`;
+}
+
+export function summarizeCodexBatchFailures(options: {
+  batchFailures: CodexBatchFailure[];
+  hasSuggestions: boolean;
+  requestLabel: string;
+  timeoutMs: number;
+}): string | undefined {
+  const timeoutFailure = options.batchFailures.find((failure) => failure.kind === "timeout");
+  if (!timeoutFailure) {
+    return summarizeBatchErrors(
+      options.batchFailures.map((failure) => failure.message),
+      options.hasSuggestions,
+    );
+  }
+
+  const prefix = options.hasSuggestions
+    ? "Partial Codex suggestions."
+    : "Codex title generation failed.";
+  const timeoutMessage = formatCodexTimeoutFailure({
+    requestLabel: options.requestLabel,
+    timeoutMs: options.timeoutMs,
+    attemptsUsed: timeoutFailure.attemptsUsed,
+  });
+  const otherFailureCount = options.batchFailures.filter(
+    (failure) => failure.kind !== "timeout",
+  ).length;
+  const otherFailureMessage =
+    otherFailureCount > 0
+      ? ` ${otherFailureCount} additional non-timeout batch failure(s) occurred.`
+      : "";
+
+  return `${prefix} ${timeoutMessage}${otherFailureMessage}`;
 }
 
 export async function inspectCodexEnvironment(): Promise<CodexEnvironmentInspection> {

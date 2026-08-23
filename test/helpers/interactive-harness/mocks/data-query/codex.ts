@@ -18,6 +18,10 @@ export function installDataQueryCodexMock(context: HarnessRunnerContext): void {
       context.recordAction("data:query:codex-draft", {
         format: options.format,
         intent: options.intent,
+        ...(context.scenario.codexTimeoutMs !== undefined ||
+        context.scenario.captureCodexTimeouts === true
+          ? { timeoutMs: options.timeoutMs }
+          : {}),
         ...(typeof options.introspection === "object" &&
         options.introspection !== null &&
         "selectedHeaderRow" in options.introspection &&
@@ -64,7 +68,10 @@ export function installDataQueryCodexMock(context: HarnessRunnerContext): void {
       });
 
       if (context.scenario.dataQueryCodexErrorMessage) {
-        return { errorMessage: context.scenario.dataQueryCodexErrorMessage };
+        return {
+          errorMessage: context.scenario.dataQueryCodexErrorMessage,
+          failureKind: context.scenario.dataQueryCodexFailureKind,
+        };
       }
 
       return {
