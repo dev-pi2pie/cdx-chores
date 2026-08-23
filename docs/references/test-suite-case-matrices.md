@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Case Matrices And Catalog"
 created-date: 2026-08-23
-modified-date: 2026-08-24
+modified-date: 2026-08-23
 status: completed
 agent: codex
 ---
@@ -202,8 +202,9 @@ suites.
 | 6.15  | Shared fixtures in `test/cli-actions-rename-file.test.ts`                        | `test/rename/actions/file-support.ts`                                                  | Extract only file-action fixtures shared by the four admitted action owners.                                                                         |
 | 6.15  | Shared timeout fixture in `test/adapters-codex-rename-timeout.test.ts`            | `test/rename/adapters/title-suggester-support.ts`                                      | Extract the adapter timeout-signal fixture shared by image and document title suggesters.                                                            |
 | 6.18  | Markdown DOCX behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | `test/markdown-docx/interactive/mock-action.ts`                                       | Executed: the final feature residual moved, neutral mock composition was updated, and the empty catch-all was deleted; no harness scenario field moved. |
-| 6.21  | `test/helpers/virtual-terminal.ts`                                              | `test/cli-foundations/inline-rendering/virtual-terminal.ts`                           | Move atomically with its three path, text, and renderer consumers; no compatibility facade remains because every consumer moves in this batch.          |
-| 6.21  | Shared fake streams and render tick in `test/cli-text-inline.test.ts`            | `test/cli-foundations/text-inline/prompt-fixtures.ts`                                 | Extract only the split suite's feature-neutral stream fixtures and tick helper; all three admitted text-controller owners consume the local support.    |
+| 6.21  | `test/helpers/virtual-terminal.ts`                                              | `test/cli-foundations/inline-rendering/virtual-terminal.ts`                           | Executed atomically with its three path, text, and renderer consumers; no compatibility facade remains because every consumer moved in this batch.       |
+| 6.21  | Shared fake streams and render tick in `test/cli-text-inline.test.ts`            | `test/cli-foundations/text-inline/prompt-fixtures.ts`                                 | Executed by extracting only the split suite's feature-neutral stream fixtures and tick helper for the three admitted text-controller owners.             |
+| 6.21  | Real select integration scenario in `test/cli-interactive-menu-prompt.test.ts`   | `test/cli-foundations/interactive/real-select-search-fixture.ts`                      | Added during stabilization so an unrelated historical `mock.module("@inquirer/prompts")` cannot replace the real Inquirer boundary under full discovery. |
 
 ### Phase 3 Data Query Path Contract
 
@@ -3142,9 +3143,24 @@ and the complementary compressed-mode Video routing owner. It passes 82 tests
 with 389 assertions across seven files. No current guide names an admitted
 historical test or support path.
 
-Only the two recorded support changes are admitted. Neutral Interactive
-harness movement, `test/helpers/cli-test-utils.ts`, and compatibility-facade
-cleanup remain Phase 7 work. No production change is admitted.
+The two planned support changes were executed. Full-suite discovery then
+exposed a historical global `mock.module("@inquirer/prompts")` collision with
+the moved real-select case, so the matrix records one additional suite-local
+subprocess fixture. Three text-controller owners also use query-isolated
+production imports to avoid the historical text-inline mock. These bounded
+test-runtime changes preserve the admitted cases and assertions without
+changing production or shared harness code. Neutral Interactive harness
+movement, `test/helpers/cli-test-utils.ts`, and compatibility-facade cleanup
+remain Phase 7 work.
+
+Phase 6.21 executed the CLI-foundations split over `10f7eeef..84c3d3b9`, the
+mixed-root split over `10f7eeef..337a677f`, and the prompt-isolation follow-up
+at `ef02de90`. The destination slice reproduces exactly 213 tests with 580
+assertions across 42 files, and the adjacent safety set reproduces 82 tests
+with 389 assertions across seven files. The complete suite passes 2,621 tests
+with 14,870 assertions across 354 files. `bunx tsc --noEmit`, `bun run lint`,
+`bun run format:check`, `bun run build`, and `git diff --check` are clean.
+Pre-commit test-quality and maintainability review found no material issue.
 
 ##### Phase 6.21 Focused Validation Commands
 

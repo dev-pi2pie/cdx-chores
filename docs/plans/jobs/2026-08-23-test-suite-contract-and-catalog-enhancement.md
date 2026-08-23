@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Contract And Catalog Enhancement Execution"
 created-date: 2026-08-23
-modified-date: 2026-08-24
+modified-date: 2026-08-23
 status: in-progress
 agent: codex
 ---
@@ -2009,13 +2009,15 @@ Review gate:
 
 ### Phase 6.21: CLI Foundations And Mixed-Root Decomposition
 
-Status: `admission ready`
+Status: `in-review`
 
 Admission predecessor: `dd74aa3e`
 
-Batch base: pending admission checkpoint
+Batch base: `10f7eeef`
 
-Implementation tip: pending
+Implementation tip: `ef02de90`
+
+Execution and path migration range: `10f7eeef..ef02de90`
 
 Evidence tip: pending
 
@@ -2046,6 +2048,39 @@ The matrix owns the exact source-to-target and mixed-case execution manifests.
 Neutral Interactive harness movement, routing-facade cleanup, global CLI test
 helpers, and caller-owned built-CLI cleanup remain Phase 7 work.
 
+Implementation used three semantic checkpoints:
+
+- `84c3d3b9` split the CLI-foundations contracts and moved their local support
+- `337a677f` split the mixed routing and command-UX roots into accepted owners
+- `ef02de90` isolated the moved prompt contracts from unrelated historical Bun
+  module mocks without changing production code
+
+The two approved Markdown PDF routing cases are the only removals. All other
+admitted runtime cases and assertions are preserved, including the 12
+contextual-tip runtime rows and the 10-, 9-, and 4-case text-controller split.
+The focused and adjacent results reproduce their exact admission targets:
+
+| Boundary                                      | Passed | Failed | Assertions | Files |
+| --------------------------------------------- | -----: | -----: | ---------: | ----: |
+| Phase 6.21 destination slice                  |    213 |      0 |        580 |    42 |
+| Exact adjacent safety set                     |     82 |      0 |        389 |     7 |
+| Historical prompt-mock interference reproducer |     45 |      0 |        144 |     6 |
+| Complete repository suite                     |  2,621 |      0 |     14,870 |   354 |
+
+Full discovery initially exposed that
+`test/cli-interactive-markdown-pdf/formal-guide-prompts.test.ts` leaves global
+`@inquirer/prompts` and text-inline mocks active. The old monolithic load order
+had hidden that coupling. The three new text-controller owners now use unique
+query imports, while the real Inquirer q-search contract runs through the
+suite-local `real-select-search-fixture.ts` subprocess. The deterministic
+six-file interference set and the complete suite are both clean; broad mock
+cleanup remains explicitly deferred to Phase 7.
+
+Repository checks are clean: `bun run format:check`, `bun run lint`,
+`bunx tsc --noEmit`, `bun run build`, and `git diff --check`. Pre-commit
+test-quality and maintainability review found no material issue. Current-guide
+scanning found no historical path requiring an update.
+
 Review gate:
 
 - [x] reproduce all 24 selectors and the 215-test, 588-assertion baseline
@@ -2054,11 +2089,11 @@ Review gate:
 - [x] record the two exact removals and both table-driven consolidations
 - [x] baseline the 82-test, 389-assertion adjacent safety set
 - [x] confirm current guides and non-doc scripts/configuration need no path edit
-- [ ] create the admission checkpoint and record it as the batch base
-- [ ] implement only the admitted moves, splits, merges, rename, and removals
-- [ ] reproduce the exact 213-test, 580-assertion, 42-file focused post-state
-- [ ] run the adjacent, complete-suite, and repository checks
-- [ ] record all path/support correspondence rows and execution evidence
+- [x] create the admission checkpoint and record it as the batch base
+- [x] implement only the admitted moves, splits, merges, rename, and removals
+- [x] reproduce the exact 213-test, 580-assertion, 42-file focused post-state
+- [x] run the adjacent, complete-suite, and repository checks
+- [x] record all path/support correspondence rows and execution evidence
 - [ ] create the evidence commit and review the exact batch range
 - [ ] record accepted review fixes and the continuation decision
 
