@@ -281,6 +281,37 @@ migration and final reconciliation finish.
 | 2026-08-23     | `test/fixtures/data-query/multi.sqlite`                  | moved      | `test/data-sources/fixtures/multi.sqlite`                        | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
 | 2026-08-23     | `test/fixtures/data-query/multi.xlsx`                    | moved      | `test/data-sources/fixtures/multi.xlsx`                          | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
 
+### Phase 6.10: Data Extract
+
+The paths below were implemented and validated over `733f27cb..d02bf761`.
+Exact-range review and the continuation decision remain pending. The reference
+stays `draft` until the initial migration and final reconciliation finish.
+
+| Reference date | Historical path                                                     | Transition | Current owner or owners                                                                                    | Migration range      | Job evidence                      |
+| -------------- | ------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |
+| 2026-08-23     | `test/cli-actions-data-extract-review.test.ts`                      | moved      | `test/data-extract/actions/header-mapping-review.test.ts`                                                  | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/cli-actions-data-extract-source-shape-reuse.test.ts`          | moved      | `test/data-extract/actions/source-shape-reuse.test.ts`                                                     | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/cli-actions-data-extract-source-shape-review.test.ts`         | moved      | `test/data-extract/actions/source-shape-review.test.ts`                                                    | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/cli-actions-data-extract-sources.test.ts`                     | moved      | `test/data-extract/actions/source-selection.test.ts`                                                       | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/cli-actions-data-extract-validation.test.ts`                  | moved      | `test/data-extract/actions/validation.test.ts`                                                             | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/cli-actions-data-extract.test.ts`                             | moved      | `test/data-extract/actions/materialization.test.ts`                                                        | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/cli-command-data-extract-review.test.ts`                      | moved      | `test/data-extract/commands/header-mapping-review.test.ts`                                                 | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/cli-command-data-extract-shape.test.ts`                       | moved      | `test/data-extract/commands/excel-shape.test.ts`                                                           | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/cli-command-data-extract-source-shape.test.ts`                | moved      | `test/data-extract/commands/source-shape-review.test.ts`                                                   | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/cli-command-data-extract.test.ts`                             | moved      | `test/data-extract/commands/basic-sources.test.ts`                                                         | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/cli-interactive-routing-data-extract-checkpoints.test.ts`     | moved      | `test/data-extract/interactive/checkpoints.test.ts`                                                        | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/cli-interactive-routing-data-extract-core.test.ts`            | moved      | `test/data-extract/interactive/core.test.ts`                                                               | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/cli-interactive-routing-data-extract-revision.test.ts`        | moved      | `test/data-extract/interactive/revision.test.ts`                                                           | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/cli-actions-data-extract.helpers.ts`                          | moved      | `test/data-extract/actions/support.ts`                                                                     | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/cli-command-data-extract.helpers.ts`                          | moved      | `test/data-extract/commands/support.ts`                                                                    | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/helpers/interactive-harness/mocks/action-data.ts`             | split      | `test/data-query/interactive/mock-action.ts`<br>`test/data-extract/interactive/mock-action.ts`             | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/helpers/interactive-harness/mocks/data-query/index.ts`        | split      | `test/data-query/interactive/mock-installation.ts`<br>`test/data-extract/interactive/mock-installation.ts` | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/helpers/interactive-harness/mocks/data-query/query.ts`        | split      | `test/data-query/interactive/mock-query.ts`<br>`test/data-extract/interactive/mock-introspection.ts`       | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/helpers/interactive-harness/mocks/data-query/source-shape.ts` | split      | `test/data-query/interactive/mock-source-shape.ts`<br>`test/data-extract/interactive/mock-source-shape.ts` | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/helpers/interactive-harness/mocks/data-query/types.ts`        | split      | `test/data-query/interactive/mock-types.ts`<br>`test/helpers/interactive-harness/types.ts`                 | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/helpers/interactive-harness/types.ts`                         | split      | `test/helpers/interactive-harness/types.ts`<br>`test/data-extract/interactive/harness-contract.ts`         | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+| 2026-08-23     | `test/data-query/interactive/module-urls.ts`                        | split      | `test/data-query/interactive/module-urls.ts`<br>`test/data-extract/interactive/module-urls.ts`             | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
+
 [phase-3-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-3-data-query-migration-pilot
 [phase-4-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-4-doctor-ownership-migration-pilot
 [phase-5-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-5-bounded-markdown-pdf-migration-pilot
@@ -293,6 +324,7 @@ migration and final reconciliation finish.
 [phase-6-7-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-67-markdown-frontmatter
 [phase-6-8-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-68-video
 [phase-6-9-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-69-data-sources
+[phase-6-10-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-610-data-extract
 
 ## Completion Boundary
 

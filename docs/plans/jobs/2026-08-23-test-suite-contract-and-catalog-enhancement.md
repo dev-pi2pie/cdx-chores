@@ -379,7 +379,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.7  | Markdown Frontmatter                          | completed       | `16966305` | `61df100e`         | `16159a87`   | `16966305..16159a87` | Continue with constraints |
 | 6.8  | Video                                         | completed       | `5b362772` | `cf85a757`         | `7feac20a`   | `5b362772..7feac20a` | Continue with constraints |
 | 6.9  | Data Sources                                  | completed       | `9458f888` | `a3a76f53`         | `e35eea80`   | `9458f888..e35eea80` | Continue with constraints |
-| 6.10 | Data Extract                                  | pending         | -          | -                  | -            | -                    | -                         |
+| 6.10 | Data Extract                                  | in-review       | `733f27cb` | `d02bf761`         | pending      | pending              | pending                   |
 | 6.11 | Data Preview                                  | pending         | -          | -                  | -            | -                    | -                         |
 | 6.12 | Data Stack                                    | pending         | -          | -                  | -            | -                    | -                         |
 | 6.13 | Data Conversion                               | pending         | -          | -                  | -            | -                    | -                         |
@@ -1241,6 +1241,103 @@ Review gate:
 - [x] update the current guide, matrix, and path correspondence
 - [x] create the evidence commit and review the exact batch range
 - [x] record accepted review fixes and the batch continuation decision
+
+### Phase 6.10: Data Extract
+
+Status: `in-review`
+
+Batch base: `733f27cb`
+
+Implementation tip: `d02bf761`
+
+Execution and path migration range: `733f27cb..d02bf761`
+
+Evidence tip: pending
+
+Exact batch review range: pending
+
+The 13 selected suites moved to six action, four command, and three
+Interactive owners. Feature-local action and command support moved with their
+consumers. The remaining Data Extract action, introspection, source-shape, and
+installation mocks left the historical mixed Data Query residue without moving
+the neutral harness or compatibility facade.
+
+The initial exact admission was `7d9be60b`. Pre-commit maintainability review
+found that its first implementation duplicated `SourceShapeSuggestionOptions`
+between Data Query and Data Extract. The accepted admission correction at
+`733f27cb` keeps that shared request type in the neutral harness, keeps
+`DataQueryIntrospectionColumn` Data Query-local, and drops the unused residual
+introspection interface. The implementation contains no duplicated shared
+mock type.
+
+Pre-move review found no vague, duplicate, or removable case. It retained all
+55 cases and accepted two focused strengthenings:
+
+- overwrite rejection now proves the pre-existing output remains exactly
+  `existing\n`
+- the command-layer shape conflict now proves exit code `2` and empty stdout
+
+Selector preservation and strengthening:
+
+| Check       | Owner files | Passed | Failed | Assertions |
+| ----------- | ----------: | -----: | -----: | ---------: |
+| Pre-change  |          13 |     55 |      0 |        264 |
+| Post-change |          13 |     55 |      0 |        266 |
+
+All 55 declarations and exact titles remain represented once. Static
+assertions rose from 211 to 213 only for the two accepted checks.
+
+The implementation checkpoint is:
+
+- `d02bf761` — move all 13 suite owners, localize action and command support,
+  decompose the remaining Data Extract mocks, and apply the two accepted
+  assertion strengthenings
+
+Pre-commit test-quality review found no material issue. Maintainability review
+accepted the corrected shared-type ownership and found no remaining stale
+import, cycle, compatibility shim, or duplicate support contract.
+
+Validation evidence:
+
+| Boundary                              | Passed | Failed | Assertions | Files |
+| ------------------------------------- | -----: | -----: | ---------: | ----: |
+| Data Extract destinations             |     55 |      0 |        266 |    13 |
+| Destinations plus adjacent safety set |    112 |      0 |        449 |    15 |
+| Data Query Interactive compatibility  |     40 |      0 |        155 |     8 |
+| Complete repository suite             |  2,614 |      0 |     14,873 |   325 |
+
+Repository checks are clean:
+
+- `bun run format:check`
+- `bun run lint`
+- `bunx tsc --noEmit`
+- `bun run build`
+- `git diff --check`
+
+Documentation path scan:
+
+- no current guide names a historical Phase 6.10 suite or support path
+- the completed inventory and time-bounded matrix source headings remain
+  historical evidence
+- the current support dispositions and exact admission record the executed
+  suite and support ownership
+- the correspondence reference records all 22 accepted path transitions over
+  `733f27cb..d02bf761`
+
+Decision: pending the exact batch review. Phase 6.10 may close only after the
+documentation, test-quality, and maintainability reviews accept
+`733f27cb..<evidence-tip>` and the receipt records the continuation decision.
+
+Review gate:
+
+- [x] reproduce the 13-source selector and 55-case baseline
+- [x] admit all suite and support targets, then correct shared-type ownership
+- [x] move only the accepted Data Extract suites and feature support
+- [x] preserve all 55 declarations and add two accepted safety assertions
+- [x] complete focused, compatibility, full-suite, and repository validation
+- [x] record current support dispositions and path correspondence
+- [ ] create the evidence commit and review the exact batch range
+- [ ] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
