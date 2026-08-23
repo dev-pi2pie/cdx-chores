@@ -3020,6 +3020,26 @@ found no material issue.
 Exact-range review over `de108f7d..bc1ed261` found no material test-quality,
 maintainability, or documentation issue.
 
+#### Phase 6.20 Exact Suite Admission
+
+Phase 6.20 admits `test/utils-datetime.test.ts` as a source-aligned pure move
+to `test/utils/datetime.test.ts`. All four cases and seven assertions remain
+unchanged:
+
+1. `formatUtcFileDateTimeISO produces compact UTC ISO with Z`
+2. `formatLocalFileDateTimeISO appends a numeric local offset`
+3. `formatUtcFileDateTime12Hour handles morning, noon, and midnight boundaries`
+4. `formatLocalFileDateTime12Hour uses compact AM/PM suffix`
+
+These direct utility cases own exact formatter output and local-offset shape.
+Rename planner and action suites retain token rendering, precedence, metadata,
+and integration contracts, so no duplicate removal qualifies.
+
+The refreshed source slice passes four tests with seven assertions in one
+file. The adjacent Rename template-rendering, timestamp-action, and direct
+template suites pass 35 tests with 107 assertions across three files. No
+support, title, assertion, or production change is admitted.
+
 ### Decision Summary
 
 - Audited suites: 10 of 10 assigned inventory rows.
@@ -3030,9 +3050,10 @@ maintainability, or documentation issue.
 - Accepted stable owners: `rename`, `markdown-frontmatter`, `video`, `fonts`,
   and platform owner `release-tooling`.
 - Accepted future target files: 21 exact catalog paths across those five owners.
-- Accepted source-aligned exceptions: none. Each assigned suite has a stable
-  feature or platform owner, and the split families have enough suites or a
-  stable production seam to justify their boundary folders.
+- Accepted source-aligned exceptions in the Phase 2 miscellaneous-feature
+  slice: none. Each assigned suite in that slice has a stable feature or
+  platform owner, and the split families have enough suites or a stable
+  production seam to justify their boundary folders.
 - Accepted temporary root deferrals: none. No assigned suite is a lone,
   uncertain owner that needs to remain at `test/` while another decision
   lands.
