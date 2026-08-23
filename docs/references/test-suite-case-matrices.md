@@ -166,6 +166,7 @@ suites.
 | 6.5   | `test/helpers/interactive-harness/mocks/markdown-pdf.ts`                        | `test/markdown-pdf/interactive/mock-action.ts`                     | Phase 6.5 executed the feature-local move; the neutral harness composition remains under CLI foundations for Phase 7.                              |
 | 6.5   | `test/cli-interactive-markdown-pdf/codex-authoring/fixtures.ts`                 | `test/markdown-pdf/interactive/codex-authoring-fixtures.ts`        | Phase 6.5 executed the move and preserved all five Markdown PDF Codex-authoring consumers.                                                         |
 | 6.7   | Frontmatter behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | `test/markdown-frontmatter/interactive/mock-action.ts`             | Phase 6.7 executed the one-action extraction; the mixed residual and neutral composition remain for later admitted batches and Phase 7.            |
+| 6.8   | Video behavior in `test/helpers/interactive-harness/mocks/action-misc.ts`       | `test/video/interactive/mock-action.ts`                            | Extract only the three Video action mocks; the mixed residual and neutral composition remain for later admitted batches and Phase 7.               |
 
 ### Phase 3 Data Query Path Contract
 
@@ -2485,6 +2486,16 @@ path:
 | Historical path                      | Accepted exact target                       | Admission evidence                                                                                      |
 | ------------------------------------ | ------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `test/version-embedded-sync.test.ts` | `test/release-tooling/version-sync.test.ts` | Package/source version agreement and build-time regeneration are release-tooling integration contracts. |
+
+#### Phase 6.8 Exact Suite Admission
+
+The retained executable GIF action suite was not part of the literal
+miscellaneous-feature matrix. Phase 6.8 admits its exact catalog path before
+implementation:
+
+| Historical path                      | Accepted exact target            | Admission evidence                                                                                                   |
+| ------------------------------------ | -------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `test/cli-actions-video-gif.test.ts` | `test/video/actions/gif.test.ts` | FFmpeg recipe execution, mode inference, option validation, and palette cleanup are cohesive Video action contracts. |
 
 ### Decision Summary
 
