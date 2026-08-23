@@ -44,7 +44,7 @@ references.
 |     3 | Data Query migration pilot                     | completed   | `db9622cf..27ccab6e` | Continue with constraints |
 |     4 | Doctor ownership migration pilot               | completed   | `ff0f3d6f..837e5d95` | Continue with constraints |
 |     5 | bounded Markdown PDF migration pilot           | completed   | `05a87d54..4cce415a` | Continue with constraints |
-|     6 | remaining accepted family batches              | in-progress | per-batch            | Continue with constraints |
+|     6 | remaining accepted family batches              | completed   | `fca1204a..953aa7ad` | Continue with constraints |
 
 ## Phase 1: Refreshed Baseline And Complete File Inventory
 
@@ -354,9 +354,11 @@ and do not fold out-of-manifest findings into a migration checkpoint.
 
 ## Phase 6: Remaining Accepted Family Batches
 
-Status: `in-progress`
+Status: `completed`
 
 Manifest base: `2d6c81fa`
+
+Aggregate review range: `fca1204a..953aa7ad`
 
 The parent plan owns the exact source selectors, destination catalogs,
 operation boundaries, and support boundaries. This job records execution.
@@ -2128,3 +2130,26 @@ An out-of-manifest finding returns to inventory or matrix review. Phase 7 owns
 global-helper neutrality, explicitly accepted residual support moves, and final
 root exception or deferral classification; it does not admit another broad
 family migration.
+
+### Phase 6 Aggregate Reconciliation
+
+Status: `completed`
+
+All 21 manifest rows are completed. Their 246 selected source paths were
+disjoint at the manifest base, and every batch has a focused result, adjacent
+safety result where required, complete-suite result, repository checks,
+implementation and evidence tips, correspondence, and an exact-range decision.
+
+The final Phase 6 state passes 2,621 tests with 14,870 assertions across 354
+files. `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`,
+`bun run build`, and `git diff --check` are clean. The aggregate exact-range
+test-quality, maintainability, and documentation review over
+`fca1204a..953aa7ad` found no material issue. The two Phase 6.21 Markdown PDF
+routing removals and their eight assertions are the only final delta from the
+2,623-test, 14,878-assertion Phase 6.20 baseline.
+
+Decision: `Continue with constraints` to Phase 7. Keep the correspondence
+reference `draft`; Phase 7 must still close global helper neutrality,
+Interactive harness and mock ownership, compatibility facades, and all
+remaining flat-root exceptions or deferrals before Phase 8 documentation
+reconciliation.

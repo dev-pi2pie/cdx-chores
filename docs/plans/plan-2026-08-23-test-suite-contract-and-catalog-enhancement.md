@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Contract And Catalog Enhancement"
 created-date: 2026-08-23
-modified-date: 2026-08-24
+modified-date: 2026-08-23
 status: active
 agent: codex
 ---
@@ -381,15 +381,15 @@ path; a destination folder alone does not authorize an opportunistic rename.
 
 Tasks for each batch:
 
-- [ ] Filter the accepted inventory to one owner and confirm every changed
+- [x] Filter the accepted inventory to one owner and confirm every changed
       suite has a settled disposition.
-- [ ] Complete any newly required case matrix before editing.
-- [ ] Apply accepted rename, merge, removal, split, and move decisions.
-- [ ] Colocate feature-local support and preserve approved global imports.
-- [ ] Update executable references, current docs, and correspondence rows.
-- [ ] Run the complete focused owner set plus affected adjacent boundaries.
-- [ ] Run the complete suite and repository checks after the focused owner set.
-- [ ] Review the exact batch range and record a continue, constrain, defer, or
+- [x] Complete any newly required case matrix before editing.
+- [x] Apply accepted rename, merge, removal, split, and move decisions.
+- [x] Colocate feature-local support and preserve approved global imports.
+- [x] Update executable references, current docs, and correspondence rows.
+- [x] Run the complete focused owner set plus affected adjacent boundaries.
+- [x] Run the complete suite and repository checks after the focused owner set.
+- [x] Review the exact batch range and record a continue, constrain, defer, or
       stop decision.
 
 Batch gate:
