@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { getDisplayWidth } from "../src/cli/text-display-width";
+import { getDisplayWidth } from "../../../src/cli/text-display-width";
 
 describe("text display width", () => {
   test("treats standalone emoji as double-width graphemes", () => {

@@ -6,8 +6,8 @@ import {
   getInteractiveFlowStaticTips,
   pickInteractiveFlowTip,
   resolveInteractiveFlowTipSelectionValue,
-} from "../src/cli/interactive/contextual-tip";
-import type { CliRuntime } from "../src/cli/types";
+} from "../../../src/cli/interactive/contextual-tip";
+import type { CliRuntime } from "../../../src/cli/types";
 
 function createRuntime(options: { columns?: number; isTTY?: boolean }): CliRuntime {
   return {
@@ -55,35 +55,39 @@ describe("interactive flow tip pools", () => {
     ]);
   });
 
-  test("builds the expected randomized pool for data query", () => {
+  test.each([
+    {
+      flow: "Query",
+      flowKind: "data-query" as const,
+      expected: [
+        "Press Ctrl+C to abort this session.",
+        "Manual is best for joins or custom SQL.",
+        "SQL limit and preview rows are separate controls.",
+        "Rows to show only affects terminal preview.",
+      ],
+    },
+    {
+      flow: "Extract",
+      flowKind: "data-extract" as const,
+      expected: [
+        "Press Ctrl+C to abort this session.",
+        "Source interpretation is reviewed before output setup.",
+        "Change destination keeps the current extraction setup.",
+      ],
+    },
+    {
+      flow: "Stack",
+      flowKind: "data-stack" as const,
+      expected: [
+        "Press Ctrl+C to abort this session.",
+        "Pattern filtering only affects files discovered from the input directory.",
+        "Review matched files before writing the stacked output.",
+      ],
+    },
+  ])("prepends the abort notice to the selected flow's static tips for $flow", (scenario) => {
     expect(
-      buildInteractiveFlowTipPool("data-query", "Press Ctrl+C to abort this session."),
-    ).toEqual([
-      "Press Ctrl+C to abort this session.",
-      "Manual is best for joins or custom SQL.",
-      "SQL limit and preview rows are separate controls.",
-      "Rows to show only affects terminal preview.",
-    ]);
-  });
-
-  test("builds the expected randomized pool for data extract", () => {
-    expect(
-      buildInteractiveFlowTipPool("data-extract", "Press Ctrl+C to abort this session."),
-    ).toEqual([
-      "Press Ctrl+C to abort this session.",
-      "Source interpretation is reviewed before output setup.",
-      "Change destination keeps the current extraction setup.",
-    ]);
-  });
-
-  test("builds the expected randomized pool for data stack", () => {
-    expect(
-      buildInteractiveFlowTipPool("data-stack", "Press Ctrl+C to abort this session."),
-    ).toEqual([
-      "Press Ctrl+C to abort this session.",
-      "Pattern filtering only affects files discovered from the input directory.",
-      "Review matched files before writing the stacked output.",
-    ]);
+      buildInteractiveFlowTipPool(scenario.flowKind, "Press Ctrl+C to abort this session."),
+    ).toEqual([...scenario.expected]);
   });
 });
 
@@ -96,22 +100,33 @@ describe("interactive flow tip selection", () => {
     expect(pickInteractiveFlowTip(["a", "b", "c"], 0.999)).toBe("c");
   });
 
-  test("selects the expected query tip for a deterministic random value", () => {
+  test.each([
+    {
+      flow: "Query",
+      flowKind: "data-query" as const,
+      randomValue: 0.3,
+      expected: "Manual is best for joins or custom SQL.",
+    },
+    {
+      flow: "Extract",
+      flowKind: "data-extract" as const,
+      randomValue: 0.9,
+      expected: "Change destination keeps the current extraction setup.",
+    },
+    {
+      flow: "Stack",
+      flowKind: "data-stack" as const,
+      randomValue: 0.9,
+      expected: "Review matched files before writing the stacked output.",
+    },
+  ])("composes the $flow catalog and deterministic selector", (scenario) => {
     expect(
-      getInteractiveFlowTip(createRuntime({ columns: 80, isTTY: true }), "data-query", 0.3),
-    ).toBe("Manual is best for joins or custom SQL.");
-  });
-
-  test("selects the expected extract tip for a deterministic random value", () => {
-    expect(
-      getInteractiveFlowTip(createRuntime({ columns: 80, isTTY: true }), "data-extract", 0.9),
-    ).toBe("Change destination keeps the current extraction setup.");
-  });
-
-  test("selects the expected stack tip for a deterministic random value", () => {
-    expect(
-      getInteractiveFlowTip(createRuntime({ columns: 80, isTTY: true }), "data-stack", 0.9),
-    ).toBe("Review matched files before writing the stacked output.");
+      getInteractiveFlowTip(
+        createRuntime({ columns: 80, isTTY: true }),
+        scenario.flowKind,
+        scenario.randomValue,
+      ),
+    ).toBe(scenario.expected);
   });
 
   test("derives the selection value from runtime milliseconds", () => {

@@ -1,8 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import { resolveCliColorEnabled } from "../src/cli/colors";
-import { getInteractiveAbortNotice, writeInteractiveTip } from "../src/cli/interactive/notice";
-import type { CliRuntime } from "../src/cli/types";
+import { resolveCliColorEnabled } from "../../../src/cli/colors";
+import {
+  getInteractiveAbortNotice,
+  writeInteractiveTip,
+} from "../../../src/cli/interactive/notice";
+import type { CliRuntime } from "../../../src/cli/types";
 
 const ANSI_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
 

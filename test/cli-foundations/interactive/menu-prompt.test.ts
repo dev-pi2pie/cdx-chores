@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 
-import { selectInteractiveMenuChoice } from "../src/cli/interactive/menu-prompt";
+import { selectInteractiveMenuChoice } from "../../../src/cli/interactive/menu-prompt";
 
 class FakePromptReadStream extends EventEmitter {
   isTTY = true;

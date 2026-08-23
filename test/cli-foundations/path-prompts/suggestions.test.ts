@@ -5,8 +5,8 @@ import { join } from "node:path";
 import {
   resolvePathSuggestions,
   shouldSuggestForPathInput,
-} from "../src/cli/prompts/path-suggestions";
-import { createTempFixtureDir } from "./helpers/cli-test-utils";
+} from "../../../src/cli/prompts/path-suggestions";
+import { createTempFixtureDir } from "../../helpers/cli-test-utils";
 
 describe("path suggestion engine", () => {
   test("shouldSuggestForPathInput enforces min chars but allows explicit path prefixes", () => {

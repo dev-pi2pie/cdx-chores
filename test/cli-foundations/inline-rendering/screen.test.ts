@@ -11,7 +11,7 @@ import {
   restoreCursor,
   saveCursor,
   showCursor,
-} from "../src/cli/tui";
+} from "../../../src/cli/tui";
 
 class CaptureWriteStream {
   writes: string[] = [];

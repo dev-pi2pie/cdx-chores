@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { Command } from "commander";
 
-import { registerCliCommands } from "../src/cli/commands";
-import type { InteractiveSessionOptions } from "../src/cli/interactive/session";
-import { createInteractiveSession } from "../src/cli/interactive/session";
-import { createCapturedRuntime, runCli } from "./helpers/cli-test-utils";
+import { registerCliCommands } from "../../../src/cli/commands";
+import type { InteractiveSessionOptions } from "../../../src/cli/interactive/session";
+import { createInteractiveSession } from "../../../src/cli/interactive/session";
+import { createCapturedRuntime, runCli } from "../../helpers/cli-test-utils";
 
 function createInteractiveTimeoutHarness() {
   const { runtime, stderr, stdout } = createCapturedRuntime({ colorEnabled: false });

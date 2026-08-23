@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { promptPath } from "../src/cli/prompts/path";
+import { promptPath } from "../../../src/cli/prompts/path";
 
 describe("path prompt routing", () => {
   test("promptPath uses simple fallback when advanced mode is unavailable", async () => {

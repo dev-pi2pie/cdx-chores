@@ -8,7 +8,7 @@ import {
   parseCodexTimeoutDuration,
   parseUniqueCodexTimeoutDuration,
   resolveCodexTimeout,
-} from "../src/cli/options/codex-timeout";
+} from "../../../src/cli/options/codex-timeout";
 
 describe("Codex timeout duration parsing", () => {
   test.each([

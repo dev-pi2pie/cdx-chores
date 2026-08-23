@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { createInlinePromptRenderer } from "../src/cli/tui";
-import { VirtualTerminal, wrapAscii } from "./helpers/virtual-terminal";
+import { createInlinePromptRenderer } from "../../../src/cli/tui";
+import { VirtualTerminal, wrapAscii } from "./virtual-terminal";
 
 class CaptureWriteStream {
   isTTY = true;

@@ -10,7 +10,7 @@ import {
   getActiveSiblingPreviewReplacement,
   setCycleState,
   type InlinePromptInteractionState,
-} from "../src/cli/prompts/path-inline-state";
+} from "../../../src/cli/prompts/path-inline-state";
 
 describe("inline path prompt interaction state", () => {
   test("entering sibling preview mode abandons any active Tab cycle", () => {

@@ -5,8 +5,8 @@ import { join } from "node:path";
 import {
   deriveSiblingPreviewScopeKey,
   resolveSiblingPreviewCandidates,
-} from "../src/cli/prompts/path-sibling-preview";
-import { createTempFixtureDir } from "./helpers/cli-test-utils";
+} from "../../../src/cli/prompts/path-sibling-preview";
+import { createTempFixtureDir } from "../../helpers/cli-test-utils";
 
 describe("path sibling preview candidates", () => {
   test("resolves empty-fragment sibling browsing with directories first", async () => {

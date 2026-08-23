@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createInteractiveAnalyzerStatus } from "../src/cli/interactive/analyzer-status";
+import { createInteractiveAnalyzerStatus } from "../../../src/cli/interactive/analyzer-status";
 
 class CaptureStream {
   public text = "";

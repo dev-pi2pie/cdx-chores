@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { EventEmitter } from "node:events";
 
-import { runInteractiveMode } from "../src/cli/interactive";
-import { selectInteractiveAction } from "../src/cli/interactive/menu";
-import type { SelectInteractiveMenuChoiceOptions } from "../src/cli/interactive/menu-prompt";
-import type { CliRuntime } from "../src/cli/types";
+import { runInteractiveMode } from "../../../src/cli/interactive";
+import { selectInteractiveAction } from "../../../src/cli/interactive/menu";
+import type { SelectInteractiveMenuChoiceOptions } from "../../../src/cli/interactive/menu-prompt";
+import type { CliRuntime } from "../../../src/cli/types";
 
 class FakePromptReadStream extends EventEmitter {
   isTTY = true;

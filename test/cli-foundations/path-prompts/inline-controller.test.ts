@@ -3,9 +3,9 @@ import { EventEmitter } from "node:events";
 import { mkdir, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 
-import { promptPathInlineGhost } from "../src/cli/prompts/path-inline";
-import { createTempFixtureDir } from "./helpers/cli-test-utils";
-import { VirtualTerminal, wrapAscii } from "./helpers/virtual-terminal";
+import { promptPathInlineGhost } from "../../../src/cli/prompts/path-inline";
+import { createTempFixtureDir } from "../../helpers/cli-test-utils";
+import { VirtualTerminal, wrapAscii } from "../inline-rendering/virtual-terminal";
 
 class FakePromptReadStream extends EventEmitter {
   isTTY = true;

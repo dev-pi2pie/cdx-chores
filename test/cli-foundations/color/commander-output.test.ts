@@ -1,10 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import { Command } from "commander";
 
-import { configureCliProgramOutput, styleCommanderErrorOutput } from "../src/cli/program/output";
-import { getFormattedVersionLabel } from "../src/cli/program/version";
-import type { CliRuntime } from "../src/cli/types";
-import { createCapturedRuntime, runCli } from "./helpers/cli-test-utils";
+import {
+  configureCliProgramOutput,
+  styleCommanderErrorOutput,
+} from "../../../src/cli/program/output";
+import { getFormattedVersionLabel } from "../../../src/cli/program/version";
+import type { CliRuntime } from "../../../src/cli/types";
+import { createCapturedRuntime, runCli } from "../../helpers/cli-test-utils";
 
 const ANSI_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
 

@@ -2,12 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import { rm, writeFile } from "node:fs/promises";
 
-import { runCli as runCliInProcess } from "../src/command";
+import { runCli as runCliInProcess } from "../../../src/command";
 import {
   createTempFixtureDir,
   toRepoRelativePath,
   createCapturedRuntime,
-} from "./helpers/cli-test-utils";
+} from "../../helpers/cli-test-utils";
 
 const ANSI_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
 

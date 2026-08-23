@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { resolveTemplateCompletionMatch } from "../src/cli/prompts/text-template-candidates";
+import { resolveTemplateCompletionMatch } from "../../../src/cli/prompts/text-template-candidates";
 
 describe("text template candidates", () => {
   test("does not activate before an opening brace is typed", () => {

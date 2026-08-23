@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import { resolveCliColorEnabled } from "../src/cli/colors";
-import { styleCliDiagnosticLabel } from "../src/cli/diagnostic-color";
-import type { CliRuntime } from "../src/cli/types";
-import { createCapturedRuntime } from "./helpers/cli-test-utils";
+import { resolveCliColorEnabled } from "../../../src/cli/colors";
+import { styleCliDiagnosticLabel } from "../../../src/cli/diagnostic-color";
+import type { CliRuntime } from "../../../src/cli/types";
+import { createCapturedRuntime } from "../../helpers/cli-test-utils";
 
 const ANSI_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
 

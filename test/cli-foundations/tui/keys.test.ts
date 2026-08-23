@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createKeypressParser, type ParsedKeypressEvent } from "../src/cli/tui";
+import { createKeypressParser, type ParsedKeypressEvent } from "../../../src/cli/tui";
 
 describe("cli tui keys", () => {
   test("normalizes explicit arrow escape sequences", () => {

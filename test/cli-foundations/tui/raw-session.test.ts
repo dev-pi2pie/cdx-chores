@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { EventEmitter } from "node:events";
 
-import { startRawSession, supportsRawSessionIO, type RawSessionKeypressInfo } from "../src/cli/tui";
+import {
+  startRawSession,
+  supportsRawSessionIO,
+  type RawSessionKeypressInfo,
+} from "../../../src/cli/tui";
 
 class FakeReadStream extends EventEmitter {
   isTTY = true;
