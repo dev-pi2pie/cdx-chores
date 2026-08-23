@@ -40,7 +40,7 @@ references.
 | ----: | ---------------------------------------------- | ----------- | -------------------- | ------------------------- |
 |     1 | refreshed baseline and complete file inventory | completed   | `2f3013ca..fae7d92b` | Continue                  |
 |     2 | case matrices and catalog admission            | completed   | `34d080e9..0b8d59bd` | Continue with constraints |
-|     3 | Data Query migration pilot                     | in-progress | pending              | —                         |
+|     3 | Data Query migration pilot                     | completed   | `db9622cf..27ccab6e` | Continue with constraints |
 |     4 | Doctor ownership migration pilot               | pending     | —                    | —                         |
 
 ## Phase 1: Refreshed Baseline And Complete File Inventory
@@ -151,11 +151,11 @@ plan and this job remain active, while the path-correspondence reference stays
 
 ## Phase 3: Data Query Migration Pilot
 
-Status: `in-progress`
+Status: `completed`
 
 Phase base: `db9622cf`
 
-Initial review range: `db9622cf..0eaa2a15`
+Review range: `db9622cf..27ccab6e`
 
 The implementation applies the accepted Data Query path contract while
 retaining the five `keep pending evidence` command owners at their root paths.
@@ -204,5 +204,12 @@ checklist sentence: it implied every Data Query suite moved even though five
 recorded pending command owners intentionally remain at the root. The sentence
 now names the non-pending scope and the preserved deferral paths.
 
-The review fix requires a widened exact-range review before Phase 3 admission.
-No Phase 3 decision is recorded until that final review completes.
+The widened exact-range documentation, test-quality, and maintainability
+reviews found no remaining material issue in `db9622cf..27ccab6e`.
+
+Decision: `Continue with constraints` to Phase 4. Reuse the accepted
+feature-and-boundary catalog pattern, keep the five pending Data Query command
+owners at their recorded root paths, preserve all Phase 2 event-based
+deferrals, and do not generalize the Parquet Preview injection seam beyond the
+specific test-isolation boundary that required it. The path-correspondence
+reference remains `draft` until the later reconciliation phase.

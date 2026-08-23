@@ -250,7 +250,7 @@ Tasks:
 - [x] Update imports, scripts, current docs, and correspondence rows atomically.
 - [x] Run every pre-change owner and final Data Query catalog path recorded by
       Phase 2.
-- [ ] Review the exact phase range and record whether the catalog pattern is
+- [x] Review the exact phase range and record whether the catalog pattern is
       accepted, constrained, or stopped before applying it elsewhere.
 
 Observable contracts:
