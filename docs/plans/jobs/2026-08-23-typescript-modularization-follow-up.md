@@ -532,3 +532,59 @@ added because each surface already invokes the registered public CLI and owns
 its relevant help assertions.
 
 Decision: `Continue` to Phase 11.
+
+## Phase 11: Interactive Markdown `to-pdf`
+
+Status: `completed`
+
+Decision: `Split`
+
+Implementation range: `f10fdb8e..5f9aa9be`
+
+Implementation commit: `5f9aa9be`
+
+| Dimension          | Before                                                                        | After                                                                                       |
+| ------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| File topology      | one 530-line mixed flow module                                                | one 159-line facade plus three private responsibility modules                               |
+| Largest file       | 530 lines                                                                     | 187 lines                                                                                   |
+| Focused validation | 347 passing tests; 0 failures; 1,537 assertions                               | 347 passing tests; 0 failures; 1,537 assertions                                             |
+| Public surface     | two exports from `to-pdf.ts`; two production callers                          | the same exports, path, and caller imports                                                  |
+| Responsibility     | preparation, prepared rendering, output review, and route orchestration mixed | source preparation, prepared rendering, output review, and outer orchestration are explicit |
+
+After topology: `source-preparation.ts` is 65 lines, `prepared-render.ts` is
+157, `output-review.ts` is 187, and the retained `to-pdf.ts` facade is 159.
+
+Decision-gate evidence:
+
+- source preparation still owns an independent prompt sequence, saved Project
+  completeness guard, and one authoritative preparation call
+- prepared rendering still owns recipe review, output selection, final
+  confirmation, override changes, output rebinding, and execution
+- output review still owns destination planning and retry plus final and
+  renderer-capability presentation
+- the facade remains responsible for saved, direct, and generated route
+  transitions, cancellation and backtracking, both public exports, and Codex
+  session cleanup
+
+Baseline and after validation:
+
+```bash
+bun test test/cli-interactive-markdown-pdf
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+git diff --check
+```
+
+Result: the focused scope passed 347 tests with 1,537 assertions before and
+after the split. TypeScript, lint, formatting, build, and diff checks passed.
+The existing tests cover prompt order, cancellation, backtracking,
+regeneration, handoff, source preparation, output recovery, plan rebinding,
+renderer warnings and capabilities, and artifact lifecycle.
+
+Exact-range test and maintainability reviews found no material issues. No
+accidental deep imports or cycles were introduced, and the two production
+callers retain their imports from `to-pdf.ts`.
+
+Decision: `Continue` to cumulative validation and documentation closeout.

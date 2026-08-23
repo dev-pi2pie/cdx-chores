@@ -354,11 +354,11 @@ bun test test/cli-actions-md-to-pdf-commands test/cli-actions-md-to-pdf-command-
 
 Decision gate:
 
-- [ ] Reinspect `src/cli/interactive/markdown/to-pdf.ts` after Phases 1 through
+- [x] Reinspect `src/cli/interactive/markdown/to-pdf.ts` after Phases 1 through
       10 using the research criteria and the now-focused Interactive tests.
-- [ ] Record whether source preparation, prepared-render handling, and output
+- [x] Record whether source preparation, prepared-render handling, and output
       review remain independently owned responsibilities.
-- [ ] Execute and record one accepted outcome: defer the split with no
+- [x] Execute and record one accepted outcome: defer the split with no
       production edit when the boundary is no longer clear, or extract those
       responsibilities under `src/cli/interactive/markdown/to-pdf/` while
       retaining cancellation and backtracking orchestration plus both current
