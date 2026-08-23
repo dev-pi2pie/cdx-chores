@@ -33,7 +33,7 @@ modularization follow-up without duplicating the parent plan's checklists.
 | ----: | -------------------------------------------- | --------- | -------------------- | -------- |
 |     1 | Profile Codex action test                    | completed | `f81a68e5..909c8c50` | Continue |
 |     2 | Template asset handling                      | completed | `6ecd8597..7ecc882d` | Continue |
-|     3 | Project Codex action-write test              | pending   | pending              | pending  |
+|     3 | Project Codex action-write test              | completed | `f1941d88..69aefb8e` | Continue |
 |     4 | Rename Codex option ownership                | pending   | pending              | pending  |
 |     5 | Doctor workflow projection                   | pending   | pending              | pending  |
 |     6 | Interactive Codex authoring test             | pending   | pending              | pending  |
@@ -139,3 +139,49 @@ as supporting context, and recorded complete coverage with zero findings. No
 whole-repository security scan was performed.
 
 Decision: `Continue` to Phase 3.
+
+## Phase 3: Project Codex Action-Write Test
+
+Status: `completed`
+
+Implementation range: `f1941d88..69aefb8e`
+
+Implementation commit: `69aefb8e`
+
+| Dimension          | Before                                             | After                                                                                             |
+| ------------------ | -------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| File topology      | one 2,310-line action-write suite                  | five behavior-owned suites plus one action-write fixture module                                   |
+| Largest file       | 2,310 lines                                        | 796 lines                                                                                         |
+| Focused validation | 89 passing tests; 0 failures; 1,294 assertions     | 89 passing tests; 0 failures; 1,294 assertions                                                    |
+| Production scope   | no production change                               | no production change                                                                              |
+| Ownership          | 28 review, write, privacy, and failure tests mixed | 6 review/dry-run, 9 privacy/redaction, 6 successful-write, 2 asset-safety, and 5 prevention tests |
+
+Baseline validation:
+
+```bash
+bun test test/cli-actions-md-to-pdf-project-codex/action-write.test.ts test/cli-actions-md-to-pdf-project-codex/command-state.test.ts test/cli-actions-md-to-pdf-project-codex/output-plan.test.ts test/cli-actions-md-to-pdf-project-codex/prepared.test.ts test/cli-actions-md-to-pdf-project-codex/validation.test.ts
+```
+
+Result: 89 passed, 0 failed, 1,294 assertions across five files.
+
+After validation:
+
+```bash
+bun test test/cli-actions-md-to-pdf-project-codex/action-write test/cli-actions-md-to-pdf-project-codex/command-state.test.ts test/cli-actions-md-to-pdf-project-codex/output-plan.test.ts test/cli-actions-md-to-pdf-project-codex/prepared.test.ts test/cli-actions-md-to-pdf-project-codex/validation.test.ts
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+git diff --check
+```
+
+Result: 89 passed, 0 failed, 1,294 assertions across nine files. TypeScript,
+lint, formatting, and diff checks passed. All 28 test names and 268 static
+assertions were preserved, with no `src/` change.
+
+Exact-range test and maintainability reviews found no material issues. The
+shared fixture remains local to the action-write boundary, while the existing
+Template fixture retains ownership of its reusable PNG and path helpers. The
+privacy/redaction suite remains cohesive despite being the largest resulting
+file.
+
+Decision: `Continue` to Phase 4.

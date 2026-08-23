@@ -161,13 +161,13 @@ bunx tsc --noEmit
 
 Tasks:
 
-- [ ] Split
+- [x] Split
       `test/cli-actions-md-to-pdf-project-codex/action-write.test.ts` into
       review and dry-run, privacy and redaction, successful writes, asset
       safety, and write-prevention suites.
-- [ ] Preserve failure timing, filesystem assertions, redaction checks, and
+- [x] Preserve failure timing, filesystem assertions, redaction checks, and
       partial-write prevention coverage.
-- [ ] Keep fixtures inside the Project Codex action-write boundary unless an
+- [x] Keep fixtures inside the Project Codex action-write boundary unless an
       existing feature fixture already owns them.
 
 Observable contracts:
