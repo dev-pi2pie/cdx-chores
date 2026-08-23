@@ -5,8 +5,8 @@ import { join } from "node:path";
 import {
   __testOnlyBuildDocumentPrompt,
   __testOnlyExtractDocumentTitleEvidenceForPath,
-} from "../src/adapters/codex/document-rename-titles";
-import { createTempFixtureDir, REPO_ROOT, toRepoRelativePath } from "./helpers/cli-test-utils";
+} from "../../../src/adapters/codex/document-rename-titles";
+import { createTempFixtureDir, REPO_ROOT, toRepoRelativePath } from "../../helpers/cli-test-utils";
 
 describe("codex document rename title extractor", () => {
   test("extracts pdf evidence from a metadata-rich fixture", async () => {
