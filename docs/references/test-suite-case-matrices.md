@@ -2471,7 +2471,19 @@ schema assertions from matching, and remove only the empty declaration.
 
 Suite result: split the branch-filter script from stable-note generation. The
 stable-note cases form one coherent integration owner and should not be split
-further merely because each creates a separate fixture repository.
+further merely because each creates a separate fixture repository. Move the
+shared command runner and temporary repository setup to the exact feature-local
+support target `test/release-tooling/fixtures.ts`.
+
+#### Phase 6.6 Exact Suite Admission
+
+The retained version-synchronization suite was not part of the literal
+miscellaneous-feature matrix. Phase 6.6 admits its exact catalog path before
+implementation:
+
+| Historical path                      | Accepted exact target                       | Admission evidence                                                                                      |
+| ------------------------------------ | ------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `test/version-embedded-sync.test.ts` | `test/release-tooling/version-sync.test.ts` | Package/source version agreement and build-time regeneration are release-tooling integration contracts. |
 
 ### Decision Summary
 
