@@ -387,7 +387,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.15 | Rename                                        | completed       | `93e7a797` | `da247175`         | `c0659081`   | `93e7a797..c0659081` | Continue with constraints |
 | 6.16 | Codex adapter platform                        | completed       | `2f5d5a20` | `c69a9abc`         | `e2e2cf34`   | `2f5d5a20..e2e2cf34` | Continue with constraints |
 | 6.17 | Document Rename                               | completed       | `91165757` | `111a67ea`         | `f97e3846`   | `91165757..f97e3846` | Continue with constraints |
-| 6.18 | DOCX                                          | pending         | -          | -                  | -            | -                    | -                         |
+| 6.18 | DOCX                                          | in-review       | `56624bef` | `0018929c`         | pending      | pending              | pending                   |
 | 6.19 | Markdown platform                             | pending         | -          | -                  | -            | -                    | -                         |
 | 6.20 | Utilities                                     | pending         | -          | -                  | -            | -                    | -                         |
 | 6.21 | CLI foundations and mixed-root decomposition  | pending         | -          | -                  | -            | -                    | -                         |
@@ -1845,6 +1845,58 @@ Review gate:
 - [x] record the path transition
 - [x] create the evidence commit and review the exact batch range
 - [x] record accepted review fixes and the continuation decision
+
+### Phase 6.18: DOCX
+
+Status: `in-review`
+
+Batch base: `56624bef`
+
+Implementation tip: `0018929c`
+
+Execution and path migration range: `56624bef..0018929c`
+
+Evidence tip: pending
+
+Exact batch review range: pending
+
+The OOXML metadata suite moved to
+`test/markdown-docx/adapters/ooxml-metadata.test.ts` with only two relative
+import changes. All ten titles, bodies, local builders, fixtures, and 28
+assertions remain unchanged.
+
+The final `actionMdToDocx` mock residual moved to
+`test/markdown-docx/interactive/mock-action.ts`. Neutral harness composition
+now installs that feature owner directly, and the empty `action-misc.ts`
+catch-all was deleted. No scenario field moved.
+
+| Boundary                         | Passed | Failed | Assertions | Files |
+| -------------------------------- | -----: | -----: | ---------: | ----: |
+| DOCX adapter destination         |     10 |      0 |         28 |     1 |
+| Exact adjacent safety set        |     24 |      0 |         90 |     3 |
+| Complete repository suite        |  2,623 |      0 |     14,878 |   336 |
+
+Repository checks are clean: `bun run format:check`, `bun run lint`,
+`bunx tsc --noEmit`, `bun run build`, and `git diff --check`.
+
+Pre-commit test-quality and maintainability review found no material issue. No
+current guide names the historical suite or mock path. The matrix records the
+executed mock closeout, and correspondence records two transitions over
+`56624bef..0018929c`.
+
+Decision: pending exact-range test-quality, maintainability, and documentation
+review.
+
+Review gate:
+
+- [x] admit all ten OOXML cases before implementation
+- [x] move only the DOCX adapter suite and final DOCX mock residual
+- [x] preserve all suite titles, bodies, fixtures, and 28 assertions
+- [x] delete only the empty catch-all after neutral composition is updated
+- [x] complete focused, adjacent, full-suite, and repository validation
+- [x] record both path and support transitions
+- [ ] create the evidence commit and review the exact batch range
+- [ ] record accepted review fixes and the continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,

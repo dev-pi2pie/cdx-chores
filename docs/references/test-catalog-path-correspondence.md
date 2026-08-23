@@ -483,6 +483,17 @@ reconciliation.
 | -------------- | ----------------------------------------------------------- | ---------- | ----------------------------------------------------------------- | -------------------- | --------------------------------- |
 | 2026-08-23     | `test/adapters-codex-document-rename-titles.test.ts`         | moved      | `test/document-rename/adapters/title-evidence.test.ts`            | `91165757..111a67ea` | [Phase 6.17][phase-6-17-evidence] |
 
+### Phase 6.18: DOCX
+
+The paths below were implemented and validated over `56624bef..0018929c`.
+Phase 6.18 remains in review until the exact admission-to-evidence range is
+reviewed; this reference stays `draft` through final reconciliation.
+
+| Reference date | Historical path                                                                    | Transition | Current owner or owners                                      | Migration range      | Job evidence                      |
+| -------------- | ---------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------ | -------------------- | --------------------------------- |
+| 2026-08-23     | `test/adapters-docx-ooxml-metadata.test.ts`                                       | moved      | `test/markdown-docx/adapters/ooxml-metadata.test.ts`         | `56624bef..0018929c` | [Phase 6.18][phase-6-18-evidence] |
+| 2026-08-23     | Markdown DOCX behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | moved      | `test/markdown-docx/interactive/mock-action.ts`              | `56624bef..0018929c` | [Phase 6.18][phase-6-18-evidence] |
+
 [phase-3-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-3-data-query-migration-pilot
 [phase-4-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-4-doctor-ownership-migration-pilot
 [phase-5-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-5-bounded-markdown-pdf-migration-pilot
@@ -503,6 +514,7 @@ reconciliation.
 [phase-6-15-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-615-rename
 [phase-6-16-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-616-codex-adapter-platform
 [phase-6-17-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-617-document-rename
+[phase-6-18-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-618-docx
 
 ## Completion Boundary
 
