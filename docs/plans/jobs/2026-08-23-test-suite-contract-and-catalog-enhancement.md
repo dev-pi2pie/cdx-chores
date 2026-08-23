@@ -113,11 +113,11 @@ declarations appear once with their literal source title and variants.
 
 Pre-review decisions:
 
-- 737 `move`
+- 739 `move`
 - 215 `split`
 - 4 `rename`
-- 5 `merge`
-- 11 `remove`
+- 4 `merge`
+- 10 `remove`
 - 10 `keep pending evidence`
 
 The proposed catalog also resolves all 39 support files deferred from Phase 1,
