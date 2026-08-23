@@ -3,17 +3,17 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import { actionMdPdfTemplateCodex } from "../../src/cli/actions/markdown";
+import { actionMdPdfTemplateCodex } from "../../../src/cli/actions/markdown";
 import {
   prepareMdPdfTemplateCodex,
   rebindPreparedMdPdfTemplateCodexArtifact,
   writePreparedMdPdfTemplateCodexBundle,
-} from "../../src/cli/markdown-pdf/template-codex";
-import { suggestedMarkdownPdfCodexOutputPath } from "../../src/cli/interactive/markdown/codex-service";
-import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
-import { withTempFixtureDir } from "../helpers/cli-test-utils";
-import { pathExists } from "../markdown-pdf/support/path-fixtures";
-import { minimalPng } from "../markdown-pdf/actions/template-codex-fixtures";
+} from "../../../src/cli/markdown-pdf/template-codex";
+import { suggestedMarkdownPdfCodexOutputPath } from "../../../src/cli/interactive/markdown/codex-service";
+import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
+import { withTempFixtureDir } from "../../helpers/cli-test-utils";
+import { pathExists } from "../support/path-fixtures";
+import { minimalPng } from "./template-codex-fixtures";
 
 describe("Markdown PDF prepared Template Codex services", () => {
   test("rebinds content and snapshotted assets with destination-time report and overwrite policy", async () => {

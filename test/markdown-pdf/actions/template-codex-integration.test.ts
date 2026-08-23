@@ -2,25 +2,21 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { actionMdPdfTemplateCodex, actionMdToPdf } from "../../src/cli/actions/markdown";
-import type { CodexProgressPresenter } from "../../src/cli/actions/codex-progress";
-import { prepareMdPdfTemplateCodex } from "../../src/cli/actions/markdown/pdf-template-codex";
-import type { MarkdownPdfTemplateCodexRunner } from "../../src/adapters/codex/markdown-pdf-template";
-import type { MarkdownPdfProcessRunner } from "../../src/cli/markdown-pdf";
-import { MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME } from "../../src/cli/markdown-pdf/profile/page-number-format";
+import { actionMdPdfTemplateCodex, actionMdToPdf } from "../../../src/cli/actions/markdown";
+import type { CodexProgressPresenter } from "../../../src/cli/actions/codex-progress";
+import { prepareMdPdfTemplateCodex } from "../../../src/cli/actions/markdown/pdf-template-codex";
+import type { MarkdownPdfTemplateCodexRunner } from "../../../src/adapters/codex/markdown-pdf-template";
+import type { MarkdownPdfProcessRunner } from "../../../src/cli/markdown-pdf";
+import { MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME } from "../../../src/cli/markdown-pdf/profile/page-number-format";
 import {
   bindPreparedMdPdfTemplateCodexOutput,
   writePreparedMdPdfTemplateCodexBundle,
-} from "../../src/cli/markdown-pdf/template-codex";
-import { createPdfRunner } from "../markdown-pdf/actions/render-support";
-import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
-import { toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
-import { pathExists } from "../markdown-pdf/support/path-fixtures";
-import {
-  minimalJpeg,
-  minimalPng,
-  minimalWebpVp8x1200By800,
-} from "../markdown-pdf/actions/template-codex-fixtures";
+} from "../../../src/cli/markdown-pdf/template-codex";
+import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
+import { toRepoRelativePath, withTempFixtureDir } from "../../helpers/cli-test-utils";
+import { pathExists } from "../support/path-fixtures";
+import { createPdfRunner } from "./render-support";
+import { minimalJpeg, minimalPng, minimalWebpVp8x1200By800 } from "./template-codex-fixtures";
 
 function codexTemplateResponse(
   input: {
