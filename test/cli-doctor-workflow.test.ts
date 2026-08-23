@@ -1,12 +1,16 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  DOCTOR_ACTION_IDS,
+  DOCTOR_CONDITION_IDS,
   DOCTOR_WORKFLOWS,
   projectDoctorWorkflows,
   type DoctorAction,
+  type DoctorActionClass,
   type DoctorActionId,
   type DoctorCondition,
   type DoctorConditionId,
+  type DoctorWorkflow,
   type DoctorWorkflowId,
   type DoctorWorkflowProjection,
   type DoctorWorkflowState,
@@ -175,6 +179,35 @@ const ACTION_CONTRACT = {
 } satisfies Record<DoctorActionId, Omit<DoctorAction, "id">>;
 
 describe("doctor workflow projection", () => {
+  test("keeps the complete public workflow facade available", () => {
+    const fixture = createDoctorFixture({
+      commands: {
+        pandoc: { ...DOCTOR_FIXTURE_COMMANDS.pandoc, available: false, version: null },
+      },
+    });
+    const projection: DoctorWorkflowProjection = projectDoctorWorkflows(
+      createDoctorReportFromFixture(fixture),
+    );
+    const workflow: DoctorWorkflow = projection.workflows[0]!;
+    const condition: DoctorCondition = projection.conditions[0]!;
+    const action: DoctorAction = projection.actions[0]!;
+    const workflowId: DoctorWorkflowId = workflow.id;
+    const conditionId: DoctorConditionId = condition.id;
+    const actionId: DoctorActionId = action.id;
+    const state: DoctorWorkflowState = workflow.state;
+    const actionClass: DoctorActionClass = action.class;
+
+    expect({ workflowId, conditionId, actionId, state, actionClass }).toEqual({
+      workflowId: "markdown.docx",
+      conditionId: "dependency.pandoc.missing",
+      actionId: "dependency.pandoc.install",
+      state: "unavailable",
+      actionClass: "required",
+    });
+    expect(Object.keys(CONDITION_CONTRACT)).toEqual([...DOCTOR_CONDITION_IDS]);
+    expect(Object.keys(ACTION_CONTRACT)).toEqual([...DOCTOR_ACTION_IDS]);
+  });
+
   test("projects the all-ready fixture into seven ordered ready workflows", () => {
     const projection = project(createDoctorFixture());
 
@@ -186,6 +219,71 @@ describe("doctor workflow projection", () => {
     expect(projection.actions).toEqual([]);
     expect(projection.issueCount).toBe(0);
     expect(projection.actionCount).toBe(0);
+  });
+
+  test("orders a mixed report across every workflow boundary", () => {
+    const projection = project(
+      createDoctorFixture({
+        codex: { configuredSupport: false, authSessionAvailable: false },
+        commands: {
+          ffmpeg: { ...DOCTOR_FIXTURE_COMMANDS.ffmpeg, available: false, version: null },
+          "fc-list": {
+            ...DOCTOR_FIXTURE_COMMANDS["fc-list"],
+            available: false,
+            version: null,
+          },
+          "fc-query": {
+            ...DOCTOR_FIXTURE_COMMANDS["fc-query"],
+            available: false,
+            version: null,
+          },
+          weasyprint: { ...DOCTOR_FIXTURE_COMMANDS.weasyprint, version: "65.0" },
+        },
+        query: {
+          ...DOCTOR_FIXTURE_QUERY,
+          excel: {
+            installed: false,
+            loaded: false,
+            loadable: false,
+            installable: false,
+          },
+          sqlite: {
+            installed: false,
+            loaded: false,
+            loadable: false,
+            installable: true,
+          },
+        },
+      }),
+    );
+
+    expect(conditionIds(projection)).toEqual([
+      "markdown.pdf.renderer.capability.unsupported",
+      "dependency.ffmpeg.missing",
+      "data.query.extension.excel.unavailable",
+      "data.query.extension.sqlite.unavailable",
+      "data.query.codex.unconfigured",
+      "dependency.fontconfig.discovery.missing",
+      "dependency.fontconfig.coverage.missing",
+    ]);
+    expect(projection.actions.map(({ id, class: actionClass }) => [id, actionClass])).toEqual([
+      ["dependency.ffmpeg.install", "required"],
+      ["data.query.extension.sqlite.install", "required"],
+      ["data.query.codex.configure", "required"],
+      ["dependency.fontconfig.install", "required"],
+      ["dependency.weasyprint.upgrade", "recommended"],
+    ]);
+    expect(states(projection)).toEqual({
+      "markdown.docx": "ready",
+      "markdown.pdf": "limited",
+      video: "unavailable",
+      "data.query": "limited",
+      "data.query.codex": "unavailable",
+      "font.discovery": "unavailable",
+      "font.coverage": "unavailable",
+    });
+    expect(projection.issueCount).toBe(7);
+    expect(projection.actionCount).toBe(5);
   });
 
   const cases: Array<{
