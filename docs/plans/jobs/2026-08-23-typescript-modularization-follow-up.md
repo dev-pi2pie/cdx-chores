@@ -43,7 +43,7 @@ modularization follow-up without duplicating the parent plan's checklists.
 |     9 | Template adapter test                        | completed | `e9234ac0..c0b34c53` | Continue |
 |    10 | Markdown PDF command-surface test            | completed | `9d5a2d4d..d8cfc74c` | Continue |
 |    11 | Interactive Markdown `to-pdf` decision gate  | completed | `f10fdb8e..5f9aa9be` | Split    |
-|    12 | Cumulative validation and lifecycle closeout | completed | `4ff8678e..ab8106a5` | Complete |
+|    12 | Cumulative validation and lifecycle closeout | completed | `4ff8678e..245859d5` | Complete |
 
 ## Phase 1: Profile Codex Action Test
 
@@ -876,11 +876,18 @@ helper outside the accepted refactor scope.
 
 ### Whole-Range Review And Lifecycle Closeout
 
-The literal complete-plan range from the parent of the activation commit
+The validation and code-evidence range from the parent of the activation commit
 through the Phase 12 evidence checkpoint is:
 
 ```text
 4ff8678ec868babd24c20149f964d5517c83482e..ab8106a5
+```
+
+The final lifecycle review range, including the completed research, plan, and
+job closeout commit, is:
+
+```text
+4ff8678ec868babd24c20149f964d5517c83482e..245859d5659258d255b9c3679fd9373b7f6d5fbb
 ```
 
 Independent maintainability and test reviews found no material code,
@@ -897,6 +904,9 @@ record.
 
 Final documentation review found no remaining material lifecycle, traceability,
 or stale-currentness gap after that correction.
+
+This entry is a receipt-only traceability correction. It changes no source or
+test files and does not add a self-review claim for the commit that records it.
 
 The policy evidence bar is satisfied: the research question is answered, its
 accepted dispositions are implemented, and fresh validation plus review
