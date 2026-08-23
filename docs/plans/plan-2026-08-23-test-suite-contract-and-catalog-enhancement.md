@@ -329,26 +329,55 @@ Observable contracts:
 
 ### Phase 6: Migrate Remaining Feature And Platform Families
 
-Complete a docs-only batch manifest before the first Phase 6 test edit. Repeat
-this phase as one checkpoint per accepted manifest row; do not combine rows
-merely because they share a feature prefix.
+Repeat this phase as one checkpoint per accepted manifest row; do not combine
+rows merely because they share a feature prefix.
 
-The manifest order is:
+#### Phase 6 Batch Manifest
 
-1. remaining Markdown PDF slices
-2. release tooling, Markdown Frontmatter, and Video as separate small-family
-   checkpoints
-3. Data Sources fixtures, then Data Extract, Data Preview, Data Stack, and Data
-   Conversion or shared Data ownership
-4. Fonts
-5. Rename
-6. Codex adapter platform, Document Rename, DOCX, and utilities as separate
-   checkpoints
-7. CLI foundations
+Manifest base: `2d6c81fa`
 
-The accepted inventory and case matrices own the exact source and destination
-paths within each row. CLI foundations is the final family migration; global
-support reconciliation remains Phase 7 work.
+Let `I` be the rows in the completed inventory's `Complete File Inventory`
+whose recorded current path exists at the manifest base and matches
+`test/**/*.test.ts`. Support-only rows are excluded from selector counts and
+are governed by each row's support boundary. Source selectors are evaluated
+against `I`, not against the changing working tree. The 21 rows select 246
+distinct test paths with no overlap.
+
+For the five Markdown PDF rows, let `M` be paths whose feature owner contains
+`Markdown PDF`. The Phase 5 historical sources are absent at the manifest base
+and therefore outside `M`.
+
+| ID   | Batch                                         | Exact source selector                                                                                                                                                                                 | Count | Accepted destination                                              | Test operations                              | Support boundary                                                                   |
+| ---- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----: | ----------------------------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------- |
+| 6.1  | Markdown PDF general                          | `M` excluding 6.2-6.5                                                                                                                                                                                 |    26 | `test/markdown-pdf/{actions,commands,direct,evidence}/`            | move and accepted split                      | Move slice-exclusive support only; retain cross-slice support.                     |
+| 6.2  | Markdown PDF Template Codex                   | `M` paths containing `markdown-pdf-template` or `md-to-pdf-template`, plus `test/cli-actions-md-to-pdf-commands/template.test.ts`                                                                      |    28 | `test/markdown-pdf/{actions,adapters,commands}/`                   | move and accepted split                      | Move Template-exclusive fixtures before their remaining consumers.                |
+| 6.3  | Markdown PDF Profile                          | `M` paths containing `markdown-pdf-profile` or `md-to-pdf-profile`, plus `test/cli-actions-md-to-pdf-actions-profile-rendering.test.ts` and `test/cli-actions-md-to-pdf-commands/profile.test.ts`         |    20 | `test/markdown-pdf/{actions,adapters,commands,evidence}/`          | move and accepted split                      | Move Profile-exclusive fixtures; retain cross-slice path support.                  |
+| 6.4  | Markdown PDF Project Codex                    | `M` paths containing `md-to-pdf-project-codex`, plus `test/cli-actions-md-to-pdf-commands/project.test.ts`                                                                                            |    16 | `test/markdown-pdf/{actions,commands}/`                            | move and accepted split                      | Move Project action-write fixtures; retain cross-slice support.                    |
+| 6.5  | Markdown PDF Interactive and support closeout | `M` paths beneath `test/cli-interactive-markdown-pdf/`                                                                                                                                                |    19 | `test/markdown-pdf/{interactive,support}/`                         | move and accepted split                      | Move remaining Markdown support; retain neutral harness residue for Phase 7.       |
+| 6.6  | Release tooling                               | owner exactly `Release tooling`                                                                                                                                                                       |     2 | `test/release-tooling/`                                           | move and accepted split                      | Feature-local fixtures only.                                                       |
+| 6.7  | Markdown Frontmatter                          | owner exactly `Markdown Frontmatter`                                                                                                                                                                  |     1 | `test/markdown-frontmatter/{actions,commands}/`                    | accepted split                               | Extract its action mock; catch-all deletion remains Phase 7.                       |
+| 6.8  | Video                                         | owner exactly `Video`                                                                                                                                                                                 |     2 | `test/video/{actions,interactive}/`                                | pure move                                    | Extract its mock behavior; CLI UX and routing remain in 6.21.                      |
+| 6.9  | Data Sources                                  | owner in `DuckDB adapter`, `Shared data fixtures`, `Spreadsheet source adapter`, `Shared data shaping`, or `Shared spreadsheet fixtures`                                                              |     5 | `test/data-sources/{adapters,direct,evidence,fixtures}/`           | pure move                                    | Move accepted tabular and DuckDB fixture helpers; no harness work.                 |
+| 6.10 | Data Extract                                  | owner exactly `Data Extract`                                                                                                                                                                          |    13 | `test/data-extract/{actions,commands,interactive}/`                | pure test moves                              | Move feature support and mocks; retain neutral harness residue.                    |
+| 6.11 | Data Preview                                  | owner exactly `Data Preview`                                                                                                                                                                          |     6 | `test/data-preview/{actions,commands,interactive}/`                | pure test moves                              | Split feature support and introduce accepted `test/helpers/ansi.ts`.               |
+| 6.12 | Data Stack                                    | owner exactly `Data Stack`                                                                                                                                                                            |    21 | `test/data-stack/{actions,commands,direct,interactive,evidence}/`  | move and one accepted split                  | Move feature support; compatibility facade remains Phase 7.                        |
+| 6.13 | Data Conversion                               | owner exactly `Data Convert` or `Data Conversion`                                                                                                                                                     |     2 | `test/data-conversion/{actions,commands,interactive}/`             | pure test moves                              | Extract its mock behavior; shared root UX and routing remain in 6.21.              |
+| 6.14 | Fonts                                         | owner exactly `Fonts`                                                                                                                                                                                 |    21 | `test/fonts/{actions,adapters,commands,direct}/`                   | move and accepted split                      | No shared-support move; remove only the recorded empty `describe`.                 |
+| 6.15 | Rename                                        | owner exactly `Rename`, `Rename cleanup`, or `Rename / Apply replay`                                                                                                                                  |    34 | `test/rename/{actions,adapters,codex,commands,direct,interactive,planner,presentation,support}/` | move, accepted split, and one title rename | Move local support and mocks; retain global compatibility exports for Phase 7.     |
+| 6.16 | Codex adapter platform                        | owner exactly `Codex adapter platform`                                                                                                                                                                |     2 | gated by a new exact platform matrix                              | matrix required                              | Do not move before the broad shared-adapter suite has an exact case matrix.        |
+| 6.17 | Document Rename                               | owner exactly `Document Rename`                                                                                                                                                                       |     1 | `test/document-rename/adapters/`                                  | pure move                                    | No support move.                                                                   |
+| 6.18 | DOCX                                          | owner exactly `DOCX`                                                                                                                                                                                  |     1 | `test/markdown-docx/adapters/`                                    | pure move                                    | Extract only DOCX mock behavior; neutral harness residue remains Phase 7.          |
+| 6.19 | Markdown platform                             | owner exactly `Markdown`                                                                                                                                                                              |     1 | `test/markdown/commands/`                                         | pure move                                    | No support move.                                                                   |
+| 6.20 | Utilities                                     | owner exactly `Utilities`                                                                                                                                                                             |     1 | `test/utils/`                                                     | source-aligned move                          | No support move.                                                                   |
+| 6.21 | CLI foundations and mixed-root decomposition  | owner in `CLI foundations`, `CLI foundations and Doctor`, `CLI Interactive infrastructure`, `CLI Interactive`, or `CLI command families`                                                              |    24 | accepted CLI-foundations and feature destinations                 | move, split, merge, rename, accepted removal | Move virtual terminal; defer neutral harness and compatibility cleanup to Phase 7. |
+
+CLI foundations runs last so every destination referenced by the mixed routing
+and UX owners already exists. A batch may start only when its selector
+reproduces the recorded count, every selected path exists or has a recorded
+earlier transition, and its destination and support boundary are settled.
+An inventory row without an exact case-matrix destination must receive an
+exact path mapping in that batch's admission receipt or remain at its current
+path; a destination folder alone does not authorize an opportunistic rename.
 
 Tasks for each batch:
 

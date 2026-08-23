@@ -1332,7 +1332,7 @@ Declared-case manifest: 112 cases. Matrix decision manifest: 112 cases.
 ```text
 test/
   data-extract/
-    command/
+    commands/
       basic-sources.test.ts
       excel-shape.test.ts
       header-mapping-review.test.ts
@@ -1341,13 +1341,13 @@ test/
       checkpoints.test.ts
       revision.test.ts
   data-stack/
-    action/
+    actions/
       codex-assist.test.ts
       dry-run-plan.test.ts
       materialization.test.ts
       schema-modes.test.ts
       validation.test.ts
-    command/
+    commands/
       direct-stack.test.ts
       options.test.ts
       replay.test.ts
@@ -1377,8 +1377,8 @@ bun test test/cli-actions-data-stack/*.test.ts test/cli-command-data-stack/*.tes
 Expected post-move paths:
 
 ```bash
-bun test test/data-extract/action test/data-extract/command test/data-extract/interactive
-bun test test/data-stack/action test/data-stack/command test/data-stack/direct test/data-stack/interactive
+bun test test/data-extract/actions test/data-extract/commands test/data-extract/interactive
+bun test test/data-stack/actions test/data-stack/commands test/data-stack/direct test/data-stack/interactive
 ```
 
 ### Validation Evidence

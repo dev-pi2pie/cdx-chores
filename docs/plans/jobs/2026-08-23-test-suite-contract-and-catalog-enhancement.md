@@ -355,27 +355,47 @@ and do not fold out-of-manifest findings into a migration checkpoint.
 
 Status: `pending`
 
-Before the first test edit, expand each row below into its exact source and
-destination manifest from the completed inventory and case matrices. Each row
-is an independent checkpoint with its own base, focused evidence, complete
-suite and repository checks, exact review range, and decision.
+Manifest base: `2d6c81fa`
 
-1. remaining Markdown PDF slices
-2. release tooling
-3. Markdown Frontmatter
-4. Video
-5. Data Sources fixtures
-6. Data Extract
-7. Data Preview
-8. Data Stack
-9. Data Conversion or shared Data ownership
-10. Fonts
-11. Rename
-12. Codex adapter platform
-13. Document Rename
-14. DOCX
-15. utilities
-16. CLI foundations
+The parent plan owns the exact source selectors, destination catalogs,
+operation boundaries, and support boundaries. This job records execution.
+
+Manifest validation at `2d6c81fa` reproduced all 21 recorded selector counts
+over existing `test/**/*.test.ts` inventory rows: 246 selected paths, 246
+unique paths, and no overlap. Support-only rows remain governed separately by
+the recorded batch boundaries. The admission checkpoint also normalizes the
+Data Extract and Data Stack destination folders to the established plural
+`actions/commands` convention without changing any case decision.
+
+| ID   | Batch                                         | Status          | Batch base | Implementation tip | Evidence tip | Review range | Decision |
+| ---- | --------------------------------------------- | --------------- | ---------- | ------------------ | ------------ | ------------ | -------- |
+| 6.1  | Markdown PDF general                          | pending         | -          | -                  | -            | -            | -        |
+| 6.2  | Markdown PDF Template Codex                   | pending         | -          | -                  | -            | -            | -        |
+| 6.3  | Markdown PDF Profile                          | pending         | -          | -                  | -            | -            | -        |
+| 6.4  | Markdown PDF Project Codex                    | pending         | -          | -                  | -            | -            | -        |
+| 6.5  | Markdown PDF Interactive and support closeout | pending         | -          | -                  | -            | -            | -        |
+| 6.6  | Release tooling                               | pending         | -          | -                  | -            | -            | -        |
+| 6.7  | Markdown Frontmatter                          | pending         | -          | -                  | -            | -            | -        |
+| 6.8  | Video                                         | pending         | -          | -                  | -            | -            | -        |
+| 6.9  | Data Sources                                  | pending         | -          | -                  | -            | -            | -        |
+| 6.10 | Data Extract                                  | pending         | -          | -                  | -            | -            | -        |
+| 6.11 | Data Preview                                  | pending         | -          | -                  | -            | -            | -        |
+| 6.12 | Data Stack                                    | pending         | -          | -                  | -            | -            | -        |
+| 6.13 | Data Conversion                               | pending         | -          | -                  | -            | -            | -        |
+| 6.14 | Fonts                                         | pending         | -          | -                  | -            | -            | -        |
+| 6.15 | Rename                                        | pending         | -          | -                  | -            | -            | -        |
+| 6.16 | Codex adapter platform                        | matrix-required | -          | -                  | -            | -            | -        |
+| 6.17 | Document Rename                               | pending         | -          | -                  | -            | -            | -        |
+| 6.18 | DOCX                                          | pending         | -          | -                  | -            | -            | -        |
+| 6.19 | Markdown platform                             | pending         | -          | -                  | -            | -            | -        |
+| 6.20 | Utilities                                     | pending         | -          | -                  | -            | -            | -        |
+| 6.21 | CLI foundations and mixed-root decomposition  | pending         | -          | -                  | -            | -            | -        |
+
+For each completed row, record its selected source count and dispositions,
+focused pre/post and adjacent results, complete-suite and repository checks,
+implementation and evidence commits, correspondence rows, exact test-quality,
+maintainability, and documentation review range, accepted fixes, and final
+`continue`, `constrain`, `defer`, or `stop` decision.
 
 An out-of-manifest finding returns to inventory or matrix review. Phase 7 owns
 global-helper neutrality, explicitly accepted residual support moves, and final
