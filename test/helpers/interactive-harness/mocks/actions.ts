@@ -5,6 +5,7 @@ import { actionsModuleUrl } from "../module-urls";
 import { createDataQueryActionMock } from "../../../data-query/interactive/mock-action";
 import { createDoctorActionMock } from "../../../doctor/interactive/mock-action";
 import { createMarkdownFrontmatterActionMock } from "../../../markdown-frontmatter/interactive/mock-action";
+import { createVideoActionMocks } from "../../../video/interactive/mock-action";
 import { createDataExtractActionMock } from "./action-data";
 import { createMiscActionMocks } from "./action-misc";
 import { createRenameActionMocks } from "./action-rename";
@@ -20,6 +21,7 @@ export function installActionMocks(context: HarnessRunnerContext): void {
     ...createMiscActionMocks(context),
     ...createDoctorActionMock(context),
     ...createMarkdownFrontmatterActionMock(context),
+    ...createVideoActionMocks(context),
     ...createDataExtractActionMock(context),
     ...createDataQueryActionMock(context),
     ...createStackActionMocks(context),

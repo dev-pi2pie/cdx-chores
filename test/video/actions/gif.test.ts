@@ -3,9 +3,9 @@ import { chmod, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 
-import { actionVideoGif } from "../src/cli/actions/video";
-import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
-import { createTempFixtureDir, toRepoRelativePath } from "./helpers/cli-test-utils";
+import { actionVideoGif } from "../../../src/cli/actions/video";
+import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
+import { createTempFixtureDir, toRepoRelativePath } from "../../helpers/cli-test-utils";
 
 interface FakeFfmpegRecord {
   call: number;
@@ -481,7 +481,7 @@ describe("actionVideoGif", () => {
   test("rejects gifProfile with explicit compressed mode", async () => {
     const fixtureDir = await createTempFixtureDir("video-gif-action");
     try {
-      const { inputPath, outputPath } = await createFakeFfmpegEnvironment(fixtureDir);
+      const { inputPath, outputPath, logPath } = await createFakeFfmpegEnvironment(fixtureDir);
       const { runtime, expectNoOutput } = createActionTestRuntime();
 
       await expect(
@@ -497,6 +497,8 @@ describe("actionVideoGif", () => {
       });
 
       expectNoOutput();
+      await expect(readFile(logPath, "utf8")).rejects.toThrow();
+      await expect(readFile(outputPath, "utf8")).rejects.toThrow();
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
@@ -614,7 +616,7 @@ describe("actionVideoGif", () => {
   test("rejects gifLook with explicit compressed mode", async () => {
     const fixtureDir = await createTempFixtureDir("video-gif-action");
     try {
-      const { inputPath, outputPath } = await createFakeFfmpegEnvironment(fixtureDir);
+      const { inputPath, outputPath, logPath } = await createFakeFfmpegEnvironment(fixtureDir);
       const { runtime, expectNoOutput } = createActionTestRuntime();
 
       await expect(
@@ -630,6 +632,8 @@ describe("actionVideoGif", () => {
       });
 
       expectNoOutput();
+      await expect(readFile(logPath, "utf8")).rejects.toThrow();
+      await expect(readFile(outputPath, "utf8")).rejects.toThrow();
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
