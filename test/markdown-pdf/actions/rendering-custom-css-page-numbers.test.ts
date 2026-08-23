@@ -2,17 +2,17 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { actionMdToPdf } from "../src/cli/actions";
+import { actionMdToPdf } from "../../../src/cli/actions";
 import {
   findMarkdownPdfRenderConfigurationConflict,
   MARKDOWN_PDF_PAGE_NUMBERS_REQUIRE_DEFAULT_CSS_REASON,
-} from "../src/cli/actions/markdown/to-pdf-service";
-import { resolveMarkdownPdfPageNumberConfiguration } from "../src/cli/markdown-pdf";
-import { MARKDOWN_PDF_COVER_DEFAULT_CSS_DISABLED_WARNING } from "../src/cli/markdown-pdf";
-import { DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE } from "../src/cli/markdown-pdf/profile";
-import { createPdfRunner } from "./cli-actions-md-to-pdf.helpers";
-import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
-import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
+} from "../../../src/cli/actions/markdown/to-pdf-service";
+import { resolveMarkdownPdfPageNumberConfiguration } from "../../../src/cli/markdown-pdf";
+import { MARKDOWN_PDF_COVER_DEFAULT_CSS_DISABLED_WARNING } from "../../../src/cli/markdown-pdf";
+import { DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE } from "../../../src/cli/markdown-pdf/profile";
+import { createPdfRunner } from "../../cli-actions-md-to-pdf.helpers";
+import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
+import { toRepoRelativePath, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 async function expectMissing(path: string): Promise<void> {
   await expect(stat(path)).rejects.toMatchObject({ code: "ENOENT" });

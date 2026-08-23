@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { actionMdToPdf, prepareMarkdownPdfRender } from "../src/cli/actions";
-import { resolveCliColorEnabled } from "../src/cli/colors";
+import { actionMdToPdf, prepareMarkdownPdfRender } from "../../../src/cli/actions";
+import { resolveCliColorEnabled } from "../../../src/cli/colors";
 import {
   assessMarkdownPdfCoverVisibility,
   assessMarkdownPdfProfileRevision,
@@ -13,15 +13,15 @@ import {
   MARKDOWN_PDF_DIAGNOSTIC_CONDITION_IDS,
   MARKDOWN_PDF_EMPTY_COVER_WARNING,
   MARKDOWN_PDF_LEGACY_BODY_VISIBILITY_WARNING,
-} from "../src/cli/markdown-pdf";
+} from "../../../src/cli/markdown-pdf";
 import type {
   MarkdownPdfTemplateCompatibilityResult,
   NormalizedMarkdownPdfPageNumbers,
   NormalizedMarkdownPdfProfile,
-} from "../src/cli/markdown-pdf";
-import { createPdfRunner } from "./cli-actions-md-to-pdf.helpers";
-import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
-import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
+} from "../../../src/cli/markdown-pdf";
+import { createPdfRunner } from "../../cli-actions-md-to-pdf.helpers";
+import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
+import { toRepoRelativePath, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 function profileWith(input: {
   footerCenter?: string;

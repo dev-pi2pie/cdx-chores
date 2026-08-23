@@ -2,10 +2,10 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { actionMdToPdf } from "../src/cli/actions";
-import { createPdfRunner } from "./cli-actions-md-to-pdf.helpers";
-import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
-import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
+import { actionMdToPdf } from "../../../src/cli/actions";
+import { createPdfRunner } from "../../cli-actions-md-to-pdf.helpers";
+import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
+import { toRepoRelativePath, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 describe("cli action modules: md to-pdf validation", () => {
   test("rejects empty bundle values before dependency execution", async () => {
