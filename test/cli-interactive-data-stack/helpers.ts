@@ -6,7 +6,7 @@ import type {
   InteractiveHarnessScenario,
 } from "../helpers/interactive-harness/types";
 
-export { stripAnsi } from "../cli-actions-data-preview/helpers";
+export { stripAnsi } from "../helpers/ansi";
 
 export const DEFAULT_DATA_STACK_TIMESTAMP = "20260225T000000Z";
 export const DEFAULT_DATA_STACK_SOURCE = "examples/playground/stack-cases/csv-matching-headers";

@@ -1,7 +1,7 @@
 import { describe, test } from "bun:test";
 
-import { expectCliError } from "../helpers/cli-action-test-utils";
-import { runDataPreview, withDataPreviewFixture } from "./helpers";
+import { expectCliError } from "../../helpers/cli-action-test-utils";
+import { runDataPreview, withDataPreviewFixture } from "./support";
 
 describe("cli action modules: data preview failure modes", () => {
   test("actionDataPreview rejects unsupported file types", async () => {
@@ -90,7 +90,7 @@ describe("cli action modules: data preview failure modes", () => {
     await withDataPreviewFixture({
       content: "name,age\nAda,36\n",
       fileName: "rows.csv",
-      run: async (context) => {
+      run: async ({ expectNoOutput, ...context }) => {
         await expectCliError(
           () =>
             runDataPreview(context, {
@@ -114,6 +114,8 @@ describe("cli action modules: data preview failure modes", () => {
             messageIncludes: "keyword cannot be blank",
           },
         );
+
+        expectNoOutput();
       },
     });
   });

@@ -6,12 +6,19 @@ import {
   expectAnsi,
   expectNoAnsi,
   runDataPreview,
-  stripAnsi,
   withDataPreviewFixture,
-} from "./helpers";
+} from "./support";
+import { stripAnsi } from "../../helpers/ansi";
 
 const HIGHLIGHTED_ACTIVE_PATTERN = new RegExp(
   `${ANSI_ESCAPE}\\[[0-9;]*mactive\\s*${ANSI_ESCAPE}\\[[0-9;]*m`,
+);
+const ANSI_SEQUENCE_PATTERN = `${ANSI_ESCAPE}\\[[0-9;]*m`;
+const STYLED_INPUT_PATTERN = new RegExp(
+  `(?:${ANSI_SEQUENCE_PATTERN})+Input(?:${ANSI_SEQUENCE_PATTERN})+`,
+);
+const STYLED_NAME_PATTERN = new RegExp(
+  `(?:${ANSI_SEQUENCE_PATTERN})+name(?:${ANSI_SEQUENCE_PATTERN})+`,
 );
 
 describe("cli action modules: data preview tty behavior", () => {
@@ -101,9 +108,8 @@ describe("cli action modules: data preview tty behavior", () => {
         await runDataPreview({ ...context, runtime });
 
         expectNoStderr();
-        expectAnsi(stdout.text);
-        expect(stripAnsi(stdout.text)).toContain("Input");
-        expect(stripAnsi(stdout.text)).toContain("name");
+        expect(stdout.text).toMatch(STYLED_INPUT_PATTERN);
+        expect(stdout.text).toMatch(STYLED_NAME_PATTERN);
       },
     });
   });

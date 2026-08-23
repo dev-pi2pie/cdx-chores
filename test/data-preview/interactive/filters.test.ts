@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { runInteractiveHarness } from "./cli-interactive-routing.helpers";
+import { runInteractiveHarness } from "../../cli-interactive-routing.helpers";
 
 describe("interactive mode routing: data preview filters", () => {
   test("routes data preview with a single contains filter from interactive mode", () => {

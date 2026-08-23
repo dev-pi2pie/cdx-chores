@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { runInteractiveHarness, stripAnsi } from "./cli-interactive-routing.helpers";
+import { runInteractiveHarness } from "../../cli-interactive-routing.helpers";
+import { stripAnsi } from "../../helpers/ansi";
 
 describe("interactive mode routing: data preview", () => {
   test("routes data preview through optional interactive prompts", () => {

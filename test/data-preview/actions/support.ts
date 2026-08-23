@@ -2,9 +2,9 @@ import { expect } from "bun:test";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { actionDataPreview, type DataPreviewOptions } from "../../src/cli/actions";
-import { createActionTestRuntime } from "../helpers/cli-action-test-utils";
-import { toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
+import { actionDataPreview, type DataPreviewOptions } from "../../../src/cli/actions";
+import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
+import { toRepoRelativePath, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 export const ANSI_ESCAPE = String.fromCharCode(0x1b);
 const ANSI_PATTERN = new RegExp(`${ANSI_ESCAPE}\\[[0-9;]*m`, "g");
@@ -27,10 +27,6 @@ export function enableTty(runtime: { stdout: NodeJS.WritableStream }, columns: n
   const stream = runtime.stdout as NodeJS.WritableStream & { columns?: number; isTTY?: boolean };
   stream.isTTY = true;
   stream.columns = columns;
-}
-
-export function stripAnsi(value: string): string {
-  return value.replace(ANSI_PATTERN, "");
 }
 
 export function expectAnsi(text: string): void {

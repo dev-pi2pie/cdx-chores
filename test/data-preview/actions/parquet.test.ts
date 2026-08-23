@@ -1,10 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
 
-import { actionDataParquetPreview, actionDataPreview } from "../src/cli/actions";
-import { expectCliError } from "./helpers/cli-action-test-utils";
-import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
-import { REPO_ROOT, toRepoRelativePath } from "./helpers/cli-test-utils";
+import { actionDataParquetPreview, actionDataPreview } from "../../../src/cli/actions";
+import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
+import { REPO_ROOT, toRepoRelativePath } from "../../helpers/cli-test-utils";
 
 function parquetFixturePath(name: string): string {
   return join(REPO_ROOT, "test", "fixtures", "parquet-preview", name);
@@ -12,7 +11,7 @@ function parquetFixturePath(name: string): string {
 
 describe("cli action modules: data parquet preview", () => {
   test("actionDataParquetPreview renders Parquet summary and table output", async () => {
-    const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
+    const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
     const inputPath = parquetFixturePath("basic.parquet");
 
     await actionDataParquetPreview(runtime, {
@@ -20,7 +19,6 @@ describe("cli action modules: data parquet preview", () => {
     });
 
     expectNoStderr();
-    expect(stderr.text).toBe("");
     expect(stdout.text).toContain(`Input: ${toRepoRelativePath(inputPath)}`);
     expect(stdout.text).toContain("Format: parquet");
     expect(stdout.text).toContain("Rows: 3");

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { getDisplayWidth } from "../../src/cli/text-display-width";
-import { runDataPreview, withDataPreviewFixture } from "./helpers";
+import { getDisplayWidth } from "../../../src/cli/text-display-width";
+import { runDataPreview, withDataPreviewFixture } from "./support";
 
 describe("cli action modules: data preview", () => {
   test("actionDataPreview renders CSV summary and table output", async () => {
@@ -107,7 +107,6 @@ describe("cli action modules: data preview", () => {
 
         expectNoStderr();
         expect(stdout.text).toContain("Visible columns: value");
-        expect(stdout.text).toContain("value");
         expect(stdout.text).toContain("Ada");
         expect(stdout.text).toContain("36");
         expect(stdout.text).toContain("true");
