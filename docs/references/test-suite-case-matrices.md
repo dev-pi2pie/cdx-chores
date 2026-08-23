@@ -194,7 +194,7 @@ suites.
 | 6.12  | `test/helpers/interactive-harness/mocks/action-stack.ts`                         | `test/data-stack/interactive/mock-action.ts`                                               | Executed: only the Data Stack action mocks moved; the neutral harness composition remains under CLI foundations.                                    |
 | 6.12  | Data Stack fields in `test/helpers/interactive-harness/types.ts`                 | `test/data-stack/interactive/harness-contract.ts`                                          | Executed: eight `dataStack*` scenario fields plus stack plan and Codex report writes moved; shared timeout fields remain neutral.                    |
 | 6.12  | Data Stack matcher in `test/cli-interactive-routing.helpers.ts`                  | `test/data-stack/interactive/support.ts`                                                   | Executed: the matcher became a temporary facade re-export; unrelated routing support stays in place for Phase 7.                                    |
-| 6.13  | Data Conversion behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | `test/data-conversion/interactive/mock-action.ts`                                       | Extract only the six format-conversion action mocks; retain the Markdown DOCX residual for Phase 6.18 and keep neutral composition global.           |
+| 6.13  | Data Conversion behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | `test/data-conversion/interactive/mock-action.ts`                                       | Executed: only six format-conversion action mocks moved; the Markdown DOCX residual remains for Phase 6.18 and neutral composition stays global.      |
 
 ### Phase 3 Data Query Path Contract
 
@@ -2687,6 +2687,12 @@ files; the adjacent CLI UX and top-level Interactive routing slice passes 42
 tests with 198 assertions across two files. Phase 6.13 must preserve all 13
 titles, keep the focused assertion count at 56, extract exactly six conversion
 action mocks, and leave only `actionMdToDocx` in the mixed residual.
+
+Phase 6.13 executed the two suite moves and mock split over
+`f2fb794b..f7f509ee`. The destination slice remains 13 tests with 56 assertions
+across two files, while the adjacent slice remains 42 tests with 198 assertions.
+All titles remain represented once, the two admitted assertion edits offset,
+and only `actionMdToDocx` remains in the mixed residual.
 
 ### Decision Summary
 

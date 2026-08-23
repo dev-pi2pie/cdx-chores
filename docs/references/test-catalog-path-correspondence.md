@@ -368,6 +368,18 @@ through final reconciliation.
 | 2026-08-23     | Data Stack fields in `test/helpers/interactive-harness/types.ts`       | split      | `test/helpers/interactive-harness/types.ts`<br>`test/data-stack/interactive/harness-contract.ts`                | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
 | 2026-08-23     | Data Stack matcher in `test/cli-interactive-routing.helpers.ts`        | split      | `test/cli-interactive-routing.helpers.ts`<br>`test/data-stack/interactive/support.ts`                            | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
 
+### Phase 6.13: Data Conversion
+
+The paths below were implemented and validated over `f2fb794b..f7f509ee`.
+Phase 6.13 remains in review until the evidence checkpoint receives its exact
+range review; this reference stays `draft` through final reconciliation.
+
+| Reference date | Historical path                                                                    | Transition | Current owner or owners                                                                                                      | Migration range      | Job evidence                      |
+| -------------- | ---------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |
+| 2026-08-23     | `test/cli-actions-data.test.ts`                                                    | moved      | `test/data-conversion/actions/formats.test.ts`                                                                               | `f2fb794b..f7f509ee` | [Phase 6.13][phase-6-13-evidence] |
+| 2026-08-23     | `test/cli-interactive-routing-data-convert.test.ts`                               | moved      | `test/data-conversion/interactive/routing.test.ts`                                                                           | `f2fb794b..f7f509ee` | [Phase 6.13][phase-6-13-evidence] |
+| 2026-08-23     | Data Conversion behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | split    | `test/helpers/interactive-harness/mocks/action-misc.ts`<br>`test/data-conversion/interactive/mock-action.ts`                | `f2fb794b..f7f509ee` | [Phase 6.13][phase-6-13-evidence] |
+
 [phase-3-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-3-data-query-migration-pilot
 [phase-4-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-4-doctor-ownership-migration-pilot
 [phase-5-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-5-bounded-markdown-pdf-migration-pilot
@@ -383,6 +395,7 @@ through final reconciliation.
 [phase-6-10-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-610-data-extract
 [phase-6-11-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-611-data-preview
 [phase-6-12-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-612-data-stack
+[phase-6-13-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-613-data-conversion
 
 ## Completion Boundary
 
