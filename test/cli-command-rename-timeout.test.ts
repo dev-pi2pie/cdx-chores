@@ -18,6 +18,7 @@ interface RenameCommandHarness {
   batchCalls: RenameBatchOptions[];
   fileCalls: RenameFileOptions[];
   parse: (args: string[]) => Promise<unknown>;
+  program: Command;
   stderr: { text: string };
   stdout: { text: string };
 }
@@ -67,9 +68,20 @@ function createRenameCommandHarness(
     batchCalls,
     fileCalls,
     parse: (args) => program.parseAsync(["node", "test", ...args]),
+    program,
     stderr,
     stdout,
   };
+}
+
+function findCommand(program: Command, path: string[]): Command {
+  return path.reduce((parent, name) => {
+    const command = parent.commands.find((candidate) => candidate.name() === name);
+    if (!command) {
+      throw new Error(`Expected command ${path.join(" ")}`);
+    }
+    return command;
+  }, program);
 }
 
 async function expectParseFailure(harness: RenameCommandHarness, args: string[]): Promise<void> {
@@ -167,6 +179,47 @@ describe("rename Codex timeout command routing", () => {
     expect(harness.stderr.text).toContain(
       "Use --codex-docs-timeout 40000ms instead of --codex-docs-timeout-ms.",
     );
+  });
+
+  test.each([
+    {
+      label: "rename file",
+      args: ["rename", "file", "sample.md"],
+      callKind: "file",
+    },
+    {
+      label: "rename batch",
+      args: ["rename", "batch", "./files"],
+      callKind: "batch",
+    },
+    {
+      label: "batch-rename",
+      args: ["batch-rename", "./files"],
+      callKind: "batch",
+    },
+  ])("forwards analyzer retry and batch-size values for $label", async (scenario) => {
+    const harness = createRenameCommandHarness();
+
+    await harness.parse([
+      ...scenario.args,
+      "--codex-images-retries",
+      "3",
+      "--codex-images-batch-size",
+      "7",
+      "--codex-docs-retries",
+      "4",
+      "--codex-docs-batch-size",
+      "8",
+    ]);
+
+    const calls = scenario.callKind === "file" ? harness.fileCalls : harness.batchCalls;
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toMatchObject({
+      codexImagesRetries: 3,
+      codexImagesBatchSize: 7,
+      codexDocsRetries: 4,
+      codexDocsBatchSize: 8,
+    });
   });
 });
 
@@ -334,6 +387,67 @@ describe("rename Codex timeout validation", () => {
 });
 
 describe("rename Codex timeout help", () => {
+  test.each([
+    ["rename file", ["rename", "file"], ["--prefix <value>", "--dry-run"]],
+    [
+      "rename batch",
+      ["rename", "batch"],
+      [
+        "--prefix <value>",
+        "--profile <name>",
+        "--dry-run",
+        "--preview-skips <mode>",
+        "--recursive",
+        "--max-depth <value>",
+        "--match-regex <pattern>",
+        "--skip-regex <pattern>",
+        "--ext <value>",
+        "--skip-ext <value>",
+      ],
+    ],
+    [
+      "batch-rename",
+      ["batch-rename"],
+      [
+        "--prefix <value>",
+        "--profile <name>",
+        "--dry-run",
+        "--preview-skips <mode>",
+        "--recursive",
+        "--max-depth <value>",
+        "--match-regex <pattern>",
+        "--skip-regex <pattern>",
+        "--ext <value>",
+        "--skip-ext <value>",
+      ],
+    ],
+  ] as const)("keeps base, Codex, and template option ordering for %s", (_label, path, base) => {
+    const harness = createRenameCommandHarness();
+    const command = findCommand(harness.program, [...path]);
+
+    expect(command.options.map((option) => option.flags)).toEqual([
+      ...base,
+      "--codex",
+      "--codex-timeout <duration>",
+      "--codex-images",
+      "--codex-images-timeout <duration>",
+      "--codex-images-timeout-ms <ms>",
+      "--codex-images-retries <count>",
+      "--codex-images-batch-size <count>",
+      "--codex-docs",
+      "--codex-docs-timeout <duration>",
+      "--codex-docs-timeout-ms <ms>",
+      "--codex-docs-retries <count>",
+      "--codex-docs-batch-size <count>",
+      "--pattern <template>",
+      "--serial-order <value>",
+      "--serial-start <value>",
+      "--serial-width <value>",
+      "--serial-scope <value>",
+      "--timestamp-timezone <value>",
+    ]);
+  });
+
   test.each([
     ["rename file", ["rename", "file", "--help"]],
     ["rename batch", ["rename", "batch", "--help"]],
