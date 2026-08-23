@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { Command } from "commander";
 
-import { registerMarkdownCommands } from "../src/cli/commands/markdown";
-import { createCapturedRuntime, runCli } from "./helpers/cli-test-utils";
+import { registerMarkdownCommands } from "../../../src/cli/commands/markdown";
+import { createCapturedRuntime, runCli } from "../../helpers/cli-test-utils";
 
 type MarkdownCodexCommand = "pdf-profile" | "pdf-project" | "pdf-template";
 
