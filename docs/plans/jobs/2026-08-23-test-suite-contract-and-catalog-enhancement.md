@@ -1,6 +1,7 @@
 ---
 title: "Test Suite Contract And Catalog Enhancement Execution"
 created-date: 2026-08-23
+modified-date: 2026-08-23
 status: in-progress
 agent: codex
 ---
@@ -43,7 +44,7 @@ references.
 |     3 | Data Query migration pilot                     | completed   | `db9622cf..27ccab6e` | Continue with constraints |
 |     4 | Doctor ownership migration pilot               | completed   | `ff0f3d6f..837e5d95` | Continue with constraints |
 |     5 | bounded Markdown PDF migration pilot           | completed   | `05a87d54..4cce415a` | Continue with constraints |
-|     6 | remaining accepted family batches              | pending     | per-batch             | Admitted                  |
+|     6 | remaining accepted family batches              | in-review   | per-batch             | Admitted                  |
 
 ## Phase 1: Refreshed Baseline And Complete File Inventory
 
@@ -353,7 +354,7 @@ and do not fold out-of-manifest findings into a migration checkpoint.
 
 ## Phase 6: Remaining Accepted Family Batches
 
-Status: `pending`
+Status: `in-review`
 
 Manifest base: `2d6c81fa`
 
@@ -369,7 +370,7 @@ Data Extract and Data Stack destination folders to the established plural
 
 | ID   | Batch                                         | Status          | Batch base | Implementation tip | Evidence tip | Review range | Decision |
 | ---- | --------------------------------------------- | --------------- | ---------- | ------------------ | ------------ | ------------ | -------- |
-| 6.1  | Markdown PDF general                          | pending         | -          | -                  | -            | -            | -        |
+| 6.1  | Markdown PDF general                          | in-review       | `fca1204a` | `c55da02a`         | pending      | pending      | pending  |
 | 6.2  | Markdown PDF Template Codex                   | pending         | -          | -                  | -            | -            | -        |
 | 6.3  | Markdown PDF Profile                          | pending         | -          | -                  | -            | -            | -        |
 | 6.4  | Markdown PDF Project Codex                    | pending         | -          | -                  | -            | -            | -        |
@@ -390,6 +391,94 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.19 | Markdown platform                             | pending         | -          | -                  | -            | -            | -        |
 | 6.20 | Utilities                                     | pending         | -          | -                  | -            | -            | -        |
 | 6.21 | CLI foundations and mixed-root decomposition  | pending         | -          | -                  | -            | -            | -        |
+
+### Phase 6.1: Markdown PDF General
+
+Status: `in-review`
+
+Batch base: `fca1204a`
+
+Implementation tip: `c55da02a`
+
+Execution and stability range: `fca1204a..c55da02a`
+
+Path migration range: `fca1204a..b5ffc3f1`
+
+Exact batch review range: pending the evidence tip
+
+The batch admitted 10 general Markdown PDF suites. The selector retained 16
+additional suites at their current paths because their rename or destination
+ownership remains unresolved; retention is an admitted deferral, not a claim
+that the flat paths are final.
+
+Selector preservation:
+
+| Check      | Owner files | Passed | Failed | Assertions |
+| ---------- | ----------: | -----: | -----: | ---------: |
+| Pre-change |          26 |    326 |      0 |      2,648 |
+| Post-change |          34 |    326 |      0 |      2,648 |
+
+Implementation checkpoints:
+
+- `9c3e795e` — split the admitted action contracts
+- `a74487a7` — split the admitted direct and evidence contracts
+- `b5ffc3f1` — localize the admitted Markdown PDF test support
+- `c55da02a` — make the generated-fallback release test deterministic after
+  initial full-suite attempts exposed incidental live-network timeout behavior
+
+Pre-commit test-quality and maintainability review was incorporated before the
+three Markdown PDF commits. Broad action `describe` titles were replaced with
+owner-specific titles before `9c3e795e`; duplicated page-chrome helpers moved
+to `test/markdown-pdf/direct/page-chrome-test-utils.ts` before `a74487a7`; and
+duplicated `pathExists` ownership was removed from command fixtures so command,
+Profile, Project, and Template consumers use
+`test/markdown-pdf/support/path-fixtures.ts` before `b5ffc3f1`.
+
+Validation evidence:
+
+| Boundary                         | Passed | Failed | Assertions | Files |
+| -------------------------------- | -----: | -----: | ---------: | ----: |
+| Focused moved owners             |    181 |      0 |      1,927 |    18 |
+| Changed-support consumer set     |    756 |      0 |      6,599 |    77 |
+| Complete suite after `c55da02a`  |  2,614 |      0 |     14,866 |   317 |
+
+The first complete-suite attempts reached the release-script fallback case but
+timed out while it could make a live `curl` request. The isolated release suite
+confirmed that the generated fallback path, rather than the Markdown PDF
+migration, owned the nondeterminism. Commit `c55da02a` stubs that request, after
+which the complete suite passed with the result above.
+
+Repository checks are clean:
+
+- `bun run format:check`
+- `bun run lint`
+- `bun run build`
+- `bunx tsc --noEmit`
+- `git diff --check`
+
+Documentation path scan:
+
+- no current guide links name the migrated Phase 6.1 paths
+- the completed audit inventory remains the dated Phase 1 baseline and now
+  labels those entries as audited, rather than live, paths
+- the current support-decision wording names the executed Phase 6.1 split and
+  the pending Phase 6.2 and 6.3 completion events
+- current ownership is recorded only in the correspondence rows below
+
+Correspondence rows use the fixed path-migration range
+`fca1204a..b5ffc3f1`; `c55da02a` is the separate full-suite stability
+checkpoint. The evidence commit, exact range review, accepted review
+fixes, and final continuation decision remain pending; this receipt does not
+claim the batch is completed.
+
+Review gate:
+
+- [x] preserve the pre-change selector declarations and assertions
+- [x] migrate the 10 admitted suites and retain the 16 unresolved suites
+- [x] validate moved owners and all changed-support consumers
+- [x] complete the full suite and repository checks
+- [ ] fix the evidence tip and complete the exact batch range review
+- [ ] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,

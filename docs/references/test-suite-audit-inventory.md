@@ -1,6 +1,7 @@
 ---
 title: "Test Suite Audit Inventory"
 created-date: 2026-08-23
+modified-date: 2026-08-23
 status: completed
 agent: codex
 ---
@@ -17,6 +18,12 @@ and Phase 2 completed and reviewed every required case matrix and support
 ownership decision. File size, runtime, and matcher shape remain audit context,
 not removal criteria.
 
+This is the dated audit snapshot at baseline commit `2f3013ca`, not a live path
+index. Later implementation phases do not rewrite the audited rows. Historical
+to current ownership is recorded in
+[Test Catalog Path Correspondence](test-catalog-path-correspondence.md), while
+accepted destinations and case dispositions remain in the case matrices.
+
 Literal matrices and accepted future destinations live in
 [Test Suite Case Matrices And Catalog](test-suite-case-matrices.md).
 
@@ -24,7 +31,8 @@ Literal matrices and accepted future destinations live in
 
 Each discovered test file appears exactly once and records:
 
-- **Current path** — the repository-relative discovered test path.
+- **Audited path** — the repository-relative test path discovered at the fixed
+  Phase 1 baseline.
 - **Feature owner** — the product or stable platform family that owns the
   behavior.
 - **Layer** — the direct/unit, adapter, action, command, Interactive,
@@ -71,7 +79,7 @@ any test edit or path migration:
 
 The rows below are in exact sorted discovered-manifest order.
 
-| Current path                                                                            | Feature owner                         | Layer                       | Tested boundary                                                                          | Representative contract                                                                                                                                                      | Closest overlap                                                                                                                                          | Disposition           | Rationale                                                                                                                                                                           | Case matrix                                                                                |
+| Audited path                                                                            | Feature owner                         | Layer                       | Tested boundary                                                                          | Representative contract                                                                                                                                                      | Closest overlap                                                                                                                                          | Disposition           | Rationale                                                                                                                                                                           | Case matrix                                                                                |
 | --------------------------------------------------------------------------------------- | ------------------------------------- | --------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | `test/adapters-codex-document-rename-titles.test.ts`                                    | Document Rename                       | adapter                     | PDF and DOCX title-evidence extraction                                                   | Metadata-rich DOCX and PDF fixtures produce bounded title signals while unreadable inputs return typed failures.                                                             | `test/adapters-docx-ooxml-metadata.test.ts`                                                                                                              | retain                | This owns rename-specific evidence selection and prompt-filename uniqueness, not low-level OOXML metadata parsing.                                                                  | —                                                                                          |
 | `test/adapters-codex-failure.test.ts`                                                   | Codex adapter platform                | direct/unit                 | structural request-failure classification                                                | Preserved timeout causes are recognized without misclassifying ordinary aborts or message text.                                                                              | `test/adapters-codex-shared.test.ts`                                                                                                                     | retain                | The suite isolates the shared classifier and stable exhaustion formatting from retry orchestration.                                                                                 | —                                                                                          |
@@ -382,7 +390,7 @@ The accepted decisions and event-based revisit conditions for those deferred
 rows are recorded in the
 [catalog and support decisions](test-suite-case-matrices.md#phase-2-catalog-and-support-decisions).
 
-| Support path                                                                      | Current owner                                                                       | Consumer evidence                                                                                                                                                                                                                                                                 | Decision                       | Rationale                                                                                                                                                                         |
+| Audited support path                                                              | Current owner                                                                       | Consumer evidence                                                                                                                                                                                                                                                                 | Decision                       | Rationale                                                                                                                                                                         |
 | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `test/adapters-codex-markdown-pdf-profile/fixtures.ts`                            | Markdown PDF profile Codex adapter                                                  | `test/adapters-codex-markdown-pdf-profile/fallback-failures.test.ts`, `patch-application.test.ts`, `prompt-schema.test.ts`, and `runner-behavior.test.ts`                                                                                                                         | owned through consuming suites | All four direct consumers are the co-located adapter contract suites and the fixture imports only profile-adapter production types.                                               |
 | `test/adapters-codex-markdown-pdf-template/fixtures.ts`                           | Markdown PDF template Codex adapter                                                 | Five co-located adapter suites, including `test/adapters-codex-markdown-pdf-template/css-safety.test.ts` and `repair-timeout.test.ts`                                                                                                                                             | Phase 2 ownership review       | Adapter-local request and response fixtures depend on action-layer `cli-actions-md-to-pdf-template-codex/synthesis-fixtures.ts`, so the support boundary crosses catalog layers.  |
