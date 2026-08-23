@@ -8,10 +8,10 @@ import { createDataPreviewActionMocks } from "../../../data-preview/interactive/
 import { createDataQueryActionMock } from "../../../data-query/interactive/mock-action";
 import { createStackActionMocks } from "../../../data-stack/interactive/mock-action";
 import { createDoctorActionMock } from "../../../doctor/interactive/mock-action";
+import { createMarkdownDocxActionMock } from "../../../markdown-docx/interactive/mock-action";
 import { createMarkdownFrontmatterActionMock } from "../../../markdown-frontmatter/interactive/mock-action";
 import { createRenameActionMocks } from "../../../rename/interactive/mock-action";
 import { createVideoActionMocks } from "../../../video/interactive/mock-action";
-import { createMiscActionMocks } from "./action-misc";
 
 export function installActionMocks(context: HarnessRunnerContext): void {
   mock.module(actionsModuleUrl, () => ({
@@ -20,7 +20,7 @@ export function installActionMocks(context: HarnessRunnerContext): void {
       groupLimit: 12,
       examplesPerGroup: 3,
     },
-    ...createMiscActionMocks(context),
+    ...createMarkdownDocxActionMock(context),
     ...createDataConversionActionMocks(context),
     ...createDoctorActionMock(context),
     ...createMarkdownFrontmatterActionMock(context),

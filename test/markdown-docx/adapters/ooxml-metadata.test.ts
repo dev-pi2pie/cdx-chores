@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { readDocxCoreMetadata } from "../src/adapters/docx/ooxml-metadata";
-import { REPO_ROOT, withTempFixtureDir } from "./helpers/cli-test-utils";
+import { readDocxCoreMetadata } from "../../../src/adapters/docx/ooxml-metadata";
+import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 const FIXTURE_TIMESTAMP = new Date("2026-03-17T00:00:00.000Z");
 
