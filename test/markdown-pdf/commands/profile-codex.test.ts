@@ -2,31 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { runCli, toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
-import { createProfileCodexStub } from "../markdown-pdf/commands/fixtures";
-import { pathExists } from "../markdown-pdf/support/path-fixtures";
-
-describe("cli command: md pdf-profile init", () => {
-  test("writes a profile file from the command layer", async () => {
-    await withTempFixtureDir("md-pdf-profile-cli", async (fixtureDir) => {
-      const outputPath = join(fixtureDir, "pdf-profile.yml");
-      const result = runCli([
-        "md",
-        "pdf-profile",
-        "init",
-        "--output",
-        toRepoRelativePath(outputPath),
-        "--preset",
-        "report",
-      ]);
-
-      expect(result.exitCode).toBe(0);
-      expect(result.stderr).toBe("");
-      expect(result.stdout).toContain("Wrote Markdown PDF profile:");
-      expect(await readFile(outputPath, "utf8")).toContain("pageNumbers:");
-    });
-  });
-});
+import { runCli, toRepoRelativePath, withTempFixtureDir } from "../../helpers/cli-test-utils";
+import { createProfileCodexStub } from "./fixtures";
+import { pathExists } from "../support/path-fixtures";
 
 describe("cli command: md pdf-profile codex", () => {
   test("documents the direct Codex profile helper options", () => {
