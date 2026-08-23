@@ -42,9 +42,6 @@ export function createMiscActionMocks(context: HarnessRunnerContext) {
     actionMdToDocx: async (_runtime: unknown, options: Record<string, unknown>) => {
       context.recordAction("md:to-docx", options);
     },
-    actionMdFrontmatterToJson: async (_runtime: unknown, options: Record<string, unknown>) => {
-      context.recordAction("md:frontmatter-to-json", options);
-    },
     actionVideoConvert: async (_runtime: unknown, options: Record<string, unknown>) => {
       context.recordAction("video:convert", options);
     },
