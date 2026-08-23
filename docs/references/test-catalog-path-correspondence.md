@@ -44,10 +44,10 @@ contract in the related research.
 
 ## Correspondence
 
-Current state: Phases 3 through 5 and Phase 6.1 through 6.20 have completed
-their accepted path correspondences. Phase 6.21 correspondence is recorded and
-awaiting exact-range review. The reference remains `draft` until the complete
-initial migration and final documentation reconciliation are finished.
+Current state: Phases 3 through 5 and all 21 Phase 6 batches have completed
+their accepted path correspondences. The reference remains `draft` until the
+complete initial migration and final documentation reconciliation are
+finished.
 
 ### Phase 3: Data Query Pilot
 
@@ -519,9 +519,10 @@ reconciliation.
 
 ### Phase 6.21: CLI Foundations And Mixed-Root Decomposition
 
-The paths below were implemented and validated over `10f7eeef..d5985314`.
-Exact-range review and the continuation decision are pending. The reference
-stays `draft` through final reconciliation.
+The paths below were implemented and validated over `10f7eeef..d5985314`, then
+reviewed over `10f7eeef..83512ece`. Phase 6.21 is completed with the decision
+`Continue with constraints`; the reference stays `draft` through final
+reconciliation.
 
 | Reference date | Historical path                                                               | Transition | Current owner or owners                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Migration range      | Job evidence                      |
 | -------------- | ----------------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |

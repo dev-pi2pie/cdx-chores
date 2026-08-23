@@ -390,7 +390,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.18 | DOCX                                          | completed       | `56624bef` | `0018929c`         | `3500991c`   | `56624bef..3500991c` | Continue with constraints |
 | 6.19 | Markdown platform                             | completed       | `de108f7d` | `16020bd3`         | `bc1ed261`   | `de108f7d..bc1ed261` | Continue with constraints |
 | 6.20 | Utilities                                     | completed       | `a48b30b1` | `60e3b5ce`         | `7ccbbc8a`   | `a48b30b1..7ccbbc8a` | Continue with constraints |
-| 6.21 | CLI foundations and mixed-root decomposition  | admission ready | pending    | -                  | -            | -                    | -                         |
+| 6.21 | CLI foundations and mixed-root decomposition  | completed       | `10f7eeef` | `d5985314`         | `83512ece`   | `10f7eeef..83512ece` | Continue with constraints |
 
 ### Phase 6.1: Markdown PDF General
 
@@ -2009,7 +2009,7 @@ Review gate:
 
 ### Phase 6.21: CLI Foundations And Mixed-Root Decomposition
 
-Status: `in-review`
+Status: `completed`
 
 Admission predecessor: `dd74aa3e`
 
@@ -2019,9 +2019,9 @@ Implementation tip: `d5985314`
 
 Execution and path migration range: `10f7eeef..d5985314`
 
-Evidence tip: pending
+Evidence tip: `83512ece`
 
-Exact batch review range: pending
+Exact batch review range: `10f7eeef..83512ece`
 
 Owner: CLI foundations plus the exact Data, Markdown, Rename, and Video
 destinations recorded in the Phase 2 matrix and Phase 6.21 admission.
@@ -2048,15 +2048,16 @@ The matrix owns the exact source-to-target and mixed-case execution manifests.
 Neutral Interactive harness movement, routing-facade cleanup, global CLI test
 helpers, and caller-owned built-CLI cleanup remain Phase 7 work.
 
-Implementation used three semantic checkpoints:
+Implementation and stabilization used three semantic checkpoints:
 
 - `84c3d3b9` split the CLI-foundations contracts and moved their local support
 - `337a677f` split the mixed routing and command-UX roots into accepted owners
 - `ef02de90` isolated the moved prompt contracts from unrelated historical Bun
   module mocks without changing production code
-- `d5985314` applies the exact-range review fix by aligning the three
-  text-controller suite labels with their completion, terminal, and fallback
-  owners
+
+The subsequent review-fix checkpoint `d5985314` aligns the three
+text-controller suite labels with their completion, terminal, and fallback
+owners.
 
 The two approved Markdown PDF routing cases are the only removals. All other
 admitted runtime cases and assertions are preserved, including the 12
@@ -2090,8 +2091,16 @@ same generic suite label. `d5985314` gives those owners distinct completion,
 terminal, and fallback labels without changing leaf titles, bodies, or
 assertions. Focused and full validation remained exact, and test-quality plus
 maintainability re-review of the fix found no follow-on issue. The canonical
-post-fix exact range remains pending until this refreshed evidence is
-committed.
+post-fix exact range `10f7eeef..83512ece` found no material test-quality or
+maintainability issue. Documentation review found that the job grouped the
+review-fix checkpoint under a three-checkpoint implementation heading; this
+closeout distinguishes the two boundaries.
+
+Decision: `Continue with constraints`. Phase 6.21 is complete. Preserve the
+accepted CLI-foundations and feature owners, the two evidence-backed removals,
+and the local prompt-isolation boundary. Keep broad Interactive harness,
+global mock, compatibility-facade, and caller-owned built-CLI cleanup in Phase
+7.
 
 Review gate:
 
@@ -2106,8 +2115,8 @@ Review gate:
 - [x] reproduce the exact 213-test, 580-assertion, 42-file focused post-state
 - [x] run the adjacent, complete-suite, and repository checks
 - [x] record all path/support correspondence rows and execution evidence
-- [ ] create the evidence commit and review the exact batch range
-- [ ] record accepted review fixes and the continuation decision
+- [x] create the evidence commit and review the exact batch range
+- [x] record accepted review fixes and the continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
