@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { runInteractiveHarness } from "../cli-interactive-routing.helpers";
+import { runInteractiveHarness } from "../../cli-interactive-routing.helpers";
 
 const TO_PDF_ENTRY = ["md", "md:to-pdf"];
 

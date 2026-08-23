@@ -1,12 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
 import { runInteractiveHarness } from "../../cli-interactive-routing.helpers";
-import {
-  TO_PDF_ENTRY,
-  recipesCodexSelections,
-} from "../../markdown-pdf/interactive/codex-authoring-fixtures";
+import { TO_PDF_ENTRY, recipesCodexSelections } from "./codex-authoring-fixtures";
 
-describe("interactive Markdown PDF Codex authoring", () => {
+describe("interactive Markdown PDF Codex output recovery and lifecycle", () => {
   test("changes output and report binding without preparing the candidate again", () => {
     const result = runInteractiveHarness({
       mode: "run",
