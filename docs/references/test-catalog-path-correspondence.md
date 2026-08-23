@@ -414,9 +414,10 @@ reconciliation.
 
 ### Phase 6.15: Rename
 
-The paths below were implemented and validated over `93e7a797..da247175`.
-Phase 6.15 remains in review until the exact admission-to-evidence range is
-reviewed; this reference stays `draft` through final reconciliation.
+The paths below were implemented and validated over `93e7a797..da247175`, then
+reviewed over `93e7a797..c0659081`. Phase 6.15 is completed with the decision
+`Continue with constraints`; this reference stays `draft` through final
+reconciliation.
 
 | Reference date | Historical path                                                            | Transition | Current owner or owners                                                                                                                                                                                                                 | Migration range      | Job evidence                      |
 | -------------- | -------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |

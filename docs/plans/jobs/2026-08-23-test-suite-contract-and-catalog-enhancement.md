@@ -384,7 +384,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.12 | Data Stack                                    | completed       | `cf15f599` | `4ae50698`         | `6ee0d7b0`   | `cf15f599..6ee0d7b0` | Continue with constraints |
 | 6.13 | Data Conversion                               | completed       | `f2fb794b` | `f7f509ee`         | `a24c3bdd`   | `f2fb794b..a24c3bdd` | Continue with constraints |
 | 6.14 | Fonts                                         | completed       | `ba8a6cd7` | `4be23beb`         | `e4235892`   | `ba8a6cd7..e4235892` | Continue with constraints |
-| 6.15 | Rename                                        | in-review       | `93e7a797` | `da247175`         | pending      | pending              | pending                   |
+| 6.15 | Rename                                        | completed       | `93e7a797` | `da247175`         | `c0659081`   | `93e7a797..c0659081` | Continue with constraints |
 | 6.16 | Codex adapter platform                        | matrix-required | -          | -                  | -            | -                    | -                         |
 | 6.17 | Document Rename                               | pending         | -          | -                  | -            | -                    | -                         |
 | 6.18 | DOCX                                          | pending         | -          | -                  | -            | -                    | -                         |
@@ -1678,7 +1678,7 @@ Review gate:
 
 ### Phase 6.15: Rename
 
-Status: `in-review`
+Status: `completed`
 
 Batch base: `93e7a797`
 
@@ -1686,9 +1686,9 @@ Implementation tip: `da247175`
 
 Execution and path migration range: `93e7a797..da247175`
 
-Evidence tip: pending
+Evidence tip: `c0659081`
 
-Exact batch review range: pending
+Exact batch review range: `93e7a797..c0659081`
 
 The 34 selected Rename suites moved into 41 action, adapter, Codex, command,
 direct, Interactive, planner, and presentation owners. Four historical suites
@@ -1721,8 +1721,12 @@ No current guide names the historical Rename suite or support paths. The
 matrix records the executed support boundaries, and the correspondence
 reference records 38 transitions over `93e7a797..da247175`.
 
-Decision: pending exact-range test-quality, maintainability, and documentation
-review.
+Exact-range test-quality, maintainability, and documentation review found no
+material issue. This closeout records `c0659081` as the evidence tip.
+
+Decision: `Continue with constraints`. Preserve the feature-local support and
+split-owner labels, keep only the documented `runCli` compatibility import
+until Phase 7, and do not recombine the planner or Codex/file-action owners.
 
 Review gate:
 
@@ -1734,8 +1738,8 @@ Review gate:
       `runCli` compatibility import
 - [x] complete focused, adjacent, full-suite, and repository validation
 - [x] record all 38 path and support transitions
-- [ ] create the evidence commit and review the exact batch range
-- [ ] record accepted review fixes and the continuation decision
+- [x] create the evidence commit and review the exact batch range
+- [x] record accepted review fixes and the continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
