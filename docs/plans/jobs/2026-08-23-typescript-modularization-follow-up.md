@@ -29,20 +29,20 @@ modularization follow-up without duplicating the parent plan's checklists.
 
 ## Phase Summary
 
-| Phase | Boundary                                     | Status    | Review range         | Decision |
-| ----: | -------------------------------------------- | --------- | -------------------- | -------- |
-|     1 | Profile Codex action test                    | completed | `f81a68e5..909c8c50` | Continue |
-|     2 | Template asset handling                      | completed | `6ecd8597..7ecc882d` | Continue |
-|     3 | Project Codex action-write test              | completed | `f1941d88..69aefb8e` | Continue |
-|     4 | Rename Codex option ownership                | completed | `a5ac3ed3..8df643e1` | Continue |
-|     5 | Doctor workflow projection                   | completed | `8a2f9136..e2c15629` | Continue |
-|     6 | Interactive Codex authoring test             | completed | `d2172ad8..e197efed` | Continue |
-|     7 | Template synthesis test                      | completed | `f74795e7..b68ed2d1` | Continue |
-|     8 | Profile adapter test                         | completed | `2e5fa5f1..8c7c6ae6` | Continue |
-|     9 | Template adapter test                        | completed | `e9234ac0..c0b34c53` | Continue |
-|    10 | Markdown PDF command-surface test            | completed | `9d5a2d4d..d8cfc74c` | Continue |
-|    11 | Interactive Markdown `to-pdf` decision gate  | completed | `f10fdb8e..5f9aa9be` | Split    |
-|    12 | Cumulative validation and lifecycle closeout | pending   | pending              | pending  |
+| Phase | Boundary                                     | Status      | Review range         | Decision |
+| ----: | -------------------------------------------- | ----------- | -------------------- | -------- |
+|     1 | Profile Codex action test                    | completed   | `f81a68e5..909c8c50` | Continue |
+|     2 | Template asset handling                      | completed   | `6ecd8597..7ecc882d` | Continue |
+|     3 | Project Codex action-write test              | completed   | `f1941d88..69aefb8e` | Continue |
+|     4 | Rename Codex option ownership                | completed   | `a5ac3ed3..8df643e1` | Continue |
+|     5 | Doctor workflow projection                   | completed   | `8a2f9136..e2c15629` | Continue |
+|     6 | Interactive Codex authoring test             | completed   | `d2172ad8..e197efed` | Continue |
+|     7 | Template synthesis test                      | completed   | `f74795e7..b68ed2d1` | Continue |
+|     8 | Profile adapter test                         | completed   | `2e5fa5f1..8c7c6ae6` | Continue |
+|     9 | Template adapter test                        | completed   | `e9234ac0..c0b34c53` | Continue |
+|    10 | Markdown PDF command-surface test            | completed   | `9d5a2d4d..d8cfc74c` | Continue |
+|    11 | Interactive Markdown `to-pdf` decision gate  | completed   | `f10fdb8e..5f9aa9be` | Split    |
+|    12 | Cumulative validation and lifecycle closeout | in-progress | pending              | pending  |
 
 ## Phase 1: Profile Codex Action Test
 
@@ -588,3 +588,293 @@ accidental deep imports or cycles were introduced, and the two production
 callers retain their imports from `to-pdf.ts`.
 
 Decision: `Continue` to cumulative validation and documentation closeout.
+
+## Phase 12: Cumulative Validation And Lifecycle Closeout
+
+Status: `in-progress`
+
+Fresh-validation base: `9e34db77`
+
+### Focused And Cumulative Validation
+
+Each post-refactor focused command recorded in Phases 1 through 11 was rerun
+from the fresh-validation base:
+
+| Phase | Tests | Failures | Assertions | Files |
+| ----: | ----: | -------: | ---------: | ----: |
+|     1 |    66 |        0 |        464 |     8 |
+|     2 |   105 |        0 |        425 |     5 |
+|     3 |    89 |        0 |      1,294 |     9 |
+|     4 |    56 |        0 |        298 |     5 |
+|     5 |   124 |        0 |        894 |     4 |
+|     6 |   153 |        0 |        715 |     8 |
+|     7 |    60 |        0 |        576 |     7 |
+|     8 |    88 |        0 |        654 |    10 |
+|     9 |    67 |        0 |        383 |     7 |
+|    10 |    35 |        0 |        259 |     6 |
+|    11 |   347 |        0 |      1,537 |    20 |
+
+These scopes overlap, so their totals are not summed as a unique-test count.
+
+Closeout validation:
+
+```bash
+bun test
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+git diff --check
+```
+
+Result: the complete Bun suite passed 2,625 tests with 14,983 assertions across
+289 files in 96.64 seconds. TypeScript checking, lint, repository formatting,
+build, and diff checks passed, and the commands left the worktree clean.
+
+### Strict Over-300-Line Inventory
+
+The scan retains the research rule: a strict physical line count greater than
+300, with Markdown PDF classification by `/markdown-pdf/` or
+`/interactive/markdown/` for source and `md-to-pdf` or `markdown-pdf` for
+tests.
+
+| Root    | Baseline total | Baseline related | Baseline other | Final total | Final related | Final other | Change |
+| ------- | -------------: | ---------------: | -------------: | ----------: | ------------: | ----------: | -----: |
+| `src/`  |             59 |               33 |             26 |          55 |            29 |          26 |     -4 |
+| `test/` |             75 |               48 |             27 |          84 |            57 |          27 |     +9 |
+| Total   |            134 |               81 |             53 |         139 |            86 |          53 |     +5 |
+
+Four accepted production monoliths left the inventory. The seven accepted test
+monoliths also left it, while their behavior-owned replacements contribute 16
+files still above 300 lines, producing the net test increase of nine. This is
+threshold fragmentation, not a claim that the test structure regressed.
+
+All 139 remaining paths are accounted for below. “Retain” means the current
+responsibility is accepted for this plan, not that the file can never be
+reconsidered.
+
+<details>
+<summary>Source deferrals: 55 paths</summary>
+
+Prior responsibility-reviewed ordered boundaries (8), retained because each
+owns one normalization, signal, synthesis, planning, validation, preparation,
+or projection pipeline:
+
+- `src/cli/markdown-pdf/profile/normalize.ts`
+- `src/cli/markdown-pdf/profile/signals.ts`
+- `src/cli/markdown-pdf/template-codex/synthesize-css.ts`
+- `src/cli/markdown-pdf/template-codex/output-plan.ts`
+- `src/cli/markdown-pdf/project-codex/validate-project.ts`
+- `src/cli/markdown-pdf/project-codex/output-plan.ts`
+- `src/cli/markdown-pdf/project-codex/prepared.ts`
+- `src/cli/markdown-pdf/project-codex/handoff-projection.ts`
+
+Research-explicit safety, parser, and state boundaries (7), retained as raw
+terminal state machines, strict parsers, transactional pipelines, or
+format-specific APIs:
+
+- `src/cli/prompts/path-inline.ts`
+- `src/cli/prompts/text-inline.ts`
+- `src/cli/data-stack/plan/parse.ts`
+- `src/cli/markdown-pdf/code-highlight.ts`
+- `src/cli/file-io.ts`
+- `src/cli/markdown-pdf/template/init-service.ts`
+- `src/utils/exif.ts`
+
+Other Markdown PDF decision, registry, report, preparation, compatibility, and
+lifecycle boundaries (23), retained because each path owns one feature-local
+contract and another split would mainly add cross-module state or indirection:
+
+- `src/adapters/codex/markdown-pdf-profile/decision.ts`
+- `src/adapters/codex/markdown-pdf-template/decision.ts`
+- `src/cli/actions/markdown/to-pdf-service.ts`
+- `src/cli/commands/markdown.ts`
+- `src/cli/interactive/markdown/authoring.ts`
+- `src/cli/interactive/markdown/codex-review.ts`
+- `src/cli/interactive/markdown/font-hints/service.ts`
+- `src/cli/interactive/markdown/formal-guide/collection.ts`
+- `src/cli/interactive/markdown/formal-guide/prompts.ts`
+- `src/cli/interactive/markdown/generated-lifecycle.ts`
+- `src/cli/interactive/markdown/materialization.ts`
+- `src/cli/markdown-pdf/profile-codex/prepare.ts`
+- `src/cli/markdown-pdf/profile/feature-registry.ts`
+- `src/cli/markdown-pdf/project-codex/page-number-compatibility.ts`
+- `src/cli/markdown-pdf/project-codex/project-bundle-completeness.ts`
+- `src/cli/markdown-pdf/project-codex/report.ts`
+- `src/cli/markdown-pdf/render-bundle.ts`
+- `src/cli/markdown-pdf/renderer-capabilities.ts`
+- `src/cli/markdown-pdf/template-codex/codex-decision.ts`
+- `src/cli/markdown-pdf/template-codex/image-metadata.ts`
+- `src/cli/markdown-pdf/template-codex/prepared.ts`
+- `src/cli/markdown-pdf/template-codex/report.ts`
+- `src/cli/markdown-pdf/template-codex/slots.ts`
+
+Other feature-owned pipelines (17), retained as one font, rename, data,
+DuckDB, or Interactive execution, validation, discovery, or presentation
+contract:
+
+- `src/cli/actions/font-check.ts`
+- `src/cli/actions/font.ts`
+- `src/cli/actions/rename/cleanup-codex.ts`
+- `src/cli/actions/rename/cleanup-planner.ts`
+- `src/cli/actions/rename/cleanup.ts`
+- `src/cli/rename-plan-csv.ts`
+- `src/cli/rename-preview.ts`
+- `src/cli/data-preview/source.ts`
+- `src/cli/data-stack/codex-report/validation.ts`
+- `src/cli/data-stack/rows.ts`
+- `src/cli/duckdb/extensions.ts`
+- `src/cli/duckdb/header-mapping/artifact.ts`
+- `src/cli/duckdb/query/prepare-source.ts`
+- `src/cli/interactive/data-query/execution.ts`
+- `src/cli/interactive/data/stack/codex-review.ts`
+- `src/cli/interactive/data/stack/source-discovery.ts`
+- `src/fonts/coverage.ts`
+
+</details>
+
+<details>
+<summary>Test deferrals and future candidates: 84 paths</summary>
+
+Phase-produced behavior-owned suites (16), retained because their remaining
+size is concentrated within the named patch, schema, signal, privacy, write,
+font, or lifecycle contract already reviewed at its phase boundary:
+
+- `test/adapters-codex-markdown-pdf-profile/patch-application.test.ts`
+- `test/adapters-codex-markdown-pdf-profile/prompt-schema.test.ts`
+- `test/adapters-codex-markdown-pdf-template/decision-parsing.test.ts`
+- `test/cli-actions-md-to-pdf-profile-codex-action/outputs-dry-run.test.ts`
+- `test/cli-actions-md-to-pdf-profile-codex-action/path-alias-safety.test.ts`
+- `test/cli-actions-md-to-pdf-profile-codex-action/reports-failures.test.ts`
+- `test/cli-actions-md-to-pdf-profile-codex-action/request-progress.test.ts`
+- `test/cli-actions-md-to-pdf-profile-codex-action/signals-bases.test.ts`
+- `test/cli-actions-md-to-pdf-project-codex/action-write/privacy-redaction.test.ts`
+- `test/cli-actions-md-to-pdf-project-codex/action-write/review-dry-run.test.ts`
+- `test/cli-actions-md-to-pdf-project-codex/action-write/successful-writes.test.ts`
+- `test/cli-actions-md-to-pdf-project-codex/action-write/write-prevention.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex/template-synthesis/cover-layout.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex/template-synthesis/font-ownership.test.ts`
+- `test/cli-interactive-markdown-pdf/codex-authoring/font-hint-editing.test.ts`
+- `test/cli-interactive-markdown-pdf/codex-authoring/output-recovery-lifecycle.test.ts`
+
+Project and Template Codex phase suites (10), retained as one handoff,
+planning, preparation, signal, validation, action integration, bundle write,
+or signal collection contract:
+
+- `test/cli-actions-md-to-pdf-project-codex/handoff-equivalence.test.ts`
+- `test/cli-actions-md-to-pdf-project-codex/output-plan.test.ts`
+- `test/cli-actions-md-to-pdf-project-codex/prepared.test.ts`
+- `test/cli-actions-md-to-pdf-project-codex/profile-phase.test.ts`
+- `test/cli-actions-md-to-pdf-project-codex/signals.test.ts`
+- `test/cli-actions-md-to-pdf-project-codex/template-phase.test.ts`
+- `test/cli-actions-md-to-pdf-project-codex/validation.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex/bundle-write.test.ts`
+- `test/cli-actions-md-to-pdf-template-codex/signal-collection.test.ts`
+
+Core Markdown PDF contract and evidence files (20), retained because each
+couples its cases or fixtures to one render, Profile, compatibility,
+capability, evidence, or smoke contract:
+
+- `test/cli-actions-md-to-pdf-actions-assets.test.ts`
+- `test/cli-actions-md-to-pdf-actions-profile-rendering.test.ts`
+- `test/cli-actions-md-to-pdf-actions-validation.test.ts`
+- `test/cli-actions-md-to-pdf-actions.test.ts`
+- `test/cli-actions-md-to-pdf-code-highlight.test.ts`
+- `test/cli-actions-md-to-pdf-diagnostics.test.ts`
+- `test/cli-actions-md-to-pdf-no-default-css.test.ts`
+- `test/cli-actions-md-to-pdf-page-chrome.test.ts`
+- `test/cli-actions-md-to-pdf-prepared-render.test.ts`
+- `test/cli-actions-md-to-pdf-profile-codex-phase2.test.ts`
+- `test/cli-actions-md-to-pdf-profile-revision.test.ts`
+- `test/cli-actions-md-to-pdf-profile.test.ts`
+- `test/cli-actions-md-to-pdf-recipe.test.ts`
+- `test/cli-actions-md-to-pdf-template-compatibility.test.ts`
+- `test/cli-markdown-pdf-renderer-capabilities.test.ts`
+- `test/markdown-pdf-page-number-renderer-evidence/inspection.test.ts`
+- `test/markdown-pdf-page-number-renderer-evidence/orchestration.test.ts`
+- `test/markdown-pdf-profile-font-preservation-smoke.test.ts`
+- `test/fixtures/markdown-pdf/page-number-renderer-contract/product-scenarios.ts`
+- `test/fixtures/markdown-pdf/page-number-renderer-contract/renderer-scenarios.ts`
+
+Interactive Markdown suites and harness (9), retained as stateful authoring,
+guide, handoff, lifecycle, materialization, render-source, or shared mock
+contracts:
+
+- `test/cli-interactive-markdown-pdf/deterministic-authoring.test.ts`
+- `test/cli-interactive-markdown-pdf/deterministic-service.test.ts`
+- `test/cli-interactive-markdown-pdf/formal-guide-prompts.test.ts`
+- `test/cli-interactive-markdown-pdf/formal-guide.test.ts`
+- `test/cli-interactive-markdown-pdf/handoff.test.ts`
+- `test/cli-interactive-markdown-pdf/lifecycle.test.ts`
+- `test/cli-interactive-markdown-pdf/materialization.test.ts`
+- `test/cli-interactive-markdown-pdf/render-sources.test.ts`
+- `test/helpers/interactive-harness/mocks/markdown-pdf.ts`
+
+Other feature contract suites and fixtures (26), retained because each owns
+one adapter, action, command, workflow, raw prompt, data, harness, or release
+contract:
+
+- `test/adapters-docx-ooxml-metadata.test.ts`
+- `test/cli-action-doctor.test.ts`
+- `test/cli-actions-data-stack/validation.test.ts`
+- `test/cli-actions-rename-apply-validation.test.ts`
+- `test/cli-actions-rename-cleanup-single.test.ts`
+- `test/cli-actions-rename-file.test.ts`
+- `test/cli-actions-video-gif.test.ts`
+- `test/cli-command-data-stack/options.test.ts`
+- `test/cli-command-data-stack/replay.test.ts`
+- `test/cli-command-rename-timeout.test.ts`
+- `test/cli-doctor-workflow.test.ts`
+- `test/cli-fs-utils-rename-template.test.ts`
+- `test/cli-interactive-data-stack/codex-review.test.ts`
+- `test/cli-interactive-data-stack/discovery.test.ts`
+- `test/cli-interactive-data-stack/dry-run-write.test.ts`
+- `test/cli-interactive-routing-data-query-codex-single.test.ts`
+- `test/cli-path-inline.test.ts`
+- `test/cli-text-inline.test.ts`
+- `test/cli-ux.test.ts`
+- `test/data-query-xlsx-sources.test.ts`
+- `test/data-source-shape.test.ts`
+- `test/data-stack-codex-report/apply.test.ts`
+- `test/data-stack-codex-report/validation.test.ts`
+- `test/fonts-cli-list.test.ts`
+- `test/helpers/interactive-harness/mocks/action-stack.ts`
+- `test/release-scripts.test.ts`
+
+Future split candidates (3), explicitly deferred because they are outside the
+accepted Phase 1 through 11 boundary rather than because they are cohesive:
+
+- `test/cli-actions-doctor-markdown-video-deferred.test.ts`: Doctor inspection
+  and Markdown, DOCX, and video failure describes
+- `test/cli-actions-md-to-pdf-bundle.test.ts`: bundle discovery, resolution,
+  and action integration
+- `test/cli-interactive-markdown-pdf/font-hints.test.ts`: font-hint model,
+  suggestion service, and post-Codex review
+
+</details>
+
+### Import And Test-Layout Review
+
+Public import review found no actionable issue. Template assets retain both
+facade exports, rename retains `registerRenameCommands`, Doctor retains its
+constants, types, and `projectDoctorWorkflows`, and Interactive Markdown
+retains both `to-pdf.ts` exports. Existing callers still import those facades;
+no unrelated source or test imports a new private module, and the package root
+export map is unchanged.
+
+Bun discovered all 32 behavior-owned suites created by the seven test phases
+and passed 286 tests with 2,614 assertions. No obsolete compatibility loader,
+executable reference to a deleted monolith, or discovery gap remains.
+
+Exact `pathExists` and `minimalPng` helpers remain duplicated between the
+Template and command-surface feature fixtures, while some earlier suites reuse
+the Template fixture. This small ownership inconsistency is intentionally
+deferred: consolidating it here would introduce a broader cross-feature test
+helper outside the accepted refactor scope.
+
+Pending before lifecycle completion:
+
+- exact review of the complete plan range
+- research lifecycle and current-state wording review
+- final documentation review and lifecycle status updates

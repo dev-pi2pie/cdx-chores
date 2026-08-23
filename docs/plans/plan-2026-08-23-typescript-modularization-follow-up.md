@@ -389,15 +389,15 @@ bunx tsc --noEmit
 
 Tasks:
 
-- [ ] Run every focused suite associated with moved source and test boundaries.
-- [ ] Run the complete Bun test suite.
-- [ ] Run TypeScript checking, lint, formatting, build, and diff checks.
-- [ ] Repeat the strict over-300-line inventory and record every remaining
+- [x] Run every focused suite associated with moved source and test boundaries.
+- [x] Run the complete Bun test suite.
+- [x] Run TypeScript checking, lint, formatting, build, and diff checks.
+- [x] Repeat the strict over-300-line inventory and record every remaining
       intentional deferral without treating the threshold as a defect rule.
-- [ ] Review public imports and repository callers for accidental deep imports.
-- [ ] Review the resulting test layout for duplicated fixtures, scattered
+- [x] Review public imports and repository callers for accidental deep imports.
+- [x] Review the resulting test layout for duplicated fixtures, scattered
       ownership, and obsolete compatibility loaders.
-- [ ] Update this checklist and every phase section in the unified job record
+- [x] Update this checklist and every phase section in the unified job record
       from actual evidence.
 - [ ] Update the research status only if its own policy-defined evidence bar is
       satisfied.
