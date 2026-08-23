@@ -38,7 +38,7 @@ describe("cli action modules: data query artifact validation", () => {
           {
             input: {
               format: "excel",
-              path: "test/fixtures/data-query/multi.xlsx",
+              path: "test/data-sources/fixtures/multi.xlsx",
               source: "Summary",
             },
             metadata: {
@@ -81,7 +81,7 @@ describe("cli action modules: data query artifact validation", () => {
     await expectCliError(
       () =>
         actionDataQuery(runtime, {
-          input: "test/fixtures/data-query/multi.xlsx",
+          input: "test/data-sources/fixtures/multi.xlsx",
           range: "A1:B3",
           sourceShape: "shape.json",
           sql: "select * from file",

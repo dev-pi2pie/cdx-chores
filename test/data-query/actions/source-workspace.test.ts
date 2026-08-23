@@ -209,7 +209,7 @@ describe("cli action modules: data query source and workspace resolution", () =>
     await expectCliError(
       () =>
         actionDataQuery(runtime, {
-          input: "test/fixtures/data-query/multi.sqlite",
+          input: "test/data-sources/fixtures/multi.sqlite",
           relations: [{ alias: "entries", source: "time_entries" }],
           source: "users",
           sql: "select * from file",
@@ -229,7 +229,7 @@ describe("cli action modules: data query source and workspace resolution", () =>
 
     const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
     await actionDataQuery(runtime, {
-      input: "test/fixtures/data-query/multi.sqlite",
+      input: "test/data-sources/fixtures/multi.sqlite",
       relations: [{ alias: "file", source: "users" }],
       sql: "select id, name from file order by id",
     });
@@ -246,7 +246,7 @@ describe("cli action modules: data query source and workspace resolution", () =>
     await expectCliError(
       () =>
         actionDataQuery(runtime, {
-          input: "test/fixtures/data-query/multi.sqlite",
+          input: "test/data-sources/fixtures/multi.sqlite",
           relations: [
             { alias: "users", source: "users" },
             { alias: "users", source: "time_entries" },

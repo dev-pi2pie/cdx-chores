@@ -4,14 +4,14 @@ import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
 import { inspectDataQueryExtensions } from "../../../src/cli/duckdb/query";
-import { seedDataExtractFixtures } from "../../helpers/data-extract-fixture-test-utils";
 import {
   seedAmbiguousDuckDbSourceFixture,
   seedDuckDbQuotedCommaSourceFixture,
   seedDuckDbWorkspaceFixture,
   seedSingleTableDuckDbFixture,
-} from "../../helpers/data-query-duckdb-fixture-test-utils";
-import { seedStackedMergedBandFixture } from "../../helpers/stacked-merged-band-fixture-test-utils";
+} from "../../data-sources/fixtures/duckdb";
+import { seedStackedMergedBandFixture } from "../../data-sources/fixtures/stacked-merged-band";
+import { seedDataExtractFixtures } from "../../data-sources/fixtures/tabular";
 import {
   REPO_ROOT,
   runCli,
@@ -25,7 +25,7 @@ export const sqliteReady = queryExtensions.available && queryExtensions.sqlite?.
 export const excelReady = queryExtensions.available && queryExtensions.excel?.loadable === true;
 
 export function fixturePath(name: string): string {
-  return join("test", "fixtures", "data-query", name);
+  return join("test", "data-sources", "fixtures", name);
 }
 
 export async function createHeaderSuggestionStub(options: {

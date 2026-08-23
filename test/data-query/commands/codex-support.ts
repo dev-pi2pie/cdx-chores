@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
 import { inspectDataQueryExtensions } from "../../../src/cli/duckdb/query";
-import { seedDataExtractFixtures } from "../../helpers/data-extract-fixture-test-utils";
-import { seedDuckDbWorkspaceFixture } from "../../helpers/data-query-duckdb-fixture-test-utils";
+import { seedDuckDbWorkspaceFixture } from "../../data-sources/fixtures/duckdb";
+import { seedDataExtractFixtures } from "../../data-sources/fixtures/tabular";
 import { runCli, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 export const queryExtensions = await inspectDataQueryExtensions();

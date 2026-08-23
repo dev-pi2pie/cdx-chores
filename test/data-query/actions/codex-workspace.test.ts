@@ -27,7 +27,7 @@ describe("cli action modules: data query codex workspace", () => {
     const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
 
     await actionDataQueryCodex(runtime, {
-      input: "test/fixtures/data-query/multi.sqlite",
+      input: "test/data-sources/fixtures/multi.sqlite",
       intent: "join users with time entries",
       relations: [
         { alias: "users", source: "users" },
@@ -64,7 +64,7 @@ describe("cli action modules: data query codex workspace", () => {
     const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
 
     await actionDataQueryCodex(runtime, {
-      input: "test/fixtures/data-query/multi.sqlite",
+      input: "test/data-sources/fixtures/multi.sqlite",
       intent: "list users ordered by id",
       relations: [{ alias: "file", source: "users" }],
       runner: async ({ prompt }) => {

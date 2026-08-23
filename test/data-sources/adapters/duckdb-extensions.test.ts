@@ -4,9 +4,9 @@ import type { DuckDBConnection } from "@duckdb/node-api";
 import {
   ensureDuckDbManagedExtensionLoaded,
   installDuckDbManagedExtension,
-} from "../src/cli/duckdb/extensions";
-import { CaptureStream, createCapturedRuntime } from "./helpers/cli-test-utils";
-import { CliError } from "../src/cli/errors";
+} from "../../../src/cli/duckdb/extensions";
+import { CliError } from "../../../src/cli/errors";
+import { CaptureStream, createCapturedRuntime } from "../../helpers/cli-test-utils";
 
 type FakeExtensionStatusName = "excel" | "sqlite_scanner";
 
@@ -19,6 +19,7 @@ interface FakeExtensionState {
 
 class FakeDuckDbConnection {
   public readonly version = "v1.5.0";
+  public readonly installCalls: FakeExtensionStatusName[] = [];
   private readonly extensions: Record<FakeExtensionStatusName, FakeExtensionState>;
   private readonly installFailures: Partial<Record<FakeExtensionStatusName, string>>;
 
@@ -94,6 +95,7 @@ class FakeDuckDbConnection {
   }
 
   private install(name: FakeExtensionStatusName, options: { force?: boolean } = {}): void {
+    this.installCalls.push(name);
     const failure = this.installFailures[name];
     if (failure) {
       throw new Error(failure);
@@ -201,6 +203,7 @@ describe("DuckDB extension lifecycle helpers", () => {
 
     expect(probe.installed).toBe(true);
     expect(probe.loadable).toBe(true);
+    expect(connection.installCalls).toEqual([]);
     expect(statusStream.text).toContain("DuckDB extension already present: sqlite");
     expect(statusStream.text).toContain("Load check: ok");
   });

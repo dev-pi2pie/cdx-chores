@@ -7,11 +7,11 @@ import {
 } from "../../../src/cli/data-query/codex";
 import { inspectDataQueryExtensions } from "../../../src/cli/duckdb/query";
 import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
-import { seedDataExtractFixtures } from "../../helpers/data-extract-fixture-test-utils";
 import {
   seedDuckDbWorkspaceFixture,
   seedSingleTableDuckDbFixture,
-} from "../../helpers/data-query-duckdb-fixture-test-utils";
+} from "../../data-sources/fixtures/duckdb";
+import { seedDataExtractFixtures } from "../../data-sources/fixtures/tabular";
 import { toRepoRelativePath, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 export const queryExtensions = await inspectDataQueryExtensions();

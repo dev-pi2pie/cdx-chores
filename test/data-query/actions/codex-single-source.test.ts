@@ -23,7 +23,7 @@ describe("cli action modules: data query codex single-source", () => {
     const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
 
     await actionDataQueryCodex(runtime, {
-      input: "test/fixtures/data-query/basic.csv",
+      input: "test/data-sources/fixtures/basic.csv",
       intent: "show active rows\nby status",
       runner: async ({ prompt }) => {
         expect(prompt).toContain("User intent: show active rows by status");
@@ -43,7 +43,7 @@ describe("cli action modules: data query codex single-source", () => {
     const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
 
     await actionDataQueryCodex(runtime, {
-      input: "test/fixtures/data-query/basic.csv",
+      input: "test/data-sources/fixtures/basic.csv",
       intent: "show id and name ordered by id",
       runner: async ({ prompt, timeoutMs }) => {
         expect(timeoutMs).toBe(30_000);
@@ -79,7 +79,7 @@ describe("cli action modules: data query codex single-source", () => {
     const { runtime, expectNoStderr } = createActionTestRuntime();
 
     await actionDataQueryCodex(runtime, {
-      input: "test/fixtures/data-query/basic.csv",
+      input: "test/data-sources/fixtures/basic.csv",
       intent: "show id and name ordered by id",
       runner: async ({ timeoutMs }) => {
         expect(timeoutMs).toBe(120_000);
@@ -185,7 +185,7 @@ describe("cli action modules: data query codex single-source", () => {
     const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
 
     await actionDataQueryCodex(runtime, {
-      input: "test/fixtures/data-query/basic.csv",
+      input: "test/data-sources/fixtures/basic.csv",
       intent: "show all rows",
       printSql: true,
       runner: async () =>
@@ -243,7 +243,7 @@ describe("cli action modules: data query codex single-source", () => {
     Object.assign(runtime.stdout as object, { isTTY: true });
 
     await actionDataQueryCodex(runtime, {
-      input: "test/fixtures/data-query/basic.csv",
+      input: "test/data-sources/fixtures/basic.csv",
       intent: "show id and name ordered by id",
       runner: async () =>
         JSON.stringify({

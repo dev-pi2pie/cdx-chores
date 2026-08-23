@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { CliError } from "../src/cli/errors";
+import { CliError } from "../../../src/cli/errors";
 import {
   createDataSourceShapeArtifact,
   createSourceShapeInputReference,
@@ -11,8 +11,8 @@ import {
   resolveReusableSourceShape,
   suggestDataSourceShapeWithCodex,
   writeDataSourceShapeArtifact,
-} from "../src/cli/duckdb/source-shape";
-import { REPO_ROOT, withTempFixtureDir } from "./helpers/cli-test-utils";
+} from "../../../src/cli/duckdb/source-shape";
+import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 const SOURCE_SHAPE_SUGGESTION_CONTEXT = {
   currentIntrospection: {
@@ -99,13 +99,13 @@ describe("data source shape artifacts", () => {
     const inputReference = createSourceShapeInputReference({
       cwd: REPO_ROOT,
       format: "excel",
-      inputPath: join(REPO_ROOT, "test", "fixtures", "data-query", "multi.xlsx"),
+      inputPath: join(REPO_ROOT, "test", "data-sources", "fixtures", "multi.xlsx"),
       source: "Summary",
     });
 
     expect(inputReference).toEqual({
       format: "excel",
-      path: "test/fixtures/data-query/multi.xlsx",
+      path: "test/data-sources/fixtures/multi.xlsx",
       source: "Summary",
     });
   });

@@ -5,16 +5,16 @@ import { join } from "node:path";
 import { actionDataExtract } from "../src/cli/actions";
 import { inspectDataQueryExtensions } from "../src/cli/duckdb/query";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
-import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
 import {
   seedDuckDbWorkspaceFixture,
   seedSingleTableDuckDbFixture,
-} from "./helpers/data-query-duckdb-fixture-test-utils";
+} from "./data-sources/fixtures/duckdb";
+import { seedStackedMergedBandFixture } from "./data-sources/fixtures/stacked-merged-band";
+import { seedDataExtractFixtures } from "./data-sources/fixtures/tabular";
 import { REPO_ROOT, toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
-import { seedStackedMergedBandFixture } from "./helpers/stacked-merged-band-fixture-test-utils";
 
 export function dataQueryFixturePath(name: string): string {
-  return join(REPO_ROOT, "test", "fixtures", "data-query", name);
+  return join(REPO_ROOT, "test", "data-sources", "fixtures", name);
 }
 
 export class TtyCaptureStream {

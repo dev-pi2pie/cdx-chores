@@ -83,7 +83,7 @@ describe("data header mapping artifacts", () => {
     const inputReference = createHeaderMappingInputReference({
       cwd: REPO_ROOT,
       format: "excel",
-      inputPath: join(REPO_ROOT, "test", "fixtures", "data-query", "multi.xlsx"),
+      inputPath: join(REPO_ROOT, "test", "data-sources", "fixtures", "multi.xlsx"),
       shape: {
         headerRow: 7,
         range: "A1:B3",
@@ -94,7 +94,7 @@ describe("data header mapping artifacts", () => {
     expect(inputReference).toEqual({
       format: "excel",
       headerRow: 7,
-      path: "test/fixtures/data-query/multi.xlsx",
+      path: "test/data-sources/fixtures/multi.xlsx",
       range: "A1:B3",
       source: "Summary",
     });

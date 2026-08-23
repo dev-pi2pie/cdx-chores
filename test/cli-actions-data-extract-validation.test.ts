@@ -88,7 +88,7 @@ describe("cli action modules: data extract validation", () => {
         () =>
           actionDataExtract(createActionTestRuntime().runtime, {
             codexSuggestShape: true,
-            input: "test/fixtures/data-query/multi.xlsx",
+            input: "test/data-sources/fixtures/multi.xlsx",
             output: toRepoRelativePath(join(fixtureDir, "summary.json")),
             source: "Summary",
           }),
@@ -109,7 +109,7 @@ describe("cli action modules: data extract validation", () => {
         actionDataExtract(runtime, {
           codexSuggestShape: true,
           headerRow: 7,
-          input: "test/fixtures/data-query/multi.xlsx",
+          input: "test/data-sources/fixtures/multi.xlsx",
           source: "Summary",
         }),
       {
@@ -133,7 +133,7 @@ describe("cli action modules: data extract validation", () => {
           {
             input: {
               format: "excel",
-              path: "test/fixtures/data-query/multi.xlsx",
+              path: "test/data-sources/fixtures/multi.xlsx",
               source: "Summary",
             },
             metadata: {

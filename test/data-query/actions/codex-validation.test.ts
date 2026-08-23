@@ -25,7 +25,7 @@ describe("cli action modules: data query codex validation", () => {
     await expectCliError(
       () =>
         actionDataQueryCodex(runtime, {
-          input: "test/fixtures/data-query/basic.csv",
+          input: "test/data-sources/fixtures/basic.csv",
           intent: "   ",
         }),
       { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "Intent is required." },
@@ -40,7 +40,7 @@ describe("cli action modules: data query codex validation", () => {
     await expectCliError(
       () =>
         actionDataQueryCodex(runtime, {
-          input: "test/fixtures/data-query/basic.csv",
+          input: "test/data-sources/fixtures/basic.csv",
           intent: "show active rows",
           runner: async () => {
             throw new Error("Codex Exec exited with code 1: authentication required");
@@ -58,7 +58,7 @@ describe("cli action modules: data query codex validation", () => {
     await expectCliError(
       () =>
         actionDataQueryCodex(runtime, {
-          input: "test/fixtures/data-query/basic.csv",
+          input: "test/data-sources/fixtures/basic.csv",
           intent: "show active rows",
           runner: async () => "{not json",
         }),
@@ -78,7 +78,7 @@ describe("cli action modules: data query codex validation", () => {
     await expectCliError(
       () =>
         actionDataQueryCodex(runtime, {
-          input: "test/fixtures/data-query/basic.csv",
+          input: "test/data-sources/fixtures/basic.csv",
           intent: "show active rows",
           runner: async () =>
             JSON.stringify({
@@ -103,7 +103,7 @@ describe("cli action modules: data query codex validation", () => {
     await expectCliError(
       () =>
         actionDataQueryCodex(runtime, {
-          input: "test/fixtures/data-query/basic.csv",
+          input: "test/data-sources/fixtures/basic.csv",
           intent: "show active rows",
           runner: async () => {
             throw timeout;
@@ -125,7 +125,7 @@ describe("cli action modules: data query codex validation", () => {
     await expectCliError(
       () =>
         actionDataQueryCodex(runtime, {
-          input: "test/fixtures/data-query/basic.csv",
+          input: "test/data-sources/fixtures/basic.csv",
           intent: "show active rows",
           runner: async () => {
             throw new Error("request timed out after 30 seconds");
@@ -144,7 +144,7 @@ describe("cli action modules: data query codex validation", () => {
 
     try {
       await actionDataQueryCodex(runtime, {
-        input: "test/fixtures/data-query/basic.csv",
+        input: "test/data-sources/fixtures/basic.csv",
         intent: "show active rows",
         runner: async () => {
           throw new DOMException("request cancelled", "AbortError");
@@ -168,7 +168,7 @@ describe("cli action modules: data query codex validation", () => {
     await expectCliError(
       () =>
         actionDataQueryCodex(runtime, {
-          input: "test/fixtures/data-query/multi.sqlite",
+          input: "test/data-sources/fixtures/multi.sqlite",
           intent: "list users",
           runner: async () =>
             JSON.stringify({
@@ -188,7 +188,7 @@ describe("cli action modules: data query codex validation", () => {
     await expectCliError(
       () =>
         actionDataQueryCodex(runtime, {
-          input: "test/fixtures/data-query/multi.sqlite",
+          input: "test/data-sources/fixtures/multi.sqlite",
           intent: "list users",
           relations: [{ alias: "users", source: "users" }],
           source: "users",

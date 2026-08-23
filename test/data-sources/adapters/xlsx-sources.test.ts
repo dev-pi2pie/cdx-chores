@@ -4,11 +4,11 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { collectXlsxSheetSnapshot, listXlsxSheetNames } from "../src/cli/duckdb/xlsx-sources";
-import { expectCliError } from "./helpers/cli-action-test-utils";
-import { REPO_ROOT, withTempFixtureDir } from "./helpers/cli-test-utils";
-import { seedDataExtractFixtures } from "./helpers/data-extract-fixture-test-utils";
-import { seedStackedMergedBandFixture } from "./helpers/stacked-merged-band-fixture-test-utils";
+import { collectXlsxSheetSnapshot, listXlsxSheetNames } from "../../../src/cli/duckdb/xlsx-sources";
+import { expectCliError } from "../../helpers/cli-action-test-utils";
+import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
+import { seedStackedMergedBandFixture } from "../fixtures/stacked-merged-band";
+import { seedDataExtractFixtures } from "../fixtures/tabular";
 
 function createWorkbookWithInvalidCentralDirectoryOffset(): Buffer {
   const buffer = Buffer.alloc(22);
@@ -95,7 +95,7 @@ async function createWorkbookWithReorderedMetadataAttributes(outputPath: string)
       cmd: [
         "unzip",
         "-qq",
-        join(REPO_ROOT, "test", "fixtures", "data-query", "multi.xlsx"),
+        join(REPO_ROOT, "test", "data-sources", "fixtures", "multi.xlsx"),
         "-d",
         unpackDir,
       ],
@@ -145,7 +145,7 @@ async function createWorkbookWithReorderedMetadataAttributes(outputPath: string)
 describe("xlsx source discovery", () => {
   test("collectXlsxSheetSnapshot summarizes non-empty rows and used range for a simple workbook", async () => {
     const snapshot = await collectXlsxSheetSnapshot(
-      "test/fixtures/data-query/multi.xlsx",
+      "test/data-sources/fixtures/multi.xlsx",
       "Summary",
     );
 

@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-import { REPO_ROOT } from "./cli-test-utils";
+import { REPO_ROOT } from "../../helpers/cli-test-utils";
 
 export function seedStackedMergedBandFixture(outputDir: string): void {
   const proc = Bun.spawnSync({
