@@ -385,7 +385,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.13 | Data Conversion                               | completed       | `f2fb794b` | `f7f509ee`         | `a24c3bdd`   | `f2fb794b..a24c3bdd` | Continue with constraints |
 | 6.14 | Fonts                                         | completed       | `ba8a6cd7` | `4be23beb`         | `e4235892`   | `ba8a6cd7..e4235892` | Continue with constraints |
 | 6.15 | Rename                                        | completed       | `93e7a797` | `da247175`         | `c0659081`   | `93e7a797..c0659081` | Continue with constraints |
-| 6.16 | Codex adapter platform                        | matrix-required | -          | -                  | -            | -                    | -                         |
+| 6.16 | Codex adapter platform                        | pending         | -          | -                  | -            | -                    | -                         |
 | 6.17 | Document Rename                               | pending         | -          | -                  | -            | -                    | -                         |
 | 6.18 | DOCX                                          | pending         | -          | -                  | -            | -                    | -                         |
 | 6.19 | Markdown platform                             | pending         | -          | -                  | -            | -                    | -                         |

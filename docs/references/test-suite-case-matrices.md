@@ -2836,6 +2836,64 @@ labels so each split owner is identifiable in test output; test titles and
 assertions remain unchanged. Exact-range review over `93e7a797..c0659081`
 found no material test-quality, maintainability, or documentation issue.
 
+#### Phase 6.16 Exact Suite Admission
+
+Phase 6.16 admits both Codex adapter platform suites into four direct owners.
+All 21 cases and 43 assertions remain admitted. No support file, production
+file, scenario, or assertion is removed. The broad shared suite splits by pure
+filename-title primitives, batch retry/failure composition, and disposable
+prompt-workspace lifecycle.
+
+`test/adapters-codex-failure.test.ts` moves all seven cases to
+`test/codex-adapters/direct/request-failure.test.ts`:
+
+| Exact current title                                                     | Decision           |
+| ----------------------------------------------------------------------- | ------------------ |
+| `recognizes a direct TimeoutError`                                      | move; retain title |
+| `recognizes a TimeoutError through a preserved cause chain`             | move; retain title |
+| `prefers a preserved timeout cause over an outer AbortError`            | move; retain title |
+| `keeps an ordinary AbortError distinct from a timeout`                  | move; retain title |
+| `does not infer timeout from arbitrary error messages`                  | move; retain title |
+| `bounds cause traversal and terminates safely on cycles`                | move; retain title |
+| `formats stable per-attempt duration and exhaustion context`            | move; retain title |
+
+The local `withCause` fixture stays with this owner. Structural
+classification, bounded cause traversal, and timeout formatting are direct
+contracts; feature adapters retain their separate translation and request
+wiring cases.
+
+`test/adapters-codex-shared.test.ts` splits as follows:
+
+| Exact current title                                                                                     | Accepted exact target                                                   | Decision                                                                                                              |
+| ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `normalizeTitle strips punctuation and collapses whitespace`                                           | `test/codex-adapters/direct/filename-title-primitives.test.ts`          | move; retain title                                                                                                    |
+| `chunkItems groups arrays by chunk size`                                                               | `test/codex-adapters/direct/filename-title-primitives.test.ts`          | move; retain title                                                                                                    |
+| `parseFilenameTitleSuggestions normalizes titles and keeps latest duplicate filename`                  | `test/codex-adapters/direct/filename-title-primitives.test.ts`          | move; retain title                                                                                                    |
+| `summarizeBatchErrors returns consistent summary text`                                                  | `test/codex-adapters/direct/batch-retry-failures.test.ts`               | rename to `omits empty errors and deduplicates full or partial batch summaries`                                       |
+| `executeBatchesWithRetries aggregates suggestions and per-batch errors`                                 | `test/codex-adapters/direct/batch-retry-failures.test.ts`               | move; retain title                                                                                                    |
+| `executeBatchesWithRetries retries thrown errors and succeeds`                                          | `test/codex-adapters/direct/batch-retry-failures.test.ts`               | move; retain title                                                                                                    |
+| `retains partial results with timeout-specific exhausted batch metadata`                                | `test/codex-adapters/direct/batch-retry-failures.test.ts`               | move; retain title                                                                                                    |
+| `records attempt exhaustion after multiple timeout retries`                                             | `test/codex-adapters/direct/batch-retry-failures.test.ts`               | move; retain title                                                                                                    |
+| `keeps ordinary abort failures on the generic summary path`                                             | `test/codex-adapters/direct/batch-retry-failures.test.ts`               | move; retain title                                                                                                    |
+| `keeps an exhausted unknown failure on the unchanged generic summary path`                              | `test/codex-adapters/direct/batch-retry-failures.test.ts`               | move; retain title                                                                                                    |
+| `reports additional non-timeout batches without overclassifying them`                                  | `test/codex-adapters/direct/batch-retry-failures.test.ts`               | move; retain title                                                                                                    |
+| `runCodexPromptOnly runs work in an empty disposable directory`                                         | `test/codex-adapters/direct/prompt-only-workspace.test.ts`              | rename to `provides an empty disposable directory and removes it after success`                                       |
+| `runCodexPromptOnly removes the disposable directory when work throws`                                  | `test/codex-adapters/direct/prompt-only-workspace.test.ts`              | move; retain title                                                                                                    |
+| `runCodexPromptOnly removes the disposable directory when the signal aborts`                             | `test/codex-adapters/direct/prompt-only-workspace.test.ts`              | move; retain title                                                                                                    |
+
+The three workspace cases receive one bounded assertion strengthening each:
+replace broad `readdir(...).rejects.toThrow()` checks with
+`rejects.toMatchObject({ code: "ENOENT" })`. This proves directory removal
+rather than accepting an arbitrary read failure and preserves the 43-assertion
+count.
+
+The refreshed source slice passes 21 tests with 43 assertions across two
+files. The expected destination remains 21 tests and 43 assertions across four
+files. The adjacent Rename, Data Query, Data Stack, and Markdown PDF adapter
+slice passes 54 tests with 317 assertions across nine files. No overlap has the
+same trigger, result, layer, and cleanup lifecycle as these direct owners, so
+no duplicate removal qualifies.
+
 ### Decision Summary
 
 - Audited suites: 10 of 10 assigned inventory rows.
