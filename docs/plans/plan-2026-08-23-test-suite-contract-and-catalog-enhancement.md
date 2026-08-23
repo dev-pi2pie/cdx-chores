@@ -237,16 +237,16 @@ Accepted path contract: [Phase 3 Data Query Path Contract](../references/test-su
 
 Tasks:
 
-- [ ] Apply only the accepted Data Query matrix decisions.
-- [ ] Preserve direct query, action orchestration, command parsing and
+- [x] Apply only the accepted Data Query matrix decisions.
+- [x] Preserve direct query, action orchestration, command parsing and
       forwarding, Interactive lifecycle, adapter, and artifact contracts that
       own distinct boundaries.
-- [ ] Rename vague cases, merge or remove proved duplication, and split mixed
+- [x] Rename vague cases, merge or remove proved duplication, and split mixed
       suites before moving the retained owners.
-- [ ] Move Data Query suites and feature-local support into the accepted
+- [x] Move Data Query suites and feature-local support into the accepted
       catalog without creating a second compatibility test tree.
-- [ ] Update imports, scripts, current docs, and correspondence rows atomically.
-- [ ] Run every pre-change owner and final Data Query catalog path recorded by
+- [x] Update imports, scripts, current docs, and correspondence rows atomically.
+- [x] Run every pre-change owner and final Data Query catalog path recorded by
       Phase 2.
 - [ ] Review the exact phase range and record whether the catalog pattern is
       accepted, constrained, or stopped before applying it elsewhere.

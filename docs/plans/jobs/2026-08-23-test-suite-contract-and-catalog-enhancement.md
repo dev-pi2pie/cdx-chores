@@ -36,12 +36,12 @@ references.
 
 ## Phase Summary
 
-| Phase | Boundary                                       | Status    | Review range         | Decision                  |
-| ----: | ---------------------------------------------- | --------- | -------------------- | ------------------------- |
-|     1 | refreshed baseline and complete file inventory | completed | `2f3013ca..fae7d92b` | Continue                  |
-|     2 | case matrices and catalog admission            | completed | `34d080e9..0b8d59bd` | Continue with constraints |
-|     3 | Data Query migration pilot                     | pending   | —                    | —                         |
-|     4 | Doctor ownership migration pilot               | pending   | —                    | —                         |
+| Phase | Boundary                                       | Status      | Review range         | Decision                  |
+| ----: | ---------------------------------------------- | ----------- | -------------------- | ------------------------- |
+|     1 | refreshed baseline and complete file inventory | completed   | `2f3013ca..fae7d92b` | Continue                  |
+|     2 | case matrices and catalog admission            | completed   | `34d080e9..0b8d59bd` | Continue with constraints |
+|     3 | Data Query migration pilot                     | in-progress | pending              | —                         |
+|     4 | Doctor ownership migration pilot               | pending     | —                    | —                         |
 
 ## Phase 1: Refreshed Baseline And Complete File Inventory
 
@@ -148,3 +148,53 @@ their current paths and behavior, and enforce every event-based deferral. The
 research, audit inventory, and case-matrix reference are now `completed`; the
 plan and this job remain active, while the path-correspondence reference stays
 `draft` until final reconciliation.
+
+## Phase 3: Data Query Migration Pilot
+
+Status: `in-progress`
+
+Phase base: `db9622cf`
+
+Implementation range awaiting exact-range review: `db9622cf..885e3846`
+
+The implementation applies the accepted Data Query path contract while
+retaining the five `keep pending evidence` command owners at their root paths.
+It also separates the Data Query portions of the shared Codex-timeout, CLI UX,
+source-shape, and Interactive-harness owners without advancing the deferred
+Data Extract or wider CLI-foundations migrations.
+
+Focused validation before the move:
+
+- 253 passed, 0 failed, and 1,182 assertions across 39 files
+
+Focused validation after the move:
+
+- 253 passed, 0 failed, and 1,174 assertions across 48 files
+
+The runtime case count is preserved, and the static staged implementation diff
+adds six `expect` lines. The aggregate Bun assertion count changed with the file
+split and scheduling; no assertion source was removed.
+
+The first complete-suite run exposed a process-wide DuckDB mock leaking from
+the Parquet Preview suite into later Data Query owners. The implementation
+replaced that broad mock seam with a narrow injectable DuckDB loader. A focused
+36-case reproduction then passed, followed by the complete suite:
+
+- 2,625 passed, 0 failed, and 14,975 assertions across 298 files
+
+Repository checks also passed:
+
+```bash
+bun run format:check
+bun run lint
+bun run build
+```
+
+The current-document scan found no Data Query test paths in guides or current
+reference prose that required rewriting. Historical documentation retains its
+dated commands and wording. The 53 accepted path changes are recorded in the
+path-correspondence reference, which remains `draft` through the initial
+catalog migration.
+
+The exact implementation range has not yet been reviewed. No Phase 3 admission
+decision is recorded until that review completes.
