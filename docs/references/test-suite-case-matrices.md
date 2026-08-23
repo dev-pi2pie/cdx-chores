@@ -194,6 +194,7 @@ suites.
 | 6.12  | `test/helpers/interactive-harness/mocks/action-stack.ts`                         | `test/data-stack/interactive/mock-action.ts`                                               | Executed: only the Data Stack action mocks moved; the neutral harness composition remains under CLI foundations.                                    |
 | 6.12  | Data Stack fields in `test/helpers/interactive-harness/types.ts`                 | `test/data-stack/interactive/harness-contract.ts`                                          | Executed: eight `dataStack*` scenario fields plus stack plan and Codex report writes moved; shared timeout fields remain neutral.                    |
 | 6.12  | Data Stack matcher in `test/cli-interactive-routing.helpers.ts`                  | `test/data-stack/interactive/support.ts`                                                   | Executed: the matcher became a temporary facade re-export; unrelated routing support stays in place for Phase 7.                                    |
+| 6.13  | Data Conversion behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | `test/data-conversion/interactive/mock-action.ts`                                       | Extract only the six format-conversion action mocks; retain the Markdown DOCX residual for Phase 6.18 and keep neutral composition global.           |
 
 ### Phase 3 Data Query Path Contract
 
@@ -2659,6 +2660,33 @@ split. The adjacent Stack timeout, top-level Interactive routing, CLI UX, and
 contextual-tip slice remains 59 tests with 227 assertions across four files.
 All 181 titles remain represented once, and the completed historical inventory
 and records remain unchanged.
+
+#### Phase 6.13 Exact Suite Admission
+
+Phase 6.13 admits two Data Conversion suites into action and Interactive
+owners. All 13 cases remain admitted; none is vague, duplicate, or removable.
+Conversion command cases in `test/cli-ux.test.ts` remain explicitly deferred
+to the Phase 6.21 mixed-root decomposition, so this batch must not create a
+`commands/` owner.
+
+Only these two reviewed assertion edits are permitted, and their counts offset:
+
+- `formats.test.ts` > `actionJsonToCsv writes CSV and reports relative output
+  path`: replace two broad CSV substring checks with the exact bytes
+  `name,age\nAda,36\n`
+- `formats.test.ts` > `actionJsonToCsv rejects invalid JSON input`: prove the
+  derived CSV output was not created
+
+| Historical path                                        | Accepted exact target                                      | Admission evidence                                                                                         |
+| ------------------------------------------------------ | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `test/cli-actions-data.test.ts`                        | `test/data-conversion/actions/formats.test.ts`             | Six serializers and three failure contracts form the direct Data Conversion action owner.                 |
+| `test/cli-interactive-routing-data-convert.test.ts`    | `test/data-conversion/interactive/routing.test.ts`         | Path prompting, target exclusion, JSON-only pretty prompting, and forwarding are Interactive contracts.  |
+
+The refreshed pre-move slice passes 13 tests with 56 assertions across two
+files; the adjacent CLI UX and top-level Interactive routing slice passes 42
+tests with 198 assertions across two files. Phase 6.13 must preserve all 13
+titles, keep the focused assertion count at 56, extract exactly six conversion
+action mocks, and leave only `actionMdToDocx` in the mixed residual.
 
 ### Decision Summary
 
