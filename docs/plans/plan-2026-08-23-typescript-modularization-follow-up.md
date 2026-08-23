@@ -186,12 +186,12 @@ bun test test/cli-actions-md-to-pdf-project-codex/action-write test/cli-actions-
 
 Tasks:
 
-- [ ] Extract Codex option registration, scoped timeout resolution, and legacy
+- [x] Extract Codex option registration, scoped timeout resolution, and legacy
       migration notices from `src/cli/commands/rename.ts` into focused modules
       under `src/cli/commands/rename/`.
-- [ ] Keep command registration and action wiring in `rename.ts`.
-- [ ] Preserve `registerRenameCommands` and all current caller imports.
-- [ ] Do not split every rename subcommand or change the settled timeout
+- [x] Keep command registration and action wiring in `rename.ts`.
+- [x] Preserve `registerRenameCommands` and all current caller imports.
+- [x] Do not split every rename subcommand or change the settled timeout
       contract.
 
 Observable contracts:

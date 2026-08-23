@@ -34,7 +34,7 @@ modularization follow-up without duplicating the parent plan's checklists.
 |     1 | Profile Codex action test                    | completed | `f81a68e5..909c8c50` | Continue |
 |     2 | Template asset handling                      | completed | `6ecd8597..7ecc882d` | Continue |
 |     3 | Project Codex action-write test              | completed | `f1941d88..69aefb8e` | Continue |
-|     4 | Rename Codex option ownership                | pending   | pending              | pending  |
+|     4 | Rename Codex option ownership                | completed | `a5ac3ed3..8df643e1` | Continue |
 |     5 | Doctor workflow projection                   | pending   | pending              | pending  |
 |     6 | Interactive Codex authoring test             | pending   | pending              | pending  |
 |     7 | Template synthesis test                      | pending   | pending              | pending  |
@@ -185,3 +185,56 @@ privacy/redaction suite remains cohesive despite being the largest resulting
 file.
 
 Decision: `Continue` to Phase 4.
+
+## Phase 4: Rename Codex Option Ownership
+
+Status: `completed`
+
+Implementation range: `a5ac3ed3..8df643e1`
+
+Characterization commit: `19987de8`
+
+Implementation commit: `5228e93a`
+
+Review-fix commit: `8df643e1`
+
+| Dimension          | Before                                                   | After                                                                                          |
+| ------------------ | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| File topology      | one 441-line rename command module                       | 282-line command facade plus 81-line option and 84-line timeout modules                        |
+| Responsibility     | registration, Codex options, migration, and wiring mixed | option registration and timeout preparation have private feature owners; action wiring remains |
+| Focused validation | 50 passing tests; 0 failures; 288 assertions             | 56 passing tests; 0 failures; 298 assertions                                                   |
+| Public imports     | callers import `registerRenameCommands` from `rename.ts` | the same public import; only `rename.ts` imports the new internals                             |
+
+Baseline validation:
+
+```bash
+bun test test/cli-command-rename-timeout.test.ts test/cli-actions-rename-file.test.ts test/cli-actions-rename-batch-codex-auto.test.ts test/cli-actions-rename-batch-codex-docs.test.ts test/cli-actions-rename-batch-codex-images.test.ts
+```
+
+Result: 50 passed, 0 failed, 288 assertions across five files.
+
+Characterization coverage added exact Commander option ordering and unchanged
+retry and batch-size forwarding for `rename file`, `rename batch`, and the
+`batch-rename` alias.
+
+After validation:
+
+```bash
+bun test test/cli-command-rename-timeout.test.ts test/cli-actions-rename-file.test.ts test/cli-actions-rename-batch-codex-auto.test.ts test/cli-actions-rename-batch-codex-docs.test.ts test/cli-actions-rename-batch-codex-images.test.ts
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+git diff --check
+```
+
+Result: 56 passed, 0 failed, 298 assertions. TypeScript, lint, formatting,
+build, and diff checks passed. The extraction added no barrel, and retry,
+batch-size, and default-timeout ownership remain in the action analyzer.
+
+The first exact-range review found one small missing assertion for combined
+legacy migration-notice ordering. The accepted fix now locks image-before-
+document ordering. Test and maintainability reviewers re-reviewed the widened
+`a5ac3ed3..8df643e1` range and found no remaining material issues.
+
+Decision: `Continue` to Phase 5.
