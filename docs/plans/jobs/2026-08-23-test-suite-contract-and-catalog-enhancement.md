@@ -381,7 +381,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.9  | Data Sources                                  | completed       | `9458f888` | `a3a76f53`         | `e35eea80`   | `9458f888..e35eea80` | Continue with constraints |
 | 6.10 | Data Extract                                  | completed       | `733f27cb` | `d02bf761`         | `dbb5574e`   | `733f27cb..dbb5574e` | Continue with constraints |
 | 6.11 | Data Preview                                  | completed       | `7b840652` | `3d95eba5`         | `350b07ac`   | `7b840652..350b07ac` | Continue with constraints |
-| 6.12 | Data Stack                                    | in-review       | `cf15f599` | `4ae50698`         | pending      | pending              | Pending exact review      |
+| 6.12 | Data Stack                                    | completed       | `cf15f599` | `4ae50698`         | `6ee0d7b0`   | `cf15f599..6ee0d7b0` | Continue with constraints |
 | 6.13 | Data Conversion                               | pending         | -          | -                  | -            | -                    | -                         |
 | 6.14 | Fonts                                         | pending         | -          | -                  | -            | -                    | -                         |
 | 6.15 | Rename                                        | pending         | -          | -                  | -            | -                    | -                         |
@@ -1446,7 +1446,7 @@ Review gate:
 
 ### Phase 6.12: Data Stack
 
-Status: `in-review`
+Status: `completed`
 
 Batch base: `cf15f599`
 
@@ -1456,9 +1456,9 @@ Execution and path migration range: `cf15f599..4ae50698`
 
 Review-fix tip: `04a0cfea`
 
-Evidence tip: pending
+Evidence tip: `6ee0d7b0`
 
-Exact batch review range: pending
+Exact batch review range: `cf15f599..6ee0d7b0`
 
 The 21 selected suites moved to five action, three command, nine direct,
 four Interactive, and one evidence owner. The reporting-renderer case split
@@ -1536,8 +1536,15 @@ Documentation path scan:
 - the correspondence reference records all 26 accepted path transitions over
   `cf15f599..4ae50698`
 
-Decision: pending exact-range test-quality, maintainability, and documentation
-review of the evidence checkpoint.
+The updated exact-range test-quality, maintainability, and documentation
+review found no remaining material issue. It confirmed that `04a0cfea`
+resolved both initial findings without changing any test title or assertion
+semantics. This closeout records `6ee0d7b0` as the evidence tip.
+
+Decision: `Continue with constraints`. Preserve the direct reporting owner and
+neutral ANSI dependency, keep the shared timeout fields and neutral harness
+composition global, and retain the routing facade only through its recorded
+Phase 7 cleanup.
 
 Review gate:
 
@@ -1548,8 +1555,8 @@ Review gate:
 - [x] complete focused, adjacent, full-suite, and repository validation
 - [x] classify and clear the unrelated transient full-suite failure
 - [x] record current support dispositions and path correspondence
-- [ ] create the evidence commit and review the exact batch range
-- [ ] record accepted review fixes and the batch continuation decision
+- [x] create the evidence commit and review the exact batch range
+- [x] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,

@@ -334,9 +334,10 @@ reconciliation.
 
 ### Phase 6.12: Data Stack
 
-The paths below were implemented and validated over `cf15f599..4ae50698`.
-Phase 6.12 remains in review until the evidence checkpoint receives its exact
-range review; this reference stays `draft` through final reconciliation.
+The paths below were implemented and validated over `cf15f599..4ae50698`, then
+reviewed with accepted fixes over `cf15f599..6ee0d7b0`. Phase 6.12 is completed
+with the decision `Continue with constraints`; this reference stays `draft`
+through final reconciliation.
 
 | Reference date | Historical path                                                        | Transition | Current owner or owners                                                                                          | Migration range      | Job evidence                      |
 | -------------- | ---------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |
