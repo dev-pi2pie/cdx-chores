@@ -377,7 +377,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.5  | Markdown PDF Interactive and support closeout | completed       | `2b8151dd` | `b1d2c133`         | `70b71653`   | `2b8151dd..70b71653` | Continue with constraints |
 | 6.6  | Release tooling                               | completed       | `bb3d683a` | `608b0d2b`         | `d0b989a9`   | `bb3d683a..d0b989a9` | Continue with constraints |
 | 6.7  | Markdown Frontmatter                          | completed       | `16966305` | `61df100e`         | `16159a87`   | `16966305..16159a87` | Continue with constraints |
-| 6.8  | Video                                         | in-review       | `5b362772` | `cf85a757`         | pending      | pending              | pending                   |
+| 6.8  | Video                                         | completed       | `5b362772` | `cf85a757`         | `7feac20a`   | `5b362772..7feac20a` | Continue with constraints |
 | 6.9  | Data Sources                                  | pending         | -          | -                  | -            | -                    | -                         |
 | 6.10 | Data Extract                                  | pending         | -          | -                  | -            | -                    | -                         |
 | 6.11 | Data Preview                                  | pending         | -          | -                  | -            | -                    | -                         |
@@ -1063,7 +1063,7 @@ Review gate:
 
 ### Phase 6.8: Video
 
-Status: `in-review`
+Status: `completed`
 
 Batch base: `5b362772`
 
@@ -1071,9 +1071,9 @@ Implementation tip: `cf85a757`
 
 Execution and path migration range: `5b362772..cf85a757`
 
-Evidence tip: pending
+Evidence tip: `7feac20a`
 
-Exact batch review range: pending
+Exact batch review range: `5b362772..7feac20a`
 
 The two selected Video suites moved to their exact action and Interactive
 owners. Pre-move review found no vague or duplicated case: the focused
@@ -1129,9 +1129,15 @@ Documentation path scan:
 - the correspondence reference records two suite moves and the support split
   over `5b362772..cf85a757`
 
-Decision: pending the exact batch review. Phase 6.8 may close only after the
-documentation, test-quality, and maintainability reviews accept
-`5b362772..<evidence-tip>` and the receipt records the continuation decision.
+Exact-range test-quality and maintainability review found no material issue.
+Documentation review found only the expected self-tip gap: the evidence commit
+could not name itself before it existed. This closeout records `7feac20a` as
+the evidence tip and closes that lifecycle gap.
+
+Decision: `Continue with constraints`. Keep the retained quality-mode smoke
+route with Phase 6.21, keep the mixed `action-misc` residual and neutral
+Interactive-harness composition in their recorded later boundaries, and
+continue to the exact Phase 6.9 Data Sources batch from this closeout tip.
 
 Review gate:
 
@@ -1141,8 +1147,8 @@ Review gate:
 - [x] preserve all 12 declarations and add four accepted safety assertions
 - [x] complete focused, full-suite, and repository validation
 - [x] record correspondence and current exact-path evidence
-- [ ] create the evidence commit and review the exact batch range
-- [ ] record accepted review fixes and the batch continuation decision
+- [x] create the evidence commit and review the exact batch range
+- [x] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
