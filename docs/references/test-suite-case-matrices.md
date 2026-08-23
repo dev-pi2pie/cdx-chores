@@ -202,6 +202,8 @@ suites.
 | 6.15  | Shared fixtures in `test/cli-actions-rename-file.test.ts`                        | `test/rename/actions/file-support.ts`                                                  | Extract only file-action fixtures shared by the four admitted action owners.                                                                         |
 | 6.15  | Shared timeout fixture in `test/adapters-codex-rename-timeout.test.ts`            | `test/rename/adapters/title-suggester-support.ts`                                      | Extract the adapter timeout-signal fixture shared by image and document title suggesters.                                                            |
 | 6.18  | Markdown DOCX behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | `test/markdown-docx/interactive/mock-action.ts`                                       | Executed: the final feature residual moved, neutral mock composition was updated, and the empty catch-all was deleted; no harness scenario field moved. |
+| 6.21  | `test/helpers/virtual-terminal.ts`                                              | `test/cli-foundations/inline-rendering/virtual-terminal.ts`                           | Move atomically with its three path, text, and renderer consumers; no compatibility facade remains because every consumer moves in this batch.          |
+| 6.21  | Shared fake streams and render tick in `test/cli-text-inline.test.ts`            | `test/cli-foundations/text-inline/prompt-fixtures.ts`                                 | Extract only the split suite's feature-neutral stream fixtures and tick helper; all three admitted text-controller owners consume the local support.    |
 
 ### Phase 3 Data Query Path Contract
 
@@ -981,10 +983,12 @@ contracts back into one CLI bucket.
 | `CLI UX flags and path output > rename rejects unsupported serial order alias values`                                 | Rename command rejects legacy/unknown serial-order alias                     | `test/cli-rename-template.test.ts` direct serial token parsing                                                                          | Public command parser vocabulary                            | move     | `test/rename/commands/ux.test.ts`                              |
 | `CLI UX flags and path output > rename batch honors embedded serial start when no CLI override is provided`           | Embedded `{serial_start_3}` controls full built-CLI dry-run numbering        | `test/cli-rename-template.test.ts` direct token parsing; Rename batch action suites                                                     | Command-to-planner integration and visible ordered plan     | move     | `test/rename/commands/ux.test.ts`                              |
 
-Count: 35 declarations and 35 runtime cases. All cases move intact into ten
-feature/platform destinations. No duplicate removal is justified: visually
-similar action cases do not own command registration, option parsing,
-forwarding, or the child-process exit/output boundary.
+Count: 35 declarations and 35 runtime cases. All cases move intact into 12
+historical feature/platform destinations. Phase 3 already moved the two Data
+Query destinations, leaving ten destinations and 31 cases for Phase 6.21. No
+duplicate removal is justified: visually similar action cases do not own
+command registration, option parsing, forwarding, or the child-process
+exit/output boundary.
 
 ### Decision Totals
 
@@ -3048,7 +3052,179 @@ import depth changed. Pre-commit test-quality and maintainability review found
 no material issue. Exact-range review over `a48b30b1..7ccbbc8a` found no
 material test-quality, maintainability, or documentation issue.
 
-### Decision Summary
+#### Phase 6.21 Exact Suite Admission
+
+Phase 6.21 admits the 24 remaining CLI-foundations and mixed-root sources at
+the manifest base. All 24 paths still exist. Three are deliberate residuals:
+`test/cli-ux.test.ts` follows the Phase 3 Data Query extraction, while
+`test/cli-interactive-menu.test.ts` and
+`test/cli-interactive-routing.test.ts` follow the Phase 4 Doctor extraction.
+The refreshed source slice passes 215 runtime tests with 588 assertions across
+24 files.
+
+| Historical source | Accepted exact target or targets | Operation |
+| --- | --- | --- |
+| `test/cli-color.test.ts` | `test/cli-foundations/color/controls.test.ts` | move |
+| `test/cli-command-interactive-timeout.test.ts` | `test/cli-foundations/commands/interactive-timeout.test.ts` | move |
+| `test/cli-command-output-color.test.ts` | `test/cli-foundations/color/commander-output.test.ts` | move |
+| `test/cli-diagnostic-color.test.ts` | `test/cli-foundations/color/diagnostic-labels.test.ts` | move |
+| `test/cli-interactive-analyzer-status.test.ts` | `test/cli-foundations/interactive/analyzer-status.test.ts` | move |
+| `test/cli-interactive-contextual-tip.test.ts` | `test/cli-foundations/interactive/contextual-tip.test.ts` | move, two table-driven merges, and two title renames |
+| `test/cli-interactive-menu-prompt.test.ts` | `test/cli-foundations/interactive/menu-prompt.test.ts` | move |
+| `test/cli-interactive-menu.test.ts` | `test/cli-foundations/interactive/menu-wiring.test.ts` | move the three-case residual |
+| `test/cli-interactive-notice.test.ts` | `test/cli-foundations/interactive/notice.test.ts` | move |
+| `test/cli-interactive-routing.test.ts` | `test/data/interactive/menu-routing.test.ts`<br>`test/markdown/interactive/menu-routing.test.ts`<br>`test/markdown-pdf/interactive/entry-routing.test.ts`<br>`test/markdown-frontmatter/interactive/routing.test.ts`<br>`test/markdown-docx/interactive/routing.test.ts`<br>`test/rename/interactive/routing.test.ts`<br>`test/video/interactive/routing.test.ts`<br>`test/cli-foundations/interactive/root-routing.test.ts` | split, rename the quality-mode Video title, and apply the two recorded Markdown PDF removals |
+| `test/cli-options-codex-timeout.test.ts` | `test/cli-foundations/options/codex-timeout.test.ts` | move |
+| `test/cli-path-inline-state.test.ts` | `test/cli-foundations/path-prompts/interaction-state.test.ts` | move |
+| `test/cli-path-inline.test.ts` | `test/cli-foundations/path-prompts/inline-controller.test.ts` | move |
+| `test/cli-path-sibling-preview.test.ts` | `test/cli-foundations/path-prompts/sibling-preview.test.ts` | move |
+| `test/cli-path-suggestions.test.ts` | `test/cli-foundations/path-prompts/suggestions.test.ts` | move |
+| `test/cli-path.test.ts` | `test/cli-foundations/path-prompts/fallback.test.ts` | move and clarify the owner name |
+| `test/cli-text-display-width.test.ts` | `test/cli-foundations/inline-rendering/display-width.test.ts` | move |
+| `test/cli-text-inline.test.ts` | `test/cli-foundations/text-inline/completion-controller.test.ts`<br>`test/cli-foundations/text-inline/terminal-controller.test.ts`<br>`test/cli-foundations/text-inline/fallback.test.ts` | split into the accepted 10-, 9-, and 4-case controller owners |
+| `test/cli-text-template-candidates.test.ts` | `test/cli-foundations/text-inline/template-candidates.test.ts` | move |
+| `test/cli-tui-inline-renderer.test.ts` | `test/cli-foundations/inline-rendering/renderer.test.ts` | move |
+| `test/cli-tui-keys.test.ts` | `test/cli-foundations/tui/keys.test.ts` | move |
+| `test/cli-tui-raw-session.test.ts` | `test/cli-foundations/tui/raw-session.test.ts` | move |
+| `test/cli-tui-screen.test.ts` | `test/cli-foundations/inline-rendering/screen.test.ts` | move |
+| `test/cli-ux.test.ts` | `test/cli-foundations/commands/root-ux.test.ts`<br>`test/data-conversion/commands/output-paths.test.ts`<br>`test/data-preview/commands/preview-ux.test.ts`<br>`test/data-preview/commands/parquet-ux.test.ts`<br>`test/data/commands/help.test.ts`<br>`test/data-conversion/commands/help.test.ts`<br>`test/data-extract/commands/help-and-input-format.test.ts`<br>`test/data-stack/commands/help-and-input-format.test.ts`<br>`test/rename/commands/ux.test.ts`<br>`test/video/commands/ux.test.ts` | split the 31-case residual into its ten accepted command owners |
+
+The destination projection is 42 test files. The two evidence-approved
+Markdown PDF routing removals reduce the focused result to 213 tests and 580
+assertions. The contextual-tip consolidation preserves all 12 runtime cases;
+its three flow values become rows of the two accepted table-driven owners.
+All other titles, bodies, and assertions remain unchanged except the accepted
+Video routing title and the path fallback filename.
+
+The exact Phase 2 title rows above remain the controlling case-level manifest.
+The tables below reconcile those historical rows to the three current
+residuals and the two table-driven consolidations; they are the executable
+split checklist for this batch.
+
+| Mixed source | Exact destination | Runtime tests | Assertions |
+| --- | --- | ---: | ---: |
+| `test/cli-interactive-contextual-tip.test.ts` | `test/cli-foundations/interactive/contextual-tip.test.ts` | 12 | 12 |
+| `test/cli-interactive-routing.test.ts` | eight admitted feature/platform destinations | 9 | 18 |
+| `test/cli-text-inline.test.ts` | `test/cli-foundations/text-inline/completion-controller.test.ts` | 10 | 38 |
+| `test/cli-text-inline.test.ts` | `test/cli-foundations/text-inline/terminal-controller.test.ts` | 9 | 29 |
+| `test/cli-text-inline.test.ts` | `test/cli-foundations/text-inline/fallback.test.ts` | 4 | 21 |
+| `test/cli-ux.test.ts` | `test/cli-foundations/commands/root-ux.test.ts` | 2 | 12 |
+| `test/cli-ux.test.ts` | `test/data-conversion/commands/output-paths.test.ts` | 2 | 9 |
+| `test/cli-ux.test.ts` | `test/data-preview/commands/preview-ux.test.ts` | 5 | 24 |
+| `test/cli-ux.test.ts` | `test/data-preview/commands/parquet-ux.test.ts` | 3 | 13 |
+| `test/cli-ux.test.ts` | `test/data/commands/help.test.ts` | 1 | 14 |
+| `test/cli-ux.test.ts` | `test/data-conversion/commands/help.test.ts` | 2 | 8 |
+| `test/cli-ux.test.ts` | `test/data-extract/commands/help-and-input-format.test.ts` | 2 | 17 |
+| `test/cli-ux.test.ts` | `test/data-stack/commands/help-and-input-format.test.ts` | 2 | 15 |
+| `test/cli-ux.test.ts` | `test/rename/commands/ux.test.ts` | 3 | 22 |
+| `test/cli-ux.test.ts` | `test/video/commands/ux.test.ts` | 9 | 38 |
+
+The routing residual assigns two exact Markdown menu cases to
+`test/markdown/interactive/menu-routing.test.ts` and one case to each of its
+other seven destinations. Remove exactly these two cases, both of which have
+stronger retained owners:
+
+1. `routes a built-in markdown pdf render through the prepared service`
+2. `routes the markdown pdf recipes branch into deterministic artifact selection`
+
+The contextual-tip consolidation maps the three `builds the expected
+randomized pool for ...` source titles to the table-driven `prepends the abort
+notice to the selected flow's static tips for $flow` owner. It maps the three
+`selects the expected ... tip for a deterministic random value` titles to the
+table-driven `composes the $flow catalog and deterministic selector` owner.
+Each declaration executes Query, Extract, and Stack rows, preserving six
+runtime cases and six assertions. The other six contextual-tip titles move
+unchanged.
+
+The exact adjacent safety set covers the Phase 3 and Phase 4 extractions from
+the same historical roots, both stronger Markdown PDF owners for the removals,
+and the complementary compressed-mode Video routing owner. It passes 82 tests
+with 389 assertions across seven files. No current guide names an admitted
+historical test or support path.
+
+Only the two recorded support changes are admitted. Neutral Interactive
+harness movement, `test/helpers/cli-test-utils.ts`, and compatibility-facade
+cleanup remain Phase 7 work. No production change is admitted.
+
+##### Phase 6.21 Focused Validation Commands
+
+Pre-change exact 24-source slice:
+
+```bash
+bun test \
+  test/cli-color.test.ts \
+  test/cli-command-interactive-timeout.test.ts \
+  test/cli-command-output-color.test.ts \
+  test/cli-diagnostic-color.test.ts \
+  test/cli-interactive-analyzer-status.test.ts \
+  test/cli-interactive-contextual-tip.test.ts \
+  test/cli-interactive-menu-prompt.test.ts \
+  test/cli-interactive-menu.test.ts \
+  test/cli-interactive-notice.test.ts \
+  test/cli-interactive-routing.test.ts \
+  test/cli-options-codex-timeout.test.ts \
+  test/cli-path-inline-state.test.ts \
+  test/cli-path-inline.test.ts \
+  test/cli-path-sibling-preview.test.ts \
+  test/cli-path-suggestions.test.ts \
+  test/cli-path.test.ts \
+  test/cli-text-display-width.test.ts \
+  test/cli-text-inline.test.ts \
+  test/cli-text-template-candidates.test.ts \
+  test/cli-tui-inline-renderer.test.ts \
+  test/cli-tui-keys.test.ts \
+  test/cli-tui-raw-session.test.ts \
+  test/cli-tui-screen.test.ts \
+  test/cli-ux.test.ts
+```
+
+Expected post-change exact destination slice:
+
+```bash
+bun test \
+  test/cli-foundations/color \
+  test/cli-foundations/commands \
+  test/cli-foundations/interactive \
+  test/cli-foundations/options \
+  test/cli-foundations/path-prompts \
+  test/cli-foundations/inline-rendering \
+  test/cli-foundations/tui \
+  test/cli-foundations/text-inline \
+  test/data/interactive/menu-routing.test.ts \
+  test/markdown/interactive/menu-routing.test.ts \
+  test/markdown-pdf/interactive/entry-routing.test.ts \
+  test/markdown-frontmatter/interactive/routing.test.ts \
+  test/markdown-docx/interactive/routing.test.ts \
+  test/rename/interactive/routing.test.ts \
+  test/video/interactive/routing.test.ts \
+  test/data-conversion/commands/output-paths.test.ts \
+  test/data-preview/commands/preview-ux.test.ts \
+  test/data-preview/commands/parquet-ux.test.ts \
+  test/data/commands/help.test.ts \
+  test/data-conversion/commands/help.test.ts \
+  test/data-extract/commands/help-and-input-format.test.ts \
+  test/data-stack/commands/help-and-input-format.test.ts \
+  test/rename/commands/ux.test.ts \
+  test/video/commands/ux.test.ts
+```
+
+Exact adjacent safety set:
+
+```bash
+bun test \
+  test/data-query/commands/help-and-input-format.test.ts \
+  test/data-query/commands/codex-help-and-input-format.test.ts \
+  test/doctor/interactive/menu-routing.test.ts \
+  test/doctor/interactive/routing.test.ts \
+  test/markdown-pdf/interactive/render-sources.test.ts \
+  test/markdown-pdf/interactive/deterministic-authoring.test.ts \
+  test/video/interactive/gif.test.ts
+```
+
+### Phase 2 Miscellaneous-Feature Decision Summary
+
+The summary and commands below close the earlier Phase 2
+miscellaneous-feature audit. They are not the Phase 6.21 execution checklist.
 
 - Audited suites: 10 of 10 assigned inventory rows.
 - Declared `test(...)` cases: 70 of 70 represented exactly once.
@@ -3074,7 +3250,7 @@ accepted these destinations. Implementation remains gated by the focused
 validation, correspondence update, and exact-range review required by the
 destination phase.
 
-### Focused Validation Commands
+### Phase 2 Miscellaneous-Feature Focused Validation Commands
 
 Pre-change exact assigned slice:
 

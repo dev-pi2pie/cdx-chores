@@ -390,7 +390,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.18 | DOCX                                          | completed       | `56624bef` | `0018929c`         | `3500991c`   | `56624bef..3500991c` | Continue with constraints |
 | 6.19 | Markdown platform                             | completed       | `de108f7d` | `16020bd3`         | `bc1ed261`   | `de108f7d..bc1ed261` | Continue with constraints |
 | 6.20 | Utilities                                     | completed       | `a48b30b1` | `60e3b5ce`         | `7ccbbc8a`   | `a48b30b1..7ccbbc8a` | Continue with constraints |
-| 6.21 | CLI foundations and mixed-root decomposition  | pending         | -          | -                  | -            | -                    | -                         |
+| 6.21 | CLI foundations and mixed-root decomposition  | admission ready | pending    | -                  | -            | -                    | -                         |
 
 ### Phase 6.1: Markdown PDF General
 
@@ -2006,6 +2006,61 @@ Review gate:
 - [x] record the Phase 2 summary clarification and path transition
 - [x] create the evidence commit and review the exact batch range
 - [x] record accepted review fixes and the continuation decision
+
+### Phase 6.21: CLI Foundations And Mixed-Root Decomposition
+
+Status: `admission ready`
+
+Admission predecessor: `dd74aa3e`
+
+Batch base: pending admission checkpoint
+
+Implementation tip: pending
+
+Evidence tip: pending
+
+Exact batch review range: pending
+
+Owner: CLI foundations plus the exact Data, Markdown, Rename, and Video
+destinations recorded in the Phase 2 matrix and Phase 6.21 admission.
+
+All 24 manifest selectors exist at the admission predecessor. The refreshed
+source slice passes 215 tests with 588 assertions across 24 files. The exact
+admission fixes 42 destination files, the virtual-terminal move, one local
+text-controller fixture extraction, two table-driven contextual-tip
+consolidations, one Video title clarification, and only the two approved
+Markdown PDF routing removals. The required focused post-state is 213 tests
+with 580 assertions across 42 files.
+
+Against the Phase 6.20 complete-suite baseline, the same narrow delta projects
+to 2,621 tests with 14,870 assertions across 354 files. Any other test,
+assertion, or file-count change stops the batch for reconciliation.
+
+The exact adjacent safety set passes 82 tests with 389 assertions across seven
+files. It covers the earlier Data Query and Doctor extractions from the same
+three residual roots, the two stronger Markdown PDF owners, and the
+complementary compressed-mode Video route. No current guide names an admitted
+historical path.
+
+The matrix owns the exact source-to-target and mixed-case execution manifests.
+Neutral Interactive harness movement, routing-facade cleanup, global CLI test
+helpers, and caller-owned built-CLI cleanup remain Phase 7 work.
+
+Review gate:
+
+- [x] reproduce all 24 selectors and the 215-test, 588-assertion baseline
+- [x] settle all 42 destination files and both exact support changes
+- [x] reconcile the three residual sources with their Phase 3 and Phase 4 moves
+- [x] record the two exact removals and both table-driven consolidations
+- [x] baseline the 82-test, 389-assertion adjacent safety set
+- [x] confirm current guides and non-doc scripts/configuration need no path edit
+- [ ] create the admission checkpoint and record it as the batch base
+- [ ] implement only the admitted moves, splits, merges, rename, and removals
+- [ ] reproduce the exact 213-test, 580-assertion, 42-file focused post-state
+- [ ] run the adjacent, complete-suite, and repository checks
+- [ ] record all path/support correspondence rows and execution evidence
+- [ ] create the evidence commit and review the exact batch range
+- [ ] record accepted review fixes and the continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
