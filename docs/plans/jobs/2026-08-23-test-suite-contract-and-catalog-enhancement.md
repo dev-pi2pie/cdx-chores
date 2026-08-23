@@ -23,6 +23,7 @@ references.
 
 - `docs/references/test-catalog-path-correspondence.md`
 - `docs/references/test-suite-audit-inventory.md`
+- `docs/references/test-suite-case-matrices.md`
 
 ## Starting Evidence
 
@@ -35,12 +36,12 @@ references.
 
 ## Phase Summary
 
-| Phase | Boundary                                       | Status    | Review range         | Decision |
-| ----: | ---------------------------------------------- | --------- | -------------------- | -------- |
-|     1 | refreshed baseline and complete file inventory | completed | `2f3013ca..fae7d92b` | Continue |
-|     2 | case matrices and catalog admission            | pending   | —                    | —        |
-|     3 | Data Query migration pilot                     | pending   | —                    | —        |
-|     4 | Doctor ownership migration pilot               | pending   | —                    | —        |
+| Phase | Boundary                                       | Status      | Review range         | Decision |
+| ----: | ---------------------------------------------- | ----------- | -------------------- | -------- |
+|     1 | refreshed baseline and complete file inventory | completed   | `2f3013ca..fae7d92b` | Continue |
+|     2 | case matrices and catalog admission            | in-progress | pending              | pending  |
+|     3 | Data Query migration pilot                     | pending     | —                    | —        |
+|     4 | Doctor ownership migration pilot               | pending     | —                    | —        |
 
 ## Phase 1: Refreshed Baseline And Complete File Inventory
 
@@ -99,3 +100,38 @@ remaining material issues.
 
 Decision: `Continue` to Phase 2. The research and audit inventory remain
 `draft` until the Phase 2 matrices and catalog admission gate are complete.
+
+## Phase 2: Case Matrices And Catalog Admission
+
+Status: `in-progress`
+
+Phase base: `34d080e9`
+
+The case-matrix reference covers all 94 `case audit` and `split review`
+suites and all 982 declared `test` or `it` cases exactly once. Parameterized
+declarations appear once with their literal source title and variants.
+
+Pre-review decisions:
+
+- 737 `move`
+- 215 `split`
+- 4 `rename`
+- 5 `merge`
+- 11 `remove`
+- 10 `keep pending evidence`
+
+The proposed catalog also resolves all 39 support files deferred from Phase 1,
+including independent consumer and semantic evidence for proposed global
+helpers. Event-based deferrals keep unrelated Markdown PDF, Data Extract, Data
+Stack, shared Data Sources, Rename, and Interactive-harness migrations out of
+the Data Query and Doctor pilots.
+
+Representative validation:
+
+- Data Query: 202 passed, 0 failed, and 932 assertions across 36 files
+- Doctor: 124 passed, 0 failed, and 894 assertions across 4 files
+- contextual tip plus the mixed Markdown PDF candidates: 96 passed, 0 failed,
+  and 296 assertions across 3 files
+
+The Phase 2 range, final decision counts, lifecycle updates, and admission
+decision remain pending documentation and test-quality review.

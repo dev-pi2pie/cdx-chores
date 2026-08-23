@@ -37,15 +37,15 @@ The working sequence is:
 audit behavior -> settle ownership -> rename/merge/remove -> split -> move
 ```
 
-The likely enhancement is a behavior-preserving cleanup with feature-first
-ownership as the default. The exact folder topology, exceptions, deferrals,
-and removal set remain open until the inventory and representative case
-matrices are complete.
+The Phase 2 evidence supports a behavior-preserving cleanup with feature-first
+ownership as the default. The complete inventory, 982-row literal case matrix,
+support decisions, exact folder topology, deferrals, and proposed removal set
+are recorded in the companion references and remain subject to final review.
 
 ### Baseline
 
-The test baseline was captured on 2026-08-23 at commit `076f0299`, before this
-research was created, with a clean tracked worktree:
+The implementation baseline was refreshed on 2026-08-23 at commit `2f3013ca`,
+before any test edit or path migration, with a clean tracked worktree:
 
 ```text
 2625 pass
@@ -55,7 +55,6 @@ Ran 2625 tests across 289 files.
 ```
 
 The completed modularization job records the same test and discovery counts.[3]
-The baseline must be refreshed before this research is settled.
 
 ## Review Contract
 
@@ -139,11 +138,12 @@ The audit is complete only when:
 - the inventory, matrices, and conclusions receive documentation and
   test-quality review
 
-The complete inventory and matrices should live in a checked-in companion
-reference, `docs/references/test-suite-audit-inventory.md`, created when
-population begins. Keeping hundreds of evidence rows out of this document
-preserves the research as a readable decision record without weakening the
-audit gate.
+The complete inventory and matrices live in checked-in companion references:
+`docs/references/test-suite-audit-inventory.md` owns file-level classification,
+and `docs/references/test-suite-case-matrices.md` owns literal case decisions,
+catalog targets, and support ownership. Keeping the evidence rows out of this
+document preserves the research as a readable decision record without
+weakening the audit gate.
 
 ## Pilot Evidence
 
@@ -168,7 +168,7 @@ Data Stack, Doctor, root-level Markdown PDF actions, duplicated feature
 fixtures, and global helpers with only one feature consumer. Inclusion is an
 audit signal, not a presumption that the suite must be split or reduced.
 
-## Accepted Catalog Direction
+## Proposed Catalog Direction
 
 Feature-first ownership with a bounded second-level layer is the working
 default because it keeps a feature's direct, action, command, Interactive, and
@@ -232,11 +232,11 @@ The later implementation should:
 - update the dated path correspondence without rewriting historical evidence
 - use one unified job record for implementation and validation receipts
 
-Data Query is the strongest overlap pilot because it spans direct, action,
-command, and Interactive coverage. Doctor is the strongest catalog pilot
-because its production boundaries are already clearer than its remaining test
-layout. The inventory should decide whether they form the first migration
-slice.
+Data Query is proposed as the first overlap and catalog pilot because it spans
+direct, action, command, and Interactive coverage. Doctor is proposed as the
+second pilot because its production boundaries are clearer than its remaining
+mixed test layout. Their exact pre-change owners, destinations, support
+boundaries, and focused commands live in the case-matrix reference.
 
 A draft plan may define the evidence and migration gates, but no test edit or
 path-migration phase should begin until the inventory, representative
@@ -287,28 +287,33 @@ migration. It becomes `completed` only after the final reconciliation proves
 that every accepted path change is recorded and no old-path occurrence remains
 unclassified.
 
-## Remaining Evidence And Decisions
+## Phase 2 Recommendations Pending Review
 
-The following work remains before this research can be completed:
+The completed evidence supports these recommendations:
 
-1. Populate the complete file inventory at a refreshed baseline.
-2. Complete case matrices for Data Query, Doctor, the contextual-tip catalog,
-   and one mixed Markdown PDF family.
-3. Identify rename-only cases and record retained owners for every proposed
-   merge or removal.
-4. Decide which utility and adapter families satisfy the source-aligned
-   exception criteria.
-5. Identify unique command boundaries and action-semantic duplication.
-6. Record each temporary root deferral and its event-based revisit condition.
-7. Confirm which helpers satisfy both independent cross-feature reuse and
-   feature-neutral contract criteria.
-8. Settle the exact feature/platform folder topology and migration boundaries.
-9. Review the completed evidence with documentation and test-quality reviewers
-   before drafting a plan.
+1. Use the accepted feature/platform catalog in the case-matrix reference;
+   create a second-level boundary only for multiple siblings or a stable seam.
+2. Admit only proved feature-neutral global helpers. Move the Interactive
+   harness to the CLI-foundations platform owner and extract feature mocks over
+   bounded later checkpoints.
+3. Keep all ten `keep pending evidence` cases unchanged. They do not authorize
+   a merge, removal, or behavior rewrite.
+4. Apply the Data Query path contract first, then the Doctor and mixed-suite
+   path contract. Defer shared Data Sources, Markdown PDF, Data Extract, Data
+   Stack, Rename, and broad harness migrations to their recorded events.
+5. Use the Bundle plus Interactive font-hints pair as the later bounded
+   Markdown PDF pilot; preserve renderer, safety, privacy, cleanup, collision,
+   and evidence contracts.
+6. Retain command cases only for registration, parsing, precedence, defaults,
+   environment, forwarding, or process seams not owned by action coverage.
+7. Accept a removal or merge only when its matrix row names the exact retained
+   owner and final test-quality review confirms equivalent trigger, outcome,
+   boundary, failure, and side-effect lifecycle.
 
-Until this evidence is recorded and reviewed, this research and the path
-correspondence reference remain `draft`. The audit inventory reference should
-also begin as `draft` when its population starts.
+The research, audit inventory, and case-matrix reference remain `draft` until
+documentation and test-quality review accepts or constrains these conclusions.
+The path-correspondence reference remains `draft` through implementation and
+final documentation reconciliation.
 
 ## Reproduction Appendix
 
@@ -364,6 +369,8 @@ while explicitly deferring several suites from a suite-wide value review.[2][3]
 - [Test Suite Contract And Catalog Enhancement](../plans/plan-2026-08-23-test-suite-contract-and-catalog-enhancement.md)
 - [Historical Test Suite Modularization And Redundancy Reduction](../plans/archive/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md)
 - [Test Catalog Path Correspondence](../references/test-catalog-path-correspondence.md)
+- [Test Suite Audit Inventory](../references/test-suite-audit-inventory.md)
+- [Test Suite Case Matrices And Catalog](../references/test-suite-case-matrices.md)
 
 [1]: archive/research-2026-03-02-test-suite-audit.md
 [2]: research-2026-08-23-typescript-modularization-follow-up.md

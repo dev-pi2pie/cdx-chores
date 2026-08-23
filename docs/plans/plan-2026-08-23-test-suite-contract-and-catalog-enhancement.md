@@ -36,8 +36,8 @@ than forcing a move.
 
 - [Test Suite Contract, Overlap, And Catalog Review](../researches/research-2026-08-23-test-suite-contract-overlap-and-catalog.md)
 - [Test Catalog Path Correspondence](../references/test-catalog-path-correspondence.md)
-- `docs/references/test-suite-audit-inventory.md` — create when Phase 1
-  population begins
+- [Test Suite Audit Inventory](../references/test-suite-audit-inventory.md)
+- [Test Suite Case Matrices And Catalog](../references/test-suite-case-matrices.md)
 - [TypeScript Modularization Follow-Up Implementation](plan-2026-08-23-typescript-modularization-follow-up.md)
 - [Historical Test Suite Modularization And Redundancy Reduction](archive/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md)
 
@@ -99,29 +99,31 @@ Out of scope:
 - Update plan checklists and lifecycle status only after the required evidence
   passes.
 
-## Provisional Catalog Contract
+## Proposed Catalog Contract
 
-Phase 2 must replace the placeholders below with accepted owner and boundary
-names before implementation begins:
+Phase 2 proposes stable feature or platform owners with a bounded second level:
 
 ```text
 test/
-  <feature-or-platform-owner>/
-    <boundary>/        # only when multiple suites or a stable seam justify it
-  helpers/             # independently reused, feature-neutral infrastructure
-  fixtures/            # independently reused, feature-neutral data only
+  data-query/{direct,actions,commands,interactive,evidence}/
+  doctor/{actions,commands,workflow,interactive,support}/
+  data-sources/{adapters,fixtures}/
+  cli-foundations/{dependencies,inline-rendering,interactive-harness}/
+  markdown-pdf/{actions,adapters,commands,direct,evidence,interactive,support}/
+  markdown-docx/actions/
+  video/actions/
+  <other-feature>/{direct,actions,commands,interactive,support}/
+  helpers/ # independently reused, feature-neutral infrastructure only
 ```
 
-Feature owners may include product families such as Data Query, Doctor,
-Markdown PDF, Data Stack, Rename, Fonts, or Video. Platform owners may include
-stable families such as CLI foundations, Codex adapters, release tooling, or
-utilities. The inventory decides membership; this list does not pre-approve a
-folder.
+Do not create every listed boundary eagerly. A boundary directory is admitted
+only when multiple suites or a stable seam justifies it. The complete targets,
+support decisions, and event-based deferrals live in the case-matrix reference.
 
 Feature-local fixtures and helpers should live under their owner. New feature
-tests should not expand the flat `test/` root after Phase 2 accepts the
-catalog. Existing root suites may remain only as recorded source-aligned
-exceptions or temporary deferrals with event-based revisit conditions.
+tests should not expand the flat `test/` root. Existing root suites may remain
+only as recorded source-aligned exceptions or temporary deferrals with
+event-based revisit conditions.
 
 ## Execution Record Strategy
 
@@ -231,6 +233,8 @@ Admission gate:
 
 ### Phase 3: Migrate The Data Query Pilot
 
+Proposed path contract: [Phase 3 Data Query Path Contract](../references/test-suite-case-matrices.md#phase-3-data-query-path-contract)
+
 Tasks:
 
 - [ ] Apply only the accepted Data Query matrix decisions.
@@ -257,6 +261,8 @@ Observable contracts:
 - artifact validation, DuckDB lifecycle, and fixture generation remain covered
 
 ### Phase 4: Migrate The Doctor Ownership Pilot
+
+Proposed path contract: [Phase 4 Doctor Path Contract](../references/test-suite-case-matrices.md#phase-4-doctor-path-contract)
 
 Tasks:
 
