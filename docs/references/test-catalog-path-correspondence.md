@@ -44,10 +44,10 @@ contract in the related research.
 
 ## Correspondence
 
-Current state: Phases 3 through 5 and Phase 6.1 have completed their accepted
-path correspondences. Phase 6.2 correspondence is implemented and in review.
-The reference remains `draft` until the complete initial migration and final
-documentation reconciliation are finished.
+Current state: Phases 3 through 5 and Phase 6.1 through 6.2 have completed their
+accepted path correspondences. The reference remains `draft` until the
+complete initial migration and final documentation reconciliation are
+finished.
 
 ### Phase 3: Data Query Pilot
 
@@ -153,9 +153,10 @@ all initial migration and documentation reconciliation work is complete.
 
 ### Phase 6.2: Markdown PDF Template Codex
 
-The paths below were implemented and validated over
-`2af1ae7b..b74f6279`. Phase 6.2 remains `in-review` until its evidence commit,
-exact range review, and continuation decision are recorded.
+The paths below were implemented and validated over `2af1ae7b..b74f6279`, then
+reviewed over `2af1ae7b..ae3d717b`. Phase 6.2 is completed with the decision
+`Continue with constraints`; the reference remains `draft` until all initial
+migration and documentation reconciliation work is complete.
 
 | Reference date | Historical path                                                         | Transition | Current owner or owners                                                                                                                 | Migration range      | Job evidence                    |
 | -------------- | ----------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------- |

@@ -371,7 +371,7 @@ Data Extract and Data Stack destination folders to the established plural
 | ID   | Batch                                         | Status          | Batch base | Implementation tip | Evidence tip | Review range | Decision |
 | ---- | --------------------------------------------- | --------------- | ---------- | ------------------ | ------------ | ------------ | -------- |
 | 6.1  | Markdown PDF general                          | completed       | `fca1204a` | `c55da02a`         | `870fef23`   | `fca1204a..870fef23` | Continue with constraints |
-| 6.2  | Markdown PDF Template Codex                   | in-review       | `2af1ae7b` | `b74f6279`         | pending      | pending      | pending  |
+| 6.2  | Markdown PDF Template Codex                   | completed       | `2af1ae7b` | `b74f6279`         | `ae3d717b`   | `2af1ae7b..ae3d717b` | Continue with constraints |
 | 6.3  | Markdown PDF Profile                          | pending         | -          | -                  | -            | -            | -        |
 | 6.4  | Markdown PDF Project Codex                    | pending         | -          | -                  | -            | -            | -        |
 | 6.5  | Markdown PDF Interactive and support closeout | pending         | -          | -                  | -            | -            | -        |
@@ -491,7 +491,7 @@ Review gate:
 
 ### Phase 6.2: Markdown PDF Template Codex
 
-Status: `in-review`
+Status: `completed`
 
 Batch base: `2af1ae7b`
 
@@ -499,9 +499,9 @@ Implementation tip: `b74f6279`
 
 Execution and path migration range: `2af1ae7b..b74f6279`
 
-Evidence tip: pending
+Evidence tip: `ae3d717b`
 
-Exact batch review range: pending
+Exact batch review range: `2af1ae7b..ae3d717b`
 
 The batch admitted five Template Codex suites. One command suite split into
 separate Template initialization and Codex command owners, producing six
@@ -562,9 +562,16 @@ Documentation path scan:
   three support sources over `2af1ae7b..b74f6279`
 
 The implementation and validation evidence is clean through `b74f6279`.
-Phase 6.2 remains `in-review` until an evidence commit records its own tip, the
-exact base-to-evidence-tip range receives test-quality, maintainability, and
-documentation review, and the continuation decision is recorded.
+Exact-range test-quality and maintainability review found no material concerns.
+Documentation review found that the evidence receipt could not name its own
+tip; this closeout accepts the finding by recording `ae3d717b` and the exact
+reviewed range above.
+
+Decision: `Continue with constraints`. Phase 6.2 is complete because all 28
+selected owners were dispositioned: five admitted suites migrated into six
+owners and 23 unresolved suites remained at their recorded paths. Those
+deferrals are not catalog approval. Continue to Phase 6.3 from a new batch base
+with its exact selector and the same validation, evidence, and review gates.
 
 Review gate:
 
@@ -573,8 +580,8 @@ Review gate:
 - [x] move the three fixture owners and validate all 30 consumer suites
 - [x] complete focused, full-suite, and repository validation
 - [x] record correspondence and current support-decision updates
-- [ ] create the evidence commit and review the exact batch range
-- [ ] record accepted review fixes and the batch continuation decision
+- [x] create the evidence commit and review the exact batch range
+- [x] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
