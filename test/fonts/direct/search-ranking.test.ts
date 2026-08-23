@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { rankSearchableFontFamilies } from "../src/fonts";
-import type { SearchableFontFamily } from "../src/fonts";
+import { rankSearchableFontFamilies } from "../../../src/fonts";
+import type { SearchableFontFamily } from "../../../src/fonts";
 
 function record(
   family: string,

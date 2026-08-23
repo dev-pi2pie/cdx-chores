@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { collectSearchableFontFamilies } from "../src/fonts";
-import type { FontFace } from "../src/fonts";
+import { collectSearchableFontFamilies } from "../../../src/fonts";
+import type { FontFace } from "../../../src/fonts";
 
 function face(input: {
   family: string;

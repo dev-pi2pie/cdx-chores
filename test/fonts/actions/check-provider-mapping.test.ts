@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import { actionFontCheck } from "../src/cli/actions";
-import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
+import { actionFontCheck } from "../../../src/cli/actions";
+import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
 
 describe("font CLI check provider results", () => {
-  test("maps font check provider pass, fail, and nerd requirement results", async () => {
+  test("maps provider coverage to pass and fail JSON results", async () => {
     const passRuntime = createActionTestRuntime();
     passRuntime.runtime.platform = "linux";
     const pass = await actionFontCheck(passRuntime.runtime, {
@@ -108,7 +108,9 @@ describe("font CLI check provider results", () => {
       warnings: [],
       info: [],
     });
+  });
 
+  test("adds Nerd requirements before mapping provider results", async () => {
     const nerdRuntime = createActionTestRuntime();
     nerdRuntime.runtime.platform = "linux";
     await actionFontCheck(nerdRuntime.runtime, {

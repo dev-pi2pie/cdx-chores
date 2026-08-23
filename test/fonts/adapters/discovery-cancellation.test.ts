@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { defaultFontDiscoveryRunner, discoverSystemFonts } from "../src/fonts";
-import type { FontDiscoveryRunOptions } from "../src/fonts";
+import { defaultFontDiscoveryRunner, discoverSystemFonts } from "../../../src/fonts";
+import type { FontDiscoveryRunOptions } from "../../../src/fonts";
 
 describe("font discovery cancellation and timeout controls", () => {
   test("forwards additive run controls to explicit fontconfig discovery", async () => {

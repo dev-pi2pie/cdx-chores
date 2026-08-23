@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import { parseFontconfigCharset } from "../src/fonts/coverage";
-import { checkFontCoverage, NERD_FONT_SAMPLE_TEXT, sampleTextForLanguage } from "../src/fonts";
+import { parseFontconfigCharset } from "../../../src/fonts/coverage";
+import {
+  checkFontCoverage,
+  NERD_FONT_SAMPLE_TEXT,
+  sampleTextForLanguage,
+} from "../../../src/fonts";
 
 describe("font coverage samples", () => {
   test("provides controlled sample text for expanded language fixtures", () => {

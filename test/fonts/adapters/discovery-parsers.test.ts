@@ -4,7 +4,7 @@ import {
   parseFontconfigList,
   parseMacosSystemProfilerFonts,
   parseWindowsFontRegistry,
-} from "../src/fonts";
+} from "../../../src/fonts";
 
 describe("font discovery parsers", () => {
   test("parses fontconfig faces without requiring fontconfig on CI", () => {

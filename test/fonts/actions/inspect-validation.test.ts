@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { actionFontInspect } from "../src/cli/actions";
-import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
+import { actionFontInspect } from "../../../src/cli/actions";
+import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
 
 describe("font CLI inspect validation", () => {
   test("rejects font inspect without a family before discovery", async () => {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { checkFontconfigCoverage, fontconfigCoverageProvider } from "../src/fonts/coverage";
+import { checkFontconfigCoverage, fontconfigCoverageProvider } from "../../../src/fonts/coverage";
 
 describe("fontconfig coverage provider", () => {
   test("checks selected font files with the fontconfig coverage provider", async () => {

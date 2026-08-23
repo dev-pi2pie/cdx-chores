@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { actionFontInspect } from "../src/cli/actions";
-import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
+import { actionFontInspect } from "../../../src/cli/actions";
+import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
 
 describe("font CLI inspect debug", () => {
   test("preserves font inspect discovery warnings in text and JSON output", async () => {

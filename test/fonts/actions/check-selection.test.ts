@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { actionFontCheck } from "../src/cli/actions";
-import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
+import { actionFontCheck } from "../../../src/cli/actions";
+import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
 
 describe("font CLI check selection", () => {
   test("selects one deterministic font check face before checking coverage", async () => {

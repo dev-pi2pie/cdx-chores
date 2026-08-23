@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { checkFontconfigCoverage } from "../src/fonts/coverage";
+import { checkFontconfigCoverage } from "../../../src/fonts/coverage";
 
 describe("fontconfig TTC coverage provider", () => {
   test("checks indexed TTC coverage through matching face metadata", async () => {

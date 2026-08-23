@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { actionFontCheck } from "../src/cli/actions";
-import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
+import { actionFontCheck } from "../../../src/cli/actions";
+import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
 
 describe("font CLI check output", () => {
-  test("prints font check text output and warning output", async () => {
+  test("prints pass and fail text with selected-face context", async () => {
     const passRuntime = createActionTestRuntime({ colorEnabled: false });
     passRuntime.runtime.platform = "linux";
 
@@ -78,36 +78,9 @@ describe("font CLI check output", () => {
     );
     expect(stdout.text).not.toContain("/private/path");
     expectNoStderr();
+  });
 
-    const warningRuntime = createActionTestRuntime({ colorEnabled: false });
-    warningRuntime.runtime.platform = "linux";
-    await actionFontCheck(warningRuntime.runtime, {
-      family: "Missing",
-      text: "A",
-      discovery: "fontconfig",
-      runner: async () => ({ ok: false, stdout: "", stderr: "/private/path/fc-list failed" }),
-    });
-    expect(warningRuntime.stdout.text).toContain("Result: inconclusive");
-    expect(warningRuntime.stderr.text).toContain("Warning: fontconfig discovery failed.");
-    expect(warningRuntime.stdout.text).not.toContain("/private/path");
-
-    const warningPayloadRuntime = createActionTestRuntime();
-    warningPayloadRuntime.runtime.platform = "linux";
-    await actionFontCheck(warningPayloadRuntime.runtime, {
-      json: true,
-      family: "Missing",
-      text: "A",
-      discovery: "fontconfig",
-      runner: async () => ({ ok: false, stdout: "", stderr: "/private/path/fc-list failed" }),
-    });
-    const warningPayload = JSON.parse(warningPayloadRuntime.stdout.text) as {
-      warnings: string[];
-      info: string[];
-    };
-    expect(warningPayload.warnings).toEqual(["fontconfig discovery failed."]);
-    expect(warningPayload.info).toEqual([]);
-    warningPayloadRuntime.expectNoStderr();
-
+  test("prints Nerd requirement gaps", async () => {
     const requirementRuntime = createActionTestRuntime({ colorEnabled: false });
     requirementRuntime.runtime.platform = "linux";
     await actionFontCheck(requirementRuntime.runtime, {
@@ -132,56 +105,9 @@ describe("font CLI check output", () => {
     expect(requirementRuntime.stdout.text).toContain("- U+E0B0");
     expect(requirementRuntime.stdout.text).toContain("- U+F418");
     requirementRuntime.expectNoStderr();
-
-    const debugRuntime = createActionTestRuntime({ colorEnabled: false });
-    debugRuntime.runtime.platform = "darwin";
-    await actionFontCheck(debugRuntime.runtime, {
-      debug: true,
-      family: "Latin",
-      text: "A",
-      runner: async (command, args) => {
-        if (command === "fc-list") {
-          return { ok: false, stdout: "", stderr: "/private/path/fc-list missing" };
-        }
-        if (command === "system_profiler") {
-          return {
-            ok: true,
-            stdout: JSON.stringify({
-              SPFontsDataType: [
-                {
-                  _name: "Latin Regular",
-                  type: "TrueType",
-                  path: "/fonts/Latin.ttf",
-                  typefaces: [
-                    {
-                      family: "Latin",
-                      fullname: "Latin Regular",
-                      style: "Regular",
-                    },
-                  ],
-                },
-              ],
-            }),
-            stderr: "",
-          };
-        }
-        return args[0] === "--version"
-          ? { ok: true, stdout: "fontconfig version 2.15.0", stderr: "" }
-          : { ok: true, stdout: "0041\n", stderr: "" };
-      },
-    });
-    expect(debugRuntime.stdout.text).toContain("Debug:");
-    expect(debugRuntime.stdout.text).toMatch(
-      /- fontconfig: failed in \d+ms \(fc-list was not available or failed\.\)/,
-    );
-    expect(debugRuntime.stdout.text).toMatch(
-      /- macos-system-profiler: success in \d+ms \(macOS native discovery succeeded\.\)/,
-    );
-    expect(debugRuntime.stdout.text).not.toContain("/private/path");
-    debugRuntime.expectNoStderr();
   });
 
-  test("prints selection-based font check inconclusive text output", async () => {
+  test("prints no-match inconclusive text without a selected face", async () => {
     const noMatchRuntime = createActionTestRuntime({ colorEnabled: false });
     noMatchRuntime.runtime.platform = "linux";
     await actionFontCheck(noMatchRuntime.runtime, {
@@ -200,7 +126,9 @@ describe("font CLI check output", () => {
       "Reason: no discovered font face matched the requested family.",
     );
     noMatchRuntime.expectNoStderr();
+  });
 
+  test("prints ambiguous-family inconclusive text without a path", async () => {
     const ambiguousRuntime = createActionTestRuntime({ colorEnabled: false });
     ambiguousRuntime.runtime.platform = "linux";
     await actionFontCheck(ambiguousRuntime.runtime, {
@@ -224,7 +152,9 @@ describe("font CLI check output", () => {
     expect(ambiguousRuntime.stdout.text).toContain("Result: inconclusive");
     expect(ambiguousRuntime.stdout.text).not.toContain("Path:");
     ambiguousRuntime.expectNoStderr();
+  });
 
+  test("prints pathless-face inconclusive text", async () => {
     const noPathRuntime = createActionTestRuntime({ colorEnabled: false });
     noPathRuntime.runtime.platform = "linux";
     await actionFontCheck(noPathRuntime.runtime, {

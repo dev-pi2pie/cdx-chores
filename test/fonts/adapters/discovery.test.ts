@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { discoverSystemFonts } from "../src/fonts";
+import { discoverSystemFonts } from "../../../src/fonts";
 
 describe("font discovery", () => {
   test("discovers Linux fonts through fontconfig with an injected runner", async () => {

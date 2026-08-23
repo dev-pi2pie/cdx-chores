@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { actionFontList } from "../src/cli/actions";
-import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
+import { actionFontList } from "../../../src/cli/actions";
+import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
 
 const ANSI_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
 const ANSI_START = `${String.fromCharCode(27)}[`;

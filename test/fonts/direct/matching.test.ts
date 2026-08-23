@@ -4,8 +4,8 @@ import {
   fontFamilyMatchRank,
   selectFontFaceForCheck,
   uniqueFontFaces,
-} from "../src/fonts/matching";
-import type { FontFace } from "../src/fonts";
+} from "../../../src/fonts/matching";
+import type { FontFace } from "../../../src/fonts";
 
 function face(input: {
   family: string;

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { actionFontInspect } from "../src/cli/actions";
-import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
+import { actionFontInspect } from "../../../src/cli/actions";
+import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
 
 describe("font CLI inspect output", () => {
   test("prints font inspect text output with multiple faces under one family", async () => {
@@ -180,6 +180,62 @@ describe("font CLI inspect output", () => {
     expect(payload.matches[0]).not.toHaveProperty("format");
     expect(payload.matches[0]).not.toHaveProperty("faceIndex");
     expect(payload.matches[0]).not.toHaveProperty("path");
+    jsonRuntime.expectNoStderr();
+  });
+
+  test("omits lookup-only alias metadata from inspect JSON", async () => {
+    const jsonRuntime = createActionTestRuntime();
+    jsonRuntime.runtime.platform = "linux";
+    await actionFontInspect(jsonRuntime.runtime, {
+      json: true,
+      family: "Noto Sans JP",
+      runner: async () => ({
+        ok: true,
+        stdout:
+          "Noto Sans CJK JP,Noto Sans JP\tNoto Sans CJK JP Regular,Noto Sans JP Regular\tRegular\t/usr/share/fonts/NotoSansCJK-Regular.otf\n",
+        stderr: "",
+      }),
+    });
+    const payload = JSON.parse(jsonRuntime.stdout.text) as {
+      matches: Array<Record<string, unknown>>;
+    };
+    expect(payload.matches[0]).toMatchObject({
+      family: "Noto Sans CJK JP",
+      fullName: "Noto Sans CJK JP Regular,Noto Sans JP Regular",
+    });
+    expect(payload.matches[0]).not.toHaveProperty("aliases");
+    expect(payload.matches[0]).not.toHaveProperty("fullNames");
+    jsonRuntime.expectNoStderr();
+  });
+
+  test("prints an empty JSON discovery result for an unmatched family", async () => {
+    const jsonRuntime = createActionTestRuntime();
+    jsonRuntime.runtime.platform = "linux";
+    await actionFontInspect(jsonRuntime.runtime, {
+      json: true,
+      family: "Missing Family",
+      runner: async () => ({
+        ok: true,
+        stdout:
+          "Source Serif 4\tSource Serif 4 Regular\tRegular\t/usr/share/fonts/SourceSerif4-Regular.otf\n",
+        stderr: "",
+      }),
+    });
+
+    const payload = JSON.parse(jsonRuntime.stdout.text) as {
+      command: string;
+      family: string;
+      discovery: string;
+      adapter: string;
+      matches: unknown[];
+      warnings: unknown[];
+    };
+    expect(payload.command).toBe("font inspect");
+    expect(payload.family).toBe("Missing Family");
+    expect(payload.discovery).toBe("auto");
+    expect(payload.adapter).toBe("linux-fontconfig");
+    expect(payload.matches).toEqual([]);
+    expect(payload.warnings).toEqual([]);
     jsonRuntime.expectNoStderr();
   });
 });

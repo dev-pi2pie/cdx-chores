@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { runCli } from "./helpers/cli-test-utils";
+import { runCli } from "../../helpers/cli-test-utils";
 
 describe("font CLI registration", () => {
   test("registers the top-level font command", () => {

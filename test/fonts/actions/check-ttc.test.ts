@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { actionFontCheck } from "../src/cli/actions";
-import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
+import { actionFontCheck } from "../../../src/cli/actions";
+import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
 
 describe("font CLI check TTC output", () => {
   test("prints font check TTC mismatch text output with selected face context", async () => {

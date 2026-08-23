@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { actionFontCheck } from "../src/cli/actions";
-import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
-import { withTempFixtureDir } from "./helpers/cli-test-utils";
+import { actionFontCheck } from "../../../src/cli/actions";
+import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
+import { withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 describe("font CLI check validation", () => {
   test("rejects invalid font check inputs before discovery", async () => {
