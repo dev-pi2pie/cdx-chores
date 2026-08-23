@@ -315,9 +315,10 @@ migration and final reconciliation finish.
 
 ### Phase 6.11: Data Preview
 
-The paths below were implemented and validated over `7b840652..3d95eba5`.
-Phase 6.11 remains in review until the evidence checkpoint receives its exact
-range review; this reference stays `draft` through final reconciliation.
+The paths below were implemented and validated over `7b840652..3d95eba5`, then
+reviewed over `7b840652..350b07ac`. Phase 6.11 is completed with the decision
+`Continue with constraints`; this reference stays `draft` through final
+reconciliation.
 
 | Reference date | Historical path                                                                 | Transition | Current owner or owners                                                                                               | Migration range      | Job evidence                      |
 | -------------- | ------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |

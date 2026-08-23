@@ -380,7 +380,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.8  | Video                                         | completed       | `5b362772` | `cf85a757`         | `7feac20a`   | `5b362772..7feac20a` | Continue with constraints |
 | 6.9  | Data Sources                                  | completed       | `9458f888` | `a3a76f53`         | `e35eea80`   | `9458f888..e35eea80` | Continue with constraints |
 | 6.10 | Data Extract                                  | completed       | `733f27cb` | `d02bf761`         | `dbb5574e`   | `733f27cb..dbb5574e` | Continue with constraints |
-| 6.11 | Data Preview                                  | in-review       | `7b840652` | `3d95eba5`         | pending      | pending              | Pending exact review      |
+| 6.11 | Data Preview                                  | completed       | `7b840652` | `3d95eba5`         | `350b07ac`   | `7b840652..350b07ac` | Continue with constraints |
 | 6.12 | Data Stack                                    | pending         | -          | -                  | -            | -                    | -                         |
 | 6.13 | Data Conversion                               | pending         | -          | -                  | -            | -                    | -                         |
 | 6.14 | Fonts                                         | pending         | -          | -                  | -            | -                    | -                         |
@@ -1347,7 +1347,7 @@ Review gate:
 
 ### Phase 6.11: Data Preview
 
-Status: `in-review`
+Status: `completed`
 
 Batch base: `7b840652`
 
@@ -1355,9 +1355,9 @@ Implementation tip: `3d95eba5`
 
 Execution and path migration range: `7b840652..3d95eba5`
 
-Evidence tip: pending
+Evidence tip: `350b07ac`
 
-Exact batch review range: pending
+Exact batch review range: `7b840652..350b07ac`
 
 The six selected suites moved to four action and two Interactive owners.
 Preview-specific action support moved with its consumers, neutral ANSI
@@ -1424,8 +1424,14 @@ Documentation path scan:
 - the correspondence reference records all nine accepted path transitions
   over `7b840652..3d95eba5`
 
-Decision: pending exact-range test-quality, maintainability, and documentation
-review of the evidence checkpoint.
+Exact-range test-quality, maintainability, and documentation review found no
+material issue. The documentation review found only the expected self-tip gap;
+this closeout records `350b07ac` as the evidence tip.
+
+Decision: `Continue with constraints`. Keep the shared Parquet fixtures at
+their current owner, retain the routing facade only until its recorded Phase 7
+cleanup, and let Phase 6.12 consume the neutral ANSI helper without recreating
+a Data Preview dependency.
 
 Review gate:
 
@@ -1435,8 +1441,8 @@ Review gate:
 - [x] preserve all 48 declarations and apply only four admitted assertion edits
 - [x] complete focused, adjacent, full-suite, and repository validation
 - [x] record current support dispositions and path correspondence
-- [ ] create the evidence commit and review the exact batch range
-- [ ] record accepted review fixes and the batch continuation decision
+- [x] create the evidence commit and review the exact batch range
+- [x] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
