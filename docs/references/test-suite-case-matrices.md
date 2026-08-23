@@ -160,11 +160,12 @@ file. These rows fix that exact path before implementation; they do not change
 the Phase 2 support-row count above or authorize movement of unresolved test
 suites.
 
-| Batch | Historical support path                                             | Accepted exact target                                              | Admission evidence                                                                                                                                 |
-| ----- | ------------------------------------------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 6.4   | `test/cli-actions-md-to-pdf-project-codex/action-write/fixtures.ts` | `test/markdown-pdf/actions/project-codex-action-write-fixtures.ts` | Phase 6.4 executed this admitted move; all five Project Codex action-write consumers preserved their Profile, Template, write, and renderer setup. |
-| 6.5   | `test/helpers/interactive-harness/mocks/markdown-pdf.ts`            | `test/markdown-pdf/interactive/mock-action.ts`                     | Phase 6.5 executed the feature-local move; the neutral harness composition remains under CLI foundations for Phase 7.                              |
-| 6.5   | `test/cli-interactive-markdown-pdf/codex-authoring/fixtures.ts`     | `test/markdown-pdf/interactive/codex-authoring-fixtures.ts`        | Phase 6.5 executed the move and preserved all five Markdown PDF Codex-authoring consumers.                                                         |
+| Batch | Historical support path                                                         | Accepted exact target                                              | Admission evidence                                                                                                                                 |
+| ----- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 6.4   | `test/cli-actions-md-to-pdf-project-codex/action-write/fixtures.ts`             | `test/markdown-pdf/actions/project-codex-action-write-fixtures.ts` | Phase 6.4 executed this admitted move; all five Project Codex action-write consumers preserved their Profile, Template, write, and renderer setup. |
+| 6.5   | `test/helpers/interactive-harness/mocks/markdown-pdf.ts`                        | `test/markdown-pdf/interactive/mock-action.ts`                     | Phase 6.5 executed the feature-local move; the neutral harness composition remains under CLI foundations for Phase 7.                              |
+| 6.5   | `test/cli-interactive-markdown-pdf/codex-authoring/fixtures.ts`                 | `test/markdown-pdf/interactive/codex-authoring-fixtures.ts`        | Phase 6.5 executed the move and preserved all five Markdown PDF Codex-authoring consumers.                                                         |
+| 6.7   | Frontmatter behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | `test/markdown-frontmatter/interactive/mock-action.ts`             | Extract only `actionMdFrontmatterToJson`; the mixed residual and neutral composition remain for later admitted batches and Phase 7.                |
 
 ### Phase 3 Data Query Path Contract
 
