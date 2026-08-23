@@ -508,9 +508,10 @@ reconciliation.
 
 ### Phase 6.20: Utilities
 
-The path below was implemented and validated over `a48b30b1..60e3b5ce`.
-Phase 6.20 remains in review until the exact admission-to-evidence range is
-reviewed; this reference stays `draft` through final reconciliation.
+The path below was implemented and validated over `a48b30b1..60e3b5ce`, then
+reviewed over `a48b30b1..7ccbbc8a`. Phase 6.20 is completed with the decision
+`Continue with constraints`; this reference stays `draft` through final
+reconciliation.
 
 | Reference date | Historical path                 | Transition | Current owner or owners          | Migration range      | Job evidence                      |
 | -------------- | ------------------------------- | ---------- | -------------------------------- | -------------------- | --------------------------------- |

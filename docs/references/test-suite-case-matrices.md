@@ -3045,7 +3045,8 @@ destination remains four tests with seven assertions; the adjacent slice
 remains 35 tests with 107 assertions across three files; and the complete suite
 passes 2,623 tests with 14,878 assertions across 336 files. Only the production
 import depth changed. Pre-commit test-quality and maintainability review found
-no material issue.
+no material issue. Exact-range review over `a48b30b1..7ccbbc8a` found no
+material test-quality, maintainability, or documentation issue.
 
 ### Decision Summary
 

@@ -389,7 +389,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.17 | Document Rename                               | completed       | `91165757` | `111a67ea`         | `f97e3846`   | `91165757..f97e3846` | Continue with constraints |
 | 6.18 | DOCX                                          | completed       | `56624bef` | `0018929c`         | `3500991c`   | `56624bef..3500991c` | Continue with constraints |
 | 6.19 | Markdown platform                             | completed       | `de108f7d` | `16020bd3`         | `bc1ed261`   | `de108f7d..bc1ed261` | Continue with constraints |
-| 6.20 | Utilities                                     | in-review       | `a48b30b1` | `60e3b5ce`         | pending      | pending              | pending                   |
+| 6.20 | Utilities                                     | completed       | `a48b30b1` | `60e3b5ce`         | `7ccbbc8a`   | `a48b30b1..7ccbbc8a` | Continue with constraints |
 | 6.21 | CLI foundations and mixed-root decomposition  | pending         | -          | -                  | -            | -                    | -                         |
 
 ### Phase 6.1: Markdown PDF General
@@ -1959,7 +1959,7 @@ Review gate:
 
 ### Phase 6.20: Utilities
 
-Status: `in-review`
+Status: `completed`
 
 Batch base: `a48b30b1`
 
@@ -1967,9 +1967,9 @@ Implementation tip: `60e3b5ce`
 
 Execution and path migration range: `a48b30b1..60e3b5ce`
 
-Evidence tip: pending
+Evidence tip: `7ccbbc8a`
 
-Exact batch review range: pending
+Exact batch review range: `a48b30b1..7ccbbc8a`
 
 The datetime suite moved to the source-aligned owner
 `test/utils/datetime.test.ts`. Only its production import depth changed; all
@@ -1990,8 +1990,12 @@ only to the Phase 2 miscellaneous-feature slice. No current guide names the
 historical utility path. The matrix records the pure move, and correspondence
 records its transition over `a48b30b1..60e3b5ce`.
 
-Decision: pending exact-range test-quality, maintainability, and documentation
-review.
+Exact-range test-quality, maintainability, and documentation review found no
+material issue. This closeout records `7ccbbc8a` as the evidence tip.
+
+Decision: `Continue with constraints`. Preserve this bounded source-aligned
+utility owner and keep Rename token, precedence, metadata, and action behavior
+with their feature suites.
 
 Review gate:
 
@@ -2000,8 +2004,8 @@ Review gate:
 - [x] preserve all titles, bodies, and seven assertions
 - [x] complete focused, adjacent, full-suite, and repository validation
 - [x] record the Phase 2 summary clarification and path transition
-- [ ] create the evidence commit and review the exact batch range
-- [ ] record accepted review fixes and the continuation decision
+- [x] create the evidence commit and review the exact batch range
+- [x] record accepted review fixes and the continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
