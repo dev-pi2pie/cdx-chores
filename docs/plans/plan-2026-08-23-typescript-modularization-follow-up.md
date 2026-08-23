@@ -211,13 +211,13 @@ bunx tsc --noEmit
 
 Tasks:
 
-- [ ] Keep the public types, constants, and `projectDoctorWorkflows` available
+- [x] Keep the public types, constants, and `projectDoctorWorkflows` available
       from `src/cli/doctor/workflow.ts`.
-- [ ] Extract the shared projection model and kernel from Markdown, video,
+- [x] Extract the shared projection model and kernel from Markdown, video,
       data, extension, and font domain projectors under
       `src/cli/doctor/workflow/`.
-- [ ] Preserve projection ordering and avoid parsing rendered output.
-- [ ] Do not change probes, public messages, JSON, or exit behavior.
+- [x] Preserve projection ordering and avoid parsing rendered output.
+- [x] Do not change probes, public messages, JSON, or exit behavior.
 
 Observable contracts:
 

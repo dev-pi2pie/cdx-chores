@@ -35,7 +35,7 @@ modularization follow-up without duplicating the parent plan's checklists.
 |     2 | Template asset handling                      | completed | `6ecd8597..7ecc882d` | Continue |
 |     3 | Project Codex action-write test              | completed | `f1941d88..69aefb8e` | Continue |
 |     4 | Rename Codex option ownership                | completed | `a5ac3ed3..8df643e1` | Continue |
-|     5 | Doctor workflow projection                   | pending   | pending              | pending  |
+|     5 | Doctor workflow projection                   | completed | `8a2f9136..e2c15629` | Continue |
 |     6 | Interactive Codex authoring test             | pending   | pending              | pending  |
 |     7 | Template synthesis test                      | pending   | pending              | pending  |
 |     8 | Profile adapter test                         | pending   | pending              | pending  |
@@ -238,3 +238,56 @@ document ordering. Test and maintainability reviewers re-reviewed the widened
 `a5ac3ed3..8df643e1` range and found no remaining material issues.
 
 Decision: `Continue` to Phase 5.
+
+## Phase 5: Doctor Workflow Projection
+
+Status: `completed`
+
+Implementation range: `8a2f9136..e2c15629`
+
+Characterization commit: `513cd93d`
+
+Implementation commit: `e2c15629`
+
+| Dimension          | Before                                            | After                                                                                        |
+| ------------------ | ------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| File topology      | one 506-line workflow projection module           | 33-line facade plus model, kernel, Markdown, video, data, extension, and font modules        |
+| Responsibility     | public model, aggregation, and five domains mixed | public model, deterministic kernel, and domain projection ownership are explicit             |
+| Focused validation | 122 passing tests; 0 failures; 886 assertions     | 124 passing tests; 0 failures; 894 assertions                                                |
+| Public imports     | callers import the public `workflow.ts` surface   | the same facade exports all prior constants, types, interfaces, and `projectDoctorWorkflows` |
+
+After topology: `model.ts` is 76 lines, `kernel.ts` 136, `markdown.ts` 132,
+`video.ts` 24, `data.ts` 54, `extension.ts` 51, and `fonts.ts` 53.
+
+Baseline validation:
+
+```bash
+bun test test/cli-doctor-workflow.test.ts test/cli-action-doctor.test.ts test/cli-actions-doctor-markdown-video-deferred.test.ts test/cli-command-doctor.test.ts
+```
+
+Result: 122 passed, 0 failed, 886 assertions across four files.
+
+Characterization coverage added a complete public-facade compile/runtime
+contract and one mixed projection that freezes cross-domain condition, action,
+state, and count ordering.
+
+After validation:
+
+```bash
+bun test test/cli-doctor-workflow.test.ts test/cli-action-doctor.test.ts test/cli-actions-doctor-markdown-video-deferred.test.ts test/cli-command-doctor.test.ts
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+git diff --check
+```
+
+Result: 124 passed, 0 failed, 894 assertions. TypeScript, lint, formatting,
+build, and diff checks passed. Projector invocation remains Markdown, video,
+data, then fonts; no caller imports an internal module.
+
+Exact-range maintainability, test, and security reviews found no material
+issues. The compact projection still excludes raw report detail, and extension
+command construction remains limited to the closed SQLite and Excel set.
+
+Decision: `Continue` to Phase 6.
