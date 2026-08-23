@@ -42,7 +42,7 @@ references.
 |     2 | case matrices and catalog admission            | completed   | `34d080e9..0b8d59bd` | Continue with constraints |
 |     3 | Data Query migration pilot                     | completed   | `db9622cf..27ccab6e` | Continue with constraints |
 |     4 | Doctor ownership migration pilot               | completed   | `ff0f3d6f..837e5d95` | Continue with constraints |
-|     5 | bounded Markdown PDF migration pilot           | pending     | pending              | Admitted                  |
+|     5 | bounded Markdown PDF migration pilot           | in-review   | pending              | Evidence recorded         |
 |     6 | remaining accepted family batches              | pending     | per-batch             | Admitted                  |
 
 ## Phase 1: Refreshed Baseline And Complete File Inventory
@@ -284,25 +284,58 @@ bounded Markdown PDF matrix admitted for the next pilot.
 
 ## Phase 5: Bounded Markdown PDF Migration Pilot
 
-Status: `pending`
+Status: `in-review`
+
+Phase base: `05a87d54`
+
+Implementation range: `05a87d54..802d3b86`
+
+Review range: pending evidence-tip review
 
 The pilot is limited to these two pre-change owners:
 
 - `test/cli-actions-md-to-pdf-bundle.test.ts`
 - `test/cli-interactive-markdown-pdf/font-hints.test.ts`
 
-The Phase 2 matrix admits six destination owners under
-`test/markdown-pdf/actions/` and `test/markdown-pdf/interactive/`. It admits no
-test removal or production change. Shared Markdown PDF support and all other
-Markdown PDF suites remain outside this checkpoint.
+The Phase 2 matrix admitted six destination owners under
+`test/markdown-pdf/actions/` and `test/markdown-pdf/interactive/`. The Bundle
+split landed in `c581ba43`; the font-hints split landed in `802d3b86`. All
+shared Markdown PDF support and every other Markdown PDF suite remain at their
+pre-phase paths.
+
+Focused validation before the split:
+
+- 84 passed, 0 failed, and 284 assertions across 2 files
+
+Focused validation after the split:
+
+- 84 passed, 0 failed, and 284 assertions across 6 files
+- all 63 admitted declarations remain represented exactly once
+
+The adjacent safety set passed with 89 tests, 0 failures, and 1,508 assertions
+across action asset safety, action validation, Interactive lifecycle, and
+renderer-evidence orchestration owners.
+
+The complete suite passed with 2,614 tests, 0 failures, and 14,866 assertions
+across 309 files. Formatting, lint, build, TypeScript no-emit, and diff checks
+also passed.
+
+The current-link scan found no affected guide or current reference link beyond
+the canonical correspondence and matrix records. Older plan and job commands
+remain dated historical evidence.
+
+The pre-commit test-quality and maintainability reviews found no material
+issue. They confirmed declaration and runtime preservation, safety and
+side-effect coverage, cancellation and keyboard behavior, local helper scope,
+and the absence of production or shared-support changes.
 
 Execution receipt:
 
-- [ ] record the focused pre-change baseline
-- [ ] land the Bundle and font-hints owners as separate validated commits
-- [ ] run all six destination owners and the recorded adjacent safety set
-- [ ] run the complete suite, formatting check, lint, build, and diff check
-- [ ] land a separate evidence commit containing validation, correspondence,
+- [x] record the focused pre-change baseline
+- [x] land the Bundle and font-hints owners as separate validated commits
+- [x] run all six destination owners and the recorded adjacent safety set
+- [x] run the complete suite, formatting check, lint, build, and diff check
+- [x] land a separate evidence commit containing validation, correspondence,
       and status evidence
 - [ ] review the complete phase-base-to-evidence-tip range
 - [ ] record the closeout receipt and continuation decision after clean review

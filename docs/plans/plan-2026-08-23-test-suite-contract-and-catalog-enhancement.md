@@ -305,17 +305,17 @@ Admission boundary:
 
 Tasks:
 
-- [ ] Apply the accepted matrix for the bounded Markdown PDF pilot selected in
+- [x] Apply the accepted matrix for the bounded Markdown PDF pilot selected in
       Phase 2.
-- [ ] Keep safety, privacy, cleanup, collision, symlink, hardlink,
+- [x] Keep safety, privacy, cleanup, collision, symlink, hardlink,
       partial-write, renderer, and reproducible evidence contracts unless
       literal duplication is proved.
-- [ ] Separate direct, adapter, action, command, Interactive, integration, and
+- [x] Separate direct, adapter, action, command, Interactive, integration, and
       evidence ownership without reorganizing the entire Markdown PDF family in
       one checkpoint.
-- [ ] Move retained suites and feature-local fixtures into the accepted catalog
+- [x] Move retained suites and feature-local fixtures into the accepted catalog
       and update current documentation and correspondence rows.
-- [ ] Run every recorded pre-change owner, destination owner, and adjacent
+- [x] Run every recorded pre-change owner, destination owner, and adjacent
       Markdown PDF integration or evidence suite affected by shared support.
 - [ ] Review the exact phase range and decide whether the catalog pattern is
       safe for the remaining large feature families.

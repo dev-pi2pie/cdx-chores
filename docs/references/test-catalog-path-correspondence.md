@@ -118,8 +118,16 @@ migration and final documentation reconciliation are finished.
 | 2026-08-23     | `test/cli-interactive-routing.test.ts`                    | split      | `test/cli-interactive-routing.test.ts`<br>`test/doctor/interactive/routing.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                             | `ff0f3d6f..93c60f9e` | [Phase 4][phase-4-evidence] |
 | 2026-08-23     | `test/helpers/interactive-harness/mocks/action-misc.ts`   | split      | `test/helpers/interactive-harness/mocks/action-misc.ts`<br>`test/doctor/interactive/mock-action.ts`                                                                                                                                                                                                                                                                                                                                                                                                                             | `ff0f3d6f..93c60f9e` | [Phase 4][phase-4-evidence] |
 
+### Phase 5: Markdown PDF Catalog Pilot
+
+| Reference date | Historical path                                                 | Transition | Current owner or owners                                                                                                                                                                                          | Migration range      | Job evidence                |
+| -------------- | --------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------- |
+| 2026-08-23     | `test/cli-actions-md-to-pdf-bundle.test.ts`                     | split      | `test/markdown-pdf/actions/bundle-discovery.test.ts`<br>`test/markdown-pdf/actions/bundle-resolution.test.ts`<br>`test/markdown-pdf/actions/bundle-integration.test.ts`                                            | `05a87d54..802d3b86` | [Phase 5][phase-5-evidence] |
+| 2026-08-23     | `test/cli-interactive-markdown-pdf/font-hints.test.ts`          | split      | `test/markdown-pdf/interactive/font-model.test.ts`<br>`test/markdown-pdf/interactive/font-suggestion-service.test.ts`<br>`test/markdown-pdf/interactive/font-post-codex-review.test.ts`                  | `05a87d54..802d3b86` | [Phase 5][phase-5-evidence] |
+
 [phase-3-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-3-data-query-migration-pilot
 [phase-4-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-4-doctor-ownership-migration-pilot
+[phase-5-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-5-bounded-markdown-pdf-migration-pilot
 
 ## Completion Boundary
 
