@@ -19,7 +19,7 @@ import {
   adaptedProfileRunner,
   expectPrivacySafeReport,
   prepareWriteValidationFixture,
-} from "./fixtures";
+} from "../../markdown-pdf/actions/project-codex-action-write-fixtures";
 
 describe("cli action modules: md pdf-project codex action writes", () => {
   test("reviews the contained Profile policy separately through the public handoff", async () => {

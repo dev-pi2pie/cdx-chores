@@ -27,7 +27,7 @@ import {
   expectPrivacySafeReport,
   noUsableTemplateResponse,
   stubTemplateRunner,
-} from "./fixtures";
+} from "../../markdown-pdf/actions/project-codex-action-write-fixtures";
 
 const SENSITIVE_REPORT_TEXT =
   "Use /Users/alice/private/report.md, file:///Users/alice/private/report.md, ssh://host/private/report.md, smb://server/share/report.md, vscode://file/secrets/report.md, C:\\Users\\Alice\\report.md, \\\\server\\share\\report.md, ./secrets/client-report.md, ../drafts/notes.md, assets/internal-logo.png, https://example.test/private?token=abc, localhost:3000, 127.0.0.1:3000, 127.1:3000, 2130706433:3000, and [::1]:3000";

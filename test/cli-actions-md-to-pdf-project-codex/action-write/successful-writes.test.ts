@@ -22,7 +22,7 @@ import {
   adaptedTemplateResponse,
   expectPrivacySafeReport,
   stubTemplateRunner,
-} from "./fixtures";
+} from "../../markdown-pdf/actions/project-codex-action-write-fixtures";
 
 function expectManagedProjectTemplateRoles(
   templateHtml: string,

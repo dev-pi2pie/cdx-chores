@@ -19,7 +19,10 @@ import { withTempFixtureDir } from "../../helpers/cli-test-utils";
 import { minimalPng } from "../../markdown-pdf/actions/template-codex-fixtures";
 import { pathExists } from "../../markdown-pdf/support/path-fixtures";
 
-import { BASE_PROFILE, expectPrivacySafeReport } from "./fixtures";
+import {
+  BASE_PROFILE,
+  expectPrivacySafeReport,
+} from "../../markdown-pdf/actions/project-codex-action-write-fixtures";
 
 describe("cli action modules: md pdf-project codex action writes", () => {
   test("redacts local managed asset source paths from read failures", async () => {
