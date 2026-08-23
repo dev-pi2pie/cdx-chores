@@ -1,10 +1,13 @@
 import { mock } from "bun:test";
 
 import type { HarnessRunnerContext } from "../../context";
-import { sourceShapeModuleUrl, xlsxSourcesModuleUrl } from "../../module-urls";
+import {
+  sourceShapeModuleUrl,
+  xlsxSourcesModuleUrl,
+} from "../../../../data-query/interactive/module-urls";
 import type { SourceShapeSuggestionOptions } from "./types";
 
-export function installDataQuerySourceShapeMocks(context: HarnessRunnerContext): void {
+export function installDataExtractSourceShapeMocks(context: HarnessRunnerContext): void {
   mock.module(xlsxSourcesModuleUrl, () => ({
     collectXlsxSheetSnapshot: async (_inputPath: unknown, sheetName: unknown) => ({
       mergedRanges: [],

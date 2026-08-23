@@ -1,4 +1,6 @@
-export interface InteractiveHarnessScenario {
+import type { DataQueryInteractiveHarnessScenario } from "../../data-query/interactive/harness-contract";
+
+export interface InteractiveHarnessScenario extends DataQueryInteractiveHarnessScenario {
   mode: "run" | "invalid-data-action";
   codexTimeoutMs?: number;
   captureCodexTimeouts?: boolean;
@@ -40,6 +42,13 @@ export interface InteractiveHarnessScenario {
   dataExtractActionErrorCode?: string;
   dataExtractActionStderr?: string;
   dataExtractActionStdout?: string;
+  dataQueryDetectedFormat?: string;
+  dataQueryIntrospection?: Record<string, unknown>;
+  dataQueryIntrospectionQueue?: Record<string, unknown>[];
+  dataSourceShapeSuggestion?: Record<string, unknown>;
+  dataSourceShapeSuggestionErrorMessage?: string;
+  dataQuerySources?: string[];
+  xlsxSheetSnapshot?: Record<string, unknown>;
   dataStackActionErrorMessage?: string;
   dataStackActionErrorCode?: string;
   dataStackActionStderr?: string;
@@ -51,25 +60,6 @@ export interface InteractiveHarnessScenario {
   stdoutColumns?: number;
   stdoutIsTTY?: boolean;
   stderrIsTTY?: boolean;
-  dataQueryActionErrorMessage?: string;
-  dataQueryActionErrorCode?: string;
-  dataQueryActionStderr?: string;
-  dataQueryActionStdout?: string;
-  dataQueryCodexDraft?: { reasoningSummary?: string; sql: string };
-  dataQueryCodexErrorMessage?: string;
-  dataQueryCodexFailureKind?: "timeout" | "aborted" | "other";
-  dataQueryDetectedFormat?: string;
-  dataQueryMocks?: boolean;
-  dataQueryHeaderSuggestionErrorMessage?: string;
-  dataQueryHeaderSuggestions?: Array<Record<string, unknown>>;
-  dataQueryIntrospection?: Record<string, unknown>;
-  dataQueryIntrospectionQueue?: Record<string, unknown>[];
-  dataQueryWorkspaceIntrospection?: Record<string, unknown>;
-  dataQueryWorkspaceIntrospectionQueue?: Record<string, unknown>[];
-  dataSourceShapeSuggestion?: Record<string, unknown>;
-  dataSourceShapeSuggestionErrorMessage?: string;
-  dataQuerySources?: string[];
-  xlsxSheetSnapshot?: Record<string, unknown>;
   cleanupAnalyzerEvidence?: Record<string, unknown>;
   cleanupAnalyzerSuggestion?: Record<string, unknown>;
   cleanupAnalyzerErrorMessage?: string;

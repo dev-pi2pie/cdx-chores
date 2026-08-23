@@ -186,30 +186,6 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).toContain("Input TSV file");
   });
 
-  test("data query help documents SQL, shaping, header review, source, and output options", () => {
-    const result = runCli(["data", "query", "--help"]);
-
-    expect(result.exitCode).toBe(0);
-    expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("--sql <query>");
-    expect(result.stdout).toContain("--input-format <format>");
-    expect(result.stdout).toContain("--relation <binding>");
-    expect(result.stdout).toContain("--source <name>");
-    expect(result.stdout).toContain("--range <A1:Z99>");
-    expect(result.stdout).toContain("--source-shape <path>");
-    expect(result.stdout).toContain("--no-header");
-    expect(result.stdout).toContain("--body-start-row <value>");
-    expect(result.stdout).toContain("--header-row <value>");
-    expect(result.stdout).toContain("--header-mapping <path>");
-    expect(result.stdout).toContain("--codex-suggest-headers");
-    expect(result.stdout).toContain("--write-header-mapping <path>");
-    expect(result.stdout).toContain("--rows <value>");
-    expect(result.stdout).toContain("--json");
-    expect(result.stdout).toContain("--pretty");
-    expect(result.stdout).toContain("--output <path>");
-    expect(result.stdout).toContain("codex");
-  });
-
   test("data extract help documents shaping, reviewed header suggestions, and output options", () => {
     const result = runCli(["data", "extract", "--help"]);
 
@@ -248,21 +224,6 @@ describe("CLI UX flags and path output", () => {
     expect(result.stdout).toContain("Input source file or directory");
   });
 
-  test("data query rejects invalid input-format values at CLI parsing time", () => {
-    const result = runCli([
-      "data",
-      "query",
-      "sample.csv",
-      "--sql",
-      "select * from file",
-      "--input-format",
-      "json",
-    ]);
-
-    expect(result.exitCode).not.toBe(0);
-    expect(result.stderr).toContain("--input-format must be one of:");
-  });
-
   test("data extract rejects invalid input-format values at CLI parsing time", () => {
     const result = runCli([
       "data",
@@ -287,37 +248,6 @@ describe("CLI UX flags and path output", () => {
       "merged.csv",
       "--input-format",
       "parquet",
-    ]);
-
-    expect(result.exitCode).not.toBe(0);
-    expect(result.stderr).toContain("--input-format must be one of:");
-  });
-
-  test("data query codex help documents intent, shaping, and print-sql options", () => {
-    const result = runCli(["data", "query", "codex", "--help"]);
-
-    expect(result.exitCode).toBe(0);
-    expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("--intent <text>");
-    expect(result.stdout).toContain("--input-format <format>");
-    expect(result.stdout).toContain("--relation <binding>");
-    expect(result.stdout).toContain("--source <name>");
-    expect(result.stdout).toContain("--range <A1:Z99>");
-    expect(result.stdout).toContain("--body-start-row <value>");
-    expect(result.stdout).toContain("--header-row <value>");
-    expect(result.stdout).toContain("--print-sql");
-  });
-
-  test("data query codex rejects invalid input-format values at CLI parsing time", () => {
-    const result = runCli([
-      "data",
-      "query",
-      "codex",
-      "sample.csv",
-      "--intent",
-      "show rows",
-      "--input-format",
-      "json",
     ]);
 
     expect(result.exitCode).not.toBe(0);

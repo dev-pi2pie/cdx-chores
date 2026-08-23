@@ -1,12 +1,20 @@
 import type { HarnessRunnerContext } from "../context";
+import { installDataQueryMocks } from "../../../data-query/interactive/mock-installation";
 import { installActionMocks } from "./actions";
-import { installDataQueryMocks } from "./data-query";
+import { installDataExtractIntrospectionMocks } from "./data-query";
 import { installFsPromiseMocks } from "./fs";
 import { installPathPromptMocks } from "./path-prompts";
 import { installPromptMocks } from "./prompts";
 import { installMarkdownPdfMocks } from "./markdown-pdf";
 
-function needsDataQueryMocks(context: HarnessRunnerContext): boolean {
+function hasInteractiveDataCommand(
+  context: HarnessRunnerContext,
+  command: "data:extract" | "data:query",
+): boolean {
+  return context.scenario.selectQueue?.includes(command) ?? false;
+}
+
+function needsDataMocks(context: HarnessRunnerContext): boolean {
   return Boolean(
     context.scenario.dataQueryMocks ||
     context.scenario.dataQueryActionErrorMessage ||
@@ -37,7 +45,15 @@ export function installHarnessMocks(context: HarnessRunnerContext): void {
   if (context.scenario.markdownPdfMocks) {
     installMarkdownPdfMocks(context);
   }
-  if (needsDataQueryMocks(context)) {
-    installDataQueryMocks(context);
+  if (needsDataMocks(context)) {
+    if (hasInteractiveDataCommand(context, "data:extract")) {
+      installDataExtractIntrospectionMocks(context);
+    }
+    if (
+      hasInteractiveDataCommand(context, "data:query") ||
+      context.scenario.dataQueryMocks === true
+    ) {
+      installDataQueryMocks(context);
+    }
   }
 }

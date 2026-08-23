@@ -11,6 +11,14 @@ export interface LoadParquetPreviewWindowOptions {
   rowCount: number;
 }
 
+export interface ParquetPreviewDependencies {
+  loadDuckDb?: () => Promise<{
+    DuckDBConnection: {
+      create(): Promise<DuckDBConnection>;
+    };
+  }>;
+}
+
 export interface ParquetPreviewWindow {
   allColumns: string[];
   rows: DataPreviewRow[];
@@ -59,9 +67,11 @@ function validateRequestedColumns(
   return selected;
 }
 
-async function createDuckDbConnection(): Promise<DuckDBConnection> {
+async function createDuckDbConnection(
+  dependencies: ParquetPreviewDependencies,
+): Promise<DuckDBConnection> {
   try {
-    const duckdb = await import("@duckdb/node-api");
+    const duckdb = await (dependencies.loadDuckDb ?? (() => import("@duckdb/node-api")))();
     return await duckdb.DuckDBConnection.create();
   } catch (error) {
     throw new CliError(`DuckDB is unavailable for Parquet preview: ${toErrorMessage(error)}`, {
@@ -118,10 +128,11 @@ async function readParquetWindowRows(
 
 export async function loadParquetPreviewWindow(
   options: LoadParquetPreviewWindowOptions,
+  dependencies: ParquetPreviewDependencies = {},
 ): Promise<ParquetPreviewWindow> {
   let connection: DuckDBConnection | undefined;
   try {
-    connection = await createDuckDbConnection();
+    connection = await createDuckDbConnection(dependencies);
     const allColumns = await readParquetColumns(connection, options.inputPath);
     const selectedColumns = validateRequestedColumns(allColumns, options.columns);
     const totalRows = await readParquetTotalRows(connection, options.inputPath);

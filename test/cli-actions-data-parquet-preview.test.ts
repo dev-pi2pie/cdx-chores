@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
 
 import { actionDataParquetPreview, actionDataPreview } from "../src/cli/actions";
@@ -11,10 +11,6 @@ function parquetFixturePath(name: string): string {
 }
 
 describe("cli action modules: data parquet preview", () => {
-  afterEach(() => {
-    mock.restore();
-  });
-
   test("actionDataParquetPreview renders Parquet summary and table output", async () => {
     const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
     const inputPath = parquetFixturePath("basic.parquet");
@@ -149,19 +145,23 @@ describe("cli action modules: data parquet preview", () => {
     const { runtime, expectNoOutput } = createActionTestRuntime();
     const inputPath = parquetFixturePath("basic.parquet");
 
-    mock.module("@duckdb/node-api", () => ({
-      DuckDBConnection: {
-        create: async () => {
-          throw new Error("native initialization failed");
-        },
-      },
-    }));
-
     await expectCliError(
       () =>
-        actionDataParquetPreview(runtime, {
-          input: toRepoRelativePath(inputPath),
-        }),
+        actionDataParquetPreview(
+          runtime,
+          {
+            input: toRepoRelativePath(inputPath),
+          },
+          {
+            loadDuckDb: async () => ({
+              DuckDBConnection: {
+                create: async () => {
+                  throw new Error("native initialization failed");
+                },
+              },
+            }),
+          },
+        ),
       {
         code: "DUCKDB_UNAVAILABLE",
         exitCode: 2,

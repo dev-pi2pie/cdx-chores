@@ -2,7 +2,8 @@ import { mock } from "bun:test";
 
 import type { HarnessRunnerContext } from "../context";
 import { actionsModuleUrl } from "../module-urls";
-import { createDataActionMocks } from "./action-data";
+import { createDataQueryActionMock } from "../../../data-query/interactive/mock-action";
+import { createDataExtractActionMock } from "./action-data";
 import { createMiscActionMocks } from "./action-misc";
 import { createRenameActionMocks } from "./action-rename";
 import { createStackActionMocks } from "./action-stack";
@@ -15,7 +16,8 @@ export function installActionMocks(context: HarnessRunnerContext): void {
       examplesPerGroup: 3,
     },
     ...createMiscActionMocks(context),
-    ...createDataActionMocks(context),
+    ...createDataExtractActionMock(context),
+    ...createDataQueryActionMock(context),
     ...createStackActionMocks(context),
     ...createRenameActionMocks(context),
   }));

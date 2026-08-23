@@ -17,7 +17,7 @@ import {
   createOutputExistsError,
   resolveOutputPath,
   type ActionRuntimeLike,
-} from "./action-data-shared";
+} from "../../../cli-foundations/interactive-harness/action-output";
 
 interface MockStackPlanOptions {
   diagnostics?: { planDiagnostics?: { reportPath?: unknown; rowCount?: unknown } } | undefined;

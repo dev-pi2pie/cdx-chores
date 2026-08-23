@@ -2,8 +2,7 @@ import { mock } from "bun:test";
 
 import { getMultiObjectSourceDisplayLabel } from "../../../../../src/cli/duckdb/query";
 import type { HarnessRunnerContext } from "../../context";
-import { duckdbQueryModuleUrl } from "../../module-urls";
-import { getScenarioWorkspaceIntrospection } from "./workspace";
+import { duckdbQueryModuleUrl } from "../../../../data-query/interactive/module-urls";
 
 function getScenarioIntrospection(
   context: HarnessRunnerContext,
@@ -36,7 +35,7 @@ function getScenarioIntrospection(
   };
 }
 
-export function installDuckDbQueryMock(context: HarnessRunnerContext): void {
+export function installDataExtractIntrospectionMock(context: HarnessRunnerContext): void {
   mock.module(duckdbQueryModuleUrl, () => ({
     DATA_QUERY_INPUT_FORMAT_VALUES: ["csv", "tsv", "parquet", "sqlite", "excel"],
     normalizeExcelBodyStartRow: (value: unknown) => {
@@ -75,11 +74,5 @@ export function installDuckDbQueryMock(context: HarnessRunnerContext): void {
         source?: unknown;
       },
     ) => getScenarioIntrospection(context, shape),
-    collectDataQueryWorkspaceIntrospection: async (
-      _connection: unknown,
-      _input: unknown,
-      _format: unknown,
-      relations: Array<{ alias?: unknown; source?: unknown }>,
-    ) => getScenarioWorkspaceIntrospection(context, relations),
   }));
 }
