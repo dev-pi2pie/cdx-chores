@@ -44,7 +44,7 @@ references.
 |     3 | Data Query migration pilot                     | completed   | `db9622cf..27ccab6e` | Continue with constraints |
 |     4 | Doctor ownership migration pilot               | completed   | `ff0f3d6f..837e5d95` | Continue with constraints |
 |     5 | bounded Markdown PDF migration pilot           | completed   | `05a87d54..4cce415a` | Continue with constraints |
-|     6 | remaining accepted family batches              | in-review   | per-batch             | Admitted                  |
+|     6 | remaining accepted family batches              | in-progress | per-batch             | Continue with constraints |
 
 ## Phase 1: Refreshed Baseline And Complete File Inventory
 
@@ -354,7 +354,7 @@ and do not fold out-of-manifest findings into a migration checkpoint.
 
 ## Phase 6: Remaining Accepted Family Batches
 
-Status: `in-review`
+Status: `in-progress`
 
 Manifest base: `2d6c81fa`
 
@@ -370,7 +370,7 @@ Data Extract and Data Stack destination folders to the established plural
 
 | ID   | Batch                                         | Status          | Batch base | Implementation tip | Evidence tip | Review range | Decision |
 | ---- | --------------------------------------------- | --------------- | ---------- | ------------------ | ------------ | ------------ | -------- |
-| 6.1  | Markdown PDF general                          | in-review       | `fca1204a` | `c55da02a`         | pending      | pending      | pending  |
+| 6.1  | Markdown PDF general                          | completed       | `fca1204a` | `c55da02a`         | `870fef23`   | `fca1204a..870fef23` | Continue with constraints |
 | 6.2  | Markdown PDF Template Codex                   | pending         | -          | -                  | -            | -            | -        |
 | 6.3  | Markdown PDF Profile                          | pending         | -          | -                  | -            | -            | -        |
 | 6.4  | Markdown PDF Project Codex                    | pending         | -          | -                  | -            | -            | -        |
@@ -394,7 +394,7 @@ Data Extract and Data Stack destination folders to the established plural
 
 ### Phase 6.1: Markdown PDF General
 
-Status: `in-review`
+Status: `completed`
 
 Batch base: `fca1204a`
 
@@ -404,7 +404,9 @@ Execution and stability range: `fca1204a..c55da02a`
 
 Path migration range: `fca1204a..b5ffc3f1`
 
-Exact batch review range: pending the evidence tip
+Evidence tip: `870fef23`
+
+Exact batch review range: `fca1204a..870fef23`
 
 The batch admitted 10 general Markdown PDF suites. The selector retained 16
 additional suites at their current paths because their rename or destination
@@ -467,9 +469,16 @@ Documentation path scan:
 
 Correspondence rows use the fixed path-migration range
 `fca1204a..b5ffc3f1`; `c55da02a` is the separate full-suite stability
-checkpoint. The evidence commit, exact range review, accepted review
-fixes, and final continuation decision remain pending; this receipt does not
-claim the batch is completed.
+checkpoint. Exact-range test-quality and maintainability review found no
+material concerns. Documentation review found that the evidence commit could
+not name its own tip; this closeout accepts the finding by recording
+`870fef23` and the exact reviewed range above.
+
+Decision: `Continue with constraints`. Phase 6.1 is complete because all 26
+selected owners were dispositioned: 10 admitted suites migrated and 16
+unresolved suites remained at their recorded paths. The deferrals are not
+catalog approval. Continue to Phase 6.2 with a new batch base, exact selector,
+focused and full validation, evidence commit, and exact range review.
 
 Review gate:
 
@@ -477,8 +486,8 @@ Review gate:
 - [x] migrate the 10 admitted suites and retain the 16 unresolved suites
 - [x] validate moved owners and all changed-support consumers
 - [x] complete the full suite and repository checks
-- [ ] fix the evidence tip and complete the exact batch range review
-- [ ] record accepted review fixes and the batch continuation decision
+- [x] fix the evidence tip and complete the exact batch range review
+- [x] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
