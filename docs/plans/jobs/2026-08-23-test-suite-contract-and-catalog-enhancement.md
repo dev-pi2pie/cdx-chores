@@ -41,7 +41,7 @@ references.
 |     1 | refreshed baseline and complete file inventory | completed   | `2f3013ca..fae7d92b` | Continue                  |
 |     2 | case matrices and catalog admission            | completed   | `34d080e9..0b8d59bd` | Continue with constraints |
 |     3 | Data Query migration pilot                     | completed   | `db9622cf..27ccab6e` | Continue with constraints |
-|     4 | Doctor ownership migration pilot               | in-progress | pending              | —                         |
+|     4 | Doctor ownership migration pilot               | completed   | `ff0f3d6f..837e5d95` | Continue with constraints |
 
 ## Phase 1: Refreshed Baseline And Complete File Inventory
 
@@ -216,11 +216,11 @@ reference remains `draft` until the later reconciliation phase.
 
 ## Phase 4: Doctor Ownership Migration Pilot
 
-Status: `in-progress`
+Status: `completed`
 
 Phase base: `ff0f3d6f`
 
-Implementation range awaiting exact-range review: `ff0f3d6f..93c60f9e`
+Review range: `ff0f3d6f..837e5d95`
 
 The implementation applies the exact Doctor ownership pilot rather than the
 complete CLI-foundations matrix. Doctor action, command, workflow, fixture,
@@ -271,5 +271,11 @@ controlled action, command, requirements, and feature owners instead of
 leaving a blank destination. The reference remains `draft`, the plan remains
 `active`, and this job remains `in-progress`.
 
-The exact implementation range has not yet been reviewed. No Phase 4 admission
-decision is recorded until that review completes.
+The exact-range documentation, test-quality, and maintainability reviews found
+no material issue in `ff0f3d6f..837e5d95`.
+
+Decision: `Continue with constraints` to Phase 5. Reuse the accepted
+feature-and-boundary catalog pattern, but do not treat the deferred non-Doctor
+Interactive cases or residual mixed action mocks as migrated. Keep those paths
+for Phase 6, keep the correspondence reference `draft`, and apply only the
+bounded Markdown PDF matrix admitted for the next pilot.

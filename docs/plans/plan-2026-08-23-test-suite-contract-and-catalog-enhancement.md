@@ -277,7 +277,7 @@ Tasks:
       imports, current docs, and correspondence rows.
 - [x] Run every pre-change owner, every destination owner created by the split,
       and the complete Doctor family.
-- [ ] Review the exact phase range before continuing.
+- [x] Review the exact phase range before continuing.
 
 Observable contracts:
 
