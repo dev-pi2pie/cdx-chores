@@ -189,6 +189,11 @@ suites.
 | 6.11  | `test/cli-actions-data-preview/helpers.ts`                                       | `test/data-preview/actions/support.ts`<br>`test/helpers/ansi.ts`                           | Executed: Preview runners and matchers moved to the action owner; only neutral `stripAnsi` moved to global support for independent consumers.        |
 | 6.11  | Data Preview behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | `test/data-preview/interactive/mock-action.ts`                                             | Executed: the two Preview actions and source loader moved; conversion and Markdown DOCX behavior remain in the mixed residual.                       |
 | 6.11  | `stripAnsi` in `test/cli-interactive-routing.helpers.ts`                         | `test/helpers/ansi.ts`                                                                     | Executed: the duplicate implementation became a temporary facade re-export; unrelated routing and Data Stack behavior kept its current owner.       |
+| 6.12  | `test/helpers/data-stack-test-utils.ts`                                          | `test/data-stack/direct/support.ts`                                                        | Move direct Data Stack fixture and plan support with its independent direct consumers.                                                              |
+| 6.12  | `test/cli-interactive-data-stack/helpers.ts`                                     | `test/data-stack/interactive/support.ts`                                                   | Move Interactive Data Stack support to the feature owner; consume neutral ANSI support and keep no Preview dependency.                              |
+| 6.12  | `test/helpers/interactive-harness/mocks/action-stack.ts`                         | `test/data-stack/interactive/mock-action.ts`                                               | Move only the Data Stack action mocks; the neutral harness composition remains under CLI foundations.                                               |
+| 6.12  | Data Stack fields in `test/helpers/interactive-harness/types.ts`                 | `test/data-stack/interactive/harness-contract.ts`                                          | Extract eight `dataStack*` scenario fields plus stack plan and Codex report writes; keep shared timeout fields neutral.                              |
+| 6.12  | Data Stack matcher in `test/cli-interactive-routing.helpers.ts`                  | `test/data-stack/interactive/support.ts`                                                   | Replace the matcher implementation with a temporary facade re-export; unrelated routing support stays in place for Phase 7.                         |
 
 ### Phase 3 Data Query Path Contract
 
@@ -2598,6 +2603,58 @@ destination slice passed with 236 assertions; the exact adjacent slice passed
 with 449 assertions; and the complete suite passed 2,614 tests across 325
 files. The four admitted assertion edits were applied without moving the
 shared Parquet fixtures.
+
+#### Phase 6.12 Exact Suite Admission
+
+Phase 6.12 admits 21 Data Stack source suites into action, command, direct,
+Interactive, and evidence owners. All 181 cases remain admitted; no vague or
+duplicate case is removed. One source suite splits because its first case
+directly tests the reporting renderer rather than command registration or
+process behavior.
+
+The implementation may make only these four reviewed assertion
+strengthenings:
+
+- `dry-run-plan.test.ts` > `generates a default dry-run plan path`: prove the
+  reported plan exists, parses as a stack plan, and leaves the configured
+  stack output absent
+- `validation.test.ts` > `rejects explicit output path conflicts`: prove the
+  source bytes remain exactly `id,name\n1,Ada\n` even when overwrite is enabled
+- `diagnostics.test.ts` > `rejects unknown unique key columns`: assert error
+  code `INVALID_INPUT`, exit code `2`, and exact message `Unknown --unique-by
+  names: missing.` rather than only the error class
+- `codex-signals.test.ts` > `formats signal labels for interactive copy`:
+  assert the complete five-signal label mapping in one table-shaped equality
+
+| Historical path                                          | Accepted exact target                                                  | Admission evidence                                                                                              |
+| -------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `test/cli-actions-data-stack/codex-assist.test.ts`       | `test/data-stack/actions/codex-assist.test.ts`                         | Codex advisory generation and failure handling are Data Stack action contracts.                                 |
+| `test/cli-actions-data-stack/dry-run-plan.test.ts`       | `test/data-stack/actions/dry-run-plan.test.ts`                         | Plan creation, collision safety, and dry-run non-materialization are Data Stack action contracts.               |
+| `test/cli-actions-data-stack/happy-paths.test.ts`        | `test/data-stack/actions/materialization.test.ts`                      | Successful schema and duplicate-policy materialization form the core action owner.                              |
+| `test/cli-actions-data-stack/schema-modes.test.ts`       | `test/data-stack/actions/schema-modes.test.ts`                         | Strict, automatic, and union schema behavior are distinct action contracts.                                     |
+| `test/cli-actions-data-stack/validation.test.ts`         | `test/data-stack/actions/validation.test.ts`                           | Preconditions, source conflicts, and write safety are Data Stack action contracts.                              |
+| `test/cli-command-data-stack/direct-stack.test.ts`       | `test/data-stack/commands/direct-stack.test.ts`                        | Command parsing and direct process output retain a command-layer seam.                                          |
+| `test/cli-command-data-stack/options.test.ts`            | `test/data-stack/commands/options.test.ts`<br>`test/data-stack/direct/reporting.test.ts` | Command option behavior stays under commands; the direct warning-renderer case moves to its production seam.    |
+| `test/cli-command-data-stack/replay.test.ts`             | `test/data-stack/commands/replay.test.ts`                              | Replay parsing, output policy, drift warnings, and stored duplicate policy form one command owner.              |
+| `test/cli-interactive-data-stack/codex-review.test.ts`   | `test/data-stack/interactive/codex-review.test.ts`                     | Codex review, retry, timeout, and apply decisions are Interactive Data Stack contracts.                          |
+| `test/cli-interactive-data-stack/discovery.test.ts`      | `test/data-stack/interactive/discovery.test.ts`                        | Source discovery, schema setup, and bounded sampling form one Interactive owner.                                |
+| `test/cli-interactive-data-stack/dry-run-write.test.ts`  | `test/data-stack/interactive/dry-run-write.test.ts`                    | Final review, plan retention, destination revision, and write recovery are Interactive contracts.               |
+| `test/cli-interactive-routing-data-stack.test.ts`        | `test/data-stack/interactive/routing.test.ts`                          | Root Interactive routing into shared stack execution retains a feature-local route seam.                        |
+| `test/data-stack-artifact-paths.test.ts`                 | `test/data-stack/direct/artifact-paths.test.ts`                        | Artifact collision and fallback policy is a direct path-contract owner.                                         |
+| `test/data-stack-codex-report/apply.test.ts`             | `test/data-stack/direct/codex-report/apply.test.ts`                    | Accepted recommendation application and schema reconciliation form a coherent direct subfamily.                 |
+| `test/data-stack-codex-report/validation.test.ts`        | `test/data-stack/direct/codex-report/validation.test.ts`               | Report parsing, patch validation, and rejection policy form the paired direct subfamily.                         |
+| `test/data-stack-codex-signals.test.ts`                  | `test/data-stack/direct/codex-signals.test.ts`                         | Deterministic signal detection and user-facing labels are a direct Data Stack contract.                          |
+| `test/data-stack-diagnostics.test.ts`                    | `test/data-stack/direct/diagnostics.test.ts`                           | Duplicate, schema, and unique-key diagnostics are direct computation contracts.                                 |
+| `test/data-stack-input-router.test.ts`                   | `test/data-stack/direct/input-router.test.ts`                          | Source normalization, discovery, deduplication, and unsupported-kind rejection form one direct owner.           |
+| `test/data-stack-plan/identity-serialization.test.ts`    | `test/data-stack/direct/plan/identity-serialization.test.ts`           | Plan identity and serialization remain a coherent direct plan subfamily.                                        |
+| `test/data-stack-plan/parse-io.test.ts`                  | `test/data-stack/direct/plan/parse-io.test.ts`                         | Plan parsing and file I/O remain the paired direct plan subfamily.                                               |
+| `test/data-stack-fixture-generator.test.ts`              | `test/data-stack/evidence/fixture-generator.test.ts`                   | Deterministic fixture generation and safe cleanup are evidence contracts.                                       |
+
+The pre-move exact slice passes 181 tests with 798 assertions across 21
+source files. The adjacent Stack timeout, top-level Interactive routing, CLI
+UX, and contextual-tip slice passes 59 tests with 227 assertions across four
+files. The destination batch must reproduce both boundaries, preserve all 181
+titles, and keep the completed historical inventory and records unchanged.
 
 ### Decision Summary
 
