@@ -277,6 +277,9 @@ describe("rename legacy Codex timeout compatibility", () => {
     expect(harness.stderr.text.match(/Warning:/gu)).toHaveLength(1);
     expect(harness.stderr.text).toContain("--codex-images-timeout 15000ms");
     expect(harness.stderr.text).toContain("--codex-docs-timeout 45000ms");
+    expect(harness.stderr.text.indexOf("--codex-images-timeout 15000ms")).toBeLessThan(
+      harness.stderr.text.indexOf("--codex-docs-timeout 45000ms"),
+    );
   });
 
   test("preserves an above-cap legacy value without suggesting an invalid replacement", async () => {
