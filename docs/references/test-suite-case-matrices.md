@@ -2903,6 +2903,33 @@ admission. Pre-commit test-quality and maintainability review found no material
 issue. Exact-range review over `2f5d5a20..e2e2cf34` found no material
 test-quality, maintainability, or documentation issue.
 
+#### Phase 6.17 Exact Suite Admission
+
+Phase 6.17 admits `test/adapters-codex-document-rename-titles.test.ts` as a
+pure move to `test/document-rename/adapters/title-evidence.test.ts`. All nine
+cases and 42 assertions remain unchanged:
+
+1. `extracts pdf evidence from a metadata-rich fixture`
+2. `returns pdf_no_text for weak/no-text pdf proxy fixture`
+3. `returns pdf_extract_error for unreadable/invalid pdf bytes`
+4. `extracts docx evidence from a metadata-rich fixture`
+5. `prefers meaningful lead text over a weak generic heading in docx fixtures`
+6. `uses the first non-heading line when a docx fixture has no headings`
+7. `extracts usable signals from hyperlink-heavy and table-heavy docx fixtures`
+8. `extracts a strong body-derived title from the alternate-editor textutil fixture`
+9. `builds unique prompt filenames for duplicate basenames`
+
+Checked-in PDF and DOCX fixtures remain at their existing shared locations.
+Low-level OOXML decoding remains with the DOCX platform; Rename action and
+adapter suites retain request execution and plan propagation. Those layers do
+not duplicate title-evidence selection, fallback reasons, ranking, or prompt
+filename uniqueness, so no removal qualifies.
+
+The refreshed source slice passes nine tests with 42 assertions in one file.
+The adjacent DOCX metadata and Rename document-adapter/action slice passes 20
+tests with 80 assertions across four files. No support, title, assertion, or
+production change is admitted.
+
 ### Decision Summary
 
 - Audited suites: 10 of 10 assigned inventory rows.
