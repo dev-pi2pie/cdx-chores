@@ -1,0 +1,401 @@
+---
+title: "Test Suite Contract And Catalog Enhancement"
+created-date: 2026-08-23
+status: draft
+agent: codex
+---
+
+## Goal
+
+Turn the suite-wide contract and overlap research into a behavior-preserving
+test enhancement. Establish one evidence-backed owner for each useful
+contract, remove only proved duplication, clarify vague tests, split mixed
+suites, and migrate surviving coverage toward a feature-first catalog with
+bounded exceptions.
+
+The goal is clearer regression ownership and navigation. Reducing test count,
+line count, or runtime is not a success criterion by itself.
+
+## Planning Boundary
+
+This plan is `draft`. Phases 1 and 2 complete the evidence required by the
+related research. No test edit, removal, merge, split, or path migration may
+begin before the Phase 2 admission gate accepts the inventory, representative
+case matrices, and exact catalog topology.
+
+Move the plan to `active` only when Phase 1 execution begins. Once active, keep
+it active through the evidence and migration phases unless a recorded blocker
+prevents the next gate.
+
+If the evidence does not support a removal, retain the test. If the catalog
+cannot yet give a suite a stable owner, record an event-based deferral rather
+than forcing a move.
+
+## Related Documents
+
+- [Test Suite Contract, Overlap, And Catalog Review](../researches/research-2026-08-23-test-suite-contract-overlap-and-catalog.md)
+- [Test Catalog Path Correspondence](../references/test-catalog-path-correspondence.md)
+- `docs/references/test-suite-audit-inventory.md` — create when Phase 1
+  population begins
+- [TypeScript Modularization Follow-Up Implementation](plan-2026-08-23-typescript-modularization-follow-up.md)
+- [Historical Test Suite Modularization And Redundancy Reduction](archive/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md)
+
+## Scope
+
+In scope:
+
+- inventory every discovered `test/**/*.test.ts` file
+- complete case matrices for flagged vague, overlapping, or mixed suites
+- rename useful but vague files and cases
+- merge or remove only cases with a recorded retained contract owner
+- split mixed suites by behavioral ownership
+- move surviving tests in bounded feature or platform families
+- colocate feature fixtures and helpers while retaining only proved
+  cross-feature infrastructure globally
+- record source-aligned exceptions and temporary root deferrals
+- maintain historical-to-current path correspondence and current docs links
+- validate each migration slice and the cumulative suite
+
+Out of scope:
+
+- production behavior, prompts, diagnostics, output, or artifact changes
+- pruning tests because they are large, slow, inconvenient, or use broad
+  matchers
+- treating a zero-test-removal result as failure
+- changing runtime support or introducing Bun-only production APIs
+- rewriting historical commands or time-bounded evidence as if new paths
+  existed earlier
+- moving the complete suite in one repository-wide batch
+
+## Implementation Rules
+
+- Audit before editing. Every changed suite must have an accepted inventory
+  disposition; every merge or removal must have an accepted case-matrix row.
+- Preserve one clear test owner for every accepted direct, adapter, action,
+  command, Interactive, integration, smoke, evidence, privacy, cleanup, and
+  safety contract.
+- Treat vague naming as a rename signal. Removal requires proof that another
+  named case protects the same trigger, outcome, failure signal, boundary, and
+  side-effect lifecycle.
+- Leave `keep pending evidence` cases unchanged.
+- Move one bounded feature or platform family per implementation checkpoint.
+  Do not mix unrelated catalog migrations in one review range.
+- Keep a single small suite at its nearest feature root. Create a boundary
+  directory only when multiple suites or a stable production seam justify it.
+- Admit a source-aligned exception only when it satisfies every criterion in
+  the research and the inventory records its rationale.
+- Keep global helpers or fixtures only after recording independent consumer
+  families and feature-neutral semantics. Import count alone is insufficient.
+- Preserve Node.js runtime compatibility. Bun remains the development and test
+  runner.
+- Update current imports, scripts, configuration, guides, references, and
+  active current-state claims atomically with each move.
+- Add correspondence rows for every accepted move, split, merge, or removal;
+  do not duplicate that mapping in the execution record.
+- Run focused validation and review the exact implementation `base..tip` range
+  before starting the next migration slice. Widen and repeat the review if a
+  review fix lands.
+- Update plan checklists and lifecycle status only after the required evidence
+  passes.
+
+## Provisional Catalog Contract
+
+Phase 2 must replace the placeholders below with accepted owner and boundary
+names before implementation begins:
+
+```text
+test/
+  <feature-or-platform-owner>/
+    <boundary>/        # only when multiple suites or a stable seam justify it
+  helpers/             # independently reused, feature-neutral infrastructure
+  fixtures/            # independently reused, feature-neutral data only
+```
+
+Feature owners may include product families such as Data Query, Doctor,
+Markdown PDF, Data Stack, Rename, Fonts, or Video. Platform owners may include
+stable families such as CLI foundations, Codex adapters, release tooling, or
+utilities. The inventory decides membership; this list does not pre-approve a
+folder.
+
+Feature-local fixtures and helpers should live under their owner. New feature
+tests should not expand the flat `test/` root after Phase 2 accepts the
+catalog. Existing root suites may remain only as recorded source-aligned
+exceptions or temporary deferrals with event-based revisit conditions.
+
+## Execution Record Strategy
+
+Use one execution record for the complete rollout:
+
+```text
+docs/plans/jobs/YYYY-MM-DD-test-suite-contract-and-catalog-enhancement.md
+```
+
+Create it when Phase 1 begins, using that execution date, and keep it
+`in-progress` through the rollout. Each phase section should record:
+
+- inventory or behavior boundary reviewed
+- suites and cases retained, renamed, merged, removed, split, moved, or
+  deferred
+- retained owner for every merge or removal
+- focused validation and exact review range
+- correspondence entries added and current docs updated
+- historical path occurrences intentionally retained
+- continue, constrain, or stop decision
+
+For migration phases, include a compact before/after owner table and copy the
+exact focused test paths from the accepted inventory before editing. Create a
+separate job only if discovered work materially leaves this plan's scope.
+
+## Phase Checklist
+
+### Phase 1: Refresh The Baseline And Populate The Inventory
+
+Tasks:
+
+- [ ] Refresh the test count, discovered-file count, assertion count, topology,
+      and tracked baseline commit.
+- [ ] Create `docs/references/test-suite-audit-inventory.md` with `draft`
+      status and the schema accepted by the research.
+- [ ] Record every discovered `*.test.ts` file exactly once with its feature
+      owner, layer, tested boundary, representative contract, closest overlap,
+      primary disposition, rationale, and matrix link when required.
+- [ ] Review support-only TypeScript files through their consuming suites and
+      add explicit support rows where ownership is itself uncertain.
+- [ ] Prove mechanically that the inventory has no missing or duplicate test
+      paths; add a small validator only if a reproducible one-off comparison is
+      insufficient.
+- [ ] Run the complete suite without changing tests and record the fresh
+      baseline in the unified job.
+
+Validation:
+
+```bash
+find test -type f -name '*.ts' | wc -l
+find test -type f -name '*.ts' -print0 | xargs -0 wc -l | tail -n 1
+find test -type f -name '*.test.ts' | wc -l
+find test -maxdepth 1 -type f -name '*.test.ts' | wc -l
+bun test
+```
+
+Gate:
+
+- Continue only when every discovered test file appears exactly once and every
+  row names an observable contract and primary disposition.
+- Constrain unresolved rows to `case audit`, `split review`, `move-only
+review`, `fixture/helper review`, or `keep pending evidence`; do not infer
+  implementation permission.
+- Stop before Phase 2 if inventory completeness cannot be reproduced.
+
+### Phase 2: Complete Case Matrices And Admit The Catalog
+
+Tasks:
+
+- [ ] Complete literal case matrices for Data Query, Doctor, the contextual-tip
+      catalog, and one mixed Markdown PDF family.
+- [ ] Add matrices for every other inventory row marked `case audit` or `split
+review`.
+- [ ] Record rename-only cases separately from proposed merges and removals.
+- [ ] Name the retained owner for every proposed merge or removal and keep
+      disputed cases as `keep pending evidence`.
+- [ ] Record accepted source-aligned exceptions and every temporary root
+      deferral with its event-based revisit condition.
+- [ ] Record independent consumer families and semantic review for every
+      proposed global helper or fixture.
+- [ ] Replace the provisional catalog placeholders with the accepted owner and
+      boundary names and select the exact Data Query, Doctor, and Markdown PDF
+      pilot slices.
+- [ ] Add exact pre-change and expected post-change focused-test paths to the
+      corresponding later phase sections or unified-job templates.
+- [ ] Review the completed inventory, matrices, catalog, and research with
+      documentation and test-quality reviewers.
+- [ ] Update the research and audit-inventory lifecycle states only when their
+      own completion criteria are satisfied.
+
+Representative validation:
+
+```bash
+bun test test/cli-actions-data-query*.test.ts test/cli-command-data-query*.test.ts test/cli-interactive-*data-query*.test.ts test/data-query*.test.ts
+bun test test/cli-action-doctor.test.ts test/cli-actions-doctor-markdown-video-deferred.test.ts test/cli-command-doctor.test.ts test/cli-doctor-workflow.test.ts
+bun test test/cli-interactive-contextual-tip.test.ts test/cli-actions-md-to-pdf-bundle.test.ts test/cli-interactive-markdown-pdf/font-hints.test.ts
+```
+
+Admission gate:
+
+- Continue to Phase 3 only when the research evidence bar is satisfied and the
+  exact pilot owners, paths, matrices, and focused commands are accepted.
+- Constrain the implementation to rename, split, and move operations when no
+  merge or removal meets the duplicate-evidence protocol.
+- Stop before Phase 3 and mark the active plan `blocked` if the catalog or
+  retained owners remain materially disputed.
+
+### Phase 3: Migrate The Data Query Pilot
+
+Tasks:
+
+- [ ] Apply only the accepted Data Query matrix decisions.
+- [ ] Preserve direct query, action orchestration, command parsing and
+      forwarding, Interactive lifecycle, adapter, and artifact contracts that
+      own distinct boundaries.
+- [ ] Rename vague cases, merge or remove proved duplication, and split mixed
+      suites before moving the retained owners.
+- [ ] Move Data Query suites and feature-local support into the accepted
+      catalog without creating a second compatibility test tree.
+- [ ] Update imports, scripts, current docs, and correspondence rows atomically.
+- [ ] Run every pre-change owner and final Data Query catalog path recorded by
+      Phase 2.
+- [ ] Review the exact phase range and record whether the catalog pattern is
+      accepted, constrained, or stopped before applying it elsewhere.
+
+Observable contracts:
+
+- direct query semantics remain owned independently from action orchestration
+- command tests retain only distinct registration, parsing, precedence,
+  environment, forwarding, and process boundaries
+- Interactive routing, review, cancellation, workspace, header, and
+  source-shape contracts remain represented
+- artifact validation, DuckDB lifecycle, and fixture generation remain covered
+
+### Phase 4: Migrate The Doctor Ownership Pilot
+
+Tasks:
+
+- [ ] Apply the accepted Doctor and mixed-suite matrix decisions.
+- [ ] Split Doctor inspection, workflow projection, command rendering, Markdown,
+      DOCX, and video behavior into their accepted owners.
+- [ ] Keep feature-local Doctor fixtures with Doctor unless independent
+      cross-feature use and feature-neutral semantics are proved.
+- [ ] Move retained Doctor suites into the accepted catalog and update all
+      imports, current docs, and correspondence rows.
+- [ ] Run every pre-change owner, every destination owner created by the split,
+      and the complete Doctor family.
+- [ ] Review the exact phase range before continuing.
+
+Observable contracts:
+
+- Doctor inspection, projection, rendering, command, JSON, and exit behavior
+  retain distinct coverage
+- Markdown, DOCX, and video failure contracts remain owned by their actual
+  features rather than a mixed Doctor bucket
+- no production behavior changes occur
+
+### Phase 5: Migrate The Markdown PDF Catalog Pilot
+
+Tasks:
+
+- [ ] Apply the accepted matrix for the bounded Markdown PDF pilot selected in
+      Phase 2.
+- [ ] Keep safety, privacy, cleanup, collision, symlink, hardlink,
+      partial-write, renderer, and reproducible evidence contracts unless
+      literal duplication is proved.
+- [ ] Separate direct, adapter, action, command, Interactive, integration, and
+      evidence ownership without reorganizing the entire Markdown PDF family in
+      one checkpoint.
+- [ ] Move retained suites and feature-local fixtures into the accepted catalog
+      and update current documentation and correspondence rows.
+- [ ] Run every recorded pre-change owner, destination owner, and adjacent
+      Markdown PDF integration or evidence suite affected by shared support.
+- [ ] Review the exact phase range and decide whether the catalog pattern is
+      safe for the remaining large feature families.
+
+Observable contracts:
+
+- command and action semantics remain distinct where parsing, forwarding, and
+  process boundaries differ
+- Interactive lifecycle and renderer/evidence safety retain clear owners
+- no test is removed because of runtime, size, or matcher style
+
+### Phase 6: Migrate Remaining Feature And Platform Families
+
+Repeat this phase as one checkpoint per accepted inventory family. Likely
+families include Data Stack, Rename, the remaining Markdown PDF suites, CLI
+foundations, Codex adapters, Fonts, Video, release tooling, and utilities; the
+inventory owns the final list and order.
+
+Tasks for each batch:
+
+- [ ] Filter the accepted inventory to one owner and confirm every changed
+      suite has a settled disposition.
+- [ ] Complete any newly required case matrix before editing.
+- [ ] Apply accepted rename, merge, removal, split, and move decisions.
+- [ ] Colocate feature-local support and preserve approved global imports.
+- [ ] Update executable references, current docs, and correspondence rows.
+- [ ] Run the complete focused owner set plus affected adjacent boundaries.
+- [ ] Review the exact batch range and record a continue, constrain, defer, or
+      stop decision.
+
+Batch gate:
+
+- A family may be deferred only with a named ownership issue and event-based
+  revisit condition.
+- A new finding outside the accepted inventory returns to matrix review or
+  becomes separate work; it is not folded silently into the batch.
+
+### Phase 7: Close Global Support Ownership And Root Deferrals
+
+Tasks:
+
+- [ ] Verify the named consumer families and feature-neutral semantics of every
+      retained global helper and fixture.
+- [ ] Move feature-specific helper dependencies and re-exports to their feature
+      owners, including accepted Rename leakage from global CLI helpers.
+- [ ] Confirm each remaining flat-root suite is an accepted source-aligned
+      exception or a temporary deferral with a revisit event.
+- [ ] Confirm no migration phase introduced a new flat-root feature suite.
+- [ ] Re-run all suites importing changed global support and the affected
+      feature families.
+- [ ] Update the inventory and unified job with final global, local, exception,
+      and deferral ownership.
+- [ ] Review the exact phase range before cumulative closeout.
+
+### Phase 8: Validate And Reconcile Documentation
+
+Tasks:
+
+- [ ] Run every focused owner set affected by the rollout.
+- [ ] Run the complete Bun test suite, TypeScript check, lint, formatting check,
+      build, and diff check.
+- [ ] Confirm inventory current paths, dispositions, retained owners,
+      exceptions, and deferrals match the final tree.
+- [ ] Scan every moved historical path across imports, scripts, configuration,
+      guides, references, research, plans, and job records.
+- [ ] Update current paths, repair navigational links, and classify each
+      retained old path as intentional historical evidence.
+- [ ] Confirm every accepted move, split, merge, and removal has a complete
+      correspondence row and unified-job evidence.
+- [ ] Review the complete implementation range for test-quality, documentation,
+      maintainability, and behavior-preservation risks.
+- [ ] Update the research, plan, references, and unified job statuses only from
+      their recorded completion evidence.
+
+Closeout validation:
+
+```bash
+bun test
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
+git diff --check
+```
+
+## Completion Criteria
+
+This plan may be marked `completed` only when:
+
+- every discovered test file remains represented in the final inventory
+- every implemented merge or removal names a retained owner and matches an
+  accepted case matrix
+- every surviving test has an accepted feature, platform, source-aligned, or
+  temporary-deferral owner
+- every deferral has an event-based revisit condition
+- focused and cumulative validation pass
+- exact phase and batch review ranges are recorded in the unified job
+- current documentation uses accepted paths and remaining old paths are
+  intentionally historical
+- the correspondence reference satisfies its final reconciliation boundary
+- final documentation and test-quality review report no unresolved material
+  findings
+
+Completion does not require every test to move or the suite to become smaller.
+It requires every exception and retained overlap to be evidence-backed and no
+accepted path change to remain undocumented.

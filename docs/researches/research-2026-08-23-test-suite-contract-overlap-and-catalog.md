@@ -238,7 +238,8 @@ because its production boundaries are already clearer than its remaining test
 layout. The inventory should decide whether they form the first migration
 slice.
 
-Do not draft the implementation plan until the inventory, representative
+A draft plan may define the evidence and migration gates, but no test edit or
+path-migration phase should begin until the inventory, representative
 matrices, and exact catalog topology are accepted.
 
 ## Documentation Currentness
@@ -360,6 +361,7 @@ August modularization follow-up later split large tests and production modules
 while explicitly deferring several suites from a suite-wide value review.[2][3]
 
 - [TypeScript Modularization Follow-Up Implementation](../plans/plan-2026-08-23-typescript-modularization-follow-up.md)
+- [Test Suite Contract And Catalog Enhancement](../plans/plan-2026-08-23-test-suite-contract-and-catalog-enhancement.md)
 - [Historical Test Suite Modularization And Redundancy Reduction](../plans/archive/plan-2026-03-02-test-suite-modularization-and-redundancy-reduction.md)
 - [Test Catalog Path Correspondence](../references/test-catalog-path-correspondence.md)
 
