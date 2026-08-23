@@ -44,7 +44,7 @@ contract in the related research.
 
 ## Correspondence
 
-Current state: Phases 3 through 5 and Phase 6.1 through 6.5 have completed their
+Current state: Phases 3 through 5 and Phase 6.1 through 6.6 have completed their
 accepted path correspondences. The reference remains `draft` until the
 complete initial migration and final documentation reconciliation are
 finished.
@@ -221,9 +221,10 @@ unresolved selector paths remain explicit deferrals.
 
 ### Phase 6.6: Release Tooling
 
-The paths below were implemented and validated over `bb3d683a..608b0d2b`.
-Exact-range review and the continuation decision remain pending. The reference
-stays `draft` until the initial migration and final reconciliation finish.
+The paths below were implemented and validated over `bb3d683a..608b0d2b`, then
+reviewed over `bb3d683a..d0b989a9`. Phase 6.6 is completed with the decision
+`Continue with constraints`; the reference stays `draft` until the initial
+migration and final reconciliation finish.
 
 | Reference date | Historical path                      | Transition | Current owner or owners                                                                                                           | Migration range      | Job evidence                    |
 | -------------- | ------------------------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------- |

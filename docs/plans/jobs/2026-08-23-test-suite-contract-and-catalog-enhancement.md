@@ -375,7 +375,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.3  | Markdown PDF Profile                          | completed       | `171eec39` | `b66e1c35`         | `4c13019d`   | `171eec39..4c13019d` | Continue with constraints |
 | 6.4  | Markdown PDF Project Codex                    | completed       | `54c24460` | `e5489182`         | `1627e953`   | `54c24460..1627e953` | Continue with constraints |
 | 6.5  | Markdown PDF Interactive and support closeout | completed       | `2b8151dd` | `b1d2c133`         | `70b71653`   | `2b8151dd..70b71653` | Continue with constraints |
-| 6.6  | Release tooling                               | in-review       | `bb3d683a` | `608b0d2b`         | pending      | pending              | pending                   |
+| 6.6  | Release tooling                               | completed       | `bb3d683a` | `608b0d2b`         | `d0b989a9`   | `bb3d683a..d0b989a9` | Continue with constraints |
 | 6.7  | Markdown Frontmatter                          | pending         | -          | -                  | -            | -                    | -                         |
 | 6.8  | Video                                         | pending         | -          | -                  | -            | -                    | -                         |
 | 6.9  | Data Sources                                  | pending         | -          | -                  | -            | -                    | -                         |
@@ -890,7 +890,7 @@ Review gate:
 
 ### Phase 6.6: Release Tooling
 
-Status: `in-review`
+Status: `completed`
 
 Batch base: `bb3d683a`
 
@@ -898,9 +898,9 @@ Implementation tip: `608b0d2b`
 
 Execution and path migration range: `bb3d683a..608b0d2b`
 
-Evidence tip: pending
+Evidence tip: `d0b989a9`
 
-Exact batch review range: pending
+Exact batch review range: `bb3d683a..d0b989a9`
 
 The two selected Release tooling suites were fully dispositioned. The mixed
 release-script source split into branch-policy and stable-note owners with one
@@ -954,9 +954,15 @@ Documentation path scan:
 - the correspondence reference records both historical suite sources over
   `bb3d683a..608b0d2b`
 
-Decision: pending the exact batch review. Phase 6.6 may close only after the
-documentation, test-quality, and maintainability reviews accept
-`bb3d683a..<evidence-tip>` and the receipt records the continuation decision.
+Exact-range test-quality and maintainability review found no material issue in
+`bb3d683a..d0b989a9`. Documentation review found that the evidence receipt
+could not name its own tip before commit; this closeout accepts the finding by
+recording `d0b989a9` and the exact reviewed range above.
+
+Decision: `Continue with constraints`. Phase 6.6 is complete because both
+selected sources were dispositioned into the admitted Release tooling catalog,
+all nine cases remain, and the weak ordering signal is now explicit. Continue
+to Phase 6.7 from this closeout tip without broadening its one-source selector.
 
 Review gate:
 
@@ -966,8 +972,8 @@ Review gate:
 - [x] strengthen the weak build-order assertion
 - [x] complete focused, full-suite, and repository validation
 - [x] record correspondence and current exact-path evidence
-- [ ] create the evidence commit and review the exact batch range
-- [ ] record accepted review fixes and the batch continuation decision
+- [x] create the evidence commit and review the exact batch range
+- [x] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
