@@ -41,7 +41,7 @@ references.
 |     1 | refreshed baseline and complete file inventory | completed   | `2f3013ca..fae7d92b` | Continue                  |
 |     2 | case matrices and catalog admission            | completed   | `34d080e9..0b8d59bd` | Continue with constraints |
 |     3 | Data Query migration pilot                     | completed   | `db9622cf..27ccab6e` | Continue with constraints |
-|     4 | Doctor ownership migration pilot               | pending     | —                    | —                         |
+|     4 | Doctor ownership migration pilot               | in-progress | pending              | —                         |
 
 ## Phase 1: Refreshed Baseline And Complete File Inventory
 
@@ -213,3 +213,63 @@ owners at their recorded root paths, preserve all Phase 2 event-based
 deferrals, and do not generalize the Parquet Preview injection seam beyond the
 specific test-isolation boundary that required it. The path-correspondence
 reference remains `draft` until the later reconciliation phase.
+
+## Phase 4: Doctor Ownership Migration Pilot
+
+Status: `in-progress`
+
+Phase base: `ff0f3d6f`
+
+Implementation range awaiting exact-range review: `ff0f3d6f..93c60f9e`
+
+The implementation applies the exact Doctor ownership pilot rather than the
+complete CLI-foundations matrix. Doctor action, command, workflow, fixture,
+menu, routing, and mock contracts move to feature-owned paths. Non-Doctor cases
+remain in the two root Interactive suites, and the non-Doctor action-mock
+residue remains at its recorded support path for Phase 6.
+
+Focused validation before the move:
+
+- 145 passed, 0 failed, and 957 assertions across 6 files
+
+Focused validation after the move:
+
+- 136 passed, 0 failed, and 857 assertions across 14 files
+
+The post-change command includes the two unchanged cases in
+`test/data-query/commands/duckdb-lifecycle.test.ts` because they are the
+retained command/process owner for the removed direct DuckDB report case. The
+changed-owner result is therefore 134 runtime cases. Compared with the 145
+pre-change cases, exactly 11 evidence-approved runtime cases were removed; the
+distinct direct DuckDB invalid-input contract moved separately to
+`test/data-query/actions/duckdb-lifecycle.test.ts`.
+
+The complete suite then passed:
+
+- 2,614 passed, 0 failed, and 14,866 assertions across 305 files
+
+Repository checks also passed:
+
+```bash
+bun run format:check
+bun run lint
+bun run build
+```
+
+The pre-commit maintainability review found two issues: moved suites retained
+misleading mixed or root-oriented `describe` titles, and an empty
+`DoctorInteractiveHarnessScenario = Record<never, never>` abstraction added no
+scenario contract. The accepted fixes renamed each suite to its actual feature
+and boundary and removed the empty type and import while retaining the
+meaningful Doctor mock extraction. Re-review found both concerns resolved and
+no remaining material maintainability issue. The pre-commit test-quality
+review was clean.
+
+Eight historical Phase 4 paths now have dated entries in the path
+correspondence reference. Removed portions of the mixed suite name their
+controlled action, command, requirements, and feature owners instead of
+leaving a blank destination. The reference remains `draft`, the plan remains
+`active`, and this job remains `in-progress`.
+
+The exact implementation range has not yet been reviewed. No Phase 4 admission
+decision is recorded until that review completes.

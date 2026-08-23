@@ -268,14 +268,14 @@ Accepted path contract: [Phase 4 Doctor Path Contract](../references/test-suite-
 
 Tasks:
 
-- [ ] Apply the accepted Doctor and mixed-suite matrix decisions.
-- [ ] Split Doctor inspection, workflow projection, command rendering, Markdown,
+- [x] Apply the accepted Doctor and mixed-suite matrix decisions.
+- [x] Split Doctor inspection, workflow projection, command rendering, Markdown,
       DOCX, and video behavior into their accepted owners.
-- [ ] Keep feature-local Doctor fixtures with Doctor unless independent
+- [x] Keep feature-local Doctor fixtures with Doctor unless independent
       cross-feature use and feature-neutral semantics are proved.
-- [ ] Move retained Doctor suites into the accepted catalog and update all
+- [x] Move retained Doctor suites into the accepted catalog and update all
       imports, current docs, and correspondence rows.
-- [ ] Run every pre-change owner, every destination owner created by the split,
+- [x] Run every pre-change owner, every destination owner created by the split,
       and the complete Doctor family.
 - [ ] Review the exact phase range before continuing.
 

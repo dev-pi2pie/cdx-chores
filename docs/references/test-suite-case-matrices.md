@@ -186,27 +186,29 @@ final Phase 3 tree.
 
 ### Phase 4 Doctor Path Contract
 
-| Pre-change family                                                                        | Post-change family                                                              | Notes                                                                                                                                           |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `test/cli-action-doctor.test.ts`                                                         | `test/doctor/actions/reporting.test.ts`                                         | Own controlled inspection, legacy JSON, detailed rendering, compact rendering, ordering, TTY parity, and privacy-safe output.                   |
-| Doctor reporting cases in `test/cli-actions-doctor-markdown-video-deferred.test.ts`      | Merge only distinct accepted cases into `test/doctor/actions/reporting.test.ts` | The matrix must reject duplicate projection cases instead of carrying an `older` Doctor suite forward.                                          |
-| `test/cli-command-doctor.test.ts`                                                        | `test/doctor/commands/routing.test.ts`                                          | Registration, option conflicts, view forwarding, help, built-CLI output, and exit behavior remain command-owned.                                |
-| `test/cli-doctor-workflow.test.ts`                                                       | `test/doctor/workflow/projection.test.ts`                                       | Pure workflow ordering, suppression, action deduplication, and compact trust-boundary projection remain direct workflow contracts.              |
-| `test/helpers/doctor-test-fixtures.ts`                                                   | `test/doctor/support/fixtures.ts`                                               | Doctor-local inspection and report fixtures move with all Doctor owners. The Interactive menu consumer imports the feature owner directly.      |
-| `inspectCommand` cases in `test/cli-actions-doctor-markdown-video-deferred.test.ts`      | `test/cli-foundations/dependencies/command-inspection.test.ts`                  | WeasyPrint/fontconfig parsing and missing-command normalization belong to dependency inspection, not Doctor action rendering.                   |
-| DuckDB doctor/install cases in `test/cli-actions-doctor-markdown-video-deferred.test.ts` | `test/data-query/actions/duckdb-lifecycle.test.ts`                              | Data Query owns DuckDB extension state and install preconditions; Phase 4 may move these few split cases without reopening the Phase 3 catalog. |
-| DOCX cases in `test/cli-actions-doctor-markdown-video-deferred.test.ts`                  | `test/markdown-docx/actions/rendering.test.ts`                                  | Missing-input, injected-runner write, overwrite refusal, and overwrite behavior belong to Markdown DOCX.                                        |
-| Video cases in `test/cli-actions-doctor-markdown-video-deferred.test.ts`                 | `test/video/actions/validation.test.ts`                                         | Missing input and resize option preconditions belong to Video.                                                                                  |
-| Doctor mock in `test/helpers/interactive-harness/mocks/action-misc.ts`                   | `test/doctor/interactive/mock-action.ts`                                        | Extract only Doctor; leave unrelated residual mocks at the recorded deferral path.                                                              |
+| Pre-change family                                                                        | Post-change family                                                                                                                                                                                            | Notes                                                                                                                                                                                                                         |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `test/cli-action-doctor.test.ts`                                                         | `test/doctor/actions/report-projections.test.ts`                                                                                                                                                              | Own controlled inspection, legacy JSON, detailed rendering, compact rendering, ordering, TTY parity, and privacy-safe output.                                                                                                 |
+| Doctor cases in `test/cli-actions-doctor-markdown-video-deferred.test.ts`                | `test/doctor/actions/dependency-integration.test.ts`; `test/doctor/commands/environment.test.ts`; retained owners `test/doctor/actions/report-projections.test.ts` and `test/doctor/commands/routing.test.ts` | Split distinct dependency and environment integration into their owners. Remove only weaker reporting cases whose controlled action or command owners are named by the literal matrix.                                        |
+| `test/cli-command-doctor.test.ts`                                                        | `test/doctor/commands/routing.test.ts`                                                                                                                                                                        | Registration, option conflicts, view forwarding, help, built-CLI output, and exit behavior remain command-owned.                                                                                                              |
+| `test/cli-doctor-workflow.test.ts`                                                       | `test/doctor/workflow-projection.test.ts`                                                                                                                                                                     | Pure workflow ordering, suppression, action deduplication, and compact trust-boundary projection remain direct workflow contracts.                                                                                            |
+| `test/helpers/doctor-test-fixtures.ts`                                                   | `test/doctor/fixtures.ts`                                                                                                                                                                                     | Doctor-local inspection and report fixtures move with all Doctor owners.                                                                                                                                                      |
+| Doctor cases in `test/cli-interactive-menu.test.ts`                                      | `test/doctor/interactive/menu-routing.test.ts`; retained routing and action owners under `test/doctor/`; residual stays at `test/cli-interactive-menu.test.ts`                                                | Move the distinct selector stream/order case. Remove three composition-only render cases in favor of the Doctor routing and controlled action-projection owners. Preserve every non-Doctor menu case at the root for Phase 6. |
+| Doctor cases in `test/cli-interactive-routing.test.ts`                                   | `test/doctor/interactive/routing.test.ts`; residual stays at `test/cli-interactive-routing.test.ts`                                                                                                           | Move only Doctor Summary, Details, and JSON routing. Preserve every non-Doctor route at the root for Phase 6.                                                                                                                 |
+| `inspectCommand` cases in `test/cli-actions-doctor-markdown-video-deferred.test.ts`      | `test/cli-foundations/dependencies/command-inspection.test.ts`                                                                                                                                                | WeasyPrint/fontconfig parsing and missing-command normalization belong to dependency inspection, not Doctor action rendering.                                                                                                 |
+| DuckDB doctor/install cases in `test/cli-actions-doctor-markdown-video-deferred.test.ts` | `test/data-query/actions/duckdb-lifecycle.test.ts`; retained command owner `test/data-query/commands/duckdb-lifecycle.test.ts`                                                                                | Move the unique direct invalid-input action contract. Remove the weaker direct report case in favor of the existing command registration and process-output owner.                                                            |
+| DOCX cases in `test/cli-actions-doctor-markdown-video-deferred.test.ts`                  | `test/markdown-docx/actions/rendering.test.ts`                                                                                                                                                                | Missing-input, injected-runner write, overwrite refusal, and overwrite behavior belong to Markdown DOCX.                                                                                                                      |
+| Video cases in `test/cli-actions-doctor-markdown-video-deferred.test.ts`                 | `test/video/actions/preconditions.test.ts`                                                                                                                                                                    | Missing input and resize option preconditions belong to Video.                                                                                                                                                                |
+| Doctor mock in `test/helpers/interactive-harness/mocks/action-misc.ts`                   | `test/doctor/interactive/mock-action.ts`; residual stays at `test/helpers/interactive-harness/mocks/action-misc.ts`                                                                                           | Extract only Doctor; leave unrelated residual mocks at the recorded deferral path.                                                                                                                                            |
 
 Focused commands:
 
 ```sh
-## Pre-change owners and the current Interactive menu consumer of Doctor fixtures
-bun test test/cli-action-doctor.test.ts test/cli-actions-doctor-markdown-video-deferred.test.ts test/cli-command-doctor.test.ts test/cli-doctor-workflow.test.ts test/cli-interactive-menu.test.ts
+## Pre-change owners
+bun test test/cli-action-doctor.test.ts test/cli-actions-doctor-markdown-video-deferred.test.ts test/cli-command-doctor.test.ts test/cli-doctor-workflow.test.ts test/cli-interactive-menu.test.ts test/cli-interactive-routing.test.ts
 
-## Post-change Doctor owners and every destination created by the mixed-suite split
-bun test test/doctor test/data-query/actions/duckdb-lifecycle.test.ts test/cli-foundations/dependencies/command-inspection.test.ts test/markdown-docx/actions/rendering.test.ts test/video/actions/validation.test.ts test/cli-interactive-menu.test.ts
+## Post-change Doctor owners, split destinations, retained removal owner, and root residues
+bun test test/doctor test/cli-foundations/dependencies/command-inspection.test.ts test/data-query/actions/duckdb-lifecycle.test.ts test/data-query/commands/duckdb-lifecycle.test.ts test/markdown-docx/actions/rendering.test.ts test/video/actions/preconditions.test.ts test/cli-interactive-menu.test.ts test/cli-interactive-routing.test.ts
 ```
 
 Run the full suite after the focused command. Phase 4 should not move the
@@ -959,7 +961,7 @@ appear only where multiple suites or a stable seam make them useful.
 ```text
 test/
   cli-foundations/
-    command/
+    commands/
       root-ux.test.ts
     dependencies/
       command-inspection.test.ts
@@ -972,30 +974,30 @@ test/
       fallback.test.ts
       terminal-controller.test.ts
   data/
-    command/help.test.ts
+    commands/help.test.ts
     interactive/menu-routing.test.ts
   data-conversion/
-    command/
+    commands/
       help.test.ts
       output-paths.test.ts
   data-extract/
-    command/help-and-input-format.test.ts
+    commands/help-and-input-format.test.ts
   data-preview/
-    command/
+    commands/
       parquet-ux.test.ts
       preview-ux.test.ts
   data-query/
-    command/
+    commands/
       codex-help-and-input-format.test.ts
       duckdb-lifecycle.test.ts
       help-and-input-format.test.ts
   data-stack/
-    command/help-and-input-format.test.ts
+    commands/help-and-input-format.test.ts
   doctor/
-    action/
+    actions/
       dependency-integration.test.ts
       report-projections.test.ts
-    command/
+    commands/
       environment.test.ts
       routing.test.ts
     interactive/
@@ -1006,7 +1008,7 @@ test/
   markdown/
     interactive/menu-routing.test.ts
   markdown-docx/
-    action/rendering.test.ts
+    actions/rendering.test.ts
     interactive/routing.test.ts
   markdown-frontmatter/
     interactive/routing.test.ts
@@ -1016,11 +1018,11 @@ test/
       entry-routing.test.ts
       render-sources.test.ts
   rename/
-    command/ux.test.ts
+    commands/ux.test.ts
     interactive/routing.test.ts
   video/
-    action/preconditions.test.ts
-    command/ux.test.ts
+    actions/preconditions.test.ts
+    commands/ux.test.ts
     interactive/routing.test.ts
 ```
 
@@ -1041,13 +1043,21 @@ test/cli-doctor-workflow.test.ts
 test/cli-interactive-menu.test.ts
 test/cli-interactive-routing.test.ts
 test/helpers/doctor-test-fixtures.ts
+test/helpers/interactive-harness/mocks/action-misc.ts
 ```
 
 The mixed deferred suite must be split in the same phase so no residual
-Doctor/DOCX/Video bucket survives. Its two DuckDB declarations are removed in
-favor of the Data Query command owner; its dependency-parser declarations move
-to CLI foundations; its DOCX and Video declarations move to their feature
-owners.
+Doctor/DOCX/Video bucket survives. One DuckDB declaration is removed in favor
+of the Data Query command owner; the direct invalid-input declaration moves to
+the Data Query action owner. Dependency-parser declarations move to CLI
+foundations, while DOCX and Video declarations move to their feature owners.
+Only Doctor cases move out of the two root Interactive suites; their non-Doctor
+residues remain at the root for Phase 6.
+
+The decision totals above cover the eventual CLI and feature catalog. Phase 4
+applies the 11 evidence-approved runtime removals from the core action, mixed,
+and Doctor menu owners. The two accepted non-Doctor top-level routing removals
+remain unchanged at the root until Phase 6.
 
 #### Expected post-change owners
 
@@ -1057,18 +1067,28 @@ test/doctor/actions/report-projections.test.ts
 test/doctor/commands/environment.test.ts
 test/doctor/commands/routing.test.ts
 test/doctor/interactive/menu-routing.test.ts
+test/doctor/interactive/mock-action.ts
 test/doctor/interactive/routing.test.ts
 test/doctor/fixtures.ts
 test/doctor/workflow-projection.test.ts
 test/cli-foundations/dependencies/command-inspection.test.ts
+test/data-query/actions/duckdb-lifecycle.test.ts
 test/data-query/commands/duckdb-lifecycle.test.ts
+test/cli-interactive-menu.test.ts
+test/cli-interactive-routing.test.ts
+test/helpers/interactive-harness/mocks/action-misc.ts
 test/markdown-docx/actions/rendering.test.ts
 test/video/actions/preconditions.test.ts
 ```
 
-`test/data-query/commands/duckdb-lifecycle.test.ts` is expected to exist after
-Phase 3. Phase 4 removes the two weaker direct DuckDB declarations; it does not
-move or rewrite the retained Data Query command suite.
+`test/data-query/commands/duckdb-lifecycle.test.ts` exists after Phase 3 and
+retains the command/process owner for the removed direct report case. Phase 4
+moves the distinct direct invalid-input contract to
+`test/data-query/actions/duckdb-lifecycle.test.ts`; it does not move or rewrite
+the retained command suite. The Doctor mock moves to its feature owner while
+the non-Doctor support residue stays at its current path. The post-change
+Interactive targets exercise both sides of that support split; the support
+modules are not standalone Bun test targets.
 
 #### Focused commands
 
@@ -1081,13 +1101,13 @@ bun test test/cli-action-doctor.test.ts test/cli-actions-doctor-markdown-video-d
 Post-change evidence:
 
 ```bash
-bun test test/doctor/actions/dependency-integration.test.ts test/doctor/actions/report-projections.test.ts test/doctor/commands/environment.test.ts test/doctor/commands/routing.test.ts test/doctor/interactive/menu-routing.test.ts test/doctor/interactive/routing.test.ts test/doctor/workflow-projection.test.ts test/cli-foundations/dependencies/command-inspection.test.ts test/data-query/commands/duckdb-lifecycle.test.ts test/markdown-docx/actions/rendering.test.ts test/video/actions/preconditions.test.ts
+bun test test/doctor/actions/dependency-integration.test.ts test/doctor/actions/report-projections.test.ts test/doctor/commands/environment.test.ts test/doctor/commands/routing.test.ts test/doctor/interactive/menu-routing.test.ts test/doctor/interactive/routing.test.ts test/doctor/workflow-projection.test.ts test/cli-foundations/dependencies/command-inspection.test.ts test/data-query/actions/duckdb-lifecycle.test.ts test/data-query/commands/duckdb-lifecycle.test.ts test/markdown-docx/actions/rendering.test.ts test/video/actions/preconditions.test.ts test/cli-interactive-menu.test.ts test/cli-interactive-routing.test.ts
 ```
 
-Complete retained-family evidence after all affected roots move:
+Complete retained-family evidence with deferred root residues:
 
 ```bash
-bun test test/doctor test/cli-foundations/dependencies/command-inspection.test.ts test/data-query/commands/duckdb-lifecycle.test.ts test/markdown-docx test/video
+bun test test/doctor test/cli-foundations/dependencies/command-inspection.test.ts test/data-query/actions/duckdb-lifecycle.test.ts test/data-query/commands/duckdb-lifecycle.test.ts test/markdown-docx test/video test/cli-interactive-menu.test.ts test/cli-interactive-routing.test.ts
 ```
 
 Phase 4 must also run the full suite because removal decisions span action,
