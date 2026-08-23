@@ -1,15 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import { readFile, writeFile } from "node:fs/promises";
 
-import { actionMdPdfProjectCodex } from "../src/cli/markdown-pdf/project-codex";
+import { actionMdPdfProjectCodex } from "../../../src/cli/markdown-pdf/project-codex";
 import {
   materializePageNumberRendererContract,
   PAGE_NUMBER_LAB_MARKER_CONTENT,
   PAGE_NUMBER_LAB_MARKER_NAME,
   PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS,
-} from "./fixtures/markdown-pdf/page-number-renderer-contract";
-import { createActionTestRuntime } from "./helpers/cli-action-test-utils";
-import { withTempFixtureDir } from "./helpers/cli-test-utils";
+} from "../../fixtures/markdown-pdf/page-number-renderer-contract";
+import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
+import { withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 describe("Markdown PDF deterministic Project renderer contract", () => {
   test("pins the no-base and base-profile live cases to the frozen candidates", () => {

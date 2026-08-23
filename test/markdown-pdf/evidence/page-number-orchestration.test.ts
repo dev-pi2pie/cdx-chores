@@ -8,11 +8,11 @@ import {
   PAGE_NUMBER_RENDERER_HARNESS_DIGEST,
   publicEvidenceReport,
   runRendererEvidence,
-} from "../../scripts/spikes/markdown-pdf-page-number-renderer-evidence";
+} from "../../../scripts/spikes/markdown-pdf-page-number-renderer-evidence";
 import type {
   CommandRequest,
   CommandResult,
-} from "../../scripts/spikes/markdown-pdf-page-number-renderer-evidence";
+} from "../../../scripts/spikes/markdown-pdf-page-number-renderer-evidence";
 import {
   PAGE_NUMBER_AUTOMATED_EVIDENCE,
   PAGE_NUMBER_COUNTER_EXPERIMENTS,
@@ -20,12 +20,16 @@ import {
   PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS,
   PAGE_NUMBER_RENDERER_SCENARIOS,
   WEASYPRINT_CANDIDATES,
-} from "../fixtures/markdown-pdf/page-number-renderer-contract";
+} from "../../fixtures/markdown-pdf/page-number-renderer-contract";
 import type {
   ProjectRendererScenario,
   WeasyPrintCandidate,
-} from "../fixtures/markdown-pdf/page-number-renderer-contract";
-import { createMockExecution, pathHasSegment, withEvidenceRoot } from "./support";
+} from "../../fixtures/markdown-pdf/page-number-renderer-contract";
+import {
+  createMockExecution,
+  pathHasSegment,
+  withEvidenceRoot,
+} from "../../markdown-pdf-page-number-renderer-evidence/support";
 
 describe("Markdown PDF renderer evidence orchestration", () => {
   test("keeps the tested catalog concrete while accepting future candidate identities", () => {

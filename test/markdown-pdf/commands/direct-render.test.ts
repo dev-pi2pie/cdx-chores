@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { runCli, toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
-import { createFakeMarkdownPdfDependencies } from "./fixtures";
+import { runCli, toRepoRelativePath, withTempFixtureDir } from "../../helpers/cli-test-utils";
+import { createFakeMarkdownPdfDependencies } from "../../cli-actions-md-to-pdf-commands/fixtures";
 
 describe("cli command: md to-pdf", () => {
   test("lists bundle, code highlight, and page-number flags in help", () => {
