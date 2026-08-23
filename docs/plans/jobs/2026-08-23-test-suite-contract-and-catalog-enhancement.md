@@ -388,7 +388,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.16 | Codex adapter platform                        | completed       | `2f5d5a20` | `c69a9abc`         | `e2e2cf34`   | `2f5d5a20..e2e2cf34` | Continue with constraints |
 | 6.17 | Document Rename                               | completed       | `91165757` | `111a67ea`         | `f97e3846`   | `91165757..f97e3846` | Continue with constraints |
 | 6.18 | DOCX                                          | completed       | `56624bef` | `0018929c`         | `3500991c`   | `56624bef..3500991c` | Continue with constraints |
-| 6.19 | Markdown platform                             | pending         | -          | -                  | -            | -                    | -                         |
+| 6.19 | Markdown platform                             | in-review       | `de108f7d` | `16020bd3`         | pending      | pending              | pending                   |
 | 6.20 | Utilities                                     | pending         | -          | -                  | -            | -                    | -                         |
 | 6.21 | CLI foundations and mixed-root decomposition  | pending         | -          | -                  | -            | -                    | -                         |
 
@@ -1901,6 +1901,57 @@ Review gate:
 - [x] record both path and support transitions
 - [x] create the evidence commit and review the exact batch range
 - [x] record accepted review fixes and the continuation decision
+
+### Phase 6.19: Markdown Platform
+
+Status: `in-review`
+
+Batch base: `de108f7d`
+
+Implementation tip: `16020bd3`
+
+Execution and path migration range: `de108f7d..16020bd3`
+
+Evidence tip: pending
+
+Exact batch review range: pending
+
+The Markdown Codex timeout command suite moved to
+`test/markdown/commands/codex-timeout.test.ts`. Only its two relative imports
+changed. All five parameterized declarations, 15 runtime cases, and 42
+assertions remain unchanged.
+
+| Boundary                         | Passed | Failed | Assertions | Files |
+| -------------------------------- | -----: | -----: | ---------: | ----: |
+| Markdown command destination     |     15 |      0 |         42 |     1 |
+| Exact adjacent safety set        |     63 |      0 |        264 |     5 |
+| Complete repository suite        |  2,623 |      0 |     14,878 |   336 |
+
+Repository checks are clean: `bun run format:check`, `bun run lint`,
+`bunx tsc --noEmit`, `bun run build`, and `git diff --check`.
+
+The first full-suite run stopped producing output beyond its normal runtime
+and was interrupted. An immediate complete rerun passed in 92.83 seconds with
+the counts above, and the focused and adjacent slices did not reproduce a
+problem. Pre-commit test-quality and maintainability review found no material
+issue.
+
+No current guide names the historical suite path. The matrix records the pure
+move, and correspondence records its transition over `de108f7d..16020bd3`.
+
+Decision: pending exact-range test-quality, maintainability, and documentation
+review.
+
+Review gate:
+
+- [x] admit all five parameterized declarations before implementation
+- [x] move only the Markdown timeout command suite
+- [x] preserve all 15 runtime cases and 42 assertions
+- [x] complete focused, adjacent, clean full-suite rerun, and repository checks
+- [x] record the initial interrupted run and the clean immediate rerun
+- [x] record the path transition
+- [ ] create the evidence commit and review the exact batch range
+- [ ] record accepted review fixes and the continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,

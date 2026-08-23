@@ -3009,6 +3009,14 @@ file. The adjacent Interactive timeout, shared timeout-option, and three
 Markdown PDF command-owner suites pass 63 tests with 264 assertions across
 five files. No support, title, assertion, or production change is admitted.
 
+Phase 6.19 executed the admitted pure move over `de108f7d..16020bd3`. The
+destination remains 15 runtime tests with 42 assertions; the adjacent slice
+remains 63 tests with 264 assertions across five files; and an immediate clean
+full-suite rerun passes 2,623 tests with 14,878 assertions across 336 files
+after an initial run stopped producing output and was interrupted. Only two
+relative imports changed. Pre-commit test-quality and maintainability review
+found no material issue.
+
 ### Decision Summary
 
 - Audited suites: 10 of 10 assigned inventory rows.
