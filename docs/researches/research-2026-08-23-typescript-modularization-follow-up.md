@@ -1,7 +1,8 @@
 ---
 title: "TypeScript Modularization Follow-Up"
 created-date: 2026-08-23
-status: draft
+modified-date: 2026-08-23
+status: completed
 agent: codex
 ---
 
@@ -13,14 +14,19 @@ new behavior-preserving modularization plan.
 
 This is follow-up research. The completed May size-refactor work remains the
 historical record for its rename, data-query, and earlier test-suite phases.
-This document focuses on the repository after later Markdown PDF, Project,
-Template, Profile, Interactive, timeout, and Doctor work expanded the current
-code and test surfaces.
+This document evaluated the repository after later Markdown PDF, Project,
+Template, Profile, Interactive, timeout, and Doctor work expanded the code and
+test surfaces.
+
+The research is completed. Its inventory, line counts, and candidate paths
+describe the pre-implementation baseline. The accepted boundaries were
+implemented through the related plan, and the unified job record contains the
+current topology, final inventory, validation, and review evidence.
 
 ## Research At A Glance
 
-A strict current scan finds 59 TypeScript files in `src/` and 75 in `test/`
-above 300 lines. The threshold is a discovery tool, not a refactor rule:
+A strict baseline scan found 59 TypeScript files in `src/` and 75 in `test/`
+above 300 lines. The threshold was a discovery tool, not a refactor rule:
 
 - 33 of the 59 source files are Markdown PDF or Interactive Markdown related
 - 48 of the 75 test files are Markdown PDF related
@@ -62,7 +68,7 @@ The review used:
   highest-value candidates
 - comparison with the completed May TypeScript size-refactor research and plan
 - comparison with the August Markdown PDF Phase 13 keep-or-split dispositions
-- an independent read-only `ts_structure_planner` review
+- an independent structural review
 
 Reproduction command:
 
@@ -82,7 +88,7 @@ file counts when its path contains `/markdown-pdf/` or
 `md-to-pdf` or `markdown-pdf`. The rule is intentionally mechanical and may
 exclude shared helpers with broader names.
 
-## Current Inventory Summary
+## Research Baseline Inventory Summary
 
 | Root    | Files over 300 lines | Markdown PDF related | Other feature areas |
 | ------- | -------------------: | -------------------: | ------------------: |
@@ -91,7 +97,7 @@ exclude shared helpers with broader names.
 | Total   |                  134 |                   81 |                  53 |
 
 The completed May closeout recorded 21 source files and 20 test files above the
-same threshold. The larger current inventory is primarily a signal of later
+same threshold. The larger baseline inventory is primarily a signal of later
 feature growth. It does not invalidate the earlier refactor or prove that 134
 new splits are needed.
 
@@ -117,9 +123,10 @@ A file should remain intact when:
 
 ### 1. Test modularization is the largest immediate opportunity
 
-The largest current tests contain distinct behavioral clusters under one
-top-level suite. They can be split without changing production imports or CLI
-behavior.
+At the research baseline, the largest tests contained distinct behavioral
+clusters under one top-level suite. The related plan implemented these seven
+accepted splits without changing production imports or CLI behavior. The paths
+and line counts below are historical baseline evidence.
 
 | Lines | Test file                                                              | Recommended behavioral files                                                                                       |
 | ----: | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
@@ -219,9 +226,9 @@ Other intentional deferrals remain:
 These files may be reassessed when concrete feature work changes their
 responsibility, but they should not enter the initial modularization scope.
 
-## Recommended Direction
+## Settled Direction
 
-Implementation should remain behavior-preserving and proceed through bounded
+The accepted implementation proceeded through bounded, behavior-preserving
 phases rather than one repository-wide movement:
 
 1. split the Profile Codex action test by behavioral ownership
@@ -229,23 +236,20 @@ phases rather than one repository-wide movement:
 3. split the Project Codex action-write test
 4. extract rename Codex option and timeout ownership
 5. split Doctor workflow domain projections
-6. continue with the remaining accepted Markdown PDF tests and adapter suites,
-   one behavioral boundary per phase
-7. reassess the Interactive Markdown `to-pdf` boundary after the safer work;
-   split it only if mixed responsibility remains clear
+6. split the remaining accepted Markdown PDF tests and adapter suites, one
+   behavioral boundary per phase
+7. reassess and split Interactive Markdown `to-pdf` after the safer work
 8. complete cumulative validation and documentation closeout
 
-Only one feature boundary should move in a phase. Test-only movement should not
-carry assertion or production behavior changes. Any defect found during a
-refactor should be reported and fixed in a separate change unless it blocks
-safe movement.
+Only one feature boundary moved in a phase. Test-only movement did not carry
+assertion or production behavior changes, and no blocking defect required a
+mixed refactor-and-fix change.
 
-Each production phase should preserve current public names and imports through
-small facades, avoid broad barrels or cross-feature abstractions, identify its
-observable contracts and focused tests, and receive exact-boundary review
-before the next production slice begins.
+Each production phase preserved public names and imports through small facades,
+avoided broad barrels and cross-feature abstractions, identified observable
+contracts and focused tests, and received exact-boundary review.
 
-The final phase should include:
+The final closeout evidence includes:
 
 - all focused suites associated with moved source and test boundaries
 - the complete Bun test suite
@@ -259,8 +263,19 @@ The final phase should include:
   records do not retain stale paths or responsibility claims
 - final review of the complete refactor range before lifecycle closeout
 
-Validation evidence should be recorded as a concise receipt. It should not
-claim that every remaining file over 300 lines is a defect.
+The unified job record contains the validation receipt and does not claim that
+every remaining file over 300 lines is a defect.
+
+## Implementation Outcome
+
+The completed plan implemented all accepted research dispositions. Fresh final
+validation passed 2,625 tests across 289 files, and the strict inventory moved
+from 59 to 55 source files and from 75 to 84 test files over 300 lines. The
+test increase reflects behavior-owned replacement suites rather than retained
+monoliths. Exact validation, inventory, deferral, import, test-layout, security,
+and whole-range review evidence is recorded in:
+
+- `docs/plans/jobs/2026-08-23-typescript-modularization-follow-up.md`
 
 ## Related Plans
 

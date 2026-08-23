@@ -1,7 +1,8 @@
 ---
 title: "TypeScript Modularization Follow-Up Implementation"
 created-date: 2026-08-23
-status: active
+modified-date: 2026-08-23
+status: completed
 agent: codex
 ---
 
@@ -15,8 +16,10 @@ compatibility.
 
 ## Planning Boundary
 
-This plan is `active`. Phase 1 began from a clean focused-test baseline; later
-phases remain gated on reviewed completion of the preceding phase.
+This plan is `completed`. Each production or test boundary proceeded only after
+reviewed completion of the preceding phase. Phase 12 closed fresh focused and
+cumulative validation, inventory, import, test-layout, documentation, security,
+and whole-range review.
 
 The strict research inventory found 59 source files and 75 test files above 300
 lines. Those counts identify review candidates, not defects or completion
@@ -399,11 +402,11 @@ Tasks:
       ownership, and obsolete compatibility loaders.
 - [x] Update this checklist and every phase section in the unified job record
       from actual evidence.
-- [ ] Update the research status only if its own policy-defined evidence bar is
+- [x] Update the research status only if its own policy-defined evidence bar is
       satisfied.
-- [ ] Review guides, research, plans, and the job record for stale paths,
+- [x] Review guides, research, plans, and the job record for stale paths,
       responsibility claims, and missing traceability.
-- [ ] Review the complete refactor range before marking this plan completed.
+- [x] Review the complete refactor range before marking this plan completed.
 
 Closeout validation:
 
