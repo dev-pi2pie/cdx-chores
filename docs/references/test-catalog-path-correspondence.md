@@ -381,6 +381,36 @@ reconciliation.
 | 2026-08-23     | `test/cli-interactive-routing-data-convert.test.ts`                               | moved      | `test/data-conversion/interactive/routing.test.ts`                                                                           | `f2fb794b..f7f509ee` | [Phase 6.13][phase-6-13-evidence] |
 | 2026-08-23     | Data Conversion behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | split    | `test/helpers/interactive-harness/mocks/action-misc.ts`<br>`test/data-conversion/interactive/mock-action.ts`                | `f2fb794b..f7f509ee` | [Phase 6.13][phase-6-13-evidence] |
 
+### Phase 6.14: Fonts
+
+The paths below were implemented and validated over `ba8a6cd7..4be23beb`.
+Phase 6.14 remains in review until the evidence checkpoint receives its exact
+range review; this reference stays `draft` through final reconciliation.
+
+| Reference date | Historical path                                      | Transition | Current owner or owners                                                                                     | Migration range      | Job evidence                      |
+| -------------- | ---------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |
+| 2026-08-23     | `test/fonts-cli-check-output.test.ts`                | split      | `test/fonts/actions/check-text-output.test.ts`<br>`test/fonts/actions/check-diagnostics.test.ts`           | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-cli-check-provider.test.ts`              | moved      | `test/fonts/actions/check-provider-mapping.test.ts`                                                         | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-cli-check-selection.test.ts`             | moved      | `test/fonts/actions/check-selection.test.ts`                                                                | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-cli-check-ttc.test.ts`                   | moved      | `test/fonts/actions/check-ttc.test.ts`                                                                      | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-cli-check-validation.test.ts`            | moved      | `test/fonts/actions/check-validation.test.ts`                                                               | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-cli-inspect-debug.test.ts`               | moved      | `test/fonts/actions/inspect-debug.test.ts`                                                                  | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-cli-inspect-matching.test.ts`            | split      | `test/fonts/actions/inspect-matching.test.ts`<br>`test/fonts/actions/inspect-output.test.ts`                | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-cli-inspect-output.test.ts`              | moved      | `test/fonts/actions/inspect-output.test.ts`                                                                 | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-cli-inspect-validation.test.ts`          | moved      | `test/fonts/actions/inspect-validation.test.ts`                                                             | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-cli-list.test.ts`                        | moved      | `test/fonts/actions/list.test.ts`                                                                           | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-cli-registration.test.ts`                | moved      | `test/fonts/commands/registration.test.ts`                                                                  | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-coverage-fontconfig.test.ts`             | moved      | `test/fonts/adapters/coverage-fontconfig.test.ts`                                                           | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-coverage-ttc-inconclusive.test.ts`       | moved      | `test/fonts/adapters/coverage-ttc-inconclusive.test.ts`                                                     | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-coverage-ttc.test.ts`                    | moved      | `test/fonts/adapters/coverage-ttc.test.ts`                                                                  | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-discovery-cancellation.test.ts`          | moved      | `test/fonts/adapters/discovery-cancellation.test.ts`                                                        | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-discovery-parsers.test.ts`               | moved      | `test/fonts/adapters/discovery-parsers.test.ts`                                                             | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-discovery.test.ts`                       | moved      | `test/fonts/adapters/discovery.test.ts`                                                                     | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-coverage-samples.test.ts`                | moved      | `test/fonts/direct/coverage-samples.test.ts`                                                                | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-matching.test.ts`                        | moved      | `test/fonts/direct/matching.test.ts`                                                                        | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-search-ranking.test.ts`                  | moved      | `test/fonts/direct/search-ranking.test.ts`                                                                  | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+| 2026-08-23     | `test/fonts-search-records.test.ts`                  | moved      | `test/fonts/direct/search-records.test.ts`                                                                  | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
+
 [phase-3-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-3-data-query-migration-pilot
 [phase-4-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-4-doctor-ownership-migration-pilot
 [phase-5-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-5-bounded-markdown-pdf-migration-pilot
@@ -397,6 +427,7 @@ reconciliation.
 [phase-6-11-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-611-data-preview
 [phase-6-12-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-612-data-stack
 [phase-6-13-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-613-data-conversion
+[phase-6-14-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-614-fonts
 
 ## Completion Boundary
 

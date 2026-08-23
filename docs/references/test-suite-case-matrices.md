@@ -2744,6 +2744,13 @@ The adjacent Markdown PDF font slice passes 30 tests with 162 assertions across
 four files. No support, fixture, mock, module-URL, or production path is
 admitted; moved suites continue using neutral test helpers directly.
 
+Phase 6.14 executed the 21 source transitions over `ba8a6cd7..4be23beb`.
+The 22 destination files pass 113 tests with the same 493 assertions. The
+three admitted compound splits account for the exact five-title removal and
+13-title addition; the other 100 titles remain unchanged. The empty wrapper is
+gone, no support or production path moved, and the diagnostics owner received
+the reviewed feature-specific `describe` label.
+
 ### Decision Summary
 
 - Audited suites: 10 of 10 assigned inventory rows.

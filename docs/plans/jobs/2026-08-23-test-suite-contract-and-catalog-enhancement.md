@@ -383,7 +383,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.11 | Data Preview                                  | completed       | `7b840652` | `3d95eba5`         | `350b07ac`   | `7b840652..350b07ac` | Continue with constraints |
 | 6.12 | Data Stack                                    | completed       | `cf15f599` | `4ae50698`         | `6ee0d7b0`   | `cf15f599..6ee0d7b0` | Continue with constraints |
 | 6.13 | Data Conversion                               | completed       | `f2fb794b` | `f7f509ee`         | `a24c3bdd`   | `f2fb794b..a24c3bdd` | Continue with constraints |
-| 6.14 | Fonts                                         | pending         | -          | -                  | -            | -                    | -                         |
+| 6.14 | Fonts                                         | in-review       | `ba8a6cd7` | `4be23beb`         | pending      | pending              | Pending exact review      |
 | 6.15 | Rename                                        | pending         | -          | -                  | -            | -                    | -                         |
 | 6.16 | Codex adapter platform                        | matrix-required | -          | -                  | -            | -                    | -                         |
 | 6.17 | Document Rename                               | pending         | -          | -                  | -            | -                    | -                         |
@@ -1613,6 +1613,64 @@ Review gate:
 - [x] record support disposition and path correspondence
 - [x] create the evidence commit and review the exact batch range
 - [x] record accepted review fixes and the continuation decision
+
+### Phase 6.14: Fonts
+
+Status: `in-review`
+
+Batch base: `ba8a6cd7`
+
+Implementation tip: `4be23beb`
+
+Execution and path migration range: `ba8a6cd7..4be23beb`
+
+Evidence tip: pending
+
+Exact batch review range: pending
+
+The 21 selected suites moved to 11 action, one command, six adapter, and four
+direct owners. Three compound sources were decomposed into independently
+failing contracts, producing 22 destination files and 113 declarations from
+the original 105. No scenario or assertion was added or removed; the only
+structural deletion was an empty `font coverage` wrapper.
+
+| Check       | Owner files | Passed | Failed | Assertions |
+| ----------- | ----------: | -----: | -----: | ---------: |
+| Pre-change  |          21 |    105 |      0 |        493 |
+| Post-change |          22 |    113 |      0 |        493 |
+
+The five compound titles became 13 precise titles, while the other 100 titles
+remain unchanged. Pre-commit review found and corrected one split-owner label:
+`check-diagnostics.test.ts` now names diagnostics rather than duplicating the
+text-output `describe` label. No case title or assertion changed in that fix.
+
+| Boundary                              | Passed | Failed | Assertions | Files |
+| ------------------------------------- | -----: | -----: | ---------: | ----: |
+| Fonts destinations                    |    113 |      0 |        493 |    22 |
+| Adjacent Markdown PDF font slice      |     30 |      0 |        162 |     4 |
+| Complete repository suite             |  2,622 |      0 |     14,878 |   327 |
+
+Repository checks are clean: `bun run format:check`, `bun run lint`,
+`bunx tsc --noEmit`, `bun run build`, and `git diff --check`.
+
+No current guide names a historical Fonts test path. The completed historical
+inventory and plans retain dated commands; the current matrix records the
+executed splits, and correspondence records all 21 transitions over
+`ba8a6cd7..4be23beb`.
+
+Decision: pending exact-range test-quality, maintainability, and documentation
+review of the evidence checkpoint.
+
+Review gate:
+
+- [x] reproduce the 21-source and adjacent baselines
+- [x] migrate only the admitted Fonts suites
+- [x] decompose three compound sources without assertion drift
+- [x] remove only the empty wrapper and fix the diagnostics owner label
+- [x] complete focused, adjacent, full-suite, and repository validation
+- [x] record all 21 path transitions
+- [ ] create the evidence commit and review the exact batch range
+- [ ] record accepted review fixes and the continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
