@@ -45,8 +45,9 @@ contract in the related research.
 ## Correspondence
 
 Current state: Phases 3 through 5 and Phase 6.1 have completed their accepted
-path correspondences. The reference remains `draft` until the complete initial
-migration and final documentation reconciliation are finished.
+path correspondences. Phase 6.2 correspondence is implemented and in review.
+The reference remains `draft` until the complete initial migration and final
+documentation reconciliation are finished.
 
 ### Phase 3: Data Query Pilot
 
@@ -150,10 +151,28 @@ all initial migration and documentation reconciliation work is complete.
 | 2026-08-23     | `test/markdown-pdf-page-number-renderer-evidence/support.ts`             | moved      | `test/markdown-pdf/evidence/page-number-support.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `fca1204a..b5ffc3f1` | [Phase 6.1][phase-6-1-evidence] |
 | 2026-08-23     | `test/cli-actions-md-to-pdf-template-codex/fixtures.ts`                  | split      | `test/cli-actions-md-to-pdf-template-codex/fixtures.ts`<br>`test/markdown-pdf/support/path-fixtures.ts`                                                                                                                                                                                                                                                                                                                                                                                                     | `fca1204a..b5ffc3f1` | [Phase 6.1][phase-6-1-evidence] |
 
+### Phase 6.2: Markdown PDF Template Codex
+
+The paths below were implemented and validated over
+`2af1ae7b..b74f6279`. Phase 6.2 remains `in-review` until its evidence commit,
+exact range review, and continuation decision are recorded.
+
+| Reference date | Historical path                                                         | Transition | Current owner or owners                                                                                                                 | Migration range      | Job evidence                    |
+| -------------- | ----------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------- |
+| 2026-08-23     | `test/adapters-codex-markdown-pdf-template/repair-timeout.test.ts`      | moved      | `test/markdown-pdf/adapters/template-repair-timeout.test.ts`                                                                            | `2af1ae7b..b74f6279` | [Phase 6.2][phase-6-2-evidence] |
+| 2026-08-23     | `test/cli-actions-md-to-pdf-commands/template.test.ts`                  | split      | `test/markdown-pdf/commands/template-codex.test.ts`<br>`test/markdown-pdf/commands/template-init.test.ts`                               | `2af1ae7b..b74f6279` | [Phase 6.2][phase-6-2-evidence] |
+| 2026-08-23     | `test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts`  | moved      | `test/markdown-pdf/actions/template-codex-integration.test.ts`                                                                          | `2af1ae7b..b74f6279` | [Phase 6.2][phase-6-2-evidence] |
+| 2026-08-23     | `test/cli-actions-md-to-pdf-template-codex/action.test.ts`              | moved      | `test/markdown-pdf/actions/template-codex-action.test.ts`                                                                               | `2af1ae7b..b74f6279` | [Phase 6.2][phase-6-2-evidence] |
+| 2026-08-23     | `test/cli-actions-md-to-pdf-template-codex/prepared.test.ts`            | moved      | `test/markdown-pdf/actions/template-codex-prepared.test.ts`                                                                             | `2af1ae7b..b74f6279` | [Phase 6.2][phase-6-2-evidence] |
+| 2026-08-23     | `test/adapters-codex-markdown-pdf-template/fixtures.ts`                 | moved      | `test/markdown-pdf/adapters/template-codex-fixtures.ts`                                                                                 | `2af1ae7b..b74f6279` | [Phase 6.2][phase-6-2-evidence] |
+| 2026-08-23     | `test/cli-actions-md-to-pdf-template-codex/fixtures.ts`                 | moved      | `test/markdown-pdf/actions/template-codex-fixtures.ts`                                                                                  | `2af1ae7b..b74f6279` | [Phase 6.2][phase-6-2-evidence] |
+| 2026-08-23     | `test/cli-actions-md-to-pdf-template-codex/synthesis-fixtures.ts`       | moved      | `test/markdown-pdf/actions/template-synthesis-fixtures.ts`                                                                              | `2af1ae7b..b74f6279` | [Phase 6.2][phase-6-2-evidence] |
+
 [phase-3-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-3-data-query-migration-pilot
 [phase-4-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-4-doctor-ownership-migration-pilot
 [phase-5-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-5-bounded-markdown-pdf-migration-pilot
 [phase-6-1-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-61-markdown-pdf-general
+[phase-6-2-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-62-markdown-pdf-template-codex
 
 ## Completion Boundary
 

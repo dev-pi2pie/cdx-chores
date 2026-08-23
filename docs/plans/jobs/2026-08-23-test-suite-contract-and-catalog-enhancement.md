@@ -371,7 +371,7 @@ Data Extract and Data Stack destination folders to the established plural
 | ID   | Batch                                         | Status          | Batch base | Implementation tip | Evidence tip | Review range | Decision |
 | ---- | --------------------------------------------- | --------------- | ---------- | ------------------ | ------------ | ------------ | -------- |
 | 6.1  | Markdown PDF general                          | completed       | `fca1204a` | `c55da02a`         | `870fef23`   | `fca1204a..870fef23` | Continue with constraints |
-| 6.2  | Markdown PDF Template Codex                   | pending         | -          | -                  | -            | -            | -        |
+| 6.2  | Markdown PDF Template Codex                   | in-review       | `2af1ae7b` | `b74f6279`         | pending      | pending      | pending  |
 | 6.3  | Markdown PDF Profile                          | pending         | -          | -                  | -            | -            | -        |
 | 6.4  | Markdown PDF Project Codex                    | pending         | -          | -                  | -            | -            | -        |
 | 6.5  | Markdown PDF Interactive and support closeout | pending         | -          | -                  | -            | -            | -        |
@@ -488,6 +488,93 @@ Review gate:
 - [x] complete the full suite and repository checks
 - [x] fix the evidence tip and complete the exact batch range review
 - [x] record accepted review fixes and the batch continuation decision
+
+### Phase 6.2: Markdown PDF Template Codex
+
+Status: `in-review`
+
+Batch base: `2af1ae7b`
+
+Implementation tip: `b74f6279`
+
+Execution and path migration range: `2af1ae7b..b74f6279`
+
+Evidence tip: pending
+
+Exact batch review range: pending
+
+The batch admitted five Template Codex suites. One command suite split into
+separate Template initialization and Codex command owners, producing six
+destination suites. The selector retained 23 additional suites at their
+recorded paths because their destination ownership remains unresolved;
+retention is an admitted deferral, not catalog approval.
+
+Selector preservation:
+
+| Check       | Owner files | Passed | Failed | Assertions |
+| ----------- | ----------: | -----: | -----: | ---------: |
+| Pre-change  |          28 |    234 |      0 |      1,413 |
+| Post-change |          29 |    234 |      0 |      1,413 |
+
+Three fixture sources moved with the admitted owners. Thirty-two imports were
+rewritten across 30 consumer suites without changing their declarations or
+assertions:
+
+| Check       | Consumer files | Passed | Failed | Assertions |
+| ----------- | -------------: | -----: | -----: | ---------: |
+| Pre-change  |             30 |    276 |      0 |      2,271 |
+| Post-change |             30 |    276 |      0 |      2,271 |
+
+Implementation checkpoints:
+
+- `ffbf4124` — move Template Codex support ownership
+- `e9493be3` — move the admitted adapter contract
+- `57f227f8` — split Template initialization from the Codex command owner
+- `b74f6279` — move the admitted Template Codex action contracts
+
+Pre-commit test-quality and maintainability review found no material concerns
+at any checkpoint.
+
+Validation evidence:
+
+| Boundary                     | Passed | Failed | Assertions | Files |
+| ---------------------------- | -----: | -----: | ---------: | ----: |
+| All destination suites       |     43 |      0 |        344 |     6 |
+| Fixture-support consumer set |    276 |      0 |      2,271 |    30 |
+| Complete suite               |  2,614 |      0 |     14,866 |   318 |
+
+Repository checks are clean:
+
+- `bun run format:check`
+- `bun run lint`
+- `bun run build`
+- `bunx tsc --noEmit`
+- `git diff --check`
+
+Documentation path scan:
+
+- no current guide links name the migrated Phase 6.2 paths
+- the completed audit inventory and literal Phase 2 case sections remain dated
+  historical snapshots
+- the current support-decision table records the three fixture moves executed
+  in Phase 6.2
+- the correspondence reference records five historical suite sources and
+  three support sources over `2af1ae7b..b74f6279`
+
+The implementation and validation evidence is clean through `b74f6279`.
+Phase 6.2 remains `in-review` until an evidence commit records its own tip, the
+exact base-to-evidence-tip range receives test-quality, maintainability, and
+documentation review, and the continuation decision is recorded.
+
+Review gate:
+
+- [x] preserve all selected declarations and assertions
+- [x] migrate the five admitted suites and retain the 23 unresolved suites
+- [x] move the three fixture owners and validate all 30 consumer suites
+- [x] complete focused, full-suite, and repository validation
+- [x] record correspondence and current support-decision updates
+- [ ] create the evidence commit and review the exact batch range
+- [ ] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
