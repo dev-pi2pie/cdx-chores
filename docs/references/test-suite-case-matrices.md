@@ -2478,8 +2478,8 @@ support target `test/release-tooling/fixtures.ts`.
 #### Phase 6.6 Exact Suite Admission
 
 The retained version-synchronization suite was not part of the literal
-miscellaneous-feature matrix. Phase 6.6 admits its exact catalog path before
-implementation:
+miscellaneous-feature matrix. Phase 6.6 admitted and executed its exact catalog
+path:
 
 | Historical path                      | Accepted exact target                       | Admission evidence                                                                                      |
 | ------------------------------------ | ------------------------------------------- | ------------------------------------------------------------------------------------------------------- |

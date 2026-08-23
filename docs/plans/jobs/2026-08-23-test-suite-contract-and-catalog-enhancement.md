@@ -375,7 +375,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.3  | Markdown PDF Profile                          | completed       | `171eec39` | `b66e1c35`         | `4c13019d`   | `171eec39..4c13019d` | Continue with constraints |
 | 6.4  | Markdown PDF Project Codex                    | completed       | `54c24460` | `e5489182`         | `1627e953`   | `54c24460..1627e953` | Continue with constraints |
 | 6.5  | Markdown PDF Interactive and support closeout | completed       | `2b8151dd` | `b1d2c133`         | `70b71653`   | `2b8151dd..70b71653` | Continue with constraints |
-| 6.6  | Release tooling                               | pending         | -          | -                  | -            | -                    | -                         |
+| 6.6  | Release tooling                               | in-review       | `bb3d683a` | `608b0d2b`         | pending      | pending              | pending                   |
 | 6.7  | Markdown Frontmatter                          | pending         | -          | -                  | -            | -                    | -                         |
 | 6.8  | Video                                         | pending         | -          | -                  | -            | -                    | -                         |
 | 6.9  | Data Sources                                  | pending         | -          | -                  | -            | -                    | -                         |
@@ -887,6 +887,87 @@ Review gate:
 - [x] record correspondence and current support-matrix evidence
 - [x] create the evidence commit and review the exact batch range
 - [x] record accepted review fixes and the batch continuation decision
+
+### Phase 6.6: Release Tooling
+
+Status: `in-review`
+
+Batch base: `bb3d683a`
+
+Implementation tip: `608b0d2b`
+
+Execution and path migration range: `bb3d683a..608b0d2b`
+
+Evidence tip: pending
+
+Exact batch review range: pending
+
+The two selected Release tooling suites were fully dispositioned. The mixed
+release-script source split into branch-policy and stable-note owners with one
+feature-local fixture; the version synchronization suite moved to its admitted
+catalog owner.
+
+Selector preservation:
+
+| Check       | Owner files | Passed | Failed | Assertions |
+| ----------- | ----------: | -----: | -----: | ---------: |
+| Pre-change  |           2 |      9 |      0 |        154 |
+| Post-change |           3 |      9 |      0 |        154 |
+
+The pre-move test-quality review found no vague, duplicate, or removable case.
+It did find that the build-regeneration case proved only that the generator and
+`tsdown` names were present. The accepted fix now proves that the embedded
+version generator exists and appears before `tsdown`, without changing the
+test title or declaration count.
+
+Implementation checkpoint:
+
+- `608b0d2b` — split branch filtering from stable-note generation, move version
+  synchronization, extract the admitted release fixture, and strengthen build
+  ordering coverage
+
+Pre-commit test-quality and maintainability reviews were clean after the fix.
+All nine literal titles and declarations remain represented once, the 28
+static assertions remain split between test owners and their fixture, and the
+generated-fallback case retains its deterministic failing `curl` stub.
+
+Validation evidence:
+
+| Boundary                  | Passed | Failed | Assertions | Files |
+| ------------------------- | -----: | -----: | ---------: | ----: |
+| Release tooling selector  |      9 |      0 |        154 |     3 |
+| Complete repository suite |  2,614 |      0 |     14,866 |   324 |
+
+Repository checks are clean:
+
+- `bun run format:check`
+- `bun run lint`
+- `bun run build`
+- `bunx tsc --noEmit`
+- `git diff --check`
+
+Documentation path scan:
+
+- no current guide links name the two historical release paths
+- the completed inventory and literal matrix remain dated historical evidence
+- the current matrix records the exact version-sync and fixture admissions
+- the correspondence reference records both historical suite sources over
+  `bb3d683a..608b0d2b`
+
+Decision: pending the exact batch review. Phase 6.6 may close only after the
+documentation, test-quality, and maintainability reviews accept
+`bb3d683a..<evidence-tip>` and the receipt records the continuation decision.
+
+Review gate:
+
+- [x] reproduce the two-source selector and pre-change baseline
+- [x] split the release-script owner and move version synchronization
+- [x] preserve all nine declarations and deterministic stable-note behavior
+- [x] strengthen the weak build-order assertion
+- [x] complete focused, full-suite, and repository validation
+- [x] record correspondence and current exact-path evidence
+- [ ] create the evidence commit and review the exact batch range
+- [ ] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
