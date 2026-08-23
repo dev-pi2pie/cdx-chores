@@ -166,7 +166,7 @@ suites.
 | 6.5   | `test/helpers/interactive-harness/mocks/markdown-pdf.ts`                        | `test/markdown-pdf/interactive/mock-action.ts`                     | Phase 6.5 executed the feature-local move; the neutral harness composition remains under CLI foundations for Phase 7.                              |
 | 6.5   | `test/cli-interactive-markdown-pdf/codex-authoring/fixtures.ts`                 | `test/markdown-pdf/interactive/codex-authoring-fixtures.ts`        | Phase 6.5 executed the move and preserved all five Markdown PDF Codex-authoring consumers.                                                         |
 | 6.7   | Frontmatter behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | `test/markdown-frontmatter/interactive/mock-action.ts`             | Phase 6.7 executed the one-action extraction; the mixed residual and neutral composition remain for later admitted batches and Phase 7.            |
-| 6.8   | Video behavior in `test/helpers/interactive-harness/mocks/action-misc.ts`       | `test/video/interactive/mock-action.ts`                            | Extract only the three Video action mocks; the mixed residual and neutral composition remain for later admitted batches and Phase 7.               |
+| 6.8   | Video behavior in `test/helpers/interactive-harness/mocks/action-misc.ts`       | `test/video/interactive/mock-action.ts`                            | Phase 6.8 executed the three-action extraction; the mixed residual and neutral composition remain for later admitted batches and Phase 7.          |
 
 ### Phase 3 Data Query Path Contract
 
@@ -2490,8 +2490,8 @@ path:
 #### Phase 6.8 Exact Suite Admission
 
 The retained executable GIF action suite was not part of the literal
-miscellaneous-feature matrix. Phase 6.8 admits its exact catalog path before
-implementation:
+miscellaneous-feature matrix. Phase 6.8 admitted and executed its exact catalog
+path:
 
 | Historical path                      | Accepted exact target            | Admission evidence                                                                                                   |
 | ------------------------------------ | -------------------------------- | -------------------------------------------------------------------------------------------------------------------- |

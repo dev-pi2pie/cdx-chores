@@ -243,6 +243,18 @@ migration and final reconciliation finish.
 | 2026-08-23     | `test/cli-actions-md-frontmatter-to-json.test.ts`       | split      | `test/markdown-frontmatter/actions/frontmatter-to-json.test.ts`<br>`test/markdown-frontmatter/commands/frontmatter-to-json.test.ts` | `16966305..61df100e` | [Phase 6.7][phase-6-7-evidence] |
 | 2026-08-23     | `test/helpers/interactive-harness/mocks/action-misc.ts` | split      | `test/helpers/interactive-harness/mocks/action-misc.ts`<br>`test/markdown-frontmatter/interactive/mock-action.ts`                   | `16966305..61df100e` | [Phase 6.7][phase-6-7-evidence] |
 
+### Phase 6.8: Video
+
+The paths below were implemented and validated over `5b362772..cf85a757`.
+Exact-range review and the continuation decision remain pending. The reference
+stays `draft` until the initial migration and final reconciliation finish.
+
+| Reference date | Historical path                                         | Transition | Current owner or owners                                                                            | Migration range      | Job evidence                    |
+| -------------- | ------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------- |
+| 2026-08-23     | `test/cli-actions-video-gif.test.ts`                    | moved      | `test/video/actions/gif.test.ts`                                                                   | `5b362772..cf85a757` | [Phase 6.8][phase-6-8-evidence] |
+| 2026-08-23     | `test/cli-interactive-routing-video.test.ts`            | moved      | `test/video/interactive/gif.test.ts`                                                               | `5b362772..cf85a757` | [Phase 6.8][phase-6-8-evidence] |
+| 2026-08-23     | `test/helpers/interactive-harness/mocks/action-misc.ts` | split      | `test/helpers/interactive-harness/mocks/action-misc.ts`<br>`test/video/interactive/mock-action.ts` | `5b362772..cf85a757` | [Phase 6.8][phase-6-8-evidence] |
+
 [phase-3-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-3-data-query-migration-pilot
 [phase-4-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-4-doctor-ownership-migration-pilot
 [phase-5-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-5-bounded-markdown-pdf-migration-pilot
@@ -253,6 +265,7 @@ migration and final reconciliation finish.
 [phase-6-5-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-65-markdown-pdf-interactive-and-support-closeout
 [phase-6-6-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-66-release-tooling
 [phase-6-7-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-67-markdown-frontmatter
+[phase-6-8-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-68-video
 
 ## Completion Boundary
 

@@ -377,7 +377,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.5  | Markdown PDF Interactive and support closeout | completed       | `2b8151dd` | `b1d2c133`         | `70b71653`   | `2b8151dd..70b71653` | Continue with constraints |
 | 6.6  | Release tooling                               | completed       | `bb3d683a` | `608b0d2b`         | `d0b989a9`   | `bb3d683a..d0b989a9` | Continue with constraints |
 | 6.7  | Markdown Frontmatter                          | completed       | `16966305` | `61df100e`         | `16159a87`   | `16966305..16159a87` | Continue with constraints |
-| 6.8  | Video                                         | pending         | -          | -                  | -            | -                    | -                         |
+| 6.8  | Video                                         | in-review       | `5b362772` | `cf85a757`         | pending      | pending              | pending                   |
 | 6.9  | Data Sources                                  | pending         | -          | -                  | -            | -                    | -                         |
 | 6.10 | Data Extract                                  | pending         | -          | -                  | -            | -                    | -                         |
 | 6.11 | Data Preview                                  | pending         | -          | -                  | -            | -                    | -                         |
@@ -1060,6 +1060,89 @@ Review gate:
 - [x] record correspondence and current support evidence
 - [x] create the evidence commit and review the exact batch range
 - [x] record accepted review fixes and the batch continuation decision
+
+### Phase 6.8: Video
+
+Status: `in-review`
+
+Batch base: `5b362772`
+
+Implementation tip: `cf85a757`
+
+Execution and path migration range: `5b362772..cf85a757`
+
+Evidence tip: pending
+
+Exact batch review range: pending
+
+The two selected Video suites moved to their exact action and Interactive
+owners. Pre-move review found no vague or duplicated case: the focused
+compressed Interactive route and the retained Phase 6.21 quality-mode smoke
+route protect mutually exclusive prompt and option paths.
+
+Selector preservation and strengthening:
+
+| Check       | Owner files | Passed | Failed | Assertions |
+| ----------- | ----------: | -----: | -----: | ---------: |
+| Pre-change  |           2 |     12 |      0 |         54 |
+| Post-change |           2 |     12 |      0 |         58 |
+
+The two rejected compressed-mode option cases previously checked the typed
+error and empty runtime output but not the claimed pre-execution boundary. Four
+accepted assertions now prove that neither an FFmpeg log nor an output artifact
+is created for incompatible `gifProfile` or `gifLook` inputs.
+
+The admitted support extraction moved only the three Video action mocks to
+`test/video/interactive/mock-action.ts`. The mixed residual and neutral harness
+composition remain for later batches and Phase 7.
+
+Implementation checkpoint:
+
+- `cf85a757` — move GIF action and Interactive routing owners, extract Video
+  mocks, and strengthen rejected-input side-effect coverage
+
+Pre-commit test-quality and maintainability reviews found no material issue.
+All 12 titles and declarations remain represented once; static assertions rose
+from 41 to 45 only for the four accepted side-effect checks.
+
+Validation evidence:
+
+| Boundary                              | Passed | Failed | Assertions | Files |
+| ------------------------------------- | -----: | -----: | ---------: | ----: |
+| Video destinations                    |     12 |      0 |         58 |     2 |
+| Destinations plus adjacent safety set |     31 |      0 |        132 |     4 |
+| Complete repository suite             |  2,614 |      0 |     14,870 |   325 |
+
+Repository checks are clean:
+
+- `bun run format:check`
+- `bun run lint`
+- `bun run build`
+- `bunx tsc --noEmit`
+- `git diff --check`
+
+Documentation path scan:
+
+- no current guide links name the two historical Video suite paths
+- the completed inventory and literal matrix remain dated historical evidence
+- the current matrix records the executed suite and support admissions
+- the correspondence reference records two suite moves and the support split
+  over `5b362772..cf85a757`
+
+Decision: pending the exact batch review. Phase 6.8 may close only after the
+documentation, test-quality, and maintainability reviews accept
+`5b362772..<evidence-tip>` and the receipt records the continuation decision.
+
+Review gate:
+
+- [x] reproduce the two-source selector and adjacent safety baseline
+- [x] move both suites to their exact Video owners
+- [x] extract only the three admitted Video action mocks
+- [x] preserve all 12 declarations and add four accepted safety assertions
+- [x] complete focused, full-suite, and repository validation
+- [x] record correspondence and current exact-path evidence
+- [ ] create the evidence commit and review the exact batch range
+- [ ] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
