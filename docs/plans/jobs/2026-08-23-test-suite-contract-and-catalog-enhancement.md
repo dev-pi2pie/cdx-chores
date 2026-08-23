@@ -373,7 +373,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.1  | Markdown PDF general                          | completed       | `fca1204a` | `c55da02a`         | `870fef23`   | `fca1204a..870fef23` | Continue with constraints |
 | 6.2  | Markdown PDF Template Codex                   | completed       | `2af1ae7b` | `b74f6279`         | `ae3d717b`   | `2af1ae7b..ae3d717b` | Continue with constraints |
 | 6.3  | Markdown PDF Profile                          | completed       | `171eec39` | `b66e1c35`         | `4c13019d`   | `171eec39..4c13019d` | Continue with constraints |
-| 6.4  | Markdown PDF Project Codex                    | pending         | -          | -                  | -            | -            | -        |
+| 6.4  | Markdown PDF Project Codex                    | in-review       | `54c24460` | `e5489182`         | pending      | pending      | pending  |
 | 6.5  | Markdown PDF Interactive and support closeout | pending         | -          | -                  | -            | -            | -        |
 | 6.6  | Release tooling                               | pending         | -          | -                  | -            | -            | -        |
 | 6.7  | Markdown Frontmatter                          | pending         | -          | -                  | -            | -            | -        |
@@ -679,6 +679,102 @@ Review gate:
 - [x] record correspondence and current support-decision updates
 - [x] create the evidence commit and review the exact batch range
 - [x] record accepted review fixes and the batch continuation decision
+
+### Phase 6.4: Markdown PDF Project Codex
+
+Status: `in-review`
+
+Batch base: `54c24460`
+
+Implementation tip: `e5489182`
+
+Execution and path migration range: `54c24460..e5489182`
+
+Evidence tip: pending
+
+Exact batch review range: pending
+
+The batch admitted four Project Codex suite sources into five destination test
+owners. The selector retained 12 additional suites at their recorded paths
+because their destination ownership remains unresolved; retention is an
+admitted deferral, not catalog approval.
+
+Selector preservation:
+
+| Check       | Owner files | Passed | Failed | Assertions |
+| ----------- | ----------: | -----: | -----: | ---------: |
+| Pre-change  |          16 |    149 |      0 |      1,892 |
+| Post-change |          17 |    149 |      0 |      1,892 |
+
+The action-write fixture moved to
+`test/markdown-pdf/actions/project-codex-action-write-fixtures.ts`. Its five
+consumer suites preserved their declarations and assertions:
+
+| Check       | Consumer files | Passed | Failed | Assertions |
+| ----------- | -------------: | -----: | -----: | ---------: |
+| Pre-change  |              5 |     28 |      0 |        816 |
+| Post-change |              5 |     28 |      0 |        816 |
+
+The prepared source split into request-lifecycle and handoff test owners.
+Their common Project, Profile, and Template setup moved to the feature-local
+`test/markdown-pdf/actions/project-codex-prepared-fixtures.ts` support owner;
+the prepared-source correspondence records all three destinations.
+
+Implementation checkpoints:
+
+- `a30f3017` — move Project Codex action-write support ownership
+- `be64b8ae` — move Project Codex command ownership
+- `7bc14742` — split prepared request lifecycle from handoff projection
+- `5130ac9a` — move output-plan ownership
+- `e5489182` — move validation ownership
+
+Pre-commit maintainability review found duplicated prepared-suite setup and
+broad `describe` titles. The shared prepared fixture and owner-specific titles
+were applied before `7bc14742`; subsequent test-quality and maintainability
+review was clean.
+
+Validation evidence:
+
+| Boundary                       | Passed | Failed | Assertions | Files |
+| ------------------------------ | -----: | -----: | ---------: | ----: |
+| All destination suites         |     62 |      0 |        558 |     5 |
+| Action-write fixture consumers |     28 |      0 |        816 |     5 |
+| Complete suite                 |  2,614 |      0 |     14,866 |   322 |
+
+Repository checks are clean:
+
+- `bun run format:check`
+- `bun run lint`
+- `bun run build`
+- `bunx tsc --noEmit`
+- `git diff --check`
+
+Documentation path scan:
+
+- no current guide links name the migrated Phase 6.4 paths
+- the completed audit inventory and literal Phase 2 case sections remain dated
+  historical snapshots
+- the current Phase 6 support-admission table records the executed action-write
+  fixture move
+- the correspondence reference records four historical suite sources and one
+  support source over `54c24460..e5489182`
+
+The implementation and validation evidence is clean through `e5489182`.
+Phase 6.4 remains `in-review` until an evidence commit records its own tip, the
+exact base-to-evidence-tip range receives test-quality, maintainability, and
+documentation review, and the continuation decision is recorded.
+
+Review gate:
+
+- [x] preserve all selected declarations and assertions
+- [x] migrate the four admitted suite sources and retain the 12 unresolved
+  suites
+- [x] move the action-write fixture and validate all five consumer suites
+- [x] extract prepared support without adding another test owner
+- [x] complete focused, full-suite, and repository validation
+- [x] record correspondence and current support-admission evidence
+- [ ] create the evidence commit and review the exact batch range
+- [ ] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,

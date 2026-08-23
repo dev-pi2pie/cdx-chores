@@ -45,9 +45,9 @@ contract in the related research.
 ## Correspondence
 
 Current state: Phases 3 through 5 and Phase 6.1 through 6.3 have completed their
-accepted path correspondences. The reference remains `draft` until the
-complete initial migration and final documentation reconciliation are
-finished.
+accepted path correspondences. Phase 6.4 correspondence is implemented and in
+review. The reference remains `draft` until the complete initial migration and
+final documentation reconciliation are finished.
 
 ### Phase 3: Data Query Pilot
 
@@ -184,12 +184,27 @@ migration and documentation reconciliation work is complete.
 | 2026-08-23     | `test/cli-actions-md-to-pdf-profile-codex-phase2.test.ts`                     | split      | `test/markdown-pdf/actions/profile-codex-candidates.test.ts`<br>`test/markdown-pdf/actions/profile-codex-signals.test.ts`                               | `171eec39..b66e1c35` | [Phase 6.3][phase-6-3-evidence] |
 | 2026-08-23     | `test/cli-actions-md-to-pdf-profile-codex-action/fixtures.ts`                 | moved      | `test/markdown-pdf/actions/profile-codex-fixtures.ts`                                                                                                  | `171eec39..b66e1c35` | [Phase 6.3][phase-6-3-evidence] |
 
+### Phase 6.4: Markdown PDF Project Codex
+
+The paths below were implemented and validated over
+`54c24460..e5489182`. Phase 6.4 remains `in-review` until its evidence commit,
+exact range review, and continuation decision are recorded.
+
+| Reference date | Historical path                                                               | Transition | Current owner or owners                                                                                                                                                                                                                           | Migration range      | Job evidence                    |
+| -------------- | ----------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------- |
+| 2026-08-23     | `test/cli-actions-md-to-pdf-commands/project.test.ts`                         | moved      | `test/markdown-pdf/commands/project-codex.test.ts`                                                                                                                                                                                                | `54c24460..e5489182` | [Phase 6.4][phase-6-4-evidence] |
+| 2026-08-23     | `test/cli-actions-md-to-pdf-project-codex/output-plan.test.ts`                | moved      | `test/markdown-pdf/actions/project-codex-output-plan.test.ts`                                                                                                                                                                                      | `54c24460..e5489182` | [Phase 6.4][phase-6-4-evidence] |
+| 2026-08-23     | `test/cli-actions-md-to-pdf-project-codex/prepared.test.ts`                   | split      | `test/markdown-pdf/actions/project-codex-prepared-handoff.test.ts`<br>`test/markdown-pdf/actions/project-codex-prepared-request-lifecycle.test.ts`<br>`test/markdown-pdf/actions/project-codex-prepared-fixtures.ts` | `54c24460..e5489182` | [Phase 6.4][phase-6-4-evidence] |
+| 2026-08-23     | `test/cli-actions-md-to-pdf-project-codex/validation.test.ts`                 | moved      | `test/markdown-pdf/actions/project-codex-validation.test.ts`                                                                                                                                                                                       | `54c24460..e5489182` | [Phase 6.4][phase-6-4-evidence] |
+| 2026-08-23     | `test/cli-actions-md-to-pdf-project-codex/action-write/fixtures.ts`           | moved      | `test/markdown-pdf/actions/project-codex-action-write-fixtures.ts`                                                                                                                                                                                 | `54c24460..e5489182` | [Phase 6.4][phase-6-4-evidence] |
+
 [phase-3-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-3-data-query-migration-pilot
 [phase-4-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-4-doctor-ownership-migration-pilot
 [phase-5-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-5-bounded-markdown-pdf-migration-pilot
 [phase-6-1-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-61-markdown-pdf-general
 [phase-6-2-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-62-markdown-pdf-template-codex
 [phase-6-3-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-63-markdown-pdf-profile
+[phase-6-4-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-64-markdown-pdf-project-codex
 
 ## Completion Boundary
 
