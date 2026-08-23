@@ -1,7 +1,8 @@
 ---
 title: "Test Suite Contract And Catalog Enhancement"
 created-date: 2026-08-23
-status: draft
+modified-date: 2026-08-23
+status: active
 agent: codex
 ---
 
@@ -18,14 +19,14 @@ line count, or runtime is not a success criterion by itself.
 
 ## Planning Boundary
 
-This plan is `draft`. Phases 1 and 2 complete the evidence required by the
+This plan is `active`. Phases 1 and 2 complete the evidence required by the
 related research. No test edit, removal, merge, split, or path migration may
 begin before the Phase 2 admission gate accepts the inventory, representative
 case matrices, and exact catalog topology.
 
-Move the plan to `active` only when Phase 1 execution begins. Once active, keep
-it active through the evidence and migration phases unless a recorded blocker
-prevents the next gate.
+The plan became `active` when Phase 1 execution began. Keep it active through
+the evidence and migration phases unless a recorded blocker prevents the next
+gate.
 
 If the evidence does not support a removal, retain the test. If the catalog
 cannot yet give a suite a stable owner, record an event-based deferral rather
