@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Audit Inventory"
 created-date: 2026-08-23
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -12,11 +12,12 @@ Provide the canonical file-level audit of every discovered
 observable contract, closest overlap, and the evidence work required before
 any test or path change is admitted.
 
-This reference remains `draft` while Phase 2 completes the case matrices and
-settles the catalog. File size, runtime, and matcher shape are audit context,
+This reference is `completed`: Phase 1 recorded every test and support path,
+and Phase 2 completed and reviewed every required case matrix and support
+ownership decision. File size, runtime, and matcher shape remain audit context,
 not removal criteria.
 
-Literal matrices and proposed destinations live in
+Literal matrices and accepted future destinations live in
 [Test Suite Case Matrices And Catalog](test-suite-case-matrices.md).
 
 ## Inventory Contract
@@ -36,9 +37,9 @@ Each discovered test file appears exactly once and records:
 - **Case matrix** — a completed family link for `case audit` and `split
 review`; otherwise an em dash.
 
-Phase 2 has populated the linked literal matrices. They remain an evidence
-gate until documentation and test-quality review accepts the catalog. Any case
-classified as `keep pending evidence` remains outside implementation scope.
+Phase 2 populated and reviewed the linked literal matrices. They are the
+accepted implementation gate. Any case classified as `keep pending evidence`
+remains outside implementation scope.
 
 ## Disposition Meanings
 
@@ -377,9 +378,9 @@ represented by the named consumers. `Phase 2 ownership review` means
 cross-feature reuse, global infrastructure, or feature leakage still requires
 an explicit catalog decision; it does not authorize a move or split.
 
-The proposed decisions and event-based revisit conditions for those deferred
+The accepted decisions and event-based revisit conditions for those deferred
 rows are recorded in the
-[catalog and support proposal](test-suite-case-matrices.md#phase-2-catalog-and-support-proposal).
+[catalog and support decisions](test-suite-case-matrices.md#phase-2-catalog-and-support-decisions).
 
 | Support path                                                                      | Current owner                                                                       | Consumer evidence                                                                                                                                                                                                                                                                 | Decision                       | Rationale                                                                                                                                                                         |
 | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

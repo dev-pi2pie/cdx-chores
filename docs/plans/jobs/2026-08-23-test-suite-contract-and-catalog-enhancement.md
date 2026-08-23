@@ -36,12 +36,12 @@ references.
 
 ## Phase Summary
 
-| Phase | Boundary                                       | Status      | Review range         | Decision |
-| ----: | ---------------------------------------------- | ----------- | -------------------- | -------- |
-|     1 | refreshed baseline and complete file inventory | completed   | `2f3013ca..fae7d92b` | Continue |
-|     2 | case matrices and catalog admission            | in-progress | pending              | pending  |
-|     3 | Data Query migration pilot                     | pending     | —                    | —        |
-|     4 | Doctor ownership migration pilot               | pending     | —                    | —        |
+| Phase | Boundary                                       | Status    | Review range         | Decision                  |
+| ----: | ---------------------------------------------- | --------- | -------------------- | ------------------------- |
+|     1 | refreshed baseline and complete file inventory | completed | `2f3013ca..fae7d92b` | Continue                  |
+|     2 | case matrices and catalog admission            | completed | `34d080e9..0b8d59bd` | Continue with constraints |
+|     3 | Data Query migration pilot                     | pending   | —                    | —                         |
+|     4 | Doctor ownership migration pilot               | pending   | —                    | —                         |
 
 ## Phase 1: Refreshed Baseline And Complete File Inventory
 
@@ -98,20 +98,22 @@ support-only TypeScript audit, so the 66-row support inventory was added. The
 final documentation and test-quality review of `2f3013ca..fae7d92b` found no
 remaining material issues.
 
-Decision: `Continue` to Phase 2. The research and audit inventory remain
-`draft` until the Phase 2 matrices and catalog admission gate are complete.
+Decision: `Continue` to Phase 2. The research and audit inventory remained
+`draft` until the Phase 2 matrices and catalog admission gate were complete.
 
 ## Phase 2: Case Matrices And Catalog Admission
 
-Status: `in-progress`
+Status: `completed`
 
 Phase base: `34d080e9`
+
+Review range: `34d080e9..0b8d59bd`
 
 The case-matrix reference covers all 94 `case audit` and `split review`
 suites and all 982 declared `test` or `it` cases exactly once. Parameterized
 declarations appear once with their literal source title and variants.
 
-Pre-review decisions:
+Accepted decisions:
 
 - 739 `move`
 - 215 `split`
@@ -120,8 +122,8 @@ Pre-review decisions:
 - 10 `remove`
 - 10 `keep pending evidence`
 
-The proposed catalog also resolves all 39 support files deferred from Phase 1,
-including independent consumer and semantic evidence for proposed global
+The accepted catalog also resolves all 39 support files deferred from Phase 1,
+including independent consumer and semantic evidence for accepted global
 helpers. Event-based deferrals keep unrelated Markdown PDF, Data Extract, Data
 Stack, shared Data Sources, Rename, and Interactive-harness migrations out of
 the Data Query and Doctor pilots.
@@ -133,5 +135,16 @@ Representative validation:
 - contextual tip plus the mixed Markdown PDF candidates: 96 passed, 0 failed,
   and 296 assertions across 3 files
 
-The Phase 2 range, final decision counts, lifecycle updates, and admission
-decision remain pending documentation and test-quality review.
+The initial exact-range review of `34d080e9..78bea000` found two proposed
+reductions that lacked equivalent retained owners. The final decisions instead
+preserve the complete four-state Markdown PDF action projection and the direct
+DuckDB extension-install invalid-input contract. The correction landed in
+`0b8d59bd`; documentation and test-quality reviewers then found no remaining
+material issue in the widened range `34d080e9..0b8d59bd`.
+
+Decision: `Continue with constraints` to Phase 3. Apply the accepted Data Query
+pilot before Doctor, leave all ten `keep pending evidence` declarations at
+their current paths and behavior, and enforce every event-based deferral. The
+research, audit inventory, and case-matrix reference are now `completed`; the
+plan and this job remain active, while the path-correspondence reference stays
+`draft` until final reconciliation.

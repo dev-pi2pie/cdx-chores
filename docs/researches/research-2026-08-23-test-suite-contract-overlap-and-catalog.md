@@ -2,7 +2,7 @@
 title: "Test Suite Contract, Overlap, And Catalog Review"
 created-date: 2026-08-23
 modified-date: 2026-08-23
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -39,8 +39,9 @@ audit behavior -> settle ownership -> rename/merge/remove -> split -> move
 
 The Phase 2 evidence supports a behavior-preserving cleanup with feature-first
 ownership as the default. The complete inventory, 982-row literal case matrix,
-support decisions, exact folder topology, deferrals, and proposed removal set
-are recorded in the companion references and remain subject to final review.
+support decisions, exact folder topology, deferrals, and accepted removal set
+are recorded in the companion references and passed final documentation and
+test-quality review.
 
 ### Baseline
 
@@ -132,7 +133,7 @@ The audit is complete only when:
 - every discovered test file appears exactly once in the inventory
 - every disposition has a contract-based rationale
 - every `case audit` or `split review` row links to a completed matrix
-- each proposed removal or merge names the retained owner or destination
+- each accepted removal or merge names the retained owner or destination
 - `keep pending evidence` cases remain outside the implementation scope
 - representative feature pilots support the accepted catalog
 - the inventory, matrices, and conclusions receive documentation and
@@ -168,7 +169,7 @@ Data Stack, Doctor, root-level Markdown PDF actions, duplicated feature
 fixtures, and global helpers with only one feature consumer. Inclusion is an
 audit signal, not a presumption that the suite must be split or reduced.
 
-## Proposed Catalog Direction
+## Accepted Catalog Direction
 
 Feature-first ownership with a bounded second-level layer is the working
 default because it keeps a feature's direct, action, command, Interactive, and
@@ -232,8 +233,8 @@ The later implementation should:
 - update the dated path correspondence without rewriting historical evidence
 - use one unified job record for implementation and validation receipts
 
-Data Query is proposed as the first overlap and catalog pilot because it spans
-direct, action, command, and Interactive coverage. Doctor is proposed as the
+Data Query is accepted as the first overlap and catalog pilot because it spans
+direct, action, command, and Interactive coverage. Doctor is accepted as the
 second pilot because its production boundaries are clearer than its remaining
 mixed test layout. Their exact pre-change owners, destinations, support
 boundaries, and focused commands live in the case-matrix reference.
@@ -287,7 +288,7 @@ migration. It becomes `completed` only after the final reconciliation proves
 that every accepted path change is recorded and no old-path occurrence remains
 unclassified.
 
-## Phase 2 Recommendations Pending Review
+## Resolved Recommendations
 
 The completed evidence supports these recommendations:
 
@@ -310,10 +311,11 @@ The completed evidence supports these recommendations:
    owner and final test-quality review confirms equivalent trigger, outcome,
    boundary, failure, and side-effect lifecycle.
 
-The research, audit inventory, and case-matrix reference remain `draft` until
-documentation and test-quality review accepts or constrains these conclusions.
-The path-correspondence reference remains `draft` through implementation and
-final documentation reconciliation.
+Documentation and test-quality review accepted these conclusions in the exact
+Phase 2 range recorded by the implementation job. The research, audit
+inventory, and case-matrix reference are therefore `completed`. The
+path-correspondence reference remains `draft` through implementation and final
+documentation reconciliation.
 
 ## Reproduction Appendix
 

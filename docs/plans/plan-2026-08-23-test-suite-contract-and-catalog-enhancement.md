@@ -99,9 +99,9 @@ Out of scope:
 - Update plan checklists and lifecycle status only after the required evidence
   passes.
 
-## Proposed Catalog Contract
+## Accepted Catalog Contract
 
-Phase 2 proposes stable feature or platform owners with a bounded second level:
+Phase 2 admits stable feature or platform owners with a bounded second level:
 
 ```text
 test/
@@ -193,25 +193,25 @@ review`, `fixture/helper review`, or `keep pending evidence`; do not infer
 
 Tasks:
 
-- [ ] Complete literal case matrices for Data Query, Doctor, the contextual-tip
+- [x] Complete literal case matrices for Data Query, Doctor, the contextual-tip
       catalog, and one mixed Markdown PDF family.
-- [ ] Add matrices for every other inventory row marked `case audit` or `split
+- [x] Add matrices for every other inventory row marked `case audit` or `split
 review`.
-- [ ] Record rename-only cases separately from proposed merges and removals.
-- [ ] Name the retained owner for every proposed merge or removal and keep
+- [x] Record rename-only cases separately from accepted merges and removals.
+- [x] Name the retained owner for every accepted merge or removal and keep
       disputed cases as `keep pending evidence`.
-- [ ] Record accepted source-aligned exceptions and every temporary root
+- [x] Record accepted source-aligned exceptions and every temporary root
       deferral with its event-based revisit condition.
-- [ ] Record independent consumer families and semantic review for every
-      proposed global helper or fixture.
-- [ ] Replace the provisional catalog placeholders with the accepted owner and
+- [x] Record independent consumer families and semantic review for every
+      accepted global helper or fixture.
+- [x] Replace the provisional catalog placeholders with the accepted owner and
       boundary names and select the exact Data Query, Doctor, and Markdown PDF
       pilot slices.
-- [ ] Add exact pre-change and expected post-change focused-test paths to the
+- [x] Add exact pre-change and expected post-change focused-test paths to the
       corresponding later phase sections or unified-job templates.
-- [ ] Review the completed inventory, matrices, catalog, and research with
+- [x] Review the completed inventory, matrices, catalog, and research with
       documentation and test-quality reviewers.
-- [ ] Update the research and audit-inventory lifecycle states only when their
+- [x] Update the research and audit-inventory lifecycle states only when their
       own completion criteria are satisfied.
 
 Representative validation:
@@ -233,7 +233,7 @@ Admission gate:
 
 ### Phase 3: Migrate The Data Query Pilot
 
-Proposed path contract: [Phase 3 Data Query Path Contract](../references/test-suite-case-matrices.md#phase-3-data-query-path-contract)
+Accepted path contract: [Phase 3 Data Query Path Contract](../references/test-suite-case-matrices.md#phase-3-data-query-path-contract)
 
 Tasks:
 
@@ -262,7 +262,7 @@ Observable contracts:
 
 ### Phase 4: Migrate The Doctor Ownership Pilot
 
-Proposed path contract: [Phase 4 Doctor Path Contract](../references/test-suite-case-matrices.md#phase-4-doctor-path-contract)
+Accepted path contract: [Phase 4 Doctor Path Contract](../references/test-suite-case-matrices.md#phase-4-doctor-path-contract)
 
 Tasks:
 
