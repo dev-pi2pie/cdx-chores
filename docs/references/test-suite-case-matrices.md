@@ -2694,6 +2694,56 @@ across two files, while the adjacent slice remains 42 tests with 198 assertions.
 All titles remain represented once, the two admitted assertion edits offset,
 and only `actionMdToDocx` remains in the mixed residual.
 
+#### Phase 6.14 Exact Suite Admission
+
+Phase 6.14 admits 21 Fonts suites into action, command, adapter, and direct
+owners. The current 105 declarations contain 113 independently failing
+contracts; three compound suites are split without adding scenarios or
+assertions. No duplicate case is removed. The only structural removal is the
+empty, assertion-free `describe("font coverage", () => {})` wrapper.
+
+Accepted declaration splits:
+
+- `fonts-cli-check-output.test.ts`: split three compound declarations into six
+  text-output cases and two diagnostics cases
+- `fonts-cli-check-provider.test.ts`: split the combined pass/fail/Nerd case
+  into provider mapping and Nerd-requirement cases; retain the inconclusive
+  reason matrix
+- `fonts-cli-inspect-matching.test.ts`: retain five matching cases and move two
+  JSON/no-match output cases into the existing inspect-output owner
+
+| Historical path                                      | Accepted exact target                                                                                   | Admission evidence                                                                                 |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `test/fonts-cli-check-output.test.ts`                | `test/fonts/actions/check-text-output.test.ts`<br>`test/fonts/actions/check-diagnostics.test.ts`       | Separate visible selected-face output from sanitized warning and debug diagnostics.                |
+| `test/fonts-cli-check-provider.test.ts`              | `test/fonts/actions/check-provider-mapping.test.ts`                                                     | Provider result mapping, Nerd requirements, and inconclusive reasons remain one action owner.      |
+| `test/fonts-cli-check-selection.test.ts`             | `test/fonts/actions/check-selection.test.ts`                                                            | Selection, ambiguity, and inconclusive action mapping form one owner.                              |
+| `test/fonts-cli-check-ttc.test.ts`                   | `test/fonts/actions/check-ttc.test.ts`                                                                  | Indexed TTC output, mismatch, query failure, aliases, and debug diagnostics are cohesive.           |
+| `test/fonts-cli-check-validation.test.ts`            | `test/fonts/actions/check-validation.test.ts`                                                           | Family and sample preconditions are action validation contracts.                                   |
+| `test/fonts-cli-inspect-debug.test.ts`               | `test/fonts/actions/inspect-debug.test.ts`                                                              | Sanitized inspection debug attempts form a distinct action owner.                                  |
+| `test/fonts-cli-inspect-matching.test.ts`            | `test/fonts/actions/inspect-matching.test.ts`<br>`test/fonts/actions/inspect-output.test.ts`            | Query/group selection stays with matching; JSON and no-match presentation move to output.          |
+| `test/fonts-cli-inspect-output.test.ts`              | `test/fonts/actions/inspect-output.test.ts`                                                             | Existing inspection JSON and text presentation remains in the shared output owner.                 |
+| `test/fonts-cli-inspect-validation.test.ts`          | `test/fonts/actions/inspect-validation.test.ts`                                                         | Missing and blank family validation remain distinct action preconditions.                           |
+| `test/fonts-cli-list.test.ts`                        | `test/fonts/actions/list.test.ts`                                                                       | Text/JSON listing and debug output form the list action owner.                                      |
+| `test/fonts-cli-registration.test.ts`                | `test/fonts/commands/registration.test.ts`                                                              | Command registration, help, version, and parser failures remain at the process boundary.           |
+| `test/fonts-coverage-fontconfig.test.ts`             | `test/fonts/adapters/coverage-fontconfig.test.ts`                                                       | Fontconfig charset coverage and unavailable-provider classifications are adapter contracts.        |
+| `test/fonts-coverage-ttc-inconclusive.test.ts`       | `test/fonts/adapters/coverage-ttc-inconclusive.test.ts`                                                 | TTC inconclusive classification and indexed metadata failures form a cohesive adapter owner.       |
+| `test/fonts-coverage-ttc.test.ts`                    | `test/fonts/adapters/coverage-ttc.test.ts`                                                              | Indexed TTC coverage success and face selection form the complementary adapter owner.              |
+| `test/fonts-discovery-cancellation.test.ts`          | `test/fonts/adapters/discovery-cancellation.test.ts`                                                    | Timeout, abort, cleanup, and late-settlement behavior are cancellation adapter contracts.           |
+| `test/fonts-discovery-parsers.test.ts`               | `test/fonts/adapters/discovery-parsers.test.ts`                                                         | Native adapter output parsing and normalization form one translation owner.                         |
+| `test/fonts-discovery.test.ts`                       | `test/fonts/adapters/discovery.test.ts`                                                                 | Platform routing, adapter fallback, and discovery errors form the discovery owner.                  |
+| `test/fonts-coverage-samples.test.ts`                | `test/fonts/direct/coverage-samples.test.ts`                                                            | Sample resolution and required-codepoint derivation are direct contracts.                           |
+| `test/fonts-matching.test.ts`                        | `test/fonts/direct/matching.test.ts`                                                                    | Reusable exact/fuzzy selection and ambiguity rules are direct matching contracts.                   |
+| `test/fonts-search-ranking.test.ts`                  | `test/fonts/direct/search-ranking.test.ts`                                                              | Search scoring, stable ordering, and fuzzy ranking form the ranking owner.                           |
+| `test/fonts-search-records.test.ts`                  | `test/fonts/direct/search-records.test.ts`                                                              | Normalized searchable-record construction remains distinct from ranking.                            |
+
+The refreshed pre-move slice passes 105 tests with 493 assertions across 21
+files. The expected destination is 113 declarations with the same 493 runtime
+assertions across 22 files: 54 action cases in 11 files, six command cases in
+one file, 30 adapter cases in six files, and 23 direct cases in four files.
+The adjacent Markdown PDF font slice passes 30 tests with 162 assertions across
+four files. No support, fixture, mock, module-URL, or production path is
+admitted; moved suites continue using neutral test helpers directly.
+
 ### Decision Summary
 
 - Audited suites: 10 of 10 assigned inventory rows.
