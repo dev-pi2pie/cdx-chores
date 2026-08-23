@@ -1,6 +1,7 @@
 # DOCUMENTATION_POLICY.md
 
-Repository-wide policy for plans, research docs, job records, and related documentation lifecycle decisions.
+Repository-wide policy for guides, references, plans, research docs, job
+records, and related documentation lifecycle decisions.
 
 ---
 
@@ -35,6 +36,10 @@ Recommended structure:
 
 ```text
 docs/
+  guides/
+    <short-title>.md
+  references/
+    <short-title>.md
   researches/
     research-YYYY-MM-DD-<short-title>.md
     archive/
@@ -50,6 +55,8 @@ docs/
 Archive scope rules:
 
 - only research docs and top-level plan docs may move into `archive/`
+- guide and reference docs remain at stable current-reference locations
+- do not create `docs/guides/archive/` or `docs/references/archive/` in the first documentation reorganization pass
 - job records should remain in `docs/plans/jobs/` even when related research or plan docs are archived
 - do not create `docs/plans/archive/jobs/` in the first documentation reorganization pass
 - revisit job-record archiving only if the active job list becomes meaningfully hard to work with
@@ -59,9 +66,12 @@ Archive link-handling rules:
 - do not leave broken repository-relative links when moving a doc into `archive/`
 - update all affected links to the new archive path
 - internal historical docs, including job records and related research/plan sections, may link to archived docs directly
-- guide docs and other user-facing reference docs should prefer non-archived current docs over archived ones
-- if a guide doc still mentions an archived doc, label it clearly as historical context or historical reference
-- historical labeling is required only for guide docs and other user-facing reference docs, not for archived docs or job-record traceability links
+- guide and reference docs should prefer non-archived current docs over
+  archived ones
+- if a guide or reference doc still mentions an archived doc, label it clearly
+  as historical context or historical reference
+- historical labeling is required only for guide and reference docs, not for
+  archived docs or job-record traceability links
 - when a doc is archived because it is `superseded`, add a short status note that points readers to the newer primary doc when applicable
 
 ### Guide Documents
@@ -100,6 +110,58 @@ Guide status guidance:
 - `blocked` — the guide should be completed, but is waiting on a decision or dependency
 - `cancelled` — the guide was intentionally stopped and should not be used as guidance
 - `superseded` — a newer guide replaced this guide as the primary reference
+
+### Reference Documents
+
+Use reference docs for current lookup material whose primary value is
+structured retrieval rather than narrative guidance. Examples include schemas,
+matrices, catalogs, compatibility tables, and historical-to-current path
+correspondences.
+
+Location:
+
+```text
+docs/references/<short-title>.md
+```
+
+Notes:
+
+- Use a stable, subject-based filename without a date prefix.
+- Keep reference docs focused on the current accepted lookup contract.
+- Use `modified-date` when a later substantive update changes the reference
+  data, schema, status, or reader-facing interpretation.
+- Do not update `modified-date` for link-only or formatting-only maintenance
+  unless the reference meaning changes.
+- Keep decision rationale in research or plans and execution evidence in job
+  records; link those documents instead of duplicating them in the reference.
+- When adding front matter to an older reference, use git history to preserve
+  the original `created-date` when practical.
+
+Front-matter format:
+
+```yaml
+---
+title: "<reference title>"
+created-date: YYYY-MM-DD
+modified-date: YYYY-MM-DD # optional
+status: draft | completed | blocked | cancelled | superseded
+agent: <agent name>
+---
+```
+
+Reference status guidance:
+
+- `draft` — the reference schema or lookup content is not yet settled
+- `completed` — the reference documents the current accepted lookup contract
+- `blocked` — the reference should be completed, but is waiting on a decision
+  or dependency
+- `cancelled` — the reference was intentionally stopped and should not be used
+  as a lookup source
+- `superseded` — a newer reference replaced this document as the primary lookup
+
+Reference docs do not move into an archive directory under the current policy.
+When a reference is superseded, keep it at its stable path with a short status
+note pointing to the replacement.
 
 ### Archived Follow-Up Rule
 
@@ -287,7 +349,8 @@ Job status guidance:
 - When useful for explanation, sanitized OS-specific absolute-path examples are allowed (for example: `/Users/alice/...`, `/home/alice/...`, `C:\Users\Alice\...`, `$HOME/.config/...`, `%USERPROFILE%\...`).
 - Prefer placeholder usernames like `alice` or `bob` in examples.
 - Keep this case-by-case: prefer clarity for behavior/docs examples, but avoid disclosing actual local paths.
-- This policy applies to plan, research, and job documents, including summaries, change lists, and verification notes.
+- This policy applies to guide, reference, plan, research, and job documents,
+  including summaries, change lists, and verification notes.
 
 ---
 
