@@ -4,12 +4,9 @@ import {
   MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA,
   MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS,
   suggestMarkdownPdfTemplateWithCodex,
-} from "../../src/adapters/codex/markdown-pdf-template";
+} from "../../../src/adapters/codex/markdown-pdf-template";
 
-import {
-  requestBase,
-  responseFromDecision,
-} from "../markdown-pdf/adapters/template-codex-fixtures";
+import { requestBase, responseFromDecision } from "./template-codex-fixtures";
 
 describe("Markdown PDF template Codex adapter: repair timeout", () => {
   afterEach(() => {
