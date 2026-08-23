@@ -374,7 +374,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.2  | Markdown PDF Template Codex                   | completed       | `2af1ae7b` | `b74f6279`         | `ae3d717b`   | `2af1ae7b..ae3d717b` | Continue with constraints |
 | 6.3  | Markdown PDF Profile                          | completed       | `171eec39` | `b66e1c35`         | `4c13019d`   | `171eec39..4c13019d` | Continue with constraints |
 | 6.4  | Markdown PDF Project Codex                    | completed       | `54c24460` | `e5489182`         | `1627e953`   | `54c24460..1627e953` | Continue with constraints |
-| 6.5  | Markdown PDF Interactive and support closeout | in-review       | `2b8151dd` | `b1d2c133`         | pending      | pending              | pending                   |
+| 6.5  | Markdown PDF Interactive and support closeout | completed       | `2b8151dd` | `b1d2c133`         | `70b71653`   | `2b8151dd..70b71653` | Continue with constraints |
 | 6.6  | Release tooling                               | pending         | -          | -                  | -            | -                    | -                         |
 | 6.7  | Markdown Frontmatter                          | pending         | -          | -                  | -            | -                    | -                         |
 | 6.8  | Video                                         | pending         | -          | -                  | -            | -                    | -                         |
@@ -785,7 +785,7 @@ Review gate:
 
 ### Phase 6.5: Markdown PDF Interactive And Support Closeout
 
-Status: `in-review`
+Status: `completed`
 
 Batch base: `2b8151dd`
 
@@ -793,9 +793,9 @@ Implementation tip: `b1d2c133`
 
 Execution and path migration range: `2b8151dd..b1d2c133`
 
-Evidence tip: pending
+Evidence tip: `70b71653`
 
-Exact batch review range: pending
+Exact batch review range: `2b8151dd..70b71653`
 
 The batch selected 19 Interactive Markdown PDF suites. Seven admitted sources
 migrated into eight destination test owners; the remaining 12 unresolved
@@ -865,9 +865,17 @@ Documentation path scan:
 - the correspondence reference records seven suite sources and three support
   transitions over `2b8151dd..b1d2c133`
 
-Decision: pending the exact batch review. Phase 6.5 may close only after the
-documentation, test-quality, and maintainability reviews accept
-`2b8151dd..<evidence-tip>` and the receipt records the continuation decision.
+Exact-range test-quality and maintainability review found no material issue in
+`2b8151dd..70b71653`. Documentation review found that the evidence receipt
+could not name its own tip before commit; this closeout accepts the finding by
+recording `70b71653` and the exact reviewed range above.
+
+Decision: `Continue with constraints`. Phase 6.5 is complete because all 19
+selected sources were dispositioned: seven admitted sources migrated into
+eight test owners and 12 unresolved suites remained at their recorded paths.
+Those deferrals are not catalog approval. Continue to Phase 6.6 from this
+closeout tip while keeping the correspondence reference `draft` and the
+neutral harness residue reserved for Phase 7.
 
 Review gate:
 
@@ -877,8 +885,8 @@ Review gate:
 - [x] localize the three admitted support contracts and preserve consumers
 - [x] complete focused, retained-selector, full-suite, and repository checks
 - [x] record correspondence and current support-matrix evidence
-- [ ] create the evidence commit and review the exact batch range
-- [ ] record accepted review fixes and the batch continuation decision
+- [x] create the evidence commit and review the exact batch range
+- [x] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,
