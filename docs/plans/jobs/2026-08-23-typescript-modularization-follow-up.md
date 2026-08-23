@@ -432,3 +432,55 @@ its cases share bounded patch validation, nested materialization, page-number
 domains, page-chrome behavior, and immutability.
 
 Decision: `Continue` to Phase 9.
+
+## Phase 9: Template Adapter Test
+
+Status: `completed`
+
+Implementation range: `e9234ac0..c0b34c53`
+
+Implementation commits: `44d0c506`, `c0b34c53`
+
+| Dimension          | Before                                                    | After                                                                             |
+| ------------------ | --------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| File topology      | one 1,429-line Template adapter suite                     | five behavior-owned suites plus one 129-line adapter fixture module               |
+| Largest file       | 1,429 lines                                               | 531 lines                                                                         |
+| Focused validation | 66 passing tests; 0 failures; 380 assertions              | 67 passing tests; 0 failures; 383 assertions                                      |
+| Production scope   | no production change                                      | no production change                                                              |
+| Ownership          | 39 prompt, decision, repair, CSS, and failure tests mixed | 4 prompt/schema, 19 decision, 5 repair/timeout, 8 CSS-safety, and 4 failure tests |
+
+Baseline validation:
+
+```bash
+bun test test/adapters-codex-markdown-pdf-template.test.ts test/cli-actions-md-to-pdf-template-codex/action.test.ts test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts
+```
+
+Result: 66 passed, 0 failed, 380 assertions across three files. The adapter
+boundary contributed 39 tests.
+
+Characterization added an explicit two-call ceiling for a failed application
+repair, closing the repair-limit evidence gap before moving the suite.
+
+After validation:
+
+```bash
+bun test test/adapters-codex-markdown-pdf-template
+bun test test/adapters-codex-markdown-pdf-template test/cli-actions-md-to-pdf-template-codex/action.test.ts test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts
+bunx tsc --noEmit
+bun run lint
+bun run format:check
+git diff --check
+```
+
+Result: the adapter suites passed 40 tests with 169 assertions, and the
+complete focused scope passed 67 tests with 383 assertions across seven files.
+TypeScript, lint, formatting, and diff checks passed. Module mock cleanup and
+`AbortSignal.timeout` restoration remain local to the repair/timeout suite.
+
+Exact-range test and maintainability reviews found no material issues. All 39
+original tests remain present, the repair-limit characterization adds one test,
+and shared request and response construction remains adapter-local. The
+531-line decision-parsing suite is an explicit deferred concentration because
+its cases share bounded decision parsing and application rules.
+
+Decision: `Continue` to Phase 10.

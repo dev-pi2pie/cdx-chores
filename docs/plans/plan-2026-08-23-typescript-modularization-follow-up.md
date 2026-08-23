@@ -308,12 +308,12 @@ bun test test/adapters-codex-markdown-pdf-profile test/cli-actions-md-to-pdf-pro
 
 Tasks:
 
-- [ ] Split `test/adapters-codex-markdown-pdf-template.test.ts` into prompt and
+- [x] Split `test/adapters-codex-markdown-pdf-template.test.ts` into prompt and
       schema, decision parsing, repair and timeout, CSS safety, and failure
       classification suites.
-- [ ] Preserve repair limits, timeout/abort behavior, malformed response
+- [x] Preserve repair limits, timeout/abort behavior, malformed response
       handling, and CSS safety assertions.
-- [ ] Keep adapter-specific fixtures with the Template adapter suites.
+- [x] Keep adapter-specific fixtures with the Template adapter suites.
 
 Observable contracts:
 
