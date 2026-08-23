@@ -1454,6 +1454,8 @@ Implementation tip: `4ae50698`
 
 Execution and path migration range: `cf15f599..4ae50698`
 
+Review-fix tip: `04a0cfea`
+
 Evidence tip: pending
 
 Exact batch review range: pending
@@ -1496,6 +1498,14 @@ Pre-commit test-quality and maintainability reviews found no material issue.
 They confirmed exact title preservation, the single admitted split, coherent
 feature ownership, neutral harness composition, narrow facade behavior, no
 cycle, and no shared fixture or unrelated mock drift.
+
+The first exact-range maintainability review found that the newly split direct
+reporting owner retained a command-oriented `describe` label and duplicated
+the neutral ANSI stripping implementation. Both findings were accepted in
+`04a0cfea`: the owner label now names reporting, and the normalized-output
+assertion consumes `test/helpers/ansi.ts`. The test title and assertion
+semantics remain unchanged. Targeted reporting and complete Data Stack catalog
+checks pass after the fix, as do lint, type checking, and diff validation.
 
 Validation evidence:
 
