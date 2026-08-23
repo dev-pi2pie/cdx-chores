@@ -376,7 +376,7 @@ Data Extract and Data Stack destination folders to the established plural
 | 6.4  | Markdown PDF Project Codex                    | completed       | `54c24460` | `e5489182`         | `1627e953`   | `54c24460..1627e953` | Continue with constraints |
 | 6.5  | Markdown PDF Interactive and support closeout | completed       | `2b8151dd` | `b1d2c133`         | `70b71653`   | `2b8151dd..70b71653` | Continue with constraints |
 | 6.6  | Release tooling                               | completed       | `bb3d683a` | `608b0d2b`         | `d0b989a9`   | `bb3d683a..d0b989a9` | Continue with constraints |
-| 6.7  | Markdown Frontmatter                          | pending         | -          | -                  | -            | -                    | -                         |
+| 6.7  | Markdown Frontmatter                          | in-review       | `16966305` | `61df100e`         | pending      | pending              | pending                   |
 | 6.8  | Video                                         | pending         | -          | -                  | -            | -                    | -                         |
 | 6.9  | Data Sources                                  | pending         | -          | -                  | -            | -                    | -                         |
 | 6.10 | Data Extract                                  | pending         | -          | -                  | -            | -                    | -                         |
@@ -974,6 +974,86 @@ Review gate:
 - [x] record correspondence and current exact-path evidence
 - [x] create the evidence commit and review the exact batch range
 - [x] record accepted review fixes and the batch continuation decision
+
+### Phase 6.7: Markdown Frontmatter
+
+Status: `in-review`
+
+Batch base: `16966305`
+
+Implementation tip: `61df100e`
+
+Execution and path migration range: `16966305..61df100e`
+
+Evidence tip: pending
+
+Exact batch review range: pending
+
+The single selected suite split into its six-case action owner and three-case
+command owner. Pre-move review found no vague, duplicated, or removable case:
+the command cases intentionally retain CLI registration, parsing, forwarding,
+exit, and stream boundaries distinct from direct action semantics.
+
+Selector preservation:
+
+| Check       | Owner files | Passed | Failed | Assertions |
+| ----------- | ----------: | -----: | -----: | ---------: |
+| Pre-change  |           1 |      9 |      0 |         38 |
+| Post-change |           2 |      9 |      0 |         38 |
+
+The admitted support extraction moved only `actionMdFrontmatterToJson` from the
+mixed Interactive action mock to
+`test/markdown-frontmatter/interactive/mock-action.ts`. The mixed residual and
+neutral harness composition remain for later admitted batches and Phase 7.
+
+Implementation checkpoint:
+
+- `61df100e` — split action and command contracts and extract the one-action
+  Frontmatter Interactive mock
+
+Pre-commit test-quality and maintainability reviews found no material issue.
+All nine literal titles, declarations, bodies, and 22 static assertions remain
+represented once. The future Phase 6.21 top-level routing owner remains at its
+historical path and continues to consume the extracted feature mock.
+
+Validation evidence:
+
+| Boundary                    | Passed | Failed | Assertions | Files |
+| --------------------------- | -----: | -----: | ---------: | ----: |
+| Frontmatter destination set |      9 |      0 |         38 |     2 |
+| Top-level routing consumer  |     11 |      0 |         26 |     1 |
+| Complete repository suite   |  2,614 |      0 |     14,866 |   325 |
+
+Repository checks are clean:
+
+- `bun run format:check`
+- `bun run lint`
+- `bun run build`
+- `bunx tsc --noEmit`
+- `git diff --check`
+
+Documentation path scan:
+
+- no current guide links name the historical Frontmatter suite or mock path
+- the completed inventory and literal matrix remain dated historical evidence
+- the current support matrix records the executed one-action extraction
+- the correspondence reference records the selected suite and support split
+  over `16966305..61df100e`
+
+Decision: pending the exact batch review. Phase 6.7 may close only after the
+documentation, test-quality, and maintainability reviews accept
+`16966305..<evidence-tip>` and the receipt records the continuation decision.
+
+Review gate:
+
+- [x] reproduce the one-source selector and adjacent routing baseline
+- [x] split all action and command cases into exact matrix owners
+- [x] extract only the admitted Frontmatter mock behavior
+- [x] preserve all nine declarations, 22 static assertions, and routing behavior
+- [x] complete focused, full-suite, and repository validation
+- [x] record correspondence and current support evidence
+- [ ] create the evidence commit and review the exact batch range
+- [ ] record accepted review fixes and the batch continuation decision
 
 For each completed row, record its selected source count and dispositions,
 focused pre/post and adjacent results, complete-suite and repository checks,

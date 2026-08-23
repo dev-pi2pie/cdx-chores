@@ -231,6 +231,17 @@ migration and final reconciliation finish.
 | 2026-08-23     | `test/release-scripts.test.ts`       | split      | `test/release-tooling/branch-filter.test.ts`<br>`test/release-tooling/stable-notes.test.ts`<br>`test/release-tooling/fixtures.ts` | `bb3d683a..608b0d2b` | [Phase 6.6][phase-6-6-evidence] |
 | 2026-08-23     | `test/version-embedded-sync.test.ts` | moved      | `test/release-tooling/version-sync.test.ts`                                                                                       | `bb3d683a..608b0d2b` | [Phase 6.6][phase-6-6-evidence] |
 
+### Phase 6.7: Markdown Frontmatter
+
+The paths below were implemented and validated over `16966305..61df100e`.
+Exact-range review and the continuation decision remain pending. The reference
+stays `draft` until the initial migration and final reconciliation finish.
+
+| Reference date | Historical path                                         | Transition | Current owner or owners                                                                                                             | Migration range      | Job evidence                    |
+| -------------- | ------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------- |
+| 2026-08-23     | `test/cli-actions-md-frontmatter-to-json.test.ts`       | split      | `test/markdown-frontmatter/actions/frontmatter-to-json.test.ts`<br>`test/markdown-frontmatter/commands/frontmatter-to-json.test.ts` | `16966305..61df100e` | [Phase 6.7][phase-6-7-evidence] |
+| 2026-08-23     | `test/helpers/interactive-harness/mocks/action-misc.ts` | split      | `test/helpers/interactive-harness/mocks/action-misc.ts`<br>`test/markdown-frontmatter/interactive/mock-action.ts`                   | `16966305..61df100e` | [Phase 6.7][phase-6-7-evidence] |
+
 [phase-3-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-3-data-query-migration-pilot
 [phase-4-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-4-doctor-ownership-migration-pilot
 [phase-5-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-5-bounded-markdown-pdf-migration-pilot
@@ -240,6 +251,7 @@ migration and final reconciliation finish.
 [phase-6-4-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-64-markdown-pdf-project-codex
 [phase-6-5-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-65-markdown-pdf-interactive-and-support-closeout
 [phase-6-6-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-66-release-tooling
+[phase-6-7-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-67-markdown-frontmatter
 
 ## Completion Boundary
 
