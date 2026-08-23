@@ -243,8 +243,10 @@ Tasks:
       own distinct boundaries.
 - [x] Rename vague cases, merge or remove proved duplication, and split mixed
       suites before moving the retained owners.
-- [x] Move Data Query suites and feature-local support into the accepted
-      catalog without creating a second compatibility test tree.
+- [x] Move all non-pending Data Query suites and feature-local support into the
+      accepted catalog without creating a second compatibility test tree;
+      preserve the five recorded pending command owners at their current
+      paths.
 - [x] Update imports, scripts, current docs, and correspondence rows atomically.
 - [x] Run every pre-change owner and final Data Query catalog path recorded by
       Phase 2.

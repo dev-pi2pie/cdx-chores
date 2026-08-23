@@ -155,7 +155,7 @@ Status: `in-progress`
 
 Phase base: `db9622cf`
 
-Implementation range awaiting exact-range review: `db9622cf..885e3846`
+Initial review range: `db9622cf..0eaa2a15`
 
 The implementation applies the accepted Data Query path contract while
 retaining the five `keep pending evidence` command owners at their root paths.
@@ -196,5 +196,13 @@ dated commands and wording. The 53 accepted path changes are recorded in the
 path-correspondence reference, which remains `draft` through the initial
 catalog migration.
 
-The exact implementation range has not yet been reviewed. No Phase 3 admission
-decision is recorded until that review completes.
+The initial exact-range test-quality and maintainability reviews found no
+material implementation issue. They confirmed the focused and complete-suite
+results, all ten pending declarations, the accepted catalog split, and the
+narrow DuckDB loader seam. The documentation review found one over-broad plan
+checklist sentence: it implied every Data Query suite moved even though five
+recorded pending command owners intentionally remain at the root. The sentence
+now names the non-pending scope and the preserved deferral paths.
+
+The review fix requires a widened exact-range review before Phase 3 admission.
+No Phase 3 decision is recorded until that final review completes.
