@@ -468,25 +468,86 @@ exact range `3ae8e0fb..8784ccd9`. Continue with constraints to Phase 8; the
 parent plan stays `active`, the unified job stays `in-progress`, and the path
 correspondence stays `draft` until cumulative reconciliation finishes.
 
-### Phase 8: Validate And Reconcile Documentation
+### Phase 8: Reconcile The Test Tree And Final Documentation
 
-Tasks:
+Phase 8 is a bounded reconciliation and closeout phase. Cleanup discovery is
+limited to `test/**`. Documentation work may inspect and update only references
+to the changed `test/**` paths and the lifecycle records required to close this
+plan. Production code, scripts, configuration, examples, and unrelated
+documentation are outside the scan boundary.
+
+This phase must not reopen broad catalog migration or vague-test reduction.
+An unexpected tracked test entry may change only through a separately recorded
+bounded correction with a retained owner and focused validation. If proving a
+candidate safe requires an out-of-scope audit, defer it instead of expanding
+Phase 8.
+
+#### 8.1: Admit The Final Reconciliation
+
+- [ ] Record the clean Phase 8 base and the exact `test/**` inventory commands.
+- [ ] Fix one definition for each before/after measure so historical and final
+      counts are comparable.
+- [ ] Confirm the completed audit inventory remains a dated snapshot; use the
+      case matrix, path correspondence, and unified job for current ownership.
+- [ ] Reconfirm that the 31 flat-root suites and 12 legacy Interactive Markdown
+      PDF suites remain classified deferrals rather than unused entries.
+
+#### 8.2: Remove Proven `test/**` Residue
+
+- [ ] Remove empty migration directories as local workspace hygiene and record
+      that Git does not track their deletion.
+- [ ] Scan `test/**` for stale internal imports, deleted-facade references,
+      accidental duplicate copies, and tracked support entries with no current
+      test-tree consumer.
+- [ ] Remove a tracked compatibility or support entry only when the zero-use
+      proof, retained owner, and correspondence are explicit; otherwise retain
+      or defer it.
+- [ ] Do not remove another test declaration unless an existing accepted case
+      matrix decision already authorizes that exact removal.
+- [ ] Confirm every surviving `test/**` entry has a feature, platform, global,
+      source-aligned, or event-based deferral owner.
+
+#### 8.3: Reconcile Test-Path Documentation
+
+- [ ] Scan current guides and current references only for the accepted changed
+      `test/**` path set; do not start a general documentation cleanup.
+- [ ] Update current paths and navigational links while preserving dated
+      inventories, historical commands, and execution records as historical
+      evidence.
+- [ ] Classify every retained old test-path occurrence as intentional history
+      or repair it as stale current guidance.
+- [ ] Confirm every accepted move, split, merge, and removal has a complete
+      correspondence row and unified-job evidence.
+
+#### 8.4: Record The Before/After And Removal Summary
+
+- [ ] Add one unified-job table covering test files, flat-root suites, runtime
+      tests, assertions, global helpers, compatibility facades, and
+      unclassified entries before and after the rollout.
+- [ ] Explain net count changes without treating file or test-count reduction
+      as the goal; distinguish catalog splits and added protection from actual
+      removals.
+- [ ] Add an exact removal ledger separating coverage removals, historical path
+      removals caused by move/split/merge, and untracked empty-directory
+      cleanup.
+- [ ] For every removed declaration or parameterized variant, name the reason,
+      retained owner, and implementation range; link the full path-move list to
+      the correspondence reference instead of duplicating it.
+
+#### 8.5: Validate, Review, And Close
 
 - [ ] Run every focused owner set affected by the rollout.
 - [ ] Run the complete Bun test suite, TypeScript check, lint, formatting check,
       build, and diff check.
-- [ ] Confirm inventory current paths, dispositions, retained owners,
-      exceptions, and deferrals match the final tree.
-- [ ] Scan every moved historical path across imports, scripts, configuration,
-      guides, references, research, plans, and job records.
-- [ ] Update current paths, repair navigational links, and classify each
-      retained old path as intentional historical evidence.
-- [ ] Confirm every accepted move, split, merge, and removal has a complete
-      correspondence row and unified-job evidence.
-- [ ] Review the complete implementation range for test-quality, documentation,
-      maintainability, and behavior-preservation risks.
-- [ ] Update the research, plan, references, and unified job statuses only from
-      their recorded completion evidence.
+- [ ] Re-run the exact stale-path, empty-directory, facade, helper, root-suite,
+      legacy-suite, and mock-boundary scans recorded by the phase.
+- [ ] Review the exact Phase 8 range and the complete implementation range for
+      test-quality, documentation, maintainability, and behavior-preservation
+      risks.
+- [ ] Record accepted review fixes and the final continuation or closeout
+      decision in the unified job.
+- [ ] Update research, plan, reference, and unified-job statuses only from the
+      recorded completion evidence.
 
 Closeout validation:
 
@@ -503,7 +564,8 @@ git diff --check
 
 This plan may be marked `completed` only when:
 
-- every discovered test file remains represented in the final inventory
+- every current `test/**` entry reconciles to the dated inventory through the
+  current case matrix, path correspondence, or an explicit deferral
 - every implemented merge or removal names a retained owner and matches an
   accepted case matrix
 - every surviving test has an accepted feature, platform, source-aligned, or
@@ -516,6 +578,9 @@ This plan may be marked `completed` only when:
 - the correspondence reference satisfies its final reconciliation boundary
 - final documentation and test-quality review report no unresolved material
   findings
+- the unified job contains a comparable before/after summary and an exact
+  ledger of coverage removals, historical path removals, and local residue
+  cleanup
 
 Completion does not require every test to move or the suite to become smaller.
 It requires every exception and retained overlap to be evidence-backed and no
