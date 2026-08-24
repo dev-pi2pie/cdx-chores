@@ -1,7 +1,7 @@
 import { mock } from "bun:test";
 
 import type { HarnessRunnerContext } from "../../helpers/interactive-harness/context";
-import type { SourceShapeSuggestionOptions } from "../../helpers/interactive-harness/types";
+import type { SourceShapeSuggestionOptions } from "../../data-sources/interactive/harness-contract";
 import { sourceShapeModuleUrl, xlsxSourcesModuleUrl } from "./module-urls";
 
 export function installDataQuerySourceShapeMocks(context: HarnessRunnerContext): void {

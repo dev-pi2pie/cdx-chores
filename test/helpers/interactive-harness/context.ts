@@ -1,5 +1,6 @@
 import { dirname, resolve as resolvePath } from "node:path";
 
+import { createMarkdownPdfInteractiveHarnessResultState } from "../../markdown-pdf/interactive/harness-contract";
 import type { InteractiveHarnessResult, InteractiveHarnessScenario } from "./types";
 
 type InteractiveHarnessResultState = Omit<InteractiveHarnessResult, "stdout" | "stderr" | "error">;
@@ -40,20 +41,7 @@ function createInteractiveHarnessResultState(): InteractiveHarnessResultState {
     stackPlanWrites: [],
     codexReportWrites: [],
     removedPaths: [],
-    markdownPdfPrepareCalls: [],
-    markdownPdfPlanCalls: [],
-    markdownPdfExecuteCalls: [],
-    markdownPdfBundleDiscoveryCalls: [],
-    markdownPdfDeterministicPrepareCalls: [],
-    markdownPdfDeterministicBindCalls: [],
-    markdownPdfDeterministicWriteCalls: [],
-    markdownPdfCodexPrepareCalls: [],
-    markdownPdfCodexBindCalls: [],
-    markdownPdfCodexWriteCalls: [],
-    markdownPdfSessionCreateCalls: [],
-    markdownPdfSessionRetainCalls: [],
-    markdownPdfSessionCleanupCalls: [],
-    markdownPdfFontDiscoveryCalls: [],
+    ...createMarkdownPdfInteractiveHarnessResultState(),
   };
 }
 

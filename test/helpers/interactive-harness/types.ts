@@ -1,53 +1,27 @@
 import type { DataExtractInteractiveHarnessScenario } from "../../data-extract/interactive/harness-contract";
 import type { DataQueryInteractiveHarnessScenario } from "../../data-query/interactive/harness-contract";
+import type { DataSourcesInteractiveHarnessScenario } from "../../data-sources/interactive/harness-contract";
 import type {
   DataStackInteractiveHarnessResult,
   DataStackInteractiveHarnessScenario,
 } from "../../data-stack/interactive/harness-contract";
+import type {
+  MarkdownPdfInteractiveHarnessResult,
+  MarkdownPdfInteractiveHarnessScenario,
+} from "../../markdown-pdf/interactive/harness-contract";
 import type { RenameInteractiveHarnessScenario } from "../../rename/interactive/harness-contract";
-
-export interface SourceShapeSuggestionOptions {
-  currentHeaderRow?: unknown;
-  currentRange?: unknown;
-  timeoutMs?: unknown;
-  context?: {
-    currentIntrospection?: { selectedSource?: unknown };
-    sheetSnapshot?: { sheetName?: unknown };
-  };
-}
 
 export interface InteractiveHarnessScenario
   extends
     DataExtractInteractiveHarnessScenario,
     DataQueryInteractiveHarnessScenario,
+    DataSourcesInteractiveHarnessScenario,
     DataStackInteractiveHarnessScenario,
+    MarkdownPdfInteractiveHarnessScenario,
     RenameInteractiveHarnessScenario {
   mode: "run" | "invalid-data-action";
   codexTimeoutMs?: number;
   captureCodexTimeouts?: boolean;
-  markdownPdfMocks?: boolean;
-  markdownPdfBundleRoles?: Array<"profile" | "template" | "css">;
-  markdownPdfIgnoredBundleFiles?: string[];
-  markdownPdfPrepareErrorMessage?: string;
-  markdownPdfPrepareErrorMessages?: string[];
-  markdownPdfDeterministicBindErrorMessage?: string;
-  markdownPdfDeterministicWriteErrorMessages?: string[];
-  markdownPdfCodexBindErrorMessage?: string;
-  markdownPdfCodexFinalProfile?: Record<string, unknown>;
-  markdownPdfCodexProjectHandoff?: Record<string, unknown>;
-  markdownPdfCodexUnusableArtifacts?: Array<"profile" | "template-bundle" | "project-bundle">;
-  markdownPdfProjectCompletenessErrorMessage?: string;
-  markdownPdfRenderWarnings?: string[];
-  markdownPdfNoDefaultCss?: boolean;
-  markdownPdfProfilePageNumbersEnabled?: boolean;
-  markdownPdfRendererCapabilityRequests?: Array<Record<string, unknown>>;
-  markdownPdfRendererCapabilities?: Record<string, unknown>;
-  markdownPdfRenderErrorMessages?: string[];
-  markdownPdfOutputErrorMessages?: string[];
-  markdownPdfCleanupErrorMessage?: string;
-  markdownPdfFontFamilies?: string[];
-  markdownPdfFontFamilyRuns?: string[][];
-  markdownPdfFontDiscoveryErrorMessage?: string;
   selectQueue?: unknown[];
   nowIsoString?: string;
   checkboxQueue?: unknown[];
@@ -59,19 +33,13 @@ export interface InteractiveHarnessScenario
   requiredPathQueue?: string[];
   statExistsQueue?: boolean[];
   optionalPathQueue?: Array<string | undefined>;
-  dataQueryDetectedFormat?: string;
-  dataQueryIntrospection?: Record<string, unknown>;
-  dataQueryIntrospectionQueue?: Record<string, unknown>[];
-  dataSourceShapeSuggestion?: Record<string, unknown>;
-  dataSourceShapeSuggestionErrorMessage?: string;
-  dataQuerySources?: string[];
-  xlsxSheetSnapshot?: Record<string, unknown>;
   stdoutColumns?: number;
   stdoutIsTTY?: boolean;
   stderrIsTTY?: boolean;
 }
 
-export interface InteractiveHarnessResult extends DataStackInteractiveHarnessResult {
+export interface InteractiveHarnessResult
+  extends DataStackInteractiveHarnessResult, MarkdownPdfInteractiveHarnessResult {
   promptCalls: Array<{
     kind: "select" | "checkbox" | "confirm" | "input" | "editor" | "search";
     message: string;
@@ -97,20 +65,6 @@ export interface InteractiveHarnessResult extends DataStackInteractiveHarnessRes
   }>;
   actionCalls: Array<{ name: string; options: Record<string, unknown> }>;
   removedPaths: string[];
-  markdownPdfPrepareCalls: Array<Record<string, unknown>>;
-  markdownPdfPlanCalls: Array<Record<string, unknown>>;
-  markdownPdfExecuteCalls: Array<Record<string, unknown>>;
-  markdownPdfBundleDiscoveryCalls: Array<Record<string, unknown>>;
-  markdownPdfDeterministicPrepareCalls: Array<Record<string, unknown>>;
-  markdownPdfDeterministicBindCalls: Array<Record<string, unknown>>;
-  markdownPdfDeterministicWriteCalls: Array<Record<string, unknown>>;
-  markdownPdfCodexPrepareCalls: Array<Record<string, unknown>>;
-  markdownPdfCodexBindCalls: Array<Record<string, unknown>>;
-  markdownPdfCodexWriteCalls: Array<Record<string, unknown>>;
-  markdownPdfSessionCreateCalls: string[];
-  markdownPdfSessionRetainCalls: string[];
-  markdownPdfSessionCleanupCalls: string[];
-  markdownPdfFontDiscoveryCalls: Array<Record<string, unknown>>;
   stdout: string;
   stderr: string;
   error?: string;
