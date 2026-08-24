@@ -1,14 +1,24 @@
+import { parseMarkdown } from "../../../markdown";
+
 import { displayPath, printLine } from "../../actions/shared";
+import { readTextFileRequired } from "../../file-io";
+import { resolveFromCwd } from "../../path-utils";
 import type { CliRuntime } from "../../types";
+import { styleCliDiagnosticLabel } from "../../diagnostic-color";
 import type {
   MarkdownPdfDeterministicArtifact,
   PreparedMarkdownPdfDeterministicRecipe,
 } from "./deterministic-authoring";
 import type { MarkdownPdfInteractiveEntry } from "./types";
+import { renderReusableMarkdownPdfCodeReview } from "./code-highlighting-review";
 import {
-  renderReusableMarkdownPdfCodeReview,
-  resolveReusableMarkdownPdfCode,
-} from "./code-highlighting-review";
+  collectMarkdownPdfProfileAuthoringReview,
+  formatMarkdownPdfProfileAuthoringReview,
+} from "../../markdown-pdf/profile-authoring-review";
+import {
+  collectMarkdownPdfEmptyCoverDiagnostic,
+  collectMarkdownPdfOccupiedPageNumberSlotDiagnostic,
+} from "../../markdown-pdf/diagnostics";
 
 export type MarkdownPdfCandidateReviewAction =
   | "save"
@@ -17,7 +27,10 @@ export type MarkdownPdfCandidateReviewAction =
   | "revise-layout"
   | "revise-margins"
   | "revise-toc"
+  | "revise-cover"
   | "revise-code"
+  | "revise-page-chrome"
+  | "revise-page-numbers"
   | "change-mode"
   | "change-artifact"
   | "cancel";
@@ -34,11 +47,22 @@ function formatMargins(candidate: PreparedMarkdownPdfDeterministicRecipe): strin
     : `${top} ${right} ${bottom} ${left}`;
 }
 
-export function renderDeterministicRecipeReview(
+function reviewNeedsMarkdownFrontmatter(
+  candidate: PreparedMarkdownPdfDeterministicRecipe,
+  markdownInput: string | undefined,
+): candidate is Extract<PreparedMarkdownPdfDeterministicRecipe, { artifact: "profile" }> {
+  return (
+    candidate.artifact === "profile" &&
+    candidate.formalGuideAnswers?.cover.enabled === true &&
+    Boolean(markdownInput)
+  );
+}
+
+export async function renderDeterministicRecipeReview(
   runtime: CliRuntime,
   candidate: PreparedMarkdownPdfDeterministicRecipe,
   markdownInput?: string,
-): void {
+): Promise<void> {
   const options = candidate.prepared.normalizedOptions;
   printLine(runtime.stderr, "Markdown PDF recipe review");
   printLine(runtime.stderr, "");
@@ -58,11 +82,45 @@ export function renderDeterministicRecipeReview(
     `- ToC: ${options.toc ? `enabled (depth ${options.tocDepth}, page break ${options.tocPageBreak})` : "disabled"}`,
   );
   if (candidate.artifact === "profile") {
+    const frontmatter = reviewNeedsMarkdownFrontmatter(candidate, markdownInput)
+      ? parseMarkdown(await readTextFileRequired(resolveFromCwd(runtime, markdownInput!))).data
+      : undefined;
+    const review =
+      frontmatter === undefined
+        ? collectMarkdownPdfProfileAuthoringReview(candidate.prepared.profile)
+        : collectMarkdownPdfProfileAuthoringReview(candidate.prepared.profile, { frontmatter });
     printLine(runtime.stderr, "");
-    renderReusableMarkdownPdfCodeReview(
-      runtime,
-      resolveReusableMarkdownPdfCode(candidate.prepared.profile),
-    );
+    renderReusableMarkdownPdfCodeReview(runtime, review.normalizedProfile.code);
+    for (const line of formatMarkdownPdfProfileAuthoringReview(review)) {
+      printLine(runtime.stderr, line);
+    }
+    const documentOrder = [
+      ...(review.normalizedProfile.cover.enabled ? ["cover page (first, chrome-free)"] : []),
+      ...(options.toc ? ["table of contents"] : []),
+      "document body",
+    ];
+    printLine(runtime.stderr, `- Document order: ${documentOrder.join(" → ")}`);
+    const emptyCover =
+      frontmatter !== undefined
+        ? collectMarkdownPdfEmptyCoverDiagnostic(review.normalizedProfile)
+        : undefined;
+    if (emptyCover) {
+      printLine(
+        runtime.stderr,
+        `${styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:")} ${emptyCover.message}`,
+      );
+    }
+    const occupiedSlot = collectMarkdownPdfOccupiedPageNumberSlotDiagnostic({
+      profile: review.normalizedProfile,
+      pageNumbers: review.normalizedProfile.pageNumbers,
+    });
+    if (occupiedSlot) {
+      printLine(runtime.stderr, "");
+      printLine(
+        runtime.stderr,
+        `${styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:")} ${occupiedSlot.message}`,
+      );
+    }
   }
   printLine(runtime.stderr, "");
   printLine(runtime.stderr, "Planned recipe files:");
@@ -114,10 +172,19 @@ export function markdownPdfCandidateReviewChoices(
     candidate.preparation === "formal-guide" && candidate.artifact === "profile"
       ? ([{ name: "Revise code highlighting", value: "revise-code" }] as const)
       : [];
+  const profileRevisionChoices =
+    candidate.preparation === "formal-guide" && candidate.artifact === "profile"
+      ? ([
+          { name: "Revise cover page", value: "revise-cover" },
+          { name: "Revise page numbers", value: "revise-page-numbers" },
+          { name: "Revise repeating page content", value: "revise-page-chrome" },
+        ] as const)
+      : [];
   return [
     ...acceptChoices,
     ...commonRevisionChoices,
     ...codeRevisionChoices,
+    ...profileRevisionChoices,
     { name: "Change preparation mode", value: "change-mode" as const },
     { name: "Change artifact", value: "change-artifact" as const },
     { name: "Cancel", value: "cancel" as const },

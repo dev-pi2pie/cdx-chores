@@ -15,6 +15,7 @@ import type { InteractivePathPromptContext } from "../shared";
 export async function handleRenameFileInteractiveAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
+  codexTimeoutMs: number,
 ): Promise<void> {
   const path = await promptRequiredPathWithConfig("Target file", {
     kind: "file",
@@ -74,6 +75,7 @@ export async function handleRenameFileInteractiveAction(
     dryRun,
     codexImages: codexFlags.codexImages,
     codexDocs: codexFlags.codexDocs,
+    codexTimeoutMs,
   });
 
   if (!dryRun || !result.changed) {

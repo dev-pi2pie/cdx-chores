@@ -1,4 +1,6 @@
 import { startCodexReadOnlyThread } from "../../../adapters/codex/shared";
+import { formatCodexRequestFailure } from "../../../utils/codex-request-failure";
+import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../../utils/codex-timeout";
 import type {
   RenameCleanupHint,
   RenameCleanupStyle,
@@ -273,7 +275,7 @@ async function runRenameCleanupCodexPrompt(options: {
   const thread = await startCodexReadOnlyThread(options.workingDirectory);
   const turn = await thread.run([{ type: "text", text: options.prompt }], {
     outputSchema: CLEANUP_SUGGESTION_OUTPUT_SCHEMA,
-    signal: AbortSignal.timeout(options.timeoutMs ?? 30_000),
+    signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
   });
   return turn.finalResponse;
 }
@@ -292,7 +294,13 @@ export async function suggestRenameCleanupWithCodex(
       suggestion: parseRenameCleanupSuggestion(finalResponse),
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { errorMessage: message };
+    return {
+      errorMessage: formatCodexRequestFailure({
+        attemptsUsed: 1,
+        error,
+        requestLabel: "Codex rename-cleanup suggestion request",
+        timeoutMs: options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS,
+      }),
+    };
   }
 }

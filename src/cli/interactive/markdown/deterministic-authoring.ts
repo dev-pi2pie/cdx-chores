@@ -19,7 +19,7 @@ import {
 import type { CliRuntime } from "../../types";
 
 import {
-  compileMarkdownPdfFormalGuideCode,
+  compileMarkdownPdfFormalGuideProfile,
   type MarkdownPdfFormalGuideAnswers,
   type MarkdownPdfProfileFormalGuideAnswers,
 } from "./formal-guide";
@@ -86,7 +86,7 @@ export function prepareMarkdownPdfDeterministicRecipe(
       prepared: prepareMarkdownPdfProfileInit(
         normalizedOptions,
         input.formalGuideAnswers
-          ? { code: compileMarkdownPdfFormalGuideCode(input.formalGuideAnswers) }
+          ? compileMarkdownPdfFormalGuideProfile(input.formalGuideAnswers)
           : undefined,
       ),
     };

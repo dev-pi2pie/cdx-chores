@@ -21,6 +21,12 @@ export const DEFAULT_MARKDOWN_PDF_PROFILE: Record<string, unknown> = {
   footer: {},
   pageNumbers: {
     enabled: false,
+    scope: "body",
+    countFrom: "document",
+    start: 1,
+    increment: 1,
+    position: "bottom-center",
+    format: "{page}",
   },
   titleBlock: {
     metadataTitle: "auto",
@@ -56,6 +62,9 @@ export const DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE: NormalizedMarkdownPdfProfi
     position: "bottom-center",
     format: "{page}",
     scope: "body",
+    countFrom: "document",
+    start: 1,
+    increment: 1,
   },
   titleBlock: {
     metadataTitle: "auto",

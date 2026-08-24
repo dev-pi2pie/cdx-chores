@@ -10,11 +10,13 @@ import { runInteractiveDataPreview, runInteractiveParquetPreview } from "./data/
 import { runInteractiveDataStack } from "./data/stack";
 import { runInteractiveDataQuery } from "./data-query";
 import { assertNeverInteractiveAction, type InteractivePathPromptContext } from "./shared";
+import { createInteractiveSession, type InteractiveSession } from "./session";
 
 export async function handleDataInteractiveAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   action: DataInteractiveActionKey,
+  session: InteractiveSession = createInteractiveSession(),
 ): Promise<void> {
   if (action === "data:convert") {
     await runInteractiveDataConvert(runtime, pathPromptContext);
@@ -22,17 +24,17 @@ export async function handleDataInteractiveAction(
   }
 
   if (action === "data:query") {
-    await runInteractiveDataQuery(runtime, pathPromptContext);
+    await runInteractiveDataQuery(runtime, pathPromptContext, session.codexTimeoutMs);
     return;
   }
 
   if (action === "data:extract") {
-    await runInteractiveDataExtract(runtime, pathPromptContext);
+    await runInteractiveDataExtract(runtime, pathPromptContext, session.codexTimeoutMs);
     return;
   }
 
   if (action === "data:stack") {
-    await runInteractiveDataStack(runtime, pathPromptContext);
+    await runInteractiveDataStack(runtime, pathPromptContext, session.codexTimeoutMs);
     return;
   }
 

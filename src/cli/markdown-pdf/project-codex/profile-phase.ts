@@ -1,8 +1,13 @@
 import {
   classifyMarkdownPdfCodexProfileFailure,
+  MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS,
   type MarkdownPdfCodexProfileResult,
   type MarkdownPdfCodexProfileRunner,
 } from "../../../adapters/codex/markdown-pdf-profile";
+import {
+  classifyCodexRequestFailure,
+  formatCodexTimeoutFailure,
+} from "../../../utils/codex-request-failure";
 import { type MarkdownPdfProfileCandidate } from "../profile/candidates";
 import {
   createMarkdownPdfCodexProfileOrchestrationContext,
@@ -100,10 +105,12 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
   runtime: CliRuntime;
   signals: MdPdfProjectCodexSignalCollection;
   state: NormalizedMdPdfProjectCodexCommandState;
+  timeoutMs?: number;
 }): Promise<MdPdfProjectCodexProfilePhaseResult> {
   const signalMode = input.signals.modes.profile;
   const orchestrationContext = createMarkdownPdfCodexProfileOrchestrationContext({
     baseProfileCandidate: input.signals.profile.baseProfile.candidate,
+    baseProfileRole: "authoritative",
     createdAt: input.outputPlan.identity.createdAt,
     documentSignals: input.signals.shared.document,
     fontHints: input.signals.profile.fonts.hints,
@@ -122,9 +129,23 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
       progressSession: input.progressSession,
       progressLabel: "Requesting Codex Markdown PDF project profile recommendation",
       runtime: input.runtime,
+      timeoutMs: input.timeoutMs,
     });
   } catch (error) {
     const failureKind = classifyMarkdownPdfCodexProfileFailure(error);
+    if (classifyCodexRequestFailure(error) === "timeout") {
+      throw new CliError(
+        formatCodexTimeoutFailure({
+          attemptsUsed: 1,
+          requestLabel: "Codex Markdown PDF project profile request",
+          timeoutMs: input.timeoutMs ?? MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS,
+        }),
+        {
+          code: "MARKDOWN_PDF_PROJECT_PROFILE_CODEX_FAILED",
+          exitCode: 1,
+        },
+      );
+    }
     if (failureKind === "invalid-application") {
       throw new CliError("Codex returned an invalid Markdown PDF project profile decision.", {
         code: "MARKDOWN_PDF_PROJECT_PROFILE_INVALID",

@@ -4,6 +4,7 @@ import type { PreparedMarkdownPdfRender } from "../../actions/markdown/to-pdf-se
 import { displayPath, printLine } from "../../actions/shared";
 import type { MarkdownPdfRenderBundleRole } from "../../markdown-pdf/render-bundle";
 import type { CliRuntime } from "../../types";
+import { styleCliDiagnosticLabel } from "../../diagnostic-color";
 
 import type { MarkdownPdfInteractivePreparedRenderSource } from "./render-source";
 import type { MarkdownPdfInteractiveRenderSource } from "./types";
@@ -13,6 +14,7 @@ import {
   formatReusableMarkdownPdfCodeReview,
 } from "./code-highlighting-review";
 import type { MarkdownPdfRenderCodeHighlightChoice } from "./render-code-highlighting";
+import { formatMarkdownPdfPageNumberReview } from "./page-number-review";
 
 const SOURCE_LABELS: Record<MarkdownPdfInteractiveRenderSource, string> = {
   "built-in": "built-in",
@@ -118,6 +120,17 @@ export function renderMarkdownPdfRecipeReview(
     selection.prepared,
     selection.codeHighlight,
   )) {
-    printLine(runtime.stderr, line);
+    printLine(
+      runtime.stderr,
+      line === "Bundle warnings:"
+        ? styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", line)
+        : line,
+    );
+  }
+  if (selection.pageNumbers !== undefined) {
+    printLine(runtime.stderr, "");
+    for (const line of formatMarkdownPdfPageNumberReview(selection.prepared)) {
+      printLine(runtime.stderr, line);
+    }
   }
 }

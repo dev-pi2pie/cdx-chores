@@ -70,6 +70,7 @@ export async function reviewInteractiveHeaderMappings(options: {
   selectedNoHeader?: boolean;
   selectedRange?: string;
   selectedSource?: string;
+  timeoutMs: number;
 }): Promise<InteractiveHeaderReviewState> {
   const labels = options.labels ?? QUERY_CONTINUATION_LABELS;
   if (!hasGeneratedHeaderColumns(options.introspection)) {
@@ -98,6 +99,7 @@ export async function reviewInteractiveHeaderMappings(options: {
     suggestionResult = await suggestDataHeaderMappingsWithCodex({
       format: options.format,
       introspection: options.introspection,
+      timeoutMs: options.timeoutMs,
       workingDirectory: options.runtime.cwd,
     });
   } finally {

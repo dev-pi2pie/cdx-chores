@@ -2,7 +2,7 @@ import { describe, expect } from "bun:test";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { pandocTest } from "./cli-actions-md-to-pdf.helpers";
+import { pandocTest } from "./markdown-pdf/actions/render-support";
 import { withTempFixtureDir } from "./helpers/cli-test-utils";
 
 describe("markdown PDF recipe generation: Pandoc language-attribute fixture", () => {

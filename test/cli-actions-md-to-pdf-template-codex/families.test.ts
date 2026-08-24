@@ -5,7 +5,7 @@ import {
   MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES,
   resolveMdPdfTemplateCodexFamily,
 } from "../../src/cli/markdown-pdf/template-codex";
-import { createSynthesisSignals } from "./synthesis-fixtures";
+import { createSynthesisSignals } from "../markdown-pdf/actions/template-synthesis-fixtures";
 
 describe("cli action modules: md pdf-template codex families", () => {
   test("defines required deterministic family hooks", () => {
@@ -20,6 +20,10 @@ describe("cli action modules: md pdf-template codex families", () => {
         expect.objectContaining({
           id: "body-placeholder",
           marker: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.bodyPlaceholder,
+        }),
+        expect.objectContaining({
+          id: "document-body",
+          marker: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.documentBodyClass,
         }),
         expect.objectContaining({
           id: "toc-conditional",
@@ -61,6 +65,10 @@ describe("cli action modules: md pdf-template codex families", () => {
         expect.objectContaining({
           id: "body-placeholder",
           marker: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.bodyPlaceholder,
+        }),
+        expect.objectContaining({
+          id: "document-body",
+          marker: MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.documentBodyClass,
         }),
         expect.objectContaining({
           id: "toc-conditional",

@@ -14,6 +14,7 @@ import type { PathPromptRuntimeConfig } from "./path-config";
 import {
   deriveTemplateGhostSuffix,
   resolveTemplateCompletionMatch,
+  type TemplateCompletionKind,
   type TemplateCompletionMatch,
 } from "./text-template-candidates";
 
@@ -24,7 +25,8 @@ export interface InlineTextPromptOptions {
   helpLines?: string[];
   ghostHintLabel?: string;
   ghostText: string;
-  completionKind?: "none" | "rename-template";
+  initialValue?: string;
+  completionKind?: "none" | TemplateCompletionKind;
   runtimeConfig?: PathPromptRuntimeConfig;
   stdin?: NodeJS.ReadStream;
   stdout?: NodeJS.WritableStream;
@@ -93,6 +95,7 @@ export async function promptTextWithGhost(options: InlineTextPromptOptions): Pro
         helpLines: options.helpLines,
         ghostHintLabel: options.ghostHintLabel,
         ghostText: options.ghostText,
+        initialValue: options.initialValue,
         completionKind: options.completionKind,
         stdin: options.stdin!,
         stdout: options.stdout!,
@@ -109,11 +112,17 @@ export async function promptTextWithGhost(options: InlineTextPromptOptions): Pro
   if (options.helpLines && options.helpLines.length > 0 && options.stdout) {
     options.stdout.write(`${options.helpLines.join("\n")}\n`);
   }
-  if (options.ghostHintLabel && options.ghostText.length > 0 && options.stdout) {
+  if (
+    options.ghostHintLabel &&
+    options.ghostText.length > 0 &&
+    !options.initialValue &&
+    options.stdout
+  ) {
     options.stdout.write(`${dim(`${options.ghostHintLabel}: ${options.ghostText}`)}\n`);
   }
   return await simpleInput({
     message: options.message,
+    ...(options.initialValue !== undefined ? { default: options.initialValue } : {}),
     validate: options.validate,
   });
 }
@@ -123,7 +132,8 @@ export async function promptTextInlineGhost(options: {
   helpLines?: string[];
   ghostHintLabel?: string;
   ghostText: string;
-  completionKind?: "none" | "rename-template";
+  initialValue?: string;
+  completionKind?: "none" | TemplateCompletionKind;
   stdin: NodeJS.ReadStream;
   stdout: NodeJS.WritableStream;
   validate: ValidationFn;
@@ -133,7 +143,7 @@ export async function promptTextInlineGhost(options: {
   }
 
   const stdout = options.stdout;
-  let value = "";
+  let value = options.initialValue ?? "";
   let ghostText = "";
   let closed = false;
   let renderScheduled = false;
@@ -145,31 +155,42 @@ export async function promptTextInlineGhost(options: {
         scopeKey: string;
       }
     | undefined;
+  const suppressFullGhost = value.length > 0;
+
+  const getCompletionKind = (): TemplateCompletionKind | undefined =>
+    options.completionKind && options.completionKind !== "none"
+      ? options.completionKind
+      : undefined;
 
   const refreshGhostText = (): void => {
     templateCompletion = undefined;
-    if (options.completionKind === "rename-template") {
-      templateCompletion = resolveTemplateCompletionMatch(value);
-      if (!templateCompletion) {
-        ghostText = "";
-        templateCycleState = undefined;
+    const completionKind = getCompletionKind();
+    if (completionKind) {
+      templateCompletion = resolveTemplateCompletionMatch(value, completionKind);
+      if (templateCompletion) {
+        if (templateCycleState?.scopeKey !== templateCompletion.scopeKey) {
+          templateCycleState = undefined;
+        }
+
+        const candidateIndex = templateCycleState?.index ?? 0;
+        const candidate = templateCompletion.candidates[candidateIndex];
+        ghostText =
+          typeof candidate === "string"
+            ? deriveTemplateGhostSuffix(templateCompletion.fragment, candidate)
+            : "";
         return;
       }
 
-      if (templateCycleState?.scopeKey !== templateCompletion.scopeKey) {
-        templateCycleState = undefined;
+      templateCycleState = undefined;
+      if (completionKind !== "rename-template" && !suppressFullGhost && value.length === 0) {
+        ghostText = options.ghostText;
+      } else {
+        ghostText = "";
       }
-
-      const candidateIndex = templateCycleState?.index ?? 0;
-      const candidate = templateCompletion.candidates[candidateIndex];
-      ghostText =
-        typeof candidate === "string"
-          ? deriveTemplateGhostSuffix(templateCompletion.fragment, candidate)
-          : "";
       return;
     }
 
-    ghostText = value.length === 0 ? options.ghostText : "";
+    ghostText = !suppressFullGhost && value.length === 0 ? options.ghostText : "";
   };
 
   const render = (): void => {
@@ -196,7 +217,7 @@ export async function promptTextInlineGhost(options: {
   if (options.helpLines && options.helpLines.length > 0) {
     stdout.write(`${options.helpLines.join("\n")}\n`);
   }
-  if (options.ghostHintLabel && options.ghostText.length > 0) {
+  if (options.ghostHintLabel && options.ghostText.length > 0 && !suppressFullGhost) {
     stdout.write(`${dim(`${options.ghostHintLabel}: ${options.ghostText}`)}\n`);
   }
 
@@ -260,10 +281,11 @@ export async function promptTextInlineGhost(options: {
         };
 
         const cycleTemplateCandidates = (direction: "up" | "down"): boolean => {
-          if (options.completionKind !== "rename-template") {
+          const completionKind = getCompletionKind();
+          if (!completionKind) {
             return false;
           }
-          const completion = resolveTemplateCompletionMatch(value);
+          const completion = resolveTemplateCompletionMatch(value, completionKind);
           if (!completion || completion.candidates.length <= 1) {
             return false;
           }

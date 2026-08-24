@@ -17,6 +17,11 @@ import {
   resolveGeneratedReusableMarkdownPdfCode,
 } from "./code-highlighting-review";
 import type { NormalizedMarkdownPdfCode } from "../../markdown-pdf/profile";
+import {
+  collectMarkdownPdfProfileAuthoringReview,
+  formatMarkdownPdfProfileAuthoringReview,
+} from "../../markdown-pdf/profile-authoring-review";
+import { formatMdPdfProjectCodexHandoffReview } from "../../markdown-pdf/project-codex/summary";
 
 export type MarkdownPdfCodexReviewAction =
   | "save"
@@ -153,8 +158,10 @@ export function renderMarkdownPdfCodexCandidateReview(
   }
   printLine(runtime.stderr, `Artifact: ${MARKDOWN_PDF_CODEX_ARTIFACT_LABELS[candidate.artifact]}`);
   printLine(runtime.stderr, "Preparation mode: Codex Assistant");
-  printLine(runtime.stderr, `Signal mode: ${candidateSignalMode(candidate)}`);
-  printLine(runtime.stderr, `Decision: ${candidateDecision(candidate)}`);
+  if (candidate.artifact !== "project-bundle") {
+    printLine(runtime.stderr, `Signal mode: ${candidateSignalMode(candidate)}`);
+    printLine(runtime.stderr, `Decision: ${candidateDecision(candidate)}`);
+  }
   printLine(
     runtime.stderr,
     `Codex request: ${isUsableMarkdownPdfCodexCandidate(candidate) ? "completed" : "no usable candidate"}`,
@@ -187,15 +194,34 @@ export function renderMarkdownPdfCodexCandidateReview(
       printLine(runtime.stderr, `- ${direction}`);
     }
   }
-  const code = reusableCode(candidate);
+  const profileReview =
+    candidate.artifact === "profile" && candidate.prepared.kind === "profile"
+      ? collectMarkdownPdfProfileAuthoringReview(candidate.prepared.finalProfile)
+      : undefined;
+  const code = profileReview?.normalizedProfile.code ?? reusableCode(candidate);
   if (code) {
     printLine(runtime.stderr, "");
     renderReusableMarkdownPdfCodeReview(runtime, code);
   }
-  printLine(runtime.stderr, "");
-  printLine(runtime.stderr, "Planned recipe files:");
-  for (const file of plannedFiles(candidate)) {
-    printLine(runtime.stderr, `- ${file}`);
+  if (profileReview) {
+    for (const line of formatMarkdownPdfProfileAuthoringReview(profileReview)) {
+      printLine(runtime.stderr, line);
+    }
+  }
+  if (candidate.artifact === "project-bundle") {
+    printLine(runtime.stderr, "");
+    for (const line of formatMdPdfProjectCodexHandoffReview({
+      finalProfile: candidate.prepared.profilePhase.finalProfile,
+      reportArtifact: candidate.prepared.binding.reportArtifact,
+    })) {
+      printLine(runtime.stderr, line);
+    }
+  } else {
+    printLine(runtime.stderr, "");
+    printLine(runtime.stderr, "Planned recipe files:");
+    for (const file of plannedFiles(candidate)) {
+      printLine(runtime.stderr, `- ${file}`);
+    }
   }
   printLine(runtime.stderr, "");
   printLine(runtime.stderr, "Dry run: no files have been written.");

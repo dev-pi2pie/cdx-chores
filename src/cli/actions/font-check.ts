@@ -19,6 +19,7 @@ import {
 import { selectFontFaceForCheck, type FontCheckFaceSelectionReason } from "../../fonts/matching";
 import type { FontCoverageInconclusiveReason, FontCoverageProviderResult } from "../../fonts/types";
 import { getCliColors } from "../colors";
+import { styleCliDiagnosticLabel } from "../diagnostic-color";
 import { CliError } from "../errors";
 import { resolveFromCwd } from "../path-utils";
 import type { CliRuntime } from "../types";
@@ -193,12 +194,15 @@ function checkedFaceName(face: FontFace | undefined): string | null {
 
 function printDiscoveryWarnings(runtime: CliRuntime, warnings: string[]): void {
   for (const warning of warnings) {
-    printLine(runtime.stderr, `Warning: ${warning}`);
+    printLine(
+      runtime.stderr,
+      `${styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:")} ${warning}`,
+    );
   }
 }
 
 function printFontCheckTextOutput(runtime: CliRuntime, output: FontCheckOutput): void {
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stdout);
   printLine(runtime.stdout, pc.bold(pc.cyan("cdx-chores font check")));
   printLine(runtime.stdout, `${pc.dim("Family:")} ${output.family}`);
   printLine(runtime.stdout, `${pc.dim("Discovery:")} ${output.discovery}`);

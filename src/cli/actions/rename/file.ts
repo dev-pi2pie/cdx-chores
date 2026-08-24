@@ -36,6 +36,7 @@ export interface RenameFileOptions {
   timestampTimezone?: TimestampTimezone;
   dryRun?: boolean;
   codexImages?: boolean;
+  codexTimeoutMs?: number;
   codexImagesTimeoutMs?: number;
   codexImagesRetries?: number;
   codexImagesBatchSize?: number;
@@ -76,6 +77,7 @@ export async function actionRenameFile(
     effectiveFlags: effectiveCodexFlags,
     cli: {
       codex: options.codex,
+      codexTimeoutMs: options.codexTimeoutMs,
       codexImages: options.codexImages,
       codexImagesTimeoutMs: options.codexImagesTimeoutMs,
       codexImagesRetries: options.codexImagesRetries,

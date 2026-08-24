@@ -1,7 +1,7 @@
 ---
 title: "Data Query Usage"
 created-date: 2026-03-10
-modified-date: 2026-07-10
+modified-date: 2026-08-16
 status: completed
 agent: codex
 ---
@@ -296,6 +296,9 @@ The report distinguishes:
 - extension-backed formats that also depend on DuckDB extension loadability
 - whether extension installability appears blocked by the current environment
 
+Use `cdx-chores doctor --details` for complete human-readable evidence and
+`cdx-chores doctor --json` for automation.
+
 For extension-backed formats, `detected support=yes` does not mean the format is queryable right now. The capability line turns green only when the required DuckDB extension is currently loadable.
 
 DuckDB-file is reported as built-in DuckDB support and does not require a managed extension.
@@ -372,10 +375,10 @@ Reset the DuckDB manual smoke fixtures under `examples/playground/data-query-duc
 node scripts/generate-data-query-duckdb-fixtures.mjs reset
 ```
 
-Reset the checked-in lighter test fixtures under `test/fixtures/data-query/`:
+Reset the checked-in lighter test fixtures under `test/data-sources/fixtures/`:
 
 ```bash
-node scripts/generate-data-query-fixtures.mjs reset --output-dir test/fixtures/data-query
+node scripts/generate-data-query-fixtures.mjs reset --output-dir test/data-sources/fixtures
 ```
 
 The lightweight generator is independent from the preview fixture scripts and covers representative CSV, TSV, Parquet, SQLite, and Excel inputs, including multi-object SQLite and Excel fixtures for `--source`.

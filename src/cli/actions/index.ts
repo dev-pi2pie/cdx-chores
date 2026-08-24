@@ -81,6 +81,7 @@ export type {
   MdToDocxOptions,
   MdToPdfOptions,
   ExecutePlannedMarkdownPdfRenderOptions,
+  MarkdownPdfRenderExecutionResult,
   MarkdownPdfRenderOutputInput,
   PlannedMarkdownPdfRender,
   PreparedMarkdownPdfRender,

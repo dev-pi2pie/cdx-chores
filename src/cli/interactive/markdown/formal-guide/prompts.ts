@@ -1,5 +1,6 @@
-import { confirm, input, select } from "@inquirer/prompts";
+import { checkbox, confirm, input, select } from "@inquirer/prompts";
 
+import { promptTextWithGhost } from "../../../prompts/text-inline";
 import {
   MARKDOWN_PDF_ORIENTATIONS,
   MARKDOWN_PDF_PAGE_SIZES,
@@ -13,9 +14,82 @@ import {
 import {
   DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
   MARKDOWN_PDF_CODE_THEMES,
+  MARKDOWN_PDF_PAGE_CHROME_POSITIONS,
+  markdownPdfPageNumberFormatTokens,
   type MarkdownPdfCodeTheme,
+  type MarkdownPdfPageChromePosition,
 } from "../../../markdown-pdf/profile";
-import type { MarkdownPdfFormalGuideMarginAnswers, MarkdownPdfFormalGuidePrompts } from "./types";
+import type { InteractivePathPromptContext } from "../../shared";
+import type {
+  MarkdownPdfFormalGuideMarginAnswers,
+  MarkdownPdfFormalGuidePageNumberOutcome,
+  MarkdownPdfFormalGuidePrompts,
+} from "./types";
+
+const PAGE_NUMBER_OUTCOME_CHOICES: ReadonlyArray<{
+  name: string;
+  value: MarkdownPdfFormalGuidePageNumberOutcome;
+}> = [
+  { name: "Body pages, starting at 1", value: "body" },
+  { name: "Entire document, starting at 1", value: "document" },
+];
+
+const PAGE_NUMBER_POSITION_CHOICES: ReadonlyArray<{
+  name: string;
+  value: MarkdownPdfPageChromePosition;
+}> = [
+  { name: "Bottom center", value: "bottom-center" },
+  { name: "Bottom right", value: "bottom-right" },
+  { name: "Bottom left", value: "bottom-left" },
+  { name: "Top center", value: "top-center" },
+  { name: "Top right", value: "top-right" },
+  { name: "Top left", value: "top-left" },
+];
+
+type MarkdownPdfFormalGuidePageNumberLabelChoice = "page" | "compact" | "custom";
+
+const PAGE_NUMBER_LABEL_CHOICES: ReadonlyArray<{
+  name: string;
+  value: MarkdownPdfFormalGuidePageNumberLabelChoice;
+  description: string;
+}> = [
+  { name: "Page 1", value: "page", description: "Recommended" },
+  { name: "1", value: "compact", description: "Compact" },
+  { name: "Custom...", value: "custom", description: "Use page-label placeholders" },
+];
+
+const REPEATING_CONTENT_GHOSTS: Readonly<Record<MarkdownPdfPageChromePosition, string>> = {
+  "top-left": "{title}",
+  "top-center": "{company}",
+  "top-right": "{date}",
+  "bottom-left": "{author}",
+  "bottom-center": "{title}",
+  "bottom-right": "{date}",
+};
+
+function pageNumberLabelChoiceFrom(
+  format: string | undefined,
+): MarkdownPdfFormalGuidePageNumberLabelChoice {
+  if (format === undefined || format === "Page {page}") {
+    return "page";
+  }
+  return format === "{page}" ? "compact" : "custom";
+}
+
+function repeatingContentPositionLabel(position: MarkdownPdfPageChromePosition): string {
+  const [area, slot] = position.split("-");
+  return `${area === "top" ? "Header" : "Footer"} ${slot}`;
+}
+
+function validatePageNumberLabel(value: string): true | string {
+  if (!value.trim()) {
+    return "Page-number label is required";
+  }
+  const tokens = markdownPdfPageNumberFormatTokens(value);
+  return tokens.includes("page") || tokens.includes("pdfPage")
+    ? true
+    : "Page-number label must include the {page} or {pdfPage} placeholder";
+}
 
 function validateMargin(value: string, label: string): true | string {
   try {
@@ -34,8 +108,17 @@ async function promptMargin(message: string, current = "18mm"): Promise<string> 
   });
 }
 
-export function createMarkdownPdfFormalGuidePrompts(): MarkdownPdfFormalGuidePrompts {
+export function createMarkdownPdfFormalGuidePrompts(
+  pathPromptContext?: InteractivePathPromptContext,
+): MarkdownPdfFormalGuidePrompts {
   return {
+    async coverEnabled({ current }) {
+      return await confirm({
+        message: "Add a cover page?",
+        default: current ?? DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.cover.enabled,
+      });
+    },
+
     async codeHighlight({ current }) {
       return await confirm({
         message: "Enable code highlighting in this Profile?",
@@ -65,6 +148,120 @@ export function createMarkdownPdfFormalGuidePrompts(): MarkdownPdfFormalGuidePro
       return await confirm({
         message: "Enable transformer notation in highlighted code blocks?",
         default: current ?? false,
+      });
+    },
+
+    async pageNumbersEnabled({ current }) {
+      return await confirm({
+        message: "Enable reusable page numbers in this Profile?",
+        default: current ?? DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.pageNumbers.enabled,
+      });
+    },
+
+    async pageNumberOutcome({ current }) {
+      return await select<MarkdownPdfFormalGuidePageNumberOutcome>({
+        message: "Number which pages?",
+        choices: PAGE_NUMBER_OUTCOME_CHOICES,
+        default: current ?? "body",
+      });
+    },
+
+    async pageNumberLabel({ current }) {
+      const choice = await select<MarkdownPdfFormalGuidePageNumberLabelChoice>({
+        message: "Page-number label",
+        choices: PAGE_NUMBER_LABEL_CHOICES,
+        default: pageNumberLabelChoiceFrom(current),
+      });
+      if (choice === "page") {
+        return "Page {page}";
+      }
+      if (choice === "compact") {
+        return "{page}";
+      }
+      return await promptTextWithGhost({
+        message: "Custom page-number label",
+        helpLines: [
+          "{page}: current logical page number",
+          "{pages}: final logical page number in the selected countFrom domain",
+          "{pdfPage}: current physical PDF page",
+          "{pdfPages}: total physical PDF pages",
+          "Literal text, punctuation, and digits are allowed; a literal total can become stale.",
+        ],
+        ghostHintLabel: "Page-number label suggestion (Right arrow to accept)",
+        ghostText: "Page {page} of {pages}",
+        ...(current !== undefined && pageNumberLabelChoiceFrom(current) === "custom"
+          ? { initialValue: current }
+          : {}),
+        completionKind: "markdown-pdf-page-label",
+        runtimeConfig: pathPromptContext?.runtimeConfig,
+        stdin: pathPromptContext?.stdin,
+        stdout: pathPromptContext?.stdout,
+        validate: validatePageNumberLabel,
+      });
+    },
+
+    async pageNumberPosition({ current }) {
+      return await select<MarkdownPdfPageChromePosition>({
+        message: "Page-number position",
+        choices: PAGE_NUMBER_POSITION_CHOICES,
+        default: current ?? DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.pageNumbers.position,
+      });
+    },
+
+    async repeatingContentEnabled({ current }) {
+      return await confirm({
+        message: "Add repeating header or footer text?",
+        default: current ?? false,
+      });
+    },
+
+    async repeatingContentPositions({ available, current, reserved }) {
+      const availablePositions = new Set(available);
+      return await checkbox<MarkdownPdfPageChromePosition>({
+        message: reserved
+          ? `Repeating-content positions (page number uses ${repeatingContentPositionLabel(reserved).toLowerCase()})`
+          : "Repeating-content positions",
+        choices: MARKDOWN_PDF_PAGE_CHROME_POSITIONS.filter(
+          (position) => availablePositions.has(position) || position === reserved,
+        ).map((position) =>
+          position === reserved
+            ? {
+                name: `${repeatingContentPositionLabel(position)} - Page number`,
+                value: position,
+                disabled: "Page-number position",
+              }
+            : {
+                name: repeatingContentPositionLabel(position),
+                value: position,
+                checked: current?.includes(position) ?? false,
+              },
+        ),
+      });
+    },
+
+    async repeatingContent({ current, position }) {
+      return await promptTextWithGhost({
+        message: `${repeatingContentPositionLabel(position)} content`,
+        helpLines: [
+          "Placeholders: {title}, {company}, {author}, {date}",
+          "Values resolve from CLI metadata, Markdown frontmatter, then Profile metadata.",
+          "Unknown or missing placeholders render as empty text; literal text is also valid.",
+        ],
+        ghostHintLabel: "Content suggestion (Right arrow to accept)",
+        ghostText: REPEATING_CONTENT_GHOSTS[position],
+        ...(current !== undefined ? { initialValue: current } : {}),
+        completionKind: "markdown-pdf-repeating-content",
+        runtimeConfig: pathPromptContext?.runtimeConfig,
+        stdin: pathPromptContext?.stdin,
+        stdout: pathPromptContext?.stdout,
+        validate: (value) => (value.trim() ? true : "Repeating content is required"),
+      });
+    },
+
+    async clearOccupiedPageNumberPosition({ position }) {
+      return await confirm({
+        message: `Clear existing ${repeatingContentPositionLabel(position).toLowerCase()} content that conflicts with page numbering?`,
+        default: false,
       });
     },
 

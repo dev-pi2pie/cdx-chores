@@ -3,6 +3,7 @@ import type { MarkdownPdfProjectCodexPreparedArtifact } from "../../markdown-pdf
 import type { PreparedMdPdfTemplateCodexArtifact } from "../../markdown-pdf/template-codex";
 import type { PreparedMarkdownPdfDeterministicRecipe } from "./deterministic-authoring";
 import type { MarkdownPdfRenderCodeHighlightChoice } from "./render-code-highlighting";
+import type { MarkdownPdfRenderPageNumberChoice } from "./render-page-numbers";
 
 export type MarkdownPdfCodexArtifact = "profile" | "template-bundle" | "project-bundle";
 
@@ -49,6 +50,7 @@ export interface MarkdownPdfGeneratedLifecycleSelection {
   kind: "generated-lifecycle";
   lifecycle: MarkdownPdfGeneratedLifecycle;
   markdownInput: string;
+  pageNumbers: MarkdownPdfRenderPageNumberChoice;
   report: MarkdownPdfCodexReportRetention;
 }
 
@@ -57,6 +59,7 @@ export type MarkdownPdfGeneratedLifecycleHandlerOutcome =
   | {
       codeHighlight: MarkdownPdfRenderCodeHighlightChoice;
       kind: "review";
+      pageNumbers: MarkdownPdfRenderPageNumberChoice;
     };
 
 export type MarkdownPdfGeneratedLifecycleHandler = (

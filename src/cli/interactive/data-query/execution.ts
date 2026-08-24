@@ -38,7 +38,7 @@ function isOutputExistsError(error: unknown): boolean {
 }
 
 function renderCandidateSql(runtime: CliRuntime, sql: string, sqlLimit?: number): void {
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stderr);
   printLine(runtime.stderr, `${pc.bold(pc.green("SQL"))}:`);
   printLine(runtime.stderr, pc.yellow(sql));
   if (sqlLimit !== undefined) {
@@ -50,7 +50,7 @@ function renderOutputReview(
   runtime: CliRuntime,
   options: { rows?: number; sqlLimit?: number },
 ): void {
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stderr);
   printLine(runtime.stderr, "");
   printLine(
     runtime.stderr,

@@ -42,7 +42,6 @@ export interface InteractiveDataStackWritePlan {
 
 export const INTERACTIVE_DATA_STACK_DUPLICATE_POLICY: DataStackDuplicatePolicy = "preserve";
 export const INTERACTIVE_DATA_STACK_UNIQUE_BY: readonly string[] = [];
-export const INTERACTIVE_DATA_STACK_CODEX_TIMEOUT_MS = 30_000;
 
 export type InteractiveDataStackMatchedFileAction = "accept" | "options" | "sources" | "cancel";
 export type InteractiveDataStackSourceDiscoveryOption = "pattern" | "recursive" | "format" | "back";

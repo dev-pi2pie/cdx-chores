@@ -1,7 +1,7 @@
 ---
 title: "Interactive Data Query Usage"
 created-date: 2026-03-11
-modified-date: 2026-04-24
+modified-date: 2026-08-23
 status: completed
 agent: codex
 ---
@@ -25,6 +25,35 @@ Start the flow with:
 ```bash
 cdx-chores interactive
 ```
+
+To use a different per-attempt deadline for Codex-backed work throughout this
+Interactive session, pass the option to the `interactive` command.
+
+✅ Correct:
+
+```bash
+cdx-chores interactive --codex-timeout 2m
+```
+
+❌ Incorrect:
+
+```bash
+cdx-chores --codex-timeout 2m
+```
+
+The root-level form is rejected. If the option is omitted, Interactive mode
+uses the 30-second default and the query flow does not prompt for timeout
+configuration.
+
+The session value applies independently to Codex source-shape suggestions,
+semantic header suggestions, and SQL drafting requests. Backtracking, revising
+intent, or returning to SQL review preserves the value. `Regenerate SQL` starts
+a new request with the same per-attempt window; the flow does not retry a failed
+request automatically.
+
+For the shared duration grammar and the distinction between timeouts, retries,
+and user-triggered regeneration, see
+[Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md).
 
 Choose:
 
@@ -50,35 +79,35 @@ Current interactive flow:
 9. after accepted source-shape changes, re-inspect before SQL authoring
 10. when generated placeholder columns are present, optionally review semantic header suggestions before SQL authoring
 11. choose one mode:
-   - single-source:
-     - `manual`
-     - `formal-guide`
-     - `Codex Assistant`
-   - workspace:
-     - `manual`
-     - `Codex Assistant`
+    - single-source:
+      - `manual`
+      - `formal-guide`
+      - `Codex Assistant`
+    - workspace:
+      - `manual`
+      - `Codex Assistant`
 12. review the generated SQL
 13. explicitly confirm execution
 14. if execution is declined or fails, choose the next step at SQL review:
-   - revise within the current mode
-   - use a mode-specific recovery action when available
-   - change mode
-   - cancel
+    - revise within the current mode
+    - use a mode-specific recovery action when available
+    - change mode
+    - cancel
 15. choose one output mode:
-   - terminal table
-   - JSON stdout
-   - file output
+    - terminal table
+    - JSON stdout
+    - file output
 16. from output selection, either continue with the selected output, go back to SQL review, or cancel
 
 ### Support matrix
 
-| Input family | Single-source interactive query | Workspace interactive query | Notes |
-| --- | --- | --- | --- |
-| CSV / TSV | yes | no | one logical table only |
-| Parquet | yes | no | one logical table only |
-| SQLite | yes | yes | scope chooser appears when multiple sources exist |
-| DuckDB-file | yes | yes | scope chooser appears when multiple sources exist |
-| Excel | yes | no | workbook workspace support remains deferred |
+| Input family | Single-source interactive query | Workspace interactive query | Notes                                             |
+| ------------ | ------------------------------- | --------------------------- | ------------------------------------------------- |
+| CSV / TSV    | yes                             | no                          | one logical table only                            |
+| Parquet      | yes                             | no                          | one logical table only                            |
+| SQLite       | yes                             | yes                         | scope chooser appears when multiple sources exist |
+| DuckDB-file  | yes                             | yes                         | scope chooser appears when multiple sources exist |
+| Excel        | yes                             | no                          | workbook workspace support remains deferred       |
 
 ### Mode behavior
 

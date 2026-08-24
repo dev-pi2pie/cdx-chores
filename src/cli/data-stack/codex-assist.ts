@@ -1,4 +1,5 @@
 import { startCodexReadOnlyThread } from "../../adapters/codex/shared";
+import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../utils/codex-timeout";
 import {
   createDataStackCodexReportArtifact,
   DATA_STACK_CODEX_PATCH_PATHS,
@@ -9,8 +10,6 @@ import {
 } from "./codex-report";
 import type { DataStackDiagnosticsResult } from "./diagnostics";
 import type { DataStackPlanArtifact } from "./plan";
-
-const DATA_STACK_CODEX_TIMEOUT_MS = 30_000;
 
 export const DATA_STACK_CODEX_OUTPUT_SCHEMA = {
   type: "object",
@@ -220,7 +219,7 @@ async function runDataStackCodexPrompt(options: {
   const thread = await startCodexReadOnlyThread(options.workingDirectory);
   const turn = await thread.run([{ type: "text", text: options.prompt }], {
     outputSchema: DATA_STACK_CODEX_OUTPUT_SCHEMA,
-    signal: AbortSignal.timeout(options.timeoutMs ?? DATA_STACK_CODEX_TIMEOUT_MS),
+    signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
   });
   return turn.finalResponse;
 }
@@ -234,7 +233,7 @@ export async function suggestDataStackWithCodex(
       diagnostics: options.diagnostics,
       plan: options.plan,
     }),
-    timeoutMs: options.timeoutMs,
+    timeoutMs: options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS,
     workingDirectory: options.workingDirectory,
   });
   return createDataStackCodexReportArtifact({

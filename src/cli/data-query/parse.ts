@@ -1,3 +1,5 @@
+import type { CodexRequestFailureKind } from "../../utils/codex-request-failure";
+
 export interface DataQueryCodexDraft {
   reasoningSummary: string;
   sql: string;
@@ -6,6 +8,7 @@ export interface DataQueryCodexDraft {
 export interface DataQueryCodexDraftResult {
   draft?: DataQueryCodexDraft;
   errorMessage?: string;
+  failureKind?: CodexRequestFailureKind;
 }
 
 export function parseDataQueryCodexDraft(finalResponse: string): DataQueryCodexDraft {

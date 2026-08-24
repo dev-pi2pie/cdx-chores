@@ -77,6 +77,7 @@ const NO_USABLE_MARKDOWN_PDF_CODEX_PROFILE_MESSAGE =
 
 export function createMarkdownPdfCodexProfileOrchestrationContext(input: {
   baseProfileCandidate?: MarkdownPdfProfileCandidate;
+  baseProfileRole?: "authoritative" | "candidate";
   createdAt: string;
   documentSignals: MarkdownPdfDocumentSignals;
   fontHints: string[];
@@ -88,6 +89,7 @@ export function createMarkdownPdfCodexProfileOrchestrationContext(input: {
 }): MarkdownPdfCodexProfileOrchestrationContext {
   const candidateResolution = resolveMarkdownPdfCodexProfileCandidates({
     baseProfileCandidate: input.baseProfileCandidate,
+    baseProfileRole: input.baseProfileRole,
     signalMode: input.signalMode,
   });
   const fontSignals =
@@ -122,6 +124,7 @@ async function suggestMarkdownPdfCodexProfileWithProgress(input: {
   progressSession?: CodexProgressSession;
   progressLabel: string;
   runtime: CliRuntime;
+  timeoutMs?: number;
 }): Promise<MarkdownPdfCodexProfileResult> {
   const ownsProgressSession = !input.progressSession;
   const codexProgress =
@@ -136,8 +139,12 @@ async function suggestMarkdownPdfCodexProfileWithProgress(input: {
       ? await suggestMarkdownPdfProfileWithCodex({
           ...input.context.request,
           runner: input.profileCodexRunner,
+          timeoutMs: input.timeoutMs,
         })
-      : await suggestMarkdownPdfProfileWithCodex(input.context.request);
+      : await suggestMarkdownPdfProfileWithCodex({
+          ...input.context.request,
+          timeoutMs: input.timeoutMs,
+        });
     codexProgressStatus = result.profile
       ? result.decision.decisionMode === "conservative-fallback"
         ? "fallback"
@@ -189,6 +196,7 @@ export async function runMarkdownPdfCodexProfileOrchestration(input: {
   progressSession?: CodexProgressSession;
   progressLabel: string;
   runtime: CliRuntime;
+  timeoutMs?: number;
 }): Promise<MarkdownPdfCodexProfileOrchestrationResult> {
   const { candidateResolution } = input.context;
   if (candidateResolution.executionMode === "deterministic") {

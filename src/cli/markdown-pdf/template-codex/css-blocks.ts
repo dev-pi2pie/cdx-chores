@@ -1,3 +1,5 @@
+import { normalizeCssForInspection } from "../css-inspection";
+
 export const MARKDOWN_PDF_TEMPLATE_CODEX_CSS_BLOCK_SLOTS = [
   "cover",
   "tables",
@@ -36,9 +38,19 @@ const SLOT_SELECTORS: Record<MarkdownPdfTemplateCodexCssBlockSlot, readonly stri
   typography: ["body", "p", "h1", "h2", "h3", "h4", "h5", "h6"],
 };
 
+function inspectedCss(css: string, maskStrings: boolean): string {
+  // This bounded validator intentionally keeps inspecting the normalized prefix
+  // when generated CSS ends inside a comment or string.
+  return normalizeCssForInspection(css, {
+    commentReplacement: "",
+    lowercase: true,
+    maskStrings,
+  }).css;
+}
+
 function includesRemoteOrLocalPathReference(css: string): boolean {
-  const inspectedCss = [css, normalizeCssForInspection(css, false)];
-  return inspectedCss.some(
+  const inspectedValues = [css, inspectedCss(css, false)];
+  return inspectedValues.some(
     (value) =>
       /https?:\/\//iu.test(value) ||
       /\bfile:\/\//iu.test(value) ||
@@ -60,88 +72,8 @@ function includesRequiredHookRemoval(css: string): boolean {
   );
 }
 
-function decodeCssEscape(css: string, index: number): { nextIndex: number; value: string } {
-  const next = css[index + 1];
-  if (next === "\n" || next === "\f") {
-    return { nextIndex: index + 1, value: "" };
-  }
-  if (next === "\r") {
-    return {
-      nextIndex: css[index + 2] === "\n" ? index + 2 : index + 1,
-      value: "",
-    };
-  }
-  const hex = css.slice(index + 1).match(/^[0-9a-f]{1,6}/iu)?.[0];
-  if (hex) {
-    const codePoint = Number.parseInt(hex, 16);
-    let nextIndex = index + hex.length;
-    const trailingWhitespace = css[nextIndex + 1];
-    if (trailingWhitespace && /[ \t\r\n\f]/u.test(trailingWhitespace)) {
-      nextIndex += trailingWhitespace === "\r" && css[nextIndex + 2] === "\n" ? 2 : 1;
-    }
-    return {
-      nextIndex,
-      value: codePoint > 0 && codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : "\uFFFD",
-    };
-  }
-  return next ? { nextIndex: index + 1, value: next } : { nextIndex: index, value: "\\" };
-}
-
-function normalizeCssForInspection(css: string, maskStrings: boolean): string {
-  let result = "";
-  let quote: '"' | "'" | undefined;
-
-  for (let index = 0; index < css.length; index += 1) {
-    const char = css[index];
-    const next = css[index + 1];
-    if (!char) {
-      break;
-    }
-
-    if (quote) {
-      if (char === "\\") {
-        const escape = decodeCssEscape(css, index);
-        result += maskStrings ? " " : escape.value.toLowerCase();
-        index = escape.nextIndex;
-        continue;
-      }
-      if (char === quote) {
-        quote = undefined;
-      }
-      result += maskStrings ? " " : char.toLowerCase();
-      continue;
-    }
-
-    if (char === '"' || char === "'") {
-      quote = char;
-      result += maskStrings ? " " : char;
-      continue;
-    }
-
-    if (char === "/" && next === "*") {
-      const commentEnd = css.indexOf("*/", index + 2);
-      if (commentEnd === -1) {
-        return result;
-      }
-      index = commentEnd + 1;
-      continue;
-    }
-
-    if (char === "\\") {
-      const escape = decodeCssEscape(css, index);
-      result += escape.value.toLowerCase();
-      index = escape.nextIndex;
-      continue;
-    }
-
-    result += char.toLowerCase();
-  }
-
-  return result;
-}
-
 function includesFontOwnershipOverride(css: string): boolean {
-  const normalized = normalizeCssForInspection(css, true);
+  const normalized = inspectedCss(css, true);
   const declarationMatcher = /(?:^|[;{}])\s*([^:{}]+?)\s*:/gu;
   for (const match of normalized.matchAll(declarationMatcher)) {
     const property = match[1]?.trim();
@@ -166,7 +98,7 @@ function inspectCssBraceStructure(css: string): {
 } {
   let depth = 0;
   let nested = false;
-  for (const char of normalizeCssForInspection(css, true)) {
+  for (const char of inspectedCss(css, true)) {
     if (char === "{") {
       depth += 1;
       nested ||= depth > 1;
@@ -183,7 +115,7 @@ function inspectCssBraceStructure(css: string): {
 function topLevelSelectors(css: string): string[] {
   const selectors: string[] = [];
   const matcher = /([^{}]+)\{/gu;
-  for (const match of normalizeCssForInspection(css, true).matchAll(matcher)) {
+  for (const match of inspectedCss(css, true).matchAll(matcher)) {
     const selector = match[1]?.trim();
     if (selector) {
       selectors.push(selector);

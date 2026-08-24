@@ -1,3 +1,8 @@
+import {
+  classifyCodexRequestFailure,
+  formatCodexTimeoutFailure,
+} from "../../../utils/codex-request-failure";
+import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../../utils/codex-timeout";
 import { readTextFileRequired } from "../../file-io";
 import { resolveFromCwd } from "../../path-utils";
 import { writeDataStackCodexReportArtifact } from "../../data-stack/codex-report";
@@ -117,6 +122,19 @@ export async function actionDataStack(
           workingDirectory: runtime.cwd,
         });
       } catch (error) {
+        if (classifyCodexRequestFailure(error) === "timeout") {
+          throw new CliError(
+            formatCodexTimeoutFailure({
+              attemptsUsed: 1,
+              requestLabel: "Codex stack assist request",
+              timeoutMs: options.codexTimeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS,
+            }),
+            {
+              code: "DATA_STACK_CODEX_FAILED",
+              exitCode: 2,
+            },
+          );
+        }
         if (error instanceof CliError) {
           throw error;
         }

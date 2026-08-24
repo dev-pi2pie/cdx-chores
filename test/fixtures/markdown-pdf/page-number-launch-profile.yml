@@ -1,0 +1,13 @@
+page:
+  size: A5
+  orientation: portrait
+  margin: 18mm
+
+titleBlock:
+  metadataTitle: hide
+
+pageNumbers:
+  enabled: true
+  position: bottom-center
+  format: "LAUNCH-PN-{page}/{pages}"
+  scope: body

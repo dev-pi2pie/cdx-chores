@@ -1,0 +1,205 @@
+import {
+  describe,
+  expect,
+  test,
+  actionDataQueryCodex,
+  buildDataQueryCodexIntentEditorTemplate,
+  normalizeDataQueryCodexEditorIntent,
+  createActionTestRuntime,
+  expectCliError,
+  seedDataExtractFixtures,
+  seedDuckDbWorkspaceFixture,
+  seedSingleTableDuckDbFixture,
+  toRepoRelativePath,
+  withTempFixtureDir,
+  duckdbReady,
+  excelReady,
+  sqliteReady,
+  stripAnsi,
+} from "./codex-support";
+
+describe("cli action modules: data query codex validation", () => {
+  test("actionDataQueryCodex requires intent", async () => {
+    const { runtime, expectNoOutput } = createActionTestRuntime();
+
+    await expectCliError(
+      () =>
+        actionDataQueryCodex(runtime, {
+          input: "test/data-sources/fixtures/basic.csv",
+          intent: "   ",
+        }),
+      { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "Intent is required." },
+    );
+
+    expectNoOutput();
+  });
+
+  test("actionDataQueryCodex reports codex unavailability failures clearly", async () => {
+    const { runtime, expectNoOutput } = createActionTestRuntime();
+
+    await expectCliError(
+      () =>
+        actionDataQueryCodex(runtime, {
+          input: "test/data-sources/fixtures/basic.csv",
+          intent: "show active rows",
+          runner: async () => {
+            throw new Error("Codex Exec exited with code 1: authentication required");
+          },
+        }),
+      { code: "CODEX_UNAVAILABLE", exitCode: 2, messageIncludes: "Codex drafting unavailable" },
+    );
+
+    expectNoOutput();
+  });
+
+  test("actionDataQueryCodex reports malformed Codex draft JSON clearly", async () => {
+    const { runtime, expectNoOutput } = createActionTestRuntime();
+
+    await expectCliError(
+      () =>
+        actionDataQueryCodex(runtime, {
+          input: "test/data-sources/fixtures/basic.csv",
+          intent: "show active rows",
+          runner: async () => "{not json",
+        }),
+      {
+        code: "DATA_QUERY_CODEX_FAILED",
+        exitCode: 2,
+        messageIncludes: "Codex drafting failed",
+      },
+    );
+
+    expectNoOutput();
+  });
+
+  test("actionDataQueryCodex reports incomplete Codex draft payloads clearly", async () => {
+    const { runtime, expectNoOutput } = createActionTestRuntime();
+
+    await expectCliError(
+      () =>
+        actionDataQueryCodex(runtime, {
+          input: "test/data-sources/fixtures/basic.csv",
+          intent: "show active rows",
+          runner: async () =>
+            JSON.stringify({
+              reasoning_summary: "Missing the SQL field.",
+            }),
+        }),
+      {
+        code: "DATA_QUERY_CODEX_FAILED",
+        exitCode: 2,
+        messageIncludes: "Codex drafting response did not include SQL.",
+      },
+    );
+
+    expectNoOutput();
+  });
+
+  test("actionDataQueryCodex reports a structurally identified timeout with its limit", async () => {
+    const { runtime } = createActionTestRuntime();
+    const timeout = new Error("request stopped");
+    timeout.name = "TimeoutError";
+
+    await expectCliError(
+      () =>
+        actionDataQueryCodex(runtime, {
+          input: "test/data-sources/fixtures/basic.csv",
+          intent: "show active rows",
+          runner: async () => {
+            throw timeout;
+          },
+          timeoutMs: 120_000,
+        }),
+      {
+        code: "DATA_QUERY_CODEX_FAILED",
+        exitCode: 2,
+        messageIncludes:
+          "Codex data-query drafting request timed out after the 2m per-attempt limit.",
+      },
+    );
+  });
+
+  test("actionDataQueryCodex does not infer timeout from arbitrary error text", async () => {
+    const { runtime } = createActionTestRuntime();
+
+    await expectCliError(
+      () =>
+        actionDataQueryCodex(runtime, {
+          input: "test/data-sources/fixtures/basic.csv",
+          intent: "show active rows",
+          runner: async () => {
+            throw new Error("request timed out after 30 seconds");
+          },
+        }),
+      {
+        code: "DATA_QUERY_CODEX_FAILED",
+        exitCode: 2,
+        messageIncludes: "Codex drafting failed: request timed out after 30 seconds",
+      },
+    );
+  });
+
+  test("actionDataQueryCodex keeps ordinary aborts on the generic failure path", async () => {
+    const { runtime } = createActionTestRuntime();
+
+    try {
+      await actionDataQueryCodex(runtime, {
+        input: "test/data-sources/fixtures/basic.csv",
+        intent: "show active rows",
+        runner: async () => {
+          throw new DOMException("request cancelled", "AbortError");
+        },
+      });
+      throw new Error("Expected data-query Codex drafting to fail");
+    } catch (error) {
+      expect(error).toHaveProperty("code", "DATA_QUERY_CODEX_FAILED");
+      expect(error).toHaveProperty("message", "Codex drafting failed: request cancelled");
+      expect(error instanceof Error ? error.message : String(error)).not.toContain("timed out");
+    }
+  });
+
+  test("actionDataQueryCodex reports source ambiguity for SQLite inputs", async () => {
+    if (!sqliteReady) {
+      return;
+    }
+
+    const { runtime, expectNoOutput } = createActionTestRuntime();
+
+    await expectCliError(
+      () =>
+        actionDataQueryCodex(runtime, {
+          input: "test/data-sources/fixtures/multi.sqlite",
+          intent: "list users",
+          runner: async () =>
+            JSON.stringify({
+              sql: "select id, name from file order by id",
+              reasoning_summary: "Uses the selected source.",
+            }),
+        }),
+      { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "--source is required for SQLite" },
+    );
+
+    expectNoOutput();
+  });
+
+  test("actionDataQueryCodex rejects --relation together with --source", async () => {
+    const { runtime, expectNoOutput } = createActionTestRuntime();
+
+    await expectCliError(
+      () =>
+        actionDataQueryCodex(runtime, {
+          input: "test/data-sources/fixtures/multi.sqlite",
+          intent: "list users",
+          relations: [{ alias: "users", source: "users" }],
+          source: "users",
+        }),
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "--relation cannot be used together with --source",
+      },
+    );
+
+    expectNoOutput();
+  });
+});

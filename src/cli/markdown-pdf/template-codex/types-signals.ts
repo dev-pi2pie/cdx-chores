@@ -40,9 +40,20 @@ export interface MarkdownPdfTemplateCodexLayoutPolicySignal {
   };
 }
 
+export type MarkdownPdfTemplateCodexBaseProfileSummary = Omit<
+  MarkdownPdfProfileCandidateSummary,
+  "traits"
+> & {
+  traits: Omit<MarkdownPdfProfileCandidateSummary["traits"], "pageNumbers">;
+};
+
 export interface MarkdownPdfTemplateCodexBaseProfileSignals {
   available: boolean;
-  summary?: MarkdownPdfProfileCandidateSummary;
+  /**
+   * Identity and preset ownership only. The normalized Profile and its
+   * page-number values remain private compatibility inputs, not model signals.
+   */
+  summary?: MarkdownPdfTemplateCodexBaseProfileSummary;
 }
 
 export interface MarkdownPdfTemplateCodexTitleSignals {

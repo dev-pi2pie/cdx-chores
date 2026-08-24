@@ -51,10 +51,14 @@ function requireBaseMarkdownPdfProfileCandidate(
 
 export function resolveMarkdownPdfCodexProfileCandidates(input: {
   baseProfileCandidate?: MarkdownPdfProfileCandidate;
+  baseProfileRole?: "authoritative" | "candidate";
   signalMode: MarkdownPdfCodexSignalMode;
 }): MarkdownPdfCodexProfileCandidateResolution {
-  const candidates = createMarkdownPdfProfileCandidates();
-  if (input.baseProfileCandidate) {
+  const candidates =
+    input.baseProfileCandidate && input.baseProfileRole === "authoritative"
+      ? [input.baseProfileCandidate]
+      : createMarkdownPdfProfileCandidates();
+  if (input.baseProfileCandidate && input.baseProfileRole !== "authoritative") {
     candidates.unshift(input.baseProfileCandidate);
   }
   const strongestCandidate =

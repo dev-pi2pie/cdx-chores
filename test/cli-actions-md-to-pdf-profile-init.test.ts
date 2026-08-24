@@ -23,10 +23,18 @@ describe("cli action modules: md to-pdf profile init", () => {
       });
 
       const profile = await readFile(outputPath, "utf8");
+      expect(profile).toStartWith("schemaVersion: 3\n");
       expect(profile).toContain("page:");
       expect(profile).not.toContain("profile:");
       expect(profile).toContain("pageNumbers:");
       expect(profile).toContain("enabled: false");
+      expect(profile).toContain("scope: body");
+      expect(profile).toContain("countFrom: document");
+      expect(profile).toContain("start: 1");
+      expect(profile).toContain("increment: 1");
+      expect(profile).toContain("position: bottom-center");
+      expect(profile).toContain('format: "{page}"');
+      expect(profile).not.toContain("style:");
       expect(stdout.text).toContain("Wrote Markdown PDF profile:");
       expectNoStderr();
     });
@@ -43,10 +51,30 @@ describe("cli action modules: md to-pdf profile init", () => {
       });
 
       const profile = JSON.parse(await readFile(outputPath, "utf8")) as {
+        schemaVersion: number;
         page: { orientation: string; marginTop: string };
+        pageNumbers: {
+          enabled: boolean;
+          scope: string;
+          countFrom: string;
+          start: number;
+          increment: number;
+          position: string;
+          format: string;
+        };
       };
+      expect(profile.schemaVersion).toBe(3);
       expect(profile.page.orientation).toBe("landscape");
       expect(profile.page.marginTop).toBe("12mm");
+      expect(profile.pageNumbers).toEqual({
+        enabled: false,
+        scope: "body",
+        countFrom: "document",
+        start: 1,
+        increment: 1,
+        position: "bottom-center",
+        format: "{page}",
+      });
       expectNoStderr();
     });
   });
@@ -116,6 +144,34 @@ describe("cli action modules: md to-pdf profile init", () => {
         transformerNotation: true,
       },
     });
+  });
+
+  test("copies only supported defined Profile fields from runtime input", () => {
+    const normalizedOptions = normalizeMarkdownPdfOptions();
+    const directEquivalent = prepareMarkdownPdfProfileInit(normalizedOptions);
+    const runtimeInput = {
+      code: undefined,
+      header: undefined,
+      footer: undefined,
+      pageNumbers: {
+        enabled: false,
+        scope: "body",
+        countFrom: "document",
+        start: 0,
+        increment: 1,
+        position: "bottom-center",
+        format: "{page}",
+      },
+      unexpected: "must not be copied",
+    } as const;
+    const prepared = prepareMarkdownPdfProfileInit(normalizedOptions, runtimeInput as never);
+
+    expect(prepared.profile).toEqual({
+      ...directEquivalent.profile,
+      pageNumbers: runtimeInput.pageNumbers,
+    });
+    expect(prepared.profile).not.toHaveProperty("unexpected");
+    expect(prepared.profile.pageNumbers).not.toBe(runtimeInput.pageNumbers);
   });
 
   test("prepares once and rebinds YAML and JSON destinations without writing", async () => {

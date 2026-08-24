@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Profile Helper"
 created-date: 2026-06-16
-modified-date: 2026-07-28
+modified-date: 2026-08-22
 status: completed
 agent: codex
 ---
@@ -34,14 +34,26 @@ Common options:
 - `--keep-codex-report`: write a diagnostic Codex report sidecar.
 - `--codex-report-output <path>`: explicit diagnostic report JSON path.
 - `--overwrite`: allow selected output artifacts to be replaced.
+- `--codex-timeout <duration>`: command-local deadline for each Codex profile
+  request attempt.
 
 Example:
 
 ```bash
 cdx-chores md pdf-profile codex ./report.md \
   --intent "wide internal report with readable code blocks" \
+  --codex-timeout 2m \
   --output ./report-profile.yml
 ```
+
+The timeout option changes request timing only; it does not change whether the
+signal ladder calls Codex. When omitted, Codex profile requests keep the
+30-second default. Each request receives its own per-attempt window rather than
+sharing one command-wide budget.
+
+For the shared duration grammar and the distinction between timeouts, retries,
+and recovery, see
+[Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md).
 
 Render with the accepted profile:
 
@@ -188,9 +200,11 @@ the replayable rendering input is the profile itself.
 
 ## Generated Profile Identity
 
-Codex-assisted profiles include a `profile` identity section:
+Codex-assisted profiles materialize the current Profile contract as
+`schemaVersion: 3` and include a `profile` identity section:
 
 ```yaml
+schemaVersion: 3
 profile:
   id: md-pdf-profile-20260616T081500Z-a1b2c3d4
   source: codex
@@ -202,6 +216,13 @@ profile:
 Deterministic fallback profiles use `source: deterministic`. Older profiles
 without a `profile` section remain valid for rendering and as `--base-profile`
 inputs.
+
+When the helper derives a new Profile from an older or unversioned base, the
+new output declares revision `3`; the original base file is not rewritten.
+`schemaVersion` describes the serialized feature set rather than locking out
+otherwise supported content. See [Markdown PDF Usage](markdown-pdf-usage.md)
+for the canonical revision, validation, migration, and renderer-capability
+contract.
 
 `profile.preset` is replayable. Rendering with `md to-pdf --profile <path>`
 consumes the preset identity before renderer defaults. Direct render-time CLI
@@ -233,20 +254,28 @@ invalid final profiles fail without silently writing a fake Codex profile.
 ## Supported Profile Patch Boundary
 
 Codex can only recommend supported profile fields through strict patches. The
-normal patch contract covers fixed profile leaves such as:
+normal patch contract covers these bounded groups:
 
 - page size, orientation, and margins
 - ToC enabled/depth/page-break settings
 - `pdf.content-langs`
 - cover enabled/style/fields
-- header and footer slots
-- page-number enabled/position/format/scope
+- header and footer slots plus their bounded text and separator styles
+- page-number enabled/position/format/scope, count origin, start, and increment
 - `titleBlock.metadataTitle`
 - code highlighting, theme, line numbers, and transformer notation
 
 The helper validates every patch before writing a profile. Unknown paths,
 unsupported value types, invalid enum values, deletion, reset, arbitrary object
 writes, and raw CSS/template changes are rejected.
+
+This is a strict Codex patch allowlist, not the complete Profile authoring
+surface. The Interactive Formal Guide exposes common cover, ToC, page-number,
+and repeating-content choices; the direct helper does not receive those guided
+answers. A supported patch path also does not mean Codex will author that field
+in every request. Edit Profile YAML or JSON when exact or advanced values must
+be explicit. The canonical field meanings, defaults, combinations, and
+examples live in [Markdown PDF Usage](markdown-pdf-usage.md).
 
 ## Font Patch Contract
 
@@ -255,12 +284,12 @@ by language tag while other font roles are single-slot settings.
 
 Supported role/key combinations:
 
-| Role | Supported keys |
-| --- | --- |
-| `body` | `default` or language tags such as `ja`, `zh-Hant`, `ko` |
-| `code` | `default` or `symbols` |
-| `heading` | `default` only |
-| `pageChrome` | `default` only |
+| Role         | Supported keys                                           |
+| ------------ | -------------------------------------------------------- |
+| `body`       | `default` or language tags such as `ja`, `zh-Hant`, `ko` |
+| `code`       | `default` or `symbols`                                   |
+| `heading`    | `default` only                                           |
+| `pageChrome` | `default` only                                           |
 
 Example generated profile shape:
 
@@ -357,6 +386,7 @@ template-only behavior.
 
 ## Related Docs
 
+- [Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md)
 - [Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md)
 - [Markdown PDF Usage](markdown-pdf-usage.md)
 - [Markdown PDF Codex Template Helper](markdown-pdf-codex-template-helper.md)

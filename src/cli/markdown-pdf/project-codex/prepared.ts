@@ -314,6 +314,7 @@ export async function prepareMdPdfProjectCodex(
       runtime,
       signals,
       state,
+      timeoutMs: options.timeoutMs,
     });
     const completeTemplatePhase = await runMdPdfProjectCodexTemplatePhase({
       outputPlan,
@@ -323,8 +324,9 @@ export async function prepareMdPdfProjectCodex(
       signals,
       state,
       templateCodexRunner: options.templateCodexRunner,
+      timeoutMs: options.timeoutMs,
     });
-    const completedProgressStatus = projectProgressStatus({
+    const completedPhaseProgressStatus = projectProgressStatus({
       profilePhase,
       templatePhase: completeTemplatePhase,
     });
@@ -352,7 +354,10 @@ export async function prepareMdPdfProjectCodex(
             outputPlan,
             templatePhase: binding.templatePhase,
           });
-    progressStatus = completedProgressStatus;
+    progressStatus =
+      binding.validation.decisionMode === "no-usable-project"
+        ? "error"
+        : completedPhaseProgressStatus;
     return {
       identity: stableIdentity(outputPlan),
       layout: preparedLayout(outputPlan),

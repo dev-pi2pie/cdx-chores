@@ -5,7 +5,7 @@ import { parse, type DefaultTreeAdapterTypes } from "parse5";
 import { MARKDOWN_PDF_CODE_CLASSES } from "../src/cli/markdown-pdf/code-style";
 import { highlightMarkdownPdfCodeBlocks } from "../src/cli/markdown-pdf/code-highlight";
 import type { EffectiveMarkdownPdfCodeOptions } from "../src/cli/markdown-pdf";
-import { pandocTest } from "./cli-actions-md-to-pdf.helpers";
+import { pandocTest } from "./markdown-pdf/actions/render-support";
 
 const CODE_OPTIONS: EffectiveMarkdownPdfCodeOptions = {
   highlight: true,

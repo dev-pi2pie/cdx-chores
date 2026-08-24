@@ -6,12 +6,14 @@ import {
   type NormalizeMarkdownPdfOptionsInput,
 } from "../../markdown-pdf";
 import type { CliRuntime } from "../../types";
+import { styleCliDiagnosticLabel } from "../../diagnostic-color";
 import { displayPath, printLine } from "../shared";
 import {
   executePlannedMarkdownPdfRender,
   planMarkdownPdfRender,
   prepareMarkdownPdfRender,
 } from "./to-pdf-service";
+import { printMarkdownPdfRenderWarnings } from "./render-warnings";
 
 export interface MdToPdfOptions extends NormalizeMarkdownPdfOptionsInput {
   input: string;
@@ -24,6 +26,7 @@ export interface MdToPdfOptions extends NormalizeMarkdownPdfOptionsInput {
   noDefaultCss?: boolean;
   htmlOutput?: string;
   codeHighlight?: boolean;
+  pageNumbers?: boolean;
   overwrite?: boolean;
   runner?: MarkdownPdfProcessRunner;
   codeHighlighter?: MarkdownPdfCodeHighlighter;
@@ -56,7 +59,10 @@ function printIgnoredRenderBundleFiles(runtime: CliRuntime, ignoredProfileFiles:
   if (ignoredProfileFiles.length === 0) {
     return;
   }
-  printLine(runtime.stderr, "Warning: ignored unclassified YAML or JSON bundle files:");
+  printLine(
+    runtime.stderr,
+    `${styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:")} ignored unclassified YAML or JSON bundle files:`,
+  );
   for (const filename of ignoredProfileFiles) {
     printLine(runtime.stderr, `- ${filename}`);
   }
@@ -80,12 +86,7 @@ export async function actionMdToPdf(runtime: CliRuntime, options: MdToPdfOptions
     codeHighlighter: options.codeHighlighter,
   });
 
-  if (result.warnings.length > 0) {
-    printLine(runtime.stderr, "Markdown PDF render warnings:");
-    for (const warning of result.warnings) {
-      printLine(runtime.stderr, `- ${warning}`);
-    }
-  }
+  printMarkdownPdfRenderWarnings(runtime, result.warnings);
 
   printLine(runtime.stdout, `Wrote PDF: ${displayPath(runtime, plan.outputPath)}`);
 }

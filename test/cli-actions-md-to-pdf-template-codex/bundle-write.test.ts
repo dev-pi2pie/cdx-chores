@@ -19,8 +19,9 @@ import {
   toRepoRelativePath,
   withTempFixtureDir,
 } from "../helpers/cli-test-utils";
-import { minimalPng, pathExists } from "./fixtures";
-import { createSynthesisSignals } from "./synthesis-fixtures";
+import { pathExists } from "../markdown-pdf/support/path-fixtures";
+import { minimalPng } from "../markdown-pdf/actions/template-codex-fixtures";
+import { createSynthesisSignals } from "../markdown-pdf/actions/template-synthesis-fixtures";
 
 function outputPlan(input: {
   coverImagePath?: string;
@@ -132,6 +133,56 @@ describe("cli action modules: md pdf-template codex bundle writes", () => {
         },
       );
       expect(await pathExists(plan.templateHtml.path)).toBe(false);
+    });
+  });
+
+  test("rejects unproven generated body hooks before any bundle write", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-validate-body-hook", async (fixtureDir) => {
+      const cases = [
+        {
+          name: "missing-hook",
+          mutate: (html: string) =>
+            html.replace('class="document-body"', 'class="document-content"'),
+        },
+        {
+          name: "duplicate-hook",
+          mutate: (html: string) =>
+            html.replace("$body$", '<section class="document-body">$body$</section>'),
+        },
+        {
+          name: "unrelated-insertion",
+          mutate: (html: string) =>
+            html.replace(
+              '<main class="document-body">',
+              '<aside class="document-body"></aside><main>',
+            ),
+        },
+      ] as const;
+
+      for (const invalidCase of cases) {
+        const plan = outputPlan({
+          outputDirectory: join(fixtureDir, invalidCase.name),
+        });
+        const synthesis = synthesizeForPlan(plan);
+        await expectCliError(
+          () =>
+            writeMdPdfTemplateCodexBundle({
+              outputPlan: plan,
+              ...bundleWriteContext(plan),
+              synthesis: {
+                ...synthesis,
+                templateHtml: invalidCase.mutate(synthesis.templateHtml),
+              },
+            }),
+          {
+            code: "TEMPLATE_VALIDATION_FAILED",
+            exitCode: 2,
+            messageIncludes: invalidCase.name,
+          },
+        );
+        expect(await pathExists(plan.templateHtml.path)).toBe(false);
+        expect(await pathExists(plan.styleCss.path)).toBe(false);
+      }
     });
   });
 

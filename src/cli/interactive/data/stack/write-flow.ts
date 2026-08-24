@@ -88,6 +88,7 @@ export async function confirmInteractiveStackWrite(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   setup: InteractiveDataStackSetup,
+  codexTimeoutMs: number,
 ): Promise<InteractiveDataStackWriteOutcome> {
   let outputPlan = await promptInteractiveStackOutput(runtime, pathPromptContext);
   let reviewedPlan: InteractiveDataStackReviewedPlan | undefined;
@@ -130,7 +131,7 @@ export async function confirmInteractiveStackWrite(
       const checkpointAction = await promptInteractiveStackCodexCheckpoint(runtime, codexSignals);
       if (checkpointAction === "codex") {
         handledCodexSignalKey = codexSignalKey;
-        reviewedPlan = await requestInteractiveStackCodexReview(runtime, state);
+        reviewedPlan = await requestInteractiveStackCodexReview(runtime, state, codexTimeoutMs);
         continue;
       }
       if (checkpointAction === "review") {

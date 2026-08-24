@@ -11,9 +11,9 @@ import {
   type MarkdownPdfProjectCodexTemplatePhaseSignalMode,
   type MdPdfProjectCodexOptions,
 } from "../../src/cli/markdown-pdf/project-codex";
-import { createActionTestRuntime } from "../helpers/cli-action-test-utils";
+import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
-import { minimalPng } from "../cli-actions-md-to-pdf-template-codex/fixtures";
+import { minimalPng } from "../markdown-pdf/actions/template-codex-fixtures";
 
 interface ExpectedModes {
   profileSignalMode: MarkdownPdfProjectCodexProfilePhaseSignalMode;
@@ -36,6 +36,47 @@ async function collectModes(
 }
 
 describe("cli action modules: md pdf-project codex signal classification", () => {
+  test("rejects invalid base profiles while collecting pre-Codex project signals", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-invalid-base-signals", async (fixtureDir) => {
+      const invalidBases = [
+        {
+          contents: "pageNumbers: [\n",
+          messageIncludes: "Failed to parse Markdown PDF profile YAML",
+          name: "malformed.yml",
+        },
+        {
+          contents: "unknown:\n  bad: true\n",
+          messageIncludes: "Unknown Markdown PDF profile key",
+          name: "unknown.yml",
+        },
+        {
+          contents: "pageNumbers:\n  start: -1\n  increment: 0\n",
+          messageIncludes: "start must be a non-negative integer",
+          name: "invalid-arithmetic.yml",
+        },
+        {
+          contents: "pageNumbers:\n  scope: document\n  countFrom: body\n",
+          messageIncludes: "scope document cannot be used with countFrom body",
+          name: "invalid-origin.yml",
+        },
+      ];
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+
+      for (const invalidBase of invalidBases) {
+        await writeFile(join(fixtureDir, invalidBase.name), invalidBase.contents, "utf8");
+        const state = await normalizeMdPdfProjectCodexCommandState(runtime, {
+          baseProfile: invalidBase.name,
+          intent: "repair this profile",
+        });
+        await expectCliError(() => collectMdPdfProjectCodexSignals(runtime, state), {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: invalidBase.messageIncludes,
+        });
+      }
+    });
+  });
+
   test("classifies the project signal ladder while preserving phase-native modes", async () => {
     await withTempFixtureDir("md-pdf-project-codex-signals", async (fixtureDir) => {
       await writeFile(join(fixtureDir, "report.md"), "# Report\n\nPlain body.\n", "utf8");

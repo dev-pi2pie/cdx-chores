@@ -1,5 +1,23 @@
 import type { NormalizeMarkdownPdfOptionsInput } from "../validation";
 import type { MarkdownPdfPreset } from "../validation";
+import {
+  MARKDOWN_PDF_CODE_THEMES,
+  MARKDOWN_PDF_PAGE_CHROME_FONT_WEIGHTS,
+  MARKDOWN_PDF_PAGE_CHROME_POSITIONS,
+  MARKDOWN_PDF_PAGE_CHROME_SEPARATOR_STYLES,
+  MARKDOWN_PDF_PAGE_NUMBER_COUNT_ORIGINS,
+  MARKDOWN_PDF_PAGE_NUMBER_SCOPES,
+} from "./feature-registry";
+import type { MarkdownPdfProfileRevisionAssessment } from "./revision";
+
+export {
+  MARKDOWN_PDF_CODE_THEMES,
+  MARKDOWN_PDF_PAGE_CHROME_FONT_WEIGHTS,
+  MARKDOWN_PDF_PAGE_CHROME_POSITIONS,
+  MARKDOWN_PDF_PAGE_CHROME_SEPARATOR_STYLES,
+  MARKDOWN_PDF_PAGE_NUMBER_COUNT_ORIGINS,
+  MARKDOWN_PDF_PAGE_NUMBER_SCOPES,
+};
 
 export type MarkdownPdfProfileFormat = "json" | "yaml";
 
@@ -15,14 +33,6 @@ export interface NormalizedMarkdownPdfProfileIdentity {
   createdAt: string;
 }
 
-export const MARKDOWN_PDF_CODE_THEMES = [
-  "github-light",
-  "light-plus",
-  "min-light",
-  "vitesse-light",
-  "catppuccin-latte",
-] as const;
-
 export type MarkdownPdfCodeTheme = (typeof MARKDOWN_PDF_CODE_THEMES)[number];
 
 export interface NormalizedMarkdownPdfCode {
@@ -34,13 +44,7 @@ export interface NormalizedMarkdownPdfCode {
 
 export type EffectiveMarkdownPdfCodeOptions = NormalizedMarkdownPdfCode;
 
-export type MarkdownPdfPageChromePosition =
-  | "top-left"
-  | "top-center"
-  | "top-right"
-  | "bottom-left"
-  | "bottom-center"
-  | "bottom-right";
+export type MarkdownPdfPageChromePosition = (typeof MARKDOWN_PDF_PAGE_CHROME_POSITIONS)[number];
 
 export interface MarkdownPdfPageChromeSlots {
   left: string;
@@ -48,11 +52,44 @@ export interface MarkdownPdfPageChromeSlots {
   right: string;
 }
 
+export type MarkdownPdfPageNumberScope = (typeof MARKDOWN_PDF_PAGE_NUMBER_SCOPES)[number];
+
+export type MarkdownPdfPageNumberCountOrigin =
+  (typeof MARKDOWN_PDF_PAGE_NUMBER_COUNT_ORIGINS)[number];
+
+export type MarkdownPdfPageChromeFontWeight =
+  (typeof MARKDOWN_PDF_PAGE_CHROME_FONT_WEIGHTS)[number];
+
+export type MarkdownPdfPageChromeSeparatorStyle =
+  (typeof MARKDOWN_PDF_PAGE_CHROME_SEPARATOR_STYLES)[number];
+
+export interface NormalizedMarkdownPdfPageChromeSeparator {
+  width?: string;
+  style?: MarkdownPdfPageChromeSeparatorStyle;
+  color?: string;
+  gap?: string | 0;
+}
+
+export interface NormalizedMarkdownPdfPageChromeStyle {
+  fontSize?: string;
+  fontWeight?: MarkdownPdfPageChromeFontWeight;
+  lineHeight?: number;
+  color?: string;
+  separator?: NormalizedMarkdownPdfPageChromeSeparator;
+}
+
+export interface NormalizedMarkdownPdfPageChromeArea extends MarkdownPdfPageChromeSlots {
+  style?: NormalizedMarkdownPdfPageChromeStyle;
+}
+
 export interface NormalizedMarkdownPdfPageNumbers {
   enabled: boolean;
   position: MarkdownPdfPageChromePosition;
   format: string;
-  scope: "body";
+  scope: MarkdownPdfPageNumberScope;
+  countFrom: MarkdownPdfPageNumberCountOrigin;
+  start: number;
+  increment: number;
 }
 
 export type MarkdownPdfMetadataTitleBlockMode = "auto" | "show" | "hide";
@@ -90,8 +127,8 @@ export interface NormalizedMarkdownPdfProfile {
   identity?: NormalizedMarkdownPdfProfileIdentity;
   metadata: MarkdownPdfMetadata;
   code: NormalizedMarkdownPdfCode;
-  header: MarkdownPdfPageChromeSlots;
-  footer: MarkdownPdfPageChromeSlots;
+  header: NormalizedMarkdownPdfPageChromeArea;
+  footer: NormalizedMarkdownPdfPageChromeArea;
   pageNumbers: NormalizedMarkdownPdfPageNumbers;
   titleBlock: NormalizedMarkdownPdfTitleBlock;
   cover: NormalizedMarkdownPdfCover;
@@ -108,4 +145,5 @@ export interface MarkdownPdfProfileMergeInput {
 export interface MarkdownPdfProfileLoadResult {
   profile: NormalizedMarkdownPdfProfile;
   recipeOptions: NormalizeMarkdownPdfOptionsInput;
+  revisionAssessment: MarkdownPdfProfileRevisionAssessment;
 }

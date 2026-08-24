@@ -65,12 +65,10 @@ export async function planBatchRename(
   const uidByPath = preparedPattern.usesUid
     ? new Map<string, string>(
         await Promise.all(
-          entries.map(
-            async (entry): Promise<[string, string]> => [
-              entry.sourcePath,
-              await buildRenameUidBasename(entry.sourcePath),
-            ],
-          ),
+          entries.map(async (entry): Promise<[string, string]> => [
+            entry.sourcePath,
+            await buildRenameUidBasename(entry.sourcePath),
+          ]),
         ),
       )
     : undefined;

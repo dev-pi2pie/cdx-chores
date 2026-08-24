@@ -15,6 +15,7 @@ import type { InteractivePathPromptContext } from "../shared";
 export async function handleRenameBatchInteractiveAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
+  codexTimeoutMs: number,
 ): Promise<void> {
   const directory = await promptRequiredPathWithConfig("Target directory", {
     kind: "directory",
@@ -128,6 +129,7 @@ export async function handleRenameBatchInteractiveAction(
     previewSkips,
     codexImages: codexFlags.codexImages,
     codexDocs: codexFlags.codexDocs,
+    codexTimeoutMs,
   });
 
   if (!dryRun && result.changedCount > 0) {

@@ -1,12 +1,14 @@
 import { basename } from "node:path";
+import type { Thread } from "@openai/codex-sdk";
 
+import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../utils/codex-timeout";
 import {
   CODEX_FILENAME_TITLE_OUTPUT_SCHEMA,
   chunkItems,
   executeBatchesWithRetries,
   parseFilenameTitleSuggestions,
   startCodexReadOnlyThread,
-  summarizeBatchErrors,
+  summarizeCodexBatchFailures,
 } from "./shared";
 
 export interface CodexImageRenameSuggestion {
@@ -47,12 +49,13 @@ function buildPrompt(imagePaths: string[]): string {
 
 async function suggestSingleBatch(
   options: SuggestImageTitlesOptions,
+  startThread: StartCodexRenameThread = startCodexReadOnlyThread,
 ): Promise<CodexImageRenameResult> {
   if (options.imagePaths.length === 0) {
     return { suggestions: [] };
   }
 
-  const thread = await startCodexReadOnlyThread(options.workingDirectory);
+  const thread = await startThread(options.workingDirectory);
 
   const input = [
     { type: "text", text: buildPrompt(options.imagePaths) } as const,
@@ -61,7 +64,7 @@ async function suggestSingleBatch(
 
   const turn = await thread.run(input, {
     outputSchema: CODEX_FILENAME_TITLE_OUTPUT_SCHEMA,
-    signal: AbortSignal.timeout(options.timeoutMs ?? 30_000),
+    signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
   });
   const suggestionsByFilename = parseFilenameTitleSuggestions(turn.finalResponse);
 
@@ -78,29 +81,39 @@ async function suggestSingleBatch(
   return { suggestions };
 }
 
-export async function suggestImageRenameTitlesWithCodex(
+type SuggestImageBatch = (options: SuggestImageTitlesOptions) => Promise<CodexImageRenameResult>;
+type StartCodexRenameThread = (workingDirectory: string) => Promise<Pick<Thread, "run">>;
+
+async function suggestImageRenameTitles(
   options: SuggestImageTitlesOptions,
+  suggestBatch: SuggestImageBatch,
 ): Promise<CodexImageRenameResult> {
   if (options.imagePaths.length === 0) {
     return { suggestions: [] };
   }
 
   try {
+    const timeoutMs = options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS;
     const batchSize = Math.max(1, Math.trunc(options.batchSize ?? options.imagePaths.length));
     const retries = Math.max(0, Math.trunc(options.retries ?? 0));
     const batches = chunkItems(options.imagePaths, batchSize);
-    const { suggestions, batchErrors } = await executeBatchesWithRetries({
+    const { suggestions, batchFailures } = await executeBatchesWithRetries({
       batches,
       retries,
       runBatch: async (batch) =>
-        suggestSingleBatch({
+        suggestBatch({
           imagePaths: batch,
           workingDirectory: options.workingDirectory,
-          timeoutMs: options.timeoutMs,
+          timeoutMs,
         }),
     });
 
-    const errorSummary = summarizeBatchErrors(batchErrors, suggestions.length > 0);
+    const errorSummary = summarizeCodexBatchFailures({
+      batchFailures,
+      hasSuggestions: suggestions.length > 0,
+      requestLabel: "Codex image-title request",
+      timeoutMs,
+    });
     if (!errorSummary) {
       return { suggestions };
     }
@@ -110,4 +123,26 @@ export async function suggestImageRenameTitlesWithCodex(
     const message = error instanceof Error ? error.message : String(error);
     return { suggestions: [], errorMessage: message };
   }
+}
+
+export async function suggestImageRenameTitlesWithCodex(
+  options: SuggestImageTitlesOptions,
+): Promise<CodexImageRenameResult> {
+  return suggestImageRenameTitles(options, suggestSingleBatch);
+}
+
+export async function __testOnlySuggestImageRenameTitlesWithBatch(
+  options: SuggestImageTitlesOptions,
+  suggestBatch: SuggestImageBatch,
+): Promise<CodexImageRenameResult> {
+  return suggestImageRenameTitles(options, suggestBatch);
+}
+
+export async function __testOnlySuggestImageRenameTitlesWithThread(
+  options: SuggestImageTitlesOptions,
+  startThread: StartCodexRenameThread,
+): Promise<CodexImageRenameResult> {
+  return suggestImageRenameTitles(options, (batchOptions) =>
+    suggestSingleBatch(batchOptions, startThread),
+  );
 }

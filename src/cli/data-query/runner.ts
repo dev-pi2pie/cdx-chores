@@ -1,4 +1,6 @@
 import { startCodexReadOnlyThread } from "../../adapters/codex/shared";
+import { classifyCodexRequestFailure } from "../../utils/codex-request-failure";
+import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../utils/codex-timeout";
 import type { DataQueryInputFormat } from "../duckdb/query";
 import { parseDataQueryCodexDraft, type DataQueryCodexDraftResult } from "./parse";
 import { buildDataQueryCodexPrompt, normalizeDataQueryCodexIntent } from "./prompt";
@@ -18,8 +20,6 @@ const DATA_QUERY_CODEX_OUTPUT_SCHEMA = {
   additionalProperties: false,
 } as const;
 
-const DATA_QUERY_CODEX_TIMEOUT_MS = 30_000;
-
 export type DataQueryCodexRunner = (options: {
   prompt: string;
   workingDirectory: string;
@@ -34,7 +34,7 @@ async function runDataQueryCodexPrompt(options: {
   const thread = await startCodexReadOnlyThread(options.workingDirectory);
   const turn = await thread.run([{ type: "text", text: options.prompt }], {
     outputSchema: DATA_QUERY_CODEX_OUTPUT_SCHEMA,
-    signal: AbortSignal.timeout(options.timeoutMs ?? DATA_QUERY_CODEX_TIMEOUT_MS),
+    signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
   });
   return turn.finalResponse;
 }
@@ -49,6 +49,7 @@ export async function draftDataQueryWithCodex(options: {
 }): Promise<DataQueryCodexDraftResult> {
   try {
     const runner = options.runner ?? runDataQueryCodexPrompt;
+    const timeoutMs = options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS;
     const normalizedIntent = normalizeDataQueryCodexIntent(options.intent);
     const finalResponse = await runner({
       prompt: buildDataQueryCodexPrompt({
@@ -57,7 +58,7 @@ export async function draftDataQueryWithCodex(options: {
         introspection: options.introspection,
       }),
       workingDirectory: options.workingDirectory,
-      timeoutMs: options.timeoutMs,
+      timeoutMs,
     });
     return {
       draft: parseDataQueryCodexDraft(finalResponse),
@@ -65,6 +66,7 @@ export async function draftDataQueryWithCodex(options: {
   } catch (error) {
     return {
       errorMessage: error instanceof Error ? error.message : String(error),
+      failureKind: classifyCodexRequestFailure(error),
     };
   }
 }

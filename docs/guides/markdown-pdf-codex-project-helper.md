@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Project Helper"
 created-date: 2026-07-05
-modified-date: 2026-07-28
+modified-date: 2026-08-22
 status: completed
 agent: codex
 ---
@@ -38,6 +38,8 @@ Common options:
 - `--codex-report-output <path>`: explicit diagnostic report JSON path.
 - `--overwrite`: allow selected project-generated outputs to be replaced when
   safe.
+- `--codex-timeout <duration>`: command-local deadline for each Codex project
+  request attempt.
 
 Example:
 
@@ -45,9 +47,21 @@ Example:
 cdx-chores md pdf-project codex ./report.md \
   --intent "client report with a cover image, table of contents, readable code, and dense tables" \
   --cover-image ./cover.jpg \
+  --codex-timeout 2m \
   --output ./report-pdf-project \
   --keep-codex-report
 ```
+
+The timeout option changes request timing only; it does not enable another
+Codex path. When omitted, project Codex requests keep the 30-second default.
+The Profile phase, Template phase, and any validation-driven application-repair
+request each receive an independent per-attempt window using the same value;
+they do not consume one shared project-wide budget. An application repair is
+semantic recovery, not a generic automatic retry of a failed request.
+
+For the shared duration grammar and the distinction between timeouts, retries,
+and recovery, see
+[Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md).
 
 ## Generated Project
 
@@ -63,9 +77,16 @@ report-pdf-project/
   project.codex-report.json
 ```
 
-`profile.yml` is the reusable render policy. `template.html` and `style.css`
-are the reviewable template layer. `assets/` is created only when managed local
-assets are needed. `project.codex-report.json` is written only when requested.
+`profile.yml` is the reusable render policy and materializes the current
+`schemaVersion: 3` contract. `template.html` and `style.css` are the reviewable
+template layer. `assets/` is created only when managed local assets are needed.
+`project.codex-report.json` is written only when requested.
+
+An older or unversioned `--base-profile` may be accepted when its actual fields
+are supported. The generated Project still writes revision `3` without
+rewriting the original base file. See
+[Markdown PDF Usage](markdown-pdf-usage.md) for the canonical Profile revision
+and feature-validation contract.
 
 When `--output` is omitted, the helper creates a non-colliding default directory
 with this shape:
@@ -108,6 +129,12 @@ Both forms use the same renderer and input precedence. `--profile`,
 `--template`, and `--css` remain fully supported for precise selection,
 cross-directory composition, and role-specific troubleshooting.
 
+For the same canonical three Project files, bundle discovery and explicit-role
+selection resolve the same effective Profile, diagnostics, renderer capability
+requests, and render behavior. Review the generated `profile.yml`,
+`template.html`, and `style.css` before accepting either handoff; the bundle
+form is shorthand, not a second rendering contract.
+
 By default, the follow-up render uses layered CSS: the profile-derived default
 stylesheet stays enabled and the project `style.css` is applied after it. This
 keeps the normal cascade available for deliberate user styling. Generated
@@ -118,20 +145,37 @@ ownership boundary from the final Profile and rejects a generated stylesheet
 that bypasses it. Profile-owned page chrome, cover defaults, and Shiki hooks
 remain active through their existing boundaries.
 
+Page-number enablement, sequence, logical/physical label terms, visibility,
+position, and repeating header/footer content belong to the final Profile.
+Metadata-cover enablement and fields are also Profile-owned; the managed
+Template supplies the compatible cover structure and presentation. The Project
+coordinator does not persist a second page-number or cover policy.
+
+Before exposing a usable bundle or follow-up command, Project validation checks
+the normalized final Profile, one live `.document-body` containing the single
+`$body$` insertion point, the managed `.pdf-cover` boundary when required,
+Profile/Template title and font ownership, generated CSS ownership, managed
+assets, shared diagnostics, and renderer capability requirements. Generated
+Template CSS may style cover/ToC and document layout, but it must not compete
+with Profile-owned counters or ordinary page chrome. A failed validation does
+not produce or claim a usable Project bundle; an explicitly requested
+diagnostic report may still describe the failure without becoming a replayable
+render input.
+
 ## Ownership Model
 
 `md pdf-project codex` coordinates the direct helpers without becoming a third
 rendering owner.
 
-| Need | `md pdf-profile codex` | `md pdf-template codex` | `md pdf-project codex` |
-| --- | --- | --- | --- |
-| Output | Reusable profile YAML/JSON | Reviewable template bundle | Coordinated render project folder |
-| Owns | Render policy | HTML/CSS/assets | Orchestration and coherence |
-| ToC | Emits enabled/depth/page-break settings | Preserves and styles ToC hooks | Coordinates profile output with template hook validation |
-| Code highlighting | Emits Shiki settings | Provides Shiki-compatible CSS | Coordinates profile output with CSS compatibility validation |
-| Cover/title page | Emits text/metadata fields | Emits custom layout/composition | Persists compatible profile and template outputs together |
-| Cover image asset | Not supported | Local managed asset | Routes asset input to project `assets/` through the template phase |
-| Render with | `--profile <file>` or profile-only `--bundle <directory>` | `--bundle <directory>` or explicit `--template --css` | `--bundle <directory>` or explicit `--profile --template --css` |
+| Need              | `md pdf-profile codex`                                    | `md pdf-template codex`                               | `md pdf-project codex`                                             |
+| ----------------- | --------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------ |
+| Output            | Reusable profile YAML/JSON                                | Reviewable template bundle                            | Coordinated render project folder                                  |
+| Owns              | Render policy                                             | HTML/CSS/assets                                       | Orchestration and coherence                                        |
+| ToC               | Emits enabled/depth/page-break settings                   | Preserves and styles ToC hooks                        | Coordinates profile output with template hook validation           |
+| Code highlighting | Emits Shiki settings                                      | Provides Shiki-compatible CSS                         | Coordinates profile output with CSS compatibility validation       |
+| Cover/title page  | Emits text/metadata fields                                | Emits custom layout/composition                       | Persists compatible profile and template outputs together          |
+| Cover image asset | Not supported                                             | Local managed asset                                   | Routes asset input to project `assets/` through the template phase |
+| Render with       | `--profile <file>` or profile-only `--bundle <directory>` | `--bundle <directory>` or explicit `--template --css` | `--bundle <directory>` or explicit `--profile --template --css`    |
 
 `--bundle` is optional discovery shorthand only. It does not change which
 helper owns the selected profile, template, stylesheet, or managed assets. The
@@ -219,12 +263,19 @@ unsupported directions, managed asset metadata, and the follow-up render command
 It is advisory; the replayable rendering inputs are `profile.yml`,
 `template.html`, and `style.css`.
 
+The terminal summary and optional report project shared Profile diagnostics and
+renderer capability requirements from the final `profile.yml`. They identify
+the requesting fields and validation result without persisting a second mutable
+page-number or cover configuration. Rendering still performs the installed
+renderer capability check.
+
 Persisted reports and generated artifacts avoid raw absolute source paths.
 Managed cover assets are copied into the project folder and reported by
 bundle-relative paths plus source basenames and metadata.
 
 ## Related Docs
 
+- [Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md)
 - [Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md)
 - [Markdown PDF Usage](markdown-pdf-usage.md)
 - [Markdown PDF Project Codex Helper Research](../researches/research-2026-07-03-markdown-pdf-project-codex-helper.md)

@@ -1,330 +1,442 @@
 ---
-title: "Codex Timeout Configuration"
+title: "cdx-chores Codex Request Timeout Contract"
 created-date: 2026-07-05
-modified-date: 2026-07-05
-status: draft
+modified-date: 2026-08-22
+status: completed
 agent: codex
 ---
 
 ## Goal
 
-Research whether Codex-backed CLI flows should expose a consistent timeout
-configuration contract.
+Record how `cdx-chores` exposes a consistent timeout contract for its
+Codex-backed CLI requests without changing existing behavior unexpectedly.
 
-This is early-stage research. It records the current implementation shape,
-recent Markdown PDF timeout evidence, and the design questions that should be
-answered before creating an implementation plan.
+This research covers application-enforced request deadlines passed through
+`AbortSignal.timeout(...)`. It does not define an upstream Codex service timeout
+or treat Codex provider, stream-idle, or MCP timeout settings as equivalent.
 
-## Why This Research
+The inventory and implementation-evidence sections describe shipped behavior.
+The staged reasoning remains here to explain why the completed implementation
+keeps timeout, retry, repair, and regeneration under different ownership.
 
-Several commands call Codex through bounded `AbortSignal.timeout(...)` requests.
-Most defaults are currently 30 seconds, but configurability is uneven:
+## Executive Summary
 
-- some paths expose public timeout flags
-- some paths have internal `timeoutMs` seams for tests or injected runners
-- some direct CLI commands have no timeout override
-- there is no dedicated repository-wide config-file flow for this setting
+- The completed contract keeps the existing 30-second per-request defaults for
+  compatibility. The
+  controlled Markdown PDF smoke supports that default for the tested Markdown
+  PDF path, not as a universal latency conclusion for every Codex workflow.
+- A shared, duration-based `--codex-timeout <duration>` contract now appears on
+  relevant command surfaces. Treat it as a reusable command option rather than
+  requiring one root-level CLI flag on commands that do not use Codex.
+- Rename also exposes analyzer-specific timeout overrides, with
+  `--codex-images-timeout <duration>` and
+  `--codex-docs-timeout <duration>` overriding the shared value.
+- The duration-based rename equivalents coexist with the legacy millisecond
+  flags during a compatibility period. The old flags keep working, emit one
+  deprecation notice when used,
+  provide exact replacements when values satisfy the new contract, and do not
+  schedule removal until a release boundary is chosen.
+- Timeout applies to each Codex request attempt. Batches, retries,
+  repair requests, phases, and user-triggered regeneration can make the total
+  command duration longer.
+- Retry configuration remains workflow-owned. The implementation does not add a
+  repository-wide `--codex-retries` option merely because timeout parsing
+  becomes shared.
+- Total command budgets, config-file and environment-variable sources, and
+  report-schema changes remain non-goals until a concrete operational need is
+  demonstrated.
 
-The immediate Markdown PDF question was whether `md pdf-project codex` needed a
-longer timeout default. The controlled Phase 7 and Phase 8 smoke results did not
-confirm that hypothesis. A broader timeout-config decision should therefore be a
-new research track, not a late expansion of the completed project-helper plan.
+## Key Findings
 
-## Current Evidence
+### Evidence Boundary
 
-The completed Markdown PDF project-helper plan kept 30 seconds as the committed
-default for direct Markdown PDF Codex helpers.
+The completed Markdown PDF project-helper work kept 30 seconds as the committed
+default. A controlled smoke passed after the Codex runner path was fixed, and the
+earlier failure was not proven to be a timeout problem.[^markdown-pdf-smoke]
 
-Concise evidence summary:
+That evidence supports retaining 30 seconds for the tested Markdown PDF path. It
+does not establish that 30 seconds is optimal for every Codex-backed command.
+The repository-wide reason to retain current defaults is compatibility while
+explicit overrides and better failure information are introduced.
 
-```text
-30s passed the controlled Markdown PDF smoke after the Codex runner path was
-fixed.
+### Current Timeout Surface Inventory
 
-The earlier failure was not proven to be a timeout problem.
+The inventory below reflects the implementation re-reviewed on the document's
+`modified-date`.[^timeout-inventory]
 
-The evidence supports keeping 30s as the default, while still leaving room for
-an explicit longer-timeout override in slower cases.
-```
+| Area                         | Entry points                                               | Current default | Public timeout option                                                                                                                      | Request multiplicity                                                         |
+| ---------------------------- | ---------------------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| Rename image analyzer        | `rename file`, `rename batch`, `batch-rename`              | 30s             | `--codex-timeout`, `--codex-images-timeout`, and legacy `--codex-images-timeout-ms`; explicit Interactive sessions use their session value | One request per batch attempt; up to `batch count × (retries + 1)` attempts. |
+| Rename document analyzer     | `rename file`, `rename batch`, `batch-rename`              | 30s             | `--codex-timeout`, `--codex-docs-timeout`, and legacy `--codex-docs-timeout-ms`; explicit Interactive sessions use their session value     | One request per batch attempt; up to `batch count × (retries + 1)` attempts. |
+| Rename cleanup suggestion    | Interactive rename cleanup                                 | 30s             | `interactive --codex-timeout`                                                                                                              | One request per suggestion invocation.                                       |
+| Markdown PDF profile helper  | `md pdf-profile codex`, Interactive authoring              | 30s             | direct `--codex-timeout`; explicit Interactive sessions use their session value                                                            | One request per generation.                                                  |
+| Markdown PDF template helper | `md pdf-template codex`, Interactive authoring             | 30s             | direct `--codex-timeout`; explicit Interactive sessions use their session value                                                            | The initial request and a separate application-repair request when needed.   |
+| Markdown PDF project helper  | `md pdf-project codex`, Interactive authoring              | 30s per request | direct `--codex-timeout`; explicit Interactive sessions use their session value                                                            | Profile, template, and template-repair requests receive independent windows. |
+| Data query SQL drafting      | `data query codex`, Interactive Codex mode                 | 30s             | direct `--codex-timeout`; explicit Interactive sessions use their session value                                                            | One request per draft or user-triggered regeneration.                        |
+| Data stack Codex assist      | `data stack --codex-assist`, Interactive review            | 30s             | direct `--codex-timeout`; explicit Interactive sessions use their session value                                                            | One request per assist invocation.                                           |
+| Header-mapping suggestions   | data query/extract suggestion modes and Interactive review | 30s             | direct embedded helpers remain default-only; explicit Interactive sessions use their session value                                         | One request per suggestion invocation.                                       |
+| Source-shape suggestions     | data extract suggestion mode and Interactive review        | 30s             | direct embedded helpers remain default-only; explicit Interactive sessions use their session value                                         | One request per suggestion invocation.                                       |
 
-## Current Timeout Surfaces
+Rename supplied the earlier shipped timeout pattern.[^rename-timeout-history]
+The completed contract preserves those millisecond options while adding strict
+duration parsing, shared and scoped precedence, consolidated migration notices,
+and command/action separation.
 
-### Inventory
+The shared timeout module now owns the 30-second default, 10-minute maximum for
+new duration-based options, strict parsing, repeated-option detection, pure
+resolution, conflicts, and migration text. A bounded failure classifier
+recognizes preserved timeout causes without treating every abort or unknown SDK
+error as a timeout. Existing public report schemas remain unchanged.
 
-Current Codex timeout surfaces:
+### Per-Request Timeout Is Not a Total Command Budget
 
-| Area | Entry points | Current default | Public timeout flag | Threading depth | Notes |
-| --- | --- | --- | --- | --- | --- |
-| Rename image analyzer | `rename file`, `rename batch` | 30s | `--codex-images-timeout-ms` | CLI -> action -> analyzer -> adapter | Also exposes image retries and batch size. Current parsing uses raw `Number(value)`. |
-| Rename document analyzer | `rename file`, `rename batch` | 30s | `--codex-docs-timeout-ms` | CLI -> action -> analyzer -> adapter | Also exposes document retries and batch size. Current parsing uses raw `Number(value)`. |
-| Rename cleanup Codex suggestion | interactive rename cleanup flow | 30s | no direct public flag | adapter seam only | The helper accepts `timeoutMs`, but the interactive call currently does not pass one. |
-| Markdown PDF profile helper | `md pdf-profile codex` | 30s | no | adapter seam only | Direct command does not expose or thread a timeout override. |
-| Markdown PDF template helper | `md pdf-template codex` | 30s | no | adapter seam only | Direct command does not expose or thread a timeout override. |
-| Markdown PDF project helper | `md pdf-project codex` | phase-owned 30s profile/template requests | no | phase adapter seams only | No project-level total timeout budget exists today. |
-| Data query SQL drafting | `data query codex`, interactive data query Codex mode | 30s | no | action/runner seam for direct command; interactive call uses default | Direct action accepts `timeoutMs`, but command registration does not expose it. |
-| Data stack Codex assist | `data stack --codex-assist`, interactive data stack review | 30s | no | action seam for direct command; fixed interactive constant | Direct command registration has no public flag. Interactive review passes a fixed timeout. |
-| Header-mapping suggestions | `data query --codex-suggest-headers`, `data extract --codex-suggest-headers`, interactive header review | 30s | no | adapter seam only | Workflow and interactive call sites currently do not pass a timeout override. |
-| Source-shape suggestions | `data extract --codex-suggest-shape`, interactive source-shape review | 30s | no | adapter seam only | Used by reviewed Excel source-shape flows. Direct workflow call does not pass a timeout override. |
+A timeout applies to one Codex request attempt. It does not cap the complete
+command lifecycle.
 
-Rename is the clearest existing public pattern. It is analyzer-specific, uses
-milliseconds, and exposes timeout alongside retries and batch size. Most other
-Codex-backed paths have internal seams but no user-facing timeout contract.
-
-### Out Of Scope Timeout Uses
-
-Non-Codex process timeouts also exist, such as font discovery command timeouts
-and test-runner timeouts in job records. They should not drive the Codex timeout
-contract except as naming collision context.
-
-## Problem Statement
-
-The repo needs a timeout policy that answers:
-
-- which Codex-backed commands should expose user-tunable timeouts
-- whether the override should be command-specific, global, or both
-- whether timeout values should be milliseconds or duration strings
-- how to validate unsafe values such as zero, negative numbers, decimals, and
-  very large numbers
-- whether timeout override details should be recorded in reports
-- how timeout failures should be classified and surfaced to users
-- whether retries and batch size should stay separate from timeout controls
-
-Without a contract, new helpers will keep copying local defaults and option
-names, which makes behavior harder to predict.
-
-## Current State Gaps
-
-The codebase has timeout primitives, but they are not a consistent contract yet.
-
-Seam depth is uneven:
-
-- adapter-level `timeoutMs` exists in several places
-- direct action or workflow options thread timeout only in some paths
-- public CLI flags exist only for rename image/document analyzers
-- interactive flows mostly use defaults or fixed constants
-
-Failure classification is also uneven. Timeout and abort failures generally flow
-through existing generic Codex failure paths such as unavailable, failed, or
-suggestion failed. The code does not yet provide one normalized
-`timeout`-specific classification across adapters.
-
-Reporting is not standardized either. Existing Markdown PDF and data-stack Codex
-reports do not record the effective timeout value or whether it came from a
-flag, a default, a future config source, or an environment variable.
-
-Finally, timeout wiring is duplicated. Several adapters call
-`AbortSignal.timeout(...)` directly instead of using one shared resolver for
-effective timeout defaults, validation, and failure classification.
-
-## Per-Request Versus Total Budget
-
-Current timeout values are per Codex request, not necessarily per user command.
-
-This distinction matters because some commands can issue more than one Codex
-request:
-
-- rename can split work into batches and retry failed batches
-- `md pdf-project codex` can run a profile phase and then a template phase
-- interactive flows can regenerate suggestions or drafts in a loop
-
-A 30-second per-request timeout can therefore allow a longer wall-clock command
-without violating the timeout contract. That behavior is acceptable only if it
-is documented and intentional.
-
-Before implementation, decide whether each command needs:
-
-- only a per-request timeout
-- a total command budget
-- both, with separate names and precedence
-
-Initial leaning:
+For one sequential rename analyzer, the approximate worst-case request time is:
 
 ```text
-Start with per-request timeout flags.
-Do not add total-budget flags until a concrete command needs them.
-Keep `md pdf-project codex` explicit that the timeout applies per Codex phase.
+batch count × (retries + 1) × per-attempt timeout
+  + retry delays
+  + local processing
 ```
 
-## Candidate Direction To Evaluate
+When both rename analyzers run, their elapsed time is additive. A direct Markdown
+PDF template command can consume two timeout windows because its repair request
+is a second Codex request. A project command can consume three windows when the
+profile, template, and template repair requests all run.
 
-Start narrow:
+Help text and failure messages therefore use **per request attempt**. A
+generic `--codex-timeout 30s` must not imply that the whole command finishes
+within 30 seconds.
 
-- Keep 30 seconds as the default for Codex-backed CLI requests.
-- Prefer direct CLI flags before introducing a repository-wide config file.
-- Add public timeout flags only to commands where live Codex latency is a real
-  user-facing concern.
-- Use one generic flag name on single-Codex-command surfaces:
-  `--codex-timeout-ms <ms>`.
-- Keep analyzer-specific names where the command already has separate analyzer
-  lanes, such as rename images versus rename docs.
-- Preserve internal `timeoutMs` seams for tests and service composition.
-- Validate timeout values with shared positive-integer parsing before any Codex
-  work begins.
-- Treat rename's existing raw numeric parsing as an alignment question: either
-  grandfather it for compatibility or migrate it to the shared validation rule.
-- Keep timeout classification/reporting changes separate unless a first-wave
-  command needs them to explain user-visible failures clearly.
-- Do not record raw local environment details in timeout evidence or reports.
+### Retry Configuration Boundary
 
-This direction is not settled. It is a starting hypothesis because it matches
-existing rename flags while avoiding a broad config-file system before the repo
-has one.
+Timeout is a shared boundedness policy. Retry is workflow behavior and remains
+exposed only where the workflow can explain its retry unit, safety, and total
+latency.
 
-## Config File Question
+| Surface                    | Current retry-like behavior                                                                      | Public retry configuration       | Settled boundary                                                                        |
+| -------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------- | --------------------------------------------------------------------------------------- |
+| Rename image analyzer      | Repeats a failed image-title batch request; retry count is additional to the initial attempt.    | `--codex-images-retries <count>` | Keep analyzer-specific and describe it as retries after the initial attempt, per batch. |
+| Rename document analyzer   | Repeats a failed document-title batch request; retry count is additional to the initial attempt. | `--codex-docs-retries <count>`   | Keep analyzer-specific and describe it as retries after the initial attempt, per batch. |
+| Markdown PDF template      | May issue one new repair request with validation feedback.                                       | none                             | Keep internal. This is semantic repair, not repetition of the same failed request.      |
+| Markdown PDF project       | Inherits the template repair behavior inside a multi-phase workflow.                             | none                             | Keep internal and document request multiplicity instead of calling it a retry option.   |
+| Data query drafting        | No workflow retry.                                                                               | none                             | Do not add retry configuration without failure evidence and a defined replay contract.  |
+| Data stack assist          | No workflow retry.                                                                               | none                             | Do not add retry configuration without failure evidence and a defined replay contract.  |
+| Header-mapping suggestions | No workflow retry.                                                                               | none                             | Keep timeout-only unless transient failures justify automatic retry later.              |
+| Source-shape suggestions   | No workflow retry.                                                                               | none                             | Keep timeout-only unless transient failures justify automatic retry later.              |
+| Rename cleanup suggestion  | No workflow retry.                                                                               | none                             | Keep timeout-only unless a safe, bounded retry need is demonstrated.                    |
+| Interactive regeneration   | The user may explicitly request another draft or suggestion.                                     | user-controlled                  | Do not convert the user-controlled loop into an automatic global retry policy.          |
 
-No dedicated repo-wide config-file flow is currently established for these CLI
-helpers.
+The timeout contract does not introduce a generic `--codex-retries` option.
 
-A config file could eventually support shared defaults, but it would raise
-larger questions:
+## Settled Contract And Implementation Outcome
 
-- discovery path and precedence
-- local-only versus committed config
-- interaction with CLI flags
-- schema versioning
-- privacy expectations for generated reports
-- migration behavior for existing scripts
+### Shared Base Timeout Contract
 
-Because this is broader than timeout alone, the first timeout plan should avoid
-introducing a config-file system unless later evidence shows that per-command
-flags are not enough.
-
-## Environment Variable Question
-
-A timeout environment variable would be easy to add, but it is less explicit
-than a flag and can make command behavior harder to replay from logs or job
-records.
-
-If an environment variable is considered later, the research should decide:
-
-- whether it applies globally or only to Codex-backed commands
-- whether public reports should include the effective timeout value
-- whether CLI flags always override environment values
-- whether hidden environment behavior is acceptable for replayable workflows
-
-Initial leaning:
+Relevant Codex-backed command surfaces use the same base option name:
 
 ```text
-CLI flag first.
-Environment variable only if repeated operational use proves a need.
+--codex-timeout <duration>
 ```
 
-## Precedence Model To Evaluate
+Shipped semantics:
 
-If the repo later supports more than one timeout configuration source, the
-likely precedence should be:
+- timeout applies to each Codex request attempt
+- accepted input requires an explicit unit, initially `ms`, `s`, or `m`
+- examples include `500ms`, `30s`, and `2m`
+- bare numbers are rejected because their unit would be ambiguous
+- parsed values are normalized to positive integer milliseconds internally
+- zero, negative, decimal, malformed, unknown-unit, and overflowing values are
+  rejected with an option-specific error
+- repeated occurrences of the same timeout option are rejected instead of
+  silently applying last-value-wins behavior
+- the existing 30-second default remains when no override is supplied
+- the upper bound for new duration-based CLI options is 10 minutes
+- parsing and validation happen before any Codex request or artifact write
+
+This is a shared command-local option contract, not a root-level option. For
+example:
+
+```bash
+cdx-chores rename batch ./files --codex --codex-timeout 30s
+cdx-chores data query codex ./data.csv --codex-timeout 30s
+cdx-chores md pdf-profile codex ./document.md --codex-timeout 2m
+```
+
+Commands that do not use Codex do not advertise the option.
+
+### Interactive Entry And Discoverability Boundary
+
+Interactive timeout configuration belongs to the explicit `interactive`
+command rather than the root command or individual workflow prompts:
 
 ```text
-explicit CLI flag
-  -> command-scoped config, if a config system exists
-  -> global config, if a config system exists
-  -> environment variable, if accepted
-  -> built-in default
+cdx-chores
+  -> Interactive mode with the shared 30-second default
+
+cdx-chores interactive --codex-timeout 2m
+  -> Interactive mode with one 2-minute per-attempt session value
+
+cdx-chores --codex-timeout 2m
+  -> unsupported root-level spelling
 ```
 
-This is only a candidate model. It should not be documented as shipped behavior
-until implemented and verified.
+The explicit session value is parsed once, retained through menu routing,
+backtracking, revision, and user-triggered regeneration, and forwarded only when
+a selected workflow invokes Codex. It must not add a timeout setup prompt to the
+Interactive entry or to each Codex-assisted workflow.
 
-## Reporting And Replay
+Discoverability comes from `interactive --help`, timeout-specific
+remediation when appropriate, and one canonical cross-feature guide. The guide
+compares timeout, scoped timeout, retry, semantic repair, and user-triggered
+regeneration before linking to workflow-specific rename, data, Markdown, and
+Interactive guidance. Workflow guides keep only their local examples and
+behavior instead of duplicating the shared contract.
 
-Timeout configuration should support replay without leaking local environment
-details.
+### Rename Timeout Standard
 
-Recommended reporting questions:
+Rename exposes scoped duration overrides because image and document analysis
+can run in the same command with different operational needs:
 
-- Should diagnostic reports store the effective timeout value?
-- Should reports store whether the value came from a flag, config, environment,
-  or default?
-- Should timeout values appear in follow-up commands?
-- Should failed timeout reports classify the failure separately from generic
-  Codex unavailability?
+```text
+--codex-timeout <duration>
+--codex-images-timeout <duration>
+--codex-docs-timeout <duration>
+```
 
-Initial leaning:
+Shipped precedence:
 
-- record the effective numeric timeout in advisory reports when reports already
-  exist
-- treat that as a future report-schema change because no current Codex report
-  stores timeout source metadata
-- avoid recording environment variable names or local configuration paths unless
-  the future config contract explicitly requires it
-- prefer replayable follow-up commands that include explicit flags only when the
-  user supplied them
+```text
+effective image timeout:
+  --codex-images-timeout
+    -> --codex-images-timeout-ms  # deprecated compatibility input
+    -> --codex-timeout
+    -> built-in default
 
-## Failure Semantics
+effective document timeout:
+  --codex-docs-timeout
+    -> --codex-docs-timeout-ms    # deprecated compatibility input
+    -> --codex-timeout
+    -> built-in default
+```
 
-Timeouts should fail in the same safety posture as other Codex failures:
+A shared value and a scoped value may be combined. The scoped value overrides
+the shared value for its analyzer:
 
-- deterministic commands should not hang indefinitely
-- partial generated artifacts should not be written after failed preflight
-- reports, if requested and safe, may record sanitized failure context
-- user-facing messages should distinguish timeout from malformed output,
-  validation failure, and missing Codex availability when practical
+```bash
+cdx-chores rename batch ./files \
+  --codex \
+  --codex-timeout 30s \
+  --codex-docs-timeout 2m
+```
 
-This is desired behavior, not current uniform behavior. Current adapters mostly
-route timeout or abort failures through generic failure classifications. A
-future plan should decide whether timeout classification is part of the first
-implementation wave or a separate cleanup.
+The example gives image requests a 30-second timeout and document requests a
+two-minute timeout.
 
-Markdown PDF project behavior should stay especially strict because one project
-can involve multiple Codex phases. A timeout in either phase should not leave a
-half-written project bundle.
+The new and legacy scoped forms for the same analyzer must not be combined. The
+command rejects an ambiguous invocation such as:
 
-## Open Questions
+```bash
+--codex-docs-timeout 30s --codex-docs-timeout-ms 60000
+```
 
-- Should Markdown PDF direct helpers expose `--codex-timeout-ms` on
-  `md pdf-profile codex`, `md pdf-template codex`, and `md pdf-project codex`?
-- Should project helper timeout apply independently to each Codex phase, or
-  should there also be a project-level total budget?
-- Should `data query codex` and `data stack --codex-assist` expose the same
-  public flag name?
-- Should `data extract --codex-suggest-shape`, `data query --codex-suggest-headers`,
-  and `data extract --codex-suggest-headers` expose timeout flags, or stay
-  default-only until evidence appears?
-- Should existing rename timeout flags remain analyzer-specific forever, or
-  should a generic parent-level timeout alias be added later?
-- Should timeout validation allow only milliseconds, or support duration strings
-  such as `30s` and `2m`?
-- What upper bound prevents accidental multi-hour hangs while still allowing
-  slow but legitimate local workflows?
-- Should timeout values be stored in advisory reports as part of request facts?
-- Should timeout classification be normalized across all Codex adapters?
+### Legacy Rename Flag Transition
 
-## Non-Goals
+The duration-based scoped flags provide exact replacements when the legacy
+value is a positive integer within the new 10-minute bound:
 
-This research does not implement:
+```text
+--codex-images-timeout-ms 30000
+  -> --codex-images-timeout 30000ms
 
-- timeout flag wiring
-- a config-file system
-- environment-variable timeout behavior
+--codex-docs-timeout-ms 30000
+  -> --codex-docs-timeout 30000ms
+```
+
+The 10-minute maximum is a validation rule for the new duration-based options.
+It is not a retroactive restriction on the deprecated rename millisecond flags
+during their compatibility period or on existing internal numeric timeout
+inputs.
+
+During the compatibility phase:
+
+- keep both legacy flags functional with their current semantics
+- emit one deprecation notice per command invocation when either legacy flag was
+  explicitly supplied
+- write the notice to stderr without changing the success exit status
+- show the exact duration-based replacement when the legacy value satisfies the
+  new duration grammar and maximum
+- otherwise explain that the current value cannot migrate unchanged and must be
+  reduced or normalized before using the duration-based flag
+- do not emit the notice once per batch or retry attempt
+- do not announce a removal release until that release boundary is approved
+
+Shipped single-option plain-text notice:
+
+```text
+Warning: legacy Codex timeout option is deprecated.
+Use --codex-docs-timeout 30000ms instead of --codex-docs-timeout-ms.
+The legacy option remains supported during the current compatibility phase.
+```
+
+Removing the legacy options later is a breaking change even though introducing
+their duration-based replacements is additive.
+
+### Failure Semantics
+
+The implementation includes timeout-specific user feedback where the preserved
+error structure makes classification reliable.
+
+Shipped behavior:
+
+- distinguish a timeout from malformed output, validation failure, missing
+  authentication, and user cancellation when the SDK error preserves that cause
+- include the effective per-attempt duration in the timeout message
+- identify the analyzer or phase when a composed command can do so safely
+- preserve the current no-partial-write posture for failed preflight or
+  generation phases
+- keep report-schema changes separate unless an existing report cannot explain
+  the failure without them
+
+### Implemented Stages
+
+The completed plan kept adoption layers independently reviewable:
+
+1. added a shared duration parser, validation contract, and pure resolver
+2. exposed shared and scoped duration options on rename while preserving legacy
+   compatibility and workflow-owned retry behavior
+3. added the narrow shared timeout classifier and proved it through rename
+4. added the shared option to the selected explicit data and Markdown commands
+5. added one session-owned timeout to explicit Interactive mode and threaded it
+   through current Interactive Codex request paths
+6. created one canonical cross-feature timeout/retry/recovery guide, linked local
+   workflow guidance to it, and closed public documentation and research only
+   after the complete staged contract is verified
+
+Retry remained workflow-owned while timeout configuration broadened.
+
+## Contract Non-Goals
+
+The current timeout contract and implementation plan do not include:
+
+- a repository-wide config-file system
+- an environment-variable timeout source
+- a total command or project budget
+- generic retry configuration
+- automatic retry for interactive regeneration
+- timeout source metadata in every report schema
+- a root-level global CLI option
+- Markdown PDF phase-specific timeout overrides
 - default timeout changes
+- removal of the legacy rename millisecond flags
+
+These exclusions are not scheduled follow-up work. Later research may reconsider
+one only when concrete operational evidence justifies reopening it.
+
+If later research introduces config or environment sources, it must separate
+source precedence from scope precedence. An explicit CLI value must not be
+silently overridden by a less visible configuration source, while an explicit
+scoped value remains more specific than a shared value from the same source.
+
+## Resolved Decisions
+
+The completed implementation resolves the earlier open questions as follows:
+
+- values accepted through the new duration-based CLI options are capped at 10 minutes
+  (`600_000ms`) per request attempt; this is not a whole-command SLA and does
+  not retroactively cap the deprecated rename millisecond flags during their
+  compatibility period
+- only positive integer `ms`, `s`, and `m` values are accepted; hours,
+  decimals, compounds, bare numbers, and case-insensitive aliases remain
+  rejected
+- the first non-rename direct option wave covers `data query codex`,
+  `data stack --codex-assist`, `md pdf-profile codex`,
+  `md pdf-template codex`, and `md pdf-project codex`
+- one Markdown PDF project value applies independently to every profile,
+  template, and repair request attempt; defer phase-specific overrides
+- the legacy rename millisecond flags remain for at least one stable
+  compatibility release and may be removed only through a separately approved
+  breaking release
+- one narrow internal `timeout | aborted | other` classifier was introduced
+  without rewriting all public Codex result or report schemas
+- one session-owned `interactive --codex-timeout <duration>` value uses rename
+  as the reference helper contract for Interactive data and Markdown Codex
+  paths, reusing the shared parser, resolver, 30-second default, numeric
+  `timeoutMs` seams, per-request-attempt meaning, and narrow failure classifier
+  without helper-local fixed timeout constants, per-workflow prompts, or
+  automatic retry
+- `cdx-chores --codex-timeout <duration>` remains unsupported; custom Interactive
+  configuration requires the explicit
+  `cdx-chores interactive --codex-timeout <duration>` spelling
+- `docs/guides/codex-timeouts-retries-and-recovery.md` is the canonical
+  comparison-first public guide, with the README and workflow-specific guides
+  linking to it rather than repeating the complete shared contract
+
+These decisions are implemented and verified through the
+[Codex request timeout implementation plan](../plans/plan-2026-08-21-codex-request-timeout-contract.md).
+
+## Implementation Evidence
+
+The original Phase 1 through Phase 6 timeout implementation is bounded by:
+
+```text
+6636a88bb962946c9e51defbf144c1a7bcd4b995..efca21ea364d4765d1b780abb5e42cd3e499196f
+```
+
+Phase 8 records the accepted final-review corrections and final closeout in:
+
+```text
+24ddbfe0dd383677e5c3d6db61d572a6ae7e7815..TIMEOUT_PHASE8_TIP
+```
+
+The staged records are:
+
+1. [Phase 1: duration parser and pure resolver](../plans/jobs/2026-08-21-codex-request-timeout-phase-1.md)
+2. [Phase 2: rename command surface and compatibility](../plans/jobs/2026-08-21-codex-request-timeout-phase-2.md)
+3. [Phase 3: action routing and retry preservation](../plans/jobs/2026-08-21-codex-request-timeout-phase-3.md)
+4. [Phase 4: timeout-specific fallback information](../plans/jobs/2026-08-21-codex-request-timeout-phase-4.md)
+5. [Phase 5: explicit direct-command adoption](../plans/jobs/2026-08-21-codex-request-timeout-phase-5.md)
+6. [Phase 6: Interactive session timeout](../plans/jobs/2026-08-21-codex-request-timeout-phase-6.md)
+7. [Phase 7: public documentation and integration](../plans/jobs/2026-08-22-codex-request-timeout-phase-7.md)
+8. [Phase 8: final validation and lifecycle closeout](../plans/jobs/2026-08-22-codex-request-timeout-phase-8.md)
+
+Final validation reran the cumulative rename/shared, direct data/Markdown, and
+Interactive timeout suites, followed by type checking, lint, format checking,
+the full repository suite, and the Node-target build. Cumulative review also
+confirmed fresh per-attempt production retry signals and corrected the remaining
+Interactive suggestion fallbacks to use the shared default and preserve
+timeout-specific duration information. The built help for all three rename
+surfaces, five direct commands, and explicit Interactive mode matches the
+shipped contract. The root-level spelling remains unsupported.
+
+Current public guidance lives in
+[Codex Timeouts, Retries, And Recovery](../guides/codex-timeouts-retries-and-recovery.md).
+
+## Research Document Boundary
+
+This research records the timeout contract, planning evidence, and completed
+implementation outcome. The research document itself did not implement:
+
+- timeout flag wiring or duration parsing
+- legacy-option warnings
 - retry or batch-size changes
-- report schema changes
+- Codex request execution or failure handling
 - Markdown PDF rendering changes
 
-This research also does not reopen the completed Markdown PDF project-helper
-plan. Any implementation should happen in a new focused plan after this research
-is reviewed.
+The linked focused timeout plan owns the completed implementation. This research
+does not reopen the completed Markdown PDF project-helper plan.
 
-## Suggested Next Review
+## References
 
-Before implementation planning, review:
+[^markdown-pdf-smoke]: [Markdown PDF project Codex phase 7 validation and render compatibility](../plans/jobs/2026-07-04-markdown-pdf-project-codex-phase-7-validation-render-compatibility.md) and [phase 8 report, summary, writes, and dry run](../plans/jobs/2026-07-04-markdown-pdf-project-codex-phase-8-report-summary-writes-dry-run.md).
 
-- all Codex-backed command surfaces and their current default timeout values
-- existing public timeout/retry/batch-size flags in rename
-- whether data and Markdown PDF commands should share one flag name
-- whether timeout should be included in diagnostic report schemas
-- whether per-phase versus total-budget semantics matter for project-style
-  commands
-- whether first-wave work should only thread existing seams or also normalize
-  failure classification and report metadata
+[^rename-timeout-history]: [Tune Codex rename timeout, add progress feedback, and fallback tests](../plans/jobs/2026-02-25-codex-rename-progress-timeout-tuning-and-fallback-tests.md).
 
-The smallest likely first plan would only add validated `--codex-timeout-ms`
-flags to selected direct Codex commands and thread them through existing
-`timeoutMs` seams.
+[^timeout-inventory]: Current timeout and retry behavior is implemented across [`src/utils/codex-timeout.ts`](../../src/utils/codex-timeout.ts), [`src/cli/options/codex-timeout.ts`](../../src/cli/options/codex-timeout.ts), [`src/cli/options/codex-timeout-option.ts`](../../src/cli/options/codex-timeout-option.ts), [`src/cli/commands/rename.ts`](../../src/cli/commands/rename.ts), [`src/cli/commands/data/query.ts`](../../src/cli/commands/data/query.ts), [`src/cli/commands/data/stack.ts`](../../src/cli/commands/data/stack.ts), [`src/cli/commands/markdown.ts`](../../src/cli/commands/markdown.ts), [`src/cli/interactive/session.ts`](../../src/cli/interactive/session.ts), [`src/adapters/codex/shared.ts`](../../src/adapters/codex/shared.ts), [`src/adapters/codex/image-rename-titles.ts`](../../src/adapters/codex/image-rename-titles.ts), [`src/adapters/codex/document-rename/batch.ts`](../../src/adapters/codex/document-rename/batch.ts), [`src/cli/actions/rename/cleanup-codex.ts`](../../src/cli/actions/rename/cleanup-codex.ts), [`src/adapters/codex/markdown-pdf-profile/index.ts`](../../src/adapters/codex/markdown-pdf-profile/index.ts), [`src/adapters/codex/markdown-pdf-template/index.ts`](../../src/adapters/codex/markdown-pdf-template/index.ts), [`src/cli/data-query/runner.ts`](../../src/cli/data-query/runner.ts), [`src/cli/data-stack/codex-assist.ts`](../../src/cli/data-stack/codex-assist.ts), [`src/cli/duckdb/header-mapping/suggestions.ts`](../../src/cli/duckdb/header-mapping/suggestions.ts), and [`src/cli/duckdb/source-shape/suggestions.ts`](../../src/cli/duckdb/source-shape/suggestions.ts).
 
-## Related Docs
+## Related Plans
 
+- [Codex request timeout contract implementation](../plans/plan-2026-08-21-codex-request-timeout-contract.md)
 - [Markdown PDF project Codex helper implementation](../plans/plan-2026-07-04-markdown-pdf-project-codex-helper.md)
-- [Markdown PDF project Codex phase 7 validation and render compatibility](../plans/jobs/2026-07-04-markdown-pdf-project-codex-phase-7-validation-render-compatibility.md)
-- [Markdown PDF project Codex phase 8 report, summary, writes, and dry run](../plans/jobs/2026-07-04-markdown-pdf-project-codex-phase-8-report-summary-writes-dry-run.md)
-- [Tune Codex rename timeout, add progress feedback, and fallback tests](../plans/jobs/2026-02-25-codex-rename-progress-timeout-tuning-and-fallback-tests.md)

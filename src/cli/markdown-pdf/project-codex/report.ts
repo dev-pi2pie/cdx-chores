@@ -2,6 +2,7 @@ import { writeTextFileSafe } from "../../file-io";
 import type { CliRuntime } from "../../types";
 import { publicPathBasename, publicPathDisplay } from "../codex-path-display";
 import { collectMdPdfProjectCodexUnsupportedDirections } from "./diagnostics";
+import { createMdPdfProjectCodexHandoffProjection } from "./handoff-projection";
 import {
   sanitizeMdPdfProjectCodexReportText,
   sanitizeMdPdfProjectCodexReportTexts,
@@ -110,11 +111,12 @@ function documentSummary(
 
 function reportFiles(input: {
   outputPlan: MarkdownPdfProjectCodexOutputPlan;
+  projectRolesPlanned?: boolean;
   runtime: CliRuntime;
   validation: MarkdownPdfProjectCodexValidationSummary;
 }): MarkdownPdfProjectCodexReportArtifact["files"] {
   const files: MarkdownPdfProjectCodexReportArtifact["files"] =
-    input.validation.decisionMode === "no-usable-project"
+    input.validation.decisionMode === "no-usable-project" || input.projectRolesPlanned === false
       ? []
       : [
           plannedFile("profile", input.outputPlan.profile),
@@ -169,6 +171,8 @@ function sanitizeValidationResults(
 
 export function createMdPdfProjectCodexReportArtifact(input: {
   outputPlan: MarkdownPdfProjectCodexOutputPlan;
+  projectArtifactsWritten?: boolean;
+  projectRolesPlanned?: boolean;
   profilePhase: MdPdfProjectCodexProfilePhaseResult;
   runtime: CliRuntime;
   signals: MdPdfProjectCodexSignalCollection;
@@ -177,9 +181,9 @@ export function createMdPdfProjectCodexReportArtifact(input: {
   validation: MarkdownPdfProjectCodexValidationSummary;
 }): MarkdownPdfProjectCodexReportArtifact {
   const coverImage = inputCoverImageReport(input);
+  const handoff = createMdPdfProjectCodexHandoffProjection(input);
   return {
     artifactType: MARKDOWN_PDF_PROJECT_CODEX_REPORT_ARTIFACT_TYPE,
-    version: 1,
     advisoryOnly: true,
     reportId: reportArtifactId(input.outputPlan.identity.projectBundleId),
     generatedAt: input.runtime.now().toISOString(),
@@ -214,8 +218,12 @@ export function createMdPdfProjectCodexReportArtifact(input: {
     signals: {
       document: documentSummary(input.signals),
       templateOwnedDirections: {
-        document: input.signals.template.ownedSignals.documentDirections,
-        intent: input.signals.template.ownedSignals.intentDirections,
+        document: sanitizeMdPdfProjectCodexReportTexts(
+          input.signals.template.ownedSignals.documentDirections,
+        ),
+        intent: sanitizeMdPdfProjectCodexReportTexts(
+          input.signals.template.ownedSignals.intentDirections,
+        ),
         requiresCodex: input.signals.template.ownedSignals.requiresCodex,
       },
     },
@@ -239,9 +247,10 @@ export function createMdPdfProjectCodexReportArtifact(input: {
               : [];
           }),
     validationResults: sanitizeValidationResults(input.validation.results),
-    ...(input.validation.renderCommand
-      ? { followUpRenderCommand: input.validation.renderCommand }
-      : {}),
+    ...(handoff.render.usability === "unavailable"
+      ? {}
+      : { followUpRenderCommand: handoff.render.command }),
+    handoff,
   };
 }
 
@@ -254,6 +263,8 @@ export function serializeMdPdfProjectCodexReportArtifact(
 export async function writeMdPdfProjectCodexReportArtifact(input: {
   outputPlan: MarkdownPdfProjectCodexOutputPlan;
   overwrite?: boolean;
+  projectArtifactsWritten?: boolean;
+  projectRolesPlanned?: boolean;
   profilePhase: MdPdfProjectCodexProfilePhaseResult;
   reportArtifact?: MarkdownPdfProjectCodexReportArtifact;
   runtime: CliRuntime;
@@ -265,11 +276,24 @@ export async function writeMdPdfProjectCodexReportArtifact(input: {
   if (!input.outputPlan.report) {
     return;
   }
+  const reportArtifact = input.reportArtifact ?? createMdPdfProjectCodexReportArtifact(input);
+  const { followUpRenderCommand: _followUpRenderCommand, ...reportWithoutRenderCommand } =
+    reportArtifact;
+  const handoff = createMdPdfProjectCodexHandoffProjection(input);
+  const files =
+    input.projectRolesPlanned === false
+      ? reportArtifact.files.filter((file) => file.role === "project-report")
+      : reportArtifact.files;
   await writeTextFileSafe(
     input.outputPlan.report.path,
-    serializeMdPdfProjectCodexReportArtifact(
-      input.reportArtifact ?? createMdPdfProjectCodexReportArtifact(input),
-    ),
+    serializeMdPdfProjectCodexReportArtifact({
+      ...reportWithoutRenderCommand,
+      ...(handoff.render.usability === "unavailable"
+        ? {}
+        : { followUpRenderCommand: handoff.render.command }),
+      files,
+      handoff,
+    }),
     {
       displayPath: publicProjectReportWritePath(input.runtime),
       label: "--codex-report-output",

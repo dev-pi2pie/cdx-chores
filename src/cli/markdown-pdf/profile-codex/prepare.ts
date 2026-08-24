@@ -4,8 +4,13 @@ import { join, parse, resolve } from "node:path";
 
 import {
   classifyMarkdownPdfCodexProfileFailure,
+  MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS,
   type MarkdownPdfCodexProfileResult,
 } from "../../../adapters/codex/markdown-pdf-profile";
+import {
+  classifyCodexRequestFailure,
+  formatCodexTimeoutFailure,
+} from "../../../utils/codex-request-failure";
 import type { MarkdownPdfCodexSignalMode } from "../../../adapters/codex/markdown-pdf-profile/types";
 import { formatUtcFileDateTimeISO } from "../../../utils/datetime";
 import { assertNonEmpty, printLine } from "../../actions/shared";
@@ -265,6 +270,7 @@ export async function prepareMarkdownPdfProfileCodex(
       progressPresenter: options.codexProgressPresenter,
       progressLabel: "Requesting Codex Markdown PDF profile recommendation",
       runtime,
+      timeoutMs: options.timeoutMs,
     });
     if (decision.kind === "no-usable-profile") {
       const failure: MarkdownPdfCodexReportFailure = {
@@ -321,7 +327,14 @@ export async function prepareMarkdownPdfProfileCodex(
       ...destinationSource,
       createdAt,
       failure,
-      failureMessage: `${codexFailureMessage(failureKind)} ${failure.message}`,
+      failureMessage:
+        classifyCodexRequestFailure(error) === "timeout"
+          ? formatCodexTimeoutFailure({
+              attemptsUsed: 1,
+              requestLabel: "Codex Markdown PDF profile request",
+              timeoutMs: options.timeoutMs ?? MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS,
+            })
+          : `${codexFailureMessage(failureKind)} ${failure.message}`,
       identity,
       kind: "failed",
       reportPayload: { ...reportBase, failure, profileIdentity: identity },

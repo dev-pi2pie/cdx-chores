@@ -4,6 +4,7 @@ import { resolveCliColorEnabled } from "./cli/colors";
 import { registerCliCommands } from "./cli/commands";
 import { toCliError } from "./cli/errors";
 import { runInteractiveMode } from "./cli/interactive";
+import { configureCliProgramOutput } from "./cli/program/output";
 import { getFormattedVersionLabel } from "./cli/program/version";
 import type { CliRuntime, RunCliOptions } from "./cli/types";
 
@@ -87,17 +88,14 @@ export async function runCli(
   }
 
   const program = new Command();
+  configureCliProgramOutput(program, cliRuntime);
   program
     .name("cdx-chores")
     .description("CLI chores toolkit for file/media/document workflow helpers")
     .showHelpAfterError()
     .option("--absolute, --abs", "Show absolute paths in CLI output", false)
     .option("--no-color", "Disable ANSI colors", false)
-    .version(
-      getFormattedVersionLabel(cliRuntime.colorEnabled),
-      "-v, --version",
-      "Show version information",
-    );
+    .version(getFormattedVersionLabel(cliRuntime), "-v, --version", "Show version information");
 
   registerCliCommands(program, cliRuntime);
 

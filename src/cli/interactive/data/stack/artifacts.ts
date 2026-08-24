@@ -106,7 +106,7 @@ export async function maybeKeepInteractiveStackPlan(
 }
 
 function renderInteractiveStackReplayTip(runtime: CliRuntime, planPath: string): void {
-  const pc = getCliColors(runtime);
+  const pc = getCliColors(runtime, runtime.stderr);
   const replayCommand = `cdx-chores data stack replay ${displayPath(runtime, planPath)}`;
   printLine(runtime.stderr, `${pc.yellow("Replay later:")} ${pc.cyan(replayCommand)}`);
 }

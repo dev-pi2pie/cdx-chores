@@ -3,7 +3,10 @@ import { extname } from "node:path";
 import { resolveFromCwd } from "../path-utils";
 import type { CliRuntime } from "../types";
 import { renderDataPreview, type RenderDataPreviewSource } from "../data-preview/render";
-import { loadParquetPreviewWindow } from "../duckdb/parquet-preview";
+import {
+  loadParquetPreviewWindow,
+  type ParquetPreviewDependencies,
+} from "../duckdb/parquet-preview";
 import { CliError } from "../errors";
 import { assertNonEmpty, ensureFileExists, printLine } from "./shared";
 
@@ -19,6 +22,7 @@ const DEFAULT_PARQUET_PREVIEW_ROWS = 20;
 export async function actionDataParquetPreview(
   runtime: CliRuntime,
   options: DataParquetPreviewOptions,
+  dependencies: ParquetPreviewDependencies = {},
 ): Promise<void> {
   const inputPath = resolveFromCwd(runtime, assertNonEmpty(options.input, "Input path"));
   await ensureFileExists(inputPath, "Input");
@@ -32,12 +36,15 @@ export async function actionDataParquetPreview(
 
   const rowCount = options.rows ?? DEFAULT_PARQUET_PREVIEW_ROWS;
   const offset = options.offset ?? 0;
-  const preview = await loadParquetPreviewWindow({
-    columns: options.columns,
-    inputPath,
-    offset,
-    rowCount,
-  });
+  const preview = await loadParquetPreviewWindow(
+    {
+      columns: options.columns,
+      inputPath,
+      offset,
+      rowCount,
+    },
+    dependencies,
+  );
 
   const source: RenderDataPreviewSource = {
     columns: preview.allColumns,

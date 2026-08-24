@@ -8,7 +8,11 @@ import {
 } from "../../src/cli/markdown-pdf/template-codex";
 import { createActionTestRuntime } from "../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
-import { minimalJpeg, minimalPng, minimalWebpVp8xSquare1200 } from "./fixtures";
+import {
+  minimalJpeg,
+  minimalPng,
+  minimalWebpVp8xSquare1200,
+} from "../markdown-pdf/actions/template-codex-fixtures";
 
 describe("cli action modules: md pdf-template codex signal collection", () => {
   test("collects Markdown, recipe, and font signals for Codex-assisted input", async () => {
@@ -114,6 +118,81 @@ describe("cli action modules: md pdf-template codex signal collection", () => {
       expect(signals.recipe.effectiveOptions.tocDepth).toBe(4);
       expect(JSON.stringify(signals)).not.toContain("fontOwnership");
       expect(JSON.stringify(signals)).not.toContain("ownedKeys");
+    });
+  });
+
+  test("keeps page-number and page-chrome values out of Template model signals", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-private-page-profile", async (fixtureDir) => {
+      const baseProfilePath = join(fixtureDir, "profile.yml");
+      await writeFile(
+        baseProfilePath,
+        [
+          "header:",
+          "  style:",
+          "    color: '#123ABC'",
+          "    fontSize: 11pt",
+          "pageNumbers:",
+          "  enabled: true",
+          "  scope: body",
+          "  countFrom: body",
+          "  start: 17",
+          "  increment: 3",
+          "  position: top-right",
+          "  format: 'Confidential {page}'",
+          "fonts:",
+          "  body:",
+          "    default: Template Body Font",
+          "  pageChrome:",
+          "    default: Private Chrome Font",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const { runtime } = createActionTestRuntime();
+      const state = await normalizeMdPdfTemplateCodexCommandState(runtime, {
+        baseProfile: toRepoRelativePath(baseProfilePath),
+      });
+      const signals = await collectMdPdfTemplateCodexSignals(runtime, state);
+      const serialized = JSON.stringify(signals);
+
+      expect(signals.baseProfile).toEqual({
+        available: true,
+        summary: {
+          id: "base-profile",
+          kind: "base-profile",
+          label: "User supplied base profile",
+          presetBacked: false,
+          basedOn: "untracked-base-profile",
+          fields: ["fonts", "header"],
+          traits: {
+            cover: false,
+            toc: false,
+            codeHighlight: false,
+            lineNumbers: false,
+            density: "standard",
+            bestFor: ["user supplied base profile"],
+          },
+        },
+      });
+      expect(serialized).not.toContain("pageNumbers");
+      expect(serialized).not.toContain("Confidential");
+      expect(serialized).not.toContain("#123ABC");
+      expect(serialized).not.toContain("fontSize");
+      expect(serialized).not.toContain("top-right");
+      expect(serialized).not.toContain("Private Chrome Font");
+      expect(signals.fonts.profileFonts.families).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            family: "Template Body Font",
+            key: "default",
+            role: "body",
+          }),
+        ]),
+      );
+      expect(signals.fonts.profileFonts.families).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ role: "pageChrome" })]),
+      );
     });
   });
 

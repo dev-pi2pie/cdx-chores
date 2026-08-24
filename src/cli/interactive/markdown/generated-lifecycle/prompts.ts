@@ -20,13 +20,23 @@ import {
   resolveGeneratedReusableMarkdownPdfCode,
 } from "../code-highlighting-review";
 import type { MarkdownPdfRenderCodeHighlightChoice } from "../render-code-highlighting";
+import {
+  formatMarkdownPdfPageNumberConfigurationReview,
+  resolveGeneratedMarkdownPdfPageNumberConfiguration,
+} from "../page-number-review";
+import type { MarkdownPdfRenderPageNumberChoice } from "../render-page-numbers";
 
 export type ArtifactDestinationOutcome =
   | { kind: "destination"; output: string; overwrite: boolean }
   | { kind: "review" }
   | { kind: "cancel" };
 
-export type FinalRenderNextStep = "outputs" | "change-code-highlighting" | "review" | "cancel";
+export type FinalRenderNextStep =
+  | "outputs"
+  | "change-code-highlighting"
+  | "change-page-numbers"
+  | "review"
+  | "cancel";
 
 export type PdfOutputOutcome =
   | { kind: "output"; output: ResolvedMarkdownPdfRenderOutput }
@@ -149,6 +159,7 @@ export async function promptGeneratedFinalRenderNextStep(
         value: "outputs",
       },
       { name: "Change code highlighting", value: "change-code-highlighting" },
+      { name: "Change page numbers", value: "change-page-numbers" },
       { name: "Back to recipe review", value: "review" },
       { name: "Cancel", value: "cancel" },
     ],
@@ -161,6 +172,7 @@ export function renderGeneratedFinalReview(
   pdf: ResolvedMarkdownPdfRenderOutput,
   materialization?: BoundMarkdownPdfGeneratedMaterialization,
   codeHighlight: MarkdownPdfRenderCodeHighlightChoice = selection.codeHighlight,
+  pageNumbers: MarkdownPdfRenderPageNumberChoice = selection.pageNumbers,
 ): void {
   printLine(runtime.stderr, "Final render review");
   printLine(runtime.stderr, "");
@@ -193,6 +205,12 @@ export function renderGeneratedFinalReview(
   printLine(runtime.stderr, "");
   for (const line of formatEffectiveMarkdownPdfCodeReview(
     resolveGeneratedEffectiveMarkdownPdfCode(selection.candidate, codeHighlight),
+  )) {
+    printLine(runtime.stderr, line);
+  }
+  printLine(runtime.stderr, "");
+  for (const line of formatMarkdownPdfPageNumberConfigurationReview(
+    resolveGeneratedMarkdownPdfPageNumberConfiguration(selection.candidate, pageNumbers),
   )) {
     printLine(runtime.stderr, line);
   }

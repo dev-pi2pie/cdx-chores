@@ -52,6 +52,7 @@ export interface MdPdfTemplateCodexOptions {
   templateBundleIdFactory?: MarkdownPdfTemplateCodexBundleIdFactory;
   codexRunner?: MarkdownPdfTemplateCodexRunner;
   codexProgressPresenter?: CodexProgressPresenter;
+  timeoutMs?: number;
 }
 
 type MdPdfTemplateCodexNonCliOption =
@@ -69,6 +70,7 @@ type MdPdfTemplateCodexNonCliOption =
   | "positionalInput"
   | "preset"
   | "templateBundleIdFactory"
+  | "timeoutMs"
   | "toc"
   | "tocDepth"
   | "tocPageBreak";
@@ -76,7 +78,9 @@ type MdPdfTemplateCodexNonCliOption =
 export type MdPdfTemplateCodexCliOptions = Omit<
   MdPdfTemplateCodexOptions,
   MdPdfTemplateCodexNonCliOption
->;
+> & {
+  codexTimeout?: number;
+};
 
 export interface NormalizedMdPdfTemplateCodexCommandState {
   inputPath?: string;

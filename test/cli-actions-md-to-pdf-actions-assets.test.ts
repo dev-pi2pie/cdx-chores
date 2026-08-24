@@ -1,9 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { mkdir, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 
 import { actionMdToPdf } from "../src/cli/actions";
-import { createPdfRunner, createRemoteInlineCssHtml } from "./cli-actions-md-to-pdf.helpers";
+import { rewriteMarkdownPdfTemplateLocalAssets } from "../src/cli/markdown-pdf/template-assets";
+import { createPdfRunner, createRemoteInlineCssHtml } from "./markdown-pdf/actions/render-support";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 
@@ -71,6 +73,44 @@ describe("cli action modules: md to-pdf assets", () => {
           code: "REMOTE_ASSET_BLOCKED",
           exitCode: 2,
           messageIncludes: "https://example.com/nested-logo.png",
+        },
+      );
+
+      expect(
+        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+      ).toBe(false);
+      expectNoOutput();
+    });
+  });
+
+  test("terminates cyclic CSS imports and still blocks nested remote assets", async () => {
+    await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
+      const inputPath = join(fixtureDir, "report.md");
+      const cssDir = join(fixtureDir, "styles");
+      const customCss = join(cssDir, "base.css");
+      const nestedCss = join(cssDir, "nested.css");
+      await mkdir(cssDir, { recursive: true });
+      await writeFile(inputPath, "# Report\n", "utf8");
+      await writeFile(customCss, '@import "nested.css";\nbody { color: black; }\n', "utf8");
+      await writeFile(
+        nestedCss,
+        '@import "base.css";\n.logo { background: url("https://example.com/cycle-logo.png"); }\n',
+        "utf8",
+      );
+      const { calls, runner } = createPdfRunner({ html: "<html><body></body></html>" });
+      const { runtime, expectNoOutput } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionMdToPdf(runtime, {
+            input: toRepoRelativePath(inputPath),
+            css: toRepoRelativePath(customCss),
+            runner,
+          }),
+        {
+          code: "REMOTE_ASSET_BLOCKED",
+          exitCode: 2,
+          messageIncludes: "https://example.com/cycle-logo.png",
         },
       );
 
@@ -326,6 +366,23 @@ describe("cli action modules: md to-pdf assets", () => {
       ).toBe(true);
       expect(stdout.text).toContain("Wrote PDF:");
       expectNoStderr();
+    });
+  });
+
+  test("keeps an in-root Template file URL unchanged", async () => {
+    await withTempFixtureDir("md-to-pdf-template-file-url", async (fixtureDir) => {
+      const templateDirectory = join(fixtureDir, "template");
+      const assetPath = join(templateDirectory, "assets", "cover.png");
+      await mkdir(join(templateDirectory, "assets"), { recursive: true });
+      await writeFile(assetPath, "template-asset", "utf8");
+      const assetUrl = pathToFileURL(assetPath).href;
+
+      const rewritten = await rewriteMarkdownPdfTemplateLocalAssets(
+        `<html><body><img src="${assetUrl}"></body></html>`,
+        templateDirectory,
+      );
+
+      expect(rewritten).toContain(`src="${assetUrl}"`);
     });
   });
 
