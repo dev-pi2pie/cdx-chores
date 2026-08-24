@@ -25,7 +25,7 @@ Each accepted path change receives one row:
 | Reference date          | UTC date on which the new path or retained owner became the accepted repository location |
 | Historical path         | Repository-relative path that existed before the accepted change                         |
 | Transition              | `moved`, `split`, `merged`, or `removed`                                                 |
-| Current owner or owners | Current path or paths that retain the historical contract                                |
+| Current owner or owners | Successor path or paths that retained the contract at the exact migration range          |
 | Migration range         | Exact `<base>..<tip>` implementation range                                               |
 | Job evidence            | Unified job section containing execution and validation evidence                         |
 
@@ -37,6 +37,11 @@ retains part of the historical contract. For a merge or removal, name the
 existing test path that retains the contract rather than leaving the current
 owner blank. Job evidence should link to the exact unified-job section when a
 stable section anchor is available.
+
+An owner cell is range-relative. When a successor path moves again, its later
+row continues the chain; follow those rows until they reach existing terminal
+owners. Historical rows and migration ranges remain unchanged when a later
+transition extends the chain.
 
 Current guides and current reference docs must use the latest accepted paths.
 Historical commands and time-bounded wording follow the dated currentness
@@ -578,6 +583,36 @@ and historical-wording reconciliation.
 | 2026-08-24 | `test/helpers/interactive-harness.ts` | merged | `test/cli-foundations/interactive-harness/index.ts` | `ba4701aa..b8f78174` | [Phase 7][phase-7-evidence] |
 | 2026-08-24 | `test/cli-interactive-routing.helpers.ts` | removed | `test/cli-foundations/interactive-harness/index.ts`<br>`test/helpers/ansi.ts`<br>`test/data-stack/interactive/support.ts`<br>`test/helpers/cli-test-utils.ts` | `5411dc03..b8f78174` | [Phase 7][phase-7-evidence] |
 
+### Phase 8: Final Reconciliation
+
+Phase 8 removed one tracked fixture with proved zero use. It removed no test
+declaration and changed no runtime contract.
+
+| Reference date | Historical path | Transition | Current owner or owners | Migration range | Job evidence |
+| --- | --- | --- | --- | --- | --- |
+| 2026-08-24 | `test/fixtures/parquet-preview/wide.parquet` | removed | `test/data-preview/actions/parquet.test.ts` | `1009d3c8..6e288cb1` | [Phase 8][phase-8-evidence] |
+
+The final chain audit found 24 nonterminal owner cells across the 14 successor
+paths below. Every later chain terminates in the listed existing `test/**`
+owners:
+
+| Nonterminal successor path | Terminal existing owner paths |
+| --- | --- |
+| `test/cli-actions-md-to-pdf-template-codex/fixtures.ts` | `test/markdown-pdf/actions/template-codex-fixtures.ts`<br>`test/markdown-pdf/support/path-fixtures.ts` |
+| `test/cli-foundations/interactive/root-routing.test.ts` | `test/data/interactive/unknown-action.test.ts` |
+| `test/cli-interactive-menu.test.ts` | `test/cli-foundations/interactive/menu-wiring.test.ts`<br>`test/doctor/actions/report-projections.test.ts`<br>`test/doctor/interactive/menu-routing.test.ts`<br>`test/doctor/interactive/routing.test.ts` |
+| `test/cli-interactive-routing.helpers.ts` | `test/cli-foundations/interactive-harness/index.ts`<br>`test/data-stack/interactive/support.ts`<br>`test/helpers/ansi.ts`<br>`test/helpers/cli-test-utils.ts` |
+| `test/cli-interactive-routing.test.ts` | `test/data/interactive/menu-routing.test.ts`<br>`test/data/interactive/unknown-action.test.ts`<br>`test/doctor/interactive/routing.test.ts`<br>`test/markdown/interactive/menu-routing.test.ts`<br>`test/markdown-pdf/interactive/entry-routing.test.ts`<br>`test/markdown-frontmatter/interactive/routing.test.ts`<br>`test/markdown-docx/interactive/routing.test.ts`<br>`test/rename/interactive/routing.test.ts`<br>`test/video/interactive/routing.test.ts` |
+| `test/cli-ux.test.ts` | `test/cli-foundations/commands/root-ux.test.ts`<br>`test/data/commands/help.test.ts`<br>`test/data-conversion/commands/help.test.ts`<br>`test/data-conversion/commands/output-paths.test.ts`<br>`test/data-extract/commands/help-and-input-format.test.ts`<br>`test/data-preview/commands/parquet-ux.test.ts`<br>`test/data-preview/commands/preview-ux.test.ts`<br>`test/data-query/commands/codex-help-and-input-format.test.ts`<br>`test/data-query/commands/help-and-input-format.test.ts`<br>`test/data-stack/commands/help-and-input-format.test.ts`<br>`test/rename/commands/ux.test.ts`<br>`test/video/commands/ux.test.ts` |
+| `test/helpers/interactive-harness/mocks/action-data.ts` | `test/data-extract/interactive/mock-action.ts`<br>`test/data-query/interactive/mock-action.ts` |
+| `test/helpers/interactive-harness/mocks/action-misc.ts` | `test/data-conversion/interactive/mock-action.ts`<br>`test/data-preview/interactive/mock-action.ts`<br>`test/doctor/interactive/mock-action.ts`<br>`test/markdown-docx/interactive/mock-action.ts`<br>`test/markdown-frontmatter/interactive/mock-action.ts`<br>`test/video/interactive/mock-action.ts` |
+| `test/helpers/interactive-harness/mocks/data-query/index.ts` | `test/data-extract/interactive/mock-installation.ts`<br>`test/data-query/interactive/mock-installation.ts` |
+| `test/helpers/interactive-harness/mocks/data-query/query.ts` | `test/data-extract/interactive/mock-introspection.ts`<br>`test/data-query/interactive/mock-query.ts` |
+| `test/helpers/interactive-harness/mocks/data-query/source-shape.ts` | `test/data-extract/interactive/mock-source-shape.ts`<br>`test/data-query/interactive/mock-source-shape.ts` |
+| `test/helpers/interactive-harness/mocks/data-query/types.ts` | `test/cli-foundations/interactive-harness/types.ts`<br>`test/data-extract/interactive/harness-contract.ts`<br>`test/data-query/interactive/harness-contract.ts`<br>`test/data-query/interactive/mock-types.ts`<br>`test/data-sources/interactive/harness-contract.ts`<br>`test/data-stack/interactive/harness-contract.ts`<br>`test/markdown-pdf/interactive/harness-contract.ts`<br>`test/rename/interactive/harness-contract.ts` |
+| `test/helpers/interactive-harness/module-urls.ts` | `test/cli-foundations/interactive-harness/module-urls.ts`<br>`test/data-query/interactive/module-urls.ts`<br>`test/markdown-pdf/interactive/module-urls.ts` |
+| `test/helpers/interactive-harness/types.ts` | `test/cli-foundations/interactive-harness/types.ts`<br>`test/data-extract/interactive/harness-contract.ts`<br>`test/data-query/interactive/harness-contract.ts`<br>`test/data-sources/interactive/harness-contract.ts`<br>`test/data-stack/interactive/harness-contract.ts`<br>`test/markdown-pdf/interactive/harness-contract.ts`<br>`test/rename/interactive/harness-contract.ts` |
+
 [phase-3-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-3-data-query-migration-pilot
 [phase-4-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-4-doctor-ownership-migration-pilot
 [phase-5-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-5-bounded-markdown-pdf-migration-pilot
@@ -603,6 +638,7 @@ and historical-wording reconciliation.
 [phase-6-20-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-620-utilities
 [phase-6-21-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-621-cli-foundations-and-mixed-root-decomposition
 [phase-7-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-7-global-support-ownership-and-root-deferrals
+[phase-8-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-8-final-test-tree-and-documentation-reconciliation
 
 ## Completion Boundary
 
@@ -611,8 +647,9 @@ including after the first correspondence rows are added. It may move to
 `completed` only after the final documentation reconciliation confirms that:
 
 - every accepted move, split, merge, and removal has a correspondence row
-- every row names its reference date, current owner or owners, exact migration
-  range, and job evidence
+- every row names its reference date, range-relative successor owner or owners,
+  exact migration range, and job evidence
+- every nonterminal successor chain resolves to existing terminal owners
 - current guides and reference docs use the accepted current paths
 - every remaining historical path occurrence is intentionally historical
 - no accepted historical path remains unclassified

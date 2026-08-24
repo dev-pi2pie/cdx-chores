@@ -494,29 +494,29 @@ Phase 8.
 
 #### 8.2: Remove Proven `test/**` Residue
 
-- [ ] Remove empty migration directories as local workspace hygiene and record
+- [x] Remove empty migration directories as local workspace hygiene and record
       that Git does not track their deletion.
-- [ ] Scan `test/**` for stale internal imports, deleted-facade references,
+- [x] Scan `test/**` for stale internal imports, deleted-facade references,
       accidental duplicate copies, and tracked support entries with no current
       test-tree consumer.
-- [ ] Remove a tracked compatibility or support entry only when the zero-use
+- [x] Remove a tracked compatibility or support entry only when the zero-use
       proof, retained owner, and correspondence are explicit; otherwise retain
       or defer it.
-- [ ] Do not remove another test declaration unless an existing accepted case
+- [x] Do not remove another test declaration unless an existing accepted case
       matrix decision already authorizes that exact removal.
-- [ ] Confirm every surviving `test/**` entry has a feature, platform, global,
+- [x] Confirm every surviving `test/**` entry has a feature, platform, global,
       source-aligned, or event-based deferral owner.
 
 #### 8.3: Reconcile Test-Path Documentation
 
-- [ ] Scan current guides and current references only for the accepted changed
+- [x] Scan current guides and current references only for the accepted changed
       `test/**` path set; do not start a general documentation cleanup.
-- [ ] Update current paths and navigational links while preserving dated
+- [x] Update current paths and navigational links while preserving dated
       inventories, historical commands, and execution records as historical
       evidence.
-- [ ] Classify every retained old test-path occurrence as intentional history
+- [x] Classify every retained old test-path occurrence as intentional history
       or repair it as stale current guidance.
-- [ ] Confirm every accepted move, split, merge, and removal has a complete
+- [x] Confirm every accepted move, split, merge, and removal has a complete
       correspondence row and unified-job evidence.
 
 #### 8.4: Record The Before/After And Removal Summary

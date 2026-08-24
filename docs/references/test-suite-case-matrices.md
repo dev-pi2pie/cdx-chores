@@ -24,6 +24,11 @@ settled; it does not claim that the filesystem path already exists. A target
 becomes current only after its implementation phase passes validation and adds
 the corresponding path-correspondence row.
 
+Source paths, matrix headings, focused commands, and overlap paths are Phase 2
+audit-time evidence at baseline `2f3013ca`; they remain intentionally
+historical after migration. Use the path-correspondence reference for accepted
+successor and terminal current locations.
+
 ## Matrix Contract
 
 Each scoped source declaration appears exactly once. A parameterized
@@ -156,6 +161,7 @@ commits.
 | `test/helpers/cli-action-test-utils.ts` | retain globally | feature-neutral action runtime, error, and removal helpers | verify independent feature families and absence of feature re-exports |
 | `test/helpers/cli-test-utils.ts` | retain after split | global CLI runtime, path, fixture-directory, and capture support | remove the Rename plan import and validate all affected built-CLI families |
 | `test/rename/support/plan-artifacts.ts` | retain locally | Rename plan artifact lifecycle | add caller-owned `try/finally` cleanup for the two artifact-producing command tests |
+| `test/rename/support/run-cli.test.ts` | retain locally | two concrete Rename CLI plan-lifecycle regression cases | added with the caller-owned cleanup in `b83d14f5`; preserve return, throw, newly-created, and pre-existing artifact behavior |
 | `test/helpers/ansi.ts` | retain globally | feature-neutral ANSI normalization | preserve independent Data Preview, Data Stack, Data Extract, and Data Query consumers |
 | `test/helpers/interactive-harness.ts` | delete facade | direct imports from `test/cli-foundations/interactive-harness/index.ts` | delete after its nine non-definition consumers use the canonical entry point |
 | `test/helpers/interactive-harness/**` | split and move | feature contracts remain local; neutral platform support and the explicit composition mechanism move to `test/cli-foundations/interactive-harness/` | preserve all 41 direct harness test consumers and subprocess behavior; feature mock implementations remain local |

@@ -2380,3 +2380,78 @@ Review gate:
 - [ ] run focused, complete-suite, repository, and static validation
 - [ ] review the exact Phase 8 and complete implementation ranges
 - [ ] record accepted review fixes and the final closeout decision
+
+### Cleanup And Current-Path Reconciliation
+
+Implementation tip: `6e288cb1`
+
+The bounded `test/**` audit found one tracked removal candidate. The binary
+fixture `test/fixtures/parquet-preview/wide.parquet` had no current basename or
+text consumer, appeared in only its introduction commit `a4a4a2ec`, and had no
+consumer there either. Commit `6e288cb1` removes it while retaining the active
+Parquet behavior owner at `test/data-preview/actions/parquet.test.ts`; no test
+declaration or assertion was removed. The focused Data Preview and Data Query
+selector passes 17 tests with 87 expectations across three files.
+
+After that removal, the tracked tree contains 487 paths: 355 runnable test
+files, 93 support TypeScript entries, and 39 non-TypeScript fixtures. The
+support graph gives 91 support files direct literal consumers and confirms the
+remaining two are spawned entry points:
+
+- `test/cli-foundations/interactive-harness/runner.ts`
+- `test/cli-foundations/interactive/real-select-search-fixture.ts`
+
+Relative-import resolution reports zero unresolved imports. No deleted-facade
+reference remains, no TypeScript or test file has duplicate content, and no
+tracked TypeScript support entry qualifies for removal. The identical
+`basic.parquet` and `large.parquet` fixture pairs remain under their separately
+admitted Data Sources and Parquet Preview owners. Pandoc HTML/CSS and alternate
+editor RTF sources remain as provenance for their retained generated fixtures.
+
+The current-owner union initially named 354 of 355 runnable paths exactly. The
+only missing path, `test/rename/support/run-cli.test.ts`, contains the two
+concrete Phase 7 lifecycle regressions added in `b83d14f5`; the case matrix now
+records that current Rename owner. The reconciled union therefore names all
+355 runnable paths. The 31 root and 12 legacy Interactive Markdown PDF suites
+remain their admitted event-based deferrals.
+
+Local cleanup removed ten empty untracked directories and two ignored Finder
+files. Git cannot record these deletions:
+
+| Local residue | Disposition |
+| --- | --- |
+| `test/cli-actions-data-preview` | removed empty historical migration directory |
+| `test/cli-actions-data-stack` | removed empty historical migration directory |
+| `test/cli-actions-md-to-pdf-commands` | removed empty historical migration directory |
+| `test/cli-command-data-stack` | removed empty historical migration directory |
+| `test/cli-interactive-data-stack` | removed empty historical migration directory |
+| `test/data-stack-codex-report` | removed empty test-output directory |
+| `test/data-stack-plan` | removed empty test-output directory |
+| `test/helpers/interactive-harness` | removed empty historical harness directory |
+| `test/helpers/interactive-harness/mocks` | removed empty historical harness directory |
+| `test/helpers/interactive-harness/mocks/data-query` | removed empty historical harness directory |
+| `test/.DS_Store` | removed ignored Finder metadata |
+| `test/fixtures/.DS_Store` | removed ignored Finder metadata |
+
+Current-guide scanning found no obsolete accepted test path. Its only three
+`test/**` references point to existing fixture directories, and no current
+guide or reference has a navigational Markdown link into the test tree. Old
+paths in the audit inventory, case matrix, plan, research, job, and
+correspondence remain dated or phase-bounded historical evidence. The case
+matrix now states that contract explicitly.
+
+The correspondence audit found 295 pre-Phase-8 rows structurally complete.
+Twenty-four older owner cells name 14 intermediate successors that moved again;
+every chain terminates in existing current owners. The reference now defines
+owner cells as range-relative, records all 14 terminal mappings, and adds the
+Phase 8 fixture-removal row without rewriting historical ranges.
+
+Cleanup decision: `Continue with constraints`. No new vague or duplicate test
+removal is justified. Proceed to the final before/after record, cumulative
+validation, and exact-range review.
+
+Review gate update:
+
+- [x] classify and remove proven untracked empty-directory residue
+- [x] prove every tracked `test/**` entry has an owner or deferral
+- [x] reconcile current test-path documentation and historical occurrences
