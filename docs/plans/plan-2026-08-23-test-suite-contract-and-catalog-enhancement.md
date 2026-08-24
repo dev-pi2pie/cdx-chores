@@ -19,14 +19,14 @@ line count, or runtime is not a success criterion by itself.
 
 ## Planning Boundary
 
-This plan is `active`. Phases 1 and 2 complete the evidence required by the
-related research. No test edit, removal, merge, split, or path migration may
-begin before the Phase 2 admission gate accepts the inventory, representative
-case matrices, and exact catalog topology.
+At admission, this plan became `active`. Phases 1 and 2 completed the evidence
+required by the related research before any test edit, removal, merge, split,
+or path migration began. The Phase 2 gate accepted the inventory,
+representative case matrices, and exact catalog topology.
 
-The plan became `active` when Phase 1 execution began. Keep it active through
-the evidence and migration phases unless a recorded blocker prevents the next
-gate.
+The plan remained active through the evidence and migration phases. Phase 8
+closed it as `completed` on 2026-08-24 after the recorded validation and exact
+commit-range reviews passed.
 
 If the evidence does not support a removal, retain the test. If the catalog
 cannot yet give a suite a stable owner, record an event-based deferral rather
