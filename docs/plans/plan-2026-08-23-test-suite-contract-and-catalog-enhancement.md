@@ -448,18 +448,25 @@ seams, not neutral feature implementations.
 
 Tasks:
 
-- [ ] Verify the named consumer families and feature-neutral semantics of every
+- [x] Verify the named consumer families and feature-neutral semantics of every
       retained global helper and fixture.
-- [ ] Move feature-specific helper dependencies and re-exports to their feature
+- [x] Move feature-specific helper dependencies and re-exports to their feature
       owners, including accepted Rename leakage from global CLI helpers.
-- [ ] Confirm each remaining flat-root suite is an accepted source-aligned
+- [x] Confirm each remaining flat-root suite is an accepted source-aligned
       exception or a temporary deferral with a revisit event.
-- [ ] Confirm no migration phase introduced a new flat-root feature suite.
-- [ ] Re-run all suites importing changed global support and the affected
+- [x] Confirm no migration phase introduced a new flat-root feature suite.
+- [x] Re-run all suites importing changed global support and the affected
       feature families.
-- [ ] Update the inventory and unified job with final global, local, exception,
-      and deferral ownership.
-- [ ] Review the exact phase range before cumulative closeout.
+- [x] Preserve the completed inventory as a dated snapshot and update the case
+      matrix and unified job with final global, local, exception, and deferral
+      ownership.
+- [x] Review the exact phase range before cumulative closeout.
+
+Phase 7 completed at evidence tip `8784ccd9`. Test-quality,
+maintainability, and documentation review found no actionable issue in the
+exact range `3ae8e0fb..8784ccd9`. Continue with constraints to Phase 8; the
+parent plan stays `active`, the unified job stays `in-progress`, and the path
+correspondence stays `draft` until cumulative reconciliation finishes.
 
 ### Phase 8: Validate And Reconcile Documentation
 

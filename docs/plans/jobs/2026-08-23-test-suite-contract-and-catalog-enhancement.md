@@ -2157,15 +2157,15 @@ reconciliation.
 
 ## Phase 7: Global Support Ownership And Root Deferrals
 
-Status: `in-progress`
+Status: `completed`
 
 Phase base: `3ae8e0fb`
 
 Implementation tip: `b8f78174`
 
-Evidence tip: pending
+Evidence tip: `8784ccd9`
 
-Exact phase review range: pending
+Exact phase review range: `3ae8e0fb..8784ccd9`
 
 Admission validation reproduced the Phase 6 closeout baseline: 2,621 tests,
 14,870 assertions, and 354 files. The live inventory contains 31 flat-root
@@ -2255,6 +2255,13 @@ Final ownership is explicit:
   condition; accepted source-aligned exceptions remain zero
 - no migration phase introduced a new flat-root or legacy-catalog suite
 
+The aggregate test-quality, maintainability, and documentation review over
+`3ae8e0fb..8784ccd9` found no actionable issue. Decision: `Continue with
+constraints` to Phase 8. Keep the parent plan `active`, this unified job
+`in-progress`, and the path correspondence `draft`; Phase 8 still owns the
+cumulative validation, current-link scan, historical-wording classification,
+and final documentation lifecycle decisions.
+
 Admission constraints:
 
 - the 31 flat-root suites and 12 Phase 6.5 deferrals receive classifications;
@@ -2294,5 +2301,5 @@ Review gate:
       demonstrated mock leakage
 - [x] record final global, local, exception, and deferral ownership
 - [x] run focused, adjacent, complete-suite, and repository validation
-- [ ] create the evidence checkpoint and review the exact phase range
-- [ ] record accepted review fixes and the Phase 7 continuation decision
+- [x] create the evidence checkpoint and review the exact phase range
+- [x] record accepted review fixes and the Phase 7 continuation decision

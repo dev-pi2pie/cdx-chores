@@ -44,9 +44,8 @@ contract in the related research.
 
 ## Correspondence
 
-Current state: Phases 3 through 6 have completed their accepted path
-correspondences. Phase 7 rows are recorded pending its evidence checkpoint and
-exact-range review. The reference remains `draft` until Phase 8 completes the
+Current state: Phases 3 through 7 have completed their accepted path
+correspondences. The reference remains `draft` until Phase 8 completes the
 final documentation reconciliation.
 
 ### Phase 3: Data Query Pilot
@@ -554,10 +553,10 @@ reconciliation.
 
 ### Phase 7: Global Support Ownership And Root Deferrals
 
-The paths below were implemented over the named checkpoint ranges and are
-recorded pending the Phase 7 evidence checkpoint and exact-range review. The
-reference stays `draft`; Phase 8 still owns the final current-link and
-historical-wording reconciliation.
+The paths below were implemented through evidence tip `8784ccd9` and reviewed
+over `3ae8e0fb..8784ccd9`. Phase 7 completed with `Continue with constraints`;
+the reference stays `draft` because Phase 8 still owns the final current-link
+and historical-wording reconciliation.
 
 | Reference date | Historical path or fragment | Transition | Current owner or owners | Migration range | Job evidence |
 | --- | --- | --- | --- | --- | --- |
