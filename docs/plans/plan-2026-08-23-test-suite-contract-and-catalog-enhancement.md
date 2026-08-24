@@ -521,25 +521,25 @@ Phase 8.
 
 #### 8.4: Record The Before/After And Removal Summary
 
-- [ ] Add one unified-job table covering test files, flat-root suites, runtime
+- [x] Add one unified-job table covering test files, flat-root suites, runtime
       tests, assertions, global helpers, compatibility facades, and
       unclassified entries before and after the rollout.
-- [ ] Explain net count changes without treating file or test-count reduction
+- [x] Explain net count changes without treating file or test-count reduction
       as the goal; distinguish catalog splits and added protection from actual
       removals.
-- [ ] Add an exact removal ledger separating coverage removals, historical path
+- [x] Add an exact removal ledger separating coverage removals, historical path
       removals caused by move/split/merge, and untracked empty-directory
       cleanup.
-- [ ] For every removed declaration or parameterized variant, name the reason,
+- [x] For every removed declaration or parameterized variant, name the reason,
       retained owner, and implementation range; link the full path-move list to
       the correspondence reference instead of duplicating it.
 
 #### 8.5: Validate, Review, And Close
 
-- [ ] Run every focused owner set affected by the rollout.
-- [ ] Run the complete Bun test suite, TypeScript check, lint, formatting check,
+- [x] Run every focused owner set affected by the rollout.
+- [x] Run the complete Bun test suite, TypeScript check, lint, formatting check,
       build, and diff check.
-- [ ] Re-run the exact stale-path, empty-directory, facade, helper, root-suite,
+- [x] Re-run the exact stale-path, empty-directory, facade, helper, root-suite,
       legacy-suite, and mock-boundary scans recorded by the phase.
 - [ ] Review the exact Phase 8 range and the complete implementation range for
       test-quality, documentation, maintainability, and behavior-preservation

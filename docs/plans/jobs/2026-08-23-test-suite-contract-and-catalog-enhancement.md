@@ -2307,7 +2307,7 @@ Review gate:
 
 ## Phase 8: Final Test-Tree And Documentation Reconciliation
 
-Status: `in-progress`
+Status: `in-review`
 
 Phase base: `fb8acd94`
 
@@ -2455,3 +2455,94 @@ Review gate update:
 - [x] classify and remove proven untracked empty-directory residue
 - [x] prove every tracked `test/**` entry has an owner or deferral
 - [x] reconcile current test-path documentation and historical occurrences
+
+### Final Before/After And Removal Record
+
+The measures below use the fixed Phase 8.1 definitions. Counts compare the
+clean Phase 1 base `2f3013ca` with the post-cleanup Phase 8 tree:
+
+| Measure | Phase 1 base | Phase 8 final | Delta | Interpretation |
+| --- | ---: | ---: | ---: | --- |
+| tracked `test/**` paths | 395 | 487 | +92 | feature splits added navigable owners while one unused fixture was removed |
+| runnable `*.test.ts` files | 289 | 355 | +66 | mixed suites became smaller feature and boundary owners |
+| support TypeScript entries | 66 | 93 | +27 | feature-local contracts and harness support became explicit |
+| flat-root suites | 197 | 31 | -166 | 31 intentional deferrals remain; reduction itself was not the goal |
+| runtime tests | 2,625 | 2,623 | -2 | 13 accepted removals are offset by 11 new or newly parameterized protection cases |
+| assertions or expectations | 14,983 | 14,876 | -107 | reflects stronger retained owners and new protection, not a reduction target |
+| direct `test/helpers/*.ts` entries | 11 | 3 | -8 | only `ansi`, `cli-action-test-utils`, and `cli-test-utils` remain accepted global helpers |
+| admitted temporary compatibility facades | 2 | 0 | -2 | both Phase 7 facades were removed after direct-owner rewiring |
+| unclassified ownership entries | 133 | 0 | -133 | all 94 matrix suites and 39 support boundaries now have owners or deferrals |
+
+The runtime net change is deliberately smaller than the removal count. The
+audit removed 13 overlapping runtime cases and added or expanded 11 concrete
+protection cases elsewhere, including the two Rename lifecycle cases recorded
+in Phase 7. File-count growth likewise reflects catalog splits rather than
+coverage duplication.
+
+#### Coverage-Removal Ledger
+
+These are the only removed runtime cases. Phase 8 removed no declaration or
+parameterized variant.
+
+| Removed declaration or variant | Reason and retained owner | Implementation range |
+| --- | --- | --- |
+| Doctor `renders the compact $name state` — `limited renderer` variant | repeated the controlled WeasyPrint fixture-loop state; retain `test/doctor/actions/report-projections.test.ts` | `ff0f3d6f..837e5d95` |
+| Doctor `renders the compact $name state` — `unknown Pandoc compatibility` variant | repeated the controlled `pandoc-unverified` fixture-loop state; retain `test/doctor/actions/report-projections.test.ts` | `ff0f3d6f..837e5d95` |
+| Doctor `renders the compact $name state` — `constrained extension without an invented action` variant | repeated the controlled `excel-constrained` fixture-loop state; retain `test/doctor/actions/report-projections.test.ts` | `ff0f3d6f..837e5d95` |
+| `actionDoctor emits machine-readable JSON payload` | host-dependent and weaker than `test/doctor/actions/report-projections.test.ts` plus `test/doctor/commands/routing.test.ts` | `ff0f3d6f..837e5d95` |
+| `actionDoctor emits human-readable text report` | host-dependent and weaker than `test/doctor/actions/report-projections.test.ts` plus `test/doctor/commands/routing.test.ts` | `ff0f3d6f..837e5d95` |
+| `actionDoctor renders optional font support status text` | duplicates the controlled fixture in `test/doctor/actions/report-projections.test.ts`; injected wiring remains in `test/doctor/actions/dependency-integration.test.ts` | `ff0f3d6f..837e5d95` |
+| `actionDoctor explains unsupported and unverified Markdown PDF capability states` | duplicates `test/doctor/actions/report-projections.test.ts`, `test/doctor/actions/dependency-integration.test.ts`, and `test/cli-markdown-pdf-requirements.test.ts` | `ff0f3d6f..837e5d95` |
+| `actionDataDuckDbDoctor emits human-readable DuckDB extension report` | command owner already protects registration and visible process output; retain `test/data-query/commands/duckdb-lifecycle.test.ts` | `ff0f3d6f..837e5d95` |
+| `runInteractiveMode renders compact doctor output from Summary` | composition repeats `test/doctor/interactive/routing.test.ts` plus the compact golden owner in `test/doctor/actions/report-projections.test.ts` | `ff0f3d6f..837e5d95` |
+| `runInteractiveMode renders detailed doctor output from Details` | composition repeats `test/doctor/interactive/routing.test.ts` plus controlled detail in `test/doctor/actions/report-projections.test.ts` | `ff0f3d6f..837e5d95` |
+| `runInteractiveMode renders structured doctor output from JSON` | composition repeats `test/doctor/interactive/routing.test.ts` plus controlled JSON in `test/doctor/actions/report-projections.test.ts` | `ff0f3d6f..837e5d95` |
+| `routes a built-in markdown pdf render through the prepared service` | `test/markdown-pdf/interactive/render-sources.test.ts` protects the same successful route more completely | `10f7eeef..d5985314` |
+| `routes the markdown pdf recipes branch into deterministic artifact selection` | `test/markdown-pdf/interactive/deterministic-authoring.test.ts` protects the same entry and chooser contract | `10f7eeef..d5985314` |
+
+#### Historical Path-Transition Ledger
+
+The canonical correspondence reference contains the complete 296-row list: 226
+`moved`, 66 `split`, two `merged`, and two `removed` events. Rows are
+range-relative, and the final chain audit proves every intermediate successor
+reaches an existing terminal owner. The two `removed` path events are the Phase
+7 routing facade and the Phase 8 unused Parquet fixture; neither represents an
+unrecorded test-declaration removal.
+
+#### Local-Residue Ledger
+
+The exact ten-directory and two-file table in the cleanup section is the
+authoritative local-residue list. Those entries were untracked or ignored, so
+their removal has no Git path event. The post-suite scan reports zero empty
+directories, ignored files, and untracked files under `test/**`.
+
+### Final Validation Before Review
+
+All commands ran with Conda environment `base` active:
+
+| Gate | Result |
+| --- | --- |
+| affected Parquet owner selector | 17 passed, 87 expectations, 3 files |
+| complete `bun test` | 2,623 passed, 14,876 expectations, 355 files, 0 failed |
+| `bunx tsc --noEmit` | passed |
+| `bun run lint` | passed |
+| `bun run format:check` | passed; 1,002 files checked |
+| `bun run build` | passed for Node.js 22 targets; TypeScript 7 warning is informational |
+| `git diff --check` | passed |
+
+The repeated static gate reports 487 tracked paths, 355 runnable tests, 93
+support TypeScript files, 39 fixtures, 31 flat roots, zero empty directories,
+zero ignored or untracked files, zero deleted-facade references, and the
+unchanged 17-file/36-registration mock boundary. The exact 12-suite legacy
+Interactive Markdown PDF deferral remains present. All focused owner results
+for earlier phases remain recorded beside their implementation ranges, and the
+complete suite re-exercises every current owner.
+
+Phase 8 now enters review. Keep the parent plan `active`, this job
+`in-progress`, and the correspondence reference `draft` until the exact Phase
+8 and complete implementation ranges are clean.
+
+Review gate update:
+
+- [x] record the final before/after table and exact removal ledgers
+- [x] run focused, complete-suite, repository, and static validation
