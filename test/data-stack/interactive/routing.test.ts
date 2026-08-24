@@ -1,10 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-  dataStackDefaultOutputMatcher,
-  runInteractiveHarness,
-  stripAnsi,
-} from "../../cli-interactive-routing.helpers";
+import { runInteractiveHarness } from "../../cli-foundations/interactive-harness";
+import { stripAnsi } from "../../helpers/ansi";
+import { dataStackDefaultOutputMatcher } from "./support";
 
 describe("interactive mode routing: data stack", () => {
   test("routes interactive data stack through shared stack execution", () => {

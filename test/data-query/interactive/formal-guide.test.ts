@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { runInteractiveHarness } from "../../cli-interactive-routing.helpers";
+import { runInteractiveHarness } from "../../cli-foundations/interactive-harness";
 
 describe("interactive mode routing: data query formal guide", () => {
   test("prompts for Excel range before SQL authoring and carries it into execution", () => {

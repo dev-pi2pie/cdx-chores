@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { runInteractiveHarness } from "../../cli-interactive-routing.helpers";
+import { runInteractiveHarness } from "../../cli-foundations/interactive-harness";
 
 describe("interactive data menu routing", () => {
   test("shows the broadened data menu copy and includes data stack plus query and extract", () => {

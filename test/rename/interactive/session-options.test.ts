@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { runInteractiveHarness } from "../../helpers/interactive-harness";
+import { runInteractiveHarness } from "../../cli-foundations/interactive-harness";
 
 describe("interactive rename routing", () => {
   test("uses the shortened custom template hint text", () => {

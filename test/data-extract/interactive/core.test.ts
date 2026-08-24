@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { runInteractiveHarness, stripAnsi } from "../../cli-interactive-routing.helpers";
+import { runInteractiveHarness } from "../../cli-foundations/interactive-harness";
+import { stripAnsi } from "../../helpers/ansi";
 
 describe("interactive mode routing: data extract core", () => {
   test("routes interactive data extract through shared extraction execution", () => {

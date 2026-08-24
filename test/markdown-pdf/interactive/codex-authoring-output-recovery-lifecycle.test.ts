@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { runInteractiveHarness } from "../../cli-interactive-routing.helpers";
+import { runInteractiveHarness } from "../../cli-foundations/interactive-harness";
 import { TO_PDF_ENTRY, recipesCodexSelections } from "./codex-authoring-fixtures";
 
 describe("interactive Markdown PDF Codex output recovery and lifecycle", () => {

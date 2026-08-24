@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { runInteractiveHarness } from "../../cli-interactive-routing.helpers";
+import { runInteractiveHarness } from "../../cli-foundations/interactive-harness";
 
 describe("interactive mode routing: video", () => {
   test("routes a video flow through gif generation in compressed mode", () => {

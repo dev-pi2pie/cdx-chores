@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { runInteractiveHarness } from "../../cli-interactive-routing.helpers";
+import { runInteractiveHarness } from "../../cli-foundations/interactive-harness";
 
 describe("interactive mode routing: data query headers", () => {
   test("accepts all interactive header suggestions and re-inspects before SQL authoring", () => {

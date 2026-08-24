@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { runInteractiveHarness } from "../../cli-interactive-routing.helpers";
+import { runInteractiveHarness } from "../../cli-foundations/interactive-harness";
 
 describe("interactive Markdown menu routing", () => {
   test("shows the markdown pdf submenu entries before the existing markdown routes", () => {

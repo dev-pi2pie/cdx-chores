@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { REPO_ROOT } from "../../helpers/cli-test-utils";
-import { runInteractiveHarness } from "../../helpers/interactive-harness";
+import { runInteractiveHarness } from "../../cli-foundations/interactive-harness";
 
 describe("interactive rename routing", () => {
   test("routes an analyzer-assisted cleanup flow without manual hint prompts", () => {

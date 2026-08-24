@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { runInteractiveHarness } from "../../helpers/interactive-harness";
+import { runInteractiveHarness } from "../../cli-foundations/interactive-harness";
 
 describe("interactive rename routing", () => {
   test("shows grouped-pattern overflow indicator when analyzer groups exceed preview cap", () => {

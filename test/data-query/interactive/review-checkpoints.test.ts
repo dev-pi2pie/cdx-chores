@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { runInteractiveHarness, stripAnsi } from "../../cli-interactive-routing.helpers";
+import { runInteractiveHarness } from "../../cli-foundations/interactive-harness";
+import { stripAnsi } from "../../helpers/ansi";
 
 describe("interactive mode routing: data query review", () => {
   test("supports checkpoint change-mode from manual sql review", () => {

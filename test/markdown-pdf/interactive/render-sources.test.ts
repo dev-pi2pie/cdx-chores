@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { runInteractiveHarness } from "../../cli-interactive-routing.helpers";
+import { runInteractiveHarness } from "../../cli-foundations/interactive-harness";
 
 const ANSI_PATTERN = new RegExp(String.raw`\u001B\[[0-9;]*m`, "g");
 

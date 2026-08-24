@@ -1,6 +1,6 @@
 import { expect } from "bun:test";
 
-import { runInteractiveHarness } from "../../helpers/interactive-harness";
+import { runInteractiveHarness } from "../../cli-foundations/interactive-harness";
 import type {
   InteractiveHarnessResult,
   InteractiveHarnessScenario,
