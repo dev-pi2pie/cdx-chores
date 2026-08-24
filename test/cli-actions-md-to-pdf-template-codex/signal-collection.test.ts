@@ -8,7 +8,11 @@ import {
 } from "../../src/cli/markdown-pdf/template-codex";
 import { createActionTestRuntime } from "../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
-import { minimalJpeg, minimalPng, minimalWebpVp8xSquare1200 } from "./fixtures";
+import {
+  minimalJpeg,
+  minimalPng,
+  minimalWebpVp8xSquare1200,
+} from "../markdown-pdf/actions/template-codex-fixtures";
 
 describe("cli action modules: md pdf-template codex signal collection", () => {
   test("collects Markdown, recipe, and font signals for Codex-assisted input", async () => {

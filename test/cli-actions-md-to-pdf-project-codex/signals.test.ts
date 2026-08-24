@@ -13,7 +13,7 @@ import {
 } from "../../src/cli/markdown-pdf/project-codex";
 import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
-import { minimalPng } from "../cli-actions-md-to-pdf-template-codex/fixtures";
+import { minimalPng } from "../markdown-pdf/actions/template-codex-fixtures";
 
 interface ExpectedModes {
   profileSignalMode: MarkdownPdfProjectCodexProfilePhaseSignalMode;

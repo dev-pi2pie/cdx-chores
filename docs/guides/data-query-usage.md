@@ -375,10 +375,10 @@ Reset the DuckDB manual smoke fixtures under `examples/playground/data-query-duc
 node scripts/generate-data-query-duckdb-fixtures.mjs reset
 ```
 
-Reset the checked-in lighter test fixtures under `test/fixtures/data-query/`:
+Reset the checked-in lighter test fixtures under `test/data-sources/fixtures/`:
 
 ```bash
-node scripts/generate-data-query-fixtures.mjs reset --output-dir test/fixtures/data-query
+node scripts/generate-data-query-fixtures.mjs reset --output-dir test/data-sources/fixtures
 ```
 
 The lightweight generator is independent from the preview fixture scripts and covers representative CSV, TSV, Parquet, SQLite, and Excel inputs, including multi-object SQLite and Excel fixtures for `--source`.

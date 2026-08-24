@@ -5,7 +5,7 @@ import {
   MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES,
   resolveMdPdfTemplateCodexFamily,
 } from "../../src/cli/markdown-pdf/template-codex";
-import { createSynthesisSignals } from "./synthesis-fixtures";
+import { createSynthesisSignals } from "../markdown-pdf/actions/template-synthesis-fixtures";
 
 describe("cli action modules: md pdf-template codex families", () => {
   test("defines required deterministic family hooks", () => {

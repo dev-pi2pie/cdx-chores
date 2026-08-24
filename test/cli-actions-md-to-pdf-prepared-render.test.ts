@@ -12,7 +12,7 @@ import {
   MARKDOWN_PDF_LOGICAL_FINAL_TARGET_ID,
   MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME,
 } from "../src/cli/markdown-pdf/profile";
-import { createPdfRunner } from "./cli-actions-md-to-pdf.helpers";
+import { createPdfRunner } from "./markdown-pdf/actions/render-support";
 import { createActionTestRuntime, expectCliError } from "./helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "./helpers/cli-test-utils";
 

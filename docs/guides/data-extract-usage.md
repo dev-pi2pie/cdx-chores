@@ -1,7 +1,7 @@
 ---
 title: "Data Extract Usage"
 created-date: 2026-03-18
-modified-date: 2026-08-22
+modified-date: 2026-08-23
 status: completed
 agent: codex
 ---
@@ -192,17 +192,25 @@ cdx-chores interactive
 ```
 
 To use a different per-attempt deadline for Interactive Codex source-shape and
-semantic-header requests, start the explicit session with:
+semantic-header requests, pass the option to the `interactive` command.
+
+✅ Correct:
 
 ```bash
 cdx-chores interactive --codex-timeout 2m
 ```
 
-The option belongs to `interactive`; the root spelling
-`cdx-chores --codex-timeout 2m` is unsupported. Omitting it keeps the 30-second
-default, and no timeout setup prompt is added to the extract flow. Each new
-source-shape or header-suggestion request receives its own window using the
-same session value, which is preserved through review and backtracking.
+❌ Incorrect:
+
+```bash
+cdx-chores --codex-timeout 2m
+```
+
+The root-level form is rejected. If the option is omitted, Interactive mode
+uses the 30-second default and the extract flow does not prompt for timeout
+configuration. Each new source-shape or header-suggestion request receives its
+own window using the same session value, which is preserved through review and
+backtracking.
 
 The direct embedded helpers `data extract --codex-suggest-shape` and
 `data extract --codex-suggest-headers` remain default-only and do not accept a

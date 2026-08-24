@@ -10,7 +10,7 @@ import {
   minimalWebpVp8x1200By800,
   minimalWebpVp8x900By300Payload,
   minimalWebpWithChunks,
-} from "./fixtures";
+} from "../markdown-pdf/actions/template-codex-fixtures";
 
 describe("cli action modules: md pdf-template codex image metadata", () => {
   test("parses WebP dimensions from VP8X, VP8, VP8L, and padded chunks", async () => {

@@ -23,7 +23,7 @@ import {
   mockPng,
   pathHasSegment,
   withEvidenceRoot,
-} from "./support";
+} from "../markdown-pdf/evidence/page-number-support";
 
 describe("Markdown PDF renderer evidence inspection and validation", () => {
   test("reports page roles and one-pass four-counter evidence without replacing the historical baseline", async () => {

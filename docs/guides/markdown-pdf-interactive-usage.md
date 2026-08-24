@@ -1,7 +1,7 @@
 ---
 title: "Interactive Markdown PDF Usage"
 created-date: 2026-07-22
-modified-date: 2026-08-22
+modified-date: 2026-08-23
 status: completed
 agent: codex
 ---
@@ -30,16 +30,23 @@ cdx-chores interactive
 ```
 
 To use a longer per-attempt deadline for Codex-backed work throughout this
-Interactive session, start the explicit command with:
+Interactive session, pass the option to the `interactive` command.
+
+✅ Correct:
 
 ```bash
 cdx-chores interactive --codex-timeout 2m
 ```
 
-The option belongs to `interactive`; the root spelling
-`cdx-chores --codex-timeout 2m` is unsupported. Omitting the option keeps the
-30-second default, and Interactive mode does not add a timeout setup prompt to
-the Markdown workflows.
+❌ Incorrect:
+
+```bash
+cdx-chores --codex-timeout 2m
+```
+
+The root-level form is rejected. If the option is omitted, Interactive mode
+uses the 30-second default and does not prompt for timeout configuration in the
+Markdown workflows.
 
 Choose `md`, then choose `to-pdf` or `pdf-recipes`.
 

@@ -9,7 +9,7 @@ import {
 } from "../../src/cli/markdown-pdf/template-codex";
 import { createActionTestRuntime, expectCliError } from "../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../helpers/cli-test-utils";
-import { pathExists } from "./fixtures";
+import { pathExists } from "../markdown-pdf/support/path-fixtures";
 
 describe("cli action modules: md pdf-template codex output directory", () => {
   test("rejects explicit non-empty output directories without overwrite", async () => {
