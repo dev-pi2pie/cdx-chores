@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Contract And Catalog Enhancement"
 created-date: 2026-08-23
-modified-date: 2026-08-23
+modified-date: 2026-08-24
 status: active
 agent: codex
 ---
@@ -404,6 +404,47 @@ Batch gate:
 This is a post-family closure and reconciliation phase. It may finish only
 explicitly accepted residual support moves and root classifications; it must
 not introduce another unbounded feature or CLI-foundations migration.
+
+Admission boundary:
+
+- phase base: `3ae8e0fb`
+- baseline: 2,621 tests, 14,870 assertions, and 354 files
+- 31 flat-root suites, all represented in the completed Phase 1 inventory
+- 12 unresolved Interactive Markdown PDF suites retained from Phase 6.5
+- 176 TypeScript paths matching `cli-test-utils`, 104 matching
+  `cli-action-test-utils`, and 45 matching `runInteractiveHarness`
+- 36 Bun module-mock registrations across 17 files
+
+The current counts supersede the earlier consumer-count snapshots for Phase 7
+admission only; they do not rewrite the completed Phase 1 or Phase 2 evidence.
+No current flat-root suite was introduced by Phases 3 through 6.
+
+Execution checkpoints:
+
+1. remove Rename-specific cleanup from the global CLI runner and make the two
+   artifact-producing built-CLI calls use Rename-owned cleanup
+2. extract the remaining Markdown PDF scenario/result fields, shared Data
+   Sources introspection fields, and Data Stack context/result hooks to their
+   accepted feature or platform contracts; move the Data-specific unknown
+   action case out of CLI foundations
+3. move neutral runner, runtime, context, prompt, path, filesystem, and
+   module-URL support plus the explicit composition mechanism to the
+   CLI-foundations harness owner; feature mock implementations stay local
+4. convert consumers to canonical imports and delete the
+   `test/helpers/interactive-harness.ts` and
+   `test/cli-interactive-routing.helpers.ts` compatibility facades without
+   introducing a replacement catch-all
+5. reproduce and fix only demonstrated shared-process module-mock collisions
+6. classify every remaining flat-root and previously retained unresolved suite
+   without admitting another broad feature migration
+
+The contract-extraction manifest keeps neutral queues, prompt/path calls,
+streams, and process results under CLI foundations; keeps Markdown PDF call
+arrays under Markdown PDF; keeps shared Query/Extract introspection and
+source-shape fields under Data Sources; keeps Data Stack write and result hooks
+under Data Stack; and preserves the existing Data Query, Data Extract, and
+Rename scenario contracts. The action and mock composition files are platform
+seams, not neutral feature implementations.
 
 Tasks:
 

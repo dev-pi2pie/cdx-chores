@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Case Matrices And Catalog"
 created-date: 2026-08-23
-modified-date: 2026-08-23
+modified-date: 2026-08-24
 status: completed
 agent: codex
 ---
@@ -144,6 +144,71 @@ columns record the latest accepted disposition and current migration evidence.
 | `test/helpers/interactive-harness/types.ts`                         | Extract feature contracts, then move the platform schema  | `test/data-query/interactive/harness-contract.ts`, `test/doctor/interactive/harness-contract.ts`, and `test/cli-foundations/interactive-harness/types.ts`                          | Extract Data Query fields in Phase 3 and Doctor fields in Phase 4. Remaining feature fields move with their owner audits; move the neutral prompt/path/runtime/result envelope in the dedicated harness checkpoint.                                |
 | `test/helpers/rename-plan-test-utils.ts`                            | Move to Rename owner                                      | `test/rename/support/plan-artifacts.ts`                                                                                                                                            | Move when removing Rename leakage from the global CLI helpers; every Rename consumer imports this target directly. Revisit no later than the next Rename suite edit.                                                                               |
 | `test/helpers/virtual-terminal.ts`                                  | Move to CLI-foundations platform owner                    | `test/cli-foundations/inline-rendering/virtual-terminal.ts`                                                                                                                        | Text, path, and TUI inline-renderer suites are one stable CLI rendering platform, not two independent feature families. Move in a dedicated CLI-foundations checkpoint or on the next inline-renderer edit.                                        |
+
+### Phase 7 Global-Support And Deferral Admission
+
+The live admission scan at `3ae8e0fb` updates only the execution boundary.
+Earlier inventory and consumer counts remain dated evidence of their recorded
+commits.
+
+| Current boundary | Decision | Accepted owner or disposition | Completion evidence |
+| --- | --- | --- | --- |
+| `test/helpers/cli-action-test-utils.ts` | retain globally | feature-neutral action runtime, error, and removal helpers | verify independent feature families and absence of feature re-exports |
+| `test/helpers/cli-test-utils.ts` | retain after split | global CLI runtime, path, fixture-directory, and capture support | remove the Rename plan import and validate all affected built-CLI families |
+| `test/rename/support/plan-artifacts.ts` | retain locally | Rename plan artifact lifecycle | add caller-owned `try/finally` cleanup for the two artifact-producing command tests |
+| `test/helpers/ansi.ts` | retain globally | feature-neutral ANSI normalization | preserve independent Data Preview, Data Stack, Data Extract, and Data Query consumers |
+| `test/helpers/interactive-harness.ts` | delete facade | direct imports from `test/cli-foundations/interactive-harness/index.ts` | delete after its nine non-definition consumers use the canonical entry point |
+| `test/helpers/interactive-harness/**` | split and move | feature contracts remain local; neutral platform support and the explicit composition mechanism move to `test/cli-foundations/interactive-harness/` | preserve all 41 direct harness test consumers and subprocess behavior; feature mock implementations remain local |
+| `test/cli-interactive-routing.helpers.ts` | delete | direct imports from CLI foundations, global ANSI/CLI helpers, and Data Stack support | remove all 33 facade consumers without another catch-all facade |
+| 17 files containing 36 `mock.module()` registrations | bounded audit | retain current ownership unless a shared-process collision is reproduced | record the reproducer and isolation boundary for every change |
+| 31 flat-root suites | classify, no implicit move | accepted source-aligned exception or temporary deferral with an event | all 31 exist in the completed inventory and none were introduced by migration |
+| 12 unresolved Phase 6.5 suites | classify, no implicit move | retained current path or an exact later feature owner | preserve their 98-test, 378-assertion selector unless separately admitted |
+
+The feature-contract extraction is limited to these exact fields:
+
+| Current contract | Exact feature-owned fields | Accepted destination | Focused selector |
+| --- | --- | --- | --- |
+| `InteractiveHarnessScenario` Markdown PDF fragment | `markdownPdfMocks`<br>`markdownPdfBundleRoles`<br>`markdownPdfIgnoredBundleFiles`<br>`markdownPdfPrepareErrorMessage`<br>`markdownPdfPrepareErrorMessages`<br>`markdownPdfDeterministicBindErrorMessage`<br>`markdownPdfDeterministicWriteErrorMessages`<br>`markdownPdfCodexBindErrorMessage`<br>`markdownPdfCodexFinalProfile`<br>`markdownPdfCodexProjectHandoff`<br>`markdownPdfCodexUnusableArtifacts`<br>`markdownPdfProjectCompletenessErrorMessage`<br>`markdownPdfRenderWarnings`<br>`markdownPdfNoDefaultCss`<br>`markdownPdfProfilePageNumbersEnabled`<br>`markdownPdfRendererCapabilityRequests`<br>`markdownPdfRendererCapabilities`<br>`markdownPdfRenderErrorMessages`<br>`markdownPdfOutputErrorMessages`<br>`markdownPdfCleanupErrorMessage`<br>`markdownPdfFontFamilies`<br>`markdownPdfFontFamilyRuns`<br>`markdownPdfFontDiscoveryErrorMessage` | `test/markdown-pdf/interactive/harness-contract.ts` | `bun test test/markdown-pdf/interactive test/cli-interactive-markdown-pdf` |
+| `InteractiveHarnessResult` Markdown PDF fragment | `markdownPdfPrepareCalls`<br>`markdownPdfPlanCalls`<br>`markdownPdfExecuteCalls`<br>`markdownPdfBundleDiscoveryCalls`<br>`markdownPdfDeterministicPrepareCalls`<br>`markdownPdfDeterministicBindCalls`<br>`markdownPdfDeterministicWriteCalls`<br>`markdownPdfCodexPrepareCalls`<br>`markdownPdfCodexBindCalls`<br>`markdownPdfCodexWriteCalls`<br>`markdownPdfSessionCreateCalls`<br>`markdownPdfSessionRetainCalls`<br>`markdownPdfSessionCleanupCalls`<br>`markdownPdfFontDiscoveryCalls` | `test/markdown-pdf/interactive/harness-contract.ts` | same Markdown PDF selector |
+| `InteractiveHarnessScenario` shared Data fragment and `SourceShapeSuggestionOptions` | `dataQueryDetectedFormat`<br>`dataQueryIntrospection`<br>`dataQueryIntrospectionQueue`<br>`dataSourceShapeSuggestion`<br>`dataSourceShapeSuggestionErrorMessage`<br>`dataQuerySources`<br>`xlsxSheetSnapshot`<br>the shared source-shape option schema | `test/data-sources/interactive/harness-contract.ts` | `bun test test/data-query/interactive test/data-extract/interactive` |
+| `HarnessRunnerContext` Data Stack fragment | `dataStackWriteExistingPaths`<br>`recordStackPlanWrite`<br>`recordCodexReportWrite` | state and writes become local implementation in `test/data-stack/interactive/mock-action.ts`; the existing scenario/result contract stays in `test/data-stack/interactive/harness-contract.ts` | `bun test test/data-stack/interactive` |
+| CLI-foundations unknown-action harness driver | `mode: "invalid-data-action"`, `interactiveDataUrl`, and the `handleDataInteractiveAction(..., "data:unknown")` branch | move the case from `test/cli-foundations/interactive/root-routing.test.ts` to `test/data/interactive/unknown-action.test.ts`, then delete the Data-specific driver state | `bun test test/data/interactive/unknown-action.test.ts test/data/interactive/menu-routing.test.ts` |
+
+Neutral prompt queues, path state, stream settings, shared Data Query/Data
+Extract action-output state, action calls, removed paths, and process results
+remain in the CLI-foundations aggregate contract. Existing Data Query, Data
+Extract, Data Stack, and Rename feature contracts retain their current fields.
+
+Final root and legacy-suite admission classifications are:
+
+| Group | Paths | Classification | Event-based revisit condition |
+| --- | ---: | --- | --- |
+| Data Query flat command roots | 5 | temporary deferral; accepted owner is `test/data-query/commands/` | first substantive suite or command-contract edit, or completion of the recorded action-versus-command comparison |
+| functional Markdown PDF flat roots | 23 | temporary deferral; accepted owner is the applicable `test/markdown-pdf/` layer | first substantive suite or corresponding production-contract edit |
+| Markdown PDF evidence and smoke roots | 3 | temporary deferral; accepted owner is `test/markdown-pdf/evidence/` | first harness/script change or evidence rerun requiring a test edit |
+| unresolved Phase 6.5 Interactive Markdown PDF suites | 12 | temporary deferral; accepted owner is `test/markdown-pdf/interactive/` | first substantive suite or corresponding Interactive production-contract edit |
+
+No current survivor qualifies as a source-aligned exception: every group has a
+clear feature owner. All 43 survivors predate Phase 6, so no migration phase
+introduced a new root or legacy catalog suite.
+
+The exact unresolved Phase 6.5 selector is:
+
+```bash
+bun test \
+  test/cli-interactive-markdown-pdf/codex-authoring/entry-setup.test.ts \
+  test/cli-interactive-markdown-pdf/codex-authoring/font-hint-editing.test.ts \
+  test/cli-interactive-markdown-pdf/codex-authoring/regeneration.test.ts \
+  test/cli-interactive-markdown-pdf/codex-progress.test.ts \
+  test/cli-interactive-markdown-pdf/codex-service-profile-font-ownership.test.ts \
+  test/cli-interactive-markdown-pdf/deterministic-service.test.ts \
+  test/cli-interactive-markdown-pdf/formal-guide-prompts.test.ts \
+  test/cli-interactive-markdown-pdf/lifecycle-unit.test.ts \
+  test/cli-interactive-markdown-pdf/materialization.test.ts \
+  test/cli-interactive-markdown-pdf/page-number-review.test.ts \
+  test/cli-interactive-markdown-pdf/render-page-number-preparation.test.ts \
+  test/cli-interactive-markdown-pdf/render-page-numbers.test.ts
+```
 
 #### Coverage Check
 

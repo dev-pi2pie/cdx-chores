@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Contract And Catalog Enhancement Execution"
 created-date: 2026-08-23
-modified-date: 2026-08-23
+modified-date: 2026-08-24
 status: in-progress
 agent: codex
 ---
@@ -45,6 +45,7 @@ references.
 |     4 | Doctor ownership migration pilot               | completed   | `ff0f3d6f..837e5d95` | Continue with constraints |
 |     5 | bounded Markdown PDF migration pilot           | completed   | `05a87d54..4cce415a` | Continue with constraints |
 |     6 | remaining accepted family batches              | completed   | `fca1204a..953aa7ad` | Continue with constraints |
+|     7 | global support ownership and root deferrals     | in-progress | pending              | pending                   |
 
 ## Phase 1: Refreshed Baseline And Complete File Inventory
 
@@ -2153,3 +2154,88 @@ reference `draft`; Phase 7 must still close global helper neutrality,
 Interactive harness and mock ownership, compatibility facades, and all
 remaining flat-root exceptions or deferrals before Phase 8 documentation
 reconciliation.
+
+## Phase 7: Global Support Ownership And Root Deferrals
+
+Status: `in-progress`
+
+Phase base: `3ae8e0fb`
+
+Implementation tip: pending
+
+Evidence tip: pending
+
+Exact phase review range: pending
+
+Admission validation reproduced the Phase 6 closeout baseline: 2,621 tests,
+14,870 assertions, and 354 files. The live inventory contains 31 flat-root
+test suites, and every path remains represented in the completed Phase 1
+inventory; no migration phase introduced a new flat-root suite. The 12
+unresolved Interactive Markdown PDF suites retained in Phase 6.5 also remain
+at their recorded paths.
+
+Current support scans replace historical consumer-count snapshots for this
+phase without rewriting them:
+
+| Boundary | Current matching TypeScript paths | Admission decision |
+| --- | ---: | --- |
+| `cli-action-test-utils` | 104 | retain only feature-neutral action runtime and error helpers |
+| `cli-test-utils` | 176 | retain after removing its Rename-specific cleanup dependency |
+| `runInteractiveHarness` | 45 matching paths / 41 direct test files | move the neutral harness entry point to CLI foundations |
+| `cli-interactive-routing.helpers` | 33 test files | delete after direct owner imports replace the catch-all facade |
+| Bun `mock.module()` | 17 files / 36 registrations | change only reproduced shared-process collisions |
+
+The execution checkpoints are deliberately sequential because the global CLI
+runner, composed harness contract, subprocess module URLs, and compatibility
+facades share import boundaries:
+
+| ID | Checkpoint | Status | Implementation tip | Evidence |
+| --- | --- | --- | --- | --- |
+| 7.1 | caller-owned Rename plan cleanup | admitted | pending | pending |
+| 7.2 | feature-owned Interactive harness contracts | admitted | pending | pending |
+| 7.3 | neutral CLI-foundations harness relocation | admitted | pending | pending |
+| 7.4 | canonical imports and the two Interactive facade deletions | admitted | pending | pending |
+| 7.5 | demonstrated shared-process mock-collision fixes | admitted | pending | pending |
+| 7.6 | final global-helper and root-deferral classification | admitted | pending | pending |
+
+Admission constraints:
+
+- the 31 flat-root suites and 12 Phase 6.5 deferrals receive classifications;
+  they do not receive an implicit move or removal authorization
+- the two evidence-approved Phase 6.21 removals remain the only accepted case
+  removals unless a new exact matrix row names a retained owner
+- the broad mock audit may change only a demonstrated leaking boundary
+- the feature-contract checkpoint keeps neutral queues, prompt/path calls,
+  streams, and process results with CLI foundations; Markdown PDF call arrays,
+  shared Query/Extract introspection fields, Data Stack write/result hooks, and
+  existing feature scenario contracts stay with their accepted feature or
+  Data Sources platform owners
+- the Data-specific unknown-action case moves from CLI foundations to
+  `test/data/interactive/unknown-action.test.ts`, after which the harness drops
+  its `invalid-data-action` driver and Data dispatcher URL
+- the platform action and mock composition files may import feature bundles,
+  but they own only the explicit composition mechanism
+- Rename-owned cleanup covers the artifact-producing `rename cleanup --dry-run`
+  call in `test/rename/commands/cleanup.test.ts` and `rename batch --dry-run`
+  call in `test/rename/commands/ux.test.ts`; a static scan must confirm no
+  producer still relies on the global runner
+- the completed audit inventory remains a dated snapshot; current ownership
+  decisions belong in the case matrix and this unified job
+- the parent plan stays `active`, this job stays `in-progress`, and the path
+  correspondence stays `draft` through Phase 7
+
+Review gate:
+
+- [x] record the exact phase base and reproduce the complete-suite baseline
+- [x] refresh global helper, harness, facade, mock, and root-suite counts
+- [x] confirm every current flat-root suite exists in the completed inventory
+- [x] admit only bounded support ownership and classification checkpoints
+- [ ] complete caller-owned Rename cleanup and affected-consumer validation
+- [ ] complete feature-contract extraction and neutral harness relocation
+- [ ] remove `test/helpers/interactive-harness.ts` and
+      `test/cli-interactive-routing.helpers.ts`, then separately close
+      demonstrated mock leakage
+- [ ] record final global, local, exception, and deferral ownership
+- [ ] run focused, adjacent, complete-suite, and repository validation
+- [ ] create the evidence checkpoint and review the exact phase range
+- [ ] record accepted review fixes and the Phase 7 continuation decision
