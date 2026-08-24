@@ -8,662 +8,558 @@ agent: codex
 
 ## Goal
 
-Maintain the canonical lookup from historical test paths to their current
-contract owners as the test catalog is reorganized.
-
-This reference records correspondence only after a path move, split, merge, or
-removal is accepted. Research and plans own the decision rationale. The unified
-implementation job owns execution evidence, validation results, and exact
-review decisions.
-
-## Entry Contract
-
-Each accepted path change receives one row:
-
-| Field                   | Meaning                                                                                  |
-| ----------------------- | ---------------------------------------------------------------------------------------- |
-| Reference date          | UTC date on which the new path or retained owner became the accepted repository location |
-| Historical path         | Repository-relative path that existed before the accepted change                         |
-| Transition              | `moved`, `split`, `merged`, or `removed`                                                 |
-| Current owner or owners | Successor path or paths that retained the contract at the exact migration range          |
-| Migration range         | Exact `<base>..<tip>` implementation range                                               |
-| Job evidence            | Unified job section containing execution and validation evidence                         |
-
-The reference date supports documentation-currentness review. The exact
-migration range remains authoritative when same-day ordering matters.
-
-Use one row per historical path. For a split, list every current owner that
-retains part of the historical contract. For a merge or removal, name the
-existing test path that retains the contract rather than leaving the current
-owner blank. Job evidence should link to the exact unified-job section when a
-stable section anchor is available.
-
-An owner cell is range-relative. When a successor path moves again, its later
-row continues the chain; follow those rows until they reach existing terminal
-owners. Historical rows and migration ranges remain unchanged when a later
-transition extends the chain.
-
-Current guides and current reference docs must use the latest accepted paths.
-Historical commands and time-bounded wording follow the dated currentness
-contract in the related research.
-
-## Correspondence
-
-Current state: Phases 3 through 8 have completed their accepted path
-correspondences. Phase 8 validated every transition chain and completed this
-reference as the accepted current lookup contract.
-
-### Phase 3: Data Query Pilot
-
-| Reference date | Historical path                                                       | Transition | Current owner or owners                                                                                                                             | Migration range      | Job evidence                |
-| -------------- | --------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------- |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/action-data-shared.ts`        | moved      | `test/cli-foundations/interactive-harness/action-output.ts`                                                                                         | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-actions-data-query-artifact-validation.test.ts`             | moved      | `test/data-query/actions/artifact-validation.test.ts`                                                                                               | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-actions-data-query-codex.test.ts`                           | moved      | `test/data-query/actions/codex-single-source.test.ts`                                                                                               | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-actions-data-query-codex.helpers.ts`                        | moved      | `test/data-query/actions/codex-support.ts`                                                                                                          | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-actions-data-query-codex-validation.test.ts`                | moved      | `test/data-query/actions/codex-validation.test.ts`                                                                                                  | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-actions-data-query-codex-workspace.test.ts`                 | moved      | `test/data-query/actions/codex-workspace.test.ts`                                                                                                   | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-actions-data-query-header-artifacts.test.ts`                | moved      | `test/data-query/actions/header-artifacts.test.ts`                                                                                                  | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-actions-data-query-headers.test.ts`                         | moved      | `test/data-query/actions/header-modes.test.ts`                                                                                                      | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-actions-data-query-validation.test.ts`                      | moved      | `test/data-query/actions/option-validation.test.ts`                                                                                                 | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-actions-data-query.test.ts`                                 | moved      | `test/data-query/actions/query-output.test.ts`                                                                                                      | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-actions-data-query-shape.test.ts`                           | moved      | `test/data-query/actions/source-shape.test.ts`                                                                                                      | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-actions-data-query-workspace.test.ts`                       | moved      | `test/data-query/actions/source-workspace.test.ts`                                                                                                  | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-actions-data-query.helpers.ts`                              | moved      | `test/data-query/actions/support.ts`                                                                                                                | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-actions-data-query-codex-prompt.test.ts`                    | split      | `test/data-query/codex-intent.test.ts`<br>`test/data-query/actions/codex-single-source.test.ts`                                                     | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-command-data-query-codex.helpers.ts`                        | moved      | `test/data-query/commands/codex-support.ts`                                                                                                         | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-command-data-query-codex-validation.test.ts`                | moved      | `test/data-query/commands/codex-validation.test.ts`                                                                                                 | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-command-data-query-codex-workspace.test.ts`                 | moved      | `test/data-query/commands/codex-workspace.test.ts`                                                                                                  | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-command-data-query-duckdb-lifecycle.test.ts`                | moved      | `test/data-query/commands/duckdb-lifecycle.test.ts`                                                                                                 | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-command-data-query-shape.test.ts`                           | moved      | `test/data-query/commands/excel-shape.test.ts`                                                                                                      | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-command-data-query-headers.test.ts`                         | moved      | `test/data-query/commands/header-review.test.ts`                                                                                                    | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-command-data-query-workspace.test.ts`                       | moved      | `test/data-query/commands/sqlite-workspace.test.ts`                                                                                                 | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-command-data-query.helpers.ts`                              | moved      | `test/data-query/commands/support.ts`                                                                                                               | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-interactive-data-query-formal-guide.test.ts`                | moved      | `test/data-query/direct/formal-guide.test.ts`                                                                                                       | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-interactive-data-query-facade.test.ts`                      | moved      | `test/data-query/direct/interactive-facade.test.ts`                                                                                                 | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-options-parsers.test.ts`                                    | moved      | `test/data-query/direct/relation-option-parser.test.ts`                                                                                             | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/data-query-duckdb-fixture-generator.test.ts`                    | moved      | `test/data-query/evidence/duckdb-fixtures.test.ts`                                                                                                  | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/data-query-fixture-generator.test.ts`                           | moved      | `test/data-query/evidence/tabular-fixtures.test.ts`                                                                                                 | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/data-query-header-mapping.test.ts`                              | moved      | `test/data-query/header-mapping.test.ts`                                                                                                            | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-interactive-routing-data-query-codex-single.test.ts`        | moved      | `test/data-query/interactive/codex-single-source.test.ts`                                                                                           | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-interactive-routing-data-query-codex-workspace.test.ts`     | moved      | `test/data-query/interactive/codex-workspace.test.ts`                                                                                               | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-interactive-routing-data-query-formal.test.ts`              | moved      | `test/data-query/interactive/formal-guide.test.ts`                                                                                                  | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-interactive-routing-data-query-headers.test.ts`             | moved      | `test/data-query/interactive/header-review.test.ts`                                                                                                 | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-interactive-routing-data-query-manual.test.ts`              | moved      | `test/data-query/interactive/manual.test.ts`                                                                                                        | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/data-query/codex.ts`          | moved      | `test/data-query/interactive/mock-codex.ts`                                                                                                         | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/data-query/header-mapping.ts` | moved      | `test/data-query/interactive/mock-header-mapping.ts`                                                                                                | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/data-query/workspace.ts`      | moved      | `test/data-query/interactive/mock-workspace.ts`                                                                                                     | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-interactive-routing-data-query-review.test.ts`              | moved      | `test/data-query/interactive/review-checkpoints.test.ts`                                                                                            | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-interactive-routing-data-query-source-shape.test.ts`        | split      | `test/data-query/interactive/source-shape.test.ts`<br>`test/data-query/source-introspection.test.ts`                                                | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-interactive-routing-data-query-workspace.test.ts`           | moved      | `test/data-query/interactive/workspace.test.ts`                                                                                                     | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-command-data-codex-timeout.test.ts`                         | split      | `test/data-query/commands/codex-timeout.test.ts`<br>`test/data-stack/commands/codex-timeout.test.ts`                                                | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-command-data-query-codex.test.ts`                           | split      | `test/cli-command-data-query-codex.test.ts`<br>`test/data-query/commands/codex-single-source.test.ts`                                               | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-command-data-query-duckdb-sources.test.ts`                  | split      | `test/cli-command-data-query-duckdb-sources.test.ts`<br>`test/data-query/commands/duckdb-sources.test.ts`                                           | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-command-data-query-source-shape.test.ts`                    | split      | `test/cli-command-data-query-source-shape.test.ts`<br>`test/data-query/commands/source-shape-artifacts.test.ts`                                     | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-command-data-query-validation.test.ts`                      | split      | `test/cli-command-data-query-validation.test.ts`<br>`test/data-query/commands/validation-remediation.test.ts`                                       | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-command-data-query.test.ts`                                 | split      | `test/cli-command-data-query.test.ts`<br>`test/data-query/commands/basic-formats.test.ts`                                                           | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/cli-ux.test.ts`                                                 | split      | `test/cli-ux.test.ts`<br>`test/data-query/commands/help-and-input-format.test.ts`<br>`test/data-query/commands/codex-help-and-input-format.test.ts` | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/action-data.ts`               | split      | `test/helpers/interactive-harness/mocks/action-data.ts`<br>`test/data-query/interactive/mock-action.ts`                                             | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/data-query/index.ts`          | split      | `test/helpers/interactive-harness/mocks/data-query/index.ts`<br>`test/data-query/interactive/mock-installation.ts`                                  | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/data-query/query.ts`          | split      | `test/helpers/interactive-harness/mocks/data-query/query.ts`<br>`test/data-query/interactive/mock-query.ts`                                         | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/data-query/source-shape.ts`   | split      | `test/helpers/interactive-harness/mocks/data-query/source-shape.ts`<br>`test/data-query/interactive/mock-source-shape.ts`                           | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/data-query/types.ts`          | split      | `test/helpers/interactive-harness/mocks/data-query/types.ts`<br>`test/data-query/interactive/mock-types.ts`                                         | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/module-urls.ts`                     | split      | `test/helpers/interactive-harness/module-urls.ts`<br>`test/data-query/interactive/module-urls.ts`                                                   | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/types.ts`                           | split      | `test/helpers/interactive-harness/types.ts`<br>`test/data-query/interactive/harness-contract.ts`                                                    | `db9622cf..885e3846` | [Phase 3][phase-3-evidence] |
-
-### Phase 4: Doctor Ownership Pilot
-
-| Reference date | Historical path                                           | Transition | Current owner or owners                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Migration range      | Job evidence                |
-| -------------- | --------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------- |
-| 2026-08-23     | `test/cli-action-doctor.test.ts`                          | moved      | `test/doctor/actions/report-projections.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `ff0f3d6f..93c60f9e` | [Phase 4][phase-4-evidence] |
-| 2026-08-23     | `test/cli-actions-doctor-markdown-video-deferred.test.ts` | split      | `test/doctor/actions/dependency-integration.test.ts`<br>`test/doctor/actions/report-projections.test.ts`<br>`test/doctor/commands/environment.test.ts`<br>`test/doctor/commands/routing.test.ts`<br>`test/cli-foundations/dependencies/command-inspection.test.ts`<br>`test/cli-markdown-pdf-requirements.test.ts`<br>`test/data-query/actions/duckdb-lifecycle.test.ts`<br>`test/data-query/commands/duckdb-lifecycle.test.ts`<br>`test/markdown-docx/actions/rendering.test.ts`<br>`test/video/actions/preconditions.test.ts` | `ff0f3d6f..93c60f9e` | [Phase 4][phase-4-evidence] |
-| 2026-08-23     | `test/cli-command-doctor.test.ts`                         | moved      | `test/doctor/commands/routing.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `ff0f3d6f..93c60f9e` | [Phase 4][phase-4-evidence] |
-| 2026-08-23     | `test/cli-doctor-workflow.test.ts`                        | moved      | `test/doctor/workflow-projection.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `ff0f3d6f..93c60f9e` | [Phase 4][phase-4-evidence] |
-| 2026-08-23     | `test/helpers/doctor-test-fixtures.ts`                    | moved      | `test/doctor/fixtures.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `ff0f3d6f..93c60f9e` | [Phase 4][phase-4-evidence] |
-| 2026-08-23     | `test/cli-interactive-menu.test.ts`                       | split      | `test/cli-interactive-menu.test.ts`<br>`test/doctor/interactive/menu-routing.test.ts`<br>`test/doctor/interactive/routing.test.ts`<br>`test/doctor/actions/report-projections.test.ts`                                                                                                                                                                                                                                                                                                                                          | `ff0f3d6f..93c60f9e` | [Phase 4][phase-4-evidence] |
-| 2026-08-23     | `test/cli-interactive-routing.test.ts`                    | split      | `test/cli-interactive-routing.test.ts`<br>`test/doctor/interactive/routing.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                             | `ff0f3d6f..93c60f9e` | [Phase 4][phase-4-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/action-misc.ts`   | split      | `test/helpers/interactive-harness/mocks/action-misc.ts`<br>`test/doctor/interactive/mock-action.ts`                                                                                                                                                                                                                                                                                                                                                                                                                             | `ff0f3d6f..93c60f9e` | [Phase 4][phase-4-evidence] |
-
-### Phase 5: Markdown PDF Catalog Pilot
-
-| Reference date | Historical path                                        | Transition | Current owner or owners                                                                                                                                                                 | Migration range      | Job evidence                |
-| -------------- | ------------------------------------------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------- |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-bundle.test.ts`            | split      | `test/markdown-pdf/actions/bundle-discovery.test.ts`<br>`test/markdown-pdf/actions/bundle-resolution.test.ts`<br>`test/markdown-pdf/actions/bundle-integration.test.ts`                 | `05a87d54..802d3b86` | [Phase 5][phase-5-evidence] |
-| 2026-08-23     | `test/cli-interactive-markdown-pdf/font-hints.test.ts` | split      | `test/markdown-pdf/interactive/font-model.test.ts`<br>`test/markdown-pdf/interactive/font-suggestion-service.test.ts`<br>`test/markdown-pdf/interactive/font-post-codex-review.test.ts` | `05a87d54..802d3b86` | [Phase 5][phase-5-evidence] |
-
-### Phase 6.1: Markdown PDF General
-
-The paths below were implemented through `b5ffc3f1`, validated through
-`c55da02a`, and reviewed over `fca1204a..870fef23`. Phase 6.1 is completed with
-the decision `Continue with constraints`; the reference remains `draft` until
-all initial migration and documentation reconciliation work is complete.
-
-| Reference date | Historical path                                                         | Transition | Current owner or owners                                                                                                                                                                                                                                                                                                                                                                  | Migration range      | Job evidence                    |
-| -------------- | ----------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------- |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-actions-validation.test.ts`                 | moved      | `test/markdown-pdf/actions/rendering-validation.test.ts`                                                                                                                                                                                                                                                                                                                                 | `fca1204a..b5ffc3f1` | [Phase 6.1][phase-6-1-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-actions.test.ts`                            | split      | `test/markdown-pdf/actions/rendering-code-highlighting.test.ts`<br>`test/markdown-pdf/actions/rendering-composition.test.ts`<br>`test/markdown-pdf/actions/rendering-core.test.ts`<br>`test/markdown-pdf/actions/rendering-requirements.test.ts`<br>`test/markdown-pdf/actions/rendering-template-asset-safety.test.ts`<br>`test/markdown-pdf/actions/rendering-write-lifecycle.test.ts` | `fca1204a..b5ffc3f1` | [Phase 6.1][phase-6-1-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-commands/direct-render.test.ts`             | moved      | `test/markdown-pdf/commands/direct-render.test.ts`                                                                                                                                                                                                                                                                                                                                       | `fca1204a..b5ffc3f1` | [Phase 6.1][phase-6-1-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-diagnostics.test.ts`                        | moved      | `test/markdown-pdf/actions/rendering-diagnostics.test.ts`                                                                                                                                                                                                                                                                                                                                | `fca1204a..b5ffc3f1` | [Phase 6.1][phase-6-1-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-no-default-css.test.ts`                     | moved      | `test/markdown-pdf/actions/rendering-custom-css-page-numbers.test.ts`                                                                                                                                                                                                                                                                                                                    | `fca1204a..b5ffc3f1` | [Phase 6.1][phase-6-1-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-page-chrome.test.ts`                        | split      | `test/markdown-pdf/direct/page-chrome-area-styling.test.ts`<br>`test/markdown-pdf/direct/page-chrome-sequence-visibility.test.ts`                                                                                                                                                                                                                                                        | `fca1204a..b5ffc3f1` | [Phase 6.1][phase-6-1-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-recipe-fonts.test.ts`                       | split      | `test/markdown-pdf/actions/recipe-font-check.test.ts`<br>`test/markdown-pdf/actions/recipe-font-generation.test.ts`                                                                                                                                                                                                                                                                      | `fca1204a..b5ffc3f1` | [Phase 6.1][phase-6-1-evidence] |
-| 2026-08-23     | `test/cli-markdown-pdf-renderer-capabilities.test.ts`                   | split      | `test/markdown-pdf/actions/rendering-renderer-capability-gate.test.ts`<br>`test/markdown-pdf/direct/renderer-capabilities-matrix.test.ts`                                                                                                                                                                                                                                                | `fca1204a..b5ffc3f1` | [Phase 6.1][phase-6-1-evidence] |
-| 2026-08-23     | `test/markdown-pdf-page-number-project-renderer-contract.test.ts`       | moved      | `test/markdown-pdf/evidence/page-number-project-renderer-contract.test.ts`                                                                                                                                                                                                                                                                                                               | `fca1204a..b5ffc3f1` | [Phase 6.1][phase-6-1-evidence] |
-| 2026-08-23     | `test/markdown-pdf-page-number-renderer-evidence/orchestration.test.ts` | moved      | `test/markdown-pdf/evidence/page-number-orchestration.test.ts`                                                                                                                                                                                                                                                                                                                           | `fca1204a..b5ffc3f1` | [Phase 6.1][phase-6-1-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf.helpers.ts`                                 | moved      | `test/markdown-pdf/actions/render-support.ts`                                                                                                                                                                                                                                                                                                                                            | `fca1204a..b5ffc3f1` | [Phase 6.1][phase-6-1-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-commands/fixtures.ts`                       | moved      | `test/markdown-pdf/commands/fixtures.ts`                                                                                                                                                                                                                                                                                                                                                 | `fca1204a..b5ffc3f1` | [Phase 6.1][phase-6-1-evidence] |
-| 2026-08-23     | `test/markdown-pdf-page-number-renderer-evidence/support.ts`            | moved      | `test/markdown-pdf/evidence/page-number-support.ts`                                                                                                                                                                                                                                                                                                                                      | `fca1204a..b5ffc3f1` | [Phase 6.1][phase-6-1-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-template-codex/fixtures.ts`                 | split      | `test/cli-actions-md-to-pdf-template-codex/fixtures.ts`<br>`test/markdown-pdf/support/path-fixtures.ts`                                                                                                                                                                                                                                                                                  | `fca1204a..b5ffc3f1` | [Phase 6.1][phase-6-1-evidence] |
-
-### Phase 6.2: Markdown PDF Template Codex
-
-The paths below were implemented and validated over `2af1ae7b..b74f6279`, then
-reviewed over `2af1ae7b..ae3d717b`. Phase 6.2 is completed with the decision
-`Continue with constraints`; the reference remains `draft` until all initial
-migration and documentation reconciliation work is complete.
-
-| Reference date | Historical path                                                        | Transition | Current owner or owners                                                                                   | Migration range      | Job evidence                    |
-| -------------- | ---------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------- |
-| 2026-08-23     | `test/adapters-codex-markdown-pdf-template/repair-timeout.test.ts`     | moved      | `test/markdown-pdf/adapters/template-repair-timeout.test.ts`                                              | `2af1ae7b..b74f6279` | [Phase 6.2][phase-6-2-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-commands/template.test.ts`                 | split      | `test/markdown-pdf/commands/template-codex.test.ts`<br>`test/markdown-pdf/commands/template-init.test.ts` | `2af1ae7b..b74f6279` | [Phase 6.2][phase-6-2-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts` | moved      | `test/markdown-pdf/actions/template-codex-integration.test.ts`                                            | `2af1ae7b..b74f6279` | [Phase 6.2][phase-6-2-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-template-codex/action.test.ts`             | moved      | `test/markdown-pdf/actions/template-codex-action.test.ts`                                                 | `2af1ae7b..b74f6279` | [Phase 6.2][phase-6-2-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-template-codex/prepared.test.ts`           | moved      | `test/markdown-pdf/actions/template-codex-prepared.test.ts`                                               | `2af1ae7b..b74f6279` | [Phase 6.2][phase-6-2-evidence] |
-| 2026-08-23     | `test/adapters-codex-markdown-pdf-template/fixtures.ts`                | moved      | `test/markdown-pdf/adapters/template-codex-fixtures.ts`                                                   | `2af1ae7b..b74f6279` | [Phase 6.2][phase-6-2-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-template-codex/fixtures.ts`                | moved      | `test/markdown-pdf/actions/template-codex-fixtures.ts`                                                    | `2af1ae7b..b74f6279` | [Phase 6.2][phase-6-2-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-template-codex/synthesis-fixtures.ts`      | moved      | `test/markdown-pdf/actions/template-synthesis-fixtures.ts`                                                | `2af1ae7b..b74f6279` | [Phase 6.2][phase-6-2-evidence] |
-
-### Phase 6.3: Markdown PDF Profile
-
-The paths below were implemented and validated over `171eec39..b66e1c35`, then
-reviewed over `171eec39..4c13019d`. Phase 6.3 is completed with the decision
-`Continue with constraints`; the reference remains `draft` until all initial
-migration and documentation reconciliation work is complete.
-
-| Reference date | Historical path                                                            | Transition | Current owner or owners                                                                                                           | Migration range      | Job evidence                    |
-| -------------- | -------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------- |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-actions-profile-rendering.test.ts`             | moved      | `test/markdown-pdf/actions/rendering-profile-rendering.test.ts`                                                                   | `171eec39..b66e1c35` | [Phase 6.3][phase-6-3-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-commands/profile.test.ts`                      | split      | `test/markdown-pdf/commands/profile-codex.test.ts`<br>`test/markdown-pdf/commands/profile-init.test.ts`                           | `171eec39..b66e1c35` | [Phase 6.3][phase-6-3-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-profile-codex-action/request-progress.test.ts` | split      | `test/markdown-pdf/actions/profile-codex-request-lifecycle.test.ts`<br>`test/markdown-pdf/actions/profile-codex-progress.test.ts` | `171eec39..b66e1c35` | [Phase 6.3][phase-6-3-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-profile-codex-phase2.test.ts`                  | split      | `test/markdown-pdf/actions/profile-codex-candidates.test.ts`<br>`test/markdown-pdf/actions/profile-codex-signals.test.ts`         | `171eec39..b66e1c35` | [Phase 6.3][phase-6-3-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-profile-codex-action/fixtures.ts`              | moved      | `test/markdown-pdf/actions/profile-codex-fixtures.ts`                                                                             | `171eec39..b66e1c35` | [Phase 6.3][phase-6-3-evidence] |
-
-### Phase 6.4: Markdown PDF Project Codex
-
-The paths below were implemented and validated over `54c24460..e5489182`, then
-reviewed over `54c24460..1627e953`. Phase 6.4 is completed with the decision
-`Continue with constraints`; the reference remains `draft` until all initial
-migration and documentation reconciliation work is complete.
-
-| Reference date | Historical path                                                     | Transition | Current owner or owners                                                                                                                                                                                              | Migration range      | Job evidence                    |
-| -------------- | ------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------- |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-commands/project.test.ts`               | moved      | `test/markdown-pdf/commands/project-codex.test.ts`                                                                                                                                                                   | `54c24460..e5489182` | [Phase 6.4][phase-6-4-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-project-codex/output-plan.test.ts`      | moved      | `test/markdown-pdf/actions/project-codex-output-plan.test.ts`                                                                                                                                                        | `54c24460..e5489182` | [Phase 6.4][phase-6-4-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-project-codex/prepared.test.ts`         | split      | `test/markdown-pdf/actions/project-codex-prepared-handoff.test.ts`<br>`test/markdown-pdf/actions/project-codex-prepared-request-lifecycle.test.ts`<br>`test/markdown-pdf/actions/project-codex-prepared-fixtures.ts` | `54c24460..e5489182` | [Phase 6.4][phase-6-4-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-project-codex/validation.test.ts`       | moved      | `test/markdown-pdf/actions/project-codex-validation.test.ts`                                                                                                                                                         | `54c24460..e5489182` | [Phase 6.4][phase-6-4-evidence] |
-| 2026-08-23     | `test/cli-actions-md-to-pdf-project-codex/action-write/fixtures.ts` | moved      | `test/markdown-pdf/actions/project-codex-action-write-fixtures.ts`                                                                                                                                                   | `54c24460..e5489182` | [Phase 6.4][phase-6-4-evidence] |
-
-### Phase 6.5: Markdown PDF Interactive And Support Closeout
-
-The paths below were implemented and validated over `2b8151dd..b1d2c133`, then
-reviewed over `2b8151dd..70b71653`. Phase 6.5 is completed with the decision
-`Continue with constraints`; the reference stays `draft`, and the 12
-unresolved selector paths remain explicit deferrals.
-
-| Reference date | Historical path                                                                       | Transition | Current owner or owners                                                                                                                                                                      | Migration range      | Job evidence                    |
-| -------------- | ------------------------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------- |
-| 2026-08-23     | `test/cli-interactive-markdown-pdf/codex-authoring/output-recovery-lifecycle.test.ts` | moved      | `test/markdown-pdf/interactive/codex-authoring-output-recovery-lifecycle.test.ts`                                                                                                            | `2b8151dd..b1d2c133` | [Phase 6.5][phase-6-5-evidence] |
-| 2026-08-23     | `test/cli-interactive-markdown-pdf/codex-authoring/project-handoff.test.ts`           | moved      | `test/markdown-pdf/interactive/codex-authoring-project-handoff.test.ts`                                                                                                                      | `2b8151dd..b1d2c133` | [Phase 6.5][phase-6-5-evidence] |
-| 2026-08-23     | `test/cli-interactive-markdown-pdf/deterministic-authoring.test.ts`                   | moved      | `test/markdown-pdf/interactive/deterministic-authoring.test.ts`                                                                                                                              | `2b8151dd..b1d2c133` | [Phase 6.5][phase-6-5-evidence] |
-| 2026-08-23     | `test/cli-interactive-markdown-pdf/formal-guide.test.ts`                              | split      | `test/markdown-pdf/interactive/formal-guide-answers.test.ts`<br>`test/markdown-pdf/interactive/formal-guide-compilation.test.ts`<br>`test/markdown-pdf/interactive/formal-guide-fixtures.ts` | `2b8151dd..b1d2c133` | [Phase 6.5][phase-6-5-evidence] |
-| 2026-08-23     | `test/cli-interactive-markdown-pdf/handoff.test.ts`                                   | moved      | `test/markdown-pdf/interactive/saved-recipe-handoff.test.ts`                                                                                                                                 | `2b8151dd..b1d2c133` | [Phase 6.5][phase-6-5-evidence] |
-| 2026-08-23     | `test/cli-interactive-markdown-pdf/lifecycle.test.ts`                                 | moved      | `test/markdown-pdf/interactive/generated-lifecycle.test.ts`                                                                                                                                  | `2b8151dd..b1d2c133` | [Phase 6.5][phase-6-5-evidence] |
-| 2026-08-23     | `test/cli-interactive-markdown-pdf/render-sources.test.ts`                            | moved      | `test/markdown-pdf/interactive/render-sources.test.ts`                                                                                                                                       | `2b8151dd..b1d2c133` | [Phase 6.5][phase-6-5-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/module-urls.ts`                                     | split      | `test/helpers/interactive-harness/module-urls.ts`<br>`test/markdown-pdf/interactive/module-urls.ts`                                                                                          | `2b8151dd..b1d2c133` | [Phase 6.5][phase-6-5-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/markdown-pdf.ts`                              | moved      | `test/markdown-pdf/interactive/mock-action.ts`                                                                                                                                               | `2b8151dd..b1d2c133` | [Phase 6.5][phase-6-5-evidence] |
-| 2026-08-23     | `test/cli-interactive-markdown-pdf/codex-authoring/fixtures.ts`                       | moved      | `test/markdown-pdf/interactive/codex-authoring-fixtures.ts`                                                                                                                                  | `2b8151dd..b1d2c133` | [Phase 6.5][phase-6-5-evidence] |
-
-### Phase 6.6: Release Tooling
-
-The paths below were implemented and validated over `bb3d683a..608b0d2b`, then
-reviewed over `bb3d683a..d0b989a9`. Phase 6.6 is completed with the decision
-`Continue with constraints`; the reference stays `draft` until the initial
-migration and final reconciliation finish.
-
-| Reference date | Historical path                      | Transition | Current owner or owners                                                                                                           | Migration range      | Job evidence                    |
-| -------------- | ------------------------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------- |
-| 2026-08-23     | `test/release-scripts.test.ts`       | split      | `test/release-tooling/branch-filter.test.ts`<br>`test/release-tooling/stable-notes.test.ts`<br>`test/release-tooling/fixtures.ts` | `bb3d683a..608b0d2b` | [Phase 6.6][phase-6-6-evidence] |
-| 2026-08-23     | `test/version-embedded-sync.test.ts` | moved      | `test/release-tooling/version-sync.test.ts`                                                                                       | `bb3d683a..608b0d2b` | [Phase 6.6][phase-6-6-evidence] |
-
-### Phase 6.7: Markdown Frontmatter
-
-The paths below were implemented and validated over `16966305..61df100e`, then
-reviewed over `16966305..16159a87`. Phase 6.7 is completed with the decision
-`Continue with constraints`; the reference stays `draft` until the initial
-migration and final reconciliation finish.
-
-| Reference date | Historical path                                         | Transition | Current owner or owners                                                                                                             | Migration range      | Job evidence                    |
-| -------------- | ------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------- |
-| 2026-08-23     | `test/cli-actions-md-frontmatter-to-json.test.ts`       | split      | `test/markdown-frontmatter/actions/frontmatter-to-json.test.ts`<br>`test/markdown-frontmatter/commands/frontmatter-to-json.test.ts` | `16966305..61df100e` | [Phase 6.7][phase-6-7-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/action-misc.ts` | split      | `test/helpers/interactive-harness/mocks/action-misc.ts`<br>`test/markdown-frontmatter/interactive/mock-action.ts`                   | `16966305..61df100e` | [Phase 6.7][phase-6-7-evidence] |
-
-### Phase 6.8: Video
-
-The paths below were implemented and validated over `5b362772..cf85a757`, then
-reviewed over `5b362772..7feac20a`. Phase 6.8 is completed with the decision
-`Continue with constraints`; the reference stays `draft` until the initial
-migration and final reconciliation finish.
-
-| Reference date | Historical path                                         | Transition | Current owner or owners                                                                            | Migration range      | Job evidence                    |
-| -------------- | ------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------- |
-| 2026-08-23     | `test/cli-actions-video-gif.test.ts`                    | moved      | `test/video/actions/gif.test.ts`                                                                   | `5b362772..cf85a757` | [Phase 6.8][phase-6-8-evidence] |
-| 2026-08-23     | `test/cli-interactive-routing-video.test.ts`            | moved      | `test/video/interactive/gif.test.ts`                                                               | `5b362772..cf85a757` | [Phase 6.8][phase-6-8-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/action-misc.ts` | split      | `test/helpers/interactive-harness/mocks/action-misc.ts`<br>`test/video/interactive/mock-action.ts` | `5b362772..cf85a757` | [Phase 6.8][phase-6-8-evidence] |
-
-### Phase 6.9: Data Sources
-
-The paths below were implemented and validated over `9458f888..a3a76f53`, then
-reviewed over `9458f888..e35eea80`. Phase 6.9 is completed with the decision
-`Continue with constraints`; the reference stays `draft` until the initial
-migration and final reconciliation finish.
-
-| Reference date | Historical path                                          | Transition | Current owner or owners                                          | Migration range      | Job evidence                    |
-| -------------- | -------------------------------------------------------- | ---------- | ---------------------------------------------------------------- | -------------------- | ------------------------------- |
-| 2026-08-23     | `test/data-duckdb-extensions.test.ts`                    | moved      | `test/data-sources/adapters/duckdb-extensions.test.ts`           | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
-| 2026-08-23     | `test/data-extract-fixture-generator.test.ts`            | moved      | `test/data-sources/evidence/tabular-fixtures.test.ts`            | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
-| 2026-08-23     | `test/data-query-xlsx-sources.test.ts`                   | moved      | `test/data-sources/adapters/xlsx-sources.test.ts`                | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
-| 2026-08-23     | `test/data-source-shape.test.ts`                         | moved      | `test/data-sources/direct/source-shape.test.ts`                  | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
-| 2026-08-23     | `test/stacked-merged-band-fixture-generator.test.ts`     | moved      | `test/data-sources/evidence/stacked-merged-band-fixture.test.ts` | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
-| 2026-08-23     | `test/helpers/data-extract-fixture-test-utils.ts`        | moved      | `test/data-sources/fixtures/tabular.ts`                          | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
-| 2026-08-23     | `test/helpers/data-query-duckdb-fixture-test-utils.ts`   | moved      | `test/data-sources/fixtures/duckdb.ts`                           | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
-| 2026-08-23     | `test/helpers/stacked-merged-band-fixture-test-utils.ts` | moved      | `test/data-sources/fixtures/stacked-merged-band.ts`              | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
-| 2026-08-23     | `test/fixtures/data-query/basic.csv`                     | moved      | `test/data-sources/fixtures/basic.csv`                           | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
-| 2026-08-23     | `test/fixtures/data-query/basic.parquet`                 | moved      | `test/data-sources/fixtures/basic.parquet`                       | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
-| 2026-08-23     | `test/fixtures/data-query/basic.tsv`                     | moved      | `test/data-sources/fixtures/basic.tsv`                           | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
-| 2026-08-23     | `test/fixtures/data-query/large.csv`                     | moved      | `test/data-sources/fixtures/large.csv`                           | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
-| 2026-08-23     | `test/fixtures/data-query/large.parquet`                 | moved      | `test/data-sources/fixtures/large.parquet`                       | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
-| 2026-08-23     | `test/fixtures/data-query/multi.sqlite`                  | moved      | `test/data-sources/fixtures/multi.sqlite`                        | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
-| 2026-08-23     | `test/fixtures/data-query/multi.xlsx`                    | moved      | `test/data-sources/fixtures/multi.xlsx`                          | `9458f888..a3a76f53` | [Phase 6.9][phase-6-9-evidence] |
-
-### Phase 6.10: Data Extract
-
-The paths below were implemented and validated over `733f27cb..d02bf761`, then
-reviewed over `733f27cb..dbb5574e`. Phase 6.10 is completed with the decision
-`Continue with constraints`; the reference stays `draft` until the initial
-migration and final reconciliation finish.
-
-| Reference date | Historical path                                                     | Transition | Current owner or owners                                                                                    | Migration range      | Job evidence                      |
-| -------------- | ------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |
-| 2026-08-23     | `test/cli-actions-data-extract-review.test.ts`                      | moved      | `test/data-extract/actions/header-mapping-review.test.ts`                                                  | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/cli-actions-data-extract-source-shape-reuse.test.ts`          | moved      | `test/data-extract/actions/source-shape-reuse.test.ts`                                                     | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/cli-actions-data-extract-source-shape-review.test.ts`         | moved      | `test/data-extract/actions/source-shape-review.test.ts`                                                    | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/cli-actions-data-extract-sources.test.ts`                     | moved      | `test/data-extract/actions/source-selection.test.ts`                                                       | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/cli-actions-data-extract-validation.test.ts`                  | moved      | `test/data-extract/actions/validation.test.ts`                                                             | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/cli-actions-data-extract.test.ts`                             | moved      | `test/data-extract/actions/materialization.test.ts`                                                        | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/cli-command-data-extract-review.test.ts`                      | moved      | `test/data-extract/commands/header-mapping-review.test.ts`                                                 | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/cli-command-data-extract-shape.test.ts`                       | moved      | `test/data-extract/commands/excel-shape.test.ts`                                                           | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/cli-command-data-extract-source-shape.test.ts`                | moved      | `test/data-extract/commands/source-shape-review.test.ts`                                                   | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/cli-command-data-extract.test.ts`                             | moved      | `test/data-extract/commands/basic-sources.test.ts`                                                         | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/cli-interactive-routing-data-extract-checkpoints.test.ts`     | moved      | `test/data-extract/interactive/checkpoints.test.ts`                                                        | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/cli-interactive-routing-data-extract-core.test.ts`            | moved      | `test/data-extract/interactive/core.test.ts`                                                               | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/cli-interactive-routing-data-extract-revision.test.ts`        | moved      | `test/data-extract/interactive/revision.test.ts`                                                           | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/cli-actions-data-extract.helpers.ts`                          | moved      | `test/data-extract/actions/support.ts`                                                                     | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/cli-command-data-extract.helpers.ts`                          | moved      | `test/data-extract/commands/support.ts`                                                                    | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/action-data.ts`             | split      | `test/data-query/interactive/mock-action.ts`<br>`test/data-extract/interactive/mock-action.ts`             | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/data-query/index.ts`        | split      | `test/data-query/interactive/mock-installation.ts`<br>`test/data-extract/interactive/mock-installation.ts` | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/data-query/query.ts`        | split      | `test/data-query/interactive/mock-query.ts`<br>`test/data-extract/interactive/mock-introspection.ts`       | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/data-query/source-shape.ts` | split      | `test/data-query/interactive/mock-source-shape.ts`<br>`test/data-extract/interactive/mock-source-shape.ts` | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/data-query/types.ts`        | split      | `test/data-query/interactive/mock-types.ts`<br>`test/helpers/interactive-harness/types.ts`                 | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/types.ts`                         | split      | `test/helpers/interactive-harness/types.ts`<br>`test/data-extract/interactive/harness-contract.ts`         | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-| 2026-08-23     | `test/data-query/interactive/module-urls.ts`                        | split      | `test/data-query/interactive/module-urls.ts`<br>`test/data-extract/interactive/module-urls.ts`             | `733f27cb..d02bf761` | [Phase 6.10][phase-6-10-evidence] |
-
-### Phase 6.11: Data Preview
-
-The paths below were implemented and validated over `7b840652..3d95eba5`, then
-reviewed over `7b840652..350b07ac`. Phase 6.11 is completed with the decision
-`Continue with constraints`; this reference stays `draft` through final
-reconciliation.
-
-| Reference date | Historical path                                                                 | Transition | Current owner or owners                                                                                               | Migration range      | Job evidence                      |
-| -------------- | ------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |
-| 2026-08-23     | `test/cli-actions-data-parquet-preview.test.ts`                                 | moved      | `test/data-preview/actions/parquet.test.ts`                                                                           | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
-| 2026-08-23     | `test/cli-actions-data-preview/failures.test.ts`                                | moved      | `test/data-preview/actions/failures.test.ts`                                                                          | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
-| 2026-08-23     | `test/cli-actions-data-preview/highlighting.test.ts`                            | moved      | `test/data-preview/actions/highlighting.test.ts`                                                                      | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
-| 2026-08-23     | `test/cli-actions-data-preview/rendering.test.ts`                               | moved      | `test/data-preview/actions/rendering.test.ts`                                                                         | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
-| 2026-08-23     | `test/cli-interactive-routing-data-preview-filters.test.ts`                     | moved      | `test/data-preview/interactive/filters.test.ts`                                                                       | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
-| 2026-08-23     | `test/cli-interactive-routing-data-preview.test.ts`                             | moved      | `test/data-preview/interactive/routing.test.ts`                                                                       | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
-| 2026-08-23     | `test/cli-actions-data-preview/helpers.ts`                                      | split      | `test/data-preview/actions/support.ts`<br>`test/helpers/ansi.ts`                                                      | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
-| 2026-08-23     | Data Preview behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | split      | `test/helpers/interactive-harness/mocks/action-misc.ts`<br>`test/data-preview/interactive/mock-action.ts`             | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
-| 2026-08-23     | `stripAnsi` in `test/cli-interactive-routing.helpers.ts`                        | split      | `test/cli-interactive-routing.helpers.ts`<br>`test/helpers/ansi.ts`                                                   | `7b840652..3d95eba5` | [Phase 6.11][phase-6-11-evidence] |
-
-### Phase 6.12: Data Stack
-
-The paths below were implemented and validated over `cf15f599..4ae50698`, then
-reviewed with accepted fixes over `cf15f599..6ee0d7b0`. Phase 6.12 is completed
-with the decision `Continue with constraints`; this reference stays `draft`
-through final reconciliation.
-
-| Reference date | Historical path                                                        | Transition | Current owner or owners                                                                                          | Migration range      | Job evidence                      |
-| -------------- | ---------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |
-| 2026-08-23     | `test/cli-actions-data-stack/codex-assist.test.ts`                     | moved      | `test/data-stack/actions/codex-assist.test.ts`                                                                  | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/cli-actions-data-stack/dry-run-plan.test.ts`                     | moved      | `test/data-stack/actions/dry-run-plan.test.ts`                                                                  | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/cli-actions-data-stack/happy-paths.test.ts`                      | moved      | `test/data-stack/actions/materialization.test.ts`                                                               | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/cli-actions-data-stack/schema-modes.test.ts`                     | moved      | `test/data-stack/actions/schema-modes.test.ts`                                                                  | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/cli-actions-data-stack/validation.test.ts`                       | moved      | `test/data-stack/actions/validation.test.ts`                                                                    | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/cli-command-data-stack/direct-stack.test.ts`                     | moved      | `test/data-stack/commands/direct-stack.test.ts`                                                                 | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/cli-command-data-stack/options.test.ts`                          | split      | `test/data-stack/commands/options.test.ts`<br>`test/data-stack/direct/reporting.test.ts`                         | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/cli-command-data-stack/replay.test.ts`                           | moved      | `test/data-stack/commands/replay.test.ts`                                                                       | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/cli-interactive-data-stack/codex-review.test.ts`                 | moved      | `test/data-stack/interactive/codex-review.test.ts`                                                              | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/cli-interactive-data-stack/discovery.test.ts`                    | moved      | `test/data-stack/interactive/discovery.test.ts`                                                                 | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/cli-interactive-data-stack/dry-run-write.test.ts`                | moved      | `test/data-stack/interactive/dry-run-write.test.ts`                                                             | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/cli-interactive-routing-data-stack.test.ts`                      | moved      | `test/data-stack/interactive/routing.test.ts`                                                                   | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/data-stack-artifact-paths.test.ts`                               | moved      | `test/data-stack/direct/artifact-paths.test.ts`                                                                 | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/data-stack-codex-report/apply.test.ts`                           | moved      | `test/data-stack/direct/codex-report/apply.test.ts`                                                             | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/data-stack-codex-report/validation.test.ts`                      | moved      | `test/data-stack/direct/codex-report/validation.test.ts`                                                        | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/data-stack-codex-signals.test.ts`                                | moved      | `test/data-stack/direct/codex-signals.test.ts`                                                                  | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/data-stack-diagnostics.test.ts`                                  | moved      | `test/data-stack/direct/diagnostics.test.ts`                                                                    | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/data-stack-input-router.test.ts`                                 | moved      | `test/data-stack/direct/input-router.test.ts`                                                                   | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/data-stack-plan/identity-serialization.test.ts`                  | moved      | `test/data-stack/direct/plan/identity-serialization.test.ts`                                                    | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/data-stack-plan/parse-io.test.ts`                                | moved      | `test/data-stack/direct/plan/parse-io.test.ts`                                                                  | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/data-stack-fixture-generator.test.ts`                            | moved      | `test/data-stack/evidence/fixture-generator.test.ts`                                                            | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/helpers/data-stack-test-utils.ts`                                | moved      | `test/data-stack/direct/support.ts`                                                                             | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/cli-interactive-data-stack/helpers.ts`                           | moved      | `test/data-stack/interactive/support.ts`                                                                        | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/action-stack.ts`               | moved      | `test/data-stack/interactive/mock-action.ts`                                                                    | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | Data Stack fields in `test/helpers/interactive-harness/types.ts`       | split      | `test/helpers/interactive-harness/types.ts`<br>`test/data-stack/interactive/harness-contract.ts`                | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-| 2026-08-23     | Data Stack matcher in `test/cli-interactive-routing.helpers.ts`        | split      | `test/cli-interactive-routing.helpers.ts`<br>`test/data-stack/interactive/support.ts`                            | `cf15f599..4ae50698` | [Phase 6.12][phase-6-12-evidence] |
-
-### Phase 6.13: Data Conversion
-
-The paths below were implemented and validated over `f2fb794b..f7f509ee`, then
-reviewed over `f2fb794b..a24c3bdd`. Phase 6.13 is completed with the decision
-`Continue with constraints`; this reference stays `draft` through final
-reconciliation.
-
-| Reference date | Historical path                                                                    | Transition | Current owner or owners                                                                                                      | Migration range      | Job evidence                      |
-| -------------- | ---------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |
-| 2026-08-23     | `test/cli-actions-data.test.ts`                                                    | moved      | `test/data-conversion/actions/formats.test.ts`                                                                               | `f2fb794b..f7f509ee` | [Phase 6.13][phase-6-13-evidence] |
-| 2026-08-23     | `test/cli-interactive-routing-data-convert.test.ts`                               | moved      | `test/data-conversion/interactive/routing.test.ts`                                                                           | `f2fb794b..f7f509ee` | [Phase 6.13][phase-6-13-evidence] |
-| 2026-08-23     | Data Conversion behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | split    | `test/helpers/interactive-harness/mocks/action-misc.ts`<br>`test/data-conversion/interactive/mock-action.ts`                | `f2fb794b..f7f509ee` | [Phase 6.13][phase-6-13-evidence] |
-
-### Phase 6.14: Fonts
-
-The paths below were implemented and validated over `ba8a6cd7..4be23beb`, then
-reviewed over `ba8a6cd7..e4235892`. Phase 6.14 is completed with the decision
-`Continue with constraints`; this reference stays `draft` through final
-reconciliation.
-
-| Reference date | Historical path                                      | Transition | Current owner or owners                                                                                     | Migration range      | Job evidence                      |
-| -------------- | ---------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |
-| 2026-08-23     | `test/fonts-cli-check-output.test.ts`                | split      | `test/fonts/actions/check-text-output.test.ts`<br>`test/fonts/actions/check-diagnostics.test.ts`           | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-cli-check-provider.test.ts`              | moved      | `test/fonts/actions/check-provider-mapping.test.ts`                                                         | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-cli-check-selection.test.ts`             | moved      | `test/fonts/actions/check-selection.test.ts`                                                                | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-cli-check-ttc.test.ts`                   | moved      | `test/fonts/actions/check-ttc.test.ts`                                                                      | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-cli-check-validation.test.ts`            | moved      | `test/fonts/actions/check-validation.test.ts`                                                               | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-cli-inspect-debug.test.ts`               | moved      | `test/fonts/actions/inspect-debug.test.ts`                                                                  | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-cli-inspect-matching.test.ts`            | split      | `test/fonts/actions/inspect-matching.test.ts`<br>`test/fonts/actions/inspect-output.test.ts`                | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-cli-inspect-output.test.ts`              | moved      | `test/fonts/actions/inspect-output.test.ts`                                                                 | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-cli-inspect-validation.test.ts`          | moved      | `test/fonts/actions/inspect-validation.test.ts`                                                             | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-cli-list.test.ts`                        | moved      | `test/fonts/actions/list.test.ts`                                                                           | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-cli-registration.test.ts`                | moved      | `test/fonts/commands/registration.test.ts`                                                                  | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-coverage-fontconfig.test.ts`             | moved      | `test/fonts/adapters/coverage-fontconfig.test.ts`                                                           | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-coverage-ttc-inconclusive.test.ts`       | moved      | `test/fonts/adapters/coverage-ttc-inconclusive.test.ts`                                                     | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-coverage-ttc.test.ts`                    | moved      | `test/fonts/adapters/coverage-ttc.test.ts`                                                                  | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-discovery-cancellation.test.ts`          | moved      | `test/fonts/adapters/discovery-cancellation.test.ts`                                                        | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-discovery-parsers.test.ts`               | moved      | `test/fonts/adapters/discovery-parsers.test.ts`                                                             | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-discovery.test.ts`                       | moved      | `test/fonts/adapters/discovery.test.ts`                                                                     | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-coverage-samples.test.ts`                | moved      | `test/fonts/direct/coverage-samples.test.ts`                                                                | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-matching.test.ts`                        | moved      | `test/fonts/direct/matching.test.ts`                                                                        | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-search-ranking.test.ts`                  | moved      | `test/fonts/direct/search-ranking.test.ts`                                                                  | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-| 2026-08-23     | `test/fonts-search-records.test.ts`                  | moved      | `test/fonts/direct/search-records.test.ts`                                                                  | `ba8a6cd7..4be23beb` | [Phase 6.14][phase-6-14-evidence] |
-
-### Phase 6.15: Rename
-
-The paths below were implemented and validated over `93e7a797..da247175`, then
-reviewed over `93e7a797..c0659081`. Phase 6.15 is completed with the decision
-`Continue with constraints`; this reference stays `draft` through final
-reconciliation.
-
-| Reference date | Historical path                                                            | Transition | Current owner or owners                                                                                                                                                                                                                 | Migration range      | Job evidence                      |
-| -------------- | -------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |
-| 2026-08-23     | `test/adapters-codex-rename-timeout.test.ts`                                | split      | `test/rename/adapters/image-title-suggester.test.ts`<br>`test/rename/adapters/document-title-suggester.test.ts`<br>`test/rename/adapters/title-suggester-support.ts`                                                                     | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-apply-replay.test.ts`                              | moved      | `test/rename/actions/apply-replay.test.ts`                                                                                                                                                                                              | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-apply-validation.test.ts`                          | moved      | `test/rename/actions/apply-validation.test.ts`                                                                                                                                                                                          | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-batch-codex-auto.test.ts`                          | moved      | `test/rename/actions/batch-codex-auto.test.ts`                                                                                                                                                                                          | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-batch-codex-docs.test.ts`                          | moved      | `test/rename/actions/batch-codex-docs.test.ts`                                                                                                                                                                                          | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-batch-codex-images.test.ts`                        | moved      | `test/rename/actions/batch-codex-images.test.ts`                                                                                                                                                                                        | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-batch-core.test.ts`                                | moved      | `test/rename/actions/batch-core.test.ts`                                                                                                                                                                                                | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-batch-filters.test.ts`                             | moved      | `test/rename/actions/batch-filters.test.ts`                                                                                                                                                                                             | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-batch-preview.test.ts`                             | moved      | `test/rename/actions/batch-preview.test.ts`                                                                                                                                                                                             | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-batch-recursion.test.ts`                           | moved      | `test/rename/actions/batch-recursion.test.ts`                                                                                                                                                                                           | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-cleanup-analysis-report.test.ts`                   | moved      | `test/rename/actions/cleanup-analysis-report.test.ts`                                                                                                                                                                                   | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-cleanup-analyzer.test.ts`                          | moved      | `test/rename/actions/cleanup-analyzer.test.ts`                                                                                                                                                                                          | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-cleanup-codex.test.ts`                             | moved      | `test/rename/adapters/cleanup-suggester.test.ts`                                                                                                                                                                                        | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-cleanup-directory.test.ts`                         | moved      | `test/rename/actions/cleanup-directory.test.ts`                                                                                                                                                                                         | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-cleanup-matchers.test.ts`                          | moved      | `test/rename/direct/cleanup-matchers.test.ts`                                                                                                                                                                                           | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-cleanup-single.test.ts`                            | moved      | `test/rename/actions/cleanup-single.test.ts`                                                                                                                                                                                            | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-cleanup-uid.test.ts`                               | moved      | `test/rename/direct/cleanup-uid.test.ts`                                                                                                                                                                                                | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-cleanup-validation.test.ts`                        | moved      | `test/rename/actions/cleanup-validation.test.ts`                                                                                                                                                                                        | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-codex-internals.test.ts`                           | split      | `test/rename/presentation/analyzer-progress.test.ts`<br>`test/rename/codex/candidate-selection.test.ts`                                                                                                                               | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-file.test.ts`                                      | split      | `test/rename/actions/file-core.test.ts`<br>`test/rename/actions/file-codex-images.test.ts`<br>`test/rename/actions/file-codex-auto.test.ts`<br>`test/rename/actions/file-codex-docs.test.ts`<br>`test/rename/actions/file-support.ts`       | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-actions-rename-timestamp.test.ts`                                 | moved      | `test/rename/actions/timestamp.test.ts`                                                                                                                                                                                                 | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-command-rename-cleanup.test.ts`                                   | moved      | `test/rename/commands/cleanup.test.ts`                                                                                                                                                                                                  | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-command-rename-timeout.test.ts`                                   | moved      | `test/rename/commands/codex-timeout.test.ts`                                                                                                                                                                                            | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-fs-utils-rename-template.test.ts`                                 | split      | `test/rename/planner/serial-ordering.test.ts`<br>`test/rename/planner/template-rendering.test.ts`<br>`test/rename/planner/collision-and-source-lifecycle.test.ts`                                                                       | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-interactive-rename-cleanup-analyzer-rendering.test.ts`            | moved      | `test/rename/interactive/cleanup-analyzer-rendering.test.ts`                                                                                                                                                                           | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-interactive-rename-cleanup-analyzer-review.test.ts`               | moved      | `test/rename/interactive/cleanup-analyzer-review.test.ts`                                                                                                                                                                              | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-interactive-rename-cleanup-codex-timestamp.test.ts`               | moved      | `test/rename/interactive/cleanup-codex-timestamp.test.ts`                                                                                                                                                                              | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-interactive-rename-cleanup-codex.test.ts`                         | moved      | `test/rename/interactive/cleanup-codex.test.ts`                                                                                                                                                                                        | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-interactive-rename-cleanup-retention.test.ts`                     | moved      | `test/rename/interactive/cleanup-retention.test.ts`                                                                                                                                                                                    | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-interactive-rename-cleanup.test.ts`                               | moved      | `test/rename/interactive/cleanup.test.ts`                                                                                                                                                                                              | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-interactive-rename.test.ts`                                       | moved      | `test/rename/interactive/session-options.test.ts`                                                                                                                                                                                      | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-rename-interactive-router.test.ts`                                | moved      | `test/rename/direct/interactive-router.test.ts`                                                                                                                                                                                        | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-rename-preview.test.ts`                                           | moved      | `test/rename/presentation/preview-composition.test.ts`                                                                                                                                                                                 | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/cli-rename-template.test.ts`                                          | moved      | `test/rename/direct/template.test.ts`                                                                                                                                                                                                  | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/helpers/rename-apply-test-utils.ts`                                   | moved      | `test/rename/actions/apply-validation-support.ts`                                                                                                                                                                                      | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/helpers/rename-plan-test-utils.ts`                                    | moved      | `test/rename/support/plan-artifacts.ts`                                                                                                                                                                                                | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | `test/helpers/interactive-harness/mocks/action-rename.ts`                   | moved      | `test/rename/interactive/mock-action.ts`                                                                                                                                                                                               | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-| 2026-08-23     | Rename fields in `test/helpers/interactive-harness/types.ts`                | split      | `test/helpers/interactive-harness/types.ts`<br>`test/rename/interactive/harness-contract.ts`                                                                                                                                           | `93e7a797..da247175` | [Phase 6.15][phase-6-15-evidence] |
-
-### Phase 6.16: Codex Adapter Platform
-
-The paths below were implemented and validated over `2f5d5a20..c69a9abc`, then
-reviewed over `2f5d5a20..e2e2cf34`. Phase 6.16 is completed with the decision
-`Continue with constraints`; this reference stays `draft` through final
-reconciliation.
-
-| Reference date | Historical path                         | Transition | Current owner or owners                                                                                                                                                                                                    | Migration range      | Job evidence                      |
-| -------------- | --------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |
-| 2026-08-23     | `test/adapters-codex-failure.test.ts`   | moved      | `test/codex-adapters/direct/request-failure.test.ts`                                                                                                                                                                       | `2f5d5a20..c69a9abc` | [Phase 6.16][phase-6-16-evidence] |
-| 2026-08-23     | `test/adapters-codex-shared.test.ts`    | split      | `test/codex-adapters/direct/filename-title-primitives.test.ts`<br>`test/codex-adapters/direct/batch-retry-failures.test.ts`<br>`test/codex-adapters/direct/prompt-only-workspace.test.ts`                                   | `2f5d5a20..c69a9abc` | [Phase 6.16][phase-6-16-evidence] |
-
-### Phase 6.17: Document Rename
-
-The path below was implemented and validated over `91165757..111a67ea`, then
-reviewed over `91165757..f97e3846`. Phase 6.17 is completed with the decision
-`Continue with constraints`; this reference stays `draft` through final
-reconciliation.
-
-| Reference date | Historical path                                             | Transition | Current owner or owners                                           | Migration range      | Job evidence                      |
-| -------------- | ----------------------------------------------------------- | ---------- | ----------------------------------------------------------------- | -------------------- | --------------------------------- |
-| 2026-08-23     | `test/adapters-codex-document-rename-titles.test.ts`         | moved      | `test/document-rename/adapters/title-evidence.test.ts`            | `91165757..111a67ea` | [Phase 6.17][phase-6-17-evidence] |
-
-### Phase 6.18: DOCX
-
-The paths below were implemented and validated over `56624bef..0018929c`, then
-reviewed over `56624bef..3500991c`. Phase 6.18 is completed with the decision
-`Continue with constraints`; this reference stays `draft` through final
-reconciliation.
-
-| Reference date | Historical path                                                                    | Transition | Current owner or owners                                      | Migration range      | Job evidence                      |
-| -------------- | ---------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------ | -------------------- | --------------------------------- |
-| 2026-08-23     | `test/adapters-docx-ooxml-metadata.test.ts`                                       | moved      | `test/markdown-docx/adapters/ooxml-metadata.test.ts`         | `56624bef..0018929c` | [Phase 6.18][phase-6-18-evidence] |
-| 2026-08-23     | Markdown DOCX behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | moved      | `test/markdown-docx/interactive/mock-action.ts`              | `56624bef..0018929c` | [Phase 6.18][phase-6-18-evidence] |
-
-### Phase 6.19: Markdown Platform
-
-The path below was implemented and validated over `de108f7d..16020bd3`, then
-reviewed over `de108f7d..bc1ed261`. Phase 6.19 is completed with the decision
-`Continue with constraints`; this reference stays `draft` through final
-reconciliation.
-
-| Reference date | Historical path                                           | Transition | Current owner or owners                              | Migration range      | Job evidence                      |
-| -------------- | --------------------------------------------------------- | ---------- | ---------------------------------------------------- | -------------------- | --------------------------------- |
-| 2026-08-23     | `test/cli-command-markdown-codex-timeout.test.ts`          | moved      | `test/markdown/commands/codex-timeout.test.ts`       | `de108f7d..16020bd3` | [Phase 6.19][phase-6-19-evidence] |
-
-### Phase 6.20: Utilities
-
-The path below was implemented and validated over `a48b30b1..60e3b5ce`, then
-reviewed over `a48b30b1..7ccbbc8a`. Phase 6.20 is completed with the decision
-`Continue with constraints`; this reference stays `draft` through final
-reconciliation.
-
-| Reference date | Historical path                 | Transition | Current owner or owners          | Migration range      | Job evidence                      |
-| -------------- | ------------------------------- | ---------- | -------------------------------- | -------------------- | --------------------------------- |
-| 2026-08-23     | `test/utils-datetime.test.ts`   | moved      | `test/utils/datetime.test.ts`    | `a48b30b1..60e3b5ce` | [Phase 6.20][phase-6-20-evidence] |
-
-### Phase 6.21: CLI Foundations And Mixed-Root Decomposition
-
-The paths below were implemented and validated over `10f7eeef..d5985314`, then
-reviewed over `10f7eeef..83512ece`. Phase 6.21 is completed with the decision
-`Continue with constraints`; the reference stays `draft` through final
-reconciliation.
-
-| Reference date | Historical path                                                               | Transition | Current owner or owners                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Migration range      | Job evidence                      |
-| -------------- | ----------------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------- |
-| 2026-08-23     | `test/cli-color.test.ts`                                                      | moved      | `test/cli-foundations/color/controls.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-command-interactive-timeout.test.ts`                                | moved      | `test/cli-foundations/commands/interactive-timeout.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-command-output-color.test.ts`                                       | moved      | `test/cli-foundations/color/commander-output.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-diagnostic-color.test.ts`                                           | moved      | `test/cli-foundations/color/diagnostic-labels.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-interactive-analyzer-status.test.ts`                                | moved      | `test/cli-foundations/interactive/analyzer-status.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-interactive-contextual-tip.test.ts`                                 | moved      | `test/cli-foundations/interactive/contextual-tip.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-interactive-menu-prompt.test.ts`                                    | split      | `test/cli-foundations/interactive/menu-prompt.test.ts`<br>`test/cli-foundations/interactive/real-select-search-fixture.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | Phase 4 residual in `test/cli-interactive-menu.test.ts`                       | moved      | `test/cli-foundations/interactive/menu-wiring.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-interactive-notice.test.ts`                                         | moved      | `test/cli-foundations/interactive/notice.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | Phase 4 residual in `test/cli-interactive-routing.test.ts`                    | split      | `test/data/interactive/menu-routing.test.ts`<br>`test/markdown/interactive/menu-routing.test.ts`<br>`test/markdown-pdf/interactive/entry-routing.test.ts`<br>`test/markdown-frontmatter/interactive/routing.test.ts`<br>`test/markdown-docx/interactive/routing.test.ts`<br>`test/rename/interactive/routing.test.ts`<br>`test/video/interactive/routing.test.ts`<br>`test/cli-foundations/interactive/root-routing.test.ts`                                                                                                                                                                         | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-options-codex-timeout.test.ts`                                      | moved      | `test/cli-foundations/options/codex-timeout.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-path-inline-state.test.ts`                                          | moved      | `test/cli-foundations/path-prompts/interaction-state.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-path-inline.test.ts`                                                | moved      | `test/cli-foundations/path-prompts/inline-controller.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-path-sibling-preview.test.ts`                                       | moved      | `test/cli-foundations/path-prompts/sibling-preview.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-path-suggestions.test.ts`                                           | moved      | `test/cli-foundations/path-prompts/suggestions.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-path.test.ts`                                                       | moved      | `test/cli-foundations/path-prompts/fallback.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-text-display-width.test.ts`                                         | moved      | `test/cli-foundations/inline-rendering/display-width.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-text-inline.test.ts`                                                | split      | `test/cli-foundations/text-inline/completion-controller.test.ts`<br>`test/cli-foundations/text-inline/terminal-controller.test.ts`<br>`test/cli-foundations/text-inline/fallback.test.ts`<br>`test/cli-foundations/text-inline/prompt-fixtures.ts`                                                                                                                                                                                                                                                                                                                                                  | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-text-template-candidates.test.ts`                                   | moved      | `test/cli-foundations/text-inline/template-candidates.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-tui-inline-renderer.test.ts`                                        | moved      | `test/cli-foundations/inline-rendering/renderer.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-tui-keys.test.ts`                                                   | moved      | `test/cli-foundations/tui/keys.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-tui-raw-session.test.ts`                                            | moved      | `test/cli-foundations/tui/raw-session.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/cli-tui-screen.test.ts`                                                 | moved      | `test/cli-foundations/inline-rendering/screen.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | Phase 3 residual in `test/cli-ux.test.ts`                                     | split      | `test/cli-foundations/commands/root-ux.test.ts`<br>`test/data-conversion/commands/output-paths.test.ts`<br>`test/data-preview/commands/preview-ux.test.ts`<br>`test/data-preview/commands/parquet-ux.test.ts`<br>`test/data/commands/help.test.ts`<br>`test/data-conversion/commands/help.test.ts`<br>`test/data-extract/commands/help-and-input-format.test.ts`<br>`test/data-stack/commands/help-and-input-format.test.ts`<br>`test/rename/commands/ux.test.ts`<br>`test/video/commands/ux.test.ts`                                                                 | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-| 2026-08-23     | `test/helpers/virtual-terminal.ts`                                           | moved      | `test/cli-foundations/inline-rendering/virtual-terminal.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
-
-### Phase 7: Global Support Ownership And Root Deferrals
-
-The paths below were implemented through evidence tip `8784ccd9` and reviewed
-over `3ae8e0fb..8784ccd9`. Phase 7 completed with `Continue with constraints`;
-the reference stays `draft` because Phase 8 still owns the final current-link
-and historical-wording reconciliation.
-
-| Reference date | Historical path or fragment | Transition | Current owner or owners | Migration range | Job evidence |
-| --- | --- | --- | --- | --- | --- |
-| 2026-08-24 | Markdown PDF fields in `test/helpers/interactive-harness/types.ts` | split | `test/markdown-pdf/interactive/harness-contract.ts`<br>`test/cli-foundations/interactive-harness/types.ts` | `b83d14f5..275f88f9` | [Phase 7][phase-7-evidence] |
-| 2026-08-24 | Shared Data Sources fields and source-shape options in `test/helpers/interactive-harness/types.ts` | moved | `test/data-sources/interactive/harness-contract.ts` | `b83d14f5..275f88f9` | [Phase 7][phase-7-evidence] |
-| 2026-08-24 | Data Stack hooks in `test/helpers/interactive-harness/context.ts` | split | `test/data-stack/interactive/harness-contract.ts`<br>`test/data-stack/interactive/mock-action.ts`<br>`test/cli-foundations/interactive-harness/context.ts` | `275f88f9..ba4701aa` | [Phase 7][phase-7-evidence] |
-| 2026-08-24 | `test/cli-foundations/interactive/root-routing.test.ts` | moved | `test/data/interactive/unknown-action.test.ts` | `275f88f9..ba4701aa` | [Phase 7][phase-7-evidence] |
-| 2026-08-24 | `test/helpers/interactive-harness/context.ts` | moved | `test/cli-foundations/interactive-harness/context.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
-| 2026-08-24 | `test/helpers/interactive-harness/index.ts` | merged | `test/cli-foundations/interactive-harness/index.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
-| 2026-08-24 | `test/helpers/interactive-harness/mocks/actions.ts` | moved | `test/cli-foundations/interactive-harness/action-mocks.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
-| 2026-08-24 | `test/helpers/interactive-harness/mocks/fs.ts` | moved | `test/cli-foundations/interactive-harness/fs-mock.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
-| 2026-08-24 | `test/helpers/interactive-harness/mocks/index.ts` | moved | `test/cli-foundations/interactive-harness/mock-composition.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
-| 2026-08-24 | `test/helpers/interactive-harness/mocks/path-prompts.ts` | moved | `test/cli-foundations/interactive-harness/path-prompt-mocks.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
-| 2026-08-24 | `test/helpers/interactive-harness/mocks/prompts.ts` | moved | `test/cli-foundations/interactive-harness/prompt-mocks.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
-| 2026-08-24 | `test/helpers/interactive-harness/module-urls.ts` | moved | `test/cli-foundations/interactive-harness/module-urls.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
-| 2026-08-24 | `test/helpers/interactive-harness/runner.ts` | moved | `test/cli-foundations/interactive-harness/runner.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
-| 2026-08-24 | `test/helpers/interactive-harness/runtime.ts` | moved | `test/cli-foundations/interactive-harness/runtime.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
-| 2026-08-24 | `test/helpers/interactive-harness/types.ts` | moved | `test/cli-foundations/interactive-harness/types.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
-| 2026-08-24 | `test/helpers/interactive-harness.ts` | merged | `test/cli-foundations/interactive-harness/index.ts` | `ba4701aa..b8f78174` | [Phase 7][phase-7-evidence] |
-| 2026-08-24 | `test/cli-interactive-routing.helpers.ts` | removed | `test/cli-foundations/interactive-harness/index.ts`<br>`test/helpers/ansi.ts`<br>`test/data-stack/interactive/support.ts`<br>`test/helpers/cli-test-utils.ts` | `5411dc03..b8f78174` | [Phase 7][phase-7-evidence] |
-
-### Phase 8: Final Reconciliation
-
-Phase 8 removed one tracked fixture with proved zero use. It removed no test
-declaration and changed no runtime contract.
-
-| Reference date | Historical path | Transition | Current owner or owners | Migration range | Job evidence |
-| --- | --- | --- | --- | --- | --- |
-| 2026-08-24 | `test/fixtures/parquet-preview/wide.parquet` | removed | `test/data-preview/actions/parquet.test.ts` | `1009d3c8..6e288cb1` | [Phase 8][phase-8-evidence] |
-
-The final chain audit found 24 nonterminal owner cells across the 14 successor
-paths below. Every later chain terminates in the listed existing `test/**`
-owners:
-
-| Nonterminal successor path | Terminal existing owner paths |
-| --- | --- |
-| `test/cli-actions-md-to-pdf-template-codex/fixtures.ts` | `test/markdown-pdf/actions/template-codex-fixtures.ts`<br>`test/markdown-pdf/support/path-fixtures.ts` |
-| `test/cli-foundations/interactive/root-routing.test.ts` | `test/data/interactive/unknown-action.test.ts` |
-| `test/cli-interactive-menu.test.ts` | `test/cli-foundations/interactive/menu-wiring.test.ts`<br>`test/doctor/actions/report-projections.test.ts`<br>`test/doctor/interactive/menu-routing.test.ts`<br>`test/doctor/interactive/routing.test.ts` |
-| `test/cli-interactive-routing.helpers.ts` | `test/cli-foundations/interactive-harness/index.ts`<br>`test/data-stack/interactive/support.ts`<br>`test/helpers/ansi.ts`<br>`test/helpers/cli-test-utils.ts` |
-| `test/cli-interactive-routing.test.ts` | `test/data/interactive/menu-routing.test.ts`<br>`test/data/interactive/unknown-action.test.ts`<br>`test/doctor/interactive/routing.test.ts`<br>`test/markdown/interactive/menu-routing.test.ts`<br>`test/markdown-pdf/interactive/entry-routing.test.ts`<br>`test/markdown-frontmatter/interactive/routing.test.ts`<br>`test/markdown-docx/interactive/routing.test.ts`<br>`test/rename/interactive/routing.test.ts`<br>`test/video/interactive/routing.test.ts` |
-| `test/cli-ux.test.ts` | `test/cli-foundations/commands/root-ux.test.ts`<br>`test/data/commands/help.test.ts`<br>`test/data-conversion/commands/help.test.ts`<br>`test/data-conversion/commands/output-paths.test.ts`<br>`test/data-extract/commands/help-and-input-format.test.ts`<br>`test/data-preview/commands/parquet-ux.test.ts`<br>`test/data-preview/commands/preview-ux.test.ts`<br>`test/data-query/commands/codex-help-and-input-format.test.ts`<br>`test/data-query/commands/help-and-input-format.test.ts`<br>`test/data-stack/commands/help-and-input-format.test.ts`<br>`test/rename/commands/ux.test.ts`<br>`test/video/commands/ux.test.ts` |
-| `test/helpers/interactive-harness/mocks/action-data.ts` | `test/data-extract/interactive/mock-action.ts`<br>`test/data-query/interactive/mock-action.ts` |
-| `test/helpers/interactive-harness/mocks/action-misc.ts` | `test/data-conversion/interactive/mock-action.ts`<br>`test/data-preview/interactive/mock-action.ts`<br>`test/doctor/interactive/mock-action.ts`<br>`test/markdown-docx/interactive/mock-action.ts`<br>`test/markdown-frontmatter/interactive/mock-action.ts`<br>`test/video/interactive/mock-action.ts` |
-| `test/helpers/interactive-harness/mocks/data-query/index.ts` | `test/data-extract/interactive/mock-installation.ts`<br>`test/data-query/interactive/mock-installation.ts` |
-| `test/helpers/interactive-harness/mocks/data-query/query.ts` | `test/data-extract/interactive/mock-introspection.ts`<br>`test/data-query/interactive/mock-query.ts` |
-| `test/helpers/interactive-harness/mocks/data-query/source-shape.ts` | `test/data-extract/interactive/mock-source-shape.ts`<br>`test/data-query/interactive/mock-source-shape.ts` |
-| `test/helpers/interactive-harness/mocks/data-query/types.ts` | `test/cli-foundations/interactive-harness/types.ts`<br>`test/data-extract/interactive/harness-contract.ts`<br>`test/data-query/interactive/harness-contract.ts`<br>`test/data-query/interactive/mock-types.ts`<br>`test/data-sources/interactive/harness-contract.ts`<br>`test/data-stack/interactive/harness-contract.ts`<br>`test/markdown-pdf/interactive/harness-contract.ts`<br>`test/rename/interactive/harness-contract.ts` |
-| `test/helpers/interactive-harness/module-urls.ts` | `test/cli-foundations/interactive-harness/module-urls.ts`<br>`test/data-query/interactive/module-urls.ts`<br>`test/markdown-pdf/interactive/module-urls.ts` |
-| `test/helpers/interactive-harness/types.ts` | `test/cli-foundations/interactive-harness/types.ts`<br>`test/data-extract/interactive/harness-contract.ts`<br>`test/data-query/interactive/harness-contract.ts`<br>`test/data-sources/interactive/harness-contract.ts`<br>`test/data-stack/interactive/harness-contract.ts`<br>`test/markdown-pdf/interactive/harness-contract.ts`<br>`test/rename/interactive/harness-contract.ts` |
-
-[phase-3-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-3-data-query-migration-pilot
-[phase-4-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-4-doctor-ownership-migration-pilot
-[phase-5-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-5-bounded-markdown-pdf-migration-pilot
-[phase-6-1-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-61-markdown-pdf-general
-[phase-6-2-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-62-markdown-pdf-template-codex
-[phase-6-3-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-63-markdown-pdf-profile
-[phase-6-4-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-64-markdown-pdf-project-codex
-[phase-6-5-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-65-markdown-pdf-interactive-and-support-closeout
-[phase-6-6-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-66-release-tooling
-[phase-6-7-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-67-markdown-frontmatter
-[phase-6-8-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-68-video
-[phase-6-9-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-69-data-sources
-[phase-6-10-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-610-data-extract
-[phase-6-11-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-611-data-preview
-[phase-6-12-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-612-data-stack
-[phase-6-13-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-613-data-conversion
-[phase-6-14-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-614-fonts
-[phase-6-15-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-615-rename
-[phase-6-16-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-616-codex-adapter-platform
-[phase-6-17-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-617-document-rename
-[phase-6-18-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-618-docx
-[phase-6-19-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-619-markdown-platform
-[phase-6-20-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-620-utilities
-[phase-6-21-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-621-cli-foundations-and-mixed-root-decomposition
-[phase-7-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-7-global-support-ownership-and-root-deferrals
-[phase-8-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-8-final-test-tree-and-documentation-reconciliation
-
-## Completion Boundary
-
-This reference remained `draft` throughout the initial test-catalog migration,
-including after the first correspondence rows were added. Phase 8 completed it
-after the final documentation reconciliation confirmed that:
-
-- every accepted move, split, merge, and removal has a correspondence row
-- every row names its reference date, range-relative successor owner or owners,
-  exact migration range, and job evidence
-- every nonterminal successor chain resolves to existing terminal owners
-- current guides and reference docs use the accepted current paths
-- every remaining historical path occurrence is intentionally historical
-- no accepted historical path remains unclassified
-
-Completion evidence: all 296 transition rows are structurally complete, all 14
-nonterminal successor paths resolve to existing terminal owners, current-guide
-scanning found no obsolete accepted path, and exact ranges
-`fb8acd94..1734ab0b` and `2f3013ca..1734ab0b` received clean documentation,
-test-quality, and maintainability review.
-
-After that initial completion, later isolated migrations may append rows and
-update `modified-date` without reopening the reference unless its schema or
-currentness contract changes materially.
-
-## Related Research
+Provide the canonical lookup from historical test paths to their current
+contract owners after the test catalog reorganization.
+
+The table is organized by named catalog change sets instead of plan numbering.
+The completed implementation job retains execution order, validation detail,
+and exact review decisions.
+
+## Lookup Contract
+
+Each historical path appears once for each accepted move, split, merge, or
+removal. Current-owner cells point directly to existing terminal owners; readers
+do not need to follow intermediate migration chains.
+
+- `moved` names the current path that owns the same contract.
+- `split` names every current path that owns part of the former contract.
+- `merged` names the current path that absorbed the contract.
+- `removed` names the retained current test that protects the useful contract.
+
+A change set records the acceptance date, evidence range, and implementation
+record once for the related path group. Later path changes update current-owner
+cells and append a new change set without rewriting completed job evidence.
+
+## Catalog Change Sets
+
+| Change set | Accepted | Scope | Evidence range | Implementation record |
+| --- | --- | --- | --- | --- |
+| `data-query` | 2026-08-23 | Data Query | `db9622cf..885e3846` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-3-data-query-migration-pilot) |
+| `doctor` | 2026-08-23 | Doctor | `ff0f3d6f..93c60f9e` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-4-doctor-ownership-migration-pilot) |
+| `markdown-pdf-pilot` | 2026-08-23 | Markdown PDF Pilot | `05a87d54..802d3b86` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-5-bounded-markdown-pdf-migration-pilot) |
+| `markdown-pdf-general` | 2026-08-23 | Markdown PDF General | `fca1204a..b5ffc3f1` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-61-markdown-pdf-general) |
+| `markdown-pdf-template` | 2026-08-23 | Markdown PDF Template | `2af1ae7b..b74f6279` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-62-markdown-pdf-template-codex) |
+| `markdown-pdf-profile` | 2026-08-23 | Markdown PDF Profile | `171eec39..b66e1c35` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-63-markdown-pdf-profile) |
+| `markdown-pdf-project` | 2026-08-23 | Markdown PDF Project | `54c24460..e5489182` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-64-markdown-pdf-project-codex) |
+| `markdown-pdf-interactive` | 2026-08-23 | Markdown PDF Interactive And Support | `2b8151dd..b1d2c133` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-65-markdown-pdf-interactive-and-support-closeout) |
+| `release-tooling` | 2026-08-23 | Release Tooling | `bb3d683a..608b0d2b` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-66-release-tooling) |
+| `markdown-frontmatter` | 2026-08-23 | Markdown Frontmatter | `16966305..61df100e` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-67-markdown-frontmatter) |
+| `video` | 2026-08-23 | Video | `5b362772..cf85a757` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-68-video) |
+| `data-sources` | 2026-08-23 | Data Sources | `9458f888..a3a76f53` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-69-data-sources) |
+| `data-extract` | 2026-08-23 | Data Extract | `733f27cb..d02bf761` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-610-data-extract) |
+| `data-preview` | 2026-08-23 | Data Preview | `7b840652..3d95eba5` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-611-data-preview) |
+| `data-stack` | 2026-08-23 | Data Stack | `cf15f599..4ae50698` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-612-data-stack) |
+| `data-conversion` | 2026-08-23 | Data Conversion | `f2fb794b..f7f509ee` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-613-data-conversion) |
+| `fonts` | 2026-08-23 | Fonts | `ba8a6cd7..4be23beb` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-614-fonts) |
+| `rename` | 2026-08-23 | Rename | `93e7a797..da247175` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-615-rename) |
+| `codex-adapters` | 2026-08-23 | Codex Adapter Platform | `2f5d5a20..c69a9abc` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-616-codex-adapter-platform) |
+| `document-rename` | 2026-08-23 | Document Rename | `91165757..111a67ea` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-617-document-rename) |
+| `markdown-docx` | 2026-08-23 | Markdown DOCX | `56624bef..0018929c` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-618-docx) |
+| `markdown` | 2026-08-23 | Markdown Platform | `de108f7d..16020bd3` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-619-markdown-platform) |
+| `utilities` | 2026-08-23 | Utilities | `a48b30b1..60e3b5ce` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-620-utilities) |
+| `cli-foundations` | 2026-08-23 | CLI Foundations And Mixed-Root Cleanup | `10f7eeef..d5985314` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-621-cli-foundations-and-mixed-root-decomposition) |
+| `support-and-root-cleanup` | 2026-08-24 | Shared Support And Root Cleanup | `b83d14f5..275f88f9`<br>`275f88f9..ba4701aa`<br>`ba4701aa..5411dc03`<br>`ba4701aa..b8f78174`<br>`5411dc03..b8f78174` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-7-global-support-ownership-and-root-deferrals) |
+| `final-reconciliation` | 2026-08-24 | Final Reconciliation | `1009d3c8..6e288cb1` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-8-final-test-tree-and-documentation-reconciliation) |
+
+## Historical-To-Current Lookup
+
+### Data Query
+
+Change set: `data-query`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/helpers/interactive-harness/mocks/action-data-shared.ts` | moved | `test/cli-foundations/interactive-harness/action-output.ts` |
+| `test/cli-actions-data-query-artifact-validation.test.ts` | moved | `test/data-query/actions/artifact-validation.test.ts` |
+| `test/cli-actions-data-query-codex.test.ts` | moved | `test/data-query/actions/codex-single-source.test.ts` |
+| `test/cli-actions-data-query-codex.helpers.ts` | moved | `test/data-query/actions/codex-support.ts` |
+| `test/cli-actions-data-query-codex-validation.test.ts` | moved | `test/data-query/actions/codex-validation.test.ts` |
+| `test/cli-actions-data-query-codex-workspace.test.ts` | moved | `test/data-query/actions/codex-workspace.test.ts` |
+| `test/cli-actions-data-query-header-artifacts.test.ts` | moved | `test/data-query/actions/header-artifacts.test.ts` |
+| `test/cli-actions-data-query-headers.test.ts` | moved | `test/data-query/actions/header-modes.test.ts` |
+| `test/cli-actions-data-query-validation.test.ts` | moved | `test/data-query/actions/option-validation.test.ts` |
+| `test/cli-actions-data-query.test.ts` | moved | `test/data-query/actions/query-output.test.ts` |
+| `test/cli-actions-data-query-shape.test.ts` | moved | `test/data-query/actions/source-shape.test.ts` |
+| `test/cli-actions-data-query-workspace.test.ts` | moved | `test/data-query/actions/source-workspace.test.ts` |
+| `test/cli-actions-data-query.helpers.ts` | moved | `test/data-query/actions/support.ts` |
+| `test/cli-actions-data-query-codex-prompt.test.ts` | split | `test/data-query/codex-intent.test.ts`<br>`test/data-query/actions/codex-single-source.test.ts` |
+| `test/cli-command-data-query-codex.helpers.ts` | moved | `test/data-query/commands/codex-support.ts` |
+| `test/cli-command-data-query-codex-validation.test.ts` | moved | `test/data-query/commands/codex-validation.test.ts` |
+| `test/cli-command-data-query-codex-workspace.test.ts` | moved | `test/data-query/commands/codex-workspace.test.ts` |
+| `test/cli-command-data-query-duckdb-lifecycle.test.ts` | moved | `test/data-query/commands/duckdb-lifecycle.test.ts` |
+| `test/cli-command-data-query-shape.test.ts` | moved | `test/data-query/commands/excel-shape.test.ts` |
+| `test/cli-command-data-query-headers.test.ts` | moved | `test/data-query/commands/header-review.test.ts` |
+| `test/cli-command-data-query-workspace.test.ts` | moved | `test/data-query/commands/sqlite-workspace.test.ts` |
+| `test/cli-command-data-query.helpers.ts` | moved | `test/data-query/commands/support.ts` |
+| `test/cli-interactive-data-query-formal-guide.test.ts` | moved | `test/data-query/direct/formal-guide.test.ts` |
+| `test/cli-interactive-data-query-facade.test.ts` | moved | `test/data-query/direct/interactive-facade.test.ts` |
+| `test/cli-options-parsers.test.ts` | moved | `test/data-query/direct/relation-option-parser.test.ts` |
+| `test/data-query-duckdb-fixture-generator.test.ts` | moved | `test/data-query/evidence/duckdb-fixtures.test.ts` |
+| `test/data-query-fixture-generator.test.ts` | moved | `test/data-query/evidence/tabular-fixtures.test.ts` |
+| `test/data-query-header-mapping.test.ts` | moved | `test/data-query/header-mapping.test.ts` |
+| `test/cli-interactive-routing-data-query-codex-single.test.ts` | moved | `test/data-query/interactive/codex-single-source.test.ts` |
+| `test/cli-interactive-routing-data-query-codex-workspace.test.ts` | moved | `test/data-query/interactive/codex-workspace.test.ts` |
+| `test/cli-interactive-routing-data-query-formal.test.ts` | moved | `test/data-query/interactive/formal-guide.test.ts` |
+| `test/cli-interactive-routing-data-query-headers.test.ts` | moved | `test/data-query/interactive/header-review.test.ts` |
+| `test/cli-interactive-routing-data-query-manual.test.ts` | moved | `test/data-query/interactive/manual.test.ts` |
+| `test/helpers/interactive-harness/mocks/data-query/codex.ts` | moved | `test/data-query/interactive/mock-codex.ts` |
+| `test/helpers/interactive-harness/mocks/data-query/header-mapping.ts` | moved | `test/data-query/interactive/mock-header-mapping.ts` |
+| `test/helpers/interactive-harness/mocks/data-query/workspace.ts` | moved | `test/data-query/interactive/mock-workspace.ts` |
+| `test/cli-interactive-routing-data-query-review.test.ts` | moved | `test/data-query/interactive/review-checkpoints.test.ts` |
+| `test/cli-interactive-routing-data-query-source-shape.test.ts` | split | `test/data-query/interactive/source-shape.test.ts`<br>`test/data-query/source-introspection.test.ts` |
+| `test/cli-interactive-routing-data-query-workspace.test.ts` | moved | `test/data-query/interactive/workspace.test.ts` |
+| `test/cli-command-data-codex-timeout.test.ts` | split | `test/data-query/commands/codex-timeout.test.ts`<br>`test/data-stack/commands/codex-timeout.test.ts` |
+| `test/cli-command-data-query-codex.test.ts` | split | `test/cli-command-data-query-codex.test.ts`<br>`test/data-query/commands/codex-single-source.test.ts` |
+| `test/cli-command-data-query-duckdb-sources.test.ts` | split | `test/cli-command-data-query-duckdb-sources.test.ts`<br>`test/data-query/commands/duckdb-sources.test.ts` |
+| `test/cli-command-data-query-source-shape.test.ts` | split | `test/cli-command-data-query-source-shape.test.ts`<br>`test/data-query/commands/source-shape-artifacts.test.ts` |
+| `test/cli-command-data-query-validation.test.ts` | split | `test/cli-command-data-query-validation.test.ts`<br>`test/data-query/commands/validation-remediation.test.ts` |
+| `test/cli-command-data-query.test.ts` | split | `test/cli-command-data-query.test.ts`<br>`test/data-query/commands/basic-formats.test.ts` |
+| `test/cli-ux.test.ts` | split | `test/cli-foundations/commands/root-ux.test.ts`<br>`test/data/commands/help.test.ts`<br>`test/data-conversion/commands/help.test.ts`<br>`test/data-conversion/commands/output-paths.test.ts`<br>`test/data-extract/commands/help-and-input-format.test.ts`<br>`test/data-preview/commands/parquet-ux.test.ts`<br>`test/data-preview/commands/preview-ux.test.ts`<br>`test/data-query/commands/codex-help-and-input-format.test.ts`<br>`test/data-query/commands/help-and-input-format.test.ts`<br>`test/data-stack/commands/help-and-input-format.test.ts`<br>`test/rename/commands/ux.test.ts`<br>`test/video/commands/ux.test.ts` |
+| `test/helpers/interactive-harness/mocks/action-data.ts` | split | `test/data-extract/interactive/mock-action.ts`<br>`test/data-query/interactive/mock-action.ts` |
+| `test/helpers/interactive-harness/mocks/data-query/index.ts` | split | `test/data-extract/interactive/mock-installation.ts`<br>`test/data-query/interactive/mock-installation.ts` |
+| `test/helpers/interactive-harness/mocks/data-query/query.ts` | split | `test/data-extract/interactive/mock-introspection.ts`<br>`test/data-query/interactive/mock-query.ts` |
+| `test/helpers/interactive-harness/mocks/data-query/source-shape.ts` | split | `test/data-extract/interactive/mock-source-shape.ts`<br>`test/data-query/interactive/mock-source-shape.ts` |
+| `test/helpers/interactive-harness/mocks/data-query/types.ts` | split | `test/cli-foundations/interactive-harness/types.ts`<br>`test/data-extract/interactive/harness-contract.ts`<br>`test/data-query/interactive/harness-contract.ts`<br>`test/data-query/interactive/mock-types.ts`<br>`test/data-sources/interactive/harness-contract.ts`<br>`test/data-stack/interactive/harness-contract.ts`<br>`test/markdown-pdf/interactive/harness-contract.ts`<br>`test/rename/interactive/harness-contract.ts` |
+| `test/helpers/interactive-harness/module-urls.ts` | split | `test/cli-foundations/interactive-harness/module-urls.ts`<br>`test/data-query/interactive/module-urls.ts`<br>`test/markdown-pdf/interactive/module-urls.ts` |
+| `test/helpers/interactive-harness/types.ts` | split | `test/cli-foundations/interactive-harness/types.ts`<br>`test/data-extract/interactive/harness-contract.ts`<br>`test/data-query/interactive/harness-contract.ts`<br>`test/data-sources/interactive/harness-contract.ts`<br>`test/data-stack/interactive/harness-contract.ts`<br>`test/markdown-pdf/interactive/harness-contract.ts`<br>`test/rename/interactive/harness-contract.ts` |
+
+### Doctor
+
+Change set: `doctor`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/cli-action-doctor.test.ts` | moved | `test/doctor/actions/report-projections.test.ts` |
+| `test/cli-actions-doctor-markdown-video-deferred.test.ts` | split | `test/doctor/actions/dependency-integration.test.ts`<br>`test/doctor/actions/report-projections.test.ts`<br>`test/doctor/commands/environment.test.ts`<br>`test/doctor/commands/routing.test.ts`<br>`test/cli-foundations/dependencies/command-inspection.test.ts`<br>`test/cli-markdown-pdf-requirements.test.ts`<br>`test/data-query/actions/duckdb-lifecycle.test.ts`<br>`test/data-query/commands/duckdb-lifecycle.test.ts`<br>`test/markdown-docx/actions/rendering.test.ts`<br>`test/video/actions/preconditions.test.ts` |
+| `test/cli-command-doctor.test.ts` | moved | `test/doctor/commands/routing.test.ts` |
+| `test/cli-doctor-workflow.test.ts` | moved | `test/doctor/workflow-projection.test.ts` |
+| `test/helpers/doctor-test-fixtures.ts` | moved | `test/doctor/fixtures.ts` |
+| `test/cli-interactive-menu.test.ts` | split | `test/cli-foundations/interactive/menu-wiring.test.ts`<br>`test/doctor/actions/report-projections.test.ts`<br>`test/doctor/interactive/menu-routing.test.ts`<br>`test/doctor/interactive/routing.test.ts` |
+| `test/cli-interactive-routing.test.ts` | split | `test/data/interactive/menu-routing.test.ts`<br>`test/data/interactive/unknown-action.test.ts`<br>`test/doctor/interactive/routing.test.ts`<br>`test/markdown/interactive/menu-routing.test.ts`<br>`test/markdown-pdf/interactive/entry-routing.test.ts`<br>`test/markdown-frontmatter/interactive/routing.test.ts`<br>`test/markdown-docx/interactive/routing.test.ts`<br>`test/rename/interactive/routing.test.ts`<br>`test/video/interactive/routing.test.ts` |
+| `test/helpers/interactive-harness/mocks/action-misc.ts` | split | `test/data-conversion/interactive/mock-action.ts`<br>`test/data-preview/interactive/mock-action.ts`<br>`test/doctor/interactive/mock-action.ts`<br>`test/markdown-docx/interactive/mock-action.ts`<br>`test/markdown-frontmatter/interactive/mock-action.ts`<br>`test/video/interactive/mock-action.ts` |
+
+### Markdown PDF Pilot
+
+Change set: `markdown-pdf-pilot`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/cli-actions-md-to-pdf-bundle.test.ts` | split | `test/markdown-pdf/actions/bundle-discovery.test.ts`<br>`test/markdown-pdf/actions/bundle-resolution.test.ts`<br>`test/markdown-pdf/actions/bundle-integration.test.ts` |
+| `test/cli-interactive-markdown-pdf/font-hints.test.ts` | split | `test/markdown-pdf/interactive/font-model.test.ts`<br>`test/markdown-pdf/interactive/font-suggestion-service.test.ts`<br>`test/markdown-pdf/interactive/font-post-codex-review.test.ts` |
+
+### Markdown PDF General
+
+Change set: `markdown-pdf-general`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/cli-actions-md-to-pdf-actions-validation.test.ts` | moved | `test/markdown-pdf/actions/rendering-validation.test.ts` |
+| `test/cli-actions-md-to-pdf-actions.test.ts` | split | `test/markdown-pdf/actions/rendering-code-highlighting.test.ts`<br>`test/markdown-pdf/actions/rendering-composition.test.ts`<br>`test/markdown-pdf/actions/rendering-core.test.ts`<br>`test/markdown-pdf/actions/rendering-requirements.test.ts`<br>`test/markdown-pdf/actions/rendering-template-asset-safety.test.ts`<br>`test/markdown-pdf/actions/rendering-write-lifecycle.test.ts` |
+| `test/cli-actions-md-to-pdf-commands/direct-render.test.ts` | moved | `test/markdown-pdf/commands/direct-render.test.ts` |
+| `test/cli-actions-md-to-pdf-diagnostics.test.ts` | moved | `test/markdown-pdf/actions/rendering-diagnostics.test.ts` |
+| `test/cli-actions-md-to-pdf-no-default-css.test.ts` | moved | `test/markdown-pdf/actions/rendering-custom-css-page-numbers.test.ts` |
+| `test/cli-actions-md-to-pdf-page-chrome.test.ts` | split | `test/markdown-pdf/direct/page-chrome-area-styling.test.ts`<br>`test/markdown-pdf/direct/page-chrome-sequence-visibility.test.ts` |
+| `test/cli-actions-md-to-pdf-recipe-fonts.test.ts` | split | `test/markdown-pdf/actions/recipe-font-check.test.ts`<br>`test/markdown-pdf/actions/recipe-font-generation.test.ts` |
+| `test/cli-markdown-pdf-renderer-capabilities.test.ts` | split | `test/markdown-pdf/actions/rendering-renderer-capability-gate.test.ts`<br>`test/markdown-pdf/direct/renderer-capabilities-matrix.test.ts` |
+| `test/markdown-pdf-page-number-project-renderer-contract.test.ts` | moved | `test/markdown-pdf/evidence/page-number-project-renderer-contract.test.ts` |
+| `test/markdown-pdf-page-number-renderer-evidence/orchestration.test.ts` | moved | `test/markdown-pdf/evidence/page-number-orchestration.test.ts` |
+| `test/cli-actions-md-to-pdf.helpers.ts` | moved | `test/markdown-pdf/actions/render-support.ts` |
+| `test/cli-actions-md-to-pdf-commands/fixtures.ts` | moved | `test/markdown-pdf/commands/fixtures.ts` |
+| `test/markdown-pdf-page-number-renderer-evidence/support.ts` | moved | `test/markdown-pdf/evidence/page-number-support.ts` |
+| `test/cli-actions-md-to-pdf-template-codex/fixtures.ts` | split | `test/markdown-pdf/actions/template-codex-fixtures.ts`<br>`test/markdown-pdf/support/path-fixtures.ts` |
+
+### Markdown PDF Template
+
+Change set: `markdown-pdf-template`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/adapters-codex-markdown-pdf-template/repair-timeout.test.ts` | moved | `test/markdown-pdf/adapters/template-repair-timeout.test.ts` |
+| `test/cli-actions-md-to-pdf-commands/template.test.ts` | split | `test/markdown-pdf/commands/template-codex.test.ts`<br>`test/markdown-pdf/commands/template-init.test.ts` |
+| `test/cli-actions-md-to-pdf-template-codex/action-integration.test.ts` | moved | `test/markdown-pdf/actions/template-codex-integration.test.ts` |
+| `test/cli-actions-md-to-pdf-template-codex/action.test.ts` | moved | `test/markdown-pdf/actions/template-codex-action.test.ts` |
+| `test/cli-actions-md-to-pdf-template-codex/prepared.test.ts` | moved | `test/markdown-pdf/actions/template-codex-prepared.test.ts` |
+| `test/adapters-codex-markdown-pdf-template/fixtures.ts` | moved | `test/markdown-pdf/adapters/template-codex-fixtures.ts` |
+| `test/cli-actions-md-to-pdf-template-codex/fixtures.ts` | moved | `test/markdown-pdf/actions/template-codex-fixtures.ts` |
+| `test/cli-actions-md-to-pdf-template-codex/synthesis-fixtures.ts` | moved | `test/markdown-pdf/actions/template-synthesis-fixtures.ts` |
+
+### Markdown PDF Profile
+
+Change set: `markdown-pdf-profile`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/cli-actions-md-to-pdf-actions-profile-rendering.test.ts` | moved | `test/markdown-pdf/actions/rendering-profile-rendering.test.ts` |
+| `test/cli-actions-md-to-pdf-commands/profile.test.ts` | split | `test/markdown-pdf/commands/profile-codex.test.ts`<br>`test/markdown-pdf/commands/profile-init.test.ts` |
+| `test/cli-actions-md-to-pdf-profile-codex-action/request-progress.test.ts` | split | `test/markdown-pdf/actions/profile-codex-request-lifecycle.test.ts`<br>`test/markdown-pdf/actions/profile-codex-progress.test.ts` |
+| `test/cli-actions-md-to-pdf-profile-codex-phase2.test.ts` | split | `test/markdown-pdf/actions/profile-codex-candidates.test.ts`<br>`test/markdown-pdf/actions/profile-codex-signals.test.ts` |
+| `test/cli-actions-md-to-pdf-profile-codex-action/fixtures.ts` | moved | `test/markdown-pdf/actions/profile-codex-fixtures.ts` |
+
+### Markdown PDF Project
+
+Change set: `markdown-pdf-project`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/cli-actions-md-to-pdf-commands/project.test.ts` | moved | `test/markdown-pdf/commands/project-codex.test.ts` |
+| `test/cli-actions-md-to-pdf-project-codex/output-plan.test.ts` | moved | `test/markdown-pdf/actions/project-codex-output-plan.test.ts` |
+| `test/cli-actions-md-to-pdf-project-codex/prepared.test.ts` | split | `test/markdown-pdf/actions/project-codex-prepared-handoff.test.ts`<br>`test/markdown-pdf/actions/project-codex-prepared-request-lifecycle.test.ts`<br>`test/markdown-pdf/actions/project-codex-prepared-fixtures.ts` |
+| `test/cli-actions-md-to-pdf-project-codex/validation.test.ts` | moved | `test/markdown-pdf/actions/project-codex-validation.test.ts` |
+| `test/cli-actions-md-to-pdf-project-codex/action-write/fixtures.ts` | moved | `test/markdown-pdf/actions/project-codex-action-write-fixtures.ts` |
+
+### Markdown PDF Interactive And Support
+
+Change set: `markdown-pdf-interactive`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/cli-interactive-markdown-pdf/codex-authoring/output-recovery-lifecycle.test.ts` | moved | `test/markdown-pdf/interactive/codex-authoring-output-recovery-lifecycle.test.ts` |
+| `test/cli-interactive-markdown-pdf/codex-authoring/project-handoff.test.ts` | moved | `test/markdown-pdf/interactive/codex-authoring-project-handoff.test.ts` |
+| `test/cli-interactive-markdown-pdf/deterministic-authoring.test.ts` | moved | `test/markdown-pdf/interactive/deterministic-authoring.test.ts` |
+| `test/cli-interactive-markdown-pdf/formal-guide.test.ts` | split | `test/markdown-pdf/interactive/formal-guide-answers.test.ts`<br>`test/markdown-pdf/interactive/formal-guide-compilation.test.ts`<br>`test/markdown-pdf/interactive/formal-guide-fixtures.ts` |
+| `test/cli-interactive-markdown-pdf/handoff.test.ts` | moved | `test/markdown-pdf/interactive/saved-recipe-handoff.test.ts` |
+| `test/cli-interactive-markdown-pdf/lifecycle.test.ts` | moved | `test/markdown-pdf/interactive/generated-lifecycle.test.ts` |
+| `test/cli-interactive-markdown-pdf/render-sources.test.ts` | moved | `test/markdown-pdf/interactive/render-sources.test.ts` |
+| `test/helpers/interactive-harness/module-urls.ts` | split | `test/cli-foundations/interactive-harness/module-urls.ts`<br>`test/data-query/interactive/module-urls.ts`<br>`test/markdown-pdf/interactive/module-urls.ts` |
+| `test/helpers/interactive-harness/mocks/markdown-pdf.ts` | moved | `test/markdown-pdf/interactive/mock-action.ts` |
+| `test/cli-interactive-markdown-pdf/codex-authoring/fixtures.ts` | moved | `test/markdown-pdf/interactive/codex-authoring-fixtures.ts` |
+
+### Release Tooling
+
+Change set: `release-tooling`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/release-scripts.test.ts` | split | `test/release-tooling/branch-filter.test.ts`<br>`test/release-tooling/stable-notes.test.ts`<br>`test/release-tooling/fixtures.ts` |
+| `test/version-embedded-sync.test.ts` | moved | `test/release-tooling/version-sync.test.ts` |
+
+### Markdown Frontmatter
+
+Change set: `markdown-frontmatter`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/cli-actions-md-frontmatter-to-json.test.ts` | split | `test/markdown-frontmatter/actions/frontmatter-to-json.test.ts`<br>`test/markdown-frontmatter/commands/frontmatter-to-json.test.ts` |
+| `test/helpers/interactive-harness/mocks/action-misc.ts` | split | `test/data-conversion/interactive/mock-action.ts`<br>`test/data-preview/interactive/mock-action.ts`<br>`test/doctor/interactive/mock-action.ts`<br>`test/markdown-docx/interactive/mock-action.ts`<br>`test/markdown-frontmatter/interactive/mock-action.ts`<br>`test/video/interactive/mock-action.ts` |
+
+### Video
+
+Change set: `video`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/cli-actions-video-gif.test.ts` | moved | `test/video/actions/gif.test.ts` |
+| `test/cli-interactive-routing-video.test.ts` | moved | `test/video/interactive/gif.test.ts` |
+| `test/helpers/interactive-harness/mocks/action-misc.ts` | split | `test/data-conversion/interactive/mock-action.ts`<br>`test/data-preview/interactive/mock-action.ts`<br>`test/doctor/interactive/mock-action.ts`<br>`test/markdown-docx/interactive/mock-action.ts`<br>`test/markdown-frontmatter/interactive/mock-action.ts`<br>`test/video/interactive/mock-action.ts` |
+
+### Data Sources
+
+Change set: `data-sources`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/data-duckdb-extensions.test.ts` | moved | `test/data-sources/adapters/duckdb-extensions.test.ts` |
+| `test/data-extract-fixture-generator.test.ts` | moved | `test/data-sources/evidence/tabular-fixtures.test.ts` |
+| `test/data-query-xlsx-sources.test.ts` | moved | `test/data-sources/adapters/xlsx-sources.test.ts` |
+| `test/data-source-shape.test.ts` | moved | `test/data-sources/direct/source-shape.test.ts` |
+| `test/stacked-merged-band-fixture-generator.test.ts` | moved | `test/data-sources/evidence/stacked-merged-band-fixture.test.ts` |
+| `test/helpers/data-extract-fixture-test-utils.ts` | moved | `test/data-sources/fixtures/tabular.ts` |
+| `test/helpers/data-query-duckdb-fixture-test-utils.ts` | moved | `test/data-sources/fixtures/duckdb.ts` |
+| `test/helpers/stacked-merged-band-fixture-test-utils.ts` | moved | `test/data-sources/fixtures/stacked-merged-band.ts` |
+| `test/fixtures/data-query/basic.csv` | moved | `test/data-sources/fixtures/basic.csv` |
+| `test/fixtures/data-query/basic.parquet` | moved | `test/data-sources/fixtures/basic.parquet` |
+| `test/fixtures/data-query/basic.tsv` | moved | `test/data-sources/fixtures/basic.tsv` |
+| `test/fixtures/data-query/large.csv` | moved | `test/data-sources/fixtures/large.csv` |
+| `test/fixtures/data-query/large.parquet` | moved | `test/data-sources/fixtures/large.parquet` |
+| `test/fixtures/data-query/multi.sqlite` | moved | `test/data-sources/fixtures/multi.sqlite` |
+| `test/fixtures/data-query/multi.xlsx` | moved | `test/data-sources/fixtures/multi.xlsx` |
+
+### Data Extract
+
+Change set: `data-extract`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/cli-actions-data-extract-review.test.ts` | moved | `test/data-extract/actions/header-mapping-review.test.ts` |
+| `test/cli-actions-data-extract-source-shape-reuse.test.ts` | moved | `test/data-extract/actions/source-shape-reuse.test.ts` |
+| `test/cli-actions-data-extract-source-shape-review.test.ts` | moved | `test/data-extract/actions/source-shape-review.test.ts` |
+| `test/cli-actions-data-extract-sources.test.ts` | moved | `test/data-extract/actions/source-selection.test.ts` |
+| `test/cli-actions-data-extract-validation.test.ts` | moved | `test/data-extract/actions/validation.test.ts` |
+| `test/cli-actions-data-extract.test.ts` | moved | `test/data-extract/actions/materialization.test.ts` |
+| `test/cli-command-data-extract-review.test.ts` | moved | `test/data-extract/commands/header-mapping-review.test.ts` |
+| `test/cli-command-data-extract-shape.test.ts` | moved | `test/data-extract/commands/excel-shape.test.ts` |
+| `test/cli-command-data-extract-source-shape.test.ts` | moved | `test/data-extract/commands/source-shape-review.test.ts` |
+| `test/cli-command-data-extract.test.ts` | moved | `test/data-extract/commands/basic-sources.test.ts` |
+| `test/cli-interactive-routing-data-extract-checkpoints.test.ts` | moved | `test/data-extract/interactive/checkpoints.test.ts` |
+| `test/cli-interactive-routing-data-extract-core.test.ts` | moved | `test/data-extract/interactive/core.test.ts` |
+| `test/cli-interactive-routing-data-extract-revision.test.ts` | moved | `test/data-extract/interactive/revision.test.ts` |
+| `test/cli-actions-data-extract.helpers.ts` | moved | `test/data-extract/actions/support.ts` |
+| `test/cli-command-data-extract.helpers.ts` | moved | `test/data-extract/commands/support.ts` |
+| `test/helpers/interactive-harness/mocks/action-data.ts` | split | `test/data-query/interactive/mock-action.ts`<br>`test/data-extract/interactive/mock-action.ts` |
+| `test/helpers/interactive-harness/mocks/data-query/index.ts` | split | `test/data-query/interactive/mock-installation.ts`<br>`test/data-extract/interactive/mock-installation.ts` |
+| `test/helpers/interactive-harness/mocks/data-query/query.ts` | split | `test/data-query/interactive/mock-query.ts`<br>`test/data-extract/interactive/mock-introspection.ts` |
+| `test/helpers/interactive-harness/mocks/data-query/source-shape.ts` | split | `test/data-query/interactive/mock-source-shape.ts`<br>`test/data-extract/interactive/mock-source-shape.ts` |
+| `test/helpers/interactive-harness/mocks/data-query/types.ts` | split | `test/data-query/interactive/mock-types.ts`<br>`test/cli-foundations/interactive-harness/types.ts`<br>`test/data-extract/interactive/harness-contract.ts`<br>`test/data-query/interactive/harness-contract.ts`<br>`test/data-sources/interactive/harness-contract.ts`<br>`test/data-stack/interactive/harness-contract.ts`<br>`test/markdown-pdf/interactive/harness-contract.ts`<br>`test/rename/interactive/harness-contract.ts` |
+| `test/helpers/interactive-harness/types.ts` | split | `test/cli-foundations/interactive-harness/types.ts`<br>`test/data-extract/interactive/harness-contract.ts`<br>`test/data-query/interactive/harness-contract.ts`<br>`test/data-sources/interactive/harness-contract.ts`<br>`test/data-stack/interactive/harness-contract.ts`<br>`test/markdown-pdf/interactive/harness-contract.ts`<br>`test/rename/interactive/harness-contract.ts` |
+| `test/data-query/interactive/module-urls.ts` | split | `test/data-query/interactive/module-urls.ts`<br>`test/data-extract/interactive/module-urls.ts` |
+
+### Data Preview
+
+Change set: `data-preview`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/cli-actions-data-parquet-preview.test.ts` | moved | `test/data-preview/actions/parquet.test.ts` |
+| `test/cli-actions-data-preview/failures.test.ts` | moved | `test/data-preview/actions/failures.test.ts` |
+| `test/cli-actions-data-preview/highlighting.test.ts` | moved | `test/data-preview/actions/highlighting.test.ts` |
+| `test/cli-actions-data-preview/rendering.test.ts` | moved | `test/data-preview/actions/rendering.test.ts` |
+| `test/cli-interactive-routing-data-preview-filters.test.ts` | moved | `test/data-preview/interactive/filters.test.ts` |
+| `test/cli-interactive-routing-data-preview.test.ts` | moved | `test/data-preview/interactive/routing.test.ts` |
+| `test/cli-actions-data-preview/helpers.ts` | split | `test/data-preview/actions/support.ts`<br>`test/helpers/ansi.ts` |
+| Data Preview behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | split | `test/data-conversion/interactive/mock-action.ts`<br>`test/data-preview/interactive/mock-action.ts`<br>`test/doctor/interactive/mock-action.ts`<br>`test/markdown-docx/interactive/mock-action.ts`<br>`test/markdown-frontmatter/interactive/mock-action.ts`<br>`test/video/interactive/mock-action.ts` |
+| `stripAnsi` in `test/cli-interactive-routing.helpers.ts` | split | `test/cli-foundations/interactive-harness/index.ts`<br>`test/data-stack/interactive/support.ts`<br>`test/helpers/ansi.ts`<br>`test/helpers/cli-test-utils.ts` |
+
+### Data Stack
+
+Change set: `data-stack`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/cli-actions-data-stack/codex-assist.test.ts` | moved | `test/data-stack/actions/codex-assist.test.ts` |
+| `test/cli-actions-data-stack/dry-run-plan.test.ts` | moved | `test/data-stack/actions/dry-run-plan.test.ts` |
+| `test/cli-actions-data-stack/happy-paths.test.ts` | moved | `test/data-stack/actions/materialization.test.ts` |
+| `test/cli-actions-data-stack/schema-modes.test.ts` | moved | `test/data-stack/actions/schema-modes.test.ts` |
+| `test/cli-actions-data-stack/validation.test.ts` | moved | `test/data-stack/actions/validation.test.ts` |
+| `test/cli-command-data-stack/direct-stack.test.ts` | moved | `test/data-stack/commands/direct-stack.test.ts` |
+| `test/cli-command-data-stack/options.test.ts` | split | `test/data-stack/commands/options.test.ts`<br>`test/data-stack/direct/reporting.test.ts` |
+| `test/cli-command-data-stack/replay.test.ts` | moved | `test/data-stack/commands/replay.test.ts` |
+| `test/cli-interactive-data-stack/codex-review.test.ts` | moved | `test/data-stack/interactive/codex-review.test.ts` |
+| `test/cli-interactive-data-stack/discovery.test.ts` | moved | `test/data-stack/interactive/discovery.test.ts` |
+| `test/cli-interactive-data-stack/dry-run-write.test.ts` | moved | `test/data-stack/interactive/dry-run-write.test.ts` |
+| `test/cli-interactive-routing-data-stack.test.ts` | moved | `test/data-stack/interactive/routing.test.ts` |
+| `test/data-stack-artifact-paths.test.ts` | moved | `test/data-stack/direct/artifact-paths.test.ts` |
+| `test/data-stack-codex-report/apply.test.ts` | moved | `test/data-stack/direct/codex-report/apply.test.ts` |
+| `test/data-stack-codex-report/validation.test.ts` | moved | `test/data-stack/direct/codex-report/validation.test.ts` |
+| `test/data-stack-codex-signals.test.ts` | moved | `test/data-stack/direct/codex-signals.test.ts` |
+| `test/data-stack-diagnostics.test.ts` | moved | `test/data-stack/direct/diagnostics.test.ts` |
+| `test/data-stack-input-router.test.ts` | moved | `test/data-stack/direct/input-router.test.ts` |
+| `test/data-stack-plan/identity-serialization.test.ts` | moved | `test/data-stack/direct/plan/identity-serialization.test.ts` |
+| `test/data-stack-plan/parse-io.test.ts` | moved | `test/data-stack/direct/plan/parse-io.test.ts` |
+| `test/data-stack-fixture-generator.test.ts` | moved | `test/data-stack/evidence/fixture-generator.test.ts` |
+| `test/helpers/data-stack-test-utils.ts` | moved | `test/data-stack/direct/support.ts` |
+| `test/cli-interactive-data-stack/helpers.ts` | moved | `test/data-stack/interactive/support.ts` |
+| `test/helpers/interactive-harness/mocks/action-stack.ts` | moved | `test/data-stack/interactive/mock-action.ts` |
+| Data Stack fields in `test/helpers/interactive-harness/types.ts` | split | `test/cli-foundations/interactive-harness/types.ts`<br>`test/data-extract/interactive/harness-contract.ts`<br>`test/data-query/interactive/harness-contract.ts`<br>`test/data-sources/interactive/harness-contract.ts`<br>`test/data-stack/interactive/harness-contract.ts`<br>`test/markdown-pdf/interactive/harness-contract.ts`<br>`test/rename/interactive/harness-contract.ts` |
+| Data Stack matcher in `test/cli-interactive-routing.helpers.ts` | split | `test/cli-foundations/interactive-harness/index.ts`<br>`test/data-stack/interactive/support.ts`<br>`test/helpers/ansi.ts`<br>`test/helpers/cli-test-utils.ts` |
+
+### Data Conversion
+
+Change set: `data-conversion`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/cli-actions-data.test.ts` | moved | `test/data-conversion/actions/formats.test.ts` |
+| `test/cli-interactive-routing-data-convert.test.ts` | moved | `test/data-conversion/interactive/routing.test.ts` |
+| Data Conversion behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | split | `test/data-conversion/interactive/mock-action.ts`<br>`test/data-preview/interactive/mock-action.ts`<br>`test/doctor/interactive/mock-action.ts`<br>`test/markdown-docx/interactive/mock-action.ts`<br>`test/markdown-frontmatter/interactive/mock-action.ts`<br>`test/video/interactive/mock-action.ts` |
+
+### Fonts
+
+Change set: `fonts`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/fonts-cli-check-output.test.ts` | split | `test/fonts/actions/check-text-output.test.ts`<br>`test/fonts/actions/check-diagnostics.test.ts` |
+| `test/fonts-cli-check-provider.test.ts` | moved | `test/fonts/actions/check-provider-mapping.test.ts` |
+| `test/fonts-cli-check-selection.test.ts` | moved | `test/fonts/actions/check-selection.test.ts` |
+| `test/fonts-cli-check-ttc.test.ts` | moved | `test/fonts/actions/check-ttc.test.ts` |
+| `test/fonts-cli-check-validation.test.ts` | moved | `test/fonts/actions/check-validation.test.ts` |
+| `test/fonts-cli-inspect-debug.test.ts` | moved | `test/fonts/actions/inspect-debug.test.ts` |
+| `test/fonts-cli-inspect-matching.test.ts` | split | `test/fonts/actions/inspect-matching.test.ts`<br>`test/fonts/actions/inspect-output.test.ts` |
+| `test/fonts-cli-inspect-output.test.ts` | moved | `test/fonts/actions/inspect-output.test.ts` |
+| `test/fonts-cli-inspect-validation.test.ts` | moved | `test/fonts/actions/inspect-validation.test.ts` |
+| `test/fonts-cli-list.test.ts` | moved | `test/fonts/actions/list.test.ts` |
+| `test/fonts-cli-registration.test.ts` | moved | `test/fonts/commands/registration.test.ts` |
+| `test/fonts-coverage-fontconfig.test.ts` | moved | `test/fonts/adapters/coverage-fontconfig.test.ts` |
+| `test/fonts-coverage-ttc-inconclusive.test.ts` | moved | `test/fonts/adapters/coverage-ttc-inconclusive.test.ts` |
+| `test/fonts-coverage-ttc.test.ts` | moved | `test/fonts/adapters/coverage-ttc.test.ts` |
+| `test/fonts-discovery-cancellation.test.ts` | moved | `test/fonts/adapters/discovery-cancellation.test.ts` |
+| `test/fonts-discovery-parsers.test.ts` | moved | `test/fonts/adapters/discovery-parsers.test.ts` |
+| `test/fonts-discovery.test.ts` | moved | `test/fonts/adapters/discovery.test.ts` |
+| `test/fonts-coverage-samples.test.ts` | moved | `test/fonts/direct/coverage-samples.test.ts` |
+| `test/fonts-matching.test.ts` | moved | `test/fonts/direct/matching.test.ts` |
+| `test/fonts-search-ranking.test.ts` | moved | `test/fonts/direct/search-ranking.test.ts` |
+| `test/fonts-search-records.test.ts` | moved | `test/fonts/direct/search-records.test.ts` |
+
+### Rename
+
+Change set: `rename`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/adapters-codex-rename-timeout.test.ts` | split | `test/rename/adapters/image-title-suggester.test.ts`<br>`test/rename/adapters/document-title-suggester.test.ts`<br>`test/rename/adapters/title-suggester-support.ts` |
+| `test/cli-actions-rename-apply-replay.test.ts` | moved | `test/rename/actions/apply-replay.test.ts` |
+| `test/cli-actions-rename-apply-validation.test.ts` | moved | `test/rename/actions/apply-validation.test.ts` |
+| `test/cli-actions-rename-batch-codex-auto.test.ts` | moved | `test/rename/actions/batch-codex-auto.test.ts` |
+| `test/cli-actions-rename-batch-codex-docs.test.ts` | moved | `test/rename/actions/batch-codex-docs.test.ts` |
+| `test/cli-actions-rename-batch-codex-images.test.ts` | moved | `test/rename/actions/batch-codex-images.test.ts` |
+| `test/cli-actions-rename-batch-core.test.ts` | moved | `test/rename/actions/batch-core.test.ts` |
+| `test/cli-actions-rename-batch-filters.test.ts` | moved | `test/rename/actions/batch-filters.test.ts` |
+| `test/cli-actions-rename-batch-preview.test.ts` | moved | `test/rename/actions/batch-preview.test.ts` |
+| `test/cli-actions-rename-batch-recursion.test.ts` | moved | `test/rename/actions/batch-recursion.test.ts` |
+| `test/cli-actions-rename-cleanup-analysis-report.test.ts` | moved | `test/rename/actions/cleanup-analysis-report.test.ts` |
+| `test/cli-actions-rename-cleanup-analyzer.test.ts` | moved | `test/rename/actions/cleanup-analyzer.test.ts` |
+| `test/cli-actions-rename-cleanup-codex.test.ts` | moved | `test/rename/adapters/cleanup-suggester.test.ts` |
+| `test/cli-actions-rename-cleanup-directory.test.ts` | moved | `test/rename/actions/cleanup-directory.test.ts` |
+| `test/cli-actions-rename-cleanup-matchers.test.ts` | moved | `test/rename/direct/cleanup-matchers.test.ts` |
+| `test/cli-actions-rename-cleanup-single.test.ts` | moved | `test/rename/actions/cleanup-single.test.ts` |
+| `test/cli-actions-rename-cleanup-uid.test.ts` | moved | `test/rename/direct/cleanup-uid.test.ts` |
+| `test/cli-actions-rename-cleanup-validation.test.ts` | moved | `test/rename/actions/cleanup-validation.test.ts` |
+| `test/cli-actions-rename-codex-internals.test.ts` | split | `test/rename/presentation/analyzer-progress.test.ts`<br>`test/rename/codex/candidate-selection.test.ts` |
+| `test/cli-actions-rename-file.test.ts` | split | `test/rename/actions/file-core.test.ts`<br>`test/rename/actions/file-codex-images.test.ts`<br>`test/rename/actions/file-codex-auto.test.ts`<br>`test/rename/actions/file-codex-docs.test.ts`<br>`test/rename/actions/file-support.ts` |
+| `test/cli-actions-rename-timestamp.test.ts` | moved | `test/rename/actions/timestamp.test.ts` |
+| `test/cli-command-rename-cleanup.test.ts` | moved | `test/rename/commands/cleanup.test.ts` |
+| `test/cli-command-rename-timeout.test.ts` | moved | `test/rename/commands/codex-timeout.test.ts` |
+| `test/cli-fs-utils-rename-template.test.ts` | split | `test/rename/planner/serial-ordering.test.ts`<br>`test/rename/planner/template-rendering.test.ts`<br>`test/rename/planner/collision-and-source-lifecycle.test.ts` |
+| `test/cli-interactive-rename-cleanup-analyzer-rendering.test.ts` | moved | `test/rename/interactive/cleanup-analyzer-rendering.test.ts` |
+| `test/cli-interactive-rename-cleanup-analyzer-review.test.ts` | moved | `test/rename/interactive/cleanup-analyzer-review.test.ts` |
+| `test/cli-interactive-rename-cleanup-codex-timestamp.test.ts` | moved | `test/rename/interactive/cleanup-codex-timestamp.test.ts` |
+| `test/cli-interactive-rename-cleanup-codex.test.ts` | moved | `test/rename/interactive/cleanup-codex.test.ts` |
+| `test/cli-interactive-rename-cleanup-retention.test.ts` | moved | `test/rename/interactive/cleanup-retention.test.ts` |
+| `test/cli-interactive-rename-cleanup.test.ts` | moved | `test/rename/interactive/cleanup.test.ts` |
+| `test/cli-interactive-rename.test.ts` | moved | `test/rename/interactive/session-options.test.ts` |
+| `test/cli-rename-interactive-router.test.ts` | moved | `test/rename/direct/interactive-router.test.ts` |
+| `test/cli-rename-preview.test.ts` | moved | `test/rename/presentation/preview-composition.test.ts` |
+| `test/cli-rename-template.test.ts` | moved | `test/rename/direct/template.test.ts` |
+| `test/helpers/rename-apply-test-utils.ts` | moved | `test/rename/actions/apply-validation-support.ts` |
+| `test/helpers/rename-plan-test-utils.ts` | moved | `test/rename/support/plan-artifacts.ts` |
+| `test/helpers/interactive-harness/mocks/action-rename.ts` | moved | `test/rename/interactive/mock-action.ts` |
+| Rename fields in `test/helpers/interactive-harness/types.ts` | split | `test/cli-foundations/interactive-harness/types.ts`<br>`test/data-extract/interactive/harness-contract.ts`<br>`test/data-query/interactive/harness-contract.ts`<br>`test/data-sources/interactive/harness-contract.ts`<br>`test/data-stack/interactive/harness-contract.ts`<br>`test/markdown-pdf/interactive/harness-contract.ts`<br>`test/rename/interactive/harness-contract.ts` |
+
+### Codex Adapter Platform
+
+Change set: `codex-adapters`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/adapters-codex-failure.test.ts` | moved | `test/codex-adapters/direct/request-failure.test.ts` |
+| `test/adapters-codex-shared.test.ts` | split | `test/codex-adapters/direct/filename-title-primitives.test.ts`<br>`test/codex-adapters/direct/batch-retry-failures.test.ts`<br>`test/codex-adapters/direct/prompt-only-workspace.test.ts` |
+
+### Document Rename
+
+Change set: `document-rename`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/adapters-codex-document-rename-titles.test.ts` | moved | `test/document-rename/adapters/title-evidence.test.ts` |
+
+### Markdown DOCX
+
+Change set: `markdown-docx`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/adapters-docx-ooxml-metadata.test.ts` | moved | `test/markdown-docx/adapters/ooxml-metadata.test.ts` |
+| Markdown DOCX behavior in `test/helpers/interactive-harness/mocks/action-misc.ts` | moved | `test/markdown-docx/interactive/mock-action.ts` |
+
+### Markdown Platform
+
+Change set: `markdown`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/cli-command-markdown-codex-timeout.test.ts` | moved | `test/markdown/commands/codex-timeout.test.ts` |
+
+### Utilities
+
+Change set: `utilities`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/utils-datetime.test.ts` | moved | `test/utils/datetime.test.ts` |
+
+### CLI Foundations And Mixed-Root Cleanup
+
+Change set: `cli-foundations`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/cli-color.test.ts` | moved | `test/cli-foundations/color/controls.test.ts` |
+| `test/cli-command-interactive-timeout.test.ts` | moved | `test/cli-foundations/commands/interactive-timeout.test.ts` |
+| `test/cli-command-output-color.test.ts` | moved | `test/cli-foundations/color/commander-output.test.ts` |
+| `test/cli-diagnostic-color.test.ts` | moved | `test/cli-foundations/color/diagnostic-labels.test.ts` |
+| `test/cli-interactive-analyzer-status.test.ts` | moved | `test/cli-foundations/interactive/analyzer-status.test.ts` |
+| `test/cli-interactive-contextual-tip.test.ts` | moved | `test/cli-foundations/interactive/contextual-tip.test.ts` |
+| `test/cli-interactive-menu-prompt.test.ts` | split | `test/cli-foundations/interactive/menu-prompt.test.ts`<br>`test/cli-foundations/interactive/real-select-search-fixture.ts` |
+| Residual in `test/cli-interactive-menu.test.ts` after the Doctor migration | moved | `test/cli-foundations/interactive/menu-wiring.test.ts` |
+| `test/cli-interactive-notice.test.ts` | moved | `test/cli-foundations/interactive/notice.test.ts` |
+| Residual in `test/cli-interactive-routing.test.ts` after the Doctor migration | split | `test/data/interactive/menu-routing.test.ts`<br>`test/markdown/interactive/menu-routing.test.ts`<br>`test/markdown-pdf/interactive/entry-routing.test.ts`<br>`test/markdown-frontmatter/interactive/routing.test.ts`<br>`test/markdown-docx/interactive/routing.test.ts`<br>`test/rename/interactive/routing.test.ts`<br>`test/video/interactive/routing.test.ts`<br>`test/data/interactive/unknown-action.test.ts` |
+| `test/cli-options-codex-timeout.test.ts` | moved | `test/cli-foundations/options/codex-timeout.test.ts` |
+| `test/cli-path-inline-state.test.ts` | moved | `test/cli-foundations/path-prompts/interaction-state.test.ts` |
+| `test/cli-path-inline.test.ts` | moved | `test/cli-foundations/path-prompts/inline-controller.test.ts` |
+| `test/cli-path-sibling-preview.test.ts` | moved | `test/cli-foundations/path-prompts/sibling-preview.test.ts` |
+| `test/cli-path-suggestions.test.ts` | moved | `test/cli-foundations/path-prompts/suggestions.test.ts` |
+| `test/cli-path.test.ts` | moved | `test/cli-foundations/path-prompts/fallback.test.ts` |
+| `test/cli-text-display-width.test.ts` | moved | `test/cli-foundations/inline-rendering/display-width.test.ts` |
+| `test/cli-text-inline.test.ts` | split | `test/cli-foundations/text-inline/completion-controller.test.ts`<br>`test/cli-foundations/text-inline/terminal-controller.test.ts`<br>`test/cli-foundations/text-inline/fallback.test.ts`<br>`test/cli-foundations/text-inline/prompt-fixtures.ts` |
+| `test/cli-text-template-candidates.test.ts` | moved | `test/cli-foundations/text-inline/template-candidates.test.ts` |
+| `test/cli-tui-inline-renderer.test.ts` | moved | `test/cli-foundations/inline-rendering/renderer.test.ts` |
+| `test/cli-tui-keys.test.ts` | moved | `test/cli-foundations/tui/keys.test.ts` |
+| `test/cli-tui-raw-session.test.ts` | moved | `test/cli-foundations/tui/raw-session.test.ts` |
+| `test/cli-tui-screen.test.ts` | moved | `test/cli-foundations/inline-rendering/screen.test.ts` |
+| Residual in `test/cli-ux.test.ts` after the Data Query migration | split | `test/cli-foundations/commands/root-ux.test.ts`<br>`test/data-conversion/commands/output-paths.test.ts`<br>`test/data-preview/commands/preview-ux.test.ts`<br>`test/data-preview/commands/parquet-ux.test.ts`<br>`test/data/commands/help.test.ts`<br>`test/data-conversion/commands/help.test.ts`<br>`test/data-extract/commands/help-and-input-format.test.ts`<br>`test/data-stack/commands/help-and-input-format.test.ts`<br>`test/rename/commands/ux.test.ts`<br>`test/video/commands/ux.test.ts` |
+| `test/helpers/virtual-terminal.ts` | moved | `test/cli-foundations/inline-rendering/virtual-terminal.ts` |
+
+### Shared Support And Root Cleanup
+
+Change set: `support-and-root-cleanup`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| Markdown PDF fields in `test/helpers/interactive-harness/types.ts` | split | `test/markdown-pdf/interactive/harness-contract.ts`<br>`test/cli-foundations/interactive-harness/types.ts` |
+| Shared Data Sources fields and source-shape options in `test/helpers/interactive-harness/types.ts` | moved | `test/data-sources/interactive/harness-contract.ts` |
+| Data Stack hooks in `test/helpers/interactive-harness/context.ts` | split | `test/data-stack/interactive/harness-contract.ts`<br>`test/data-stack/interactive/mock-action.ts`<br>`test/cli-foundations/interactive-harness/context.ts` |
+| `test/cli-foundations/interactive/root-routing.test.ts` | moved | `test/data/interactive/unknown-action.test.ts` |
+| `test/helpers/interactive-harness/context.ts` | moved | `test/cli-foundations/interactive-harness/context.ts` |
+| `test/helpers/interactive-harness/index.ts` | merged | `test/cli-foundations/interactive-harness/index.ts` |
+| `test/helpers/interactive-harness/mocks/actions.ts` | moved | `test/cli-foundations/interactive-harness/action-mocks.ts` |
+| `test/helpers/interactive-harness/mocks/fs.ts` | moved | `test/cli-foundations/interactive-harness/fs-mock.ts` |
+| `test/helpers/interactive-harness/mocks/index.ts` | moved | `test/cli-foundations/interactive-harness/mock-composition.ts` |
+| `test/helpers/interactive-harness/mocks/path-prompts.ts` | moved | `test/cli-foundations/interactive-harness/path-prompt-mocks.ts` |
+| `test/helpers/interactive-harness/mocks/prompts.ts` | moved | `test/cli-foundations/interactive-harness/prompt-mocks.ts` |
+| `test/helpers/interactive-harness/module-urls.ts` | moved | `test/cli-foundations/interactive-harness/module-urls.ts` |
+| `test/helpers/interactive-harness/runner.ts` | moved | `test/cli-foundations/interactive-harness/runner.ts` |
+| `test/helpers/interactive-harness/runtime.ts` | moved | `test/cli-foundations/interactive-harness/runtime.ts` |
+| `test/helpers/interactive-harness/types.ts` | moved | `test/cli-foundations/interactive-harness/types.ts` |
+| `test/helpers/interactive-harness.ts` | merged | `test/cli-foundations/interactive-harness/index.ts` |
+| `test/cli-interactive-routing.helpers.ts` | removed | `test/cli-foundations/interactive-harness/index.ts`<br>`test/helpers/ansi.ts`<br>`test/data-stack/interactive/support.ts`<br>`test/helpers/cli-test-utils.ts` |
+
+### Final Reconciliation
+
+Change set: `final-reconciliation`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/fixtures/parquet-preview/wide.parquet` | removed | `test/data-preview/actions/parquet.test.ts` |
+
+## Completion
+
+The completed lookup contains 296 accepted transitions:
+
+- 226 moved
+- 66 split
+- 2 merged
+- 2 removed
+
+Every current-owner path was reconciled against the final `test/**` tree on
+2026-08-24. Current guides and reference docs use current paths; historical
+commands and plan wording remain in their dated implementation records.
+
+Later isolated migrations may append a named change set and update
+`modified-date` without reopening this reference unless its lookup schema
+changes materially.
+
+## Related Records
 
 - [Test Suite Contract, Overlap, And Catalog Review](../researches/research-2026-08-23-test-suite-contract-overlap-and-catalog.md)
+- [Test Suite Contract And Catalog Enhancement Job](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md)
+- [Test Suite Contract Ownership Catalog](test-suite-case-matrices.md)
