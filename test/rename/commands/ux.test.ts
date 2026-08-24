@@ -3,6 +3,7 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { createTempFixtureDir, runCli, toRepoRelativePath } from "../../helpers/cli-test-utils";
+import { runRenameCli } from "../support/run-cli";
 
 describe("Rename command UX", () => {
   test("rename help includes template and serial controls", () => {
@@ -43,7 +44,7 @@ describe("Rename command UX", () => {
       await writeFile(join(dirPath, "new-hi.txt"), "hi\n", "utf8");
       await writeFile(join(dirPath, "new-hoho.txt"), "hoho\n", "utf8");
 
-      const result = runCli([
+      const result = runRenameCli([
         "rename",
         "batch",
         toRepoRelativePath(dirPath),

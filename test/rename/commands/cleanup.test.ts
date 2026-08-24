@@ -3,6 +3,7 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { runCli, toRepoRelativePath, withTempFixtureDir } from "../../helpers/cli-test-utils";
+import { runRenameCli } from "../support/run-cli";
 
 describe("cli command: rename cleanup", () => {
   test("accepts --hints as an alias for --hint", async () => {
@@ -10,7 +11,7 @@ describe("cli command: rename cleanup", () => {
       const filePath = join(fixtureDir, "Screenshot 2026-03-02 at 4.53.04 PM.png");
       await writeFile(filePath, "fake", "utf8");
 
-      const result = runCli([
+      const result = runRenameCli([
         "rename",
         "cleanup",
         toRepoRelativePath(filePath),
