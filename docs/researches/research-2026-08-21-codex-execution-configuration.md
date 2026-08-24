@@ -1,7 +1,7 @@
 ---
 title: "Codex Execution Configuration"
 created-date: 2026-08-21
-modified-date: 2026-08-22
+modified-date: 2026-08-24
 status: draft
 agent: codex
 ---
@@ -30,7 +30,7 @@ All current helpers use the shared read-only thread factory in
 Embedded suggestion paths without an adopted timeout option retain the shared
 default.
 
-The repository currently uses `@openai/codex-sdk` 0.149.0. Its thread options
+The repository currently uses `@openai/codex-sdk` 0.149.1. Its thread options
 support per-thread model and reasoning-effort selection. Supported reasoning
 values remain model- and provider-dependent.[^reasoning]
 
