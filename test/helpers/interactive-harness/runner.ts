@@ -1,5 +1,5 @@
 import { createHarnessRunnerContext } from "./context";
-import { interactiveDataUrl, interactiveIndexUrl } from "./module-urls";
+import { interactiveIndexUrl } from "./module-urls";
 import { installHarnessMocks } from "./mocks";
 import { createHarnessRuntime } from "./runtime";
 import type { InteractiveHarnessResult, InteractiveHarnessScenario } from "./types";
@@ -27,24 +27,10 @@ async function runHarnessScenario(
   });
 
   try {
-    if (scenario.mode === "run") {
-      const interactiveModule = await import(interactiveIndexUrl);
-      await interactiveModule.runInteractiveMode(runtime, undefined, {
-        codexTimeoutMs: scenario.codexTimeoutMs,
-      });
-    } else {
-      const interactiveDataModule = await import(interactiveDataUrl);
-      await interactiveDataModule.handleDataInteractiveAction(
-        runtime,
-        {
-          runtimeConfig: context.mockedPathPromptRuntimeConfig,
-          cwd: runtime.cwd,
-          stdin: runtime.stdin,
-          stdout: runtime.stdout,
-        },
-        "data:unknown",
-      );
-    }
+    const interactiveModule = await import(interactiveIndexUrl);
+    await interactiveModule.runInteractiveMode(runtime, undefined, {
+      codexTimeoutMs: scenario.codexTimeoutMs,
+    });
 
     return {
       ...context.result,

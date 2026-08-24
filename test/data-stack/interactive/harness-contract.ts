@@ -13,3 +13,10 @@ export interface DataStackInteractiveHarnessResult {
   stackPlanWrites: Array<{ path: string; options: Record<string, unknown> }>;
   codexReportWrites: Array<{ path: string; options: Record<string, unknown> }>;
 }
+
+export function createDataStackInteractiveHarnessResultState(): DataStackInteractiveHarnessResult {
+  return {
+    stackPlanWrites: [],
+    codexReportWrites: [],
+  };
+}

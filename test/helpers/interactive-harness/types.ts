@@ -19,7 +19,7 @@ export interface InteractiveHarnessScenario
     DataStackInteractiveHarnessScenario,
     MarkdownPdfInteractiveHarnessScenario,
     RenameInteractiveHarnessScenario {
-  mode: "run" | "invalid-data-action";
+  mode: "run";
   codexTimeoutMs?: number;
   captureCodexTimeouts?: boolean;
   selectQueue?: unknown[];

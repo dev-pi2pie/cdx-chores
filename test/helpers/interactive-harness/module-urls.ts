@@ -15,6 +15,3 @@ export const pathConfigModuleUrl = pathToFileURL(
 export const interactiveIndexUrl = pathToFileURL(
   resolve(REPO_ROOT, "src/cli/interactive/index.ts"),
 ).href;
-export const interactiveDataUrl = pathToFileURL(
-  resolve(REPO_ROOT, "src/cli/interactive/data.ts"),
-).href;

@@ -121,6 +121,18 @@ function createMockStackPlanArtifact(options: MockStackPlanOptions): DataStackPl
 }
 
 export function createStackActionMocks(context: HarnessRunnerContext) {
+  const dataStackWriteExistingPaths = new Set(
+    (context.scenario.dataStackWriteExistingPaths ?? []).map((item) =>
+      context.resolveHarnessPath(item),
+    ),
+  );
+  const recordStackPlanWrite = (path: string, options: Record<string, unknown>): void => {
+    context.result.stackPlanWrites.push({ path, options });
+  };
+  const recordCodexReportWrite = (path: string, options: Record<string, unknown>): void => {
+    context.result.codexReportWrites.push({ path, options });
+  };
+
   return {
     actionDataStack: async (runtime: ActionRuntimeLike, options: Record<string, unknown>) => {
       context.recordAction("data:stack", options);
@@ -178,7 +190,7 @@ export function createStackActionMocks(context: HarnessRunnerContext) {
       if (
         typeof options.outputPath === "string" &&
         (context.existingPaths.has(options.outputPath) ||
-          context.dataStackWriteExistingPaths.has(options.outputPath))
+          dataStackWriteExistingPaths.has(options.outputPath))
       ) {
         if (options.overwrite !== true) {
           throw createOutputExistsError(String(options.outputPath));
@@ -219,7 +231,7 @@ export function createStackActionMocks(context: HarnessRunnerContext) {
       const planDiagnostics = plan.diagnostics;
       const planDuplicates = plan.duplicates;
       const planMetadata = plan.metadata;
-      context.recordStackPlanWrite(planPath, {
+      recordStackPlanWrite(planPath, {
         acceptedRecommendationIds: planMetadata.acceptedRecommendationIds,
         columnCount: options.prepared?.header?.length ?? planDiagnostics.schemaNameCount,
         derivedFromPayloadId: planMetadata.derivedFromPayloadId,
@@ -297,7 +309,7 @@ export function createStackActionMocks(context: HarnessRunnerContext) {
       path: string,
       report: { recommendations?: unknown[] },
     ) => {
-      context.recordCodexReportWrite(path, {
+      recordCodexReportWrite(path, {
         recommendationCount: report.recommendations?.length ?? 0,
       });
     },
