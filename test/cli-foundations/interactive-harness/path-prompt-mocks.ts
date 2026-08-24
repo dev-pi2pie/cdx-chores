@@ -1,7 +1,7 @@
 import { mock } from "bun:test";
 
-import type { HarnessRunnerContext } from "../context";
-import { pathConfigModuleUrl, pathModuleUrl } from "../module-urls";
+import type { HarnessRunnerContext } from "./context";
+import { pathConfigModuleUrl, pathModuleUrl } from "./module-urls";
 
 interface OptionalPathPromptOptions {
   message?: unknown;

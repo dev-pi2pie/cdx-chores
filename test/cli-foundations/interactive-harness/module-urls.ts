@@ -1,11 +1,11 @@
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { REPO_ROOT } from "../cli-test-utils";
+import { REPO_ROOT } from "../../helpers/cli-test-utils";
 
 export const interactiveHarnessRunnerPath = resolve(
   REPO_ROOT,
-  "test/helpers/interactive-harness/runner.ts",
+  "test/cli-foundations/interactive-harness/runner.ts",
 );
 export const actionsModuleUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/actions/index.ts")).href;
 export const pathModuleUrl = pathToFileURL(resolve(REPO_ROOT, "src/cli/prompts/path.ts")).href;

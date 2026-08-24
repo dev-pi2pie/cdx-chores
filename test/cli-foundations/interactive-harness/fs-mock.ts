@@ -2,7 +2,7 @@ import { lstatSync } from "node:fs";
 
 import { mock } from "bun:test";
 
-import type { HarnessRunnerContext } from "../context";
+import type { HarnessRunnerContext } from "./context";
 
 export function installFsPromiseMocks(context: HarnessRunnerContext): void {
   mock.module("node:fs/promises", () => ({

@@ -1,4 +1,4 @@
-import type { HarnessRunnerContext } from "../../helpers/interactive-harness/context";
+import type { HarnessRunnerContext } from "../../cli-foundations/interactive-harness/context";
 import { installDataQueryCodexMock } from "./mock-codex";
 import { installDataQueryHeaderMappingMock } from "./mock-header-mapping";
 import { installDataQueryMock } from "./mock-query";

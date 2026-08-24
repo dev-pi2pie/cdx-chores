@@ -1,6 +1,6 @@
 import { createHarnessRunnerContext } from "./context";
 import { interactiveIndexUrl } from "./module-urls";
-import { installHarnessMocks } from "./mocks";
+import { installHarnessMocks } from "./mock-composition";
 import { createHarnessRuntime } from "./runtime";
 import type { InteractiveHarnessResult, InteractiveHarnessScenario } from "./types";
 

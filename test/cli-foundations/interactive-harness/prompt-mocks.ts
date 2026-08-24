@@ -1,6 +1,6 @@
 import { mock } from "bun:test";
 
-import type { HarnessRunnerContext } from "../context";
+import type { HarnessRunnerContext } from "./context";
 
 interface PromptChoice {
   name?: unknown;

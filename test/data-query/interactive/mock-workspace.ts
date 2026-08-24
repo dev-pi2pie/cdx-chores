@@ -1,4 +1,4 @@
-import type { HarnessRunnerContext } from "../../helpers/interactive-harness/context";
+import type { HarnessRunnerContext } from "../../cli-foundations/interactive-harness/context";
 import type { DataQueryWorkspaceRelationScenario } from "./mock-types";
 
 function buildDefaultWorkspaceRelation(relation: {

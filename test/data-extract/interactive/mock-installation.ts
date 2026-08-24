@@ -1,4 +1,4 @@
-import type { HarnessRunnerContext } from "../../helpers/interactive-harness/context";
+import type { HarnessRunnerContext } from "../../cli-foundations/interactive-harness/context";
 import { installDataExtractIntrospectionMock } from "./mock-introspection";
 import { installDataExtractSourceShapeMocks } from "./mock-source-shape";
 

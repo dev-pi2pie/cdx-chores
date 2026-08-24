@@ -1,4 +1,4 @@
-import type { HarnessRunnerContext } from "../../helpers/interactive-harness/context";
+import type { HarnessRunnerContext } from "./context";
 
 export interface ActionRuntimeLike {
   stdout: { write(chunk: string): boolean };

@@ -1,7 +1,7 @@
-// Compatibility facade for existing tests. The folder module owns the runner
-// implementation; internal harness modules should import each other directly.
-export { runInteractiveHarness } from "./interactive-harness/index";
+// Temporary compatibility facade. The canonical implementation lives under
+// CLI foundations and consumers move there in the next checkpoint.
+export { runInteractiveHarness } from "../cli-foundations/interactive-harness";
 export type {
   InteractiveHarnessResult,
   InteractiveHarnessScenario,
-} from "./interactive-harness/types";
+} from "../cli-foundations/interactive-harness/types";

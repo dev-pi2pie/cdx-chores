@@ -4,7 +4,7 @@ import { runInteractiveHarness } from "../../helpers/interactive-harness";
 import type {
   InteractiveHarnessResult,
   InteractiveHarnessScenario,
-} from "../../helpers/interactive-harness/types";
+} from "../../cli-foundations/interactive-harness/types";
 
 export { stripAnsi } from "../../helpers/ansi";
 

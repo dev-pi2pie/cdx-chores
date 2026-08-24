@@ -1,4 +1,4 @@
-import { REPO_ROOT } from "../cli-test-utils";
+import { REPO_ROOT } from "../../helpers/cli-test-utils";
 import { interactiveHarnessRunnerPath } from "./module-urls";
 import type { InteractiveHarnessResult, InteractiveHarnessScenario } from "./types";
 

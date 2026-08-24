@@ -1,6 +1,6 @@
 import { mock } from "bun:test";
 
-import type { HarnessRunnerContext } from "../../helpers/interactive-harness/context";
+import type { HarnessRunnerContext } from "../../cli-foundations/interactive-harness/context";
 import type { SourceShapeSuggestionOptions } from "../../data-sources/interactive/harness-contract";
 import { sourceShapeModuleUrl, xlsxSourcesModuleUrl } from "./module-urls";
 

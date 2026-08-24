@@ -1,4 +1,4 @@
-import type { HarnessRunnerContext } from "../../helpers/interactive-harness/context";
+import type { HarnessRunnerContext } from "../../cli-foundations/interactive-harness/context";
 
 export function createMarkdownFrontmatterActionMock(context: HarnessRunnerContext) {
   return {

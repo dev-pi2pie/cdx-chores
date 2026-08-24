@@ -1,11 +1,11 @@
-import type { HarnessRunnerContext } from "../context";
-import { installDataExtractIntrospectionMocks } from "../../../data-extract/interactive/mock-installation";
-import { installDataQueryMocks } from "../../../data-query/interactive/mock-installation";
-import { installActionMocks } from "./actions";
-import { installFsPromiseMocks } from "./fs";
-import { installPathPromptMocks } from "./path-prompts";
-import { installPromptMocks } from "./prompts";
-import { installMarkdownPdfMocks } from "../../../markdown-pdf/interactive/mock-action";
+import type { HarnessRunnerContext } from "./context";
+import { installDataExtractIntrospectionMocks } from "../../data-extract/interactive/mock-installation";
+import { installDataQueryMocks } from "../../data-query/interactive/mock-installation";
+import { installMarkdownPdfMocks } from "../../markdown-pdf/interactive/mock-action";
+import { installActionMocks } from "./action-mocks";
+import { installFsPromiseMocks } from "./fs-mock";
+import { installPathPromptMocks } from "./path-prompt-mocks";
+import { installPromptMocks } from "./prompt-mocks";
 
 function hasInteractiveDataCommand(
   context: HarnessRunnerContext,

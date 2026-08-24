@@ -5,7 +5,7 @@ import {
   normalizeDataQueryCodexEditorIntent,
   normalizeDataQueryCodexIntent,
 } from "../../../src/cli/data-query/prompt";
-import type { HarnessRunnerContext } from "../../helpers/interactive-harness/context";
+import type { HarnessRunnerContext } from "../../cli-foundations/interactive-harness/context";
 import { dataQueryCodexModuleUrl } from "./module-urls";
 import type { DataQueryCodexDraftOptions } from "./mock-types";
 
