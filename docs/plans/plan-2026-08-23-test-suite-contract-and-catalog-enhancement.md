@@ -484,12 +484,12 @@ Phase 8.
 
 #### 8.1: Admit The Final Reconciliation
 
-- [ ] Record the clean Phase 8 base and the exact `test/**` inventory commands.
-- [ ] Fix one definition for each before/after measure so historical and final
+- [x] Record the clean Phase 8 base and the exact `test/**` inventory commands.
+- [x] Fix one definition for each before/after measure so historical and final
       counts are comparable.
-- [ ] Confirm the completed audit inventory remains a dated snapshot; use the
+- [x] Confirm the completed audit inventory remains a dated snapshot; use the
       case matrix, path correspondence, and unified job for current ownership.
-- [ ] Reconfirm that the 31 flat-root suites and 12 legacy Interactive Markdown
+- [x] Reconfirm that the 31 flat-root suites and 12 legacy Interactive Markdown
       PDF suites remain classified deferrals rather than unused entries.
 
 #### 8.2: Remove Proven `test/**` Residue

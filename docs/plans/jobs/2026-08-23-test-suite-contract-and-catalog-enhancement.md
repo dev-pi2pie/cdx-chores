@@ -45,7 +45,8 @@ references.
 |     4 | Doctor ownership migration pilot               | completed   | `ff0f3d6f..837e5d95` | Continue with constraints |
 |     5 | bounded Markdown PDF migration pilot           | completed   | `05a87d54..4cce415a` | Continue with constraints |
 |     6 | remaining accepted family batches              | completed   | `fca1204a..953aa7ad` | Continue with constraints |
-|     7 | global support ownership and root deferrals     | in-progress | pending              | pending                   |
+|     7 | global support ownership and root deferrals     | completed   | `3ae8e0fb..8784ccd9` | Continue with constraints |
+|     8 | final test-tree and documentation reconciliation | in-progress | pending              | pending                   |
 
 ## Phase 1: Refreshed Baseline And Complete File Inventory
 
@@ -2303,3 +2304,79 @@ Review gate:
 - [x] run focused, adjacent, complete-suite, and repository validation
 - [x] create the evidence checkpoint and review the exact phase range
 - [x] record accepted review fixes and the Phase 7 continuation decision
+
+## Phase 8: Final Test-Tree And Documentation Reconciliation
+
+Status: `in-progress`
+
+Phase base: `fb8acd94`
+
+The clean Phase 8 base is the committed closeout-plan revision. Cleanup
+discovery is restricted to `test/**`; documentation review may follow only
+accepted changed test paths and the lifecycle records required to close this
+plan. Phase 8 does not admit another catalog migration or vague-test reduction.
+
+Admission inventory uses tracked paths so untracked test output cannot silently
+change the catalog counts:
+
+```bash
+git status --short --branch
+git ls-files test
+git ls-files --others --exclude-standard test
+find test -type d -empty -print
+```
+
+The clean base contains 488 tracked `test/**` paths: 448 TypeScript entries,
+including 355 runnable `*.test.ts` files and 93 support TypeScript files. Of the
+runnable files, 31 remain directly under `test/`. There are no untracked files.
+The empty-directory scan found eight untracked workspace directories whose
+classification and cleanup remain Phase 8.2 work:
+
+- `test/cli-actions-data-preview`
+- `test/cli-actions-data-stack`
+- `test/cli-actions-md-to-pdf-commands`
+- `test/cli-command-data-stack`
+- `test/cli-interactive-data-stack`
+- `test/data-stack-codex-report`
+- `test/data-stack-plan`
+- `test/helpers/interactive-harness/mocks/data-query`
+
+The completed audit inventory remains the dated Phase 1 snapshot. The current
+case matrix, path correspondence, and this job own later path and ownership
+decisions; Phase 8 does not rewrite the snapshot to resemble the final tree.
+The 31 flat-root suites and the exact 12-suite legacy Interactive Markdown PDF
+selector remain event-based deferrals, not unused entries.
+
+The final before/after summary uses these fixed definitions:
+
+- **Runnable test files:** tracked `test/**/*.test.ts` paths.
+- **Flat-root suites:** runnable test files whose direct parent is `test/`.
+- **Runtime tests and assertions:** the complete `bun test` result at the Phase
+  1 baseline and Phase 8 closeout.
+- **Global-scope helper entries:** direct TypeScript children of `test/helpers/`;
+  final interpretation must distinguish accepted neutral helpers from the
+  feature-owned and facade entries present at the Phase 1 base.
+- **Compatibility facades:** the two Phase 7-admitted temporary facades,
+  `test/helpers/interactive-harness.ts` and
+  `test/cli-interactive-routing.helpers.ts`.
+- **Unclassified ownership entries:** the 94 runnable suites requiring a Phase
+  2 case matrix plus the 39 support boundaries requiring an ownership decision.
+
+Admission decision: `Continue with constraints`. Reconcile the eight empty
+directories and the current tree, repair only stale current references to
+accepted changed test paths, and preserve every historical command or dated
+inventory occurrence as evidence.
+
+Review gate:
+
+- [x] record the clean Phase 8 base and exact inventory commands
+- [x] fix comparable definitions for the final before/after measures
+- [x] preserve the completed inventory as a dated snapshot
+- [x] reconfirm the 31 flat-root and 12 legacy-suite deferrals
+- [ ] classify and remove proven untracked empty-directory residue
+- [ ] prove every tracked `test/**` entry has an owner or deferral
+- [ ] reconcile current test-path documentation and historical occurrences
+- [ ] record the final before/after table and exact removal ledgers
+- [ ] run focused, complete-suite, repository, and static validation
+- [ ] review the exact Phase 8 and complete implementation ranges
+- [ ] record accepted review fixes and the final closeout decision
