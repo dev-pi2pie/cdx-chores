@@ -2,7 +2,7 @@
 title: "Test Suite Contract And Catalog Enhancement"
 created-date: 2026-08-23
 modified-date: 2026-08-24
-status: active
+status: completed
 agent: codex
 ---
 
@@ -541,12 +541,12 @@ Phase 8.
       build, and diff check.
 - [x] Re-run the exact stale-path, empty-directory, facade, helper, root-suite,
       legacy-suite, and mock-boundary scans recorded by the phase.
-- [ ] Review the exact Phase 8 range and the complete implementation range for
+- [x] Review the exact Phase 8 range and the complete implementation range for
       test-quality, documentation, maintainability, and behavior-preservation
       risks.
-- [ ] Record accepted review fixes and the final continuation or closeout
+- [x] Record accepted review fixes and the final continuation or closeout
       decision in the unified job.
-- [ ] Update research, plan, reference, and unified-job statuses only from the
+- [x] Update research, plan, reference, and unified-job statuses only from the
       recorded completion evidence.
 
 Closeout validation:
@@ -559,6 +559,12 @@ bun run format:check
 bun run build
 git diff --check
 ```
+
+Closeout decision: `completed`. Evidence tip `1734ab0b` passed the exact Phase
+8 review `fb8acd94..1734ab0b` and the complete implementation review
+`2f3013ca..1734ab0b` without an actionable test-quality, maintainability, or
+documentation finding. The unified job contains the canonical validation,
+before/after measures, and removal ledgers.
 
 ## Completion Criteria
 

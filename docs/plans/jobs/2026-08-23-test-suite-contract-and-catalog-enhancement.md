@@ -2,7 +2,7 @@
 title: "Test Suite Contract And Catalog Enhancement Execution"
 created-date: 2026-08-23
 modified-date: 2026-08-24
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -46,7 +46,7 @@ references.
 |     5 | bounded Markdown PDF migration pilot           | completed   | `05a87d54..4cce415a` | Continue with constraints |
 |     6 | remaining accepted family batches              | completed   | `fca1204a..953aa7ad` | Continue with constraints |
 |     7 | global support ownership and root deferrals     | completed   | `3ae8e0fb..8784ccd9` | Continue with constraints |
-|     8 | final test-tree and documentation reconciliation | in-progress | pending              | pending                   |
+|     8 | final test-tree and documentation reconciliation | completed   | `fb8acd94..1734ab0b` | Close plan                |
 
 ## Phase 1: Refreshed Baseline And Complete File Inventory
 
@@ -2307,9 +2307,17 @@ Review gate:
 
 ## Phase 8: Final Test-Tree And Documentation Reconciliation
 
-Status: `in-review`
+Status: `completed`
 
 Phase base: `fb8acd94`
+
+Implementation tip: `6e288cb1`
+
+Evidence tip: `1734ab0b`
+
+Exact phase review range: `fb8acd94..1734ab0b`
+
+Complete implementation review range: `2f3013ca..1734ab0b`
 
 The clean Phase 8 base is the committed closeout-plan revision. Cleanup
 discovery is restricted to `test/**`; documentation review may follow only
@@ -2373,13 +2381,13 @@ Review gate:
 - [x] fix comparable definitions for the final before/after measures
 - [x] preserve the completed inventory as a dated snapshot
 - [x] reconfirm the 31 flat-root and 12 legacy-suite deferrals
-- [ ] classify and remove proven untracked empty-directory residue
-- [ ] prove every tracked `test/**` entry has an owner or deferral
-- [ ] reconcile current test-path documentation and historical occurrences
-- [ ] record the final before/after table and exact removal ledgers
-- [ ] run focused, complete-suite, repository, and static validation
-- [ ] review the exact Phase 8 and complete implementation ranges
-- [ ] record accepted review fixes and the final closeout decision
+- [x] classify and remove proven untracked empty-directory residue
+- [x] prove every tracked `test/**` entry has an owner or deferral
+- [x] reconcile current test-path documentation and historical occurrences
+- [x] record the final before/after table and exact removal ledgers
+- [x] run focused, complete-suite, repository, and static validation
+- [x] review the exact Phase 8 and complete implementation ranges
+- [x] record accepted review fixes and the final closeout decision
 
 ### Cleanup And Current-Path Reconciliation
 
@@ -2546,3 +2554,23 @@ Review gate update:
 
 - [x] record the final before/after table and exact removal ledgers
 - [x] run focused, complete-suite, repository, and static validation
+
+### Exact-Range Review And Closeout
+
+Test-quality, maintainability, and documentation reviewers inspected both
+`fb8acd94..1734ab0b` and `2f3013ca..1734ab0b`. They found no material coverage,
+behavior-preservation, catalog-ownership, maintainability, correspondence, or
+lifecycle issue. No review fix was accepted because no actionable finding was
+reported.
+
+Decision: `Close plan`. Phase 8 is complete. The parent plan and this unified
+job move to `completed`; the path correspondence moves to `completed` as the
+accepted current lookup contract. The completed research, dated audit
+inventory, and case matrix retain their existing lifecycle states.
+
+Final review gate:
+
+- [x] review the exact Phase 8 range for test quality, maintainability, and documentation
+- [x] review the complete implementation range for the same boundaries
+- [x] record that no review fix was required
+- [x] close Phase 8, the unified job, the correspondence reference, and the parent plan

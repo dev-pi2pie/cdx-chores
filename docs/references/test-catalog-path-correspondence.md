@@ -2,7 +2,7 @@
 title: "Test Catalog Path Correspondence"
 created-date: 2026-08-23
 modified-date: 2026-08-24
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -49,9 +49,9 @@ contract in the related research.
 
 ## Correspondence
 
-Current state: Phases 3 through 7 have completed their accepted path
-correspondences. The reference remains `draft` until Phase 8 completes the
-final documentation reconciliation.
+Current state: Phases 3 through 8 have completed their accepted path
+correspondences. Phase 8 validated every transition chain and completed this
+reference as the accepted current lookup contract.
 
 ### Phase 3: Data Query Pilot
 
@@ -642,9 +642,9 @@ owners:
 
 ## Completion Boundary
 
-This reference remains `draft` throughout the initial test-catalog migration,
-including after the first correspondence rows are added. It may move to
-`completed` only after the final documentation reconciliation confirms that:
+This reference remained `draft` throughout the initial test-catalog migration,
+including after the first correspondence rows were added. Phase 8 completed it
+after the final documentation reconciliation confirmed that:
 
 - every accepted move, split, merge, and removal has a correspondence row
 - every row names its reference date, range-relative successor owner or owners,
@@ -653,6 +653,12 @@ including after the first correspondence rows are added. It may move to
 - current guides and reference docs use the accepted current paths
 - every remaining historical path occurrence is intentionally historical
 - no accepted historical path remains unclassified
+
+Completion evidence: all 296 transition rows are structurally complete, all 14
+nonterminal successor paths resolve to existing terminal owners, current-guide
+scanning found no obsolete accepted path, and exact ranges
+`fb8acd94..1734ab0b` and `2f3013ca..1734ab0b` received clean documentation,
+test-quality, and maintainability review.
 
 After that initial completion, later isolated migrations may append rows and
 update `modified-date` without reopening the reference unless its schema or
