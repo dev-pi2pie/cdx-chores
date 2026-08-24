@@ -2161,7 +2161,7 @@ Status: `in-progress`
 
 Phase base: `3ae8e0fb`
 
-Implementation tip: pending
+Implementation tip: `b8f78174`
 
 Evidence tip: pending
 
@@ -2191,12 +2191,69 @@ facades share import boundaries:
 
 | ID | Checkpoint | Status | Implementation tip | Evidence |
 | --- | --- | --- | --- | --- |
-| 7.1 | caller-owned Rename plan cleanup | admitted | pending | pending |
-| 7.2 | feature-owned Interactive harness contracts | admitted | pending | pending |
-| 7.3 | neutral CLI-foundations harness relocation | admitted | pending | pending |
-| 7.4 | canonical imports and the two Interactive facade deletions | admitted | pending | pending |
-| 7.5 | demonstrated shared-process mock-collision fixes | admitted | pending | pending |
-| 7.6 | final global-helper and root-deferral classification | admitted | pending | pending |
+| 7.1 | caller-owned Rename plan cleanup | completed | `b83d14f5` | Rename-owned lifecycle wrapper; focused, adjacent, full, and repository gates clean |
+| 7.2 | feature-owned Interactive harness contracts | completed | `ba4701aa` | contract slice 399/1,742/35; Data slice 37/225/6; exact review clean |
+| 7.3 | neutral CLI-foundations harness relocation | completed | `5411dc03` | harness slice 416/1,836/48; full 2,623/14,876/355; exact review clean |
+| 7.4 | canonical imports and the two Interactive facade deletions | completed | `b8f78174` | 41 consumers rewired; zero legacy imports; focused/full/static gates and exact review clean |
+| 7.5 | demonstrated shared-process mock-collision fixes | completed | no code change | bounded audit found no new reproducible collision; both isolation selectors clean |
+| 7.6 | final global-helper and root-deferral classification | completed | `b8f78174` | three global helpers retained; 31 flat roots plus 12 legacy suites classified with revisit events |
+
+Implementation used five semantic checkpoints after the admission record:
+
+- `b83d14f5` removes Rename-specific cleanup from the global CLI runner and
+  gives the two artifact-producing command calls Rename-owned `try/finally`
+  cleanup
+- `275f88f9` extracts the Markdown PDF and shared Data Sources contracts
+- `ba4701aa` localizes Data Stack harness state and moves the unknown Data
+  action contract to its feature owner
+- `5411dc03` relocates the 11 neutral harness implementation files to CLI
+  foundations while retaining the two temporary facades
+- `b8f78174` rewires 41 harness consumers and deletes exactly those facades
+
+The exact subsection reviews are clean over `5733219b..b83d14f5`,
+`b83d14f5..ba4701aa`, `ba4701aa..5411dc03`, and
+`5411dc03..b8f78174`. Test-quality and maintainability reviewers found no
+remaining actionable issue. The relocation review's one accepted comment now
+names the canonical CLI-foundations owner; the temporary facade carrying that
+comment was then deleted in 7.4.
+
+Rename validation preserved the two pre-existing artifact sets, removed only
+new plan CSVs after both return and throw, and left no root-level Rename plan
+artifact. The final harness selector passes 416 tests with 1,836 assertions
+across 48 files. The complete suite passes 2,623 tests with 14,876 assertions
+across 355 files; TypeScript, lint, formatting, build, and diff checks are
+clean.
+
+One earlier complete-suite run reported a single wrapped path-inline ghost
+failure. The case passed alone, beside the known formal-guide mock producer,
+on three audit repetitions, and on the immediate complete-suite rerun. It has
+no mock registration and imports neither Inquirer nor text-inline, so it is
+recorded as asynchronous prompt timing evidence rather than a demonstrated
+module-mock collision.
+
+The 17-file, 36-registration mock audit found 21 registrations installed only
+inside the Interactive runner subprocess, 13 registrations bounded by
+`afterEach(mock.restore)`, and the two already-known top-level formal-guide
+registrations. The historical interference selector passes 45 tests with 144
+assertions across six files; the five Codex mock owners pass 44 tests with 435
+assertions. Existing unique-query and subprocess boundaries contain the only
+previously reproduced collision, so Phase 7 admits no speculative mock rewrite.
+Revisit when the formal-guide mocks or a new direct real Inquirer/text-inline
+consumer changes, or when a deterministic shared-process failure reproduces.
+
+Final ownership is explicit:
+
+- `test/helpers/cli-action-test-utils.ts`,
+  `test/helpers/cli-test-utils.ts`, and `test/helpers/ansi.ts` remain global
+  because independent feature families consume feature-neutral contracts
+- no Rename plan import remains in the global CLI helper
+- the 31 flat-root suites remain the admitted five Data Query, 23 functional
+  Markdown PDF, and three Markdown PDF evidence/smoke deferrals
+- the exact 12-suite Interactive Markdown PDF selector remains deferred and
+  passes 98 tests with 378 assertions
+- all 43 survivors have the recorded feature owner and event-based revisit
+  condition; accepted source-aligned exceptions remain zero
+- no migration phase introduced a new flat-root or legacy-catalog suite
 
 Admission constraints:
 
@@ -2230,12 +2287,12 @@ Review gate:
 - [x] refresh global helper, harness, facade, mock, and root-suite counts
 - [x] confirm every current flat-root suite exists in the completed inventory
 - [x] admit only bounded support ownership and classification checkpoints
-- [ ] complete caller-owned Rename cleanup and affected-consumer validation
-- [ ] complete feature-contract extraction and neutral harness relocation
-- [ ] remove `test/helpers/interactive-harness.ts` and
+- [x] complete caller-owned Rename cleanup and affected-consumer validation
+- [x] complete feature-contract extraction and neutral harness relocation
+- [x] remove `test/helpers/interactive-harness.ts` and
       `test/cli-interactive-routing.helpers.ts`, then separately close
       demonstrated mock leakage
-- [ ] record final global, local, exception, and deferral ownership
-- [ ] run focused, adjacent, complete-suite, and repository validation
+- [x] record final global, local, exception, and deferral ownership
+- [x] run focused, adjacent, complete-suite, and repository validation
 - [ ] create the evidence checkpoint and review the exact phase range
 - [ ] record accepted review fixes and the Phase 7 continuation decision

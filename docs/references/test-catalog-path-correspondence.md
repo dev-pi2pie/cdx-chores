@@ -1,7 +1,7 @@
 ---
 title: "Test Catalog Path Correspondence"
 created-date: 2026-08-23
-modified-date: 2026-08-23
+modified-date: 2026-08-24
 status: draft
 agent: codex
 ---
@@ -44,10 +44,10 @@ contract in the related research.
 
 ## Correspondence
 
-Current state: Phases 3 through 5 and all 21 Phase 6 batches have completed
-their accepted path correspondences. The reference remains `draft` until the
-complete initial migration and final documentation reconciliation are
-finished.
+Current state: Phases 3 through 6 have completed their accepted path
+correspondences. Phase 7 rows are recorded pending its evidence checkpoint and
+exact-range review. The reference remains `draft` until Phase 8 completes the
+final documentation reconciliation.
 
 ### Phase 3: Data Query Pilot
 
@@ -552,6 +552,33 @@ reconciliation.
 | 2026-08-23     | Phase 3 residual in `test/cli-ux.test.ts`                                     | split      | `test/cli-foundations/commands/root-ux.test.ts`<br>`test/data-conversion/commands/output-paths.test.ts`<br>`test/data-preview/commands/preview-ux.test.ts`<br>`test/data-preview/commands/parquet-ux.test.ts`<br>`test/data/commands/help.test.ts`<br>`test/data-conversion/commands/help.test.ts`<br>`test/data-extract/commands/help-and-input-format.test.ts`<br>`test/data-stack/commands/help-and-input-format.test.ts`<br>`test/rename/commands/ux.test.ts`<br>`test/video/commands/ux.test.ts`                                                                 | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
 | 2026-08-23     | `test/helpers/virtual-terminal.ts`                                           | moved      | `test/cli-foundations/inline-rendering/virtual-terminal.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | `10f7eeef..d5985314` | [Phase 6.21][phase-6-21-evidence] |
 
+### Phase 7: Global Support Ownership And Root Deferrals
+
+The paths below were implemented over the named checkpoint ranges and are
+recorded pending the Phase 7 evidence checkpoint and exact-range review. The
+reference stays `draft`; Phase 8 still owns the final current-link and
+historical-wording reconciliation.
+
+| Reference date | Historical path or fragment | Transition | Current owner or owners | Migration range | Job evidence |
+| --- | --- | --- | --- | --- | --- |
+| 2026-08-24 | Markdown PDF fields in `test/helpers/interactive-harness/types.ts` | split | `test/markdown-pdf/interactive/harness-contract.ts`<br>`test/cli-foundations/interactive-harness/types.ts` | `b83d14f5..275f88f9` | [Phase 7][phase-7-evidence] |
+| 2026-08-24 | Shared Data Sources fields and source-shape options in `test/helpers/interactive-harness/types.ts` | moved | `test/data-sources/interactive/harness-contract.ts` | `b83d14f5..275f88f9` | [Phase 7][phase-7-evidence] |
+| 2026-08-24 | Data Stack hooks in `test/helpers/interactive-harness/context.ts` | split | `test/data-stack/interactive/harness-contract.ts`<br>`test/data-stack/interactive/mock-action.ts`<br>`test/cli-foundations/interactive-harness/context.ts` | `275f88f9..ba4701aa` | [Phase 7][phase-7-evidence] |
+| 2026-08-24 | `test/cli-foundations/interactive/root-routing.test.ts` | moved | `test/data/interactive/unknown-action.test.ts` | `275f88f9..ba4701aa` | [Phase 7][phase-7-evidence] |
+| 2026-08-24 | `test/helpers/interactive-harness/context.ts` | moved | `test/cli-foundations/interactive-harness/context.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
+| 2026-08-24 | `test/helpers/interactive-harness/index.ts` | merged | `test/cli-foundations/interactive-harness/index.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
+| 2026-08-24 | `test/helpers/interactive-harness/mocks/actions.ts` | moved | `test/cli-foundations/interactive-harness/action-mocks.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
+| 2026-08-24 | `test/helpers/interactive-harness/mocks/fs.ts` | moved | `test/cli-foundations/interactive-harness/fs-mock.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
+| 2026-08-24 | `test/helpers/interactive-harness/mocks/index.ts` | moved | `test/cli-foundations/interactive-harness/mock-composition.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
+| 2026-08-24 | `test/helpers/interactive-harness/mocks/path-prompts.ts` | moved | `test/cli-foundations/interactive-harness/path-prompt-mocks.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
+| 2026-08-24 | `test/helpers/interactive-harness/mocks/prompts.ts` | moved | `test/cli-foundations/interactive-harness/prompt-mocks.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
+| 2026-08-24 | `test/helpers/interactive-harness/module-urls.ts` | moved | `test/cli-foundations/interactive-harness/module-urls.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
+| 2026-08-24 | `test/helpers/interactive-harness/runner.ts` | moved | `test/cli-foundations/interactive-harness/runner.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
+| 2026-08-24 | `test/helpers/interactive-harness/runtime.ts` | moved | `test/cli-foundations/interactive-harness/runtime.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
+| 2026-08-24 | `test/helpers/interactive-harness/types.ts` | moved | `test/cli-foundations/interactive-harness/types.ts` | `ba4701aa..5411dc03` | [Phase 7][phase-7-evidence] |
+| 2026-08-24 | `test/helpers/interactive-harness.ts` | merged | `test/cli-foundations/interactive-harness/index.ts` | `ba4701aa..b8f78174` | [Phase 7][phase-7-evidence] |
+| 2026-08-24 | `test/cli-interactive-routing.helpers.ts` | removed | `test/cli-foundations/interactive-harness/index.ts`<br>`test/helpers/ansi.ts`<br>`test/data-stack/interactive/support.ts`<br>`test/helpers/cli-test-utils.ts` | `5411dc03..b8f78174` | [Phase 7][phase-7-evidence] |
+
 [phase-3-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-3-data-query-migration-pilot
 [phase-4-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-4-doctor-ownership-migration-pilot
 [phase-5-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-5-bounded-markdown-pdf-migration-pilot
@@ -576,6 +603,7 @@ reconciliation.
 [phase-6-19-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-619-markdown-platform
 [phase-6-20-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-620-utilities
 [phase-6-21-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-621-cli-foundations-and-mixed-root-decomposition
+[phase-7-evidence]: ../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-7-global-support-ownership-and-root-deferrals
 
 ## Completion Boundary
 
