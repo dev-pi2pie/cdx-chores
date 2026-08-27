@@ -1,7 +1,7 @@
 ---
 title: "Codex Execution Configuration"
 created-date: 2026-08-21
-modified-date: 2026-08-24
+modified-date: 2026-08-27
 status: draft
 agent: codex
 ---
@@ -30,9 +30,10 @@ All current helpers use the shared read-only thread factory in
 Embedded suggestion paths without an adopted timeout option retain the shared
 default.
 
-The repository currently uses `@openai/codex-sdk` 0.149.1. Its thread options
-support per-thread model and reasoning-effort selection. Supported reasoning
-values remain model- and provider-dependent.[^reasoning]
+The SDK capability review in this research was performed against
+`@openai/codex-sdk` 0.149.1. At that baseline, its thread options supported
+per-thread model and reasoning-effort selection. Supported reasoning values
+remain model- and provider-dependent.[^reasoning]
 
 A provider ID is a Codex configuration key, such as `company_proxy` for
 `[model_providers.company_proxy]`. Provider definitions, authentication, and
