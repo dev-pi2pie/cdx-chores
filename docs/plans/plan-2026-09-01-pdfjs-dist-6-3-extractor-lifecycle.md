@@ -150,19 +150,19 @@ Gate:
 
 Tasks:
 
-- [ ] Mark this plan `active` before the first source or test change.
-- [ ] Add focused coverage for repeated extraction, loading-task destruction,
+- [x] Mark this plan `active` before the first source or test change.
+- [x] Add focused coverage for repeated extraction, loading-task destruction,
       page cleanup on success and extraction failure, cleanup-error suppression,
       and installed-package standard-font resolution.
-- [ ] Retain `PDFDocumentLoadingTask`; clean up the page in the inner `finally`
+- [x] Retain `PDFDocumentLoadingTask`; clean up the page in the inner `finally`
       and destroy the task in the outer `finally`.
-- [ ] Remove `worker: null` and add only the lifecycle types required to make
+- [x] Remove `worker: null` and add only the lifecycle types required to make
       ownership explicit.
-- [ ] Resolve the installed PDF.js package root through Node module resolution
+- [x] Resolve the installed PDF.js package root through Node module resolution
       and derive an accessible trailing-slash `standard_fonts/` file URL.
-- [ ] Run focused checks, build, and current-Node plus exact Node 22.23 import
+- [x] Run focused checks, build, and current-Node plus exact Node 22.23 import
       and extraction smokes while the dependency remains `6.2.108`.
-- [ ] Review the exact Phase 2 `base..tip` range, resolve findings, update the
+- [x] Review the exact Phase 2 `base..tip` range, resolve findings, update the
       unified job section, and record the gate decision.
 
 Observable contracts:

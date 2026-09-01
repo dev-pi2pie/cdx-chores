@@ -135,10 +135,60 @@ legacy build.
 
 ## Phase 2: Lifecycle And Asset Resolution On PDF.js 6.2.108
 
-Status: `in-progress`
+Status: `completed`
 
 - `PHASE2_BASE`: `2e331088`.
-- Source, test, validation, review, and gate evidence pending.
+- `PHASE2_TIP`: `b9099979`.
+
+### Implementation And Contracts
+
+- The extractor now retains `PDFDocumentLoadingTask`, cleans an acquired first
+  page in an inner `finally`, and destroys the loading task in the outer
+  `finally`. Page cleanup precedes task destruction on success and first-page
+  failure; task destruction also runs when document or page loading fails.
+- Page-cleanup and task-destruction errors are suppressed after extraction so
+  they cannot replace evidence, warnings, or fail-closed reasons.
+- Redundant `worker: null` was removed. Published lifecycle types define the
+  narrow internal loader seam without changing the package's public exports.
+- Standard fonts now resolve from `pdfjs-dist/package.json` through Node module
+  resolution, derive a trailing-slash `standard_fonts/` file URL, verify its
+  accessibility, and preserve the cached `undefined` fallback.
+- Repeated real and loader-backed extraction preserves evidence and performs
+  ordered page cleanup followed by task destruction.
+- The dependency remained `pdfjs-dist@6.2.108` throughout Phase 2.
+
+### Validation
+
+- `bun test test/document-rename` — 18 passed, 0 failed, 71 assertions.
+- `./node_modules/.bin/tsc --noEmit` — passed.
+- `bun run lint` — passed.
+- `bun run format:check` — passed.
+- `bun run build` — passed; embedded package version remained
+  `0.1.8-canary.2` and all Tsdown targets remained `node22`.
+- Current Node imported built ESM and CJS outputs and resolved the installed
+  standard-font directory from both bundle entry depths.
+- Exact Node `22.23.0` imported built ESM and CJS outputs, resolved standard
+  fonts from both bundle entry depths, and extracted the installed `6.2.108`
+  fixture with 4 pages and 127 first-page text items.
+- `git diff --check` — passed.
+
+### Review
+
+- Exact range: `2e331088..b9099979`.
+- Initial maintainability review requested alignment of the plan's active
+  boundary. Initial test review requested stronger evidence, URL, access-
+  fallback, page-load failure, and repeated-lifecycle assertions.
+- Accepted fixes landed in `b9099979`; the widened maintainability, test, and
+  focused trust-boundary reviews found no remaining actionable issue.
+- This ledger-only closeout records the already-reviewed semantic range and is
+  included in later cumulative rollout review.
+
+### Gate
+
+- Decision: **Continue** to Phase 3.
+- Constrain Phase 3 to `pdfjs-dist@6.3.289`, the reviewed lockfile resolution,
+  installed-package verification, cumulative validation, and lifecycle
+  closeout. Do not change extractor behavior to accommodate the update.
 
 ## Phase 3: Upgrade, Cumulative Validation, And Closeout
 
