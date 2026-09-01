@@ -2,7 +2,7 @@
 title: "PDF.js 6.3 Extractor Lifecycle Enhancement"
 created-date: 2026-09-01
 modified-date: 2026-09-01
-status: active
+status: completed
 agent: codex
 ---
 
@@ -15,9 +15,9 @@ font resolution without changing its evidence or failure contracts.
 ## Planning Boundary
 
 Phase 1 accepted the read-only baseline, target-release evidence, and
-implementation boundary. The plan is now `active` for Phase 2 lifecycle and
-asset-resolution work. Its unified execution record remains `in-progress`
-through Phase 3 closeout.
+implementation boundary. Phases 2 and 3 completed the lifecycle, asset-
+resolution, dependency, and cumulative validation work. The unified execution
+record contains the completed phase evidence and exact review ranges.
 
 Keep `pdfjs-dist/legacy/build/pdf.mjs`. The `6.3.289` modern build requires
 JavaScript unavailable at the declared Node `22.23.0` floor and directs Node.js
@@ -201,20 +201,20 @@ Gate:
 
 Tasks:
 
-- [ ] Update `pdfjs-dist` to `^6.3.289` with the exact reviewed lockfile
+- [x] Update `pdfjs-dist` to `^6.3.289` with the exact reviewed lockfile
       resolution; preserve package and runtime boundaries.
-- [ ] Confirm the installed resolution, integrity, legacy build, declarations,
+- [x] Confirm the installed resolution, integrity, legacy build, declarations,
       and standard-font paths match the reviewed target.
-- [ ] Re-run the Phase 1 and Phase 2 focused contract without changing behavior
+- [x] Re-run the Phase 1 and Phase 2 focused contract without changing behavior
       to accommodate the new release.
-- [ ] Run frozen install, native TypeScript, audits, untrusted-script review,
+- [x] Run frozen install, native TypeScript, audits, untrusted-script review,
       lint, formatting, build, full suite, and current-Node smokes.
-- [ ] Run exact Node `22.23.0` ESM, CJS, CLI, and legacy-build PDF extraction
+- [x] Run exact Node `22.23.0` ESM, CJS, CLI, and legacy-build PDF extraction
       smokes through `npx --yes node@22.23.0`.
-- [ ] Run final `bun outdated`; record new candidates without expanding scope.
-- [ ] Review the exact Phase 3 and complete-plan `base..tip` ranges, resolve
+- [x] Run final `bun outdated`; record new candidates without expanding scope.
+- [x] Review the exact Phase 3 and complete-plan `base..tip` ranges, resolve
       findings, and re-review widened ranges.
-- [ ] Complete the unified job with counts, smokes, audits, outdated state,
+- [x] Complete the unified job with counts, smokes, audits, outdated state,
       review ranges, and final gate decision; then mark plan and job completed.
 
 Observable contracts:
@@ -259,11 +259,11 @@ Gate:
 
 ## Completion Criteria
 
-- [ ] All three phase gates and exact review ranges are recorded in the unified
+- [x] All three phase gates and exact review ranges are recorded in the unified
       job.
-- [ ] Repeated extraction performs page cleanup and loading-task destruction
+- [x] Repeated extraction performs page cleanup and loading-task destruction
       without changing user-visible results.
-- [ ] Standard fonts resolve through the installed package.
-- [ ] `pdfjs-dist@6.3.289` passes focused, full, audit, build, and exact Node
+- [x] Standard fonts resolve through the installed package.
+- [x] `pdfjs-dist@6.3.289` passes focused, full, audit, build, and exact Node
       `22.23.0` validation.
-- [ ] The complete implementation range has no unresolved actionable finding.
+- [x] The complete implementation range has no unresolved actionable finding.

@@ -1,7 +1,7 @@
 ---
 title: "PDF.js 6.3 Extractor Lifecycle Enhancement"
 created-date: 2026-09-01
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -192,7 +192,55 @@ Status: `completed`
 
 ## Phase 3: Upgrade, Cumulative Validation, And Closeout
 
-Status: `in-progress`
+Status: `completed`
 
 - `PHASE3_BASE`: `23fd6f8e`.
-- Dependency, cumulative validation, review, and closeout evidence pending.
+- `PHASE3_TIP`: `e7e4c600`.
+
+### Dependency And Package Evidence
+
+- `package.json` now requires `pdfjs-dist@^6.3.289`; `bun.lock` resolves exact
+  `6.3.289` with reviewed SHA-512 integrity
+  `ZHjSVpDa3D6izMq8/04lvkhkATUmL9px6ChPaXc1k6nU2Mrhlg1/7F0bdUqCwUjw3NsPTfPZsMDUU6ZIcRaeQw==`.
+- Frozen installation changed only PDF.js and installed exact `6.3.289`.
+- The installed package matches Phase 1 evidence: Node
+  `>=22.13.0 || >=24`, optional `@napi-rs/canvas@^1.0.0`, no package scripts,
+  modern and legacy builds, declarations, and all 16 standard-font assets.
+- Package version `0.1.8-canary.2`, Node engine `>=22.23.0`, Tsdown target
+  `node22`, explicit legacy-build import, and public CLI behavior are unchanged.
+
+### Validation
+
+- `bun install --frozen-lockfile` — passed; installed
+  `pdfjs-dist@6.3.289` only.
+- `./node_modules/.bin/tsc --noEmit` — passed.
+- `bun audit` — no vulnerabilities across 276 packages.
+- `bun audit --production` — no vulnerabilities across 138 packages.
+- `bun pm untrusted` — 0 untrusted dependencies with scripts.
+- `bun run lint` and `bun run format:check` — passed.
+- `bun run build` — passed; embedded version remained `0.1.8-canary.2`.
+- `bun test test/document-rename` — 18 passed, 0 failed, 71 assertions.
+- `bun test` — 2,632 passed, 0 failed, 14,905 assertions across 356 files.
+- Current Node and exact Node `22.23.0` imported built ESM and CJS, reported CLI
+  version `0.1.8-canary.2`, and resolved standard fonts from both bundle entry
+  depths.
+- Current Node and exact Node `22.23.0` extracted the `6.3.289` legacy-build
+  fixture with 4 pages, metadata title, 1 outline item, 127 first-page text
+  items, and an accessible installed standard-font URL.
+- `git diff --check` — passed.
+- Final `bun outdated` — no remaining candidates; no scope deferral required.
+
+### Review
+
+- Exact Phase 3 range: `23fd6f8e..e7e4c600`.
+- Complete implementation range: `2df804de..e7e4c600`.
+- Test, maintainability, focused trust-boundary, and documentation reviews found
+  no actionable issue in either range. No review-fix widening was required.
+- This ledger-only closeout records the already-reviewed semantic ranges.
+
+### Gate
+
+- Decision: **Complete**.
+- `pdfjs-dist@6.3.289` preserves the accepted extractor lifecycle, evidence,
+  failure, asset-resolution, package, and Node-runtime contracts.
+- Unrelated future dependency candidates remain separate maintenance work.
