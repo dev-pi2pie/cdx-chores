@@ -74,7 +74,40 @@ Status: `in-progress`
   metadata, outline, page-count, and text evidence.
 - `npm audit signatures` in an isolated, script-disabled target installation —
   3 packages with verified registry signatures and 3 with verified
-  attestations; 0 vulnerabilities.
+  attestations.
+
+Sanitized package and provenance commands:
+
+```bash
+npm view pdfjs-dist@6.3.289 name version repository maintainers \
+  dist.integrity dist.shasum dist.signatures dist.attestations engines \
+  optionalDependencies --json
+npm pack pdfjs-dist@6.3.289 --json
+shasum -a 1 pdfjs-dist-6.3.289.tgz
+openssl dgst -sha512 -binary pdfjs-dist-6.3.289.tgz | openssl base64 -A
+PDFJS_PACKAGE_ROOT="/tmp/pdfjs-dist-6.3.289/package"
+rg --files "$PDFJS_PACKAGE_ROOT/standard_fonts"
+rg -n "getDocument|destroy|cleanup|getMetadata|getOutline|getPage|getTextContent" \
+  "$PDFJS_PACKAGE_ROOT/types/src/display/api.d.ts"
+npm install --ignore-scripts
+npm audit signatures --json --include-attestations
+```
+
+The isolated install used a package manifest containing only exact dependency
+`pdfjs-dist@6.3.289`. Package paths above replace the temporary extraction
+location.
+
+Exact Node-floor target smoke shape, run once with the legacy entry and once
+with the modern entry:
+
+```bash
+PDFJS_ENTRY="file:///tmp/pdfjs-dist-6.3.289/package/legacy/build/pdf.mjs" \
+npx --yes node@22.23.0 --input-type=module -e "const { readFile } = await import('node:fs/promises'); const pdfjs = await import(process.env.PDFJS_ENTRY); const task = pdfjs.getDocument({ data: new Uint8Array(await readFile('test/fixtures/docs/metadata-rich.pdf')) }); try { const doc = await task.promise; const metadata = await doc.getMetadata(); const outline = await doc.getOutline(); const page = await doc.getPage(1); try { const text = await page.getTextContent(); console.log(JSON.stringify({ pages: doc.numPages, metadataTitle: metadata.info?.Title, outlineItems: outline?.length ?? 0, textItems: text.items.length })); } finally { page.cleanup(); } } finally { await task.destroy(); }"
+```
+
+The modern run replaced only `legacy/build/pdf.mjs` with `build/pdf.mjs` and
+failed at unavailable `Promise.try` after instructing Node consumers to use the
+legacy build.
 
 ### Review
 
