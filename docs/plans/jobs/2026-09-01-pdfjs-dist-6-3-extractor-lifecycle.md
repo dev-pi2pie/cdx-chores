@@ -49,8 +49,9 @@ Status: `in-progress`
   `9e46d89489782a479f58d674ae5ddde8481aaa17` and SHA-512 integrity
   `ZHjSVpDa3D6izMq8/04lvkhkATUmL9px6ChPaXc1k6nU2Mrhlg1/7F0bdUqCwUjw3NsPTfPZsMDUU6ZIcRaeQw==`.
   An isolated, script-disabled npm installation verified registry signatures
-  and attestations for all three installed packages; the PDF.js attestation
-  includes SLSA provenance for the Mozilla release tag.
+  and attestations for `pdfjs-dist@6.3.289`, optional
+  `@napi-rs/canvas@1.0.8`, and its environment-selected platform package; the
+  PDF.js attestation includes SLSA provenance for the Mozilla release tag.
 - The target contains its modern and legacy builds, declarations, and all 16
   standard-font assets. Across `6.2.108` and `6.3.289`, the used declarations
   remain compatible: `getDocument`, loading-task `destroy`, document
@@ -73,8 +74,8 @@ Status: `in-progress`
 - The same smoke against the reviewed `6.3.289` legacy tarball — passed with
   metadata, outline, page-count, and text evidence.
 - `npm audit signatures` in an isolated, script-disabled target installation —
-  3 packages with verified registry signatures and 3 with verified
-  attestations.
+  the exact PDF.js package, optional canvas package, and selected platform
+  package had verified registry signatures and attestations.
 
 Sanitized package and provenance commands:
 
@@ -111,11 +112,18 @@ legacy build.
 
 ### Review
 
-- Pending exact `PHASE1_BASE..PHASE1_TIP` review.
+- Evidence was reviewed through `2df804de..c364a89d`.
+- The first review requested sanitized reproduction commands and correction of
+  audit wording. Those accepted findings landed in `c364a89d`.
+- The widened documentation review found one low-severity clarity issue about
+  the verified package set; the current follow-up identifies that set without
+  recording platform-specific machine details.
+- The widened focused supply-chain review found no remaining actionable issue.
+- Pending final exact-range review after the package-set clarification lands.
 
 ### Gate
 
-- Pending Continue, Constrain, or Stop decision.
+- Pending final review and Continue, Constrain, or Stop decision.
 
 ## Phase 2: Lifecycle And Asset Resolution On PDF.js 6.2.108
 
