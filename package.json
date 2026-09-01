@@ -1,6 +1,6 @@
 {
   "name": "cdx-chores",
-  "version": "0.1.8-canary.1",
+  "version": "0.1.8-canary.2",
   "keywords": [
     "automation",
     "cli",
@@ -48,23 +48,23 @@
   },
   "dependencies": {
     "@duckdb/node-api": "^1.5.5-r.4",
-    "@inquirer/prompts": "8.6.0",
-    "@inquirer/search": "4.3.0",
-    "@openai/codex-sdk": "^0.150.1",
+    "@inquirer/prompts": "8.7.0",
+    "@inquirer/search": "4.3.1",
+    "@openai/codex-sdk": "^0.152.0",
     "@shikijs/transformers": "^4.4.3",
     "commander": "^15.0.0",
-    "fast-xml-parser": "5.11.0",
-    "mammoth": "^1.12.1",
+    "fast-xml-parser": "5.11.1",
+    "mammoth": "^1.12.2",
     "papaparse": "^5.7.0",
     "parse5": "^8.0.1",
-    "pdfjs-dist": "^6.2.108",
+    "pdfjs-dist": "^6.3.289",
     "shiki": "^4.4.3",
     "yaml": "^2.9.0",
     "yauzl": "^3.4.0"
   },
   "devDependencies": {
     "@types/bun": "1.4.0",
-    "@types/node": "25.9.5",
+    "@types/node": "26.4.0",
     "oxfmt": "0.65.0",
     "oxlint": "1.80.0",
     "picocolors": "^1.1.1",

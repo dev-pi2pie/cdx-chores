@@ -1,6 +1,7 @@
 import { access } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { basename, extname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import type { DocumentTitleEvidence } from "../types";
 import {
@@ -11,6 +12,7 @@ import {
 } from "../types";
 
 let pdfStandardFontDataUrlPromise: Promise<string | undefined> | undefined;
+const pdfJsRequire = createRequire(import.meta.url);
 
 export function toSingleLine(value: string): string {
   return value.replace(/\s+/g, " ").trim();
@@ -126,26 +128,31 @@ export function collectKeySummary(data: Record<string, unknown> | null): string[
   return keys.length > 0 ? keys : undefined;
 }
 
-export async function resolvePdfStandardFontDataUrl(): Promise<string | undefined> {
-  pdfStandardFontDataUrlPromise ??= (async () => {
-    const candidates = [
-      new URL("../../../../node_modules/pdfjs-dist/standard_fonts/", import.meta.url),
-      new URL("../../../../../node_modules/pdfjs-dist/standard_fonts/", import.meta.url),
-    ];
-
-    for (const candidate of candidates) {
-      try {
-        await access(fileURLToPath(candidate));
-        return candidate.href;
-      } catch {
-        // try next
-      }
-    }
-
+async function resolvePdfStandardFontDataUrlWith(
+  resolveModule: (specifier: string) => string,
+): Promise<string | undefined> {
+  try {
+    const packageJsonPath = resolveModule("pdfjs-dist/package.json");
+    const standardFontsUrl = new URL("standard_fonts/", pathToFileURL(packageJsonPath));
+    await access(fileURLToPath(standardFontsUrl));
+    return standardFontsUrl.href;
+  } catch {
     return undefined;
-  })();
+  }
+}
+
+export async function resolvePdfStandardFontDataUrl(): Promise<string | undefined> {
+  pdfStandardFontDataUrlPromise ??= resolvePdfStandardFontDataUrlWith((specifier) =>
+    pdfJsRequire.resolve(specifier),
+  );
 
   return pdfStandardFontDataUrlPromise;
+}
+
+export async function __testOnlyResolvePdfStandardFontDataUrlWith(
+  resolveModule: (specifier: string) => string,
+): Promise<string | undefined> {
+  return resolvePdfStandardFontDataUrlWith(resolveModule);
 }
 
 export function buildStructuredLeadText(data: Record<string, unknown> | null): string | undefined {
