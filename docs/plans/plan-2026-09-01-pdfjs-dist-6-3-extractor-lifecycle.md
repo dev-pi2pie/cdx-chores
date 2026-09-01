@@ -2,7 +2,7 @@
 title: "PDF.js 6.3 Extractor Lifecycle Enhancement"
 created-date: 2026-09-01
 modified-date: 2026-09-01
-status: draft
+status: active
 agent: codex
 ---
 

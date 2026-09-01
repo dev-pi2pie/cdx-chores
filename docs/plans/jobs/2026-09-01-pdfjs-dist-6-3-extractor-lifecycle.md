@@ -135,7 +135,10 @@ legacy build.
 
 ## Phase 2: Lifecycle And Asset Resolution On PDF.js 6.2.108
 
-Status: `pending`
+Status: `in-progress`
+
+- `PHASE2_BASE`: `2e331088`.
+- Source, test, validation, review, and gate evidence pending.
 
 ## Phase 3: Upgrade, Cumulative Validation, And Closeout
 
