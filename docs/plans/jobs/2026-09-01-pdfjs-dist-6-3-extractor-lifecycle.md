@@ -192,4 +192,7 @@ Status: `completed`
 
 ## Phase 3: Upgrade, Cumulative Validation, And Closeout
 
-Status: `pending`
+Status: `in-progress`
+
+- `PHASE3_BASE`: `23fd6f8e`.
+- Dependency, cumulative validation, review, and closeout evidence pending.
