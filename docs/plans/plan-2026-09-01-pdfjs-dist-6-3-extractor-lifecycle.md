@@ -98,18 +98,18 @@ validation and plan lifecycle.
 
 Tasks:
 
-- [ ] Record `PHASE1_BASE` from the clean starting commit and create the unified
+- [x] Record `PHASE1_BASE` from the clean starting commit and create the unified
       `in-progress` job record.
-- [ ] Run the existing metadata-rich, no-text, and invalid-PDF fixture coverage
+- [x] Run the existing metadata-rich, no-text, and invalid-PDF fixture coverage
       without changing source or tests.
-- [ ] Record that current code retains only `PDFDocumentProxy` and calls its
+- [x] Record that current code retains only `PDFDocumentProxy` and calls its
       nonexistent public `destroy()` method, so loading-task and page cleanup
       are not currently performed.
-- [ ] Verify `6.3.289` repository, maintainer, integrity, signatures, SLSA
+- [x] Verify `6.3.289` repository, maintainer, integrity, signatures, SLSA
       provenance, Node engine, optional canvas dependency, legacy build, used
       declarations, and standard-font paths.
-- [ ] Compare the used extraction and lifecycle surfaces across both releases.
-- [ ] Run exact Node `22.23.0` legacy-build extraction smokes and record the
+- [x] Compare the used extraction and lifecycle surfaces across both releases.
+- [x] Run exact Node `22.23.0` legacy-build extraction smokes and record the
       modern-build incompatibility as evidence for retaining `legacy/`.
 - [ ] Update this plan and the job with the accepted evidence, create the
       Phase 1 documentation checkpoint, review `PHASE1_BASE..PHASE1_TIP`, and
