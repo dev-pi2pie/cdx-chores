@@ -111,7 +111,7 @@ Tasks:
 - [x] Compare the used extraction and lifecycle surfaces across both releases.
 - [x] Run exact Node `22.23.0` legacy-build extraction smokes and record the
       modern-build incompatibility as evidence for retaining `legacy/`.
-- [ ] Update this plan and the job with the accepted evidence, create the
+- [x] Update this plan and the job with the accepted evidence, create the
       Phase 1 documentation checkpoint, review `PHASE1_BASE..PHASE1_TIP`, and
       record the gate decision.
 

@@ -25,7 +25,7 @@ version `0.1.8-canary.2`, and Tsdown `node22` target.
 
 ## Phase 1: Baseline And Contract Freeze
 
-Status: `in-progress`
+Status: `completed`
 
 ### Evidence
 
@@ -112,18 +112,26 @@ legacy build.
 
 ### Review
 
-- Evidence was reviewed through `2df804de..c364a89d`.
+- `PHASE1_TIP`: `16316956`.
+- Exact evidence range: `2df804de..16316956`.
 - The first review requested sanitized reproduction commands and correction of
   audit wording. Those accepted findings landed in `c364a89d`.
 - The widened documentation review found one low-severity clarity issue about
-  the verified package set; the current follow-up identifies that set without
-  recording platform-specific machine details.
-- The widened focused supply-chain review found no remaining actionable issue.
-- Pending final exact-range review after the package-set clarification lands.
+  the verified package set; `16316956` identifies that set without recording
+  platform-specific machine details.
+- Final documentation and focused supply-chain reviews of the exact range found
+  no remaining actionable issue.
+- This ledger-only closeout records the already-reviewed semantic range and is
+  included in later cumulative rollout review.
 
 ### Gate
 
-- Pending final review and Continue, Constrain, or Stop decision.
+- Decision: **Continue** to Phase 2.
+- Constrain Phase 2 to loading-task and first-page lifecycle ownership,
+  cleanup-error suppression, redundant `worker: null` removal, installed
+  standard-font resolution, and focused regression coverage on `6.2.108`.
+- Retain the legacy build and Node `22.23.0` floor. Defer unrelated API-minor,
+  parser-option, rendering, and type-cleanup work.
 
 ## Phase 2: Lifecycle And Asset Resolution On PDF.js 6.2.108
 
