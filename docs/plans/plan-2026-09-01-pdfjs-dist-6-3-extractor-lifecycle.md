@@ -14,10 +14,10 @@ font resolution without changing its evidence or failure contracts.
 
 ## Planning Boundary
 
-This plan is `draft`. Phase 1 owns read-only baseline and target-release
-evidence. Create the unified execution record when Phase 1 begins, but keep the
-plan `draft` until its gate accepts the implementation boundary. Mark the plan
-`active` immediately before the first Phase 2 production or test change.
+Phase 1 accepted the read-only baseline, target-release evidence, and
+implementation boundary. The plan is now `active` for Phase 2 lifecycle and
+asset-resolution work. Its unified execution record remains `in-progress`
+through Phase 3 closeout.
 
 Keep `pdfjs-dist/legacy/build/pdf.mjs`. The `6.3.289` modern build requires
 JavaScript unavailable at the declared Node `22.23.0` floor and directs Node.js
