@@ -48,9 +48,9 @@
   },
   "dependencies": {
     "@duckdb/node-api": "^1.5.5-r.4",
-    "@inquirer/prompts": "8.7.0",
-    "@inquirer/search": "4.3.1",
-    "@openai/codex-sdk": "^0.152.0",
+    "@inquirer/prompts": "8.7.1",
+    "@inquirer/search": "4.3.2",
+    "@openai/codex-sdk": "^0.153.0",
     "@shikijs/transformers": "^4.4.3",
     "commander": "^15.0.0",
     "fast-xml-parser": "5.11.1",
@@ -64,9 +64,9 @@
   },
   "devDependencies": {
     "@types/bun": "1.4.0",
-    "@types/node": "26.4.0",
-    "oxfmt": "0.65.0",
-    "oxlint": "1.80.0",
+    "@types/node": "26.4.1",
+    "oxfmt": "0.66.0",
+    "oxlint": "1.81.0",
     "picocolors": "^1.1.1",
     "tsdown": "0.22.14",
     "typescript": "^7.0.2"
