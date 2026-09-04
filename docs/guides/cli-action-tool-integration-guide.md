@@ -1,7 +1,7 @@
 ---
 title: "CLI Action Tool Integration Guide"
 created-date: 2026-02-25
-modified-date: 2026-09-01
+modified-date: 2026-09-04
 status: completed
 agent: codex
 ---
@@ -57,14 +57,16 @@ Avoid direct SDK/tool-client complexity inside action modules when an adapter bo
 - Use `src/cli/process.ts` for:
   - process execution helpers
 - Add focused adapters when logic grows:
-  - example future path: `src/adapters/codex/**`
+  - existing Codex adapters: `src/adapters/codex/**`
   - example future path: `src/adapters/tools/**` (if wrappers outgrow `src/cli/*`)
 
-## Codex SDK Integration Guidance (Current + Planned)
+## Codex SDK Integration
 
-Codex SDK baseline for `v0.1.8-canary.2`: `0.152.0`
+Codex-assisted workflows in `v0.1.8-canary.3` are validated with
+`@openai/codex-sdk` `0.153.3`.
 
-`@openai/codex-sdk` is used in runtime code through `src/adapters/codex/shared.ts`, with feature-specific adapters for rename suggestions, document rename analysis, Markdown PDF profile suggestions, and data workflow Codex assistance.
+`src/adapters/codex/shared.ts` loads the Codex SDK on demand. Feature-specific
+adapters provide Codex assistance for rename, Markdown PDF, and data workflows.
 
 When adding or expanding Codex-backed features:
 
