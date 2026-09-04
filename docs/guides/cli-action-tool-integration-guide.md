@@ -65,13 +65,8 @@ Avoid direct SDK/tool-client complexity inside action modules when an adapter bo
 Codex-assisted workflows in `v0.1.8-canary.3` are validated with
 `@openai/codex-sdk` `0.153.3`.
 
-`@openai/codex-sdk` is used in runtime code through `src/adapters/codex/shared.ts`, with feature-specific adapters for rename suggestions, document rename analysis, Markdown PDF profile and template suggestions, and data workflow Codex assistance.
-
-The shared adapter loads the SDK through a lazy ESM import. By default, the SDK
-uses its bundled Codex executable. `CDX_CHORES_CODEX_PATH` selects an alternate
-executable; the SDK validation baseline does not establish that executable's
-version or compatibility. Doctor checks configuration and auth/session signals,
-but does not prove that authentication or a live Codex request will succeed.
+`src/adapters/codex/shared.ts` loads the Codex SDK on demand. Feature-specific
+adapters provide Codex assistance for rename, Markdown PDF, and data workflows.
 
 When adding or expanding Codex-backed features:
 
