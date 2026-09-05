@@ -83,7 +83,30 @@ concerns in the data and Markdown integration.
 
 ## Phase 4: Interactive Adoption
 
-Status: pending.
+Status: completed. Reviewed range: `560f621d..dec8fe4f`.
+
+- Explicit Interactive startup accepts execution options and snapshots normalized
+  settings beside the independent timeout. Rename, data, and Markdown dispatch
+  pass the session policy to every adopted request owner.
+- Header/shape suggestions and cleanup analysis receive the policy at injected
+  runner and SDK boundaries. Regeneration and repeated Markdown submenu visits
+  retain selections; new sessions resolve their own defaults. Consent, manual
+  recovery, and prepared-output lifecycles retain their existing behavior.
+- `bun test test/rename test/cli-foundations/commands/interactive-timeout.test.ts test/cli-foundations/options/codex-execution-scope.test.ts`
+  passed 315 tests across 48 files with no failures.
+- `bun test test/data-query/interactive test/data-extract/interactive test/data-stack/interactive test/data-query/header-mapping.test.ts test/data-sources/direct/source-shape.test.ts test/data-query/direct/interactive-execution-validation.test.ts`
+  passed 124 tests across 19 files with no failures.
+- `bun test test/cli-interactive-markdown-pdf test/markdown-pdf/interactive`
+  passed 351 tests. After adding explicit submenu-cycle coverage,
+  `bun test test/cli-interactive-markdown-pdf/codex-execution.test.ts` passed all
+  four tests. `bun test codex` passed 884 tests across 105 files with no failures.
+- TypeScript, lint, formatting, build, Node ESM/CJS imports, built Interactive
+  help, and diff checks passed. Build retains the existing TypeScript 7 API
+  warning. No live provider requests were used for this evidence.
+
+The full phase range review found no actionable issues; an independent rerun of
+seven focused suites passed 43 tests with no failures. Supplementary
+maintainability and documentation reviews found no material gaps.
 
 ## Phase 5: Validation And Documentation Closeout
 

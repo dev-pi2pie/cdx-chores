@@ -273,14 +273,14 @@ visible failure handling without changing saved artifact contracts.
 
 ### Phase 4: Interactive Adoption
 
-- [ ] Register options on explicit `interactive` in `src/cli/commands/index.ts`.
-- [ ] Extend session construction and the rename/data/Markdown dispatch seams
+- [x] Register options on explicit `interactive` in `src/cli/commands/index.ts`.
+- [x] Extend session construction and the rename/data/Markdown dispatch seams
       using the existing timeout startup-and-propagation pattern.
-- [ ] Cover every request owner in the inventory, including header mapping,
+- [x] Cover every request owner in the inventory, including header mapping,
       source shape, rename cleanup, project phases, and template repair.
-- [ ] Verify regeneration and repeated menu visits retain selections, while a
+- [x] Verify regeneration and repeated menu visits retain selections, while a
       separate Interactive session starts with its own settings.
-- [ ] Preserve consent prompts and prepared-output write/recovery lifecycles.
+- [x] Preserve consent prompts and prepared-output write/recovery lifecycles.
 
 Exit evidence: Interactive tests exercise custom session settings and default
 entry behavior, with no configuration leakage across sessions.
