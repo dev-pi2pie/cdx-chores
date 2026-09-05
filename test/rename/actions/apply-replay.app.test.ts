@@ -1,11 +1,6 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { mkdir, readFile, readdir, rm, stat, utimes, writeFile } from "node:fs/promises";
-import { join } from "node:path";
-
-import {
-  captureRenamePlanCsvSnapshot,
-  cleanupRenamePlanCsvSinceSnapshot,
-} from "../support/plan-artifacts";
+import { join, relative } from "node:path";
 
 import { actionRenameApply, actionRenameBatch } from "../../../src/cli/actions";
 import { removeIfPresent } from "../../helpers/cli-action-test-utils";
@@ -13,25 +8,14 @@ import {
   createCapturedRuntime,
   createTempFixtureDir,
   REPO_ROOT,
-  toRepoRelativePath,
 } from "../../helpers/cli-test-utils";
-
-let renamePlanCsvSnapshot = new Set<string>();
-
-beforeEach(async () => {
-  renamePlanCsvSnapshot = await captureRenamePlanCsvSnapshot();
-});
-
-afterEach(async () => {
-  await cleanupRenamePlanCsvSinceSnapshot(renamePlanCsvSnapshot);
-});
 
 describe("cli action modules: rename apply replay", () => {
   test("actionRenameBatch dry-run writes a replayable CSV plan under cwd", async () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
     try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const dirPath = join(fixtureDir, "rename-plan-csv");
       await mkdir(dirPath, { recursive: true });
 
@@ -41,7 +25,7 @@ describe("cli action modules: rename apply replay", () => {
       await utimes(filePath, fixedTime, fixedTime);
 
       const result = await actionRenameBatch(runtime, {
-        directory: toRepoRelativePath(dirPath),
+        directory: relative(fixtureDir, dirPath),
         prefix: "img",
         dryRun: true,
       });
@@ -58,7 +42,7 @@ describe("cli action modules: rename apply replay", () => {
       );
       expect(csvText).toContain("sample image.png");
       expect(csvText).toContain(",planned,");
-      expect(stdout.text).toContain(`Plan CSV: ${toRepoRelativePath(planCsvPath!)}`);
+      expect(stdout.text).toContain(`Plan CSV: ${relative(fixtureDir, planCsvPath!)}`);
     } finally {
       await removeIfPresent(planCsvPath);
       await rm(fixtureDir, { recursive: true, force: true });
@@ -69,7 +53,7 @@ describe("cli action modules: rename apply replay", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
     try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const dirPath = join(fixtureDir, "rename-replay");
       await mkdir(dirPath, { recursive: true });
 
@@ -79,7 +63,7 @@ describe("cli action modules: rename apply replay", () => {
       await utimes(originalPath, fixedTime, fixedTime);
 
       const dryRunResult = await actionRenameBatch(runtime, {
-        directory: toRepoRelativePath(dirPath),
+        directory: relative(fixtureDir, dirPath),
         prefix: "img",
         dryRun: true,
       });
@@ -101,7 +85,7 @@ describe("cli action modules: rename apply replay", () => {
 
       expect(stderr.text).toBe("");
       expect(applyResult.appliedCount).toBe(1);
-      expect(stdout.text).toContain(`Plan CSV: ${toRepoRelativePath(planCsvPath!)}`);
+      expect(stdout.text).toContain(`Plan CSV: ${relative(fixtureDir, planCsvPath!)}`);
       expect(stdout.text).toContain("Rows applied: 1");
 
       const entries = await readdir(dirPath);
@@ -121,7 +105,7 @@ describe("cli action modules: rename apply replay", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
     try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const dirPath = join(fixtureDir, "rename-replay-autoclean");
       await mkdir(dirPath, { recursive: true });
 
@@ -131,7 +115,7 @@ describe("cli action modules: rename apply replay", () => {
       await utimes(originalPath, fixedTime, fixedTime);
 
       const dryRunResult = await actionRenameBatch(runtime, {
-        directory: toRepoRelativePath(dirPath),
+        directory: relative(fixtureDir, dirPath),
         prefix: "img",
         dryRun: true,
       });

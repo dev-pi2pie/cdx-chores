@@ -1,36 +1,17 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { mkdir, rm, symlink, utimes, writeFile } from "node:fs/promises";
-import { join } from "node:path";
-
-import {
-  captureRenamePlanCsvSnapshot,
-  cleanupRenamePlanCsvSinceSnapshot,
-} from "../support/plan-artifacts";
+import { join, relative } from "node:path";
 
 import { actionRenameBatch } from "../../../src/cli/actions";
 import { expectCliError, removeIfPresent } from "../../helpers/cli-action-test-utils";
-import {
-  createCapturedRuntime,
-  createTempFixtureDir,
-  toRepoRelativePath,
-} from "../../helpers/cli-test-utils";
-
-let renamePlanCsvSnapshot = new Set<string>();
-
-beforeEach(async () => {
-  renamePlanCsvSnapshot = await captureRenamePlanCsvSnapshot();
-});
-
-afterEach(async () => {
-  await cleanupRenamePlanCsvSinceSnapshot(renamePlanCsvSnapshot);
-});
+import { createCapturedRuntime, createTempFixtureDir } from "../../helpers/cli-test-utils";
 
 describe("cli action modules: rename batch preview", () => {
   test("actionRenameBatch dry-run truncates large rename previews and emphasizes the plan csv", async () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
     try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       Object.assign(runtime.stdout as object, { isTTY: true, rows: 28 });
 
       const dirPath = join(fixtureDir, "rename-large-preview");
@@ -44,7 +25,7 @@ describe("cli action modules: rename batch preview", () => {
       }
 
       const result = await actionRenameBatch(runtime, {
-        directory: toRepoRelativePath(dirPath),
+        directory: relative(fixtureDir, dirPath),
         prefix: "file",
         dryRun: true,
       });
@@ -74,7 +55,7 @@ describe("cli action modules: rename batch preview", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
     try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
 
       const dirPath = join(fixtureDir, "rename-large-preview-non-tty");
       await mkdir(dirPath, { recursive: true });
@@ -87,7 +68,7 @@ describe("cli action modules: rename batch preview", () => {
       }
 
       const result = await actionRenameBatch(runtime, {
-        directory: toRepoRelativePath(dirPath),
+        directory: relative(fixtureDir, dirPath),
         prefix: "file",
         dryRun: true,
       });
@@ -118,7 +99,7 @@ describe("cli action modules: rename batch preview", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
     try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       Object.assign(runtime.stdout as object, { isTTY: true, rows: 28 });
 
       const dirPath = join(fixtureDir, "rename-detailed-skips");
@@ -137,7 +118,7 @@ describe("cli action modules: rename batch preview", () => {
       await symlink(nestedDir, linkC);
 
       const result = await actionRenameBatch(runtime, {
-        directory: toRepoRelativePath(dirPath),
+        directory: relative(fixtureDir, dirPath),
         prefix: "doc",
         dryRun: true,
         recursive: true,
@@ -161,7 +142,7 @@ describe("cli action modules: rename batch preview", () => {
   test("actionRenameBatch rejects invalid previewSkips values", async () => {
     const fixtureDir = await createTempFixtureDir("actions");
     try {
-      const { runtime } = createCapturedRuntime();
+      const { runtime } = createCapturedRuntime({ cwd: fixtureDir });
       const dirPath = join(fixtureDir, "rename-invalid-preview-skips");
       await mkdir(dirPath, { recursive: true });
       await writeFile(join(dirPath, "root.txt"), "root", "utf8");
@@ -169,7 +150,7 @@ describe("cli action modules: rename batch preview", () => {
       await expectCliError(
         () =>
           actionRenameBatch(runtime, {
-            directory: toRepoRelativePath(dirPath),
+            directory: relative(fixtureDir, dirPath),
             dryRun: true,
             previewSkips: "verbose" as "summary",
           }),

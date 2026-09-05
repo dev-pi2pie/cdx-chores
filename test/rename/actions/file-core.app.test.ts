@@ -1,30 +1,16 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { mkdir, readFile, readdir, stat, symlink, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 
 import { actionRenameFile } from "../../../src/cli/actions";
-import { createCapturedRuntime, toRepoRelativePath } from "../../helpers/cli-test-utils";
+import { createCapturedRuntime } from "../../helpers/cli-test-utils";
 import { expectCliError } from "../../helpers/cli-action-test-utils";
-import {
-  captureRenamePlanCsvSnapshot,
-  cleanupRenamePlanCsvSinceSnapshot,
-} from "../support/plan-artifacts";
 import { createRenameFileFixture, withRenameWorkspace } from "./file-support";
-
-let renamePlanCsvSnapshot = new Set<string>();
-
-beforeEach(async () => {
-  renamePlanCsvSnapshot = await captureRenamePlanCsvSnapshot();
-});
-
-afterEach(async () => {
-  await cleanupRenamePlanCsvSinceSnapshot(renamePlanCsvSnapshot);
-});
 
 describe("rename file core actions", () => {
   test("actionRenameFile dry-run previews one file and writes a replayable CSV plan", async () => {
     await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const { dirPath, filePath } = await createRenameFileFixture(
         fixtureDir,
         "rename-file-dry-run",
@@ -35,7 +21,7 @@ describe("rename file core actions", () => {
       );
 
       const result = await actionRenameFile(runtime, {
-        path: toRepoRelativePath(filePath),
+        path: relative(fixtureDir, filePath),
         prefix: "img",
         dryRun: true,
       });
@@ -44,8 +30,8 @@ describe("rename file core actions", () => {
       expect(stderr.text).toBe("");
       expect(result.changed).toBe(true);
       expect(result.planCsvPath).toBeDefined();
-      expect(stdout.text).toContain(`Directory: ${toRepoRelativePath(dirPath)}`);
-      expect(stdout.text).toContain(`File: ${toRepoRelativePath(filePath)}`);
+      expect(stdout.text).toContain(`Directory: ${relative(fixtureDir, dirPath)}`);
+      expect(stdout.text).toContain(`File: ${relative(fixtureDir, filePath)}`);
       expect(stdout.text).toContain("- cover image.png -> img-");
       expect(stdout.text).toContain("Plan CSV:");
       expect(stdout.text).toContain("Dry run only. No files were renamed.");
@@ -59,7 +45,7 @@ describe("rename file core actions", () => {
 
   test("actionRenameFile applies a single-file rename with collision suffix handling", async () => {
     await withRenameWorkspace(async (fixtureDir) => {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const { dirPath, filePath: targetPath } = await createRenameFileFixture(
         fixtureDir,
         "rename-file-apply",
@@ -74,14 +60,14 @@ describe("rename file core actions", () => {
       await writeFile(join(dirPath, conflictingName), "occupied", "utf8");
 
       const result = await actionRenameFile(runtime, {
-        path: toRepoRelativePath(targetPath),
+        path: relative(fixtureDir, targetPath),
         prefix: "doc",
         dryRun: false,
       });
 
       expect(stderr.text).toBe("");
       expect(result.changed).toBe(true);
-      expect(stdout.text).toContain(`File: ${toRepoRelativePath(targetPath)}`);
+      expect(stdout.text).toContain(`File: ${relative(fixtureDir, targetPath)}`);
       expect(stdout.text).toContain("Renamed 1 file(s).");
 
       const entries = (await readdir(dirPath)).sort();
@@ -94,7 +80,7 @@ describe("rename file core actions", () => {
 
   test("actionRenameFile without prefix omits the old implicit file prefix", async () => {
     await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const { filePath } = await createRenameFileFixture(
         fixtureDir,
         "rename-file-no-prefix",
@@ -105,7 +91,7 @@ describe("rename file core actions", () => {
       );
 
       const result = await actionRenameFile(runtime, {
-        path: toRepoRelativePath(filePath),
+        path: relative(fixtureDir, filePath),
         dryRun: true,
       });
       trackPlanCsv(result.planCsvPath);
@@ -123,7 +109,7 @@ describe("rename file core actions", () => {
     }
 
     await withRenameWorkspace(async (fixtureDir) => {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const dirPath = join(fixtureDir, "rename-file-symlink");
       await mkdir(dirPath, { recursive: true });
 
@@ -135,7 +121,7 @@ describe("rename file core actions", () => {
       await expectCliError(
         () =>
           actionRenameFile(runtime, {
-            path: toRepoRelativePath(linkPath),
+            path: relative(fixtureDir, linkPath),
             dryRun: true,
           }),
         {
@@ -152,14 +138,14 @@ describe("rename file core actions", () => {
 
   test("actionRenameFile rejects directory input paths", async () => {
     await withRenameWorkspace(async (fixtureDir) => {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const dirPath = join(fixtureDir, "rename-file-directory");
       await mkdir(dirPath, { recursive: true });
 
       await expectCliError(
         () =>
           actionRenameFile(runtime, {
-            path: toRepoRelativePath(dirPath),
+            path: relative(fixtureDir, dirPath),
             dryRun: true,
           }),
         {

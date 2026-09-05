@@ -1,3 +1,4 @@
+import { registerFixtureOutput } from "../../../../scripts/testing/fixture-exports.ts";
 import { describe, expect, test } from "bun:test";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -11,6 +12,12 @@ describe("markdown PDF recipe generation: Pandoc language-attribute fixture", ()
       async (fixtureDir, runPandoc) => {
         const inputPath = join(fixtureDir, "mixed-langs.md");
         const outputPath = join(fixtureDir, "mixed-langs.html");
+        registerFixtureOutput(fixtureDir, {
+          source: outputPath,
+          name: "mixed-langs.html",
+          kind: "generated",
+          required: true,
+        });
         await writeFile(
           inputPath,
           [

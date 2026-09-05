@@ -1,29 +1,10 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { mkdir, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
-
-import {
-  captureRenamePlanCsvSnapshot,
-  cleanupRenamePlanCsvSinceSnapshot,
-} from "../support/plan-artifacts";
+import { join, relative } from "node:path";
 
 import { actionRenameBatch } from "../../../src/cli/actions";
-import {
-  createCapturedRuntime,
-  createTempFixtureDir,
-  toRepoRelativePath,
-} from "../../helpers/cli-test-utils";
+import { createCapturedRuntime, createTempFixtureDir } from "../../helpers/cli-test-utils";
 import { removeIfPresent } from "../../helpers/cli-action-test-utils";
-
-let renamePlanCsvSnapshot = new Set<string>();
-
-beforeEach(async () => {
-  renamePlanCsvSnapshot = await captureRenamePlanCsvSnapshot();
-});
-
-afterEach(async () => {
-  await cleanupRenamePlanCsvSinceSnapshot(renamePlanCsvSnapshot);
-});
 
 describe("cli action modules: rename batch codex auto", () => {
   for (const scenario of [
@@ -54,7 +35,7 @@ describe("cli action modules: rename batch codex auto", () => {
       const fixtureDir = await createTempFixtureDir("actions");
       let planCsvPath: string | undefined;
       try {
-        const { runtime, stdout, stderr } = createCapturedRuntime();
+        const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
         const dirPath = join(fixtureDir, scenario.fixtureDirName);
         await mkdir(dirPath, { recursive: true });
 
@@ -63,7 +44,7 @@ describe("cli action modules: rename batch codex auto", () => {
         let imageCalls = 0;
         let docCalls = 0;
         const result = await actionRenameBatch(runtime, {
-          directory: toRepoRelativePath(dirPath),
+          directory: relative(fixtureDir, dirPath),
           prefix: scenario.prefix,
           dryRun: true,
           codex: true,
@@ -99,7 +80,7 @@ describe("cli action modules: rename batch codex auto", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
     try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const dirPath = join(fixtureDir, "rename-codex-auto-mixed");
       await mkdir(dirPath, { recursive: true });
 
@@ -111,7 +92,7 @@ describe("cli action modules: rename batch codex auto", () => {
       const imageTimeouts: Array<number | undefined> = [];
       const docTimeouts: Array<number | undefined> = [];
       const result = await actionRenameBatch(runtime, {
-        directory: toRepoRelativePath(dirPath),
+        directory: relative(fixtureDir, dirPath),
         prefix: "asset",
         dryRun: true,
         codex: true,
@@ -154,7 +135,7 @@ describe("cli action modules: rename batch codex auto", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
     try {
-      const { runtime, stderr } = createCapturedRuntime();
+      const { runtime, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const dirPath = join(fixtureDir, "rename-codex-timeout-only");
       await mkdir(dirPath, { recursive: true });
       await writeFile(join(dirPath, "cover.png"), "fakepng", "utf8");
@@ -163,7 +144,7 @@ describe("cli action modules: rename batch codex auto", () => {
       let imageCalls = 0;
       let docCalls = 0;
       const result = await actionRenameBatch(runtime, {
-        directory: toRepoRelativePath(dirPath),
+        directory: relative(fixtureDir, dirPath),
         dryRun: true,
         codexTimeoutMs: 120_000,
         codexImagesTitleSuggester: async () => {
@@ -190,7 +171,7 @@ describe("cli action modules: rename batch codex auto", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
     try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const dirPath = join(fixtureDir, "rename-codex-auto-override");
       await mkdir(dirPath, { recursive: true });
 
@@ -202,7 +183,7 @@ describe("cli action modules: rename batch codex auto", () => {
       let imageCalls = 0;
       let docCalls = 0;
       const result = await actionRenameBatch(runtime, {
-        directory: toRepoRelativePath(dirPath),
+        directory: relative(fixtureDir, dirPath),
         prefix: "asset",
         dryRun: true,
         codex: true,
@@ -236,7 +217,7 @@ describe("cli action modules: rename batch codex auto", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
     try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const dirPath = join(fixtureDir, "rename-codex-auto-unsupported");
       await mkdir(dirPath, { recursive: true });
 
@@ -246,7 +227,7 @@ describe("cli action modules: rename batch codex auto", () => {
       let imageCalls = 0;
       let docCalls = 0;
       const result = await actionRenameBatch(runtime, {
-        directory: toRepoRelativePath(dirPath),
+        directory: relative(fixtureDir, dirPath),
         prefix: "media",
         dryRun: true,
         codex: true,

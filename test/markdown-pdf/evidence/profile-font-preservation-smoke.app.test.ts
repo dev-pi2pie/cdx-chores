@@ -1,6 +1,14 @@
 import { describe, expect, test } from "bun:test";
-import { chmod, mkdir, readFile, stat, symlink, writeFile } from "node:fs/promises";
+import { chmod, lstat, mkdir, readFile, stat, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+
+import {
+  allocateRun,
+  fixtureEnvironment,
+  removeRun,
+  suitePath,
+  TEST_CONTEXT_ENV,
+} from "../../../scripts/testing/run-context.ts";
 
 import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
@@ -84,6 +92,57 @@ async function withSmokeFixture(
 }
 
 describe("Markdown PDF Profile font-preservation smoke harness", () => {
+  test("managed clean preserves its fixture owner and rejects other run and suite roots", async () => {
+    const run = await allocateRun(REPO_ROOT, ["app", "unit"], false);
+    try {
+      const otherRun = await allocateRun(REPO_ROOT, ["app"], false);
+      try {
+        const namespace = join(suitePath(run, "app", "scratch"), "fixtures");
+        const ownerName = "markdown-pdf-profile-font-preservation-smoke-managed";
+        const owner = join(namespace, ownerName);
+        const otherOwner = join(namespace, "unrelated-owner");
+        const otherSuiteOwner = join(suitePath(run, "unit", "scratch"), "fixtures", ownerName);
+        const otherRunOwner = join(suitePath(otherRun, "app", "scratch"), "fixtures", ownerName);
+        await Promise.all([
+          mkdir(owner),
+          mkdir(otherOwner),
+          mkdir(otherSuiteOwner),
+          mkdir(otherRunOwner),
+        ]);
+        const smokeDir = join(owner, "smoke");
+        await mkdir(smokeDir);
+        const before = await lstat(owner);
+        const env = { [TEST_CONTEXT_ENV]: fixtureEnvironment(run, "app") };
+        const missingMarker = runHarness(["clean", "--smoke-dir", smokeDir], env);
+        expect(missingMarker.exitCode).toBe(1);
+        expect(missingMarker.stderr).toContain("without its ownership marker");
+        await writeFile(join(smokeDir, ownershipMarkerName), ownershipMarkerContent);
+        const result = runHarness(["clean", "--smoke-dir", smokeDir], env);
+        expect(result.exitCode, result.stderr).toBe(0);
+        await expect(stat(smokeDir)).rejects.toMatchObject({ code: "ENOENT" });
+        const after = await lstat(owner);
+        expect({ dev: after.dev, ino: after.ino }).toEqual({ dev: before.dev, ino: before.ino });
+        for (const rejected of [
+          run.root,
+          suitePath(run, "app", "scratch"),
+          namespace,
+          owner,
+          join(otherOwner, "smoke"),
+          join(otherSuiteOwner, "smoke"),
+          join(otherRunOwner, "smoke"),
+        ]) {
+          const rejectedResult = runHarness(["clean", "--smoke-dir", rejected], env);
+          expect(rejectedResult.exitCode).toBe(1);
+          expect(rejectedResult.stderr).toContain("outside allowed direct-output children");
+        }
+      } finally {
+        await removeRun(otherRun);
+      }
+    } finally {
+      await removeRun(run);
+    }
+  });
+
   test("prints help without naming a private output subdirectory", () => {
     const result = runHarness(["--help"]);
 
@@ -697,6 +756,13 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
 
       await mkdir(join(isolatedRepo, "scripts"), { recursive: true });
       await writeFile(isolatedScript, await readFile(join(REPO_ROOT, scriptPath), "utf8"), "utf8");
+      await mkdir(join(isolatedRepo, "scripts/testing"));
+      for (const dependency of ["run-context.ts", "selection.ts"]) {
+        await writeFile(
+          join(isolatedRepo, "scripts/testing", dependency),
+          await readFile(join(REPO_ROOT, "scripts/testing", dependency)),
+        );
+      }
       await writeFile(inputPath, "# Isolated smoke\n", "utf8");
       await writeFile(profilePath, "fonts: {}\n", "utf8");
       await mkdir(join(isolatedRepo, "examples", "playground", "md-pdf"), {
@@ -710,6 +776,7 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
         {
           PATH: stubBinDir,
           SMOKE_COMMAND_LOG: commandLogPath,
+          [TEST_CONTEXT_ENV]: undefined,
         },
         { cwd: isolatedRepo, script: isolatedScript },
       );
@@ -720,10 +787,14 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
         ownershipMarkerContent,
       );
 
-      const cleanResult = runHarness(["clean", "--smoke-dir", smokeDir], undefined, {
-        cwd: isolatedRepo,
-        script: isolatedScript,
-      });
+      const cleanResult = runHarness(
+        ["clean", "--smoke-dir", smokeDir],
+        { [TEST_CONTEXT_ENV]: undefined },
+        {
+          cwd: isolatedRepo,
+          script: isolatedScript,
+        },
+      );
       expect(cleanResult.exitCode).toBe(0);
       await expect(stat(smokeDir)).rejects.toMatchObject({ code: "ENOENT" });
     });

@@ -1187,6 +1187,65 @@ installed-Bun sample confirmed TODO appears as a skipped record even with exit
 zero. The prior real 2,995-case report also reconciled exactly. Full process-exit
 and finalization agreement is verified when the orchestrator is connected.
 
+#### Fixture Ownership and Designated Exports
+
+Managed fixture helpers allocate beneath the suite's owned scratch namespace.
+They record fixture identity before setup, export designated files before inner
+cleanup, and preserve callback/export/cleanup errors together. Both retention
+modes exercise the same staged export path; finalization alone decides whether
+results survive. Interrupted publication is removed only when its recorded
+directory identity still matches. Raw standalone helpers retain their existing
+allocation location.
+
+Native, Pandoc, and Codex infrastructure launches now record pending/started/
+completed ownership receipts for their detached child groups. Missing or
+unverified completion prevents later scheduling and scratch deletion. Managed
+SIGINT/SIGTERM and caller cancellation are forwarded to active nested owners;
+listeners are removed when completion or launch rejection is recorded. Deliberate
+failure/timeout fixtures with verified stopped work remain valid tests.
+
+The allocation audit led to these scoped adaptations:
+
+- Rename actions and CLI fixtures write plans under their own workspace; cleanup
+  no longer scans or deletes repository-root plans. Concurrent-owner regressions
+  preserve another workspace's plan.
+- Release fixture setup failures clean their owner without replacing the original
+  error. A deterministic curl stub keeps fallback-note tests offline while the
+  explicit PR-title stub remains covered.
+- Newly allocated tabular fixture roots use seeding instead of destructive reset;
+  all 19 helper callers were verified to supply fresh owners. Dedicated reset and
+  clean tests still exercise those operations against child data directories.
+- Markdown code and font-preservation generators recognize the current managed
+  suite's approved fixture children while retaining marker, symlink, input,
+  capability, and raw-path protections. Another run or suite is not authorized.
+- Real OS-temp session and sibling outputs have exact failure-safe cleanup owners.
+  The child environment roots production temporary allocation inside suite scratch.
+
+Designated outputs are limited to representative generated template/Pandoc files
+and whitelisted Codex request/check evidence. No configuration, credentials, homes,
+whole workspaces, or committed input copies are retained. Keys and values in the
+Codex evidence are constructed from fixed names and validated check outcomes.
+
+Focused fixture verification passed 17 cases and 74 assertions, including real
+SIGINT/SIGTERM handling and independent sibling survival. Earlier managed smoke
+verification passed 72 case executions across application, Pandoc, and Codex in
+both retention modes, with export/process inspection and exact acceptance cleanup.
+The unit selection passed 1,197 cases with prerequisite probes blocked.
+
+The first complete managed application run passed 1,881 cases and failed 16: an
+older font-smoke guard rejected the new nesting before its intended assertions.
+After its scoped guard correction, all 1,898 application cases passed across 273
+files: 12,082 assertions in 122.42 seconds, zero skips/failures, verified outer and
+nested shutdown, and successful export inspection. The subsequent signal-forwarding
+extension passed its focused checks. The final runner acceptance will exercise
+that extension in the full aggregate.
+
+A raw pre-fix tabular fixture was intentionally retained when reset replaced its
+registered owner. It was removed only after fresh inspection confirmed the exact
+nine generated regular files and no aliases. Reviewed managed acceptance runs were
+also removed only after their recorded shutdown and ownership checks passed.
+Types, lint, formatting, and whitespace checks passed for the completed batch.
+
 ### 3C: Scheduling and Finalization
 
 Status: pending.

@@ -1,3 +1,4 @@
+import { registerFixtureOutput } from "../../../../scripts/testing/fixture-exports.ts";
 import {
   outputPlan,
   synthesizeForPlan,
@@ -530,6 +531,18 @@ describe("cli action modules: md pdf-template codex bundle writes", () => {
         reportPath,
       });
       const signals = signalsForPlan(plan);
+      registerFixtureOutput(fixtureDir, {
+        source: plan.templateHtml.path,
+        name: "template.html",
+        kind: "generated",
+        required: true,
+      });
+      registerFixtureOutput(fixtureDir, {
+        source: plan.styleCss.path,
+        name: "style.css",
+        kind: "generated",
+        required: true,
+      });
 
       await writeMdPdfTemplateCodexBundle({
         outputPlan: plan,
@@ -546,7 +559,7 @@ describe("cli action modules: md pdf-template codex bundle writes", () => {
         followUpRenderCommand: string;
       };
       expect(report.followUpRenderCommand).toContain(
-        "--input 'examples/playground/.tmp-tests/md-pdf-template-codex-quoted-followup-",
+        `--input '${toRepoRelativePath(fixtureDir)}/source report`,
       );
       expect(report.followUpRenderCommand).toContain("'\\''s draft.md'");
       expect(report.followUpRenderCommand).toContain("--bundle '<template-bundle>'");

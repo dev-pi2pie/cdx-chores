@@ -1,6 +1,8 @@
 import { fileURLToPath } from "node:url";
 
-import { startOwnedProcess, type OwnedProcessOptions } from "../../scripts/testing/process.ts";
+import { type OwnedProcessOptions } from "../../scripts/testing/process.ts";
+
+import { startFixtureProcess } from "../../scripts/testing/fixture-process.ts";
 
 export type NativeRequirement = "duckdb" | "excel" | "sqlite";
 export type NativeReadiness = Record<NativeRequirement, boolean>;
@@ -9,7 +11,7 @@ export type NativeReadiness = Record<NativeRequirement, boolean>;
 export async function probeNativePrerequisites(
   overrides: Partial<OwnedProcessOptions> = {},
 ): Promise<NativeReadiness> {
-  const result = await startOwnedProcess({
+  const result = await startFixtureProcess({
     executable: process.execPath,
     args: [fileURLToPath(new URL("./native-prerequisite-probe.ts", import.meta.url))],
     cwd: fileURLToPath(new URL("../..", import.meta.url)),

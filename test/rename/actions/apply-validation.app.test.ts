@@ -1,44 +1,25 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { rm, stat, writeFile } from "node:fs/promises";
-import { join } from "node:path";
-
-import {
-  captureRenamePlanCsvSnapshot,
-  cleanupRenamePlanCsvSinceSnapshot,
-} from "../support/plan-artifacts";
+import { join, relative } from "node:path";
 
 import { actionRenameApply } from "../../../src/cli/actions";
 import { readRenamePlanCsv } from "../../../src/cli/rename-plan-csv";
 import { expectCliError } from "../../helpers/cli-action-test-utils";
-import {
-  createCapturedRuntime,
-  createTempFixtureDir,
-  toRepoRelativePath,
-} from "../../helpers/cli-test-utils";
+import { createCapturedRuntime, createTempFixtureDir } from "../../helpers/cli-test-utils";
 import {
   createRenamePlanCsvText,
   createRenamePlanRow,
   RENAME_PLAN_HEADERS,
 } from "./apply-validation-support";
 
-let renamePlanCsvSnapshot = new Set<string>();
-
-beforeEach(async () => {
-  renamePlanCsvSnapshot = await captureRenamePlanCsvSnapshot();
-});
-
-afterEach(async () => {
-  await cleanupRenamePlanCsvSinceSnapshot(renamePlanCsvSnapshot);
-});
-
 describe("cli action modules: rename apply validation", () => {
   test("actionRenameApply rejects CSVs missing required replay columns", async () => {
     const fixtureDir = await createTempFixtureDir("actions");
     const csvPath = join(fixtureDir, "rename-plan-missing-status.csv");
     try {
-      const { runtime } = createCapturedRuntime();
-      const oldPath = toRepoRelativePath(join(fixtureDir, "alpha.txt"));
-      const newPath = toRepoRelativePath(join(fixtureDir, "beta.txt"));
+      const { runtime } = createCapturedRuntime({ cwd: fixtureDir });
+      const oldPath = relative(fixtureDir, join(fixtureDir, "alpha.txt"));
+      const newPath = relative(fixtureDir, join(fixtureDir, "beta.txt"));
       const headers = RENAME_PLAN_HEADERS.filter((header) => header !== "status");
 
       await writeFile(
@@ -47,11 +28,14 @@ describe("cli action modules: rename apply validation", () => {
         "utf8",
       );
 
-      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
-        code: "INVALID_RENAME_PLAN",
-        exitCode: 2,
-        messageIncludes: "missing required column: status",
-      });
+      await expectCliError(
+        () => actionRenameApply(runtime, { csv: relative(fixtureDir, csvPath) }),
+        {
+          code: "INVALID_RENAME_PLAN",
+          exitCode: 2,
+          messageIncludes: "missing required column: status",
+        },
+      );
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
@@ -61,9 +45,9 @@ describe("cli action modules: rename apply validation", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     const csvPath = join(fixtureDir, "rename-plan-blank-status.csv");
     try {
-      const { runtime } = createCapturedRuntime();
-      const oldPath = toRepoRelativePath(join(fixtureDir, "alpha.txt"));
-      const newPath = toRepoRelativePath(join(fixtureDir, "beta.txt"));
+      const { runtime } = createCapturedRuntime({ cwd: fixtureDir });
+      const oldPath = relative(fixtureDir, join(fixtureDir, "alpha.txt"));
+      const newPath = relative(fixtureDir, join(fixtureDir, "beta.txt"));
 
       await writeFile(
         csvPath,
@@ -73,11 +57,14 @@ describe("cli action modules: rename apply validation", () => {
         "utf8",
       );
 
-      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
-        code: "INVALID_RENAME_PLAN",
-        exitCode: 2,
-        messageIncludes: "row 2 missing required field: status",
-      });
+      await expectCliError(
+        () => actionRenameApply(runtime, { csv: relative(fixtureDir, csvPath) }),
+        {
+          code: "INVALID_RENAME_PLAN",
+          exitCode: 2,
+          messageIncludes: "row 2 missing required field: status",
+        },
+      );
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
@@ -87,9 +74,9 @@ describe("cli action modules: rename apply validation", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     const csvPath = join(fixtureDir, "rename-plan-missing-plan-id.csv");
     try {
-      const { runtime } = createCapturedRuntime();
-      const oldPath = toRepoRelativePath(join(fixtureDir, "alpha.txt"));
-      const newPath = toRepoRelativePath(join(fixtureDir, "beta.txt"));
+      const { runtime } = createCapturedRuntime({ cwd: fixtureDir });
+      const oldPath = relative(fixtureDir, join(fixtureDir, "alpha.txt"));
+      const newPath = relative(fixtureDir, join(fixtureDir, "beta.txt"));
 
       await writeFile(
         csvPath,
@@ -99,11 +86,14 @@ describe("cli action modules: rename apply validation", () => {
         "utf8",
       );
 
-      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
-        code: "INVALID_RENAME_PLAN",
-        exitCode: 2,
-        messageIncludes: "row 2 missing required field: plan_id",
-      });
+      await expectCliError(
+        () => actionRenameApply(runtime, { csv: relative(fixtureDir, csvPath) }),
+        {
+          code: "INVALID_RENAME_PLAN",
+          exitCode: 2,
+          messageIncludes: "row 2 missing required field: plan_id",
+        },
+      );
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
@@ -113,9 +103,9 @@ describe("cli action modules: rename apply validation", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     const csvPath = join(fixtureDir, "rename-plan-missing-planned-at.csv");
     try {
-      const { runtime } = createCapturedRuntime();
-      const oldPath = toRepoRelativePath(join(fixtureDir, "alpha.txt"));
-      const newPath = toRepoRelativePath(join(fixtureDir, "beta.txt"));
+      const { runtime } = createCapturedRuntime({ cwd: fixtureDir });
+      const oldPath = relative(fixtureDir, join(fixtureDir, "alpha.txt"));
+      const newPath = relative(fixtureDir, join(fixtureDir, "beta.txt"));
 
       await writeFile(
         csvPath,
@@ -125,11 +115,14 @@ describe("cli action modules: rename apply validation", () => {
         "utf8",
       );
 
-      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
-        code: "INVALID_RENAME_PLAN",
-        exitCode: 2,
-        messageIncludes: "row 2 missing required field: planned_at",
-      });
+      await expectCliError(
+        () => actionRenameApply(runtime, { csv: relative(fixtureDir, csvPath) }),
+        {
+          code: "INVALID_RENAME_PLAN",
+          exitCode: 2,
+          messageIncludes: "row 2 missing required field: planned_at",
+        },
+      );
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
@@ -139,9 +132,9 @@ describe("cli action modules: rename apply validation", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     const csvPath = join(fixtureDir, "rename-plan-invalid-status.csv");
     try {
-      const { runtime } = createCapturedRuntime();
-      const oldPath = toRepoRelativePath(join(fixtureDir, "alpha.txt"));
-      const newPath = toRepoRelativePath(join(fixtureDir, "beta.txt"));
+      const { runtime } = createCapturedRuntime({ cwd: fixtureDir });
+      const oldPath = relative(fixtureDir, join(fixtureDir, "alpha.txt"));
+      const newPath = relative(fixtureDir, join(fixtureDir, "beta.txt"));
 
       await writeFile(
         csvPath,
@@ -151,11 +144,14 @@ describe("cli action modules: rename apply validation", () => {
         "utf8",
       );
 
-      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
-        code: "INVALID_RENAME_PLAN",
-        exitCode: 2,
-        messageIncludes: "Invalid rename plan status 'queued'",
-      });
+      await expectCliError(
+        () => actionRenameApply(runtime, { csv: relative(fixtureDir, csvPath) }),
+        {
+          code: "INVALID_RENAME_PLAN",
+          exitCode: 2,
+          messageIncludes: "Invalid rename plan status 'queued'",
+        },
+      );
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
@@ -168,23 +164,26 @@ describe("cli action modules: rename apply validation", () => {
     const targetAPath = join(fixtureDir, "beta.txt");
     const targetBPath = join(fixtureDir, "gamma.txt");
     try {
-      const { runtime } = createCapturedRuntime();
+      const { runtime } = createCapturedRuntime({ cwd: fixtureDir });
       await writeFile(sourcePath, "alpha", "utf8");
 
       await writeFile(
         csvPath,
         createRenamePlanCsvText(RENAME_PLAN_HEADERS, [
-          createRenamePlanRow(toRepoRelativePath(sourcePath), toRepoRelativePath(targetAPath)),
-          createRenamePlanRow(toRepoRelativePath(sourcePath), toRepoRelativePath(targetBPath)),
+          createRenamePlanRow(relative(fixtureDir, sourcePath), relative(fixtureDir, targetAPath)),
+          createRenamePlanRow(relative(fixtureDir, sourcePath), relative(fixtureDir, targetBPath)),
         ]),
         "utf8",
       );
 
-      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
-        code: "INVALID_RENAME_PLAN",
-        exitCode: 2,
-        messageIncludes: "duplicate executable old_path",
-      });
+      await expectCliError(
+        () => actionRenameApply(runtime, { csv: relative(fixtureDir, csvPath) }),
+        {
+          code: "INVALID_RENAME_PLAN",
+          exitCode: 2,
+          messageIncludes: "duplicate executable old_path",
+        },
+      );
 
       expect(await stat(sourcePath).catch(() => null)).not.toBeNull();
       expect(await stat(targetAPath).catch(() => null)).toBeNull();
@@ -201,24 +200,27 @@ describe("cli action modules: rename apply validation", () => {
     const sourceBPath = join(fixtureDir, "beta.txt");
     const targetPath = join(fixtureDir, "renamed.txt");
     try {
-      const { runtime } = createCapturedRuntime();
+      const { runtime } = createCapturedRuntime({ cwd: fixtureDir });
       await writeFile(sourceAPath, "alpha", "utf8");
       await writeFile(sourceBPath, "beta", "utf8");
 
       await writeFile(
         csvPath,
         createRenamePlanCsvText(RENAME_PLAN_HEADERS, [
-          createRenamePlanRow(toRepoRelativePath(sourceAPath), toRepoRelativePath(targetPath)),
-          createRenamePlanRow(toRepoRelativePath(sourceBPath), toRepoRelativePath(targetPath)),
+          createRenamePlanRow(relative(fixtureDir, sourceAPath), relative(fixtureDir, targetPath)),
+          createRenamePlanRow(relative(fixtureDir, sourceBPath), relative(fixtureDir, targetPath)),
         ]),
         "utf8",
       );
 
-      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
-        code: "INVALID_RENAME_PLAN",
-        exitCode: 2,
-        messageIncludes: "duplicate executable new_path",
-      });
+      await expectCliError(
+        () => actionRenameApply(runtime, { csv: relative(fixtureDir, csvPath) }),
+        {
+          code: "INVALID_RENAME_PLAN",
+          exitCode: 2,
+          messageIncludes: "duplicate executable new_path",
+        },
+      );
 
       expect(await stat(sourceAPath).catch(() => null)).not.toBeNull();
       expect(await stat(sourceBPath).catch(() => null)).not.toBeNull();
@@ -232,8 +234,8 @@ describe("cli action modules: rename apply validation", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     const csvPath = join(fixtureDir, "rename-plan-escape.csv");
     try {
-      const { runtime } = createCapturedRuntime();
-      const newPath = toRepoRelativePath(join(fixtureDir, "beta.txt"));
+      const { runtime } = createCapturedRuntime({ cwd: fixtureDir });
+      const newPath = relative(fixtureDir, join(fixtureDir, "beta.txt"));
 
       await writeFile(
         csvPath,
@@ -243,11 +245,14 @@ describe("cli action modules: rename apply validation", () => {
         "utf8",
       );
 
-      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
-        code: "INVALID_RENAME_PLAN",
-        exitCode: 2,
-        messageIncludes: "old_path escaped current working directory",
-      });
+      await expectCliError(
+        () => actionRenameApply(runtime, { csv: relative(fixtureDir, csvPath) }),
+        {
+          code: "INVALID_RENAME_PLAN",
+          exitCode: 2,
+          messageIncludes: "old_path escaped current working directory",
+        },
+      );
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
@@ -259,7 +264,7 @@ describe("cli action modules: rename apply validation", () => {
     const sourcePath = join(fixtureDir, "alpha.txt");
     const skippedPath = join(fixtureDir, "skip.txt");
     try {
-      const { runtime } = createCapturedRuntime();
+      const { runtime } = createCapturedRuntime({ cwd: fixtureDir });
       await writeFile(sourcePath, "alpha", "utf8");
       await writeFile(skippedPath, "skip", "utf8");
 
@@ -267,23 +272,30 @@ describe("cli action modules: rename apply validation", () => {
         csvPath,
         createRenamePlanCsvText(RENAME_PLAN_HEADERS, [
           createRenamePlanRow(
-            toRepoRelativePath(sourcePath),
-            toRepoRelativePath(join(fixtureDir, "beta.txt")),
+            relative(fixtureDir, sourcePath),
+            relative(fixtureDir, join(fixtureDir, "beta.txt")),
           ),
-          createRenamePlanRow(toRepoRelativePath(skippedPath), toRepoRelativePath(skippedPath), {
-            status: "skipped",
-            reason: "unchanged",
-            plan_id: "plan-2",
-          }),
+          createRenamePlanRow(
+            relative(fixtureDir, skippedPath),
+            relative(fixtureDir, skippedPath),
+            {
+              status: "skipped",
+              reason: "unchanged",
+              plan_id: "plan-2",
+            },
+          ),
         ]),
         "utf8",
       );
 
-      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
-        code: "INVALID_RENAME_PLAN",
-        exitCode: 2,
-        messageIncludes: "inconsistent plan_id",
-      });
+      await expectCliError(
+        () => actionRenameApply(runtime, { csv: relative(fixtureDir, csvPath) }),
+        {
+          code: "INVALID_RENAME_PLAN",
+          exitCode: 2,
+          messageIncludes: "inconsistent plan_id",
+        },
+      );
 
       expect(await stat(sourcePath).catch(() => null)).not.toBeNull();
     } finally {
@@ -297,7 +309,7 @@ describe("cli action modules: rename apply validation", () => {
     const sourcePath = join(fixtureDir, "alpha.txt");
     const skippedPath = join(fixtureDir, "skip.txt");
     try {
-      const { runtime } = createCapturedRuntime();
+      const { runtime } = createCapturedRuntime({ cwd: fixtureDir });
       await writeFile(sourcePath, "alpha", "utf8");
       await writeFile(skippedPath, "skip", "utf8");
 
@@ -305,23 +317,30 @@ describe("cli action modules: rename apply validation", () => {
         csvPath,
         createRenamePlanCsvText(RENAME_PLAN_HEADERS, [
           createRenamePlanRow(
-            toRepoRelativePath(sourcePath),
-            toRepoRelativePath(join(fixtureDir, "beta.txt")),
+            relative(fixtureDir, sourcePath),
+            relative(fixtureDir, join(fixtureDir, "beta.txt")),
           ),
-          createRenamePlanRow(toRepoRelativePath(skippedPath), toRepoRelativePath(skippedPath), {
-            status: "skipped",
-            reason: "unchanged",
-            planned_at: "2026-02-26T00:00:00.000Z",
-          }),
+          createRenamePlanRow(
+            relative(fixtureDir, skippedPath),
+            relative(fixtureDir, skippedPath),
+            {
+              status: "skipped",
+              reason: "unchanged",
+              planned_at: "2026-02-26T00:00:00.000Z",
+            },
+          ),
         ]),
         "utf8",
       );
 
-      await expectCliError(() => actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) }), {
-        code: "INVALID_RENAME_PLAN",
-        exitCode: 2,
-        messageIncludes: "inconsistent planned_at",
-      });
+      await expectCliError(
+        () => actionRenameApply(runtime, { csv: relative(fixtureDir, csvPath) }),
+        {
+          code: "INVALID_RENAME_PLAN",
+          exitCode: 2,
+          messageIncludes: "inconsistent planned_at",
+        },
+      );
 
       expect(await stat(sourcePath).catch(() => null)).not.toBeNull();
     } finally {
@@ -335,12 +354,12 @@ describe("cli action modules: rename apply validation", () => {
     const sourcePath = join(fixtureDir, "alpha.txt");
     const targetPath = join(fixtureDir, "renamed.txt");
     try {
-      const { runtime, stderr } = createCapturedRuntime();
+      const { runtime, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       await writeFile(sourcePath, "alpha", "utf8");
 
       const headers = [...RENAME_PLAN_HEADERS, "future_note"];
       const row = {
-        ...createRenamePlanRow(toRepoRelativePath(sourcePath), toRepoRelativePath(targetPath), {
+        ...createRenamePlanRow(relative(fixtureDir, sourcePath), relative(fixtureDir, targetPath), {
           old_name: "mismatch-old.txt",
           new_name: "mismatch-new.txt",
         }),
@@ -349,7 +368,7 @@ describe("cli action modules: rename apply validation", () => {
 
       await writeFile(csvPath, createRenamePlanCsvText(headers, [row]), "utf8");
 
-      const applyResult = await actionRenameApply(runtime, { csv: toRepoRelativePath(csvPath) });
+      const applyResult = await actionRenameApply(runtime, { csv: relative(fixtureDir, csvPath) });
 
       expect(stderr.text).toBe("");
       expect(applyResult.appliedCount).toBe(1);
@@ -364,9 +383,9 @@ describe("cli action modules: rename apply validation", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     const csvPath = join(fixtureDir, "rename-plan-read-lenient.csv");
     try {
-      const { runtime } = createCapturedRuntime();
-      const sourcePath = toRepoRelativePath(join(fixtureDir, "alpha.txt"));
-      const targetPath = toRepoRelativePath(join(fixtureDir, "renamed.txt"));
+      const { runtime } = createCapturedRuntime({ cwd: fixtureDir });
+      const sourcePath = relative(fixtureDir, join(fixtureDir, "alpha.txt"));
+      const targetPath = relative(fixtureDir, join(fixtureDir, "renamed.txt"));
       const headers = [...RENAME_PLAN_HEADERS, "future_note"];
 
       await writeFile(
@@ -385,7 +404,7 @@ describe("cli action modules: rename apply validation", () => {
         "utf8",
       );
 
-      const result = await readRenamePlanCsv(runtime, toRepoRelativePath(csvPath));
+      const result = await readRenamePlanCsv(runtime, relative(fixtureDir, csvPath));
 
       expect(result.csvPath).toBe(csvPath);
       expect(result.rows).toHaveLength(1);

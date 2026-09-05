@@ -1,30 +1,11 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { mkdir, readFile, rm, utimes, writeFile } from "node:fs/promises";
-import { join } from "node:path";
-
-import {
-  captureRenamePlanCsvSnapshot,
-  cleanupRenamePlanCsvSinceSnapshot,
-} from "../support/plan-artifacts";
+import { join, relative } from "node:path";
 
 import { actionRenameBatch, actionRenameFile } from "../../../src/cli/actions";
 import { formatLocalFileDateTime } from "../../../src/utils/datetime";
 import { removeIfPresent } from "../../helpers/cli-action-test-utils";
-import {
-  createCapturedRuntime,
-  createTempFixtureDir,
-  toRepoRelativePath,
-} from "../../helpers/cli-test-utils";
-
-let renamePlanCsvSnapshot = new Set<string>();
-
-beforeEach(async () => {
-  renamePlanCsvSnapshot = await captureRenamePlanCsvSnapshot();
-});
-
-afterEach(async () => {
-  await cleanupRenamePlanCsvSinceSnapshot(renamePlanCsvSnapshot);
-});
+import { createCapturedRuntime, createTempFixtureDir } from "../../helpers/cli-test-utils";
 
 type RenameFixtureOptions = {
   content?: string;
@@ -104,10 +85,10 @@ describe("cli action modules: rename timestamp behavior", () => {
             "batch-legacy",
             "note.txt",
           );
-          const { runtime, stderr } = createCapturedRuntime();
+          const { runtime, stderr } = createCapturedRuntime({ cwd: fixtureDir });
 
           const result = await actionRenameBatch(runtime, {
-            directory: toRepoRelativePath(dirPath),
+            directory: relative(fixtureDir, dirPath),
             prefix: "doc",
             dryRun: true,
             timestampTimezone: "local",
@@ -129,10 +110,10 @@ describe("cli action modules: rename timestamp behavior", () => {
     test("keeps explicit Route A placeholders authoritative even when an override is passed", async () => {
       await withActionWorkspace(async (fixtureDir, trackPlanCsv) => {
         const { dirPath } = await createRenameFixture(fixtureDir, "batch-explicit", "note.txt");
-        const { runtime, stderr } = createCapturedRuntime();
+        const { runtime, stderr } = createCapturedRuntime({ cwd: fixtureDir });
 
         const localIso = await actionRenameBatch(runtime, {
-          directory: toRepoRelativePath(dirPath),
+          directory: relative(fixtureDir, dirPath),
           pattern: "{timestamp_local_iso}-{stem}",
           dryRun: true,
           timestampTimezone: "utc",
@@ -145,7 +126,7 @@ describe("cli action modules: rename timestamp behavior", () => {
         expect((dataLine.split(",")[1] ?? "").includes("Z")).toBe(false);
 
         const utc12h = await actionRenameBatch(runtime, {
-          directory: toRepoRelativePath(dirPath),
+          directory: relative(fixtureDir, dirPath),
           pattern: "{timestamp_utc_12h}-{stem}",
           dryRun: true,
         });
@@ -159,10 +140,10 @@ describe("cli action modules: rename timestamp behavior", () => {
     test("leaves timestamp_tz empty for mixed or timestamp-free patterns", async () => {
       await withActionWorkspace(async (fixtureDir, trackPlanCsv) => {
         const { dirPath } = await createRenameFixture(fixtureDir, "batch-empty", "note.txt");
-        const { runtime, stderr } = createCapturedRuntime();
+        const { runtime, stderr } = createCapturedRuntime({ cwd: fixtureDir });
 
         const mixed = await actionRenameBatch(runtime, {
-          directory: toRepoRelativePath(dirPath),
+          directory: relative(fixtureDir, dirPath),
           pattern: "{timestamp_local}-{timestamp_utc_iso}-{stem}",
           dryRun: true,
         });
@@ -173,7 +154,7 @@ describe("cli action modules: rename timestamp behavior", () => {
         expectTimestampTz(dataLine, "");
 
         const noTimestamp = await actionRenameBatch(runtime, {
-          directory: toRepoRelativePath(dirPath),
+          directory: relative(fixtureDir, dirPath),
           pattern: "{prefix}-{stem}",
           prefix: "raw",
           dryRun: true,
@@ -196,10 +177,10 @@ describe("cli action modules: rename timestamp behavior", () => {
             "file-spaced",
             "memo.txt",
           );
-          const { runtime, stderr } = createCapturedRuntime();
+          const { runtime, stderr } = createCapturedRuntime({ cwd: fixtureDir });
 
           const result = await actionRenameFile(runtime, {
-            path: toRepoRelativePath(filePath),
+            path: relative(fixtureDir, filePath),
             pattern: "{ prefix }-{ timestamp }-{ stem }",
             prefix: "doc",
             dryRun: true,
@@ -221,7 +202,7 @@ describe("cli action modules: rename timestamp behavior", () => {
     test("derives metadata from explicit Route A placeholders and clears it for mixed patterns", async () => {
       await withActionWorkspace(async (fixtureDir, trackPlanCsv) => {
         const { filePath } = await createRenameFixture(fixtureDir, "file-explicit", "memo.txt");
-        const { runtime, stderr } = createCapturedRuntime();
+        const { runtime, stderr } = createCapturedRuntime({ cwd: fixtureDir });
 
         const scenarios = [
           {
@@ -240,7 +221,7 @@ describe("cli action modules: rename timestamp behavior", () => {
 
         for (const scenario of scenarios) {
           const result = await actionRenameFile(runtime, {
-            path: toRepoRelativePath(filePath),
+            path: relative(fixtureDir, filePath),
             pattern: scenario.pattern,
             dryRun: true,
           });
@@ -264,10 +245,10 @@ describe("cli action modules: rename timestamp behavior", () => {
               content: "# Weekly Sync\n",
             },
           );
-          const { runtime, stderr } = createCapturedRuntime();
+          const { runtime, stderr } = createCapturedRuntime({ cwd: fixtureDir });
 
           const result = await actionRenameFile(runtime, {
-            path: toRepoRelativePath(filePath),
+            path: relative(fixtureDir, filePath),
             pattern: "{timestamp}-{stem}",
             dryRun: true,
             timestampTimezone: "local",

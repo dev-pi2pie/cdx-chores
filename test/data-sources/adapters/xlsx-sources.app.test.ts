@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "bun";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { collectXlsxSheetSnapshot, listXlsxSheetNames } from "../../../src/cli/duckdb/xlsx-sources";
@@ -11,9 +10,7 @@ import { seedStackedMergedBandFixture } from "../fixtures/stacked-merged-band";
 import { seedDataExtractFixtures } from "../fixtures/tabular";
 
 async function createWorkbookWithReorderedMetadataAttributes(outputPath: string): Promise<void> {
-  const workspace = await mkdtemp(join(tmpdir(), "xlsx-attribute-order-"));
-
-  try {
+  await withTempFixtureDir("xlsx-attribute-order", async (workspace) => {
     const unpackDir = join(workspace, "unpacked");
     await mkdir(unpackDir, { recursive: true });
 
@@ -63,9 +60,7 @@ async function createWorkbookWithReorderedMetadataAttributes(outputPath: string)
     if (zipProc.exitCode !== 0) {
       throw new Error(Buffer.from(zipProc.stderr).toString("utf8"));
     }
-  } finally {
-    await rm(workspace, { force: true, recursive: true });
-  }
+  });
 }
 
 describe("xlsx source discovery", () => {

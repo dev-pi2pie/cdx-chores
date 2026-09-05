@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { withTempFixtureDir } from "../../helpers/cli-test-utils";
@@ -27,8 +27,12 @@ function runGenerator(outputDir: string): { exitCode: number; stdout: string; st
 
 describe("data query DuckDB fixture generator", () => {
   test("reset creates deterministic DuckDB fixtures and a .db alias", async () => {
-    await withTempFixtureDir("data-query-duckdb-fixtures-a", async (outputA) => {
-      await withTempFixtureDir("data-query-duckdb-fixtures-b", async (outputB) => {
+    await withTempFixtureDir("data-query-duckdb-fixtures-a", async (ownerA) => {
+      const outputA = join(ownerA, "data");
+      await mkdir(outputA);
+      await withTempFixtureDir("data-query-duckdb-fixtures-b", async (ownerB) => {
+        const outputB = join(ownerB, "data");
+        await mkdir(outputB);
         const first = runGenerator(outputA);
         const second = runGenerator(outputB);
 
@@ -66,7 +70,9 @@ describe("data query DuckDB fixture generator", () => {
   test("reset writes the expected DuckDB catalog fixture for both extensions", async () => {
     const { DuckDBConnection } = await import("@duckdb/node-api");
 
-    await withTempFixtureDir("data-query-fixtures-duckdb", async (outputDir) => {
+    await withTempFixtureDir("data-query-fixtures-duckdb", async (owner) => {
+      const outputDir = join(owner, "data");
+      await mkdir(outputDir);
       const result = runGenerator(outputDir);
       expect(result.exitCode).toBe(0);
 

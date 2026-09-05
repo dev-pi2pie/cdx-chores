@@ -102,29 +102,33 @@ describe("interactive Markdown PDF generated-candidate materialization", () => {
   ] as const)("binds and writes the accepted %s candidate exactly once", async (kind, artifact) => {
     const { runtime } = createActionTestRuntime();
     const session = await createOwnedMarkdownPdfSession();
-    const calls = { binds: [] as ServiceCall[], writes: [] as unknown[] };
-    const services = createServices({ calls });
-    const candidate = fakeCandidate(kind, artifact);
+    try {
+      const calls = { binds: [] as ServiceCall[], writes: [] as unknown[] };
+      const services = createServices({ calls });
+      const candidate = fakeCandidate(kind, artifact);
 
-    const bound = await bindPreparedMarkdownPdfGeneratedCandidate(
-      runtime,
-      candidate,
-      { kind: "temporary", report: { kind: "none" }, session },
-      services,
-    );
-    await writeBoundMarkdownPdfGeneratedCandidate(bound);
+      const bound = await bindPreparedMarkdownPdfGeneratedCandidate(
+        runtime,
+        candidate,
+        { kind: "temporary", report: { kind: "none" }, session },
+        services,
+      );
+      await writeBoundMarkdownPdfGeneratedCandidate(bound);
 
-    expect(bound.acceptedCandidate).toBe(candidate);
-    expect(calls.binds).toHaveLength(1);
-    expect(calls.binds[0]?.candidate).toBe(candidate.candidate);
-    expect(calls.writes).toHaveLength(1);
-    expect(bound.rendererSource).toEqual(
-      artifact === "profile" ? { profile: bound.destination } : { bundle: bound.destination },
-    );
-    expect(bound.destination).toBe(
-      join(session.path, artifact === "profile" ? "profile.yml" : "project-bundle"),
-    );
-    await cleanupOwnedMarkdownPdfSession(session);
+      expect(bound.acceptedCandidate).toBe(candidate);
+      expect(calls.binds).toHaveLength(1);
+      expect(calls.binds[0]?.candidate).toBe(candidate.candidate);
+      expect(calls.writes).toHaveLength(1);
+      expect(bound.rendererSource).toEqual(
+        artifact === "profile" ? { profile: bound.destination } : { bundle: bound.destination },
+      );
+      expect(bound.destination).toBe(
+        join(session.path, artifact === "profile" ? "profile.yml" : "project-bundle"),
+      );
+      await cleanupOwnedMarkdownPdfSession(session);
+    } finally {
+      await cleanupOwnedMarkdownPdfSession(session);
+    }
   });
 
   test("derives materialization and cleanup paths from the canonical owned session", async () => {
@@ -142,81 +146,99 @@ describe("interactive Markdown PDF generated-candidate materialization", () => {
         removeCalls.push({ path, options });
       },
     });
-    const calls = { binds: [] as ServiceCall[], writes: [] as unknown[] };
+    try {
+      const calls = { binds: [] as ServiceCall[], writes: [] as unknown[] };
 
-    const bound = await bindPreparedMarkdownPdfGeneratedCandidate(
-      runtime,
-      fakeCandidate("deterministic", "profile"),
-      { kind: "temporary", report: { kind: "none" }, session },
-      createServices({ calls }),
-    );
+      const bound = await bindPreparedMarkdownPdfGeneratedCandidate(
+        runtime,
+        fakeCandidate("deterministic", "profile"),
+        { kind: "temporary", report: { kind: "none" }, session },
+        createServices({ calls }),
+      );
 
-    expect(session.path).toBe(canonicalPath);
-    expect(bound.destination).toBe(join(canonicalPath, "profile.yml"));
-    expect(calls.binds[0]?.output).toBe(join(canonicalPath, "profile.yml"));
+      expect(session.path).toBe(canonicalPath);
+      expect(bound.destination).toBe(join(canonicalPath, "profile.yml"));
+      expect(calls.binds[0]?.output).toBe(join(canonicalPath, "profile.yml"));
 
-    await cleanupOwnedMarkdownPdfSession(session);
-    expect(removeCalls).toEqual([
-      { path: canonicalPath, options: { force: false, recursive: true } },
-    ]);
+      await cleanupOwnedMarkdownPdfSession(session);
+      expect(removeCalls).toEqual([
+        { path: canonicalPath, options: { force: false, recursive: true } },
+      ]);
+    } finally {
+      await cleanupOwnedMarkdownPdfSession(session);
+    }
   });
 
   test("rejects a repeated write of the same bound candidate", async () => {
     const { runtime } = createActionTestRuntime();
     const session = await createOwnedMarkdownPdfSession();
-    const calls = { binds: [] as ServiceCall[], writes: [] as unknown[] };
-    const bound = await bindPreparedMarkdownPdfGeneratedCandidate(
-      runtime,
-      fakeCandidate("deterministic", "profile"),
-      { kind: "temporary", report: { kind: "none" }, session },
-      createServices({ calls }),
-    );
+    try {
+      const calls = { binds: [] as ServiceCall[], writes: [] as unknown[] };
+      const bound = await bindPreparedMarkdownPdfGeneratedCandidate(
+        runtime,
+        fakeCandidate("deterministic", "profile"),
+        { kind: "temporary", report: { kind: "none" }, session },
+        createServices({ calls }),
+      );
 
-    await writeBoundMarkdownPdfGeneratedCandidate(bound);
-    await expect(writeBoundMarkdownPdfGeneratedCandidate(bound)).rejects.toThrow("already written");
-    expect(calls.writes).toHaveLength(1);
-    await cleanupOwnedMarkdownPdfSession(session);
+      await writeBoundMarkdownPdfGeneratedCandidate(bound);
+      await expect(writeBoundMarkdownPdfGeneratedCandidate(bound)).rejects.toThrow(
+        "already written",
+      );
+      expect(calls.writes).toHaveLength(1);
+      await cleanupOwnedMarkdownPdfSession(session);
+    } finally {
+      await cleanupOwnedMarkdownPdfSession(session);
+    }
   });
 
   test("allows a failed write to retry the same bound candidate", async () => {
     const { runtime } = createActionTestRuntime();
     const session = await createOwnedMarkdownPdfSession();
-    const calls = { binds: [] as ServiceCall[], writes: [] as unknown[] };
-    const bound = await bindPreparedMarkdownPdfGeneratedCandidate(
-      runtime,
-      fakeCandidate("deterministic", "profile"),
-      { kind: "temporary", report: { kind: "none" }, session },
-      createServices({ calls, writeFailures: ["transient write failure"] }),
-    );
+    try {
+      const calls = { binds: [] as ServiceCall[], writes: [] as unknown[] };
+      const bound = await bindPreparedMarkdownPdfGeneratedCandidate(
+        runtime,
+        fakeCandidate("deterministic", "profile"),
+        { kind: "temporary", report: { kind: "none" }, session },
+        createServices({ calls, writeFailures: ["transient write failure"] }),
+      );
 
-    await expect(writeBoundMarkdownPdfGeneratedCandidate(bound)).rejects.toThrow(
-      "transient write failure",
-    );
-    await writeBoundMarkdownPdfGeneratedCandidate(bound);
+      await expect(writeBoundMarkdownPdfGeneratedCandidate(bound)).rejects.toThrow(
+        "transient write failure",
+      );
+      await writeBoundMarkdownPdfGeneratedCandidate(bound);
 
-    expect(calls.binds).toHaveLength(1);
-    expect(calls.writes).toHaveLength(2);
-    await cleanupOwnedMarkdownPdfSession(session);
+      expect(calls.binds).toHaveLength(1);
+      expect(calls.writes).toHaveLength(2);
+      await cleanupOwnedMarkdownPdfSession(session);
+    } finally {
+      await cleanupOwnedMarkdownPdfSession(session);
+    }
   });
 
   test("keeps an external temporary report outside the cleanup target", async () => {
     await withTempFixtureDir("md-pdf-materialization-report", async (fixtureDir) => {
       const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
       const session = await createOwnedMarkdownPdfSession();
-      const reportPath = join(fixtureDir, "report.json");
-      const calls = { binds: [] as ServiceCall[], writes: [] as unknown[] };
-      const services = createServices({ calls, externalReport: reportPath });
-      const bound = await bindPreparedMarkdownPdfGeneratedCandidate(
-        runtime,
-        fakeCandidate("codex", "profile"),
-        { kind: "temporary", report: { kind: "external", path: reportPath }, session },
-        services,
-      );
-      await writeFile(reportPath, "{}\n");
+      try {
+        const reportPath = join(fixtureDir, "report.json");
+        const calls = { binds: [] as ServiceCall[], writes: [] as unknown[] };
+        const services = createServices({ calls, externalReport: reportPath });
+        const bound = await bindPreparedMarkdownPdfGeneratedCandidate(
+          runtime,
+          fakeCandidate("codex", "profile"),
+          { kind: "temporary", report: { kind: "external", path: reportPath }, session },
+          services,
+        );
+        await writeFile(reportPath, "{}\n");
 
-      expect(bound.outputFiles).toContain(reportPath);
-      await cleanupOwnedMarkdownPdfSession(session);
-      expect(await pathExists(reportPath)).toBe(true);
+        expect(bound.outputFiles).toContain(reportPath);
+        await cleanupOwnedMarkdownPdfSession(session);
+        expect(await pathExists(reportPath)).toBe(true);
+      } finally {
+        await cleanupOwnedMarkdownPdfSession(session);
+      }
     });
   });
 
@@ -300,38 +322,46 @@ describe("interactive Markdown PDF generated-candidate materialization", () => {
   test("rejects temporary with-artifact report retention before binding", async () => {
     const { runtime } = createActionTestRuntime();
     const session = await createOwnedMarkdownPdfSession();
-    const calls = { binds: [] as ServiceCall[], writes: [] as unknown[] };
+    try {
+      const calls = { binds: [] as ServiceCall[], writes: [] as unknown[] };
 
-    await expect(
-      bindPreparedMarkdownPdfGeneratedCandidate(
-        runtime,
-        fakeCandidate("codex", "profile"),
-        {
-          kind: "temporary",
-          report: { kind: "with-artifact" },
-          session,
-        } as never,
-        createServices({ calls }),
-      ),
-    ).rejects.toThrow("cannot retain a report with the artifact");
-    expect(calls.binds).toHaveLength(0);
-    await cleanupOwnedMarkdownPdfSession(session);
+      await expect(
+        bindPreparedMarkdownPdfGeneratedCandidate(
+          runtime,
+          fakeCandidate("codex", "profile"),
+          {
+            kind: "temporary",
+            report: { kind: "with-artifact" },
+            session,
+          } as never,
+          createServices({ calls }),
+        ),
+      ).rejects.toThrow("cannot retain a report with the artifact");
+      expect(calls.binds).toHaveLength(0);
+      await cleanupOwnedMarkdownPdfSession(session);
+    } finally {
+      await cleanupOwnedMarkdownPdfSession(session);
+    }
   });
 
   test("rejects an external report placed inside the owned session", async () => {
     const { runtime } = createActionTestRuntime();
     const session = await createOwnedMarkdownPdfSession();
-    const reportPath = join(session.path, "external-report.json");
-    const calls = { binds: [] as ServiceCall[], writes: [] as unknown[] };
+    try {
+      const reportPath = join(session.path, "external-report.json");
+      const calls = { binds: [] as ServiceCall[], writes: [] as unknown[] };
 
-    await expect(
-      bindPreparedMarkdownPdfGeneratedCandidate(
-        runtime,
-        fakeCandidate("codex", "profile"),
-        { kind: "temporary", report: { kind: "external", path: reportPath }, session },
-        createServices({ calls, externalReport: reportPath }),
-      ),
-    ).rejects.toThrow("external report must be outside its owned session");
-    await cleanupOwnedMarkdownPdfSession(session);
+      await expect(
+        bindPreparedMarkdownPdfGeneratedCandidate(
+          runtime,
+          fakeCandidate("codex", "profile"),
+          { kind: "temporary", report: { kind: "external", path: reportPath }, session },
+          createServices({ calls, externalReport: reportPath }),
+        ),
+      ).rejects.toThrow("external report must be outside its owned session");
+      await cleanupOwnedMarkdownPdfSession(session);
+    } finally {
+      await cleanupOwnedMarkdownPdfSession(session);
+    }
   });
 });

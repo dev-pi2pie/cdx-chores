@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { access, readdir, readFile } from "node:fs/promises";
+import { access, mkdir, readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { withTempFixtureDir } from "../../helpers/cli-test-utils";
@@ -63,8 +63,12 @@ async function snapshotDirectory(
 
 describe("data stack fixture generator", () => {
   test("reset creates a deterministic representative fixture tree", async () => {
-    await withTempFixtureDir("data-stack-fixtures-a", async (outputA) => {
-      await withTempFixtureDir("data-stack-fixtures-b", async (outputB) => {
+    await withTempFixtureDir("data-stack-fixtures-a", async (ownerA) => {
+      const outputA = join(ownerA, "data");
+      await mkdir(outputA);
+      await withTempFixtureDir("data-stack-fixtures-b", async (ownerB) => {
+        const outputB = join(ownerB, "data");
+        await mkdir(outputB);
         const first = runGenerator("reset", outputA);
         const second = runGenerator("reset", outputB);
 
@@ -136,7 +140,9 @@ describe("data stack fixture generator", () => {
   });
 
   test("seed creates fixtures and clean removes them", async () => {
-    await withTempFixtureDir("data-stack-fixtures-seed-clean", async (outputDir) => {
+    await withTempFixtureDir("data-stack-fixtures-seed-clean", async (owner) => {
+      const outputDir = join(owner, "data");
+      await mkdir(outputDir);
       const seeded = runGenerator("seed", outputDir);
       expect(seeded.exitCode).toBe(0);
       expect(seeded.stdout).toContain("Seeded deterministic data stack fixtures");

@@ -1,29 +1,10 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
-import { join } from "node:path";
-
-import {
-  captureRenamePlanCsvSnapshot,
-  cleanupRenamePlanCsvSinceSnapshot,
-} from "../support/plan-artifacts";
+import { join, relative } from "node:path";
 
 import { actionRenameBatch } from "../../../src/cli/actions";
 import { expectCliError, removeIfPresent } from "../../helpers/cli-action-test-utils";
-import {
-  createCapturedRuntime,
-  createTempFixtureDir,
-  toRepoRelativePath,
-} from "../../helpers/cli-test-utils";
-
-let renamePlanCsvSnapshot = new Set<string>();
-
-beforeEach(async () => {
-  renamePlanCsvSnapshot = await captureRenamePlanCsvSnapshot();
-});
-
-afterEach(async () => {
-  await cleanupRenamePlanCsvSinceSnapshot(renamePlanCsvSnapshot);
-});
+import { createCapturedRuntime, createTempFixtureDir } from "../../helpers/cli-test-utils";
 
 describe("cli action modules: rename batch recursion", () => {
   test("actionRenameBatch supports recursive traversal and skips symlinks with audit reasons", async () => {
@@ -34,7 +15,7 @@ describe("cli action modules: rename batch recursion", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
     try {
-      const first = createCapturedRuntime();
+      const first = createCapturedRuntime({ cwd: fixtureDir });
       const dirPath = join(fixtureDir, "rename-recursive");
       const nestedDir = join(dirPath, "nested");
       await mkdir(nestedDir, { recursive: true });
@@ -47,7 +28,7 @@ describe("cli action modules: rename batch recursion", () => {
       await symlink(nestedDir, linkPath);
 
       const noRecursive = await actionRenameBatch(first.runtime, {
-        directory: toRepoRelativePath(dirPath),
+        directory: relative(fixtureDir, dirPath),
         prefix: "doc",
         dryRun: true,
         recursive: false,
@@ -56,9 +37,9 @@ describe("cli action modules: rename batch recursion", () => {
 
       expect(noRecursive.totalCount).toBe(1);
 
-      const second = createCapturedRuntime();
+      const second = createCapturedRuntime({ cwd: fixtureDir });
       const recursiveResult = await actionRenameBatch(second.runtime, {
-        directory: toRepoRelativePath(dirPath),
+        directory: relative(fixtureDir, dirPath),
         prefix: "doc",
         dryRun: true,
         recursive: true,
@@ -97,9 +78,9 @@ describe("cli action modules: rename batch recursion", () => {
       await writeFile(join(d1, "child.txt"), "c", "utf8");
       await writeFile(join(d2, "grand.txt"), "g", "utf8");
 
-      const a = createCapturedRuntime();
+      const a = createCapturedRuntime({ cwd: fixtureDir });
       const rootOnly = await actionRenameBatch(a.runtime, {
-        directory: toRepoRelativePath(dirPath),
+        directory: relative(fixtureDir, dirPath),
         prefix: "doc",
         dryRun: true,
         recursive: true,
@@ -111,9 +92,9 @@ describe("cli action modules: rename batch recursion", () => {
       expect(a.stdout.text).toContain("root.txt ->");
       expect(a.stdout.text).not.toContain("child.txt");
 
-      const b = createCapturedRuntime();
+      const b = createCapturedRuntime({ cwd: fixtureDir });
       const depthOne = await actionRenameBatch(b.runtime, {
-        directory: toRepoRelativePath(dirPath),
+        directory: relative(fixtureDir, dirPath),
         prefix: "doc",
         dryRun: true,
         recursive: true,
@@ -149,11 +130,11 @@ describe("cli action modules: rename batch recursion", () => {
         const dirPath = join(fixtureDir, "rename-max-depth-invalid");
         await mkdir(dirPath, { recursive: true });
 
-        const { runtime } = createCapturedRuntime();
+        const { runtime } = createCapturedRuntime({ cwd: fixtureDir });
         await expectCliError(
           () =>
             actionRenameBatch(runtime, {
-              directory: toRepoRelativePath(dirPath),
+              directory: relative(fixtureDir, dirPath),
               dryRun: true,
               ...scenario.options,
             }),

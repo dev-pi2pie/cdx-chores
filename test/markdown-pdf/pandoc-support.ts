@@ -1,7 +1,9 @@
-import { mkdir, rm } from "node:fs/promises";
+import { startFixtureProcess } from "../../scripts/testing/fixture-process.ts";
+import { flushFixtureExports, removeFixtureDir } from "../../scripts/testing/fixture-exports.ts";
+import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
-import { startOwnedProcess, type OwnedProcessResult } from "../../scripts/testing/process";
+import { type OwnedProcessResult } from "../../scripts/testing/process";
 import { createTempFixtureDir } from "../helpers/cli-test-utils";
 
 export type PandocRunner = (args: readonly string[]) => Promise<OwnedProcessResult>;
@@ -27,7 +29,7 @@ export async function withPandocFixtureDir<T>(
         `Pandoc process ownership remains unresolved: ${JSON.stringify(ownership())}`,
       );
     }
-    const owned = startOwnedProcess({
+    const owned = startFixtureProcess({
       executable: "pandoc",
       args,
       cwd: fixtureDir,
@@ -72,7 +74,12 @@ export async function withPandocFixtureDir<T>(
   }
   if (stopped) {
     try {
-      await rm(fixtureDir, { recursive: true, force: true });
+      await flushFixtureExports(fixtureDir, errors.length === 0);
+    } catch (error) {
+      errors.push(error);
+    }
+    try {
+      await removeFixtureDir(fixtureDir);
     } catch (error) {
       errors.push(error);
     }

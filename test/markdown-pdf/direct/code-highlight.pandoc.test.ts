@@ -1,3 +1,5 @@
+import { writeFile } from "node:fs/promises";
+import { registerFixtureOutput } from "../../../scripts/testing/fixture-exports.ts";
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import { parse, type DefaultTreeAdapterTypes } from "parse5";
@@ -99,7 +101,7 @@ function expectNumberedLineState(html: string, lineNumber: number, className: st
 
 describe("markdown PDF Shiki code highlighting", () => {
   test("transforms required Pandoc fixture HTML with stable code hooks", async () => {
-    await withPandocFixtureDir("code-highlight-pandoc", async (_fixtureDir, runPandoc) => {
+    await withPandocFixtureDir("code-highlight-pandoc", async (fixtureDir, runPandoc) => {
       const cases = [
         {
           fileName: "code-basic.md",
@@ -241,11 +243,19 @@ describe("markdown PDF Shiki code highlighting", () => {
       ];
 
       for (const fixtureCase of cases) {
+        const outputPath = join(fixtureDir, fixtureCase.fileName + ".html");
+        registerFixtureOutput(fixtureDir, {
+          source: outputPath,
+          name: fixtureCase.fileName + ".html",
+          kind: "generated",
+          required: true,
+        });
         const result = await highlightMarkdownPdfCodeBlocks(
           await pandocHtmlFixture(runPandoc, fixtureCase.fileName),
           fixtureCase.options,
         );
 
+        await writeFile(outputPath, result);
         expect(
           result.match(new RegExp(MARKDOWN_PDF_CODE_CLASSES.highlightedBlock, "g")) ?? [],
         ).toHaveLength(fixtureCase.expectedHighlighted);
@@ -293,12 +303,20 @@ describe("markdown PDF Shiki code highlighting", () => {
   }, 90_000);
 
   test("keeps transformer markers inert in Pandoc fixture HTML when disabled", async () => {
-    await withPandocFixtureDir("code-highlight-pandoc-inert", async (_fixtureDir, runPandoc) => {
+    await withPandocFixtureDir("code-highlight-pandoc-inert", async (fixtureDir, runPandoc) => {
+      const outputPath = join(fixtureDir, "inert.html");
+      registerFixtureOutput(fixtureDir, {
+        source: outputPath,
+        name: "inert.html",
+        kind: "generated",
+        required: true,
+      });
       const result = await highlightMarkdownPdfCodeBlocks(
         await pandocHtmlFixture(runPandoc, "code-transformer-line-numbers-combined.md"),
         CODE_OPTIONS,
       );
 
+      await writeFile(outputPath, result);
       expect(result).toContain("[!code highlight]");
       expect(result).toContain("[!code --]");
       expect(result).toContain("[!code ++]");

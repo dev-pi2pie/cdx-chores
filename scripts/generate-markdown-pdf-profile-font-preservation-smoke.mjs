@@ -4,6 +4,8 @@ import { randomUUID } from "node:crypto";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { assertRunParent, readFixtureContext, suitePath } from "./testing/run-context.ts";
+
 const scriptDirectory = fileURLToPath(new URL(".", import.meta.url));
 const repoRoot = resolve(scriptDirectory, "..");
 const coverImagePath = join(
@@ -175,6 +177,21 @@ function assertSafeSmokeDir(smokeDir) {
 }
 
 function allowedMutationRoot(smokeDir) {
+  const context = readFixtureContext(process.env, repoRoot);
+  if (context) {
+    const namespace = join(suitePath(context.run, context.suite, "scratch"), "fixtures");
+    const relativePath = relative(namespace, smokeDir);
+    const parts = relativePath.split(/[\\/]+/);
+    if (
+      !isAbsolute(relativePath) &&
+      parts.length === 2 &&
+      parts[0]?.startsWith(`${testScratchPrefix}smoke-`) &&
+      parts[1]
+    ) {
+      return join(namespace, parts[0]);
+    }
+    return undefined;
+  }
   if (dirname(smokeDir) === smokeRoot) {
     return smokeRoot;
   }
@@ -212,6 +229,12 @@ async function assertNoSymlinkedMutationComponents(smokeDir) {
       }
       throw error;
     }
+  }
+  const context = readFixtureContext(process.env, repoRoot);
+  if (context) {
+    // Keep the existing symbolic-link diagnostic ahead of identity checks and
+    // retain the marker guard before deleting any generated output.
+    assertRunParent(context.run, smokeDir);
   }
 }
 

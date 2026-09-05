@@ -1,8 +1,9 @@
-import { mkdir, rm } from "node:fs/promises";
+import { startFixtureProcess } from "../../scripts/testing/fixture-process.ts";
+import { flushFixtureExports, removeFixtureDir } from "../../scripts/testing/fixture-exports.ts";
+import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
 import {
-  startOwnedProcess,
   type OwnedProcess,
   type OwnedProcessOptions,
   type OwnedProcessResult,
@@ -98,7 +99,7 @@ export async function withLiveCodexFixture(
       env,
       start: (options) => {
         assertLaunchAllowed();
-        const spawned = startOwnedProcess({
+        const spawned = startFixtureProcess({
           timeoutMs: 30_000,
           graceMs: 1000,
           cleanupMs: 3000,
@@ -128,7 +129,12 @@ export async function withLiveCodexFixture(
     errors.push(...results.map(cleanupFailure).filter((error) => error !== undefined));
     if (results.every((result) => result.stopped)) {
       try {
-        await rm(root, { recursive: true, force: true });
+        await flushFixtureExports(root, !failed && errors.length === 0);
+      } catch (error) {
+        errors.push(error instanceof Error ? error : new Error(String(error)));
+      }
+      try {
+        await removeFixtureDir(root);
       } catch (error) {
         errors.push(error instanceof Error ? error : new Error(String(error)));
       }

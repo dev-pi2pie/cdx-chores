@@ -5,15 +5,19 @@ import {
   cleanupRenamePlanCsvSinceSnapshotSync,
 } from "./plan-artifacts";
 
-export function withRenamePlanCsvCleanup<T>(run: () => T): T {
-  const snapshot = captureRenamePlanCsvSnapshotSync();
+export function withRenamePlanCsvCleanup<T>(workspace: string, run: () => T): T {
+  const snapshot = captureRenamePlanCsvSnapshotSync(workspace);
   try {
     return run();
   } finally {
-    cleanupRenamePlanCsvSinceSnapshotSync(snapshot);
+    cleanupRenamePlanCsvSinceSnapshotSync(workspace, snapshot);
   }
 }
 
-export function runRenameCli(...args: Parameters<typeof runCli>): ReturnType<typeof runCli> {
-  return withRenamePlanCsvCleanup(() => runCli(...args));
+export function runRenameCli(
+  workspace: string,
+  args: string[],
+  env?: NodeJS.ProcessEnv,
+): ReturnType<typeof runCli> {
+  return withRenamePlanCsvCleanup(workspace, () => runCli(args, workspace, env));
 }

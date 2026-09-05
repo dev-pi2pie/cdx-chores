@@ -1,28 +1,15 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { readFile } from "node:fs/promises";
+import { relative } from "node:path";
 
 import { actionRenameFile } from "../../../src/cli/actions";
-import { createCapturedRuntime, toRepoRelativePath } from "../../helpers/cli-test-utils";
-import {
-  captureRenamePlanCsvSnapshot,
-  cleanupRenamePlanCsvSinceSnapshot,
-} from "../support/plan-artifacts";
+import { createCapturedRuntime } from "../../helpers/cli-test-utils";
 import { createRenameFileFixture, withRenameWorkspace } from "./file-support";
-
-let renamePlanCsvSnapshot = new Set<string>();
-
-beforeEach(async () => {
-  renamePlanCsvSnapshot = await captureRenamePlanCsvSnapshot();
-});
-
-afterEach(async () => {
-  await cleanupRenamePlanCsvSinceSnapshot(renamePlanCsvSnapshot);
-});
 
 describe("rename file Codex automatic routing", () => {
   test("actionRenameFile codex auto routes markdown through the document analyzer", async () => {
     await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const { filePath: docPath } = await createRenameFileFixture(
         fixtureDir,
         "rename-file-codex-auto-doc",
@@ -36,7 +23,7 @@ describe("rename file Codex automatic routing", () => {
       let docCalls = 0;
       const docTimeouts: Array<number | undefined> = [];
       const result = await actionRenameFile(runtime, {
-        path: toRepoRelativePath(docPath),
+        path: relative(fixtureDir, docPath),
         prefix: "doc",
         dryRun: true,
         codex: true,
@@ -74,7 +61,7 @@ describe("rename file Codex automatic routing", () => {
 
   test("actionRenameFile codex auto reports unsupported files without analyzer calls", async () => {
     await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const { filePath: videoPath } = await createRenameFileFixture(
         fixtureDir,
         "rename-file-codex-auto-unsupported",
@@ -87,7 +74,7 @@ describe("rename file Codex automatic routing", () => {
       let imageCalls = 0;
       let docCalls = 0;
       const result = await actionRenameFile(runtime, {
-        path: toRepoRelativePath(videoPath),
+        path: relative(fixtureDir, videoPath),
         prefix: "media",
         dryRun: true,
         codex: true,

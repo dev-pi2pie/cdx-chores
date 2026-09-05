@@ -1,29 +1,15 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 
 import { actionRenameFile } from "../../../src/cli/actions";
-import { createCapturedRuntime, REPO_ROOT, toRepoRelativePath } from "../../helpers/cli-test-utils";
-import {
-  captureRenamePlanCsvSnapshot,
-  cleanupRenamePlanCsvSinceSnapshot,
-} from "../support/plan-artifacts";
+import { createCapturedRuntime, REPO_ROOT } from "../../helpers/cli-test-utils";
 import { createRenameFileFixture, withRenameWorkspace } from "./file-support";
-
-let renamePlanCsvSnapshot = new Set<string>();
-
-beforeEach(async () => {
-  renamePlanCsvSnapshot = await captureRenamePlanCsvSnapshot();
-});
-
-afterEach(async () => {
-  await cleanupRenamePlanCsvSinceSnapshot(renamePlanCsvSnapshot);
-});
 
 describe("rename file Codex document actions", () => {
   test("actionRenameFile forwards the shared timeout and document tuning options", async () => {
     await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
-      const { runtime, stderr } = createCapturedRuntime();
+      const { runtime, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const { filePath: docPath } = await createRenameFileFixture(
         fixtureDir,
         "rename-file-codex-shared-timeout",
@@ -39,7 +25,7 @@ describe("rename file Codex document actions", () => {
         batchSize?: number;
       }> = [];
       const result = await actionRenameFile(runtime, {
-        path: toRepoRelativePath(docPath),
+        path: relative(fixtureDir, docPath),
         dryRun: true,
         codex: true,
         codexTimeoutMs: 45_000,
@@ -68,7 +54,7 @@ describe("rename file Codex document actions", () => {
 
   test("actionRenameFile codex-docs mode records docx extraction error for invalid docx input", async () => {
     await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const { filePath: docPath } = await createRenameFileFixture(
         fixtureDir,
         "rename-file-codex-docx-error",
@@ -79,7 +65,7 @@ describe("rename file Codex document actions", () => {
       );
 
       const result = await actionRenameFile(runtime, {
-        path: toRepoRelativePath(docPath),
+        path: relative(fixtureDir, docPath),
         prefix: "doc",
         dryRun: true,
         codexDocs: true,
@@ -98,7 +84,7 @@ describe("rename file Codex document actions", () => {
 
   test("actionRenameFile codex-docs mode can route a heading-rich docx fixture", async () => {
     await withRenameWorkspace(async (fixtureDir, trackPlanCsv) => {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const sourceFixture = join(REPO_ROOT, "test", "fixtures", "docs", "heading-rich.docx");
       const { filePath: docPath } = await createRenameFileFixture(
         fixtureDir,
@@ -108,7 +94,7 @@ describe("rename file Codex document actions", () => {
       );
 
       const result = await actionRenameFile(runtime, {
-        path: toRepoRelativePath(docPath),
+        path: relative(fixtureDir, docPath),
         prefix: "doc",
         dryRun: true,
         codexDocs: true,

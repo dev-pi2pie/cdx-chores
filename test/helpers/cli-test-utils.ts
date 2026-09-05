@@ -1,5 +1,12 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp } from "node:fs/promises";
 import { join, resolve } from "node:path";
+
+import { assertRunPath, readFixtureContext, suitePath } from "../../scripts/testing/run-context.ts";
+import {
+  registerFixtureOwner,
+  flushFixtureExports,
+  removeFixtureDir,
+} from "../../scripts/testing/fixture-exports.ts";
 
 import type { CliRuntime } from "../../src/cli/types";
 
@@ -16,7 +23,7 @@ export function runCli(
   env?: NodeJS.ProcessEnv,
 ): { exitCode: number; stdout: string; stderr: string } {
   const proc = Bun.spawnSync({
-    cmd: [process.execPath, "src/bin.ts", ...args],
+    cmd: [process.execPath, join(REPO_ROOT, "src/bin.ts"), ...args],
     cwd,
     env: env ? { ...process.env, ...env } : undefined,
     stdout: "pipe",
@@ -31,8 +38,18 @@ export function runCli(
 }
 
 export async function createTempFixtureDir(prefix: string): Promise<string> {
-  await mkdir(TMP_ROOT, { recursive: true });
-  return await mkdtemp(join(TMP_ROOT, `${prefix}-`));
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(prefix)) throw new Error("Invalid fixture prefix.");
+  const context = readFixtureContext(process.env, REPO_ROOT);
+  let parent = TMP_ROOT;
+  if (context) {
+    assertRunPath(context.run, "scratch/" + context.suite + "/fixtures");
+    parent = join(suitePath(context.run, context.suite, "scratch"), "fixtures");
+  } else {
+    await mkdir(parent, { recursive: true });
+  }
+  const root = await mkdtemp(join(parent, `${prefix}-`));
+  registerFixtureOwner(root);
+  return root;
 }
 
 export async function withTempFixtureDir<T>(
@@ -40,11 +57,27 @@ export async function withTempFixtureDir<T>(
   run: (fixtureDir: string) => Promise<T>,
 ): Promise<T> {
   const fixtureDir = await createTempFixtureDir(prefix);
+  const errors: unknown[] = [];
+  let value: T | undefined;
   try {
-    return await run(fixtureDir);
-  } finally {
-    await rm(fixtureDir, { recursive: true, force: true });
+    value = await run(fixtureDir);
+  } catch (error) {
+    errors.push(error);
   }
+  try {
+    await flushFixtureExports(fixtureDir, errors.length === 0);
+  } catch (error) {
+    errors.push(error);
+  }
+  try {
+    await removeFixtureDir(fixtureDir);
+  } catch (error) {
+    errors.push(error);
+  }
+  if (errors.length > 1)
+    throw new AggregateError(errors, "Fixture callback, export, or cleanup failed.");
+  if (errors.length) throw errors[0];
+  return value as T;
 }
 
 export class CaptureStream {

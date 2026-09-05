@@ -177,13 +177,9 @@ describe("stable release notes script", () => {
 
   test("falls back to generated notes when no matching CHANGELOGS override file exists", async () => {
     const repoDir = await createReleaseFixtureRepo("release-notes-generated-fallback");
-    const fakeBinDir = join(repoDir, "fake-bin");
 
     try {
       await mkdir(join(repoDir, "CHANGELOGS"), { recursive: true });
-      await mkdir(fakeBinDir, { recursive: true });
-      await writeFile(join(fakeBinDir, "curl"), "#!/usr/bin/env bash\nexit 22\n", "utf8");
-      await chmod(join(fakeBinDir, "curl"), 0o755);
       await writeFile(
         join(repoDir, "CHANGELOGS", "v9.9.9.md"),
         "## What's Changed\n\n- unrelated future note\n",
@@ -210,13 +206,7 @@ describe("stable release notes script", () => {
           "--repository",
           "example/project",
         ],
-        {
-          cwd: repoDir,
-          env: {
-            ...process.env,
-            PATH: `${fakeBinDir}:${process.env.PATH ?? ""}`,
-          },
-        },
+        { cwd: repoDir },
       );
 
       expectSuccess(result);

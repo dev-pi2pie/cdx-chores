@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 
 import { runCli, toRepoRelativePath, withTempFixtureDir } from "../../helpers/cli-test-utils";
 import { runRenameCli } from "../support/run-cli";
@@ -11,10 +11,10 @@ describe("cli command: rename cleanup", () => {
       const filePath = join(fixtureDir, "Screenshot 2026-03-02 at 4.53.04 PM.png");
       await writeFile(filePath, "fake", "utf8");
 
-      const result = runRenameCli([
+      const result = runRenameCli(fixtureDir, [
         "rename",
         "cleanup",
-        toRepoRelativePath(filePath),
+        relative(fixtureDir, filePath),
         "--hints",
         "timestamp",
         "--dry-run",

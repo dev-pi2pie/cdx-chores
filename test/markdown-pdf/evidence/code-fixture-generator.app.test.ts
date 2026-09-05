@@ -1,12 +1,19 @@
 import { describe, expect, test } from "bun:test";
-import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readdir, readFile, stat, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { withTempFixtureDir } from "../../helpers/cli-test-utils";
+import {
+  allocateRun,
+  fixtureEnvironment,
+  removeRun,
+  suitePath,
+  TEST_CONTEXT_ENV,
+} from "../../../scripts/testing/run-context.ts";
+import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
-function runGenerator(args: string[], env?: NodeJS.ProcessEnv) {
+function runGenerator(args: string[], env?: NodeJS.ProcessEnv, executable = process.execPath) {
   const proc = Bun.spawnSync({
-    cmd: [process.execPath, "scripts/generate-markdown-pdf-code-fixtures.mjs", ...args],
+    cmd: [executable, "scripts/generate-markdown-pdf-code-fixtures.mjs", ...args],
     stdout: "pipe",
     stderr: "pipe",
     env: env ? { ...process.env, ...env } : process.env,
@@ -35,9 +42,87 @@ async function listRelativeFiles(root: string, prefix = ""): Promise<string[]> {
 }
 
 describe("markdown PDF code fixture generator", () => {
+  test("managed reset preserves its fixture owner and rejects other namespaces and aliases", async () => {
+    const run = await allocateRun(REPO_ROOT, ["app", "unit"], false);
+    try {
+      const otherRun = await allocateRun(REPO_ROOT, ["app"], false);
+      try {
+        const namespace = join(suitePath(run, "app", "scratch"), "fixtures");
+        const owner = join(namespace, "markdown-pdf-code-managed");
+        const otherOwner = join(namespace, "other-feature-owner");
+        const otherSuiteOwner = join(
+          suitePath(run, "unit", "scratch"),
+          "fixtures",
+          "markdown-pdf-code-managed",
+        );
+        const otherRunOwner = join(
+          suitePath(otherRun, "app", "scratch"),
+          "fixtures",
+          "markdown-pdf-code-managed",
+        );
+        await Promise.all([
+          mkdir(owner),
+          mkdir(otherOwner),
+          mkdir(otherSuiteOwner),
+          mkdir(otherRunOwner),
+        ]);
+        const fixtureDir = join(owner, "fixtures");
+        const smokeDir = join(owner, "smoke");
+        await mkdir(fixtureDir);
+        await mkdir(smokeDir);
+        await writeFile(join(fixtureDir, "stale.md"), "stale fixture");
+        await writeFile(join(smokeDir, "stale.html"), "stale smoke");
+        const before = await lstat(owner);
+        const env = { [TEST_CONTEXT_ENV]: fixtureEnvironment(run, "app") };
+        const reset = runGenerator(
+          ["reset", "--fixture-dir", fixtureDir, "--smoke-dir", smokeDir],
+          env,
+          "node",
+        );
+        expect(reset.exitCode, reset.stderr).toBe(0);
+        expect(await listRelativeFiles(fixtureDir)).toContain("code-basic.md");
+        expect(await listRelativeFiles(fixtureDir)).not.toContain("stale.md");
+        await expect(stat(smokeDir)).rejects.toMatchObject({ code: "ENOENT" });
+        const after = await lstat(owner);
+        expect({ dev: after.dev, ino: after.ino }).toEqual({ dev: before.dev, ino: before.ino });
+
+        const aliasOwner = join(namespace, "markdown-pdf-code-alias");
+        await symlink(owner, aliasOwner);
+        const aliasChild = join(owner, "data");
+        await symlink(otherOwner, aliasChild);
+        await writeFile(join(otherOwner, "keep.md"), "untouched");
+        for (const rejected of [
+          run.root,
+          suitePath(run, "app", "scratch"),
+          namespace,
+          owner,
+          join(otherOwner, "data"),
+          join(otherSuiteOwner, "fixtures"),
+          join(otherRunOwner, "fixtures"),
+          join(aliasOwner, "fixtures"),
+          aliasChild,
+        ]) {
+          const result = runGenerator(["clean", "--smoke-dir", rejected], env);
+          expect(result.exitCode, rejected).toBe(1);
+          expect(result.stderr).toContain("Refusing to clean smoke directory");
+        }
+        expect(await readFile(join(otherOwner, "keep.md"), "utf8")).toBe("untouched");
+        expect(await listRelativeFiles(fixtureDir)).toContain("code-basic.md");
+      } finally {
+        await removeRun(otherRun);
+      }
+    } finally {
+      await removeRun(run);
+    }
+  });
+
   test("reset creates committed Markdown and profile fixtures", async () => {
-    await withTempFixtureDir("markdown-pdf-code-fixtures", async (fixtureDir) => {
-      await withTempFixtureDir("markdown-pdf-code-smoke", async (smokeDir) => {
+    await withTempFixtureDir("markdown-pdf-code-fixtures", async (fixtureOwner) => {
+      const fixtureDir = join(fixtureOwner, "fixtures");
+      await mkdir(fixtureDir);
+      await withTempFixtureDir("markdown-pdf-code-smoke", async (smokeOwner) => {
+        const smokeDir = join(smokeOwner, "smoke");
+        await mkdir(smokeDir);
         const result = runGenerator([
           "reset",
           "--fixture-dir",
@@ -96,8 +181,11 @@ describe("markdown PDF code fixture generator", () => {
   });
 
   test("reset removes stale fixture files", async () => {
-    await withTempFixtureDir("markdown-pdf-code-stale-fixtures", async (fixtureDir) => {
-      await withTempFixtureDir("markdown-pdf-code-stale-smoke", async (smokeDir) => {
+    await withTempFixtureDir("markdown-pdf-code-stale-fixtures", async (fixtureOwner) => {
+      const fixtureDir = join(fixtureOwner, "fixtures");
+      await withTempFixtureDir("markdown-pdf-code-stale-smoke", async (smokeOwner) => {
+        const smokeDir = join(smokeOwner, "smoke");
+        await mkdir(smokeDir);
         await mkdir(join(fixtureDir, "profiles"), { recursive: true });
         await writeFile(join(fixtureDir, "stale.md"), "# Stale\n", "utf8");
         await writeFile(join(fixtureDir, "profiles/stale.yml"), "stale: true\n", "utf8");
@@ -118,8 +206,11 @@ describe("markdown PDF code fixture generator", () => {
   });
 
   test("reset removes stale smoke output files", async () => {
-    await withTempFixtureDir("markdown-pdf-code-reset-fixtures", async (fixtureDir) => {
-      await withTempFixtureDir("markdown-pdf-code-reset-smoke", async (smokeDir) => {
+    await withTempFixtureDir("markdown-pdf-code-reset-fixtures", async (fixtureOwner) => {
+      const fixtureDir = join(fixtureOwner, "fixtures");
+      await mkdir(fixtureDir);
+      await withTempFixtureDir("markdown-pdf-code-reset-smoke", async (smokeOwner) => {
+        const smokeDir = join(smokeOwner, "smoke");
         await mkdir(join(smokeDir, "html"), { recursive: true });
         await writeFile(join(smokeDir, "html/stale.html"), "<html></html>\n", "utf8");
 
@@ -139,8 +230,12 @@ describe("markdown PDF code fixture generator", () => {
   });
 
   test("refuses to reset arbitrary fixture directories", async () => {
-    await withTempFixtureDir("unsafe-fixture-root", async (fixtureDir) => {
-      await withTempFixtureDir("markdown-pdf-code-safe-smoke", async (smokeDir) => {
+    await withTempFixtureDir("unsafe-fixture-root", async (fixtureOwner) => {
+      const fixtureDir = join(fixtureOwner, "fixtures");
+      await mkdir(fixtureDir);
+      await withTempFixtureDir("markdown-pdf-code-safe-smoke", async (smokeOwner) => {
+        const smokeDir = join(smokeOwner, "smoke");
+        await mkdir(smokeDir);
         await writeFile(join(fixtureDir, "keep.md"), "# Keep\n", "utf8");
         await writeFile(join(smokeDir, "keep.html"), "<html></html>\n", "utf8");
 
@@ -161,8 +256,12 @@ describe("markdown PDF code fixture generator", () => {
   });
 
   test("reset refuses arbitrary smoke output directories before fixture cleanup", async () => {
-    await withTempFixtureDir("markdown-pdf-code-safe-fixtures", async (fixtureDir) => {
-      await withTempFixtureDir("unsafe-smoke-root", async (smokeDir) => {
+    await withTempFixtureDir("markdown-pdf-code-safe-fixtures", async (fixtureOwner) => {
+      const fixtureDir = join(fixtureOwner, "fixtures");
+      await mkdir(fixtureDir);
+      await withTempFixtureDir("unsafe-smoke-root", async (smokeOwner) => {
+        const smokeDir = join(smokeOwner, "smoke");
+        await mkdir(smokeDir);
         await writeFile(join(fixtureDir, "keep.md"), "# Keep\n", "utf8");
         await writeFile(join(smokeDir, "keep.html"), "<html></html>\n", "utf8");
 
@@ -201,7 +300,8 @@ describe("markdown PDF code fixture generator", () => {
   });
 
   test("clean refuses arbitrary smoke output directories", async () => {
-    await withTempFixtureDir("unsafe-smoke-root", async (smokeDir) => {
+    await withTempFixtureDir("unsafe-smoke-root", async (smokeOwner) => {
+      const smokeDir = join(smokeOwner, "smoke");
       await mkdir(smokeDir, { recursive: true });
       await writeFile(join(smokeDir, "keep.html"), "<html></html>\n", "utf8");
 
@@ -233,8 +333,12 @@ describe("markdown PDF code fixture generator", () => {
   });
 
   test("smoke refuses arbitrary smoke output directories", async () => {
-    await withTempFixtureDir("markdown-pdf-code-smoke-fixtures", async (fixtureDir) => {
-      await withTempFixtureDir("unsafe-smoke-root", async (smokeDir) => {
+    await withTempFixtureDir("markdown-pdf-code-smoke-fixtures", async (fixtureOwner) => {
+      const fixtureDir = join(fixtureOwner, "fixtures");
+      await mkdir(fixtureDir);
+      await withTempFixtureDir("unsafe-smoke-root", async (smokeOwner) => {
+        const smokeDir = join(smokeOwner, "smoke");
+        await mkdir(smokeDir);
         await writeFile(join(smokeDir, "keep.html"), "<html></html>\n", "utf8");
 
         const result = runGenerator(

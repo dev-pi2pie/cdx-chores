@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { readdir, readFile } from "node:fs/promises";
+import { mkdir, readdir, readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 import { withTempFixtureDir } from "../../helpers/cli-test-utils";
 
@@ -33,8 +34,12 @@ async function snapshotDirectory(
 
 describe("data extract fixture generator", () => {
   test("reset creates a deterministic representative fixture set", async () => {
-    await withTempFixtureDir("data-extract-fixtures-a", async (outputA) => {
-      await withTempFixtureDir("data-extract-fixtures-b", async (outputB) => {
+    await withTempFixtureDir("data-extract-fixtures-a", async (ownerA) => {
+      const outputA = join(ownerA, "data");
+      await mkdir(outputA);
+      await withTempFixtureDir("data-extract-fixtures-b", async (ownerB) => {
+        const outputB = join(ownerB, "data");
+        await mkdir(outputB);
         const first = runGenerator(outputA);
         const second = runGenerator(outputB);
 

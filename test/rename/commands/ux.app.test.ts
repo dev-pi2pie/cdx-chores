@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { mkdir, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 
-import { createTempFixtureDir, runCli, toRepoRelativePath } from "../../helpers/cli-test-utils";
+import { createTempFixtureDir, runCli } from "../../helpers/cli-test-utils";
 import { runRenameCli } from "../support/run-cli";
 
 describe("Rename command UX", () => {
@@ -44,10 +44,10 @@ describe("Rename command UX", () => {
       await writeFile(join(dirPath, "new-hi.txt"), "hi\n", "utf8");
       await writeFile(join(dirPath, "new-hoho.txt"), "hoho\n", "utf8");
 
-      const result = runRenameCli([
+      const result = runRenameCli(fixtureDir, [
         "rename",
         "batch",
-        toRepoRelativePath(dirPath),
+        relative(fixtureDir, dirPath),
         "--pattern",
         "{stem}-{serial_start_3}",
         "--dry-run",

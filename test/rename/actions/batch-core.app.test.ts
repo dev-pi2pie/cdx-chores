@@ -1,36 +1,17 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { mkdir, rm, stat, utimes, writeFile } from "node:fs/promises";
-import { join } from "node:path";
-
-import {
-  captureRenamePlanCsvSnapshot,
-  cleanupRenamePlanCsvSinceSnapshot,
-} from "../support/plan-artifacts";
+import { join, relative } from "node:path";
 
 import { actionRenameBatch } from "../../../src/cli/actions";
-import {
-  createCapturedRuntime,
-  createTempFixtureDir,
-  toRepoRelativePath,
-} from "../../helpers/cli-test-utils";
+import { createCapturedRuntime, createTempFixtureDir } from "../../helpers/cli-test-utils";
 import { removeIfPresent } from "../../helpers/cli-action-test-utils";
-
-let renamePlanCsvSnapshot = new Set<string>();
-
-beforeEach(async () => {
-  renamePlanCsvSnapshot = await captureRenamePlanCsvSnapshot();
-});
-
-afterEach(async () => {
-  await cleanupRenamePlanCsvSinceSnapshot(renamePlanCsvSnapshot);
-});
 
 describe("cli action modules: rename batch core", () => {
   test("actionRenameBatch dry-run previews renames and returns counts", async () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
     try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const dirPath = join(fixtureDir, "rename-dry-run");
       await mkdir(dirPath, { recursive: true });
 
@@ -39,7 +20,7 @@ describe("cli action modules: rename batch core", () => {
       const fixedTime = new Date("2026-02-25T12:34:56.000Z");
       await utimes(filePath, fixedTime, fixedTime);
 
-      const relativeDir = toRepoRelativePath(dirPath);
+      const relativeDir = relative(fixtureDir, dirPath);
       const result = await actionRenameBatch(runtime, {
         directory: relativeDir,
         prefix: "file",
@@ -70,7 +51,7 @@ describe("cli action modules: rename batch core", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
     try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const dirPath = join(fixtureDir, "rename-batch-no-prefix");
       await mkdir(dirPath, { recursive: true });
 
@@ -80,7 +61,7 @@ describe("cli action modules: rename batch core", () => {
       await utimes(filePath, fixedTime, fixedTime);
 
       const result = await actionRenameBatch(runtime, {
-        directory: toRepoRelativePath(dirPath),
+        directory: relative(fixtureDir, dirPath),
         dryRun: true,
       });
       planCsvPath = result.planCsvPath;
@@ -99,7 +80,7 @@ describe("cli action modules: rename batch core", () => {
   test("actionRenameBatch applies renames when dryRun is false", async () => {
     const fixtureDir = await createTempFixtureDir("actions");
     try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const dirPath = join(fixtureDir, "rename-apply");
       await mkdir(dirPath, { recursive: true });
 
@@ -108,7 +89,7 @@ describe("cli action modules: rename batch core", () => {
       const fixedTime = new Date("2026-02-25T07:08:09.000Z");
       await utimes(originalPath, fixedTime, fixedTime);
 
-      const relativeDir = toRepoRelativePath(dirPath);
+      const relativeDir = relative(fixtureDir, dirPath);
       const result = await actionRenameBatch(runtime, {
         directory: relativeDir,
         prefix: "doc",
@@ -129,11 +110,11 @@ describe("cli action modules: rename batch core", () => {
     const fixtureDir = await createTempFixtureDir("actions");
     let planCsvPath: string | undefined;
     try {
-      const { runtime, stdout, stderr } = createCapturedRuntime();
+      const { runtime, stdout, stderr } = createCapturedRuntime({ cwd: fixtureDir });
       const dirPath = join(fixtureDir, "rename-empty");
       await mkdir(dirPath, { recursive: true });
 
-      const relativeDir = toRepoRelativePath(dirPath);
+      const relativeDir = relative(fixtureDir, dirPath);
       const result = await actionRenameBatch(runtime, {
         directory: relativeDir,
         prefix: "file",
