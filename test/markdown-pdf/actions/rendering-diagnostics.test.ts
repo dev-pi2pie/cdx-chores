@@ -29,6 +29,7 @@ function profileWith(input: {
 }): NormalizedMarkdownPdfProfile {
   return {
     ...DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
+    header: { ...DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.header },
     footer: {
       ...DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE.footer,
       center: input.footerCenter ?? "",

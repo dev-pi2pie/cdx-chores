@@ -959,6 +959,17 @@ PDF support paths remain temporarily in place until the adjacent PDF batch is
 validated and their consumers can be relocated together. Section 2C remains in
 progress; the final default-discovery switch and complete range reviews are pending.
 
+#### PDF Isolation Corrections
+
+Unit instrumentation exposed eager native renderer loading in the development
+PDF evidence helper. Loading `pdfjs-dist` inside `inspectPdf` preserves real PDF
+inspection while allowing supplied-text evidence utilities to remain pure.
+Parameterized diagnostic fixtures now copy their header before mutation, matching
+the existing footer/page-number copies and preventing shared-default pollution.
+These two corrections are checkpointed separately from the general PDF moves.
+The migrated combined selection, including real PDF inspection, passed 876 cases
+and 5,309 assertions; guarded units passed 327 cases and 1,383 assertions.
+
 ## Remaining Phases
 
 Phases 3–4 have not started. Record their mappings and execution evidence here
