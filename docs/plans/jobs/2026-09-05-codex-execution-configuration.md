@@ -248,6 +248,7 @@ was left outside this planning update.
 
 ### Concision Checkpoint
 
+- Checkpoint commit: `a233dca4`.
 - Tailored overview, models, and providers output to their own context; condensed
   source/coverage wording and moved invocation context to the details footer.
   Configured reasoning remains in overview details; child views omit unrelated
@@ -259,6 +260,25 @@ was left outside this planning update.
   passed 24 tests, 201 assertions. Report/action/command and shared-color suites
   passed another 73 tests. TypeScript, lint, repository format check, and
   `git diff --check` passed. Styling and final phase review remain pending.
+
+### Styling Checkpoint
+
+- Applied shared per-stream colors to titles, context headings, IDs, and literal
+  selection markers. All external strings are escaped before styling; plain
+  wording, curated JSON, and discovery behavior are preserved.
+- Added all-view/default/details ANSI-stripped equality, independent stream and
+  runtime-disable tests, JSON equality, hostile-string regression, and one-call
+  action assertions. Isolated real CLI tests verify nonempty/empty `NO_COLOR` and
+  global `--no-color` without mutating the test process environment.
+- `bun test test/codex-info test/cli-foundations/color` passed 141 tests with
+  one existing opt-in live-protocol skip, 846 assertions, and no failures.
+  TypeScript, lint, repository format check, build, and diff checks passed.
+  Build retains only the existing TypeScript 7 API warning.
+- Built Node `26.5.0` ESM/CJS package smoke checked all nine command/format
+  combinations with styled and empty-`NO_COLOR` output. Synthetic subprocess
+  responses established human ANSI/plain equality and unchanged parsed JSON;
+  no provider requests or user configuration were used. Scratch files were removed.
+  Full phase review remains pending.
 
 ## Phase 6: Validation And Documentation Closeout
 

@@ -1,4 +1,5 @@
 import { printLine } from "../actions/shared";
+import { getCliColors } from "../colors";
 import type { CliRuntime } from "../types";
 import type { CodexInfoReport, CodexModelInfo } from "./report";
 
@@ -28,18 +29,19 @@ export function renderCodexInfoReport(
   report: CodexInfoReport,
   options: { details?: boolean } = {},
 ): void {
+  const pc = getCliColors(runtime, runtime.stdout);
   const lines: string[] = [];
   const line = (text = "") => lines.push(text);
-  line(`Codex ${report.view === "summary" ? "information" : report.view}`);
+  line(pc.bold(pc.cyan(`Codex ${report.view === "summary" ? "information" : report.view}`)));
   line();
   if (report.view === "summary") {
-    line(`Configured model: ${value(report.configured.model, "unspecified")}`);
+    line(`Configured model: ${pc.bold(value(report.configured.model, "unspecified"))}`);
   }
-  line(`Configured provider: ${value(report.configured.provider, "unspecified")}`);
+  line(`Configured provider: ${pc.bold(value(report.configured.provider, "unspecified"))}`);
   if (report.view === "summary") {
     line(`Helper reasoning default: ${safe(report.helperReasoningDefault)}`);
     line(
-      `Catalog recommended model: ${report.catalogRecommendedModelIds?.map(safe).join(", ") || "none reported"}`,
+      `Catalog recommended model: ${report.catalogRecommendedModelIds?.map((id) => pc.bold(safe(id))).join(", ") || "none reported"}`,
     );
     if (options.details) {
       line(
@@ -55,7 +57,9 @@ export function renderCodexInfoReport(
     line();
     if (report.providers.length === 0) line("No configured provider definitions reported.");
     for (const provider of report.providers) {
-      line(`${safe(provider.id)}${provider.isConfigured ? " [configured]" : ""}`);
+      line(
+        `${pc.bold(safe(provider.id))}${provider.isConfigured ? ` ${pc.cyan("[configured]")}` : ""}`,
+      );
       if (options.details && provider.displayName) {
         line(`  Display name: ${safe(provider.displayName)}`);
       }
@@ -81,7 +85,7 @@ export function renderCodexInfoReport(
       for (const model of report.models) {
         const selection = markers(model);
         line();
-        line(`${safe(model.id)}${selection ? ` [${selection}]` : ""}`);
+        line(`${pc.bold(safe(model.id))}${selection ? ` ${pc.cyan(`[${selection}]`)}` : ""}`);
         line(
           `  Reasoning efforts: ${model.supportedReasoningEfforts?.map((effort) => safe(effort.effort)).join(", ") ?? "unknown"}`,
         );
@@ -102,7 +106,7 @@ export function renderCodexInfoReport(
   }
   if (options.details) {
     line();
-    line("Invocation context:");
+    line(pc.bold(pc.cyan("Invocation context:")));
     line(`  Working directory: ${safe(report.context.cwd)}`);
     line(`  Codex home: ${safe(report.context.codexHome)}`);
     line(`  Codex home source: ${safe(report.context.codexHomeSource)}`);

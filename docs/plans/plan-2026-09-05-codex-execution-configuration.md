@@ -566,15 +566,15 @@ this phase changes presentation without expanding discovery or the JSON schema.
 - [x] Group details consistently; omit absent optional descriptions and print a
       separate model value only when it differs from the displayed catalog ID.
       Preserve meaningful unknown capability/default values and invocation context.
-- [ ] Use `getCliColors(runtime, runtime.stdout)` for restrained bold cyan
+- [x] Use `getCliColors(runtime, runtime.stdout)` for restrained bold cyan
       headings, bold IDs, and readable selection emphasis. Keep literal markers
       and qualifications meaningful without color. Escape external strings before
       styling; selection markers must not imply successful provider validation.
-- [ ] Preserve the [shared output/color contract](../guides/cli-output-and-color.md):
+- [x] Preserve the [shared output/color contract](../guides/cli-output-and-color.md):
       `NO_COLOR` presence (including empty), global `--no-color`, disabled runtime
       color, and redirected stdout disable styling. Stdout eligibility is
       independent of stderr. Do not introduce a separate color policy or flag.
-- [ ] Verify all three commands in default/details views with eligible TTY,
+- [x] Verify all three commands in default/details views with eligible TTY,
       redirected output, and each color-disable control. Stripping generated ANSI
       must reproduce exactly the same plain text. Verify JSON remains unstyled
       and semantically unchanged; retain hostile-string, empty/unlisted selection,
