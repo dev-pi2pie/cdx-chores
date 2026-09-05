@@ -41,6 +41,11 @@
   "scripts": {
     "build": "node scripts/generate-embedded-version.mjs && tsdown",
     "cli": "node dist/esm/bin.mjs",
+    "test:unit": "bun scripts/testing/run.ts unit",
+    "test:integration:app": "bun scripts/testing/run.ts app",
+    "test:integration:codex": "bun scripts/testing/run.ts codex",
+    "test:integration:pandoc": "bun scripts/testing/run.ts pandoc",
+    "test:all": "bun scripts/testing/run.ts all",
     "lint": "oxlint --tsconfig tsconfig.json src test scripts",
     "lint:fix": "oxlint --tsconfig tsconfig.json --fix src test scripts",
     "format": "oxfmt src test scripts package.json tsconfig.json .oxlintrc.json .oxfmtrc.json",

@@ -1326,6 +1326,18 @@ agreed; Codex and Pandoc still ran and passed, all process shutdown checks passe
 and default finalization removed the run. The affected existing regression and
 complete aggregate are rerun after this correction.
 
+The corrected default aggregate passed all 3,152 cases and 17,301 assertions across
+434 files: unit 1,197/155 files, app 1,950/276, Codex 2/1, and Pandoc 3/2. All
+reports had zero failures/errors/skips, every outer and nested owner stopped,
+exports verified, and default finalization removed the run. The application test
+execution took 116.22 seconds within its 240-second budget.
+
+With that complete contract passing, `package.json` now exposes `test:unit`,
+`test:integration:app`, `test:integration:codex`, `test:integration:pandoc`, and
+`test:all`. Each routes directly to the shared runner and accepts only the optional
+`--keep-results` flag. Retained aggregate acceptance and final range reviews remain
+in progress.
+
 ## Remaining Phases
 
 Phase 4 has not started. Its broader repetition matrix, built-package checks, and
