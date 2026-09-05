@@ -17,8 +17,8 @@ settled design decisions. The feature-first layout and filename-based selection
 below are the proposed implementation direction, supported by a current-tree
 review and isolated Bun discovery checks. The complete move/split inventory and
 representative feature pilots still need verification before broad migration.
-Implementation has not started. Research remains in progress until that evidence
-and the process-completion mechanisms and shutdown budgets are recorded.
+Phase 1 implementation is in progress. Research remains in progress until that
+evidence and the process-completion mechanisms and shutdown budgets are recorded.
 
 ## Contributor Command Model
 
@@ -433,8 +433,8 @@ pilots, the complete case map, import isolation, and selection/config/report
 agreement. Establish process observation and bounded preflight/shutdown budgets
 on macOS. The synthetic discovery checks do not establish these results.
 
-Implementation has not started. Research closure requires recorded evidence for
-these decisions; the plan remains draft until execution is authorized.
+Phase 1 evidence is recorded in the [implementation record](../plans/jobs/2026-09-05-test-suite-refactor.md).
+Research closure still requires the remaining process and migration evidence.
 
 ## Related Plans
 

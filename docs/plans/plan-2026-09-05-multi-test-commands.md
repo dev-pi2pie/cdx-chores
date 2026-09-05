@@ -2,7 +2,7 @@
 title: "Test Suite Refactor Implementation Plan"
 created-date: 2026-09-05
 modified-date: 2026-09-05
-status: draft
+status: active
 agent: codex
 ---
 
@@ -12,9 +12,9 @@ Implement one aggregate command and four disjoint suites while preserving featur
 ownership and regression coverage. The proposed target uses feature/boundary
 folders and `.{unit,app,codex,pandoc}.test.ts` suffixes.
 
-Implementation has not started. Review the research's structure proposal before
-authorizing execution; the complete mapping and representative pilots remain
-pending. The research is authoritative for these contracts:
+Phase 1 is in progress in the [implementation record](jobs/2026-09-05-test-suite-refactor.md).
+The complete structure mapping and representative migration pilots remain pending.
+The research is authoritative for these contracts:
 
 - [Commands](../researches/research-2026-09-05-multi-test-commands.md#contributor-command-model), [structure and before/after comparison](../researches/research-2026-09-05-multi-test-commands.md#proposed-structure-and-beforeafter-comparison), and [unit boundaries](../researches/research-2026-09-05-multi-test-commands.md#what-unit-means-in-this-repository).
 - [Discovery](../researches/research-2026-09-05-multi-test-commands.md#proposed-discovery-and-suite-membership), [process completion](../researches/research-2026-09-05-multi-test-commands.md#process-completion-and-failure-semantics), and [reporting/retention](../researches/research-2026-09-05-multi-test-commands.md#shared-reporting-and-artifact-contract).
@@ -37,10 +37,10 @@ need a controllable execution boundary.
 
 Acceptance:
 
-- [ ] Verify normal/delayed exit, expected server termination, unexpected surviving
+- [x] Verify normal/delayed exit, expected server termination, unexpected surviving
       descendants, resistant termination, launch failure, and unverifiable completion
       against the research's outcome policy.
-- [ ] Verify a hanging prerequisite probe times out before test launch and terminates
+- [x] Verify a hanging prerequisite probe times out before test launch and terminates
       owned descendants. Exercise cancellation during both preflight and test work;
       preserve original failures and remaining-path diagnostics.
 - [ ] Check installed Codex in terminal and captured-output execution under a bounded
@@ -167,10 +167,8 @@ Acceptance:
 
 ## Execution Records and Reviews
 
-Create one `Test Suite Refactor Implementation Record` when Phase 1 starts, planned
-at `docs/plans/jobs/2026-09-05-test-suite-refactor.md`. Use the actual UTC start date,
-`status: in-progress`, and policy-compliant metadata; adjust the filename if needed.
-Link it from both drafts after creation.
+Use the unified [Test Suite Refactor Implementation Record](jobs/2026-09-05-test-suite-refactor.md),
+created when Phase 1 began. Keep it in progress until all implementation phases pass.
 
 The job owns the full mapping, commands/versions, results, failure diagnoses, and
 exact phase/batch review ranges. Add accepted change sets to the correspondence and
