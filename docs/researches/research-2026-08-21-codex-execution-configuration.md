@@ -1,7 +1,7 @@
 ---
 title: "Codex Execution Configuration"
 created-date: 2026-08-21
-modified-date: 2026-09-04
+modified-date: 2026-09-05
 status: completed
 agent: codex
 ---
@@ -38,7 +38,12 @@ The original SDK review used `@openai/codex-sdk` 0.149.1. A follow-up review on
 types and `dist/index.js` argument construction. `codex --version` reported
 `codex-cli 0.153.3`; its `exec --help` output confirmed the CLI selectors.
 
-| Selection        | SDK 0.153.3 integration                                                    |
+On 2026-09-05, the same option types and argument mappings were rechecked against
+the installed SDK 0.153.4. `codex --version` reported `codex-cli 0.153.4`, and
+`exec --help` confirmed the same selectors. The integration mappings below,
+accepted reasoning values, and SDK profile-selection limitation remain unchanged.
+
+| Selection        | SDK 0.153.4 integration                                                    |
 | ---------------- | -------------------------------------------------------------------------- |
 | Model            | `startThread({ model })` forwards `--model`                                |
 | Provider         | `new Codex({ config: { model_provider: id } })` forwards a config override |
@@ -104,7 +109,7 @@ research.
   `--codex-reasoning-effort` is omitted, even if Codex configuration specifies
   another value. An explicit recognized option value takes precedence and is
   forwarded unchanged; `low` is not a cap.
-- Accept the SDK 0.153.3 values: `minimal`, `low`, `medium`, `high`, `xhigh`,
+- Accept the SDK 0.153.4 values: `minimal`, `low`, `medium`, `high`, `xhigh`,
   `max`, `ultra`, and `persistent`. Reject empty or unknown explicit values
   locally before starting a Codex request; do not forward arbitrary strings.
 - Membership in that set does not guarantee model/provider support or effective
