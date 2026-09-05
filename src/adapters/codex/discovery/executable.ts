@@ -15,10 +15,9 @@ function resolveSdkPackage(): string {
   if (typeof nodeModule.findPackageJSON === "function") {
     const path = nodeModule.findPackageJSON("@openai/codex-sdk", import.meta.url);
     if (path) return path;
-    throw new Error();
   }
-  // Bun's development runtime does not yet implement findPackageJSON. Searching
-  // its module lookup paths also works around this ESM-only package's export map.
+  // Fall back when the runtime has no package result (including Bun, which does
+  // not yet implement findPackageJSON). Lookup paths bypass the ESM-only export map.
   const localRequire = nodeModule.createRequire(import.meta.url);
   for (const directory of localRequire.resolve.paths("@openai/codex-sdk") ?? []) {
     const path = join(directory, "@openai/codex-sdk/package.json");

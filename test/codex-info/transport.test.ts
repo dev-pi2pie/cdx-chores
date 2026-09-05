@@ -277,6 +277,57 @@ describe("Codex information discovery transport", () => {
     });
   });
 
+  test("configuration read errors stop discovery before model listing", async () => {
+    await withServer(
+      'if (method === "config/read") { process.stdout.write(JSON.stringify({ id, error: { message: "PRIVATE-CONFIG" } }) + "\\n"); return; }',
+      async (env, cwd, log) => {
+        await expect(discoverCodexInfo({ cwd, env, view: "models" })).rejects.toThrow(
+          "Codex discovery request failed.",
+        );
+        const requests = await readFile(log, "utf8");
+        expect(requests).toContain("config/read");
+        expect(requests).not.toContain("model/list");
+      },
+    );
+  });
+
+  test("cancels a pending later model page without returning partial discovery", async () => {
+    await withServer(
+      'if (method === "model/list" && params.cursor) return;',
+      async (env, cwd, log) => {
+        const controller = new AbortController();
+        const discovery = discoverCodexInfo({
+          cwd,
+          env,
+          view: "models",
+          signal: controller.signal,
+        });
+        // Observe the actual second request before cancellation; a fixed delay
+        // could cancel initialization instead on a loaded test machine.
+        const outcome = discovery.then(
+          (result) => ({ result, error: null }),
+          (error: Error) => ({ result: null, error }),
+        );
+        try {
+          const until = Date.now() + 3000;
+          let requests = "";
+          while (!requests.includes('"cursor":"page-two"') && Date.now() < until) {
+            requests = await readFile(log, "utf8").catch(() => "");
+            if (!requests.includes('"cursor":"page-two"')) {
+              await new Promise((resolve) => setTimeout(resolve, 10));
+            }
+          }
+          expect(requests).toContain('"cursor":"page-two"');
+        } finally {
+          controller.abort();
+          const settled = await outcome;
+          expect(settled.result).toBeNull();
+          expect(settled.error?.message).toContain("cancelled");
+        }
+      },
+    );
+  });
+
   test("sanitizes missing executable failures", async () => {
     await expect(
       discoverCodexInfo({

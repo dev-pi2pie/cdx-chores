@@ -39,7 +39,14 @@ if (process.argv[2] === "app-server") {
       const discovery = await discoverCodexInfo({cwd:process.cwd(),view:"providers"});
       process.stdout.write(JSON.stringify({sdk:JSON.parse(turn.finalResponse),discovery:discovery.config.captured,unchanged:JSON.stringify(before)===JSON.stringify(process.env)}));
     `;
-    for (const home of [undefined, "", "relative-home", join(directory, "other-home"), undefined]) {
+    for (const home of [
+      undefined,
+      "",
+      "   ",
+      "relative-home",
+      join(directory, "other-home"),
+      undefined,
+    ]) {
       const env: NodeJS.ProcessEnv = {
         ...process.env,
         CDX_CHORES_CODEX_PATH: executable,

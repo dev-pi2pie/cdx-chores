@@ -25,6 +25,22 @@ const discovery: CodexDiscovery = {
 };
 
 describe("Codex information action", () => {
+  test("JSON escapes terminal controls while preserving parsed Unicode values", async () => {
+    const { runtime, stdout } = createCapturedRuntime();
+    const hostile = "name\u009d8;;https://example.invalid\u009c\u202e\u2028\u2029\u{e0001}";
+    await actionCodexInfo(runtime, {
+      view: "providers",
+      json: true,
+      discover: async () => ({
+        ...discovery,
+        config: { model_providers: { proxy: { name: hostile } } },
+        models: null,
+      }),
+    });
+    expect(stdout.text).not.toMatch(/[\u007f-\u009f\p{Cf}\p{Zl}\p{Zp}]/u);
+    expect(JSON.parse(stdout.text).providers[0].displayName).toBe(hostile);
+    expect(stdout.text).toContain("\\udb40\\udc01");
+  });
   test.each(["summary", "models", "providers"] as const)(
     "%s builds JSON from one scoped discovery",
     async (view) => {

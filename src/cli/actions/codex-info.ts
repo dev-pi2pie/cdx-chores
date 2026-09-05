@@ -2,6 +2,7 @@ import type { CodexInfoView } from "../../adapters/codex/discovery/types";
 import type { discoverCodexInfo } from "../../adapters/codex/discovery";
 import { buildCodexInfoReport } from "../codex-info/report";
 import { renderCodexInfoReport } from "../codex-info/render";
+import { serializeCodexInfoReport } from "../codex-info/json";
 import { CliError } from "../errors";
 import type { CliRuntime } from "../types";
 
@@ -29,7 +30,7 @@ export async function actionCodexInfo(
   const discovery = await discover({ cwd: runtime.cwd, view, env });
   const report = buildCodexInfoReport(discovery, view);
   if (options.json) {
-    runtime.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+    runtime.stdout.write(`${serializeCodexInfoReport(report)}\n`);
   } else {
     renderCodexInfoReport(runtime, report, { details: options.details });
   }
