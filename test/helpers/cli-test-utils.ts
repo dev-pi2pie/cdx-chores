@@ -1,12 +1,16 @@
 import { mkdir, mkdtemp } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
-import { assertRunPath, readFixtureContext, suitePath } from "../../scripts/testing/run-context.ts";
+import {
+  assertRunPath,
+  readFixtureContext,
+  suitePath,
+} from "../../scripts/testing/ownership/run-context.ts";
 import {
   registerFixtureOwner,
   flushFixtureExports,
   removeFixtureDir,
-} from "../../scripts/testing/fixture-exports.ts";
+} from "../../scripts/testing/fixtures/fixture-exports.ts";
 
 import type { CliRuntime } from "../../src/cli/types";
 

@@ -8,7 +8,7 @@ import {
   removeRun,
   suitePath,
   TEST_CONTEXT_ENV,
-} from "../../../scripts/testing/run-context.ts";
+} from "../../../scripts/testing/ownership/run-context.ts";
 import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 function runGenerator(args: string[], env?: NodeJS.ProcessEnv, executable = process.execPath) {

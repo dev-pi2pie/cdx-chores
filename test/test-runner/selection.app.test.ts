@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
-import { startOwnedProcess } from "../../scripts/testing/process.ts";
+import { startOwnedProcess } from "../../scripts/testing/execution/process.ts";
 import {
   assertUnitDiscoveryConfig,
   discoverSuites,
@@ -11,8 +11,11 @@ import {
   selectTestFiles,
   SUITES,
   UNIT_IGNORE_PATTERNS,
-} from "../../scripts/testing/selection.ts";
-import { assertReportedTestFiles, reportedTestFiles } from "../../scripts/testing/report-files.ts";
+} from "../../scripts/testing/suites/selection.ts";
+import {
+  assertReportedTestFiles,
+  reportedTestFiles,
+} from "../../scripts/testing/reports/report-files.ts";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
 
 async function put(root: string, path: string, content: string): Promise<void> {

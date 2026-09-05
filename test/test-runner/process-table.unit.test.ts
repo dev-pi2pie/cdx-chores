@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { isLiveProcess, parseProcessTable } from "../../scripts/testing/process-table.ts";
+import { isLiveProcess, parseProcessTable } from "../../scripts/testing/execution/process-table.ts";
 
 describe("process observation", () => {
   test("distinguishes live states from zombies and retains only executable names", () => {

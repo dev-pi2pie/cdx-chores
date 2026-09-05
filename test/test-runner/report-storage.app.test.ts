@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { link, mkdir, readFile, rename, symlink, utimes, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { prepareReport, readReport } from "../../scripts/testing/report-storage";
-import { allocateRun, runPath } from "../../scripts/testing/run-context";
+import { prepareReport, readReport } from "../../scripts/testing/reports/report-storage";
+import { allocateRun, runPath } from "../../scripts/testing/ownership/run-context";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
 
 const selected = ["test/example.unit.test.ts"];

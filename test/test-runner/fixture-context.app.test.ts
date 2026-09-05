@@ -2,15 +2,15 @@ import { describe, expect, test } from "bun:test";
 import { lstat, mkdir, readdir, readFile, rename, rm, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
-import { type OwnedProcess } from "../../scripts/testing/process.ts";
+import { type OwnedProcess } from "../../scripts/testing/execution/process.ts";
 import {
   inspectFixtureExports,
   registerFixtureOutput,
-} from "../../scripts/testing/fixture-exports.ts";
+} from "../../scripts/testing/fixtures/fixture-exports.ts";
 import {
   inspectFixtureProcesses,
   startFixtureProcess,
-} from "../../scripts/testing/fixture-process.ts";
+} from "../../scripts/testing/fixtures/fixture-process.ts";
 import {
   allocateRun,
   fixtureEnvironment,
@@ -18,7 +18,7 @@ import {
   suitePath,
   TEST_CONTEXT_ENV,
   type RunContext,
-} from "../../scripts/testing/run-context.ts";
+} from "../../scripts/testing/ownership/run-context.ts";
 import { REPO_ROOT, withTempFixtureDir } from "../helpers/cli-test-utils";
 
 async function managed(keep: boolean, run: (context: RunContext) => Promise<void>) {
@@ -326,7 +326,7 @@ describe("managed fixture signal cancellation", () => {
       };
       try {
         const harnessProgram = `
-        const { startFixtureProcess } = await import(${JSON.stringify(join(REPO_ROOT, "scripts/testing/fixture-process.ts"))});
+        const { startFixtureProcess } = await import(${JSON.stringify(join(REPO_ROOT, "scripts/testing/fixtures/fixture-process.ts"))});
         const before = [process.listenerCount("SIGINT"), process.listenerCount("SIGTERM")];
         const callerSignal = new AbortController();
         const child = startFixtureProcess({ executable: process.execPath, args: ["-e", ${JSON.stringify(childProgram)}], cwd: process.cwd(), env: { PATH: process.env.PATH }, signal: callerSignal.signal, timeoutMs: 3000, graceMs: 250, cleanupMs: 1500 });

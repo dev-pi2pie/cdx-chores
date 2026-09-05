@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { access, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { readFixtureContext } from "../../scripts/testing/run-context.ts";
-import { SUITES } from "../../scripts/testing/selection.ts";
+import { readFixtureContext } from "../../scripts/testing/ownership/run-context.ts";
+import { SUITES } from "../../scripts/testing/suites/selection.ts";
 import { completed, reportPath, withRunner, writeReport } from "./runner-support.ts";
 
 describe("managed runner scheduling", () => {

@@ -1,5 +1,8 @@
-import { startFixtureProcess } from "../../scripts/testing/fixture-process.ts";
-import { flushFixtureExports, removeFixtureDir } from "../../scripts/testing/fixture-exports.ts";
+import { startFixtureProcess } from "../../scripts/testing/fixtures/fixture-process.ts";
+import {
+  flushFixtureExports,
+  removeFixtureDir,
+} from "../../scripts/testing/fixtures/fixture-exports.ts";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -7,7 +10,7 @@ import {
   type OwnedProcess,
   type OwnedProcessOptions,
   type OwnedProcessResult,
-} from "../../scripts/testing/process.ts";
+} from "../../scripts/testing/execution/process.ts";
 import { createTempFixtureDir } from "../helpers/cli-test-utils";
 
 // Unresolved ownership survives individual cases: this process must stop scheduling.

@@ -13,7 +13,7 @@ import {
   readdirSync,
 } from "node:fs";
 import { randomUUID } from "node:crypto";
-import type { Suite } from "./selection.ts";
+import type { Suite } from "../suites/selection.ts";
 import { rm } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import {
@@ -23,7 +23,7 @@ import {
   suitePath,
   type FixtureContext,
   type RunContext,
-} from "./run-context.ts";
+} from "../ownership/run-context.ts";
 
 export interface FixtureOutput {
   /** An explicitly designated generated file, never a fixture directory or raw account state. */
@@ -40,7 +40,7 @@ interface Owner {
   receipt?: string;
 }
 const owners = new Map<string, Owner>();
-const repoRoot = resolve(import.meta.dirname, "../..");
+const repoRoot = resolve(import.meta.dirname, "../../..");
 
 export function registerFixtureOwner(root: string): void {
   const context = readFixtureContext(process.env, repoRoot);

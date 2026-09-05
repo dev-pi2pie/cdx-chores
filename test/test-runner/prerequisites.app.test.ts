@@ -2,8 +2,11 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, symlink, access } from "node:fs/promises";
 import { join } from "node:path";
 
-import { runSuitePreflight, type PreflightLauncher } from "../../scripts/testing/prerequisites.ts";
-import { startOwnedProcess } from "../../scripts/testing/process.ts";
+import {
+  runSuitePreflight,
+  type PreflightLauncher,
+} from "../../scripts/testing/execution/prerequisites.ts";
+import { startOwnedProcess } from "../../scripts/testing/execution/process.ts";
 import { REPO_ROOT, withTempFixtureDir } from "../helpers/cli-test-utils";
 
 const success = JSON.stringify({ schema: 1, suite: "unit", versions: { bun: "1.4.1" } });

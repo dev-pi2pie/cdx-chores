@@ -12,19 +12,22 @@ import {
 } from "node:fs/promises";
 import { join } from "node:path";
 
-import { finalizeRun, type FinalizationHooks } from "../../scripts/testing/finalization.ts";
+import {
+  finalizeRun,
+  type FinalizationHooks,
+} from "../../scripts/testing/ownership/finalization.ts";
 import {
   allocateRun,
   removeRun,
   runPath,
   type RunContext,
-} from "../../scripts/testing/run-context.ts";
+} from "../../scripts/testing/ownership/run-context.ts";
 import {
   processDiagnostic,
   refreshSummaryState,
   renderSummary,
   type InvocationSummary,
-} from "../../scripts/testing/summary.ts";
+} from "../../scripts/testing/terminal/summary.ts";
 import { REPO_ROOT, withTempFixtureDir } from "../helpers/cli-test-utils.ts";
 
 function summary(keepResults: boolean): InvocationSummary {

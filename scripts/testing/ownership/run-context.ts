@@ -2,7 +2,7 @@ import { chmod, lstat, mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
 import { lstatSync, realpathSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
-import { SUITES, type Suite } from "./selection.ts";
+import { SUITES, type Suite } from "../suites/selection.ts";
 
 export const TEST_CONTEXT_ENV = "CDX_CHORES_TEST_CONTEXT";
 

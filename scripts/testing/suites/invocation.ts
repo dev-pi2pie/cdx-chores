@@ -7,7 +7,7 @@ import {
   suitePath,
   TEST_CONTEXT_ENV,
   type RunContext,
-} from "./run-context.ts";
+} from "../ownership/run-context.ts";
 import { SUITES, type Suite } from "./selection.ts";
 
 export interface InvocationOptions {

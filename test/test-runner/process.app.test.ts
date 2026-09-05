@@ -8,9 +8,9 @@ import {
   type OwnedProcess,
   type OwnedProcessOptions,
   type OwnedProcessResult,
-} from "../../scripts/testing/process.ts";
-import { observeProcessGroup } from "../../scripts/testing/process-table.ts";
-import { runAfterPreflight } from "../../scripts/testing/preflight.ts";
+} from "../../scripts/testing/execution/process.ts";
+import { observeProcessGroup } from "../../scripts/testing/execution/process-table.ts";
+import { runAfterPreflight } from "../../scripts/testing/execution/preflight.ts";
 import { REPO_ROOT, withTempFixtureDir } from "../helpers/cli-test-utils";
 
 const subject = join(import.meta.dir, "fixtures/process-subject.cjs");

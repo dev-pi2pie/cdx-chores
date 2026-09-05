@@ -13,7 +13,7 @@ ownership and regression coverage. The implemented layout uses feature/boundary
 folders and `.{unit,app,codex,pandoc}.test.ts` suffixes.
 
 Phase 1 is completed in the [implementation record](jobs/2026-09-05-test-suite-refactor.md).
-Phases 2 and 3 are completed. Phase 3.2 is drafted and must complete before
+Phases 2 and 3 are completed. Phase 3.2 is in progress and must complete before
 Phase 4, which has not started.
 The inventory, representative
 pilots, feature migration, final discovery, and full-range reviews are recorded
@@ -169,7 +169,7 @@ be presented as complete verification.
 
 ## Phase 3.2: Live Test Output and Terminal Experience
 
-Status: draft; implementation has not started.
+Status: in progress. Modularization precedes streaming and presentation changes.
 
 Address the manual-run feedback gap after the completed Phase 3 contract. Preserve
 its recorded execution/reporting/cleanup evidence and add the research's accepted

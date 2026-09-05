@@ -20,7 +20,8 @@ the actual mapping, evidence, and completed Phase 2 range reviews. Phase 1 imple
 evidence are complete. Phase 3 delivered the managed runner and passed the real
 aggregate in both retention modes. Phase 3.2 adds live test output and terminal
 presentation before Phase 4's broader workflow verification and final usage
-documentation. Both remain pending; research stays in progress.
+documentation. Phase 3.2 implementation is underway; its verification and Phase 4
+remain pending, so research stays in progress.
 
 ## Contributor Command Model
 
@@ -357,8 +358,8 @@ or allocation failure must still print its concrete reason.
 
 ### Live Test Output and Terminal Experience
 
-Accepted follow-up contract for Phase 3.2; implementation and verification are
-pending. Phase 3 established final reporting and lifecycle evidence. Its runner
+Accepted follow-up contract for Phase 3.2; implementation is underway and
+verification is pending. Phase 3 established final reporting and lifecycle evidence. Its runner
 currently captures child output and prints after finalization, leaving long runs
 without visible feedback. The job records the manual observation and review.
 

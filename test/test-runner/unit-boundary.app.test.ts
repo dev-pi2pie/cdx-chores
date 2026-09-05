@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { startOwnedProcess } from "../../scripts/testing/process.ts";
+import { startOwnedProcess } from "../../scripts/testing/execution/process.ts";
 import { REPO_ROOT, withTempFixtureDir } from "../helpers/cli-test-utils";
 
 test.each([

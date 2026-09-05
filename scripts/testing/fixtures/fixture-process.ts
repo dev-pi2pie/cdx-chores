@@ -6,22 +6,22 @@ import {
   type OwnedProcess,
   type OwnedProcessOptions,
   type ProcessObserver,
-} from "./process.ts";
+} from "../execution/process.ts";
 import {
   assertRunParent,
   assertRunPath,
   readFixtureContext,
   suitePath,
   type RunContext,
-} from "./run-context.ts";
-import type { Suite } from "./selection.ts";
+} from "../ownership/run-context.ts";
+import type { Suite } from "../suites/selection.ts";
 
 /** Detached nested groups must hand ownership back to the outer suite before Bun exits. */
 export function startFixtureProcess(
   options: OwnedProcessOptions,
   observer?: ProcessObserver,
 ): OwnedProcess {
-  const context = readFixtureContext(process.env, resolve(import.meta.dirname, "../.."));
+  const context = readFixtureContext(process.env, resolve(import.meta.dirname, "../../.."));
   if (!context) return startOwnedProcess(options, observer);
   const id = randomUUID();
   const directory = join(suitePath(context.run, context.suite, "scratch"), "processes");

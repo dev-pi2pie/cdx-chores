@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { startOwnedProcess, type OwnedProcessResult } from "./process.ts";
+import { startOwnedProcess, type OwnedProcessResult } from "./execution/process.ts";
 
 /** Explicit Phase 1 verification entry point; not discovered by bare bun test. */
 const repoRoot = resolve(fileURLToPath(new URL("../..", import.meta.url)));

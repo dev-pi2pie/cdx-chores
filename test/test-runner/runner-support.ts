@@ -6,15 +6,18 @@ import {
   runManagedTests,
   type RunnerDependencies,
   type RunnerOptions,
-} from "../../scripts/testing/runner.ts";
+} from "../../scripts/testing/orchestration/runner.ts";
 import {
   allocateRun,
   readFixtureContext,
   removeRun,
   type RunContext,
-} from "../../scripts/testing/run-context.ts";
-import type { OwnedProcessOptions, OwnedProcessResult } from "../../scripts/testing/process.ts";
-import { SUITES, UNIT_IGNORE_PATTERNS } from "../../scripts/testing/selection.ts";
+} from "../../scripts/testing/ownership/run-context.ts";
+import type {
+  OwnedProcessOptions,
+  OwnedProcessResult,
+} from "../../scripts/testing/execution/process.ts";
+import { SUITES, UNIT_IGNORE_PATTERNS } from "../../scripts/testing/suites/selection.ts";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
 
 export function completed(overrides: Partial<OwnedProcessResult> = {}): OwnedProcessResult {

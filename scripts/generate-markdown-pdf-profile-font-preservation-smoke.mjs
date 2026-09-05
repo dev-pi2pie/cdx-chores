@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { assertRunParent, readFixtureContext, suitePath } from "./testing/run-context.ts";
+import { assertRunParent, readFixtureContext, suitePath } from "./testing/ownership/run-context.ts";
 
 const scriptDirectory = fileURLToPath(new URL(".", import.meta.url));
 const repoRoot = resolve(scriptDirectory, "..");

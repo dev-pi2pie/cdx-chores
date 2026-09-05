@@ -8,8 +8,11 @@ import {
   selectTestFiles,
   SUITES,
   UNIT_IGNORE_PATTERNS,
-} from "../../scripts/testing/selection.ts";
-import { assertReportedTestFiles, reportedTestFiles } from "../../scripts/testing/report-files.ts";
+} from "../../scripts/testing/suites/selection.ts";
+import {
+  assertReportedTestFiles,
+  reportedTestFiles,
+} from "../../scripts/testing/reports/report-files.ts";
 
 describe("suite selection contracts", () => {
   test("recognizes every Bun filename form before applying the stricter suite policy", () => {

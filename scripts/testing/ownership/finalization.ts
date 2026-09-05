@@ -9,7 +9,7 @@ import {
   runPath,
   type RunContext,
 } from "./run-context.ts";
-import { refreshSummaryState, type InvocationSummary } from "./summary.ts";
+import { refreshSummaryState, type InvocationSummary } from "../terminal/summary.ts";
 
 export interface FinalizationHooks {
   /** Bounded failure seams for internal tests; these are never CLI options. */

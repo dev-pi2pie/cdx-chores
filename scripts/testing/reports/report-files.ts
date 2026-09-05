@@ -1,6 +1,6 @@
 import { XMLParser, XMLValidator } from "fast-xml-parser";
 
-import { classifyTestFiles } from "./selection.ts";
+import { classifyTestFiles } from "../suites/selection.ts";
 
 /** File-identity evidence only; exit status, counts, freshness, and outcomes are separate checks. */
 export function reportedTestFiles(xml: string): string[] {

@@ -1,9 +1,12 @@
-import { startFixtureProcess } from "../../scripts/testing/fixture-process.ts";
-import { flushFixtureExports, removeFixtureDir } from "../../scripts/testing/fixture-exports.ts";
+import { startFixtureProcess } from "../../scripts/testing/fixtures/fixture-process.ts";
+import {
+  flushFixtureExports,
+  removeFixtureDir,
+} from "../../scripts/testing/fixtures/fixture-exports.ts";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
-import { type OwnedProcessResult } from "../../scripts/testing/process";
+import { type OwnedProcessResult } from "../../scripts/testing/execution/process";
 import { createTempFixtureDir } from "../helpers/cli-test-utils";
 
 export type PandocRunner = (args: readonly string[]) => Promise<OwnedProcessResult>;

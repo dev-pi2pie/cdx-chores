@@ -1,8 +1,8 @@
 import { lstatSync } from "node:fs";
 
-import type { OwnedProcessResult } from "./process.ts";
-import type { JUnitSummary } from "./report-validation.ts";
-import type { Suite } from "./selection.ts";
+import type { OwnedProcessResult } from "../execution/process.ts";
+import type { JUnitSummary } from "../reports/report-validation.ts";
+import type { Suite } from "../suites/selection.ts";
 
 export interface LeafSummary {
   suite: Suite;

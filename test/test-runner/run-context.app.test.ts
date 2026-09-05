@@ -13,9 +13,9 @@ import {
   runPath,
   suitePath,
   TEST_CONTEXT_ENV,
-} from "../../scripts/testing/run-context";
+} from "../../scripts/testing/ownership/run-context";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
-import { createSuiteEnvironment } from "../../scripts/testing/invocation";
+import { createSuiteEnvironment } from "../../scripts/testing/suites/invocation";
 
 describe("managed invocation ownership", () => {
   test("isolates suite homes and snapshots only allowed environment values", async () => {

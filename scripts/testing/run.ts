@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 
-import { runManagedTests } from "./runner.ts";
+import { runManagedTests } from "./orchestration/runner.ts";
 
 const cancellation = new AbortController();
 const cancel = () => cancellation.abort();

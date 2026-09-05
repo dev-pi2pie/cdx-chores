@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { parseInvocation } from "../../scripts/testing/invocation";
+import { parseInvocation } from "../../scripts/testing/suites/invocation";
 
 describe("managed invocation arguments", () => {
   test("selects each leaf or the ordered aggregate and snapshots retention", () => {

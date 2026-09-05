@@ -8,7 +8,7 @@ import {
   removeRun,
   suitePath,
   TEST_CONTEXT_ENV,
-} from "../../../scripts/testing/run-context.ts";
+} from "../../../scripts/testing/ownership/run-context.ts";
 
 import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
@@ -756,11 +756,15 @@ describe("Markdown PDF Profile font-preservation smoke harness", () => {
 
       await mkdir(join(isolatedRepo, "scripts"), { recursive: true });
       await writeFile(isolatedScript, await readFile(join(REPO_ROOT, scriptPath), "utf8"), "utf8");
-      await mkdir(join(isolatedRepo, "scripts/testing"));
-      for (const dependency of ["run-context.ts", "selection.ts"]) {
+      await mkdir(join(isolatedRepo, "scripts/testing", "ownership"), { recursive: true });
+      await mkdir(join(isolatedRepo, "scripts/testing", "suites"), { recursive: true });
+      for (const [directory, dependency] of [
+        ["ownership", "run-context.ts"],
+        ["suites", "selection.ts"],
+      ] as const) {
         await writeFile(
-          join(isolatedRepo, "scripts/testing", dependency),
-          await readFile(join(REPO_ROOT, "scripts/testing", dependency)),
+          join(isolatedRepo, "scripts/testing", directory, dependency),
+          await readFile(join(REPO_ROOT, "scripts/testing", directory, dependency)),
         );
       }
       await writeFile(inputPath, "# Isolated smoke\n", "utf8");

@@ -1,8 +1,8 @@
 import { fileURLToPath } from "node:url";
 
-import { type OwnedProcessOptions } from "../../scripts/testing/process.ts";
+import { type OwnedProcessOptions } from "../../scripts/testing/execution/process.ts";
 
-import { startFixtureProcess } from "../../scripts/testing/fixture-process.ts";
+import { startFixtureProcess } from "../../scripts/testing/fixtures/fixture-process.ts";
 
 export type NativeRequirement = "duckdb" | "excel" | "sqlite";
 export type NativeReadiness = Record<NativeRequirement, boolean>;

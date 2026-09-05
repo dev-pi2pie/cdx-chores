@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import { parsePreflightReport } from "../../scripts/testing/prerequisites.ts";
-import { SUITES } from "../../scripts/testing/selection.ts";
-import { SUITE_POLICIES } from "../../scripts/testing/suite-policy.ts";
+import { parsePreflightReport } from "../../scripts/testing/execution/prerequisites.ts";
+import { SUITES } from "../../scripts/testing/suites/selection.ts";
+import { SUITE_POLICIES } from "../../scripts/testing/suites/suite-policy.ts";
 
 describe("suite prerequisite contract", () => {
   test("unit declares only the runner and process observation", () => {

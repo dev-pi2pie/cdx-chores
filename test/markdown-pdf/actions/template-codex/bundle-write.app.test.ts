@@ -1,4 +1,4 @@
-import { registerFixtureOutput } from "../../../../scripts/testing/fixture-exports.ts";
+import { registerFixtureOutput } from "../../../../scripts/testing/fixtures/fixture-exports.ts";
 import {
   outputPlan,
   synthesizeForPlan,

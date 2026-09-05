@@ -1,8 +1,8 @@
 import { fileURLToPath } from "node:url";
 
 import { startOwnedProcess, type OwnedProcessOptions, type OwnedProcessResult } from "./process.ts";
-import { SUITE_POLICIES } from "./suite-policy.ts";
-import type { Suite } from "./selection.ts";
+import { SUITE_POLICIES } from "../suites/suite-policy.ts";
+import type { Suite } from "../suites/selection.ts";
 
 export interface SuitePreflightOptions {
   suite: Suite;

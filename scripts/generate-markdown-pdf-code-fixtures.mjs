@@ -10,7 +10,7 @@ import {
   readFixtureContext,
   suitePath,
   TEST_CONTEXT_ENV,
-} from "./testing/run-context.ts";
+} from "./testing/ownership/run-context.ts";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const repoRoot = resolve(__dirname, "..");

@@ -4,7 +4,7 @@ import { access, lstat, mkdir, open } from "node:fs/promises";
 import { isAbsolute, join } from "node:path";
 import { promisify } from "node:util";
 
-import { SUITES, type Suite } from "./selection.ts";
+import { SUITES, type Suite } from "../suites/selection.ts";
 
 const execute = promisify(execFile);
 const suite = process.argv[2] as Suite;

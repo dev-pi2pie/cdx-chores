@@ -1,4 +1,4 @@
-import type { ProcessLimits } from "./process.ts";
+import type { ProcessLimits } from "../execution/process.ts";
 import type { Suite } from "./selection.ts";
 
 export interface SuitePolicy {

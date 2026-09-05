@@ -1,9 +1,14 @@
 import { constants } from "node:fs";
 import { lstat, open } from "node:fs/promises";
 
-import { assertRunParent, assertRunPath, runPath, type RunContext } from "./run-context.ts";
+import {
+  assertRunParent,
+  assertRunPath,
+  runPath,
+  type RunContext,
+} from "../ownership/run-context.ts";
 import { validateJUnitReport, type JUnitSummary } from "./report-validation.ts";
-import type { Suite } from "./selection.ts";
+import type { Suite } from "../suites/selection.ts";
 
 export interface ReportTicket {
   readonly path: string;

@@ -12,8 +12,8 @@ Execute the [implementation plan](../plan-2026-09-05-multi-test-commands.md)
 against the [research contracts](../../researches/research-2026-09-05-multi-test-commands.md).
 Phase 1 established bounded process ownership. Phase 2 completed suite
 classification, migration, and final discovery. Phase 3 completed the managed
-runner. Phase 3.2 is drafted for live output and terminal presentation;
-implementation and the subsequent Phase 4 remain pending.
+runner. Phase 3.2 is in progress for live output and terminal presentation;
+the subsequent Phase 4 remains pending.
 
 ## Phase 1: Process Lifecycle
 
@@ -1369,7 +1369,10 @@ verification and usage documentation remain pending.
 
 ## Phase 3.2: Live Test Output and Terminal Experience
 
-Status: draft; implementation has not started.
+Status: in progress.
+
+Fixed phase and 3.2A review base: `5649f171c0713265b29c3cb661a044cc55f1d12d`.
+The starting tracked worktree was clean.
 
 After Phase 3 closeout, manual use of `test:integration:app` and `test:all`
 reported apparent stalls after more than 20 seconds and a lack of terminal styling.
@@ -1389,16 +1392,46 @@ The plan supplies unchecked acceptance items for transport failures, styling,
 terminal/redirected execution, and both retention modes. Phase 4 keeps its number
 and begins only after this follow-up passes.
 
-This update refines the research and inserts the draft phase; it does not implement
-streaming or claim new runtime verification. Record the implementation review base
-when Phase 3.2 execution begins.
+The planning checkpoint refined the research and inserted the draft phase without
+implementing streaming or claiming new runtime verification. The implementation
+review base is recorded above.
 
 Documentation review clarified the initial backpressure/overflow policy and added
 privacy-sentinel acceptance coverage. The revised draft has no material review
 findings. Link/anchor and checklist checks confirmed that Phase 3 is preserved,
 all eleven Phase 3.2 items are unchecked, and Phase 4 retains its number and gate.
 
+### 3.2A: Module Boundaries and Streaming
+
+Status: in progress.
+
+Map module and external-consumer dependencies before the behavior-preserving
+reorganization. Validate Node-consumed helpers and subprocess/test fixture paths
+before checkpointing the moves and adding streaming behavior.
+
+The selected layout groups existing filenames into `orchestration/`, `execution/`,
+`ownership/`, `suites/`, `reports/`, `fixtures/`, and `terminal/`. The public
+`run.ts` and explicit Node lifecycle probe remain at the root. Consumer updates
+include generator imports and the isolated generator fixture that copies the
+context/selection modules into a synthetic repository.
+
+The move checkpoint passed 196 runner cases (871 assertions), 32 generator cases
+(299 assertions), direct Node loading of both generators, types, lint, formatting,
+and whitespace checks. Invalid runner selection still failed before allocation.
+The initial sandboxed runner attempt could not observe processes through `ps`;
+the focused run passed with the required process-observation permission. Module
+bodies changed only for imports and the two moved fixture modules' repository-root
+calculations. Streaming behavior is not part of this checkpoint.
+
+### 3.2B: Terminal Presentation
+
+Status: pending.
+
+### 3.2C: Verification and Closeout
+
+Status: pending.
+
 ## Remaining Phases
 
-Phase 3.2 implementation is pending. Phase 4 has not started; its broader repetition
+Phase 3.2 implementation is in progress. Phase 4 has not started; its broader repetition
 matrix, built-package checks, and usage documentation follow Phase 3.2 completion.

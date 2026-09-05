@@ -2,29 +2,38 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { TOML } from "bun";
 
-import { inspectFixtureExports } from "./fixture-exports.ts";
-import { inspectFixtureProcesses } from "./fixture-process.ts";
-import { finalizeRun } from "./finalization.ts";
-import { createSuiteEnvironment, parseInvocation } from "./invocation.ts";
-import { runSuitePreflight } from "./prerequisites.ts";
-import { startOwnedProcess, type OwnedProcessOptions, type OwnedProcessResult } from "./process.ts";
-import { prepareReport, readReport } from "./report-storage.ts";
-import { assertJUnitPassed } from "./report-validation.ts";
-import { allocateRun, assertRunPath, assertRunRoot, type RunContext } from "./run-context.ts";
+import { inspectFixtureExports } from "../fixtures/fixture-exports.ts";
+import { inspectFixtureProcesses } from "../fixtures/fixture-process.ts";
+import { finalizeRun } from "../ownership/finalization.ts";
+import { createSuiteEnvironment, parseInvocation } from "../suites/invocation.ts";
+import { runSuitePreflight } from "../execution/prerequisites.ts";
+import {
+  startOwnedProcess,
+  type OwnedProcessOptions,
+  type OwnedProcessResult,
+} from "../execution/process.ts";
+import { prepareReport, readReport } from "../reports/report-storage.ts";
+import { assertJUnitPassed } from "../reports/report-validation.ts";
+import {
+  allocateRun,
+  assertRunPath,
+  assertRunRoot,
+  type RunContext,
+} from "../ownership/run-context.ts";
 import {
   assertUnitDiscoveryConfig,
   discoverSuites,
   exactTestArguments,
   selectTestFiles,
-} from "./selection.ts";
+} from "../suites/selection.ts";
 import {
   processDiagnostic,
   refreshSummaryState,
   renderSummary,
   type InvocationSummary,
   type LeafSummary,
-} from "./summary.ts";
-import { SUITE_POLICIES } from "./suite-policy.ts";
+} from "../terminal/summary.ts";
+import { SUITE_POLICIES } from "../suites/suite-policy.ts";
 
 /** Internal bounded-fixture seams. None are accepted as command-line flags. */
 export interface RunnerDependencies {

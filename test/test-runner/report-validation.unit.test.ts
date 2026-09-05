@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import { assertJUnitPassed, validateJUnitReport } from "../../scripts/testing/report-validation.ts";
+import {
+  assertJUnitPassed,
+  validateJUnitReport,
+} from "../../scripts/testing/reports/report-validation.ts";
 
 const FILE = "test/example.unit.test.ts";
 const CASE = '<testcase name="one" assertions="2" time="0.001" />';

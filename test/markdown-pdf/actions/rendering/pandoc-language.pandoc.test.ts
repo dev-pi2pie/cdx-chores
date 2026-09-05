@@ -1,4 +1,4 @@
-import { registerFixtureOutput } from "../../../../scripts/testing/fixture-exports.ts";
+import { registerFixtureOutput } from "../../../../scripts/testing/fixtures/fixture-exports.ts";
 import { describe, expect, test } from "bun:test";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
