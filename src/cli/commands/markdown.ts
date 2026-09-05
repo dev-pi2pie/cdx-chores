@@ -1,3 +1,7 @@
+import {
+  applyCodexExecutionOptions,
+  resolveCodexExecutionCommandOptions,
+} from "../options/codex-execution-option";
 import type { Command } from "commander";
 
 import {
@@ -174,8 +178,7 @@ export function registerMarkdownCommands(
       }),
   );
 
-  pdfTemplateCommand
-    .command("codex")
+  applyCodexExecutionOptions(pdfTemplateCommand.command("codex"))
     .argument("[input]", "Markdown sample for document-informed template signals")
     .description("Draft a reviewable Markdown PDF template bundle from bounded signals")
     .option("-i, --input <path>", "Same as the input argument; useful in scripts")
@@ -203,9 +206,16 @@ export function registerMarkdownCommands(
       ),
     )
     .action(async (input: string | undefined, options: MdPdfTemplateCodexCliOptions) => {
-      const { codexTimeout, ...actionOptions } = options;
+      const { codexTimeout, codexModel, codexProvider, codexReasoningEffort, ...actionOptions } =
+        options;
+      const codexExecution = resolveCodexExecutionCommandOptions({
+        codexModel,
+        codexProvider,
+        codexReasoningEffort,
+      });
       await actions.actionMdPdfTemplateCodex(runtime, {
         ...actionOptions,
+        codexExecution,
         ...(codexTimeout !== undefined ? { timeoutMs: codexTimeout } : {}),
         positionalInput: input,
       });
@@ -226,8 +236,7 @@ export function registerMarkdownCommands(
       }),
   );
 
-  pdfProfileCommand
-    .command("codex")
+  applyCodexExecutionOptions(pdfProfileCommand.command("codex"))
     .argument("[input]", "Markdown sample for document-informed profile signals")
     .description(
       "Draft a reusable Markdown PDF profile from sample signals, hints, or fallback defaults",
@@ -252,9 +261,16 @@ export function registerMarkdownCommands(
       ),
     )
     .action(async (input: string | undefined, options: MdPdfProfileCodexCliOptions) => {
-      const { codexTimeout, ...actionOptions } = options;
+      const { codexTimeout, codexModel, codexProvider, codexReasoningEffort, ...actionOptions } =
+        options;
+      const codexExecution = resolveCodexExecutionCommandOptions({
+        codexModel,
+        codexProvider,
+        codexReasoningEffort,
+      });
       await actions.actionMdPdfProfileCodex(runtime, {
         ...actionOptions,
+        codexExecution,
         ...(codexTimeout !== undefined ? { timeoutMs: codexTimeout } : {}),
         positionalInput: input,
       });
@@ -264,8 +280,7 @@ export function registerMarkdownCommands(
     .command("pdf-project")
     .description("Manage Markdown PDF project bundles");
 
-  pdfProjectCommand
-    .command("codex")
+  applyCodexExecutionOptions(pdfProjectCommand.command("codex"))
     .argument("[input]", "Markdown sample for shared project signals")
     .description("Draft a coordinated Markdown PDF profile and template project bundle")
     .option("-i, --input <path>", "Same as the input argument; useful in scripts")
@@ -293,9 +308,16 @@ export function registerMarkdownCommands(
       ),
     )
     .action(async (input: string | undefined, options: MdPdfProjectCodexCliOptions) => {
-      const { codexTimeout, ...actionOptions } = options;
+      const { codexTimeout, codexModel, codexProvider, codexReasoningEffort, ...actionOptions } =
+        options;
+      const codexExecution = resolveCodexExecutionCommandOptions({
+        codexModel,
+        codexProvider,
+        codexReasoningEffort,
+      });
       await actions.actionMdPdfProjectCodex(runtime, {
         ...actionOptions,
+        codexExecution,
         ...(codexTimeout !== undefined ? { timeoutMs: codexTimeout } : {}),
         positionalInput: input,
       });

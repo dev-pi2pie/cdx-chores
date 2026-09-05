@@ -21,6 +21,12 @@ describe("Markdown PDF Project Codex prepared request lifecycle", () => {
       await writeFile(join(fixtureDir, "base.yml"), BASE_PROFILE, "utf8");
       await writeFile(join(fixtureDir, "report.md"), "# Report\n\nBody.\n", "utf8");
       await writeFile(join(fixtureDir, "cover.png"), minimalPng(1200, 800));
+      const codexExecution = {
+        model: "Model-A",
+        provider: "Provider-A",
+        reasoningEffort: "high",
+      } as const;
+      const executionCalls: unknown[] = [];
       const profileTimeouts: Array<number | undefined> = [];
       const templateTimeouts: Array<number | undefined> = [];
       let templateCallCount = 0;
@@ -30,6 +36,7 @@ describe("Markdown PDF Project Codex prepared request lifecycle", () => {
       });
 
       const prepared = await prepareMdPdfProjectCodex(runtime, {
+        codexExecution,
         baseProfile: "base.yml",
         coverImage: "cover.png",
         dryRun: true,
@@ -38,10 +45,12 @@ describe("Markdown PDF Project Codex prepared request lifecycle", () => {
         output: "project-output",
         profileCodexRunner: async (options) => {
           profileTimeouts.push(options.timeoutMs);
+          executionCalls.push(options.codexExecution);
           return adaptedProfileResponse();
         },
         templateCodexRunner: async (options) => {
           templateTimeouts.push(options.timeoutMs);
+          executionCalls.push(options.codexExecution);
           templateCallCount += 1;
           return templateCallCount === 1
             ? adaptedTemplateResponse().replace("assets/cover.png", "assets/other.png")
@@ -53,6 +62,9 @@ describe("Markdown PDF Project Codex prepared request lifecycle", () => {
       expect(prepared.binding.validation.decisionMode).toBe("adapted");
       expect(profileTimeouts).toEqual([120_000]);
       expect(templateTimeouts).toEqual([120_000, 120_000]);
+      expect(executionCalls).toEqual([codexExecution, codexExecution, codexExecution]);
+      expect(JSON.stringify(prepared)).not.toContain("Provider-A");
+      expect(JSON.stringify(prepared)).not.toContain("codexExecution");
     });
   });
 

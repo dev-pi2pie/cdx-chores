@@ -176,7 +176,7 @@ describe("Markdown PDF Profile Codex request lifecycle", () => {
         webSearchMode: string;
         workingDirectory: string;
       };
-      expect(capturedCodexOptions).toBeUndefined();
+      expect(capturedCodexOptions).toEqual({});
       expect(threadOptions).toMatchObject({
         approvalPolicy: "never",
         networkAccessEnabled: true,

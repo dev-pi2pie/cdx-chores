@@ -994,7 +994,7 @@ describe("cli action modules: md pdf-project codex template phase", () => {
         webSearchMode: "disabled",
       });
       expect(threadOptions.workingDirectory).toBe(fixtureDir);
-      expect(capturedCodexOptions).toBeUndefined();
+      expect(capturedCodexOptions).toEqual({});
       expect(runOptions.outputSchema).toBe(MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA);
       expect(runOptions.signal).toBeInstanceOf(AbortSignal);
       expect(timeoutCalls).toEqual([MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS]);

@@ -19,7 +19,7 @@ describe("cli command: md pdf-profile codex", () => {
     expect(result.stdout).toContain("input");
     expect(normalizedStdout).toContain("Markdown sample for document-informed profile signals");
     expect(result.stdout).toContain("-i, --input <path>");
-    expect(result.stdout).toContain("Same as the input argument; useful in scripts");
+    expect(normalizedStdout).toContain("Same as the input argument; useful in scripts");
     expect(result.stdout).toContain("--intent <text>");
     expect(result.stdout).toContain("--font-hint <text>");
     expect(normalizedStdout).toContain(

@@ -1,3 +1,4 @@
+import type { ResolvedCodexExecution } from "../../../utils/codex-execution";
 import type {
   MarkdownPdfTemplateCodexDecision,
   MarkdownPdfTemplateCodexOutputPlan,
@@ -17,6 +18,7 @@ export interface MarkdownPdfTemplateCodexResult {
 
 export type MarkdownPdfTemplateCodexRunner = (options: {
   prompt: string;
+  codexExecution: ResolvedCodexExecution;
   timeoutMs?: number;
   workingDirectory: string;
 }) => Promise<string>;

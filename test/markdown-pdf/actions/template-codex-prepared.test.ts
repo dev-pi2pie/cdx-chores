@@ -25,7 +25,13 @@ describe("Markdown PDF prepared Template Codex services", () => {
         cwd: fixtureDir,
         now: () => new Date("2026-07-22T07:00:00.000Z"),
       });
+      let requestCount = 0;
       const prepared = await prepareMdPdfTemplateCodex(runtime, {
+        codexExecution: { model: "Model-A", provider: "Provider-A", reasoningEffort: "high" },
+        codexRunner: async () => {
+          requestCount += 1;
+          throw new Error("Unexpected request");
+        },
         coverImage: "cover.png",
         dryRun: true,
         output: "preview-template",
@@ -100,6 +106,11 @@ describe("Markdown PDF prepared Template Codex services", () => {
         await pathExists(join(fixtureDir, "external-template", "template.codex-report.json")),
       ).toBe(false);
       expect(await pathExists(join(fixtureDir, "accepted-template-report.json"))).toBe(true);
+      expect(requestCount).toBe(0);
+      expect(
+        await readFile(join(fixtureDir, "accepted-template-report.json"), "utf8"),
+      ).not.toContain("codexExecution");
+      expect(JSON.stringify(externalReport)).not.toContain("Provider-A");
     });
   });
 

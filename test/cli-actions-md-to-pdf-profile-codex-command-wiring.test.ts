@@ -40,6 +40,7 @@ test("md pdf-profile codex command forwards positional input and repeated font h
 
   expect(calls).toEqual([
     {
+      codexExecution: { reasoningEffort: "low" },
       dryRun: false,
       fontHint: ["   ", "prefer Noto Serif CJK TC"],
       keepCodexReport: false,

@@ -142,3 +142,46 @@ describe("Markdown Codex timeout help", () => {
     },
   );
 });
+
+describe("Markdown Codex execution option routing", () => {
+  test.each(["pdf-profile", "pdf-template", "pdf-project"] as const)(
+    "forwards normalized policy without raw flags for %s",
+    async (command) => {
+      const harness = createMarkdownCodexTimeoutHarness();
+      await harness.parse([
+        "md",
+        command,
+        "codex",
+        "--codex-model",
+        " Model-A ",
+        "--codex-provider",
+        " Provider-A ",
+        "--codex-reasoning-effort",
+        "high",
+      ]);
+      const options = harness.calls[command][0];
+      expect(options).toHaveProperty("codexExecution", {
+        model: "Model-A",
+        provider: "Provider-A",
+        reasoningEffort: "high",
+      });
+      expect(options).not.toHaveProperty("codexModel");
+      expect(options).not.toHaveProperty("codexProvider");
+      expect(options).not.toHaveProperty("codexReasoningEffort");
+    },
+  );
+  test.each(["pdf-profile", "pdf-template", "pdf-project"] as const)(
+    "rejects invalid effort before %s action work",
+    async (command) => {
+      const harness = createMarkdownCodexTimeoutHarness();
+      await expectParseFailure(harness, [
+        "md",
+        command,
+        "codex",
+        "--codex-reasoning-effort",
+        "inherit",
+      ]);
+      expect(harness.calls[command]).toEqual([]);
+    },
+  );
+});

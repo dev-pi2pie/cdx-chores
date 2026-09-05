@@ -1,3 +1,4 @@
+import { resolveCodexExecution, type CodexExecutionOptions } from "../../../utils/codex-execution";
 import {
   MarkdownPdfCodexProfileError,
   suggestMarkdownPdfProfileWithCodex,
@@ -125,6 +126,7 @@ async function suggestMarkdownPdfCodexProfileWithProgress(input: {
   progressLabel: string;
   runtime: CliRuntime;
   timeoutMs?: number;
+  codexExecution?: CodexExecutionOptions;
 }): Promise<MarkdownPdfCodexProfileResult> {
   const ownsProgressSession = !input.progressSession;
   const codexProgress =
@@ -140,10 +142,12 @@ async function suggestMarkdownPdfCodexProfileWithProgress(input: {
           ...input.context.request,
           runner: input.profileCodexRunner,
           timeoutMs: input.timeoutMs,
+          codexExecution: input.codexExecution,
         })
       : await suggestMarkdownPdfProfileWithCodex({
           ...input.context.request,
           timeoutMs: input.timeoutMs,
+          codexExecution: input.codexExecution,
         });
     codexProgressStatus = result.profile
       ? result.decision.decisionMode === "conservative-fallback"
@@ -197,7 +201,10 @@ export async function runMarkdownPdfCodexProfileOrchestration(input: {
   progressLabel: string;
   runtime: CliRuntime;
   timeoutMs?: number;
+  codexExecution?: CodexExecutionOptions;
 }): Promise<MarkdownPdfCodexProfileOrchestrationResult> {
+  const codexExecution = resolveCodexExecution(input.codexExecution);
+  input = { ...input, codexExecution };
   const { candidateResolution } = input.context;
   if (candidateResolution.executionMode === "deterministic") {
     const identity = createMarkdownPdfCodexProfileIdentity({

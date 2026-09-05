@@ -48,6 +48,7 @@ test("md pdf-project codex command forwards positional input and project options
 
   expect(calls).toEqual([
     {
+      codexExecution: { reasoningEffort: "low" },
       baseProfile: "base-profile.yml",
       coverImage: "cover.png",
       dryRun: false,
@@ -97,6 +98,7 @@ test("md pdf-project codex command forwards explicit input alias", async () => {
 
   expect(calls).toEqual([
     {
+      codexExecution: { reasoningEffort: "low" },
       codexReportOutput: "project-report.json",
       dryRun: true,
       fontHint: ["Inter"],

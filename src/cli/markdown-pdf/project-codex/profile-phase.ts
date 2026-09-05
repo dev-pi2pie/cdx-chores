@@ -1,3 +1,4 @@
+import { resolveCodexExecution, type CodexExecutionOptions } from "../../../utils/codex-execution";
 import {
   classifyMarkdownPdfCodexProfileFailure,
   MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS,
@@ -106,7 +107,10 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
   signals: MdPdfProjectCodexSignalCollection;
   state: NormalizedMdPdfProjectCodexCommandState;
   timeoutMs?: number;
+  codexExecution?: CodexExecutionOptions;
 }): Promise<MdPdfProjectCodexProfilePhaseResult> {
+  const codexExecution = resolveCodexExecution(input.codexExecution);
+  input = { ...input, codexExecution };
   const signalMode = input.signals.modes.profile;
   const orchestrationContext = createMarkdownPdfCodexProfileOrchestrationContext({
     baseProfileCandidate: input.signals.profile.baseProfile.candidate,
@@ -130,6 +134,7 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
       progressLabel: "Requesting Codex Markdown PDF project profile recommendation",
       runtime: input.runtime,
       timeoutMs: input.timeoutMs,
+      codexExecution: input.codexExecution,
     });
   } catch (error) {
     const failureKind = classifyMarkdownPdfCodexProfileFailure(error);

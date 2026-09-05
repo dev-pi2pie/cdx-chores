@@ -63,7 +63,21 @@ Status: in-progress. Base: `35f43634`.
   regression, `bun test test/data-stack/actions/execution-policy.test.ts` passed
   all 12 tests. Scoped lint, formatting, and diff checks passed.
 
-Markdown integration and full phase-range review remain in progress.
+### Markdown And Integration Checkpoint
+
+- Added leaf-command execution options and propagated settings through profile,
+  template, project, and repair requests. Direct preparation validates before
+  input work; settings stay out of prompts and durable outputs.
+- Narrowed PDF schema-failure classification to schema-specific evidence.
+  Updated existing command/default-runner assertions for the explicit policy.
+- `bun test codex` passed 879 tests with 0 failures. The combined four new data
+  and Markdown execution-policy suites passed 34 tests; the actual CLI scope
+  suite passed 24 tests. Prepared-template lifecycle coverage verifies no extra
+  requests or policy serialization when writing/rebinding existing outputs.
+- TypeScript, lint, formatting, build, Node ESM/CJS imports, built CLI help, and
+  diff checks passed. Build retains the existing TypeScript 7 API warning.
+
+Full phase-range review remains pending.
 
 ## Phase 4: Interactive Adoption
 
