@@ -200,6 +200,54 @@ the discovery report must not become an execution configuration snapshot or an
 execution prerequisite. Do not implement a parallel TOML loader or read private
 catalog-cache files as a public contract.
 
+### Environment And Configuration Location
+
+The tool currently takes the Codex configuration/state directory from the
+invocation environment through `CODEX_HOME`. When unset, Codex uses its normal
+home-directory default (`~/.codex`). The variable names the directory containing
+`config.toml`, not an arbitrary configuration filename.[^config-location]
+`CDX_CHORES_CODEX_PATH` independently selects the executable.
+
+In the current repository, `startCodexReadOnlyThread()` supplies no SDK environment
+override; SDK `0.153.4` inherits the process environment. The local
+`resolveCodexHome()` helper is used for the authentication-file signal check; it
+is not a configuration loader. Phase 5 discovery must use the same invocation
+environment basis as execution, preserving unrelated child environment entries
+and avoiding parent-environment mutation or module-level caching. Discovery
+reports the invocation working directory (`runtime.cwd`), also used for child
+startup and `config/read`; it does not predict project configuration loaded by
+helpers using different workflow-specific working directories. Verify unset,
+custom, and edge-case home values against actual Codex behavior instead of
+assuming the local signal check defines CLI semantics.
+
+A follow-up schema inspection on 2026-09-05 confirmed that CLI `0.153.4`'s
+`InitializeResponse.codexHome` is the server's absolute home directory. This is
+the proposed report path source. Phase 5 must corroborate it with real-executable
+fixtures using isolated default/custom homes and distinct synthetic configuration
+values; use `config/read` values/origins to confirm the selected configuration.
+Derive home-source classification from the launch environment and those verified
+CLI rules. Child-environment capture alone proves forwarding, not config resolution.
+
+Show the verified effective absolute Codex home and whether Codex selected it
+through `CODEX_HOME` or its normal fallback in discovery details and JSON. Do not
+label a supplied-but-ignored empty value as an environment-selected home. Establish
+empty, whitespace, and relative-path behavior from CLI evidence; fail discovery
+without a report if the effective path/source cannot be determined or Codex rejects
+the value. This describes configuration for this invocation.
+Test successive invocations with different homes so a previous location cannot
+leak into later discovery or helper execution.
+
+A tool-owned configuration file has not been implemented. Its filename, schema,
+and precedence belong to separate future work; this plan adds neither a
+`codex.home` file setting nor another home-directory CLI option.
+
+Phase 6 will create `docs/guides/environment-variables.md` as the central guide to
+implemented environment controls. It will cover ownership, accepted values,
+defaults, precedence, command scope, and examples, with README discovery and
+links to the existing path-prompt and color guides. Codex authentication entries
+must distinguish this tool's signal checks from credential handling by Codex.
+Future file-based settings must not be presented as available configuration.
+
 ### Selection And Capability Meaning
 
 Keep these facts separate in the report:
@@ -239,7 +287,8 @@ providers receive the same rule; their IDs do not justify swallowing errors.
 
 Phase 5 must verify the version-specific protocol and lifecycle, omitted versus
 explicit model/provider configuration, project context, catalog recommendation
-semantics, and custom-provider catalog limitations. Record unknowns explicitly
+semantics, custom-provider catalog limitations, and default/custom `CODEX_HOME`
+consistency between discovery and execution. Record unknowns explicitly
 when the protocol cannot resolve them. Record the CLI version, initialization
 exchange, request parameters, and observed response structure in sanitized
 protocol fixtures and job evidence. Separately verify pagination, missing
@@ -323,3 +372,5 @@ numeric `timeoutMs` seams instead of introducing another timeout policy.
 [^profiles]: [Codex configuration profiles](https://learn.chatgpt.com/docs/config-file/config-advanced#profiles)
 
 [^app-server]: [Codex App Server: models and configuration APIs](https://learn.chatgpt.com/docs/app-server)
+
+[^config-location]: [Codex configuration and state locations](https://learn.chatgpt.com/docs/config-file/config-advanced#config-and-state-locations)

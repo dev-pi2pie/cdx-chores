@@ -121,6 +121,17 @@ missing-value semantics, and required protocol evidence. The follow-up review
 found no material gaps. Local links, footnotes, code fences, phase numbering,
 preservation of completed phase evidence, and `git diff --check` passed.
 
+The follow-up environment clarification assigns dynamic `CODEX_HOME` handling,
+discovery/execution consistency, and inspected-home reporting to Phase 5. Phase 6
+will add the central `docs/guides/environment-variables.md` guide and discovery
+links. A tool-owned configuration file remains future work.
+
+Review clarified invocation-directory scope and effective-home reporting through
+`initialize.codexHome`, with real CLI resolution evidence separated from synthetic
+environment-forwarding tests. The final documentation review found no material
+gaps. Link/structure checks and `git diff --check` passed; completed Phase 1–4
+checklists and evidence were verified unchanged.
+
 ## Phase 5: Codex Information Discovery
 
 Status: pending. Command and output requirements are in the plan. Verify the
@@ -131,4 +142,4 @@ a future extension.
 ## Phase 6: Validation And Documentation Closeout
 
 Status: pending. Final repository validation and shipped-guide updates remain
-owned by this phase.
+owned by this phase, including the central environment-variable guide.

@@ -229,7 +229,7 @@ execution model/provider/effort overrides or profile selector.
 
 | View                | Summary                                                                                                             | Details                                                                                                         |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `codex-info`        | Configured model/provider, separately labeled catalog recommendation, helper reasoning default `low`                | Add configuration working-directory context, Codex version, and reported configuration reasoning value          |
+| `codex-info`        | Configured model/provider, separately labeled catalog recommendation, helper reasoning default `low`                | Add working-directory/Codex-home context, Codex version, and reported configuration reasoning value          |
 | `codex-info models` | Model IDs, reported reasoning efforts, configured/recommended markers; retain configured selection even if unlisted | Add display names, descriptions, reported input modalities, effort descriptions, and catalog reasoning defaults |
 
 `--json` serializes a curated report with a schema version and explicit missing
@@ -261,8 +261,11 @@ Both commands serialize the same report shape for `--json`, using `schemaVersion
 | `models[].supportedReasoningEfforts` | Supported reasoning efforts | `null`: unknown when upstream omits or supplies an empty effort list |
 | `models[].catalogReasoningDefault` | Catalog reasoning default | `null`: unknown when not reported |
 
-The report also contains `context` (working directory and Codex version),
-`catalogScope: "picker-visible"`, and `models` with model IDs and the metadata
+The report's `context` contains working directory, Codex version, `codexHome`
+(the verified effective absolute home path, not the raw environment string), and
+`codexHomeSource` (`environment` when Codex uses `CODEX_HOME` to choose that path,
+`default` when Codex uses its normal home fallback). The report also contains
+`catalogScope: "picker-visible"` and `models` with model IDs and the metadata
 listed in the view table. Nullable optional metadata uses `null`, not omitted
 keys. Effort entries retain their reported value and nullable description.
 `models: []` means a successful empty visible catalog. Keep an unlisted configured
@@ -283,6 +286,49 @@ for `runtime.cwd`, list models through all pages, then terminate the owned child
 Use the same executable selection policy as helper execution, including
 `CDX_CHORES_CODEX_PATH`; do not attach to an existing desktop session or daemon.
 Keep parsing, report construction, and rendering outside command registration.
+
+Resolve the launch context from the invocation environment, including dynamic
+`CODEX_HOME`. When unset, retain Codex's normal home-directory default; never
+hardcode a machine-specific configuration path. Forward the same environment
+basis to discovery and SDK execution, preserving unrelated variables. Keep any
+resolved context local to the invocation; do not mutate the parent environment
+or cache a home directory across invocations. Reuse a shared context-resolution
+seam where necessary without adding a tool config-file loader or `--codex-home`.
+Show the inspected home and its source in `--details` and the JSON context.
+
+Use the app-server `initialize` response's `codexHome` as the effective path;
+CLI `0.153.4`'s generated `InitializeResponse` declares it as an absolute path.
+Require and validate that field instead of reconstructing the home from
+`config/read` or the local auth-signal helper. Establish source classification
+from the launch environment and CLI fallback rules verified with the real
+executable: use isolated default/custom homes with distinct synthetic config
+values, observe `initialize.codexHome`, and corroborate configuration selection
+through `config/read` values/origins. Record unset, empty, whitespace, and relative
+cases separately. Synthetic child-environment capture proves forwarding only;
+it does not prove CLI config resolution. Missing/invalid home metadata or
+unestablished source behavior fails discovery under the existing no-report policy.
+
+Discovery describes the `codex-info` invocation directory: use `runtime.cwd`
+(the normal CLI entry supplies `process.cwd()`) both as the child launch directory
+and as `config/read.cwd`. It does not predict configuration for every eventual
+helper directory. Existing workflow-specific working directories remain unchanged;
+helpers launched in another directory can load different project configuration.
+Environment parity means the same inherited environment basis; configuration
+parity is asserted only when the working-directory context also matches.
+
+Verify unset and custom `CODEX_HOME`, two successive invocations using different
+homes, and independence from `CDX_CHORES_CODEX_PATH`. Include empty, whitespace,
+and relative-path inputs in the protocol evidence: match the child process's
+actual resolution or surface a clear error, rather than displaying a different
+home based only on the existing authentication-signal helper's trimming rules.
+For empty or whitespace values, report `default` only if evidence establishes
+that Codex falls back; report `environment` if Codex accepts the value as its home.
+For accepted relative paths, report the effective absolute path resolved using
+the verified CLI behavior and launch directory. Do not trim or expand values by
+assumption. If Codex rejects a value, or effective path/source cannot be established,
+fail discovery without a report. Record these cases before finalizing the resolver.
+Tests must exercise both discovery and SDK child-environment propagation without
+making generation requests or changing the user's real Codex state.
 
 The first Phase 5 checkpoint verifies the `0.153.4` schema and actual read-method
 behavior with controlled fixtures. Record the CLI version, generated schema
@@ -404,6 +450,10 @@ entry behavior, with no configuration leakage across sessions.
       explicitly in the research and unified job before finalizing the adapter.
       Capture the initialization/read parameters and sanitized response shapes in
       version-labeled fixtures derived from the installed executable.
+- [ ] Preserve dynamic `CODEX_HOME` and the inherited child environment across
+      discovery and SDK execution. Verify default/custom homes, successive-call
+      isolation, home-value edge cases, independent executable selection, and
+      matching home/source fields in details and JSON.
 - [ ] Implement a bounded stdio discovery adapter with configuration reads,
       paginated model listing, normalized report types, and subprocess cleanup.
 - [ ] Register `codex-info` and `codex-info models` with default summary,
@@ -433,6 +483,18 @@ from synthetic tests and do not claim provider request compatibility.
       Do not imply automatic setting changes or hidden retries. Link to the
       existing timeout guide for its policy. Include `codex-info` summary,
       model listing, details/JSON views, and configuration/catalog limitations.
+- [ ] Create `docs/guides/environment-variables.md` as the central guide to
+      implemented environment controls. Inventory variables read by this tool
+      and relevant inherited dependency variables; explain ownership, accepted
+      values, unset/invalid behavior, defaults, precedence, affected commands,
+      and portable examples. Cover `CODEX_HOME`, `CDX_CHORES_CODEX_PATH`,
+      `CODEX_API_KEY`, `OPENAI_API_KEY`, `NO_COLOR`, and the existing path-prompt
+      controls. Verify authentication semantics against the installed SDK/CLI;
+      distinguish local auth signals from credentials actually used by Codex.
+      Do not document an unimplemented tool config file or `codex.home` setting.
+- [ ] Link the environment guide from README and the Codex execution guide.
+      Cross-link the existing path-prompt and output/color guides, keeping
+      detailed feature behavior in those guides and avoiding conflicting rules.
 - [ ] Update relevant rename, data-query, data-stack, Markdown helper and
       Interactive guides, the CLI integration guide, and README discovery links.
       Keep unsupported surfaces explicit and existing PDF `--profile` terminology.
@@ -458,6 +520,7 @@ from synthetic tests and do not claim provider request compatibility.
 | Discovery output               | Configured/recommended distinctions, absent selections, unlisted models, missing/new effort metadata, JSON field selection, and summary/details consistency                                                             |
 | Discovery transport            | Version-specific initialization, cwd/executable selection, pagination, unrelated notifications, malformed responses, bounded buffers/deadlines, cancellation, and child cleanup                                         |
 | Discovery isolation            | No generation/config writes, no dependency from execution workflows, unchanged helper defaults, and honest catalog scope under custom providers                                                                         |
+| Environment context            | Default/custom/edge-case `CODEX_HOME`, successive-invocation isolation, SDK/discovery environment parity, independent executable override, and accurate home/source reporting                                           |
 
 Reuse coverage in `test/codex-adapters/`, rename/data/Markdown command and action
 suites, `test/adapters-codex-markdown-pdf-profile/runner-behavior.test.ts`,
@@ -470,6 +533,12 @@ Run focused tests and `tsc --noEmit` per adoption phase. At final closeout run
 Node ESM/CJS package loading and CLI help. Use synthetic inputs and fixtures;
 manual scratch artifacts belong in `examples/playground/` and must be cleaned up.
 For documentation changes, check formatting, local links, and `git diff --check`.
+
+Environment documentation must be checked against the implemented resolvers and
+the installed SDK/CLI behavior, including parser defaults and invalid-value
+handling. Keep credential examples synthetic and link to official Codex guidance
+for externally owned semantics. Documentation checks do not require live model
+requests.
 
 ## Related Research
 
