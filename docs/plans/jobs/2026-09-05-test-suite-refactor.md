@@ -10,8 +10,8 @@ agent: codex
 
 Execute the [implementation plan](../plan-2026-09-05-multi-test-commands.md)
 against the [research contracts](../../researches/research-2026-09-05-multi-test-commands.md).
-Phase 1 established bounded process ownership. Phase 2 is classifying and
-migrating coverage; Phases 3–4 remain pending.
+Phase 1 established bounded process ownership. Phase 2 completed suite
+classification, migration, and final discovery; Phases 3–4 remain pending.
 
 ## Phase 1: Process Lifecycle
 
@@ -207,7 +207,7 @@ documentation-only closeout leaves the reviewed implementation unchanged.
 
 ## Phase 2: Classify and Migrate Existing Coverage
 
-Status: in progress.
+Status: completed.
 
 Fixed phase review base: `34c8cceff3063032950482d2f827539f0a437cbd`.
 The initial tracked worktree was clean. Section reviews use fixed section bases;
@@ -931,7 +931,7 @@ migration proceeds from it without duplicating or pruning cases.
 
 ### 2C: Feature Batches and Final Discovery
 
-Status: in progress.
+Status: completed.
 
 Fixed section review base: `62239f6973b7730ef2f2126af6b81927119749a0`.
 Migrate the remaining PDF owners first, then Data Query/Data Extract/Doctor-related
@@ -943,7 +943,7 @@ while applying the accepted source-to-target map and reconciling each batch.
 - [x] Update terminal path correspondence, links, and lint/format coverage.
 - [x] Switch to final unit-default discovery and remove remaining live gates together.
 - [x] Verify all four leaves, complete union, reports, and raw/default selection.
-- [ ] Review the complete section and Phase 2 ranges and resolve findings.
+- [x] Review the complete section and Phase 2 ranges and resolve findings.
 
 #### PDF Codex and Adapter Batch
 
@@ -954,10 +954,10 @@ class/name/assertion multisets match with no additions or losses. An instrumente
 unit selection passed 142 cases and 958 assertions across 25 files without
 subprocess, native-package, or fetch probes. Scoped formatting and lint passed.
 
-A pure bundle-writing fixture helper supports the split tests. Existing shared
-PDF support paths remain temporarily in place until the adjacent PDF batch is
-validated and their consumers can be relocated together. Section 2C remains in
-progress; the final default-discovery switch and complete range reviews are pending.
+A pure bundle-writing fixture helper supports the split tests. At this earlier
+batch checkpoint, shared PDF support paths were temporarily retained for the
+adjacent batch. The general PDF batch below records their completed relocation;
+the final discovery and closeout sections record the completed switch and reviews.
 
 #### PDF Isolation Corrections
 
@@ -1035,9 +1035,7 @@ names are normalized or discarded.
 
 #### Final Discovery and Reconciliation
 
-Validation checkpoint: `dcea21ed` plus the pending `bunfig.toml` and
-`test/codex-info/live-protocol.codex.test.ts` discovery changes. The final
-committed discovery revision will be recorded when the range reviews close.
+Committed discovery revision: `7e06cdc135345bf8344a4ae0fad6949552fe4c4c`.
 The correspondence range `62239f69..dcea21ed` covers path migration only.
 
 `bunfig.toml` now uses `./test` and excludes application, Codex, Pandoc, and
@@ -1091,7 +1089,32 @@ platform-boundary evidence; this does not certify another operating system.
 Types, lint, formatting across 1,102 source/test/script files, and whitespace
 checks passed. The current path correspondence records all 364 remaining source
 migrations and eight shared-helper relocations, and current research links resolve
-to their terminal owners. Final full-section and whole-Phase-2 reviews are pending.
+to their terminal owners. Final full-section and whole-Phase-2 reviews passed.
+
+#### Section and Phase Closeout
+
+The complete section range
+`62239f6973b7730ef2f2126af6b81927119749a0..7e06cdc135345bf8344a4ae0fad6949552fe4c4c`
+and complete Phase 2 range
+`34c8cceff3063032950482d2f827539f0a437cbd..7e06cdc135345bf8344a4ae0fad6949552fe4c4c`
+passed security, test-coverage, maintainability, and documentation review with no
+remaining material findings.
+
+Review dispositions:
+
+- Accepted the documentation traceability clarification: path migration and final
+  discovery have distinct recorded revisions.
+- Recorded the unchanged transport assertion variation instead of claiming strict
+  total-assertion equality. Case preservation and the existing test weakness are
+  both explicit above.
+- Withdrew an old-command finding in the mixed-code Markdown fixture: the string
+  is frozen syntax-highlighting input, not contributor usage documentation. The
+  committed corpus remains unchanged as required by this phase's scope.
+
+All Phase 2 acceptance items are complete. The final documentation-only checkpoint
+closes the status/checklists; it does not change the verified implementation.
+Public managed commands, full report validation, and retention remain Phase 3;
+usage documentation and final repository verification remain Phase 4.
 
 ## Remaining Phases
 

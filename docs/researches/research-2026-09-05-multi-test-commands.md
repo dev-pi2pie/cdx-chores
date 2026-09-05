@@ -16,7 +16,7 @@ The command model, behavioral suite boundaries, and shutdown outcomes below are
 settled design decisions. Phase 2 implemented the feature-first layout and
 filename-based selection, verified the baseline correspondence and prerequisite
 boundaries, and passed the complete 424-file union. The implementation job records
-the actual mapping, evidence, and review state. Phase 1 implementation and lifecycle
+the actual mapping, evidence, and completed Phase 2 range reviews. Phase 1 implementation and lifecycle
 evidence are complete. Research remains in progress pending the managed-runner
 evidence described below.
 

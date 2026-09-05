@@ -9,13 +9,13 @@ agent: codex
 ## Goal and Execution Boundary
 
 Implement one aggregate command and four disjoint suites while preserving feature
-ownership and regression coverage. The proposed target uses feature/boundary
+ownership and regression coverage. The implemented layout uses feature/boundary
 folders and `.{unit,app,codex,pandoc}.test.ts` suffixes.
 
 Phase 1 is completed in the [implementation record](jobs/2026-09-05-test-suite-refactor.md).
-Phase 2 is in progress; Phases 3–4 have not started.
-The inventory, representative pilots, feature migration, and final discovery are
-verified. Final section and whole-phase reviews remain before Phase 2 closes.
+Phase 2 is completed; Phases 3–4 have not started. The inventory, representative
+pilots, feature migration, final discovery, and full-range reviews are recorded
+in the implementation record.
 The research is authoritative for these contracts:
 
 - [Commands](../researches/research-2026-09-05-multi-test-commands.md#contributor-command-model), [structure and before/after comparison](../researches/research-2026-09-05-multi-test-commands.md#proposed-structure-and-beforeafter-comparison), and [unit boundaries](../researches/research-2026-09-05-multi-test-commands.md#what-unit-means-in-this-repository).
