@@ -10,7 +10,7 @@ import {
 import { createActionTestRuntime, expectCliError } from "../../../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../../../helpers/cli-test-utils";
 import { pathExists } from "../../support/path-fixtures";
-import { minimalPng } from "../template-codex-fixtures";
+import { minimalPng } from "./fixtures";
 
 describe("cli action modules: md pdf-template codex output paths", () => {
   test("plans generated output paths without input-derived bundle names", async () => {

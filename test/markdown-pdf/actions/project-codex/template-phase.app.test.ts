@@ -20,7 +20,7 @@ import type { MarkdownPdfCodexProfileRunner } from "../../../../src/adapters/cod
 import type { MarkdownPdfProjectCodexOutputPlan } from "../../../../src/cli/markdown-pdf/project-codex/types";
 import { createActionTestRuntime } from "../../../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../../../helpers/cli-test-utils";
-import { minimalPng } from "../template-codex-fixtures";
+import { minimalPng } from "../template-codex/fixtures";
 import { pathExists } from "../../support/path-fixtures";
 
 type TemplatePhaseFixtureOptions = MdPdfProjectCodexOptions & {

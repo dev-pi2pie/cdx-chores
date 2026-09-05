@@ -15,11 +15,8 @@ import {
   synthesizeMdPdfTemplateCodexFromDecision,
 } from "../../../../../src/cli/markdown-pdf/template-codex/synthesize";
 import type { MdPdfTemplateCodexSignalCollection } from "../../../../../src/cli/markdown-pdf/template-codex/types";
-import {
-  createSynthesisOutputPlan,
-  createSynthesisSignals,
-} from "../../template-synthesis-fixtures";
-import { cssDeclarationsForSelector } from "../../../../cli-actions-md-to-pdf-template-codex/template-synthesis/css-assertions";
+import { createSynthesisOutputPlan, createSynthesisSignals } from "../template-synthesis-fixtures";
+import { cssDeclarationsForSelector } from "./css-assertions";
 
 function bodyLanguageSelector(lang: string): string {
   return `:where(p, li, td, th, blockquote, figcaption, dd, dt):lang(${lang}),

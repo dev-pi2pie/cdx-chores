@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { normalizeMdPdfTemplateCodexCommandState } from "../../../../src/cli/markdown-pdf/template-codex";
 import { createActionTestRuntime, expectCliError } from "../../../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../../../helpers/cli-test-utils";
-import { minimalWebpWithChunks } from "../template-codex-fixtures";
+import { minimalWebpWithChunks } from "./fixtures";
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 

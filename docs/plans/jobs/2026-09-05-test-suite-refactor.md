@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Refactor Implementation Record"
 created-date: 2026-09-05
-modified-date: 2026-09-06
+modified-date: 2026-09-05
 status: in-progress
 agent: codex
 ---
@@ -969,6 +969,27 @@ the existing footer/page-number copies and preventing shared-default pollution.
 These two corrections are checkpointed separately from the general PDF moves.
 The migrated combined selection, including real PDF inspection, passed 876 cases
 and 5,309 assertions; guarded units passed 327 cases and 1,383 assertions.
+
+#### General PDF and Support Batch
+
+The adjacent batch moves 78 sources to 89 targets and retains 876 cases with
+5,309 assertions. Eight existing shared helpers now live with their feature
+owners; imports resolve directly to those locations. The font-suggestion split
+uses one small shared fixture helper. No committed input assets changed.
+
+One accepted inventory correction moves the disguised-session lifecycle case
+from unit to application integration: it creates and cleans an owned filesystem
+session. This changes case membership, not target count or assertions. Imports
+used by pure cases now name existing owner modules where broad barrels loaded
+unrelated native prerequisites.
+
+After support relocation, all 133 original PDF sources reconcile to 150 targets:
+1,323 cases and 9,213 assertions match the baseline per-source
+class/name/assertion multisets exactly. Combined execution passed in 24.95 seconds
+with zero skips/failures, including three installed-Pandoc cases and real PDF
+inspection. Instrumented units passed 504 cases and 2,457 assertions across 66
+files in 0.50 seconds under an isolated home. Bounded ownership reported complete
+cleanup. Type checking, scoped lint, formatting, and whitespace checks passed.
 
 ## Remaining Phases
 

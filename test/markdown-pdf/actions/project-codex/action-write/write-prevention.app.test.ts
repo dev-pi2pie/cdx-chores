@@ -19,7 +19,7 @@ import {
   noUsableTemplateResponse,
   prepareWriteValidationFixture,
   stubTemplateRunner,
-} from "../../project-codex-action-write-fixtures";
+} from "../action-write-fixtures";
 
 describe("cli action modules: md pdf-project codex action writes", () => {
   test("rejects report output conflicts before writing bundle files", async () => {

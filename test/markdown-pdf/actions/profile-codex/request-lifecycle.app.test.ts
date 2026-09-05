@@ -19,7 +19,7 @@ import {
   test,
   withTempFixtureDir,
   writeFile,
-} from "../profile-codex-fixtures";
+} from "./fixtures";
 
 afterEach(() => {
   mock.restore();

@@ -16,10 +16,10 @@ import {
 } from "../../../../../src/cli/markdown-pdf/project-codex";
 import { createActionTestRuntime, expectCliError } from "../../../../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../../../../helpers/cli-test-utils";
-import { minimalPng } from "../../template-codex-fixtures";
+import { minimalPng } from "../../template-codex/fixtures";
 import { pathExists } from "../../../support/path-fixtures";
 
-import { BASE_PROFILE, expectPrivacySafeReport } from "../../project-codex-action-write-fixtures";
+import { BASE_PROFILE, expectPrivacySafeReport } from "../action-write-fixtures";
 
 describe("cli action modules: md pdf-project codex action writes", () => {
   test("redacts local managed asset source paths from read failures", async () => {

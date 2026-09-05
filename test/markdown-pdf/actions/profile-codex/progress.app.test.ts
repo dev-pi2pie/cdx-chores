@@ -11,8 +11,8 @@ import {
   test,
   withTempFixtureDir,
   writeFile,
-} from "../profile-codex-fixtures";
-import type { CodexProgressPresenter } from "../profile-codex-fixtures";
+} from "./fixtures";
+import type { CodexProgressPresenter } from "./fixtures";
 
 afterEach(() => {
   mock.restore();

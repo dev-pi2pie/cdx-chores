@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionMdToPdf } from "../../../../src/cli/actions/markdown/to-pdf";
-import { createPdfRunner } from "../render-support";
+import { createPdfRunner } from "./render-support";
 import { createActionTestRuntime } from "../../../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../../../helpers/cli-test-utils";
 

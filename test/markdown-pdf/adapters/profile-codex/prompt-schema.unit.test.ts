@@ -11,7 +11,7 @@ import {
   type MarkdownPdfCodexProfileFontPatch,
 } from "../../../../src/adapters/codex/markdown-pdf-profile/types";
 import { createMarkdownPdfProfileCandidates } from "../../../../src/cli/markdown-pdf/profile/candidates";
-import { requestBase } from "../../../adapters-codex-markdown-pdf-profile/fixtures";
+import { requestBase } from "./fixtures";
 
 function promptFacts(prompt: string): Record<string, unknown> {
   const marker = "Deterministic facts:\n";

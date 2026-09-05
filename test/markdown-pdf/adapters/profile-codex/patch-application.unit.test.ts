@@ -15,7 +15,7 @@ import {
   MARKDOWN_PDF_PAGE_CHROME_POSITIONS,
   normalizeMarkdownPdfProfile,
 } from "../../../../src/cli/markdown-pdf/profile";
-import { candidate, requestBase } from "../../../adapters-codex-markdown-pdf-profile/fixtures";
+import { candidate, requestBase } from "./fixtures";
 
 function sparseCandidate(fullProfile: Record<string, unknown> = {}): MarkdownPdfProfileCandidate {
   const base = candidate("default");

@@ -17,7 +17,7 @@ import type {
   MarkdownPdfProcessRunner,
   MarkdownPdfRendererCapabilityRequest,
 } from "../../../../src/cli/markdown-pdf";
-import { ok } from "../render-support";
+import { ok } from "../rendering/render-support";
 import { createActionTestRuntime } from "../../../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../../../helpers/cli-test-utils";
 

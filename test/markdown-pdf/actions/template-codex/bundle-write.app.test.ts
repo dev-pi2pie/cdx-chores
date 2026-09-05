@@ -20,7 +20,7 @@ import {
   withTempFixtureDir,
 } from "../../../helpers/cli-test-utils";
 import { pathExists } from "../../support/path-fixtures";
-import { minimalPng } from "../template-codex-fixtures";
+import { minimalPng } from "./fixtures";
 
 describe("cli action modules: md pdf-template codex bundle writes", () => {
   test("validates required template placeholders before writing", async () => {

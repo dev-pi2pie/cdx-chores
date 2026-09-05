@@ -12,8 +12,8 @@ import {
 } from "../../../../../src/cli/markdown-pdf/project-codex";
 import { createActionTestRuntime } from "../../../../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../../../../helpers/cli-test-utils";
-import { createPdfRunner } from "../../render-support";
-import { minimalPng } from "../../template-codex-fixtures";
+import { createPdfRunner } from "../../rendering/render-support";
+import { minimalPng } from "../../template-codex/fixtures";
 import { pathExists } from "../../../support/path-fixtures";
 
 import {
@@ -22,7 +22,7 @@ import {
   adaptedTemplateResponse,
   expectPrivacySafeReport,
   stubTemplateRunner,
-} from "../../project-codex-action-write-fixtures";
+} from "../action-write-fixtures";
 
 function expectManagedProjectTemplateRoles(
   templateHtml: string,

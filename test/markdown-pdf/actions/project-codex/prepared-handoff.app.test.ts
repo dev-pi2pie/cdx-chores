@@ -13,12 +13,8 @@ import {
 } from "../../../../src/cli/markdown-pdf/project-codex";
 import { createActionTestRuntime, expectCliError } from "../../../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../../../helpers/cli-test-utils";
-import {
-  adaptedProfileResponse,
-  adaptedTemplateResponse,
-  BASE_PROFILE,
-} from "../project-codex-prepared-fixtures";
-import { minimalPng } from "../template-codex-fixtures";
+import { adaptedProfileResponse, adaptedTemplateResponse, BASE_PROFILE } from "./prepared-fixtures";
+import { minimalPng } from "../template-codex/fixtures";
 import { pathExists } from "../../support/path-fixtures";
 
 describe("Markdown PDF Project Codex prepared handoff", () => {

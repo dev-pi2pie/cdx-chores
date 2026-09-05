@@ -5,7 +5,7 @@ import {
   MarkdownPdfCodexProfileError,
   suggestMarkdownPdfProfileWithCodex,
 } from "../../../../src/adapters/codex/markdown-pdf-profile";
-import { requestBase } from "../../../adapters-codex-markdown-pdf-profile/fixtures";
+import { requestBase } from "./fixtures";
 
 describe("Markdown PDF Codex profile adapter", () => {
   test("supports conservative fallback and no usable profile decision modes", async () => {

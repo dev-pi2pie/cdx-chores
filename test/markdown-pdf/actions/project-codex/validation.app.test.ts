@@ -19,7 +19,7 @@ import type { MarkdownPdfProjectCodexOutputPlan } from "../../../../src/cli/mark
 import { createActionTestRuntime } from "../../../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../../../helpers/cli-test-utils";
 import { pathExists } from "../../support/path-fixtures";
-import { minimalPng } from "../template-codex-fixtures";
+import { minimalPng } from "../template-codex/fixtures";
 
 type ProjectValidationFixtureOptions = MdPdfProjectCodexOptions & {
   profileCodexRunner?: MarkdownPdfCodexProfileRunner;

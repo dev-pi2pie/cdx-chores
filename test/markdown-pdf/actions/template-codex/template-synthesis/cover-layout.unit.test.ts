@@ -7,11 +7,8 @@ import {
   synthesizeMdPdfTemplateCodex,
   synthesizeMdPdfTemplateCodexFromDecision,
 } from "../../../../../src/cli/markdown-pdf/template-codex/synthesize";
-import {
-  createSynthesisOutputPlan,
-  createSynthesisSignals,
-} from "../../template-synthesis-fixtures";
-import { cssDeclarationsForSelector } from "../../../../cli-actions-md-to-pdf-template-codex/template-synthesis/css-assertions";
+import { createSynthesisOutputPlan, createSynthesisSignals } from "../template-synthesis-fixtures";
+import { cssDeclarationsForSelector } from "./css-assertions";
 
 describe("cli action modules: md pdf-template codex template synthesis", () => {
   test("maps contained cover media to page-relative CSS without source pixel sizing", () => {

@@ -17,7 +17,7 @@ import {
   test,
   withTempFixtureDir,
   writeFile,
-} from "../profile-codex-fixtures";
+} from "./fixtures";
 
 describe("cli action modules: md pdf-profile codex", () => {
   test("stores relative report paths even when display paths are absolute", async () => {

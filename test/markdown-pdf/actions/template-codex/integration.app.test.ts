@@ -15,8 +15,8 @@ import {
 import { createActionTestRuntime, expectCliError } from "../../../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../../../helpers/cli-test-utils";
 import { pathExists } from "../../support/path-fixtures";
-import { createPdfRunner } from "../render-support";
-import { minimalJpeg, minimalPng, minimalWebpVp8x1200By800 } from "../template-codex-fixtures";
+import { createPdfRunner } from "../rendering/render-support";
+import { minimalJpeg, minimalPng, minimalWebpVp8x1200By800 } from "./fixtures";
 
 function codexTemplateResponse(
   input: {

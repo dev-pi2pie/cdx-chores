@@ -9,7 +9,7 @@ import {
 } from "../../../../src/cli/markdown-pdf/template-codex";
 import { createActionTestRuntime, expectCliError } from "../../../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../../../helpers/cli-test-utils";
-import { minimalPng } from "../template-codex-fixtures";
+import { minimalPng } from "./fixtures";
 
 describe("cli action modules: md pdf-template codex output targets", () => {
   test("rejects planned recipe file symlink targets", async () => {

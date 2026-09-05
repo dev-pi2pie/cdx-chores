@@ -10,7 +10,7 @@ import {
 } from "../../../../src/cli/markdown-pdf/project-codex";
 import { createActionTestRuntime, expectCliError } from "../../../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../../../helpers/cli-test-utils";
-import { minimalPng } from "../template-codex-fixtures";
+import { minimalPng } from "../template-codex/fixtures";
 import { pathExists } from "../../support/path-fixtures";
 
 describe("cli action modules: md pdf-project codex output planning", () => {

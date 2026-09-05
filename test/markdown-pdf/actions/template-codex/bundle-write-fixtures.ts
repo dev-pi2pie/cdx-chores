@@ -7,7 +7,7 @@ import {
   type NormalizedMdPdfTemplateCodexCommandState,
 } from "../../../../src/cli/markdown-pdf/template-codex";
 import { createCapturedRuntime } from "../../../helpers/cli-test-utils";
-import { createSynthesisSignals } from "../template-synthesis-fixtures";
+import { createSynthesisSignals } from "./template-synthesis-fixtures";
 
 export function outputPlan(input: {
   coverImagePath?: string;

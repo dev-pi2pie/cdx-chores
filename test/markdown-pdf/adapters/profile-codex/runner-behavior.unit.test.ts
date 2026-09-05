@@ -5,7 +5,7 @@ import {
   MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS,
   suggestMarkdownPdfProfileWithCodex,
 } from "../../../../src/adapters/codex/markdown-pdf-profile";
-import { requestBase } from "../../../adapters-codex-markdown-pdf-profile/fixtures";
+import { requestBase } from "./fixtures";
 
 afterEach(() => {
   mock.restore();
