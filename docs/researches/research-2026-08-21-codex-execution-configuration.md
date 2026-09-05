@@ -182,6 +182,41 @@ Listing identifies configuration choices, not successful authentication or reque
 compatibility. No Interactive menu entry, selection picker, or configuration
 mutation is introduced by this phase.
 
+### Human Presentation Refinement (Phase 5.5)
+
+Phase 5.5 is an accepted presentation follow-up, pending implementation. The
+current renderer repeats overview fields across commands and always emits plain
+text. Reuse the existing shared color helper and
+[output/color contract](../guides/cli-output-and-color.md) to improve hierarchy
+while reducing repeated context. Discovery conclusions and JSON stay unchanged.
+
+- Overview: retain configured model/provider, helper reasoning default, catalog
+  recommendation, and short provider-coverage/catalog-scope notes. Keep configured
+  reasoning and invocation context in details; avoid a heading for each field.
+- Models: retain provider context, one catalog qualification, IDs, reported
+  reasoning efforts, and configured/catalog-recommended markers. Omit the helper
+  default, separate recommendation line, and provider-enumeration explanation.
+  Catalog metadata does not verify provider support. Preserve an explicit notice
+  when the configured model is unlisted and reasoning capabilities are unknown.
+- Providers: retain configured selection, IDs, markers, source/coverage, and a
+  short credentials/request-support qualification. Share identical source wording
+  above the list; use per-entry sources only when needed to distinguish entries.
+  Omit model/reasoning context. Empty and unlisted results remain explicit and
+  must not imply that an absent provider is unsupported.
+- Details: group invocation context and metadata consistently. Omit absent
+  optional descriptions; show a separate model value when it differs from the
+  displayed catalog ID. Preserve meaningful unknown capabilities/defaults.
+- Styling: use restrained bold cyan headings, bold IDs, and literal selection
+  markers without success semantics. Escape external strings before adding ANSI.
+  The shared helper controls styling per output stream; `NO_COLOR` presence
+  (including empty), `--no-color`, disabled runtime color, and non-TTY output
+  disable it. Stripping ANSI must recover identical canonical plain text.
+
+The command-specific omissions apply equally to colored and plain human output.
+JSON keeps its curated fields and missing-value semantics and receives no styling.
+Phase 5.5 records implementation evidence in the unified job record; Phase 6
+documents the resulting shipped behavior in the public guides.
+
 ### Discovery Evidence And Integration
 
 The reviewed SDK `0.153.4` has thread creation/resumption methods but no model-list

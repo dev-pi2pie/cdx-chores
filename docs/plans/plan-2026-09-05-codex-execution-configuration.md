@@ -1,6 +1,7 @@
 ---
 title: "Codex execution configuration implementation"
 created-date: 2026-09-05
+modified-date: 2026-09-05
 status: active
 agent: codex
 ---
@@ -12,7 +13,8 @@ existing Codex helper flows. Omitted model/provider options continue to inherit
 Codex configuration; omitted reasoning effort continues to request `low`.
 
 Phases 1–4 implement the settled execution contract. Phase 5 implements
-`codex-info` configuration, model, and configured-provider discovery. Phase 6
+`codex-info` configuration, model, and configured-provider discovery. Phase 5.5
+adds concise command-specific output and shared terminal styling. Phase 6
 owns final validation and shipped documentation. The linked research records the
 completed discovery conclusions; phase evidence is in the unified job record.
 The shipped timeout policy remains owned by its existing guide and plan.
@@ -240,6 +242,15 @@ in command tests; describe the canonical forms in help/examples.
 | `codex-info models` | Provider context, model IDs, reported reasoning efforts, configured/recommended markers; retain configured selection even if unlisted | Add display names, descriptions, reported input modalities, effort descriptions, and catalog reasoning defaults |
 | `codex-info providers` | Provider IDs, source, configured marker, and enumeration coverage | Add reported display names, context, and coverage limitations; no endpoint/auth details |
 
+Phase 5.5 refines these human projections using the presentation contract in the
+linked research. Summary retains compact provider-coverage and catalog-scope
+notes. Models retain provider context and a catalog-scope note, while omitting
+helper defaults, the separate recommendation line, and provider-enumeration
+details. Providers omit model/reasoning context and show a shared source label
+instead of repeating an identical source on each entry. All selection markers,
+unknown capability states, and notices for unlisted configured selections remain
+explicit. JSON fields and discovery behavior remain unchanged.
+
 `--json` serializes a curated report with a schema version and explicit missing
 values, rather than raw app-server responses. Human views and JSON derive from
 one normalized result for the requested command. A complete catalog means all pages of
@@ -288,7 +299,7 @@ providers command did not request the catalog. Keep an unlisted configured
 selection in `configured`; do not fabricate a catalog entry for it.
 
 Human output renders unspecified configuration as "unspecified", absent catalog
-metadata as "unknown", and an empty recommendation list as "none reported".
+metadata as "unknown" when displayed, and an empty recommendation list as "none reported".
 All views use these same normalized states; no unqualified `default` field or
 marker is allowed. The implemented report fields are defined in
 `src/cli/codex-info/report.ts` and covered by the report and CLI replay fixtures.
@@ -309,8 +320,10 @@ without fabricating its definition. Explicitly label omitted selection unspecifi
 Verify a built-in enumeration source for the installed executable at the first
 checkpoint. Use `providerCoverage: "built-in-and-configured"` only with evidence
 covering both sources; otherwise use `configured-only` and explain the limitation
-in summary, details, and JSON. Unsupported built-in enumeration is a successful
-limited result: after successful configuration/extraction, exit 0 with
+in the overview and provider human views (including details), and in every JSON
+view. Model human views retain the separate catalog/provider-support qualification.
+Unsupported built-in enumeration is a successful limited result: after successful
+configuration/extraction, exit 0 with
 `providerCoverage: "configured-only"`, including when the configured map is empty.
 Keep this distinct from an actual required-read or transport error, which fails.
 Deduplicate exact case-sensitive IDs, retain all
@@ -426,8 +439,8 @@ adds no Interactive entry or provider-selection/configuration mutation controls.
 
 Each phase starts unchecked. When implementation begins, create one unified job
 record at `docs/plans/jobs/YYYY-MM-DD-codex-execution-configuration.md`, dated for
-the execution start, and link it from this plan. Use sections for Phases 1–6 to
-record changes, validation commands/results, exact reviewed `base..tip` ranges,
+the execution start, and link it from this plan. Use sections for Phases 1–6,
+including Phase 5.5, to record changes, validation commands/results, exact reviewed `base..tip` ranges,
 findings and resolutions, and remaining work. The plan owns intended outcomes and
 checklists; the job record owns execution evidence.
 
@@ -435,7 +448,8 @@ Commit validated, coherent changes and review each phase's full commit range
 before advancing. After review fixes, verify and re-review the expanded range
 from the same phase base. Check off outcomes only when their required evidence
 passes; close each phase after its findings are resolved. Keep the unified job
-`in-progress` until all six phases finish, then mark it and the plan completed.
+`in-progress` until every phase, including Phase 5.5, finishes, then mark it and
+the plan completed.
 Only checked outcomes have completed implementation evidence.
 
 ### Phase 1: Shared Policy And SDK Mapping
@@ -531,6 +545,49 @@ Exit evidence: protocol fixtures and command/report tests prove accurate scoped
 output and bounded lifecycle handling. Runtime observations are labeled separately
 from synthetic tests and do not claim provider request compatibility.
 
+### Phase 5.5: Codex Information Presentation
+
+Goals: make each command's human output concise and apply consistent terminal
+styling through the existing shared color policy. Phase 5 remains complete;
+this phase changes presentation without expanding discovery or the JSON schema.
+
+- [ ] Refine the overview to compact configured model/provider, helper reasoning
+      default, catalog recommendation, and short coverage/scope notes. Keep
+      configured reasoning, paths, home source, and CLI version in details.
+- [ ] Focus model output on provider context, catalog qualification, IDs,
+      reasoning efforts, and configured/catalog-recommended markers. Remove the
+      repeated helper default, separate recommendation line, and provider-source
+      coverage explanation. Preserve unknown reasoning and unlisted selections.
+- [ ] Focus provider output on configured provider, IDs, selection markers,
+      shared source/coverage wording, and the unverified credentials/request
+      support qualification. Omit model/reasoning context. Preserve successful
+      empty results and explain that an unlisted selection is not proof of lack
+      of support. Show per-entry sources only if they differ from the shared source.
+- [ ] Group details consistently; omit absent optional descriptions and print a
+      separate model value only when it differs from the displayed catalog ID.
+      Preserve meaningful unknown capability/default values and invocation context.
+- [ ] Use `getCliColors(runtime, runtime.stdout)` for restrained bold cyan
+      headings, bold IDs, and readable selection emphasis. Keep literal markers
+      and qualifications meaningful without color. Escape external strings before
+      styling; selection markers must not imply successful provider validation.
+- [ ] Preserve the [shared output/color contract](../guides/cli-output-and-color.md):
+      `NO_COLOR` presence (including empty), global `--no-color`, disabled runtime
+      color, and redirected stdout disable styling. Stdout eligibility is
+      independent of stderr. Do not introduce a separate color policy or flag.
+- [ ] Verify all three commands in default/details views with eligible TTY,
+      redirected output, and each color-disable control. Stripping generated ANSI
+      must reproduce exactly the same plain text. Verify JSON remains unstyled
+      and semantically unchanged; retain hostile-string, empty/unlisted selection,
+      unknown capability, and one-discovery-result regression coverage.
+- [ ] Record validation and meaningful checkpoint commits in the unified job
+      record. Review the full phase commit range, fix accepted findings, and
+      re-review the expanded range from the same base before marking complete.
+
+Exit evidence: focused rendering/action/CLI tests and shared color regressions
+pass, with readable synthetic summary/models/providers examples in both human
+views. Run TypeScript, lint, formatting, build, and Node CLI smoke checks for the
+changed paths. Public guide updates remain in Phase 6.
+
 ### Phase 6: Validation And Documentation Closeout
 
 - [ ] Complete the validation matrix below and record commands/results in the
@@ -542,6 +599,8 @@ from synthetic tests and do not claim provider request compatibility.
       existing timeout guide for its policy. Include `codex-info` summary,
       model/provider listing, details/JSON views, command-specific discovery
       dependencies, provider coverage, and configuration/catalog limitations.
+      Document the concise human views and shared color behavior completed in
+      Phase 5.5, linking to the output/color guide.
 - [ ] Create `docs/guides/environment-variables.md` as the central guide to
       implemented environment controls. Inventory variables read by this tool
       and relevant inherited dependency variables; explain ownership, accepted
@@ -582,6 +641,7 @@ from synthetic tests and do not claim provider request compatibility.
 | Environment context            | Default/custom/edge-case `CODEX_HOME`, successive-invocation isolation, SDK/discovery environment parity, independent executable override, and accurate home/source reporting                                           |
 | Provider discovery | Configured/built-in sources, completeness labels, duplicate IDs, unlisted selections, safe fields, and independence from model-list failures |
 | Provider/catalog relationship | Same catalog under different providers, configured context in model output, metadata-only claims, and not-requested versus empty JSON states |
+| Information presentation | Command-specific concise default/details views; TTY/color-control matrix; ANSI-stripped/plain equality; external-string escaping; unchanged JSON and discovery |
 
 Reuse coverage in `test/codex-adapters/`, rename/data/Markdown command and action
 suites, `test/adapters-codex-markdown-pdf-profile/runner-behavior.test.ts`,
