@@ -13,7 +13,7 @@ ownership and regression coverage. The proposed target uses feature/boundary
 folders and `.{unit,app,codex,pandoc}.test.ts` suffixes.
 
 Phase 1 is completed in the [implementation record](jobs/2026-09-05-test-suite-refactor.md).
-Phases 2–4 have not started.
+Phase 2 is in progress; Phases 3–4 have not started.
 The complete structure mapping and representative migration pilots remain pending.
 The research is authoritative for these contracts:
 
