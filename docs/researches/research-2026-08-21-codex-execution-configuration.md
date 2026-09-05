@@ -2,30 +2,34 @@
 title: "Codex Execution Configuration"
 created-date: 2026-08-21
 modified-date: 2026-09-05
-status: completed
+status: in-progress
 agent: codex
 ---
 
 ## Goal
 
 Research one configuration contract for Codex helper model selection, provider
-selection, reasoning effort, and timeout integration.
+selection, reasoning effort, and timeout integration, plus read-only discovery
+of Codex configuration and reported model capabilities.
 
-The model, provider, and reasoning-effort contract is settled for implementation
-planning. The SDK findings below support this research conclusion; the proposed
-options are not implemented. The separate timeout contract is already shipped
-and remains an existing integration boundary.
+The execution contract is implemented through Phases 1–4 of the linked plan;
+validation and reviewed commit ranges are recorded in the
+[unified job record](../plans/jobs/2026-09-05-codex-execution-configuration.md).
+Research is reopened for the `codex-info` discovery extension. Its command and
+output direction is accepted; runtime default resolution and provider/catalog
+behavior still require the Phase 5 evidence described below. The separate timeout
+contract remains an existing integration boundary.
 
-## Current State
+## Execution State After Phases 1–4
 
 All current helpers use the shared read-only thread factory in
 `src/adapters/codex/shared.ts`.
 
 | Setting          | Current behavior                                                                          |
 | ---------------- | ----------------------------------------------------------------------------------------- |
-| Model            | Inherited from Codex configuration                                                        |
-| Provider         | Inherited from Codex configuration                                                        |
-| Reasoning effort | Forced to `low` for every helper                                                          |
+| Model            | Inherited unless an adopted command supplies an explicit override                         |
+| Provider         | Inherited unless an adopted command supplies an explicit override                         |
+| Reasoning effort | Defaults to `low`; adopted commands can supply an explicit recognized effort              |
 | Request timeout  | Shared 30-second per-request-attempt default; CLI overrides on supported command surfaces |
 
 Embedded suggestion paths without an adopted timeout option retain the shared
@@ -72,7 +76,7 @@ reasoning effort: low
 timeout: existing shared Codex timeout policy
 ```
 
-Proposed explicit overrides:
+Implemented explicit overrides on adopted command surfaces:
 
 ```text
 --codex-model <model>
@@ -80,10 +84,9 @@ Proposed explicit overrides:
 --codex-reasoning-effort <effort>
 ```
 
-These three names describe the settled research contract, not shipped behavior.
-`--codex-timeout <duration>` already ships on the command surfaces owned by the
-separate timeout contract; it is not a candidate option introduced by this
-research.
+The implementation plan records the exact adopted surfaces and retained-default
+paths. `--codex-timeout <duration>` remains owned by the separate timeout contract;
+execution options do not change its behavior.
 
 ## Configuration Boundaries
 
@@ -148,6 +151,103 @@ configured independently.
   Such fallback must not hide a Codex failure or retry with different execution
   selections.
 
+## Codex Information Discovery
+
+### Command And Output Direction
+
+Use `codex-info` as a read-only command group. Phase 5 introduces:
+
+| Command                        | Default human output                                                                          |
+| ------------------------------ | --------------------------------------------------------------------------------------------- |
+| `cdx-chores codex-info`        | Configured model/provider, catalog recommendation when reported, and helper reasoning default |
+| `cdx-chores codex-info models` | Model IDs, reported reasoning efforts, and configured/recommended markers                     |
+
+Both commands offer `--details` and `--json`; summary is the default and needs no
+flag. Reject `--details --json` before discovery. Details expand descriptions,
+reported input modalities, effort descriptions, catalog reasoning defaults, and
+configuration context. JSON exposes a curated, versioned report from the same
+discovery result. Use explicit labels such as "Configured model", "Catalog
+recommended model", "Catalog reasoning default", and "Helper reasoning default";
+never use an unqualified "default" field or marker. The plan defines the JSON
+field names and missing-value semantics shared by every view.
+
+The broader name leaves room for `codex-info providers`. Listing provider IDs is
+a future extension pending a verified enumeration source; it is separate from
+showing the selected provider ID in the initial summary. No Interactive menu
+entry, selection picker, or configuration mutation is introduced by this phase.
+
+### Discovery Evidence And Integration
+
+The reviewed SDK `0.153.4` has thread creation/resumption methods but no model-list
+or configuration-read method. Keep helper execution on that SDK. A separate,
+bounded CLI app-server client is the proposed discovery integration.
+
+Official app-server documentation provides `model/list` with pagination,
+`supportedReasoningEfforts`, `defaultReasoningEffort`, `isDefault`, and other
+model metadata. `isDefault` denotes a catalog recommendation. `config/read`
+returns configuration after Codex resolves its layers.[^app-server]
+
+On 2026-09-05, TypeScript schemas generated by CLI `0.153.4` confirmed these model
+fields, `ConfigReadParams.cwd`, and nullable `model`, `model_provider`, and
+`model_reasoning_effort` configuration fields. This is protocol evidence; it does
+not establish runtime resolution for an omitted model or completeness for a
+custom provider. Treat the app-server integration as version-sensitive and verify
+its behavior against the installed executable before closing Phase 5.
+
+Use Codex configuration resolution for the invocation's working directory.
+Execution requests continue to delegate their configuration loading to Codex;
+the discovery report must not become an execution configuration snapshot or an
+execution prerequisite. Do not implement a parallel TOML loader or read private
+catalog-cache files as a public contract.
+
+### Selection And Capability Meaning
+
+Keep these facts separate in the report:
+
+- Configured model/provider: values returned by Codex for the inspected context.
+- Catalog recommended model: the entry marked `isDefault`, when one is reported.
+- Catalog reasoning default: each model's reported suggested effort.
+- Helper reasoning default: this tool's existing `low` request policy.
+
+An absent configured model/provider is unspecified, not proof of a particular
+resolved choice. Do not mark the catalog recommendation as the effective helper
+default without verified resolution evidence. Preserve a configured model that
+is missing from the catalog, with its capabilities unknown.
+
+Label the list as Codex-reported model metadata. In particular, do not claim a
+custom provider exposes or accepts every listed model. Empty or missing reasoning
+metadata means support is unknown, not that reasoning is disabled. Display
+reported effort values even when they are outside the execution SDK's accepted
+set; discovery does not extend that set or change the helper default.
+
+Discovery makes no generation request and supplies no compatibility verdict for
+image input, structured output, or reasoning. It does not add fallback, change
+execution settings, or maintain a repository-owned capability registry. Only
+curated configuration/model fields enter human or JSON output; raw configuration,
+provider definitions, and authentication material do not.
+
+### Discovery Failures
+
+Both initial commands require successful configuration and catalog reads.
+Failure of either read fails the invocation with a sanitized error and no partial
+report, including JSON. Do not convert a catalog request error into "unknown".
+A successful empty catalog or missing optional metadata is a valid report:
+retain the configured selection and label absent capabilities as unknown. Custom
+providers receive the same rule; their IDs do not justify swallowing errors.
+
+### Evidence Still Required
+
+Phase 5 must verify the version-specific protocol and lifecycle, omitted versus
+explicit model/provider configuration, project context, catalog recommendation
+semantics, and custom-provider catalog limitations. Record unknowns explicitly
+when the protocol cannot resolve them. Record the CLI version, initialization
+exchange, request parameters, and observed response structure in sanitized
+protocol fixtures and job evidence. Separately verify pagination, missing
+metadata, failure handling, and consistent summary/details/JSON projections.
+Close this discovery research when these findings and the resulting supported
+report contract are recorded in the unified job; implementation tests alone must
+not be presented as live provider compatibility evidence.
+
 ## Shipped Timeout Boundary
 
 The completed timeout research and the
@@ -193,6 +293,9 @@ numeric `timeoutMs` seams instead of introducing another timeout policy.
    runtime combinations, including rejection of default and explicit reasoning
    efforts without automatic effort fallback. Do not claim universal provider
    compatibility.
+5. Verify the discovery contract through Codex's version-specific protocol,
+   preserving the distinction between configuration, catalog recommendations,
+   and actual request compatibility. Keep discovery independent of execution.
 
 ## Non-Goals
 
@@ -218,3 +321,5 @@ numeric `timeoutMs` seams instead of introducing another timeout policy.
 [^providers]: [Custom model providers](https://learn.chatgpt.com/docs/config-file/config-advanced#custom-model-providers)
 
 [^profiles]: [Codex configuration profiles](https://learn.chatgpt.com/docs/config-file/config-advanced#profiles)
+
+[^app-server]: [Codex App Server: models and configuration APIs](https://learn.chatgpt.com/docs/app-server)

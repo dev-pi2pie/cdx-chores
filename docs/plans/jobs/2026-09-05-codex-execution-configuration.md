@@ -108,7 +108,27 @@ The full phase range review found no actionable issues; an independent rerun of
 seven focused suites passed 43 tests with no failures. Supplementary
 maintainability and documentation reviews found no material gaps.
 
-## Phase 5: Validation And Documentation Closeout
+## Discovery Scope Extension
+
+On 2026-09-05, the accepted command direction became `codex-info` with summary,
+details, and JSON views plus a `models` child. The research was reopened to record
+remaining configuration/default and provider/catalog evidence. Discovery is now
+Phase 5; the former validation/documentation closeout is Phase 6. Completed
+Phases 1–4 and their reviewed ranges are unchanged.
+
+Documentation review clarified discovery failure handling, report labels,
+missing-value semantics, and required protocol evidence. The follow-up review
+found no material gaps. Local links, footnotes, code fences, phase numbering,
+preservation of completed phase evidence, and `git diff --check` passed.
+
+## Phase 5: Codex Information Discovery
+
+Status: pending. Command and output requirements are in the plan. Verify the
+read-method protocol and configuration/catalog semantics before implementing the
+adapter. Selected provider reporting is included; provider enumeration remains
+a future extension.
+
+## Phase 6: Validation And Documentation Closeout
 
 Status: pending. Final repository validation and shipped-guide updates remain
 owned by this phase.

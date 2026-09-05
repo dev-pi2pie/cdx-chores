@@ -11,13 +11,16 @@ Implement explicit model, provider, and reasoning-effort selection for the
 existing Codex helper flows. Omitted model/provider options continue to inherit
 Codex configuration; omitted reasoning effort continues to request `low`.
 
-This plan adopts the completed research contract. Implementation is underway;
-phase completion is tracked below and in the unified job record.
+Phases 1–4 implement the settled execution contract. Phase 5 adds `codex-info`
+configuration and model discovery; Phase 6 owns final validation and shipped
+documentation. The linked research is reopened for discovery evidence. Phase
+completion is tracked below and in the unified job record.
 The shipped timeout policy remains owned by its existing guide and plan.
 
 ## Starting State
 
-The 2026-09-05 inventory uses SDK `0.153.4`. All current Codex request runners
+This section records the pre-implementation inventory on 2026-09-05 with SDK
+`0.153.4`; completed changes are tracked by phase below. All inventoried request runners
 reach `startCodexReadOnlyThread()` in `src/adapters/codex/shared.ts`. It lazily
 imports the SDK, preserves an optional `CDX_CHORES_CODEX_PATH` override, and sets
 read-only sandboxing, approval policy `never`, network access enabled, web search
@@ -47,7 +50,9 @@ Add these three options together on every adopted command:
 - Options are command-local, including on `interactive`, and do not enable Codex.
   Preserve existing analyzer routing, assist flags, and consent prompts.
 - Resolve omitted model/provider as absent overrides. Explicit values affect the
-  current invocation; do not read, merge, or rewrite Codex configuration ourselves.
+  current invocation; execution paths do not read, merge, or rewrite Codex
+  configuration themselves. Discovery may ask Codex for resolved configuration
+  for display, as specified below.
 - Model and provider are opaque, case-sensitive identifiers. Trim surrounding
   whitespace and reject empty explicit values. Do not maintain a model registry
   or accept provider definitions, URLs, credentials, or auth commands as options.
@@ -85,8 +90,9 @@ This plan exposes neither `inherit` nor `none` as an effort option.
 
 Keep explicit selections stable through batches, retries, repairs, and interactive
 regeneration. Omitted model/provider values stay absent; Codex remains responsible
-for configuration discovery on each process invocation. Do not snapshot user
-configuration or claim inheritance from a parent desktop/terminal selection.
+for configuration discovery on each execution process invocation. Do not feed a
+discovery report back into execution as a configuration snapshot or claim
+inheritance from a parent desktop/terminal selection.
 
 ### Existing Boundaries
 
@@ -127,7 +133,7 @@ configuration or claim inheritance from a parent desktop/terminal selection.
 
 Starting Interactive mode through the existing no-command entry retains defaults.
 Users supply session overrides through the explicit `interactive` command,
-following the existing `--codex-timeout` pattern. For example, after implementation:
+following the existing `--codex-timeout` pattern. For example:
 
 ```sh
 cdx-chores interactive --codex-model <model> --codex-reasoning-effort medium --codex-timeout 60s
@@ -212,11 +218,117 @@ project phases, and template repairs; regeneration reuses the session policy.
 Saving, rebinding, rendering, and recovery of already prepared outputs must not
 require these settings to be serialized or start another request.
 
+## Codex Information Discovery Contract
+
+Phase 5 adds `codex-info` and `codex-info models` as direct commands in a dedicated
+registration module. The group without a child performs discovery and displays
+a configuration summary. The `models` child displays the reported catalog.
+Register `--details` and `--json` on both nodes, reject their combination before
+starting a subprocess, and leave summary as the default. Discovery accepts no
+execution model/provider/effort overrides or profile selector.
+
+| View                | Summary                                                                                                             | Details                                                                                                         |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `codex-info`        | Configured model/provider, separately labeled catalog recommendation, helper reasoning default `low`                | Add configuration working-directory context, Codex version, and reported configuration reasoning value          |
+| `codex-info models` | Model IDs, reported reasoning efforts, configured/recommended markers; retain configured selection even if unlisted | Add display names, descriptions, reported input modalities, effort descriptions, and catalog reasoning defaults |
+
+`--json` serializes a curated report with a schema version and explicit missing
+values, rather than raw app-server responses. Both human views and JSON derive
+from one normalized discovery result. A complete catalog means all pages of
+picker-visible entries (`includeHidden: false`); hidden entries are not part of
+this first command contract. A configured model absent from that list remains
+visible as an unlisted selection with unknown capabilities.
+
+Use separate fields for configuration selections, catalog recommendations,
+catalog effort defaults, and the helper effort default. Do not infer an effective
+model/provider from nullable configuration fields or equate `isDefault` with a
+user selection. Show unspecified/unknown values honestly. Empty or missing
+reasoning metadata does not establish lack of reasoning support. Report advertised
+effort strings without extending the shared execution parser's accepted values.
+
+### Report Labels And Missing Values
+
+Both commands serialize the same report shape for `--json`, using `schemaVersion:
+1`. Define the following core fields and render the corresponding human labels:
+
+| JSON field | Human label | Missing-value meaning |
+| --- | --- | --- |
+| `configured.model` | Configured model | `null`: unspecified in returned configuration |
+| `configured.provider` | Configured provider | `null`: unspecified in returned configuration |
+| `configured.reasoningEffort` | Configured reasoning effort | `null`: unspecified in returned configuration |
+| `catalogRecommendedModelIds` | Catalog recommended model | `[]`: no recommendation reported; retain multiple IDs if reported |
+| `helperReasoningDefault` | Helper reasoning default | Always `low` under the current execution policy |
+| `models[].supportedReasoningEfforts` | Supported reasoning efforts | `null`: unknown when upstream omits or supplies an empty effort list |
+| `models[].catalogReasoningDefault` | Catalog reasoning default | `null`: unknown when not reported |
+
+The report also contains `context` (working directory and Codex version),
+`catalogScope: "picker-visible"`, and `models` with model IDs and the metadata
+listed in the view table. Nullable optional metadata uses `null`, not omitted
+keys. Effort entries retain their reported value and nullable description.
+`models: []` means a successful empty visible catalog. Keep an unlisted configured
+selection in `configured`; do not fabricate a catalog entry for it.
+
+Human output renders unspecified configuration as "unspecified", absent catalog
+metadata as "unknown", and an empty recommendation list as "none reported".
+All views use these same normalized states; no unqualified `default` field or
+marker is allowed. Finalize the remaining metadata field names in the Phase 5
+report type and fixtures before implementing renderers. Reported capabilities
+remain unverified for provider requests.
+
+### Integration And Lifetime
+
+Keep execution on the existing SDK. Add a small discovery adapter for the
+installed Codex CLI's app-server stdio protocol: initialize, read configuration
+for `runtime.cwd`, list models through all pages, then terminate the owned child.
+Use the same executable selection policy as helper execution, including
+`CDX_CHORES_CODEX_PATH`; do not attach to an existing desktop session or daemon.
+Keep parsing, report construction, and rendering outside command registration.
+
+The first Phase 5 checkpoint verifies the `0.153.4` schema and actual read-method
+behavior with controlled fixtures. Record the CLI version, generated schema
+provenance, JSON-RPC wire convention, initialization parameters/response and
+`initialized` notification, `config/read` parameters including `cwd`, and
+`model/list` parameters including `includeHidden` and pagination cursors. Retain
+sanitized request/response fixtures reflecting the observed field shapes, with
+no private configuration or account data. Identify observations from the real
+executable separately from simulated error cases. Record omitted/explicit
+selections, project configuration discovery, catalog recommendations, and
+custom-provider limitations.
+When the protocol cannot establish a resolved default or provider-specific catalog,
+retain unknown values and a clear source label. No private cache parsing, model
+registry, configuration writes, login actions, or generation turns are involved.
+Discovery may contact Codex services for catalog metadata; it is not an offline
+guarantee or a provider compatibility test.
+
+Use a 30-second overall discovery deadline covering startup, initialization,
+configuration reads, and pagination. This is independent of the existing
+per-attempt helper timeout and introduces no `--codex-timeout` option here.
+Bound response buffering and pagination, correlate JSON-RPC response IDs, and
+handle unrelated notifications. Reap the owned child and release streams/timers
+on success, error, timeout, and cancellation. Both commands require successful
+`config/read` and all `model/list` pages. A request, transport, protocol, or resource
+limit failure in either read fails the invocation: exit nonzero through the
+existing CLI error path and emit no report on stdout, including in JSON mode.
+Do not retain a partial configuration-only or truncated catalog report. A successful
+empty catalog or absent optional metadata is valid and uses the missing-value
+contract above. Apply the same policy to custom providers; no provider-specific
+error is silently converted into missing metadata. Surface sanitized errors;
+never print raw configuration or responses.
+
+Only selected IDs and the explicitly listed report fields may enter output.
+Provider definitions, credential fields, and arbitrary config layers stay outside
+both JSON and human views. Discovery must not become a preflight requirement,
+change helper defaults, or supply automatic fallback decisions.
+
+A future `codex-info providers` command can enumerate discoverable provider IDs
+once its source is verified. Phase 5 includes the selected provider ID in its
+summary but does not implement provider enumeration or an Interactive entry.
+
 ## Implementation Phases
 
 Each phase starts unchecked. When implementation begins, create one unified job
 record at `docs/plans/jobs/YYYY-MM-DD-codex-execution-configuration.md`, dated for
-the execution start, and link it from this plan. Use sections for Phases 1–5 to
+the execution start, and link it from this plan. Use sections for Phases 1–6 to
 record changes, validation commands/results, exact reviewed `base..tip` ranges,
 findings and resolutions, and remaining work. The plan owns intended outcomes and
 checklists; the job record owns execution evidence.
@@ -225,7 +337,7 @@ Commit validated, coherent changes and review each phase's full commit range
 before advancing. After review fixes, verify and re-review the expanded range
 from the same phase base. Check off outcomes only when their required evidence
 passes; close each phase after its findings are resolved. Keep the unified job
-`in-progress` until all five phases finish, then mark it and the plan completed.
+`in-progress` until all six phases finish, then mark it and the plan completed.
 Only checked outcomes have completed implementation evidence.
 
 ### Phase 1: Shared Policy And SDK Mapping
@@ -285,7 +397,33 @@ visible failure handling without changing saved artifact contracts.
 Exit evidence: Interactive tests exercise custom session settings and default
 entry behavior, with no configuration leakage across sessions.
 
-### Phase 5: Validation And Documentation Closeout
+### Phase 5: Codex Information Discovery
+
+- [ ] Verify the installed CLI discovery protocol, executable resolution, and
+      configuration/catalog behavior; record evidence and unresolved metadata
+      explicitly in the research and unified job before finalizing the adapter.
+      Capture the initialization/read parameters and sanitized response shapes in
+      version-labeled fixtures derived from the installed executable.
+- [ ] Implement a bounded stdio discovery adapter with configuration reads,
+      paginated model listing, normalized report types, and subprocess cleanup.
+- [ ] Register `codex-info` and `codex-info models` with default summary,
+      `--details`, and `--json`; reject conflicting output flags before discovery.
+- [ ] Preserve configuration/recommendation/default distinctions, unknown
+      reasoning support, and configured models absent from the visible catalog.
+- [ ] Verify one discovery result feeds each output projection, safe field
+      selection, custom-provider limitations, and no generation/config writes.
+- [ ] Cover startup/response failures, pagination, deadline/cancellation cleanup,
+      configuration-success/catalog-failure and reverse-failure cases, valid empty
+      results, and command-local help/option behavior. Recheck execution inheritance and
+      defaults remain independent of discovery.
+- [ ] Record research conclusions and review this phase's full commit range;
+      resolve findings before marking discovery complete.
+
+Exit evidence: protocol fixtures and command/report tests prove accurate scoped
+output and bounded lifecycle handling. Runtime observations are labeled separately
+from synthetic tests and do not claim provider request compatibility.
+
+### Phase 6: Validation And Documentation Closeout
 
 - [ ] Complete the validation matrix below and record commands/results in the
       unified job record.
@@ -293,7 +431,8 @@ entry behavior, with no configuration leakage across sessions.
       option/default/scope guide, with examples for model/provider/effort and
       failures followed by a manual rerun with an explicit supported selection.
       Do not imply automatic setting changes or hidden retries. Link to the
-      existing timeout guide for its policy.
+      existing timeout guide for its policy. Include `codex-info` summary,
+      model listing, details/JSON views, and configuration/catalog limitations.
 - [ ] Update relevant rename, data-query, data-stack, Markdown helper and
       Interactive guides, the CLI integration guide, and README discovery links.
       Keep unsupported surfaces explicit and existing PDF `--profile` terminology.
@@ -301,7 +440,8 @@ entry behavior, with no configuration leakage across sessions.
       SDK/model/provider and request capability; argument tests alone must not
       be described as backend compatibility validation.
 - [ ] Close the implementation plan only after adopted paths and documentation
-      are complete. Research remains completed and linked as the decision source.
+      are complete. Mark the reopened research completed only after Phase 5
+      discovery questions have recorded conclusions; retain it as the decision source.
 
 ## Validation Matrix
 
@@ -315,6 +455,9 @@ entry behavior, with no configuration leakage across sessions.
 | Timeout regression             | Existing parser/precedence tests, per-attempt signals, and no model/provider/effort-derived timeout changes                                                                                                             |
 | Interactive isolation          | Custom session settings reach all nine request owners; separate/default sessions do not inherit previous selections                                                                                                     |
 | Request failures and artifacts | Visible sanitized failures, unchanged advisory schemas, and no execution policy in durable outputs                                                                                                                      |
+| Discovery output               | Configured/recommended distinctions, absent selections, unlisted models, missing/new effort metadata, JSON field selection, and summary/details consistency                                                             |
+| Discovery transport            | Version-specific initialization, cwd/executable selection, pagination, unrelated notifications, malformed responses, bounded buffers/deadlines, cancellation, and child cleanup                                         |
+| Discovery isolation            | No generation/config writes, no dependency from execution workflows, unchanged helper defaults, and honest catalog scope under custom providers                                                                         |
 
 Reuse coverage in `test/codex-adapters/`, rename/data/Markdown command and action
 suites, `test/adapters-codex-markdown-pdf-profile/runner-behavior.test.ts`,
