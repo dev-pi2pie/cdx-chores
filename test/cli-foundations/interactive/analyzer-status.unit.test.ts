@@ -24,20 +24,4 @@ describe("interactive analyzer status", () => {
     expect(stream.text).toContain("Sampling filenames for cleanup analysis...\n");
     expect(stream.text).toContain("Waiting for Codex cleanup suggestions...\n");
   });
-
-  test("uses a mutable tty status line and clears it on stop", async () => {
-    const stream = new CaptureStream();
-    stream.isTTY = true;
-    const status = createInteractiveAnalyzerStatus(stream as unknown as NodeJS.WritableStream);
-
-    status.start("Sampling filenames for cleanup analysis...");
-    status.wait("Waiting for Codex cleanup suggestions...");
-    await Bun.sleep(420);
-    status.stop();
-
-    expect(stream.text).toContain("\r\x1b[2K");
-    expect(stream.text).toContain("Thinking");
-    expect(stream.text).toContain("sampling");
-    expect(stream.text).toContain("waiting");
-  });
 });

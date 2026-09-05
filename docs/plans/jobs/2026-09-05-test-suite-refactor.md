@@ -1014,6 +1014,25 @@ Accepted inventory corrections preserve the current production import graph:
 
 No new shared helpers or support relocations were needed in this batch.
 
+#### Remaining Feature Batch
+
+The remaining 124 sources move to 135 targets: 52 unit and 83 application files,
+including 11 splits. Isolated combined execution passed 811 cases and 2,903
+assertions with verified cleanup; guarded units passed 332 cases and 882
+assertions. All 2,043 static assertion calls are preserved per source. Formatting
+and lint passed, and committed fixtures remain unchanged.
+
+The document-renaming preflight case is application integration because its
+current batch module imports the native PDF extractor. This accepted membership
+correction retains the same case body and requires no production changes.
+
+Baseline correspondence matches 810 case identities exactly. One existing
+malformed-options parameter uses `new Date()`, so its generated case name contains
+the execution time. For this one source/classname/registration, reconciliation
+normalizes only the ISO timestamp in the name and then compares assertions; all
+811 cases match. The original dynamic parameter remains unchanged. No other case
+names are normalized or discarded.
+
 ## Remaining Phases
 
 Phases 3–4 have not started. Record their mappings and execution evidence here

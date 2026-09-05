@@ -2,10 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import {
-  deriveSiblingPreviewScopeKey,
-  resolveSiblingPreviewCandidates,
-} from "../../../src/cli/prompts/path-sibling-preview";
+import { resolveSiblingPreviewCandidates } from "../../../src/cli/prompts/path-sibling-preview";
 import { createTempFixtureDir } from "../../helpers/cli-test-utils";
 
 describe("path sibling preview candidates", () => {
@@ -71,30 +68,5 @@ describe("path sibling preview candidates", () => {
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
     }
-  });
-
-  test("scope keys are stable for the same segment scope and differ when the fragment changes", () => {
-    const baseOptions = {
-      cwd: "/tmp/example",
-      includeHidden: false,
-      maxSuggestions: 12,
-      targetKind: "any" as const,
-    };
-
-    const first = deriveSiblingPreviewScopeKey({
-      ...baseOptions,
-      input: "./docs/re",
-    });
-    const second = deriveSiblingPreviewScopeKey({
-      ...baseOptions,
-      input: "./docs/re",
-    });
-    const third = deriveSiblingPreviewScopeKey({
-      ...baseOptions,
-      input: "./docs/gu",
-    });
-
-    expect(first).toBe(second);
-    expect(first).not.toBe(third);
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { actionFontCheck } from "../../../src/cli/actions";
+import { actionFontCheck } from "../../../src/cli/actions/font-check";
 import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
 
 describe("font CLI check TTC output", () => {

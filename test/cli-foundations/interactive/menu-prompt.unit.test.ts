@@ -68,20 +68,6 @@ describe("interactive command menu prompt helper", () => {
     await expect(prompt).resolves.toBe("cancel");
   });
 
-  test("preserves real select search behavior for q-prefixed menu entries", async () => {
-    const result = Bun.spawnSync({
-      cmd: [process.execPath, import.meta.dir + "/real-select-search-fixture.ts"],
-      stdout: "pipe",
-      stderr: "pipe",
-    });
-
-    expect({
-      exitCode: result.exitCode,
-      stderr: result.stderr.toString(),
-      stdout: result.stdout.toString(),
-    }).toEqual({ exitCode: 0, stderr: "", stdout: "query\n" });
-  });
-
   test("returns the exit value when Escape aborts the submenu command menu", async () => {
     const stdin = new FakePromptReadStream();
     const stdout = new FakePromptWriteStream();

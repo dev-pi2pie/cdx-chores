@@ -1,9 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-  suggestRenameCleanupWithCodex,
-  type RenameCleanupAnalyzerEvidence,
-} from "../../../src/cli/actions";
+import { suggestRenameCleanupWithCodex } from "../../../src/cli/actions/rename/cleanup-codex";
+import type { RenameCleanupAnalyzerEvidence } from "../../../src/cli/actions/rename/cleanup-analyzer";
 
 const SAMPLE_EVIDENCE: RenameCleanupAnalyzerEvidence = {
   targetKind: "directory",

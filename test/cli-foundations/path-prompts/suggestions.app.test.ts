@@ -2,21 +2,10 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import {
-  resolvePathSuggestions,
-  shouldSuggestForPathInput,
-} from "../../../src/cli/prompts/path-suggestions";
+import { resolvePathSuggestions } from "../../../src/cli/prompts/path-suggestions";
 import { createTempFixtureDir } from "../../helpers/cli-test-utils";
 
 describe("path suggestion engine", () => {
-  test("shouldSuggestForPathInput enforces min chars but allows explicit path prefixes", () => {
-    expect(shouldSuggestForPathInput("", { minChars: 1 })).toBe(false);
-    expect(shouldSuggestForPathInput("a", { minChars: 1 })).toBe(true);
-    expect(shouldSuggestForPathInput("./", { minChars: 3 })).toBe(true);
-    expect(shouldSuggestForPathInput("../", { minChars: 5 })).toBe(true);
-    expect(shouldSuggestForPathInput("/", { minChars: 2 })).toBe(true);
-  });
-
   test("returns directories first, then files, with trailing slash labels/replacements", async () => {
     const fixtureDir = await createTempFixtureDir("path-suggestions-sort");
     try {

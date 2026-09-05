@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { actionFontInspect } from "../../../src/cli/actions";
+import { actionFontInspect } from "../../../src/cli/actions/font";
 import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
 
 describe("font CLI inspect output", () => {

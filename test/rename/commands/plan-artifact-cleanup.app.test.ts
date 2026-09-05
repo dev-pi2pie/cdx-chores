@@ -5,7 +5,7 @@ import { join } from "node:path";
 
 import { REPO_ROOT } from "../../helpers/cli-test-utils";
 
-import { withRenamePlanCsvCleanup } from "./run-cli";
+import { withRenamePlanCsvCleanup } from "../support/run-cli";
 
 function createPlanCsvPath(): string {
   return join(REPO_ROOT, `rename-plan-20260824T010101Z-${randomBytes(4).toString("hex")}.csv`);
