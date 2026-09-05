@@ -1,7 +1,7 @@
 ---
 title: "Codex execution configuration implementation"
 created-date: 2026-09-05
-status: draft
+status: active
 agent: codex
 ---
 
@@ -11,7 +11,8 @@ Implement explicit model, provider, and reasoning-effort selection for the
 existing Codex helper flows. Omitted model/provider options continue to inherit
 Codex configuration; omitted reasoning effort continues to request `low`.
 
-This plan adopts the completed research contract. Implementation has not started.
+This plan adopts the completed research contract. Implementation is underway;
+phase completion is tracked below and in the unified job record.
 The shipped timeout policy remains owned by its existing guide and plan.
 
 ## Starting State
@@ -225,7 +226,7 @@ before advancing. After review fixes, verify and re-review the expanded range
 from the same phase base. Check off outcomes only when their required evidence
 passes; close each phase after its findings are resolved. Keep the unified job
 `in-progress` until all five phases finish, then mark it and the plan completed.
-This draft does not claim any tests or implementation phases complete.
+Only checked outcomes have completed implementation evidence.
 
 ### Phase 1: Shared Policy And SDK Mapping
 
@@ -330,6 +331,10 @@ For documentation changes, check formatting, local links, and `git diff --check`
 ## Related Research
 
 - [Codex execution configuration](../researches/research-2026-08-21-codex-execution-configuration.md)
+
+## Related Job Records
+
+- [Codex execution configuration implementation](./jobs/2026-09-05-codex-execution-configuration.md)
 
 ## Related Plans
 
