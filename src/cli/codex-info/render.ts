@@ -32,50 +32,45 @@ export function renderCodexInfoReport(
   const line = (text = "") => lines.push(text);
   line(`Codex ${report.view === "summary" ? "information" : report.view}`);
   line();
-  line(`Configured model: ${value(report.configured.model, "unspecified")}`);
+  if (report.view === "summary") {
+    line(`Configured model: ${value(report.configured.model, "unspecified")}`);
+  }
   line(`Configured provider: ${value(report.configured.provider, "unspecified")}`);
-  line(`Helper reasoning default: ${safe(report.helperReasoningDefault)}`);
-  if (report.catalogRecommendedModelIds !== null) {
+  if (report.view === "summary") {
+    line(`Helper reasoning default: ${safe(report.helperReasoningDefault)}`);
     line(
-      `Catalog recommended model: ${report.catalogRecommendedModelIds.map(safe).join(", ") || "none reported"}`,
+      `Catalog recommended model: ${report.catalogRecommendedModelIds?.map(safe).join(", ") || "none reported"}`,
     );
-  }
-  if (options.details) {
-    line(`Configured reasoning effort: ${value(report.configured.reasoningEffort, "unspecified")}`);
-    line();
-    line("Configuration context for this invocation:");
-    line(`  Working directory: ${safe(report.context.cwd)}`);
-    line(`  Codex home: ${safe(report.context.codexHome)}`);
-    line(`  Codex home source: ${safe(report.context.codexHomeSource)}`);
-    line(`  Codex version: ${safe(report.context.codexVersion)}`);
-  }
-  line();
-  line(`Provider coverage: ${safe(report.providerCoverage)}`);
-  line(safe(report.providerCoverageDetail));
-  if (report.view === "providers") {
-    line();
-    line("Providers (listing does not verify credentials or request support):");
-    if (report.providers.length === 0) line("  No configured provider definitions reported.");
-    for (const provider of report.providers) {
+    if (options.details) {
       line(
-        `  ${safe(provider.id)} | source: ${provider.sources.map(safe).join(", ")}${provider.isConfigured ? " | configured" : ""}`,
+        `Configured reasoning effort: ${value(report.configured.reasoningEffort, "unspecified")}`,
       );
-      if (options.details) line(`    Display name: ${value(provider.displayName)}`);
+    }
+    line();
+    line("Provider coverage: configured definitions only; built-ins not enumerated.");
+  }
+  if (report.view === "providers") {
+    line("Source: configured definitions; built-ins not enumerated.");
+    line("Credentials and request support are not verified.");
+    line();
+    if (report.providers.length === 0) line("No configured provider definitions reported.");
+    for (const provider of report.providers) {
+      line(`${safe(provider.id)}${provider.isConfigured ? " [configured]" : ""}`);
+      if (options.details && provider.displayName) {
+        line(`  Display name: ${safe(provider.displayName)}`);
+      }
     }
     if (
       report.configured.provider !== null &&
       !report.providers.some((provider) => provider.isConfigured)
     ) {
       line(
-        `  Configured provider ${safe(report.configured.provider)} is not listed by these sources.`,
+        `Configured provider ${safe(report.configured.provider)} is unlisted; absence does not imply lack of support.`,
       );
     }
   }
   if (report.models !== null) {
-    line();
-    line(
-      "Codex-reported catalog metadata (picker-visible); entries do not establish support by the configured provider.",
-    );
+    line("Codex catalog metadata (picker-visible); provider support is not verified.");
     if (report.configured.model !== null && !report.models.some((model) => model.isConfigured)) {
       line(
         `Configured model ${safe(report.configured.model)} is unlisted; capabilities are unknown.`,
@@ -88,20 +83,30 @@ export function renderCodexInfoReport(
         line();
         line(`${safe(model.id)}${selection ? ` [${selection}]` : ""}`);
         line(
-          `  Supported reasoning efforts: ${model.supportedReasoningEfforts?.map((effort) => safe(effort.effort)).join(", ") ?? "unknown"}`,
+          `  Reasoning efforts: ${model.supportedReasoningEfforts?.map((effort) => safe(effort.effort)).join(", ") ?? "unknown"}`,
         );
         if (options.details) {
-          line(`  Model: ${safe(model.model)}`);
-          line(`  Display name: ${value(model.displayName)}`);
-          line(`  Description: ${value(model.description)}`);
+          if (model.model !== model.id) line(`  Model: ${safe(model.model)}`);
+          if (model.displayName) line(`  Display name: ${safe(model.displayName)}`);
+          if (model.description) line(`  Description: ${safe(model.description)}`);
           line(`  Input modalities: ${model.inputModalities?.map(safe).join(", ") || "unknown"}`);
           line(`  Catalog reasoning default: ${value(model.catalogReasoningDefault)}`);
           for (const effort of model.supportedReasoningEfforts ?? []) {
-            line(`    ${safe(effort.effort)}: ${value(effort.description)}`);
+            if (effort.description) {
+              line(`    ${safe(effort.effort)}: ${safe(effort.description)}`);
+            }
           }
         }
       }
     }
+  }
+  if (options.details) {
+    line();
+    line("Invocation context:");
+    line(`  Working directory: ${safe(report.context.cwd)}`);
+    line(`  Codex home: ${safe(report.context.codexHome)}`);
+    line(`  Codex home source: ${safe(report.context.codexHomeSource)}`);
+    line(`  Codex version: ${safe(report.context.codexVersion)}`);
   }
   printLine(runtime.stdout, lines.join("\n"));
 }

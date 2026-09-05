@@ -551,19 +551,19 @@ Goals: make each command's human output concise and apply consistent terminal
 styling through the existing shared color policy. Phase 5 remains complete;
 this phase changes presentation without expanding discovery or the JSON schema.
 
-- [ ] Refine the overview to compact configured model/provider, helper reasoning
+- [x] Refine the overview to compact configured model/provider, helper reasoning
       default, catalog recommendation, and short coverage/scope notes. Keep
       configured reasoning, paths, home source, and CLI version in details.
-- [ ] Focus model output on provider context, catalog qualification, IDs,
+- [x] Focus model output on provider context, catalog qualification, IDs,
       reasoning efforts, and configured/catalog-recommended markers. Remove the
       repeated helper default, separate recommendation line, and provider-source
       coverage explanation. Preserve unknown reasoning and unlisted selections.
-- [ ] Focus provider output on configured provider, IDs, selection markers,
+- [x] Focus provider output on configured provider, IDs, selection markers,
       shared source/coverage wording, and the unverified credentials/request
       support qualification. Omit model/reasoning context. Preserve successful
       empty results and explain that an unlisted selection is not proof of lack
       of support. Show per-entry sources only if they differ from the shared source.
-- [ ] Group details consistently; omit absent optional descriptions and print a
+- [x] Group details consistently; omit absent optional descriptions and print a
       separate model value only when it differs from the displayed catalog ID.
       Preserve meaningful unknown capability/default values and invocation context.
 - [ ] Use `getCliColors(runtime, runtime.stdout)` for restrained bold cyan

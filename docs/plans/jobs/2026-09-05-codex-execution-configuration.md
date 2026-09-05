@@ -230,11 +230,11 @@ for final repository validation and public guides.
 
 ## Phase 5.5: Codex Information Presentation
 
-Status: pending. Added after Phase 5 to make each human command view concise and
+Status: in-progress. Review base: `89d948ff`. Added after Phase 5 to make each human command view concise and
 adopt the shared terminal styling policy. The research and plan now define
 command-specific context, source deduplication, details pruning, and unchanged
 JSON/discovery boundaries. No presentation implementation is included in this
-planning update.
+planning update. Implementation now proceeds in concision and styling checkpoints.
 
 The preceding read-only review confirmed existing picocolors, `NO_COLOR`, global
 `--no-color`, and per-stream TTY handling. The existing color and Codex rendering/
@@ -245,6 +245,20 @@ Planning review found no material gaps. Local links and `git diff --check` passe
 The explicit Markdown formatter check reports issues in the plan and research;
 both committed baselines report the same file-level failures. Broad reformatting
 was left outside this planning update.
+
+### Concision Checkpoint
+
+- Tailored overview, models, and providers output to their own context; condensed
+  source/coverage wording and moved invocation context to the details footer.
+  Configured reasoning remains in overview details; child views omit unrelated
+  execution settings. Missing optional prose and duplicate model identifiers are
+  omitted while unknown capabilities/defaults remain explicit.
+- Exact synthetic output examples cover all three commands in default/details
+  views. Updated real CLI replay checks preserve scoped provider/catalog output.
+- `bun test test/codex-info/render.test.ts test/codex-info/cli-replay.test.ts`
+  passed 24 tests, 201 assertions. Report/action/command and shared-color suites
+  passed another 73 tests. TypeScript, lint, repository format check, and
+  `git diff --check` passed. Styling and final phase review remain pending.
 
 ## Phase 6: Validation And Documentation Closeout
 

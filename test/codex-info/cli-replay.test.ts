@@ -96,8 +96,18 @@ describe("Codex information CLI with recorded protocol projections", () => {
       expect(summary.stdout).toContain("Configured provider: probe_proxy");
       const details = invoke(["codex-info", "models", "--details"]);
       expect(details.status).toBe(0);
-      expect(details.stdout).toContain("Configuration context for this invocation");
+      expect(details.stdout).toContain("Invocation context:");
       expect(details.stdout).toContain("Catalog reasoning default:");
+      expect(details.stdout).not.toContain("Helper reasoning default:");
+      expect(details.stdout).not.toContain("Provider coverage:");
+      const providers = invoke(["codex-info", "providers", "--details"]);
+      expect(providers.status).toBe(0);
+      expect(providers.stdout).toContain(
+        "Source: configured definitions; built-ins not enumerated.",
+      );
+      expect(providers.stdout).toContain("probe_proxy [configured]");
+      expect(providers.stdout).not.toContain("Configured model:");
+      expect(providers.stdout).not.toContain("reasoning");
     });
   });
   test("required read failures never emit partial reports; providers ignore catalog availability", async () => {

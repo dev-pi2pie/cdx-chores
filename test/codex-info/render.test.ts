@@ -41,14 +41,67 @@ function render(view: CodexInfoView, details = false, patch: Partial<CodexDiscov
 }
 
 describe("Codex information human output", () => {
+  const context = `
+
+Invocation context:
+  Working directory: /project
+  Codex home: /custom/codex
+  Codex home source: environment
+  Codex version: 0.153.4`;
+
+  test.each([false, true])("concise summary layout, details=%s", (details) => {
+    expect(render("summary", details)).toBe(`Codex information
+
+Configured model: model-a
+Configured provider: proxy
+Helper reasoning default: low
+Catalog recommended model: model-a${details ? "\nConfigured reasoning effort: high" : ""}
+
+Provider coverage: configured definitions only; built-ins not enumerated.
+Codex catalog metadata (picker-visible); provider support is not verified.${details ? context : ""}
+`);
+  });
+
+  test.each([false, true])("concise models layout, details=%s", (details) => {
+    expect(render("models", details)).toBe(`Codex models
+
+Configured provider: proxy
+Codex catalog metadata (picker-visible); provider support is not verified.
+
+model-a [configured, catalog recommended]
+  Reasoning efforts: medium${
+    details
+      ? `
+  Display name: Model A
+  Description: Example
+  Input modalities: text
+  Catalog reasoning default: medium
+    medium: Some thought${context}`
+      : ""
+  }
+`);
+  });
+
+  test.each([false, true])("concise providers layout, details=%s", (details) => {
+    expect(render("providers", details)).toBe(`Codex providers
+
+Configured provider: proxy
+Source: configured definitions; built-ins not enumerated.
+Credentials and request support are not verified.
+
+proxy [configured]${details ? `\n  Display name: Example proxy${context}` : ""}
+`);
+  });
+
   test("summary distinguishes configuration, recommendation, and helper effort", () => {
     const output = render("summary");
     expect(output).toContain("Configured model: model-a");
     expect(output).toContain("Configured provider: proxy");
     expect(output).toContain("Catalog recommended model: model-a");
     expect(output).toContain("Helper reasoning default: low");
-    expect(output).toContain("Provider coverage: configured-only");
-    expect(output).toContain("built-in provider IDs are not enumerated");
+    expect(output).toContain("Provider coverage: configured definitions only");
+    expect(output).toContain("built-ins not enumerated");
+    expect(output).not.toContain("Configured reasoning effort");
     expect(output).not.toContain("Working directory:");
   });
 
@@ -60,7 +113,8 @@ describe("Codex information human output", () => {
       expect(output).toContain("Codex home: /custom/codex");
       expect(output).toContain("Codex home source: environment");
       expect(output).toContain("Codex version: 0.153.4");
-      expect(output).toContain("Configured reasoning effort: high");
+      if (view === "summary") expect(output).toContain("Configured reasoning effort: high");
+      else expect(output).not.toContain("Configured reasoning effort");
     },
   );
 
@@ -69,10 +123,15 @@ describe("Codex information human output", () => {
     (details) => {
       const output = render("models", details);
       expect(output).toContain("Configured provider: proxy");
-      expect(output).toContain("Codex-reported catalog metadata (picker-visible)");
-      expect(output).toContain("do not establish support by the configured provider");
+      expect(output).toContain("Codex catalog metadata (picker-visible)");
+      expect(output).toContain("provider support is not verified");
       expect(output).toContain("model-a [configured, catalog recommended]");
-      expect(output).toContain("Supported reasoning efforts: medium");
+      expect(output).toContain("Reasoning efforts: medium");
+      expect(output).not.toContain("Helper reasoning");
+      expect(output).not.toContain("Catalog recommended model:");
+      expect(output).not.toContain("Provider coverage");
+      expect(output).not.toContain("built-ins");
+      expect(output).not.toContain("  Model: model-a");
       if (details) {
         expect(output).toContain("Catalog reasoning default: medium");
         expect(output).toContain("Display name: Model A");
@@ -91,19 +150,21 @@ describe("Codex information human output", () => {
       models: [{ id: "other", model: "other", isDefault: false, supportedReasoningEfforts: [] }],
     });
     expect(output).toContain("Configured provider: unspecified");
-    expect(output).toContain("Catalog recommended model: none reported");
     expect(output).toContain("Configured model custom is unlisted; capabilities are unknown");
-    expect(output).toContain("Supported reasoning efforts: unknown");
+    expect(output).toContain("Reasoning efforts: unknown");
     expect(output).toContain("Catalog reasoning default: unknown");
-    expect(output).not.toContain("Supported reasoning efforts: unsupported");
+    expect(output).not.toContain("Reasoning efforts: unsupported");
   });
 
   test.each([false, true])(
     "providers omit unrequested model catalog sections, details=%s",
     (details) => {
       const output = render("providers", details, { models: null });
-      expect(output).toContain("proxy | source: configured | configured");
-      expect(output).toContain("listing does not verify credentials or request support");
+      expect(output).toContain("proxy [configured]");
+      expect(output).toContain("Credentials and request support are not verified");
+      expect(output).not.toContain("Configured model");
+      expect(output).not.toContain("reasoning");
+      expect(output).not.toContain("source: configured");
       expect(output).not.toContain("Catalog recommended");
       expect(output).not.toContain("picker-visible");
       if (details) expect(output).toContain("Display name: Example proxy");
@@ -113,8 +174,44 @@ describe("Codex information human output", () => {
   test("empty sources retain selected provider and coverage limitation", () => {
     const output = render("providers", false, { config: { model_provider: "builtin-example" } });
     expect(output).toContain("No configured provider definitions reported");
-    expect(output).toContain("Configured provider builtin-example is not listed by these sources");
-    expect(output).toContain("Absence does not mean a provider is unsupported");
+    expect(output).toContain("Configured provider builtin-example is unlisted");
+    expect(output).toContain("absence does not imply lack of support");
+  });
+
+  test("details retain a model identifier when it differs from the catalog entry ID", () => {
+    const output = render("models", true, {
+      models: [{ id: "catalog-entry", model: "model-a", isDefault: false }],
+    });
+    expect(output).toContain(
+      "catalog-entry [configured]\n  Reasoning efforts: unknown\n  Model: model-a",
+    );
+    expect(output).toContain("Input modalities: unknown");
+    expect(output).toContain("Catalog reasoning default: unknown");
+  });
+
+  test.each([undefined, null, ""])("details omit absent optional prose (%s)", (optional) => {
+    const modelOutput = render("models", true, {
+      models: [
+        {
+          id: "model-a",
+          model: "model-a",
+          isDefault: false,
+          displayName: optional,
+          description: optional,
+          supportedReasoningEfforts: [{ reasoningEffort: "low", description: optional }],
+        },
+      ],
+    });
+    expect(modelOutput).not.toContain("Display name:");
+    expect(modelOutput).not.toContain("Description:");
+    expect(modelOutput).not.toContain("    low:");
+    expect(modelOutput).toContain("Reasoning efforts: low");
+    expect(modelOutput).toContain("Catalog reasoning default: unknown");
+    expect(
+      render("providers", true, {
+        config: { model_provider: "proxy", model_providers: { proxy: { name: optional } } },
+      }),
+    ).not.toContain("Display name:");
   });
 
   test("empty catalog prints a successful empty state", () => {
