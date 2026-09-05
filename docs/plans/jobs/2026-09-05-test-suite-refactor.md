@@ -1474,7 +1474,7 @@ remain, and all five streaming acceptance items are complete.
 
 ### 3.2B: Terminal Presentation
 
-Status: in progress.
+Status: completed.
 
 Fixed section review base: `c0f1b1ccecbdb07c677981ab7aee863c84fcdac1`.
 
@@ -1510,9 +1510,33 @@ Existing late-output tests now target execution/final-summary bytes explicitly,
 so immediate status does not move their intended failure boundary. Types, lint,
 formatting, and whitespace checks passed.
 
+The exact B range
+`c0f1b1ccecbdb07c677981ab7aee863c84fcdac1..7c2bffca92dd5af62790e93dbb14dd76a8426588`
+and widened phase range from the fixed base passed security, maintainability,
+and test-coverage review. No material findings remain.
+
 ### 3.2C: Verification and Closeout
 
-Status: pending.
+Status: in progress.
+
+Fixed section review base: `7c2bffca92dd5af62790e93dbb14dd76a8426588`.
+The bounded regression matrix is complete. Eight sequential real invocations
+now verify app and aggregate commands, terminal and separately redirected output,
+and default/retained modes. The pre-existing run-root inventory is recorded for
+comparison; acceptance retention inspection remains pending.
+
+The first colored terminal app invocation ran 2,037 cases with one failure in the
+font-preservation smoke harness (132.38 seconds). The outer reporter's FORCE_COLOR
+flag propagated into that harness's piped Bun process, coloring its JSON stderr
+and breaking exact protocol parsing. The runner preserved the failure, reconciled
+JUnit, verified shutdown, and removed the default root. All five pre-existing
+parent entries retained their identities.
+
+The affected fixture helper now explicitly disables inherited color for its exact
+piped protocol captures. The outer test reporter remains styled; production CLI
+behavior is unchanged. The failing case passed under forced color, and the full
+fixture passed 22 cases and 233 assertions under the same environment. The eight
+acceptance runs resume from this correction.
 
 ## Remaining Phases
 

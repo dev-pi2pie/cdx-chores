@@ -214,12 +214,12 @@ summary requirements.
 
 Acceptance:
 
-- [ ] Show the active suite and preserve completed outcomes during aggregate runs;
+- [x] Show the active suite and preserve completed outcomes during aggregate runs;
       do not infer verified results or completion percentages from console lines.
-- [ ] Verify Bun color behavior through owned pipes, `NO_COLOR`, and plain redirected
+- [x] Verify Bun color behavior through owned pipes, `NO_COLOR`, and plain redirected
       output, including separately redirected stdout/stderr. Keep interactive
       redraws from overwriting test lines or partial output.
-- [ ] Make final counts, versions, failure/lifecycle reasons, and retention paths
+- [x] Make final counts, versions, failure/lifecycle reasons, and retention paths
       readable in both modes, including early argument and prerequisite failures.
 
 ### 3.2C: Verification and Closeout

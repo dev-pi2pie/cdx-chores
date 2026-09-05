@@ -36,12 +36,16 @@ function runHarness(
   env?: NodeJS.ProcessEnv,
   execution: { cwd?: string; script?: string } = {},
 ) {
+  // This helper asserts JSON and other exact CLI protocol bytes from pipes.
+  // The parent test reporter may be colored, but it must not alter this child.
+  const childEnv: NodeJS.ProcessEnv = { ...process.env, ...env, NO_COLOR: "1" };
+  delete childEnv.FORCE_COLOR;
   const proc = Bun.spawnSync({
     cmd: [process.execPath, execution.script ?? scriptPath, ...args],
     cwd: execution.cwd ?? REPO_ROOT,
     stdout: "pipe",
     stderr: "pipe",
-    env: env ? { ...process.env, ...env } : process.env,
+    env: childEnv,
   });
   return {
     exitCode: proc.exitCode,
