@@ -31,6 +31,8 @@ export interface OwnedProcessResult {
   ok: boolean;
   reason: StopReason | "completed" | "exit-failed" | "launch-failed";
   pid?: number;
+  /** Successfully spawned group; recovery still requires fresh ownership evidence. */
+  groupId?: number;
   exitCode: number | null;
   signal: NodeJS.Signals | null;
   stdout: string;
@@ -63,9 +65,11 @@ export interface ProcessObserver {
 }
 
 /**
- * Own one macOS process group. Children must inherit it; daemonizing/setsid
- * workloads are not contained by this helper. Always await completion before
- * removing scratch. No production transport or protocol behavior is replaced.
+ * Own one POSIX process group. Descendants must remain in the inherited group;
+ * processes that create a new group/session are outside this containment boundary.
+ * Await completion before removing scratch.
+ *
+ * This implementation's observation and shutdown behavior is verified on macOS only.
  */
 export function startOwnedProcess(
   options: OwnedProcessOptions,
@@ -95,6 +99,7 @@ export function startOwnedProcess(
   let exitedAt: number | undefined;
   let closed = false;
   let launchFailed = false;
+  let spawnedSuccessfully = false;
   let finished = false;
   let stopReason: StopReason | undefined;
   let requestedAt: number | undefined;
@@ -156,7 +161,10 @@ export function startOwnedProcess(
     closed = true;
   });
   const spawned = new Promise<void>((resolve) => {
-    child.once("spawn", resolve);
+    child.once("spawn", () => {
+      spawnedSuccessfully = true;
+      resolve();
+    });
     child.once("error", () => {
       launchFailed = true;
       issue("Unable to launch the owned process.");
@@ -167,6 +175,7 @@ export function startOwnedProcess(
   const completion = (async (): Promise<OwnedProcessResult> => {
     let verifiedStopped = false;
     let previousSnapshot = "";
+    let knownDescendants = new Set<number>();
     try {
       await spawned;
       const groupId = child.pid;
@@ -198,6 +207,16 @@ export function startOwnedProcess(
           requestStop("unverified");
         }
         const live = members?.filter(isLiveProcess);
+        // After leader exit, a previously observed live descendant must still
+        // anchor any signal. The same PGID alone does not exclude group-ID reuse.
+        const continuousGroup =
+          live !== undefined &&
+          (exitedAt === undefined || live.some((member) => knownDescendants.has(member.pid)));
+        if (continuousGroup) {
+          knownDescendants = new Set(
+            live!.filter((member) => member.pid !== groupId).map((member) => member.pid),
+          );
+        }
         if (live?.length === 0) groupRetired = true;
         if (closed && live?.length === 0) {
           verifiedStopped = true;
@@ -215,7 +234,9 @@ export function startOwnedProcess(
         ) {
           issue(
             live?.length
-              ? "Owned descendants outlived the normal completion allowance."
+              ? continuousGroup
+                ? "Owned descendants outlived the normal completion allowance."
+                : "Owned process group continuity is unverified."
               : "Owned process streams did not close within the normal allowance.",
           );
           requestStop("unverified");
@@ -228,7 +249,11 @@ export function startOwnedProcess(
           // Only the group established by spawn can be signaled, and never after
           // it was observed empty. A live direct child also establishes ownership
           // when observation fails; no unrelated snapshot PID is a signal target.
-          const canSignal = !groupRetired && (Boolean(live?.length) || exitedAt === undefined);
+          const canSignal =
+            !groupRetired && (exitedAt === undefined || (continuousGroup && Boolean(live?.length)));
+          if (!canSignal && live?.length && !continuousGroup) {
+            issue("Owned process group continuity is unverified.");
+          }
           const send = (signal: "SIGTERM" | "SIGKILL") => {
             try {
               process.kill(-groupId, signal);
@@ -279,6 +304,7 @@ export function startOwnedProcess(
         (reason === "completed" || reason === "shutdown"),
       reason,
       pid: child.pid,
+      groupId: spawnedSuccessfully ? child.pid : undefined,
       exitCode,
       signal: exitSignal,
       stdout: Buffer.concat(stdout).toString("utf8"),

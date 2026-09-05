@@ -45,6 +45,9 @@ does not launch the following command. Production discovery code is unchanged.
 The deadline and unresolved-descendant regressions subsequently passed: 19 tests,
 97 assertions, 5.44 seconds.
 
+After the full-range ownership review, focused verification passed 20 tests and
+120 assertions in 5.72 seconds. TypeScript, repository lint, and formatting passed.
+
 Command: `bun test ./test/test-runner/process-table.unit.test.ts ./test/test-runner/process.app.test.ts`.
 Fixture limits are 2,500 ms execution, 250 ms
 grace, and 1,500 ms total termination; timeout fixtures use shorter explicit
@@ -102,6 +105,28 @@ verification owner directly; production code and package/runtime versions were
 unchanged, so no new build/runtime behavior is claimed.
 
 Process API reference: [Node child-process lifecycle and detached groups](https://nodejs.org/api/child_process.html).
+
+### Full-Range Review Follow-Up
+
+Review of `a67aa952..815908c4` identified two ownership refinements: expose the
+successfully spawned `groupId` explicitly, and require continuity with a previously
+observed live descendant before signaling after leader exit. A replacement group
+must not inherit signal authorization merely by reusing the same numeric PGID.
+The regression establishes the descendant observation before releasing its launcher,
+then exercises both observation loss and a simulated replacement group.
+
+The API comment now distinguishes the general POSIX process-group boundary from
+macOS-only implementation support. The platform guard remains unchanged.
+
+The fixed repetition protocol was rerun after these behavior changes; all 12
+probes passed without escalation:
+
+| Mode     | Protocol total / drain ms, attempts 1–3 | Transport total / drain ms, attempts 1–3 |
+| -------- | --------------------------------------- | ---------------------------------------- |
+| Captured | 835/647, 732/610, 763/646               | 742/630, 768/641, 752/637                |
+| Terminal | 788/671, 740/630, 750/635               | 732/619, 760/642, 841/628                |
+
+The expanded fixed-base review remains pending until these fixes are committed.
 
 ### Acceptance
 

@@ -29,6 +29,7 @@ function diagnostics(result: OwnedProcessResult) {
     elapsedMs: result.elapsedMs,
     drainMs: result.drainMs,
     stopped: result.stopped,
+    groupId: result.groupId,
     escalated: result.escalated,
     issues: result.issues,
     signals: result.signals,

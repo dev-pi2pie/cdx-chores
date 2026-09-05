@@ -41,7 +41,8 @@ if (mode === "exit") {
     if (mode === "survivor") {
       child.stdout.destroy();
       child.unref();
-      process.exit(0);
+      // Exit only after the owner has observed the descendant while we live.
+      process.stdin.once("data", () => process.exit(0));
     } else if (mode === "delayed-child") {
       child.kill("SIGTERM");
       child.stdout.destroy();

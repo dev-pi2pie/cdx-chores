@@ -40,8 +40,35 @@ async function ready(process: OwnedProcess): Promise<void> {
 
 async function assertStopped(result: OwnedProcessResult): Promise<void> {
   expect(result.stopped).toBe(true);
-  const remaining = await observeProcessGroup(result.pid!, 500);
+  expect(result.groupId).toBe(result.pid);
+  const remaining = await observeProcessGroup(result.groupId!, 500);
   expect(remaining.filter((member) => !member.state.startsWith("Z"))).toEqual([]);
+}
+
+function startSurvivor(afterExit: "normal" | "unavailable" | "replacement" = "normal") {
+  let exited = false;
+  let released = false;
+  const owned = startOwnedProcess(options("survivor", { graceMs: 100, cleanupMs: 600 }), {
+    observe: async (groupId, timeoutMs) => {
+      if (exited && afterExit === "unavailable") throw new Error("observation denied after exit");
+      if (exited && afterExit === "replacement") {
+        return [{ pid: groupId, parentPid: 1, groupId, state: "S", executable: "unrelated" }];
+      }
+      const members = await observeProcessGroup(groupId, timeoutMs);
+      if (
+        !released &&
+        members.some((member) => member.pid !== groupId && !member.state.startsWith("Z"))
+      ) {
+        released = true;
+        owned.child.stdin.end("release\n");
+      }
+      return members;
+    },
+  });
+  owned.child.once("exit", () => {
+    exited = true;
+  });
+  return owned;
 }
 
 describe("owned process lifecycle", () => {
@@ -86,7 +113,7 @@ describe("owned process lifecycle", () => {
   });
 
   test("fails and recovers a resistant descendant after its launcher exits", async () => {
-    const result = await startOwnedProcess(options("survivor")).completion;
+    const result = await startSurvivor().completion;
     expect(result.ok).toBe(false);
     expect(result.exitCode).toBe(0);
     expect(result.escalated).toBe(true);
@@ -209,6 +236,7 @@ describe("owned process lifecycle", () => {
     expect(result.reason).toBe("launch-failed");
     expect(result.ok).toBe(false);
     expect(result.pid).toBeUndefined();
+    expect(result.groupId).toBeUndefined();
     expect(result.stopped).toBe(true);
   });
 
@@ -242,49 +270,48 @@ describe("owned process lifecycle", () => {
     }
   });
 
-  test("hands back unresolved descendants without signaling after observation loss", async () => {
-    let denyObservation = false;
-    const owned = startOwnedProcess(options("survivor", { graceMs: 80, cleanupMs: 400 }), {
-      observe: async (groupId, timeoutMs) => {
-        if (denyObservation) throw new Error("observation denied after launcher exit");
-        return await observeProcessGroup(groupId, timeoutMs);
-      },
-    });
-    owned.child.once("exit", () => {
-      denyObservation = true;
-    });
-    try {
-      const result = await owned.completion;
-      expect(result.ok).toBe(false);
-      expect(result.stopped).toBe(false);
-      expect(result.reason).toBe("unverified");
-      expect(result.exitCode).toBe(0);
-      expect(result.signals).toEqual([]);
-      expect(result.issues).toContain("Required process-state observation is unavailable.");
-    } finally {
-      // The deliberately unavailable observer cannot authorize cleanup. The
-      // fixture owner obtains fresh evidence of its exact child before recovery.
-      const result = await owned.completion;
-      const descendant = Number(/child:(\d+)/.exec(result.stdout)?.[1]);
-      const members = await observeProcessGroup(result.pid!, 500);
-      if (members.some((member) => member.pid === descendant && !member.state.startsWith("Z"))) {
-        process.kill(-result.pid!, "SIGKILL");
+  test.each(["unavailable", "replacement"] as const)(
+    "hands back unresolved descendants when observation is %s",
+    async (mode) => {
+      const owned = startSurvivor(mode);
+      try {
+        const result = await owned.completion;
+        expect(result.ok).toBe(false);
+        expect(result.stopped).toBe(false);
+        expect(result.reason).toBe("unverified");
+        expect(result.exitCode).toBe(0);
+        expect(result.signals).toEqual([]);
+        expect(result.groupId).toBe(result.pid);
+        expect(result.issues).toContain(
+          mode === "unavailable"
+            ? "Required process-state observation is unavailable."
+            : "Owned process group continuity is unverified.",
+        );
+      } finally {
+        // The deliberately unavailable observer cannot authorize cleanup. The
+        // fixture owner obtains fresh evidence of its exact child before recovery.
+        const result = await owned.completion;
+        const descendant = Number(/child:(\d+)/.exec(result.stdout)?.[1]);
+        const members = await observeProcessGroup(result.groupId!, 500);
+        if (members.some((member) => member.pid === descendant && !member.state.startsWith("Z"))) {
+          process.kill(-result.groupId!, "SIGKILL");
+        }
+        const deadline = performance.now() + 1000;
+        while (
+          (await observeProcessGroup(result.groupId!, 500)).some(
+            (member) => !member.state.startsWith("Z"),
+          ) &&
+          performance.now() < deadline
+        )
+          await delay(10);
+        expect(
+          (await observeProcessGroup(result.groupId!, 500)).filter(
+            (member) => !member.state.startsWith("Z"),
+          ),
+        ).toEqual([]);
       }
-      const deadline = performance.now() + 1000;
-      while (
-        (await observeProcessGroup(result.pid!, 500)).some(
-          (member) => !member.state.startsWith("Z"),
-        ) &&
-        performance.now() < deadline
-      )
-        await delay(10);
-      expect(
-        (await observeProcessGroup(result.pid!, 500)).filter(
-          (member) => !member.state.startsWith("Z"),
-        ),
-      ).toEqual([]);
-    }
-  });
+    },
+  );
 
   test("does not send a signal after the termination budget has expired", async () => {
     const owned = startOwnedProcess(options("exit", { graceMs: 10, cleanupMs: 30 }), {
