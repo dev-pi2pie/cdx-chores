@@ -132,16 +132,32 @@ Apply the research's JUnit, scheduling, cleanup, and Codex-evidence contracts.
 
 Acceptance:
 
-| Check                   | Required evidence                                                                                                                                              |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Selection and preflight | Invalid/empty membership never triggers broad discovery; missing tools/native packages/caches and unsupported platforms fail before tests                      |
-| Bounded probes          | Hanging preflight and cancellation stop owned work; no JUnit/counts invented for unlaunched tests                                                              |
-| Reports                 | Reject malformed, missing, stale, contradictory, empty, or skipped/TODO reports and selected-file mismatches; passing XML cannot override nonzero exit         |
-| Scheduling              | Unit/app/Codex/Pandoc order, one attempt each, ordinary-failure continuation, cancellation boundaries, preserved completed states                              |
-| Ownership               | Distinct concurrent roots; no overwrite/deletion across owners; replaced/symlink roots and pre-existing reports rejected                                       |
-| Failure cleanup         | Setup/assertion/export/cleanup failures preserve all reasons, remove incomplete exports, and identify remaining work                                           |
-| Terminal output         | Final states, available counts, failure/lifecycle reasons, and retention location appear in both modes; default result deletion preserves terminal diagnostics |
-| Retention and evidence  | Scratch removed, only designated safe outputs retained, existing runs/inputs unchanged; Codex keys/values sanitized in both modes                              |
+- [ ] Verify selection and preflight: invalid or empty membership never triggers
+      broad discovery; missing tools, native packages, caches, and unsupported
+      platforms fail before tests launch.
+- [ ] Verify bounded probes: hanging preflight and cancellation stop owned work;
+      never invent JUnit reports or counts for tests that were not launched.
+- [ ] Validate reports: reject malformed, missing, stale, contradictory, empty,
+      skipped/TODO reports and selected-file mismatches; passing XML cannot
+      override a nonzero exit.
+- [ ] Verify scheduling: run unit, app, Codex, and Pandoc in order, one attempt
+      each; continue after ordinary failures, honor cancellation boundaries, and
+      preserve completed states.
+- [ ] Verify ownership: concurrent invocations use distinct roots without
+      overwriting or deleting another owner's files; reject replaced or symlinked
+      roots and pre-existing reports.
+- [ ] Verify failure cleanup: preserve every setup, assertion, export, and cleanup
+      failure reason; remove incomplete exports and identify remaining work.
+- [ ] Verify terminal output in both retention modes: show final states, available
+      counts, failure/lifecycle reasons, and the retention location; deleting
+      default results must preserve terminal diagnostics.
+- [ ] Verify retention and evidence: remove scratch, retain only designated safe
+      outputs, leave existing runs and inputs unchanged, and sanitize Codex keys
+      and values in both retention modes.
+- [ ] Publish the named commands only after selection, bounded preflight, process
+      ownership, report validation, terminal output, and retention pass together.
+- [ ] Review the complete phase commit range, resolve findings, and record the
+      verified evidence and review range in the unified implementation record.
 
 Use bounded fixtures rather than recursively running the full suite. A phase pass
 requires all selected leaves and finalization to succeed; cleanup failure cannot
