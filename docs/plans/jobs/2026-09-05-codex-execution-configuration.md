@@ -302,5 +302,16 @@ was left outside this planning update.
 
 ## Phase 6: Validation And Documentation Closeout
 
-Status: pending. Final repository validation and shipped-guide updates remain
-owned by this phase, including the central environment-variable guide.
+Status: in-progress. Phase base: `1808d094`. Full implementation review base:
+`1dd5cf74`. This phase completes shipped guides, inventories environment behavior,
+validates all adopted paths, and reviews the complete implementation range.
+
+### Provider Integration Checkpoint
+
+- Added synthetic full CLI coverage for a reported OpenAI built-in selection
+  alongside two custom provider definitions, then a custom-provider selection.
+  Checks cover sorted/exact markers, details, curated JSON, unlisted built-ins,
+  and provider output when `model/list` fails. Catalog metadata remains unchanged
+  across selections; this does not establish backend compatibility.
+- `bun test test/codex-info/cli-replay.test.ts` passed 3 tests, 107 assertions.
+  TypeScript, targeted lint, formatting, and diff checks passed.
