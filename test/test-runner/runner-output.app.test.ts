@@ -20,10 +20,10 @@ function capture(parts: string[]): Writable {
   });
 }
 
-function failWrites(code: "EPIPE" | "EIO"): Writable {
+function failWrites(code: "EPIPE" | "EIO", marker = "Test invocation:"): Writable {
   return new Writable({
-    write(_chunk, _encoding, callback) {
-      setImmediate(() => callback(pipeError(code)));
+    write(chunk, _encoding, callback) {
+      setImmediate(() => callback(chunk.toString().includes(marker) ? pipeError(code) : undefined));
     },
   });
 }
@@ -33,6 +33,20 @@ async function storedSummary(root: string): Promise<{ state: string; errors: str
 }
 
 describe("managed runner output delivery", () => {
+  test("failure delivering initial status leaves all suites unstarted and allocates no run", async () => {
+    await withRunner(async ({ roots, events, invoke }) => {
+      const result = await invoke(["all"], {
+        streams: { stdout: failWrites("EPIPE", "cdx-chores"), stderr: capture([]) },
+        outputLimits,
+      });
+      expect(result.exitCode).toBe(1);
+      expect(roots).toHaveLength(0);
+      expect(events).toHaveLength(0);
+      expect(result.summary.leaves.every((leaf) => leaf.state === "not-run")).toBe(true);
+      expect(result.summary.errors.join(" ")).toContain("EPIPE");
+    });
+  });
+
   test("delivers execution bytes before completion exactly once and hides preflight protocol", async () => {
     await withRunner(async ({ invoke }) => {
       const stdout: string[] = [];
@@ -50,7 +64,8 @@ describe("managed runner output delivery", () => {
           execute: async (options) => {
             options.output!.write("stdout", "live-case-start\n");
             options.output!.write("stderr", "live-case-detail\n");
-            expect(stdout.join("")).toBe("live-case-start\n");
+            await options.output!.flush();
+            expect(stdout.join("").split("live-case-start")).toHaveLength(2);
             expect(stderr.join("")).toBe("live-case-detail\n");
             await writeReport(options);
             return completed({ stdout: "live-case-start\n", stderr: "live-case-detail\n" });
@@ -71,7 +86,7 @@ describe("managed runner output delivery", () => {
     await withRunner(async ({ roots, events, invoke }) => {
       const fallback: string[] = [];
       const result = await invoke(["all"], {
-        streams: { stdout: failWrites("EPIPE"), stderr: capture(fallback) },
+        streams: { stdout: failWrites("EPIPE", "test progress"), stderr: capture(fallback) },
         outputLimits,
         dependencies: {
           execute: async (options) => {
@@ -102,8 +117,9 @@ describe("managed runner output delivery", () => {
       let acknowledge: (() => void) | undefined;
       const fallback: string[] = [];
       const stalled = new Writable({
-        write(_chunk, _encoding, callback) {
-          acknowledge = callback;
+        write(chunk, _encoding, callback) {
+          if (chunk.toString().includes("pending progress")) acknowledge = callback;
+          else setImmediate(callback);
         },
       });
       try {
@@ -134,7 +150,11 @@ describe("managed runner output delivery", () => {
     await withRunner(async ({ roots, invoke }) => {
       let stateBeforeFailure: string | undefined;
       const stdout = new Writable({
-        write(_chunk, _encoding, callback) {
+        write(chunk, _encoding, callback) {
+          if (!chunk.toString().includes("Test invocation:")) {
+            setImmediate(callback);
+            return;
+          }
           void storedSummary(roots[0]!.root).then((summary) => {
             stateBeforeFailure = summary.state;
             setImmediate(() => callback(pipeError("EPIPE")));
@@ -161,7 +181,11 @@ describe("managed runner output delivery", () => {
     await withRunner(async ({ roots, invoke }) => {
       let removedBeforeFailure = false;
       const stdout = new Writable({
-        write(_chunk, _encoding, callback) {
+        write(chunk, _encoding, callback) {
+          if (!chunk.toString().includes("Test invocation:")) {
+            setImmediate(callback);
+            return;
+          }
           void access(roots[0]!.root).then(
             () => callback(new Error("Run still existed.")),
             () => {

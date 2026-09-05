@@ -39,6 +39,7 @@ import {
   type LeafSummary,
 } from "../terminal/summary.ts";
 import { SUITE_POLICIES } from "../suites/suite-policy.ts";
+import { createPresentation } from "../terminal/presentation.ts";
 
 /** Internal bounded-fixture seams. None are accepted as command-line flags. */
 export interface RunnerDependencies {
@@ -109,10 +110,9 @@ export async function runManagedTests(
   };
   let context: RunContext | undefined;
   let safeToClean = true;
-  const output = createOutputDelivery(
-    options.streams ?? { stdout: process.stdout, stderr: process.stderr },
-    options.outputLimits,
-  );
+  const destinations = options.streams ?? { stdout: process.stdout, stderr: process.stderr };
+  const output = createOutputDelivery(destinations, options.outputLimits);
+  const presentation = createPresentation(output, destinations, sourceEnv);
   const signal = options.signal ? AbortSignal.any([options.signal, output.signal]) : output.signal;
   const recordDelivery = () => {
     for (const issue of output.issues) {
@@ -130,11 +130,15 @@ export async function runManagedTests(
       errors: [],
       processes: [],
     }));
+    presentation.start(invocation.suites, invocation.keepResults);
+    presentation.stage(undefined, "Validate selection");
     assertUnitDiscoveryConfig(await deps.readConfig(repoRoot));
     const { suites } = await deps.discover(repoRoot);
     // Validate the entire requested membership before allocating or launching prerequisites.
     selectTestFiles(suites, invocation.suites);
     if (signal.aborted) throw new Error("Invocation cancelled before run allocation.");
+    presentation.stage(undefined, "Prepare test run");
+    if (signal.aborted) throw new Error("Invocation stopped before run allocation.");
     context = await deps.allocate(repoRoot, invocation.suites, invocation.keepResults);
     for (const leaf of summary.leaves) {
       if (signal.aborted || !safeToClean) break;
@@ -142,6 +146,8 @@ export async function runManagedTests(
       try {
         const env = await deps.environment(context, leaf.suite, sourceEnv);
         if (signal.aborted) throw new Error("Invocation cancelled before preflight.");
+        presentation.stage(leaf.suite, "Preflight");
+        if (signal.aborted) throw new Error("Invocation stopped before preflight launch.");
         // A thrown launch/completion cannot prove no work remains. Returned results restore proof.
         safeToClean = false;
         const preflight = await deps.preflight({
@@ -161,6 +167,8 @@ export async function runManagedTests(
         const files = selectTestFiles(suites, [leaf.suite]);
         const ticket = await prepareReport(context, leaf.suite);
         if (signal.aborted) throw new Error("Invocation cancelled before tests.");
+        presentation.stage(leaf.suite, "Test execution");
+        if (signal.aborted) throw new Error("Invocation stopped before test launch.");
         safeToClean = false;
         const result = await deps.execute({
           executable: options.bunExecutable ?? process.execPath,
@@ -170,16 +178,17 @@ export async function runManagedTests(
             "--reporter-outfile=" + ticket.path,
           ],
           cwd: context.repoRoot,
-          env,
+          env: presentation.childEnvironment(env),
           signal: options.signal,
           ...SUITE_POLICIES[leaf.suite].execution,
           maxOutputBytes: 8 * 1024 * 1024,
-          output,
+          output: presentation.testOutput,
         });
         recordProcess(leaf, "test", result);
         await output.flush();
         if (output.failed)
           leaf.errors.push("Test output delivery failed; diagnostics may be incomplete.");
+        presentation.stage(leaf.suite, "Validate results", { producerEnded: true });
         const nested = deps.inspectProcesses(context, leaf.suite);
         safeToClean = result.stopped && nested.stopped;
         leaf.errors.push(...nested.issues);
@@ -194,6 +203,7 @@ export async function runManagedTests(
           }
           // An exception may mean export ownership or interrupted cleanup is unknown.
           safeToClean = false;
+          presentation.stage(leaf.suite, "Validate fixture outputs");
           assertRunPath(context, "results/" + leaf.suite);
           const exports = await deps.inspectExports(context, leaf.suite);
           safeToClean = exports.cleanupVerified;
@@ -211,6 +221,14 @@ export async function runManagedTests(
         } catch (ownerError) {
           safeToClean = false;
           summary.errors.push(errorText(ownerError));
+        }
+      } finally {
+        presentation.outcome(leaf);
+        await output.flush();
+        if (output.failed) {
+          leaf.state = "failed";
+          const error = "Test output delivery failed; diagnostics may be incomplete.";
+          if (!leaf.errors.includes(error)) leaf.errors.push(error);
         }
       }
     }
@@ -235,6 +253,7 @@ export async function runManagedTests(
   recordDelivery();
   let receipt: FinalizationReceipt | undefined;
   if (context) {
+    presentation.stage(undefined, "Cleanup");
     try {
       receipt = await deps.finalize(context, summary, safeToClean);
     } catch (error) {
@@ -243,7 +262,8 @@ export async function runManagedTests(
     }
   }
   refreshSummaryState(summary);
-  output.write("stdout", renderSummary(summary));
+  presentation.finish();
+  output.write("stdout", presentation.renderSummary(summary));
   await output.flush();
   if (output.failed) {
     recordDelivery();

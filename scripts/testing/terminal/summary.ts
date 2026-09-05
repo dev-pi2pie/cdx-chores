@@ -1,4 +1,5 @@
 import { lstatSync } from "node:fs";
+import { createColors } from "picocolors";
 
 import type { OwnedProcessResult } from "../execution/process.ts";
 import type { JUnitSummary } from "../reports/report-validation.ts";
@@ -72,10 +73,17 @@ function existingLocation(path: string | undefined): path is string {
 }
 
 /** Render from the in-memory record, including after default results have been removed. */
-export function renderSummary(summary: InvocationSummary): string {
-  const lines = ["Test invocation: " + summary.state];
+export function renderSummary(
+  summary: InvocationSummary,
+  options: { color?: boolean; groupProcessDetails?: boolean } = {},
+): string {
+  const colors = createColors(options.color ?? false);
+  const stateColor = (state: string) =>
+    state === "passed" ? colors.green : state === "failed" ? colors.red : colors.yellow;
+  const lines = [colors.bold(stateColor(summary.state)("Test invocation: " + summary.state))];
+  const processDetails: string[] = [];
   for (const leaf of summary.leaves) {
-    lines.push(leaf.suite + ": " + leaf.state);
+    lines.push(stateColor(leaf.state)(leaf.suite + ": " + leaf.state));
     if (leaf.counts) {
       const count = leaf.counts;
       lines.push(
@@ -90,22 +98,24 @@ export function renderSummary(summary: InvocationSummary): string {
             .map(([name, version]) => name + "=" + version)
             .join(", "),
       );
-    for (const error of leaf.errors) lines.push("  " + error);
+    for (const error of leaf.errors) lines.push(colors.red("  " + error));
+    const details = options.groupProcessDetails ? processDetails : lines;
+    if (options.groupProcessDetails && leaf.processes.length) details.push(leaf.suite + ":");
     for (const { stage, result } of leaf.processes) {
-      lines.push(
+      details.push(
         `  ${stage}: ${result.reason}; exit=${result.exitCode ?? "none"}; signal=${result.signal ?? "none"}; stopped=${result.stopped}; escalated=${result.escalated}; elapsed=${result.elapsedMs}ms; drain=${result.drainMs ?? "unknown"}ms`,
       );
       if (result.pid !== undefined || result.groupId !== undefined)
-        lines.push(`    pid=${result.pid ?? "unknown"}; group=${result.groupId ?? "unknown"}`);
-      for (const issue of result.issues) lines.push("    " + issue);
+        details.push(`    pid=${result.pid ?? "unknown"}; group=${result.groupId ?? "unknown"}`);
+      for (const issue of result.issues) details.push(colors.red("    " + issue));
       if (result.signals.length)
-        lines.push(
+        details.push(
           "    Termination signals: " +
             result.signals.map((entry) => entry.signal + "@" + entry.elapsedMs + "ms").join(", "),
         );
     }
   }
-  for (const error of summary.errors) lines.push("Run failure: " + error);
+  for (const error of summary.errors) lines.push(colors.red("Run failure: " + error));
   lines.push(
     existingDirectory(summary.retainedResultsPath)
       ? "Retained results: " + summary.retainedResultsPath
@@ -113,5 +123,8 @@ export function renderSummary(summary: InvocationSummary): string {
   );
   if (existingLocation(summary.remainingOwnedPath))
     lines.push("Remaining owned location: " + summary.remainingOwnedPath);
+  if (processDetails.length) {
+    lines.push("", colors.dim("Process diagnostics:"), ...processDetails);
+  }
   return lines.join("\n") + "\n";
 }

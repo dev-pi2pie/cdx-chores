@@ -1403,7 +1403,7 @@ all eleven Phase 3.2 items are unchecked, and Phase 4 retains its number and gat
 
 ### 3.2A: Module Boundaries and Streaming
 
-Status: in progress.
+Status: completed.
 
 Map module and external-consumer dependencies before the behavior-preserving
 reorganization. Validate Node-consumed helpers and subprocess/test fixture paths
@@ -1467,9 +1467,48 @@ no scratch, while default roots remain removed. An actual SIGINT readiness
 handshake also verifies cancellation and cleanup. Type and scoped lint/format
 checks pass. The bounded A matrix totals 254 cases and 1,186 assertions.
 
+The complete 3.2A range
+`5649f171c0713265b29c3cb661a044cc55f1d12d..c0f1b1ccecbdb07c677981ab7aee863c84fcdac1`
+passed security, maintainability, and test-coverage review. No material findings
+remain, and all five streaming acceptance items are complete.
+
 ### 3.2B: Terminal Presentation
 
-Status: pending.
+Status: in progress.
+
+Fixed section review base: `c0f1b1ccecbdb07c677981ab7aee863c84fcdac1`.
+
+The presentation helper adds immediate selection feedback, suite/stage boundaries,
+completed outcomes, and append-only elapsed messages after ten quiet seconds in a
+terminal or thirty in redirected output. A partial line on either raw stream
+suppresses status insertion until a boundary; final producer fragments are closed
+only after process completion. No cursor redraw can overwrite test output.
+
+Color is decided from each destination. Child Bun output is forced colored only
+when both destinations are terminals and NO_COLOR is absent; otherwise the child
+receives NO_COLOR with FORCE_COLOR removed. This conservative mixed-destination
+policy keeps redirected bytes plain. Actual bounded Bun reporter probes verified
+the installed reporter through owned pipes, including empty NO_COLOR and a forced
+color source environment. Parent status colors follow its stdout destination.
+
+The helper's 22 cases and 112 assertions pass, including five real reporter cases.
+Final summaries retain counts, versions, failures, and paths, with routine process
+metadata grouped below the results.
+
+The completed integration passed all 283 focused runner cases and 1,357 assertions
+across 24 files. Real public unit invocations passed 1,197 cases and 4,743
+assertions with both NO_COLOR and terminal colors enabled; immediate stages,
+streamed reporter lines, verified counts, and grouped lifecycle details were
+visible. The host supplies NO_COLOR, so the color-enabled check explicitly removed
+that flag only for its invocation.
+
+Review identified a same-stack stage-output failure between the existing abort
+check and process launch. The runner now rechecks after each launch-boundary
+status write, preserving proof that no work was started. Three targeted
+regressions verify no premature allocation/launch or falsely retained scratch.
+Existing late-output tests now target execution/final-summary bytes explicitly,
+so immediate status does not move their intended failure boundary. Types, lint,
+formatting, and whitespace checks passed.
 
 ### 3.2C: Verification and Closeout
 

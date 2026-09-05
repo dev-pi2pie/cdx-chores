@@ -190,16 +190,16 @@ Acceptance:
       as the public entry point; update module imports, subprocess-relative URLs,
       Node-consumed helpers, and script/test fixture references. Validate and
       checkpoint the behavior-preserving reorganization before streaming changes.
-- [ ] Verify output reaches its destination before producer exit, including partial
+- [x] Verify output reaches its destination before producer exit, including partial
       lines, split UTF-8 chunks, and order within each stream; do not promise a
       combined ordering across separate stdout/stderr pipes.
-- [ ] Keep capture and pending writes bounded under sustained output and slow
+- [x] Keep capture and pending writes bounded under sustained output and slow
       destinations. Verify the research's initial 8 MiB output/1 MiB pending-write
       budgets, pause/resume behavior, and four-second stall/final-drain allowances;
       record measurements before revising limits.
-- [ ] Verify broken output, exceeded drain allowance, timeout, and cancellation
+- [x] Verify broken output, exceeded drain allowance, timeout, and cancellation
       fail clearly, stop owned work, and preserve all failure/cleanup reasons.
-- [ ] Avoid duplicate failure replay; flush successful output delivery before the
+- [x] Avoid duplicate failure replay; flush successful output delivery before the
       final summary and keep raw streams out of retained summary/artifact files.
       Use internal probe/protocol sentinels to prove private JSON and secret-like
       values never reach terminal output or retained artifacts, while sanitized
