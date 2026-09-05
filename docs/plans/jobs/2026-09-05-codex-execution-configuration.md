@@ -134,8 +134,8 @@ checklists and evidence were verified unchanged.
 
 ## Phase 5: Codex Information Discovery
 
-Status: in-progress. Base: `0f51ab8d`. Implementation is paused for the provider
-scope refinement; no feature code has been added.
+Status: in-progress. Base: `0f51ab8d`. Implementation resumed after the provider
+scope refinement at `ab4e8250`; the original phase review base is retained.
 
 An isolated CLI `0.153.4` probe used two temporary Codex homes with omitted/custom
 provider selections, the same synthetic model selection, and no credentials. Initialization, `config/read`, and
@@ -153,8 +153,26 @@ retain complete-catalog requirements. Phase 6 will document all three commands.
 
 Documentation review clarified raw-to-report provider mapping, successful
 configured-only enumeration, and command-local output flag placement. The final
-review found no material gaps; documentation checks passed. Implementation
-remains paused pending continuation of the revised phase.
+review found no material gaps; documentation checks passed before implementation
+resumed.
+
+### Protocol And Environment Evidence
+
+- Installed CLI `0.153.4` help and generated experimental request schemas expose
+  no built-in provider-ID enumeration. `modelProvider/capabilities/read` reports
+  three capability booleans, not IDs. Provider coverage is therefore
+  `configured-only`; no built-in list is guessed.
+- Added an opt-in isolated protocol probe and sanitized version-labeled fixture
+  under `test/codex-info/`. The probe performs initialization, configuration reads,
+  and paginated model listing without credentials or generation requests.
+- `CODEX_HOME` unset or empty selects the isolated default home. Existing relative
+  and symlink paths produce canonical absolute homes. A directory named with
+  spaces is accepted literally; a missing whitespace-named directory fails.
+  Configuration origins distinguish user and trusted project layers.
+- `env CDX_CHORES_RUN_CODEX_DISCOVERY_PROBE=1 bun test test/codex-info/live-protocol.test.ts`
+  passed: 1 test, 33 assertions. The default suite skips this opt-in probe.
+  Its companion fixture records the request parameters, response projections,
+  pagination, and home cases; synthetic transport tests remain separate evidence.
 
 ## Phase 6: Validation And Documentation Closeout
 

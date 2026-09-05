@@ -316,6 +316,22 @@ metadata remain valid report states. A source that cannot enumerate built-ins
 must return a successful configured-only result (exit 0), including an empty
 configured list; this known limitation is distinct from a failed request. Custom providers receive the same failure policy.
 
+### Implementation Evidence Update
+
+Phase 5's isolated CLI `0.153.4` probe is reproducible with
+`env CDX_CHORES_RUN_CODEX_DISCOVERY_PROBE=1 bun test test/codex-info/live-protocol.test.ts`.
+The sanitized `test/codex-info/fixtures/cli-0.153.4-protocol.json` records the
+initialization/configuration shapes and model pagination. Empty and unset homes
+fall back; existing relative/symlink paths canonicalize; whitespace is a literal
+path and succeeds only when the directory exists. Trusted project configuration
+can change the model and its reported origin for that invocation directory.
+
+Installed help and generated request schemas provide no built-in provider-ID
+listing. The provider-capabilities method returns booleans only. This establishes
+the supported `configured-only` coverage boundary; it does not imply built-in
+providers are unavailable. Discovery must use the returned custom map without
+inventing missing definitions.
+
 ### Evidence Still Required
 
 Phase 5 must verify the version-specific protocol and lifecycle, omitted versus

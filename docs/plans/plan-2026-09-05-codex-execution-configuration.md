@@ -497,7 +497,7 @@ entry behavior, with no configuration leakage across sessions.
 
 ### Phase 5: Codex Information Discovery
 
-- [ ] Verify the installed CLI discovery protocol, executable resolution, and
+- [x] Verify the installed CLI discovery protocol, executable resolution, and
       configuration/catalog behavior; record evidence and unresolved metadata
       explicitly in the research and unified job before finalizing the adapter.
       Capture the initialization/read parameters and sanitized response shapes in
