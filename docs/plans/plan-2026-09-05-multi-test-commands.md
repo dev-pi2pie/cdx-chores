@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Refactor Implementation Plan"
 created-date: 2026-09-05
-modified-date: 2026-09-05
+modified-date: 2026-09-06
 status: active
 agent: codex
 ---
@@ -64,11 +64,11 @@ discovery unchanged during partial migration.
 
 Acceptance:
 
-- [ ] Account for all Bun filename forms, out-of-tree files, and test-shaped inputs;
+- [x] Account for all Bun filename forms, out-of-tree files, and test-shaped inputs;
       reject unknown/missing suffixes, duplicate owners, and empty selections.
-- [ ] Review support registration and imports separately; no executable test may
+- [x] Review support registration and imports separately; no executable test may
       disappear into support or be imported to share cases across leaves.
-- [ ] Verify exact paths, ignore-pattern replacement, config drift, new/deleted files,
+- [x] Verify exact paths, ignore-pattern replacement, config drift, new/deleted files,
       and JUnit file-identity reconciliation with bounded synthetic fixtures.
 
 ### 2B: Representative Pilots

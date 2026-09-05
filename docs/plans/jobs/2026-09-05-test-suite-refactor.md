@@ -1,6 +1,7 @@
 ---
 title: "Test Suite Refactor Implementation Record"
 created-date: 2026-09-05
+modified-date: 2026-09-06
 status: in-progress
 agent: codex
 ---
@@ -9,7 +10,8 @@ agent: codex
 
 Execute the [implementation plan](../plan-2026-09-05-multi-test-commands.md)
 against the [research contracts](../../researches/research-2026-09-05-multi-test-commands.md).
-Phase 1 establishes bounded process ownership; later phases remain pending.
+Phase 1 established bounded process ownership. Phase 2 is classifying and
+migrating coverage; Phases 3–4 remain pending.
 
 ## Phase 1: Process Lifecycle
 
@@ -213,16 +215,23 @@ the final Phase 2 review includes every checkpoint from this phase base.
 
 ### 2A: Inventory and Selector
 
-Status: in progress.
+Status: completed.
+
+The complete section implementation range
+`34c8cceff3063032950482d2f827539f0a437cbd..db2445a2a42e844ab3212d545d9704d61af3d7b2`
+passed test-coverage, maintainability, and security review. Documentation review
+identified a stale opening scope statement; this closeout corrects it.
+Types, lint, formatting, and whitespace checks passed. The mapping is ready for
+pilot verification; its proposed paths are not yet migrated owners.
 
 Record a fresh baseline before migration, classify every executable test and its
 support dependencies, and verify suffix-derived selection with bounded fixtures.
 Repository default discovery remains unchanged during partial migration.
 
-- [ ] Reconcile the complete file and case baseline, including skips and bypasses.
-- [ ] Record feature/suite ownership, target paths, support consumers, and dispositions.
-- [ ] Verify strict discovery, exclusions, config changes, and report file identities.
-- [ ] Review the complete section range and resolve findings.
+- [x] Reconcile the complete file and case baseline, including skips and bypasses.
+- [x] Record feature/suite ownership, target paths, support consumers, and dispositions.
+- [x] Verify strict discovery, exclusions, config changes, and report file identities.
+- [x] Review the complete section range and resolve findings.
 
 #### Baseline and Classification Evidence
 
