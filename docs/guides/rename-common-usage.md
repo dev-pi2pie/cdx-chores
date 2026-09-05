@@ -1,7 +1,7 @@
 ---
 title: "Rename Common Usage"
 created-date: 2026-02-27
-modified-date: 2026-08-22
+modified-date: 2026-09-05
 status: completed
 agent: codex
 ---
@@ -294,6 +294,21 @@ Explicit analyzer-only paths:
 cdx-chores rename batch ./docs --codex-docs --dry-run
 cdx-chores rename batch ./images --codex-images --dry-run
 ```
+
+`rename file`, `rename batch`, and `batch-rename` also accept
+`--codex-model <model>`, `--codex-provider <provider-id>`, and
+`--codex-reasoning-effort <effort>`. One selection applies to both enabled
+analyzers, including their batches and retries. Omitted model/provider inherit
+Codex configuration; omitted effort requests `low`. These options do not enable
+analyzers by themselves.
+
+```bash
+cdx-chores rename batch ./mixed-folder --codex \
+  --codex-reasoning-effort medium --dry-run
+```
+
+See [Codex Execution Configuration](codex-execution-configuration.md) for
+selection validation, inheritance, and failure behavior.
 
 Shared and analyzer-scoped timeout examples:
 

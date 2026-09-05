@@ -592,7 +592,7 @@ changed paths. Public guide updates remain in Phase 6.
 
 - [ ] Complete the validation matrix below and record commands/results in the
       unified job record.
-- [ ] Add `docs/guides/codex-execution-configuration.md` as the canonical shipped
+- [x] Add `docs/guides/codex-execution-configuration.md` as the canonical shipped
       option/default/scope guide, with examples for model/provider/effort and
       failures followed by a manual rerun with an explicit supported selection.
       Do not imply automatic setting changes or hidden retries. Link to the
@@ -601,7 +601,7 @@ changed paths. Public guide updates remain in Phase 6.
       dependencies, provider coverage, and configuration/catalog limitations.
       Document the concise human views and shared color behavior completed in
       Phase 5.5, linking to the output/color guide.
-- [ ] Create `docs/guides/environment-variables.md` as the central guide to
+- [x] Create `docs/guides/environment-variables.md` as the central guide to
       implemented environment controls. Inventory variables read by this tool
       and relevant inherited dependency variables; explain ownership, accepted
       values, unset/invalid behavior, defaults, precedence, affected commands,
@@ -610,10 +610,10 @@ changed paths. Public guide updates remain in Phase 6.
       controls. Verify authentication semantics against the installed SDK/CLI;
       distinguish local auth signals from credentials actually used by Codex.
       Do not document an unimplemented tool config file or `codex.home` setting.
-- [ ] Link the environment guide from README and the Codex execution guide.
+- [x] Link the environment guide from README and the Codex execution guide.
       Cross-link the existing path-prompt and output/color guides, keeping
       detailed feature behavior in those guides and avoiding conflicting rules.
-- [ ] Update relevant rename, data-query, data-stack, Markdown helper and
+- [x] Update relevant rename, data-query, data-stack, Markdown helper and
       Interactive guides, the CLI integration guide, and README discovery links.
       Keep unsupported surfaces explicit and existing PDF `--profile` terminology.
 - [ ] Record any live compatibility evidence separately with the exact tested
@@ -675,4 +675,6 @@ requests.
 
 ## Related Guides
 
+- [Codex execution configuration](../guides/codex-execution-configuration.md)
+- [Environment variables](../guides/environment-variables.md)
 - [Codex timeouts, retries, and recovery](../guides/codex-timeouts-retries-and-recovery.md)

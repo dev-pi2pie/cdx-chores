@@ -1,7 +1,7 @@
 ---
 title: "Codex Timeouts, Retries, And Recovery"
 created-date: 2026-08-22
-modified-date: 2026-08-23
+modified-date: 2026-09-05
 status: completed
 agent: codex
 ---
@@ -25,6 +25,11 @@ related, but they do not share one lifecycle or one CLI option.
 There is no generic `--codex-retries` option. A timeout limits one attempt;
 retry and recovery behavior remains owned by the workflow that initiated the
 request.
+
+Model, provider, and reasoning selection is configured independently; see
+[Codex Execution Configuration](codex-execution-configuration.md). Changing a
+timeout does not change those settings, and retrying does not select another
+model, provider, or effort.
 
 ## Where The Shared Option Is Available
 

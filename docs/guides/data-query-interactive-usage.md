@@ -1,7 +1,7 @@
 ---
 title: "Interactive Data Query Usage"
 created-date: 2026-03-11
-modified-date: 2026-08-23
+modified-date: 2026-09-05
 status: completed
 agent: codex
 ---
@@ -25,6 +25,20 @@ Start the flow with:
 ```bash
 cdx-chores interactive
 ```
+
+To select execution settings for every Codex helper in this session:
+
+```bash
+cdx-chores interactive --codex-reasoning-effort medium
+```
+
+The explicit `interactive` command also accepts `--codex-model <model>` and
+`--codex-provider <provider-id>`. Omitted model/provider inherit Codex
+configuration; omitted effort requests `low`. These session settings apply to
+source-shape and header suggestions, SQL drafting, and regeneration. They
+persist through backtracking, do not enable Codex without the workflow's
+consent, and are not saved. See
+[Codex Execution Configuration](codex-execution-configuration.md).
 
 To use a different per-attempt deadline for Codex-backed work throughout this
 Interactive session, pass the option to the `interactive` command.

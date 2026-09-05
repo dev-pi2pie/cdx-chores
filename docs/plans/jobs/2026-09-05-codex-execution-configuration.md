@@ -329,6 +329,7 @@ validates all adopted paths, and reviews the complete implementation range.
 
 ### Canonical Guide Checkpoint
 
+- Checkpoint commit: `e0080008`.
 - Added the [execution configuration guide](../../guides/codex-execution-configuration.md)
   and [environment-variable guide](../../guides/environment-variables.md).
   Verified command scope/defaults, SDK environment forwarding, raw Codex home
@@ -342,3 +343,16 @@ validates all adopted paths, and reviews the complete implementation range.
 - Documentation review found no material gaps. Explicit Markdown formatting,
   relative links, fences, and diff checks passed. Examples were checked against
   registered commands and built Node CLI help.
+
+### Guide Integration Checkpoint
+
+- Linked the canonical guides from README and updated existing rename, query,
+  extract, stack, Markdown helper, and Interactive guides with the implemented
+  option/default/scope contract. Kept PDF `--profile` meaning and embedded-helper
+  exclusions explicit. Cross-linked timeout, path-prompt, and output/color guides.
+- Updated CLI integration guidance for shared execution settings and separate
+  discovery, including current command and Interactive module locations.
+- All 18 new/updated README and guide files passed explicit Oxfmt checks;
+  relative links, fences, and diff checks passed. Documentation review found no
+  material gaps. Plan guide checkboxes reflect this evidence; full validation
+  and implementation-range review are still required for closeout.

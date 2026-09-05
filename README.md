@@ -85,6 +85,23 @@ Use `cdx-chores doctor` before relying on a command in a script, a CI job, or a 
 Codex-assisted workflows in `v0.1.8-canary.4` are validated with
 `@openai/codex-sdk` `0.153.4`.
 
+Adopted helper commands and explicit `interactive` sessions accept
+`--codex-model`, `--codex-provider`, and `--codex-reasoning-effort`. Model and
+provider inherit Codex configuration when omitted; helper reasoning defaults
+to `low`. See [Codex execution configuration](docs/guides/codex-execution-configuration.md)
+for command scope and failure behavior.
+
+Inspect the configuration and reported catalog without drafting a helper result:
+
+```bash
+cdx-chores codex-info
+cdx-chores codex-info models --details
+cdx-chores codex-info providers --json
+```
+
+Provider discovery lists configured definitions only; built-ins are not
+enumerated. Model metadata does not verify support through the selected provider.
+
 Markdown PDF profile, template, and Codex-assisted profile/template/project
 helpers remain available as direct CLI flows. Interactive mode also provides
 `md -> to-pdf` for guided rendering and `md -> pdf-recipes` for durable recipe
@@ -415,6 +432,8 @@ cdx-chores video resize -i ./clip.mp4 -o ./clip-720p.mp4 --width 1280 --height 7
 
 Cross-feature:
 
+- [Codex execution configuration and discovery](docs/guides/codex-execution-configuration.md)
+- [Environment variables](docs/guides/environment-variables.md)
 - `docs/guides/cli-output-and-color.md`
 - `docs/guides/codex-timeouts-retries-and-recovery.md`
 - `docs/guides/patterns-placeholders-and-templates.md`
