@@ -13,7 +13,8 @@ ownership and regression coverage. The implemented layout uses feature/boundary
 folders and `.{unit,app,codex,pandoc}.test.ts` suffixes.
 
 Phase 1 is completed in the [implementation record](jobs/2026-09-05-test-suite-refactor.md).
-Phase 2 is completed; Phases 3–4 have not started. The inventory, representative
+Phase 2 is completed; Phase 3 is in progress and Phase 4 has not started.
+The inventory, representative
 pilots, feature migration, final discovery, and full-range reviews are recorded
 in the implementation record.
 The research is authoritative for these contracts:

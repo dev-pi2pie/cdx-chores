@@ -11,7 +11,8 @@ agent: codex
 Execute the [implementation plan](../plan-2026-09-05-multi-test-commands.md)
 against the [research contracts](../../researches/research-2026-09-05-multi-test-commands.md).
 Phase 1 established bounded process ownership. Phase 2 completed suite
-classification, migration, and final discovery; Phases 3–4 remain pending.
+classification, migration, and final discovery. Phase 3 implements the managed
+runner; Phase 4 remains pending.
 
 ## Phase 1: Process Lifecycle
 
@@ -1116,7 +1117,71 @@ closes the status/checklists; it does not change the verified implementation.
 Public managed commands, full report validation, and retention remain Phase 3;
 usage documentation and final repository verification remain Phase 4.
 
+## Phase 3: Deliver the Managed Runner
+
+Status: in progress.
+
+Fixed phase review base: `815a72a41734d3c3fad11a1df612df4b0db5d171`.
+The starting tracked worktree was clean. Use the ten acceptance items in the
+implementation plan; mark each complete only after its evidence passes.
+
+### 3A: Run Ownership and Prerequisites
+
+Status: in progress.
+
+Establish one immutable invocation context, unique run roots, suite prerequisite
+policies, bounded probes, and controlled homes/caches before public commands.
+
+The first implementation batch adds argument parsing, canonical run allocation,
+root/namespace identity checks, isolated suite environments, and a central
+prerequisite/execution policy. Unknown or repeated arguments are rejected by a
+pure parser. Serialized fixture context is bound to the allocated repository,
+run identity, and selected suite; it never adopts a caller-supplied directory.
+
+Prerequisite work executes in one bounded child per leaf. Application preflight
+checks Node SQLite, required shell tools, DuckDB in Bun and Node, the current
+cached Excel/SQLite extensions, and PDF.js. It copies only the four existing
+regular extension/metadata files for the detected DuckDB version/platform into
+the owned home and disables extension installation/loading by discovery. Unit
+preflight checks runner infrastructure without integration prerequisites.
+
+Focused verification passed 38 cases and 129 assertions in 1.16 seconds, with
+verified process cleanup. It covers concurrent owners, earlier retained results,
+replaced/symlinked roots and namespaces, argument rejection, isolated environment
+snapshots, missing/malformed/nonzero prerequisite results, unavailable caches,
+hanging probes, and cancellation. A real isolated application preflight passed
+in 1.427 seconds using Bun 1.4.1, Node 26.5.0, DuckDB 1.5.5, and PDF.js 6.3.289.
+Scoped type, lint, formatting, and whitespace checks passed.
+
+Two initial test-harness mistakes were corrected before the passing checkpoint:
+Bun's successful `fs.access` result differed from the asserted value, and an empty
+`test.each` array was interpreted as callback-style registration. The tests now
+assert directory existence directly and pass explicit argument objects.
+The full plan items remain unchecked until orchestration proves the combined
+requirements, including no reports/counts for unlaunched tests.
+
+### 3B: Reports and Fixture Retention
+
+Status: pending.
+
+Validate complete JUnit records and integrate fixture allocation, designated
+exports, and cleanup with the owned run. Audit direct and sibling allocations.
+
+### 3C: Scheduling and Finalization
+
+Status: pending.
+
+Connect ordered suite execution, failure/cancellation states, finalization, and
+terminal summaries without hiding earlier failures.
+
+### 3D: Command Publication and Integrated Verification
+
+Status: pending.
+
+Publish named commands only after the complete contract passes. Verify the real
+aggregate in default and retained modes and review the complete phase range.
+
 ## Remaining Phases
 
-Phases 3–4 have not started. Record their mappings and execution evidence here
-as implementation proceeds.
+Phase 4 has not started. Its broader repetition matrix, built-package checks, and
+usage documentation follow the completed managed runner.
