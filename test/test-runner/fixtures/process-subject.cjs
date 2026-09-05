@@ -11,8 +11,15 @@ if (mode === "exit") {
 } else if (mode === "fail") {
   process.stderr.write("subject failure\n");
   process.exitCode = 7;
-} else if (mode === "server") {
-  process.on("SIGTERM", () => setTimeout(() => process.exit(0), 80));
+} else if (mode === "server" || mode === "held-server") {
+  process.on("SIGTERM", () => {
+    if (mode === "held-server") {
+      process.stdin.once("data", () => process.exit(0));
+      process.stdout.write("terminating\n");
+    } else {
+      setTimeout(() => process.exit(0), 80);
+    }
+  });
   ready();
   stay();
 } else if (mode === "resist") {

@@ -45,6 +45,13 @@ async function assertStopped(result: OwnedProcessResult): Promise<void> {
   expect(remaining.filter((member) => !member.state.startsWith("Z"))).toEqual([]);
 }
 
+function assertSuccessful(result: OwnedProcessResult): void {
+  const { reason, exitCode, signal, stopped, issues, signals } = result;
+  expect(result.ok, JSON.stringify({ reason, exitCode, signal, stopped, issues, signals })).toBe(
+    true,
+  );
+}
+
 function startSurvivor(afterExit: "normal" | "unavailable" | "replacement" = "normal") {
   let exited = false;
   let released = false;
@@ -72,6 +79,39 @@ function startSurvivor(afterExit: "normal" | "unavailable" | "replacement" = "no
 }
 
 describe("owned process lifecycle", () => {
+  test("refreshes a live snapshot delivered after direct-child exit", async () => {
+    let terminating = false;
+    let heldSnapshot = false;
+    const owned = startOwnedProcess(options("held-server"), {
+      observe: async (groupId, timeoutMs) => {
+        const members = await observeProcessGroup(groupId, timeoutMs);
+        if (terminating && !heldSnapshot && members.some((member) => member.pid === groupId)) {
+          heldSnapshot = true;
+          await new Promise<void>((resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error("Fixture did not exit.")), timeoutMs);
+            owned.child.once("exit", () => {
+              clearTimeout(timer);
+              resolve();
+            });
+            owned.child.stdin.end("release\n");
+          });
+        }
+        return members;
+      },
+    });
+    owned.child.stdout.on("data", (chunk: Buffer) => {
+      if (chunk.toString().includes("terminating")) terminating = true;
+    });
+    await ready(owned);
+    owned.shutdown();
+    const result = await owned.completion;
+    expect(heldSnapshot).toBe(true);
+    assertSuccessful(result);
+    expect(result.exitCode).toBe(0);
+    expect(result.signals.map((entry) => entry.signal)).toEqual(["SIGTERM"]);
+    await assertStopped(result);
+  });
+
   test("retains ownership after an empty snapshot while the direct child is alive", async () => {
     let observations = 0;
     const process = startOwnedProcess(options("server"), {
@@ -85,7 +125,7 @@ describe("owned process lifecycle", () => {
     process.shutdown();
     const result = await process.completion;
     expect(observations).toBeGreaterThan(1);
-    expect(result.ok).toBe(true);
+    assertSuccessful(result);
     expect(result.issues).toEqual([]);
     expect(result.signals.map((entry) => entry.signal)).toEqual(["SIGTERM"]);
     await assertStopped(result);
@@ -93,7 +133,7 @@ describe("owned process lifecycle", () => {
 
   test("captures output and verifies normal exit without sending signals", async () => {
     const result = await startOwnedProcess(options("exit")).completion;
-    expect(result.ok).toBe(true);
+    assertSuccessful(result);
     expect(result.stdout).toBe("finished\n");
     expect(result.reason).toBe("completed");
     expect(result.signals).toEqual([]);
@@ -117,7 +157,7 @@ describe("owned process lifecycle", () => {
     process.shutdown();
     process.shutdown();
     const result = await process.completion;
-    expect(result.ok).toBe(true);
+    assertSuccessful(result);
     expect(result.reason).toBe("shutdown");
     expect(result.escalated).toBe(false);
     expect(result.signals.map((entry) => entry.signal)).toEqual(["SIGTERM"]);
@@ -126,7 +166,7 @@ describe("owned process lifecycle", () => {
 
   test("waits for a normally draining descendant after launcher exit", async () => {
     const result = await startOwnedProcess(options("delayed-child")).completion;
-    expect(result.ok).toBe(true);
+    assertSuccessful(result);
     expect(result.signals).toEqual([]);
     await assertStopped(result);
   });
@@ -159,6 +199,7 @@ describe("owned process lifecycle", () => {
     const unrelated = startOwnedProcess(options("server"));
     const abort = new AbortController();
     const process = startOwnedProcess(options("launcher", { signal: abort.signal }));
+    const failures: unknown[] = [];
     try {
       await Promise.all([ready(process), ready(unrelated)]);
       abort.abort();
@@ -171,10 +212,20 @@ describe("owned process lifecycle", () => {
           (member) => member.pid === unrelated.child.pid,
         ),
       ).toBe(true);
+    } catch (error) {
+      failures.push(error);
     } finally {
+      abort.abort();
+      await process.completion;
       unrelated.shutdown();
-      expect((await unrelated.completion).ok).toBe(true);
+      try {
+        assertSuccessful(await unrelated.completion);
+      } catch (error) {
+        failures.push(error);
+      }
     }
+    if (failures.length === 1) throw failures[0];
+    if (failures.length > 1) throw new AggregateError(failures, "Test and server cleanup failed.");
   });
 
   test("a hanging synchronous preflight cannot launch the subsequent command", async () => {

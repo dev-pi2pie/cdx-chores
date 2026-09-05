@@ -154,6 +154,44 @@ All 34 repository-relative links and anchors in the research, plan, and job were
 validated. No installed-Codex lifecycle scratch directories remained after the
 final successful protocol.
 
+### Post-Closeout Shutdown Race Correction
+
+Correction status: in progress.
+
+After closeout, a contributor reported a full `bun test` result of 2,969 passes,
+one opt-in skip, and a failure in the empty-snapshot lifecycle test. A subsequent
+failure excerpt identified the unrelated server's shutdown assertion in the
+cancellation test. Neither excerpt contained the lifecycle result's diagnostic
+fields, so the exact reported interleavings could not be established.
+
+Twenty isolated repetitions initially passed. A controlled diagnostic then
+confirmed that a live snapshot delivered after direct-child exit could record a
+continuity error despite exit code zero and verified cleanup. A deterministic
+regression reproduced that failure before the correction.
+
+The owner now refreshes successful observations spanning direct-child exit before
+using them for ownership or completion decisions, within the existing cleanup
+deadline. Uncertain continuity continues to prohibit signaling, but becomes a
+failure only when it prevents completion within the allowance. Success assertions
+include structured lifecycle diagnostics; the cancellation test preserves both
+body and cleanup failures.
+
+Focused verification passed 22 tests and 134 assertions. The new regression and
+both reported cases then passed 20 repetitions each: 60 passes, 420 assertions,
+11.26 seconds. Full `bun test` passed 2,971 tests with one existing live-Codex
+opt-in skip and zero failures: 16,445 assertions across 380 files in 123.58 seconds.
+Types and lint passed. Formatting initially flagged one test-file layout; after
+formatting that file, types, lint, formatting, and whitespace checks passed.
+
+The fixed installed-Codex protocol passed all 12 attempts without escalation:
+
+| Mode     | Protocol total / drain ms, attempts 1–3 | Transport total / drain ms, attempts 1–3 |
+| -------- | --------------------------------------- | ---------------------------------------- |
+| Captured | 834/649, 753/644, 750/639               | 800/684, 758/640, 748/635                |
+| Terminal | 739/632, 747/634, 754/639               | 794/680, 833/718, 761/645                |
+
+The expanded fixed-base review is pending the correction checkpoint.
+
 ### Acceptance
 
 - [x] Process completion and termination scenarios verified with bounded fixtures.

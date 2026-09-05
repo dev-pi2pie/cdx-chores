@@ -194,6 +194,7 @@ export function startOwnedProcess(
           requestStop("timeout");
         }
         let members: ProcessMember[] | undefined;
+        const exitBeforeObservation = exitedAt;
         try {
           const deadline = requestedAt === undefined ? now + 500 : requestedAt + options.cleanupMs;
           members = await observer.observe(groupId, Math.max(1, Math.min(500, deadline - now)));
@@ -205,6 +206,15 @@ export function startOwnedProcess(
         } catch {
           issue("Required process-state observation is unavailable.");
           requestStop("unverified");
+        }
+        if (members !== undefined && exitBeforeObservation !== exitedAt) {
+          // The snapshot may predate the exit event received while awaiting it.
+          // Refresh before using it to retire ownership, signal, or fail cleanup.
+          if (requestedAt !== undefined && performance.now() - requestedAt >= options.cleanupMs) {
+            issue("Owned process completion could not be verified within the cleanup allowance.");
+            break;
+          }
+          continue;
         }
         const live = members?.filter(isLiveProcess);
         // After leader exit, a previously observed live descendant must still
@@ -244,17 +254,17 @@ export function startOwnedProcess(
         }
         if (requestedAt !== undefined) {
           if (afterObservation - requestedAt >= options.cleanupMs) {
+            if (live?.length && !continuousGroup) {
+              issue("Owned process group continuity is unverified.");
+            }
             issue("Owned process completion could not be verified within the cleanup allowance.");
             break;
           }
           // Only the group established by spawn can be signaled, and never after
-          // it was observed empty. A live direct child also establishes ownership
+          // retirement. A live direct child also establishes ownership
           // when observation fails; no unrelated snapshot PID is a signal target.
           const canSignal =
             !groupRetired && (exitedAt === undefined || (continuousGroup && Boolean(live?.length)));
-          if (!canSignal && live?.length && !continuousGroup) {
-            issue("Owned process group continuity is unverified.");
-          }
           const send = (signal: "SIGTERM" | "SIGKILL") => {
             try {
               process.kill(-groupId, signal);
