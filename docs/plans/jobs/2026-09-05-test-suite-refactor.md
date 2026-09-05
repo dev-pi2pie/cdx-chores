@@ -1423,6 +1423,50 @@ the focused run passed with the required process-observation permission. Module
 bodies changed only for imports and the two moved fixture modules' repository-root
 calculations. Streaming behavior is not part of this checkpoint.
 
+The denied-observation attempt left two empty allocated run skeletons. Fresh
+inspection found no remaining lifecycle test subjects and no files or receipts
+in either owner. After canonical-path and directory-identity checks, only their
+22 empty directories were removed with non-recursive directory removal.
+
+The module-only checkpoint `066e36e7d0226e38043838e7eba58693b8851d71` was reviewed
+against the fixed phase base. Import/path coherence and regression coverage
+reviews found no material issues. The first acceptance item is complete.
+
+Streaming implementation now separates immediate byte delivery from bounded
+capture. A retained-summary receipt can persist a late terminal failure only to
+the original verified summary file; default cleanup is never recreated.
+Transport and recovery regressions cover pending-write budgets, source drain,
+destination errors, file replacement, partial writes, and cleanup failures.
+The combined focused runner matrix passed 251 cases and 1,158 assertions across
+21 files. Types, lint, formatting, and whitespace checks passed. Real producers
+verify visibility before stdin acknowledgment, split UTF-8, per-stream order,
+slow final delivery, paused cancellation/timeout, final-drain expiry, an 8 MiB
+capture flood, and unrelated-process survival. The default pending-write limit
+was verified at exactly 1 MiB; the next byte fails without entering the destination.
+No limits were increased.
+
+A controlled public unit invocation with stderr deliberately unread revealed a
+separate CLI exit boundary: output failure, stopped-process proof, default cleanup,
+and fallback all completed, but Bun stayed alive on its blocked stdio handle past
+20 seconds. The harness terminated that already-finalized invocation. The CLI now
+exits explicitly with failure only after the runner has finished finalization and
+bounded fallback delivery. Repeating the same check exited 1 without intervention
+in 4.51 seconds, reported incomplete stderr delivery, verified both process stages
+stopped, preserved the 1,197 passing test counts as informational evidence, and
+removed default results. A passing report cannot override terminal failure.
+
+A focused regression also found that fallback could retry a below-high-water-mark
+stalled destination. Fallback now requires zero pending bytes and selects the
+healthy stream; the runner test verifies that no fallback timeout is consumed.
+
+Three additional real-entry regressions passed 28 assertions. Synthetic repos
+exercise blocked stderr in default and retained modes using a 4 MiB payload,
+without invoking the real suite recursively. Both exit naturally in about
+4.13 seconds with stopped-process proof; retained JSON records failure and has
+no scratch, while default roots remain removed. An actual SIGINT readiness
+handshake also verifies cancellation and cleanup. Type and scoped lint/format
+checks pass. The bounded A matrix totals 254 cases and 1,186 assertions.
+
 ### 3.2B: Terminal Presentation
 
 Status: pending.

@@ -1,6 +1,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 
+import type { OutputDelivery } from "./output.ts";
 import { isLiveProcess, observeProcessGroup, type ProcessMember } from "./process-table.ts";
 
 export interface ProcessLimits {
@@ -18,9 +19,17 @@ export interface OwnedProcessOptions extends ProcessLimits {
   env: NodeJS.ProcessEnv;
   signal?: AbortSignal;
   maxOutputBytes?: number;
+  /** Caller-owned terminal delivery; capture remains bounded independently. */
+  output?: OutputDelivery;
 }
 
-export type StopReason = "shutdown" | "timeout" | "cancelled" | "output-limit" | "unverified";
+export type StopReason =
+  | "shutdown"
+  | "timeout"
+  | "cancelled"
+  | "output-limit"
+  | "output-failed"
+  | "unverified";
 
 export interface ProcessObservation {
   elapsedMs: number;
@@ -86,6 +95,8 @@ export function startOwnedProcess(
   const maximum = options.maxOutputBytes ?? 1024 * 1024;
   if (!Number.isSafeInteger(maximum) || maximum <= 0) throw new Error("Invalid output limit.");
   if (options.signal?.aborted) throw new Error("Process launch was cancelled before allocation.");
+  if (options.output?.signal.aborted)
+    throw new Error("Process launch output delivery was already unavailable.");
 
   const started = performance.now();
   const child = spawn(options.executable, [...options.args], {
@@ -108,6 +119,7 @@ export function startOwnedProcess(
   let groupRetired = false;
   let outputBytes = 0;
   let executionTimer: ReturnType<typeof setTimeout> | undefined;
+  let outputFlush: Promise<boolean> | undefined;
   const stdout: Buffer[] = [];
   const stderr: Buffer[] = [];
   const issues: string[] = [];
@@ -123,22 +135,49 @@ export function startOwnedProcess(
     if (!stopReason || stopReason === "shutdown") stopReason = reason;
     requestedAt ??= performance.now();
     clearTimeout(executionTimer);
+    // Output backpressure may have paused these pipes. Resuming lets the child
+    // observe shutdown and lets its close event complete ownership verification.
+    for (const stream of [child.stdout, child.stderr]) {
+      try {
+        stream.resume();
+      } catch {
+        // A stream already destroyed during failed launch needs no recovery.
+      }
+    }
   };
   const onAbort = () => requestStop("cancelled");
+  const onOutputAbort = () => {
+    issue("Output delivery failed; stopping owned process.");
+    requestStop("output-failed");
+  };
   options.signal?.addEventListener("abort", onAbort, { once: true });
+  options.output?.signal.addEventListener("abort", onOutputAbort, { once: true });
   if (options.signal?.aborted) onAbort();
+  if (options.output?.signal.aborted) onOutputAbort();
   if (requestedAt === undefined) {
     executionTimer = setTimeout(() => requestStop("timeout"), options.timeoutMs);
   }
 
-  const capture = (chunks: Buffer[], chunk: Buffer) => {
+  const capture = (channel: "stdout" | "stderr", chunks: Buffer[], chunk: Buffer) => {
     const remaining = maximum - outputBytes;
     outputBytes += chunk.length;
-    if (remaining > 0) chunks.push(chunk.subarray(0, remaining));
+    if (remaining > 0) {
+      const kept = chunk.subarray(0, remaining);
+      chunks.push(kept);
+      try {
+        options.output?.write(
+          channel,
+          kept,
+          requestedAt === undefined ? child[channel] : undefined,
+        );
+      } catch {
+        onOutputAbort();
+      }
+    }
     if (outputBytes > maximum) requestStop("output-limit");
   };
-  child.stdout.on("data", (chunk: Buffer) => capture(stdout, chunk));
-  child.stderr.on("data", (chunk: Buffer) => capture(stderr, chunk));
+  child.stdout.on("data", (chunk: Buffer) => capture("stdout", stdout, chunk));
+  child.stderr.on("data", (chunk: Buffer) => capture("stderr", stderr, chunk));
   child.stdin.on("error", () => {
     if (requestedAt === undefined && exitedAt === undefined) {
       issue("Owned process input failed.");
@@ -156,6 +195,16 @@ export function startOwnedProcess(
     exitSignal = signal;
     exitedAt = performance.now();
     clearTimeout(executionTimer);
+    if (options.output && !outputFlush) {
+      try {
+        outputFlush = Promise.resolve(options.output.flush([child.stdout, child.stderr])).catch(
+          () => false,
+        );
+      } catch {
+        onOutputAbort();
+        outputFlush = Promise.resolve(false);
+      }
+    }
   });
   child.once("close", () => {
     closed = true;
@@ -238,10 +287,18 @@ export function startOwnedProcess(
           break;
         }
         const afterObservation = performance.now();
+        const terminalOutputPending =
+          options.output !== undefined &&
+          outputFlush !== undefined &&
+          !options.output.failed &&
+          (options.output.snapshot().incomplete ||
+            child.stdout.isPaused() ||
+            child.stderr.isPaused());
         if (
           requestedAt === undefined &&
           exitedAt !== undefined &&
-          afterObservation - exitedAt >= options.graceMs
+          afterObservation - exitedAt >= options.graceMs &&
+          !(live?.length === 0 && terminalOutputPending)
         ) {
           issue(
             live?.length
@@ -292,10 +349,15 @@ export function startOwnedProcess(
         }
         await delay(20);
       }
+      if (outputFlush) {
+        const flushed = await outputFlush;
+        if (!flushed || options.output?.failed) onOutputAbort();
+      }
     } finally {
       finished = true;
       clearTimeout(executionTimer);
       options.signal?.removeEventListener("abort", onAbort);
+      options.output?.signal.removeEventListener("abort", onOutputAbort);
       child.stdin.destroy();
       if (!verifiedStopped) {
         child.stdout.destroy();

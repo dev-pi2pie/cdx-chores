@@ -1,5 +1,5 @@
 import { constants } from "node:fs";
-import { lstat, open, unlink, type FileHandle } from "node:fs/promises";
+import { lstat, open, unlink } from "node:fs/promises";
 
 import {
   assertRunPath,
@@ -10,6 +10,13 @@ import {
   type RunContext,
 } from "./run-context.ts";
 import { refreshSummaryState, type InvocationSummary } from "../terminal/summary.ts";
+import {
+  assertSummaryFile,
+  assertSummaryPath,
+  writeSummary,
+  type OwnedSummaryFile,
+  type SummaryIdentity,
+} from "./summary-storage.ts";
 
 export interface FinalizationHooks {
   /** Bounded failure seams for internal tests; these are never CLI options. */
@@ -19,67 +26,21 @@ export interface FinalizationHooks {
       | "scratch-cleanup"
       | "root-cleanup"
       | "final-summary"
-      | "summary-close",
+      | "summary-close"
+      | "recovery-open"
+      | "recovery-write"
+      | "recovery-close",
   ) => Promise<void>;
-}
-interface OwnedSummaryFile {
-  handle: FileHandle;
-  dev: number;
-  ino: number;
 }
 
 function message(error: unknown): string {
+  if (error instanceof AggregateError)
+    return [error.message, ...error.errors.map(message)].join("; ");
   return error instanceof Error ? error.message : String(error);
 }
 function record(summary: InvocationSummary, stage: string, error: unknown): void {
   summary.errors.push(stage + ": " + message(error));
   refreshSummaryState(summary);
-}
-
-async function assertSummaryPath(context: RunContext, owned: OwnedSummaryFile): Promise<void> {
-  assertRunPath(context, "results/summary.json");
-  const current = await lstat(runPath(context, "results/summary.json"));
-  if (
-    !current.isFile() ||
-    current.nlink !== 1 ||
-    current.dev !== owned.dev ||
-    current.ino !== owned.ino
-  )
-    throw new Error("Summary ownership changed; refusing to access it.");
-}
-
-async function assertSummaryFile(context: RunContext, owned: OwnedSummaryFile): Promise<void> {
-  await assertSummaryPath(context, owned);
-  const opened = await owned.handle.stat();
-  if (
-    !opened.isFile() ||
-    opened.nlink !== 1 ||
-    opened.dev !== owned.dev ||
-    opened.ino !== owned.ino
-  )
-    throw new Error("Summary ownership changed; refusing to access it.");
-}
-
-async function writeSummary(
-  context: RunContext,
-  owned: OwnedSummaryFile,
-  summary: InvocationSummary,
-): Promise<void> {
-  await assertSummaryFile(context, owned);
-  const bytes = Buffer.from(JSON.stringify(summary, null, 2) + "\n");
-  if (bytes.length > 8 * 1024 * 1024)
-    throw new Error("Invocation summary exceeds its storage limit.");
-  let offset = 0;
-  while (offset < bytes.length) {
-    await assertSummaryFile(context, owned);
-    const { bytesWritten } = await owned.handle.write(bytes, offset, bytes.length - offset, offset);
-    if (!bytesWritten) throw new Error("Summary write made no progress.");
-    offset += bytesWritten;
-  }
-  await assertSummaryFile(context, owned);
-  await owned.handle.truncate(bytes.length);
-  await owned.handle.sync();
-  await assertSummaryFile(context, owned);
 }
 
 /** All allocated namespaces must still be ours before any recursive removal. */
@@ -141,7 +102,7 @@ export async function finalizeRun(
   summary: InvocationSummary,
   safeToClean: boolean,
   hooks: FinalizationHooks = {},
-): Promise<void> {
+): Promise<FinalizationReceipt | undefined> {
   let owned: OwnedSummaryFile | undefined;
   let stored = false;
   let scratchRemoved = false;
@@ -182,7 +143,7 @@ export async function finalizeRun(
         }
         throw error;
       }
-      owned = { handle, dev: stat.dev, ino: stat.ino };
+      owned = { handle, dev: stat.dev, ino: stat.ino, birthtimeMs: stat.birthtimeMs };
       await hooks.before?.("initial-summary");
       // A crash before finalization finishes must not leave a passing summary behind.
       await writeSummary(context, owned, {
@@ -276,6 +237,114 @@ export async function finalizeRun(
         await observeRemaining(context, summary, safeToClean);
       }
     }
+    refreshSummaryState(summary);
+  }
+  if (!owned || !stored || !summary.retainedResultsPath) return undefined;
+  try {
+    await assertSummaryPath(context, owned);
+    return failureReceipt(
+      context,
+      summary,
+      { dev: owned.dev, ino: owned.ino, birthtimeMs: owned.birthtimeMs },
+      safeToClean,
+      hooks,
+    );
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      record(summary, "Summary recovery ownership is unavailable", error);
+      record(
+        summary,
+        "Persisted summary may be stale",
+        "Its ownership could not be verified after finalization.",
+      );
+      await observeRemaining(context, summary, safeToClean);
+    }
+    return undefined;
+  }
+}
+
+/** No open handle survives finalization; this receipt can only update the file we created. */
+export interface FinalizationReceipt {
+  persistFailure(): Promise<void>;
+}
+
+function failureReceipt(
+  context: RunContext,
+  summary: InvocationSummary,
+  identity: SummaryIdentity,
+  safeToClean: boolean,
+  hooks: FinalizationHooks,
+): FinalizationReceipt {
+  let pending = Promise.resolve();
+  return Object.freeze({
+    persistFailure: () => {
+      pending = pending.then(() => persistFailure(context, summary, identity, safeToClean, hooks));
+      return pending;
+    },
+  });
+}
+
+async function persistFailure(
+  context: RunContext,
+  summary: InvocationSummary,
+  identity: SummaryIdentity,
+  safeToClean: boolean,
+  hooks: FinalizationHooks,
+): Promise<void> {
+  let opened: OwnedSummaryFile | undefined;
+  let failed = false;
+  refreshSummaryState(summary);
+  if (summary.state !== "failed")
+    record(summary, "Failure persistence", "Recovery requires an existing invocation failure.");
+  try {
+    await observeRemaining(context, summary, safeToClean);
+    await hooks.before?.("recovery-open");
+    await assertSummaryPath(context, identity);
+    const handle = await open(
+      runPath(context, "results/summary.json"),
+      constants.O_WRONLY | constants.O_NOFOLLOW,
+    );
+    opened = { ...identity, handle };
+    await assertSummaryFile(context, opened);
+    await hooks.before?.("recovery-write");
+    await writeSummary(context, opened, summary);
+  } catch (error) {
+    // A removed file or run stays removed; failure recovery never allocates output.
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      failed = true;
+      record(summary, "Failure summary persistence failed", error);
+    }
+  } finally {
+    if (opened) {
+      try {
+        await hooks.before?.("recovery-close");
+      } catch (error) {
+        failed = true;
+        record(summary, "Failure summary close failed", error);
+      }
+      try {
+        await opened.handle.close();
+      } catch (error) {
+        failed = true;
+        record(summary, "Failure summary close failed", error);
+      }
+    }
+    if (failed) {
+      try {
+        await assertSummaryPath(context, identity);
+        await unlink(runPath(context, "results/summary.json"));
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+          record(summary, "Failure summary removal failed", error);
+          record(
+            summary,
+            "Persisted summary may be stale",
+            "Its ownership or cleanup could not be verified.",
+          );
+        }
+      }
+    }
+    await observeRemaining(context, summary, safeToClean);
     refreshSummaryState(summary);
   }
 }

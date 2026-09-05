@@ -189,6 +189,11 @@ describe("managed runner cancellation and finalization", () => {
           dependencies: {
             execute: async (options) => {
               await writeReport(options);
+              options.output!.write(
+                "stdout",
+                "Fixture check failed: expected alpha, received beta.\n",
+              );
+              options.output!.write("stderr", "at example.unit.test.ts:12\n");
               return completed({
                 ok: false,
                 reason: "exit-failed",

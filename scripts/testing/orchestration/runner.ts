@@ -4,7 +4,12 @@ import { TOML } from "bun";
 
 import { inspectFixtureExports } from "../fixtures/fixture-exports.ts";
 import { inspectFixtureProcesses } from "../fixtures/fixture-process.ts";
-import { finalizeRun } from "../ownership/finalization.ts";
+import { finalizeRun, type FinalizationReceipt } from "../ownership/finalization.ts";
+import {
+  createOutputDelivery,
+  type OutputDestinations,
+  type OutputLimits,
+} from "../execution/output.ts";
 import { createSuiteEnvironment, parseInvocation } from "../suites/invocation.ts";
 import { runSuitePreflight } from "../execution/prerequisites.ts";
 import {
@@ -64,7 +69,8 @@ export interface RunnerOptions {
   signal?: AbortSignal;
   sourceEnv?: NodeJS.ProcessEnv;
   bunExecutable?: string;
-  output?: (text: string) => void;
+  streams?: OutputDestinations;
+  outputLimits?: OutputLimits;
   dependencies?: Partial<RunnerDependencies>;
 }
 
@@ -90,7 +96,7 @@ export async function runManagedTests(
   repoRoot: string,
   args: readonly string[],
   options: RunnerOptions = {},
-): Promise<{ exitCode: number; summary: InvocationSummary }> {
+): Promise<{ exitCode: number; summary: InvocationSummary; outputFailed: boolean }> {
   const deps = { ...defaults, ...options.dependencies };
   const sourceEnv = Object.freeze({ ...(options.sourceEnv ?? process.env) });
   const summary: InvocationSummary = {
@@ -103,7 +109,17 @@ export async function runManagedTests(
   };
   let context: RunContext | undefined;
   let safeToClean = true;
-  const terminalDiagnostics: string[] = [];
+  const output = createOutputDelivery(
+    options.streams ?? { stdout: process.stdout, stderr: process.stderr },
+    options.outputLimits,
+  );
+  const signal = options.signal ? AbortSignal.any([options.signal, output.signal]) : output.signal;
+  const recordDelivery = () => {
+    for (const issue of output.issues) {
+      if (!summary.errors.includes(issue)) summary.errors.push(issue);
+    }
+    refreshSummaryState(summary);
+  };
   try {
     const invocation = parseInvocation(args);
     summary.selected = [...invocation.suites];
@@ -118,14 +134,14 @@ export async function runManagedTests(
     const { suites } = await deps.discover(repoRoot);
     // Validate the entire requested membership before allocating or launching prerequisites.
     selectTestFiles(suites, invocation.suites);
-    if (options.signal?.aborted) throw new Error("Invocation cancelled before run allocation.");
+    if (signal.aborted) throw new Error("Invocation cancelled before run allocation.");
     context = await deps.allocate(repoRoot, invocation.suites, invocation.keepResults);
     for (const leaf of summary.leaves) {
-      if (options.signal?.aborted || !safeToClean) break;
+      if (signal.aborted || !safeToClean) break;
       leaf.state = "failed";
       try {
         const env = await deps.environment(context, leaf.suite, sourceEnv);
-        if (options.signal?.aborted) throw new Error("Invocation cancelled before preflight.");
+        if (signal.aborted) throw new Error("Invocation cancelled before preflight.");
         // A thrown launch/completion cannot prove no work remains. Returned results restore proof.
         safeToClean = false;
         const preflight = await deps.preflight({
@@ -134,17 +150,17 @@ export async function runManagedTests(
           bunExecutable: options.bunExecutable ?? process.execPath,
           env,
           sourceHome: sourceEnv.HOME,
-          signal: options.signal,
+          signal,
         });
         safeToClean = preflight.process.stopped;
         recordProcess(leaf, "preflight", preflight.process);
         if (preflight.error) leaf.errors.push(preflight.error);
         leaf.versions = preflight.versions;
         if (!preflight.process.ok || !safeToClean || preflight.error) continue;
-        if (options.signal?.aborted) throw new Error("Invocation cancelled after preflight.");
+        if (signal.aborted) throw new Error("Invocation cancelled after preflight.");
         const files = selectTestFiles(suites, [leaf.suite]);
         const ticket = await prepareReport(context, leaf.suite);
-        if (options.signal?.aborted) throw new Error("Invocation cancelled before tests.");
+        if (signal.aborted) throw new Error("Invocation cancelled before tests.");
         safeToClean = false;
         const result = await deps.execute({
           executable: options.bunExecutable ?? process.execPath,
@@ -158,15 +174,12 @@ export async function runManagedTests(
           signal: options.signal,
           ...SUITE_POLICIES[leaf.suite].execution,
           maxOutputBytes: 8 * 1024 * 1024,
+          output,
         });
         recordProcess(leaf, "test", result);
-        // Keep assertion/stack diagnostics available after default cleanup, but
-        // never copy raw streams into the retained invocation summary.
-        if (!result.ok && (result.stdout || result.stderr)) {
-          terminalDiagnostics.push(
-            `${leaf.suite} test diagnostics:\n${result.stdout}${result.stderr}`,
-          );
-        }
+        await output.flush();
+        if (output.failed)
+          leaf.errors.push("Test output delivery failed; diagnostics may be incomplete.");
         const nested = deps.inspectProcesses(context, leaf.suite);
         safeToClean = result.stopped && nested.stopped;
         leaf.errors.push(...nested.issues);
@@ -218,16 +231,29 @@ export async function runManagedTests(
       summary.remainingOwnedPath = error.remainingRoot;
     }
   }
-  refreshSummaryState(summary);
+  await output.flush();
+  recordDelivery();
+  let receipt: FinalizationReceipt | undefined;
   if (context) {
     try {
-      await deps.finalize(context, summary, safeToClean);
+      receipt = await deps.finalize(context, summary, safeToClean);
     } catch (error) {
       summary.errors.push("Finalization: " + errorText(error));
       summary.remainingOwnedPath = context.root;
     }
   }
   refreshSummaryState(summary);
-  (options.output ?? console.log)([...terminalDiagnostics, renderSummary(summary)].join("\n"));
-  return { exitCode: summary.state === "passed" ? 0 : 1, summary };
+  output.write("stdout", renderSummary(summary));
+  await output.flush();
+  if (output.failed) {
+    recordDelivery();
+    await receipt?.persistFailure();
+    await output.fallback(
+      "Test invocation failed: terminal output delivery was incomplete.\n" + renderSummary(summary),
+    );
+    recordDelivery();
+    await receipt?.persistFailure();
+  }
+  output.dispose();
+  return { exitCode: summary.state === "passed" ? 0 : 1, summary, outputFailed: output.failed };
 }

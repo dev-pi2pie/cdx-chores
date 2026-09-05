@@ -1,6 +1,7 @@
 import { expect } from "bun:test";
 import { access, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { Writable } from "node:stream";
 
 import {
   runManagedTests,
@@ -114,7 +115,20 @@ export async function withRunner(
         invoke: (args = ["all"], overrides = {}) =>
           runManagedTests(repo, args, {
             sourceEnv: { PATH: process.env.PATH },
-            output: (text) => output.push(text),
+            streams: {
+              stdout: new Writable({
+                write(chunk, _encoding, callback) {
+                  output.push(chunk.toString());
+                  callback();
+                },
+              }),
+              stderr: new Writable({
+                write(chunk, _encoding, callback) {
+                  output.push(chunk.toString());
+                  callback();
+                },
+              }),
+            },
             ...overrides,
             dependencies: { ...dependencies, ...overrides.dependencies },
           }),

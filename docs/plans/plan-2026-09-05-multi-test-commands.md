@@ -184,7 +184,7 @@ validation. Retain the five command names and existing retention option.
 
 Acceptance:
 
-- [ ] Map the current imports and modularize `scripts/testing` into shallow folders
+- [x] Map the current imports and modularize `scripts/testing` into shallow folders
       by responsibility, covering orchestration, process/prerequisite handling,
       run/report ownership, and terminal presentation. Keep `scripts/testing/run.ts`
       as the public entry point; update module imports, subprocess-relative URLs,
