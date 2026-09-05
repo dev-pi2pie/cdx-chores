@@ -464,7 +464,7 @@ Research closure still requires the remaining migration and managed-runner evide
 [doctor-routing]: ../../test/doctor/commands/routing.test.ts
 [replay]: ../../test/codex-info/cli-replay.test.ts
 [duckdb-fixtures]: ../../test/data-query/evidence/duckdb-fixtures.test.ts
-[pandoc-language]: ../../test/cli-actions-md-to-pdf-pandoc.test.ts
+[pandoc-language]: ../../test/markdown-pdf/actions/rendering/pandoc-language.pandoc.test.ts
 [live-probe]: ../../test/codex-info/live-protocol.test.ts
 [correspondence]: ../references/test-catalog-path-correspondence.md
 [catalog-research]: research-2026-08-23-test-suite-contract-overlap-and-catalog.md

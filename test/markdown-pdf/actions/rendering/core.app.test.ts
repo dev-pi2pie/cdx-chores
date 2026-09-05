@@ -2,10 +2,10 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { actionMdToPdf } from "../../../src/cli/actions";
-import { createPdfRunner } from "./render-support";
-import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
-import { toRepoRelativePath, withTempFixtureDir } from "../../helpers/cli-test-utils";
+import { actionMdToPdf } from "../../../../src/cli/actions/markdown/to-pdf";
+import { createPdfRunner } from "../render-support";
+import { createActionTestRuntime } from "../../../helpers/cli-action-test-utils";
+import { toRepoRelativePath, withTempFixtureDir } from "../../../helpers/cli-test-utils";
 
 describe("Markdown PDF rendering core", () => {
   test("renders derived PDF output and optional HTML output with injected process runner", async () => {

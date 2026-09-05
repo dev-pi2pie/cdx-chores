@@ -843,6 +843,26 @@ the expected explicit Excel prerequisite failure with zero skips, verified proce
 completion, and no installation. Personal caches and committed inputs were not
 modified. Shared invocation setup remains Phase 3 work.
 
+#### PDF Pilot
+
+The five original PDF pilot sources became six files: code highlighting split
+into 14 unit and two Pandoc cases, with four format cases, 17 HTML cases, one
+fake-rendering application case, and one Pandoc language case. All 39 original
+file/class/name/assertion identities reconcile exactly across their targets.
+
+The shared rendering helper retains its current path for unmigrated consumers,
+but no longer probes Pandoc or exports conditional test registration. Dedicated
+live support verifies Pandoc 3.9 inside each test, uses an empty fixture-owned
+home and temporary directory, bounds execution/cleanup, preserves original and
+cleanup failures, and reports retained ownership before blocking further launches.
+
+Unit/application verification passed 36 cases and 125 assertions, including with
+no tools available on `PATH`. Real Pandoc passed three cases and 138 assertions;
+the combined six-file selection passed all 39 cases and 263 assertions in 2.35
+seconds. Unavailable Pandoc produced the expected explicit failure with verified
+cleanup and no skips. Narrow helper checks also covered error preservation and
+retained ownership. No committed input or generated fixture was changed.
+
 ### 2C: Feature Batches and Final Discovery
 
 Status: pending.

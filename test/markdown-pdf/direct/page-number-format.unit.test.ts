@@ -5,7 +5,7 @@ import {
   MARKDOWN_PDF_PAGE_NUMBER_FORMAT_TOKEN_DEFINITIONS,
   markdownPdfPageNumberFormatTokens,
   parseMarkdownPdfPageNumberFormat,
-} from "../src/cli/markdown-pdf/profile/page-number-format";
+} from "../../../src/cli/markdown-pdf/profile/page-number-format";
 
 describe("Markdown PDF page-number format parser", () => {
   test("keeps one complete metadata inventory for the four exact tokens", () => {

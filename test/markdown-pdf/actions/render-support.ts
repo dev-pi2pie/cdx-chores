@@ -1,4 +1,3 @@
-import { test } from "bun:test";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
@@ -82,14 +81,3 @@ export function createRemoteInlineCssHtml(): string {
     "</body></html>",
   ].join("");
 }
-
-function hasCommand(command: string): boolean {
-  const result = Bun.spawnSync({
-    cmd: ["/bin/sh", "-c", `command -v ${command}`],
-    stdout: "ignore",
-    stderr: "ignore",
-  });
-  return result.exitCode === 0;
-}
-
-export const pandocTest = hasCommand("pandoc") ? test : test.skip;

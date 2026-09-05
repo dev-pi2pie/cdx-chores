@@ -1,13 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { parse, type DefaultTreeAdapterTypes } from "parse5";
 
-import { CliError } from "../src/cli/errors";
-import { finalizeMarkdownPdfPageNumberHtml } from "../src/cli/markdown-pdf/page-number-html";
-import {
-  DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
-  MARKDOWN_PDF_LOGICAL_FINAL_TARGET_ID,
-  type NormalizedMarkdownPdfPageNumbers,
-} from "../src/cli/markdown-pdf/profile";
+import { CliError } from "../../../src/cli/errors";
+import { finalizeMarkdownPdfPageNumberHtml } from "../../../src/cli/markdown-pdf/page-number-html";
+import { DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE } from "../../../src/cli/markdown-pdf/profile/defaults";
+import { MARKDOWN_PDF_LOGICAL_FINAL_TARGET_ID } from "../../../src/cli/markdown-pdf/profile/page-number-format";
+import type { NormalizedMarkdownPdfPageNumbers } from "../../../src/cli/markdown-pdf/profile/types";
 
 type Parse5Node = DefaultTreeAdapterTypes.Node;
 type Parse5Element = DefaultTreeAdapterTypes.Element;
