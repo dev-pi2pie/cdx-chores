@@ -156,7 +156,7 @@ final successful protocol.
 
 ### Post-Closeout Shutdown Race Correction
 
-Correction status: in progress.
+Correction status: completed.
 
 After closeout, a contributor reported a full `bun test` result of 2,969 passes,
 one opt-in skip, and a failure in the empty-snapshot lifecycle test. A subsequent
@@ -190,7 +190,11 @@ The fixed installed-Codex protocol passed all 12 attempts without escalation:
 | Captured | 834/649, 753/644, 750/639               | 800/684, 758/640, 748/635                |
 | Terminal | 739/632, 747/634, 754/639               | 794/680, 833/718, 761/645                |
 
-The expanded fixed-base review is pending the correction checkpoint.
+The expanded full Phase 1 review covered
+`a67aa95255150ba785605e942a8395d7537fe7e0..2a895c80b0fb7d63b32a089dd8edfc540fafd90c`.
+Security, test-coverage, and maintainability reviews found no remaining material
+findings. No installed-Codex lifecycle scratch directories remained. This
+documentation-only closeout leaves the reviewed implementation unchanged.
 
 ### Acceptance
 
