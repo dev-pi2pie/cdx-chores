@@ -1,3 +1,8 @@
+import {
+  resolveCodexExecution,
+  type CodexExecutionOptions,
+  type ResolvedCodexExecution,
+} from "../../utils/codex-execution";
 import { startCodexReadOnlyThread } from "../../adapters/codex/shared";
 import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../utils/codex-timeout";
 import {
@@ -53,6 +58,7 @@ export const DATA_STACK_CODEX_OUTPUT_SCHEMA = {
 } as const;
 
 export type DataStackCodexRunner = (options: {
+  codexExecution: ResolvedCodexExecution;
   prompt: string;
   timeoutMs?: number;
   workingDirectory: string;
@@ -61,6 +67,7 @@ export type DataStackCodexRunner = (options: {
 export type DataStackCodexAssistFailureKind = "structured-output-schema" | "unavailable";
 
 export interface SuggestDataStackWithCodexOptions {
+  codexExecution?: CodexExecutionOptions;
   diagnostics: DataStackDiagnosticsResult;
   now: Date;
   plan: DataStackPlanArtifact;
@@ -193,12 +200,7 @@ export function classifyDataStackCodexAssistFailure(
   error: unknown,
 ): DataStackCodexAssistFailureKind {
   const message = error instanceof Error ? error.message : String(error);
-  if (
-    message.includes("invalid_json_schema") ||
-    message.includes("invalid_request_error") ||
-    message.includes("response_format") ||
-    message.trim().startsWith("{")
-  ) {
+  if (/invalid_json_schema|response_format|output.?schema|structured.{0,20}schema/i.test(message)) {
     return "structured-output-schema";
   }
   return "unavailable";
@@ -212,11 +214,14 @@ export function formatDataStackCodexAssistFailure(error: unknown): string {
 }
 
 async function runDataStackCodexPrompt(options: {
+  codexExecution: ResolvedCodexExecution;
   prompt: string;
   timeoutMs?: number;
   workingDirectory: string;
 }): Promise<string> {
-  const thread = await startCodexReadOnlyThread(options.workingDirectory);
+  const thread = await startCodexReadOnlyThread(options.workingDirectory, {
+    codexExecution: options.codexExecution,
+  });
   const turn = await thread.run([{ type: "text", text: options.prompt }], {
     outputSchema: DATA_STACK_CODEX_OUTPUT_SCHEMA,
     signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
@@ -227,8 +232,10 @@ async function runDataStackCodexPrompt(options: {
 export async function suggestDataStackWithCodex(
   options: SuggestDataStackWithCodexOptions,
 ): Promise<DataStackCodexReportArtifact> {
+  const codexExecution = resolveCodexExecution(options.codexExecution);
   const runner = options.runner ?? runDataStackCodexPrompt;
   const finalResponse = await runner({
+    codexExecution,
     prompt: buildDataStackCodexPrompt({
       diagnostics: options.diagnostics,
       plan: options.plan,

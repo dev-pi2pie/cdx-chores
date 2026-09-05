@@ -50,7 +50,20 @@ of the three new Phase 2 suites passed 27 tests with no failures.
 
 ## Phase 3: Direct Data And Markdown Adoption
 
-Status: pending.
+Status: in-progress. Base: `35f43634`.
+
+### Data Checkpoint
+
+- Query drafting and stack assist forward validated execution settings to
+  injected runners and SDK requests. Direct embedded suggestion flags retain
+  defaults. Generic request errors are no longer automatically called schema
+  errors by stack assist.
+- `bun test test/data-query/actions test/data-query/commands test/data-stack/actions test/data-stack/commands test/data-stack/direct test/data-stack/interactive/codex-review.test.ts`
+  passed 297 tests across 47 files. After adding another incompatible-effort
+  regression, `bun test test/data-stack/actions/execution-policy.test.ts` passed
+  all 12 tests. Scoped lint, formatting, and diff checks passed.
+
+Markdown integration and full phase-range review remain in progress.
 
 ## Phase 4: Interactive Adoption
 

@@ -1,3 +1,4 @@
+import { resolveCodexExecution } from "../../../utils/codex-execution";
 import {
   classifyCodexRequestFailure,
   formatCodexTimeoutFailure,
@@ -34,6 +35,7 @@ export async function actionDataStack(
   runtime: CliRuntime,
   options: DataStackOptions,
 ): Promise<void> {
+  const codexExecution = resolveCodexExecution(options.codexExecution);
   validateDataStackOptions(options);
 
   const outputPath = resolveFromCwd(runtime, assertNonEmpty(options.output, "Output path"));
@@ -114,6 +116,7 @@ export async function actionDataStack(
       let report;
       try {
         report = await suggestDataStackWithCodex({
+          codexExecution,
           diagnostics,
           now: runtime.now(),
           plan,
