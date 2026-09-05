@@ -30,6 +30,10 @@ export function renderCodexInfoReport(
   options: { details?: boolean } = {},
 ): void {
   const pc = getCliColors(runtime, runtime.stdout);
+  const providerCoverage =
+    report.providerCoverage === "configured-only"
+      ? "configured definitions only; built-ins not enumerated."
+      : safe(report.providerCoverageDetail);
   const lines: string[] = [];
   const line = (text = "") => lines.push(text);
   line(pc.bold(pc.cyan(`Codex ${report.view === "summary" ? "information" : report.view}`)));
@@ -49,10 +53,10 @@ export function renderCodexInfoReport(
       );
     }
     line();
-    line("Provider coverage: configured definitions only; built-ins not enumerated.");
+    line(`Provider coverage: ${providerCoverage}`);
   }
   if (report.view === "providers") {
-    line("Source: configured definitions; built-ins not enumerated.");
+    line(`Source: ${providerCoverage}`);
     line("Credentials and request support are not verified.");
     line();
     if (report.providers.length === 0) line("No configured provider definitions reported.");

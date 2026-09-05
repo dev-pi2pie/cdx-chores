@@ -225,21 +225,20 @@ material gaps. Local links, phase numbering, status/checklist consistency, and
 `git diff --check` passed.
 
 Phase 5 is complete. Research conclusions and plan checkboxes reflect the verified
-scope. Phase 5.5 is the pending presentation follow-up; Phase 6 remains pending
+scope. Phase 5.5 records the presentation follow-up below; Phase 6 remains pending
 for final repository validation and public guides.
 
 ## Phase 5.5: Codex Information Presentation
 
-Status: in-progress. Review base: `89d948ff`. Added after Phase 5 to make each human command view concise and
-adopt the shared terminal styling policy. The research and plan now define
-command-specific context, source deduplication, details pruning, and unchanged
-JSON/discovery boundaries. No presentation implementation is included in this
-planning update. Implementation now proceeds in concision and styling checkpoints.
+Status: in-progress. Review base: `89d948ff`. Added after Phase 5 to make each
+human command view concise and adopt the shared terminal styling policy.
+Implementation covers command-specific context, source deduplication, details
+pruning, and shared colors with unchanged JSON/discovery boundaries.
 
 The preceding read-only review confirmed existing picocolors, `NO_COLOR`, global
 `--no-color`, and per-stream TTY handling. The existing color and Codex rendering/
-action suites passed 35 tests with no failures. This is baseline evidence;
-Phase 5.5 acceptance tests and commit-range review remain pending.
+action suites passed 35 tests with no failures. This is planning baseline evidence;
+implementation validation follows below.
 
 Planning review found no material gaps. Local links and `git diff --check` passed.
 The explicit Markdown formatter check reports issues in the plan and research;
@@ -259,10 +258,11 @@ was left outside this planning update.
 - `bun test test/codex-info/render.test.ts test/codex-info/cli-replay.test.ts`
   passed 24 tests, 201 assertions. Report/action/command and shared-color suites
   passed another 73 tests. TypeScript, lint, repository format check, and
-  `git diff --check` passed. Styling and final phase review remain pending.
+  `git diff --check` passed. Styling and final phase review were pending at this checkpoint.
 
 ### Styling Checkpoint
 
+- Checkpoint commit: `c6f9b378`.
 - Applied shared per-stream colors to titles, context headings, IDs, and literal
   selection markers. All external strings are escaped before styling; plain
   wording, curated JSON, and discovery behavior are preserved.
@@ -278,7 +278,20 @@ was left outside this planning update.
   combinations with styled and empty-`NO_COLOR` output. Synthetic subprocess
   responses established human ANSI/plain equality and unchanged parsed JSON;
   no provider requests or user configuration were used. Scratch files were removed.
-  Full phase review remains pending.
+  Full phase review follows this checkpoint.
+
+### Review Fix Checkpoint
+
+- Initial full-range, security, and test reviews of `89d948ff..c6f9b378` found
+  no material correctness, security, or coverage issues. Independent focused
+  rendering/color/CLI replay runs passed 37 tests with 545 assertions.
+- Accepted the maintainability finding about duplicated provider-coverage prose.
+  The renderer now selects concise wording once from the report coverage value,
+  with an escaped full-detail fallback, and reuses it in overview/provider output.
+  Exact text assertions were updated; discovery and JSON fields are unchanged.
+- The same three focused suites passed 37 tests, 545 assertions after the fix.
+  TypeScript, lint, repository format check, and diff checks passed. Expanded
+  phase-range review remains pending.
 
 ## Phase 6: Validation And Documentation Closeout
 

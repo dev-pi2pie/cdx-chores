@@ -86,7 +86,7 @@ model-a [configured, catalog recommended]
     expect(render("providers", details)).toBe(`Codex providers
 
 Configured provider: proxy
-Source: configured definitions; built-ins not enumerated.
+Source: configured definitions only; built-ins not enumerated.
 Credentials and request support are not verified.
 
 proxy [configured]${details ? `\n  Display name: Example proxy${context}` : ""}

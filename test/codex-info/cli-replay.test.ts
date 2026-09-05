@@ -103,7 +103,7 @@ describe("Codex information CLI with recorded protocol projections", () => {
       const providers = invoke(["codex-info", "providers", "--details"]);
       expect(providers.status).toBe(0);
       expect(providers.stdout).toContain(
-        "Source: configured definitions; built-ins not enumerated.",
+        "Source: configured definitions only; built-ins not enumerated.",
       );
       expect(providers.stdout).toContain("probe_proxy [configured]");
       expect(providers.stdout).not.toContain("Configured model:");
