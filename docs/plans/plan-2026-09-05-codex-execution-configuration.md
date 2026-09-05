@@ -230,13 +230,13 @@ Only checked outcomes have completed implementation evidence.
 
 ### Phase 1: Shared Policy And SDK Mapping
 
-- [ ] Recheck the installed SDK type and argument behavior against `0.153.4`.
-- [ ] Implement shared validation/defaults and reusable command option helpers.
-- [ ] Extend the shared factory while preserving all existing factory settings.
-- [ ] Verify constructor/thread arguments for defaults, individual and combined
+- [x] Recheck the installed SDK type and argument behavior against `0.153.4`.
+- [x] Implement shared validation/defaults and reusable command option helpers.
+- [x] Extend the shared factory while preserving all existing factory settings.
+- [x] Verify constructor/thread arguments for defaults, individual and combined
       overrides, executable override coexistence, and separate invocations.
-- [ ] Verify that execution settings emit no service-tier or fast-mode override.
-- [ ] Verify SDK-generated arguments with a synthetic executable fixture using
+- [x] Verify that execution settings emit no service-tier or fast-mode override.
+- [x] Verify SDK-generated arguments with a synthetic executable fixture using
       the existing path override, without credentials or provider requests.
 
 Exit evidence: focused validation and factory tests pass; Node runtime and lazy

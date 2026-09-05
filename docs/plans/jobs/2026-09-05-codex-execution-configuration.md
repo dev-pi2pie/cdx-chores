@@ -13,7 +13,7 @@ omitted, reasoning defaults to `low`, and service tier remains inherited.
 
 ## Phase 1: Shared Policy And SDK Mapping
 
-Status: in-progress. Base: `1dd5cf74`.
+Status: completed. Reviewed range: `1dd5cf74..8eba2cb4`.
 
 - Rechecked SDK `0.153.4` option types and argument serialization against the
   recorded research findings. Model/effort use thread options, provider uses
@@ -29,7 +29,9 @@ Status: in-progress. Base: `1dd5cf74`.
 - The transport fixture launches an isolated real SDK with a synthetic
   executable and proves argument serialization without provider requests.
 
-Phase-range review is pending.
+The full phase range review found no actionable issues. An independent rerun of
+the resolver and transport suites passed 72 tests. Public option adoption starts
+in the following phases; no live provider compatibility is claimed.
 
 ## Phase 2: Rename Adoption
 
