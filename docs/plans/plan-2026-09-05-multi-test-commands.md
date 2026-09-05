@@ -169,7 +169,7 @@ be presented as complete verification.
 
 ## Phase 3.2: Live Test Output and Terminal Experience
 
-Status: in progress. Modularization precedes streaming and presentation changes.
+Status: in progress. Runtime verification is complete; final range review remains.
 
 Address the manual-run feedback gap after the completed Phase 3 contract. Preserve
 its recorded execution/reporting/cleanup evidence and add the research's accepted
@@ -230,10 +230,10 @@ from machine-verifiable results in the unified job.
 
 Acceptance:
 
-- [ ] Cover early visibility, quiet/slow work, output floods and budget exhaustion,
+- [x] Cover early visibility, quiet/slow work, output floods and budget exhaustion,
       slow/broken destinations, Ctrl+C, timeout, and no duplicate output without
       recursively running the full suite from tests.
-- [ ] Verify both retention modes, final summary/report agreement, and unchanged
+- [x] Verify both retention modes, final summary/report agreement, and unchanged
       ownership/cleanup behavior. Exercise actual app and aggregate runs with
       live output in a terminal and redirected logs.
 - [ ] Record the fixed implementation base at phase start, review its complete

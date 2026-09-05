@@ -1520,10 +1520,33 @@ and test-coverage review. No material findings remain.
 Status: in progress.
 
 Fixed section review base: `7c2bffca92dd5af62790e93dbb14dd76a8426588`.
-The bounded regression matrix is complete. Eight sequential real invocations
-now verify app and aggregate commands, terminal and separately redirected output,
-and default/retained modes. The pre-existing run-root inventory is recorded for
-comparison; acceptance retention inspection remains pending.
+The bounded regression matrix and all eight real acceptance entries passed.
+Each entry exited 0, reconciled its report and final summary, verified process
+shutdown, and completed its selected cleanup behavior.
+
+| Selection | Output | Retention | Status | Cases | Assertions | Test seconds | Wall seconds |
+| --- | --- | --- | --- | ---: | ---: | ---: | ---: |
+| App | Terminal | Default | Passed | 2,037 | 12,848 | 132.97 | 134.35 |
+| App | Terminal | Keep | Passed | 2,037 | 12,848 | 133.94 | 135.26 |
+| All | Terminal | Default | Passed | 3,239 | 17,788 | 133.41 | 134.59 |
+| All | Terminal | Keep | Passed | 3,239 | 17,787 | 142.99 | 144.77 |
+| App | Redirected | Default | Passed | 2,037 | 12,848 | 126.88 | 127.79 |
+| App | Redirected | Keep | Passed | 2,037 | 12,848 | 134.86 | 136.19 |
+| All | Redirected | Default | Passed | 3,239 | 17,787 | 132.66 | 133.94 |
+| All | Redirected | Keep | Passed | 3,239 | 17,787 | 137.52 | 139.13 |
+
+Test seconds sum validated JUnit durations; wall seconds measure the public command.
+App membership was 283 files and aggregate membership 441 files. Every report had
+zero failures, errors, and skips. The one-assertion variation is consistent with
+the unchanged conditional PID-marker assertion already recorded in Phase 2; each
+run's own assertion count reconciled exactly.
+
+Terminal runs showed immediate selection/stages, colored test lines, and completed
+suite outcomes before later suites began. All four redirected pairs contained
+zero escape bytes and received test data before producer completion. Both actual
+mixed stdout/stderr redirection checks also passed the public unit command
+(1,197 cases, 4,743 assertions); each redirected file contained zero escape bytes.
+NO_COLOR was separately exercised through the public terminal unit command.
 
 The first colored terminal app invocation ran 2,037 cases with one failure in the
 font-preservation smoke harness (132.38 seconds). The outer reporter's FORCE_COLOR
@@ -1536,7 +1559,31 @@ The affected fixture helper now explicitly disables inherited color for its exac
 piped protocol captures. The outer test reporter remains styled; production CLI
 behavior is unchanged. The failing case passed under forced color, and the full
 fixture passed 22 cases and 233 assertions under the same environment. The eight
-acceptance runs resume from this correction.
+acceptance runs resume from correction `5f1172c4`.
+
+An additional retained app run was inspected before its process completed. Final
+inspection subsequently verified a passed 2,037-case summary, matching reports,
+stopped processes, five designated result files, and absent scratch. Its shell
+exit result was not captured, so it is excluded from the complete matrix. Its
+replacement completed with exit 0 in 135.26
+wall-clock seconds and passed retained inspection. No retention defect or cleanup
+code change was established.
+
+Retained app runs contained exactly five independent regular files; aggregate runs
+contained 27. Their reports were independently reparsed against summary membership
+and counts, manifest output names/statuses/sizes matched, and no scratch or extra
+files survived. No raw streams or internal prerequisite/protocol payloads were
+added to retained summaries or designated exports.
+
+After inspection, all 69 files across the four retained matrix runs and the extra
+observed retained run were rechecked by identity and SHA-256. Their directory
+identities and exact file sets also matched. Only those five acceptance-owned
+roots were removed through the shared ownership helper. The five pre-existing
+parent entries and their identities were unchanged. Operator-directed log files
+remain outside the managed result roots for local verification.
+
+Final types, lint, formatting (1,136 files), and whitespace checks passed. The
+complete section and phase range review remains before status closeout.
 
 ## Remaining Phases
 

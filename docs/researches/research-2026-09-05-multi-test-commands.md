@@ -20,8 +20,9 @@ the actual mapping, evidence, and completed Phase 2 range reviews. Phase 1 imple
 evidence are complete. Phase 3 delivered the managed runner and passed the real
 aggregate in both retention modes. Phase 3.2 adds live test output and terminal
 presentation before Phase 4's broader workflow verification and final usage
-documentation. Phase 3.2 implementation is underway; its verification and Phase 4
-remain pending, so research stays in progress.
+documentation. Phase 3.2 streaming and presentation are implemented and passed
+bounded regressions and the real command matrix; final closeout review remains. Phase 4 is
+pending, so research stays in progress.
 
 ## Contributor Command Model
 
@@ -358,10 +359,11 @@ or allocation failure must still print its concrete reason.
 
 ### Live Test Output and Terminal Experience
 
-Accepted follow-up contract for Phase 3.2; implementation is underway and
-verification is pending. Phase 3 established final reporting and lifecycle evidence. Its runner
-currently captures child output and prints after finalization, leaving long runs
-without visible feedback. The job records the manual observation and review.
+Accepted follow-up contract for Phase 3.2. Streaming and presentation are
+implemented, and bounded regressions plus the real command matrix passed. Phase 3 established final
+reporting and lifecycle evidence but captured child output until finalization,
+leaving long runs without visible feedback. The job records that manual
+observation, the implementation, and current verification evidence.
 
 #### Streaming Boundary
 
@@ -403,8 +405,8 @@ Phase 3.2 before changing limits based on measurements:
   delivery through a surviving destination where possible. Do not claim successful
   delivery when both destinations are lost.
 
-These are proposed starting limits, not measured streaming results. Verify the
-budget accounting and allowances with controlled slow destinations. Flush pending
+These initial limits passed bounded producer and destination checks; the job
+records budget accounting and measured failure/drain behavior. Flush pending
 output before the final summary when delivery succeeds. Output failures during
 final summary delivery also make the invocation fail.
 
@@ -549,9 +551,11 @@ commands, report validation, scheduling, terminal diagnostics, and retention;
 both real aggregate modes passed 3,152 cases across 434 files. The
 [implementation record](../plans/jobs/2026-09-05-test-suite-refactor.md)
 contains failure/correction evidence, ownership and export inspection,
-acceptance cleanup, and complete phase reviews. Phase 3.2 still needs live-output,
-terminal-presentation, and output-failure evidence under the contract above.
-Phase 4 follows its completion and still owns the broader
+acceptance cleanup, and complete phase reviews. Phase 3.2 passed bounded
+live-output, presentation, and output-failure checks. Its real app/aggregate
+terminal and redirected matrix passed; final closeout review remains. Phase 4
+follows its completion and
+still owns the broader
 leaf/aggregate repetition protocol, final inventory reconciliation, built-package
 checks, and usage documentation.
 
