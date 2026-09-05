@@ -3,8 +3,7 @@ import { createHash } from "node:crypto";
 import { access, readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { fixtureGeneratorInternals } from "../../../scripts/generate-data-stack-fixtures.mjs";
-import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
+import { withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 function runGenerator(
   command: "seed" | "clean" | "reset",
@@ -158,23 +157,5 @@ describe("data stack fixture generator", () => {
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("Refusing to clean the default tracked stack fixture tree");
     expect(result.stdout).toBe("");
-  });
-
-  test("cleanup target policy rejects broad paths before recursive removal", () => {
-    expect(() => {
-      fixtureGeneratorInternals.assertSafeResetTarget(
-        join(fixtureGeneratorInternals.scratchOutputRoot, "safe-case"),
-      );
-    }).not.toThrow();
-    expect(() => {
-      fixtureGeneratorInternals.assertSafeResetTarget(fixtureGeneratorInternals.defaultOutputDir);
-    }).not.toThrow();
-
-    expect(() => {
-      fixtureGeneratorInternals.assertSafeCleanTarget(fixtureGeneratorInternals.defaultOutputDir);
-    }).toThrow("Refusing to clean the default tracked stack fixture tree");
-    expect(() => {
-      fixtureGeneratorInternals.assertSafeResetTarget(REPO_ROOT);
-    }).toThrow("Refusing to clean unsafe fixture output directory");
   });
 });

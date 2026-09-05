@@ -4,34 +4,11 @@ import {
   expect,
   test,
   actionDataQueryCodex,
-  buildDataQueryCodexIntentEditorTemplate,
-  normalizeDataQueryCodexEditorIntent,
   createActionTestRuntime,
   expectCliError,
-  seedDataExtractFixtures,
-  seedDuckDbWorkspaceFixture,
-  seedSingleTableDuckDbFixture,
-  toRepoRelativePath,
-  withTempFixtureDir,
-  stripAnsi,
 } from "./codex-support";
 
 describe("cli action modules: data query codex validation", () => {
-  test("actionDataQueryCodex requires intent", async () => {
-    const { runtime, expectNoOutput } = createActionTestRuntime();
-
-    await expectCliError(
-      () =>
-        actionDataQueryCodex(runtime, {
-          input: "test/data-sources/fixtures/basic.csv",
-          intent: "   ",
-        }),
-      { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "Intent is required." },
-    );
-
-    expectNoOutput();
-  });
-
   test("actionDataQueryCodex reports codex unavailability failures clearly", async () => {
     const { runtime, expectNoOutput } = createActionTestRuntime();
 
@@ -173,27 +150,6 @@ describe("cli action modules: data query codex validation", () => {
             }),
         }),
       { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "--source is required for SQLite" },
-    );
-
-    expectNoOutput();
-  });
-
-  test("actionDataQueryCodex rejects --relation together with --source", async () => {
-    const { runtime, expectNoOutput } = createActionTestRuntime();
-
-    await expectCliError(
-      () =>
-        actionDataQueryCodex(runtime, {
-          input: "test/data-sources/fixtures/multi.sqlite",
-          intent: "list users",
-          relations: [{ alias: "users", source: "users" }],
-          source: "users",
-        }),
-      {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-        messageIncludes: "--relation cannot be used together with --source",
-      },
     );
 
     expectNoOutput();

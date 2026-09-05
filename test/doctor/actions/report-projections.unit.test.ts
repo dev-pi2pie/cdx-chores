@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { actionDoctor } from "../../../src/cli/actions";
+import { actionDoctor } from "../../../src/cli/actions/doctor";
 import { CliError } from "../../../src/cli/errors";
 import {
   assessMarkdownPdfRendererCapabilities,

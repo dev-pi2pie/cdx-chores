@@ -991,6 +991,29 @@ inspection. Instrumented units passed 504 cases and 2,457 assertions across 66
 files in 0.50 seconds under an isolated home. Bounded ownership reported complete
 cleanup. Type checking, scoped lint, formatting, and whitespace checks passed.
 
+#### Data Feature Batch
+
+Data Query, Data Extract, related data features, and Doctor move 112 sources to
+121 targets: 27 unit and 94 application files. All 623 literal test declarations
+retain their bodies; the 690 expanded baseline cases and 3,348 assertions match
+exactly, including duplicate parameterized identities. Combined execution passed
+in 51.23 seconds with zero failures/skips and verified cleanup. Instrumented units
+passed 215 cases and 686 assertions, including the preload's guard assertions.
+The application selection used an isolated home and the previously copied native
+extension cache; no extensions were fetched. Scoped formatting and lint passed.
+
+Accepted inventory corrections preserve the current production import graph:
+
+- Duplicate relation-alias validation belongs in application integration because
+  the action loads DuckDB before that validation; the earlier source/relation
+  argument check remains unit.
+- Interactive execution validation and the public facade contract are application
+  files because their entry modules eagerly import native Skia through the action
+  graph. Their cases are unchanged; the two files switch suffix without adding
+  targets. Production modules remain unchanged.
+
+No new shared helpers or support relocations were needed in this batch.
+
 ## Remaining Phases
 
 Phases 3–4 have not started. Record their mappings and execution evidence here

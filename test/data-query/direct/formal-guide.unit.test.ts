@@ -1,9 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-  buildFormalGuideSql,
-  getFormalGuideFilterOperatorChoices,
-} from "../../../src/cli/interactive/data-query/sql/formal-guide";
+import { buildFormalGuideSql } from "../../../src/cli/interactive/data-query/sql/formal-guide/sql-builder";
+import { getFormalGuideFilterOperatorChoices } from "../../../src/cli/interactive/data-query/sql/formal-guide/operators";
 
 describe("interactive data query formal-guide helpers", () => {
   test("returns text-oriented filter choices for text columns", () => {

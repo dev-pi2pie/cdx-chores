@@ -1,4 +1,4 @@
-import { requireNativePrerequisites } from "./helpers/native-prerequisites";
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   join,
   describe,
@@ -8,7 +8,7 @@ import {
   runCli,
   withTempFixtureDir,
   createCodexStub,
-} from "./data-query/commands/codex-support";
+} from "./codex-support";
 
 describe("CLI data query codex command single-source", () => {
   test("requires --source for multi-object DuckDB codex single-source runs", async () => {

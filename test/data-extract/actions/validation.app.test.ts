@@ -8,15 +8,8 @@ import {
   actionDataExtract,
   createActionTestRuntime,
   expectCliError,
-  seedDataExtractFixtures,
-  seedDuckDbWorkspaceFixture,
-  seedSingleTableDuckDbFixture,
-  REPO_ROOT,
   toRepoRelativePath,
   withTempFixtureDir,
-  seedStackedMergedBandFixture,
-  dataQueryFixturePath,
-  TtyCaptureStream,
 } from "./support";
 
 describe("cli action modules: data extract validation", () => {
@@ -97,27 +90,6 @@ describe("cli action modules: data extract validation", () => {
         },
       );
     });
-  });
-
-  test("actionDataExtract rejects --codex-suggest-shape with --header-row", async () => {
-    const { runtime, expectNoOutput } = createActionTestRuntime();
-
-    await expectCliError(
-      () =>
-        actionDataExtract(runtime, {
-          codexSuggestShape: true,
-          headerRow: 7,
-          input: "test/data-sources/fixtures/multi.xlsx",
-          source: "Summary",
-        }),
-      {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-        messageIncludes: "--codex-suggest-shape cannot be used together with --header-row",
-      },
-    );
-
-    expectNoOutput();
   });
 
   test("actionDataExtract rejects --source-shape for non-Excel inputs", async () => {

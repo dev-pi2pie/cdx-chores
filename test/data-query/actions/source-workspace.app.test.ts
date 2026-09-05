@@ -3,25 +3,17 @@ import {
   describe,
   expect,
   test,
-  readFile,
-  writeFile,
-  join,
   actionDataQuery,
-  getDisplayWidth,
   createDuckDbConnection,
   listDataQuerySources,
   createActionTestRuntime,
   expectCliError,
-  seedDataExtractFixtures,
   seedAmbiguousDuckDbSourceFixture,
   seedDuckDbWorkspaceFixture,
   seedSingleTableDuckDbFixture,
-  REPO_ROOT,
   toRepoRelativePath,
   withTempFixtureDir,
-  seedStackedMergedBandFixture,
   dataQueryFixturePath,
-  TtyCaptureStream,
 } from "./support";
 
 describe("cli action modules: data query source and workspace resolution", () => {
@@ -187,25 +179,6 @@ describe("cli action modules: data query source and workspace resolution", () =>
     });
   });
 
-  test("actionDataQuery rejects --source together with --relation before query execution", async () => {
-    const { runtime } = createActionTestRuntime();
-
-    await expectCliError(
-      () =>
-        actionDataQuery(runtime, {
-          input: "test/data-sources/fixtures/multi.sqlite",
-          relations: [{ alias: "entries", source: "time_entries" }],
-          source: "users",
-          sql: "select * from file",
-        }),
-      {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-        messageIncludes: "--relation cannot be used together with --source",
-      },
-    );
-  });
-
   test("actionDataQuery allows explicit file aliases in workspace mode", async () => {
     await requireNativePrerequisites("sqlite");
 
@@ -220,27 +193,6 @@ describe("cli action modules: data query source and workspace resolution", () =>
     expect(stderr.text).toBe("");
     expect(stdout.text).toContain("Relations: file");
     expect(stdout.text).toContain("1   | Ada");
-  });
-
-  test("actionDataQuery rejects duplicate relation aliases in workspace mode", async () => {
-    const { runtime } = createActionTestRuntime();
-
-    await expectCliError(
-      () =>
-        actionDataQuery(runtime, {
-          input: "test/data-sources/fixtures/multi.sqlite",
-          relations: [
-            { alias: "users", source: "users" },
-            { alias: "users", source: "time_entries" },
-          ],
-          sql: "select * from users",
-        }),
-      {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-        messageIncludes: "Duplicate workspace relation alias: users",
-      },
-    );
   });
 
   test("actionDataQuery reports unknown DuckDB sources clearly", async () => {
@@ -264,5 +216,25 @@ describe("cli action modules: data query source and workspace resolution", () =>
         },
       );
     });
+  });
+  test("actionDataQuery rejects duplicate relation aliases in workspace mode", async () => {
+    const { runtime } = createActionTestRuntime();
+
+    await expectCliError(
+      () =>
+        actionDataQuery(runtime, {
+          input: "test/data-sources/fixtures/multi.sqlite",
+          relations: [
+            { alias: "users", source: "users" },
+            { alias: "users", source: "time_entries" },
+          ],
+          sql: "select * from users",
+        }),
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+        messageIncludes: "Duplicate workspace relation alias: users",
+      },
+    );
   });
 });

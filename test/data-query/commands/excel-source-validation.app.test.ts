@@ -1,4 +1,4 @@
-import { requireNativePrerequisites } from "./helpers/native-prerequisites";
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   writeFile,
   join,
@@ -10,7 +10,7 @@ import {
   toRepoRelativePath,
   withTempFixtureDir,
   fixturePath,
-} from "./data-query/commands/support";
+} from "./support";
 
 describe("CLI data query command source-shape artifacts", () => {
   test("lists available Excel sources when source is missing", async () => {

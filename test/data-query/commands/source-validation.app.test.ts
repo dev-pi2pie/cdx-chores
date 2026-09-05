@@ -1,4 +1,4 @@
-import { requireNativePrerequisites } from "./helpers/native-prerequisites";
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   describe,
   expect,
@@ -8,7 +8,7 @@ import {
   toRepoRelativePath,
   withTempFixtureDir,
   fixturePath,
-} from "./data-query/commands/support";
+} from "./support";
 
 describe("CLI data query command validation and remediation", () => {
   test("lists available SQLite sources when source is missing", async () => {

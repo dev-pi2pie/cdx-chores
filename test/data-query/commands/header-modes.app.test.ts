@@ -7,7 +7,7 @@ import {
   REPO_ROOT,
   runCli,
   withTempFixtureDir,
-} from "./data-query/commands/support";
+} from "./support";
 
 describe("CLI data query command basic formats", () => {
   test("queries headerless CSV input end to end with normalized placeholder names", async () => {

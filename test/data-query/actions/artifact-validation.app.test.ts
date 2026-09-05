@@ -1,27 +1,15 @@
 import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   describe,
-  expect,
   test,
-  readFile,
   writeFile,
   join,
   actionDataQuery,
-  getDisplayWidth,
-  createDuckDbConnection,
-  listDataQuerySources,
   createActionTestRuntime,
   expectCliError,
   seedDataExtractFixtures,
-  seedAmbiguousDuckDbSourceFixture,
-  seedDuckDbWorkspaceFixture,
-  seedSingleTableDuckDbFixture,
-  REPO_ROOT,
   toRepoRelativePath,
   withTempFixtureDir,
-  seedStackedMergedBandFixture,
-  dataQueryFixturePath,
-  TtyCaptureStream,
 } from "./support";
 
 describe("cli action modules: data query artifact validation", () => {
@@ -71,27 +59,6 @@ describe("cli action modules: data query artifact validation", () => {
 
       expectNoOutput();
     });
-  });
-
-  test("actionDataQuery rejects explicit shape flags when --source-shape is provided", async () => {
-    const { runtime, expectNoOutput } = createActionTestRuntime();
-
-    await expectCliError(
-      () =>
-        actionDataQuery(runtime, {
-          input: "test/data-sources/fixtures/multi.xlsx",
-          range: "A1:B3",
-          sourceShape: "shape.json",
-          sql: "select * from file",
-        }),
-      {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-        messageIncludes: "--source-shape cannot be used together with --range",
-      },
-    );
-
-    expectNoOutput();
   });
 
   test("actionDataQuery rejects mismatched header-mapping artifacts", async () => {

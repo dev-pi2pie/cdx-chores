@@ -1,6 +1,6 @@
 import { describe, test } from "bun:test";
 
-import { actionDataDuckDbExtensionInstall } from "../../../src/cli/actions";
+import { actionDataDuckDbExtensionInstall } from "../../../src/cli/actions/data-duckdb";
 import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
 
 describe("data query DuckDB lifecycle action", () => {

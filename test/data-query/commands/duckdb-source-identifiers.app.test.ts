@@ -1,4 +1,4 @@
-import { requireNativePrerequisites } from "./helpers/native-prerequisites";
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   describe,
   expect,
@@ -8,7 +8,7 @@ import {
   runCli,
   toRepoRelativePath,
   withTempFixtureDir,
-} from "./data-query/commands/support";
+} from "./support";
 
 describe("CLI data query command DuckDB sources", () => {
   test("infers the only DuckDB source when the file has one table", async () => {
