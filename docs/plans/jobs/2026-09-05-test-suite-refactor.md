@@ -115,8 +115,10 @@ must not inherit signal authorization merely by reusing the same numeric PGID.
 The regression establishes the descendant observation before releasing its launcher,
 then exercises both observation loss and a simulated replacement group.
 
-The API comment now distinguishes the general POSIX process-group boundary from
-macOS-only implementation support. The platform guard remains unchanged.
+Phase 1 verified process observation and shutdown on macOS. The lifecycle owner
+currently rejects other platforms because their behavior has not been verified;
+this is the current verification boundary, not a macOS-specific process model.
+The research records the [Linux and Windows extension considerations](../../researches/research-2026-09-05-multi-test-commands.md#scope-evidence-and-documentation).
 
 The fixed repetition protocol was rerun after these behavior changes; all 12
 probes passed without escalation:

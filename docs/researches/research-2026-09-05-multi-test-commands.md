@@ -412,6 +412,17 @@ preflight explicitly; product runtime support and dependency installation remain
 unchanged. Direct tests must fail required unsupported/dependency checks instead
 of bypassing assertions.
 
+The current platform restriction reflects Phase 1's verification coverage.
+Linux shares the POSIX process-group/session mechanism used by Node's
+[`detached` option](https://nodejs.org/api/child_process.html#optionsdetached), so
+it is a candidate for extending this implementation. Its
+[`ps` observation fields](https://man7.org/linux/man-pages/man1/ps.1.html), command
+availability, and shutdown behavior still require verification. Windows has
+different detached-process semantics and would need a platform-specific ownership
+approach, potentially using [Job Objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects).
+Any future platform extension must establish observation and termination behavior
+and pass the same lifecycle acceptance tests before the guard is widened.
+
 Preserve Node-compatible production behavior and Node-only compiler ambient types.
 Excluded: CI/release changes, uploads, dependency refresh, committed-fixture
 updates, duplicate pruning, full PDF/FFmpeg certification, and additional platform
