@@ -1127,7 +1127,7 @@ implementation plan; mark each complete only after its evidence passes.
 
 ### 3A: Run Ownership and Prerequisites
 
-Status: in progress.
+Status: completed.
 
 Establish one immutable invocation context, unique run roots, suite prerequisite
 policies, bounded probes, and controlled homes/caches before public commands.
@@ -1160,12 +1160,32 @@ assert directory existence directly and pass explicit argument objects.
 The full plan items remain unchecked until orchestration proves the combined
 requirements, including no reports/counts for unlaunched tests.
 
+The full 3A range
+`815a72a41734d3c3fad11a1df612df4b0db5d171..cb07cbe7974d5082c367666bf0f1fe3f01913e6e`
+passed security, test-coverage, and maintainability review with no material findings.
+
 ### 3B: Reports and Fixture Retention
 
-Status: pending.
+Status: in progress.
+
+Fixed batch review base: `cb07cbe7974d5082c367666bf0f1fe3f01913e6e`.
 
 Validate complete JUnit records and integrate fixture allocation, designated
 exports, and cleanup with the owned run. Audit direct and sibling allocations.
+
+The report checkpoint adds pure structural/outcome validation and owned-file
+consumption. Counts come from actual testcase records and must agree with every
+supplied ancestor total. Legitimate duplicate parameterized names remain separate
+cases. Structurally valid failure/skip reports retain useful counts, while the
+passing gate rejects failures/errors/skips/TODOs. Reports with no executed cases
+or invalid structure provide no trusted counts.
+
+Reports must be absent before launch, fresh afterward, bounded regular files,
+and stable while read. The reader refuses symlinks and replaced result namespaces.
+Focused report validation/storage passed 51 cases and 137 assertions. A bounded
+installed-Bun sample confirmed TODO appears as a skipped record even with exit
+zero. The prior real 2,995-case report also reconciled exactly. Full process-exit
+and finalization agreement is verified when the orchestrator is connected.
 
 ### 3C: Scheduling and Finalization
 
