@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Refactor Implementation Plan"
 created-date: 2026-09-05
-modified-date: 2026-09-06
+modified-date: 2026-09-05
 status: active
 agent: codex
 ---
@@ -14,8 +14,8 @@ folders and `.{unit,app,codex,pandoc}.test.ts` suffixes.
 
 Phase 1 is completed in the [implementation record](jobs/2026-09-05-test-suite-refactor.md).
 Phase 2 is in progress; Phases 3–4 have not started.
-The inventory and representative pilots are verified. Phase 2C handles the
-remaining migration and final discovery configuration.
+The inventory, representative pilots, feature migration, and final discovery are
+verified. Final section and whole-phase reviews remain before Phase 2 closes.
 The research is authoritative for these contracts:
 
 - [Commands](../researches/research-2026-09-05-multi-test-commands.md#contributor-command-model), [structure and before/after comparison](../researches/research-2026-09-05-multi-test-commands.md#proposed-structure-and-beforeafter-comparison), and [unit boundaries](../researches/research-2026-09-05-multi-test-commands.md#what-unit-means-in-this-repository).
@@ -80,7 +80,7 @@ Pilot Markdown PDF parsing/HTML transformation, fake-process rendering with real
 files, and real Pandoc conversion in the proposed feature homes.
 
 Separate import-time prerequisite probes from reusable support, starting with
-`test/markdown-pdf/actions/render-support.ts` and
+`test/markdown-pdf/actions/rendering/render-support.ts` and
 `test/data-query/commands/support.ts`. Reuse existing helpers and keep committed
 input paths fixed.
 
@@ -105,17 +105,17 @@ reviewable checkpoints.
 
 Acceptance:
 
-- [ ] Reconcile every batch's cases and run affected combined selections. Audit
+- [x] Reconcile every batch's cases and run affected combined selections. Audit
       availability skips, conditional registration, and native-readiness early
       returns; retain asserted missing-dependency behavior.
-- [ ] Control application/doctor configuration, homes, native caches, and executable
+- [x] Control application/doctor configuration, homes, native caches, and executable
       paths. Unit selection must neither load nor probe integration prerequisites.
-- [ ] Update lint/format coverage, links, and terminal correspondence owners while
+- [x] Update lint/format coverage, links, and terminal correspondence owners while
       preserving historical evidence and committed inputs.
-- [ ] After full classification, replace pilot configs with the final unit-default
+- [x] After full classification, replace pilot configs with the final unit-default
       config and remove live gates in the same checkpoint. Required integration
       cases must run or fail explicitly; automatic fixture writes must be gone.
-- [ ] Prove bare/feature-unit discovery, exact integration selection with the override,
+- [x] Prove bare/feature-unit discovery, exact integration selection with the override,
       disjoint leaves, their complete union, and matching report identities. Record
       final file/case counts and durations without treating counts alone as proof.
 

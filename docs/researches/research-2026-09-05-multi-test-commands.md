@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Responsibilities and Verification Lifecycle"
 created-date: 2026-09-05
-modified-date: 2026-09-06
+modified-date: 2026-09-05
 status: in-progress
 agent: codex
 ---
@@ -13,13 +13,12 @@ selected by the behavior and dependencies they verify. Establish process and
 scratch ownership before implementing shared orchestration.
 
 The command model, behavioral suite boundaries, and shutdown outcomes below are
-settled design decisions. The feature-first layout and filename-based selection
-below are the proposed implementation direction, supported by a current-tree
-review and isolated Bun discovery checks. Phase 2A completed the source inventory;
-Phase 2B verified representative feature pilots. Their mapping and evidence are
-recorded in the implementation job; broader migration and final discovery remain.
-Phase 1 implementation and lifecycle evidence are complete. Research remains in
-progress pending the migration and managed-runner evidence described below.
+settled design decisions. Phase 2 implemented the feature-first layout and
+filename-based selection, verified the baseline correspondence and prerequisite
+boundaries, and passed the complete 424-file union. The implementation job records
+the actual mapping, evidence, and review state. Phase 1 implementation and lifecycle
+evidence are complete. Research remains in progress pending the managed-runner
+evidence described below.
 
 ## Contributor Command Model
 
@@ -441,15 +440,16 @@ from the test aggregate.
 
 ## Remaining Verification Work
 
-Phase 2A established the complete baseline inventory, and Phase 2B verified the
-representative pilots and their prerequisite isolation. Remaining feature batches
-must reconcile cases and establish final selection/config/report agreement.
-Phase 1 established process observation and bounded preflight/shutdown budgets
-on macOS; the synthetic discovery checks alone do not establish the remaining
-migration results.
+Phase 2 established the baseline inventory, prerequisite-isolated pilots, feature
+migrations, and final selection/config/report-file agreement. The complete union
+passed 2,995 cases across 424 files, including the formerly skipped protocol case;
+the implementation record details retained identities and the two preexisting
+volatile comparison exceptions. Phase 1 established process observation and
+bounded preflight/shutdown budgets on macOS. Managed commands, report validation,
+retention, and final usage documentation remain to be implemented and verified.
 
 Completed Phase 1 evidence is recorded in the [implementation record](../plans/jobs/2026-09-05-test-suite-refactor.md).
-Research closure still requires the remaining migration and managed-runner evidence.
+Research closure still requires the managed-runner evidence.
 
 ## Related Plans
 
@@ -458,23 +458,23 @@ Research closure still requires the remaining migration and managed-runner evide
 ## References
 
 [transport-source]: ../../src/adapters/codex/discovery/transport.ts
-[date-tests]: ../../test/utils/datetime.test.ts
-[rename-direct]: ../../test/rename/direct/template.test.ts
-[rename-collisions]: ../../test/rename/planner/collision-and-source-lifecycle.test.ts
+[date-tests]: ../../test/utils/datetime.unit.test.ts
+[rename-direct]: ../../test/rename/direct/template.unit.test.ts
+[rename-collisions]: ../../test/rename/planner/collision-and-source-lifecycle.app.test.ts
 [report-tests]: ../../test/codex-info/report.unit.test.ts
 [action-tests]: ../../test/codex-info/action.unit.test.ts
-[rename-templates]: ../../test/rename/planner/template-rendering.test.ts
-[doctor-routing]: ../../test/doctor/commands/routing.test.ts
+[rename-templates]: ../../test/rename/planner/template-rendering.app.test.ts
+[doctor-routing]: ../../test/doctor/commands/routing.app.test.ts
 [replay]: ../../test/codex-info/cli-replay.app.test.ts
-[duckdb-fixtures]: ../../test/data-query/evidence/duckdb-fixtures.test.ts
+[duckdb-fixtures]: ../../test/data-query/evidence/duckdb-fixtures.app.test.ts
 [pandoc-language]: ../../test/markdown-pdf/actions/rendering/pandoc-language.pandoc.test.ts
 [live-probe]: ../../test/codex-info/live-protocol.codex.test.ts
 [correspondence]: ../references/test-catalog-path-correspondence.md
 [catalog-research]: research-2026-08-23-test-suite-contract-overlap-and-catalog.md
-[render-support]: ../../test/markdown-pdf/actions/render-support.ts
+[render-support]: ../../test/markdown-pdf/actions/rendering/render-support.ts
 [query-support]: ../../test/data-query/commands/support.ts
-[profile-command-wiring]: ../../test/cli-actions-md-to-pdf-profile-codex-command-wiring.test.ts
-[rename-support-tests]: ../../test/rename/support/run-cli.test.ts
+[profile-command-wiring]: ../../test/markdown-pdf/commands/profile-codex-wiring.app.test.ts
+[rename-support-tests]: ../../test/rename/commands/plan-artifact-cleanup.app.test.ts
 [bun-root]: https://bun.com/docs/test/configuration#root
 [bun-ignore]: https://bun.com/docs/test/configuration#path-ignore-patterns
 [bun-discovery]: https://bun.com/docs/test/discovery

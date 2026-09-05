@@ -938,11 +938,11 @@ Migrate the remaining PDF owners first, then Data Query/Data Extract/Doctor-rela
 owners, then the remaining features. Preserve current prerequisite corrections
 while applying the accepted source-to-target map and reconciling each batch.
 
-- [ ] Reconcile cases and combined execution for every migrated feature batch.
-- [ ] Verify controlled homes, native caches, and unit prerequisite isolation.
-- [ ] Update terminal path correspondence, links, and lint/format coverage.
-- [ ] Switch to final unit-default discovery and remove remaining live gates together.
-- [ ] Verify all four leaves, complete union, reports, and raw/default selection.
+- [x] Reconcile cases and combined execution for every migrated feature batch.
+- [x] Verify controlled homes, native caches, and unit prerequisite isolation.
+- [x] Update terminal path correspondence, links, and lint/format coverage.
+- [x] Switch to final unit-default discovery and remove remaining live gates together.
+- [x] Verify all four leaves, complete union, reports, and raw/default selection.
 - [ ] Review the complete section and Phase 2 ranges and resolve findings.
 
 #### PDF Codex and Adapter Batch
@@ -1032,6 +1032,66 @@ the execution time. For this one source/classname/registration, reconciliation
 normalizes only the ISO timestamp in the name and then compares assertions; all
 811 cases match. The original dynamic parameter remains unchanged. No other case
 names are normalized or discarded.
+
+#### Final Discovery and Reconciliation
+
+Validation checkpoint: `dcea21ed` plus the pending `bunfig.toml` and
+`test/codex-info/live-protocol.codex.test.ts` discovery changes. The final
+committed discovery revision will be recorded when the range reviews close.
+The correspondence range `62239f69..dcea21ed` covers path migration only.
+
+`bunfig.toml` now uses `./test` and excludes application, Codex, Pandoc, and
+fixture-input paths by default. The Codex opt-in gate is removed in the same
+checkpoint; its describe title now says only "isolated". Filename-only discovery
+classifies all 424 executable files with no unclassified or out-of-tree owners.
+The four selections are disjoint and their union exactly matches discovery.
+Their JUnit testcase file identities match the selected files.
+
+| Selection | Files | Cases | Assertions | Bounded elapsed time |
+| --- | ---: | ---: | ---: | ---: |
+| Bare unit default | 152 | 1,130 | 4,561 | 0.81 s |
+| Instrumented bare unit default | 152 | 1,130 | 4,561 | 0.86 s |
+| Raw PDF feature folder | 66 | 504 | 2,457 | 0.50 s |
+| Exact application | 269 | 1,860 | 11,900 | 119.43 s |
+| Exact Codex | 1 | 2 | 58 | 3.20 s |
+| Exact Pandoc | 2 | 3 | 138 | 2.48 s |
+| Exact complete union | 424 | 2,995 | 16,658 | 116.75 s |
+
+All positive runs have zero failures/skips and verified process cleanup. Unit
+verification used an empty owned home/cache and blocked subprocess, native-package,
+and fetch probes. Application and aggregate verification used an isolated home
+and only the existing copied native cache. Live Codex used isolated outer and
+fixture homes with metadata-only requests. Exact integration selections replace
+the default ignore list with the common fixture exclusion; public named commands
+remain pending Phase 3.
+
+All 2,971 previously executed baseline case identities are retained, using only
+the single documented date-name normalization. The original skipped protocol
+case now runs with 35 assertions. Twenty-three new cases cover discovery,
+prerequisite/lifecycle helpers, unit-boundary instrumentation, and production
+Codex discovery. The 380 original sources map to 418 targets; six new helper-contract
+files bring the final count to 424.
+
+One unchanged transport case has a timing-dependent assertion count. Its original
+helper checks child exit only if the child writes its PID before the cancellation
+timer. The baseline and application leaf recorded one assertion; the combined
+run recorded two. The source is byte-identical to the baseline. This explains the
+one-assertion difference between summed leaves and the union; all other baseline
+assertion identities match. Review classified waiting for the PID before starting
+the timer as a possible focused follow-up, outside this relocation phase. No
+assertion was removed to force equal totals.
+
+Negative selections proved explicit prerequisite failure after the default switch:
+a Pandoc case on a controlled path without Pandoc failed once with a launch-failure
+diagnostic, and an Excel case with no cached extension failed once with the required
+extension diagnostic. Neither skipped, attempted installation, or left owned
+processes running. Phase 2B's synthetic unsupported-platform checks remain the
+platform-boundary evidence; this does not certify another operating system.
+
+Types, lint, formatting across 1,102 source/test/script files, and whitespace
+checks passed. The current path correspondence records all 364 remaining source
+migrations and eight shared-helper relocations, and current research links resolve
+to their terminal owners. Final full-section and whole-Phase-2 reviews are pending.
 
 ## Remaining Phases
 

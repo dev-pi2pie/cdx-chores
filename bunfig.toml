@@ -1,0 +1,8 @@
+[test]
+root = "./test"
+pathIgnorePatterns = [
+  "**/*.app.test.ts",
+  "**/*.codex.test.ts",
+  "**/*.pandoc.test.ts",
+  "**/fixtures/**",
+]

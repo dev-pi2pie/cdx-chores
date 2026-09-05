@@ -7,7 +7,6 @@ import { REPO_ROOT } from "../helpers/cli-test-utils";
 import { lifecycleDiagnostic, withLiveCodexFixture } from "./live-fixture";
 import { LiveProtocolClient } from "./live-protocol-client";
 
-const enabled = process.env.CDX_CHORES_RUN_CODEX_DISCOVERY_PROBE === "1";
 const initializeParams = {
   clientInfo: { name: "cdx_chores_protocol_probe", title: "Isolated protocol probe", version: "1" },
   capabilities: { experimentalApi: false },
@@ -32,7 +31,7 @@ type Model = {
 };
 type ModelPage = { data: Model[]; nextCursor: string | null };
 
-describe.skipIf(!enabled)("real Codex discovery protocol (isolated, opt-in)", () => {
+describe("real Codex discovery protocol (isolated)", () => {
   test("records location resolution, config origins, and provider-independent catalog evidence", async () => {
     await withLiveCodexFixture(async ({ root, cwd, env: environment, start, close }) => {
       const home = join(root, "home");
