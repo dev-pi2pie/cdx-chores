@@ -18,6 +18,8 @@ validation and reviewed commit ranges are recorded in the
 Phase 5 establishes the `codex-info` discovery contract through isolated CLI
 observations, recorded protocol replay, and reviewed implementation tests.
 Configured-only provider coverage and catalog limitations are explicit conclusions.
+Phase 5.5 implements concise human views and shared terminal styling; its focused
+verification and Node package smoke evidence are recorded in the same job record.
 Research is complete for this scope; Phase 6 still owns shipped-guide updates and
 final repository closeout. The separate timeout contract remains unchanged.
 
@@ -184,11 +186,10 @@ mutation is introduced by this phase.
 
 ### Human Presentation Refinement (Phase 5.5)
 
-Phase 5.5 is an accepted presentation follow-up, pending implementation. The
-current renderer repeats overview fields across commands and always emits plain
-text. Reuse the existing shared color helper and
-[output/color contract](../guides/cli-output-and-color.md) to improve hierarchy
-while reducing repeated context. Discovery conclusions and JSON stay unchanged.
+Phase 5.5 implements the presentation follow-up. The renderer now reduces repeated
+context and uses the existing shared color helper and
+[output/color contract](../guides/cli-output-and-color.md) for terminal hierarchy.
+Discovery conclusions and JSON stay unchanged.
 
 - Overview: retain configured model/provider, helper reasoning default, catalog
   recommendation, and short provider-coverage/catalog-scope notes. Keep configured

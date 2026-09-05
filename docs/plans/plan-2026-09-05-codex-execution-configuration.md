@@ -579,7 +579,7 @@ this phase changes presentation without expanding discovery or the JSON schema.
       must reproduce exactly the same plain text. Verify JSON remains unstyled
       and semantically unchanged; retain hostile-string, empty/unlisted selection,
       unknown capability, and one-discovery-result regression coverage.
-- [ ] Record validation and meaningful checkpoint commits in the unified job
+- [x] Record validation and meaningful checkpoint commits in the unified job
       record. Review the full phase commit range, fix accepted findings, and
       re-review the expanded range from the same base before marking complete.
 
