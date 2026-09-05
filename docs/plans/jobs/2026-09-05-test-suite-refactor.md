@@ -11,7 +11,7 @@ agent: codex
 Execute the [implementation plan](../plan-2026-09-05-multi-test-commands.md)
 against the [research contracts](../../researches/research-2026-09-05-multi-test-commands.md).
 Phase 1 established bounded process ownership. Phase 2 completed suite
-classification, migration, and final discovery. Phase 3 implements the managed
+classification, migration, and final discovery. Phase 3 completed the managed
 runner; Phase 4 remains pending.
 
 ## Phase 1: Process Lifecycle
@@ -1119,7 +1119,7 @@ usage documentation and final repository verification remain Phase 4.
 
 ## Phase 3: Deliver the Managed Runner
 
-Status: in progress.
+Status: completed.
 
 Fixed phase review base: `815a72a41734d3c3fad11a1df612df4b0db5d171`.
 The starting tracked worktree was clean. Use the ten acceptance items in the
@@ -1311,7 +1311,7 @@ No material findings remain.
 
 ### 3D: Command Publication and Integrated Verification
 
-Status: in progress.
+Status: completed.
 
 Fixed batch review base: `019cd74478d4395091863df773e50aea22307fcf`.
 
@@ -1323,8 +1323,9 @@ The allocation-error class used a TypeScript parameter property, which Node's
 strip-only loader rejects when a generator imports the shared context module.
 It now uses an explicit field assignment. The failure report and terminal stack
 agreed; Codex and Pandoc still ran and passed, all process shutdown checks passed,
-and default finalization removed the run. The affected existing regression and
-complete aggregate are rerun after this correction.
+and default finalization removed the run. The affected existing generator
+regression passed 10 cases and 66 assertions, including the actual Node invocation;
+the complete aggregate then passed after this correction.
 
 The corrected default aggregate passed all 3,152 cases and 17,301 assertions across
 434 files: unit 1,197/155 files, app 1,950/276, Codex 2/1, and Pandoc 3/2. All
@@ -1335,8 +1336,35 @@ execution took 116.22 seconds within its 240-second budget.
 With that complete contract passing, `package.json` now exposes `test:unit`,
 `test:integration:app`, `test:integration:codex`, `test:integration:pandoc`, and
 `test:all`. Each routes directly to the shared runner and accepts only the optional
-`--keep-results` flag. Retained aggregate acceptance and final range reviews remain
-in progress.
+`--keep-results` flag. Actual argument-routing checks for all five scripts returned
+exit 1 for an unknown flag and allocated no run.
+
+The public `bun run test:all --keep-results` invocation matched the default
+aggregate: 3,152 cases, 17,301 assertions, 434 files, all four leaves passed with
+zero failures/errors/skips. Application execution took 124.84 seconds. Both
+modes used Bun 1.4.1, Node 26.5.0, Codex CLI 0.153.4, Pandoc 3.9, DuckDB 1.5.5,
+and PDF.js 6.3.289 on the verified macOS platform.
+
+Retained inspection found exactly 27 independent regular files: four reports,
+one invocation summary, six export manifests, and 16 designated outputs. Scratch
+was absent. Every output matched its manifest; no configuration, credentials,
+home, workspace, or committed input copies were retained. Codex evidence contained
+only whitelisted request/view/check names, booleans, and counts: seven protocol
+checks and three adapter views, all successful. Earlier 3B fixture verification
+exercised the same export path and sanitization in both retention modes.
+
+After review, all 27 file hashes and the allocated root/result identities were
+rechecked before removing only this acceptance run. The prior run-root set was
+unchanged. Production source and committed input assets were unchanged by the
+phase. Final types, lint, formatting (1,126 files), and whitespace checks passed.
+
+The complete 3D range
+`019cd74478d4395091863df773e50aea22307fcf..810ca4d8e120ffc48ab4c062c8ce1d29c59c3aa8`
+and complete Phase 3 implementation range
+`815a72a41734d3c3fad11a1df612df4b0db5d171..810ca4d8e120ffc48ab4c062c8ce1d29c59c3aa8`
+passed security, test-coverage, and maintainability review. No material findings
+remain. The plan's ten Phase 3 acceptance items are complete; the broader Phase 4
+verification and usage documentation remain pending.
 
 ## Remaining Phases
 

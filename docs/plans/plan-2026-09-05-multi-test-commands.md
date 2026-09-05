@@ -13,7 +13,7 @@ ownership and regression coverage. The implemented layout uses feature/boundary
 folders and `.{unit,app,codex,pandoc}.test.ts` suffixes.
 
 Phase 1 is completed in the [implementation record](jobs/2026-09-05-test-suite-refactor.md).
-Phase 2 is completed; Phase 3 is in progress and Phase 4 has not started.
+Phases 2 and 3 are completed; Phase 4 has not started.
 The inventory, representative
 pilots, feature migration, final discovery, and full-range reviews are recorded
 in the implementation record.
@@ -133,31 +133,31 @@ Apply the research's JUnit, scheduling, cleanup, and Codex-evidence contracts.
 
 Acceptance:
 
-- [ ] Verify selection and preflight: invalid or empty membership never triggers
+- [x] Verify selection and preflight: invalid or empty membership never triggers
       broad discovery; missing tools, native packages, caches, and unsupported
       platforms fail before tests launch.
-- [ ] Verify bounded probes: hanging preflight and cancellation stop owned work;
+- [x] Verify bounded probes: hanging preflight and cancellation stop owned work;
       never invent JUnit reports or counts for tests that were not launched.
-- [ ] Validate reports: reject malformed, missing, stale, contradictory, empty,
+- [x] Validate reports: reject malformed, missing, stale, contradictory, empty,
       skipped/TODO reports and selected-file mismatches; passing XML cannot
       override a nonzero exit.
-- [ ] Verify scheduling: run unit, app, Codex, and Pandoc in order, one attempt
+- [x] Verify scheduling: run unit, app, Codex, and Pandoc in order, one attempt
       each; continue after ordinary failures, honor cancellation boundaries, and
       preserve completed states.
-- [ ] Verify ownership: concurrent invocations use distinct roots without
+- [x] Verify ownership: concurrent invocations use distinct roots without
       overwriting or deleting another owner's files; reject replaced or symlinked
       roots and pre-existing reports.
-- [ ] Verify failure cleanup: preserve every setup, assertion, export, and cleanup
+- [x] Verify failure cleanup: preserve every setup, assertion, export, and cleanup
       failure reason; remove incomplete exports and identify remaining work.
-- [ ] Verify terminal output in both retention modes: show final states, available
+- [x] Verify terminal output in both retention modes: show final states, available
       counts, failure/lifecycle reasons, and the retention location; deleting
       default results must preserve terminal diagnostics.
-- [ ] Verify retention and evidence: remove scratch, retain only designated safe
+- [x] Verify retention and evidence: remove scratch, retain only designated safe
       outputs, leave existing runs and inputs unchanged, and sanitize Codex keys
       and values in both retention modes.
-- [ ] Publish the named commands only after selection, bounded preflight, process
+- [x] Publish the named commands only after selection, bounded preflight, process
       ownership, report validation, terminal output, and retention pass together.
-- [ ] Review the complete phase commit range, resolve findings, and record the
+- [x] Review the complete phase commit range, resolve findings, and record the
       verified evidence and review range in the unified implementation record.
 
 Use bounded fixtures rather than recursively running the full suite. A phase pass

@@ -17,8 +17,9 @@ settled design decisions. Phase 2 implemented the feature-first layout and
 filename-based selection, verified the baseline correspondence and prerequisite
 boundaries, and passed the complete 424-file union. The implementation job records
 the actual mapping, evidence, and completed Phase 2 range reviews. Phase 1 implementation and lifecycle
-evidence are complete. Research remains in progress pending the managed-runner
-evidence described below.
+evidence are complete. Phase 3 delivered the managed runner and passed the real
+aggregate in both retention modes. Research remains in progress pending Phase 4's
+broader workflow verification and final usage documentation.
 
 ## Contributor Command Model
 
@@ -445,11 +446,14 @@ migrations, and final selection/config/report-file agreement. The complete union
 passed 2,995 cases across 424 files, including the formerly skipped protocol case;
 the implementation record details retained identities and the two preexisting
 volatile comparison exceptions. Phase 1 established process observation and
-bounded preflight/shutdown budgets on macOS. Managed commands, report validation,
-retention, and final usage documentation remain to be implemented and verified.
-
-Completed Phase 1 evidence is recorded in the [implementation record](../plans/jobs/2026-09-05-test-suite-refactor.md).
-Research closure still requires the managed-runner evidence.
+bounded preflight/shutdown budgets on macOS. Phase 3 delivered the five managed
+commands, report validation, scheduling, terminal diagnostics, and retention;
+both real aggregate modes passed 3,152 cases across 434 files. The
+[implementation record](../plans/jobs/2026-09-05-test-suite-refactor.md)
+contains failure/correction evidence, ownership and export inspection,
+acceptance cleanup, and complete phase reviews. Phase 4 still owns the broader
+leaf/aggregate repetition protocol, final inventory reconciliation, built-package
+checks, and usage documentation.
 
 ## Related Plans
 
