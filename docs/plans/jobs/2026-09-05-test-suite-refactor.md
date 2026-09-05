@@ -1295,6 +1295,12 @@ The combined scheduler, fixture, and finalization matrix passed 62 cases and 316
 assertions across four files. Full type, lint, formatting (1,126 files), and
 whitespace checks passed. Complete batch review remains in progress.
 
+A follow-up terminal check found that captured assertion details were discarded
+when default results were removed. Failed-test streams now remain available in
+terminal diagnostics after finalization, while the saved invocation summary still
+excludes raw streams. Both retention modes verify expected/received text and stack
+locations survive without entering `summary.json`.
+
 ### 3D: Command Publication and Integrated Verification
 
 Status: pending.

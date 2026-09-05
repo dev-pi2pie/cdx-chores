@@ -181,4 +181,34 @@ describe("managed runner cancellation and finalization", () => {
       expect(roots.filter((root) => root.keepResults)).toHaveLength(2);
     });
   });
+  test.each([false, true])(
+    "preserves assertion diagnostics only in terminal output with keep=%s",
+    async (keep) => {
+      await withRunner(async ({ roots, output, invoke }) => {
+        const result = await invoke(["unit", ...(keep ? ["--keep-results"] : [])], {
+          dependencies: {
+            execute: async (options) => {
+              await writeReport(options);
+              return completed({
+                ok: false,
+                reason: "exit-failed",
+                exitCode: 1,
+                stdout: "Fixture check failed: expected alpha, received beta.\n",
+                stderr: "at example.unit.test.ts:12\n",
+              });
+            },
+          },
+        });
+        expect(result.exitCode).toBe(1);
+        expect(output.join("\n")).toContain("expected alpha, received beta");
+        expect(output.join("\n")).toContain("example.unit.test.ts:12");
+        expect(JSON.stringify(result.summary)).not.toContain("received beta");
+        if (keep) {
+          expect(
+            await readFile(join(roots[0]!.root, "results/summary.json"), "utf8"),
+          ).not.toContain("received beta");
+        } else await expect(access(roots[0]!.root)).rejects.toThrow();
+      });
+    },
+  );
 });

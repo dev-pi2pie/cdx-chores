@@ -94,6 +94,7 @@ export async function runManagedTests(
   };
   let context: RunContext | undefined;
   let safeToClean = true;
+  const terminalDiagnostics: string[] = [];
   try {
     const invocation = parseInvocation(args);
     summary.selected = [...invocation.suites];
@@ -150,6 +151,13 @@ export async function runManagedTests(
           maxOutputBytes: 8 * 1024 * 1024,
         });
         recordProcess(leaf, "test", result);
+        // Keep assertion/stack diagnostics available after default cleanup, but
+        // never copy raw streams into the retained invocation summary.
+        if (!result.ok && (result.stdout || result.stderr)) {
+          terminalDiagnostics.push(
+            `${leaf.suite} test diagnostics:\n${result.stdout}${result.stderr}`,
+          );
+        }
         const nested = deps.inspectProcesses(context, leaf.suite);
         safeToClean = result.stopped && nested.stopped;
         leaf.errors.push(...nested.issues);
@@ -211,6 +219,6 @@ export async function runManagedTests(
     }
   }
   refreshSummaryState(summary);
-  (options.output ?? console.log)(renderSummary(summary));
+  (options.output ?? console.log)([...terminalDiagnostics, renderSummary(summary)].join("\n"));
   return { exitCode: summary.state === "passed" ? 0 : 1, summary };
 }
