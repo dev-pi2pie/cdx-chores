@@ -319,9 +319,26 @@ validates all adopted paths, and reviews the complete implementation range.
 
 ### Image Capability Failure Checkpoint
 
+- Checkpoint commit: `4898648b`.
 - The matrix audit confirmed all nine request owners have execution-policy
   coverage and identified one explicit failure case to add. The existing image
   retry/partial-results test now also rejects image input, proving custom
   model/provider/effort settings remain unchanged through that failure.
 - `bun test test/codex-adapters/direct/rename-execution.test.ts` passed 7 tests,
   39 assertions. TypeScript, lint, formatting, and diff checks passed.
+
+### Canonical Guide Checkpoint
+
+- Added the [execution configuration guide](../../guides/codex-execution-configuration.md)
+  and [environment-variable guide](../../guides/environment-variables.md).
+  Verified command scope/defaults, SDK environment forwarding, raw Codex home
+  handling versus trimmed local inspection, credentials versus local signals,
+  path-prompt parsing, and color policy against installed code.
+- Fetched official Codex authentication, configuration, environment-variable,
+  and non-interactive-mode documentation for externally owned semantics. Guides
+  cite those sources and distinguish execution from app-server authentication.
+  OpenAI plus two custom definitions is documented without inventing a built-in
+  row or claiming backend compatibility.
+- Documentation review found no material gaps. Explicit Markdown formatting,
+  relative links, fences, and diff checks passed. Examples were checked against
+  registered commands and built Node CLI help.
