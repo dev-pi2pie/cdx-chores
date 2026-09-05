@@ -11,10 +11,10 @@ Implement explicit model, provider, and reasoning-effort selection for the
 existing Codex helper flows. Omitted model/provider options continue to inherit
 Codex configuration; omitted reasoning effort continues to request `low`.
 
-Phases 1–4 implement the settled execution contract. Phase 5 adds `codex-info`
-configuration and model discovery; Phase 6 owns final validation and shipped
-documentation. The linked research is reopened for discovery evidence. Phase
-completion is tracked below and in the unified job record.
+Phases 1–4 implement the settled execution contract. Phase 5 implements
+`codex-info` configuration, model, and configured-provider discovery. Phase 6
+owns final validation and shipped documentation. The linked research records the
+completed discovery conclusions; phase evidence is in the unified job record.
 The shipped timeout policy remains owned by its existing guide and plan.
 
 ## Starting State
@@ -290,9 +290,9 @@ selection in `configured`; do not fabricate a catalog entry for it.
 Human output renders unspecified configuration as "unspecified", absent catalog
 metadata as "unknown", and an empty recommendation list as "none reported".
 All views use these same normalized states; no unqualified `default` field or
-marker is allowed. Finalize the remaining metadata field names in the Phase 5
-report type and fixtures before implementing renderers. Reported capabilities
-remain unverified for provider requests.
+marker is allowed. The implemented report fields are defined in
+`src/cli/codex-info/report.ts` and covered by the report and CLI replay fixtures.
+Reported capabilities remain unverified for provider requests.
 
 ### Provider Sources And Catalog Scope
 
@@ -502,29 +502,29 @@ entry behavior, with no configuration leakage across sessions.
       explicitly in the research and unified job before finalizing the adapter.
       Capture the initialization/read parameters and sanitized response shapes in
       version-labeled fixtures derived from the installed executable.
-- [ ] Preserve dynamic `CODEX_HOME` and the inherited child environment across
+- [x] Preserve dynamic `CODEX_HOME` and the inherited child environment across
       discovery and SDK execution. Verify default/custom homes, successive-call
       isolation, home-value edge cases, independent executable selection, and
       matching home/source fields in details and JSON.
-- [ ] Implement a bounded stdio discovery adapter with configuration reads,
+- [x] Implement a bounded stdio discovery adapter with configuration reads,
       paginated model listing, normalized report types, and subprocess cleanup.
-- [ ] Register `codex-info`, `codex-info models`, and `codex-info providers` with
+- [x] Register `codex-info`, `codex-info models`, and `codex-info providers` with
       default summary, `--details`, and `--json`; reject conflicts before discovery.
-- [ ] Verify configured and built-in provider sources, coverage labeling, configured
+- [x] Verify configured and built-in provider sources, coverage labeling, configured
       markers, raw-to-report field mapping, exact-ID deduplication, successful
       configured-only/empty results, and safe provider field selection. Record
       unsupported enumeration capabilities without claiming a complete list.
-- [ ] Preserve configuration/recommendation/default distinctions, unknown
+- [x] Preserve configuration/recommendation/default distinctions, unknown
       reasoning support, and configured models absent from the visible catalog.
-- [ ] Verify one discovery result feeds each output projection, safe field
+- [x] Verify one discovery result feeds each output projection, safe field
       selection, custom-provider limitations, and no generation/config writes.
-- [ ] Cover startup/response failures, pagination, deadline/cancellation cleanup,
+- [x] Cover startup/response failures, pagination, deadline/cancellation cleanup,
       configuration-success/catalog-failure and reverse-failure cases, valid empty
       results, and command-local help/option behavior. Prove provider listing never calls
       `model/list` and succeeds when that unrelated method would fail. Cover model
       catalogs unchanged by provider selection and view-specific JSON null fields. Recheck execution inheritance and
       defaults remain independent of discovery.
-- [ ] Record research conclusions and review this phase's full commit range;
+- [x] Record research conclusions and review this phase's full commit range;
       resolve findings before marking discovery complete.
 
 Exit evidence: protocol fixtures and command/report tests prove accurate scoped
@@ -561,8 +561,8 @@ from synthetic tests and do not claim provider request compatibility.
       SDK/model/provider and request capability; argument tests alone must not
       be described as backend compatibility validation.
 - [ ] Close the implementation plan only after adopted paths and documentation
-      are complete. Mark the reopened research completed only after Phase 5
-      discovery questions have recorded conclusions; retain it as the decision source.
+      are complete. Keep the completed research linked as the source for the
+      verified scope and limitations.
 
 ## Validation Matrix
 

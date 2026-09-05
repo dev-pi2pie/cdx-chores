@@ -134,8 +134,8 @@ checklists and evidence were verified unchanged.
 
 ## Phase 5: Codex Information Discovery
 
-Status: in-progress. Base: `0f51ab8d`. Implementation resumed after the provider
-scope refinement at `ab4e8250`; the original phase review base is retained.
+Status: completed. Reviewed range: `0f51ab8d..c84f7fc3`. Implementation resumed
+after the provider scope refinement at `ab4e8250`; the original base is retained.
 
 An isolated CLI `0.153.4` probe used two temporary Codex homes with omitted/custom
 provider selections, the same synthetic model selection, and no credentials. Initialization, `config/read`, and
@@ -144,10 +144,12 @@ its definition ID; the omitted-provider case returned a null selection and no
 custom IDs. Both returned the same six visible models and recommendation, with
 no next page. Temporary artifacts were removed; no generation was requested.
 This observation proves neither complete provider enumeration nor backend model
-compatibility. Version-labeled reproducible fixtures remain a Phase 5 requirement.
+compatibility. The version-labeled fixtures and their validation are recorded in
+the checkpoints below.
 
-The revised scope includes `codex-info providers`, configured-ID extraction,
-verification of built-in sources, and explicit coverage limits. Provider listing
+The implemented scope includes `codex-info providers` and configured-ID extraction.
+Inspected CLI surfaces expose no built-in ID enumeration, so the implementation
+reports configured-only coverage. Provider listing
 requires configuration/provider sources but not `model/list`; summary/models
 retain complete-catalog requirements. Phase 6 will document all three commands.
 
@@ -173,6 +175,56 @@ resumed.
   passed: 1 test, 33 assertions. The default suite skips this opt-in probe.
   Its companion fixture records the request parameters, response projections,
   pagination, and home cases; synthetic transport tests remain separate evidence.
+
+### Implementation And Integration Checkpoint
+
+- Evidence checkpoint: `aade3700`. Implementation checkpoint: `f83e32a5`.
+  Initial review range: `0f51ab8d..f83e32a5`; review fixes and the expanded final
+  range are recorded below.
+- Added the owned stdio discovery adapter, SDK-matching executable resolution,
+  invocation environment capture, authoritative home metadata, bounded output and
+  pagination, and timeout/cancellation cleanup. Existing SDK execution stays intact.
+- Added `codex-info`, `codex-info models`, and `codex-info providers`, with curated
+  summary/details/JSON views. Provider listing never requests the model catalog;
+  configured-only coverage is explicit. Unknown and unrequested metadata remain
+  distinct. Root parser behavior is preserved through a default summary leaf.
+- `bun test test/codex-info` passed 96 tests with one opt-in probe skipped.
+  `bun test codex test/cli-foundations` passed 1,128 tests across 137 files,
+  with the same single skip and no failures. Environment parity tests launch the
+  real SDK against a synthetic executable and verify forwarding without changing
+  the calling process environment or making model requests.
+- TypeScript, lint, formatting, build, Node ESM/CJS imports, and diff checks passed.
+  Built Node ESM provider/model commands and CJS provider discovery passed using
+  isolated homes and loopback-only endpoint configuration. Home/cwd, provider IDs,
+  coverage, and requested/unrequested catalog fields matched the contract.
+  The build retains only the existing TypeScript 7 API warning.
+
+### Review Fixes And Final Validation
+
+- Review identified terminal-control Unicode escaping missing from JSON output.
+  `c84f7fc3` adds a serializer that escapes those characters while retaining the
+  exact parsed values, with hostile-metadata regression coverage.
+- The same checkpoint adds always-on recorded-fixture CLI replay, configuration
+  failure sequencing, cancellation during model pagination with child cleanup,
+  and whitespace environment parity. Executable lookup now falls through to the
+  existing module-path fallback when package metadata lookup returns no result.
+- `bun test test/codex-info` passed 101 tests with the opt-in probe skipped.
+  The final `bun test codex test/cli-foundations` run passed 1,133 tests across
+  138 files, with one opt-in skip and no failures. TypeScript, lint, formatting,
+  build, and final Node ESM/CJS discovery smoke passed. Node smoke used `26.5.0`;
+  this is not a claim that every supported Node version was exercised.
+- The expanded `0f51ab8d..c84f7fc3` review found no remaining material code,
+  security, maintainability, or test-coverage issues. Independent focused reruns
+  passed 101 tests with one opt-in skip; security's focused rerun passed 74 tests.
+  A further home-field assertion in CLI replay was suggested as optional; those
+  fields already have transport/render coverage and final built-Node assertions.
+
+Final documentation review corrected stale gate wording and found no remaining
+material gaps. Local links, phase numbering, status/checklist consistency, and
+`git diff --check` passed.
+
+Phase 5 is complete. Research conclusions and plan checkboxes reflect the verified
+scope. Phase 6 remains pending for final repository validation and public guides.
 
 ## Phase 6: Validation And Documentation Closeout
 
