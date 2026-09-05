@@ -1246,6 +1246,10 @@ nine generated regular files and no aliases. Reviewed managed acceptance runs we
 also removed only after their recorded shutdown and ownership checks passed.
 Types, lint, formatting, and whitespace checks passed for the completed batch.
 
+A final ownership check additionally rejects hard-linked JUnit files before and
+after consumption. Its regression preserves the other file owner unchanged;
+all five storage cases passed (11 assertions), and type checking passed.
+
 ### 3C: Scheduling and Finalization
 
 Status: pending.

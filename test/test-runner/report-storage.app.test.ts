@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdir, rename, symlink, utimes, writeFile } from "node:fs/promises";
+import { link, mkdir, readFile, rename, symlink, utimes, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { prepareReport, readReport } from "../../scripts/testing/report-storage";
@@ -65,6 +65,18 @@ describe("owned JUnit report storage", () => {
       await mkdir(runPath(run, "results"));
       await writeFile(app.path, xml);
       await expect(readReport(run, app, selected)).rejects.toThrow("namespace was replaced");
+    });
+  });
+
+  test("rejects a hard-linked report without changing its other owner", async () => {
+    await withTempFixtureDir("report-storage", async (root) => {
+      const run = await allocateRun(root, ["unit"], false);
+      const ticket = await prepareReport(run, "unit");
+      const outside = join(root, "other-owner.xml");
+      await writeFile(outside, xml);
+      await link(outside, ticket.path);
+      await expect(readReport(run, ticket, selected)).rejects.toThrow("independent regular file");
+      expect(await readFile(outside, "utf8")).toBe(xml);
     });
   });
 });

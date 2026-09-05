@@ -38,8 +38,13 @@ export async function readReport(
   const file = await open(ticket.path, constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
     const before = await file.stat();
-    if (!before.isFile() || before.size <= 0 || before.size > 64 * 1024 * 1024) {
-      throw new Error("Test report must be a nonempty, bounded regular file.");
+    if (
+      !before.isFile() ||
+      before.nlink !== 1 ||
+      before.size <= 0 ||
+      before.size > 64 * 1024 * 1024
+    ) {
+      throw new Error("Test report must be a nonempty, bounded independent regular file.");
     }
     // Allow only sub-millisecond timestamp rounding, not an older invocation's report.
     if (before.mtimeMs < ticket.earliestMtimeMs - 1) throw new Error("Test report is stale.");
@@ -50,6 +55,8 @@ export async function readReport(
     if (
       before.dev !== current.dev ||
       before.ino !== current.ino ||
+      after.nlink !== 1 ||
+      current.nlink !== 1 ||
       before.size !== after.size ||
       before.mtimeMs !== after.mtimeMs ||
       after.size !== current.size ||
