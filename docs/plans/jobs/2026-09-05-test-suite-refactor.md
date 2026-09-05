@@ -12,8 +12,8 @@ Execute the [implementation plan](../plan-2026-09-05-multi-test-commands.md)
 against the [research contracts](../../researches/research-2026-09-05-multi-test-commands.md).
 Phase 1 established bounded process ownership. Phase 2 completed suite
 classification, migration, and final discovery. Phase 3 completed the managed
-runner. Phase 3.2 is in progress for live output and terminal presentation;
-the subsequent Phase 4 remains pending.
+runner. Phase 3.2 completed live output and terminal presentation with verified
+cleanup and full-range review. The subsequent Phase 4 remains pending.
 
 ## Phase 1: Process Lifecycle
 
@@ -1369,7 +1369,7 @@ verification and usage documentation remain pending.
 
 ## Phase 3.2: Live Test Output and Terminal Experience
 
-Status: in progress.
+Status: completed.
 
 Fixed phase and 3.2A review base: `5649f171c0713265b29c3cb661a044cc55f1d12d`.
 The starting tracked worktree was clean.
@@ -1517,7 +1517,7 @@ and test-coverage review. No material findings remain.
 
 ### 3.2C: Verification and Closeout
 
-Status: in progress.
+Status: completed.
 
 Fixed section review base: `7c2bffca92dd5af62790e93dbb14dd76a8426588`.
 The bounded regression matrix and all eight real acceptance entries passed.
@@ -1583,9 +1583,15 @@ parent entries and their identities were unchanged. Operator-directed log files
 remain outside the managed result roots for local verification.
 
 Final types, lint, formatting (1,136 files), and whitespace checks passed. The
-complete section and phase range review remains before status closeout.
+complete Section C range
+`7c2bffca92dd5af62790e93dbb14dd76a8426588..02aaf73d423757b00798cecd87dd6f84d139eb1d`
+and complete Phase 3.2 range
+`5649f171c0713265b29c3cb661a044cc55f1d12d..02aaf73d423757b00798cecd87dd6f84d139eb1d`
+passed security, maintainability, and test-coverage review. Documentation review
+confirmed evidence, currentness, and the unchanged Phase 4 boundary. No material
+findings remain. All eleven Phase 3.2 acceptance items are complete.
 
 ## Remaining Phases
 
-Phase 3.2 implementation is in progress. Phase 4 has not started; its broader repetition
-matrix, built-package checks, and usage documentation follow Phase 3.2 completion.
+Phase 3.2 is completed. Phase 4 has not started; its broader repetition matrix,
+built-package checks, and usage documentation remain pending.

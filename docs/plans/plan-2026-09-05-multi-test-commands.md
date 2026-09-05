@@ -13,8 +13,7 @@ ownership and regression coverage. The implemented layout uses feature/boundary
 folders and `.{unit,app,codex,pandoc}.test.ts` suffixes.
 
 Phase 1 is completed in the [implementation record](jobs/2026-09-05-test-suite-refactor.md).
-Phases 2 and 3 are completed. Phase 3.2 is in progress and must complete before
-Phase 4, which has not started.
+Phases 2, 3, and 3.2 are completed. Phase 4 has not started.
 The inventory, representative
 pilots, feature migration, final discovery, and full-range reviews are recorded
 in the implementation record.
@@ -169,7 +168,8 @@ be presented as complete verification.
 
 ## Phase 3.2: Live Test Output and Terminal Experience
 
-Status: in progress. Runtime verification is complete; final range review remains.
+Status: completed. Streaming, presentation, runtime verification, and full-range
+review passed.
 
 Address the manual-run feedback gap after the completed Phase 3 contract. Preserve
 its recorded execution/reporting/cleanup evidence and add the research's accepted
@@ -236,7 +236,7 @@ Acceptance:
 - [x] Verify both retention modes, final summary/report agreement, and unchanged
       ownership/cleanup behavior. Exercise actual app and aggregate runs with
       live output in a terminal and redirected logs.
-- [ ] Record the fixed implementation base at phase start, review its complete
+- [x] Record the fixed implementation base at phase start, review its complete
       `base..tip` range, resolve findings, and close this phase only after all
       acceptance evidence passes. Keep Phase 4 pending until then.
 

@@ -20,9 +20,9 @@ the actual mapping, evidence, and completed Phase 2 range reviews. Phase 1 imple
 evidence are complete. Phase 3 delivered the managed runner and passed the real
 aggregate in both retention modes. Phase 3.2 adds live test output and terminal
 presentation before Phase 4's broader workflow verification and final usage
-documentation. Phase 3.2 streaming and presentation are implemented and passed
-bounded regressions and the real command matrix; final closeout review remains. Phase 4 is
-pending, so research stays in progress.
+documentation. Phase 3.2 completed streaming and presentation, bounded regressions,
+the real command matrix, and full-range review. Phase 4 remains pending, so
+research stays in progress.
 
 ## Contributor Command Model
 
@@ -360,7 +360,8 @@ or allocation failure must still print its concrete reason.
 ### Live Test Output and Terminal Experience
 
 Accepted follow-up contract for Phase 3.2. Streaming and presentation are
-implemented, and bounded regressions plus the real command matrix passed. Phase 3 established final
+implemented, and bounded regressions, the real command matrix, and full-range
+review passed. Phase 3 established final
 reporting and lifecycle evidence but captured child output until finalization,
 leaving long runs without visible feedback. The job records that manual
 observation, the implementation, and current verification evidence.
@@ -551,11 +552,9 @@ commands, report validation, scheduling, terminal diagnostics, and retention;
 both real aggregate modes passed 3,152 cases across 434 files. The
 [implementation record](../plans/jobs/2026-09-05-test-suite-refactor.md)
 contains failure/correction evidence, ownership and export inspection,
-acceptance cleanup, and complete phase reviews. Phase 3.2 passed bounded
-live-output, presentation, and output-failure checks. Its real app/aggregate
-terminal and redirected matrix passed; final closeout review remains. Phase 4
-follows its completion and
-still owns the broader
+acceptance cleanup, and complete phase reviews. Phase 3.2 completed bounded
+live-output, presentation, and output-failure checks, its real app/aggregate
+terminal and redirected matrix, and full-range review. Phase 4 still owns the broader
 leaf/aggregate repetition protocol, final inventory reconciliation, built-package
 checks, and usage documentation.
 
