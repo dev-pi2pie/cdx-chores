@@ -2,7 +2,7 @@
 title: "Codex execution configuration implementation"
 created-date: 2026-09-05
 modified-date: 2026-09-05
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -123,9 +123,10 @@ found no material gaps. Local links, footnotes, code fences, phase numbering,
 preservation of completed phase evidence, and `git diff --check` passed.
 
 The follow-up environment clarification assigns dynamic `CODEX_HOME` handling,
-discovery/execution consistency, and inspected-home reporting to Phase 5. Phase 6
-will add the central `docs/guides/environment-variables.md` guide and discovery
-links. A tool-owned configuration file remains future work.
+discovery/execution consistency, and inspected-home reporting to Phase 5. It
+assigned the central environment-variable guide and discovery links to Phase 6,
+which completed them in the guide checkpoints below. A tool-owned configuration
+file remains future work.
 
 Review clarified invocation-directory scope and effective-home reporting through
 `initialize.codexHome`, with real CLI resolution evidence separated from synthetic
@@ -152,7 +153,8 @@ The implemented scope includes `codex-info providers` and configured-ID extracti
 Inspected CLI surfaces expose no built-in ID enumeration, so the implementation
 reports configured-only coverage. Provider listing
 requires configuration/provider sources but not `model/list`; summary/models
-retain complete-catalog requirements. Phase 6 will document all three commands.
+retain complete-catalog requirements. Phase 6 subsequently documented all three
+commands in the [execution guide](../../guides/codex-execution-configuration.md).
 
 Documentation review clarified raw-to-report provider mapping, successful
 configured-only enumeration, and command-local output flag placement. The final
@@ -225,8 +227,8 @@ material gaps. Local links, phase numbering, status/checklist consistency, and
 `git diff --check` passed.
 
 Phase 5 is complete. Research conclusions and plan checkboxes reflect the verified
-scope. Phase 5.5 records the presentation follow-up below; Phase 6 remains pending
-for final repository validation and public guides.
+scope. Phase 5.5 records the presentation follow-up below; Phase 6 records final
+repository validation and public guides.
 
 ## Phase 5.5: Codex Information Presentation
 
@@ -302,9 +304,9 @@ was left outside this planning update.
 
 ## Phase 6: Validation And Documentation Closeout
 
-Status: in-progress. Phase base: `1808d094`. Full implementation review base:
-`1dd5cf74`. This phase completes shipped guides, inventories environment behavior,
-validates all adopted paths, and reviews the complete implementation range.
+Status: completed. Phase base: `1808d094`. Full reviewed implementation range:
+`1dd5cf74..8ca2dab0`. This phase completes shipped guides, inventories environment
+behavior, validates all adopted paths, and reviews the complete implementation.
 
 ### Provider Integration Checkpoint
 
@@ -346,6 +348,7 @@ validates all adopted paths, and reviews the complete implementation range.
 
 ### Guide Integration Checkpoint
 
+- Checkpoint commit: `8ca2dab0`.
 - Linked the canonical guides from README and updated existing rename, query,
   extract, stack, Markdown helper, and Interactive guides with the implemented
   option/default/scope contract. Kept PDF `--profile` meaning and embedded-helper
@@ -354,5 +357,68 @@ validates all adopted paths, and reviews the complete implementation range.
   discovery, including current command and Interactive module locations.
 - All 18 new/updated README and guide files passed explicit Oxfmt checks;
   relative links, fences, and diff checks passed. Documentation review found no
-  material gaps. Plan guide checkboxes reflect this evidence; full validation
-  and implementation-range review are still required for closeout.
+  material gaps. Plan guide checkboxes reflect this evidence; the subsequent
+  [final validation](#final-validation) and
+  [whole-plan review](#whole-plan-review-and-closeout) completed the closeout checks.
+
+### Final Validation
+
+- `bun test` passed 2,949 tests across 378 files, with one opt-in protocol skip,
+  16,312 assertions, and no failures. This final run includes both Phase 6 test
+  additions. An earlier run before the image-capability case passed 2,948 tests.
+- `env CDX_CHORES_RUN_CODEX_DISCOVERY_PROBE=1 bun test test/codex-info/live-protocol.test.ts`
+  passed separately: 1 test, 33 assertions against installed CLI `0.153.4` with
+  isolated synthetic homes. This verifies protocol/configuration behavior, not
+  model generation or provider request compatibility.
+- `bunx tsc --noEmit`, `bun run lint`, `bun run format:check`, and
+  `bun run build` passed. Build retains the existing TypeScript 7 API warning.
+  All 18 README/guide files also passed explicit Markdown Oxfmt checks.
+- Built Node `26.5.0` ESM/CJS imports and help for all nine adopted command
+  surfaces and all three discovery commands passed. Synthetic ESM/CJS discovery
+  smoke passed all nine command/format combinations, ANSI/plain equality, parsed
+  JSON/provider assertions, and resolved home/cwd checks. Fixtures were cleaned.
+  These checks do not claim coverage of every supported Node version.
+- Full validation used Bun `1.4.1` and SDK `0.153.4`. No live model/provider
+  generation requests were made. Existing isolated CLI protocol observations and
+  synthetic argument/failure tests remain distinct from backend compatibility.
+
+The matrix audit maps the plan's boundaries to current evidence below. Paths
+are relative to `test/`; the full suite includes these tests.
+
+| Boundary                      | Evidence                                                                                                                                                                                                                              |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Input contract                | `cli-foundations/options/codex-execution.test.ts`                                                                                                                                                                                     |
+| SDK transport                 | `codex-adapters/direct/execution-transport.test.ts`                                                                                                                                                                                   |
+| Direct scope                  | `cli-foundations/options/codex-execution-scope.test.ts`, command wiring and action execution-policy suites                                                                                                                            |
+| Workflow lifetime             | `codex-adapters/direct/rename-execution.test.ts`, `markdown-pdf/actions/project-codex-prepared-request-lifecycle.test.ts`, `cli-interactive-markdown-pdf/codex-authoring/regeneration.test.ts`                                        |
+| Incompatibility               | Rename execution tests, `markdown-pdf/adapters/execution-policy.test.ts`, `data-stack/actions/execution-policy.test.ts`, `adapters-codex-markdown-pdf-profile/fallback-failures.test.ts`                                              |
+| Timeout regression            | Shared and command timeout suites, profile runner behavior, template repair timeout, project request lifecycle                                                                                                                        |
+| Interactive isolation         | `cli-foundations/commands/interactive-timeout.test.ts`, rename session options, query/stack/header/shape/cleanup Interactive tests, `cli-interactive-markdown-pdf/codex-execution.test.ts`; all nine request owners remain classified |
+| Failure/artifact boundaries   | Data-stack/Markdown execution-policy tests, prepared-template/project lifecycle, regeneration and output-recovery tests                                                                                                               |
+| Discovery output              | `codex-info/report.test.ts`, `render.test.ts`, `action.test.ts`, `cli-replay.test.ts`                                                                                                                                                 |
+| Discovery transport           | `codex-info/transport.test.ts`, versioned protocol fixture and separate opt-in live probe                                                                                                                                             |
+| Discovery isolation           | Transport request-method assertions, CLI replay, provider/catalog report tests, SDK default transport tests                                                                                                                           |
+| Environment context           | `codex-info/environment-parity.test.ts`, transport home isolation, context rendering, separate live protocol probe                                                                                                                    |
+| Provider discovery            | Report curation/sorting/exact-ID tests, providers-only transport, multiple-provider CLI replay                                                                                                                                        |
+| Provider/catalog relationship | Unchanged catalog under different selections, unlisted/empty states, provider-view null fields in report/replay/protocol evidence                                                                                                     |
+| Presentation                  | `codex-info/render.test.ts`, `color.test.ts`, `action.test.ts`, `commands.test.ts`, `cli-replay.test.ts`, shared color regressions                                                                                                    |
+
+### Whole-Plan Review And Closeout
+
+The full `1dd5cf74..8ca2dab0` review covered every implementation phase, including
+Phase 5.5 and the Phase 6 regression/documentation commits. Independent code,
+maintainability, security, and test reviews found no remaining material findings.
+The review confirmed all nine request owners, retained settings across workflow
+lifetimes, independent timeout policy, scoped discovery, curated output, and
+environment/credential boundaries.
+
+All plan checklist items are complete. The plan and this job are completed;
+research remains completed and links to the shipped execution/environment guides.
+Configured-only provider coverage, unverified backend compatibility, and the
+tested Node version are explicit evidence limits rather than unfinished work.
+
+Final documentation review corrected three stale future-tense references and
+found no remaining material gaps. All 21 changed Markdown files passed local-link
+and fence checks; the three closeout documents passed Oxfmt and diff checks.
+Formatting the closeout documents also resolved their pre-existing table-format
+issues recorded during Phase 5.5 planning.

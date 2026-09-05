@@ -20,8 +20,9 @@ observations, recorded protocol replay, and reviewed implementation tests.
 Configured-only provider coverage and catalog limitations are explicit conclusions.
 Phase 5.5 implements concise human views and shared terminal styling; its focused
 verification and Node package smoke evidence are recorded in the same job record.
-Research is complete for this scope; Phase 6 still owns shipped-guide updates and
-final repository closeout. The separate timeout contract remains unchanged.
+Research is complete for this scope. Phase 6 published the execution and
+environment guides linked below and recorded final validation in the unified job.
+The separate timeout contract remains unchanged.
 
 ## Execution State After Phases 1–4
 
@@ -160,11 +161,11 @@ configured independently.
 
 Use `codex-info` as a read-only command group. Phase 5 introduces:
 
-| Command                        | Default human output                                                                          |
-| ------------------------------ | --------------------------------------------------------------------------------------------- |
-| `cdx-chores codex-info`        | Configured model/provider, catalog recommendation when reported, and helper reasoning default |
-| `cdx-chores codex-info models` | Provider context, model IDs, reported reasoning efforts, and configured/recommended markers |
-| `cdx-chores codex-info providers` | Discoverable provider IDs, their sources, configured marker, and enumeration coverage |
+| Command                           | Default human output                                                                          |
+| --------------------------------- | --------------------------------------------------------------------------------------------- |
+| `cdx-chores codex-info`           | Configured model/provider, catalog recommendation when reported, and helper reasoning default |
+| `cdx-chores codex-info models`    | Provider context, model IDs, reported reasoning efforts, and configured/recommended markers   |
+| `cdx-chores codex-info providers` | Discoverable provider IDs, their sources, configured marker, and enumeration coverage         |
 
 All three commands offer `--details` and `--json`; summary is the default and needs no
 flag. Output flags follow the invoked command (`codex-info models --json`);
@@ -215,8 +216,9 @@ Discovery conclusions and JSON stay unchanged.
 
 The command-specific omissions apply equally to colored and plain human output.
 JSON keeps its curated fields and missing-value semantics and receives no styling.
-Phase 5.5 records implementation evidence in the unified job record; Phase 6
-documents the resulting shipped behavior in the public guides.
+Phase 5.5 records implementation evidence in the unified job record; the
+[execution guide](../guides/codex-execution-configuration.md) documents the shipped
+behavior.
 
 ### Discovery Evidence And Integration
 
@@ -307,12 +309,12 @@ A tool-owned configuration file has not been implemented. Its filename, schema,
 and precedence belong to separate future work; this plan adds neither a
 `codex.home` file setting nor another home-directory CLI option.
 
-Phase 6 will create `docs/guides/environment-variables.md` as the central guide to
-implemented environment controls. It will cover ownership, accepted values,
-defaults, precedence, command scope, and examples, with README discovery and
-links to the existing path-prompt and color guides. Codex authentication entries
-must distinguish this tool's signal checks from credential handling by Codex.
-Future file-based settings must not be presented as available configuration.
+The [environment-variable guide](../guides/environment-variables.md) documents
+implemented controls: ownership, accepted values, defaults, precedence, command
+scope, and examples. README and the existing path-prompt and color guides link
+to it. Authentication entries distinguish this tool's signal checks from
+credential handling by Codex. Future file-based settings are not available
+configuration.
 
 ### Selection And Capability Meaning
 
@@ -456,6 +458,10 @@ numeric `timeoutMs` seams instead of introducing another timeout policy.
 - [Codex request timeout contract implementation](../plans/plan-2026-08-21-codex-request-timeout-contract.md)
 
 ## References
+
+Current usage is documented in the
+[execution configuration guide](../guides/codex-execution-configuration.md) and
+[environment-variable guide](../guides/environment-variables.md).
 
 [^providers]: [Custom model providers](https://learn.chatgpt.com/docs/config-file/config-advanced#custom-model-providers)
 

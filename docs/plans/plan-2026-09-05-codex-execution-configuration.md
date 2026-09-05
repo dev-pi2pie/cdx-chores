@@ -2,7 +2,7 @@
 title: "Codex execution configuration implementation"
 created-date: 2026-09-05
 modified-date: 2026-09-05
-status: active
+status: completed
 agent: codex
 ---
 
@@ -18,6 +18,10 @@ adds concise command-specific output and shared terminal styling. Phase 6
 owns final validation and shipped documentation. The linked research records the
 completed discovery conclusions; phase evidence is in the unified job record.
 The shipped timeout policy remains owned by its existing guide and plan.
+
+All phases, including Phase 5.5 and final closeout, are complete. The unified job
+records validation and the full implementation review of `1dd5cf74..8ca2dab0`.
+Current usage lives in the execution and environment guides linked below.
 
 ## Starting State
 
@@ -236,11 +240,11 @@ models` or `codex-info --details providers` before discovery, rather than silent
 ignoring or inheriting the parent flag. Cover both valid placement and rejection
 in command tests; describe the canonical forms in help/examples.
 
-| View                | Summary                                                                                                             | Details                                                                                                         |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `codex-info`        | Configured model/provider, separately labeled catalog recommendation, helper reasoning default `low`                | Add working-directory/Codex-home context, Codex version, and reported configuration reasoning value          |
-| `codex-info models` | Provider context, model IDs, reported reasoning efforts, configured/recommended markers; retain configured selection even if unlisted | Add display names, descriptions, reported input modalities, effort descriptions, and catalog reasoning defaults |
-| `codex-info providers` | Provider IDs, source, configured marker, and enumeration coverage | Add reported display names, context, and coverage limitations; no endpoint/auth details |
+| View                   | Summary                                                                                                                               | Details                                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `codex-info`           | Configured model/provider, separately labeled catalog recommendation, helper reasoning default `low`                                  | Add working-directory/Codex-home context, Codex version, and reported configuration reasoning value             |
+| `codex-info models`    | Provider context, model IDs, reported reasoning efforts, configured/recommended markers; retain configured selection even if unlisted | Add display names, descriptions, reported input modalities, effort descriptions, and catalog reasoning defaults |
+| `codex-info providers` | Provider IDs, source, configured marker, and enumeration coverage                                                                     | Add reported display names, context, and coverage limitations; no endpoint/auth details                         |
 
 Phase 5.5 refines these human projections using the presentation contract in the
 linked research. Summary retains compact provider-coverage and catalog-scope
@@ -275,17 +279,17 @@ the providers view uses `models: null`, `catalogRecommendedModelIds: null`, and
 arrays. Human provider views omit model-catalog sections rather than displaying
 unrequested data as unknown. Define these core fields and human labels:
 
-| JSON field | Human label | Missing-value meaning |
-| --- | --- | --- |
-| `configured.model` | Configured model | `null`: unspecified in returned configuration |
-| `configured.provider` | Configured provider | `null`: unspecified in returned configuration |
-| `configured.reasoningEffort` | Configured reasoning effort | `null`: unspecified in returned configuration |
-| `catalogRecommendedModelIds` | Catalog recommended model | `[]`: no recommendation reported; retain multiple IDs if reported |
-| `helperReasoningDefault` | Helper reasoning default | Always `low` under the current execution policy |
-| `models[].supportedReasoningEfforts` | Supported reasoning efforts | `null`: unknown when upstream omits or supplies an empty effort list |
-| `models[].catalogReasoningDefault` | Catalog reasoning default | `null`: unknown when not reported |
-| `providers` | Providers | `[]`: no provider entries from the verified sources; inspect `providerCoverage` |
-| `providerCoverage` | Provider coverage | `configured-only` or `built-in-and-configured`; never imply unsupported IDs from absence |
+| JSON field                           | Human label                 | Missing-value meaning                                                                    |
+| ------------------------------------ | --------------------------- | ---------------------------------------------------------------------------------------- |
+| `configured.model`                   | Configured model            | `null`: unspecified in returned configuration                                            |
+| `configured.provider`                | Configured provider         | `null`: unspecified in returned configuration                                            |
+| `configured.reasoningEffort`         | Configured reasoning effort | `null`: unspecified in returned configuration                                            |
+| `catalogRecommendedModelIds`         | Catalog recommended model   | `[]`: no recommendation reported; retain multiple IDs if reported                        |
+| `helperReasoningDefault`             | Helper reasoning default    | Always `low` under the current execution policy                                          |
+| `models[].supportedReasoningEfforts` | Supported reasoning efforts | `null`: unknown when upstream omits or supplies an empty effort list                     |
+| `models[].catalogReasoningDefault`   | Catalog reasoning default   | `null`: unknown when not reported                                                        |
+| `providers`                          | Providers                   | `[]`: no provider entries from the verified sources; inspect `providerCoverage`          |
+| `providerCoverage`                   | Provider coverage           | `configured-only` or `built-in-and-configured`; never imply unsupported IDs from absence |
 
 The report's `context` contains working directory, Codex version, `codexHome`
 (the verified effective absolute home path, not the raw environment string), and
@@ -590,7 +594,7 @@ changed paths. Public guide updates remain in Phase 6.
 
 ### Phase 6: Validation And Documentation Closeout
 
-- [ ] Complete the validation matrix below and record commands/results in the
+- [x] Complete the validation matrix below and record commands/results in the
       unified job record.
 - [x] Add `docs/guides/codex-execution-configuration.md` as the canonical shipped
       option/default/scope guide, with examples for model/provider/effort and
@@ -616,10 +620,10 @@ changed paths. Public guide updates remain in Phase 6.
 - [x] Update relevant rename, data-query, data-stack, Markdown helper and
       Interactive guides, the CLI integration guide, and README discovery links.
       Keep unsupported surfaces explicit and existing PDF `--profile` terminology.
-- [ ] Record any live compatibility evidence separately with the exact tested
+- [x] Record any live compatibility evidence separately with the exact tested
       SDK/model/provider and request capability; argument tests alone must not
       be described as backend compatibility validation.
-- [ ] Close the implementation plan only after adopted paths and documentation
+- [x] Close the implementation plan only after adopted paths and documentation
       are complete. Keep the completed research linked as the source for the
       verified scope and limitations.
 
@@ -639,9 +643,9 @@ changed paths. Public guide updates remain in Phase 6.
 | Discovery transport            | Version-specific initialization, cwd/executable selection, pagination, unrelated notifications, malformed responses, bounded buffers/deadlines, cancellation, and child cleanup                                         |
 | Discovery isolation            | No generation/config writes, no dependency from execution workflows, unchanged helper defaults, and honest catalog scope under custom providers                                                                         |
 | Environment context            | Default/custom/edge-case `CODEX_HOME`, successive-invocation isolation, SDK/discovery environment parity, independent executable override, and accurate home/source reporting                                           |
-| Provider discovery | Configured/built-in sources, completeness labels, duplicate IDs, unlisted selections, safe fields, and independence from model-list failures |
-| Provider/catalog relationship | Same catalog under different providers, configured context in model output, metadata-only claims, and not-requested versus empty JSON states |
-| Information presentation | Command-specific concise default/details views; TTY/color-control matrix; ANSI-stripped/plain equality; external-string escaping; unchanged JSON and discovery |
+| Provider discovery             | Configured/built-in sources, completeness labels, duplicate IDs, unlisted selections, safe fields, and independence from model-list failures                                                                            |
+| Provider/catalog relationship  | Same catalog under different providers, configured context in model output, metadata-only claims, and not-requested versus empty JSON states                                                                            |
+| Information presentation       | Command-specific concise default/details views; TTY/color-control matrix; ANSI-stripped/plain equality; external-string escaping; unchanged JSON and discovery                                                          |
 
 Reuse coverage in `test/codex-adapters/`, rename/data/Markdown command and action
 suites, `test/adapters-codex-markdown-pdf-profile/runner-behavior.test.ts`,
