@@ -62,8 +62,8 @@ Avoid direct SDK/tool-client complexity inside action modules when an adapter bo
 
 ## Codex SDK Integration
 
-Codex-assisted workflows in `v0.1.8-canary.3` are validated with
-`@openai/codex-sdk` `0.153.3`.
+Codex-assisted workflows in `v0.1.8-canary.4` are validated with
+`@openai/codex-sdk` `0.153.4`.
 
 `src/adapters/codex/shared.ts` loads the Codex SDK on demand. Feature-specific
 adapters provide Codex assistance for rename, Markdown PDF, and data workflows.
