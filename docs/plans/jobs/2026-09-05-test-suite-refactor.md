@@ -51,7 +51,7 @@ After the full-range ownership review, focused verification passed 20 tests and
 Command: `bun test ./test/test-runner/process-table.unit.test.ts ./test/test-runner/process.app.test.ts`.
 Fixture limits are 2,500 ms execution, 250 ms
 grace, and 1,500 ms total termination; timeout fixtures use shorter explicit
-execution deadlines. Final focused verification passed 19 tests and 98 assertions
+execution deadlines. The installed-tool checkpoint verification passed 19 tests and 98 assertions
 in 4.93 seconds, including safe cleanup for a launch failure with no spawned PID.
 `tsc --noEmit`, repository lint, and repository format checks passed.
 
@@ -126,7 +126,22 @@ probes passed without escalation:
 | Captured | 835/647, 732/610, 763/646               | 742/630, 768/641, 752/637                |
 | Terminal | 788/671, 740/630, 750/635               | 732/619, 760/642, 841/628                |
 
-The expanded fixed-base review remains pending until these fixes are committed.
+A subsequent review added a defensive observation regression: an empty snapshot
+while the direct child is alive must not retire the group. Retirement now requires
+direct-child exit; the test injects one empty observation, then verifies successful
+server shutdown using real process observations. This is a synthetic boundary
+check, not a claim that a startup race was observed in the installed tool.
+
+Final focused verification passed 21 tests and 127 assertions in 5.75 seconds.
+TypeScript, repository lint, formatting, and whitespace checks passed. The final
+fixed 12-probe repetition also passed without escalation:
+
+| Mode     | Protocol total / drain ms, attempts 1–3 | Transport total / drain ms, attempts 1–3 |
+| -------- | --------------------------------------- | ---------------------------------------- |
+| Captured | 946/759, 757/639, 778/633               | 770/655, 866/743, 847/726                |
+| Terminal | 730/613, 754/633, 763/643               | 745/626, 768/648, 785/666                |
+
+The expanded fixed-base review remains pending until this final fix is committed.
 
 ### Acceptance
 

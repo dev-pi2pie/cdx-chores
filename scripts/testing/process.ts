@@ -217,7 +217,8 @@ export function startOwnedProcess(
             live!.filter((member) => member.pid !== groupId).map((member) => member.pid),
           );
         }
-        if (live?.length === 0) groupRetired = true;
+        // A live direct child still anchors ownership if a snapshot omits it.
+        if (exitedAt !== undefined && live?.length === 0) groupRetired = true;
         if (closed && live?.length === 0) {
           verifiedStopped = true;
           break;

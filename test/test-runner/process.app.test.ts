@@ -72,6 +72,25 @@ function startSurvivor(afterExit: "normal" | "unavailable" | "replacement" = "no
 }
 
 describe("owned process lifecycle", () => {
+  test("retains ownership after an empty snapshot while the direct child is alive", async () => {
+    let observations = 0;
+    const process = startOwnedProcess(options("server"), {
+      observe: async (groupId, timeoutMs) => {
+        observations++;
+        if (observations === 1) return [];
+        return observeProcessGroup(groupId, timeoutMs);
+      },
+    });
+    await ready(process);
+    process.shutdown();
+    const result = await process.completion;
+    expect(observations).toBeGreaterThan(1);
+    expect(result.ok).toBe(true);
+    expect(result.issues).toEqual([]);
+    expect(result.signals.map((entry) => entry.signal)).toEqual(["SIGTERM"]);
+    await assertStopped(result);
+  });
+
   test("captures output and verifies normal exit without sending signals", async () => {
     const result = await startOwnedProcess(options("exit")).completion;
     expect(result.ok).toBe(true);
