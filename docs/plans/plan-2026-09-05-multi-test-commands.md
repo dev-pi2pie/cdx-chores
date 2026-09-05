@@ -1,219 +1,191 @@
 ---
-title: "Local Multi-Test Commands Implementation"
+title: "Test Suite Refactor Implementation Plan"
 created-date: 2026-09-05
 modified-date: 2026-09-05
 status: draft
 agent: codex
 ---
 
-## Goal and Planning Boundary
+## Goal and Execution Boundary
 
-Implement explicit local test commands, strict aggregate results, and default
-scratch cleanup with optional result retention. All commands run on the
-contributor's machine; integration means using real Codex or Pandoc.
+Implement one aggregate command and four disjoint suites while preserving feature
+ownership and regression coverage. The proposed target uses feature/boundary
+folders and `.{unit,app,codex,pandoc}.test.ts` suffixes.
 
-This plan is `draft`; implementation has not started. The research remains
-`in-progress` until the local acceptance evidence below is recorded.
+Implementation has not started. Review the research's structure proposal before
+authorizing execution; the complete mapping and representative pilots remain
+pending. The research is authoritative for these contracts:
 
-GitHub Actions testing, publication/release gates, and artifact uploads are
-outside this implementation. Existing publish/release workflows remain unchanged.
-Linux and additional Node-version verification, duplicate-test deletion, and
-broader test-catalog cleanup are deferred and do not block local closeout.
+- [Commands](../researches/research-2026-09-05-multi-test-commands.md#contributor-command-model), [structure and before/after comparison](../researches/research-2026-09-05-multi-test-commands.md#proposed-structure-and-beforeafter-comparison), and [unit boundaries](../researches/research-2026-09-05-multi-test-commands.md#what-unit-means-in-this-repository).
+- [Discovery](../researches/research-2026-09-05-multi-test-commands.md#proposed-discovery-and-suite-membership), [process completion](../researches/research-2026-09-05-multi-test-commands.md#process-completion-and-failure-semantics), and [reporting/retention](../researches/research-2026-09-05-multi-test-commands.md#shared-reporting-and-artifact-contract).
+- [Scope and evidence](../researches/research-2026-09-05-multi-test-commands.md#scope-evidence-and-documentation), including platform limits and excluded work.
+
+```text
+Prove process ownership
+  -> classify and pilot feature migrations
+  -> deliver the managed runner
+  -> verify the workflow and publish guidance
+```
+
+## Phase 1: Implement and Verify the Process Lifecycle
+
+Deliver the smallest working process-ownership mechanism for launcher/native-child,
+fixture, and prerequisite-probe patterns. Create the unified job first; record
+chosen completion signals, observed identities/states, and bounded preflight,
+normal-shutdown, and cleanup allowances. Potentially blocking native/tool probes
+need a controllable execution boundary.
+
+Acceptance:
+
+- [ ] Verify normal/delayed exit, expected server termination, unexpected surviving
+      descendants, resistant termination, launch failure, and unverifiable completion
+      against the research's outcome policy.
+- [ ] Verify a hanging prerequisite probe times out before test launch and terminates
+      owned descendants. Exercise cancellation during both preflight and test work;
+      preserve original failures and remaining-path diagnostics.
+- [ ] Check installed Codex in terminal and captured-output execution under a bounded
+      repeat protocol. Record every attempt and its actual timings.
+- [ ] Review the complete phase range and resolve findings before broad adoption.
+
+## Phase 2: Classify and Migrate Existing Coverage
+
+### 2A: Inventory and Selector
+
+Record a fresh execution baseline, including skips/bypasses and unmet prerequisites.
+For every test file, record feature/boundary, dependencies, leaf, target path,
+support consumers, and disposition: suffix-only, move, split, or pending decision.
+Use the existing correspondence to identify residual contracts and resolve target
+collisions. Any retained path exception still needs a suite suffix, named owner,
+and event-based revisit condition.
+
+Implement suffix-derived discovery without importing tests. Keep repository default
+discovery unchanged during partial migration.
+
+Acceptance:
+
+- [ ] Account for all Bun filename forms, out-of-tree files, and test-shaped inputs;
+      reject unknown/missing suffixes, duplicate owners, and empty selections.
+- [ ] Review support registration and imports separately; no executable test may
+      disappear into support or be imported to share cases across leaves.
+- [ ] Verify exact paths, ignore-pattern replacement, config drift, new/deleted files,
+      and JUnit file-identity reconciliation with bounded synthetic fixtures.
+
+### 2B: Representative Pilots
+
+Pilot Codex information across unit, replay/app, and live Codex boundaries, retaining
+the independent protocol client and adding production discovery-adapter coverage.
+Pilot Markdown PDF parsing/HTML transformation, fake-process rendering with real
+files, and real Pandoc conversion in the proposed feature homes.
+
+Separate import-time prerequisite probes from reusable support, starting with
+`test/markdown-pdf/actions/render-support.ts` and
+`test/data-query/commands/support.ts`. Reuse existing helpers and keep committed
+input paths fixed.
+
+Acceptance:
+
+- [ ] Preserve case names/assertions for moves; reconcile mixed-file splits.
+      Verify imports, module URL mocks, `import.meta` paths, subprocess working
+      directories, fixture resolution, and combined-selection mock/order behavior.
+- [ ] Prove prerequisite isolation and explicit missing-tool/platform failures.
+      Keep live opt-in gates during partial migration; use bounded pilot config
+      and explicit opt-in without writing committed fixtures.
+- [ ] Review pilot evidence and settle the mapping before extending it. Managed
+      named commands remain unpublished until Phase 3.
+
+### 2C: Feature Batches and Final Discovery
+
+Migrate accepted Markdown PDF groups, Data Query residuals, then remaining owners
+in bounded batches. Apply suffix and approved location changes together; prefer
+suffix-only changes in coherent features. Move executable helper-contract tests
+into ordinary ownership. Separate move/import changes from behavioral fixes in
+reviewable checkpoints.
+
+Acceptance:
+
+- [ ] Reconcile every batch's cases and run affected combined selections. Audit
+      availability skips, conditional registration, and native-readiness early
+      returns; retain asserted missing-dependency behavior.
+- [ ] Control application/doctor configuration, homes, native caches, and executable
+      paths. Unit selection must neither load nor probe integration prerequisites.
+- [ ] Update lint/format coverage, links, and terminal correspondence owners while
+      preserving historical evidence and committed inputs.
+- [ ] After full classification, replace pilot configs with the final unit-default
+      config and remove live gates in the same checkpoint. Required integration
+      cases must run or fail explicitly; automatic fixture writes must be gone.
+- [ ] Prove bare/feature-unit discovery, exact integration selection with the override,
+      disjoint leaves, their complete union, and matching report identities. Record
+      final file/case counts and durations without treating counts alone as proof.
+
+## Phase 3: Deliver the Managed Runner
+
+Publish named commands only when selection, bounded preflight, process ownership,
+report validation, terminal summaries, and retention work together. Use Phase 2's
+exact paths and exclusions; validate arguments/membership before dependency launch.
+
+Implement one owned run per invocation, direct aggregate child launches, immutable
+retention context, and suite namespaces. Audit fixture/direct/sibling/session scratch
+owners and export ordering, including setup failures and genuine system-temp tests.
+Apply the research's JUnit, scheduling, cleanup, and Codex-evidence contracts.
+
+Acceptance:
+
+| Check                   | Required evidence                                                                                                                                              |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Selection and preflight | Invalid/empty membership never triggers broad discovery; missing tools/native packages/caches and unsupported platforms fail before tests                      |
+| Bounded probes          | Hanging preflight and cancellation stop owned work; no JUnit/counts invented for unlaunched tests                                                              |
+| Reports                 | Reject malformed, missing, stale, contradictory, empty, or skipped/TODO reports and selected-file mismatches; passing XML cannot override nonzero exit         |
+| Scheduling              | Unit/app/Codex/Pandoc order, one attempt each, ordinary-failure continuation, cancellation boundaries, preserved completed states                              |
+| Ownership               | Distinct concurrent roots; no overwrite/deletion across owners; replaced/symlink roots and pre-existing reports rejected                                       |
+| Failure cleanup         | Setup/assertion/export/cleanup failures preserve all reasons, remove incomplete exports, and identify remaining work                                           |
+| Terminal output         | Final states, available counts, failure/lifecycle reasons, and retention location appear in both modes; default result deletion preserves terminal diagnostics |
+| Retention and evidence  | Scratch removed, only designated safe outputs retained, existing runs/inputs unchanged; Codex keys/values sanitized in both modes                              |
+
+Use bounded fixtures rather than recursively running the full suite. A phase pass
+requires all selected leaves and finalization to succeed; cleanup failure cannot
+be presented as complete verification.
+
+## Phase 4: Verify the Workflow and Publish Guidance
+
+Run each leaf and the aggregate in both retention modes using declared prerequisites
+and the agreed terminal/repetition protocol. Record failures and fixes alongside
+passes. Deliver the testing guide and README link once its examples are verified.
+
+Acceptance:
+
+- [ ] Reconcile final paths/cases with the accepted inventory and baseline, including
+      formerly conditional or bypassed coverage. Verify unit-default discovery,
+      integration overrides, and prerequisite isolation after all moves.
+- [ ] Compare Codex requests/checks across retention modes; inspect retained outputs
+      and remove only acceptance-owned runs.
+- [ ] Run separate lint, formatting, types, build, and built Node CLI/ESM/CJS checks.
+      Record actual platform/tool versions and distinguish source from built evidence.
+- [ ] Explain feature placement, suite suffixes, prerequisites, raw Bun limitations,
+      failures, cleanup, retention, and adding tests in the guide.
+- [ ] Review final docs and the complete phase range; resolve findings and close
+      documents only when their own acceptance criteria pass.
+
+## Execution Records and Reviews
+
+Create one `Test Suite Refactor Implementation Record` when Phase 1 starts, planned
+at `docs/plans/jobs/2026-09-05-test-suite-refactor.md`. Use the actual UTC start date,
+`status: in-progress`, and policy-compliant metadata; adjust the filename if needed.
+Link it from both drafts after creation.
+
+The job owns the full mapping, commands/versions, results, failure diagnoses, and
+exact phase/batch review ranges. Add accepted change sets to the correspondence and
+update current-owner cells to terminal paths; preserve older change-set metadata,
+test-quality inventory, and completed job evidence.
+
+Agree on the commit workflow when implementation is authorized. For checkpoint
+commits, review the fixed `phase-base..tip` range, commit accepted fixes, and
+re-review from the same base. Mark the job complete only after all phases pass.
 
 ## Related Research
 
-- [Multi-Test Commands and Verification Boundaries](../researches/research-2026-09-05-multi-test-commands.md)
+- [Test Suite Responsibilities and Verification Lifecycle](../researches/research-2026-09-05-multi-test-commands.md)
 
 ## Related References
 
 - [Documentation Policy](../../DOCUMENTATION_POLICY.md)
 - [Test Catalog Path Correspondence](../references/test-catalog-path-correspondence.md)
-
-## Command and Implementation Boundaries
-
-| Planned command | Responsibility |
-| --- | --- |
-| `bun run test:local` | Controlled unit, action, command, native-package, fixture-subprocess, and replay tests |
-| `bun run test:integration:codex` | Real Codex protocol and production discovery-adapter checks |
-| `bun run test:integration:pandoc` | Real Pandoc conversion and application HTML processing |
-| `bun run test:all` | All three suites sequentially, continuing after ordinary suite failures |
-
-Every named command accepts `--keep-results`, default false. It changes retention
-only. Reject unknown options before allocation or dependency launch. Bare
-`bun test` remains the local shortcut with normal helper cleanup. Add no `test`
-alias, `--keep`, custom output path, or recording command.
-
-Use one fixed three-suite table and a small shared runner in `scripts/testing/`.
-Keep local tests under `test/`, live suites under `integration/codex/` and
-`integration/pandoc/`, and committed fixture inputs in place. Use ordinary
-`.test.ts` names, `[test] root = "test"`, and explicit integration paths from
-the repository root. A simple membership check is sufficient; no dynamic
-registry, plugin API, or general-purpose process-management framework is needed.
-
-Reuse `TMP_ROOT`, `createTempFixtureDir`, and `withTempFixtureDir`. Each named
-invocation owns a unique run under `examples/playground/.tmp-tests/`. Extend
-these helpers for run context and designated outputs rather than introducing
-a second scratch mechanism. Audit all existing allocation patterns, including
-those outside the helpers; do not generalize for hypothetical future ones.
-
-A suite passes only with exit zero, valid fresh JUnit containing executed tests,
-and zero failures, errors, skips, or TODOs. Prerequisite, report, platform,
-export, and cleanup failures are nonzero outcomes. Preserve original failures
-alongside lifecycle errors; a small reader using `fast-xml-parser` suffices.
-
-Retain only registered regular output files and reports, copying before inner
-cleanup. Remove scratch in both modes. Never retain raw configuration,
-credentials, environment dumps, or whole fixture workspaces; refuse symlinks
-outside the run. Retained results stay until the caller removes the printed
-run after review. Later invocations must not sweep them.
-
-Initial acceptance targets local macOS with Bun 1.4.1, Node 24.18.0,
-lockfile-installed Codex, and Pandoc 3.9 as the candidate to validate. Record
-actual versions and admit only verified harness platforms; initially reject
-other platforms, including Windows. This does not change product runtime support.
-Preserve Node-compatible production code and the Node-only compiler environment.
-
-Keep lint, formatting, type checks, build, and a local built-Node smoke separate
-from `test:all`. No dependency refresh, committed fixture update, full PDF/FFmpeg
-execution coverage, or multi-version compatibility certification is included.
-
-## Execution Evidence
-
-When Phase 1 starts, create one job at
-`docs/plans/jobs/YYYY-MM-DD-multi-test-commands.md` using the actual UTC date.
-Link it here and from the research, set the plan `active`, and record phase
-evidence there. Keep a mechanical suite-membership list, exact move/split paths,
-and scratch-owner checklist; a new suite-wide quality inventory is unnecessary.
-
-Check off tasks after their evidence passes. Keep current path mappings in the
-existing correspondence reference, and commands, actual versions, failures, and
-cleanup verification in the job. Use public-safe repository-relative records.
-The guide remains `draft` while command behavior is assembled across the phases.
-
-```text
-Separate suites and define local commands
-                  |
-                  v
-Strict reporting and bounded execution
-                  |
-                  v
-Complete cleanup and explicit retention
-                  |
-                  v
-Local verification and contributor guide
-```
-
-## Phase 1: Separate Suites and Define Local Commands
-
-- [ ] Record the current local baseline and mechanically check suite membership.
-      Inventory real-dependency cases and existing scratch owners, including direct
-      allocators, generator/subprocess scratch, production-created sessions, and
-      sibling files. Record exact move/split paths without auditing every assertion.
-- [ ] Establish local prerequisite setup for Bun, Node SQLite, native DuckDB and
-      required extension caches, Git/Bash/jq, zip/unzip, Codex, and Pandoc. Control
-      ambient test configuration, especially doctor commands, and check unexpected
-      network use. Setup occurs before testing; tests do not install dependencies.
-- [ ] Move the three Pandoc conversion cases and split the Codex probe into home,
-      configuration-precedence, and pagination/metadata checks. Preserve mixed-file
-      local coverage and the independent protocol client; add real
-      `discoverCodexInfo` coverage. Remove live-test availability/opt-in wrappers.
-- [ ] Run Codex from the frozen installation with isolated homes, an environment
-      allowlist, bounded metadata requests, and no personal credentials, generation
-      requests, or automatic retries. Make evidence capture, sanitization, and
-      shape/version validation independent of the future retention choice.
-      Remove automatic committed-fixture
-      writes and both legacy probe flags. Catalog equality becomes an observation,
-      not an invariant. Phase 3 implements designated-result retention; Phase 4
-      verifies identical capture and checks with and without `--keep-results`.
-- [ ] Add the fixed suite table, command entry points, and `bunfig.toml`; preserve
-      imports, fixture locations, subprocess working directories, and every distinct
-      regression case. Correct misleading built-CLI names and declare platform
-      limits instead of accepting hidden partial coverage. Leave duplicate-test
-      assertions in place.
-- [ ] Include `integration/` in `lint`, `lint:fix`, `format`, and `format:check`,
-      and extend applicable `.oxlintrc.json` test overrides. Verify that tests and
-      support files remain covered. Update affected current links and path
-      correspondence, and start the testing guide as `draft`.
-
-Checkpoint: suite selection and prerequisite setup work locally, with real Codex
-and Pandoc results distinguished from replay evidence. Bare `bun test` excludes
-live suites; all moved coverage, fixture inputs, and tooling coverage survive.
-The complete named-command contract remains pending Phases 2–4.
-
-## Phase 2: Add Strict Results and Bounded Execution
-
-- [ ] Complete the common runner with prerequisite/platform checks, fixed-table
-      completeness checks, sequential execution, fresh per-suite JUnit, and one
-      final summary. Reject unassigned or duplicate membership and unknown options.
-- [ ] Allocate a unique run and pass one immutable run context to helpers and child
-      tests without contributor-facing environment switches. Preserve the existing
-      cleanup path; Phase 3 completes ownership and designated-result export.
-- [ ] Combine process status and validated report contents. Distinguish passed,
-      failed, and not-run suites; include prerequisite and lifecycle errors and
-      continue later suites after ordinary failures.
-- [ ] Bound suite execution and owned-child termination. Begin with a 120-second
-      Codex suite deadline plus bounded cleanup, and record measured budgets for
-      the other suites. Handled cancellation stops scheduling, terminates owned
-      work, finalizes available outcomes, and exits nonzero. Scope supervision to
-      the child-process patterns present in these suites.
-- [ ] Exercise synthetic pass, assertion/import failure, empty selection,
-      skips/TODOs, missing/malformed XML, nonzero exit with passing XML, missing
-      prerequisites, unsupported platforms, unknown options, timeout/cancellation,
-      and continuation after failure. Self-tests must not recursively launch
-      the full local suite.
-
-Checkpoint: focused scenarios demonstrate strict reporting and bounded execution;
-a zero exit never represents missing, skipped, or failed verification.
-
-## Phase 3: Complete Scratch Ownership and Result Retention
-
-- [ ] Close every existing scratch-owner checklist entry. Prefer callback helpers
-      or establish an explicit owner immediately after allocation, before setup
-      and assertions. Include direct `mkdtemp`, generator/subprocess workspaces,
-      production-created sessions, and sibling files outside the shared root.
-- [ ] Route scratch into the run where practical. Preserve real system-temp tests
-      with explicit external-path ownership and cancellation registration, including
-      child-created paths. Cleanup cannot rely solely on a child reaching `finally`
-      or on deleting the shared run directory.
-- [ ] Register designated output files before assertions fail and export before
-      inner cleanup. Keep requests/checks identical in both retention modes. Only
-      validated successful Codex evidence is a fixture candidate; label retained
-      partial/failing evidence as sanitized diagnostics.
-- [ ] Verify setup/assertion failure cleanup for each ownership pattern under bare
-      tests and named commands, plus handled cancellation of named commands with
-      child/external scratch present. Cover nested export, export/cleanup failure,
-      original-error preservation, concurrent runs, and unrelated-path/symlink
-      protection through focused scenarios.
-
-Checkpoint: default runs remove owned scratch/results; retained runs remove scratch
-and print an existing results path, or explicitly report that nothing was retained.
-Export failures remove incomplete copies and fail without claiming usable output;
-cleanup failures report the remaining owned path. Committed inputs and earlier
-retained runs remain untouched. SIGKILL, host termination, and power loss carry no
-cleanup guarantee.
-
-## Phase 4: Verify Locally and Complete Contributor Guidance
-
-- [ ] Run each named command and `test:all` locally with the declared prerequisites.
-      Verify both retention modes, identical Codex requests/checks, actual versions,
-      Pandoc 3.9 behavior, and real discovery-adapter results. Confirm final suite
-      membership, preserved move/split coverage, and unchanged committed fixtures.
-- [ ] Run separate lint, formatting, type, and build checks. Smoke the built CLI
-      and ESM/CJS exports through the local Node version; Bun source execution is
-      not built-runtime evidence. Record macOS results and verify unsupported-platform
-      rejection through focused preflight tests. Linux and additional Node versions
-      are not acceptance gates.
-- [ ] Complete `docs/guides/testing.md` and link it from README Local Development.
-      Cover command choice, prerequisite/native-cache setup, verified versions and
-      platform limits, metadata access, strict failures, cleanup, `--keep-results`,
-      explicit retained-run removal, adding tests, and separate fixture review.
-      Include concise examples and ASCII command/lifecycle flows, plus independent
-      local checks. Remove retired contributor-facing opt-in instructions.
-- [ ] Verify guide examples and links, reconcile local research acceptance with
-      the job evidence, and mark guide/plan/job/research complete only when their
-      own criteria pass. Link completed evidence from the research. Broader platform
-      testing and hosted automation remain outside these completion criteria.
-
-Checkpoint: the local workflow is verified and documented, with no unexplained
-skips or unresolved cleanup/export failures. The guide describes actual behavior
-and verified environments. Existing GitHub Actions workflows are unchanged.
