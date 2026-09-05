@@ -14,7 +14,8 @@ folders and `.{unit,app,codex,pandoc}.test.ts` suffixes.
 
 Phase 1 is completed in the [implementation record](jobs/2026-09-05-test-suite-refactor.md).
 Phase 2 is in progress; Phases 3–4 have not started.
-The complete structure mapping and representative migration pilots remain pending.
+The inventory and representative pilots are verified. Phase 2C handles the
+remaining migration and final discovery configuration.
 The research is authoritative for these contracts:
 
 - [Commands](../researches/research-2026-09-05-multi-test-commands.md#contributor-command-model), [structure and before/after comparison](../researches/research-2026-09-05-multi-test-commands.md#proposed-structure-and-beforeafter-comparison), and [unit boundaries](../researches/research-2026-09-05-multi-test-commands.md#what-unit-means-in-this-repository).
@@ -85,13 +86,13 @@ input paths fixed.
 
 Acceptance:
 
-- [ ] Preserve case names/assertions for moves; reconcile mixed-file splits.
+- [x] Preserve case names/assertions for moves; reconcile mixed-file splits.
       Verify imports, module URL mocks, `import.meta` paths, subprocess working
       directories, fixture resolution, and combined-selection mock/order behavior.
-- [ ] Prove prerequisite isolation and explicit missing-tool/platform failures.
+- [x] Prove prerequisite isolation and explicit missing-tool/platform failures.
       Keep live opt-in gates during partial migration; use bounded pilot config
       and explicit opt-in without writing committed fixtures.
-- [ ] Review pilot evidence and settle the mapping before extending it. Managed
+- [x] Review pilot evidence and settle the mapping before extending it. Managed
       named commands remain unpublished until Phase 3.
 
 ### 2C: Feature Batches and Final Discovery

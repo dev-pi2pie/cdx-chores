@@ -1,7 +1,7 @@
 ---
 title: "Test Catalog Path Correspondence"
 created-date: 2026-08-23
-modified-date: 2026-08-24
+modified-date: 2026-09-06
 status: completed
 agent: codex
 ---
@@ -34,6 +34,7 @@ cells and append a new change set without rewriting completed job evidence.
 
 | Change set | Accepted | Scope | Evidence range | Implementation record |
 | --- | --- | --- | --- | --- |
+| `test-suite-pilots` | 2026-09-06 | PDF and Codex information suite pilots | `d8735eda..02eaadf1` | [job record](../plans/jobs/2026-09-05-test-suite-refactor.md#2b-representative-pilots) |
 | `data-query` | 2026-08-23 | Data Query | `db9622cf..885e3846` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-3-data-query-migration-pilot) |
 | `doctor` | 2026-08-23 | Doctor | `ff0f3d6f..93c60f9e` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-4-doctor-ownership-migration-pilot) |
 | `markdown-pdf-pilot` | 2026-08-23 | Markdown PDF Pilot | `05a87d54..802d3b86` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-5-bounded-markdown-pdf-migration-pilot) |
@@ -154,7 +155,7 @@ Change set: `markdown-pdf-general`.
 | Historical path or fragment | Transition | Current owner or owners |
 | --- | --- | --- |
 | `test/cli-actions-md-to-pdf-actions-validation.test.ts` | moved | `test/markdown-pdf/actions/rendering-validation.test.ts` |
-| `test/cli-actions-md-to-pdf-actions.test.ts` | split | `test/markdown-pdf/actions/rendering-code-highlighting.test.ts`<br>`test/markdown-pdf/actions/rendering-composition.test.ts`<br>`test/markdown-pdf/actions/rendering-core.test.ts`<br>`test/markdown-pdf/actions/rendering-requirements.test.ts`<br>`test/markdown-pdf/actions/rendering-template-asset-safety.test.ts`<br>`test/markdown-pdf/actions/rendering-write-lifecycle.test.ts` |
+| `test/cli-actions-md-to-pdf-actions.test.ts` | split | `test/markdown-pdf/actions/rendering-code-highlighting.test.ts`<br>`test/markdown-pdf/actions/rendering-composition.test.ts`<br>`test/markdown-pdf/actions/rendering/core.app.test.ts`<br>`test/markdown-pdf/actions/rendering-requirements.test.ts`<br>`test/markdown-pdf/actions/rendering-template-asset-safety.test.ts`<br>`test/markdown-pdf/actions/rendering-write-lifecycle.test.ts` |
 | `test/cli-actions-md-to-pdf-commands/direct-render.test.ts` | moved | `test/markdown-pdf/commands/direct-render.test.ts` |
 | `test/cli-actions-md-to-pdf-diagnostics.test.ts` | moved | `test/markdown-pdf/actions/rendering-diagnostics.test.ts` |
 | `test/cli-actions-md-to-pdf-no-default-css.test.ts` | moved | `test/markdown-pdf/actions/rendering-custom-css-page-numbers.test.ts` |
@@ -563,3 +564,24 @@ changes materially.
 - [Test Suite Contract, Overlap, And Catalog Review](../researches/research-2026-08-23-test-suite-contract-overlap-and-catalog.md)
 - [Test Suite Contract And Catalog Enhancement Job](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md)
 - [Test Suite Contract Ownership Catalog](test-suite-case-matrices.md)
+
+### Test Suite Pilots
+
+Change set: `test-suite-pilots`.
+
+| Historical path or fragment | Transition | Current owner or owners |
+| --- | --- | --- |
+| `test/cli-actions-md-to-pdf-code-highlight.test.ts` | split | `test/markdown-pdf/direct/code-highlight.unit.test.ts`<br>`test/markdown-pdf/direct/code-highlight.pandoc.test.ts` |
+| `test/cli-actions-md-to-pdf-page-number-format.test.ts` | moved | `test/markdown-pdf/direct/page-number-format.unit.test.ts` |
+| `test/cli-actions-md-to-pdf-page-number-html.test.ts` | moved | `test/markdown-pdf/direct/page-number-html.unit.test.ts` |
+| `test/cli-actions-md-to-pdf-pandoc.test.ts` | moved | `test/markdown-pdf/actions/rendering/pandoc-language.pandoc.test.ts` |
+| `test/codex-info/action.test.ts` | moved | `test/codex-info/action.unit.test.ts` |
+| `test/codex-info/cli-replay.test.ts` | moved | `test/codex-info/cli-replay.app.test.ts` |
+| `test/codex-info/color.test.ts` | split | `test/codex-info/color.unit.test.ts`<br>`test/codex-info/color.app.test.ts` |
+| `test/codex-info/commands.test.ts` | moved | `test/codex-info/commands.app.test.ts` |
+| `test/codex-info/environment-parity.test.ts` | moved | `test/codex-info/environment-parity.app.test.ts` |
+| `test/codex-info/live-protocol.test.ts` | moved | `test/codex-info/live-protocol.codex.test.ts` |
+| `test/codex-info/render.test.ts` | moved | `test/codex-info/render.unit.test.ts` |
+| `test/codex-info/report.test.ts` | moved | `test/codex-info/report.unit.test.ts` |
+| `test/codex-info/transport.test.ts` | moved | `test/codex-info/transport.app.test.ts` |
+| `test/markdown-pdf/actions/rendering-core.test.ts` | moved | `test/markdown-pdf/actions/rendering/core.app.test.ts` |

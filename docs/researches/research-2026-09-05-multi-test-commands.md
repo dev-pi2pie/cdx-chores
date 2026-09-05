@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Responsibilities and Verification Lifecycle"
 created-date: 2026-09-05
-modified-date: 2026-09-05
+modified-date: 2026-09-06
 status: in-progress
 agent: codex
 ---
@@ -15,8 +15,9 @@ scratch ownership before implementing shared orchestration.
 The command model, behavioral suite boundaries, and shutdown outcomes below are
 settled design decisions. The feature-first layout and filename-based selection
 below are the proposed implementation direction, supported by a current-tree
-review and isolated Bun discovery checks. The complete move/split inventory and
-representative feature pilots still need verification before broad migration.
+review and isolated Bun discovery checks. Phase 2A completed the source inventory;
+Phase 2B verified representative feature pilots. Their mapping and evidence are
+recorded in the implementation job; broader migration and final discovery remain.
 Phase 1 implementation and lifecycle evidence are complete. Research remains in
 progress pending the migration and managed-runner evidence described below.
 
@@ -52,7 +53,7 @@ inventory. These are file counts, not executed case counts or a fresh test pass.
 | Codex information  | Nine tests together in `codex-info/`                                                | Pure reports, CLI replay, and the live protocol share a feature but need different execution suites |
 | Support and inputs | Cross-feature helpers, feature-local support, shared committed fixtures             | Review import effects separately from folder names; keep committed input paths stable               |
 
-Representative current tree; omitted siblings remain part of the inventory:
+Representative tree at the initial review; omitted siblings remain part of the inventory:
 
 ```text
 test/
@@ -78,12 +79,13 @@ ownership and records deliberate deferrals. Preserve that contract and use the
 [path correspondence][correspondence] to distinguish surviving residual cases
 from their migrated siblings. Similar names do not establish duplicate coverage.
 
-Representative source inspection also found selection hazards:
+Initial source inspection found selection hazards; Phase 2B separated the
+prerequisite probes from reusable support:
 
-- [Rendering support][render-support] probes Pandoc at module load even when a
+- [Rendering support][render-support] probed Pandoc at module load even when a
   consumer only needs a fake process runner. Separate that availability check
   from reusable fake construction; choosing a suite directory cannot isolate it.
-- [Data Query command support][query-support] inspects native extensions at module
+- [Data Query command support][query-support] inspected native extensions at module
   load. Keep native preparation with application integration consumers and avoid
   importing it through support needed by unit tests.
 - [Profile command wiring][profile-command-wiring] uses fake actions but parses
@@ -439,11 +441,12 @@ from the test aggregate.
 
 ## Remaining Verification Work
 
-Before broad migration, accept the proposed layout and verify representative
-pilots, the complete case map, import isolation, and selection/config/report
-agreement. Phase 1 established process observation and bounded preflight/shutdown
-budgets on macOS; the synthetic discovery checks alone do not establish the
-remaining migration results.
+Phase 2A established the complete baseline inventory, and Phase 2B verified the
+representative pilots and their prerequisite isolation. Remaining feature batches
+must reconcile cases and establish final selection/config/report agreement.
+Phase 1 established process observation and bounded preflight/shutdown budgets
+on macOS; the synthetic discovery checks alone do not establish the remaining
+migration results.
 
 Completed Phase 1 evidence is recorded in the [implementation record](../plans/jobs/2026-09-05-test-suite-refactor.md).
 Research closure still requires the remaining migration and managed-runner evidence.

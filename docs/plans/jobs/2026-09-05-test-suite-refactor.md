@@ -804,17 +804,17 @@ The selector adds two files beyond the migration baseline:
 
 ### 2B: Representative Pilots
 
-Status: in progress.
+Status: completed.
 
 Fixed section review base: `d8735eda1fd7d1d44f8852a0e84da390e93c34b5`.
 Pilot Codex information and the selected PDF parsing/rendering/Pandoc files from
 the inventory. Separate prerequisite probes from reusable support before wider
 migration. Keep repository default discovery and live opt-in gates during pilots.
 
-- [ ] Reconcile pilot cases, imports, fixtures, and combined execution.
-- [ ] Verify isolated prerequisites and bounded explicit failures.
-- [ ] Run live Codex and Pandoc pilots without committed-input updates.
-- [ ] Review the full section range and settle the mapping before wider migration.
+- [x] Reconcile pilot cases, imports, fixtures, and combined execution.
+- [x] Verify isolated prerequisites and bounded explicit failures.
+- [x] Run live Codex and Pandoc pilots without committed-input updates.
+- [x] Review the full section range and settle the mapping before wider migration.
 
 #### Prerequisite Isolation
 
@@ -842,6 +842,9 @@ passed with 80 assertions in 4.44 seconds. An empty isolated home instead produc
 the expected explicit Excel prerequisite failure with zero skips, verified process
 completion, and no installation. Personal caches and committed inputs were not
 modified. Shared invocation setup remains Phase 3 work.
+Synthetic Linux and Windows platform values also confirmed that the existing
+ownership guard rejects before launch; these checks do not establish support on
+either operating system.
 
 #### PDF Pilot
 
@@ -916,8 +919,15 @@ discovery case.
 
 An isolated, instrumented unit selection passed 104 cases and 557 assertions
 across eight pilot/helper files without subprocess, native-package, or fetch
-probes. Types, lint, formatting, and whitespace checks passed. The full section
-review and correspondence closeout remain pending these checkpoints.
+probes. Types, lint, formatting, and whitespace checks passed.
+
+The full section range
+`d8735eda1fd7d1d44f8852a0e84da390e93c34b5..02eaadf169c1649b10d42de4e60fe42595111d30`
+passed security, test-coverage, maintainability, and documentation review. A
+proposed consolidation of the code-highlight assertions was withdrawn after
+comparison with the baseline showed that those separate contracts already existed.
+The pilot mapping is accepted and recorded in the path correspondence; broader
+migration proceeds from it without duplicating or pruning cases.
 
 ### 2C: Feature Batches and Final Discovery
 
