@@ -137,6 +137,10 @@ configured independently.
 - Use command-local options on adopted surfaces, including the explicit
   `interactive` command; do not introduce root-global options.
 - These options configure existing Codex requests and do not enable Codex.
+- Interactive overrides follow the existing timeout session pattern: validate
+  startup options once, retain them for that session, and pass them to each
+  request. Add no configuration picker or per-step override. Timeout remains
+  independently enforced per request attempt.
 - Resolve explicit selections once per command or interactive session and
   preserve them through retries, repair requests, and regeneration. Omitted
   model/provider values remain delegated to Codex configuration loading.
@@ -184,12 +188,7 @@ numeric `timeoutMs` seams instead of introducing another timeout policy.
    combined overrides, input validation, and propagation through retries,
    repairs, and regeneration. Include timeout syntax, precedence, and
    per-attempt regression coverage.
-4. Review doctor readiness reporting: `inspectCodexEnvironment()` currently
-   looks for OpenAI API-key or `auth.json` signals, and
-   `src/cli/doctor/report.ts` uses that signal in `readyToDraft`. Do not treat
-   that heuristic as proof of readiness for other provider authentication.
-   Keep any diagnostic adjustment focused on the adopted contract.
-5. Distinguish SDK argument/propagation tests from live provider compatibility
+4. Distinguish SDK argument/propagation tests from live provider compatibility
    evidence. Verify failure reporting for unsupported capabilities and invalid
    runtime combinations, including rejection of default and explicit reasoning
    efforts without automatic effort fallback. Do not claim universal provider

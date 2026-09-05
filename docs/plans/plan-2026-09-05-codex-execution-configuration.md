@@ -111,22 +111,34 @@ configuration or claim inheritance from a parent desktop/terminal selection.
 
 ### Public Command Scope
 
-| Surface                                                                             | Adoption in this plan                                                                                 |
-| ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `rename file`, `rename batch`, `batch-rename` alias                                 | All three options, shared by image and document analyzers; existing enable flags remain authoritative |
-| `data query codex`                                                                  | All three options for drafting                                                                        |
-| `data stack`                                                                        | All three options for existing `--codex-assist` requests; preserve its dry-run requirement            |
-| `md pdf-profile codex`                                                              | All three options for profile requests                                                                |
-| `md pdf-template codex`                                                             | All three options for initial and repair requests                                                     |
-| `md pdf-project codex`                                                              | One set of options for profile, template, and repair requests                                         |
-| `interactive`                                                                       | One session-owned selection used by every Codex helper in that session                                |
-| Direct `data query --codex-suggest-headers`                                         | Retain defaults; no new execution options on the parent query command                                 |
-| Direct `data extract --codex-suggest-headers` / `--codex-suggest-shape`             | Retain defaults; no new execution options                                                             |
-| Direct `rename cleanup`, deterministic Markdown commands, `doctor`, root invocation | No execution options; existing `--profile` meanings remain unchanged                                  |
+| Surface                                                                   | Adoption in this plan                                                                                 |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `rename file`, `rename batch`, `batch-rename` alias                       | All three options, shared by image and document analyzers; existing enable flags remain authoritative |
+| `data query codex`                                                        | All three options for drafting                                                                        |
+| `data stack`                                                              | All three options for existing `--codex-assist` requests; preserve its dry-run requirement            |
+| `md pdf-profile codex`                                                    | All three options for profile requests                                                                |
+| `md pdf-template codex`                                                   | All three options for initial and repair requests                                                     |
+| `md pdf-project codex`                                                    | One set of options for profile, template, and repair requests                                         |
+| `interactive`                                                             | One session-owned selection used by every Codex helper in that session                                |
+| Direct `data query --codex-suggest-headers`                               | Retain defaults; no new execution options on the parent query command                                 |
+| Direct `data extract --codex-suggest-headers` / `--codex-suggest-shape`   | Retain defaults; no new execution options                                                             |
+| Direct `rename cleanup`, deterministic Markdown commands, root invocation | No execution options; existing `--profile` meanings remain unchanged                                  |
 
 Starting Interactive mode through the existing no-command entry retains defaults.
-Users supply session overrides through the explicit `interactive` command. No
-interactive model picker, provider picker, or per-step override is added.
+Users supply session overrides through the explicit `interactive` command,
+following the existing `--codex-timeout` pattern. For example, after implementation:
+
+```sh
+cdx-chores interactive --codex-model <model> --codex-reasoning-effort medium --codex-timeout 60s
+```
+
+Validate and resolve startup options, retain them in the Interactive session, and
+pass them through the chosen workflow to every Codex request, retry, repair, or
+regeneration. Model/provider omissions delegate to Codex configuration; omitted
+effort requests `low`, and timeout retains its 30-second per-attempt default.
+Service tier remains inherited. Session settings are not persisted, and a new
+session resolves its own settings. Add no configuration picker or per-step
+override; existing consent prompts still control whether Codex runs.
 
 Register options on the exact Commander nodes below; do not register them on
 their parents or use inherited/global option lookup:
@@ -141,7 +153,7 @@ their parents or use inherited/global option lookup:
 
 Assert options in each adopted node's help, including `batch-rename`. They must
 be absent from root, `rename`, `data`, `data query`, `data extract`, `md`, Markdown
-helper parent, `md to-pdf`, and `doctor` help. Calls to excluded executable
+helper parent, and `md to-pdf` help. Calls to excluded executable
 surfaces with these flags must fail as unknown options before action work.
 
 ### Request Paths
@@ -190,7 +202,9 @@ observe execution settings at the same boundaries as production. Do not store
 selections in module globals, environment mutations, or a shared mutable client.
 
 Extend `InteractiveSessionOptions` / `InteractiveSession` in
-`src/cli/interactive/session.ts`. Pass session execution settings through the
+`src/cli/interactive/session.ts` alongside the existing `codexTimeoutMs` field.
+Timeout keeps its own parser and per-attempt enforcement; it is not a budget for
+the whole session. Pass session execution settings through the
 existing rename, data, and Markdown dispatch paths. In Markdown, keep them in the
 request preparation path through `codex-service.ts`, profile orchestration,
 project phases, and template repairs; regeneration reuses the session policy.
@@ -199,9 +213,19 @@ require these settings to be serialized or start another request.
 
 ## Implementation Phases
 
-Each phase starts unchecked. Record implementation evidence in job records when
-execution begins, and review each coherent phase before proceeding to broader
-adoption. This draft does not claim any tests or implementation phases complete.
+Each phase starts unchecked. When implementation begins, create one unified job
+record at `docs/plans/jobs/YYYY-MM-DD-codex-execution-configuration.md`, dated for
+the execution start, and link it from this plan. Use sections for Phases 1–5 to
+record changes, validation commands/results, exact reviewed `base..tip` ranges,
+findings and resolutions, and remaining work. The plan owns intended outcomes and
+checklists; the job record owns execution evidence.
+
+Commit validated, coherent changes and review each phase's full commit range
+before advancing. After review fixes, verify and re-review the expanded range
+from the same phase base. Check off outcomes only when their required evidence
+passes; close each phase after its findings are resolved. Keep the unified job
+`in-progress` until all five phases finish, then mark it and the plan completed.
+This draft does not claim any tests or implementation phases complete.
 
 ### Phase 1: Shared Policy And SDK Mapping
 
@@ -249,7 +273,8 @@ visible failure handling without changing saved artifact contracts.
 ### Phase 4: Interactive Adoption
 
 - [ ] Register options on explicit `interactive` in `src/cli/commands/index.ts`.
-- [ ] Extend session construction and the rename/data/Markdown dispatch seams.
+- [ ] Extend session construction and the rename/data/Markdown dispatch seams
+      using the existing timeout startup-and-propagation pattern.
 - [ ] Cover every request owner in the inventory, including header mapping,
       source shape, rename cleanup, project phases, and template repair.
 - [ ] Verify regeneration and repeated menu visits retain selections, while a
@@ -259,44 +284,10 @@ visible failure handling without changing saved artifact contracts.
 Exit evidence: Interactive tests exercise custom session settings and default
 entry behavior, with no configuration leakage across sessions.
 
-### Phase 5: Doctor Evidence Wording
+### Phase 5: Validation And Documentation Closeout
 
-Doctor does not select, identify, or validate a provider in this plan. Its existing
-auth fields continue to report only the OpenAI API-key/file-session heuristic.
-For SDK support available, no detected OpenAI auth signal, and otherwise available
-query dependencies, adopt this exact projection:
-
-| Output                                                           | Current                 | Proposed                                                                                                         |
-| ---------------------------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `queryCodex.authSessionAvailable`                                | `false`                 | `false` (no detected signal)                                                                                     |
-| `queryCodex.readyToDraft` and `capabilities["data.query.codex"]` | `false`                 | `false` (legacy heuristic booleans retained)                                                                     |
-| `data.query.codex` workflow state                                | `unavailable`           | `unknown`                                                                                                        |
-| Condition `data.query.codex.unauthenticated`                     | No session available    | Keep the ID; message: "Codex provider authentication is unverified; no OpenAI auth signal was detected"          |
-| Action `data.query.codex.authenticate`                           | Required OpenAI sign-in | Keep the ID; class `recommended`; message: "Check the authentication required by your configured Codex provider" |
-
-Retain these IDs as compatibility identifiers. Do not reinterpret a false legacy
-boolean as authoritative unavailability when presenting the workflow projection.
-Detailed output and `queryCodex.detail` must explain the heuristic and that
-provider authentication/model compatibility were not tested, for both detected
-and absent auth signals. The JSON shape and legacy boolean formulas remain
-unchanged; workflow state, condition/action text, action class, and detail text
-change as specified. A detected auth signal preserves current positive heuristic
-behavior without becoming proof of backend readiness. Known SDK/executable or
-query-dependency failures retain `unavailable` through existing state precedence.
-
-- [ ] Update `inspectCodexEnvironment()` detail text and the Codex projection in
-      `src/cli/doctor/workflow/data.ts` to implement the projection above.
-- [ ] Update `src/cli/doctor/render.ts` and documentation to label heuristic
-      evidence consistently with the workflow state and JSON detail.
-- [ ] Verify these booleans do not gate adopted helper requests. Do not add live
-      credential probes, profile parsing, provider discovery, or doctor options.
-
-Exit evidence: doctor projections, detailed text, and JSON tests distinguish
-missing evidence from known support failure without broad report redesign.
-
-### Phase 6: Validation And Documentation Closeout
-
-- [ ] Complete the validation matrix below and record commands/results in jobs.
+- [ ] Complete the validation matrix below and record commands/results in the
+      unified job record.
 - [ ] Add `docs/guides/codex-execution-configuration.md` as the canonical shipped
       option/default/scope guide, with examples for model/provider/effort and
       failures followed by a manual rerun with an explicit supported selection.
@@ -313,20 +304,20 @@ missing evidence from known support failure without broad report redesign.
 
 ## Validation Matrix
 
-| Boundary                  | Required evidence                                                                                                                                                                                                       |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Input contract            | Omission, individual/combined flags, empty identifiers, identifier case preservation, all eight efforts, invalid/case-mismatched/padded efforts, and repeated options                                                   |
-| SDK transport             | Constructor provider mapping, thread model/effort mapping, omitted model/provider keys, exact argument serialization, executable override, preserved factory settings                                                   |
-| Direct commands           | Adopted options reach actions; excluded surfaces reject unknown options; flags alone do not trigger Codex                                                                                                               |
-| Workflow lifetime         | Image/document batches, retries, partial results, PDF initial/repair/project phases, and regeneration keep the same requested settings                                                                                  |
-| Incompatibility           | Synthetic failures for unknown provider, rejected model/effort, missing auth, structured output, and image support remain visible without changed-setting retries; generic failures are not mislabeled as schema errors |
-| Timeout regression        | Existing parser/precedence tests, per-attempt signals, and no model/provider/effort-derived timeout changes                                                                                                             |
-| Interactive isolation     | Custom session settings reach all nine request owners; separate/default sessions do not inherit previous selections                                                                                                     |
-| Diagnostics and artifacts | Doctor unknown-vs-unavailable projection, compatible JSON evidence, sanitization, unchanged advisory schemas, and no execution policy in durable outputs                                                                |
+| Boundary                       | Required evidence                                                                                                                                                                                                       |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Input contract                 | Omission, individual/combined flags, empty identifiers, identifier case preservation, all eight efforts, invalid/case-mismatched/padded efforts, and repeated options                                                   |
+| SDK transport                  | Constructor provider mapping, thread model/effort mapping, omitted model/provider keys, exact argument serialization, executable override, preserved factory settings                                                   |
+| Direct commands                | Adopted options reach actions; excluded surfaces reject unknown options; flags alone do not trigger Codex                                                                                                               |
+| Workflow lifetime              | Image/document batches, retries, partial results, PDF initial/repair/project phases, and regeneration keep the same requested settings                                                                                  |
+| Incompatibility                | Synthetic failures for unknown provider, rejected model/effort, missing auth, structured output, and image support remain visible without changed-setting retries; generic failures are not mislabeled as schema errors |
+| Timeout regression             | Existing parser/precedence tests, per-attempt signals, and no model/provider/effort-derived timeout changes                                                                                                             |
+| Interactive isolation          | Custom session settings reach all nine request owners; separate/default sessions do not inherit previous selections                                                                                                     |
+| Request failures and artifacts | Visible sanitized failures, unchanged advisory schemas, and no execution policy in durable outputs                                                                                                                      |
 
 Reuse coverage in `test/codex-adapters/`, rename/data/Markdown command and action
 suites, `test/adapters-codex-markdown-pdf-profile/runner-behavior.test.ts`,
-Interactive suites, and `test/doctor/`. Add focused cases at the relevant seams
+and Interactive suites. Add focused cases at the relevant seams
 instead of duplicating the entire matrix for every helper. Isolate SDK mocks so
 the real-SDK argument fixture cannot accidentally exercise a mock implementation.
 
