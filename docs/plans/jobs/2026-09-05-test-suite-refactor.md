@@ -863,6 +863,62 @@ seconds. Unavailable Pandoc produced the expected explicit failure with verified
 cleanup and no skips. Narrow helper checks also covered error preservation and
 retained ownership. No committed input or generated fixture was changed.
 
+#### Codex Information Pilot
+
+Eight files received suite suffixes; color coverage split into 12 unit cases and
+one application case. All 126 original cases remain, with unchanged assertion
+identities for previously executed cases. The independent live protocol retains
+its original assertions, adds version/lifecycle checks, and no longer writes
+committed evidence. A new live case exercises the real production discovery
+adapter's summary, models, and providers views. Two application helper cases
+verify original-error preservation and timeout cleanup diagnostics.
+
+Live-only support owns version, protocol, and adapter processes with isolated
+homes/projects, an allowlisted environment, a Git discovery ceiling, and bounded
+cleanup. Unverified ownership retains its exact scratch path and blocks further
+launches and fixture allocation. The shared protocol client's existing inherited-
+group mode remains available for the Phase 1 Node verification fixture.
+
+Nonlive pilot verification passed 125 cases and 847 assertions with two temporary
+live opt-in skips. The helper cases passed with 11 assertions after permitted
+process observation. Automatic approval review initially rejected a live launch
+whose outer command did not make home isolation explicit; no test ran. After
+checking the metadata-only request scope, the outer test process also used an
+empty environment and isolated home. Both live cases passed: 58 assertions in
+3.08 seconds. No personal credentials/configuration or generation requests were
+used, and the committed protocol JSON remained unchanged.
+
+A fixed follow-up protocol then ran each live case three times with captured
+output and three times in a terminal. All 12 case executions passed:
+
+| Mode | Independent protocol ms, attempts 1–3 | Production adapter ms, attempts 1–3 |
+| --- | --- | --- |
+| Captured | 921.69, 931.49, 843.05 | 2079.07, 2410.73, 2037.78 |
+| Terminal | 982.44, 921.90, 881.34 | 2207.65, 2074.09, 2044.72 |
+
+The original Node/inherited-client repetition protocol also passed all 12 probes
+without escalation after the shared-client extension:
+
+| Mode | Protocol total / drain ms, attempts 1–3 | Transport total / drain ms, attempts 1–3 |
+| --- | --- | --- |
+| Captured | 843/656, 770/657, 738/620 | 786/649, 752/632, 778/663 |
+| Terminal | 812/629, 805/621, 759/637 | 788/680, 848/678, 738/619 |
+
+#### Combined Pilot Verification
+
+The exact selection of 55 changed pilot/native files passed 343 cases and 2,075
+assertions with zero skips/failures in 50.50 seconds. It used an isolated invocation
+home, the copied existing native cache, and explicit live opt-in. All 329 previously
+executed baseline cases matched their original class/name/assertion multisets;
+the formerly skipped protocol case also ran. Thirteen cases were added: six
+native-helper, four unit-boundary, two live-fixture helper, and one production
+discovery case.
+
+An isolated, instrumented unit selection passed 104 cases and 557 assertions
+across eight pilot/helper files without subprocess, native-package, or fetch
+probes. Types, lint, formatting, and whitespace checks passed. The full section
+review and correspondence closeout remain pending these checkpoints.
+
 ### 2C: Feature Batches and Final Discovery
 
 Status: pending.

@@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, realpath, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { REPO_ROOT, withTempFixtureDir } from "../helpers/cli-test-utils";
+import type { CodexDiscovery } from "../../src/adapters/codex/discovery/types";
+import { REPO_ROOT } from "../helpers/cli-test-utils";
+import { lifecycleDiagnostic, withLiveCodexFixture } from "./live-fixture";
 import { LiveProtocolClient } from "./live-protocol-client";
 
 const enabled = process.env.CDX_CHORES_RUN_CODEX_DISCOVERY_PROBE === "1";
@@ -32,59 +34,37 @@ type ModelPage = { data: Model[]; nextCursor: string | null };
 
 describe.skipIf(!enabled)("real Codex discovery protocol (isolated, opt-in)", () => {
   test("records location resolution, config origins, and provider-independent catalog evidence", async () => {
-    await withTempFixtureDir("codex-live-protocol", async (root) => {
+    await withLiveCodexFixture(async ({ root, cwd, env: environment, start, close }) => {
       const home = join(root, "home");
-      const tmp = join(root, "tmp");
-      const cwd = join(root, "project");
       const defaultHome = join(home, ".codex");
       const customHome = join(root, "custom-codex");
       const whitespaceHome = join(cwd, "   ");
-      for (const directory of [home, tmp, cwd, defaultHome, customHome, whitespaceHome]) {
+      for (const directory of [defaultHome, customHome, whitespaceHome]) {
         await mkdir(directory, { recursive: true });
       }
       const linkHome = join(root, "linked-codex");
       await symlink(customHome, linkHome);
-      // Explicit allowlist: never forward API keys, account state, or the user's home.
-      const environment: NodeJS.ProcessEnv = {
-        PATH: process.env.PATH,
-        HOME: home,
-        TMPDIR: tmp,
-        XDG_CONFIG_HOME: join(root, "xdg-config"),
-        XDG_DATA_HOME: join(root, "xdg-data"),
-        XDG_CACHE_HOME: join(root, "xdg-cache"),
-      };
       const executable = join(REPO_ROOT, "node_modules", ".bin", "codex");
-      const versionResult = Bun.spawnSync([executable, "--version"], {
-        cwd,
-        env: environment,
-        stdout: "pipe",
-        stderr: "pipe",
-      });
-      expect(versionResult.exitCode).toBe(0);
-      const version = Buffer.from(versionResult.stdout).toString().trim();
-      const evidence: Record<string, unknown> = {
-        version,
-        requests: {
-          initialize: initializeParams,
-          initialized: { method: "initialized" },
-          configRead: { cwd: "<fixture>/project", includeLayers: false },
-          firstModelPage: { includeHidden: false, limit: 2 },
-        },
-      };
-      const sanitize = (value: unknown): unknown =>
-        JSON.parse(
-          JSON.stringify(value)
-            .replaceAll(root, "<fixture>")
-            .replace(/\(Mac OS [^)]*\)/g, "(<platform-version-and-architecture>)"),
-        );
+      const versionResult = await start({
+        executable,
+        args: ["--version"],
+        timeoutMs: 5000,
+      }).completion;
+      expect(versionResult.exitCode, lifecycleDiagnostic(versionResult)).toBe(0);
+      expect(versionResult.ok, lifecycleDiagnostic(versionResult)).toBe(true);
+      expect(versionResult.stdout.trim()).toMatch(/^codex-cli \d+\.\d+\.\d+$/);
 
       async function probe(codexHome: string | undefined, listModels = false) {
         const env = {
           ...environment,
           ...(codexHome === undefined ? {} : { CODEX_HOME: codexHome }),
         };
-        const client = new LiveProtocolClient(executable, cwd, env);
-        try {
+        const owned = start({ executable, args: ["app-server"], env });
+        const client = new LiveProtocolClient(executable, cwd, env, {
+          child: owned.child,
+          close: () => close(owned),
+        });
+        const readProtocol = async () => {
           const initialization = (await client.request(
             "initialize",
             initializeParams,
@@ -114,9 +94,26 @@ describe.skipIf(!enabled)("real Codex discovery protocol (isolated, opt-in)", ()
             } while (cursor !== undefined);
           }
           return { initialization, configuration, models, pages };
-        } finally {
-          await client.close();
+        };
+        let value: Awaited<ReturnType<typeof readProtocol>> | undefined;
+        let failed = false;
+        let failure: unknown;
+        try {
+          value = await readProtocol();
+        } catch (error) {
+          failed = true;
+          failure = error;
         }
+        try {
+          await client.close();
+        } catch (cleanupError) {
+          if (failed) {
+            throw new AggregateError([failure, cleanupError], "Protocol and cleanup failed.");
+          }
+          throw cleanupError;
+        }
+        if (failed) throw failure;
+        return value!;
       }
 
       const unset = await probe(undefined, true);
@@ -130,15 +127,6 @@ describe.skipIf(!enabled)("real Codex discovery protocol (isolated, opt-in)", ()
       expect(relative.initialization.codexHome).toBe(await realpath(customHome));
       expect(whitespace.initialization.codexHome).toBe(await realpath(whitespaceHome));
       expect(linked.initialization.codexHome).toBe(await realpath(customHome));
-      evidence.homeCases = sanitize({
-        unset: unset.initialization,
-        empty: empty.initialization,
-        existingRelative: relative.initialization,
-        existingWhitespace: whitespace.initialization,
-        symlink: linked.initialization,
-        missingWhitespace: { requestedHome: "  ", exitCode: 1 },
-      });
-
       await writeFile(
         join(customHome, "config.toml"),
         'model = "probe-model"\nmodel_provider = "probe_proxy"\n[model_providers.probe_proxy]\nname = "Probe proxy"\nbase_url = "http://127.0.0.1:1/v1"\nwire_api = "responses"\n',
@@ -149,32 +137,6 @@ describe.skipIf(!enabled)("real Codex discovery protocol (isolated, opt-in)", ()
       expect(custom.configuration.config.model_providers).toHaveProperty("probe_proxy");
       expect(custom.models.map((model) => model.id)).toEqual(unset.models.map((model) => model.id));
       expect(new Set(custom.models.map((model) => model.id)).size).toBe(custom.models.length);
-      evidence.configRead = sanitize({
-        omitted: {
-          model: unset.configuration.config.model,
-          model_provider: unset.configuration.config.model_provider,
-          origins: unset.configuration.origins,
-        },
-        custom: {
-          model: custom.configuration.config.model,
-          model_provider: custom.configuration.config.model_provider,
-          providerIds: Object.keys(custom.configuration.config.model_providers as object),
-          origins: custom.configuration.origins,
-        },
-      });
-      evidence.modelList = {
-        pages: custom.pages,
-        identicalCatalogAcrossTheseTwoConfigurations: true,
-        models: custom.models.map(
-          ({ id, model, isDefault, supportedReasoningEfforts, defaultReasoningEffort }) => ({
-            id,
-            model,
-            isDefault,
-            supportedReasoningEfforts,
-            defaultReasoningEffort,
-          }),
-        ),
-      };
       await mkdir(join(cwd, ".git"));
       await mkdir(join(cwd, ".codex"));
       await writeFile(join(cwd, ".codex", "config.toml"), 'model = "project-probe-model"\n');
@@ -184,18 +146,32 @@ describe.skipIf(!enabled)("real Codex discovery protocol (isolated, opt-in)", ()
       );
       const project = await probe(customHome);
       expect(project.configuration.config.model).toBe("project-probe-model");
-      evidence.trustedProjectConfig = sanitize({
-        model: project.configuration.config.model,
-        origins: project.configuration.origins,
-      });
-      if (process.env.CDX_CHORES_UPDATE_CODEX_DISCOVERY_EVIDENCE === "1") {
-        expect(version).toBe("codex-cli 0.153.4");
-        const fixtures = join(REPO_ROOT, "test", "codex-info", "fixtures");
-        await mkdir(fixtures, { recursive: true });
-        await writeFile(
-          join(fixtures, "cli-0.153.4-protocol.json"),
-          JSON.stringify(evidence, null, 2) + "\n",
-        );
+    });
+  }, 120_000);
+
+  test("production discovery adapter reads isolated configuration and the live model catalog", async () => {
+    await withLiveCodexFixture(async ({ root, cwd, env, start }) => {
+      const codexHome = join(root, "home", ".codex");
+      await writeFile(join(codexHome, "config.toml"), 'model = "adapter-probe-model"\n');
+      for (const view of ["summary", "models", "providers"] as const) {
+        const result = await start({
+          executable: process.execPath,
+          args: [join(REPO_ROOT, "test/codex-info/fixtures/live-discovery.ts"), view],
+          env: { ...env, CODEX_HOME: codexHome },
+        }).completion;
+        expect(result.ok, lifecycleDiagnostic(result)).toBe(true);
+        const discovery = JSON.parse(result.stdout) as CodexDiscovery;
+        expect(discovery.context.cwd).toBe(cwd);
+        expect(discovery.context.codexHome).toBe(await realpath(codexHome));
+        expect(discovery.context.codexHomeSource).toBe("environment");
+        expect(discovery.context.codexVersion).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(discovery.config.model).toBe("adapter-probe-model");
+        if (view === "providers") {
+          expect(discovery.models).toBeNull();
+        } else {
+          expect(Array.isArray(discovery.models)).toBe(true);
+          expect(discovery.models!.length).toBeGreaterThan(0);
+        }
       }
     });
   }, 120_000);

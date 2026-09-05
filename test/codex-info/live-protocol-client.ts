@@ -1,5 +1,6 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { once } from "node:events";
+import { StringDecoder } from "node:string_decoder";
 
 type RpcResponse = { id?: number; result?: unknown; error?: unknown };
 
@@ -12,13 +13,21 @@ export class LiveProtocolClient {
   >();
   private sequence = 0;
   private buffer = "";
+  private readonly closeOwned?: () => Promise<void>;
 
-  constructor(executable: string, cwd: string, env: NodeJS.ProcessEnv) {
-    this.child = spawn(executable, ["app-server"], { cwd, env, stdio: "pipe" });
+  constructor(
+    executable: string,
+    cwd: string,
+    env: NodeJS.ProcessEnv,
+    owned?: { child: ChildProcessWithoutNullStreams; close: () => Promise<void> },
+  ) {
+    // The default inherits the caller's process group for the Phase 1 outer-owner probe.
+    this.child = owned?.child ?? spawn(executable, ["app-server"], { cwd, env, stdio: "pipe" });
+    this.closeOwned = owned?.close;
     this.child.stderr.resume();
-    this.child.stdout.setEncoding("utf8");
-    this.child.stdout.on("data", (chunk: string) => {
-      this.buffer += chunk;
+    const decoder = new StringDecoder("utf8");
+    this.child.stdout.on("data", (chunk: Buffer) => {
+      this.buffer += decoder.write(chunk);
       let newline: number;
       while ((newline = this.buffer.indexOf("\n")) !== -1) {
         const line = this.buffer.slice(0, newline);
@@ -73,6 +82,7 @@ export class LiveProtocolClient {
   }
 
   async close(): Promise<void> {
+    if (this.closeOwned) return this.closeOwned();
     if (this.child.exitCode !== null || this.child.signalCode !== null) return;
     const exited = once(this.child, "exit");
     this.child.kill("SIGTERM");
