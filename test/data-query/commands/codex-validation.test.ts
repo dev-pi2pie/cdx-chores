@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   chmod,
   readFile,
@@ -10,17 +11,12 @@ import {
   seedDuckDbWorkspaceFixture,
   runCli,
   withTempFixtureDir,
-  duckdbReady,
-  excelReady,
-  sqliteReady,
   createCodexStub,
 } from "./codex-support";
 
 describe("CLI data query codex command validation", () => {
   test("rejects duplicate workspace aliases on the codex lane", async () => {
-    if (!sqliteReady) {
-      return;
-    }
+    await requireNativePrerequisites("sqlite");
 
     await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
       const stubPath = await createCodexStub({
@@ -52,9 +48,7 @@ describe("CLI data query codex command validation", () => {
   });
 
   test("rejects malformed workspace aliases on the codex lane", async () => {
-    if (!sqliteReady) {
-      return;
-    }
+    await requireNativePrerequisites("sqlite");
 
     await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
       const stubPath = await createCodexStub({
@@ -87,9 +81,7 @@ describe("CLI data query codex command validation", () => {
   });
 
   test("rejects empty comma-separated workspace bundles on the codex lane", async () => {
-    if (!sqliteReady) {
-      return;
-    }
+    await requireNativePrerequisites("sqlite");
 
     await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
       const stubPath = await createCodexStub({

@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   chmod,
   readFile,
@@ -16,18 +17,13 @@ import {
   runCli,
   toRepoRelativePath,
   withTempFixtureDir,
-  duckdbReady,
-  sqliteReady,
-  excelReady,
   fixturePath,
   createHeaderSuggestionStub,
 } from "./support";
 
 describe("CLI data query command source-shape artifacts", () => {
   test("reuses an accepted source-shape artifact end to end", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       seedDataExtractFixtures(fixtureDir);

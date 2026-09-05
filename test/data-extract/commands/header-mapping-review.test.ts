@@ -12,8 +12,6 @@ import {
   toRepoRelativePath,
   withTempFixtureDir,
   fixturePath,
-  duckdbReady,
-  excelReady,
 } from "./support";
 
 describe("CLI data extract command review artifacts", () => {

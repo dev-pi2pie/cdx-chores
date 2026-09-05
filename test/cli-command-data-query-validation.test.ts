@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "./helpers/native-prerequisites";
 import {
   describe,
   expect,
@@ -6,16 +7,12 @@ import {
   runCli,
   toRepoRelativePath,
   withTempFixtureDir,
-  duckdbReady,
-  sqliteReady,
   fixturePath,
 } from "./data-query/commands/support";
 
 describe("CLI data query command validation and remediation", () => {
-  test("lists available SQLite sources when source is missing", () => {
-    if (!sqliteReady) {
-      return;
-    }
+  test("lists available SQLite sources when source is missing", async () => {
+    await requireNativePrerequisites("sqlite");
 
     const result = runCli([
       "data",
@@ -31,9 +28,7 @@ describe("CLI data query command validation and remediation", () => {
   });
 
   test("lists available DuckDB sources when source is missing", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
@@ -56,9 +51,7 @@ describe("CLI data query command validation and remediation", () => {
   });
 
   test("reports unknown DuckDB sources clearly", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);

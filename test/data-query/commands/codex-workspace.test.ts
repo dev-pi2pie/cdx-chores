@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   chmod,
   readFile,
@@ -10,17 +11,12 @@ import {
   seedDuckDbWorkspaceFixture,
   runCli,
   withTempFixtureDir,
-  duckdbReady,
-  excelReady,
-  sqliteReady,
   createCodexStub,
 } from "./codex-support";
 
 describe("CLI data query codex command workspace", () => {
   test("accepts --relation on the codex lane for SQLite workspace inputs", async () => {
-    if (!sqliteReady) {
-      return;
-    }
+    await requireNativePrerequisites("sqlite");
 
     await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
       const promptPath = join(fixtureDir, "sqlite-workspace-prompt.txt");
@@ -63,9 +59,7 @@ describe("CLI data query codex command workspace", () => {
   });
 
   test("accepts inline --relation=<binding> syntax on the codex workspace lane", async () => {
-    if (!sqliteReady) {
-      return;
-    }
+    await requireNativePrerequisites("sqlite");
 
     await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
       const promptPath = join(fixtureDir, "sqlite-inline-workspace-prompt.txt");
@@ -102,9 +96,7 @@ describe("CLI data query codex command workspace", () => {
   });
 
   test("accepts comma-separated --relation bundles on the codex workspace lane", async () => {
-    if (!sqliteReady) {
-      return;
-    }
+    await requireNativePrerequisites("sqlite");
 
     await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
       const promptPath = join(fixtureDir, "sqlite-bundled-workspace-prompt.txt");
@@ -141,9 +133,7 @@ describe("CLI data query codex command workspace", () => {
   });
 
   test("accepts DuckDB workspace relations on the codex lane", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
@@ -184,9 +174,7 @@ describe("CLI data query codex command workspace", () => {
   });
 
   test("prints SQL only for SQLite workspace codex drafting", async () => {
-    if (!sqliteReady) {
-      return;
-    }
+    await requireNativePrerequisites("sqlite");
 
     await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
       const stubPath = await createCodexStub({
@@ -222,9 +210,7 @@ describe("CLI data query codex command workspace", () => {
   });
 
   test("allows explicit file aliases on the codex workspace lane", async () => {
-    if (!sqliteReady) {
-      return;
-    }
+    await requireNativePrerequisites("sqlite");
 
     await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
       const promptPath = join(fixtureDir, "sqlite-file-workspace-prompt.txt");

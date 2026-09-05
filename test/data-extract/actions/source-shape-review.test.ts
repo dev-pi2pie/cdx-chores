@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   describe,
   expect,
@@ -17,15 +18,11 @@ import {
   seedStackedMergedBandFixture,
   dataQueryFixturePath,
   TtyCaptureStream,
-  duckdbReady,
-  excelReady,
 } from "./support";
 
 describe("cli action modules: data extract source-shape review", () => {
   test("actionDataExtract writes a reviewed source-shape artifact and stops before materialization", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       seedDataExtractFixtures(fixtureDir);
@@ -86,9 +83,7 @@ describe("cli action modules: data extract source-shape review", () => {
   });
 
   test("actionDataExtract shows tty Codex thinking status while reviewing a source shape", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       seedDataExtractFixtures(fixtureDir);
@@ -132,9 +127,7 @@ describe("cli action modules: data extract source-shape review", () => {
   });
 
   test("actionDataExtract writes a reviewed source-shape artifact that includes bodyStartRow", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       seedStackedMergedBandFixture(fixtureDir);
@@ -181,9 +174,7 @@ describe("cli action modules: data extract source-shape review", () => {
   });
 
   test("actionDataExtract writes a reviewed source-shape artifact when body-start-row is the only deterministic change", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       seedStackedMergedBandFixture(fixtureDir);

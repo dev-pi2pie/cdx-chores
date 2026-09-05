@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   describe,
   expect,
@@ -12,9 +13,6 @@ import {
   seedSingleTableDuckDbFixture,
   toRepoRelativePath,
   withTempFixtureDir,
-  duckdbReady,
-  excelReady,
-  sqliteReady,
   stripAnsi,
 } from "./codex-support";
 
@@ -95,9 +93,7 @@ describe("cli action modules: data query codex single-source", () => {
   });
 
   test("actionDataQueryCodex supports schema-qualified DuckDB single-source drafting", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("query-codex-action", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
@@ -126,9 +122,7 @@ describe("cli action modules: data query codex single-source", () => {
   });
 
   test("actionDataQueryCodex infers the only DuckDB source when the file has one table", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("query-codex-action", async (fixtureDir) => {
       const inputPath = await seedSingleTableDuckDbFixture(fixtureDir);
@@ -156,9 +150,7 @@ describe("cli action modules: data query codex single-source", () => {
   });
 
   test("actionDataQueryCodex requires --source for multi-object DuckDB single-source drafting", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("query-codex-action", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
@@ -202,9 +194,7 @@ describe("cli action modules: data query codex single-source", () => {
   });
 
   test("actionDataQueryCodex includes the accepted header row in prompt and rendered output", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("query-codex-action", async (fixtureDir) => {
       seedDataExtractFixtures(fixtureDir);

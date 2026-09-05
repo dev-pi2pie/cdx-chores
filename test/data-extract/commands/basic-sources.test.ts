@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   readFile,
   writeFile,
@@ -11,8 +12,6 @@ import {
   toRepoRelativePath,
   withTempFixtureDir,
   fixturePath,
-  duckdbReady,
-  excelReady,
 } from "./support";
 
 describe("CLI data extract command basic sources", () => {
@@ -64,9 +63,7 @@ describe("CLI data extract command basic sources", () => {
   });
 
   test("extracts a DuckDB-file source end to end", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
@@ -95,9 +92,7 @@ describe("CLI data extract command basic sources", () => {
   });
 
   test("extracts the main-schema DuckDB file table end to end", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
@@ -124,9 +119,7 @@ describe("CLI data extract command basic sources", () => {
   });
 
   test("requires --source for multi-object DuckDB extract inputs", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
@@ -149,9 +142,7 @@ describe("CLI data extract command basic sources", () => {
   });
 
   test("reports unknown DuckDB sources clearly during extraction", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);

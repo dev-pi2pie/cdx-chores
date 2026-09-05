@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   chmod,
   readFile,
@@ -16,18 +17,13 @@ import {
   runCli,
   toRepoRelativePath,
   withTempFixtureDir,
-  duckdbReady,
-  sqliteReady,
-  excelReady,
   fixturePath,
   createHeaderSuggestionStub,
 } from "./support";
 
 describe("CLI data query command Excel shape", () => {
-  test("queries Excel input end to end when the extension is ready", () => {
-    if (!excelReady) {
-      return;
-    }
+  test("queries Excel input end to end when the extension is ready", async () => {
+    await requireNativePrerequisites("excel");
 
     const result = runCli([
       "data",
@@ -46,10 +42,8 @@ describe("CLI data query command Excel shape", () => {
     expect(result.stdout).toContain("1   | Ada");
   });
 
-  test("queries an explicit Excel range end to end when the extension is ready", () => {
-    if (!excelReady) {
-      return;
-    }
+  test("queries an explicit Excel range end to end when the extension is ready", async () => {
+    await requireNativePrerequisites("excel");
 
     const result = runCli([
       "data",
@@ -73,9 +67,7 @@ describe("CLI data query command Excel shape", () => {
   });
 
   test("queries an explicit Excel range plus header-row end to end when the extension is ready", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       seedDataExtractFixtures(fixtureDir);
@@ -108,9 +100,7 @@ describe("CLI data query command Excel shape", () => {
   });
 
   test("queries the stacked merged-band workbook end to end when body-start-row is provided", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       seedStackedMergedBandFixture(fixtureDir);

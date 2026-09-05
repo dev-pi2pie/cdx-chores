@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "./helpers/native-prerequisites";
 import {
   writeFile,
   join,
@@ -8,15 +9,12 @@ import {
   runCli,
   toRepoRelativePath,
   withTempFixtureDir,
-  excelReady,
   fixturePath,
 } from "./data-query/commands/support";
 
 describe("CLI data query command source-shape artifacts", () => {
-  test("lists available Excel sources when source is missing", () => {
-    if (!excelReady) {
-      return;
-    }
+  test("lists available Excel sources when source is missing", async () => {
+    await requireNativePrerequisites("excel");
 
     const result = runCli([
       "data",
@@ -32,9 +30,7 @@ describe("CLI data query command source-shape artifacts", () => {
   });
 
   test("reports exact-match failure when a source-shape artifact does not match the current query input", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       seedDataExtractFixtures(fixtureDir);

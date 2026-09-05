@@ -3,7 +3,6 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import { inspectDataQueryExtensions } from "../../../src/cli/duckdb/query";
 import {
   seedAmbiguousDuckDbSourceFixture,
   seedDuckDbQuotedCommaSourceFixture,
@@ -18,11 +17,6 @@ import {
   toRepoRelativePath,
   withTempFixtureDir,
 } from "../../helpers/cli-test-utils";
-
-export const queryExtensions = await inspectDataQueryExtensions();
-export const duckdbReady = queryExtensions.available;
-export const sqliteReady = queryExtensions.available && queryExtensions.sqlite?.loadable === true;
-export const excelReady = queryExtensions.available && queryExtensions.excel?.loadable === true;
 
 export function fixturePath(name: string): string {
   return join("test", "data-sources", "fixtures", name);
@@ -81,7 +75,6 @@ export {
   describe,
   expect,
   test,
-  inspectDataQueryExtensions,
   seedDataExtractFixtures,
   seedAmbiguousDuckDbSourceFixture,
   seedDuckDbQuotedCommaSourceFixture,

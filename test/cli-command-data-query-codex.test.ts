@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "./helpers/native-prerequisites";
 import {
   join,
   describe,
@@ -6,15 +7,12 @@ import {
   seedDuckDbWorkspaceFixture,
   runCli,
   withTempFixtureDir,
-  duckdbReady,
   createCodexStub,
 } from "./data-query/commands/codex-support";
 
 describe("CLI data query codex command single-source", () => {
   test("requires --source for multi-object DuckDB codex single-source runs", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);

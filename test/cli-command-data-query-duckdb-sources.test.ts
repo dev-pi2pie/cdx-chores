@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "./helpers/native-prerequisites";
 import {
   describe,
   expect,
@@ -7,14 +8,11 @@ import {
   runCli,
   toRepoRelativePath,
   withTempFixtureDir,
-  duckdbReady,
 } from "./data-query/commands/support";
 
 describe("CLI data query command DuckDB sources", () => {
   test("infers the only DuckDB source when the file has one table", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
       const inputPath = await seedSingleTableDuckDbFixture(fixtureDir);
@@ -37,9 +35,7 @@ describe("CLI data query command DuckDB sources", () => {
   });
 
   test("queries DuckDB workspace relations end to end", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);

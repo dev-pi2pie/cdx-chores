@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   readFile,
   writeFile,
@@ -11,15 +12,11 @@ import {
   toRepoRelativePath,
   withTempFixtureDir,
   fixturePath,
-  duckdbReady,
-  excelReady,
 } from "./support";
 
 describe("CLI data extract command Excel shape", () => {
   test("extracts an explicit Excel range end to end when the extension is ready", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       const outputPath = join(fixtureDir, "summary.tsv");
@@ -45,9 +42,7 @@ describe("CLI data extract command Excel shape", () => {
   });
 
   test("extracts an Excel source-shape artifact with reviewed header-row end to end", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       seedDataExtractFixtures(fixtureDir);
@@ -100,9 +95,7 @@ describe("CLI data extract command Excel shape", () => {
   });
 
   test("extracts a shaped Excel header-band workbook end to end after tolerant import retry", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       seedDataExtractFixtures(fixtureDir);
@@ -134,9 +127,7 @@ describe("CLI data extract command Excel shape", () => {
   });
 
   test("extracts the public stacked merged-band workbook end to end when body-start-row is provided", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       seedStackedMergedBandFixture(fixtureDir);

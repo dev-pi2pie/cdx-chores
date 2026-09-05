@@ -17,8 +17,6 @@ import {
   seedStackedMergedBandFixture,
   dataQueryFixturePath,
   TtyCaptureStream,
-  duckdbReady,
-  excelReady,
 } from "./support";
 
 describe("cli action modules: data extract output formats", () => {

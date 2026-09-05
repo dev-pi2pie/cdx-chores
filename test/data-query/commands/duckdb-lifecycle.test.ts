@@ -16,9 +16,6 @@ import {
   runCli,
   toRepoRelativePath,
   withTempFixtureDir,
-  duckdbReady,
-  sqliteReady,
-  excelReady,
   fixturePath,
   createHeaderSuggestionStub,
 } from "./support";

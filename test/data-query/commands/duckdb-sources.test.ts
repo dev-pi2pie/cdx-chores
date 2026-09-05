@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   chmod,
   readFile,
@@ -16,18 +17,13 @@ import {
   runCli,
   toRepoRelativePath,
   withTempFixtureDir,
-  duckdbReady,
-  sqliteReady,
-  excelReady,
   fixturePath,
   createHeaderSuggestionStub,
 } from "./support";
 
 describe("CLI data query command DuckDB sources", () => {
   test("queries DuckDB-file input end to end", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
@@ -51,9 +47,7 @@ describe("CLI data query command DuckDB sources", () => {
   });
 
   test("queries the main-schema DuckDB file table directly", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
@@ -76,9 +70,7 @@ describe("CLI data query command DuckDB sources", () => {
   });
 
   test("allows bare file bindings in DuckDB workspace mode", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
@@ -102,9 +94,7 @@ describe("CLI data query command DuckDB sources", () => {
   });
 
   test("accepts quoted DuckDB relation sources that contain commas", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
       const inputPath = await seedDuckDbQuotedCommaSourceFixture(fixtureDir);
@@ -128,9 +118,7 @@ describe("CLI data query command DuckDB sources", () => {
   });
 
   test("selects quoted main-table DuckDB sources without colliding with schema selectors", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("query-duckdb-cli", async (fixtureDir) => {
       const inputPath = await seedAmbiguousDuckDbSourceFixture(fixtureDir);

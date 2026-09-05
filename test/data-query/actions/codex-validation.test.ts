@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   describe,
   expect,
@@ -12,9 +13,6 @@ import {
   seedSingleTableDuckDbFixture,
   toRepoRelativePath,
   withTempFixtureDir,
-  duckdbReady,
-  excelReady,
-  sqliteReady,
   stripAnsi,
 } from "./codex-support";
 
@@ -159,9 +157,7 @@ describe("cli action modules: data query codex validation", () => {
   });
 
   test("actionDataQueryCodex reports source ambiguity for SQLite inputs", async () => {
-    if (!sqliteReady) {
-      return;
-    }
+    await requireNativePrerequisites("sqlite");
 
     const { runtime, expectNoOutput } = createActionTestRuntime();
 

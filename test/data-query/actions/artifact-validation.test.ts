@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   describe,
   expect,
@@ -21,9 +22,6 @@ import {
   seedStackedMergedBandFixture,
   dataQueryFixturePath,
   TtyCaptureStream,
-  duckdbReady,
-  excelReady,
-  sqliteReady,
 } from "./support";
 
 describe("cli action modules: data query artifact validation", () => {
@@ -142,9 +140,7 @@ describe("cli action modules: data query artifact validation", () => {
   });
 
   test("actionDataQuery rejects mismatched source-shape artifacts", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       seedDataExtractFixtures(fixtureDir);

@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   describe,
   expect,
@@ -21,16 +22,11 @@ import {
   seedStackedMergedBandFixture,
   dataQueryFixturePath,
   TtyCaptureStream,
-  duckdbReady,
-  excelReady,
-  sqliteReady,
 } from "./support";
 
 describe("cli action modules: data query source and workspace resolution", () => {
   test("actionDataQuery renders bounded table output for SQLite workspace relations", async () => {
-    if (!sqliteReady) {
-      return;
-    }
+    await requireNativePrerequisites("sqlite");
 
     const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
     await actionDataQuery(runtime, {
@@ -51,9 +47,7 @@ describe("cli action modules: data query source and workspace resolution", () =>
   });
 
   test("actionDataQuery treats one explicit relation binding as workspace mode", async () => {
-    if (!sqliteReady) {
-      return;
-    }
+    await requireNativePrerequisites("sqlite");
 
     const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
     await actionDataQuery(runtime, {
@@ -70,9 +64,7 @@ describe("cli action modules: data query source and workspace resolution", () =>
   });
 
   test("actionDataQuery renders bounded table output for DuckDB-file inputs", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
@@ -94,9 +86,7 @@ describe("cli action modules: data query source and workspace resolution", () =>
   });
 
   test("actionDataQuery infers the only DuckDB source when the file has one table", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       const inputPath = await seedSingleTableDuckDbFixture(fixtureDir);
@@ -117,9 +107,7 @@ describe("cli action modules: data query source and workspace resolution", () =>
   });
 
   test("actionDataQuery supports schema-qualified DuckDB sources", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
@@ -140,9 +128,7 @@ describe("cli action modules: data query source and workspace resolution", () =>
   });
 
   test("actionDataQuery renders bounded table output for DuckDB workspace relations", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
@@ -167,9 +153,7 @@ describe("cli action modules: data query source and workspace resolution", () =>
   });
 
   test("actionDataQuery keeps dotted DuckDB source names selectable without collisions", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       const inputPath = await seedAmbiguousDuckDbSourceFixture(fixtureDir);
@@ -223,9 +207,7 @@ describe("cli action modules: data query source and workspace resolution", () =>
   });
 
   test("actionDataQuery allows explicit file aliases in workspace mode", async () => {
-    if (!sqliteReady) {
-      return;
-    }
+    await requireNativePrerequisites("sqlite");
 
     const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
     await actionDataQuery(runtime, {
@@ -262,9 +244,7 @@ describe("cli action modules: data query source and workspace resolution", () =>
   });
 
   test("actionDataQuery reports unknown DuckDB sources clearly", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);

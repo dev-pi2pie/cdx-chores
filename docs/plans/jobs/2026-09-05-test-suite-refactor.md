@@ -804,7 +804,44 @@ The selector adds two files beyond the migration baseline:
 
 ### 2B: Representative Pilots
 
-Status: pending.
+Status: in progress.
+
+Fixed section review base: `d8735eda1fd7d1d44f8852a0e84da390e93c34b5`.
+Pilot Codex information and the selected PDF parsing/rendering/Pandoc files from
+the inventory. Separate prerequisite probes from reusable support before wider
+migration. Keep repository default discovery and live opt-in gates during pilots.
+
+- [ ] Reconcile pilot cases, imports, fixtures, and combined execution.
+- [ ] Verify isolated prerequisites and bounded explicit failures.
+- [ ] Run live Codex and Pandoc pilots without committed-input updates.
+- [ ] Review the full section range and settle the mapping before wider migration.
+
+#### Prerequisite Isolation
+
+The six native supports no longer probe at import. All 86 readiness early returns
+in 24 consumers now await an explicit requirement; unused readiness imports were
+removed from the remaining consumers. This prerequisite correction precedes their
+filename migration so later move-only batches preserve executable checks.
+
+Native preparation runs in a bounded child, returns boolean readiness only, and
+disables automatic extension installation/loading before explicit `LOAD`. The
+helper uses the invocation's allowlisted environment and caches its result. It
+does not discover personal configuration or install missing prerequisites.
+
+The verification-only unit preload rejects subprocess, native-package, and fetch
+probes, including attempts caught by a test. Its first checks found a fetch type
+annotation mismatch and an overly specific native diagnostic expectation; both
+were corrected. Combined helper verification passed ten tests and 30 assertions.
+Initial native/live-fixture helper attempts were denied process observation by
+the execution sandbox and failed explicitly. Fresh permitted observations found
+no remaining fixture work before successful reruns.
+
+An isolated application home received regular-file copies of the four existing
+DuckDB 1.5.5 `osx_arm64` Excel/SQLite cache and metadata files. Fifteen native cases
+passed with 80 assertions in 4.44 seconds. An empty isolated home instead produced
+the expected explicit Excel prerequisite failure with zero skips, verified process
+completion, and no installation. Personal caches and committed inputs were not
+modified. Shared invocation setup remains Phase 3 work.
 
 ### 2C: Feature Batches and Final Discovery
 

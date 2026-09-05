@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   describe,
   expect,
@@ -17,15 +18,11 @@ import {
   seedStackedMergedBandFixture,
   dataQueryFixturePath,
   TtyCaptureStream,
-  duckdbReady,
-  excelReady,
 } from "./support";
 
 describe("cli action modules: data extract source selection", () => {
   test("actionDataExtract applies Excel range shaping before materialization", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       const outputPath = join(fixtureDir, "summary.csv");
@@ -46,9 +43,7 @@ describe("cli action modules: data extract source selection", () => {
   });
 
   test("actionDataExtract materializes a DuckDB-file source", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
@@ -73,9 +68,7 @@ describe("cli action modules: data extract source selection", () => {
   });
 
   test("actionDataExtract materializes a schema-qualified DuckDB source", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
@@ -98,9 +91,7 @@ describe("cli action modules: data extract source selection", () => {
   });
 
   test("actionDataExtract infers the only DuckDB source when the file has one table", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       const inputPath = await seedSingleTableDuckDbFixture(fixtureDir);
@@ -123,9 +114,7 @@ describe("cli action modules: data extract source selection", () => {
   });
 
   test("actionDataExtract requires --source for multi-object DuckDB inputs", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
@@ -151,9 +140,7 @@ describe("cli action modules: data extract source selection", () => {
   });
 
   test("actionDataExtract applies header-row shaping on top of an explicit Excel range", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       seedDataExtractFixtures(fixtureDir);
@@ -179,9 +166,7 @@ describe("cli action modules: data extract source selection", () => {
   });
 
   test("actionDataExtract tolerates shaped Excel header-band rows when blank rows follow the header", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       seedDataExtractFixtures(fixtureDir);
@@ -207,9 +192,7 @@ describe("cli action modules: data extract source selection", () => {
   });
 
   test("actionDataExtract materializes the stacked merged-band workbook when body-start-row is provided", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       seedStackedMergedBandFixture(fixtureDir);
@@ -236,9 +219,7 @@ describe("cli action modules: data extract source selection", () => {
   });
 
   test("actionDataExtract reports unknown DuckDB sources clearly", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);

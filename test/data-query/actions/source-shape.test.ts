@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   describe,
   expect,
@@ -21,16 +22,11 @@ import {
   seedStackedMergedBandFixture,
   dataQueryFixturePath,
   TtyCaptureStream,
-  duckdbReady,
-  excelReady,
-  sqliteReady,
 } from "./support";
 
 describe("cli action modules: data query source shape", () => {
   test("actionDataQuery applies Excel range shaping before querying", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
     await actionDataQuery(runtime, {
@@ -49,9 +45,7 @@ describe("cli action modules: data query source shape", () => {
   });
 
   test("actionDataQuery applies header-row shaping on top of an explicit Excel range", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       seedDataExtractFixtures(fixtureDir);
@@ -79,9 +73,7 @@ describe("cli action modules: data query source shape", () => {
   });
 
   test("actionDataQuery tolerates shaped Excel header-band rows when the first data rows are blank", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       seedDataExtractFixtures(fixtureDir);
@@ -109,9 +101,7 @@ describe("cli action modules: data query source shape", () => {
   });
 
   test("actionDataQuery materializes the stacked merged-band workbook when body-start-row is provided", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       seedStackedMergedBandFixture(fixtureDir);
@@ -140,9 +130,7 @@ describe("cli action modules: data query source shape", () => {
   });
 
   test("actionDataQuery reuses an accepted source-shape artifact when it matches exactly", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-query", async (fixtureDir) => {
       seedDataExtractFixtures(fixtureDir);

@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   describe,
   expect,
@@ -21,9 +22,6 @@ import {
   seedStackedMergedBandFixture,
   dataQueryFixturePath,
   TtyCaptureStream,
-  duckdbReady,
-  excelReady,
-  sqliteReady,
 } from "./support";
 
 describe("cli action modules: data query option validation", () => {
@@ -114,9 +112,7 @@ describe("cli action modules: data query option validation", () => {
   });
 
   test("actionDataQuery requires source for SQLite inputs", async () => {
-    if (!sqliteReady) {
-      return;
-    }
+    await requireNativePrerequisites("sqlite");
 
     const { runtime, expectNoOutput } = createActionTestRuntime();
     await expectCliError(

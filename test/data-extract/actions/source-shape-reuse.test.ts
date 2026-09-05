@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   describe,
   expect,
@@ -17,15 +18,11 @@ import {
   seedStackedMergedBandFixture,
   dataQueryFixturePath,
   TtyCaptureStream,
-  duckdbReady,
-  excelReady,
 } from "./support";
 
 describe("cli action modules: data extract source-shape reuse", () => {
   test("actionDataExtract reuses an accepted source-shape artifact when it matches exactly", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       seedDataExtractFixtures(fixtureDir);
@@ -74,9 +71,7 @@ describe("cli action modules: data extract source-shape reuse", () => {
   });
 
   test("actionDataExtract reuses a body-start-row-only source-shape artifact to replay source interpretation", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       seedStackedMergedBandFixture(fixtureDir);

@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   chmod,
   readFile,
@@ -10,9 +11,6 @@ import {
   seedDuckDbWorkspaceFixture,
   runCli,
   withTempFixtureDir,
-  duckdbReady,
-  excelReady,
-  sqliteReady,
   createCodexStub,
 } from "./codex-support";
 
@@ -85,9 +83,7 @@ describe("CLI data query codex command single-source", () => {
   });
 
   test("accepts --source on the codex lane for SQLite inputs", async () => {
-    if (!sqliteReady) {
-      return;
-    }
+    await requireNativePrerequisites("sqlite");
 
     await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
       const promptPath = join(fixtureDir, "sqlite-prompt.txt");
@@ -123,9 +119,7 @@ describe("CLI data query codex command single-source", () => {
   });
 
   test("accepts DuckDB single-source drafting on the codex lane", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
@@ -165,9 +159,7 @@ describe("CLI data query codex command single-source", () => {
   });
 
   test("accepts --range on the codex lane for Excel inputs", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
       const promptPath = join(fixtureDir, "excel-prompt.txt");
@@ -208,9 +200,7 @@ describe("CLI data query codex command single-source", () => {
   });
 
   test("accepts --header-row on the codex lane for Excel inputs", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("query-codex-cli", async (fixtureDir) => {
       seedDataExtractFixtures(fixtureDir);

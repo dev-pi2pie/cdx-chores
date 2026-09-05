@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   chmod,
   readFile,
@@ -16,18 +17,13 @@ import {
   runCli,
   toRepoRelativePath,
   withTempFixtureDir,
-  duckdbReady,
-  sqliteReady,
-  excelReady,
   fixturePath,
   createHeaderSuggestionStub,
 } from "./support";
 
 describe("CLI data query command SQLite workspace sources", () => {
-  test("queries SQLite input end to end when the extension is ready", () => {
-    if (!sqliteReady) {
-      return;
-    }
+  test("queries SQLite input end to end when the extension is ready", async () => {
+    await requireNativePrerequisites("sqlite");
 
     const result = runCli([
       "data",
@@ -46,10 +42,8 @@ describe("CLI data query command SQLite workspace sources", () => {
     expect(result.stdout).toContain("1   | Ada");
   });
 
-  test("queries SQLite workspace relations end to end when the extension is ready", () => {
-    if (!sqliteReady) {
-      return;
-    }
+  test("queries SQLite workspace relations end to end when the extension is ready", async () => {
+    await requireNativePrerequisites("sqlite");
 
     const result = runCli([
       "data",
@@ -71,10 +65,8 @@ describe("CLI data query command SQLite workspace sources", () => {
     expect(result.stdout).toContain("Bob  | 5");
   });
 
-  test("treats one explicit --relation binding as workspace mode when the extension is ready", () => {
-    if (!sqliteReady) {
-      return;
-    }
+  test("treats one explicit --relation binding as workspace mode when the extension is ready", async () => {
+    await requireNativePrerequisites("sqlite");
 
     const result = runCli([
       "data",
@@ -93,10 +85,8 @@ describe("CLI data query command SQLite workspace sources", () => {
     expect(result.stdout).toContain("1   | Ada");
   });
 
-  test("allows explicit file aliases in workspace mode", () => {
-    if (!sqliteReady) {
-      return;
-    }
+  test("allows explicit file aliases in workspace mode", async () => {
+    await requireNativePrerequisites("sqlite");
 
     const result = runCli([
       "data",
@@ -115,10 +105,8 @@ describe("CLI data query command SQLite workspace sources", () => {
     expect(result.stdout).toContain("1   | Ada");
   });
 
-  test("accepts comma-separated --relation bundles", () => {
-    if (!sqliteReady) {
-      return;
-    }
+  test("accepts comma-separated --relation bundles", async () => {
+    await requireNativePrerequisites("sqlite");
 
     const result = runCli([
       "data",

@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   chmod,
   readFile,
@@ -14,15 +15,11 @@ import {
   toRepoRelativePath,
   withTempFixtureDir,
   fixturePath,
-  duckdbReady,
-  excelReady,
 } from "./support";
 
 describe("CLI data extract command source-shape artifacts", () => {
   test("writes a reviewed source-shape artifact and stops before extraction", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       seedDataExtractFixtures(fixtureDir);
@@ -121,9 +118,7 @@ process.stdout.write(JSON.stringify({
   });
 
   test("writes a reviewed body-start-only source-shape artifact and points to header review next", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       seedStackedMergedBandFixture(fixtureDir);
@@ -224,9 +219,7 @@ process.stdout.write(JSON.stringify({
   });
 
   test("reuses an accepted source-shape artifact end to end", async () => {
-    if (!excelReady) {
-      return;
-    }
+    await requireNativePrerequisites("excel");
 
     await withTempFixtureDir("data-extract", async (fixtureDir) => {
       seedDataExtractFixtures(fixtureDir);

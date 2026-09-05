@@ -21,9 +21,6 @@ import {
   seedStackedMergedBandFixture,
   dataQueryFixturePath,
   TtyCaptureStream,
-  duckdbReady,
-  excelReady,
-  sqliteReady,
 } from "./support";
 
 describe("cli action modules: data query header artifacts", () => {

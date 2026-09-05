@@ -1,3 +1,4 @@
+import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
   describe,
   expect,
@@ -12,17 +13,12 @@ import {
   seedSingleTableDuckDbFixture,
   toRepoRelativePath,
   withTempFixtureDir,
-  duckdbReady,
-  excelReady,
-  sqliteReady,
   stripAnsi,
 } from "./codex-support";
 
 describe("cli action modules: data query codex workspace", () => {
   test("actionDataQueryCodex renders workspace assistant output for SQLite relations", async () => {
-    if (!sqliteReady) {
-      return;
-    }
+    await requireNativePrerequisites("sqlite");
 
     const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
 
@@ -57,9 +53,7 @@ describe("cli action modules: data query codex workspace", () => {
   });
 
   test("actionDataQueryCodex allows explicit file aliases in workspace mode", async () => {
-    if (!sqliteReady) {
-      return;
-    }
+    await requireNativePrerequisites("sqlite");
 
     const { runtime, stdout, stderr, expectNoStderr } = createActionTestRuntime();
 
@@ -87,9 +81,7 @@ describe("cli action modules: data query codex workspace", () => {
   });
 
   test("actionDataQueryCodex renders workspace assistant output for DuckDB-file relations", async () => {
-    if (!duckdbReady) {
-      return;
-    }
+    await requireNativePrerequisites("duckdb");
 
     await withTempFixtureDir("query-codex-action", async (fixtureDir) => {
       const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
