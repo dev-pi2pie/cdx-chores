@@ -1,3 +1,4 @@
+import { resolveCodexExecution, type CodexExecutionOptions } from "../../../utils/codex-execution";
 import {
   resolveAutoCodexFlagsForFilePath,
   resolveCodexFlagsFromCliOptions,
@@ -29,6 +30,7 @@ export interface RenameFileOptions {
   prefix?: string;
   pattern?: string;
   codex?: boolean;
+  codexExecution?: CodexExecutionOptions;
   serialOrder?: RenameSerialOrder;
   serialStart?: number;
   serialWidth?: number;
@@ -52,6 +54,7 @@ export async function actionRenameFile(
   runtime: CliRuntime,
   options: RenameFileOptions,
 ): Promise<{ changed: boolean; filePath: string; directoryPath: string; planCsvPath?: string }> {
+  const codexExecution = resolveCodexExecution(options.codexExecution);
   const inputPath = assertNonEmpty(options.path, "File path");
   const effectivePattern = resolveEffectivePattern(options.pattern, options.timestampTimezone);
   const initial = await planSingleRename(runtime, inputPath, {
@@ -77,6 +80,7 @@ export async function actionRenameFile(
     effectiveFlags: effectiveCodexFlags,
     cli: {
       codex: options.codex,
+      codexExecution,
       codexTimeoutMs: options.codexTimeoutMs,
       codexImages: options.codexImages,
       codexImagesTimeoutMs: options.codexImagesTimeoutMs,

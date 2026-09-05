@@ -35,7 +35,17 @@ in the following phases; no live provider compatibility is claimed.
 
 ## Phase 2: Rename Adoption
 
-Status: pending.
+Status: in-progress. Base: `63cba169`.
+
+- Added the three command-local execution options to file/batch rename and the
+  compatibility alias, retaining analyzer enable flags and timeout ordering.
+- Actions and adapters validate direct inputs before work; image/document
+  requests retain normalized settings across batches and retries.
+- `bun test test/rename test/codex-adapters/direct test/cli-foundations/options/codex-execution.test.ts`
+  passed: 372 tests across 53 files, 0 failures. TypeScript, lint, formatting,
+  and diff checks passed.
+
+Phase-range review is pending.
 
 ## Phase 3: Direct Data And Markdown Adoption
 

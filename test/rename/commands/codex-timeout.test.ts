@@ -431,6 +431,9 @@ describe("rename Codex timeout help", () => {
     expect(command.options.map((option) => option.flags)).toEqual([
       ...base,
       "--codex",
+      "--codex-model <model>",
+      "--codex-provider <provider-id>",
+      "--codex-reasoning-effort <effort>",
       "--codex-timeout <duration>",
       "--codex-images",
       "--codex-images-timeout <duration>",
