@@ -244,13 +244,13 @@ SDK import behavior remain intact. No public command adoption is claimed yet.
 
 ### Phase 2: Rename Adoption
 
-- [ ] Register options in `src/cli/commands/rename/codex-options.ts` and wire
+- [x] Register options in `src/cli/commands/rename/codex-options.ts` and wire
       `src/cli/commands/rename.ts`, including the compatibility alias.
-- [ ] Carry settings through file/batch actions, analyzer dispatch, adapter request
+- [x] Carry settings through file/batch actions, analyzer dispatch, adapter request
       types, and injectable thread factories.
-- [ ] Verify mixed image/document routing, batch retries, partial failures, no
+- [x] Verify mixed image/document routing, batch retries, partial failures, no
       automatic effort fallback, and unchanged timeout precedence.
-- [ ] Verify that execution options alone do not enable an analyzer.
+- [x] Verify that execution options alone do not enable an analyzer.
 
 Exit evidence: command and action/adapter tests cover the same selections across
 every eligible batch and attempt, with existing rename fallback behavior intact.
