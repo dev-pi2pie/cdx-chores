@@ -27,6 +27,66 @@ function wrapFailure(error: Error): Error & { cause: Error } {
 }
 
 describe("data header mapping artifacts", () => {
+  for (const custom of [false, true]) {
+    test(`forwards ${custom ? "custom" : "default"} immutable execution settings to the runner`, async () => {
+      let calls = 0;
+      const result = await suggestDataHeaderMappingsWithCodex({
+        format: "excel" as const,
+        introspection: HEADER_SUGGESTION_INTROSPECTION,
+        workingDirectory: REPO_ROOT,
+        codexExecution: custom
+          ? { model: " example-model ", provider: " example-provider ", reasoningEffort: "medium" }
+          : undefined,
+        runner: async ({ codexExecution }) => {
+          calls++;
+          expect(codexExecution).toEqual(
+            custom
+              ? { model: "example-model", provider: "example-provider", reasoningEffort: "medium" }
+              : { reasoningEffort: "low" },
+          );
+          expect(Object.isFrozen(codexExecution)).toBe(true);
+          return JSON.stringify({ suggestions: [] });
+        },
+      });
+      expect(result.errorMessage).toBeUndefined();
+      expect(calls).toBe(1);
+    });
+  }
+
+  test("validates execution settings before reading input or invoking a runner", async () => {
+    let calls = 0;
+    await expect(
+      suggestDataHeaderMappingsWithCodex({
+        format: "excel" as const,
+        introspection: HEADER_SUGGESTION_INTROSPECTION,
+        workingDirectory: REPO_ROOT,
+        codexExecution: { provider: " " },
+        runner: async () => {
+          calls++;
+          return "";
+        },
+      }),
+    ).rejects.toThrow("Codex provider must be a non-empty string");
+    expect(calls).toBe(0);
+  });
+
+  test("surfaces incompatible reasoning without retrying with different settings", async () => {
+    let calls = 0;
+    const result = await suggestDataHeaderMappingsWithCodex({
+      format: "excel" as const,
+      introspection: HEADER_SUGGESTION_INTROSPECTION,
+      workingDirectory: REPO_ROOT,
+      codexExecution: { reasoningEffort: "high" },
+      runner: async ({ codexExecution }) => {
+        calls++;
+        expect(codexExecution.reasoningEffort).toBe("high");
+        throw new Error("reasoning effort high is unsupported");
+      },
+    });
+    expect(result.errorMessage).toContain("reasoning effort high is unsupported");
+    expect(calls).toBe(1);
+  });
+
   test("formats a direct header-mapping timeout with the configured per-attempt limit", async () => {
     const result = await suggestDataHeaderMappingsWithCodex({
       format: "excel",

@@ -27,18 +27,62 @@ function wrapFailure(error: Error): Error & { cause: Error } {
 }
 
 describe("cli action modules: rename cleanup codex suggestions", () => {
+  test("keeps explicit execution settings on a rejected request without fallback", async () => {
+    const requests: unknown[] = [];
+    const result = await suggestRenameCleanupWithCodex({
+      evidence: SAMPLE_EVIDENCE,
+      workingDirectory: process.cwd(),
+      codexExecution: { model: " Model-A ", provider: "Provider-A", reasoningEffort: "high" },
+      timeoutMs: 45_000,
+      runner: async (options) => {
+        requests.push(options);
+        expect(Object.isFrozen(options.codexExecution)).toBe(true);
+        expect(options.prompt).not.toContain("Model-A");
+        expect(options.prompt).not.toContain("Provider-A");
+        throw new Error("reasoning effort high is unsupported");
+      },
+    });
+    expect(requests).toEqual([
+      expect.objectContaining({
+        codexExecution: { model: "Model-A", provider: "Provider-A", reasoningEffort: "high" },
+        timeoutMs: 45_000,
+      }),
+    ]);
+    expect(result.errorMessage).toContain("reasoning effort high is unsupported");
+  });
+
+  test("validates execution settings before preparing evidence or invoking the runner", async () => {
+    let calls = 0;
+    await expect(
+      suggestRenameCleanupWithCodex({
+        get evidence(): RenameCleanupAnalyzerEvidence {
+          throw new Error("evidence accessed too early");
+        },
+        workingDirectory: process.cwd(),
+        codexExecution: { provider: " " },
+        runner: async () => {
+          calls += 1;
+          return "";
+        },
+      }),
+    ).rejects.toThrow("provider");
+    expect(calls).toBe(0);
+  });
+
   test("normalizes a structured Codex cleanup suggestion", async () => {
     const result = await suggestRenameCleanupWithCodex({
       evidence: SAMPLE_EVIDENCE,
       workingDirectory: process.cwd(),
-      runner: async () =>
-        JSON.stringify({
+      runner: async (options) => {
+        expect(options.codexExecution).toEqual({ reasoningEffort: "low" });
+        return JSON.stringify({
           recommended_hints: ["serial", "serial"],
           recommended_style: "slug",
           recommended_timestamp_action: "none",
           confidence: 1.2,
           reasoning_summary: "Most sampled names differ only by trailing counters.",
-        }),
+        });
+      },
     });
 
     expect(result).toEqual({

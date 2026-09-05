@@ -1,3 +1,4 @@
+import type { CodexExecutionOptions } from "../../../../utils/codex-execution";
 import { select } from "@inquirer/prompts";
 
 import { printLine } from "../../../actions/shared";
@@ -28,6 +29,7 @@ export async function collectCodexSourceShapeReview(options: {
   runtime: CliRuntime;
   selectedSource: string | undefined;
   sourceShape: InteractiveSourceShapeState;
+  codexExecution?: CodexExecutionOptions;
   timeoutMs: number;
 }): Promise<CodexSourceShapeReviewResult> {
   const selectedSource = options.selectedSource?.trim();
@@ -54,6 +56,7 @@ export async function collectCodexSourceShapeReview(options: {
       currentHeaderRow: options.sourceShape.selectedHeaderRow,
       currentBodyStartRow: options.sourceShape.selectedBodyStartRow,
       currentRange: options.sourceShape.selectedRange,
+      codexExecution: options.codexExecution,
       timeoutMs: options.timeoutMs,
       workingDirectory: options.runtime.cwd,
     });

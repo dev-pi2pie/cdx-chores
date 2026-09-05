@@ -22,6 +22,7 @@ describe("interactive rename routing", () => {
     const result = runInteractiveHarness({
       mode: "run",
       captureCodexTimeouts: true,
+      captureCodexExecution: true,
       selectQueue: ["rename", "rename:file", "default", "utc"],
       requiredPathQueue: ["README.md"],
       inputQueue: [""],
@@ -34,6 +35,7 @@ describe("interactive rename routing", () => {
         codexDocs: false,
         codexImages: false,
         codexTimeoutMs: 30_000,
+        codexExecution: { reasoningEffort: "low" },
       }),
     });
     expect(
@@ -45,6 +47,11 @@ describe("interactive rename routing", () => {
     const result = runInteractiveHarness({
       mode: "run",
       codexTimeoutMs: 120_000,
+      codexExecution: {
+        model: "custom-model",
+        provider: "custom-provider",
+        reasoningEffort: "high",
+      },
       selectQueue: ["rename", "rename:batch", "docs", "default", "utc", "summary", "docs"],
       requiredPathQueue: ["docs"],
       inputQueue: [""],
@@ -57,6 +64,11 @@ describe("interactive rename routing", () => {
         codexDocs: true,
         codexImages: false,
         codexTimeoutMs: 120_000,
+        codexExecution: {
+          model: "custom-model",
+          provider: "custom-provider",
+          reasoningEffort: "high",
+        },
       }),
     });
   });

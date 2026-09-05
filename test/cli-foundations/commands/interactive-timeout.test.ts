@@ -44,12 +44,63 @@ async function expectParseFailure(
 }
 
 describe("Interactive Codex timeout command contract", () => {
+  test("normalizes combined execution flags alongside the independent timeout", async () => {
+    const harness = createInteractiveTimeoutHarness();
+    await harness.parse([
+      "interactive",
+      "--codex-model",
+      " Model-A ",
+      "--codex-provider",
+      " Provider-A ",
+      "--codex-reasoning-effort",
+      "high",
+      "--codex-timeout",
+      "2m",
+    ]);
+    expect(harness.sessionCalls).toEqual([
+      {
+        codexTimeoutMs: 120_000,
+        codexExecution: { model: "Model-A", provider: "Provider-A", reasoningEffort: "high" },
+      },
+    ]);
+  });
+
+  test.each([
+    { args: ["--codex-model", " "] },
+    { args: ["--codex-provider", " "] },
+    { args: ["--codex-reasoning-effort", "none"] },
+    { args: ["--codex-model", "one", "--codex-model", "two"] },
+    { args: ["--codex-provider", "one", "--codex-provider", "two"] },
+    { args: ["--codex-reasoning-effort", "low", "--codex-reasoning-effort", "high"] },
+  ])("rejects malformed execution options before session entry: $args", async ({ args }) => {
+    const harness = createInteractiveTimeoutHarness();
+    await expectParseFailure(harness, ["interactive", ...args]);
+    expect(harness.sessionCalls).toEqual([]);
+  });
+
+  test("snapshots execution input and isolates subsequent sessions", () => {
+    const input = { model: " Model-A ", provider: "Provider-A", reasoningEffort: "high" as const };
+    const session = createInteractiveSession({ codexExecution: input });
+    input.model = "changed";
+    expect(session.codexExecution).toEqual({
+      model: "Model-A",
+      provider: "Provider-A",
+      reasoningEffort: "high",
+    });
+    expect(Object.isFrozen(session.codexExecution)).toBe(true);
+    expect(createInteractiveSession().codexExecution).toEqual({ reasoningEffort: "low" });
+    expect(session.codexTimeoutMs).toBe(30_000);
+    expect(() => createInteractiveSession({ codexExecution: { model: " " } })).toThrow();
+  });
+
   test("normalizes the explicit session timeout before Interactive entry", async () => {
     const harness = createInteractiveTimeoutHarness();
 
     await harness.parse(["interactive", "--codex-timeout", "2m"]);
 
-    expect(harness.sessionCalls).toEqual([{ codexTimeoutMs: 120_000 }]);
+    expect(harness.sessionCalls).toEqual([
+      { codexTimeoutMs: 120_000, codexExecution: { reasoningEffort: "low" } },
+    ]);
   });
 
   test("keeps the command input optional and resolves the shared default in session state", async () => {
@@ -57,8 +108,13 @@ describe("Interactive Codex timeout command contract", () => {
 
     await harness.parse(["interactive"]);
 
-    expect(harness.sessionCalls).toEqual([{ codexTimeoutMs: undefined }]);
-    expect(createInteractiveSession()).toEqual({ codexTimeoutMs: 30_000 });
+    expect(harness.sessionCalls).toEqual([
+      { codexTimeoutMs: undefined, codexExecution: { reasoningEffort: "low" } },
+    ]);
+    expect(createInteractiveSession()).toEqual({
+      codexTimeoutMs: 30_000,
+      codexExecution: { reasoningEffort: "low" },
+    });
   });
 
   test.each(["30", "11m"])(

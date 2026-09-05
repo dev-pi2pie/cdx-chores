@@ -1,3 +1,8 @@
+import {
+  resolveCodexExecution,
+  type CodexExecutionOptions,
+  type ResolvedCodexExecution,
+} from "../../../utils/codex-execution";
 import { startCodexReadOnlyThread } from "../../../adapters/codex/shared";
 import { formatCodexRequestFailure } from "../../../utils/codex-request-failure";
 import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../../utils/codex-timeout";
@@ -161,11 +166,14 @@ function parseHeaderSuggestionResponse(
 }
 
 async function runHeaderSuggestionPrompt(options: {
+  codexExecution: ResolvedCodexExecution;
   prompt: string;
   timeoutMs?: number;
   workingDirectory: string;
 }): Promise<string> {
-  const thread = await startCodexReadOnlyThread(options.workingDirectory);
+  const thread = await startCodexReadOnlyThread(options.workingDirectory, {
+    codexExecution: options.codexExecution,
+  });
   const turn = await thread.run([{ type: "text", text: options.prompt }], {
     outputSchema: DATA_HEADER_SUGGESTION_OUTPUT_SCHEMA,
     signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
@@ -174,15 +182,18 @@ async function runHeaderSuggestionPrompt(options: {
 }
 
 export async function suggestDataHeaderMappingsWithCodex(options: {
+  codexExecution?: CodexExecutionOptions;
   format: DataHeaderMappingFormat;
   introspection: DataHeaderSuggestionIntrospection;
   runner?: DataHeaderSuggestionRunner;
   timeoutMs?: number;
   workingDirectory: string;
 }): Promise<DataHeaderSuggestionResult> {
+  const codexExecution = resolveCodexExecution(options.codexExecution);
   try {
     const runner = options.runner ?? runHeaderSuggestionPrompt;
     const finalResponse = await runner({
+      codexExecution,
       prompt: buildHeaderSuggestionPrompt({
         format: options.format,
         introspection: options.introspection,

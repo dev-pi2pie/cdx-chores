@@ -6,6 +6,11 @@ describe("interactive mode routing: data query headers", () => {
   test("accepts all interactive header suggestions and re-inspects before SQL authoring", () => {
     const result = runInteractiveHarness({
       mode: "run",
+      codexExecution: {
+        model: "example-model",
+        provider: "example-provider",
+        reasoningEffort: "high",
+      },
       captureCodexTimeouts: true,
       selectQueue: ["data", "data:query", "accept", "manual", "table"],
       requiredPathQueue: ["fixtures/query.csv"],
@@ -42,6 +47,11 @@ describe("interactive mode routing: data query headers", () => {
         options: {
           format: "csv",
           selectedSource: undefined,
+          codexExecution: {
+            model: "example-model",
+            provider: "example-provider",
+            reasoningEffort: "high",
+          },
           timeoutMs: 30_000,
         },
       },

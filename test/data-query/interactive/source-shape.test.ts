@@ -37,6 +37,11 @@ describe("interactive mode routing: data query source shape", () => {
   test("warns about suspicious raw Excel schemas before SQL authoring and supports manual range recovery", () => {
     const result = runInteractiveHarness({
       mode: "run",
+      codexExecution: {
+        model: "example-model",
+        provider: "example-provider",
+        reasoningEffort: "high",
+      },
       stderrIsTTY: true,
       selectQueue: ["data", "data:query", "Summary", "range", "manual", "table"],
       requiredPathQueue: ["fixtures/query.xlsx"],

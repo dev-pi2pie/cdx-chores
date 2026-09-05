@@ -183,6 +183,11 @@ describe("interactive rename routing", () => {
     const result = runInteractiveHarness({
       mode: "run",
       codexTimeoutMs: 60_000,
+      codexExecution: {
+        model: "custom-model",
+        provider: "custom-provider",
+        reasoningEffort: "high",
+      },
       selectQueue: ["rename", "rename:cleanup", "date", "done", "preserve", "skip"],
       checkboxQueue: [["timestamp", "date", "serial", "uid"]],
       requiredPathQueue: ["README.md"],
@@ -196,6 +201,11 @@ describe("interactive rename routing", () => {
         name: "rename:cleanup:codex-suggest",
         options: expect.objectContaining({
           timeoutMs: 60_000,
+          codexExecution: {
+            model: "custom-model",
+            provider: "custom-provider",
+            reasoningEffort: "high",
+          },
         }),
       },
       {

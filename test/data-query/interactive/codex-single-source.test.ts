@@ -57,6 +57,11 @@ describe("interactive mode routing: data query Codex single source", () => {
   test("supports checkpoint regenerate from codex sql review", () => {
     const result = runInteractiveHarness({
       mode: "run",
+      codexExecution: {
+        model: "example-model",
+        provider: "example-provider",
+        reasoningEffort: "high",
+      },
       codexTimeoutMs: 120_000,
       selectQueue: ["data", "data:query", "Codex Assistant", "regenerate", "table"],
       requiredPathQueue: ["fixtures/query.csv"],
@@ -73,11 +78,25 @@ describe("interactive mode routing: data query Codex single source", () => {
     expect(result.actionCalls.filter((call) => call.name === "data:query:codex-draft")).toEqual([
       {
         name: "data:query:codex-draft",
-        options: expect.objectContaining({ timeoutMs: 120_000 }),
+        options: expect.objectContaining({
+          timeoutMs: 120_000,
+          codexExecution: {
+            model: "example-model",
+            provider: "example-provider",
+            reasoningEffort: "high",
+          },
+        }),
       },
       {
         name: "data:query:codex-draft",
-        options: expect.objectContaining({ timeoutMs: 120_000 }),
+        options: expect.objectContaining({
+          timeoutMs: 120_000,
+          codexExecution: {
+            model: "example-model",
+            provider: "example-provider",
+            reasoningEffort: "high",
+          },
+        }),
       },
     ]);
     expect(result.actionCalls).toContainEqual({

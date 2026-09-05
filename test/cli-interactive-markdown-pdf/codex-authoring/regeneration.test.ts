@@ -6,9 +6,16 @@ import {
   recipesCodexSelections,
 } from "../../markdown-pdf/interactive/codex-authoring-fixtures";
 
+const codexExecution = {
+  model: "Model-A",
+  provider: "Provider-A",
+  reasoningEffort: "high",
+} as const;
+
 describe("interactive Markdown PDF Codex authoring", () => {
   test("declining consent, revising setup, and re-consenting prepares exactly once", () => {
     const result = runInteractiveHarness({
+      codexExecution,
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -24,7 +31,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
     });
 
     expect(result.markdownPdfCodexPrepareCalls).toEqual([
-      expect.objectContaining({ intent: "Revised direction" }),
+      expect.objectContaining({ intent: "Revised direction", codexExecution }),
     ]);
     expect(result.markdownPdfCodexBindCalls).toEqual([]);
     expect(result.markdownPdfCodexWriteCalls).toEqual([]);
@@ -33,6 +40,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
   test("prepares a new stable candidate only after explicit regeneration", () => {
     const result = runInteractiveHarness({
       codexTimeoutMs: 120_000,
+      codexExecution,
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [...recipesCodexSelections("profile"), "continue", "regenerate", "cancel"],
@@ -46,12 +54,14 @@ describe("interactive Markdown PDF Codex authoring", () => {
         artifactCount: 1,
         candidateId: "codex-profile-1",
         timeoutMs: 120_000,
+        codexExecution,
       }),
       expect.objectContaining({
         artifact: "profile",
         artifactCount: 2,
         candidateId: "codex-profile-2",
         timeoutMs: 120_000,
+        codexExecution,
       }),
     ]);
     expect(result.markdownPdfCodexBindCalls).toEqual([]);
@@ -60,6 +70,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
 
   test("preserves the accepted candidate after a no-op font-hint review", () => {
     const result = runInteractiveHarness({
+      codexExecution,
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -88,6 +99,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
   test("invalidates the candidate only after an accepted font-hint change", () => {
     const result = runInteractiveHarness({
       codexTimeoutMs: 120_000,
+      codexExecution,
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -109,6 +121,10 @@ describe("interactive Markdown PDF Codex authoring", () => {
     expect(result.markdownPdfCodexPrepareCalls.map((call) => call.timeoutMs)).toEqual([
       120_000, 120_000,
     ]);
+    expect(result.markdownPdfCodexPrepareCalls.map((call) => call.codexExecution)).toEqual([
+      codexExecution,
+      codexExecution,
+    ]);
     expect(result.markdownPdfCodexPrepareCalls[1]?.fontHints).toEqual([
       "Prefer Inter for headings and titles",
     ]);
@@ -118,6 +134,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
     "binds and writes one durable %s candidate once",
     (artifact) => {
       const result = runInteractiveHarness({
+        codexExecution,
         mode: "run",
         markdownPdfMocks: true,
         selectQueue: [
@@ -134,7 +151,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
 
       const candidateId = `codex-${artifact}-1`;
       expect(result.markdownPdfCodexPrepareCalls).toEqual([
-        expect.objectContaining({ artifact, artifactCount: 1, candidateId }),
+        expect.objectContaining({ artifact, artifactCount: 1, candidateId, codexExecution }),
       ]);
       expect(result.markdownPdfCodexBindCalls).toEqual([
         expect.objectContaining({
@@ -159,11 +176,14 @@ describe("interactive Markdown PDF Codex authoring", () => {
       expect(result.markdownPdfCodexPrepareCalls[0]).not.toHaveProperty("codexTimeoutMs");
       expect(result.markdownPdfCodexBindCalls[0]).not.toHaveProperty("timeoutMs");
       expect(result.markdownPdfCodexWriteCalls[0]).not.toHaveProperty("timeoutMs");
+      expect(result.markdownPdfCodexBindCalls[0]).not.toHaveProperty("codexExecution");
+      expect(result.markdownPdfCodexWriteCalls[0]).not.toHaveProperty("codexExecution");
     },
   );
 
   test("resets the retained override after Codex regeneration", () => {
     const result = runInteractiveHarness({
+      codexExecution,
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -186,6 +206,10 @@ describe("interactive Markdown PDF Codex authoring", () => {
       confirmQueue: [false, true, false, false, true],
     });
 
+    expect(result.markdownPdfCodexPrepareCalls.map((call) => call.codexExecution)).toEqual([
+      codexExecution,
+      codexExecution,
+    ]);
     expect(result.markdownPdfCodexPrepareCalls.map((call) => call.candidateId)).toEqual([
       "codex-project-bundle-1",
       "codex-project-bundle-2",

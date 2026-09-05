@@ -1,3 +1,4 @@
+import { resolveCodexExecution, type CodexExecutionOptions } from "../../../utils/codex-execution";
 import { stat } from "node:fs/promises";
 import { join, parse } from "node:path";
 
@@ -90,8 +91,9 @@ function generatedOutputCollisionMessage(artifact: MarkdownPdfCodexArtifact): st
 export async function prepareMarkdownPdfCodexCandidate(
   runtime: CliRuntime,
   setup: MarkdownPdfCodexSetup,
-  options: { timeoutMs?: number } = {},
+  options: { timeoutMs?: number; codexExecution?: CodexExecutionOptions } = {},
 ): Promise<PreparedMarkdownPdfCodexCandidate> {
+  const codexExecution = resolveCodexExecution(options.codexExecution);
   const common = {
     input: setup.sample,
     intent: setup.intent,
@@ -100,6 +102,7 @@ export async function prepareMarkdownPdfCodexCandidate(
     dryRun: true,
     keepCodexReport: false,
     timeoutMs: options.timeoutMs,
+    codexExecution,
     codexProgressPresenter: createMarkdownPdfInteractiveCodexProgressPresenter(
       runtime,
       setup.artifact,

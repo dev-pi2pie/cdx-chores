@@ -117,6 +117,7 @@ export async function runMarkdownPdfToPdfInteractiveFlow(
       if (source.kind === "generated") {
         const outcome = await runMarkdownPdfAuthoring(runtime, pathPromptContext, {
           codexTimeoutMs: interactiveSession.codexTimeoutMs,
+          codexExecution: interactiveSession.codexExecution,
           entry: "to-pdf",
           fontHintEditor: codexSession.fontHintEditor,
           markdownInput: input,

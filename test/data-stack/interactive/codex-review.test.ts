@@ -6,6 +6,11 @@ describe("interactive data stack codex review", () => {
   test("reviews and accepts interactive data stack Codex recommendations before writing", () => {
     const result = runDataStackInteractiveHarness({
       captureCodexTimeouts: true,
+      codexExecution: {
+        model: "example-model",
+        provider: "example-provider",
+        reasoningEffort: "high",
+      },
       selectQueue: [
         "data",
         "data:stack",
@@ -50,7 +55,14 @@ describe("interactive data stack codex review", () => {
     expect(result.actionCalls).toEqual([
       {
         name: "data:stack:codex-suggest",
-        options: { timeoutMs: 30_000 },
+        options: {
+          timeoutMs: 30_000,
+          codexExecution: {
+            model: "example-model",
+            provider: "example-provider",
+            reasoningEffort: "high",
+          },
+        },
       },
       {
         name: "data:stack",

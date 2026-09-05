@@ -6,6 +6,11 @@ describe("interactive mode routing: data query Codex workspace", () => {
   test("routes Codex Assistant through workspace drafting in interactive query", () => {
     const result = runInteractiveHarness({
       mode: "run",
+      codexExecution: {
+        model: "example-model",
+        provider: "example-provider",
+        reasoningEffort: "high",
+      },
       selectQueue: ["data", "data:query", "workspace", "Codex Assistant", "json"],
       checkboxQueue: [["users", "active_users"]],
       requiredPathQueue: ["fixtures/query.sqlite"],
@@ -47,6 +52,11 @@ describe("interactive mode routing: data query Codex workspace", () => {
       {
         name: "data:query:codex-draft",
         options: {
+          codexExecution: {
+            model: "example-model",
+            provider: "example-provider",
+            reasoningEffort: "high",
+          },
           format: "sqlite",
           intent: "join users with active users",
           relations: [

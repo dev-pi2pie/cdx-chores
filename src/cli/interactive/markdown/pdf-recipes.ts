@@ -18,6 +18,7 @@ export async function handleMarkdownPdfRecipesInteractiveAction(
     while (true) {
       const outcome = await runMarkdownPdfAuthoring(runtime, pathPromptContext, {
         codexTimeoutMs: session.codexTimeoutMs,
+        codexExecution: session.codexExecution,
         entry: "pdf-recipes",
         fontHintEditor: codexSession.fontHintEditor,
       });

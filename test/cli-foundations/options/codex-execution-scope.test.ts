@@ -10,6 +10,7 @@ describe("Codex execution command scope", () => {
       ["rename", "file"],
       ["rename", "batch"],
       ["batch-rename"],
+      ["interactive"],
       ["data", "query", "codex"],
       ["data", "stack"],
       ["md", "pdf-profile", "codex"],

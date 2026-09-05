@@ -1,3 +1,4 @@
+import type { CodexExecutionOptions } from "../../../../utils/codex-execution";
 import { stat } from "node:fs/promises";
 import { extname } from "node:path";
 
@@ -89,6 +90,7 @@ export async function confirmInteractiveStackWrite(
   pathPromptContext: InteractivePathPromptContext,
   setup: InteractiveDataStackSetup,
   codexTimeoutMs: number,
+  codexExecution?: CodexExecutionOptions,
 ): Promise<InteractiveDataStackWriteOutcome> {
   let outputPlan = await promptInteractiveStackOutput(runtime, pathPromptContext);
   let reviewedPlan: InteractiveDataStackReviewedPlan | undefined;
@@ -131,7 +133,12 @@ export async function confirmInteractiveStackWrite(
       const checkpointAction = await promptInteractiveStackCodexCheckpoint(runtime, codexSignals);
       if (checkpointAction === "codex") {
         handledCodexSignalKey = codexSignalKey;
-        reviewedPlan = await requestInteractiveStackCodexReview(runtime, state, codexTimeoutMs);
+        reviewedPlan = await requestInteractiveStackCodexReview(
+          runtime,
+          state,
+          codexTimeoutMs,
+          codexExecution,
+        );
         continue;
       }
       if (checkpointAction === "review") {
