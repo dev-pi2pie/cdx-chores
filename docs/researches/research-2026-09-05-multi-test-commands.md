@@ -18,8 +18,9 @@ filename-based selection, verified the baseline correspondence and prerequisite
 boundaries, and passed the complete 424-file union. The implementation job records
 the actual mapping, evidence, and completed Phase 2 range reviews. Phase 1 implementation and lifecycle
 evidence are complete. Phase 3 delivered the managed runner and passed the real
-aggregate in both retention modes. Research remains in progress pending Phase 4's
-broader workflow verification and final usage documentation.
+aggregate in both retention modes. Phase 3.2 adds live test output and terminal
+presentation before Phase 4's broader workflow verification and final usage
+documentation. Both remain pending; research stays in progress.
 
 ## Contributor Command Model
 
@@ -354,6 +355,102 @@ retained-results path, or state that no results were retained. Preserve this
 diagnostic output even when default-run result files are removed; early argument
 or allocation failure must still print its concrete reason.
 
+### Live Test Output and Terminal Experience
+
+Accepted follow-up contract for Phase 3.2; implementation and verification are
+pending. Phase 3 established final reporting and lifecycle evidence. Its runner
+currently captures child output and prints after finalization, leaving long runs
+without visible feedback. The job records the manual observation and review.
+
+#### Streaming Boundary
+
+All five named commands should display the selected Bun test process's stdout
+and stderr as data arrives, in both retention modes. Start streaming immediately;
+do not wait for a duration threshold, suite completion, or the final report.
+Preserve stdout/stderr destinations and order within each stream. Separate pipes
+do not establish a total ordering between the two streams. Forward partial lines
+without waiting indefinitely for a newline; handle split UTF-8 sequences correctly
+where decoding or decoration is needed.
+
+Use the existing owned pipes as the starting approach. Stream only the outer
+Bun test output: prerequisite JSON, raw native probes, and nested Codex protocol
+traffic remain internal. Present readable preflight status, validated versions,
+and failure reasons through the runner. Keep raw streams out of retained summary
+JSON and designated artifacts. Do not replay already displayed failure output
+after finalization; the final summary still records every failure and cleanup
+outcome.
+
+Distinguish bounded diagnostic capture from live forwarding so display does not
+wait for the whole run. Use this initial delivery policy, to be verified during
+Phase 3.2 before changing limits based on measurements:
+
+- Preserve the outer test process's existing 8 MiB total output limit and existing
+  execution/cleanup deadlines. Exceeding that output limit remains an
+  `output-limit` failure with owned termination.
+- Limit combined pending terminal writes to 1 MiB, including bytes handed to a
+  destination until its write callback completes. Pause the corresponding child
+  readable when its destination applies backpressure; resume on drain. Keep
+  cancellation and process-deadline handling responsive while reads are paused.
+- If another chunk would exceed the pending-byte limit, fail output delivery and
+  stop the owned producer instead of dropping bytes silently or spilling logs to
+  disk. Use a four-second no-progress allowance while backpressured and a separate
+  four-second final output-drain allowance after producer completion. Expiry or
+  a broken destination also fails delivery and triggers bounded owned shutdown.
+- On delivery failure, stop scheduling further suites. Preserve completed suite
+  outcomes and any test/cleanup failures; fail the active attempt and invocation.
+  Report the affected destination, limit/error, byte counts, and incomplete
+  delivery through a surviving destination where possible. Do not claim successful
+  delivery when both destinations are lost.
+
+These are proposed starting limits, not measured streaming results. Verify the
+budget accounting and allowances with controlled slow destinations. Flush pending
+output before the final summary when delivery succeeds. Output failures during
+final summary delivery also make the invocation fail.
+
+Live lines are informational. Exit status, validated JUnit, verified process
+completion, export checks, and finalization continue to determine final results.
+A child's printed pass line or an elapsed-time indicator cannot establish a
+completed suite.
+
+#### Presentation
+
+Print immediate invocation/selection feedback and clear suite boundaries. Show
+preflight, test execution, report validation, and cleanup stages. Actual streamed
+test lines are the main progress display. During quiet work, show elapsed time
+and the active stage; do not imply measured completion percentages or treat a
+spinner as proof that assertions are advancing. Aggregate output identifies the
+active suite and preserves completed suite results while later suites run.
+
+Use the repository's existing color conventions for active, passed, failed, and
+not-run states. Keep essential meaning in text and respect `NO_COLOR`. Detect
+capabilities per destination, including separately redirected stdout/stderr. Verify the
+installed Bun reporter's color behavior through pipes before choosing how to
+enable child colors. For redirected streams, use plain append-only output and
+infrequent status updates without cursor controls. Interactive redraws must not
+overwrite test lines, partial output, or failure details. Finish with a readable
+summary retaining the counts, versions, reasons, and paths required above;
+group routine process metadata below the results and emphasize lifecycle problems.
+
+#### Verification Boundary
+
+Use bounded producers and controlled output destinations to prove visibility
+before producer exit, partial-line/chunk handling, per-stream ordering, bounded
+capture/queues, and absence of duplicate replay. Exercise quiet work, sustained
+output, slow/broken destinations, output-budget exhaustion, timeout, and Ctrl+C.
+Verify that output failures cannot hide test or cleanup failures or leave owned
+work unaccounted for.
+
+Exercise the privacy boundary with synthetic internal JSON and secret-like
+sentinels from prerequisite/native/Codex probe fixtures. Assert that these values
+never enter the streamed terminal output, summary JSON, or retained artifacts,
+while sanitized status and failure reasons remain visible.
+
+Inspect actual terminal and redirected execution, including `NO_COLOR`, failures,
+both retention modes, and the named app/aggregate commands. Unit/application
+fixtures must not recursively invoke the complete suite. Record measurements and
+terminal observations in the existing job. A PTY or a separate research document
+is warranted only if a concrete unresolved behavior requires that investigation.
+
 ### Ownership and Retention
 
 One named invocation owns one atomically allocated unique run directory under
@@ -451,7 +548,9 @@ commands, report validation, scheduling, terminal diagnostics, and retention;
 both real aggregate modes passed 3,152 cases across 434 files. The
 [implementation record](../plans/jobs/2026-09-05-test-suite-refactor.md)
 contains failure/correction evidence, ownership and export inspection,
-acceptance cleanup, and complete phase reviews. Phase 4 still owns the broader
+acceptance cleanup, and complete phase reviews. Phase 3.2 still needs live-output,
+terminal-presentation, and output-failure evidence under the contract above.
+Phase 4 follows its completion and still owns the broader
 leaf/aggregate repetition protocol, final inventory reconciliation, built-package
 checks, and usage documentation.
 

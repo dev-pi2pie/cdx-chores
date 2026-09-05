@@ -13,7 +13,8 @@ ownership and regression coverage. The implemented layout uses feature/boundary
 folders and `.{unit,app,codex,pandoc}.test.ts` suffixes.
 
 Phase 1 is completed in the [implementation record](jobs/2026-09-05-test-suite-refactor.md).
-Phases 2 and 3 are completed; Phase 4 has not started.
+Phases 2 and 3 are completed. Phase 3.2 is drafted and must complete before
+Phase 4, which has not started.
 The inventory, representative
 pilots, feature migration, final discovery, and full-range reviews are recorded
 in the implementation record.
@@ -22,11 +23,13 @@ The research is authoritative for these contracts:
 - [Commands](../researches/research-2026-09-05-multi-test-commands.md#contributor-command-model), [structure and before/after comparison](../researches/research-2026-09-05-multi-test-commands.md#proposed-structure-and-beforeafter-comparison), and [unit boundaries](../researches/research-2026-09-05-multi-test-commands.md#what-unit-means-in-this-repository).
 - [Discovery](../researches/research-2026-09-05-multi-test-commands.md#proposed-discovery-and-suite-membership), [process completion](../researches/research-2026-09-05-multi-test-commands.md#process-completion-and-failure-semantics), and [reporting/retention](../researches/research-2026-09-05-multi-test-commands.md#shared-reporting-and-artifact-contract).
 - [Scope and evidence](../researches/research-2026-09-05-multi-test-commands.md#scope-evidence-and-documentation), including platform limits and excluded work.
+- [Live output and terminal presentation](../researches/research-2026-09-05-multi-test-commands.md#live-test-output-and-terminal-experience), the accepted Phase 3.2 follow-up contract.
 
 ```text
 Prove process ownership
   -> classify and pilot feature migrations
   -> deliver the managed runner
+  -> add live test output and terminal presentation (Phase 3.2)
   -> verify the workflow and publish guidance
 ```
 
@@ -164,7 +167,82 @@ Use bounded fixtures rather than recursively running the full suite. A phase pas
 requires all selected leaves and finalization to succeed; cleanup failure cannot
 be presented as complete verification.
 
+## Phase 3.2: Live Test Output and Terminal Experience
+
+Status: draft; implementation has not started.
+
+Address the manual-run feedback gap after the completed Phase 3 contract. Preserve
+its recorded execution/reporting/cleanup evidence and add the research's accepted
+live-output contract. Phase 4 retains its number and follows this phase.
+
+### 3.2A: Streaming Output
+
+Connect immediate stdout/stderr delivery from each selected Bun test process to
+the existing ownership mechanism. Keep prerequisite/protocol internals private,
+diagnostic capture bounded, and the final result dependent on report and lifecycle
+validation. Retain the five command names and existing retention option.
+
+Acceptance:
+
+- [ ] Map the current imports and modularize `scripts/testing` into shallow folders
+      by responsibility, covering orchestration, process/prerequisite handling,
+      run/report ownership, and terminal presentation. Keep `scripts/testing/run.ts`
+      as the public entry point; update module imports, subprocess-relative URLs,
+      Node-consumed helpers, and script/test fixture references. Validate and
+      checkpoint the behavior-preserving reorganization before streaming changes.
+- [ ] Verify output reaches its destination before producer exit, including partial
+      lines, split UTF-8 chunks, and order within each stream; do not promise a
+      combined ordering across separate stdout/stderr pipes.
+- [ ] Keep capture and pending writes bounded under sustained output and slow
+      destinations. Verify the research's initial 8 MiB output/1 MiB pending-write
+      budgets, pause/resume behavior, and four-second stall/final-drain allowances;
+      record measurements before revising limits.
+- [ ] Verify broken output, exceeded drain allowance, timeout, and cancellation
+      fail clearly, stop owned work, and preserve all failure/cleanup reasons.
+- [ ] Avoid duplicate failure replay; flush successful output delivery before the
+      final summary and keep raw streams out of retained summary/artifact files.
+      Use internal probe/protocol sentinels to prove private JSON and secret-like
+      values never reach terminal output or retained artifacts, while sanitized
+      status and failure reasons remain visible.
+
+### 3.2B: Terminal Presentation
+
+Combine streamed test lines with immediate invocation feedback, styled suite
+boundaries, visible preflight/validation/cleanup stages, and elapsed-time feedback
+during quiet work. Use the existing color conventions and the research's final
+summary requirements.
+
+Acceptance:
+
+- [ ] Show the active suite and preserve completed outcomes during aggregate runs;
+      do not infer verified results or completion percentages from console lines.
+- [ ] Verify Bun color behavior through owned pipes, `NO_COLOR`, and plain redirected
+      output, including separately redirected stdout/stderr. Keep interactive
+      redraws from overwriting test lines or partial output.
+- [ ] Make final counts, versions, failure/lifecycle reasons, and retention paths
+      readable in both modes, including early argument and prerequisite failures.
+
+### 3.2C: Verification and Closeout
+
+Use bounded fixtures for transport/failure regressions, then inspect actual terminal
+and redirected execution of the public commands. Record observations separately
+from machine-verifiable results in the unified job.
+
+Acceptance:
+
+- [ ] Cover early visibility, quiet/slow work, output floods and budget exhaustion,
+      slow/broken destinations, Ctrl+C, timeout, and no duplicate output without
+      recursively running the full suite from tests.
+- [ ] Verify both retention modes, final summary/report agreement, and unchanged
+      ownership/cleanup behavior. Exercise actual app and aggregate runs with
+      live output in a terminal and redirected logs.
+- [ ] Record the fixed implementation base at phase start, review its complete
+      `base..tip` range, resolve findings, and close this phase only after all
+      acceptance evidence passes. Keep Phase 4 pending until then.
+
 ## Phase 4: Verify the Workflow and Publish Guidance
+
+Begin after Phase 3.2 is completed.
 
 Run each leaf and the aggregate in both retention modes using declared prerequisites
 and the agreed terminal/repetition protocol. Record failures and fixes alongside

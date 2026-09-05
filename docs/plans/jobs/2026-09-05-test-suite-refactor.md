@@ -12,7 +12,8 @@ Execute the [implementation plan](../plan-2026-09-05-multi-test-commands.md)
 against the [research contracts](../../researches/research-2026-09-05-multi-test-commands.md).
 Phase 1 established bounded process ownership. Phase 2 completed suite
 classification, migration, and final discovery. Phase 3 completed the managed
-runner; Phase 4 remains pending.
+runner. Phase 3.2 is drafted for live output and terminal presentation;
+implementation and the subsequent Phase 4 remain pending.
 
 ## Phase 1: Process Lifecycle
 
@@ -1366,7 +1367,38 @@ passed security, test-coverage, and maintainability review. No material findings
 remain. The plan's ten Phase 3 acceptance items are complete; the broader Phase 4
 verification and usage documentation remain pending.
 
+## Phase 3.2: Live Test Output and Terminal Experience
+
+Status: draft; implementation has not started.
+
+After Phase 3 closeout, manual use of `test:integration:app` and `test:all`
+reported apparent stalls after more than 20 seconds and a lack of terminal styling.
+Read-only inspection found active app-suite child execution and output delayed
+until finalization; it did not establish a deadlock. Earlier app runs took
+116.22–124.84 seconds. The completed Phase 3 evidence establishes final results
+and cleanup, but did not address live interactive feedback.
+
+The agreed follow-up stays in the existing research and plan. Phase 3.2 has three
+sections: streaming output, terminal presentation, and verification/closeout.
+The streaming section first modularizes the currently flat `scripts/testing`
+directory by responsibility, preserving its public entry point and validating
+import/subprocess path changes in a separate behavior-preserving checkpoint.
+Its accepted contract streams Bun test output immediately while preserving bounded
+capture, process ownership, final result validation, and artifact restrictions.
+The plan supplies unchecked acceptance items for transport failures, styling,
+terminal/redirected execution, and both retention modes. Phase 4 keeps its number
+and begins only after this follow-up passes.
+
+This update refines the research and inserts the draft phase; it does not implement
+streaming or claim new runtime verification. Record the implementation review base
+when Phase 3.2 execution begins.
+
+Documentation review clarified the initial backpressure/overflow policy and added
+privacy-sentinel acceptance coverage. The revised draft has no material review
+findings. Link/anchor and checklist checks confirmed that Phase 3 is preserved,
+all eleven Phase 3.2 items are unchecked, and Phase 4 retains its number and gate.
+
 ## Remaining Phases
 
-Phase 4 has not started. Its broader repetition matrix, built-package checks, and
-usage documentation follow the completed managed runner.
+Phase 3.2 implementation is pending. Phase 4 has not started; its broader repetition
+matrix, built-package checks, and usage documentation follow Phase 3.2 completion.
