@@ -931,7 +931,33 @@ migration proceeds from it without duplicating or pruning cases.
 
 ### 2C: Feature Batches and Final Discovery
 
-Status: pending.
+Status: in progress.
+
+Fixed section review base: `62239f6973b7730ef2f2126af6b81927119749a0`.
+Migrate the remaining PDF owners first, then Data Query/Data Extract/Doctor-related
+owners, then the remaining features. Preserve current prerequisite corrections
+while applying the accepted source-to-target map and reconciling each batch.
+
+- [ ] Reconcile cases and combined execution for every migrated feature batch.
+- [ ] Verify controlled homes, native caches, and unit prerequisite isolation.
+- [ ] Update terminal path correspondence, links, and lint/format coverage.
+- [ ] Switch to final unit-default discovery and remove remaining live gates together.
+- [ ] Verify all four leaves, complete union, reports, and raw/default selection.
+- [ ] Review the complete section and Phase 2 ranges and resolve findings.
+
+#### PDF Codex and Adapter Batch
+
+The first 2C batch moves 50 sources to 55 targets, including five accepted
+unit/application splits. Its 406 literal test declarations expand to 408 cases
+and 3,641 assertions. Exact combined execution passed, and the baseline
+class/name/assertion multisets match with no additions or losses. An instrumented
+unit selection passed 142 cases and 958 assertions across 25 files without
+subprocess, native-package, or fetch probes. Scoped formatting and lint passed.
+
+A pure bundle-writing fixture helper supports the split tests. Existing shared
+PDF support paths remain temporarily in place until the adjacent PDF batch is
+validated and their consumers can be relocated together. Section 2C remains in
+progress; the final default-discovery switch and complete range reviews are pending.
 
 ## Remaining Phases
 
