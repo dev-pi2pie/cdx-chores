@@ -220,21 +220,29 @@ require these settings to be serialized or start another request.
 
 ## Codex Information Discovery Contract
 
-Phase 5 adds `codex-info` and `codex-info models` as direct commands in a dedicated
-registration module. The group without a child performs discovery and displays
-a configuration summary. The `models` child displays the reported catalog.
-Register `--details` and `--json` on both nodes, reject their combination before
+Phase 5 adds `codex-info`, `codex-info models`, and `codex-info providers` as direct
+commands in a dedicated registration module. The group without a child displays
+a configuration summary; children display model or provider information.
+Register `--details` and `--json` on all three nodes, reject their combination before
 starting a subprocess, and leave summary as the default. Discovery accepts no
 execution model/provider/effort overrides or profile selector.
+
+Output options belong to the invoked node: use `codex-info --json`,
+`codex-info models --json`, or `codex-info providers --details`. Parent output
+options do not propagate to children. Reject forms such as `codex-info --json
+models` or `codex-info --details providers` before discovery, rather than silently
+ignoring or inheriting the parent flag. Cover both valid placement and rejection
+in command tests; describe the canonical forms in help/examples.
 
 | View                | Summary                                                                                                             | Details                                                                                                         |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `codex-info`        | Configured model/provider, separately labeled catalog recommendation, helper reasoning default `low`                | Add working-directory/Codex-home context, Codex version, and reported configuration reasoning value          |
-| `codex-info models` | Model IDs, reported reasoning efforts, configured/recommended markers; retain configured selection even if unlisted | Add display names, descriptions, reported input modalities, effort descriptions, and catalog reasoning defaults |
+| `codex-info models` | Provider context, model IDs, reported reasoning efforts, configured/recommended markers; retain configured selection even if unlisted | Add display names, descriptions, reported input modalities, effort descriptions, and catalog reasoning defaults |
+| `codex-info providers` | Provider IDs, source, configured marker, and enumeration coverage | Add reported display names, context, and coverage limitations; no endpoint/auth details |
 
 `--json` serializes a curated report with a schema version and explicit missing
-values, rather than raw app-server responses. Both human views and JSON derive
-from one normalized discovery result. A complete catalog means all pages of
+values, rather than raw app-server responses. Human views and JSON derive from
+one normalized result for the requested command. A complete catalog means all pages of
 picker-visible entries (`includeHidden: false`); hidden entries are not part of
 this first command contract. A configured model absent from that list remains
 visible as an unlisted selection with unknown capabilities.
@@ -248,8 +256,13 @@ effort strings without extending the shared execution parser's accepted values.
 
 ### Report Labels And Missing Values
 
-Both commands serialize the same report shape for `--json`, using `schemaVersion:
-1`. Define the following core fields and render the corresponding human labels:
+All commands use `schemaVersion: 1` and a `view` discriminator (`summary`, `models`,
+`providers`). Common configuration, context, and provider fields retain the same
+meaning across views. Model-catalog fields are populated for summary/models;
+the providers view uses `models: null`, `catalogRecommendedModelIds: null`, and
+`catalogScope: null` to mean not requested. This differs from successful empty
+arrays. Human provider views omit model-catalog sections rather than displaying
+unrequested data as unknown. Define these core fields and human labels:
 
 | JSON field | Human label | Missing-value meaning |
 | --- | --- | --- |
@@ -260,15 +273,18 @@ Both commands serialize the same report shape for `--json`, using `schemaVersion
 | `helperReasoningDefault` | Helper reasoning default | Always `low` under the current execution policy |
 | `models[].supportedReasoningEfforts` | Supported reasoning efforts | `null`: unknown when upstream omits or supplies an empty effort list |
 | `models[].catalogReasoningDefault` | Catalog reasoning default | `null`: unknown when not reported |
+| `providers` | Providers | `[]`: no provider entries from the verified sources; inspect `providerCoverage` |
+| `providerCoverage` | Provider coverage | `configured-only` or `built-in-and-configured`; never imply unsupported IDs from absence |
 
 The report's `context` contains working directory, Codex version, `codexHome`
 (the verified effective absolute home path, not the raw environment string), and
 `codexHomeSource` (`environment` when Codex uses `CODEX_HOME` to choose that path,
-`default` when Codex uses its normal home fallback). The report also contains
+`default` when Codex uses its normal home fallback). Model-bearing views also contain
 `catalogScope: "picker-visible"` and `models` with model IDs and the metadata
-listed in the view table. Nullable optional metadata uses `null`, not omitted
-keys. Effort entries retain their reported value and nullable description.
-`models: []` means a successful empty visible catalog. Keep an unlisted configured
+listed in the view table; the providers view uses the not-requested nulls above.
+Nullable optional metadata uses `null`, not omitted keys. Effort entries retain their reported value and nullable description.
+`models: []` means a successful empty visible catalog; `models: null` means the
+providers command did not request the catalog. Keep an unlisted configured
 selection in `configured`; do not fabricate a catalog entry for it.
 
 Human output renders unspecified configuration as "unspecified", absent catalog
@@ -278,11 +294,46 @@ marker is allowed. Finalize the remaining metadata field names in the Phase 5
 report type and fixtures before implementing renderers. Reported capabilities
 remain unverified for provider requests.
 
+### Provider Sources And Catalog Scope
+
+Extract custom definitions from `config/read.result.config.model_providers`, a
+map keyed by provider ID. Derive normalized report entries: `id` is the map key;
+`displayName` comes from the definition's optional `name` (`null` when absent);
+`sources` includes `configured` for that map entry and `built-in` only when
+corroborated by the verified built-in source; `isConfigured` is the exact match
+between the ID and non-null `config.model_provider`. These are report fields,
+not expected wire fields on each definition. This marker does not infer the runtime provider when
+configuration omits it. Retain an unlisted configured provider in `configured`
+without fabricating its definition. Explicitly label omitted selection unspecified.
+
+Verify a built-in enumeration source for the installed executable at the first
+checkpoint. Use `providerCoverage: "built-in-and-configured"` only with evidence
+covering both sources; otherwise use `configured-only` and explain the limitation
+in summary, details, and JSON. Unsupported built-in enumeration is a successful
+limited result: after successful configuration/extraction, exit 0 with
+`providerCoverage: "configured-only"`, including when the configured map is empty.
+Keep this distinct from an actual required-read or transport error, which fails.
+Deduplicate exact case-sensitive IDs, retain all
+verified source labels, prefer the configured display name on a collision, and
+sort IDs deterministically. An observed required-read error must fail the command,
+not silently turn full enumeration into configured-only output.
+
+The observed CLI `0.153.4` configuration comparison returned the same model catalog
+with an omitted provider and a custom provider selected. Treat the catalog as
+Codex-reported metadata, not an automatic filter of models supported by that
+provider. Include configured-provider context and a reported-metadata qualification
+in both model human views; all JSON views include `configured` and model-bearing
+views identify `catalogSource: "codex"` (`null` for providers). Listing a provider
+or model does not verify credentials, model access, or request capabilities.
+
 ### Integration And Lifetime
 
 Keep execution on the existing SDK. Add a small discovery adapter for the
 installed Codex CLI's app-server stdio protocol: initialize, read configuration
-for `runtime.cwd`, list models through all pages, then terminate the owned child.
+for `runtime.cwd`, collect the sources required by the command, then terminate
+the owned child. Summary/models read every model page; the providers command
+never requests `model/list`. Extract provider metadata from the already-read
+configuration and any verified additional built-in source.
 Use the same executable selection policy as helper execution, including
 `CDX_CHORES_CODEX_PATH`; do not attach to an existing desktop session or daemon.
 Keep parsing, report construction, and rendering outside command registration.
@@ -351,9 +402,11 @@ configuration reads, and pagination. This is independent of the existing
 per-attempt helper timeout and introduces no `--codex-timeout` option here.
 Bound response buffering and pagination, correlate JSON-RPC response IDs, and
 handle unrelated notifications. Reap the owned child and release streams/timers
-on success, error, timeout, and cancellation. Both commands require successful
-`config/read` and all `model/list` pages. A request, transport, protocol, or resource
-limit failure in either read fails the invocation: exit nonzero through the
+on success, error, timeout, and cancellation. Every command requires successful
+initialization/configuration and its required provider sources. Summary/models
+also require all `model/list` pages; provider listing is independent of that API.
+A request, transport, protocol, or resource limit failure in any required read
+fails the invocation: exit nonzero through the
 existing CLI error path and emit no report on stdout, including in JSON mode.
 Do not retain a partial configuration-only or truncated catalog report. A successful
 empty catalog or absent optional metadata is valid and uses the missing-value
@@ -366,9 +419,8 @@ Provider definitions, credential fields, and arbitrary config layers stay outsid
 both JSON and human views. Discovery must not become a preflight requirement,
 change helper defaults, or supply automatic fallback decisions.
 
-A future `codex-info providers` command can enumerate discoverable provider IDs
-once its source is verified. Phase 5 includes the selected provider ID in its
-summary but does not implement provider enumeration or an Interactive entry.
+Phase 5 includes provider enumeration with explicit coverage limitations and
+adds no Interactive entry or provider-selection/configuration mutation controls.
 
 ## Implementation Phases
 
@@ -456,15 +508,21 @@ entry behavior, with no configuration leakage across sessions.
       matching home/source fields in details and JSON.
 - [ ] Implement a bounded stdio discovery adapter with configuration reads,
       paginated model listing, normalized report types, and subprocess cleanup.
-- [ ] Register `codex-info` and `codex-info models` with default summary,
-      `--details`, and `--json`; reject conflicting output flags before discovery.
+- [ ] Register `codex-info`, `codex-info models`, and `codex-info providers` with
+      default summary, `--details`, and `--json`; reject conflicts before discovery.
+- [ ] Verify configured and built-in provider sources, coverage labeling, configured
+      markers, raw-to-report field mapping, exact-ID deduplication, successful
+      configured-only/empty results, and safe provider field selection. Record
+      unsupported enumeration capabilities without claiming a complete list.
 - [ ] Preserve configuration/recommendation/default distinctions, unknown
       reasoning support, and configured models absent from the visible catalog.
 - [ ] Verify one discovery result feeds each output projection, safe field
       selection, custom-provider limitations, and no generation/config writes.
 - [ ] Cover startup/response failures, pagination, deadline/cancellation cleanup,
       configuration-success/catalog-failure and reverse-failure cases, valid empty
-      results, and command-local help/option behavior. Recheck execution inheritance and
+      results, and command-local help/option behavior. Prove provider listing never calls
+      `model/list` and succeeds when that unrelated method would fail. Cover model
+      catalogs unchanged by provider selection and view-specific JSON null fields. Recheck execution inheritance and
       defaults remain independent of discovery.
 - [ ] Record research conclusions and review this phase's full commit range;
       resolve findings before marking discovery complete.
@@ -482,7 +540,8 @@ from synthetic tests and do not claim provider request compatibility.
       failures followed by a manual rerun with an explicit supported selection.
       Do not imply automatic setting changes or hidden retries. Link to the
       existing timeout guide for its policy. Include `codex-info` summary,
-      model listing, details/JSON views, and configuration/catalog limitations.
+      model/provider listing, details/JSON views, command-specific discovery
+      dependencies, provider coverage, and configuration/catalog limitations.
 - [ ] Create `docs/guides/environment-variables.md` as the central guide to
       implemented environment controls. Inventory variables read by this tool
       and relevant inherited dependency variables; explain ownership, accepted
@@ -521,6 +580,8 @@ from synthetic tests and do not claim provider request compatibility.
 | Discovery transport            | Version-specific initialization, cwd/executable selection, pagination, unrelated notifications, malformed responses, bounded buffers/deadlines, cancellation, and child cleanup                                         |
 | Discovery isolation            | No generation/config writes, no dependency from execution workflows, unchanged helper defaults, and honest catalog scope under custom providers                                                                         |
 | Environment context            | Default/custom/edge-case `CODEX_HOME`, successive-invocation isolation, SDK/discovery environment parity, independent executable override, and accurate home/source reporting                                           |
+| Provider discovery | Configured/built-in sources, completeness labels, duplicate IDs, unlisted selections, safe fields, and independence from model-list failures |
+| Provider/catalog relationship | Same catalog under different providers, configured context in model output, metadata-only claims, and not-requested versus empty JSON states |
 
 Reuse coverage in `test/codex-adapters/`, rename/data/Markdown command and action
 suites, `test/adapters-codex-markdown-pdf-profile/runner-behavior.test.ts`,

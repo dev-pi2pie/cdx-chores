@@ -160,10 +160,13 @@ Use `codex-info` as a read-only command group. Phase 5 introduces:
 | Command                        | Default human output                                                                          |
 | ------------------------------ | --------------------------------------------------------------------------------------------- |
 | `cdx-chores codex-info`        | Configured model/provider, catalog recommendation when reported, and helper reasoning default |
-| `cdx-chores codex-info models` | Model IDs, reported reasoning efforts, and configured/recommended markers                     |
+| `cdx-chores codex-info models` | Provider context, model IDs, reported reasoning efforts, and configured/recommended markers |
+| `cdx-chores codex-info providers` | Discoverable provider IDs, their sources, configured marker, and enumeration coverage |
 
-Both commands offer `--details` and `--json`; summary is the default and needs no
-flag. Reject `--details --json` before discovery. Details expand descriptions,
+All three commands offer `--details` and `--json`; summary is the default and needs no
+flag. Output flags follow the invoked command (`codex-info models --json`);
+parent flags do not propagate to children. Reject parent-before-child output flags
+and `--details --json` before discovery. Details expand descriptions,
 reported input modalities, effort descriptions, catalog reasoning defaults, and
 configuration context. JSON exposes a curated, versioned report from the same
 discovery result. Use explicit labels such as "Configured model", "Catalog
@@ -171,10 +174,12 @@ recommended model", "Catalog reasoning default", and "Helper reasoning default";
 never use an unqualified "default" field or marker. The plan defines the JSON
 field names and missing-value semantics shared by every view.
 
-The broader name leaves room for `codex-info providers`. Listing provider IDs is
-a future extension pending a verified enumeration source; it is separate from
-showing the selected provider ID in the initial summary. No Interactive menu
-entry, selection picker, or configuration mutation is introduced by this phase.
+Provider discovery is included in Phase 5. Configured IDs come from the returned
+`model_providers` definitions; built-in IDs require a verified source for the
+installed CLI. Report coverage explicitly if only configured IDs can be enumerated.
+Listing identifies configuration choices, not successful authentication or request
+compatibility. No Interactive menu entry, selection picker, or configuration
+mutation is introduced by this phase.
 
 ### Discovery Evidence And Integration
 
@@ -199,6 +204,30 @@ Execution requests continue to delegate their configuration loading to Codex;
 the discovery report must not become an execution configuration snapshot or an
 execution prerequisite. Do not implement a parallel TOML loader or read private
 catalog-cache files as a public contract.
+
+### Provider And Catalog Observations
+
+On 2026-09-05, an isolated CLI `0.153.4` app-server probe compared two temporary
+Codex homes using the same synthetic model selection. One omitted `model_provider`;
+the other selected a synthetic `probe_proxy` provider with a loopback endpoint.
+Only initialization, `config/read`, and `model/list` were requested.
+
+- The first configuration returned a null provider selection and no custom IDs.
+- The second returned `probe_proxy` and exposed its ID under `model_providers`.
+- Both returned the same six visible catalog models and the same recommendation,
+  with no next page. These observations used isolated, unauthenticated setups.
+
+This demonstrates that provider selection need not change the catalog. It does
+not establish identical behavior for every provider/account or prove that the
+custom backend accepts those models. Codex separately supports a
+`model_catalog_json` configuration setting for catalog input.[^catalog]
+
+Use configured definitions as evidence for custom provider IDs and verify built-in
+enumeration before claiming complete coverage. Model output must include the
+inspected provider context and identify entries as Codex-reported catalog metadata,
+not a provider endpoint's verified available-model list. Preserve configured models
+that do not appear in the catalog. Do not copy endpoint URLs, headers, credentials,
+or auth commands into provider output.
 
 ### Environment And Configuration Location
 
@@ -271,23 +300,28 @@ set; discovery does not extend that set or change the helper default.
 Discovery makes no generation request and supplies no compatibility verdict for
 image input, structured output, or reasoning. It does not add fallback, change
 execution settings, or maintain a repository-owned capability registry. Only
-curated configuration/model fields enter human or JSON output; raw configuration,
+curated configuration/model/provider fields enter human or JSON output; raw configuration,
 provider definitions, and authentication material do not.
 
 ### Discovery Failures
 
-Both initial commands require successful configuration and catalog reads.
-Failure of either read fails the invocation with a sanitized error and no partial
-report, including JSON. Do not convert a catalog request error into "unknown".
-A successful empty catalog or missing optional metadata is a valid report:
-retain the configured selection and label absent capabilities as unknown. Custom
-providers receive the same rule; their IDs do not justify swallowing errors.
+All commands require successful initialization and configuration reads.
+`codex-info` and `codex-info models` additionally require a complete model catalog.
+`codex-info providers` does not call `model/list`; catalog availability cannot
+block provider inspection. Failure of a required read fails that command with a
+sanitized error and no partial report, including JSON. Do not convert request
+errors into unknown metadata or silently downgrade enumeration coverage after a
+failed required provider read. Successful empty catalogs and missing optional
+metadata remain valid report states. A source that cannot enumerate built-ins
+must return a successful configured-only result (exit 0), including an empty
+configured list; this known limitation is distinct from a failed request. Custom providers receive the same failure policy.
 
 ### Evidence Still Required
 
 Phase 5 must verify the version-specific protocol and lifecycle, omitted versus
 explicit model/provider configuration, project context, catalog recommendation
-semantics, custom-provider catalog limitations, and default/custom `CODEX_HOME`
+semantics, configured/built-in provider enumeration and coverage, custom-provider
+catalog limitations, and default/custom `CODEX_HOME`
 consistency between discovery and execution. Record unknowns explicitly
 when the protocol cannot resolve them. Record the CLI version, initialization
 exchange, request parameters, and observed response structure in sanitized
@@ -374,3 +408,5 @@ numeric `timeoutMs` seams instead of introducing another timeout policy.
 [^app-server]: [Codex App Server: models and configuration APIs](https://learn.chatgpt.com/docs/app-server)
 
 [^config-location]: [Codex configuration and state locations](https://learn.chatgpt.com/docs/config-file/config-advanced#config-and-state-locations)
+
+[^catalog]: [Codex configuration reference: model catalog](https://learn.chatgpt.com/docs/config-file/config-reference)

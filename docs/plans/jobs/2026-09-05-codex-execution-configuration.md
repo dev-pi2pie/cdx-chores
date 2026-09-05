@@ -134,10 +134,27 @@ checklists and evidence were verified unchanged.
 
 ## Phase 5: Codex Information Discovery
 
-Status: pending. Command and output requirements are in the plan. Verify the
-read-method protocol and configuration/catalog semantics before implementing the
-adapter. Selected provider reporting is included; provider enumeration remains
-a future extension.
+Status: in-progress. Base: `0f51ab8d`. Implementation is paused for the provider
+scope refinement; no feature code has been added.
+
+An isolated CLI `0.153.4` probe used two temporary Codex homes with omitted/custom
+provider selections, the same synthetic model selection, and no credentials. Initialization, `config/read`, and
+`model/list` succeeded in both cases. The custom case reported `probe_proxy` and
+its definition ID; the omitted-provider case returned a null selection and no
+custom IDs. Both returned the same six visible models and recommendation, with
+no next page. Temporary artifacts were removed; no generation was requested.
+This observation proves neither complete provider enumeration nor backend model
+compatibility. Version-labeled reproducible fixtures remain a Phase 5 requirement.
+
+The revised scope includes `codex-info providers`, configured-ID extraction,
+verification of built-in sources, and explicit coverage limits. Provider listing
+requires configuration/provider sources but not `model/list`; summary/models
+retain complete-catalog requirements. Phase 6 will document all three commands.
+
+Documentation review clarified raw-to-report provider mapping, successful
+configured-only enumeration, and command-local output flag placement. The final
+review found no material gaps; documentation checks passed. Implementation
+remains paused pending continuation of the revised phase.
 
 ## Phase 6: Validation And Documentation Closeout
 
