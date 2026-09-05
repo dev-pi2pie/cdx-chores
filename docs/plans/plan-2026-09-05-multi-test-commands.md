@@ -43,7 +43,7 @@ Acceptance:
 - [x] Verify a hanging prerequisite probe times out before test launch and terminates
       owned descendants. Exercise cancellation during both preflight and test work;
       preserve original failures and remaining-path diagnostics.
-- [ ] Check installed Codex in terminal and captured-output execution under a bounded
+- [x] Check installed Codex in terminal and captured-output execution under a bounded
       repeat protocol. Record every attempt and its actual timings.
 - [ ] Review the complete phase range and resolve findings before broad adoption.
 

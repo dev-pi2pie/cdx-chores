@@ -209,6 +209,7 @@ describe("owned process lifecycle", () => {
     expect(result.reason).toBe("launch-failed");
     expect(result.ok).toBe(false);
     expect(result.pid).toBeUndefined();
+    expect(result.stopped).toBe(true);
   });
 
   test("bounds captured output and stops the producer", async () => {

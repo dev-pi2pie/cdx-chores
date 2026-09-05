@@ -9,7 +9,7 @@ export interface ProcessMember {
   executable: string;
 }
 
-/** ps comm contains the executable only; never request command arguments or env. */
+/** Parse numeric ownership/state fields and a diagnostic executable name. */
 export function parseProcessTable(output: string): ProcessMember[] {
   return output
     .split("\n")
@@ -41,7 +41,9 @@ export async function observeProcessGroup(
   return await new Promise((resolve, reject) => {
     execFile(
       "/bin/ps",
-      ["-ax", "-o", "pid=,ppid=,pgid=,stat=,comm="],
+      // macOS documents ucomm as the dependable kernel accounting name. comm
+      // can instead expose a parenthesized fallback such as "(codex)".
+      ["-ax", "-o", "pid=,ppid=,pgid=,stat=,ucomm="],
       {
         timeout: Math.max(1, Math.floor(timeoutMs)),
         killSignal: "SIGKILL",

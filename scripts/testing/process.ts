@@ -36,6 +36,8 @@ export interface OwnedProcessResult {
   stdout: string;
   stderr: string;
   elapsedMs: number;
+  /** Time from direct-child exit until final group/stream verification. */
+  drainMs: number | null;
   /**
    * True only after direct-child close and a verified group with no live work.
    * False hands unresolved ownership back to the caller: retain scratch, stop
@@ -168,6 +170,7 @@ export function startOwnedProcess(
     try {
       await spawned;
       const groupId = child.pid;
+      if (launchFailed && groupId === undefined) verifiedStopped = true;
       if (!launchFailed && (!Number.isSafeInteger(groupId) || groupId! <= 1)) {
         issue("Spawn did not establish a valid owned process group.");
         requestStop("unverified");
@@ -281,6 +284,7 @@ export function startOwnedProcess(
       stdout: Buffer.concat(stdout).toString("utf8"),
       stderr: Buffer.concat(stderr).toString("utf8"),
       elapsedMs: elapsed(),
+      drainMs: exitedAt === undefined ? null : Math.round(performance.now() - exitedAt),
       stopped: verifiedStopped,
       escalated: killSent,
       issues,
