@@ -16,7 +16,10 @@ import { createTempFixtureDir } from "../../helpers/cli-test-utils";
 const execution = { model: "Model-A", provider: "Provider-A", reasoningEffort: "high" } as const;
 
 describe("Codex rename execution configuration", () => {
-  test("image batches and incompatible retries retain one policy and partial results", async () => {
+  test.each([
+    "Selected model rejects reasoning effort high",
+    "Selected model does not support image input",
+  ])("image batches retain policy and partial results on %s", async (message) => {
     const policies: CodexExecutionOptions[] = [];
     const result = await __testOnlySuggestImageRenameTitlesWithBatch(
       {
@@ -31,7 +34,7 @@ describe("Codex rename execution configuration", () => {
         if (options.imagePaths[0]!.endsWith("a.png")) {
           return { suggestions: [{ path: options.imagePaths[0]!, title: "Landscape" }] };
         }
-        throw new Error("Selected model rejects reasoning effort high");
+        throw new Error(message);
       },
     );
     expect(policies).toEqual([execution, execution, execution]);
@@ -39,7 +42,7 @@ describe("Codex rename execution configuration", () => {
     expect(policies[1]).toBe(policies[2]);
     expect(result.suggestions).toEqual([{ path: "/fixtures/a.png", title: "Landscape" }]);
     expect(result.errorMessage).toContain("Partial Codex suggestions");
-    expect(result.errorMessage).toContain("rejects reasoning effort high");
+    expect(result.errorMessage).toContain(message);
   });
 
   test("image thread receives settings separately from unchanged image attachments", async () => {

@@ -308,6 +308,7 @@ validates all adopted paths, and reviews the complete implementation range.
 
 ### Provider Integration Checkpoint
 
+- Checkpoint commit: `125fc6fc`.
 - Added synthetic full CLI coverage for a reported OpenAI built-in selection
   alongside two custom provider definitions, then a custom-provider selection.
   Checks cover sorted/exact markers, details, curated JSON, unlisted built-ins,
@@ -315,3 +316,12 @@ validates all adopted paths, and reviews the complete implementation range.
   across selections; this does not establish backend compatibility.
 - `bun test test/codex-info/cli-replay.test.ts` passed 3 tests, 107 assertions.
   TypeScript, targeted lint, formatting, and diff checks passed.
+
+### Image Capability Failure Checkpoint
+
+- The matrix audit confirmed all nine request owners have execution-policy
+  coverage and identified one explicit failure case to add. The existing image
+  retry/partial-results test now also rejects image input, proving custom
+  model/provider/effort settings remain unchanged through that failure.
+- `bun test test/codex-adapters/direct/rename-execution.test.ts` passed 7 tests,
+  39 assertions. TypeScript, lint, formatting, and diff checks passed.
