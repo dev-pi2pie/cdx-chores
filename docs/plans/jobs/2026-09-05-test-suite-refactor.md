@@ -13,7 +13,7 @@ Phase 1 establishes bounded process ownership; later phases remain pending.
 
 ## Phase 1: Process Lifecycle
 
-Status: in progress.
+Status: completed.
 
 Fixed review base: `a67aa95255150ba785605e942a8395d7537fe7e0`.
 
@@ -141,14 +141,23 @@ fixed 12-probe repetition also passed without escalation:
 | Captured | 946/759, 757/639, 778/633               | 770/655, 866/743, 847/726                |
 | Terminal | 730/613, 754/633, 763/643               | 745/626, 768/648, 785/666                |
 
-The expanded fixed-base review remains pending until this final fix is committed.
+The final implementation review covered the complete fixed-base range
+`a67aa95255150ba785605e942a8395d7537fe7e0..c30b9e974ebf5ebc2803c25a7c4d008cada17012`.
+Security, test-coverage, and maintainability reviews found no remaining material
+findings. Earlier findings were resolved in the checkpoint commits within that
+range. Phase 1 is complete; the following documentation-only closeout updates
+status and acceptance without changing the reviewed implementation.
+
+All 34 repository-relative links and anchors in the research, plan, and job were
+validated. No installed-Codex lifecycle scratch directories remained after the
+final successful protocol.
 
 ### Acceptance
 
 - [x] Process completion and termination scenarios verified with bounded fixtures.
 - [x] Hanging preflight and cancellation verified with real sequencing markers.
 - [x] Installed Codex terminal/captured repetition protocol completed.
-- [ ] Full phase range reviewed and findings resolved.
+- [x] Full phase range reviewed and findings resolved.
 
 ## Remaining Phases
 

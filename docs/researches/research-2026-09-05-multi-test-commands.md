@@ -17,8 +17,8 @@ settled design decisions. The feature-first layout and filename-based selection
 below are the proposed implementation direction, supported by a current-tree
 review and isolated Bun discovery checks. The complete move/split inventory and
 representative feature pilots still need verification before broad migration.
-Phase 1 implementation is in progress. Research remains in progress until that
-evidence and the process-completion mechanisms and shutdown budgets are recorded.
+Phase 1 implementation and lifecycle evidence are complete. Research remains in
+progress pending the migration and managed-runner evidence described below.
 
 ## Contributor Command Model
 
@@ -419,7 +419,7 @@ or Node-version matrices. Public evidence excludes credentials, environment dump
 personal configuration, and raw process arguments.
 
 This research owns design decisions and supporting evidence. The plan owns
-execution and acceptance; its future unified job owns actual mappings, commands,
+execution and acceptance; its unified job owns actual mappings, commands,
 results, and review ranges. Update terminal owners in the
 [path correspondence][correspondence] as moves land, preserving historical evidence. The future testing
 guide documents verified usage and receives its README link when it exists.
@@ -430,11 +430,12 @@ from the test aggregate.
 
 Before broad migration, accept the proposed layout and verify representative
 pilots, the complete case map, import isolation, and selection/config/report
-agreement. Establish process observation and bounded preflight/shutdown budgets
-on macOS. The synthetic discovery checks do not establish these results.
+agreement. Phase 1 established process observation and bounded preflight/shutdown
+budgets on macOS; the synthetic discovery checks alone do not establish the
+remaining migration results.
 
-Phase 1 evidence is recorded in the [implementation record](../plans/jobs/2026-09-05-test-suite-refactor.md).
-Research closure still requires the remaining process and migration evidence.
+Completed Phase 1 evidence is recorded in the [implementation record](../plans/jobs/2026-09-05-test-suite-refactor.md).
+Research closure still requires the remaining migration and managed-runner evidence.
 
 ## Related Plans
 

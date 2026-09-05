@@ -12,7 +12,8 @@ Implement one aggregate command and four disjoint suites while preserving featur
 ownership and regression coverage. The proposed target uses feature/boundary
 folders and `.{unit,app,codex,pandoc}.test.ts` suffixes.
 
-Phase 1 is in progress in the [implementation record](jobs/2026-09-05-test-suite-refactor.md).
+Phase 1 is completed in the [implementation record](jobs/2026-09-05-test-suite-refactor.md).
+Phases 2–4 have not started.
 The complete structure mapping and representative migration pilots remain pending.
 The research is authoritative for these contracts:
 
@@ -45,7 +46,7 @@ Acceptance:
       preserve original failures and remaining-path diagnostics.
 - [x] Check installed Codex in terminal and captured-output execution under a bounded
       repeat protocol. Record every attempt and its actual timings.
-- [ ] Review the complete phase range and resolve findings before broad adoption.
+- [x] Review the complete phase range and resolve findings before broad adoption.
 
 ## Phase 2: Classify and Migrate Existing Coverage
 
