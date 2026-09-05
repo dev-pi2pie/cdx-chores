@@ -25,6 +25,15 @@ export interface FixtureContext {
   readonly suite: Suite;
 }
 
+export class RunAllocationError extends AggregateError {
+  constructor(
+    errors: unknown[],
+    readonly remainingRoot: string,
+  ) {
+    super(errors, "Run allocation and cleanup failed.");
+  }
+}
+
 function identity(stat: { dev: number; ino: number }): DirectoryIdentity {
   return Object.freeze({ dev: stat.dev, ino: stat.ino });
 }
@@ -156,7 +165,7 @@ export async function allocateRun(
       assertRunRoot(context);
       await rm(root, { recursive: true });
     } catch (cleanupError) {
-      throw new AggregateError([error, cleanupError], "Run allocation and cleanup failed.");
+      throw new RunAllocationError([error, cleanupError], root);
     }
     throw error;
   }

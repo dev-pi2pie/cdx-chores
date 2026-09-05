@@ -1262,8 +1262,38 @@ Status: in progress.
 
 Fixed batch review base: `7eac5b8eb8d805144966fcd0a1813e0a7f1c9268`.
 
-Connect ordered suite execution, failure/cancellation states, finalization, and
-terminal summaries without hiding earlier failures.
+The scheduler validates arguments, configuration, and all selected memberships
+before allocation or prerequisite launch. It allocates one immutable invocation
+owner and launches each leaf directly, in order, once. Each passing leaf requires
+a successful process, a fresh reconciled report, and verified outer/nested shutdown.
+Ordinary failures continue; cancellation or unverified ownership stops scheduling
+and leaves unstarted suites `not-run`.
+
+Export inspection now distinguishes recovered export failures from unverified
+receipt ownership or interrupted cleanup. The latter retains scratch and prevents
+later suite launches. The distinction passed 18 fixture cases and 75 assertions.
+The bounded scheduler matrix passed 24 cases and 128 assertions using real
+allocation, environment isolation, report consumption, and finalization with
+controlled process outcomes. It covers ordering, failure/report disagreement,
+cancellation boundaries, retention, and concurrent-owner preservation.
+
+The first real integrated unit invocation passed all 1,197 cases and 4,743
+assertions across 155 files. Preflight and test shutdown were verified, the report
+reconciled exactly, default results were removed, and the final terminal summary
+preserved counts, versions, and lifecycle diagnostics. Invalid public-entry
+arguments also failed with a final diagnostic before allocation.
+
+Finalization writes a provisional failed summary in both modes, removes scratch
+only after ownership verification, and retains or removes results according to
+the immutable choice. Storage and cleanup failures preserve earlier reasons;
+summary updates require the exclusively created file identity. Replaced paths,
+shared file ownership, partial cleanup, and close failures cannot leave a trusted
+passing summary. Terminal output identifies remaining locations separately from
+verified retained results.
+
+The combined scheduler, fixture, and finalization matrix passed 62 cases and 316
+assertions across four files. Full type, lint, formatting (1,126 files), and
+whitespace checks passed. Complete batch review remains in progress.
 
 ### 3D: Command Publication and Integrated Verification
 

@@ -241,10 +241,11 @@ export async function removeFixtureDir(root: string): Promise<void> {
 export async function inspectFixtureExports(
   run: RunContext,
   suite: Suite,
-): Promise<{ ok: boolean; issues: string[] }> {
+): Promise<{ ok: boolean; cleanupVerified: boolean; issues: string[] }> {
   const directory = join(suitePath(run, suite, "scratch"), "exports");
   const base = "scratch/" + suite + "/exports";
   const issues: string[] = [];
+  let cleanupVerified = true;
   try {
     assertRunPath(run, base);
     const names = readdirSync(directory);
@@ -300,7 +301,8 @@ export async function inspectFixtureExports(
       }
     }
   } catch {
+    cleanupVerified = false;
     issues.push("Fixture export receipts could not be verified.");
   }
-  return { ok: issues.length === 0, issues };
+  return { ok: issues.length === 0, cleanupVerified, issues };
 }

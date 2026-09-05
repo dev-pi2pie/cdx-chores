@@ -71,7 +71,11 @@ describe("managed fixture ownership and exports", () => {
           exportFailures: 0,
           exports: [{ status: "checks-passed" }],
         });
-        expect(await inspectFixtureExports(context, "app")).toEqual({ ok: true, issues: [] });
+        expect(await inspectFixtureExports(context, "app")).toEqual({
+          ok: true,
+          cleanupVerified: true,
+          issues: [],
+        });
       });
     },
   );
@@ -90,7 +94,11 @@ describe("managed fixture ownership and exports", () => {
         successful: false,
         exports: [{ status: "diagnostic-after-failure" }],
       });
-      expect(await inspectFixtureExports(context, "app")).toEqual({ ok: true, issues: [] });
+      expect(await inspectFixtureExports(context, "app")).toEqual({
+        ok: true,
+        cleanupVerified: true,
+        issues: [],
+      });
       expect(await readdir(join(suitePath(context, "app", "scratch"), "fixtures"))).toEqual([]);
     });
   });
@@ -112,7 +120,10 @@ describe("managed fixture ownership and exports", () => {
       }
       expect(failure).toBeInstanceOf(AggregateError);
       expect((failure as AggregateError).errors).toHaveLength(2);
-      expect((await inspectFixtureExports(context, "app")).ok).toBe(false);
+      expect(await inspectFixtureExports(context, "app")).toMatchObject({
+        ok: false,
+        cleanupVerified: true,
+      });
       expect(await readdir(join(suitePath(context, "app", "scratch"), "fixtures"))).toEqual([]);
     });
   });
@@ -168,11 +179,25 @@ describe("managed fixture ownership and exports", () => {
         )!;
         if (mode === "missing") await rm(join(directory, completion));
         else await writeFile(join(directory, completion), "{");
-        expect((await inspectFixtureExports(context, "app")).ok).toBe(false);
+        expect(await inspectFixtureExports(context, "app")).toMatchObject({
+          ok: false,
+          cleanupVerified: true,
+        });
         expect(await readdir(suitePath(context, "app", "results"))).toEqual([]);
       });
     },
   );
+  test("unverified export namespaces prevent finalization cleanup", async () => {
+    await managed(true, async (context) => {
+      const directory = join(suitePath(context, "app", "scratch"), "exports");
+      await rename(directory, directory + "-original");
+      await mkdir(directory);
+      expect(await inspectFixtureExports(context, "app")).toMatchObject({
+        ok: false,
+        cleanupVerified: false,
+      });
+    });
+  });
 });
 
 describe("nested fixture process handoff", () => {
