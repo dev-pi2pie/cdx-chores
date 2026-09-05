@@ -126,6 +126,12 @@ research.
 - Keep advanced effort values explicit-only.
 - Do not classify task complexity or raise effort automatically.
 
+### Service Tier
+
+Service-tier selection remains inherited from Codex configuration. This
+implementation sends no service-tier or fast-mode override. Reasoning effort is
+configured independently.
+
 ### Command Scope And Recovery
 
 - Use command-local options on adopted surfaces, including the explicit
@@ -205,10 +211,7 @@ numeric `timeoutMs` seams instead of introducing another timeout policy.
 
 ## Related Plans
 
-The execution-configuration implementation plan has not yet been drafted. It
-should link back to this completed research; the existing plan below owns only
-the shipped timeout boundary.
-
+- [Codex execution configuration implementation](../plans/plan-2026-09-05-codex-execution-configuration.md)
 - [Codex request timeout contract implementation](../plans/plan-2026-08-21-codex-request-timeout-contract.md)
 
 ## References
