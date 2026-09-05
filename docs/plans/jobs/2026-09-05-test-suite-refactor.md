@@ -1258,7 +1258,7 @@ boundary. No material findings remain in this batch.
 
 ### 3C: Scheduling and Finalization
 
-Status: in progress.
+Status: completed.
 
 Fixed batch review base: `7eac5b8eb8d805144966fcd0a1813e0a7f1c9268`.
 
@@ -1293,20 +1293,38 @@ verified retained results.
 
 The combined scheduler, fixture, and finalization matrix passed 62 cases and 316
 assertions across four files. Full type, lint, formatting (1,126 files), and
-whitespace checks passed. Complete batch review remains in progress.
+whitespace checks passed.
 
 A follow-up terminal check found that captured assertion details were discarded
 when default results were removed. Failed-test streams now remain available in
 terminal diagnostics after finalization, while the saved invocation summary still
 excludes raw streams. Both retention modes verify expected/received text and stack
 locations survive without entering `summary.json`.
+The expanded runner matrix passed 26 cases and 138 assertions; type and focused
+lint/format checks passed.
+
+The complete 3C range
+`7eac5b8eb8d805144966fcd0a1813e0a7f1c9268..019cd74478d4395091863df773e50aea22307fcf`
+passed security, test-coverage, and maintainability review after the diagnostic
+correction. Documentation review confirmed the recorded verification boundary.
+No material findings remain.
 
 ### 3D: Command Publication and Integrated Verification
 
-Status: pending.
+Status: in progress.
+
+Fixed batch review base: `019cd74478d4395091863df773e50aea22307fcf`.
 
 Publish named commands only after the complete contract passes. Verify the real
 aggregate in default and retained modes and review the complete phase range.
+
+The first aggregate passed 3,151 cases and failed one application regression.
+The allocation-error class used a TypeScript parameter property, which Node's
+strip-only loader rejects when a generator imports the shared context module.
+It now uses an explicit field assignment. The failure report and terminal stack
+agreed; Codex and Pandoc still ran and passed, all process shutdown checks passed,
+and default finalization removed the run. The affected existing regression and
+complete aggregate are rerun after this correction.
 
 ## Remaining Phases
 

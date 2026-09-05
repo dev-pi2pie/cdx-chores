@@ -26,11 +26,11 @@ export interface FixtureContext {
 }
 
 export class RunAllocationError extends AggregateError {
-  constructor(
-    errors: unknown[],
-    readonly remainingRoot: string,
-  ) {
+  readonly remainingRoot: string;
+
+  constructor(errors: unknown[], remainingRoot: string) {
     super(errors, "Run allocation and cleanup failed.");
+    this.remainingRoot = remainingRoot;
   }
 }
 
