@@ -257,13 +257,13 @@ every eligible batch and attempt, with existing rename fallback behavior intact.
 
 ### Phase 3: Direct Data And Markdown Adoption
 
-- [ ] Wire `data query codex` and `data stack` through their action and runner types.
-- [ ] Wire the three Markdown Codex commands through CLI/action option conversion,
+- [x] Wire `data query codex` and `data stack` through their action and runner types.
+- [x] Wire the three Markdown Codex commands through CLI/action option conversion,
       preparation services, profile orchestration, project phases, and repairs.
-- [ ] Keep direct embedded header/shape suggestions default-only.
-- [ ] Verify deterministic and prepared-artifact paths make no additional Codex
+- [x] Keep direct embedded header/shape suggestions default-only.
+- [x] Verify deterministic and prepared-artifact paths make no additional Codex
       requests merely because execution settings are present.
-- [ ] Inspect failure formatting for configuration errors. In particular, stack
+- [x] Inspect failure formatting for configuration errors. In particular, stack
       currently treats generic `invalid_request_error` as a schema failure;
       avoid attributing all provider/model/effort rejections to output schemas.
       Preserve existing sanitized error/report surfaces and schema shapes.
