@@ -42,10 +42,20 @@ does not launch the following command. Production discovery code is unchanged.
 | Timeout conversion corrected                | 15 pass, 0 fail; 71 assertions                                                                     |
 | Real sequencing/cancellation coverage added | 17 pass, 0 fail; 86 assertions; 4.80 seconds                                                       |
 
+The deadline and unresolved-descendant regressions subsequently passed: 19 tests,
+97 assertions, 5.44 seconds.
+
 Command: `bun test ./test/test-runner/process-table.unit.test.ts ./test/test-runner/process.app.test.ts`.
 TypeScript and focused lint pass. Fixture limits are 2,500 ms execution, 250 ms
 grace, and 1,500 ms total termination; timeout fixtures use shorter explicit
 execution deadlines. Installed-Codex budgets and Node execution remain pending.
+
+The first checkpoint is `2605651c`. A subsequent review tightened signal ordering:
+no termination attempt may begin after the cleanup budget expires. Observation
+loss after launcher exit returns `stopped: false` and the owned group identity;
+callers retain scratch and stop scheduling. Recovery requires fresh ownership
+evidence, rather than an unverified post-completion force-kill API. Both boundaries
+have dedicated regressions, including verified fixture-only recovery.
 
 ### Acceptance
 

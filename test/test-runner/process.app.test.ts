@@ -240,4 +240,69 @@ describe("owned process lifecycle", () => {
       ).toEqual([]);
     }
   });
+
+  test("hands back unresolved descendants without signaling after observation loss", async () => {
+    let denyObservation = false;
+    const owned = startOwnedProcess(options("survivor", { graceMs: 80, cleanupMs: 400 }), {
+      observe: async (groupId, timeoutMs) => {
+        if (denyObservation) throw new Error("observation denied after launcher exit");
+        return await observeProcessGroup(groupId, timeoutMs);
+      },
+    });
+    owned.child.once("exit", () => {
+      denyObservation = true;
+    });
+    try {
+      const result = await owned.completion;
+      expect(result.ok).toBe(false);
+      expect(result.stopped).toBe(false);
+      expect(result.reason).toBe("unverified");
+      expect(result.exitCode).toBe(0);
+      expect(result.signals).toEqual([]);
+      expect(result.issues).toContain("Required process-state observation is unavailable.");
+    } finally {
+      // The deliberately unavailable observer cannot authorize cleanup. The
+      // fixture owner obtains fresh evidence of its exact child before recovery.
+      const result = await owned.completion;
+      const descendant = Number(/child:(\d+)/.exec(result.stdout)?.[1]);
+      const members = await observeProcessGroup(result.pid!, 500);
+      if (members.some((member) => member.pid === descendant && !member.state.startsWith("Z"))) {
+        process.kill(-result.pid!, "SIGKILL");
+      }
+      const deadline = performance.now() + 1000;
+      while (
+        (await observeProcessGroup(result.pid!, 500)).some(
+          (member) => !member.state.startsWith("Z"),
+        ) &&
+        performance.now() < deadline
+      )
+        await delay(10);
+      expect(
+        (await observeProcessGroup(result.pid!, 500)).filter(
+          (member) => !member.state.startsWith("Z"),
+        ),
+      ).toEqual([]);
+    }
+  });
+
+  test("does not send a signal after the termination budget has expired", async () => {
+    const owned = startOwnedProcess(options("exit", { graceMs: 10, cleanupMs: 30 }), {
+      observe: async () => {
+        await delay(60);
+        throw new Error("slow observation");
+      },
+    });
+    owned.shutdown();
+    const result = await owned.completion;
+    expect(result.ok).toBe(false);
+    expect(result.signals).toEqual([]);
+    expect(result.issues).toContain(
+      "Owned process completion could not be verified within the cleanup allowance.",
+    );
+    expect(
+      (await observeProcessGroup(result.pid!, 500)).filter(
+        (member) => !member.state.startsWith("Z"),
+      ),
+    ).toEqual([]);
+  });
 });

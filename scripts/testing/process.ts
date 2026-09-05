@@ -36,7 +36,11 @@ export interface OwnedProcessResult {
   stdout: string;
   stderr: string;
   elapsedMs: number;
-  /** True only after direct-child close and a verified group with no live work. */
+  /**
+   * True only after direct-child close and a verified group with no live work.
+   * False hands unresolved ownership back to the caller: retain scratch, stop
+   * scheduling, and use fresh process evidence before any external recovery.
+   */
   stopped: boolean;
   escalated: boolean;
   issues: string[];
@@ -214,6 +218,10 @@ export function startOwnedProcess(
           requestStop("unverified");
         }
         if (requestedAt !== undefined) {
+          if (afterObservation - requestedAt >= options.cleanupMs) {
+            issue("Owned process completion could not be verified within the cleanup allowance.");
+            break;
+          }
           // Only the group established by spawn can be signaled, and never after
           // it was observed empty. A live direct child also establishes ownership
           // when observation fails; no unrelated snapshot PID is a signal target.
@@ -241,10 +249,6 @@ export function startOwnedProcess(
             killSent = true;
             issue("Owned work required forced termination.");
             send("SIGKILL");
-          }
-          if (afterObservation - requestedAt >= options.cleanupMs) {
-            issue("Owned process completion could not be verified within the cleanup allowance.");
-            break;
           }
         }
         await delay(20);
