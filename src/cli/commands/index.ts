@@ -10,12 +10,15 @@ import {
 } from "../options/codex-execution-option";
 import type { CliRuntime } from "../types";
 import { registerDataCommands } from "./data";
+import { registerCodexInfoCommands } from "./codex-info";
+import type { actionCodexInfo } from "../actions/codex-info";
 import { registerFontCommands } from "./font";
 import { registerMarkdownCommands } from "./markdown";
 import { registerRenameCommands } from "./rename";
 import { registerVideoCommands } from "./video";
 
 interface RegisterCliCommandsImpls {
+  actionCodexInfoImpl?: typeof actionCodexInfo;
   actionDoctorImpl?: typeof actionDoctor;
   runInteractiveModeImpl?: typeof runInteractiveMode;
 }
@@ -51,6 +54,7 @@ export function registerCliCommands(
     });
 
   registerDataCommands(program, runtime);
+  registerCodexInfoCommands(program, runtime, impls.actionCodexInfoImpl);
   registerFontCommands(program, runtime);
   registerMarkdownCommands(program, runtime);
   registerRenameCommands(program, runtime);
