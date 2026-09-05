@@ -1166,7 +1166,7 @@ passed security, test-coverage, and maintainability review with no material find
 
 ### 3B: Reports and Fixture Retention
 
-Status: in progress.
+Status: completed.
 
 Fixed batch review base: `cb07cbe7974d5082c367666bf0f1fe3f01913e6e`.
 
@@ -1250,9 +1250,17 @@ A final ownership check additionally rejects hard-linked JUnit files before and
 after consumption. Its regression preserves the other file owner unchanged;
 all five storage cases passed (11 assertions), and type checking passed.
 
+The full 3B range
+`cb07cbe7974d5082c367666bf0f1fe3f01913e6e..7eac5b8eb8d805144966fcd0a1813e0a7f1c9268`
+passed security, test-coverage, and maintainability review after the ownership
+correction. Documentation review confirmed the evidence and pending integration
+boundary. No material findings remain in this batch.
+
 ### 3C: Scheduling and Finalization
 
-Status: pending.
+Status: in progress.
+
+Fixed batch review base: `7eac5b8eb8d805144966fcd0a1813e0a7f1c9268`.
 
 Connect ordered suite execution, failure/cancellation states, finalization, and
 terminal summaries without hiding earlier failures.
