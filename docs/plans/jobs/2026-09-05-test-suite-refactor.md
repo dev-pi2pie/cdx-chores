@@ -2,7 +2,7 @@
 title: "Test Suite Refactor Implementation Record"
 created-date: 2026-09-05
 modified-date: 2026-09-06
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -14,7 +14,8 @@ Phase 1 established bounded process ownership. Phase 2 completed suite
 classification, migration, and final discovery. Phase 3 completed the managed
 runner. Phase 3.2 completed live output and terminal presentation with verified
 cleanup and full-range review. Phase 4 completed final workflow verification,
-the live fixture isolation correction, and contributor guidance.
+the live fixture isolation correction, and contributor guidance. The capability-based
+platform follow-up below is completed.
 
 ## Phase 1: Process Lifecycle
 
@@ -1833,7 +1834,7 @@ automatic archival or broader platform/release claim follows from closure.
 
 ## Follow-up: Capability-based Platform Requirements
 
-Status: in progress. Fixed review base: `a7a18ff07d40597190312ef78227cf3040a7cc1c`.
+Status: completed. Fixed review base: `a7a18ff07d40597190312ef78227cf3040a7cc1c`.
 Phase 4 remains completed at its recorded checkpoint. This follow-up removes
 OS-name vetoes without claiming verification on additional operating systems.
 
@@ -1849,11 +1850,11 @@ Acceptance:
       allocation/launch; preserve verified ownership, shutdown, and cleanup failures.
 - [x] Validate runtime-native cache components without a macOS-only allowlist;
       retain isolation and prove unsafe identifiers are rejected.
-- [ ] Pass both fixed aggregate cells with reconciled reports and summaries,
+- [x] Pass both fixed aggregate cells with reconciled reports and summaries,
       inspect retained outputs, and remove only verified follow-up-owned roots.
 - [x] Pass focused regressions, lint, formatting, types, and build; distinguish
       local/controlled evidence from unverified other-platform execution.
-- [ ] Complete fixed-base range and documentation reviews, resolve findings,
+- [x] Complete fixed-base range and documentation reviews, resolve findings,
       and record the completed follow-up without changing Phase 4's evidence.
 
 Verification fixed before execution: controlled process capability and native-path
@@ -1889,3 +1890,46 @@ corrected before successful execution. Full lint, formatting (1,140 files), type
 and build passed; the build's existing nonfatal TypeScript 7 API warning remains.
 Test-quality and security reviews of the follow-up diff found no material issues.
 Both planned aggregate cells remain in progress at this checkpoint.
+
+
+The implementation checkpoint is `007b5a35`. Fixed-range test-quality and security
+reviews of `a7a18ff0..007b5a35` found no material issues. Documentation review
+requested explicit closure criteria; the acceptance checklist above was added and
+passed re-review. The default terminal aggregate passed 3,289 cases across 443
+files with 17,857 assertions, no failures/errors/skips, and verified shutdown and
+cleanup. This adds 49 unit cases and one app case to the Phase 4 checkpoint; no
+existing cases were removed. The retained aggregate remains outstanding.
+
+
+Final local verification:
+
+| Command | Output / retention | Cases | Assertions | Files | Exit | Whole-command seconds |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| `bun run test:all` | terminal / default | 3,289 | 17,857 | 443 | 0 | 141.692 |
+| `bun run test:all --keep-results` | redirected / retained | 3,289 | 17,857 | 443 | 0 | 130.829 |
+
+Both aggregates passed without failed, skipped, or errored cases. Final selection
+contains 157 unit files, 283 app files, one Codex file, and two Pandoc files.
+Retained leaf reports were reparsed against the summary and fresh discovery:
+unit 1,246 cases/4,798 assertions, app 2,038/12,853, Codex 2/68, Pandoc 3/138.
+The two Codex request/check snapshots are semantically identical. Redirected output
+is plain. All recorded processes completed successfully with verified shutdown.
+
+The retained root contained exactly 27 expected report/manifest/designated-export
+files under results, with no scratch/home trees. Fresh file hashes, lengths,
+device/inode identities, and exact directory/file sets matched the inspection
+before the shared owned-run remover deleted this one follow-up root. The earlier
+parent entry and its identity remain unchanged; no follow-up process or root is
+unresolved. Neither aggregate required a retry or correction.
+
+Verification ran on the same recorded macOS 26.6.2 arm64, Bun 1.4.1, and Node.js
+26.5.0 environment. Other-platform execution is still unverified. Passing simulated
+identifier/observation cases is not a Linux, BSD, or Windows support claim. The
+current guide explains this distinction. Final documentation closure review is
+complete; no material issues remain.
+
+
+Closure review covered `a7a18ff0..007b5a35` and the complete follow-up evidence diff.
+All five acceptance criteria passed. The unified job is completed again, with the
+original Phase 4 checkpoint preserved and other-platform execution explicitly
+unverified. No production/package, dependency, CI, or release changes were made.

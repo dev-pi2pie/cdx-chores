@@ -554,7 +554,7 @@ acceptance cleanup, and complete phase reviews. Phase 3.2 completed bounded
 live-output, presentation, and output-failure checks, its real app/aggregate
 terminal and redirected matrix, and full-range review. Phase 4 completed the fixed
 leaf/aggregate repetition protocol: twenty passing cells, including twelve Codex
-repetitions, plus recorded original attempts and correction diagnostics. Final
+repetitions, plus recorded original attempts and correction diagnostics. Phase 4 checkpoint
 coverage is 3,239 cases across 441 files, with report/case identity correspondence,
 verified retained-output cleanup, quality checks, and actual built Node CLI/ESM/CJS
 behavior recorded in the job. The live metadata fixtures disable plugin startup
@@ -598,3 +598,7 @@ The [unified implementation record](../plans/jobs/2026-09-05-test-suite-refactor
 tracks removal of the original macOS guards, local regression evidence, and the
 remaining absence of other-platform verification. The completed Phase 4 evidence
 retains its historical scope.
+
+The capability follow-up passed both local aggregate retention modes with 3,289
+cases across 443 files, plus controlled capability/cache regressions and quality
+checks. This extends local regression evidence; it does not add a verified platform.
