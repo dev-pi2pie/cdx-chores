@@ -3,7 +3,7 @@ import {
   flushFixtureExports,
   removeFixtureDir,
 } from "../../scripts/testing/fixtures/fixture-exports.ts";
-import { mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import {
@@ -15,6 +15,11 @@ import { createTempFixtureDir } from "../helpers/cli-test-utils";
 
 // Unresolved ownership survives individual cases: this process must stop scheduling.
 let unresolvedScratch: string | undefined;
+
+/** Metadata fixtures do not need plugin startup synchronization or its subprocesses. */
+export async function writeLiveCodexConfig(home: string, content = ""): Promise<void> {
+  await writeFile(join(home, "config.toml"), `${content}\n[features]\nplugins = false\n`);
+}
 
 function assertLaunchAllowed(): void {
   if (unresolvedScratch) {
@@ -33,6 +38,10 @@ export function lifecycleDiagnostic(result: OwnedProcessResult): string {
     signal: result.signal,
     stopped: result.stopped,
     escalated: result.escalated,
+    elapsedMs: result.elapsedMs,
+    drainMs: result.drainMs,
+    observations: result.observations,
+    signals: result.signals,
     issues: result.issues,
   });
 }

@@ -1667,3 +1667,84 @@ A fresh build passed. Separate Node.js checks passed for the built CLI JSON-to-C
 operation, ESM and CJS exported CLI behavior, CSV/TSV round trips including quoted
 multiline values, UTC date formatting, and embedded version consistency. Build
 output included the existing nonfatal TypeScript 7 experimental-API warning.
+
+
+The guide/reference checkpoint is `95dea891`. Its documentation review found no
+material gaps. Independent reference validation confirmed all 930 current-owner
+mentions, 72 relative link targets, and 41 fragment links; the dated audit inventory
+is unchanged. Lint, formatting (1,136 configured files), and TypeScript checks passed.
+Actual verification environment: macOS 26.6.2 arm64, Bun 1.4.1, Node.js 26.5.0;
+package version remains 0.1.8-canary.4. The first application terminal/default run
+passed 2,037 cases across 283 files with 12,848 assertions and verified cleanup.
+A shell sequencing attempt before the retained application command failed before
+launch; using compatible command chaining started that cell without an extra
+product invocation. Neither harness correction changes the fixed matrix count.
+
+
+The first fixed series stopped at Codex default/terminal attempt 2. The protocol
+case passed; the production adapter's providers view exited zero but reported
+unverified group continuity (eventual `stopped: true`). The command failed with
+one passed case, one failed case, and 52 assertions; default cleanup preserved
+prior retained results. This is an acceptance failure, not a successful retry.
+The retained application cell had already passed 2,037 cases/283 files with 12,849
+assertions; the one-assertion variation comes from the existing conditional PID
+assertion in `test/codex-info/transport.app.test.ts`, with unchanged case identities.
+
+Investigation adds bounded process timing/snapshot diagnostics to the existing
+live-fixture failure message. Before further public matrix execution, exactly
+three isolated providers-view probes are fixed to inspect process observations.
+Their evidence is diagnostic and does not replace any matrix cell. Candidate
+observation races remain hypotheses until supported by diagnostic or deterministic
+evidence; ownership and signal safeguards are not relaxed.
+
+
+All three diagnostic probes passed, but process snapshots showed orphaned `git`
+and `git-remote-http` descendants after the adapter/Codex leaders exited. They
+drained in approximately 616–644 ms. Installed CLI inspection identifies curated
+plugin startup synchronization as a source of background Git work. That behavior
+is outside the metadata protocol under test and can race the one-second normal
+shutdown allowance; the failing attempt did not retain snapshots, so its exact
+timing remains unproven. A second fixed three-probe diagnostic series disables
+Codex plugins in the synthetic home configuration to test that isolation correction.
+
+
+The plugin-disabled diagnostic series passed all three probes with 25–32 ms drain
+and no observed Git descendants. The live metadata fixtures now write the supported
+`features.plugins = false` setting into every synthetic Codex home, including later
+model/provider/trust replacements. Seven protocol reads and three production-adapter
+views assert the returned setting, raising each successful Codex invocation from
+58 to 68 assertions without removing a case, request, or existing check. Failure
+diagnostics now include bounded process observations and timing; no raw process
+arguments or environment are added. Process ownership and shutdown limits are
+unchanged. The original failing invocation's exact timing remains unproven, but
+the unrelated startup work is reproduced and removed by a verified fixture setting.
+
+The complete twelve-cell Codex series is restarted from attempt 1 under this
+correction; both already-passed app cells remain applicable because they do not
+import the changed live helper. The still-unrun aggregate cells will exercise the
+corrected Codex coverage. Unit/Pandoc cells remain unchanged. This produces twenty
+final acceptance cells plus the two preserved original Codex execution attempts
+and the earlier discovery rejection; diagnostic probes are counted separately.
+
+Both raw guide examples passed separately: template unit file, 16 cases/52
+assertions; focused Pandoc language file with replacement ignore patterns, one
+case/five assertions. Scoped formatting/lint and TypeScript checks passed after
+the fixture correction.
+
+
+Correction review requested a distinction between fixture regression coverage and
+process-level diagnostic evidence. Accepted: absence of Git in the three corrected
+probe snapshots and their measured drain times are diagnostic-only evidence, not
+a committed guarantee about every external Codex startup process. The committed
+checks verify the setting actually returned for all synthetic homes/views and keep
+the existing successful owned-process completion requirement. A tighter latency
+threshold or blanket executable-name prohibition was not added: process sampling
+cannot prove that no short-lived child ever existed, and legitimate future metadata
+work need not use an identical process tree. The original bounded shutdown and
+unverified-ownership failure behavior remain enforced.
+
+All twelve corrected standalone Codex cells passed with two cases/68 assertions;
+their sanitized request sequences, seven protocol checks, and three adapter-view
+checks are identical across retention and output modes. Each retained leaf report
+has been independently reparsed and reconciled with its final summary. The two
+aggregate runs and final owned cleanup remain outstanding at this checkpoint.

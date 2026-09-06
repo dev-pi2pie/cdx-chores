@@ -66,6 +66,10 @@ loader flags. `PATH` is retained for declared tools. Application preflight copie
 the required existing DuckDB cache into the isolated home after validating it;
 it does not make the caller's home the test home.
 
+The live Codex metadata fixtures disable plugins in every synthetic Codex home
+and verify that setting through returned configuration. This keeps unrelated
+plugin startup synchronization outside the protocol checks.
+
 Tests that need configuration should construct it in their fixtures. Do not make
 tests depend on a contributor's signed-in account or shell environment. For the
 product's environment behavior, see

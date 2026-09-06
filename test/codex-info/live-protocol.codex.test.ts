@@ -5,7 +5,7 @@ import { join } from "node:path";
 
 import type { CodexDiscovery } from "../../src/adapters/codex/discovery/types";
 import { REPO_ROOT } from "../helpers/cli-test-utils";
-import { lifecycleDiagnostic, withLiveCodexFixture } from "./live-fixture";
+import { lifecycleDiagnostic, withLiveCodexFixture, writeLiveCodexConfig } from "./live-fixture";
 import { LiveProtocolClient } from "./live-protocol-client";
 
 const initializeParams = {
@@ -20,7 +20,12 @@ type Initialization = {
   platformOs: string;
 };
 type Configuration = {
-  config: { model?: string | null; model_provider?: string | null; model_providers?: unknown };
+  config: {
+    model?: string | null;
+    model_provider?: string | null;
+    model_providers?: unknown;
+    features?: { plugins?: boolean };
+  };
   origins: unknown;
 };
 type Model = {
@@ -54,6 +59,7 @@ describe("real Codex discovery protocol (isolated)", () => {
       const whitespaceHome = join(cwd, "   ");
       for (const directory of [defaultHome, customHome, whitespaceHome]) {
         await mkdir(directory, { recursive: true });
+        await writeLiveCodexConfig(directory);
       }
       const linkHome = join(root, "linked-codex");
       await symlink(customHome, linkHome);
@@ -93,6 +99,7 @@ describe("real Codex discovery protocol (isolated)", () => {
           await writeFile(evidencePath, JSON.stringify(evidence));
           expect(initialization.codexHome).toBeString();
           expect(configuration.origins).toBeDefined();
+          expect(configuration.config.features?.plugins).toBe(false);
           const models: Model[] = [];
           const pages: Array<{ count: number; nextCursor: string | null }> = [];
           if (listModels) {
@@ -169,8 +176,8 @@ describe("real Codex discovery protocol (isolated)", () => {
       expect(relative.initialization.codexHome).toBe(await realpath(customHome));
       expect(whitespace.initialization.codexHome).toBe(await realpath(whitespaceHome));
       expect(linked.initialization.codexHome).toBe(await realpath(customHome));
-      await writeFile(
-        join(customHome, "config.toml"),
+      await writeLiveCodexConfig(
+        customHome,
         'model = "probe-model"\nmodel_provider = "probe_proxy"\n[model_providers.probe_proxy]\nname = "Probe proxy"\nbase_url = "http://127.0.0.1:1/v1"\nwire_api = "responses"\n',
       );
       const custom = await probe(customHome, true);
@@ -189,8 +196,8 @@ describe("real Codex discovery protocol (isolated)", () => {
       await mkdir(join(cwd, ".git"));
       await mkdir(join(cwd, ".codex"));
       await writeFile(join(cwd, ".codex", "config.toml"), 'model = "project-probe-model"\n');
-      await writeFile(
-        join(customHome, "config.toml"),
+      await writeLiveCodexConfig(
+        customHome,
         `model = "user-probe-model"\n[projects.${JSON.stringify(cwd)}]\ntrust_level = "trusted"\n`,
       );
       const project = await probe(customHome);
@@ -223,7 +230,7 @@ describe("real Codex discovery protocol (isolated)", () => {
       };
       await writeFile(evidencePath, JSON.stringify(evidence));
       const codexHome = join(root, "home", ".codex");
-      await writeFile(join(codexHome, "config.toml"), 'model = "adapter-probe-model"\n');
+      await writeLiveCodexConfig(codexHome, 'model = "adapter-probe-model"\n');
       for (const view of ["summary", "models", "providers"] as const) {
         const result = await start({
           executable: process.execPath,
@@ -246,6 +253,7 @@ describe("real Codex discovery protocol (isolated)", () => {
         expect(discovery.context.codexHomeSource).toBe("environment");
         expect(discovery.context.codexVersion).toMatch(/^\d+\.\d+\.\d+$/);
         expect(discovery.config.model).toBe("adapter-probe-model");
+        expect(discovery.config).toHaveProperty("features.plugins", false);
         if (view === "providers") {
           expect(discovery.models).toBeNull();
         } else {
