@@ -1933,3 +1933,17 @@ Closure review covered `a7a18ff0..007b5a35` and the complete follow-up evidence 
 All five acceptance criteria passed. The unified job is completed again, with the
 original Phase 4 checkpoint preserved and other-platform execution explicitly
 unverified. No production/package, dependency, CI, or release changes were made.
+
+
+## Guide Editorial Follow-up
+
+Refined the contributor testing guide for readers without development-history
+context. It now states requirements, commands, isolation, output, cleanup, and
+test-authoring responsibilities directly. Removed comparisons with previous
+platform restrictions and consolidated repeated success/failure qualifications.
+Command examples and runtime behavior are unchanged. Verification scope remains
+explicit: macOS execution is verified; other platforms are unverified.
+
+Documentation review found no material gaps. All seven guide links resolve, command
+blocks are identical to the preceding guide, and whitespace checks pass. This is
+an editorial change; no test rerun or additional platform verification was needed.
