@@ -2,7 +2,7 @@
 title: "Test Suite Responsibilities and Verification Lifecycle"
 created-date: 2026-09-05
 modified-date: 2026-09-06
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -13,16 +13,15 @@ selected by the behavior and dependencies they verify. Establish process and
 scratch ownership before implementing shared orchestration.
 
 The command model, behavioral suite boundaries, and shutdown outcomes below are
-settled design decisions. Phase 2 implemented the feature-first layout and
-filename-based selection, verified the baseline correspondence and prerequisite
-boundaries, and passed the complete 424-file union. The implementation job records
-the actual mapping, evidence, and completed Phase 2 range reviews. Phase 1 implementation and lifecycle
-evidence are complete. Phase 3 delivered the managed runner and passed the real
-aggregate in both retention modes. Phase 3.2 adds live test output and terminal
-presentation before Phase 4's broader workflow verification and final usage
-documentation. Phase 3.2 completed streaming and presentation, bounded regressions,
-the real command matrix, and full-range review. Phase 4 is in progress, so
-research stays in progress.
+settled and implemented. Phases 1–3.2 established process ownership, feature-first
+suite selection, managed execution, and bounded live output. Phase 4 completed
+its fixed twenty-cell verification matrix, final inventory reconciliation, and
+separate built-package checks. The linked implementation record preserves failed
+attempts, the live Codex plugin-isolation correction, report/case correspondence,
+and verified cleanup. Final documentation review passed, and the linked plan and job are completed.
+
+Current contributor usage lives in the [Testing Guide](../guides/testing.md).
+This research retains design rationale and the dated starting-state analysis.
 
 ## Contributor Command Model
 
@@ -535,12 +534,12 @@ personal configuration, and raw process arguments.
 This research owns design decisions and supporting evidence. The plan owns
 execution and acceptance; its unified job owns actual mappings, commands,
 results, and review ranges. Update terminal owners in the
-[path correspondence][correspondence] as moves land, preserving historical evidence. The future testing
-guide documents verified usage and receives its README link when it exists.
+[path correspondence][correspondence] as moves land, preserving historical evidence. The [Testing Guide](../guides/testing.md) documents verified usage and is linked
+from README.
 Lint, formatting, types, build, and built Node CLI/ESM/CJS checks remain separate
 from the test aggregate.
 
-## Remaining Verification Work
+## Verification Evidence
 
 Phase 2 established the baseline inventory, prerequisite-isolated pilots, feature
 migrations, and final selection/config/report-file agreement. The complete union
@@ -554,9 +553,16 @@ both real aggregate modes passed 3,152 cases across 434 files. The
 contains failure/correction evidence, ownership and export inspection,
 acceptance cleanup, and complete phase reviews. Phase 3.2 completed bounded
 live-output, presentation, and output-failure checks, its real app/aggregate
-terminal and redirected matrix, and full-range review. Phase 4 still owns the broader
-leaf/aggregate repetition protocol, final inventory reconciliation, built-package
-checks, and usage documentation.
+terminal and redirected matrix, and full-range review. Phase 4 completed the fixed
+leaf/aggregate repetition protocol: twenty passing cells, including twelve Codex
+repetitions, plus recorded original attempts and correction diagnostics. Final
+coverage is 3,239 cases across 441 files, with report/case identity correspondence,
+verified retained-output cleanup, quality checks, and actual built Node CLI/ESM/CJS
+behavior recorded in the job. The live metadata fixtures disable plugin startup
+synchronization through synthetic configuration and assert the returned setting;
+process ownership and shutdown bounds remain unchanged. Platform coverage remains
+macOS, and no CI/release expansion is implied. The research questions are answered by the recorded implementation and verification
+evidence; final documentation review passed.
 
 ## Related Plans
 

@@ -1,7 +1,7 @@
 ---
 title: "Contributor Testing Guide"
 created-date: 2026-09-06
-status: draft
+status: completed
 agent: codex
 ---
 

@@ -2,7 +2,7 @@
 title: "Test Suite Refactor Implementation Record"
 created-date: 2026-09-05
 modified-date: 2026-09-06
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -13,7 +13,8 @@ against the [research contracts](../../researches/research-2026-09-05-multi-test
 Phase 1 established bounded process ownership. Phase 2 completed suite
 classification, migration, and final discovery. Phase 3 completed the managed
 runner. Phase 3.2 completed live output and terminal presentation with verified
-cleanup and full-range review. Phase 4 is in progress for final workflow verification and contributor guidance.
+cleanup and full-range review. Phase 4 completed final workflow verification,
+the live fixture isolation correction, and contributor guidance.
 
 ## Phase 1: Process Lifecycle
 
@@ -1593,7 +1594,7 @@ findings remain. All eleven Phase 3.2 acceptance items are complete.
 
 ## Phase 4: Final Workflow Verification and Guidance
 
-Status: in progress.
+Status: completed.
 
 Fixed phase review base: `aca5e794314556a41ab660d779676585e72b502d`.
 The starting tracked worktree was clean. This phase retains one checklist and
@@ -1635,9 +1636,8 @@ identities, and exact output sets before removing only acceptance-owned runs.
 
 ### Progress and Evidence
 
-Inventory reconciliation, contributor guidance, and verification are in progress.
-No Phase 4 acceptance item has been marked complete.
-
+The following entries preserve the checkpoint sequence; the final acceptance
+results and cleanup are recorded below.
 
 The static inventory now contains 441 files: 155 unit, 283 app, one Codex, and
 two Pandoc, with zero excluded test-shaped inputs. Phase 2 closed at 424 files;
@@ -1668,7 +1668,6 @@ operation, ESM and CJS exported CLI behavior, CSV/TSV round trips including quot
 multiline values, UTC date formatting, and embedded version consistency. Build
 output included the existing nonfatal TypeScript 7 experimental-API warning.
 
-
 The guide/reference checkpoint is `95dea891`. Its documentation review found no
 material gaps. Independent reference validation confirmed all 930 current-owner
 mentions, 72 relative link targets, and 41 fragment links; the dated audit inventory
@@ -1679,7 +1678,6 @@ passed 2,037 cases across 283 files with 12,848 assertions and verified cleanup.
 A shell sequencing attempt before the retained application command failed before
 launch; using compatible command chaining started that cell without an extra
 product invocation. Neither harness correction changes the fixed matrix count.
-
 
 The first fixed series stopped at Codex default/terminal attempt 2. The protocol
 case passed; the production adapter's providers view exited zero but reported
@@ -1697,7 +1695,6 @@ Their evidence is diagnostic and does not replace any matrix cell. Candidate
 observation races remain hypotheses until supported by diagnostic or deterministic
 evidence; ownership and signal safeguards are not relaxed.
 
-
 All three diagnostic probes passed, but process snapshots showed orphaned `git`
 and `git-remote-http` descendants after the adapter/Codex leaders exited. They
 drained in approximately 616–644 ms. Installed CLI inspection identifies curated
@@ -1706,7 +1703,6 @@ is outside the metadata protocol under test and can race the one-second normal
 shutdown allowance; the failing attempt did not retain snapshots, so its exact
 timing remains unproven. A second fixed three-probe diagnostic series disables
 Codex plugins in the synthetic home configuration to test that isolation correction.
-
 
 The plugin-disabled diagnostic series passed all three probes with 25–32 ms drain
 and no observed Git descendants. The live metadata fixtures now write the supported
@@ -1731,7 +1727,6 @@ assertions; focused Pandoc language file with replacement ignore patterns, one
 case/five assertions. Scoped formatting/lint and TypeScript checks passed after
 the fixture correction.
 
-
 Correction review requested a distinction between fixture regression coverage and
 process-level diagnostic evidence. Accepted: absence of Git in the three corrected
 probe snapshots and their measured drain times are diagnostic-only evidence, not
@@ -1748,3 +1743,89 @@ their sanitized request sequences, seven protocol checks, and three adapter-view
 checks are identical across retention and output modes. Each retained leaf report
 has been independently reparsed and reconciled with its final summary. The two
 aggregate runs and final owned cleanup remain outstanding at this checkpoint.
+
+### Final Acceptance Results
+
+The corrected verification matrix completed all twenty cells with command exit
+zero, passing report validation, and verified process shutdown. The following
+elapsed times cover the whole public command, including preflight and finalization;
+they are measurements rather than new timeout contracts.
+
+| Selection | Retention | Output | Attempt | Exit | Elapsed seconds |
+| --- | --- | --- | ---: | ---: | ---: |
+| unit | default | terminal | 1 | 0 | 1.049 |
+| unit | keep | redirected | 1 | 0 | 0.962 |
+| app | default | terminal | 1 | 0 | 134.766 |
+| app | keep | redirected | 1 | 0 | 125.857 |
+| codex | default | terminal | 1 | 0 | 1.330 |
+| codex | default | terminal | 2 | 0 | 1.287 |
+| codex | default | terminal | 3 | 0 | 1.282 |
+| codex | default | redirected | 1 | 0 | 1.295 |
+| codex | default | redirected | 2 | 0 | 1.376 |
+| codex | default | redirected | 3 | 0 | 1.275 |
+| codex | keep | terminal | 1 | 0 | 1.269 |
+| codex | keep | terminal | 2 | 0 | 1.303 |
+| codex | keep | terminal | 3 | 0 | 1.356 |
+| codex | keep | redirected | 1 | 0 | 1.313 |
+| codex | keep | redirected | 2 | 0 | 1.422 |
+| codex | keep | redirected | 3 | 0 | 1.462 |
+| pandoc | default | terminal | 1 | 0 | 2.641 |
+| pandoc | keep | redirected | 1 | 0 | 2.348 |
+| all | default | terminal | 1 | 0 | 140.836 |
+| all | keep | redirected | 1 | 0 | 134.828 |
+
+Final retained aggregate: **3,239 cases, 17,797 assertions, 441 files**, zero
+failures/errors/skips. Its leaves match the selected file inventories exactly:
+
+| Suite | Files | Cases | Assertions |
+| --- | ---: | ---: | ---: |
+| Unit | 155 | 1,197 | 4,743 |
+| App | 283 | 2,037 | 12,848 |
+| Codex | 1 | 2 | 68 |
+| Pandoc | 2 | 3 | 138 |
+
+Standalone and aggregate testcase identity multisets match for all four leaves.
+Only the previously documented `new Date()` parameter in the exact Codex-options
+unit case is normalized; the existing optional PID assertion explains the app
+standalone's 12,849 versus aggregate's 12,848 assertions. No case is omitted.
+The Phase 2 total of 2,995 grew by 157 runner cases in Phase 3 and 87 in Phase 3.2,
+reaching 3,239; Phase 4 adds ten isolation assertions but no new cases or files.
+
+All twelve corrected standalone Codex runs and both aggregate Codex leaves have
+identical sanitized planned/completed request sequences, seven protocol checks,
+and three adapter-view checks. All redirected runs kept reporter cases on stderr,
+runner summaries on stdout, and both logs free of ANSI styling. Terminal runs
+showed live reporter output and styled stage/final summaries. Existing Phase 3.2
+mixed-destination, color, delivery-failure, and cancellation regressions remain
+applicable; the runner and shared `scripts/testing/fixtures/` infrastructure are
+unchanged by this correction.
+
+Every retained report was reparsed and matched its summary, selected file set,
+and successful process completions. Exact retained file counts were two for unit,
+five for app, six for each of six Codex runs, seventeen for Pandoc, and twenty-seven
+for the aggregate. Each root contained results only; manifests and designated
+exports matched the exact regular-file set with no scratch/home trees. Before
+cleanup, fresh device/inode checks, directory sets, file lengths, and SHA-256
+hashes matched all inspected snapshots. The shared owned-run remover deleted
+exactly these ten roots. The pre-existing parent entry and its identity remain
+unchanged; no acceptance run remains unresolved.
+
+The fresh build and built Node CLI/ESM/CJS checks remain applicable because Phase 4
+changed only tests and documentation. Final lint, formatting, and type checks also
+passed after the fixture correction. Recorded tool versions include Codex 0.153.4,
+Pandoc 3.9, DuckDB 1.5.5, PDF.js 6.3.289, bash 3.2.57, git 2.53.0, jq 1.8.1,
+zip 3.0, and unzip 6.00, alongside Bun/Node/macOS versions above. No runtime,
+dependency, release, CI, or committed-input changes were made.
+
+### Final Review and Document Closure
+
+The fixture correction is committed as `d8605ea3`. Test-quality and security
+reviews of the complete fixed range `aca5e794..d8605ea3` found no remaining material
+issues after the diagnostic-only clarification above. The documentation checkpoint
+`aca5e794..95dea891` also passed independent review. Final documentation review
+covered that same fixed phase base through `d8605ea3` plus the complete acceptance
+and closure diff; no material gaps remained. All five Phase 4 acceptance items
+are complete. The guide documents the verified current workflow, the plan/job
+record completed implementation, and the research conclusions are supported by
+linked evidence. All four documents are completed at their current paths; no
+automatic archival or broader platform/release claim follows from closure.
