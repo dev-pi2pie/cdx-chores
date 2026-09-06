@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Refactor Implementation Plan"
 created-date: 2026-09-05
-modified-date: 2026-09-05
+modified-date: 2026-09-06
 status: active
 agent: codex
 ---
@@ -242,25 +242,42 @@ Acceptance:
 
 ## Phase 4: Verify the Workflow and Publish Guidance
 
-Begin after Phase 3.2 is completed.
+Status: pending. Phase 3.2 is completed.
 
-Run each leaf and the aggregate in both retention modes using declared prerequisites
-and the agreed terminal/repetition protocol. Record failures and fixes alongside
-passes. Deliver the testing guide and README link once its examples are verified.
+Verify the finished contributor workflow and publish its current guidance. Keep
+this phase as one checklist, with meaningful checkpoint commits as needed.
+Reuse applicable Phase 3.2 evidence and record the remaining verification matrix
+before execution. Platform expansion and CI/release changes remain outside scope.
 
 Acceptance:
 
-- [ ] Reconcile final paths/cases with the accepted inventory and baseline, including
-      formerly conditional or bypassed coverage. Verify unit-default discovery,
-      integration overrides, and prerequisite isolation after all moves.
-- [ ] Compare Codex requests/checks across retention modes; inspect retained outputs
-      and remove only acceptance-owned runs.
-- [ ] Run separate lint, formatting, types, build, and built Node CLI/ESM/CJS checks.
-      Record actual platform/tool versions and distinguish source from built evidence.
-- [ ] Explain feature placement, suite suffixes, prerequisites, raw Bun limitations,
-      failures, cleanup, retention, and adding tests in the guide.
-- [ ] Review final docs and the complete phase range; resolve findings and close
-      documents only when their own acceptance criteria pass.
+- [ ] Reconcile final paths and cases with the accepted migration inventory,
+      accounting for newly added runner tests and formerly conditional or bypassed
+      coverage. Verify unit-default discovery, integration overrides, and
+      prerequisite isolation. Update current ownership/path references while
+      preserving dated audit snapshots and historical correspondence.
+- [ ] Record a bounded verification matrix covering the five public commands in
+      both retention modes. Identify fresh runs and reused Phase 3.2 evidence,
+      with reasons for reuse; specify terminal/redirected coverage and the fixed
+      Codex repetition count before running. Compare Codex request/check coverage
+      across retention modes, reconcile reports with final summaries, inspect
+      retained outputs, and remove only verified acceptance-owned runs. Record
+      every attempt and correction; do not repeat until green without a fixed bound.
+- [ ] Run separate lint, formatting, types, and build checks. Exercise representative
+      built Node CLI behavior and ESM/CJS exports beyond successful loading or help
+      output. Record actual platform/tool versions and distinguish source-test
+      evidence from built-package evidence.
+- [ ] Create `docs/guides/testing.md`, add testing entry points and its link to
+      README, and update affected current references. Cover suite selection,
+      feature placement, suffixes, prerequisites, platform requirements, verified
+      environments, current limitations, focused testing, raw Bun limitations,
+      live output, failures/cancellation, cleanup, retention, and adding tests.
+      Verify command examples; keep execution history in the unified job.
+- [ ] Review the complete fixed `phase-base..tip` range and final documentation;
+      resolve findings and re-review affected changes from the same base. Record
+      evidence and review outcomes in the unified job. Close the plan, research,
+      job, and guide only when each document's own criteria pass; completion does
+      not imply automatic archival.
 
 ## Execution Records and Reviews
 
