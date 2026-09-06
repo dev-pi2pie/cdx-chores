@@ -1,3 +1,8 @@
+import {
+  resolveCodexExecution,
+  type CodexExecutionOptions,
+  type ResolvedCodexExecution,
+} from "../../../utils/codex-execution";
 import { startCodexReadOnlyThread } from "../shared";
 import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../../utils/codex-timeout";
 import { buildMarkdownPdfProfileCodexPrompt } from "./prompt";
@@ -85,11 +90,7 @@ export class MarkdownPdfCodexProfileError extends Error {
 
 function isCodexStructuredOutputSchemaError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
-  return (
-    message.includes("invalid_json_schema") ||
-    message.includes("invalid_request_error") ||
-    message.includes("response_format")
-  );
+  return message.includes("invalid_json_schema") || message.includes("response_format");
 }
 
 function applyMarkdownPdfProfileCodexFinalResponse(input: {
@@ -127,10 +128,13 @@ export function classifyMarkdownPdfCodexProfileFailure(
 
 async function runMarkdownPdfProfileCodexPrompt(options: {
   prompt: string;
+  codexExecution: ResolvedCodexExecution;
   timeoutMs?: number;
   workingDirectory: string;
 }): Promise<string> {
-  const thread = await startCodexReadOnlyThread(options.workingDirectory);
+  const thread = await startCodexReadOnlyThread(options.workingDirectory, {
+    codexExecution: options.codexExecution,
+  });
   const turn = await thread.run([{ type: "text", text: options.prompt }], {
     outputSchema: MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA,
     signal: AbortSignal.timeout(options.timeoutMs ?? MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS),
@@ -142,14 +146,17 @@ export async function suggestMarkdownPdfProfileWithCodex(
   request: MarkdownPdfCodexProfileRequest & {
     runner?: MarkdownPdfCodexProfileRunner;
     timeoutMs?: number;
+    codexExecution?: CodexExecutionOptions;
   },
 ): Promise<MarkdownPdfCodexProfileResult> {
+  const codexExecution = resolveCodexExecution(request.codexExecution);
   let finalResponse: string;
   const runner = request.runner ?? runMarkdownPdfProfileCodexPrompt;
   try {
     finalResponse = await runner({
       prompt: buildMarkdownPdfProfileCodexPrompt(request),
       timeoutMs: request.timeoutMs,
+      codexExecution,
       workingDirectory: request.workingDirectory,
     });
   } catch (error) {

@@ -1,0 +1,67 @@
+import { describe, expect, test } from "bun:test";
+
+import { createKeypressParser, type ParsedKeypressEvent } from "../../../src/cli/tui";
+
+describe("cli tui keys", () => {
+  test("normalizes explicit arrow escape sequences", () => {
+    const parser = createKeypressParser();
+
+    expect(parser.handle("\x1b", { name: "escape" })).toEqual({ kind: "incomplete" });
+    expect(parser.handle("[", { sequence: "[" })).toEqual({ kind: "incomplete" });
+    expect(parser.handle("C", { sequence: "C" })).toEqual({
+      kind: "arrow",
+      direction: "right",
+    } satisfies ParsedKeypressEvent);
+  });
+
+  test("passes through ordinary keypresses", () => {
+    const parser = createKeypressParser();
+
+    expect(parser.handle("a", { name: "a" })).toEqual({
+      kind: "keypress",
+      str: "a",
+      key: { name: "a" },
+    } satisfies ParsedKeypressEvent);
+  });
+
+  test("preserves typed characters after an unmatched escape prefix", () => {
+    const parser = createKeypressParser();
+
+    expect(parser.handle("\x1b", { name: "escape" })).toEqual({ kind: "incomplete" });
+    expect(parser.handle("a", { name: "a", sequence: "a" })).toEqual({
+      kind: "keypress",
+      str: "a",
+      key: {
+        name: "a",
+        sequence: "\x1ba",
+      },
+    } satisfies ParsedKeypressEvent);
+  });
+
+  test("normalizes chunked Shift+Enter CSI sequences into shifted return", () => {
+    const parser = createKeypressParser();
+
+    expect(parser.handle("\x1b", { name: "escape" })).toEqual({ kind: "incomplete" });
+    expect(parser.handle(undefined, { sequence: "[27;2;" })).toEqual({ kind: "incomplete" });
+    expect(parser.handle("1", { name: "1", sequence: "1" })).toEqual({ kind: "incomplete" });
+    expect(parser.handle("3", { name: "3", sequence: "3" })).toEqual({ kind: "incomplete" });
+    expect(parser.handle("~", { sequence: "~" })).toEqual({
+      kind: "keypress",
+      str: "",
+      key: {
+        name: "return",
+        sequence: "\x1b[27;2;13~",
+        shift: true,
+      },
+    } satisfies ParsedKeypressEvent);
+  });
+
+  test("normalizes direct arrow key names without requiring escape-buffer state", () => {
+    const parser = createKeypressParser();
+
+    expect(parser.handle("", { name: "down" })).toEqual({
+      kind: "arrow",
+      direction: "down",
+    } satisfies ParsedKeypressEvent);
+  });
+});

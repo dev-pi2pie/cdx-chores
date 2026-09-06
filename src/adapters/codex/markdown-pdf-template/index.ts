@@ -1,3 +1,8 @@
+import {
+  resolveCodexExecution,
+  type CodexExecutionOptions,
+  type ResolvedCodexExecution,
+} from "../../../utils/codex-execution";
 import { startCodexReadOnlyThread } from "../shared";
 import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../../utils/codex-timeout";
 import {
@@ -41,11 +46,7 @@ export class MarkdownPdfTemplateCodexError extends Error {
 
 function isCodexStructuredOutputSchemaError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
-  return (
-    message.includes("invalid_json_schema") ||
-    message.includes("invalid_request_error") ||
-    message.includes("response_format")
-  );
+  return message.includes("invalid_json_schema") || message.includes("response_format");
 }
 
 export function classifyMarkdownPdfTemplateCodexFailure(
@@ -108,10 +109,13 @@ function buildApplicationRepairPrompt(input: {
 
 async function runMarkdownPdfTemplateCodexPrompt(options: {
   prompt: string;
+  codexExecution: ResolvedCodexExecution;
   timeoutMs?: number;
   workingDirectory: string;
 }): Promise<string> {
-  const thread = await startCodexReadOnlyThread(options.workingDirectory);
+  const thread = await startCodexReadOnlyThread(options.workingDirectory, {
+    codexExecution: options.codexExecution,
+  });
   const turn = await thread.run([{ type: "text", text: options.prompt }], {
     outputSchema: MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA,
     signal: AbortSignal.timeout(options.timeoutMs ?? MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS),
@@ -216,16 +220,25 @@ export async function suggestMarkdownPdfTemplateWithCodex(
   request: MarkdownPdfTemplateCodexRequest & {
     runner?: MarkdownPdfTemplateCodexRunner;
     timeoutMs?: number;
+    codexExecution?: CodexExecutionOptions;
   },
 ): Promise<MarkdownPdfTemplateCodexResult> {
-  const runner = request.runner ?? runMarkdownPdfTemplateCodexPrompt;
+  const codexExecution = resolveCodexExecution(request.codexExecution);
+  const {
+    runner: runnerOverride,
+    timeoutMs,
+    codexExecution: _execution,
+    ...domainRequest
+  } = request;
+  const runner = runnerOverride ?? runMarkdownPdfTemplateCodexPrompt;
   return suggestMarkdownPdfTemplateWithPrompt({
-    request,
-    timeoutMs: request.timeoutMs ?? MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS,
+    request: domainRequest,
+    timeoutMs: timeoutMs ?? MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS,
     runPrompt: ({ prompt }) =>
       runner({
         prompt,
-        timeoutMs: request.timeoutMs,
+        timeoutMs,
+        codexExecution,
         workingDirectory: request.workingDirectory,
       }),
   });

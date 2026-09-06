@@ -1,3 +1,4 @@
+import type { CodexExecutionOptions } from "../../../utils/codex-execution";
 import type { DuckDBConnection } from "@duckdb/node-api";
 import { confirm, input, select } from "@inquirer/prompts";
 
@@ -70,6 +71,7 @@ export async function reviewInteractiveHeaderMappings(options: {
   selectedNoHeader?: boolean;
   selectedRange?: string;
   selectedSource?: string;
+  codexExecution?: CodexExecutionOptions;
   timeoutMs: number;
 }): Promise<InteractiveHeaderReviewState> {
   const labels = options.labels ?? QUERY_CONTINUATION_LABELS;
@@ -99,6 +101,7 @@ export async function reviewInteractiveHeaderMappings(options: {
     suggestionResult = await suggestDataHeaderMappingsWithCodex({
       format: options.format,
       introspection: options.introspection,
+      codexExecution: options.codexExecution,
       timeoutMs: options.timeoutMs,
       workingDirectory: options.runtime.cwd,
     });

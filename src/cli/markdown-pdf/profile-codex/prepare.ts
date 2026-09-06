@@ -1,3 +1,4 @@
+import { resolveCodexExecution } from "../../../utils/codex-execution";
 import { randomUUID } from "node:crypto";
 import { stat } from "node:fs/promises";
 import { join, parse, resolve } from "node:path";
@@ -193,6 +194,8 @@ export async function prepareMarkdownPdfProfileCodex(
   runtime: CliRuntime,
   options: MdPdfProfileCodexOptions,
 ): Promise<PreparedMarkdownPdfProfileCodex> {
+  const codexExecution = resolveCodexExecution(options.codexExecution);
+  options = { ...options, codexExecution };
   const inputPath = resolveOptionalInputPath(runtime, options);
   const baseProfilePath = options.baseProfile
     ? resolveFromCwd(runtime, assertNonEmpty(options.baseProfile, "Base profile path"))
@@ -271,6 +274,7 @@ export async function prepareMarkdownPdfProfileCodex(
       progressLabel: "Requesting Codex Markdown PDF profile recommendation",
       runtime,
       timeoutMs: options.timeoutMs,
+      codexExecution: options.codexExecution,
     });
     if (decision.kind === "no-usable-profile") {
       const failure: MarkdownPdfCodexReportFailure = {

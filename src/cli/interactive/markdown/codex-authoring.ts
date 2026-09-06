@@ -1,3 +1,8 @@
+import {
+  resolveCodexExecution,
+  type CodexExecutionOptions,
+  type ResolvedCodexExecution,
+} from "../../../utils/codex-execution";
 import { select } from "@inquirer/prompts";
 
 import type { CliRuntime } from "../../types";
@@ -52,12 +57,13 @@ async function prepareWithConsent(
   runtime: CliRuntime,
   setup: MarkdownPdfCodexSetup,
   timeoutMs: number,
+  codexExecution: ResolvedCodexExecution,
 ): Promise<PreparedMarkdownPdfCodexCandidate | "revise" | "change-artifact" | "cancel"> {
   if (!(await confirmMarkdownPdfCodexConsent(runtime, setup))) {
     const next = await promptDeclinedConsentAction();
     return next === "setup" ? "revise" : next === "artifact" ? "change-artifact" : "cancel";
   }
-  return await prepareMarkdownPdfCodexCandidate(runtime, setup, { timeoutMs });
+  return await prepareMarkdownPdfCodexCandidate(runtime, setup, { timeoutMs, codexExecution });
 }
 
 function sameCodexSetup(left: MarkdownPdfCodexSetup, right: MarkdownPdfCodexSetup): boolean {
@@ -79,12 +85,14 @@ export async function runMarkdownPdfCodexAuthoring(
     artifact: MarkdownPdfCodexArtifact;
     backToMode: boolean;
     codexTimeoutMs: number;
+    codexExecution?: CodexExecutionOptions;
     entry: MarkdownPdfInteractiveEntry;
     fontHintEditor: MarkdownPdfInteractiveFontHintEditorSession;
     onGeneratedLifecycle?: MarkdownPdfGeneratedLifecycleHandler;
     markdownInput?: string;
   },
 ): Promise<MarkdownPdfCodexAuthoringOutcome> {
+  const codexExecution = resolveCodexExecution(input.codexExecution);
   let setup: MarkdownPdfCodexSetup | undefined;
   let acceptedCandidate: PreparedMarkdownPdfCodexCandidate | undefined;
   let renderContext:
@@ -113,7 +121,7 @@ export async function runMarkdownPdfCodexAuthoring(
     let prepared =
       acceptedCandidate && sameCodexSetup(acceptedCandidate.setup, setup)
         ? acceptedCandidate
-        : await prepareWithConsent(runtime, setup, input.codexTimeoutMs);
+        : await prepareWithConsent(runtime, setup, input.codexTimeoutMs, codexExecution);
     if (prepared === "cancel") {
       return { kind: "complete" };
     }
@@ -138,7 +146,12 @@ export async function runMarkdownPdfCodexAuthoring(
         break;
       }
       if (action === "regenerate") {
-        const regenerated = await prepareWithConsent(runtime, setup, input.codexTimeoutMs);
+        const regenerated = await prepareWithConsent(
+          runtime,
+          setup,
+          input.codexTimeoutMs,
+          codexExecution,
+        );
         if (regenerated === "cancel") {
           return { kind: "complete" };
         }

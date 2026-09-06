@@ -1,3 +1,4 @@
+import { resolveCodexExecution, type CodexExecutionOptions } from "../../../utils/codex-execution";
 import type {
   MarkdownPdfTemplateCodexResult,
   MarkdownPdfTemplateCodexRunner,
@@ -142,6 +143,7 @@ async function suggestProjectTemplateWithCodexProgress(input: {
   signals: MdPdfTemplateCodexSignalCollection;
   templateCodexRunner?: MarkdownPdfTemplateCodexRunner;
   timeoutMs?: number;
+  codexExecution?: CodexExecutionOptions;
 }): Promise<MarkdownPdfTemplateCodexResult> {
   const ownsProgressSession = !input.progressSession;
   const codexProgress =
@@ -159,6 +161,7 @@ async function suggestProjectTemplateWithCodexProgress(input: {
           runner: input.templateCodexRunner,
           signals: input.signals,
           timeoutMs: input.timeoutMs,
+          codexExecution: input.codexExecution,
           workingDirectory: input.runtime.cwd,
         })
       : await suggestMarkdownPdfTemplateWithCodex({
@@ -166,6 +169,7 @@ async function suggestProjectTemplateWithCodexProgress(input: {
           outputPlan: input.outputPlan,
           signals: input.signals,
           timeoutMs: input.timeoutMs,
+          codexExecution: input.codexExecution,
           workingDirectory: input.runtime.cwd,
         });
     codexProgressStatus =
@@ -191,7 +195,10 @@ export async function runMdPdfProjectCodexTemplatePhase(input: {
   state: NormalizedMdPdfProjectCodexCommandState;
   templateCodexRunner?: MarkdownPdfTemplateCodexRunner;
   timeoutMs?: number;
+  codexExecution?: CodexExecutionOptions;
 }): Promise<MdPdfProjectCodexTemplatePhaseResult> {
+  const codexExecution = resolveCodexExecution(input.codexExecution);
+  input = { ...input, codexExecution };
   const forwardedProfileDirections = input.profilePhase.unmatchedProfileDirections;
   const shouldRunCodex =
     input.signals.modes.template === "codex-assisted" || forwardedProfileDirections.length > 0;
@@ -220,6 +227,7 @@ export async function runMdPdfProjectCodexTemplatePhase(input: {
         signals,
         templateCodexRunner: input.templateCodexRunner,
         timeoutMs: input.timeoutMs,
+        codexExecution: input.codexExecution,
       })
     : undefined;
   const synthesis = codexResult

@@ -1,4 +1,5 @@
 import { confirm, input, select } from "@inquirer/prompts";
+import { resolveCodexExecution, type CodexExecutionOptions } from "../../../utils/codex-execution";
 
 import { actionRenameApply, actionRenameBatch } from "../../actions";
 import { promptRequiredPathWithConfig } from "../../prompts/path";
@@ -16,7 +17,9 @@ export async function handleRenameBatchInteractiveAction(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   codexTimeoutMs: number,
+  codexExecution?: CodexExecutionOptions,
 ): Promise<void> {
+  const execution = resolveCodexExecution(codexExecution);
   const directory = await promptRequiredPathWithConfig("Target directory", {
     kind: "directory",
     ...pathPromptContext,
@@ -130,6 +133,7 @@ export async function handleRenameBatchInteractiveAction(
     codexImages: codexFlags.codexImages,
     codexDocs: codexFlags.codexDocs,
     codexTimeoutMs,
+    codexExecution: execution,
   });
 
   if (!dryRun && result.changedCount > 0) {

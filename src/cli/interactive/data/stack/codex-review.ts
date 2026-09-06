@@ -1,3 +1,4 @@
+import type { CodexExecutionOptions } from "../../../../utils/codex-execution";
 import { editor, select } from "@inquirer/prompts";
 
 import {
@@ -223,6 +224,7 @@ export async function requestInteractiveStackCodexReview(
   runtime: CliRuntime,
   state: InteractiveDataStackPreviewState,
   codexTimeoutMs: number,
+  codexExecution?: CodexExecutionOptions,
 ): Promise<InteractiveDataStackReviewedPlan | undefined> {
   const reportPath = resolveFromCwd(runtime, generateDataStackCodexReportFileName(runtime.now()));
   const diagnosticsWithReport = computeDataStackDiagnostics({
@@ -246,6 +248,7 @@ export async function requestInteractiveStackCodexReview(
   try {
     status.wait("Waiting for Codex stack recommendations");
     report = await suggestDataStackWithCodex({
+      codexExecution,
       diagnostics: diagnosticsWithReport,
       now: runtime.now(),
       plan,

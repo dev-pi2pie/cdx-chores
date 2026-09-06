@@ -17,6 +17,9 @@ export function installDataQueryCodexMock(context: HarnessRunnerContext): void {
     draftDataQueryWithCodex: async (options: DataQueryCodexDraftOptions) => {
       context.recordAction("data:query:codex-draft", {
         format: options.format,
+        ...(context.scenario.codexExecution !== undefined || context.scenario.captureCodexExecution
+          ? { codexExecution: options.codexExecution }
+          : {}),
         intent: options.intent,
         ...(context.scenario.codexTimeoutMs !== undefined ||
         context.scenario.captureCodexTimeouts === true

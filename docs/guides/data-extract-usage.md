@@ -1,7 +1,7 @@
 ---
 title: "Data Extract Usage"
 created-date: 2026-03-18
-modified-date: 2026-08-23
+modified-date: 2026-09-05
 status: completed
 agent: codex
 ---
@@ -215,6 +215,13 @@ backtracking.
 The direct embedded helpers `data extract --codex-suggest-shape` and
 `data extract --codex-suggest-headers` remain default-only and do not accept a
 command-local `--codex-timeout` option in this release.
+
+Those direct helpers also do not accept `--codex-model`, `--codex-provider`, or
+`--codex-reasoning-effort`: they inherit model/provider and request effort `low`.
+Interactive suggestions instead receive the execution settings supplied to the
+explicit `interactive` command, preserved across review and backtracking. See
+[Codex Execution Configuration](codex-execution-configuration.md) for the
+supported flags and session behavior.
 
 Choose:
 

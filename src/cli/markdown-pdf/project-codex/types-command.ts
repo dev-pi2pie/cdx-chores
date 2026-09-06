@@ -1,3 +1,5 @@
+import type { CodexExecutionOptions } from "../../../utils/codex-execution";
+import type { CodexExecutionCommandOptions } from "../../options/codex-execution-option";
 import type { MarkdownPdfCodexProfileRunner } from "../../../adapters/codex/markdown-pdf-profile";
 import type { MarkdownPdfTemplateCodexRunner } from "../../../adapters/codex/markdown-pdf-template";
 import type { CodexProgressPresenter } from "../../actions/codex-progress";
@@ -20,6 +22,7 @@ export interface MdPdfProjectCodexOptions {
   templateCodexRunner?: MarkdownPdfTemplateCodexRunner;
   codexProgressPresenter?: CodexProgressPresenter;
   timeoutMs?: number;
+  codexExecution?: CodexExecutionOptions;
 }
 
 type MdPdfProjectCodexNonCliOption =
@@ -28,14 +31,16 @@ type MdPdfProjectCodexNonCliOption =
   | "positionalInput"
   | "profileCodexRunner"
   | "templateCodexRunner"
+  | "codexExecution"
   | "timeoutMs";
 
 export type MdPdfProjectCodexCliOptions = Omit<
   MdPdfProjectCodexOptions,
   MdPdfProjectCodexNonCliOption
-> & {
-  codexTimeout?: number;
-};
+> &
+  CodexExecutionCommandOptions & {
+    codexTimeout?: number;
+  };
 
 export interface NormalizedMdPdfProjectCodexCommandState {
   inputPath?: string;

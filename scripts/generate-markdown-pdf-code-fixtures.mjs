@@ -1,7 +1,16 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
+import { lstatSync } from "node:fs";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+
+import {
+  assertRunParent,
+  assertRunPath,
+  readFixtureContext,
+  suitePath,
+  TEST_CONTEXT_ENV,
+} from "./testing/ownership/run-context.ts";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const repoRoot = resolve(__dirname, "..");
@@ -318,6 +327,39 @@ function hasCommand(command) {
 }
 
 function isGeneratedMarkdownPdfCodePath(path) {
+  const context = readFixtureContext(process.env, repoRoot);
+  if (context) {
+    const namespace = join(suitePath(context.run, context.suite, "scratch"), "fixtures");
+    const relativePath = relative(namespace, path);
+    const parts = relativePath.split(/[\\/]+/);
+    // The generator may replace a fixture owner's child, never the owner or a
+    // shared namespace. Existing fixture names carry the feature permission.
+    if (
+      isAbsolute(relativePath) ||
+      parts.length !== 2 ||
+      !parts[0]?.startsWith(generatedPathPrefix) ||
+      !["data", "fixtures", "smoke"].includes(parts[1])
+    ) {
+      return false;
+    }
+    try {
+      assertRunParent(context.run, path);
+      let stat;
+      try {
+        stat = lstatSync(path);
+      } catch (error) {
+        // A fresh child may not exist yet; its entire parent ancestry was checked.
+        if (error?.code !== "ENOENT") throw error;
+      }
+      if (stat) {
+        if (!stat.isDirectory() || stat.isSymbolicLink()) return false;
+        assertRunPath(context.run, relative(context.run.root, path));
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
   const relativePath = relative(testScratchRoot, path);
   if (relativePath === "" || relativePath.startsWith("..") || isAbsolute(relativePath)) {
     return false;
@@ -327,7 +369,10 @@ function isGeneratedMarkdownPdfCodePath(path) {
 }
 
 function assertSafeFixtureDir(fixtureDir) {
-  if (fixtureDir === defaultFixtureDir || isGeneratedMarkdownPdfCodePath(fixtureDir)) {
+  if (
+    (process.env[TEST_CONTEXT_ENV] === undefined && fixtureDir === defaultFixtureDir) ||
+    isGeneratedMarkdownPdfCodePath(fixtureDir)
+  ) {
     return;
   }
 
@@ -337,7 +382,10 @@ function assertSafeFixtureDir(fixtureDir) {
 }
 
 function assertSafeSmokeDir(smokeDir) {
-  if (smokeDir === defaultSmokeDir || isGeneratedMarkdownPdfCodePath(smokeDir)) {
+  if (
+    (process.env[TEST_CONTEXT_ENV] === undefined && smokeDir === defaultSmokeDir) ||
+    isGeneratedMarkdownPdfCodePath(smokeDir)
+  ) {
     return;
   }
 

@@ -1,3 +1,5 @@
+import type { CodexExecutionOptions } from "../../../utils/codex-execution";
+import type { CodexExecutionCommandOptions } from "../../options/codex-execution-option";
 import type { MarkdownPdfCodexProfileRunner } from "../../../adapters/codex/markdown-pdf-profile";
 import type { CodexProgressPresenter } from "../../actions/codex-progress";
 
@@ -13,6 +15,7 @@ export interface MdPdfProfileCodexOptions {
   codexReportOutput?: string;
   overwrite?: boolean;
   timeoutMs?: number;
+  codexExecution?: CodexExecutionOptions;
   codexRunner?: MarkdownPdfCodexProfileRunner;
   codexProgressPresenter?: CodexProgressPresenter;
   profileUidFactory?: (now: Date) => string;
@@ -20,7 +23,8 @@ export interface MdPdfProfileCodexOptions {
 
 export type MdPdfProfileCodexCliOptions = Omit<
   MdPdfProfileCodexOptions,
-  "codexProgressPresenter" | "codexRunner" | "profileUidFactory" | "timeoutMs"
-> & {
-  codexTimeout?: number;
-};
+  "codexProgressPresenter" | "codexRunner" | "profileUidFactory" | "timeoutMs" | "codexExecution"
+> &
+  CodexExecutionCommandOptions & {
+    codexTimeout?: number;
+  };

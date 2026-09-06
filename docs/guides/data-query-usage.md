@@ -1,7 +1,7 @@
 ---
 title: "Data Query Usage"
 created-date: 2026-03-10
-modified-date: 2026-08-16
+modified-date: 2026-09-05
 status: completed
 agent: codex
 ---
@@ -22,6 +22,12 @@ For materializing one shaped table without SQL, use `docs/guides/data-extract-us
 For assembling many local sources into one table before later SQL, use `docs/guides/data-stack-usage.md`.
 For reviewed source-shape artifacts and the current shape-first direct CLI workflow, see `docs/guides/data-source-shape-usage.md`.
 For reviewed semantic header suggestions and the shared JSON artifact contract, see `docs/guides/data-schema-and-mapping-usage.md`.
+
+The direct embedded `--codex-suggest-headers` helper inherits model/provider and
+requests reasoning effort `low`. The parent `data query` command does not accept
+`--codex-model`, `--codex-provider`, or `--codex-reasoning-effort`. The drafting
+child `data query codex` and explicit `interactive` session do support these
+options; see [Codex Execution Configuration](codex-execution-configuration.md).
 
 Current stable boundary:
 

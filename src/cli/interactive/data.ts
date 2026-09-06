@@ -24,17 +24,32 @@ export async function handleDataInteractiveAction(
   }
 
   if (action === "data:query") {
-    await runInteractiveDataQuery(runtime, pathPromptContext, session.codexTimeoutMs);
+    await runInteractiveDataQuery(
+      runtime,
+      pathPromptContext,
+      session.codexTimeoutMs,
+      session.codexExecution,
+    );
     return;
   }
 
   if (action === "data:extract") {
-    await runInteractiveDataExtract(runtime, pathPromptContext, session.codexTimeoutMs);
+    await runInteractiveDataExtract(
+      runtime,
+      pathPromptContext,
+      session.codexTimeoutMs,
+      session.codexExecution,
+    );
     return;
   }
 
   if (action === "data:stack") {
-    await runInteractiveDataStack(runtime, pathPromptContext, session.codexTimeoutMs);
+    await runInteractiveDataStack(
+      runtime,
+      pathPromptContext,
+      session.codexTimeoutMs,
+      session.codexExecution,
+    );
     return;
   }
 

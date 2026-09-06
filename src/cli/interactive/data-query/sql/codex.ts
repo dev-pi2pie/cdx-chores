@@ -1,3 +1,4 @@
+import type { CodexExecutionOptions } from "../../../../utils/codex-execution";
 import { confirm, editor, input, select } from "@inquirer/prompts";
 
 import { printLine } from "../../../actions/shared";
@@ -37,6 +38,7 @@ export async function runCodexInteractiveQuery(
     selectedNoHeader?: boolean;
     selectedRange?: string;
     selectedSource?: string;
+    codexExecution?: CodexExecutionOptions;
     timeoutMs: number;
   },
 ): Promise<InteractiveQueryRunResult> {
@@ -104,6 +106,7 @@ export async function runCodexInteractiveQuery(
           format: options.format,
           intent,
           introspection: options.introspection,
+          codexExecution: options.codexExecution,
           timeoutMs: options.timeoutMs,
           workingDirectory: runtime.cwd,
         });

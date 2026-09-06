@@ -1,7 +1,7 @@
 ---
 title: "Rename Scope and Codex Capability Guide"
 created-date: 2026-02-26
-modified-date: 2026-08-22
+modified-date: 2026-09-05
 status: completed
 agent: codex
 ---
@@ -104,6 +104,12 @@ Important:
 - unsupported files still use deterministic rename behavior
 
 ## Timeout and Analyzer Routing
+
+Model, provider, and reasoning selection is also separate from analyzer routing.
+`rename file`, `rename batch`, and `batch-rename` accept the shared execution
+options; one selection is used by both enabled analyzers across batches and
+retries. See [Codex Execution Configuration](codex-execution-configuration.md)
+for these options and their defaults.
 
 Timeout selection is separate from analyzer routing. A timeout flag changes the
 per-attempt limit only for an analyzer that `--codex`, `--codex-images`, or

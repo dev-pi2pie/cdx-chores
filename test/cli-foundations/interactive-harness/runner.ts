@@ -30,6 +30,7 @@ async function runHarnessScenario(
     const interactiveModule = await import(interactiveIndexUrl);
     await interactiveModule.runInteractiveMode(runtime, undefined, {
       codexTimeoutMs: scenario.codexTimeoutMs,
+      codexExecution: scenario.codexExecution,
     });
 
     return {

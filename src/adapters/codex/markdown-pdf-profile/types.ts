@@ -1,3 +1,4 @@
+import type { ResolvedCodexExecution } from "../../../utils/codex-execution";
 import type {
   MarkdownPdfDocumentSignals,
   MarkdownPdfFontSignals,
@@ -147,6 +148,7 @@ export interface MarkdownPdfCodexReportPayload {
 
 export type MarkdownPdfCodexProfileRunner = (options: {
   prompt: string;
+  codexExecution: ResolvedCodexExecution;
   timeoutMs?: number;
   workingDirectory: string;
 }) => Promise<string>;

@@ -1,3 +1,8 @@
+import {
+  resolveCodexExecution,
+  type CodexExecutionOptions,
+  type ResolvedCodexExecution,
+} from "../../utils/codex-execution";
 import { startCodexReadOnlyThread } from "../../adapters/codex/shared";
 import { classifyCodexRequestFailure } from "../../utils/codex-request-failure";
 import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../utils/codex-timeout";
@@ -21,17 +26,21 @@ const DATA_QUERY_CODEX_OUTPUT_SCHEMA = {
 } as const;
 
 export type DataQueryCodexRunner = (options: {
+  codexExecution: ResolvedCodexExecution;
   prompt: string;
   workingDirectory: string;
   timeoutMs?: number;
 }) => Promise<string>;
 
 async function runDataQueryCodexPrompt(options: {
+  codexExecution: ResolvedCodexExecution;
   prompt: string;
   workingDirectory: string;
   timeoutMs?: number;
 }): Promise<string> {
-  const thread = await startCodexReadOnlyThread(options.workingDirectory);
+  const thread = await startCodexReadOnlyThread(options.workingDirectory, {
+    codexExecution: options.codexExecution,
+  });
   const turn = await thread.run([{ type: "text", text: options.prompt }], {
     outputSchema: DATA_QUERY_CODEX_OUTPUT_SCHEMA,
     signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
@@ -40,6 +49,7 @@ async function runDataQueryCodexPrompt(options: {
 }
 
 export async function draftDataQueryWithCodex(options: {
+  codexExecution?: CodexExecutionOptions;
   format: DataQueryInputFormat;
   intent: string;
   introspection: DataQueryCodexIntrospection;
@@ -47,11 +57,13 @@ export async function draftDataQueryWithCodex(options: {
   timeoutMs?: number;
   workingDirectory: string;
 }): Promise<DataQueryCodexDraftResult> {
+  const codexExecution = resolveCodexExecution(options.codexExecution);
   try {
     const runner = options.runner ?? runDataQueryCodexPrompt;
     const timeoutMs = options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS;
     const normalizedIntent = normalizeDataQueryCodexIntent(options.intent);
     const finalResponse = await runner({
+      codexExecution,
       prompt: buildDataQueryCodexPrompt({
         format: options.format,
         intent: normalizedIntent,

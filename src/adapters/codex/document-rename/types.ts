@@ -1,3 +1,5 @@
+import type { CodexExecutionOptions } from "../../../utils/codex-execution";
+
 export interface CodexDocumentRenameSuggestion {
   path: string;
   title: string;
@@ -20,6 +22,7 @@ export interface SuggestDocumentTitlesOptions {
   timeoutMs?: number;
   retries?: number;
   batchSize?: number;
+  codexExecution?: CodexExecutionOptions;
 }
 
 export interface DocumentTitleEvidence {

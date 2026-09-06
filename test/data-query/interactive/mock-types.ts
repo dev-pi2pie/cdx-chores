@@ -1,6 +1,7 @@
 export interface DataQueryCodexDraftOptions {
   format?: unknown;
   intent?: unknown;
+  codexExecution?: unknown;
   timeoutMs?: unknown;
   introspection?:
     | {
@@ -16,6 +17,7 @@ export interface DataQueryCodexDraftOptions {
 
 export interface HeaderSuggestionOptions {
   format?: unknown;
+  codexExecution?: unknown;
   timeoutMs?: unknown;
   introspection?: {
     selectedHeaderRow?: unknown;

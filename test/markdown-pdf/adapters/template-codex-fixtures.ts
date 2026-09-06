@@ -2,7 +2,7 @@ import type { MarkdownPdfTemplateCodexRequest } from "../../../src/adapters/code
 import {
   createSynthesisOutputPlan,
   createSynthesisSignals,
-} from "../actions/template-synthesis-fixtures";
+} from "../actions/template-codex/template-synthesis-fixtures";
 
 export { createSynthesisSignals };
 

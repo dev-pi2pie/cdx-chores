@@ -1,6 +1,6 @@
 {
   "name": "cdx-chores",
-  "version": "0.1.8-canary.3",
+  "version": "0.1.8-canary.4",
   "keywords": [
     "automation",
     "cli",
@@ -41,6 +41,11 @@
   "scripts": {
     "build": "node scripts/generate-embedded-version.mjs && tsdown",
     "cli": "node dist/esm/bin.mjs",
+    "test:unit": "bun scripts/testing/run.ts unit",
+    "test:integration:app": "bun scripts/testing/run.ts app",
+    "test:integration:codex": "bun scripts/testing/run.ts codex",
+    "test:integration:pandoc": "bun scripts/testing/run.ts pandoc",
+    "test:all": "bun scripts/testing/run.ts all",
     "lint": "oxlint --tsconfig tsconfig.json src test scripts",
     "lint:fix": "oxlint --tsconfig tsconfig.json --fix src test scripts",
     "format": "oxfmt src test scripts package.json tsconfig.json .oxlintrc.json .oxfmtrc.json",
@@ -50,7 +55,7 @@
     "@duckdb/node-api": "^1.5.5-r.4",
     "@inquirer/prompts": "8.7.1",
     "@inquirer/search": "4.3.2",
-    "@openai/codex-sdk": "^0.153.3",
+    "@openai/codex-sdk": "^0.153.4",
     "@shikijs/transformers": "^4.4.3",
     "commander": "^15.0.0",
     "fast-xml-parser": "5.11.1",

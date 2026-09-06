@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Profile Helper"
 created-date: 2026-06-16
-modified-date: 2026-08-22
+modified-date: 2026-09-05
 status: completed
 agent: codex
 ---
@@ -36,6 +36,15 @@ Common options:
 - `--overwrite`: allow selected output artifacts to be replaced.
 - `--codex-timeout <duration>`: command-local deadline for each Codex profile
   request attempt.
+- `--codex-model <model>`: override the inherited Codex model.
+- `--codex-provider <provider-id>`: override the inherited Codex provider.
+- `--codex-reasoning-effort <effort>`: requested effort; defaults to `low`.
+
+Execution options affect helper requests and are not saved in the PDF profile.
+They do not force the signal ladder to call Codex. See
+[Codex Execution Configuration](codex-execution-configuration.md) for the
+shared validation and failure contract. The render command's `--profile`
+continues to select a PDF profile file; it is unrelated to Codex configuration.
 
 Example:
 

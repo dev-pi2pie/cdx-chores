@@ -1,0 +1,327 @@
+{
+  "version": "codex-cli 0.153.4",
+  "requests": {
+    "initialize": {
+      "clientInfo": {
+        "name": "cdx_chores_protocol_probe",
+        "title": "Isolated protocol probe",
+        "version": "1"
+      },
+      "capabilities": {
+        "experimentalApi": false
+      }
+    },
+    "initialized": {
+      "method": "initialized"
+    },
+    "configRead": {
+      "cwd": "<fixture>/project",
+      "includeLayers": false
+    },
+    "firstModelPage": {
+      "includeHidden": false,
+      "limit": 2
+    }
+  },
+  "homeCases": {
+    "unset": {
+      "userAgent": "cdx_chores_protocol_probe/0.153.4 (<platform-version-and-architecture>) unknown (cdx_chores_protocol_probe; 1)",
+      "codexHome": "<fixture>/home/.codex",
+      "platformFamily": "unix",
+      "platformOs": "macos"
+    },
+    "empty": {
+      "userAgent": "cdx_chores_protocol_probe/0.153.4 (<platform-version-and-architecture>) unknown (cdx_chores_protocol_probe; 1)",
+      "codexHome": "<fixture>/home/.codex",
+      "platformFamily": "unix",
+      "platformOs": "macos"
+    },
+    "existingRelative": {
+      "userAgent": "cdx_chores_protocol_probe/0.153.4 (<platform-version-and-architecture>) unknown (cdx_chores_protocol_probe; 1)",
+      "codexHome": "<fixture>/custom-codex",
+      "platformFamily": "unix",
+      "platformOs": "macos"
+    },
+    "existingWhitespace": {
+      "userAgent": "cdx_chores_protocol_probe/0.153.4 (<platform-version-and-architecture>) unknown (cdx_chores_protocol_probe; 1)",
+      "codexHome": "<fixture>/project/   ",
+      "platformFamily": "unix",
+      "platformOs": "macos"
+    },
+    "symlink": {
+      "userAgent": "cdx_chores_protocol_probe/0.153.4 (<platform-version-and-architecture>) unknown (cdx_chores_protocol_probe; 1)",
+      "codexHome": "<fixture>/custom-codex",
+      "platformFamily": "unix",
+      "platformOs": "macos"
+    },
+    "missingWhitespace": {
+      "requestedHome": "  ",
+      "exitCode": 1
+    }
+  },
+  "configRead": {
+    "omitted": {
+      "model": null,
+      "model_provider": null,
+      "origins": {}
+    },
+    "custom": {
+      "model": "probe-model",
+      "model_provider": "probe_proxy",
+      "providerIds": ["probe_proxy"],
+      "origins": {
+        "model_provider": {
+          "name": {
+            "type": "user",
+            "file": "<fixture>/custom-codex/config.toml",
+            "profile": null
+          },
+          "version": "sha256:1ddfc304ebb0187068638c2619763bd6a3c4dc2f3743025866f50a2860881957"
+        },
+        "model_providers.probe_proxy.base_url": {
+          "name": {
+            "type": "user",
+            "file": "<fixture>/custom-codex/config.toml",
+            "profile": null
+          },
+          "version": "sha256:1ddfc304ebb0187068638c2619763bd6a3c4dc2f3743025866f50a2860881957"
+        },
+        "model_providers.probe_proxy.name": {
+          "name": {
+            "type": "user",
+            "file": "<fixture>/custom-codex/config.toml",
+            "profile": null
+          },
+          "version": "sha256:1ddfc304ebb0187068638c2619763bd6a3c4dc2f3743025866f50a2860881957"
+        },
+        "model": {
+          "name": {
+            "type": "user",
+            "file": "<fixture>/custom-codex/config.toml",
+            "profile": null
+          },
+          "version": "sha256:1ddfc304ebb0187068638c2619763bd6a3c4dc2f3743025866f50a2860881957"
+        },
+        "model_providers.probe_proxy.wire_api": {
+          "name": {
+            "type": "user",
+            "file": "<fixture>/custom-codex/config.toml",
+            "profile": null
+          },
+          "version": "sha256:1ddfc304ebb0187068638c2619763bd6a3c4dc2f3743025866f50a2860881957"
+        }
+      }
+    }
+  },
+  "modelList": {
+    "pages": [
+      {
+        "count": 2,
+        "nextCursor": "2"
+      },
+      {
+        "count": 2,
+        "nextCursor": "4"
+      },
+      {
+        "count": 2,
+        "nextCursor": null
+      }
+    ],
+    "identicalCatalogAcrossTheseTwoConfigurations": true,
+    "models": [
+      {
+        "id": "gpt-6-astra",
+        "model": "gpt-6-astra",
+        "isDefault": true,
+        "supportedReasoningEfforts": [
+          {
+            "reasoningEffort": "low",
+            "description": "Fast responses with lighter reasoning"
+          },
+          {
+            "reasoningEffort": "medium",
+            "description": "Balances speed and reasoning depth for everyday tasks"
+          },
+          {
+            "reasoningEffort": "high",
+            "description": "Greater reasoning depth for complex problems"
+          },
+          {
+            "reasoningEffort": "xhigh",
+            "description": "Extra high reasoning depth for complex problems"
+          },
+          {
+            "reasoningEffort": "max",
+            "description": "Maximum reasoning depth for the hardest problems"
+          },
+          {
+            "reasoningEffort": "ultra",
+            "description": "Maximum reasoning with automatic task delegation"
+          }
+        ],
+        "defaultReasoningEffort": "low"
+      },
+      {
+        "id": "gpt-5.6-sol",
+        "model": "gpt-5.6-sol",
+        "isDefault": false,
+        "supportedReasoningEfforts": [
+          {
+            "reasoningEffort": "low",
+            "description": "Fast responses with lighter reasoning"
+          },
+          {
+            "reasoningEffort": "medium",
+            "description": "Balances speed and reasoning depth for everyday tasks"
+          },
+          {
+            "reasoningEffort": "high",
+            "description": "Greater reasoning depth for complex problems"
+          },
+          {
+            "reasoningEffort": "xhigh",
+            "description": "Extra high reasoning depth for complex problems"
+          },
+          {
+            "reasoningEffort": "max",
+            "description": "Maximum reasoning depth for the hardest problems"
+          },
+          {
+            "reasoningEffort": "ultra",
+            "description": "Maximum reasoning with automatic task delegation"
+          }
+        ],
+        "defaultReasoningEffort": "low"
+      },
+      {
+        "id": "gpt-5.6-terra",
+        "model": "gpt-5.6-terra",
+        "isDefault": false,
+        "supportedReasoningEfforts": [
+          {
+            "reasoningEffort": "low",
+            "description": "Fast responses with lighter reasoning"
+          },
+          {
+            "reasoningEffort": "medium",
+            "description": "Balances speed and reasoning depth for everyday tasks"
+          },
+          {
+            "reasoningEffort": "high",
+            "description": "Greater reasoning depth for complex problems"
+          },
+          {
+            "reasoningEffort": "xhigh",
+            "description": "Extra high reasoning depth for complex problems"
+          },
+          {
+            "reasoningEffort": "max",
+            "description": "Maximum reasoning depth for the hardest problems"
+          },
+          {
+            "reasoningEffort": "ultra",
+            "description": "Maximum reasoning with automatic task delegation"
+          }
+        ],
+        "defaultReasoningEffort": "medium"
+      },
+      {
+        "id": "gpt-5.6-luna",
+        "model": "gpt-5.6-luna",
+        "isDefault": false,
+        "supportedReasoningEfforts": [
+          {
+            "reasoningEffort": "low",
+            "description": "Fast responses with lighter reasoning"
+          },
+          {
+            "reasoningEffort": "medium",
+            "description": "Balances speed and reasoning depth for everyday tasks"
+          },
+          {
+            "reasoningEffort": "high",
+            "description": "Greater reasoning depth for complex problems"
+          },
+          {
+            "reasoningEffort": "xhigh",
+            "description": "Extra high reasoning depth for complex problems"
+          },
+          {
+            "reasoningEffort": "max",
+            "description": "Maximum reasoning depth for the hardest problems"
+          }
+        ],
+        "defaultReasoningEffort": "medium"
+      },
+      {
+        "id": "gpt-5.5",
+        "model": "gpt-5.5",
+        "isDefault": false,
+        "supportedReasoningEfforts": [
+          {
+            "reasoningEffort": "low",
+            "description": "Fast responses with lighter reasoning"
+          },
+          {
+            "reasoningEffort": "medium",
+            "description": "Balances speed and reasoning depth for everyday tasks"
+          },
+          {
+            "reasoningEffort": "high",
+            "description": "Greater reasoning depth for complex problems"
+          },
+          {
+            "reasoningEffort": "xhigh",
+            "description": "Extra high reasoning depth for complex problems"
+          }
+        ],
+        "defaultReasoningEffort": "medium"
+      },
+      {
+        "id": "gpt-5.2",
+        "model": "gpt-5.2",
+        "isDefault": false,
+        "supportedReasoningEfforts": [
+          {
+            "reasoningEffort": "low",
+            "description": "Balances speed with some reasoning; useful for straightforward queries and short explanations"
+          },
+          {
+            "reasoningEffort": "medium",
+            "description": "Provides a solid balance of reasoning depth and latency for general-purpose tasks"
+          },
+          {
+            "reasoningEffort": "high",
+            "description": "Maximizes reasoning depth for complex or ambiguous problems"
+          },
+          {
+            "reasoningEffort": "xhigh",
+            "description": "Extra high reasoning for complex problems"
+          }
+        ],
+        "defaultReasoningEffort": "medium"
+      }
+    ]
+  },
+  "trustedProjectConfig": {
+    "model": "project-probe-model",
+    "origins": {
+      "projects.<fixture>/project.trust_level": {
+        "name": {
+          "type": "user",
+          "file": "<fixture>/custom-codex/config.toml",
+          "profile": null
+        },
+        "version": "sha256:17f60fc2d51c62ac2db165694787628a97197e0cc1c7451e4e3688d528e0409f"
+      },
+      "model": {
+        "name": {
+          "type": "project",
+          "dotCodexFolder": "<fixture>/project/.codex"
+        },
+        "version": "sha256:0ca91a3fc244b7ccda1866d7b4290dddc4cfc3653e960346a854ff1ce74f7ece"
+      }
+    }
+  }
+}

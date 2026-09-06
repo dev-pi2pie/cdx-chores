@@ -4,11 +4,7 @@ import { join } from "node:path";
 
 import { actionDataQuery } from "../../../src/cli/actions";
 import { getDisplayWidth } from "../../../src/cli/text-display-width";
-import {
-  createDuckDbConnection,
-  inspectDataQueryExtensions,
-  listDataQuerySources,
-} from "../../../src/cli/duckdb/query";
+import { createDuckDbConnection, listDataQuerySources } from "../../../src/cli/duckdb/query";
 import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
 import {
   seedAmbiguousDuckDbSourceFixture,
@@ -33,11 +29,6 @@ export class TtyCaptureStream {
   }
 }
 
-export const queryExtensions = await inspectDataQueryExtensions();
-export const duckdbReady = queryExtensions.available;
-export const excelReady = queryExtensions.available && queryExtensions.excel?.loadable === true;
-export const sqliteReady = queryExtensions.available && queryExtensions.sqlite?.loadable === true;
-
 export {
   describe,
   expect,
@@ -48,7 +39,6 @@ export {
   actionDataQuery,
   getDisplayWidth,
   createDuckDbConnection,
-  inspectDataQueryExtensions,
   listDataQuerySources,
   createActionTestRuntime,
   expectCliError,

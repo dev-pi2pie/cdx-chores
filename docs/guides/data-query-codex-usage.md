@@ -1,7 +1,7 @@
 ---
 title: "Data Query Codex Usage"
 created-date: 2026-03-10
-modified-date: 2026-08-22
+modified-date: 2026-09-05
 status: completed
 agent: codex
 ---
@@ -67,6 +67,27 @@ cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source
 cdx-chores data query codex ./examples/playground/data-query/multi.xlsx --source Summary --range A1:B3 --intent "show ids and names"
 cdx-chores data query codex ./examples/playground/data-extract/stacked-merged-band.xlsx --source Sheet1 --range B7:BR20 --body-start-row 10 --header-row 7 --intent "show id, question, status, and notes ordered by id"
 ```
+
+### Codex execution selection
+
+The `codex` child accepts these command-local options:
+
+| Option                              | Behavior when omitted                               |
+| ----------------------------------- | --------------------------------------------------- |
+| `--codex-model <model>`             | Inherit model selection from Codex configuration    |
+| `--codex-provider <provider-id>`    | Inherit provider selection from Codex configuration |
+| `--codex-reasoning-effort <effort>` | Request `low`                                       |
+
+For example, request a different effort for SQL drafting:
+
+```bash
+cdx-chores data query codex ./input.csv --intent "summarize revenue by month" \
+  --codex-reasoning-effort medium
+```
+
+These options belong to `data query codex`, not the parent `data query` command.
+See [Codex Execution Configuration](codex-execution-configuration.md) for
+accepted efforts, provider/model inheritance, and compatibility failures.
 
 ### Request timeout
 

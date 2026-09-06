@@ -30,6 +30,7 @@ interface RenameCleanupCollectOptions {
 }
 
 interface RenameCleanupSuggestOptions {
+  codexExecution?: unknown;
   timeoutMs?: unknown;
   evidence?: {
     targetKind?: unknown;
@@ -79,15 +80,26 @@ function createDefaultRenameCleanupEvidence(inputPath: string): RenameCleanupEvi
 }
 
 export function createRenameActionMocks(context: HarnessRunnerContext) {
+  function captureOptions(options: Record<string, unknown>) {
+    return Object.fromEntries(
+      Object.entries(options).filter(([key]) => {
+        if (key === "codexTimeoutMs")
+          return (
+            context.scenario.codexTimeoutMs !== undefined ||
+            context.scenario.captureCodexTimeouts === true
+          );
+        if (key === "codexExecution")
+          return (
+            context.scenario.codexExecution !== undefined ||
+            context.scenario.captureCodexExecution === true
+          );
+        return true;
+      }),
+    );
+  }
   return {
     actionRenameBatch: async (_runtime: unknown, options: Record<string, unknown>) => {
-      context.recordAction(
-        "rename:batch",
-        context.scenario.codexTimeoutMs === undefined &&
-          context.scenario.captureCodexTimeouts !== true
-          ? Object.fromEntries(Object.entries(options).filter(([key]) => key !== "codexTimeoutMs"))
-          : options,
-      );
+      context.recordAction("rename:batch", captureOptions(options));
       return {
         changedCount: 0,
         totalCount: 0,
@@ -95,13 +107,7 @@ export function createRenameActionMocks(context: HarnessRunnerContext) {
       };
     },
     actionRenameFile: async (_runtime: unknown, options: Record<string, unknown>) => {
-      context.recordAction(
-        "rename:file",
-        context.scenario.codexTimeoutMs === undefined &&
-          context.scenario.captureCodexTimeouts !== true
-          ? Object.fromEntries(Object.entries(options).filter(([key]) => key !== "codexTimeoutMs"))
-          : options,
-      );
+      context.recordAction("rename:file", captureOptions(options));
       return {
         changed: false,
         filePath: context.resolveHarnessPath(options.path),
@@ -190,6 +196,10 @@ export function createRenameActionMocks(context: HarnessRunnerContext) {
                 examples: group.examples,
               }))
             : [],
+          ...(context.scenario.codexExecution !== undefined ||
+          context.scenario.captureCodexExecution === true
+            ? { codexExecution: options.codexExecution }
+            : {}),
           ...(context.scenario.codexTimeoutMs !== undefined ||
           context.scenario.captureCodexTimeouts === true
             ? { timeoutMs: options.timeoutMs }

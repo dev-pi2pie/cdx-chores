@@ -1,3 +1,7 @@
+import {
+  resolveCodexExecution,
+  type CodexExecutionOptions,
+} from "../../../../utils/codex-execution";
 import { actionDataExtract } from "../../../actions";
 import { maybeRenderDuckDbExtensionRemediationCommand } from "../../../data-workflows/duckdb-remediation";
 import { createDuckDbConnection, listDataQuerySources } from "../../../duckdb/query";
@@ -16,7 +20,9 @@ export async function runInteractiveDataExtract(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   codexTimeoutMs: number,
+  codexExecution?: CodexExecutionOptions,
 ): Promise<void> {
+  const execution = resolveCodexExecution(codexExecution);
   writeInteractiveFlowTip(runtime, "data-extract");
   const input = await promptRequiredPathWithConfig("Input data file", {
     kind: "file",
@@ -37,6 +43,7 @@ export async function runInteractiveDataExtract(
         inputPath,
         runtime,
         sources,
+        codexExecution: execution,
         timeoutMs: codexTimeoutMs,
       });
       const checkpointOutcome = await runInteractiveExtractCheckpointFlow(

@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Template Helper"
 created-date: 2026-06-25
-modified-date: 2026-08-22
+modified-date: 2026-09-05
 status: completed
 agent: codex
 ---
@@ -37,6 +37,15 @@ Common options:
 - `--overwrite`: allow selected generated artifacts to be replaced.
 - `--codex-timeout <duration>`: command-local deadline for each Codex template
   request attempt.
+- `--codex-model <model>`: override the inherited Codex model.
+- `--codex-provider <provider-id>`: override the inherited Codex provider.
+- `--codex-reasoning-effort <effort>`: requested effort; defaults to `low`.
+
+The initial request and any application-repair request use the same execution
+selection. Settings are not saved in generated artifacts and do not enable an
+additional Codex path. See
+[Codex Execution Configuration](codex-execution-configuration.md) for accepted
+efforts, inheritance, and failure behavior.
 
 Example:
 

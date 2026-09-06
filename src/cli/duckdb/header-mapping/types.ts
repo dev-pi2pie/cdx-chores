@@ -1,3 +1,4 @@
+import type { ResolvedCodexExecution } from "../../../utils/codex-execution";
 import type {
   DataQueryInputFormat,
   DataQuerySourceIntrospection,
@@ -41,6 +42,7 @@ export interface DataHeaderSuggestionResult {
 
 export type DataHeaderSuggestionRunner = (options: {
   prompt: string;
+  codexExecution: ResolvedCodexExecution;
   timeoutMs?: number;
   workingDirectory: string;
 }) => Promise<string>;

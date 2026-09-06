@@ -1,3 +1,4 @@
+import { resolveCodexExecution, type CodexExecutionOptions } from "../../utils/codex-execution";
 import { formatCodexTimeoutFailure } from "../../utils/codex-request-failure";
 import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../utils/codex-timeout";
 import {
@@ -23,6 +24,7 @@ import { assertNonEmpty, ensureFileExists, printLine } from "./shared";
 const DATA_QUERY_CODEX_SAMPLE_ROWS = 5;
 
 export interface DataQueryCodexOptions {
+  codexExecution?: CodexExecutionOptions;
   bodyStartRow?: number;
   headerRow?: number;
   input: string;
@@ -93,6 +95,7 @@ export async function actionDataQueryCodex(
   runtime: CliRuntime,
   options: DataQueryCodexOptions,
 ): Promise<void> {
+  const codexExecution = resolveCodexExecution(options.codexExecution);
   validateDataQueryCodexOptions(options);
   const input = assertNonEmpty(options.input, "Input path");
   const inputPath = resolveFromCwd(runtime, input);
@@ -143,6 +146,7 @@ export async function actionDataQueryCodex(
           );
     status.wait("Drafting SQL with Codex");
     const draftResult = await draftDataQueryWithCodex({
+      codexExecution,
       format,
       intent,
       introspection,

@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Project Helper"
 created-date: 2026-07-05
-modified-date: 2026-08-22
+modified-date: 2026-09-05
 status: completed
 agent: codex
 ---
@@ -40,6 +40,15 @@ Common options:
   safe.
 - `--codex-timeout <duration>`: command-local deadline for each Codex project
   request attempt.
+- `--codex-model <model>`: override the inherited Codex model.
+- `--codex-provider <provider-id>`: override the inherited Codex provider.
+- `--codex-reasoning-effort <effort>`: requested effort; defaults to `low`.
+
+One execution selection applies to the Profile, Template, and application-repair
+requests. Settings are not saved in the project bundle and do not enable an
+additional Codex path. See
+[Codex Execution Configuration](codex-execution-configuration.md) for accepted
+efforts, inheritance, and failure behavior.
 
 Example:
 

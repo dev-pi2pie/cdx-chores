@@ -1,4 +1,9 @@
 import {
+  resolveCodexExecution,
+  type CodexExecutionOptions,
+  type ResolvedCodexExecution,
+} from "../../../../utils/codex-execution";
+import {
   suggestDocumentRenameTitlesWithCodex,
   type CodexDocumentRenameResult,
 } from "../../../../adapters/codex/document-rename-titles";
@@ -18,6 +23,7 @@ import { startAnalyzerProgress } from "./progress";
 export type CodexImageRenameTitleSuggester = (options: {
   imagePaths: string[];
   workingDirectory: string;
+  codexExecution?: ResolvedCodexExecution;
   timeoutMs?: number;
   retries?: number;
   batchSize?: number;
@@ -26,6 +32,7 @@ export type CodexImageRenameTitleSuggester = (options: {
 export type CodexDocumentRenameTitleSuggester = (options: {
   documentPaths: string[];
   workingDirectory: string;
+  codexExecution?: ResolvedCodexExecution;
   timeoutMs?: number;
   retries?: number;
   batchSize?: number;
@@ -33,6 +40,7 @@ export type CodexDocumentRenameTitleSuggester = (options: {
 
 export interface RenameCodexCliOptions {
   codex?: boolean;
+  codexExecution?: CodexExecutionOptions;
   codexTimeoutMs?: number;
   codexImages?: boolean;
   codexImagesTimeoutMs?: number;
@@ -78,6 +86,7 @@ interface RenameTitleAnalyzer {
   suggestTitles: (options: {
     paths: string[];
     workingDirectory: string;
+    codexExecution: ResolvedCodexExecution;
     timeoutMs?: number;
     retries?: number;
     batchSize?: number;
@@ -116,10 +125,18 @@ function createCodexStaticImageTitleAnalyzer(options: {
     summaryLabel: "Codex image titles",
     progressLabelForCount: (eligibleCount) => `Codex: analyzing ${eligibleCount} image file(s)`,
     selectCandidates: selectCodexStaticImageCandidates,
-    suggestTitles: async ({ paths, workingDirectory, timeoutMs, retries, batchSize }) => {
+    suggestTitles: async ({
+      paths,
+      workingDirectory,
+      codexExecution,
+      timeoutMs,
+      retries,
+      batchSize,
+    }) => {
       const result = await titleSuggester({
         imagePaths: paths,
         workingDirectory,
+        codexExecution,
         timeoutMs,
         retries,
         batchSize,
@@ -137,10 +154,18 @@ function createCodexDocumentTextTitleAnalyzer(options: {
     summaryLabel: "Codex doc titles",
     progressLabelForCount: (eligibleCount) => `Codex: analyzing ${eligibleCount} document file(s)`,
     selectCandidates: selectCodexDocumentTextCandidates,
-    suggestTitles: async ({ paths, workingDirectory, timeoutMs, retries, batchSize }) => {
+    suggestTitles: async ({
+      paths,
+      workingDirectory,
+      codexExecution,
+      timeoutMs,
+      retries,
+      batchSize,
+    }) => {
       const result = await titleSuggester({
         documentPaths: paths,
         workingDirectory,
+        codexExecution,
         timeoutMs,
         retries,
         batchSize,
@@ -161,6 +186,7 @@ async function runRenameTitleAnalyzer(
   plans: PlannedRename[],
   analyzer: RenameTitleAnalyzer,
   options: {
+    codexExecution: ResolvedCodexExecution;
     timeoutMs?: number;
     retries?: number;
     batchSize?: number;
@@ -180,6 +206,7 @@ async function runRenameTitleAnalyzer(
     const result = await analyzer.suggestTitles({
       paths: selection.eligiblePaths,
       workingDirectory: runtime.cwd,
+      codexExecution: options.codexExecution,
       timeoutMs: options.timeoutMs,
       retries: options.retries,
       batchSize: options.batchSize,
@@ -230,6 +257,7 @@ export async function runRenameCodexAnalysis(
     cli: RenameCodexCliOptions;
   },
 ): Promise<RenameCodexAnalysisResult> {
+  const codexExecution = resolveCodexExecution(options.cli.codexExecution);
   let image: RenameCodexChannelResult | undefined;
   let doc: RenameCodexChannelResult | undefined;
   const reasonBySourcePath = new Map<string, string>();
@@ -239,6 +267,7 @@ export async function runRenameCodexAnalysis(
       titleSuggester: options.cli.codexImagesTitleSuggester,
     });
     const run = await runRenameTitleAnalyzer(runtime, plans, analyzer, {
+      codexExecution,
       timeoutMs: resolveRenameAnalyzerTimeoutMs(
         options.cli.codexImagesTimeoutMs,
         options.cli.codexTimeoutMs,
@@ -264,6 +293,7 @@ export async function runRenameCodexAnalysis(
       titleSuggester: options.cli.codexDocsTitleSuggester,
     });
     const run = await runRenameTitleAnalyzer(runtime, plans, analyzer, {
+      codexExecution,
       timeoutMs: resolveRenameAnalyzerTimeoutMs(
         options.cli.codexDocsTimeoutMs,
         options.cli.codexTimeoutMs,

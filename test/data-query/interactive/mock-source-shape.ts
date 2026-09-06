@@ -43,6 +43,9 @@ export function installDataQuerySourceShapeMocks(context: HarnessRunnerContext):
   mock.module(sourceShapeModuleUrl, () => ({
     suggestDataSourceShapeWithCodex: async (options: SourceShapeSuggestionOptions) => {
       context.recordAction("data:source-shape-suggest", {
+        ...(context.scenario.codexExecution !== undefined || context.scenario.captureCodexExecution
+          ? { codexExecution: options.codexExecution }
+          : {}),
         ...(context.scenario.codexTimeoutMs !== undefined ||
         context.scenario.captureCodexTimeouts === true
           ? { timeoutMs: options.timeoutMs }

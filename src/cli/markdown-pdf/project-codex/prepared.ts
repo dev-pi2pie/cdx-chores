@@ -1,3 +1,4 @@
+import { resolveCodexExecution } from "../../../utils/codex-execution";
 import { extname, join } from "node:path";
 
 import { assertNonEmpty } from "../../actions/shared";
@@ -293,6 +294,8 @@ export async function prepareMdPdfProjectCodex(
   runtime: CliRuntime,
   options: MdPdfProjectCodexOptions,
 ): Promise<MarkdownPdfProjectCodexPreparedArtifact> {
+  const codexExecution = resolveCodexExecution(options.codexExecution);
+  options = { ...options, codexExecution };
   const state = await normalizeMdPdfProjectCodexCommandState(runtime, options);
   const signals = await collectMdPdfProjectCodexSignals(runtime, state);
   const outputPlan = await planMdPdfProjectCodexOutput({
@@ -315,6 +318,7 @@ export async function prepareMdPdfProjectCodex(
       signals,
       state,
       timeoutMs: options.timeoutMs,
+      codexExecution: options.codexExecution,
     });
     const completeTemplatePhase = await runMdPdfProjectCodexTemplatePhase({
       outputPlan,
@@ -325,6 +329,7 @@ export async function prepareMdPdfProjectCodex(
       state,
       templateCodexRunner: options.templateCodexRunner,
       timeoutMs: options.timeoutMs,
+      codexExecution: options.codexExecution,
     });
     const completedPhaseProgressStatus = projectProgressStatus({
       profilePhase,

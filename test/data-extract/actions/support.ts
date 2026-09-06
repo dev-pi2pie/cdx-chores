@@ -3,7 +3,6 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionDataExtract } from "../../../src/cli/actions";
-import { inspectDataQueryExtensions } from "../../../src/cli/duckdb/query";
 import { createActionTestRuntime, expectCliError } from "../../helpers/cli-action-test-utils";
 import {
   seedDuckDbWorkspaceFixture,
@@ -27,10 +26,6 @@ export class TtyCaptureStream {
   }
 }
 
-export const queryExtensions = await inspectDataQueryExtensions();
-export const duckdbReady = queryExtensions.available;
-export const excelReady = queryExtensions.available && queryExtensions.excel?.loadable === true;
-
 export {
   describe,
   expect,
@@ -39,7 +34,6 @@ export {
   writeFile,
   join,
   actionDataExtract,
-  inspectDataQueryExtensions,
   createActionTestRuntime,
   expectCliError,
   seedDataExtractFixtures,

@@ -1,7 +1,7 @@
 ---
 title: "CLI Action Tool Integration Guide"
 created-date: 2026-02-25
-modified-date: 2026-09-04
+modified-date: 2026-09-05
 status: completed
 agent: codex
 ---
@@ -14,8 +14,8 @@ Provide a practical guide for adding or extending chores commands in `cdx-chores
 
 Use this flow for new features:
 
-1. CLI command parsing in `src/command.ts`
-2. User input collection in `src/cli/interactive.ts` (if interactive path is supported)
+1. CLI entry in `src/command.ts`, with command registration in `src/cli/commands/**`
+2. User input collection in `src/cli/interactive/**` (if interactive path is supported)
 3. Shared action orchestration in `src/cli/actions/*.ts` or `src/cli/actions/<feature>/**`
 4. Tool/system execution via existing helpers/adapters (for example `src/cli/deps.ts`, `src/cli/process.ts`, `src/cli/fs-utils.ts`)
 5. Reusable pure helpers in `src/utils/**` only when they are truly generic
@@ -24,7 +24,7 @@ Use this flow for new features:
 
 ### Command wiring
 
-- Use `src/command.ts` for:
+- Use `src/cli/commands/**`, wired through `src/command.ts`, for:
   - command tree definitions
   - flag parsing
   - aliases
@@ -32,7 +32,7 @@ Use this flow for new features:
 
 ### Interactive prompts
 
-- Use `src/cli/interactive.ts` for:
+- Use `src/cli/interactive/**` for:
   - prompt UX only
   - collecting inputs and confirming options
   - dispatching to the same action functions used by CLI flag mode
@@ -62,8 +62,8 @@ Avoid direct SDK/tool-client complexity inside action modules when an adapter bo
 
 ## Codex SDK Integration
 
-Codex-assisted workflows in `v0.1.8-canary.3` are validated with
-`@openai/codex-sdk` `0.153.3`.
+Codex-assisted workflows in `v0.1.8-canary.4` are validated with
+`@openai/codex-sdk` `0.153.4`.
 
 `src/adapters/codex/shared.ts` loads the Codex SDK on demand. Feature-specific
 adapters provide Codex assistance for rename, Markdown PDF, and data workflows.
@@ -84,6 +84,35 @@ Recommended shape for rename semantic assistance:
 - rename Codex modules (`src/cli/actions/rename/codex/**`) coordinate semantic title suggestions through Codex adapters
 - Codex adapter returns normalized structured suggestions (not raw SDK responses)
 - action applies deterministic slug/length/collision handling before file operations
+
+### Execution settings and discovery
+
+Use `src/cli/options/codex-execution-option.ts` to register the three execution
+options on an adopted command node. The shared resolver in
+`src/utils/codex-execution.ts` validates action and adapter inputs and supplies
+the default effort `low`; omitted model/provider stay absent. Forward the
+resolved `codexExecution` object through every request, batch, retry, repair,
+and regeneration seam to `startCodexReadOnlyThread()`. Keep timeout resolution
+separate and retain lazy SDK loading for Node ESM/CJS compatibility.
+
+Interactive mode owns one selection in `src/cli/interactive/session.ts`.
+Do not put execution settings into prompts, saved PDF profiles, data plans,
+advisory reports, or recovery artifacts. Existing helpers keep their own
+enablement and consent boundaries. Do not change selection to recover from
+an incompatible model/provider/effort response.
+
+`codex-info` uses the separate read-only discovery adapter at
+`src/adapters/codex/discovery/` to ask the Codex app-server for configuration and
+catalog metadata. `src/cli/codex-info/` projects only curated fields and renders
+human or JSON output; raw configuration must not be printed. Discovery reports
+are for inspection and are not passed back into execution as configuration
+snapshots. Preserve inherited process environment, including dynamic
+`CODEX_HOME`, without mutating it.
+
+For current command scope and configuration semantics, see
+[Codex Execution Configuration](codex-execution-configuration.md). For
+environment ownership and parsing, see
+[Environment Variables](environment-variables.md).
 
 ## Rename-Specific Integration Guidance (Important)
 

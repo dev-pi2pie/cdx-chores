@@ -3,7 +3,6 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import { inspectDataQueryExtensions } from "../../../src/cli/duckdb/query";
 import { seedDuckDbWorkspaceFixture } from "../../data-sources/fixtures/duckdb";
 import { seedStackedMergedBandFixture } from "../../data-sources/fixtures/stacked-merged-band";
 import { seedDataExtractFixtures } from "../../data-sources/fixtures/tabular";
@@ -13,10 +12,6 @@ import {
   toRepoRelativePath,
   withTempFixtureDir,
 } from "../../helpers/cli-test-utils";
-
-export const queryExtensions = await inspectDataQueryExtensions();
-export const duckdbReady = queryExtensions.available;
-export const excelReady = queryExtensions.available && queryExtensions.excel?.loadable === true;
 
 export function fixturePath(name: string): string {
   return join("test", "data-sources", "fixtures", name);
@@ -75,7 +70,6 @@ export {
   describe,
   expect,
   test,
-  inspectDataQueryExtensions,
   seedDataExtractFixtures,
   seedDuckDbWorkspaceFixture,
   seedStackedMergedBandFixture,

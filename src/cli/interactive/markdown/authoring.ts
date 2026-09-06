@@ -1,3 +1,4 @@
+import { resolveCodexExecution, type CodexExecutionOptions } from "../../../utils/codex-execution";
 import { select } from "@inquirer/prompts";
 
 import { printLine } from "../../actions/shared";
@@ -342,12 +343,14 @@ export async function runMarkdownPdfAuthoring(
   pathPromptContext: InteractivePathPromptContext,
   input: {
     codexTimeoutMs: number;
+    codexExecution?: CodexExecutionOptions;
     entry: MarkdownPdfInteractiveEntry;
     fontHintEditor: MarkdownPdfInteractiveFontHintEditorSession;
     markdownInput?: string;
     onGeneratedLifecycle?: MarkdownPdfGeneratedLifecycleHandler;
   },
 ): Promise<MarkdownPdfAuthoringOutcome> {
+  const codexExecution = resolveCodexExecution(input.codexExecution);
   while (true) {
     const artifact = await promptArtifact(input.entry);
     if (artifact === "cancel") {
@@ -365,6 +368,7 @@ export async function runMarkdownPdfAuthoring(
         artifact,
         backToMode: false,
         codexTimeoutMs: input.codexTimeoutMs,
+        codexExecution,
         entry: input.entry,
         fontHintEditor: input.fontHintEditor,
         markdownInput: input.markdownInput,
@@ -390,6 +394,7 @@ export async function runMarkdownPdfAuthoring(
           artifact,
           backToMode: true,
           codexTimeoutMs: input.codexTimeoutMs,
+          codexExecution,
           entry: input.entry,
           fontHintEditor: input.fontHintEditor,
           markdownInput: input.markdownInput,
