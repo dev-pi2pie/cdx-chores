@@ -2,6 +2,7 @@ import type { Command } from "commander";
 
 import { applyRenameCodexOptions, type RenameCodexCommandOptions } from "./rename/codex-options";
 import { prepareRenameCodexTimeouts } from "./rename/codex-timeouts";
+import { resolveCodexExecutionCommandOptions } from "../options/codex-execution-option";
 import {
   actionRenameApply,
   actionRenameBatch,
@@ -128,6 +129,7 @@ async function handleRenameBatchAction(
     skipExt: options.skipExt,
     codex: options.codex,
     codexTimeoutMs: timeouts.codexTimeoutMs,
+    codexExecution: resolveCodexExecutionCommandOptions(options),
     codexImages: options.codexImages,
     codexImagesTimeoutMs: timeouts.codexImagesTimeoutMs,
     codexImagesRetries: options.codexImagesRetries,
@@ -161,6 +163,7 @@ export function registerRenameCommands(
         dryRun: options.dryRun,
         codex: options.codex,
         codexTimeoutMs: timeouts.codexTimeoutMs,
+        codexExecution: resolveCodexExecutionCommandOptions(options),
         codexImages: options.codexImages,
         codexImagesTimeoutMs: timeouts.codexImagesTimeoutMs,
         codexImagesRetries: options.codexImagesRetries,

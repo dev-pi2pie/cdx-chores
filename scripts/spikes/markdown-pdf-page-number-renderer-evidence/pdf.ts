@@ -1,7 +1,5 @@
 import { readFile } from "node:fs/promises";
 
-import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
-
 import type {
   CounterEvidencePattern,
   ExpectedCounterValues,
@@ -32,6 +30,7 @@ function millimetersFromPoints(points: number): number {
 }
 
 export const inspectPdf: PdfInspector = async (pdfPath) => {
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const bytes = await readFile(pdfPath);
   const loadingTask = pdfjs.getDocument({
     data: new Uint8Array(bytes),

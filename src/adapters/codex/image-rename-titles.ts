@@ -1,6 +1,11 @@
 import { basename } from "node:path";
 import type { Thread } from "@openai/codex-sdk";
 
+import {
+  resolveCodexExecution,
+  type CodexExecutionOptions,
+  type ResolvedCodexExecution,
+} from "../../utils/codex-execution";
 import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../utils/codex-timeout";
 import {
   CODEX_FILENAME_TITLE_OUTPUT_SCHEMA,
@@ -27,6 +32,7 @@ interface SuggestImageTitlesOptions {
   timeoutMs?: number;
   retries?: number;
   batchSize?: number;
+  codexExecution?: CodexExecutionOptions;
 }
 
 function buildPrompt(imagePaths: string[]): string {
@@ -48,14 +54,16 @@ function buildPrompt(imagePaths: string[]): string {
 }
 
 async function suggestSingleBatch(
-  options: SuggestImageTitlesOptions,
+  options: ResolvedImageTitlesOptions,
   startThread: StartCodexRenameThread = startCodexReadOnlyThread,
 ): Promise<CodexImageRenameResult> {
   if (options.imagePaths.length === 0) {
     return { suggestions: [] };
   }
 
-  const thread = await startThread(options.workingDirectory);
+  const thread = await startThread(options.workingDirectory, {
+    codexExecution: options.codexExecution,
+  });
 
   const input = [
     { type: "text", text: buildPrompt(options.imagePaths) } as const,
@@ -81,13 +89,21 @@ async function suggestSingleBatch(
   return { suggestions };
 }
 
-type SuggestImageBatch = (options: SuggestImageTitlesOptions) => Promise<CodexImageRenameResult>;
-type StartCodexRenameThread = (workingDirectory: string) => Promise<Pick<Thread, "run">>;
+interface ResolvedImageTitlesOptions extends Omit<SuggestImageTitlesOptions, "codexExecution"> {
+  codexExecution: ResolvedCodexExecution;
+}
+
+type SuggestImageBatch = (options: ResolvedImageTitlesOptions) => Promise<CodexImageRenameResult>;
+type StartCodexRenameThread = (
+  workingDirectory: string,
+  options?: { codexExecution?: CodexExecutionOptions },
+) => Promise<Pick<Thread, "run">>;
 
 async function suggestImageRenameTitles(
   options: SuggestImageTitlesOptions,
   suggestBatch: SuggestImageBatch,
 ): Promise<CodexImageRenameResult> {
+  const codexExecution = resolveCodexExecution(options.codexExecution);
   if (options.imagePaths.length === 0) {
     return { suggestions: [] };
   }
@@ -105,6 +121,7 @@ async function suggestImageRenameTitles(
           imagePaths: batch,
           workingDirectory: options.workingDirectory,
           timeoutMs,
+          codexExecution,
         }),
     });
 

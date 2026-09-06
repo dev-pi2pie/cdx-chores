@@ -1,6 +1,7 @@
 ---
 title: "CLI Output And Color"
 created-date: 2026-08-22
+modified-date: 2026-09-05
 status: completed
 agent: codex
 ---
@@ -85,6 +86,11 @@ NO_COLOR=1 cdx-chores rename batch ./photos --dry-run
 
 The presence of `NO_COLOR` disables color; its value is not interpreted.
 
+An empty `NO_COLOR` value also disables styling. The shared picocolors wrapper
+sets color eligibility explicitly, so `FORCE_COLOR` does not override this
+policy. See [Environment Variables](environment-variables.md) for environment
+controls used elsewhere in the CLI.
+
 These controls remove ANSI styling only. They do not change canonical text,
 stream routing, warning cardinality, help content, exit behavior, or command
 workflow.
@@ -106,6 +112,14 @@ text; it does not enter JSON, saved plans, generated documents, SQL-only
 output, or other artifacts.
 
 ## Domain-Owned Presentation
+
+`codex-info`, `codex-info models`, and `codex-info providers` use the same
+per-stream color eligibility for their human output. Headings, IDs, and literal
+selection markers receive restrained emphasis; external text is escaped before
+styling. Both default and `--details` views remain readable as plain text, and
+`--json` stays unstyled even on a TTY. See
+[Codex Execution Configuration](codex-execution-configuration.md) for the three
+views, configured-provider coverage, and catalog interpretation.
 
 The shared diagnostic roles do not recolor every terminal surface. Version
 branding, transient progress, TUI controls and hints, doctor reports, tables,

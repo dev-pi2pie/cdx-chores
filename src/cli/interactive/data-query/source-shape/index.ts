@@ -1,3 +1,4 @@
+import type { CodexExecutionOptions } from "../../../../utils/codex-execution";
 import type { DuckDBConnection } from "@duckdb/node-api";
 import { select } from "@inquirer/prompts";
 
@@ -30,6 +31,7 @@ export async function collectInteractiveIntrospection(options: {
   labels?: InteractiveContinuationLabels;
   runtime: CliRuntime;
   selectedSource?: string;
+  codexExecution?: CodexExecutionOptions;
   timeoutMs: number;
 }): Promise<{
   introspection: DataQuerySourceIntrospection;
@@ -159,6 +161,7 @@ export async function collectInteractiveIntrospection(options: {
       runtime: options.runtime,
       selectedSource: options.selectedSource,
       sourceShape,
+      codexExecution: options.codexExecution,
       timeoutMs: options.timeoutMs,
     });
     if (suggestionReview.kind === "return-current") {

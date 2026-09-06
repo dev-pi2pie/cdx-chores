@@ -1,3 +1,4 @@
+import { resolveCodexExecution, type CodexExecutionOptions } from "../../../utils/codex-execution";
 import { CliError } from "../../errors";
 import {
   resolveAutoCodexFlagsForPaths,
@@ -45,6 +46,7 @@ export interface RenameBatchOptions {
   ext?: string[];
   skipExt?: string[];
   codex?: boolean;
+  codexExecution?: CodexExecutionOptions;
   codexTimeoutMs?: number;
   codexImages?: boolean;
   codexImagesTimeoutMs?: number;
@@ -82,6 +84,7 @@ export async function actionRenameBatch(
   directoryPath: string;
   planCsvPath?: string;
 }> {
+  const codexExecution = resolveCodexExecution(options.codexExecution);
   const directory = assertNonEmpty(options.directory, "Directory path");
   const previewSkips = normalizeRenamePreviewSkipsMode(options.previewSkips);
   const maxDepth = normalizeRenameBatchMaxDepth(options);
@@ -113,6 +116,7 @@ export async function actionRenameBatch(
     effectiveFlags: effectiveCodexFlags,
     cli: {
       codex: options.codex,
+      codexExecution,
       codexTimeoutMs: options.codexTimeoutMs,
       codexImages: options.codexImages,
       codexImagesTimeoutMs: options.codexImagesTimeoutMs,

@@ -4,6 +4,7 @@ import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { sleep } from "../../utils/sleep";
+import { resolveCodexExecution, type CodexExecutionOptions } from "../../utils/codex-execution";
 import {
   classifyCodexRequestFailure,
   formatCodexTimeoutFailure,
@@ -77,16 +78,21 @@ export const CODEX_FILENAME_TITLE_OUTPUT_SCHEMA = {
 
 export async function startCodexReadOnlyThread(
   workingDirectory: string,
-  options: { codexPathOverride?: string } = {},
+  options: { codexPathOverride?: string; codexExecution?: CodexExecutionOptions } = {},
 ) {
+  const execution = resolveCodexExecution(options.codexExecution);
   const { Codex } = await import("@openai/codex-sdk");
   const codexPathOverride = options.codexPathOverride ?? getCodexPathOverrideFromEnv();
-  const codex = codexPathOverride ? new Codex({ codexPathOverride }) : new Codex();
+  const codex = new Codex({
+    ...(codexPathOverride ? { codexPathOverride } : {}),
+    ...(execution.provider ? { config: { model_provider: execution.provider } } : {}),
+  });
   return codex.startThread({
+    ...(execution.model ? { model: execution.model } : {}),
     workingDirectory,
     sandboxMode: "read-only",
     approvalPolicy: "never",
-    modelReasoningEffort: "low",
+    modelReasoningEffort: execution.reasoningEffort,
     networkAccessEnabled: true,
     webSearchMode: "disabled",
   });

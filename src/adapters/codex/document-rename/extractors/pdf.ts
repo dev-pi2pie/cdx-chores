@@ -2,10 +2,50 @@ import { readFile } from "node:fs/promises";
 import { basename, extname } from "node:path";
 
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
+import type { PDFDocumentLoadingTask, PDFDocumentProxy, PDFPageProxy } from "pdfjs-dist";
 
 import type { DocumentTitleEvidence } from "../types";
 import { MAX_HEADINGS, MAX_LEAD_TEXT_CHARS, MAX_TITLE_CANDIDATES } from "../types";
 import { resolvePdfStandardFontDataUrl, toSingleLine } from "./shared";
+
+type PdfPageResource = {
+  cleanup: PDFPageProxy["cleanup"];
+  getTextContent: () => Promise<{ items?: unknown[] }>;
+};
+
+type PdfDocumentResource = {
+  getMetadata: () => Promise<{ info?: unknown }>;
+  getOutline: () => Promise<Array<{ title?: string }> | null>;
+  getPage: (pageNumber: number) => Promise<PdfPageResource>;
+  numPages: PDFDocumentProxy["numPages"];
+};
+
+type PdfDocumentLoadingTaskResource = {
+  destroy: PDFDocumentLoadingTask["destroy"];
+  promise: Promise<PdfDocumentResource>;
+};
+
+type PdfDocumentLoader = (
+  source: Parameters<typeof pdfjs.getDocument>[0],
+) => PdfDocumentLoadingTaskResource;
+
+function cleanupPdfPage(page: PdfPageResource | undefined): void {
+  try {
+    page?.cleanup();
+  } catch {
+    // Cleanup must not replace extracted evidence or a fail-closed reason.
+  }
+}
+
+async function destroyPdfLoadingTask(
+  loadingTask: PdfDocumentLoadingTaskResource | undefined,
+): Promise<void> {
+  try {
+    await loadingTask?.destroy();
+  } catch {
+    // Cleanup must not replace extracted evidence or a fail-closed reason.
+  }
+}
 
 function extractPdfTitleAndSignals(options: {
   path: string;
@@ -60,24 +100,24 @@ function extractPdfTitleAndSignals(options: {
   };
 }
 
-export async function extractPdfEvidence(
+async function extractPdfEvidenceWithLoader(
   path: string,
+  getDocument: PdfDocumentLoader,
 ): Promise<DocumentTitleEvidence | { reason: string }> {
-  let pdfDocument: any;
+  let loadingTask: PdfDocumentLoadingTaskResource | undefined;
   try {
     const fileBytes = await readFile(path);
     const standardFontDataUrl = await resolvePdfStandardFontDataUrl();
-    const loadingTask = (pdfjs as any).getDocument({
+    loadingTask = getDocument({
       data: new Uint8Array(fileBytes),
-      worker: null,
       useWorkerFetch: false,
       standardFontDataUrl,
       isOffscreenCanvasSupported: false,
       isImageDecoderSupported: false,
-      verbosity: (pdfjs as any).VerbosityLevel?.ERRORS ?? 0,
+      verbosity: pdfjs.VerbosityLevel.ERRORS,
     });
-    pdfDocument = await loadingTask.promise;
-    const pageCount = Number(pdfDocument?.numPages ?? 0);
+    const pdfDocument = await loadingTask.promise;
+    const pageCount = Number(pdfDocument.numPages ?? 0);
     const warnings: string[] = [];
 
     let metadataInfo: Record<string, unknown> | undefined;
@@ -104,10 +144,11 @@ export async function extractPdfEvidence(
     }
 
     let firstPageText = "";
+    let firstPage: PdfPageResource | undefined;
     try {
       if (pageCount >= 1) {
-        const page = await pdfDocument.getPage(1);
-        const textContent = await page.getTextContent();
+        firstPage = await pdfDocument.getPage(1);
+        const textContent = await firstPage.getTextContent();
         const textItems = (textContent.items ?? []) as Array<{ str?: string }>;
         firstPageText = toSingleLine(
           textItems
@@ -121,6 +162,8 @@ export async function extractPdfEvidence(
       }
     } catch {
       warnings.push("pdf_no_page1_text");
+    } finally {
+      cleanupPdfPage(firstPage);
     }
 
     return extractPdfTitleAndSignals({
@@ -134,10 +177,19 @@ export async function extractPdfEvidence(
   } catch {
     return { reason: "pdf_extract_error" };
   } finally {
-    try {
-      await pdfDocument?.destroy?.();
-    } catch {
-      // ignore cleanup issues
-    }
+    await destroyPdfLoadingTask(loadingTask);
   }
+}
+
+export async function extractPdfEvidence(
+  path: string,
+): Promise<DocumentTitleEvidence | { reason: string }> {
+  return extractPdfEvidenceWithLoader(path, pdfjs.getDocument);
+}
+
+export async function __testOnlyExtractPdfEvidenceWithLoader(
+  path: string,
+  getDocument: PdfDocumentLoader,
+): Promise<DocumentTitleEvidence | { reason: string }> {
+  return extractPdfEvidenceWithLoader(path, getDocument);
 }

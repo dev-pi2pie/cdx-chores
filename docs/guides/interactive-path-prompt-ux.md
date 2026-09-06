@@ -81,6 +81,9 @@ Verified manually:
 
 Path prompt behavior can be tuned with environment variables:
 
+See [Environment Variables](environment-variables.md) for the central inventory,
+defaults, and parsing rules for these controls.
+
 - `CDX_CHORES_PATH_PROMPT_MODE=simple`
   - Force simple prompt mode (no inline ghost-hint prompt)
 - `CDX_CHORES_DISABLE_PATH_AUTOCOMPLETE=1`

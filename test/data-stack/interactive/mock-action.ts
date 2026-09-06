@@ -273,13 +273,24 @@ export function createStackActionMocks(context: HarnessRunnerContext) {
         report: options.report as never,
       });
     },
-    suggestDataStackWithCodex: async (options: { timeoutMs?: unknown }) => {
+    suggestDataStackWithCodex: async (options: {
+      codexExecution?: unknown;
+      timeoutMs?: unknown;
+    }) => {
       if (
         context.scenario.codexTimeoutMs !== undefined ||
-        context.scenario.captureCodexTimeouts === true
+        context.scenario.captureCodexTimeouts === true ||
+        context.scenario.codexExecution !== undefined ||
+        context.scenario.captureCodexExecution
       ) {
         context.recordAction("data:stack:codex-suggest", {
-          timeoutMs: options.timeoutMs,
+          ...(context.scenario.codexTimeoutMs !== undefined || context.scenario.captureCodexTimeouts
+            ? { timeoutMs: options.timeoutMs }
+            : {}),
+          ...(context.scenario.codexExecution !== undefined ||
+          context.scenario.captureCodexExecution
+            ? { codexExecution: options.codexExecution }
+            : {}),
         });
       }
       if (context.scenario.dataStackCodexErrorMessage) {

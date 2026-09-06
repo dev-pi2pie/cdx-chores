@@ -1,4 +1,5 @@
 import { confirm, select } from "@inquirer/prompts";
+import { resolveCodexExecution, type CodexExecutionOptions } from "../../../utils/codex-execution";
 
 import { actionRenameApply, actionRenameCleanup, resolveRenameCleanupTarget } from "../../actions";
 import { promptRequiredPathWithConfig } from "../../prompts/path";
@@ -18,7 +19,9 @@ export async function runInteractiveRenameCleanup(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   codexTimeoutMs: number,
+  codexExecution?: CodexExecutionOptions,
 ): Promise<void> {
+  const execution = resolveCodexExecution(codexExecution);
   const path = await promptRequiredPathWithConfig("Target path", {
     kind: "path",
     ...pathPromptContext,
@@ -37,6 +40,7 @@ export async function runInteractiveRenameCleanup(
         analyzerFamilies: analyzerFamilies ?? ANALYZER_FAMILY_VALUES,
         scope,
         timeoutMs: codexTimeoutMs,
+        codexExecution: execution,
       })
     : undefined;
   const cleanupSettings = suggestionResult?.settings ?? (await promptManualCleanupSettings());

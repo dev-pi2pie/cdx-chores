@@ -1,4 +1,9 @@
 import { startCodexReadOnlyThread } from "../../../adapters/codex/shared";
+import {
+  resolveCodexExecution,
+  type CodexExecutionOptions,
+  type ResolvedCodexExecution,
+} from "../../../utils/codex-execution";
 import { formatCodexRequestFailure } from "../../../utils/codex-request-failure";
 import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../../utils/codex-timeout";
 import type {
@@ -81,12 +86,14 @@ export interface RenameCleanupCodexSuggestionResult {
 }
 
 export type RenameCleanupCodexRunner = (options: {
+  codexExecution: ResolvedCodexExecution;
   prompt: string;
   workingDirectory: string;
   timeoutMs?: number;
 }) => Promise<string>;
 
 export interface SuggestRenameCleanupWithCodexOptions {
+  codexExecution?: CodexExecutionOptions;
   evidence: RenameCleanupAnalyzerEvidence;
   workingDirectory: string;
   timeoutMs?: number;
@@ -268,11 +275,14 @@ function buildCleanupAnalyzerPrompt(evidence: RenameCleanupAnalyzerEvidence): st
 }
 
 async function runRenameCleanupCodexPrompt(options: {
+  codexExecution: ResolvedCodexExecution;
   prompt: string;
   workingDirectory: string;
   timeoutMs?: number;
 }): Promise<string> {
-  const thread = await startCodexReadOnlyThread(options.workingDirectory);
+  const thread = await startCodexReadOnlyThread(options.workingDirectory, {
+    codexExecution: options.codexExecution,
+  });
   const turn = await thread.run([{ type: "text", text: options.prompt }], {
     outputSchema: CLEANUP_SUGGESTION_OUTPUT_SCHEMA,
     signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
@@ -283,9 +293,11 @@ async function runRenameCleanupCodexPrompt(options: {
 export async function suggestRenameCleanupWithCodex(
   options: SuggestRenameCleanupWithCodexOptions,
 ): Promise<RenameCleanupCodexSuggestionResult> {
+  const codexExecution = resolveCodexExecution(options.codexExecution);
   try {
     const runner = options.runner ?? runRenameCleanupCodexPrompt;
     const finalResponse = await runner({
+      codexExecution,
       prompt: buildCleanupAnalyzerPrompt(options.evidence),
       workingDirectory: options.workingDirectory,
       timeoutMs: options.timeoutMs,

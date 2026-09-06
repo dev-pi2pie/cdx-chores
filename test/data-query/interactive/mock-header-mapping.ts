@@ -30,6 +30,9 @@ export function installDataQueryHeaderMappingMock(context: HarnessRunnerContext)
     suggestDataHeaderMappingsWithCodex: async (options: HeaderSuggestionOptions) => {
       context.recordAction("data:query:header-suggest", {
         format: options.format,
+        ...(context.scenario.codexExecution !== undefined || context.scenario.captureCodexExecution
+          ? { codexExecution: options.codexExecution }
+          : {}),
         ...(context.scenario.codexTimeoutMs !== undefined ||
         context.scenario.captureCodexTimeouts === true
           ? { timeoutMs: options.timeoutMs }

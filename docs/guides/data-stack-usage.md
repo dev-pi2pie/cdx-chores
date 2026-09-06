@@ -1,7 +1,7 @@
 ---
 title: "Data Stack Usage"
 created-date: 2026-04-24
-modified-date: 2026-08-22
+modified-date: 2026-09-05
 status: completed
 agent: codex
 ---
@@ -144,6 +144,12 @@ Duplicate and unique-key behavior:
 Codex assist behavior:
 
 - direct `--codex-assist` is valid only with `--dry-run`
+- `--codex-model <model>` and `--codex-provider <provider-id>` override the
+  corresponding inherited Codex selections for this invocation
+- `--codex-reasoning-effort <effort>` selects the requested effort; omission
+  requests `low`
+- execution options do not enable assist or remove its dry-run requirement;
+  settings are not saved in the stack plan or advisory report
 - `--codex-timeout <duration>` changes the per-attempt limit for the direct
   Codex assist request
 - `--codex-timeout` alone does not enable `--codex-assist`; without assist, the
@@ -156,6 +162,10 @@ Codex assist behavior:
 - accepted or edited recommendations become deterministic stack-plan fields with a new `payloadId`
 - stack replay executes only stack-plan artifacts, not Codex report artifacts
 - supported recommendation areas are headerless column names, union exclusions, unique-key selection, duplicate policy selection, and schema-drift explanation
+
+See [Codex Execution Configuration](codex-execution-configuration.md) for the
+shared selection and failure contract. Interactive stack review receives the
+execution settings supplied when starting the `interactive` session.
 
 ### Examples
 

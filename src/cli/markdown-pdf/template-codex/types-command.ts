@@ -1,3 +1,5 @@
+import type { CodexExecutionOptions, ResolvedCodexExecution } from "../../../utils/codex-execution";
+import type { CodexExecutionCommandOptions } from "../../options/codex-execution-option";
 import type { NormalizedMarkdownPdfOptions, NormalizeMarkdownPdfOptionsInput } from "../validation";
 import type { CodexProgressPresenter } from "../../actions/codex-progress";
 
@@ -5,6 +7,7 @@ export type MarkdownPdfTemplateCodexBundleIdFactory = (now: Date, attempt: numbe
 
 export type MarkdownPdfTemplateCodexRunner = (options: {
   prompt: string;
+  codexExecution: ResolvedCodexExecution;
   timeoutMs?: number;
   workingDirectory: string;
 }) => Promise<string>;
@@ -53,6 +56,7 @@ export interface MdPdfTemplateCodexOptions {
   codexRunner?: MarkdownPdfTemplateCodexRunner;
   codexProgressPresenter?: CodexProgressPresenter;
   timeoutMs?: number;
+  codexExecution?: CodexExecutionOptions;
 }
 
 type MdPdfTemplateCodexNonCliOption =
@@ -70,6 +74,7 @@ type MdPdfTemplateCodexNonCliOption =
   | "positionalInput"
   | "preset"
   | "templateBundleIdFactory"
+  | "codexExecution"
   | "timeoutMs"
   | "toc"
   | "tocDepth"
@@ -78,9 +83,10 @@ type MdPdfTemplateCodexNonCliOption =
 export type MdPdfTemplateCodexCliOptions = Omit<
   MdPdfTemplateCodexOptions,
   MdPdfTemplateCodexNonCliOption
-> & {
-  codexTimeout?: number;
-};
+> &
+  CodexExecutionCommandOptions & {
+    codexTimeout?: number;
+  };
 
 export interface NormalizedMdPdfTemplateCodexCommandState {
   inputPath?: string;

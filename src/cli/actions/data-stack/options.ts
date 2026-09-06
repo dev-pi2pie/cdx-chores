@@ -1,3 +1,4 @@
+import type { CodexExecutionOptions } from "../../../utils/codex-execution";
 import type { DataStackCodexRunner } from "../../data-stack/codex-assist";
 import {
   DATA_STACK_DUPLICATE_POLICY_VALUES,
@@ -7,6 +8,7 @@ import type { DataStackInputFormat, DataStackSchemaModeOption } from "../../data
 import { CliError } from "../../errors";
 
 export interface DataStackOptions {
+  codexExecution?: CodexExecutionOptions;
   codexAssist?: boolean;
   codexReportOutput?: string;
   codexRunner?: DataStackCodexRunner;

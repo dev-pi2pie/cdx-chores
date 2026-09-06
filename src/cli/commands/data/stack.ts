@@ -1,3 +1,8 @@
+import {
+  applyCodexExecutionOptions,
+  resolveCodexExecutionCommandOptions,
+  type CodexExecutionCommandOptions,
+} from "../../options/codex-execution-option";
 import type { Command } from "commander";
 import { InvalidArgumentError } from "commander";
 
@@ -61,8 +66,7 @@ export function registerDataStackCommand(
   runtime: CliRuntime,
   actions: DataStackCommandActions = defaultDataStackCommandActions,
 ): void {
-  const stackCommand = dataCommand
-    .command("stack")
+  const stackCommand = applyCodexExecutionOptions(dataCommand.command("stack"))
     .description("Assemble one logical table from multiple input files and directories")
     .argument("<source...>", "Input source file or directory")
     .option(
@@ -146,9 +150,10 @@ export function registerDataStackCommand(
           schemaMode?: DataStackSchemaModeOption;
           unionByName?: boolean;
           uniqueBy?: string[];
-        },
+        } & CodexExecutionCommandOptions,
       ) => {
         await actions.actionDataStack(runtime, {
+          codexExecution: resolveCodexExecutionCommandOptions(options),
           codexAssist: options.codexAssist,
           codexReportOutput: options.codexReportOutput,
           codexTimeoutMs: options.codexTimeout,

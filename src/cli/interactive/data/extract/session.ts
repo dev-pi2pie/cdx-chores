@@ -1,3 +1,4 @@
+import type { CodexExecutionOptions } from "../../../../utils/codex-execution";
 import {
   collectInteractiveIntrospection,
   promptDelimitedHeaderMode,
@@ -23,6 +24,7 @@ export async function collectInteractiveExtractSessionState(options: {
   inputPath: string;
   runtime: CliRuntime;
   sources: Awaited<ReturnType<typeof listDataQuerySources>>;
+  codexExecution?: CodexExecutionOptions;
   timeoutMs: number;
 }): Promise<InteractiveExtractSessionState> {
   const noHeader = await promptDelimitedHeaderMode(options.format);
@@ -35,6 +37,7 @@ export async function collectInteractiveExtractSessionState(options: {
     labels: EXTRACT_CONTINUATION_LABELS,
     runtime: options.runtime,
     selectedSource,
+    codexExecution: options.codexExecution,
     timeoutMs: options.timeoutMs,
   });
   const reviewedHeaders = await reviewInteractiveHeaderMappings({
@@ -49,6 +52,7 @@ export async function collectInteractiveExtractSessionState(options: {
     selectedNoHeader: sourceShape.selectedNoHeader,
     selectedRange: sourceShape.selectedRange,
     selectedSource,
+    codexExecution: options.codexExecution,
     timeoutMs: options.timeoutMs,
   });
 

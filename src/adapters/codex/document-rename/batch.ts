@@ -2,6 +2,11 @@ import { extname } from "node:path";
 import { readFile } from "node:fs/promises";
 import type { Thread } from "@openai/codex-sdk";
 
+import {
+  resolveCodexExecution,
+  type CodexExecutionOptions,
+  type ResolvedCodexExecution,
+} from "../../../utils/codex-execution";
 import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../../utils/codex-timeout";
 import {
   CODEX_FILENAME_TITLE_OUTPUT_SCHEMA,
@@ -103,6 +108,7 @@ async function suggestSingleBatch(
     evidences: Array<{ path: string; promptFilename: string; evidence: DocumentTitleEvidence }>;
     workingDirectory: string;
     timeoutMs?: number;
+    codexExecution: ResolvedCodexExecution;
   },
   startThread: StartCodexRenameThread = startCodexReadOnlyThread,
 ): Promise<CodexDocumentRenameResult> {
@@ -110,7 +116,9 @@ async function suggestSingleBatch(
     return { suggestions: [] };
   }
 
-  const thread = await startThread(options.workingDirectory);
+  const thread = await startThread(options.workingDirectory, {
+    codexExecution: options.codexExecution,
+  });
   const turn = await thread.run(
     [
       {
@@ -148,13 +156,18 @@ type SuggestDocumentBatch = (options: {
   evidences: Array<{ path: string; promptFilename: string; evidence: DocumentTitleEvidence }>;
   workingDirectory: string;
   timeoutMs?: number;
+  codexExecution: ResolvedCodexExecution;
 }) => Promise<CodexDocumentRenameResult>;
-type StartCodexRenameThread = (workingDirectory: string) => Promise<Pick<Thread, "run">>;
+type StartCodexRenameThread = (
+  workingDirectory: string,
+  options?: { codexExecution?: CodexExecutionOptions },
+) => Promise<Pick<Thread, "run">>;
 
 async function suggestDocumentRenameTitles(
   options: SuggestDocumentTitlesOptions,
   suggestBatch: SuggestDocumentBatch,
 ): Promise<CodexDocumentRenameResult> {
+  const codexExecution = resolveCodexExecution(options.codexExecution);
   if (options.documentPaths.length === 0) {
     return { suggestions: [] };
   }
@@ -194,6 +207,7 @@ async function suggestDocumentRenameTitles(
           evidences: batch,
           workingDirectory: options.workingDirectory,
           timeoutMs,
+          codexExecution,
         }),
     });
 

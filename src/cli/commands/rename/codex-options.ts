@@ -1,8 +1,12 @@
 import type { Command } from "commander";
+import {
+  applyCodexExecutionOptions,
+  type CodexExecutionCommandOptions,
+} from "../../options/codex-execution-option";
 
 import { createCodexTimeoutDurationOption } from "../../options/codex-timeout-option";
 
-export interface RenameCodexCommandOptions {
+export interface RenameCodexCommandOptions extends CodexExecutionCommandOptions {
   codex?: boolean;
   codexTimeout?: number;
   codexImages?: boolean;
@@ -18,8 +22,9 @@ export interface RenameCodexCommandOptions {
 }
 
 export function applyRenameCodexOptions(command: Command): Command {
-  return command
-    .option("--codex", "Auto-route eligible files to Codex analyzers by file type", false)
+  return applyCodexExecutionOptions(
+    command.option("--codex", "Auto-route eligible files to Codex analyzers by file type", false),
+  )
     .addOption(
       createCodexTimeoutDurationOption(
         "--codex-timeout",

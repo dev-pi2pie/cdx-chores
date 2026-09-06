@@ -1,7 +1,7 @@
 ---
 title: "Interactive Markdown PDF Usage"
 created-date: 2026-07-22
-modified-date: 2026-08-23
+modified-date: 2026-09-05
 status: completed
 agent: codex
 ---
@@ -28,6 +28,20 @@ Start the guided CLI with:
 ```bash
 cdx-chores interactive
 ```
+
+To select execution settings for Codex-backed preparation in the session:
+
+```bash
+cdx-chores interactive --codex-reasoning-effort medium
+```
+
+The explicit `interactive` command also accepts `--codex-model <model>` and
+`--codex-provider <provider-id>`. Omitted model/provider inherit Codex
+configuration; omitted effort requests `low`. One session selection applies to
+Profile, Template, Project, repair, and regeneration requests. Existing consent
+still controls whether Codex runs. Execution settings are not stored in recipes
+or recovery artifacts; rendering or saving prepared outputs needs no new Codex
+request. See [Codex Execution Configuration](codex-execution-configuration.md).
 
 To use a longer per-attempt deadline for Codex-backed work throughout this
 Interactive session, pass the option to the `interactive` command.

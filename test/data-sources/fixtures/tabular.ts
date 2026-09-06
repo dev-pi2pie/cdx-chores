@@ -4,7 +4,7 @@ import { REPO_ROOT } from "../../helpers/cli-test-utils";
 
 export function seedDataExtractFixtures(outputDir: string): void {
   const proc = Bun.spawnSync({
-    cmd: ["node", "scripts/generate-data-extract-fixtures.mjs", "reset", "--output-dir", outputDir],
+    cmd: ["node", "scripts/generate-data-extract-fixtures.mjs", "seed", "--output-dir", outputDir],
     cwd: REPO_ROOT,
     stdout: "pipe",
     stderr: "pipe",

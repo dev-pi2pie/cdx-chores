@@ -166,7 +166,7 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
     prepareMarkdownPdfCodexCandidate: async (
       _runtime: unknown,
       setup: Record<string, unknown>,
-      options: { timeoutMs?: number } = {},
+      options: { timeoutMs?: number; codexExecution?: unknown } = {},
     ) => {
       const artifact = setup.artifact as CodexArtifact;
       codexPreparedCounts[artifact] += 1;
@@ -182,6 +182,9 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
         candidateId,
         suggestedOutput,
         timeoutMs: options.timeoutMs,
+        ...(context.scenario.codexExecution || context.scenario.captureCodexExecution
+          ? { codexExecution: options.codexExecution }
+          : {}),
         unusable,
       });
       const prepared =

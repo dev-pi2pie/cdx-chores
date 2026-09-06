@@ -1,3 +1,8 @@
+import {
+  resolveCodexExecution,
+  type CodexExecutionOptions,
+  type ResolvedCodexExecution,
+} from "../../../utils/codex-execution";
 import { startCodexReadOnlyThread } from "../../../adapters/codex/shared";
 import { formatCodexRequestFailure } from "../../../utils/codex-request-failure";
 import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../../utils/codex-timeout";
@@ -176,11 +181,14 @@ function parseSourceShapeSuggestionResponse(finalResponse: string): {
 }
 
 async function runSourceShapePrompt(options: {
+  codexExecution: ResolvedCodexExecution;
   prompt: string;
   timeoutMs?: number;
   workingDirectory: string;
 }): Promise<string> {
-  const thread = await startCodexReadOnlyThread(options.workingDirectory);
+  const thread = await startCodexReadOnlyThread(options.workingDirectory, {
+    codexExecution: options.codexExecution,
+  });
   const turn = await thread.run([{ type: "text", text: options.prompt }], {
     outputSchema: DATA_SOURCE_SHAPE_OUTPUT_SCHEMA,
     signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
@@ -189,6 +197,7 @@ async function runSourceShapePrompt(options: {
 }
 
 export async function suggestDataSourceShapeWithCodex(options: {
+  codexExecution?: CodexExecutionOptions;
   context: DataSourceShapeSuggestionContext;
   currentBodyStartRow?: number;
   currentHeaderRow?: number;
@@ -197,9 +206,11 @@ export async function suggestDataSourceShapeWithCodex(options: {
   timeoutMs?: number;
   workingDirectory: string;
 }): Promise<DataSourceShapeSuggestionResult> {
+  const codexExecution = resolveCodexExecution(options.codexExecution);
   try {
     const runner = options.runner ?? runSourceShapePrompt;
     const finalResponse = await runner({
+      codexExecution,
       prompt: buildSourceShapeSuggestionPrompt({
         context: options.context,
         currentBodyStartRow: options.currentBodyStartRow,

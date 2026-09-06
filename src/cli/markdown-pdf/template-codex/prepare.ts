@@ -1,3 +1,4 @@
+import { resolveCodexExecution } from "../../../utils/codex-execution";
 import type { MarkdownPdfTemplateCodexResult } from "../../../adapters/codex/markdown-pdf-template/types";
 import {
   createCodexProgressSession,
@@ -48,6 +49,7 @@ async function suggestMdPdfTemplateWithCodexProgress(input: {
       runner: input.options.codexRunner,
       signals: input.signals,
       timeoutMs: input.options.timeoutMs,
+      codexExecution: input.options.codexExecution,
       workingDirectory: input.runtime.cwd,
     });
     codexProgressStatus =
@@ -66,6 +68,8 @@ export async function prepareMdPdfTemplateCodex(
   runtime: CliRuntime,
   options: MdPdfTemplateCodexOptions,
 ): Promise<PreparedMdPdfTemplateCodexArtifact> {
+  const codexExecution = resolveCodexExecution(options.codexExecution);
+  options = { ...options, codexExecution };
   const state = await normalizeMdPdfTemplateCodexCommandState(runtime, options);
   const { compatibilityProfile, fontOwnership, signals } =
     await collectMdPdfTemplateCodexSignalContext(runtime, state);

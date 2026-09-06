@@ -14,17 +14,32 @@ export async function handleRenameInteractiveAction(
   session: InteractiveSession = createInteractiveSession(),
 ): Promise<void> {
   if (action === "rename:batch") {
-    await handleRenameBatchInteractiveAction(runtime, pathPromptContext, session.codexTimeoutMs);
+    await handleRenameBatchInteractiveAction(
+      runtime,
+      pathPromptContext,
+      session.codexTimeoutMs,
+      session.codexExecution,
+    );
     return;
   }
 
   if (action === "rename:cleanup") {
-    await handleRenameCleanupInteractiveAction(runtime, pathPromptContext, session.codexTimeoutMs);
+    await handleRenameCleanupInteractiveAction(
+      runtime,
+      pathPromptContext,
+      session.codexTimeoutMs,
+      session.codexExecution,
+    );
     return;
   }
 
   if (action === "rename:file") {
-    await handleRenameFileInteractiveAction(runtime, pathPromptContext, session.codexTimeoutMs);
+    await handleRenameFileInteractiveAction(
+      runtime,
+      pathPromptContext,
+      session.codexTimeoutMs,
+      session.codexExecution,
+    );
     return;
   }
 

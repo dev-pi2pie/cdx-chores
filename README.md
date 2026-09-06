@@ -82,7 +82,24 @@ Use `cdx-chores doctor` before relying on a command in a script, a CI job, or a 
 | `data extract` reviewed suggestions, `data query codex`                 | Codex-assisted source shaping, semantic header review, and natural-language SQL drafting | Codex support must be configured and an auth/session signal must be available                                                 | Run `cdx-chores doctor`                                                                                            |
 | `md pdf-profile codex`, `md pdf-template codex`, `md pdf-project codex` | Codex-assisted Markdown PDF profile, template, and coordinated project drafting          | Codex support must be configured for Codex-assisted decisions; deterministic fallback paths remain available where documented | Run `cdx-chores doctor`                                                                                            |
 
-Codex SDK baseline for `v0.1.7`: `0.149.1`
+The Codex SDK baseline for `v0.1.8` is `@openai/codex-sdk` `0.153.4`.
+
+Adopted helper commands and explicit `interactive` sessions accept
+`--codex-model`, `--codex-provider`, and `--codex-reasoning-effort`. Model and
+provider inherit Codex configuration when omitted; helper reasoning defaults
+to `low`. See [Codex execution configuration](docs/guides/codex-execution-configuration.md)
+for command scope and failure behavior.
+
+Inspect the configuration and reported catalog without drafting a helper result:
+
+```bash
+cdx-chores codex-info
+cdx-chores codex-info models --details
+cdx-chores codex-info providers --json
+```
+
+Provider discovery lists configured definitions only; built-ins are not
+enumerated. Model metadata does not verify support through the selected provider.
 
 Markdown PDF profile, template, and Codex-assisted profile/template/project
 helpers remain available as direct CLI flows. Interactive mode also provides
@@ -414,6 +431,8 @@ cdx-chores video resize -i ./clip.mp4 -o ./clip-720p.mp4 --width 1280 --height 7
 
 Cross-feature:
 
+- [Codex execution configuration and discovery](docs/guides/codex-execution-configuration.md)
+- [Environment variables](docs/guides/environment-variables.md)
 - `docs/guides/cli-output-and-color.md`
 - `docs/guides/codex-timeouts-retries-and-recovery.md`
 - `docs/guides/patterns-placeholders-and-templates.md`
@@ -457,6 +476,16 @@ Install dependencies:
 ```bash
 bun install
 ```
+
+Run unit tests, or all suites when their prerequisites are available:
+
+```bash
+bun run test:unit
+bun run test:all
+```
+
+See the [Contributor Testing Guide](docs/guides/testing.md) for suite selection,
+platform requirements, prerequisites, focused testing, and retained results.
 
 Build the package:
 

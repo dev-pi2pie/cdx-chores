@@ -1,4 +1,5 @@
 import type { DataExtractInteractiveHarnessScenario } from "../../data-extract/interactive/harness-contract";
+import type { CodexExecutionOptions } from "../../../src/utils/codex-execution";
 import type { DataQueryInteractiveHarnessScenario } from "../../data-query/interactive/harness-contract";
 import type { DataSourcesInteractiveHarnessScenario } from "../../data-sources/interactive/harness-contract";
 import type {
@@ -21,6 +22,8 @@ export interface InteractiveHarnessScenario
     RenameInteractiveHarnessScenario {
   mode: "run";
   codexTimeoutMs?: number;
+  codexExecution?: CodexExecutionOptions;
+  captureCodexExecution?: boolean;
   captureCodexTimeouts?: boolean;
   selectQueue?: unknown[];
   nowIsoString?: string;

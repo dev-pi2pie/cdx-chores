@@ -1,3 +1,8 @@
+import {
+  applyCodexExecutionOptions,
+  resolveCodexExecutionCommandOptions,
+  type CodexExecutionCommandOptions,
+} from "../../options/codex-execution-option";
 import { Command } from "commander";
 
 import { actionDataQuery, actionDataQueryCodex } from "../../actions";
@@ -139,8 +144,7 @@ export function registerDataQueryCommands(
       },
     );
 
-  queryCommand
-    .command("codex")
+  applyCodexExecutionOptions(queryCommand.command("codex"))
     .description("Draft SQL from natural-language intent using bounded introspection")
     .argument("<input>", "Input data file")
     .requiredOption("--intent <text>", "Natural-language query intent for Codex drafting")
@@ -190,7 +194,7 @@ export function registerDataQueryCommands(
           range?: string;
           relation?: Array<{ alias: string; source: string }>;
           source?: string;
-        },
+        } & CodexExecutionCommandOptions,
         command: Command,
       ) => {
         const parentOptions = command.parent?.opts<{
@@ -203,6 +207,7 @@ export function registerDataQueryCommands(
         }>();
         const relations = resolveCommandRelationBindings(options.relation, parentOptions?.relation);
         await actions.actionDataQueryCodex(runtime, {
+          codexExecution: resolveCodexExecutionCommandOptions(options),
           bodyStartRow: options.bodyStartRow ?? parentOptions?.bodyStartRow,
           headerRow: options.headerRow ?? parentOptions?.headerRow,
           input,

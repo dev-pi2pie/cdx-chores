@@ -1,4 +1,5 @@
 import { confirm } from "@inquirer/prompts";
+import { resolveCodexExecution, type CodexExecutionOptions } from "../../../utils/codex-execution";
 
 import {
   collectRenameCleanupAnalyzerEvidence,
@@ -55,11 +56,13 @@ export async function promptCleanupSettingsFromSuggestion(
     analyzerFamilies: RenameCleanupHint[];
     scope: RenameCleanupScopeOptions;
     timeoutMs: number;
+    codexExecution?: CodexExecutionOptions;
   },
 ): Promise<{
   settings?: InteractiveCleanupSettings;
   analysisReportPath?: string;
 }> {
+  const codexExecution = resolveCodexExecution(options.codexExecution);
   const status = createInteractiveAnalyzerStatus(runtime.stdout, runtime.colorEnabled);
 
   try {
@@ -103,6 +106,7 @@ export async function promptCleanupSettingsFromSuggestion(
     const result = await suggestRenameCleanupWithCodex({
       evidence,
       timeoutMs: options.timeoutMs,
+      codexExecution,
       workingDirectory: runtime.cwd,
     });
     status.stop();

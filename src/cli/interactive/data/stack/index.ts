@@ -1,3 +1,7 @@
+import {
+  resolveCodexExecution,
+  type CodexExecutionOptions,
+} from "../../../../utils/codex-execution";
 import { writePreparedDataStackOutput } from "../../../actions";
 import { displayPath, printLine } from "../../../actions/shared";
 import { enforceDataStackDuplicatePolicy } from "../../../data-stack/diagnostics";
@@ -12,7 +16,9 @@ export async function runInteractiveDataStack(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   codexTimeoutMs: number,
+  codexExecution?: CodexExecutionOptions,
 ): Promise<void> {
+  const execution = resolveCodexExecution(codexExecution);
   writeInteractiveFlowTip(runtime, "data-stack");
 
   while (true) {
@@ -26,6 +32,7 @@ export async function runInteractiveDataStack(
       pathPromptContext,
       setup,
       codexTimeoutMs,
+      execution,
     );
     if (outcome.kind === "cancel") {
       return;

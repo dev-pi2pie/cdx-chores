@@ -1,3 +1,4 @@
+import { resolveCodexExecution, type CodexExecutionOptions } from "../../../utils/codex-execution";
 import { select } from "@inquirer/prompts";
 
 import { maybeRenderDuckDbExtensionRemediationCommand } from "../../data-workflows/duckdb-remediation";
@@ -61,6 +62,7 @@ async function runInteractiveModeLoop(options: {
 }
 
 async function prepareInteractiveQueryScopeContext(options: {
+  codexExecution?: CodexExecutionOptions;
   codexTimeoutMs: number;
   connection: Awaited<ReturnType<typeof createDuckDbConnection>>;
   format: Awaited<ReturnType<typeof promptInteractiveInputFormat>>;
@@ -81,6 +83,7 @@ async function prepareInteractiveQueryScopeContext(options: {
 }
 
 async function prepareWorkspaceQueryScopeContext(options: {
+  codexExecution?: CodexExecutionOptions;
   codexTimeoutMs: number;
   connection: Awaited<ReturnType<typeof createDuckDbConnection>>;
   format: Awaited<ReturnType<typeof promptInteractiveInputFormat>>;
@@ -121,12 +124,14 @@ async function prepareWorkspaceQueryScopeContext(options: {
             introspection: workspaceIntrospection,
             mode: "workspace",
             relations,
+            codexExecution: options.codexExecution,
             timeoutMs: options.codexTimeoutMs,
           }),
   };
 }
 
 async function prepareSingleSourceQueryScopeContext(options: {
+  codexExecution?: CodexExecutionOptions;
   codexTimeoutMs: number;
   connection: Awaited<ReturnType<typeof createDuckDbConnection>>;
   format: Awaited<ReturnType<typeof promptInteractiveInputFormat>>;
@@ -149,6 +154,7 @@ async function prepareSingleSourceQueryScopeContext(options: {
     labels: QUERY_CONTINUATION_LABELS,
     runtime: options.runtime,
     selectedSource,
+    codexExecution: options.codexExecution,
     timeoutMs: options.codexTimeoutMs,
   });
   const reviewedHeaders = await reviewInteractiveHeaderMappings({
@@ -163,6 +169,7 @@ async function prepareSingleSourceQueryScopeContext(options: {
     selectedNoHeader: sourceShape.selectedNoHeader,
     selectedRange: sourceShape.selectedRange,
     selectedSource,
+    codexExecution: options.codexExecution,
     timeoutMs: options.codexTimeoutMs,
   });
 
@@ -203,6 +210,7 @@ async function prepareSingleSourceQueryScopeContext(options: {
               selectedNoHeader: sourceShape.selectedNoHeader,
               selectedRange: sourceShape.selectedRange,
               selectedSource,
+              codexExecution: options.codexExecution,
               timeoutMs: options.codexTimeoutMs,
             }),
   };
@@ -212,7 +220,9 @@ export async function runInteractiveDataQuery(
   runtime: CliRuntime,
   pathPromptContext: InteractivePathPromptContext,
   codexTimeoutMs: number,
+  codexExecution?: CodexExecutionOptions,
 ): Promise<void> {
+  const execution = resolveCodexExecution(codexExecution);
   writeInteractiveFlowTip(runtime, "data-query");
   const input = await promptRequiredPathWithConfig("Input data file", {
     kind: "file",
@@ -228,6 +238,7 @@ export async function runInteractiveDataQuery(
     const sources = await listDataQuerySources(connection, inputPath, format);
     const scope = await promptInteractiveQueryScope(format, sources);
     const scopeContext = await prepareInteractiveQueryScopeContext({
+      codexExecution: execution,
       codexTimeoutMs,
       connection,
       format,
