@@ -1,10 +1,12 @@
+import { requireProcessCapabilities } from "./process-capabilities.ts";
 import { execFile } from "node:child_process";
 import { constants } from "node:fs";
 import { access, lstat, mkdir, open } from "node:fs/promises";
-import { isAbsolute, join } from "node:path";
+import { delimiter, isAbsolute, join } from "node:path";
 import { promisify } from "node:util";
 
 import { SUITES, type Suite } from "../suites/selection.ts";
+import { nativeCacheParts } from "./native-cache.ts";
 
 const execute = promisify(execFile);
 const suite = process.argv[2] as Suite;
@@ -28,7 +30,7 @@ async function command(executable: string, args: string[]): Promise<string> {
 }
 
 async function executableOnPath(name: string): Promise<void> {
-  for (const directory of (process.env.PATH ?? "").split(":")) {
+  for (const directory of (process.env.PATH ?? "").split(delimiter)) {
     if (!isAbsolute(directory)) continue;
     try {
       await access(join(directory, name), constants.X_OK);
@@ -78,9 +80,8 @@ try {
   // process.versions avoids importing Bun types into the Node runtime compiler.
   if (!process.versions.bun) throw new Error("Bun is required.");
   versions.bun = version(process.versions.bun);
-  prerequisite = "macOS process observation (/bin/ps)";
-  if (process.platform !== "darwin") throw new Error("Unsupported platform.");
-  await command("/bin/ps", ["-p", String(process.pid), "-o", "pid="]);
+  prerequisite = "compatible ps observation and POSIX process-group access";
+  requireProcessCapabilities();
 
   if (suite === "app" || suite === "codex") {
     prerequisite = suite === "app" ? "Node.js with node:sqlite" : "Node.js";
@@ -107,7 +108,7 @@ try {
     versions.pandoc = version(await command("pandoc", ["--version"]));
   }
   if (suite === "app") {
-    prerequisite = "bash, git, zip, unzip, jq and macOS shell utilities";
+    prerequisite = "bash, git, zip, unzip, jq and shell utilities";
     for (const [tool, flag] of [
       ["bash", "--version"],
       ["git", "--version"],
@@ -147,21 +148,15 @@ try {
       try {
         const rawVersion = (await connection.runAndReadAll("SELECT version()")).getRows()[0]?.[0];
         const platform = (await connection.runAndReadAll("PRAGMA platform")).getRows()[0]?.[0];
-        if (
-          typeof rawVersion !== "string" ||
-          !/^v\d+\.\d+\.\d+$/.test(rawVersion) ||
-          typeof platform !== "string" ||
-          !/^osx_(arm64|amd64)$/.test(platform)
-        )
-          throw new Error("Unrecognized native cache layout.");
-        versions.duckdb = version(rawVersion);
+        const cacheParts = nativeCacheParts(rawVersion, platform);
+        versions.duckdb = version(cacheParts[2]);
         await command("node", [
           "--input-type=module",
           "--eval",
           'const {DuckDBInstance}=await import("@duckdb/node-api");const db=await DuckDBInstance.create(":memory:",{autoinstall_known_extensions:"false",autoload_known_extensions:"false"});try{const c=await db.connect();try{await c.run("SELECT 1");}finally{c.closeSync();}}finally{db.closeSync();}',
         ]);
         prerequisite = "Current DuckDB excel and sqlite_scanner extension cache";
-        await copyCache(process.argv[3], [".duckdb", "extensions", rawVersion, platform]);
+        await copyCache(process.argv[3], cacheParts);
         await connection.run("LOAD excel");
         await connection.run("LOAD sqlite_scanner");
       } finally {

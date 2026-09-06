@@ -8,7 +8,7 @@ describe("suite prerequisite contract", () => {
   test("unit declares only the runner and process observation", () => {
     expect(SUITE_POLICIES.unit.prerequisites).toEqual([
       "Bun",
-      "macOS process observation (/bin/ps)",
+      "compatible ps observation and POSIX process-group access",
     ]);
     expect(SUITE_POLICIES.unit.versionKeys).toEqual(["bun"]);
   });

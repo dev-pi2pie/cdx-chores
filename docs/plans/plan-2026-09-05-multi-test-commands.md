@@ -93,7 +93,7 @@ Acceptance:
 - [x] Preserve case names/assertions for moves; reconcile mixed-file splits.
       Verify imports, module URL mocks, `import.meta` paths, subprocess working
       directories, fixture resolution, and combined-selection mock/order behavior.
-- [x] Prove prerequisite isolation and explicit missing-tool/platform failures.
+- [x] Prove prerequisite isolation and explicit missing-tool/capability failures.
       Keep live opt-in gates during partial migration; use bounded pilot config
       and explicit opt-in without writing committed fixtures.
 - [x] Review pilot evidence and settle the mapping before extending it. Managed
@@ -137,8 +137,8 @@ Apply the research's JUnit, scheduling, cleanup, and Codex-evidence contracts.
 Acceptance:
 
 - [x] Verify selection and preflight: invalid or empty membership never triggers
-      broad discovery; missing tools, native packages, caches, and unsupported
-      platforms fail before tests launch.
+      broad discovery; missing tools, native packages, caches, and unavailable
+      process capabilities fail before tests launch.
 - [x] Verify bounded probes: hanging preflight and cancellation stop owned work;
       never invent JUnit reports or counts for tests that were not launched.
 - [x] Validate reports: reject malformed, missing, stale, contradictory, empty,
@@ -302,3 +302,11 @@ re-review from the same base. Mark the job complete only after all phases pass.
 
 - [Documentation Policy](../../DOCUMENTATION_POLICY.md)
 - [Test Catalog Path Correspondence](../references/test-catalog-path-correspondence.md)
+
+
+## Capability Follow-up
+
+The original phases remain completed. The subsequent portability refinement is
+tracked in the [unified job follow-up](jobs/2026-09-05-test-suite-refactor.md#follow-up-capability-based-platform-requirements).
+It replaces macOS-name guards with required capability checks while keeping
+other-platform execution explicitly unverified.

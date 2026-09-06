@@ -2,7 +2,7 @@
 title: "Test Suite Refactor Implementation Record"
 created-date: 2026-09-05
 modified-date: 2026-09-06
-status: completed
+status: in-progress
 agent: codex
 ---
 
@@ -1829,3 +1829,63 @@ are complete. The guide documents the verified current workflow, the plan/job
 record completed implementation, and the research conclusions are supported by
 linked evidence. All four documents are completed at their current paths; no
 automatic archival or broader platform/release claim follows from closure.
+
+
+## Follow-up: Capability-based Platform Requirements
+
+Status: in progress. Fixed review base: `a7a18ff07d40597190312ef78227cf3040a7cc1c`.
+Phase 4 remains completed at its recorded checkpoint. This follow-up removes
+OS-name vetoes without claiming verification on additional operating systems.
+
+Scope: check compatible process observation and process-group access before owned
+work launches, preserve bounded shutdown and ownership failure behavior, accept
+safe runtime-native cache identifiers, and update current platform guidance.
+Native Windows or any other environment must supply the required capabilities;
+no alternative process-containment backend is promised by this change.
+
+Acceptance:
+
+- [x] Replace OS-name restrictions with checked process capabilities before managed
+      allocation/launch; preserve verified ownership, shutdown, and cleanup failures.
+- [x] Validate runtime-native cache components without a macOS-only allowlist;
+      retain isolation and prove unsafe identifiers are rejected.
+- [ ] Pass both fixed aggregate cells with reconciled reports and summaries,
+      inspect retained outputs, and remove only verified follow-up-owned roots.
+- [x] Pass focused regressions, lint, formatting, types, and build; distinguish
+      local/controlled evidence from unverified other-platform execution.
+- [ ] Complete fixed-base range and documentation reviews, resolve findings,
+      and record the completed follow-up without changing Phase 4's evidence.
+
+Verification fixed before execution: controlled process capability and native-path
+regressions; focused runner tests; all four suites through `test:all` once in each
+retention mode on the available macOS environment; separate lint, formatting,
+types, and build checks. Inspect retained summaries/reports and clean only the
+follow-up's owned roots. Missing/incompatible capabilities must reject before
+launch. Existing Phase 4 built Node CLI/ESM/CJS evidence remains applicable if no
+production/package code changes. Other-platform execution stays explicitly
+unverified; synthetic compatibility cases do not establish platform support.
+
+
+Implementation removes both `darwin` checks. A bounded process-local capability
+bootstrap reads the same full `ps -e` fields used during execution, checks that
+its own live process is visible with unambiguous identities, and checks access to
+its observed group using signal zero. It runs before managed allocation and before
+the first owned launch in each process; successful capability checks are cached.
+Later observations still require a valid reader-visible snapshot. System `ps` is
+resolved from `/bin/ps`, then `/usr/bin/ps` only if absent; caller `PATH` cannot
+replace the observer. Existing group retirement, continuity, signaling, budgets,
+and verified-cleanup rules remain unchanged.
+
+Native metadata now selects the exact runtime version/platform cache after strict
+single-component validation. Controlled cases cover Linux/musl/Windows-style
+identifiers and reject traversal, separators, malformed versions, and control
+characters. This tests identifier handling only, not those runtimes. Source cache
+symlink/no-follow, size, isolated destination, and no-download behavior are intact.
+
+Focused verification passed: 63 cases/96 assertions across the four changed unit
+areas, then all runner tests at 333 cases/1,417 assertions across 26 files. An initial
+TypeScript check caught incorrect `test.each` tuple wrapping in a new test; it was
+corrected before successful execution. Full lint, formatting (1,140 files), types,
+and build passed; the build's existing nonfatal TypeScript 7 API warning remains.
+Test-quality and security reviews of the follow-up diff found no material issues.
+Both planned aggregate cells remain in progress at this checkpoint.

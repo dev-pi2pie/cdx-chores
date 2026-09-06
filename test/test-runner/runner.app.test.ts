@@ -6,6 +6,25 @@ import { SUITES } from "../../scripts/testing/suites/selection.ts";
 import { completed, reportPath, withRunner, writeReport } from "./runner-support.ts";
 
 describe("managed runner scheduling", () => {
+  test("rejects missing process capabilities before allocation or test launch", async () => {
+    await withRunner(async ({ roots, events, invoke }) => {
+      const result = await invoke(["all"], {
+        dependencies: {
+          capabilities: () => {
+            throw new Error("Required POSIX process-group access is unavailable.");
+          },
+        },
+      });
+      expect(result.exitCode).toBe(1);
+      expect(roots).toHaveLength(0);
+      expect(events).toHaveLength(0);
+      expect(result.summary.errors).toContain(
+        "Required POSIX process-group access is unavailable.",
+      );
+      expect(result.summary.leaves.every((leaf) => leaf.state === "not-run")).toBe(true);
+    });
+  });
+
   test.each(["arguments", "config", "empty"])(
     "rejects invalid %s before allocation or prerequisites",
     async (kind) => {

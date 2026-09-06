@@ -87,6 +87,7 @@ export async function withRunner(
     const events: string[] = [];
     const output: string[] = [];
     const dependencies: Partial<RunnerDependencies> = {
+      capabilities: () => {},
       allocate: async (...args) => {
         const context = await allocateRun(...args);
         roots.push(context);

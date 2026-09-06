@@ -10,7 +10,7 @@ export interface SuitePolicy {
 
 const limits = (timeoutMs: number): Readonly<ProcessLimits> =>
   Object.freeze({ timeoutMs, graceMs: 1000, cleanupMs: 4000 });
-const common = ["Bun", "macOS process observation (/bin/ps)"];
+const common = ["Bun", "compatible ps observation and POSIX process-group access"];
 
 /**
  * Wall-clock limits include native work. App's 240 seconds provides headroom over
@@ -28,7 +28,7 @@ export const SUITE_POLICIES: Readonly<Record<Suite, SuitePolicy>> = Object.freez
     prerequisites: Object.freeze([
       ...common,
       "Node.js with node:sqlite",
-      "bash, git, zip, unzip, jq and macOS shell utilities",
+      "bash, git, zip, unzip, jq and shell utilities",
       "DuckDB under Bun and Node.js",
       "Current DuckDB excel and sqlite_scanner extension cache",
       "PDF.js package",

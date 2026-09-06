@@ -1,6 +1,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 
+import { requireProcessCapabilities } from "./process-capabilities.ts";
 import type { OutputDelivery } from "./output.ts";
 import { isLiveProcess, observeProcessGroup, type ProcessMember } from "./process-table.ts";
 
@@ -84,8 +85,7 @@ export function startOwnedProcess(
   options: OwnedProcessOptions,
   observer: ProcessObserver = { observe: observeProcessGroup },
 ): OwnedProcess {
-  if (process.platform !== "darwin")
-    throw new Error("Process ownership is verified on macOS only.");
+  requireProcessCapabilities();
   for (const value of [options.timeoutMs, options.graceMs, options.cleanupMs]) {
     if (!Number.isSafeInteger(value) || value <= 0) throw new Error("Invalid process deadline.");
   }

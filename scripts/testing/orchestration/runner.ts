@@ -1,3 +1,4 @@
+import { requireProcessCapabilities } from "../execution/process-capabilities.ts";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { TOML } from "bun";
@@ -43,6 +44,7 @@ import { createPresentation } from "../terminal/presentation.ts";
 
 /** Internal bounded-fixture seams. None are accepted as command-line flags. */
 export interface RunnerDependencies {
+  capabilities(): void;
   discover: typeof discoverSuites;
   readConfig(root: string): Promise<unknown>;
   allocate: typeof allocateRun;
@@ -55,6 +57,7 @@ export interface RunnerDependencies {
 }
 
 const defaults: RunnerDependencies = {
+  capabilities: requireProcessCapabilities,
   discover: discoverSuites,
   readConfig: async (root) => TOML.parse(await readFile(join(root, "bunfig.toml"), "utf8")),
   allocate: allocateRun,
@@ -139,6 +142,7 @@ export async function runManagedTests(
     if (signal.aborted) throw new Error("Invocation cancelled before run allocation.");
     presentation.stage(undefined, "Prepare test run");
     if (signal.aborted) throw new Error("Invocation stopped before run allocation.");
+    deps.capabilities();
     context = await deps.allocate(repoRoot, invocation.suites, invocation.keepResults);
     for (const leaf of summary.leaves) {
       if (signal.aborted || !safeToClean) break;

@@ -327,7 +327,7 @@ Continue after ordinary preflight/test/report failures and recovered lifecycle
 failures; stop on cancellation or inability to stop owned work safely.
 
 Preflight checks only the leaf's declared prerequisites. Missing tools, unusable
-native packages/caches, and unsupported platforms fail before launching tests.
+native packages/caches, and unavailable process capabilities fail before launching tests.
 Dependencies may be shared if each affected leaf declares them. Unit selection
 must neither load nor probe integration-only prerequisites.
 
@@ -508,22 +508,21 @@ only with their complete managed contract.
 
 ## Scope, Evidence, and Documentation
 
-Scope is local test tooling on initially verified macOS, using recorded Bun/Node,
-lockfile-installed Codex, and Pandoc versions. Other named-runner platforms fail
-preflight explicitly; product runtime support and dependency installation remain
-unchanged. Direct tests must fail required unsupported/dependency checks instead
-of bypassing assertions.
+Scope is local test tooling with execution verified on macOS, using recorded
+Bun/Node, lockfile-installed Codex, and Pandoc versions. The capability follow-up
+replaces OS-name vetoes with bounded process-observation and group-access checks
+before managed work starts. Full `ps` snapshots must include the reader and provide
+unambiguous numeric identities; group access is checked with signal zero. Runtime
+observation, verified shutdown, and conservative cleanup remain required.
 
-The current platform restriction reflects Phase 1's verification coverage.
-Linux shares the POSIX process-group/session mechanism used by Node's
-[`detached` option](https://nodejs.org/api/child_process.html#optionsdetached), so
-it is a candidate for extending this implementation. Its
-[`ps` observation fields](https://man7.org/linux/man-pages/man1/ps.1.html), command
-availability, and shutdown behavior still require verification. Windows has
-different detached-process semantics and would need a platform-specific ownership
-approach, potentially using [Job Objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects).
-Any future platform extension must establish observation and termination behavior
-and pass the same lifecycle acceptance tests before the guard is widened.
+The implementation still requires compatible POSIX process-group operations and
+system `ps` fields. Passing those prerequisites permits an execution attempt; it
+does not certify that platform. Other-platform execution remains unverified in the
+available development environment. Native cache selection uses the actual DuckDB
+platform identifier with safe path-component validation. Dependency availability
+and suite behavior can still differ by platform. A different process-containment
+backend, including native Windows support, is not implemented by this follow-up.
+Product runtime support and dependency installation remain unchanged.
 
 Preserve Node-compatible production behavior and Node-only compiler ambient types.
 Excluded: CI/release changes, uploads, dependency refresh, committed-fixture
@@ -591,3 +590,11 @@ evidence; final documentation review passed.
 [bun-root]: https://bun.com/docs/test/configuration#root
 [bun-ignore]: https://bun.com/docs/test/configuration#path-ignore-patterns
 [bun-discovery]: https://bun.com/docs/test/discovery
+
+
+## Capability Follow-up
+
+The [unified implementation record](../plans/jobs/2026-09-05-test-suite-refactor.md#follow-up-capability-based-platform-requirements)
+tracks removal of the original macOS guards, local regression evidence, and the
+remaining absence of other-platform verification. The completed Phase 4 evidence
+retains its historical scope.

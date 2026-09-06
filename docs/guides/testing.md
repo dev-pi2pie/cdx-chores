@@ -34,11 +34,22 @@ The invocation succeeds only when every selected suite and finalization succeed.
 
 ## Platform requirements and verification coverage
 
-Managed test execution currently requires macOS: preflight explicitly checks the
-platform and `/bin/ps`, which the process lifecycle uses for observation. Verification
-coverage is currently on macOS; other environments need implementation work and
-verification before they can use this runner. This is a current runner limitation,
+Managed test execution checks required capabilities rather than rejecting operating
+systems by name. Before allocating a run, it checks compatible `ps` output and
+access to the current POSIX process group. Each owned process still requires
+verified shutdown before cleanup. These checks are prerequisites, not proof of
+full platform compatibility.
+
+Verification coverage currently includes macOS only. Other platforms have not
+been verified. Environments without compatible POSIX process-group operations
+cannot use this implementation, even if a `ps` command is installed. This is
 separate from the published package's Node.js runtime requirements.
+
+Process observation uses `ps -e` with PID, parent PID, group ID, state, and accounting
+name fields from `/bin/ps` or `/usr/bin/ps`. It does not use a caller-supplied `ps`
+from `PATH`. Missing tools, incompatible output, or unavailable group access produce
+explicit capability failures. A runtime loss of observation still fails ownership
+verification; an earlier prerequisite check does not override that failure.
 
 All suites require Bun and the process-observation prerequisite. Additional
 requirements are:
@@ -46,7 +57,7 @@ requirements are:
 | Suite | Additional prerequisites |
 | --- | --- |
 | Unit | None |
-| Application | Node.js with `node:sqlite`; bash, git, zip, unzip, jq and macOS shell utilities; DuckDB under Bun and Node.js; the matching existing DuckDB `excel` and `sqlite_scanner` extension cache; PDF.js |
+| Application | Node.js with `node:sqlite`; bash, git, zip, unzip, jq and shell utilities; DuckDB under Bun and Node.js; the matching existing DuckDB `excel` and `sqlite_scanner` extension cache; PDF.js |
 | Codex | Node.js and the repository-installed Codex CLI at `node_modules/.bin/codex` |
 | Pandoc | Pandoc available on `PATH` |
 
@@ -64,7 +75,9 @@ XDG directories, and temporary directories. The runner forwards an explicit
 environment allowlist, not the caller's credentials, personal configuration, or
 loader flags. `PATH` is retained for declared tools. Application preflight copies
 the required existing DuckDB cache into the isolated home after validating it;
-it does not make the caller's home the test home.
+it does not make the caller's home the test home. Cache selection uses the installed
+DuckDB version and its runtime platform identifier, validated as safe path components,
+rather than a macOS-only identifier list.
 
 The live Codex metadata fixtures disable plugins in every synthetic Codex home
 and verify that setting through returned configuration. This keeps unrelated
