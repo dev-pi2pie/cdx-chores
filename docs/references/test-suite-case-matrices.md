@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Contract Ownership Catalog"
 created-date: 2026-08-23
-modified-date: 2026-08-24
+modified-date: 2026-09-06
 status: completed
 agent: codex
 ---
@@ -39,18 +39,23 @@ owns exact validation, removal ledgers, commit ranges, and review decisions.
 | Markdown features | `test/markdown/`, `test/markdown-docx/`, `test/markdown-frontmatter/`, `test/markdown-pdf/` | Markdown platform and feature-specific contracts |
 | Rename | `test/rename/`, `test/document-rename/` | planning, apply lifecycle, adapters, presentation, commands, and Interactive flows |
 | Platform and utilities | `test/codex-adapters/`, `test/fonts/`, `test/release-tooling/`, `test/utils/`, `test/video/` | bounded platform, tooling, utility, and feature contracts |
+| Codex discovery | `test/codex-info/` | protocol parsing, transport, and isolated installed-Codex verification |
+| Test runner | `test/test-runner/` | suite discovery, prerequisites, process/output ownership, reporting, retention, and terminal presentation |
 | Shared fixtures | `test/fixtures/` | checked-in data consumed by more than one accepted owner |
 | Global helpers | `test/helpers/` | independently reused, feature-neutral test infrastructure only |
 
 ### Global Helpers
 
-Only three files retain global helper ownership:
+The shared helper files have the following responsibilities:
 
 | Helper | Retained contract |
 | --- | --- |
 | `test/helpers/ansi.ts` | feature-neutral ANSI stripping used independently by Data Preview and Data Stack |
 | `test/helpers/cli-action-test-utils.ts` | action-test stream capture, CLI error assertions, no-output checks, and scoped cleanup |
-| `test/helpers/cli-test-utils.ts` | built-CLI process launch, repository paths, temporary fixture lifecycle, and captured streams |
+| `test/helpers/cli-test-utils.ts` | Bun source-CLI process launch, repository paths, owned temporary fixture lifecycle, designated exports, and captured streams |
+| `test/helpers/native-prerequisites.ts` | lazy, cached native prerequisites with explicit failure and bounded probe ownership |
+| `test/helpers/native-prerequisite-probe.ts` | child probe for installed DuckDB and existing Excel/SQLite extension caches; no installation |
+| `test/helpers/unit-boundary-preload.ts` | verification instrumentation rejecting process, native, and fetch dependencies, including caught attempts |
 
 The Interactive harness is not a global helper. Its neutral platform lives
 under `test/cli-foundations/interactive-harness/`; feature mocks and scenario
@@ -79,7 +84,7 @@ the dated [catalog admission record](../plans/jobs/2026-08-23-test-suite-contrac
 - Ten whole declarations and three parameter variants were removed only after a stronger retained owner was named.
 - Thirteen removed runtime cases were offset by eleven new or newly parameterized protection cases, producing a net change of two runtime tests.
 - Cases lacking a distinct owner stayed protected under `keep pending evidence`.
-- The final suite contained 355 test files, 2,623 passing tests, and 14,876 expectations.
+- The audit’s final suite contained 355 test files, 2,623 passing tests, and 14,876 expectations.
 
 The exact removed title, retained owner, and implementation range for every
 accepted removal live in the
@@ -89,11 +94,13 @@ accepted removal live in the
 
 | Exception | Current scope | Revisit event |
 | --- | --- | --- |
-| Flat root suites | 31 suites: 26 Markdown PDF and 5 Data Query command suites | the next substantive edit or migration of the owning command or Markdown PDF family |
-| Legacy Markdown PDF Interactive catalog | 12 suites under `test/cli-interactive-markdown-pdf/` | the next bounded Interactive Markdown PDF catalog migration |
 | Source-aligned Markdown PDF and Codex families | existing bounded adapter, action, project, template, and renderer-evidence directories | a change that mixes owners, duplicates support, or requires a broader feature move |
 
-These locations are accepted deferrals or bounded exceptions, not templates for
+The former flat-root and legacy Markdown PDF Interactive deferrals were resolved
+by the feature/suite migration. Their historical paths remain in the correspondence
+reference; new coverage belongs under the current feature owners.
+
+The remaining source-aligned locations are bounded exceptions, not templates for
 new test placement. New coverage should use the feature-first catalog unless it
 satisfies the recorded exception rule.
 
@@ -117,6 +124,10 @@ suite owners now resolve through the
 [Doctor path lookup](test-catalog-path-correspondence.md#doctor).
 
 ## Related Records
+
+- [Testing Guide](../guides/testing.md)
+- [Test Suite Responsibilities and Verification Lifecycle](../researches/research-2026-09-05-multi-test-commands.md)
+- [Test Suite Refactor Implementation Record](../plans/jobs/2026-09-05-test-suite-refactor.md)
 
 - [Test Suite Audit Inventory](test-suite-audit-inventory.md)
 - [Test Catalog Path Correspondence](test-catalog-path-correspondence.md)

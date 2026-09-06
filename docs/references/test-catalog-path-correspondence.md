@@ -1,7 +1,7 @@
 ---
 title: "Test Catalog Path Correspondence"
 created-date: 2026-08-23
-modified-date: 2026-09-05
+modified-date: 2026-09-06
 status: completed
 agent: codex
 ---
@@ -492,9 +492,9 @@ Change set: `cli-foundations`.
 | `test/cli-interactive-analyzer-status.test.ts` | moved | `test/cli-foundations/interactive/analyzer-status.unit.test.ts`<br>`test/cli-foundations/interactive/analyzer-status.app.test.ts` |
 | `test/cli-interactive-contextual-tip.test.ts` | moved | `test/cli-foundations/interactive/contextual-tip.unit.test.ts` |
 | `test/cli-interactive-menu-prompt.test.ts` | split | `test/cli-foundations/interactive/menu-prompt.unit.test.ts`<br>`test/cli-foundations/interactive/menu-prompt.app.test.ts`<br>`test/cli-foundations/interactive/real-select-search-fixture.ts` |
-| Residual in `test/cli-interactive-menu.test.ts` after the Doctor migration | moved | `test/cli-foundations/interactive/menu-wiring.test.ts` |
+| Residual in `test/cli-interactive-menu.test.ts` after the Doctor migration | moved | `test/cli-foundations/interactive/menu-wiring.app.test.ts` |
 | `test/cli-interactive-notice.test.ts` | moved | `test/cli-foundations/interactive/notice.unit.test.ts` |
-| Residual in `test/cli-interactive-routing.test.ts` after the Doctor migration | split | `test/data/interactive/menu-routing.test.ts`<br>`test/markdown/interactive/menu-routing.test.ts`<br>`test/markdown-pdf/interactive/entry-routing.test.ts`<br>`test/markdown-frontmatter/interactive/routing.test.ts`<br>`test/markdown-docx/interactive/routing.test.ts`<br>`test/rename/interactive/routing.test.ts`<br>`test/video/interactive/routing.test.ts`<br>`test/data/interactive/unknown-action.test.ts` |
+| Residual in `test/cli-interactive-routing.test.ts` after the Doctor migration | split | `test/data/interactive/menu-routing.app.test.ts`<br>`test/markdown/interactive/menu-routing.app.test.ts`<br>`test/markdown-pdf/interactive/entry-routing.app.test.ts`<br>`test/markdown-frontmatter/interactive/routing.app.test.ts`<br>`test/markdown-docx/interactive/routing.app.test.ts`<br>`test/rename/interactive/routing.app.test.ts`<br>`test/video/interactive/routing.app.test.ts`<br>`test/data/interactive/unknown-action.app.test.ts` |
 | `test/cli-options-codex-timeout.test.ts` | moved | `test/cli-foundations/options/codex-timeout.unit.test.ts` |
 | `test/cli-path-inline-state.test.ts` | moved | `test/cli-foundations/path-prompts/interaction-state.unit.test.ts` |
 | `test/cli-path-inline.test.ts` | moved | `test/cli-foundations/path-prompts/inline-controller.app.test.ts` |
@@ -508,7 +508,7 @@ Change set: `cli-foundations`.
 | `test/cli-tui-keys.test.ts` | moved | `test/cli-foundations/tui/keys.unit.test.ts`<br>`test/cli-foundations/tui/keys.app.test.ts` |
 | `test/cli-tui-raw-session.test.ts` | moved | `test/cli-foundations/tui/raw-session.unit.test.ts` |
 | `test/cli-tui-screen.test.ts` | moved | `test/cli-foundations/inline-rendering/screen.unit.test.ts` |
-| Residual in `test/cli-ux.test.ts` after the Data Query migration | split | `test/cli-foundations/commands/root-ux.test.ts`<br>`test/data-conversion/commands/output-paths.test.ts`<br>`test/data-preview/commands/preview-ux.test.ts`<br>`test/data-preview/commands/parquet-ux.test.ts`<br>`test/data/commands/help.test.ts`<br>`test/data-conversion/commands/help.test.ts`<br>`test/data-extract/commands/help-and-input-format.test.ts`<br>`test/data-stack/commands/help-and-input-format.test.ts`<br>`test/rename/commands/ux.test.ts`<br>`test/video/commands/ux.test.ts` |
+| Residual in `test/cli-ux.test.ts` after the Data Query migration | split | `test/cli-foundations/commands/root-ux.app.test.ts`<br>`test/data-conversion/commands/output-paths.app.test.ts`<br>`test/data-preview/commands/preview-ux.app.test.ts`<br>`test/data-preview/commands/parquet-ux.app.test.ts`<br>`test/data/commands/help.app.test.ts`<br>`test/data-conversion/commands/help.app.test.ts`<br>`test/data-extract/commands/help-and-input-format.app.test.ts`<br>`test/data-stack/commands/help-and-input-format.app.test.ts`<br>`test/rename/commands/ux.app.test.ts`<br>`test/video/commands/ux.app.test.ts` |
 | `test/helpers/virtual-terminal.ts` | moved | `test/cli-foundations/inline-rendering/virtual-terminal.ts` |
 
 ### Shared Support And Root Cleanup

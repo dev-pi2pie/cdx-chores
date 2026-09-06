@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Refactor Implementation Record"
 created-date: 2026-09-05
-modified-date: 2026-09-05
+modified-date: 2026-09-06
 status: in-progress
 agent: codex
 ---
@@ -13,7 +13,7 @@ against the [research contracts](../../researches/research-2026-09-05-multi-test
 Phase 1 established bounded process ownership. Phase 2 completed suite
 classification, migration, and final discovery. Phase 3 completed the managed
 runner. Phase 3.2 completed live output and terminal presentation with verified
-cleanup and full-range review. The subsequent Phase 4 remains pending.
+cleanup and full-range review. Phase 4 is in progress for final workflow verification and contributor guidance.
 
 ## Phase 1: Process Lifecycle
 
@@ -1591,7 +1591,79 @@ passed security, maintainability, and test-coverage review. Documentation review
 confirmed evidence, currentness, and the unchanged Phase 4 boundary. No material
 findings remain. All eleven Phase 3.2 acceptance items are complete.
 
-## Remaining Phases
+## Phase 4: Final Workflow Verification and Guidance
 
-Phase 3.2 is completed. Phase 4 has not started; its broader repetition matrix,
-built-package checks, and usage documentation remain pending.
+Status: in progress.
+
+Fixed phase review base: `aca5e794314556a41ab660d779676585e72b502d`.
+The starting tracked worktree was clean. This phase retains one checklist and
+one execution record; platform expansion and CI/release changes remain excluded.
+
+### Verification Matrix Fixed Before Execution
+
+Fresh source verification covers each public command in both retention modes.
+The default primary run uses a terminal; the retained primary run redirects
+stdout/stderr separately. Codex repetition expands its primary cells to the
+following fixed protocol, without counting those primary cells twice.
+
+| Selection | Default terminal | Default redirected | Retained terminal | Retained redirected |
+| --- | ---: | ---: | ---: | ---: |
+| Unit | 1 | — | — | 1 |
+| App | 1 | — | — | 1 |
+| Codex | 3 | 3 | 3 | 3 |
+| Pandoc | 1 | — | — | 1 |
+| All | 1 | — | — | 1 |
+
+This is twenty sequential public-command invocations: eight non-Codex commands
+and twelve Codex commands. Every Codex invocation exercises both live test cases.
+Compare semantic request/check coverage across retention modes; timing, process
+identifiers, and temporary paths are not equivalence criteria. Record every
+attempt and any correction. A change invalidating a series requires the affected
+fixed series to be rerun, with the failed series preserved in this record.
+
+Phase 3.2's bounded streaming, color, mixed-redirection, output-failure,
+cancellation, and retention regressions remain applicable because the runner and
+fixture implementation are unchanged at this base. Its eight-run acceptance
+matrix is supporting evidence; it does not replace the fresh command runs above.
+Re-run affected focused regressions if Phase 4 changes their implementation.
+
+Separate checks cover lint, formatting, types, a fresh build, and actual Node CLI,
+ESM, and CJS behavior. Verify guide examples and classify raw Bun/source checks
+separately from the managed commands and built-package checks. Preserve the
+pre-existing run-parent inventory; validate retained reports, manifests, file
+identities, and exact output sets before removing only acceptance-owned runs.
+
+### Progress and Evidence
+
+Inventory reconciliation, contributor guidance, and verification are in progress.
+No Phase 4 acceptance item has been marked complete.
+
+
+The static inventory now contains 441 files: 155 unit, 283 app, one Codex, and
+two Pandoc, with zero excluded test-shaped inputs. Phase 2 closed at 424 files;
+Phase 3 added three unit and seven app files, and Phase 3.2 added seven app files.
+All seventeen additions belong to `test/test-runner/`; no test files were removed
+from `815a72a4..aca5e794`. The earlier case-identity reconciliation remains intact,
+including the activated live Codex case. All 86 former native early-return
+bypasses still use explicit awaited prerequisite checks. Default Bun exclusions
+match unit selection; managed discovery rejects ambiguous/out-of-tree membership.
+
+Current references now include the Codex and runner owners, all six shared helper
+roles, and nineteen corrected terminal-owner suffixes. Historical source cells,
+change-set metadata, and the dated audit inventory remain preserved. The former
+flat-root and legacy PDF-interactive exceptions are recorded as resolved.
+
+The initial Codex pilot was rejected during discovery before allocating a run:
+the ignored manual observer's synthetic-check script used a test-shaped filename
+outside `test/`. Renaming that scratch script to a non-test filename corrected the
+harness without changing product code. The rejected attempt remains recorded
+separately and is not counted as a completed matrix cell. The corrected default
+terminal pilot passed both live cases (58 assertions), captured complete sanitized
+protocol and adapter checks, and left no new run directory. The read-only observer
+inherits the public command's streams and records its actual child exit separately
+from observation errors; it does not modify test execution or retained exports.
+
+A fresh build passed. Separate Node.js checks passed for the built CLI JSON-to-CSV
+operation, ESM and CJS exported CLI behavior, CSV/TSV round trips including quoted
+multiline values, UTC date formatting, and embedded version consistency. Build
+output included the existing nonfatal TypeScript 7 experimental-API warning.

@@ -478,6 +478,16 @@ Install dependencies:
 bun install
 ```
 
+Run unit tests, or all suites when their prerequisites are available:
+
+```bash
+bun run test:unit
+bun run test:all
+```
+
+See the [Contributor Testing Guide](docs/guides/testing.md) for suite selection,
+platform requirements, prerequisites, focused testing, and retained results.
+
 Build the package:
 
 ```bash
