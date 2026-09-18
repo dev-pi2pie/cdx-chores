@@ -52,26 +52,26 @@
     "format:check": "oxfmt --check src test scripts package.json tsconfig.json .oxlintrc.json .oxfmtrc.json"
   },
   "dependencies": {
-    "@duckdb/node-api": "^1.5.5-r.4",
+    "@duckdb/node-api": "^1.5.5-r.5",
     "@inquirer/prompts": "8.7.2",
     "@inquirer/search": "4.3.3",
-    "@openai/codex-sdk": "^0.154.0",
+    "@openai/codex-sdk": "^0.155.0",
     "@shikijs/transformers": "^4.4.3",
     "commander": "^15.0.0",
     "fast-xml-parser": "5.11.1",
-    "mammoth": "^1.12.2",
+    "mammoth": "^1.12.3",
     "papaparse": "^5.7.0",
     "parse5": "^8.0.1",
     "pdfjs-dist": "^6.3.289",
     "shiki": "^4.4.3",
-    "yaml": "^2.9.0",
+    "yaml": "^2.9.1",
     "yauzl": "^3.4.0"
   },
   "devDependencies": {
     "@types/bun": "1.4.2",
-    "@types/node": "26.4.1",
-    "oxfmt": "0.67.0",
-    "oxlint": "1.82.0",
+    "@types/node": "26.6.1",
+    "oxfmt": "0.68.0",
+    "oxlint": "1.83.0",
     "picocolors": "^1.1.1",
     "tsdown": "0.23.0",
     "typescript": "^7.0.2"
