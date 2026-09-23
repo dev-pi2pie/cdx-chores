@@ -2,6 +2,7 @@ import { confirm } from "@inquirer/prompts";
 
 import { displayPath, printLine } from "../../actions/shared";
 import { getCliColors } from "../../colors";
+import { escapeMarkdownPdfPageInformationTerminalText } from "../../markdown-pdf/page-information-terminal";
 import type { CliRuntime } from "../../types";
 import {
   classifyMarkdownPdfProfileCodexSignalMode,
@@ -19,6 +20,13 @@ import type { MdPdfProjectCodexOptions } from "../../markdown-pdf/project-codex"
 import { resolveCodexExecution, type CodexExecutionOptions } from "../../../utils/codex-execution";
 import type { MarkdownPdfCodexSetup, PreparedMarkdownPdfCodexCandidate } from "./codex-types";
 import { prepareMarkdownPdfCodexCandidate } from "./codex-service";
+import {
+  loadMarkdownPdfCodexPageInformationBase,
+  reviseMarkdownPdfCodexPageInformationConflict,
+  type MarkdownPdfCodexLateConflict,
+  type MarkdownPdfCodexPageInformationOutcome,
+  type MarkdownPdfCodexPageInformationPrompts,
+} from "./codex-page-information";
 
 export interface MarkdownPdfPageInformationRequestPlan {
   pageInformation?: MarkdownPdfCodexPageInformationSignal;
@@ -67,13 +75,7 @@ export function planMarkdownPdfPageInformationRequest(
   };
 }
 
-/** Display-only escaping. The saved Profile and structured request keep exact text. */
-export function escapeMarkdownPdfPageInformationTerminalText(value: string): string {
-  return value.replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, (character) => {
-    const hex = character.codePointAt(0)!.toString(16);
-    return hex.length > 4 ? `\\u{${hex}}` : `\\u${hex.padStart(4, "0")}`;
-  });
-}
+export { escapeMarkdownPdfPageInformationTerminalText } from "../../markdown-pdf/page-information-terminal";
 
 export function renderMarkdownPdfPageInformationConsent(
   runtime: CliRuntime,
@@ -179,16 +181,30 @@ export function createMarkdownPdfPageInformationPreparationSession(
   const codexExecution = resolveCodexExecution(options.codexExecution);
   const prepareCandidate = options.prepareCandidate ?? prepareMarkdownPdfCodexCandidate;
   return {
+    async revise(
+      setup: MarkdownPdfCodexSetup,
+      conflict: MarkdownPdfCodexLateConflict,
+      prompts: MarkdownPdfCodexPageInformationPrompts,
+    ): Promise<MarkdownPdfCodexPageInformationOutcome> {
+      if (!setup.pageInformation) {
+        throw new Error("Page-information revision requires explicit answers.");
+      }
+      const base = setup.baseProfile
+        ? await loadMarkdownPdfCodexPageInformationBase(runtime.cwd, setup.baseProfile)
+        : undefined;
+      return await reviseMarkdownPdfCodexPageInformationConflict({
+        base,
+        conflict,
+        current: setup.pageInformation,
+        prompts,
+      });
+    },
     async prepare(setup: MarkdownPdfCodexSetup): Promise<
       | { kind: "declined"; plan: MarkdownPdfPageInformationRequestPlan }
       | {
           kind: "needs-revision";
           plan: MarkdownPdfPageInformationRequestPlan;
-          conflict: {
-            position: MarkdownPdfPageInformationConflictError["position"];
-            text: string;
-            source: MarkdownPdfPageInformationConflictError["source"];
-          };
+          conflict: MarkdownPdfCodexLateConflict;
         }
       | {
           kind: "prepared";

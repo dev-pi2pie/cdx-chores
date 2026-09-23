@@ -116,6 +116,35 @@ describe("Interactive Codex page-information materialization", () => {
     expect((apply("Occupied", "retain").footer as Record<string, string>).center).toBe("Occupied");
   });
 
+  for (const repeatingOn of [false, true]) {
+    test(`retains reviewed text when the candidate slot is empty (repeating ON: ${repeatingOn})`, () => {
+      const candidate = profile();
+      candidate.footer = { center: "" };
+      const final = applyMarkdownPdfCodexPageInformation({
+        profile: candidate,
+        pageInformation: {
+          pageNumbers: numbersOn,
+          ...(repeatingOn
+            ? {
+                repeatingContent: {
+                  enabled: true as const,
+                  selected: ["top-left" as const],
+                  text: { "top-left": "Exact header" },
+                },
+              }
+            : {}),
+        },
+        slotResolution: {
+          position: "bottom-center",
+          choice: "retain",
+          conflictingText: "Reviewed base text",
+        },
+      });
+      expect(final.footer).toMatchObject({ center: "Reviewed base text" });
+      if (repeatingOn) expect(final.header).toMatchObject({ left: "Exact header" });
+    });
+  }
+
   test("does not allow model-selected numbering to hide explicit repeating text", () => {
     const original = profile();
     original.pageNumbers = { ...numbersOn, position: "top-left" };

@@ -314,9 +314,10 @@ the new page-information path.
 - [x] Apply the step to standalone Profile preparation before acceptance or
       write. Apply it inside the Project Profile phase before Template
       preparation, binding, or write. Do not retain an optional Codex diagnostic
-      report from this internal path; Phase 4 owns its safe projection. Normalize and
-      validate the same final Profile used by all those consumers; retain
-      existing patch, capability-advisory, and diagnostic behavior. Authoring
+      report from this internal path; Phase 4 owns its safe projection. Validate
+      the final Profile through normalization while preserving its exact text
+      and unrelated recipe fields for every consumer. Retain existing patch,
+      capability-advisory, and diagnostic behavior. Authoring
       itself does not probe the installed renderer; the phase render check is
       separate QA.
 - [x] Return unresolved normalized slot conflicts to Interactive revision

@@ -39,6 +39,11 @@ export interface MarkdownPdfCodexPageInformationAnswers {
   };
 }
 
+export type MarkdownPdfCodexLateConflict = Pick<
+  MarkdownPdfPageInformationConflictError,
+  "position" | "text" | "source"
+>;
+
 export type MarkdownPdfCodexPageInformationAction =
   | "numbers"
   | "repeating"
@@ -268,7 +273,7 @@ export async function collectMarkdownPdfCodexPageInformation(input: {
 /** Resolve a post-preparation conflict in Interactive, without prompting inside a helper. */
 export async function reviseMarkdownPdfCodexPageInformationConflict(input: {
   base?: Readonly<NormalizedMarkdownPdfProfile>;
-  conflict: Pick<MarkdownPdfPageInformationConflictError, "position" | "text" | "source">;
+  conflict: MarkdownPdfCodexLateConflict;
   current: Readonly<MarkdownPdfCodexPageInformationAnswers>;
   prompts: MarkdownPdfCodexPageInformationPrompts;
 }): Promise<MarkdownPdfCodexPageInformationOutcome> {

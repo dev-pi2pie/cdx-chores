@@ -2,6 +2,7 @@ import { printLine } from "../../actions/shared";
 import type { CliRuntime } from "../../types";
 import { publicPathBasename, publicPathDisplay } from "../codex-path-display";
 import { collectMarkdownPdfProfileAuthoringReview } from "../profile-authoring-review";
+import { escapeMarkdownPdfPageInformationTerminalText } from "../page-information-terminal";
 import type {
   MarkdownPdfProjectCodexOutputPlan,
   NormalizedMdPdfProjectCodexCommandState,
@@ -33,7 +34,7 @@ export function formatMdPdfProjectCodexHandoffReview(input: {
     `Profile identity: ${handoff.profile.id}`,
     `Profile: ${handoff.profile.bundlePath}`,
     `Profile decision mode: ${phases.profile.decisionMode}`,
-    `Effective page numbers: enabled=${pageNumbers.enabled ? "yes" : "no"}, scope=${pageNumbers.scope}, countFrom=${pageNumbers.countFrom}, start=${pageNumbers.start}, increment=${pageNumbers.increment}, position=${pageNumbers.position}, format=${JSON.stringify(sanitizeMdPdfProjectCodexTerminalText(pageNumbers.format))}`,
+    `Effective page numbers: enabled=${pageNumbers.enabled ? "yes" : "no"}, scope=${pageNumbers.scope}, countFrom=${pageNumbers.countFrom}, start=${pageNumbers.start}, increment=${pageNumbers.increment}, position=${pageNumbers.position}, format=${JSON.stringify(escapeMarkdownPdfPageInformationTerminalText(sanitizeMdPdfProjectCodexTerminalText(pageNumbers.format)))}`,
   ];
 
   if (handoff.capabilityRequirements.length === 0) {

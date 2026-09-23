@@ -10,6 +10,7 @@ import {
 } from "../../../src/cli/interactive/markdown/codex-service";
 import { readMarkdownPdfProfileFile } from "../../../src/cli/markdown-pdf/profile";
 import type { MarkdownPdfCodexSetup } from "../../../src/cli/interactive/markdown/codex-types";
+import type { MarkdownPdfCodexPageInformationPrompts } from "../../../src/cli/interactive/markdown/codex-page-information";
 import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../../helpers/cli-test-utils";
 import {
@@ -93,6 +94,63 @@ describe("internal Interactive page-information preparation", () => {
             );
             expect(result.candidate.prepared.profilePhase.finalProfile).toMatchObject(saved);
           }
+        }
+      });
+    },
+  );
+
+  test.each(["profile", "project-bundle"] as const)(
+    "%s preserves reviewed retained text when Codex leaves the candidate slot empty",
+    async (artifact) => {
+      await withTempFixtureDir(`md-pdf-interactive-retained-${artifact}`, async (fixtureDir) => {
+        await writeFile(
+          join(fixtureDir, "base.yml"),
+          `${BASE_PROFILE}footer:\n  center: Occupied\n`,
+          "utf8",
+        );
+        const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+        const session = createMarkdownPdfPageInformationPreparationSession(runtime, {
+          confirmRequest: async () => true,
+          internalProfileCodexRunner: async () =>
+            JSON.stringify({
+              decision_mode: "adapted",
+              selected_candidate_id: artifact === "profile" ? "default" : "base-profile",
+              accepted_patches:
+                artifact === "profile"
+                  ? []
+                  : [{ op: "replace", path: "/footer/center", value: "" }],
+              accepted_font_patches: [],
+              reasoning: "Prepare the selected Profile.",
+              warnings: [],
+              fallback_reason: "",
+              unmatched_directions: [],
+            }),
+        });
+        const result = await session.prepare({
+          artifact,
+          baseProfile: "base.yml",
+          fontHints: [],
+          intent: "Use readable typography",
+          pageInformation: {
+            pageNumbers: pageInformation.pageNumbers,
+            occupiedNumberSlot: {
+              position: "bottom-center",
+              choice: "retain",
+              conflictingText: "Occupied",
+            },
+          },
+        });
+        expect(result.kind).toBe("prepared");
+        if (result.kind === "prepared") {
+          const final =
+            result.candidate.artifact === "profile"
+              ? result.candidate.prepared.kind === "profile"
+                ? result.candidate.prepared.finalProfile
+                : undefined
+              : result.candidate.artifact === "project-bundle"
+                ? result.candidate.prepared.profilePhase.finalProfile
+                : undefined;
+          expect(final?.footer).toMatchObject({ center: "Occupied" });
         }
       });
     },
@@ -185,17 +243,16 @@ describe("internal Interactive page-information preparation", () => {
             conflict: { position: "bottom-center", text: "Occupied", source: "candidate" },
           });
           expect(templateCalls).toBe(0);
-
+          if (conflict.kind !== "needs-revision") throw new Error("Expected revision");
+          const revision = await session.revise(setup, conflict.conflict, {
+            formalGuide: { clearOccupiedPageNumberPosition: async () => false },
+          } as unknown as MarkdownPdfCodexPageInformationPrompts);
+          if (revision.kind !== "answers" || !revision.answers) {
+            throw new Error("Expected revised answers");
+          }
           const revised = await session.prepare({
             ...setup,
-            pageInformation: {
-              ...setup.pageInformation,
-              occupiedNumberSlot: {
-                position: "bottom-center",
-                choice: "retain",
-                conflictingText: "Occupied",
-              },
-            },
+            pageInformation: revision.answers,
           });
           expect(revised.kind).toBe("prepared");
           if (revised.kind === "prepared") {
@@ -209,6 +266,18 @@ describe("internal Interactive page-information preparation", () => {
                   : undefined;
             expect(final?.footer).toMatchObject({ center: "Occupied" });
           }
+          await writeFile(
+            join(fixtureDir, "base.yml"),
+            `${BASE_PROFILE}pageNumbers:\n  enabled: true\n  position: bottom-center\nfooter:\n  center: Changed\n`,
+            "utf8",
+          );
+          expect(
+            await session.prepare({ ...setup, pageInformation: revision.answers }),
+          ).toMatchObject({
+            kind: "needs-revision",
+            conflict: { position: "bottom-center", text: "Changed", source: "candidate" },
+          });
+          expect(templateCalls).toBe(0);
         },
       );
     },
@@ -309,6 +378,44 @@ describe("internal Interactive page-information preparation", () => {
     });
   });
 
+  test("Profile save escapes page text in terminal review while keeping saved text exact", async () => {
+    await withTempFixtureDir("md-pdf-interactive-page-terminal-save", async (fixtureDir) => {
+      const { runtime, stdout } = createActionTestRuntime({ cwd: fixtureDir });
+      const label = "Label\u0085\u202e\u2028 {page}";
+      const header = "Header\u2029 exact";
+      const session = createMarkdownPdfPageInformationPreparationSession(runtime);
+      const result = await session.prepare({
+        artifact: "profile",
+        fontHints: [],
+        pageInformation: {
+          pageNumbers: { ...pageInformation.pageNumbers!, format: label },
+          repeatingContent: {
+            enabled: true,
+            selected: ["top-left"],
+            text: { "top-left": header },
+          },
+        },
+      });
+      if (result.kind !== "prepared") throw new Error("Expected a prepared Profile");
+      const bound = await bindMarkdownPdfCodexCandidate(runtime, result.candidate, {
+        output: "accepted.yml",
+        overwrite: false,
+        report: { kind: "none" },
+      });
+      await writeBoundMarkdownPdfCodexCandidate(runtime, bound);
+      const terminal = stdout.text;
+      expect(terminal).toContain("\\u0085\\u202e\\u2028");
+      expect(terminal).toContain("\\u2029");
+      expect(terminal).not.toContain("\u0085");
+      expect(terminal).not.toContain("\u202e");
+      expect(terminal).not.toContain("\u2028");
+      expect(terminal).not.toContain("\u2029");
+      const saved = await readMarkdownPdfProfileFile(join(fixtureDir, "accepted.yml"));
+      expect(saved.pageNumbers).toMatchObject({ format: label });
+      expect(saved.header).toMatchObject({ left: header });
+    });
+  });
+
   test("mixed Project setup obtains consent before either model phase and reports actual modes", async () => {
     await withTempFixtureDir("md-pdf-interactive-page-project-mixed", async (fixtureDir) => {
       await writeFile(
@@ -358,6 +465,23 @@ describe("internal Interactive page-information preparation", () => {
         expect(result.candidate.prepared.profilePhase.finalProfile.footer).toMatchObject({
           style: { color: "#123456" },
         });
+        const bound = await bindMarkdownPdfCodexCandidate(runtime, result.candidate, {
+          output: "accepted-project",
+          overwrite: false,
+          report: { kind: "none" },
+        });
+        await writeBoundMarkdownPdfCodexCandidate(runtime, bound);
+        const savedPath = join(fixtureDir, "accepted-project", "profile.yml");
+        const saved = await readMarkdownPdfProfileFile(savedPath);
+        expect(saved.pageNumbers).toMatchObject({
+          format: " Exact {page} / {pages} ",
+          position: "bottom-center",
+        });
+        expect(saved.header).toMatchObject({ left: "Exact {title}" });
+        expect(saved.fonts).toMatchObject({ pageChrome: { default: "Example Serif" } });
+        expect(await readFile(savedPath, "utf8")).toBe(
+          result.candidate.prepared.profilePhase.serializedProfile,
+        );
       }
     });
   });

@@ -76,8 +76,21 @@ export function applyMarkdownPdfCodexPageInformation(input: {
       ? repeating.text[reserved]
       : undefined;
   const candidateText = reserved ? slotText(header, footer, reserved) : undefined;
+  const reviewedRetainedText =
+    reserved &&
+    repeating?.enabled !== false &&
+    input.slotResolution?.position === reserved &&
+    input.slotResolution.choice === "retain" &&
+    !candidateText?.trim()
+      ? input.slotResolution.conflictingText
+      : undefined;
   const conflictingText =
-    explicitText ?? (repeating?.enabled === false ? undefined : candidateText);
+    explicitText ??
+    (repeating?.enabled === false
+      ? undefined
+      : candidateText?.trim()
+        ? candidateText
+        : reviewedRetainedText);
   const hasConflict = Boolean(reserved && conflictingText?.trim());
   const resolution = input.slotResolution;
 
@@ -110,18 +123,21 @@ export function applyMarkdownPdfCodexPageInformation(input: {
           : undefined;
       setSlotText(header, footer, position, selectedText ?? retainedText ?? "");
     }
-  } else if (reserved && hasConflict && resolution?.choice === "clear") {
-    setSlotText(header, footer, reserved, "");
+  } else if (reserved && hasConflict && resolution) {
+    setSlotText(
+      header,
+      footer,
+      reserved,
+      resolution.choice === "retain" ? (conflictingText ?? "") : "",
+    );
   }
 
   const finalProfile = {
     ...input.profile,
     ...(numbers ? { pageNumbers } : {}),
-    ...(repeating || (reserved && hasConflict && resolution?.choice === "clear")
-      ? { header, footer }
-      : {}),
+    ...(repeating || (reserved && hasConflict && resolution) ? { header, footer } : {}),
   };
-  // Normalization verifies the final combination while keeping unrelated fields intact.
+  // Validate via normalization, then keep the source-shaped recipe and exact authored text.
   normalizeMarkdownPdfProfile({ profile: finalProfile });
   return finalProfile;
 }
