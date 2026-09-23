@@ -62,7 +62,7 @@ Avoid direct SDK/tool-client complexity inside action modules when an adapter bo
 
 ## Codex SDK Integration
 
-The Codex SDK baseline for `v0.1.9-canary.3` is `@openai/codex-sdk` `0.156.0`.
+The Codex SDK baseline for `v0.1.9-canary.4` is `@openai/codex-sdk` `0.156.1`.
 
 `src/adapters/codex/shared.ts` loads the Codex SDK on demand. Feature-specific
 adapters provide Codex assistance for rename, Markdown PDF, and data workflows.
