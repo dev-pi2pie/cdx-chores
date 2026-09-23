@@ -134,7 +134,11 @@ Choose artifact
       Prepare Profile: deterministic or Codex-assisted
         |
         v
-      Apply exact answers -> validate final Profile
+      Apply exact answers -> normalize and check conflicts
+        +-- unresolved conflict -> local setup revision
+        |
+        v
+      Validate final Profile
         |
         +-- Project -> Template preparation from final Profile
         |
@@ -157,9 +161,14 @@ center, and right; each selected position accepts literal text or `{title}`,
 for new repeating page content.[^formal-guide]
 
 The setup menu gains a `Page information` action with separate edit paths for
-the two groups. Changing either answer invalidates a previously prepared
-candidate; unchanged setup may retain it. Recheck conflicts when the base
-Profile or page-number position changes, preserving explicit content choices.
+the two groups. Each group offers `Remove explicit choice` to return ON or OFF
+to unspecified without changing the other group's answer. Removal restores
+base/Codex authority on the next preparation; it does not disable numbers or
+clear text, and the previous prepared Profile is not the new base. Changing or
+removing either answer invalidates a previously prepared candidate; unchanged
+setup may retain it. Recheck conflicts when the base Profile, page-number
+position, or either group's explicit authority changes, preserving the other
+group's explicit choices and discarding obsolete conflict decisions.
 Project keeps its existing Profile and Template phases. This feature adds no
 model-generated options or extra clarification request.
 
@@ -209,9 +218,10 @@ Both paths use the same candidate review and final Profile validation.
   document-scoped numbers; body pages follow the effective Profile. A metadata
   title belongs to body content unless the cover owns it.
 - Keep the chosen page-number slot distinct from explicitly selected
-  repeating page content. Resolve remaining inherited collisions with the
-  explicit clear-or-retain interaction described below. Retained conflicts
-  must be visible in candidate review before save.
+  repeating page content. Recheck after local materialization and normalization
+  because Codex can introduce a collision that was absent during setup. Use
+  decision 6 below for unresolved conflicts; retained conflicts must be visible
+  in candidate review before save.
 - Show the requested answers, final Profile fields, and material conflicts in
   both Profile and Project candidate review. The current Project summary
   includes page-number settings but needs repeating page content visibility.
@@ -230,7 +240,9 @@ The implementation plan should verify fresh and revised Interactive Profile
 and Project paths, explicit ON/OFF versus omission, page-info-only input,
 base-Profile preservation, unselected-slot clearing, clear/retain conflict
 choices, and OFF clearing even an occupied reserved slot while preserving
-styles. Also verify literal-text preservation, report redaction, no model
+styles. Cover ON/OFF-to-unspecified revision, last-signal removal, and both
+directions of model-introduced slot conflicts before Project Template work.
+Also verify literal-text preservation, report redaction, no model
 request for page-info-only input, final Profile round trips, and Project
 Template compatibility. Verify that accepted or inherited
 `fonts.pageChrome.default` survives explicit Profile and Project
@@ -243,8 +255,12 @@ HTML/CSS or effective render behavior changes.
 1. **Selected positions define the final repeating content.** Preselect
    occupied eligible positions from the base Profile on first edit. Checked
    positions retain their content unless edited; unchecking clears them.
-   Revisions start from the current answers and use the same rule. Leaving the
-   group unspecified imposes no clearing. A conflicting reserved position is
+   Revisions start from the current answers and use the same rule. Selecting
+   or replacing a base later does not add slots to an existing explicit ON
+   selection: newly occupied eligible slots stay unselected and clear unless
+   the user selects them during revision. Explicit OFF still clears all slots.
+   Leaving the group unspecified imposes no clearing. Verify this later-base
+   behavior independently from first-edit base preselection. A reserved slot is
    handled separately by decision 4. This follows Formal Guide's existing
    selection behavior.[^formal-guide]
 2. **Send entered text as data; preserve it locally.** When Codex is needed,
@@ -280,6 +296,22 @@ HTML/CSS or effective render behavior changes.
    collection logic, the implementation plan must reconcile this difference
    and verify both authoring paths; it must not silently inherit the
    exception.[^off-behavior]
+6. **Resolve late conflicts locally before accepting a Profile.** When either
+   group is explicit, check the normalized candidate for an enabled number
+   sharing a nonempty content slot. A model-selected number must not silently
+   hide explicitly selected text. Return unresolved conflicts to Interactive
+   setup revision before acceptance, save, or Project Template preparation;
+   helpers report the conflict without opening prompts themselves. The user
+   can explicitly move/disable the number or revise the selected text. When
+   the conflicting text is inherited or model-selected, use the existing
+   clear-or-retain question. Clearing changes only that slot; it does not turn
+   an unspecified repeating-content group ON or clear its other slots. Retain
+   preserves the reviewed text with the existing warning. Bind each resolution
+   to the number position and exact conflicting text; recheck it when either
+   changes, including on regeneration. Explicit OFF clearing runs first and
+   needs no resolution. Both groups unspecified retain existing behavior.
+   Revision uses the normal preparation/consent flow with no automatic model
+   retry or model-generated clarification round.
 
 ## Related Research
 

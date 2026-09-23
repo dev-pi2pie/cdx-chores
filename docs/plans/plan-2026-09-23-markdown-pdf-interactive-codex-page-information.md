@@ -1,6 +1,7 @@
 ---
 title: "Markdown PDF Interactive Codex Page Information Implementation"
 created-date: 2026-09-23
+modified-date: 2026-09-23
 status: draft
 agent: codex
 ---
@@ -47,9 +48,9 @@ reusable Profile policy.
 
 ## Product Contract
 
-| Group | Unspecified | OFF | ON |
-| --- | --- | --- | --- |
-| Page numbers | Preserve base/candidate or Codex choice. | Disable numbers while retaining valid inert details. | Set the chosen body/document outcome, label, and position; use start and increment of 1. |
+| Group                  | Unspecified                              | OFF                                                              | ON                                                                                                  |
+| ---------------------- | ---------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Page numbers           | Preserve base/candidate or Codex choice. | Disable numbers while retaining valid inert details.             | Set the chosen body/document outcome, label, and position; use start and increment of 1.            |
 | Repeating page content | Preserve base/candidate or Codex choice. | Clear all six text slots; retain header/footer styles and fonts. | Set selected slots exactly; clear unselected slots except an explicitly retained reserved conflict. |
 
 Fresh page-number ON defaults to body pages starting at 1, `Page {page}`, and
@@ -58,6 +59,13 @@ number position cannot receive new repeating text. An inherited occupied
 position offers explicit clear or retain, defaulting to retain; a retained
 conflict is visible in review and its text is not promised to render. Repeating
 content OFF clears that position without a conflict prompt.
+
+Each group can return to unspecified through `Remove explicit choice`, leaving
+the other group's answer intact. Reprepare from the original base/default and
+current signals, not from the previously overlaid candidate. Recheck conflicts
+after normalization: unresolved collisions involving explicit choices return
+to local revision before acceptance or Project Template preparation, following
+research decision 6. Both groups unspecified keep existing helper behavior.
 
 Both groups are optional and independent. Exact answers outrank free-form
 intent and model suggestions. Entered text and metadata placeholders are sent
@@ -73,7 +81,8 @@ Interactive setup and review
   -> classify signals and obtain consent if a model request is needed
   -> resolve Profile from default/base values and optional Codex decision
   -> apply exact page-information answers locally
-  -> normalize and validate final Profile
+  -> normalize and check conflicts; unresolved -> local setup revision
+  -> validate final Profile
   -> Project only: prepare Template from that final Profile
   -> review, save, or render through the existing lifecycle
 ```
@@ -115,14 +124,21 @@ Interactive setup and review
 - [ ] Add a Page information setup action with separate group edits. Preselect
       eligible occupied base-Profile positions on first edit when a base is
       already selected. If the base is chosen later, re-evaluate on revision
-      without replacing earlier explicit content choices; recheck the reserved
-      slot after base or page-number position changes.
+      without replacing earlier explicit content choices or adding new slots
+      to an explicit ON selection. Newly occupied eligible base slots remain
+      unselected and clear unless selected during revision; OFF still clears
+      all slots. Recheck the reserved slot after base or number-position changes.
+- [ ] Add `Remove explicit choice` per group for ON/OFF-to-unspecified
+      revision. Preserve the other group's answers, discard obsolete conflict
+      decisions, and distinguish removal from OFF or cancelling an edit.
 - [ ] Reuse the clear-or-retain prompt for an occupied number position,
       defaulting to retain. Prevent new text in that position. Give explicit
       repeating-content OFF a six-slot clear with no conflict question; keep
       the existing Formal Guide reserved-slot exception unchanged.
 - [ ] Add focused collection, prompt-order, revision, cancellation, and
       Formal Guide compatibility tests under `test/markdown-pdf/interactive/`.
+      Cover later base selection/replacement separately from first-edit base
+      preselection, including newly occupied eligible slots under ON and OFF.
 
 Phase gate: omission, OFF, and ON remain distinct across first setup, base
 selection, and revision; the existing Formal Guide path keeps its behavior;
@@ -131,8 +147,11 @@ Template setup remains unchanged; Back/Cancel writes nothing.
 ### Phase 2: Signal Classification And Request Consent
 
 - [ ] Carry the sparse answers as bounded structured signals through
-      Interactive Profile and Project preparation. Keep literal text and
-      metadata placeholders unresolved, separate from advisory PDF intent.
+      Interactive Profile and Project preparation. Check a finite length limit
+      for each entered page-number label and repeating-content field before
+      preparation; reject over-limit input instead of truncating it. Send
+      accepted text unchanged, with metadata placeholders unresolved and
+      separate from advisory PDF intent.
       Do not add direct-command flags or serialize a second Profile schema.
 - [ ] Make page information sufficient input for both helpers without making
       it a model trigger. Profile and Project page-information-only paths, with
@@ -150,6 +169,9 @@ Template setup remains unchanged; Back/Cancel writes nothing.
 - [ ] Test signal modes, too-low-signal admission, consent/no-consent, request
       counts, model-option forwarding, and Project phase combinations with
       injected runners in the Profile, Project, and Interactive suites.
+- [ ] Reclassify after removal, including removal of the last explicit group:
+      restore the existing default/base and too-low-signal rules rather than
+      treating an empty page-information container as sufficient input.
 
 Phase gate: page-information-only Profile and Project candidates reach review
 with zero model requests and no Codex consent; mixed-signal paths ask consent
@@ -176,6 +198,15 @@ before requests and retain current model-selection rules.
       and validate the same final Profile used by all those consumers; retain
       existing patch, capability-advisory, and diagnostic behavior. Authoring
       does not probe the installed renderer.
+- [ ] Return unresolved normalized slot conflicts to Interactive revision
+      before acceptance or any Project Template preparation. Keep prompts in
+      Interactive. Protect explicit text from model-selected numbering; offer
+      number/text revision for explicit text and clear/retain for inherited or
+      model-selected text, as specified in research decision 6. Record a
+      slot-specific resolution without implicitly specifying the whole content
+      group; bind it to the position and exact text, and recheck on regeneration.
+      Apply valid resolutions locally and revalidate. Both groups unspecified
+      retain existing behavior; do not automatically retry the model.
 - [ ] Align the Profile helper prompt with logical `{page}` / `{pages}` and
       physical `{pdfPage}` / `{pdfPages}` terms. Test local exact authority over
       conflicting intent and injected Codex decisions, base preservation,
@@ -183,14 +214,16 @@ before requests and retain current model-selection rules.
       trips, and Project Template compatibility.
 
 Phase gate: an accepted Profile matches every explicit answer after
-normalization; Project Template preparation consumes that Profile; report,
+normalization; unresolved conflicts cannot reach acceptance or Project Template
+preparation; Project Template preparation consumes that Profile; report,
 bundle, and saved Profile values agree; no direct helper or renderer contract
 changes.
 
 ### Phase 4: Review, Reports, And Candidate Lifecycle
 
-- [ ] Add page information to setup equality. An edited group invalidates its
-      prepared candidate; unchanged setup, Back, and applicable save/render
+- [ ] Add page information and conflict decisions to setup equality. An edited
+      or removed group invalidates its prepared candidate; unchanged setup,
+      Back, and applicable save/render
       recovery retain it. A one-render page-number override remains transient
       and does not cause another artifact or Codex preparation.
 - [ ] Show requested answers, explicit versus inherited/Codex-selected
@@ -205,6 +238,8 @@ changes.
 - [ ] Test candidate reuse and invalidation, regeneration, consent text,
       report privacy, no-usable candidates, failure/recovery, and save-only
       versus render lifecycles. Cover Profile and Project review independently.
+      Include late-conflict revision/cancellation, stale resolution rejection,
+      and removal that restores base/Codex authority without reusing old overlays.
 
 Phase gate: review, reports, and saved output describe the same validated
 Profile; request claims match real calls; no unaccepted candidate or private
@@ -217,6 +252,12 @@ report data is written; existing cleanup and recovery behavior still applies.
       with and without a base, occupied-slot clear/retain, literal text and
       placeholders, font preservation including OFF, and Project Template
       consumption of the final Profile.
+- [ ] Cover ON/OFF-to-unspecified for each group with the other group intact,
+      last-signal removal, and injected model decisions that put a number over
+      explicit text or text under an explicit number. Assert that unresolved
+      conflicts start no Template preparation and write no artifact, that local
+      resolutions preserve unrelated fields, and that changed conflict text or
+      position requires a fresh decision.
 - [ ] Prove Template-only, direct Profile/Project commands, Profile
       initialization defaults, and the Interactive one-render override remain
       compatible. Reuse existing page-role and renderer evidence unless the
