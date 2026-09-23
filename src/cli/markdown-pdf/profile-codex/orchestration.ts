@@ -85,6 +85,7 @@ export function createMarkdownPdfCodexProfileOrchestrationContext(input: {
   fontHints: string[];
   fontSignals?: MarkdownPdfFontSignals;
   intent?: string;
+  projectCoverImageAvailable?: boolean;
   pageInformation?: MarkdownPdfCodexPageInformationSignal;
   profileId: string;
   signalMode: MarkdownPdfCodexSignalMode;
@@ -112,6 +113,9 @@ export function createMarkdownPdfCodexProfileOrchestrationContext(input: {
       fontHints: input.fontHints,
       fontSignals,
       intent: input.intent,
+      ...(input.projectCoverImageAvailable !== undefined
+        ? { projectCoverImageAvailable: input.projectCoverImageAvailable }
+        : {}),
       ...(input.pageInformation ? { pageInformation: input.pageInformation } : {}),
       selectedBaseProfileSummary: input.baseProfileCandidate?.summary,
       signalMode: input.signalMode,

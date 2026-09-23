@@ -7,12 +7,21 @@ import { readTextFileRequired, writeBufferFileSafe, writeTextFileSafe } from "..
 import { execCommand, type ExecCommandResult } from "../process";
 import { highlightMarkdownPdfCodeBlocks } from "./code-highlight";
 import { finalizeMarkdownPdfPageNumberHtml } from "./page-number-html";
-import type { EffectiveMarkdownPdfCodeOptions, NormalizedMarkdownPdfPageNumbers } from "./profile";
+import {
+  createMarkdownPdfCoverHtml,
+  MARKDOWN_PDF_PROFILE_TEXT_COVER_MARKER,
+  type EffectiveMarkdownPdfCodeOptions,
+  type NormalizedMarkdownPdfPageNumbers,
+  type NormalizedMarkdownPdfProfile,
+} from "./profile";
 import {
   rejectRemoteMarkdownPdfAssetsWhenDisabled,
   rewriteMarkdownPdfTemplateLocalAssets,
 } from "./template-assets";
-import type { MarkdownPdfTemplateCompatibilityResult } from "./template-compatibility";
+import {
+  isManagedMarkdownPdfTemplate,
+  type MarkdownPdfTemplateCompatibilityResult,
+} from "./template-compatibility";
 import type { NormalizedMarkdownPdfOptions } from "./validation";
 
 export type MarkdownPdfProcessRunner = typeof execCommand;
@@ -31,6 +40,7 @@ export interface RenderMarkdownPdfInput {
   overwrite?: boolean;
   options: NormalizedMarkdownPdfOptions;
   pageNumbers: NormalizedMarkdownPdfPageNumbers;
+  profile?: NormalizedMarkdownPdfProfile;
   code?: EffectiveMarkdownPdfCodeOptions;
   runner?: MarkdownPdfProcessRunner;
   codeHighlighter?: MarkdownPdfCodeHighlighter;
@@ -83,12 +93,45 @@ async function createFinalHtml(
 async function createCustomTemplateRenderFile(input: {
   sourcePath: string;
   tempDir: string;
+  profile?: NormalizedMarkdownPdfProfile;
 }): Promise<string> {
   const templateHtml = await readTextFileRequired(input.sourcePath);
+  const resolvedTemplate = resolveManagedProfileTextCover({
+    templateHtml,
+    profile: input.profile,
+  });
   return await createTempFile(
     input.tempDir,
     "template.html",
-    await rewriteMarkdownPdfTemplateLocalAssets(templateHtml, dirname(input.sourcePath)),
+    await rewriteMarkdownPdfTemplateLocalAssets(resolvedTemplate, dirname(input.sourcePath)),
+  );
+}
+
+const PROFILE_TEXT_COVER_SCAFFOLD =
+  /<section class="pdf-cover pdf-cover--(?:plain|report)" data-cdx-profile-text-cover="true"><\/section>/gu;
+
+function resolveManagedProfileTextCover(input: {
+  templateHtml: string;
+  profile?: NormalizedMarkdownPdfProfile;
+}): string {
+  if (!input.templateHtml.includes(MARKDOWN_PDF_PROFILE_TEXT_COVER_MARKER)) {
+    return input.templateHtml;
+  }
+  const markerCount = input.templateHtml.split(MARKDOWN_PDF_PROFILE_TEXT_COVER_MARKER).length - 1;
+  const scaffolds = input.templateHtml.match(PROFILE_TEXT_COVER_SCAFFOLD) ?? [];
+  if (
+    markerCount !== 1 ||
+    scaffolds.length !== 1 ||
+    !isManagedMarkdownPdfTemplate(input.templateHtml) ||
+    !input.profile?.cover.enabled
+  ) {
+    throw new CliError("Managed text cover does not match the enabled Profile cover.", {
+      code: "MARKDOWN_PDF_COVER_BOUNDARY_REQUIRED",
+      exitCode: 2,
+    });
+  }
+  return input.templateHtml.replace(PROFILE_TEXT_COVER_SCAFFOLD, () =>
+    createMarkdownPdfCoverHtml(input.profile),
   );
 }
 
@@ -102,6 +145,7 @@ export async function renderMarkdownPdf(
       ? await createCustomTemplateRenderFile({
           sourcePath: input.customTemplatePath,
           tempDir,
+          profile: input.profile,
         })
       : await createTempFile(tempDir, "template.html", input.templateHtml);
     const defaultCssPath =

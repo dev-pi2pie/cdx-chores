@@ -138,6 +138,7 @@ function templatePhaseDecisionMode(
 async function suggestProjectTemplateWithCodexProgress(input: {
   intent?: string;
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
+  projectTextCover?: boolean;
   progressSession?: CodexProgressSession;
   runtime: CliRuntime;
   signals: MdPdfTemplateCodexSignalCollection;
@@ -159,6 +160,7 @@ async function suggestProjectTemplateWithCodexProgress(input: {
       ? await suggestMarkdownPdfTemplateWithCodex({
           intent: input.intent,
           outputPlan: input.outputPlan,
+          projectTextCover: input.projectTextCover,
           runner: input.templateCodexRunner,
           signals: input.signals,
           timeoutMs: input.timeoutMs,
@@ -169,6 +171,7 @@ async function suggestProjectTemplateWithCodexProgress(input: {
       : await suggestMarkdownPdfTemplateWithCodex({
           intent: input.intent,
           outputPlan: input.outputPlan,
+          projectTextCover: input.projectTextCover,
           signals: input.signals,
           timeoutMs: input.timeoutMs,
           codexExecution: input.codexExecution,
@@ -218,6 +221,10 @@ export async function runMdPdfProjectCodexTemplatePhase(input: {
     signalMode,
     signals: input.signals,
   });
+  const textCoverProfile =
+    !signals.coverImage.available && normalizedFinalProfile.profile.cover.enabled
+      ? normalizedFinalProfile.profile
+      : undefined;
   const intent = createForwardedTemplateIntent({
     forwardedProfileDirections,
     intent: input.state.intent,
@@ -226,6 +233,7 @@ export async function runMdPdfProjectCodexTemplatePhase(input: {
     ? await suggestProjectTemplateWithCodexProgress({
         intent,
         outputPlan,
+        projectTextCover: Boolean(textCoverProfile),
         progressSession: input.progressSession,
         runtime: input.runtime,
         signals,
@@ -241,8 +249,9 @@ export async function runMdPdfProjectCodexTemplatePhase(input: {
         fontOwnership,
         outputPlan,
         signals,
+        textCoverProfile,
       })
-    : synthesizeMdPdfTemplateCodex({ fontOwnership, outputPlan, signals });
+    : synthesizeMdPdfTemplateCodex({ fontOwnership, outputPlan, signals, textCoverProfile });
 
   validateMdPdfTemplateCodexSynthesis({
     deferBodyBoundaryValidationToProject: true,

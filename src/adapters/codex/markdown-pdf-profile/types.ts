@@ -116,6 +116,7 @@ export interface MarkdownPdfCodexProfileRequest {
   fontHints: string[];
   fontSignals: MarkdownPdfFontSignals;
   intent?: string;
+  projectCoverImageAvailable?: boolean;
   pageInformation?: MarkdownPdfCodexPageInformationSignal;
   selectedBaseProfileSummary?: MarkdownPdfProfileCandidateSummary;
   signalMode: MarkdownPdfCodexSignalMode;

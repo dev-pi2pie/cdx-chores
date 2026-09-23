@@ -18,7 +18,7 @@ import {
 const TEMPLATE_FAMILY_VALUES = [...MARKDOWN_PDF_TEMPLATE_CODEX_TEMPLATE_FAMILIES, "none"];
 const RECIPE_PRESET_VALUES = [...MARKDOWN_PDF_TEMPLATE_CODEX_RECIPE_PRESETS, "none"];
 
-const COVER_STYLE_VALUES = ["none", "media"] as const;
+const COVER_STYLE_VALUES = ["none", "media", "profile-text"] as const;
 const ORIENTATION_BUCKET_VALUES = [
   "landscape",
   "portrait",

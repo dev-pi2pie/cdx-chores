@@ -28,6 +28,7 @@ import type {
   NormalizedMdPdfProjectCodexCommandState,
 } from "./types";
 import { collectTemplateOwnedIntentDirections } from "./signal-mode";
+import { applyMdPdfProjectCoverPolicy, explicitMdPdfProjectBaseCoverChoice } from "./cover-policy";
 
 export interface MdPdfProjectCodexProfilePhaseResult {
   codexResult?: MarkdownPdfCodexProfileResult;
@@ -124,6 +125,7 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
     fontHints: input.signals.profile.fonts.hints,
     fontSignals: input.signals.profile.fonts.profileFonts,
     intent: input.state.intent,
+    projectCoverImageAvailable: input.signals.template.coverImage.available,
     pageInformation: input.signals.profile.pageInformation,
     profileId: input.outputPlan.identity.profileId,
     signalMode,
@@ -186,11 +188,18 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
     decisionMode: decision.decisionMode,
     fallbackReason:
       decision.kind === "codex-profile" ? decision.codexResult.decision.fallbackReason : undefined,
-    finalProfile: applyMarkdownPdfCodexPageInformation({
-      profile: decision.finalProfile,
-      baseProfile: input.signals.profile.baseProfile.candidate?.fullProfile,
-      pageInformation: input.signals.profile.pageInformation,
-      slotResolution: input.slotResolution,
+    finalProfile: applyMdPdfProjectCoverPolicy({
+      baseProfileCoverEnabled: explicitMdPdfProjectBaseCoverChoice(
+        input.signals.profile.baseProfile.candidate?.fullProfile,
+      ),
+      coverImageAvailable: input.signals.template.coverImage.available,
+      finalProfile: applyMarkdownPdfCodexPageInformation({
+        profile: decision.finalProfile,
+        baseProfile: input.signals.profile.baseProfile.candidate?.fullProfile,
+        pageInformation: input.signals.profile.pageInformation,
+        slotResolution: input.slotResolution,
+      }),
+      intent: input.state.intent,
     }),
     identity: decision.identity,
     outputPlan: input.outputPlan,

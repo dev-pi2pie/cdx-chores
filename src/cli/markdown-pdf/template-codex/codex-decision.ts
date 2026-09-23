@@ -173,6 +173,7 @@ function validateOptionalFreeText(value: string | undefined): string | undefined
 
 function validateSlots(
   slots: MarkdownPdfTemplateCodexResolvedSlots,
+  input: { projectTextCover?: boolean } = {},
 ): MarkdownPdfTemplateCodexResolvedSlots {
   assertStringInDomain(
     slots.recipePreset.preset,
@@ -191,7 +192,18 @@ function validateSlots(
       "slots.cover.image_fit",
     );
   }
-  if (slots.cover.enabled && !slots.cover.imageFit) {
+  if (slots.cover.style === "profile-text") {
+    if (!input.projectTextCover || !slots.cover.enabled) {
+      throw new Error(
+        "Markdown PDF template Codex response slots.cover.style profile-text requires an enabled Project text cover.",
+      );
+    }
+    if (slots.cover.imageFit) {
+      throw new Error(
+        "Markdown PDF template Codex response slots.cover.image_fit must be empty for a Project text cover.",
+      );
+    }
+  } else if (slots.cover.enabled && !slots.cover.imageFit) {
     throw new Error(
       "Markdown PDF template Codex response slots.cover.image_fit is required when cover is enabled.",
     );
@@ -324,6 +336,7 @@ function validateRecipeOwnership(input: {
 export function validateMarkdownPdfTemplateCodexDecision(input: {
   decision: MarkdownPdfTemplateCodexDecision;
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
+  projectTextCover?: boolean;
   signals: MdPdfTemplateCodexSignalCollection;
 }): MarkdownPdfTemplateCodexDecision {
   const decisionMode = assertStringInDomain(
@@ -390,6 +403,13 @@ export function validateMarkdownPdfTemplateCodexDecision(input: {
     "template_family",
   );
   const family = MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES[templateFamily];
+  if (
+    input.projectTextCover &&
+    (input.signals.coverImage.available ||
+      input.outputPlan.assets.some((asset) => asset.role === "cover-image"))
+  ) {
+    throw new Error("Project text cover must not have a managed cover image.");
+  }
   if (family.requiresCoverImage && !input.signals.coverImage.available) {
     throw new Error(
       `Markdown PDF template Codex response template_family ${templateFamily} requires a managed cover image.`,
@@ -403,9 +423,31 @@ export function validateMarkdownPdfTemplateCodexDecision(input: {
     MARKDOWN_PDF_TEMPLATE_CODEX_RECIPE_PRESETS,
     "recipe_preset",
   );
-  const slots = validateSlots(input.decision.slots);
+  const slots = validateSlots(input.decision.slots, {
+    projectTextCover: input.projectTextCover,
+  });
+  const hasProjectTextCover =
+    input.projectTextCover === true && slots.cover.enabled && slots.cover.style === "profile-text";
+  const defersToProjectTextCover =
+    input.projectTextCover === true && !slots.cover.enabled && slots.cover.style === "none";
+  if (input.projectTextCover && !hasProjectTextCover && !defersToProjectTextCover) {
+    throw new Error(
+      "Markdown PDF template Codex response must defer to the Project Profile text cover.",
+    );
+  }
+  if ((hasProjectTextCover || defersToProjectTextCover) && templateFamily !== "document-layered") {
+    throw new Error(
+      "Markdown PDF template Codex response Project text cover requires document-layered family.",
+    );
+  }
+  if (defersToProjectTextCover && slots.cover.imageFit) {
+    throw new Error(
+      "Markdown PDF template Codex response slots.cover.image_fit must be empty when Project owns the text cover.",
+    );
+  }
   if (
     slots.cover.enabled &&
+    !hasProjectTextCover &&
     (!input.signals.coverImage.available ||
       !input.outputPlan.assets.some((asset) => asset.role === "cover-image"))
   ) {
@@ -433,6 +475,11 @@ export function validateMarkdownPdfTemplateCodexDecision(input: {
     }),
     signals: input.signals,
   });
+  if (hasProjectTextCover && input.decision.managedAssets.length > 0) {
+    throw new Error(
+      "Markdown PDF template Codex response managed_assets must be empty for a Project text cover.",
+    );
+  }
   const managedAssets = validateManagedAssets({
     decisionMode,
     managedAssets: input.decision.managedAssets,
@@ -444,7 +491,7 @@ export function validateMarkdownPdfTemplateCodexDecision(input: {
         plannedAsset.role === "cover-image" && plannedAsset.bundlePath === asset.bundlePath,
     ),
   );
-  if (slots.cover.enabled && !hasCoverManagedAsset) {
+  if (slots.cover.enabled && !hasProjectTextCover && !hasCoverManagedAsset) {
     throw new Error(
       "Markdown PDF template Codex response managed_assets must include the planned cover image when cover is enabled.",
     );

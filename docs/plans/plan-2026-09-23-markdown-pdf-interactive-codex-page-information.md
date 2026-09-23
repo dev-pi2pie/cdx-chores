@@ -533,8 +533,9 @@ phase. Never silently override a choice.
 - [ ] In Markdown PDF Usage, show how to choose a preset, page size
       (`A3`, `A4`, `A5`, `Letter`, `Legal`, or `Tabloid`), portrait or landscape
       orientation, and margins. Add a direct landscape render example and a
-      reusable Profile example; explain that render-time flags override
-      matching Profile settings. In the Interactive guide, distinguish Formal
+      reusable Profile example; explain how render-time flags override Profile
+      settings, while a saved Project stylesheet keeps its prepared `@page`
+      size and margins. In the Interactive guide, distinguish Formal
       Guide layout choices from Codex intent and reviewed Profile output.
 - [ ] In Markdown PDF Usage, explain that the built-in text cover with
       `cover.style: report` adds a fixed blue left bar, while

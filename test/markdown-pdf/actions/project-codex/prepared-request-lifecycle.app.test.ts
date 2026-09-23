@@ -111,7 +111,7 @@ describe("Markdown PDF Project Codex prepared request lifecycle", () => {
     });
   });
 
-  test("stops injected progress as error when typed Project validation rejects cover incompatibility", async () => {
+  test("keeps a Profile text cover through model-assisted Project Template preparation", async () => {
     await withTempFixtureDir(
       "md-pdf-project-codex-progress-validation-error",
       async (fixtureDir) => {
@@ -148,34 +148,32 @@ describe("Markdown PDF Project Codex prepared request lifecycle", () => {
           templateCodexRunner: async () => {
             const response = JSON.parse(adaptedTemplateResponse()) as {
               managed_assets: unknown[];
-              slots: { cover: { enabled: boolean; style: string } };
+              slots: { cover: { enabled: boolean; image_fit: string; style: string } };
             };
             response.slots.cover.enabled = false;
+            response.slots.cover.image_fit = "";
             response.slots.cover.style = "none";
             response.managed_assets = [];
             return JSON.stringify(response);
           },
         });
 
-        expect(prepared.binding.validation.decisionMode).toBe("no-usable-project");
-        expect(prepared.binding.validation.renderCommand).toBeUndefined();
+        expect(prepared.binding.validation.decisionMode).toBe("adapted");
+        expect(prepared.binding.validation.renderCommand).toBeDefined();
         expect(prepared.binding.validation.results).toContainEqual(
           expect.objectContaining({
-            message: expect.stringContaining("profile-owned text cover"),
             name: "profile-template-compatibility",
-            status: "failed",
+            status: "passed",
           }),
         );
+        expect(prepared.templatePhase.synthesis.templateHtml).toContain(
+          'data-cdx-profile-text-cover="true"',
+        );
         expect(prepared.binding.outputPlan.report).toBeUndefined();
-        expect(prepared.binding.reportArtifact.handoff).toMatchObject({
-          artifacts: { availability: "unavailable" },
-          render: { usability: "unavailable" },
-        });
-        expect(prepared.binding.reportArtifact.handoff.render).not.toHaveProperty("command");
         expect(events).toEqual([
           "start:Requesting Codex Markdown PDF project profile recommendation",
           "update:Requesting Codex Markdown PDF project template recommendation",
-          "stop:error",
+          "stop:done",
         ]);
         expect(await pathExists(join(fixtureDir, "project-output"))).toBe(false);
       },

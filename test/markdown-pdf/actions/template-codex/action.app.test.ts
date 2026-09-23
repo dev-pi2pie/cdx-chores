@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { actionMdPdfTemplateCodex } from "../../../../src/cli/actions/markdown";
@@ -62,6 +62,30 @@ describe("cli action modules: md pdf-template codex action", () => {
       expect(stderr.text).toContain("Wrote Markdown PDF template bundle:");
       expect(await readFile(join(outputPath, "template.html"), "utf8")).toContain("$body$");
       expect(await readFile(join(outputPath, "style.css"), "utf8")).toContain(".cdx-code-line");
+    });
+  });
+
+  test("keeps direct Template's no-image Profile-cover boundary", async () => {
+    await withTempFixtureDir("md-pdf-template-codex-text-cover", async (fixtureDir) => {
+      const outputPath = join(fixtureDir, "template-output");
+      const profilePath = join(fixtureDir, "profile.yml");
+      await writeFile(
+        profilePath,
+        "cover:\n  enabled: true\n  style: report\n  fields:\n    title: Direct Cover Title\n    company: Direct Cover Company\n",
+        "utf8",
+      );
+      const { runtime } = createActionTestRuntime();
+
+      await expectCliError(
+        () =>
+          actionMdPdfTemplateCodex(runtime, {
+            baseProfile: toRepoRelativePath(profilePath),
+            output: toRepoRelativePath(outputPath),
+            preset: "report",
+          }),
+        { code: "MARKDOWN_PDF_COVER_BOUNDARY_REQUIRED", exitCode: 2 },
+      );
+      expect(await pathExists(outputPath)).toBe(false);
     });
   });
 

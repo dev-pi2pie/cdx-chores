@@ -67,7 +67,7 @@ function includesRawPixelImageSizing(css: string): boolean {
 }
 
 function includesRequiredHookRemoval(css: string): boolean {
-  return /(?:#TOC|\.cdx-code-line|\.pdf-cover-media)[^{]*\{[^}]*\b(?:display\s*:\s*none|visibility\s*:\s*hidden|content\s*:\s*none)\b/iu.test(
+  return /(?:#TOC|\.cdx-code-line|\.pdf-cover)[^{]*\{[^}]*\b(?:display\s*:\s*none|visibility\s*:\s*hidden|content\s*:\s*none)\b/iu.test(
     css,
   );
 }

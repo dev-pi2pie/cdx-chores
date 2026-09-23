@@ -191,6 +191,15 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
           : {}),
         unusable,
       });
+      if (
+        context.scenario.markdownPdfCodexPrepareCoverConflictOnCall ===
+        context.result.markdownPdfCodexPrepareCalls.length
+      ) {
+        throw new CliError("Cover intent conflicts with the selected Profile.", {
+          code: "MARKDOWN_PDF_PROJECT_COVER_CONFLICT",
+          exitCode: 2,
+        });
+      }
       const conflict =
         context.scenario.markdownPdfCodexPrepareConflicts?.[
           context.result.markdownPdfCodexPrepareCalls.length - 1

@@ -7,6 +7,7 @@ export interface MarkdownPdfInteractiveHarnessScenario {
   markdownPdfDeterministicBindErrorMessage?: string;
   markdownPdfDeterministicWriteErrorMessages?: string[];
   markdownPdfCodexBindErrorMessage?: string;
+  markdownPdfCodexPrepareCoverConflictOnCall?: number;
   markdownPdfCodexPrepareConflicts?: Array<{
     position:
       | "top-left"

@@ -192,6 +192,9 @@ export function buildMarkdownPdfProfileCodexPrompt(
     fontPatchContract: MARKDOWN_PDF_CODEX_FONT_PATCH_CONTRACT,
     fontSignals: request.fontSignals,
     intent: request.intent ?? "",
+    ...(request.projectCoverImageAvailable !== undefined
+      ? { projectCoverImageAvailable: request.projectCoverImageAvailable }
+      : {}),
     ...(request.pageInformation ? { pageInformation: request.pageInformation } : {}),
     pageNumberContract: MARKDOWN_PDF_CODEX_PAGE_NUMBER_CONTRACT,
     patchValueConstraints: MARKDOWN_PDF_CODEX_PATCH_VALUE_CONSTRAINTS,
@@ -221,6 +224,11 @@ export function buildMarkdownPdfProfileCodexPrompt(
     "- Follow titleDecisionSignal before adding cover or title treatment.",
     "- If titleDecisionSignal says duplicate visible title risk exists, prefer accepted_patches path /titleBlock/metadataTitle with value auto unless the user explicitly asks to keep duplicate title output.",
     "- If explicit cover intent exists, cover may be enabled, but still use titleBlock.metadataTitle for metadata-title duplication instead of warning that no profile field exists.",
+    ...(request.projectCoverImageAvailable
+      ? [
+          "- A local cover image was selected for the Project. Treat it as a cover request and enable the Profile cover unless the user's cover directions conflict; use titleBlock.metadataTitle to avoid a duplicate body title.",
+        ]
+      : []),
     "- Use conservative-fallback when facts are weak but a safe default profile can be written.",
     "- Use no-usable-profile only when no profile should be written; set selected_candidate_id to none, accepted_patches to [], and accepted_font_patches to [].",
     "- Always include fallback_reason; use an empty string when no fallback reason applies.",

@@ -6,8 +6,14 @@ import {
 import { select } from "@inquirer/prompts";
 import { isDeepStrictEqual } from "node:util";
 
+import { printLine } from "../../actions/shared";
+import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
 import type { InteractivePathPromptContext } from "../shared";
+import {
+  assertMdPdfProjectKnownCoverSetup,
+  MD_PDF_PROJECT_COVER_CONFLICT_CODE,
+} from "../../markdown-pdf/project-codex/cover-policy";
 import {
   confirmMarkdownPdfCodexConsent,
   promptMarkdownPdfCodexReportRetention,
@@ -69,6 +75,14 @@ async function prepareWithConsent(
   return await prepareMarkdownPdfCodexCandidate(runtime, setup, { timeoutMs, codexExecution });
 }
 
+function isProjectCoverConflict(error: unknown): error is CliError {
+  return error instanceof CliError && error.code === MD_PDF_PROJECT_COVER_CONFLICT_CODE;
+}
+
+function showProjectCoverConflict(runtime: CliRuntime, error: CliError): void {
+  printLine(runtime.stderr, `Project cover choices: ${error.message}`);
+}
+
 export function sameCodexSetup(left: MarkdownPdfCodexSetup, right: MarkdownPdfCodexSetup): boolean {
   return (
     left.artifact === right.artifact &&
@@ -125,13 +139,34 @@ export async function runMarkdownPdfCodexAuthoring(
       return { kind: input.backToMode ? "change-mode" : "change-artifact" };
     }
     setup = setupOutcome.setup;
+    if (setup.artifact === "project-bundle") {
+      try {
+        await assertMdPdfProjectKnownCoverSetup({
+          baseProfile: setup.baseProfile,
+          coverImage: setup.coverImage,
+          cwd: runtime.cwd,
+        });
+      } catch (error) {
+        if (!isProjectCoverConflict(error)) throw error;
+        showProjectCoverConflict(runtime, error);
+        continue;
+      }
+    }
 
     let prepared: PreparedMarkdownPdfCodexCandidate | "revise" | "change-artifact" | "cancel";
     if (acceptedCandidate && sameCodexSetup(acceptedCandidate.setup, setup)) {
       prepared = acceptedCandidate;
     } else if (setup.pageInformation) {
       while (true) {
-        const outcome = await pageInformationSession.prepare(setup);
+        let outcome: Awaited<ReturnType<typeof pageInformationSession.prepare>>;
+        try {
+          outcome = await pageInformationSession.prepare(setup);
+        } catch (error) {
+          if (!isProjectCoverConflict(error)) throw error;
+          showProjectCoverConflict(runtime, error);
+          prepared = "revise";
+          break;
+        }
         if (outcome.kind === "prepared") {
           prepared = outcome.candidate;
           break;
@@ -162,7 +197,13 @@ export async function runMarkdownPdfCodexAuthoring(
         }
       }
     } else {
-      prepared = await prepareWithConsent(runtime, setup, input.codexTimeoutMs, codexExecution);
+      try {
+        prepared = await prepareWithConsent(runtime, setup, input.codexTimeoutMs, codexExecution);
+      } catch (error) {
+        if (!isProjectCoverConflict(error)) throw error;
+        showProjectCoverConflict(runtime, error);
+        prepared = "revise";
+      }
     }
     if (prepared === "cancel") {
       return { kind: "complete" };
@@ -188,9 +229,18 @@ export async function runMarkdownPdfCodexAuthoring(
         break;
       }
       if (action === "regenerate") {
-        const regenerated = setup.pageInformation
-          ? await pageInformationSession.prepare(setup)
-          : await prepareWithConsent(runtime, setup, input.codexTimeoutMs, codexExecution);
+        let regenerated:
+          | Awaited<ReturnType<typeof pageInformationSession.prepare>>
+          | Awaited<ReturnType<typeof prepareWithConsent>>;
+        try {
+          regenerated = setup.pageInformation
+            ? await pageInformationSession.prepare(setup)
+            : await prepareWithConsent(runtime, setup, input.codexTimeoutMs, codexExecution);
+        } catch (error) {
+          if (!isProjectCoverConflict(error)) throw error;
+          showProjectCoverConflict(runtime, error);
+          break;
+        }
         if (
           typeof regenerated !== "string" &&
           "kind" in regenerated &&

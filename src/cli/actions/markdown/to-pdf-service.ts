@@ -389,6 +389,10 @@ export async function executePlannedMarkdownPdfRender(
     overwrite: plan.overwrite,
     options: plan.prepared.options,
     pageNumbers: plan.prepared.pageNumberConfiguration.effective,
+    profile: {
+      ...plan.prepared.normalizedProfile,
+      pageNumbers: plan.prepared.pageNumberConfiguration.effective,
+    },
     code: plan.prepared.code,
     runner,
     codeHighlighter: options.codeHighlighter,

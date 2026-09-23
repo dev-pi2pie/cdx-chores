@@ -18,9 +18,17 @@ export type MarkdownPdfTemplateCodexRecipePresetSource =
 
 export type MarkdownPdfTemplateCodexCoverLayout = "none" | "contained-media" | "full-bleed-media";
 
-export type MarkdownPdfTemplateCodexCoverTitlePlacement = "document-title" | "below-media";
+export type MarkdownPdfTemplateCodexCoverTitlePlacement =
+  | "document-title"
+  | "below-media"
+  | "text-cover";
 
-export type MarkdownPdfTemplateCodexCoverStyle = "none" | "media";
+export type MarkdownPdfTemplateCodexCoverStyle =
+  | "none"
+  | "media"
+  | "profile-text"
+  | "plain"
+  | "report";
 
 export type MarkdownPdfTemplateCodexCoverComposition =
   | "media-first-caption"

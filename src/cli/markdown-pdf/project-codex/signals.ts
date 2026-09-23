@@ -21,6 +21,10 @@ import {
   collectTemplateOwnedProjectDirections,
 } from "./signal-mode";
 import { sanitizeMdPdfProjectCodexCliError } from "./error-sanitization";
+import {
+  assertMdPdfProjectKnownCoverCompatibility,
+  explicitMdPdfProjectBaseCoverChoice,
+} from "./cover-policy";
 import type { MarkdownPdfCodexPageInformationSignal } from "../profile-codex/page-information-signals";
 import type {
   MdPdfProjectCodexSignalCollection,
@@ -68,6 +72,10 @@ export async function collectMdPdfProjectCodexSignals(
     },
   });
   const coverImage = await collectTemplateCodexCoverImageSignals(state.coverImagePath);
+  assertMdPdfProjectKnownCoverCompatibility({
+    coverImageAvailable: coverImage.available,
+    baseProfileCoverEnabled: explicitMdPdfProjectBaseCoverChoice(baseProfileCandidate?.fullProfile),
+  });
   const templateOwnedSignals = collectTemplateOwnedProjectDirections({
     intent: state.intent,
     recipe,
