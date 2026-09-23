@@ -67,7 +67,7 @@ complete at the contract level.
 | Section | Status | Evidence to record |
 | ------- | ------ | ------------------ |
 | Phase 1 | Complete | Collection and revision checks; reviewed commit range |
-| Phase 2 | In progress | Signal, consent, and request checks; reviewed commit range |
+| Phase 2 | Complete | Signal, consent, and request checks; reviewed commit range |
 | Phase 3 | Pending | Final Profile and Project handoff checks; first PDF extraction and labeled page snapshots; reviewed commit range |
 | Phase 4 | Pending | Review, report projection, and lifecycle checks; saved-recipe and override snapshots; reviewed commit range |
 | Phase 5 | Pending | Integrated matrix, built-CLI smoke, final snapshot report, limitations, cleanup, final verdict |
@@ -91,8 +91,8 @@ Back/Cancel, and ON-to-OFF-to-ON revision; the inactive draft rule is explicit
 in the collector. Independent maintainability and test re-reviews of the widened
 range found no remaining material issue. No PDF artifact is due at this gate.
 
-Phase 2 starts from `d970f0b9`. Signal, consent, and request checks are in
-progress. The internal structured signal keeps exact active text and
+Phase 2 implementation range: `d970f0b9..38d3675e`. Its signal, consent, and
+request gate passed. The internal structured signal keeps exact active text and
 placeholders, drops inactive OFF drafts and conflict data, and rejects invalid
 guided number settings or page text over 512 characters. Page-information-only
 Profile and Project paths make zero model requests; removing the last explicit
@@ -102,13 +102,12 @@ retries. Local consent escapes controls and formatting characters while
 preserving plain text and per-stream heading styling. Optional diagnostic
 report retention is guarded until Phase 4 implements its safe projection.
 
-The Profile/Project action regression slice passed (222 tests). Focused
+The initial Profile/Project action regression slice passed (222 tests). Focused
 collector/signal/consent unit checks passed (27 tests), as did adjacent
 Interactive and helper application checks (29 tests), TypeScript, scoped lint
 and format checks, and whitespace validation. An existing mocked service test
 needed its export fixture updated for the new report guard; it now passes.
-No PDF artifact is due at this gate. Commit-range review and the Phase 2 gate
-verdict remain open.
+No PDF artifact is due at this gate.
 
 The first Phase 2 commit-range review found a late report-binding path that
 could retain a Codex echo of entered text. Prepared Profile and Project state
@@ -116,7 +115,8 @@ now blocks optional reports at bind and write boundaries, including direct
 report writing. Follow-up checks cover synthetic echoed text, explicit OFF
 with inactive drafts, and declined Project consent. The Profile/Project action
 slice passed again (225 tests); focused follow-up unit and application slices
-passed (14 and 21 tests). The widened range still needs review.
+passed (14 and 21 tests). Independent code, test, and security re-reviews of
+the widened range found no remaining material issue.
 
 ## Related Research
 
