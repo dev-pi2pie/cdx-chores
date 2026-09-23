@@ -273,6 +273,104 @@ describe("Interactive Codex page-information candidate lifecycle", () => {
     },
   );
 
+  test("saves the revised Profile candidate after turning numbers OFF", () => {
+    const savedProfile = { pageNumbers: { enabled: false, position: "bottom-center" } };
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfCodexFinalProfile: savedProfile,
+      selectQueue: [
+        ...entry("profile"),
+        ...numberedPageInformation(),
+        "continue",
+        "change-setup",
+        "page-information",
+        "numbers",
+        "continue",
+        "continue",
+        "save",
+        "none",
+        "suggested",
+        "exit",
+      ],
+      inputQueue: [""],
+      confirmQueue: [true, false, false, false, true],
+    });
+
+    expect(result.markdownPdfCodexPrepareCalls.map((call) => call.candidateId)).toEqual([
+      "codex-profile-1",
+      "codex-profile-2",
+    ]);
+    expect(result.markdownPdfCodexPrepareCalls[0]?.pageInformation).toMatchObject({
+      pageNumbers: { enabled: true },
+    });
+    expect(result.markdownPdfCodexPrepareCalls[1]?.pageInformation).toMatchObject({
+      pageNumbers: { enabled: false },
+    });
+    expect(result.markdownPdfCodexBindCalls).toEqual([
+      expect.objectContaining({ candidateId: "codex-profile-2" }),
+    ]);
+    expect(result.markdownPdfCodexWriteCalls).toEqual([
+      expect.objectContaining({ candidateId: "codex-profile-2", savedProfile }),
+    ]);
+  });
+
+  test("saves the revised Project candidate after removing explicit repeating text", () => {
+    const savedProfile = {
+      pageNumbers: { enabled: true, position: "bottom-center", format: "Page {page}" },
+      header: { left: "" },
+    };
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfCodexFinalProfile: savedProfile,
+      selectQueue: [
+        ...entry("project-bundle"),
+        "edit",
+        "numbers",
+        "body",
+        "page",
+        "bottom-center",
+        "repeating",
+        "continue",
+        "continue",
+        "change-setup",
+        "page-information",
+        "remove-repeating",
+        "continue",
+        "continue",
+        "save",
+        "none",
+        "suggested",
+        "exit",
+      ],
+      checkboxQueue: [["top-left"]],
+      inputQueue: ["Initial project header", ""],
+      confirmQueue: [true, true, false, false, true],
+    });
+
+    expect(result.markdownPdfCodexPrepareCalls.map((call) => call.candidateId)).toEqual([
+      "codex-project-bundle-1",
+      "codex-project-bundle-2",
+    ]);
+    expect(result.markdownPdfCodexPrepareCalls[0]?.pageInformation).toMatchObject({
+      pageNumbers: { enabled: true },
+      repeatingContent: { enabled: true, text: { "top-left": "Initial project header" } },
+    });
+    expect(result.markdownPdfCodexPrepareCalls[1]?.pageInformation).toMatchObject({
+      pageNumbers: { enabled: true },
+    });
+    expect(result.markdownPdfCodexPrepareCalls[1]?.pageInformation).not.toHaveProperty(
+      "repeatingContent",
+    );
+    expect(result.markdownPdfCodexBindCalls).toEqual([
+      expect.objectContaining({ candidateId: "codex-project-bundle-2" }),
+    ]);
+    expect(result.markdownPdfCodexWriteCalls).toEqual([
+      expect.objectContaining({ candidateId: "codex-project-bundle-2", savedProfile }),
+    ]);
+  });
+
   test("changing authored header text prepares a replacement candidate with the exact revision", () => {
     const result = runInteractiveHarness({
       mode: "run",
