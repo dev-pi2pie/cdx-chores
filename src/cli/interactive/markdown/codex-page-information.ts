@@ -36,13 +36,15 @@ export interface MarkdownPdfCodexPageInformationAnswers {
     choice: "clear" | "retain";
     /** Internal comparison only; never print or include in a diagnostic report. */
     conflictingText: string;
+    source?: "model";
+    candidateAbsentConfirmed?: boolean;
   };
 }
 
 export type MarkdownPdfCodexLateConflict = Pick<
   MarkdownPdfPageInformationConflictError,
   "position" | "text" | "source"
->;
+> & { candidateAbsent?: boolean };
 
 export type MarkdownPdfCodexPageInformationAction =
   | "numbers"
@@ -304,6 +306,7 @@ export async function reviseMarkdownPdfCodexPageInformationConflict(input: {
     position: input.conflict.position,
     current: input.conflict.text,
   });
+  const fromModel = contentAt(input.base, input.conflict.position) !== input.conflict.text;
   return {
     kind: "answers",
     answers: {
@@ -312,6 +315,10 @@ export async function reviseMarkdownPdfCodexPageInformationConflict(input: {
         position: input.conflict.position,
         choice: clear ? "clear" : "retain",
         conflictingText: input.conflict.text,
+        ...(fromModel ? { source: "model" as const } : {}),
+        ...(fromModel && input.conflict.candidateAbsent && !clear
+          ? { candidateAbsentConfirmed: true }
+          : {}),
       },
     },
   };

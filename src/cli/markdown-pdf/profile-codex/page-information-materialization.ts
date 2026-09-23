@@ -12,23 +12,33 @@ export interface MarkdownPdfPageInformationSlotResolution {
   choice: "clear" | "retain";
   /** Bind the choice to the exact content seen during revision. */
   conflictingText: string;
+  /** A late model-selected slot can disappear on regeneration. */
+  source?: "model";
+  candidateAbsentConfirmed?: boolean;
 }
 
 export class MarkdownPdfPageInformationConflictError extends Error {
   readonly position: MarkdownPdfPageChromePosition;
   readonly text: string;
   readonly source: "explicit" | "candidate";
+  readonly candidateAbsent: boolean;
 
   constructor(input: {
     position: MarkdownPdfPageChromePosition;
     text: string;
     source: "explicit" | "candidate";
+    candidateAbsent?: boolean;
   }) {
-    super(`Page numbering conflicts with repeating content at ${input.position}.`);
+    super(
+      input.candidateAbsent
+        ? `Reviewed repeating content at ${input.position} changed during preparation.`
+        : `Page numbering conflicts with repeating content at ${input.position}.`,
+    );
     this.name = "MarkdownPdfPageInformationConflictError";
     this.position = input.position;
     this.text = input.text;
     this.source = input.source;
+    this.candidateAbsent = input.candidateAbsent ?? false;
   }
 }
 
@@ -84,13 +94,35 @@ export function applyMarkdownPdfCodexPageInformation(input: {
     reserved && currentBase
       ? slotText(currentBase.header, currentBase.footer, reserved)
       : undefined;
+  const resolution = input.slotResolution;
+  const absentReviewedModelText =
+    reserved &&
+    resolution?.position === reserved &&
+    resolution.source === "model" &&
+    resolution.choice === "retain" &&
+    !candidateText?.trim() &&
+    !baseText?.trim() &&
+    repeating?.enabled !== false &&
+    explicitText === undefined;
+  if (absentReviewedModelText && !resolution.candidateAbsentConfirmed) {
+    throw new MarkdownPdfPageInformationConflictError({
+      position: reserved,
+      text: resolution.conflictingText,
+      source: "candidate",
+      candidateAbsent: true,
+    });
+  }
   const reviewedRetainedText =
     reserved &&
     repeating?.enabled !== false &&
-    input.slotResolution?.position === reserved &&
-    input.slotResolution.choice === "retain" &&
+    resolution?.position === reserved &&
+    resolution.choice === "retain" &&
     !candidateText?.trim()
-      ? baseText
+      ? baseText?.trim()
+        ? baseText
+        : absentReviewedModelText
+          ? resolution.conflictingText
+          : undefined
       : undefined;
   const conflictingText =
     explicitText ??
@@ -100,7 +132,6 @@ export function applyMarkdownPdfCodexPageInformation(input: {
         ? candidateText
         : reviewedRetainedText);
   const hasConflict = Boolean(reserved && conflictingText?.trim());
-  const resolution = input.slotResolution;
 
   if (hasConflict && reserved && conflictingText !== undefined) {
     if (explicitText !== undefined) {

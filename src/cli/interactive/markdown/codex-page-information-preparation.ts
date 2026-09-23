@@ -238,7 +238,12 @@ export function createMarkdownPdfPageInformationPreparationSession(
         return {
           kind: "needs-revision",
           plan,
-          conflict: { position: error.position, text: error.text, source: error.source },
+          conflict: {
+            position: error.position,
+            text: error.text,
+            source: error.source,
+            candidateAbsent: error.candidateAbsent,
+          },
         };
       }
       renderMarkdownPdfPageInformationPhaseModes(runtime, candidate, plan);

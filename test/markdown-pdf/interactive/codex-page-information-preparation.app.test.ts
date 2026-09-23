@@ -212,6 +212,81 @@ describe("internal Interactive page-information preparation", () => {
     },
   );
 
+  test("revises retained model text when regeneration leaves its slot empty", async () => {
+    await withTempFixtureDir("md-pdf-interactive-model-text-removed", async (fixtureDir) => {
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      let modelCalls = 0;
+      const session = createMarkdownPdfPageInformationPreparationSession(runtime, {
+        confirmRequest: async () => true,
+        internalProfileCodexRunner: async () => {
+          modelCalls += 1;
+          return JSON.stringify({
+            decision_mode: "adapted",
+            selected_candidate_id: "default",
+            accepted_patches:
+              modelCalls === 1
+                ? [{ op: "replace", path: "/footer/center", value: "Model text" }]
+                : [],
+            accepted_font_patches: [],
+            reasoning: "Use the selected Profile.",
+            warnings: [],
+            fallback_reason: "",
+            unmatched_directions: [],
+          });
+        },
+      });
+      const setup: MarkdownPdfCodexSetup = {
+        artifact: "profile",
+        fontHints: [],
+        intent: "Use a report layout",
+        pageInformation: { pageNumbers: pageInformation.pageNumbers },
+      };
+      const first = await session.prepare(setup);
+      expect(first).toMatchObject({
+        kind: "needs-revision",
+        conflict: { text: "Model text", candidateAbsent: false },
+      });
+      if (first.kind !== "needs-revision") throw new Error("Expected first revision");
+      const prompts = {
+        formalGuide: { clearOccupiedPageNumberPosition: async () => false },
+      } as unknown as MarkdownPdfCodexPageInformationPrompts;
+      const retained = await session.revise(setup, first.conflict, prompts);
+      if (retained.kind !== "answers" || !retained.answers) {
+        throw new Error("Expected retained answers");
+      }
+      expect(retained.answers.occupiedNumberSlot).toMatchObject({ source: "model" });
+      const second = await session.prepare({ ...setup, pageInformation: retained.answers });
+      expect(second).toMatchObject({
+        kind: "needs-revision",
+        conflict: { text: "Model text", candidateAbsent: true },
+      });
+      if (second.kind !== "needs-revision") throw new Error("Expected removal revision");
+      const confirmed = await session.revise(
+        { ...setup, pageInformation: retained.answers },
+        second.conflict,
+        prompts,
+      );
+      if (confirmed.kind !== "answers" || !confirmed.answers) {
+        throw new Error("Expected confirmed answers");
+      }
+      expect(confirmed.answers.occupiedNumberSlot).toMatchObject({
+        source: "model",
+        candidateAbsentConfirmed: true,
+      });
+      const third = await session.prepare({ ...setup, pageInformation: confirmed.answers });
+      expect(third.kind).toBe("prepared");
+      if (third.kind === "prepared" && third.candidate.artifact === "profile") {
+        expect(third.candidate.prepared.kind).toBe("profile");
+        if (third.candidate.prepared.kind === "profile") {
+          expect(third.candidate.prepared.finalProfile.footer).toMatchObject({
+            center: "Model text",
+          });
+        }
+      }
+      expect(modelCalls).toBe(3);
+    });
+  });
+
   test.each(["profile", "project-bundle"] as const)(
     "%s returns a late occupied-slot conflict before acceptance or Template work",
     async (artifact) => {
