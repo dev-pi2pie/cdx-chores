@@ -12,6 +12,7 @@ const codexExecution = {
 describe("interactive Markdown PDF Codex authoring", () => {
   test("declining consent, revising setup, and re-consenting prepares exactly once", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       codexExecution,
       mode: "run",
       markdownPdfMocks: true,
@@ -36,6 +37,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
 
   test("prepares a new stable candidate only after explicit regeneration", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       codexTimeoutMs: 120_000,
       codexExecution,
       mode: "run",
@@ -67,6 +69,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
 
   test("preserves the accepted candidate after a no-op font-hint review", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       codexExecution,
       mode: "run",
       markdownPdfMocks: true,
@@ -95,6 +98,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
 
   test("invalidates the candidate only after an accepted font-hint change", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       codexTimeoutMs: 120_000,
       codexExecution,
       mode: "run",
@@ -131,6 +135,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
     "binds and writes one durable %s candidate once",
     (artifact) => {
       const result = runInteractiveHarness({
+        pageInformationInitialChoice: "skip",
         codexExecution,
         mode: "run",
         markdownPdfMocks: true,
@@ -180,6 +185,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
 
   test("resets the retained override after Codex regeneration", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       codexExecution,
       mode: "run",
       markdownPdfMocks: true,

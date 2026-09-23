@@ -40,6 +40,9 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(prompt).toContain("patchValueDomains");
     expect(prompt).toContain("patchValueConstraints");
     expect(prompt).toContain("pageNumberContract");
+    expect(prompt).toContain("{page} is the current logical page number");
+    expect(prompt).toContain("{pdfPages} is the total physical PDF page count");
+    expect(prompt).not.toContain("Avoid total-page formats unless");
     expect(prompt).toContain("styleDecisionPolicy");
     expect(prompt).toContain("tableLayoutSignal");
     expect(prompt).toContain("titleDecisionSignal");

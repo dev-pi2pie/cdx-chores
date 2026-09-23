@@ -9,11 +9,15 @@ export { createSynthesisSignals };
 export function requestBase(
   input: {
     coverImage?: boolean;
+    projectTextCover?: boolean;
     signals?: MarkdownPdfTemplateCodexRequest["signals"];
   } = {},
 ): MarkdownPdfTemplateCodexRequest {
   return {
-    intent: "adapt this report with a local cover image",
+    intent: input.projectTextCover
+      ? "Use a restrained report layout."
+      : "adapt this report with a local cover image",
+    ...(input.projectTextCover ? { projectTextCover: true } : {}),
     outputPlan: createSynthesisOutputPlan({ includeCoverAsset: input.coverImage }),
     signals:
       input.signals ??
@@ -45,6 +49,7 @@ export function promptFacts(prompt: string): Record<string, unknown> {
 
 export function responseFromDecision(input: {
   coverEnabled?: boolean;
+  coverStyle?: string;
   cssBlocks?: Array<{ css: string; slot: string }>;
   decisionMode?: string;
   fontDecisions?: Array<{
@@ -90,7 +95,7 @@ export function responseFromDecision(input: {
         media_align: input.mediaAlign ?? "center",
         media_scale: input.mediaScale ?? (coverEnabled ? "hero" : "balanced"),
         text_align: input.textAlign ?? "center",
-        style: coverEnabled ? "media" : "none",
+        style: input.coverStyle ?? (coverEnabled ? "media" : "none"),
         orientation_bucket: coverEnabled ? "landscape" : "unknown",
         fit_pressure: coverEnabled ? "normal" : "unknown",
       },

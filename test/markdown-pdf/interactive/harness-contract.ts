@@ -7,6 +7,19 @@ export interface MarkdownPdfInteractiveHarnessScenario {
   markdownPdfDeterministicBindErrorMessage?: string;
   markdownPdfDeterministicWriteErrorMessages?: string[];
   markdownPdfCodexBindErrorMessage?: string;
+  markdownPdfCodexPrepareCoverConflictOnCall?: number;
+  markdownPdfCodexPrepareConflicts?: Array<{
+    position:
+      | "top-left"
+      | "top-center"
+      | "top-right"
+      | "bottom-left"
+      | "bottom-center"
+      | "bottom-right";
+    text: string;
+    source: "explicit" | "candidate";
+    candidateAbsent?: boolean;
+  }>;
   markdownPdfCodexFinalProfile?: Record<string, unknown>;
   markdownPdfCodexProjectHandoff?: Record<string, unknown>;
   markdownPdfCodexUnusableArtifacts?: Array<"profile" | "template-bundle" | "project-bundle">;

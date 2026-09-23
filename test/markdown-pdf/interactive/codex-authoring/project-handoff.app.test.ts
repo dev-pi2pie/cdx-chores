@@ -13,6 +13,7 @@ describe("interactive Markdown PDF Codex Project handoff", () => {
     (artifact, choice) => {
       const compiled = choice === "inherit" ? undefined : choice === "enable";
       const result = runInteractiveHarness({
+        pageInformationInitialChoice: "skip",
         mode: "run",
         markdownPdfMocks: true,
         selectQueue: [
@@ -61,6 +62,7 @@ describe("interactive Markdown PDF Codex Project handoff", () => {
     "shows reusable Profile code settings only for %s candidates",
     (artifact, ownsProfile) => {
       const result = runInteractiveHarness({
+        pageInformationInitialChoice: "skip",
         mode: "run",
         markdownPdfMocks: true,
         selectQueue: [...recipesCodexSelections(artifact), "continue", "cancel"],
@@ -90,6 +92,7 @@ describe("interactive Markdown PDF Codex Project handoff", () => {
     const bell = "\u0007";
     const privateDiagnostic = `Rejected /Users/alice/private/style.css ${escape}]0;unsafe${bell}`;
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfCodexFinalProfile: {
@@ -200,6 +203,7 @@ describe("interactive Markdown PDF Codex Project handoff", () => {
 
   test("reviews disabled Project page numbers without capabilities or override flags", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfCodexFinalProfile: {

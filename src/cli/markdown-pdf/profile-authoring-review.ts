@@ -2,6 +2,7 @@ import {
   normalizeMarkdownPdfProfile,
   type NormalizedMarkdownPdfPageChromeArea,
   type NormalizedMarkdownPdfProfile,
+  type MarkdownPdfPageChromePosition,
 } from "./profile";
 import {
   collectMarkdownPdfRendererCapabilityRequests,
@@ -57,12 +58,15 @@ export function collectMarkdownPdfProfileAuthoringReview(
   return { normalizedProfile, capabilityRequirements };
 }
 
-function formatPageChromeArea(
+export function formatMarkdownPdfProfilePageChromeArea(
   label: "Header" | "Footer",
   area: Readonly<NormalizedMarkdownPdfPageChromeArea>,
+  alreadyShownText: Partial<Record<"left" | "center" | "right", string>> = {},
 ): string[] {
+  const text = (slot: "left" | "center" | "right"): string =>
+    alreadyShownText[slot] === area[slot] ? "(matches entered text)" : JSON.stringify(area[slot]);
   const lines = [
-    `- ${label}: left=${JSON.stringify(area.left)}, center=${JSON.stringify(area.center)}, right=${JSON.stringify(area.right)}`,
+    `- ${label}: left=${text("left")}, center=${text("center")}, right=${text("right")}`,
   ];
   if (!area.style) {
     lines.push(`- ${label} style: default`);
@@ -84,6 +88,10 @@ function formatPageChromeArea(
 
 export function formatMarkdownPdfProfileAuthoringReview(
   review: Readonly<MarkdownPdfProfileAuthoringReview>,
+  input: {
+    alreadyShownPageNumberLabel?: string;
+    alreadyShownRepeatingText?: Partial<Record<MarkdownPdfPageChromePosition, string>>;
+  } = {},
 ): string[] {
   const pageNumbers = review.normalizedProfile.pageNumbers;
   const { cover, titleBlock } = review.normalizedProfile;
@@ -109,13 +117,21 @@ export function formatMarkdownPdfProfileAuthoringReview(
           `- Start: ${pageNumbers.start}`,
           `- Increment: ${pageNumbers.increment}`,
           `- Position: ${pageNumbers.position}`,
-          `- Label: ${JSON.stringify(pageNumbers.format)}`,
+          `- Label: ${input.alreadyShownPageNumberLabel === pageNumbers.format ? "(matches entered label)" : JSON.stringify(pageNumbers.format)}`,
         ]
       : []),
     "",
     "Reusable Profile repeating page content:",
-    ...formatPageChromeArea("Header", review.normalizedProfile.header),
-    ...formatPageChromeArea("Footer", review.normalizedProfile.footer),
+    ...formatMarkdownPdfProfilePageChromeArea("Header", review.normalizedProfile.header, {
+      left: input.alreadyShownRepeatingText?.["top-left"],
+      center: input.alreadyShownRepeatingText?.["top-center"],
+      right: input.alreadyShownRepeatingText?.["top-right"],
+    }),
+    ...formatMarkdownPdfProfilePageChromeArea("Footer", review.normalizedProfile.footer, {
+      left: input.alreadyShownRepeatingText?.["bottom-left"],
+      center: input.alreadyShownRepeatingText?.["bottom-center"],
+      right: input.alreadyShownRepeatingText?.["bottom-right"],
+    }),
   ];
 
   if (review.capabilityRequirements.length > 0) {

@@ -1,9 +1,92 @@
 import { describe, expect, test } from "bun:test";
+import { writeFile } from "node:fs/promises";
+import { join } from "node:path";
 
 import { runInteractiveHarness } from "../../../cli-foundations/interactive-harness";
+import { withTempFixtureDir } from "../../../helpers/cli-test-utils";
+import { minimalPng } from "../../actions/template-codex/fixtures";
 import { RECIPES_ENTRY, TO_PDF_ENTRY, recipesCodexSelections } from "../codex-authoring-fixtures";
 
 describe("interactive Markdown PDF Codex authoring", () => {
+  test("returns a post-Profile cover conflict to setup without writing a Project", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfCodexPrepareCoverConflictOnCall: 1,
+      selectQueue: [...recipesCodexSelections("project-bundle"), "continue", "cancel"],
+      inputQueue: [""],
+      confirmQueue: [false, true],
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.stderr).toContain("Project cover choices: Cover intent conflicts");
+    expect(result.markdownPdfCodexPrepareCalls).toHaveLength(1);
+    expect(result.markdownPdfCodexWriteCalls).toEqual([]);
+  });
+
+  test("saves a Project after revising a post-Profile cover conflict", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfCodexPrepareCoverConflictOnCall: 1,
+      selectQueue: [
+        ...recipesCodexSelections("project-bundle"),
+        "continue",
+        "intent",
+        "continue",
+        "save",
+        "none",
+        "suggested",
+        "exit",
+      ],
+      inputQueue: ["", "Use a text-only cover"],
+      confirmQueue: [false, true, false, true, false, true],
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.stderr).toContain("Project cover choices: Cover intent conflicts");
+    expect(result.markdownPdfCodexPrepareCalls).toHaveLength(2);
+    expect(result.markdownPdfCodexPrepareCalls[0]?.intent).toBeUndefined();
+    expect(result.markdownPdfCodexPrepareCalls[1]).toEqual(
+      expect.objectContaining({ intent: "Use a text-only cover" }),
+    );
+    expect(result.markdownPdfCodexWriteCalls).toEqual([
+      expect.objectContaining({
+        artifact: "project-bundle",
+        candidateId: "codex-project-bundle-2",
+      }),
+    ]);
+  });
+
+  test("returns an image/base-cover conflict to setup before consent", async () => {
+    await withTempFixtureDir("md-pdf-interactive-project-cover-conflict", async (fixtureDir) => {
+      const baseProfile = join(fixtureDir, "base.yml");
+      const coverImage = join(fixtureDir, "cover.png");
+      await writeFile(baseProfile, "cover:\n  enabled: false\n", "utf8");
+      await writeFile(coverImage, minimalPng(1200, 800));
+
+      const result = runInteractiveHarness({
+        mode: "run",
+        markdownPdfMocks: true,
+        selectQueue: [
+          ...recipesCodexSelections("project-bundle"),
+          "base-profile",
+          "cover-image",
+          "continue",
+          "cancel",
+        ],
+        inputQueue: [""],
+        requiredPathQueue: [baseProfile, coverImage],
+        confirmQueue: [false],
+      });
+
+      expect(result.error).toBeUndefined();
+      expect(result.stderr).toContain("selected cover image conflicts with the base Profile");
+      expect(result.markdownPdfCodexPrepareCalls).toEqual([]);
+      expect(result.promptCalls.some((call) => call.message.includes("Consent"))).toBe(false);
+    });
+  });
+
   test.each(["profile", "template-bundle", "project-bundle"] as const)(
     "uses the configured Interactive timeout for %s preparation without adding a prompt",
     (artifact) => {
@@ -119,6 +202,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
           "generated",
           artifact,
           "codex-assistant",
+          ...(artifact === "profile" ? ["skip"] : []),
           "continue",
           "cancel",
         ],
@@ -187,6 +271,7 @@ describe("interactive Markdown PDF Codex authoring", () => {
       "base-profile",
       ...(hasCoverChoice ? ["cover-image"] : []),
       "font-hints",
+      ...(artifact === "template-bundle" ? [] : ["page-information"]),
       "continue",
       "back",
       "cancel",

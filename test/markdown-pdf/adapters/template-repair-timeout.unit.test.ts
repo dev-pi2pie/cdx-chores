@@ -14,6 +14,7 @@ describe("Markdown PDF template Codex adapter: repair timeout", () => {
   });
 
   test("starts the default Codex runner in the request working directory", async () => {
+    const requestEvents: string[] = [];
     let capturedThreadOptions: unknown;
     let capturedRunMessages: unknown;
     let capturedRunOptions: unknown;
@@ -34,9 +35,11 @@ describe("Markdown PDF template Codex adapter: repair timeout", () => {
     mock.module("@openai/codex-sdk", () => ({
       Codex: class {
         startThread(options: unknown) {
+          requestEvents.push("start-thread");
           capturedThreadOptions = options;
           return {
             run: async (messages: unknown, options: unknown) => {
+              requestEvents.push("run");
               capturedRunMessages = messages;
               capturedRunOptions = options;
               return {
@@ -53,7 +56,10 @@ describe("Markdown PDF template Codex adapter: repair timeout", () => {
 
     let result: Awaited<ReturnType<typeof suggestMarkdownPdfTemplateWithCodex>>;
     try {
-      result = await suggestMarkdownPdfTemplateWithCodex(requestBase());
+      result = await suggestMarkdownPdfTemplateWithCodex({
+        ...requestBase(),
+        onModelRequestAttempt: () => requestEvents.push("attempt"),
+      });
     } finally {
       Object.defineProperty(AbortSignal, "timeout", originalTimeoutDescriptor);
     }
@@ -86,13 +92,17 @@ describe("Markdown PDF template Codex adapter: repair timeout", () => {
     expect(runOptions.outputSchema).toBe(MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA);
     expect(runOptions.signal).toBeInstanceOf(AbortSignal);
     expect(timeoutCalls).toEqual([MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS]);
+    expect(requestEvents).toEqual(["start-thread", "attempt", "run"]);
   });
 
   test("repairs schema-valid responses that fail local application once", async () => {
     const prompts: string[] = [];
+    const requestEvents: string[] = [];
     const result = await suggestMarkdownPdfTemplateWithCodex({
       ...requestBase(),
+      onModelRequestAttempt: () => requestEvents.push("attempt"),
       runner: async ({ prompt }) => {
+        requestEvents.push("run");
         prompts.push(prompt);
         return prompts.length === 1
           ? responseFromDecision({
@@ -122,6 +132,7 @@ describe("Markdown PDF template Codex adapter: repair timeout", () => {
     });
 
     expect(prompts).toHaveLength(2);
+    expect(requestEvents).toEqual(["attempt", "run", "attempt", "run"]);
     expect(prompts[1]).toContain("Correction request:");
     expect(prompts[1]).toContain("not in the output plan");
     expect(prompts[1]).toContain("[local-path]");
@@ -135,6 +146,41 @@ describe("Markdown PDF template Codex adapter: repair timeout", () => {
         role: "body",
       }),
     ]);
+  });
+
+  test("does not mark a request when the default thread cannot start", async () => {
+    let attempts = 0;
+    mock.module("@openai/codex-sdk", () => ({
+      Codex: class {
+        startThread(): never {
+          throw new Error("thread setup failed");
+        }
+      },
+    }));
+
+    const result = await suggestMarkdownPdfTemplateWithCodex({
+      ...requestBase(),
+      onModelRequestAttempt: () => {
+        attempts += 1;
+      },
+    });
+    expect(result.decision.decisionMode).toBe("no-usable-template");
+    expect(attempts).toBe(0);
+  });
+
+  test("marks a failed injected runner invocation", async () => {
+    let attempts = 0;
+    const result = await suggestMarkdownPdfTemplateWithCodex({
+      ...requestBase(),
+      onModelRequestAttempt: () => {
+        attempts += 1;
+      },
+      runner: async () => {
+        throw new Error("request failed");
+      },
+    });
+    expect(result.decision.decisionMode).toBe("no-usable-template");
+    expect(attempts).toBe(1);
   });
 
   test("stops after one application repair attempt", async () => {

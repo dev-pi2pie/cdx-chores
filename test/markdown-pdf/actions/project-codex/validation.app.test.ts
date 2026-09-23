@@ -1166,13 +1166,62 @@ describe("cli action modules: md pdf-project codex validation", () => {
         "utf8",
       );
 
-      const { validation } = await runValidationFixture(fixtureDir, {
-        baseProfile: "base.yml",
+      const { outputPlan, profilePhase, runtime, state, templatePhase, validation } =
+        await runValidationFixture(fixtureDir, {
+          baseProfile: "base.yml",
+        });
+
+      expect(validation.decisionMode).toBe("deterministic");
+      expect(templatePhase.synthesis.templateHtml).toContain('data-cdx-profile-text-cover="true"');
+      const withoutCover = templatePhase.synthesis.templateHtml.replace(
+        /<section class="pdf-cover[^>]*data-cdx-profile-text-cover="true"><\/section>\n?/u,
+        "",
+      );
+      expect(withoutCover).not.toBe(templatePhase.synthesis.templateHtml);
+      const invalidTemplatePhase = {
+        ...templatePhase,
+        synthesis: { ...templatePhase.synthesis, templateHtml: withoutCover },
+      };
+      const rejected = validateMdPdfProjectCodexProject({
+        outputPlan,
+        profilePhase,
+        runtime,
+        state,
+        templatePhase: invalidTemplatePhase,
       });
 
-      expectNoUsableValidationFailure(validation, {
+      expectNoUsableValidationFailure(rejected, {
         name: "profile-cover-compatibility",
         messageIncludes: "exactly one live .pdf-cover",
+      });
+    });
+  });
+
+  test("rejects a Template cover when the final Profile disables it", async () => {
+    await withTempFixtureDir("md-pdf-project-codex-validation-cover-off", async (fixtureDir) => {
+      await writeFile(join(fixtureDir, "base.yml"), "cover:\n  enabled: false\n", "utf8");
+      const { outputPlan, profilePhase, runtime, state, templatePhase } =
+        await runValidationFixture(fixtureDir, { baseProfile: "base.yml" });
+      const rejected = validateMdPdfProjectCodexProject({
+        outputPlan,
+        profilePhase,
+        runtime,
+        state,
+        templatePhase: {
+          ...templatePhase,
+          synthesis: {
+            ...templatePhase.synthesis,
+            slots: {
+              ...templatePhase.synthesis.slots,
+              cover: { ...templatePhase.synthesis.slots.cover, enabled: true },
+            },
+          },
+        },
+      });
+
+      expectNoUsableValidationFailure(rejected, {
+        name: "profile-template-compatibility",
+        messageIncludes: "final Profile disables",
       });
     });
   });

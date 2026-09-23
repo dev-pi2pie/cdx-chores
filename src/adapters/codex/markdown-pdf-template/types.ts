@@ -8,6 +8,8 @@ import type {
 export interface MarkdownPdfTemplateCodexRequest {
   intent?: string;
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
+  /** Project-only capability; carries no Profile cover fields or metadata. */
+  projectTextCover?: boolean;
   signals: MdPdfTemplateCodexSignalCollection;
   workingDirectory: string;
 }

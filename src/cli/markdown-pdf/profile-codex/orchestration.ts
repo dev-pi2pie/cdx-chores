@@ -32,6 +32,7 @@ import type { NormalizedMarkdownPdfProfileIdentity } from "../profile/types";
 import { resolveMarkdownPdfCodexProfileCandidates } from "./candidates";
 import { createMarkdownPdfCodexProfileIdentity } from "./profile-identity";
 import { materializeMarkdownPdfProfileCodexProfile } from "./synthesis";
+import type { MarkdownPdfCodexPageInformationSignal } from "./page-information-signals";
 
 export interface MarkdownPdfCodexProfileOrchestrationContext {
   candidateResolution: ReturnType<typeof resolveMarkdownPdfCodexProfileCandidates>;
@@ -84,6 +85,8 @@ export function createMarkdownPdfCodexProfileOrchestrationContext(input: {
   fontHints: string[];
   fontSignals?: MarkdownPdfFontSignals;
   intent?: string;
+  projectCoverImageAvailable?: boolean;
+  pageInformation?: MarkdownPdfCodexPageInformationSignal;
   profileId: string;
   signalMode: MarkdownPdfCodexSignalMode;
   workingDirectory: string;
@@ -110,6 +113,10 @@ export function createMarkdownPdfCodexProfileOrchestrationContext(input: {
       fontHints: input.fontHints,
       fontSignals,
       intent: input.intent,
+      ...(input.projectCoverImageAvailable !== undefined
+        ? { projectCoverImageAvailable: input.projectCoverImageAvailable }
+        : {}),
+      ...(input.pageInformation ? { pageInformation: input.pageInformation } : {}),
       selectedBaseProfileSummary: input.baseProfileCandidate?.summary,
       signalMode: input.signalMode,
       supportedSchemaSummary: MARKDOWN_PDF_PROFILE_SUPPORTED_SCHEMA_SUMMARY,
@@ -127,6 +134,7 @@ async function suggestMarkdownPdfCodexProfileWithProgress(input: {
   runtime: CliRuntime;
   timeoutMs?: number;
   codexExecution?: CodexExecutionOptions;
+  onModelRequestAttempt?: () => void;
 }): Promise<MarkdownPdfCodexProfileResult> {
   const ownsProgressSession = !input.progressSession;
   const codexProgress =
@@ -143,11 +151,13 @@ async function suggestMarkdownPdfCodexProfileWithProgress(input: {
           runner: input.profileCodexRunner,
           timeoutMs: input.timeoutMs,
           codexExecution: input.codexExecution,
+          onModelRequestAttempt: input.onModelRequestAttempt,
         })
       : await suggestMarkdownPdfProfileWithCodex({
           ...input.context.request,
           timeoutMs: input.timeoutMs,
           codexExecution: input.codexExecution,
+          onModelRequestAttempt: input.onModelRequestAttempt,
         });
     codexProgressStatus = result.profile
       ? result.decision.decisionMode === "conservative-fallback"
@@ -202,6 +212,7 @@ export async function runMarkdownPdfCodexProfileOrchestration(input: {
   runtime: CliRuntime;
   timeoutMs?: number;
   codexExecution?: CodexExecutionOptions;
+  onModelRequestAttempt?: () => void;
 }): Promise<MarkdownPdfCodexProfileOrchestrationResult> {
   const codexExecution = resolveCodexExecution(input.codexExecution);
   input = { ...input, codexExecution };

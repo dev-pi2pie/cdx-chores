@@ -18,16 +18,19 @@ import type {
 import type { MdPdfProjectCodexProfilePhaseResult } from "./profile-phase";
 import type { MdPdfProjectCodexTemplatePhaseResult } from "./template-phase";
 import type { MarkdownPdfProjectCodexReportArtifact } from "./types-report";
+import type { MarkdownPdfPageInformationSlotResolution } from "../profile-codex";
 import type { MarkdownPdfProjectCodexValidationSummary } from "./validate-project";
 
 type MdPdfProjectCodexWriteInput = {
   managedAssetContents?: readonly MarkdownPdfProjectCodexManagedAssetContent[];
+  modelCallAttempted?: boolean;
   outputPlan: MarkdownPdfProjectCodexOutputPlan;
   overwrite?: boolean;
   profilePhase: MdPdfProjectCodexProfilePhaseResult;
   reportArtifact?: MarkdownPdfProjectCodexReportArtifact;
   runtime: CliRuntime;
   signals: MdPdfProjectCodexSignalCollection;
+  slotResolution?: MarkdownPdfPageInformationSlotResolution;
   state: NormalizedMdPdfProjectCodexCommandState;
   templatePhase: MdPdfProjectCodexTemplatePhaseResult;
   validation: MarkdownPdfProjectCodexValidationSummary;
@@ -145,7 +148,7 @@ export async function snapshotMdPdfProjectCodexManagedAssets(input: {
 }
 
 async function validateMdPdfProjectCodexReportIfRequested(
-  input: Pick<MdPdfProjectCodexWriteInput, "outputPlan" | "runtime" | "state">,
+  input: Pick<MdPdfProjectCodexWriteInput, "outputPlan" | "runtime" | "signals" | "state">,
 ): Promise<void> {
   if (!input.outputPlan.report) {
     return;

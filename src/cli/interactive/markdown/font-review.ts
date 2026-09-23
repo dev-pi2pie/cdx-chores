@@ -1,5 +1,6 @@
 import type { MarkdownPdfCodexProfileFontPatch } from "../../../adapters/codex/markdown-pdf-profile";
 import type { MarkdownPdfTemplateCodexMaterializedFontDecision } from "../../markdown-pdf/template-codex";
+import { collectMdPdfProjectCodexUnsupportedDirections } from "../../markdown-pdf/project-codex/diagnostics";
 import type { PreparedMarkdownPdfCodexCandidate } from "./codex-types";
 
 export interface MarkdownPdfInteractiveAppliedFontMapping {
@@ -82,6 +83,9 @@ export function collectMarkdownPdfInteractiveFontReview(
       ...template.applied,
     ],
     blocked: template.blocked,
-    unresolved: candidate.prepared.binding.reportArtifact.unsupportedDirections,
+    unresolved: collectMdPdfProjectCodexUnsupportedDirections({
+      profilePhase: candidate.prepared.profilePhase,
+      templatePhase: candidate.prepared.templatePhase,
+    }),
   };
 }

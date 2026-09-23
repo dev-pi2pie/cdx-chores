@@ -53,6 +53,8 @@ export {
   assessMarkdownPdfCoverVisibility,
   createMarkdownPdfCoverCss,
   createMarkdownPdfCoverHtml,
+  createMarkdownPdfCoverScaffold,
+  MARKDOWN_PDF_PROFILE_TEXT_COVER_MARKER,
   resolveMarkdownPdfCoverFields,
 } from "./cover";
 export type { MarkdownPdfCoverVisibilityAssessment, ResolvedMarkdownPdfCoverFields } from "./cover";

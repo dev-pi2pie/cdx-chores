@@ -26,6 +26,8 @@ export interface InteractiveHarnessScenario
   captureCodexExecution?: boolean;
   captureCodexTimeouts?: boolean;
   selectQueue?: unknown[];
+  /** Opt in to skipping the optional Profile prompt before a queued setup Continue. */
+  pageInformationInitialChoice?: "skip";
   nowIsoString?: string;
   checkboxQueue?: unknown[];
   confirmQueue?: boolean[];

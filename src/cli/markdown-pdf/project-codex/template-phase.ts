@@ -138,12 +138,14 @@ function templatePhaseDecisionMode(
 async function suggestProjectTemplateWithCodexProgress(input: {
   intent?: string;
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
+  projectTextCover?: boolean;
   progressSession?: CodexProgressSession;
   runtime: CliRuntime;
   signals: MdPdfTemplateCodexSignalCollection;
   templateCodexRunner?: MarkdownPdfTemplateCodexRunner;
   timeoutMs?: number;
   codexExecution?: CodexExecutionOptions;
+  onModelRequestAttempt?: () => void;
 }): Promise<MarkdownPdfTemplateCodexResult> {
   const ownsProgressSession = !input.progressSession;
   const codexProgress =
@@ -158,18 +160,22 @@ async function suggestProjectTemplateWithCodexProgress(input: {
       ? await suggestMarkdownPdfTemplateWithCodex({
           intent: input.intent,
           outputPlan: input.outputPlan,
+          projectTextCover: input.projectTextCover,
           runner: input.templateCodexRunner,
           signals: input.signals,
           timeoutMs: input.timeoutMs,
           codexExecution: input.codexExecution,
+          onModelRequestAttempt: input.onModelRequestAttempt,
           workingDirectory: input.runtime.cwd,
         })
       : await suggestMarkdownPdfTemplateWithCodex({
           intent: input.intent,
           outputPlan: input.outputPlan,
+          projectTextCover: input.projectTextCover,
           signals: input.signals,
           timeoutMs: input.timeoutMs,
           codexExecution: input.codexExecution,
+          onModelRequestAttempt: input.onModelRequestAttempt,
           workingDirectory: input.runtime.cwd,
         });
     codexProgressStatus =
@@ -196,6 +202,7 @@ export async function runMdPdfProjectCodexTemplatePhase(input: {
   templateCodexRunner?: MarkdownPdfTemplateCodexRunner;
   timeoutMs?: number;
   codexExecution?: CodexExecutionOptions;
+  onModelRequestAttempt?: () => void;
 }): Promise<MdPdfProjectCodexTemplatePhaseResult> {
   const codexExecution = resolveCodexExecution(input.codexExecution);
   input = { ...input, codexExecution };
@@ -214,6 +221,10 @@ export async function runMdPdfProjectCodexTemplatePhase(input: {
     signalMode,
     signals: input.signals,
   });
+  const textCoverProfile =
+    !signals.coverImage.available && normalizedFinalProfile.profile.cover.enabled
+      ? normalizedFinalProfile.profile
+      : undefined;
   const intent = createForwardedTemplateIntent({
     forwardedProfileDirections,
     intent: input.state.intent,
@@ -222,12 +233,14 @@ export async function runMdPdfProjectCodexTemplatePhase(input: {
     ? await suggestProjectTemplateWithCodexProgress({
         intent,
         outputPlan,
+        projectTextCover: Boolean(textCoverProfile),
         progressSession: input.progressSession,
         runtime: input.runtime,
         signals,
         templateCodexRunner: input.templateCodexRunner,
         timeoutMs: input.timeoutMs,
         codexExecution: input.codexExecution,
+        onModelRequestAttempt: input.onModelRequestAttempt,
       })
     : undefined;
   const synthesis = codexResult
@@ -236,8 +249,9 @@ export async function runMdPdfProjectCodexTemplatePhase(input: {
         fontOwnership,
         outputPlan,
         signals,
+        textCoverProfile,
       })
-    : synthesizeMdPdfTemplateCodex({ fontOwnership, outputPlan, signals });
+    : synthesizeMdPdfTemplateCodex({ fontOwnership, outputPlan, signals, textCoverProfile });
 
   validateMdPdfTemplateCodexSynthesis({
     deferBodyBoundaryValidationToProject: true,

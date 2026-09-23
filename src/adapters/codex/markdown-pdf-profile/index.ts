@@ -131,13 +131,16 @@ async function runMarkdownPdfProfileCodexPrompt(options: {
   codexExecution: ResolvedCodexExecution;
   timeoutMs?: number;
   workingDirectory: string;
+  onModelRequestAttempt?: () => void;
 }): Promise<string> {
   const thread = await startCodexReadOnlyThread(options.workingDirectory, {
     codexExecution: options.codexExecution,
   });
+  const signal = AbortSignal.timeout(options.timeoutMs ?? MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS);
+  options.onModelRequestAttempt?.();
   const turn = await thread.run([{ type: "text", text: options.prompt }], {
     outputSchema: MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA,
-    signal: AbortSignal.timeout(options.timeoutMs ?? MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS),
+    signal,
   });
   return turn.finalResponse;
 }
@@ -147,18 +150,27 @@ export async function suggestMarkdownPdfProfileWithCodex(
     runner?: MarkdownPdfCodexProfileRunner;
     timeoutMs?: number;
     codexExecution?: CodexExecutionOptions;
+    onModelRequestAttempt?: () => void;
   },
 ): Promise<MarkdownPdfCodexProfileResult> {
   const codexExecution = resolveCodexExecution(request.codexExecution);
   let finalResponse: string;
-  const runner = request.runner ?? runMarkdownPdfProfileCodexPrompt;
   try {
-    finalResponse = await runner({
+    const options = {
       prompt: buildMarkdownPdfProfileCodexPrompt(request),
       timeoutMs: request.timeoutMs,
       codexExecution,
       workingDirectory: request.workingDirectory,
-    });
+    };
+    if (request.runner) {
+      request.onModelRequestAttempt?.();
+      finalResponse = await request.runner(options);
+    } else {
+      finalResponse = await runMarkdownPdfProfileCodexPrompt({
+        ...options,
+        onModelRequestAttempt: request.onModelRequestAttempt,
+      });
+    }
   } catch (error) {
     if (isCodexStructuredOutputSchemaError(error)) {
       const message = error instanceof Error ? error.message : String(error);

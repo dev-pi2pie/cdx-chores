@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-08-16
+modified-date: 2026-09-23
 status: completed
 agent: codex
 ---
@@ -279,6 +279,39 @@ cdx-chores md to-pdf \
   --page-size A4 \
   --orientation portrait \
   --margin 18mm
+```
+
+`--page-size` accepts `A3`, `A4`, `A5`, `Letter`, `Legal`, or `Tabloid`;
+`--orientation` accepts `portrait` or `landscape`. `--margin` sets all four
+sides, and `--margin-top`, `--margin-right`, `--margin-bottom`, and
+`--margin-left` can set them individually. For a wide document:
+
+```bash
+cdx-chores md to-pdf \
+  --input ./tables.md \
+  --preset wide-table \
+  --page-size A3 \
+  --orientation landscape \
+  --margin 12mm \
+  --output ./tables.pdf
+```
+
+For a reusable page shape, save these settings as `./wide-profile.yml` and
+render with it:
+
+```yaml
+schemaVersion: 3
+page:
+  size: A4
+  orientation: landscape
+  marginTop: 16mm
+  marginRight: 12mm
+  marginBottom: 16mm
+  marginLeft: 12mm
+```
+
+```bash
+cdx-chores md to-pdf --input ./tables.md --profile ./wide-profile.yml --output ./tables.pdf
 ```
 
 Margin flags accept simple CSS print lengths:
@@ -562,7 +595,14 @@ Profiles are declarative settings consumed by the built-in Markdown PDF recipe. 
 
 `md pdf-profile init` writes reusable settings for the built-in recipe. A profile can configure page shape, ToC behavior, metadata, text cover/title-page fields, page chrome, font stacks, and code highlighting. Profiles should use standard CSS generic family names such as `serif`, `sans-serif`, and `monospace`; `sans` and `mono` are treated as literal font names, not aliases.
 
-When rendering with both a profile and CLI layout flags, CLI flags override matching profile page and ToC settings. Custom CSS is loaded after generated CSS, so it can override profile-generated styles. `--no-default-css` disables generated CSS, including profile-generated font, cover, and page chrome styles.
+When rendering with both a Profile and CLI layout flags, CLI flags override
+matching Profile page and ToC settings. Custom CSS is loaded after generated
+CSS, so it can override those settings. In particular, a saved Project's
+`style.css` contains its prepared `@page` size and margins; an orientation or
+margin flag alone will not change the final page shape while that stylesheet
+still declares it. Edit or regenerate the stylesheet for a different Project
+layout, then inspect the PDF. `--no-default-css` disables generated CSS,
+including Profile font, cover, and page-chrome styles.
 
 For Codex-generated font output, ownership determines what is serialized:
 
@@ -668,6 +708,25 @@ frontmatter, Profile metadata, and derived defaults are merged. A cover whose
 fields resolve to no visible metadata warns because it may produce an empty
 page.
 
+The built-in text cover uses a fixed blue left bar for `cover.style: report`;
+`cover.style: plain` has no bar. The Profile has no separate bar-color setting.
+A Template or Project cover image uses a media cover without this bar, even if
+the saved Project Profile says `cover.style: report`. This is the expected
+image-cover case, so inspect the resulting PDF when cover appearance matters.
+
+For a Project PDF intent, name the cover owner and desired visible result:
+
+| Example intent and input                                         | Artifact owner                                                          | Expected cover                                                                   |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `"Report with a text cover"`, no `--cover-image`                 | Final Profile cover fields; managed Template presents them              | Text cover; a saved `cover.style: report` gives the blue bar.                    |
+| `"Report with an image cover"`, plus `--cover-image ./cover.jpg` | Template image asset and cover layout; Profile retains its cover policy | Image cover without the bar, including when saved `cover.style: report` remains. |
+
+Selecting a cover image signals a cover even if the PDF intent does not mention
+one. Without an image, cover intent produces a text cover; its visible text
+comes from the final Profile and render metadata. Conflicting image, intent,
+and base-Profile cover choices return Interactive to setup for revision; a
+direct Project command fails instead of silently overriding them.
+
 The built-in recipe uses this page order:
 
 ```text
@@ -700,6 +759,12 @@ inherits the style of its selected header or footer area and
 If an enabled page number selects an occupied header or footer slot, the page
 number replaces that slot for the render and emits one warning. It is not
 relocated automatically.
+
+Turning numbers off for one render releases that slot, so retained text there
+can appear and may change pagination. In Interactive Codex Assistant,
+repeating-content OFF instead clears all six saved text slots while preserving
+header/footer styles and fonts. Numbering OFF and repeating-content OFF are
+independent choices.
 
 ### Page-Number Sequence And Visibility
 

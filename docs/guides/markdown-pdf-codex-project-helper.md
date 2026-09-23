@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Project Helper"
 created-date: 2026-07-05
-modified-date: 2026-09-05
+modified-date: 2026-09-23
 status: completed
 agent: codex
 ---
@@ -159,6 +159,10 @@ position, and repeating header/footer content belong to the final Profile.
 Metadata-cover enablement and fields are also Profile-owned; the managed
 Template supplies the compatible cover structure and presentation. The Project
 coordinator does not persist a second page-number or cover policy.
+Without a cover image, a requested or enabled cover uses the final Profile's
+text fields in the managed Template. A selected cover image signals an image
+cover even when `--intent` is silent about covers. It has no built-in report
+text-cover bar, even if the saved Profile retains `cover.style: report`.
 
 Before exposing a usable bundle or follow-up command, Project validation checks
 the normalized final Profile, one live `.document-body` containing the single
@@ -244,7 +248,10 @@ agree; it does not prove that the source contains matching language markers.
 Recipe flags such as `--preset`, `--page-size`, `--orientation`, `--margin*`,
 `--toc`, `--toc-depth`, and `--toc-page-break` are not part of the project Codex
 helper surface. Use direct profile/init flows or the final `md to-pdf` render
-command for exact recipe controls.
+command for exact recipe controls. The saved Project `style.css` also declares
+its prepared `@page` size and margins after Profile-derived CSS. A later render
+flag alone does not change that final page shape; edit or regenerate the
+stylesheet for a different layout and inspect the PDF.
 
 ## Preview And Diagnostics
 

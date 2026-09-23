@@ -14,6 +14,8 @@ import {
   createMarkdownPdfCodexProfileOrchestrationContext,
   runMarkdownPdfCodexProfileOrchestration,
   serializeMarkdownPdfProfileCodexProfile,
+  applyMarkdownPdfCodexPageInformation,
+  type MarkdownPdfPageInformationSlotResolution,
 } from "../profile-codex";
 import type { NormalizedMarkdownPdfProfileIdentity } from "../profile/types";
 import { CliError } from "../../errors";
@@ -26,6 +28,7 @@ import type {
   NormalizedMdPdfProjectCodexCommandState,
 } from "./types";
 import { collectTemplateOwnedIntentDirections } from "./signal-mode";
+import { applyMdPdfProjectCoverPolicy, explicitMdPdfProjectBaseCoverChoice } from "./cover-policy";
 
 export interface MdPdfProjectCodexProfilePhaseResult {
   codexResult?: MarkdownPdfCodexProfileResult;
@@ -108,6 +111,8 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
   state: NormalizedMdPdfProjectCodexCommandState;
   timeoutMs?: number;
   codexExecution?: CodexExecutionOptions;
+  slotResolution?: MarkdownPdfPageInformationSlotResolution;
+  onModelRequestAttempt?: () => void;
 }): Promise<MdPdfProjectCodexProfilePhaseResult> {
   const codexExecution = resolveCodexExecution(input.codexExecution);
   input = { ...input, codexExecution };
@@ -120,6 +125,8 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
     fontHints: input.signals.profile.fonts.hints,
     fontSignals: input.signals.profile.fonts.profileFonts,
     intent: input.state.intent,
+    projectCoverImageAvailable: input.signals.template.coverImage.available,
+    pageInformation: input.signals.profile.pageInformation,
     profileId: input.outputPlan.identity.profileId,
     signalMode,
     workingDirectory: input.runtime.cwd,
@@ -135,6 +142,7 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
       runtime: input.runtime,
       timeoutMs: input.timeoutMs,
       codexExecution: input.codexExecution,
+      onModelRequestAttempt: input.onModelRequestAttempt,
     });
   } catch (error) {
     const failureKind = classifyMarkdownPdfCodexProfileFailure(error);
@@ -180,7 +188,19 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
     decisionMode: decision.decisionMode,
     fallbackReason:
       decision.kind === "codex-profile" ? decision.codexResult.decision.fallbackReason : undefined,
-    finalProfile: decision.finalProfile,
+    finalProfile: applyMdPdfProjectCoverPolicy({
+      baseProfileCoverEnabled: explicitMdPdfProjectBaseCoverChoice(
+        input.signals.profile.baseProfile.candidate?.fullProfile,
+      ),
+      coverImageAvailable: input.signals.template.coverImage.available,
+      finalProfile: applyMarkdownPdfCodexPageInformation({
+        profile: decision.finalProfile,
+        baseProfile: input.signals.profile.baseProfile.candidate?.fullProfile,
+        pageInformation: input.signals.profile.pageInformation,
+        slotResolution: input.slotResolution,
+      }),
+      intent: input.state.intent,
+    }),
     identity: decision.identity,
     outputPlan: input.outputPlan,
     selectedCandidate: decision.selectedCandidate,

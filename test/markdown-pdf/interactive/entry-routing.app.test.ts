@@ -5,6 +5,7 @@ import { runInteractiveHarness } from "../../cli-foundations/interactive-harness
 describe("interactive Markdown PDF entry routing", () => {
   test("returns from markdown pdf source selection to the markdown submenu", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: ["md", "md:to-pdf", "back", "cancel"],

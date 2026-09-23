@@ -16,8 +16,40 @@ import { withTempFixtureDir } from "../../../helpers/cli-test-utils";
 import { adaptedProfileResponse, adaptedTemplateResponse, BASE_PROFILE } from "./prepared-fixtures";
 import { minimalPng } from "../template-codex/fixtures";
 import { pathExists } from "../../support/path-fixtures";
+import { formatMdPdfProjectCodexHandoffReview } from "../../../../src/cli/markdown-pdf/project-codex/summary";
 
 describe("Markdown PDF Project Codex prepared handoff", () => {
+  test("escapes formatting controls in the page-number summary", async () => {
+    await withTempFixtureDir("md-pdf-project-page-label-display", async (fixtureDir) => {
+      await writeFile(
+        join(fixtureDir, "base.yml"),
+        `${BASE_PROFILE}pageNumbers:\n  enabled: true\n  format: "Part 1/2\\u0085\\u202e\\u2028 {page}"\n`,
+        "utf8",
+      );
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      const prepared = await prepareMdPdfProjectCodex(runtime, {
+        baseProfile: "base.yml",
+        dryRun: true,
+      });
+      prepared.binding.reportArtifact.project.fallbackReason = "Echo\u202e\u2028 result";
+      prepared.binding.reportArtifact.unsupportedDirections.push("Unsupported\u202e\u2028 result");
+      const review = formatMdPdfProjectCodexHandoffReview({
+        finalProfile: prepared.profilePhase.finalProfile,
+        hasExplicitPageInformation: true,
+        reportArtifact: prepared.binding.reportArtifact,
+      }).join("\n");
+      expect(review).toContain("\\u202e");
+      expect(review).toContain("\\u2028");
+      expect(review).toContain("Part 1/2");
+      expect(review).toContain("Echo\\u202e\\u2028 result");
+      expect(review).toContain("Unsupported\\u202e\\u2028 result");
+      expect(review).not.toContain("[redacted-path]");
+      expect(review).not.toContain("\u0085");
+      expect(review).not.toContain("\u202e");
+      expect(review).not.toContain("\u2028");
+    });
+  });
+
   test("prepares once, rebinds the destination, and writes snapshotted content", async () => {
     await withTempFixtureDir("md-pdf-project-codex-prepared-rebind", async (fixtureDir) => {
       const originalCover = minimalPng(1200, 800);

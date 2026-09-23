@@ -4,6 +4,7 @@ import {
   MARKDOWN_PDF_CODE_FONT_SELECTORS,
 } from "../code-style";
 import { resolveEffectiveMarkdownPdfTocPageBreak } from "../recipe";
+import type { NormalizedMarkdownPdfProfile } from "../profile";
 import type { MarkdownPdfOrientation, MarkdownPdfPageSize } from "../validation";
 import { MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT } from "./families";
 import { canonicalizeMdPdfTemplateFontKey } from "./font-keys";
@@ -292,6 +293,7 @@ export function synthesizeMdPdfTemplateCodexCss(input: {
   signals: MdPdfTemplateCodexSignalCollection;
   slots: MarkdownPdfTemplateCodexResolvedSlots;
   themeTokens: MarkdownPdfTemplateCodexThemeTokens;
+  textCoverProfile?: NormalizedMarkdownPdfProfile;
 }): string {
   const { top, right, bottom, left } = input.signals.recipe.effectiveOptions.margins;
   const slots = input.slots;
@@ -440,6 +442,6 @@ ${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.css.tocSelector} a {
   overflow-wrap: anywhere;
 }
 ${tocPageBreakCss(input.signals)}
-${coverCss(slots, input.signals)}
+${input.textCoverProfile?.cover.enabled ? "" : coverCss(slots, input.signals)}
 `;
 }

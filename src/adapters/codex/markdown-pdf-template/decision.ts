@@ -31,7 +31,7 @@ import type { MarkdownPdfTemplateCodexRequest, MarkdownPdfTemplateCodexResult } 
 
 type RawRecord = Record<string, unknown>;
 
-const COVER_STYLE_VALUES = ["none", "media"] as const;
+const COVER_STYLE_VALUES = ["none", "media", "profile-text"] as const;
 const ORIENTATION_BUCKET_VALUES = [
   "landscape",
   "portrait",
@@ -145,17 +145,26 @@ function parseTemplateFamily(value: unknown): MarkdownPdfTemplateCodexDecision["
 function coverLayoutFromComposition(input: {
   composition: MarkdownPdfTemplateCodexCoverComposition;
   enabled: boolean;
+  style: (typeof COVER_STYLE_VALUES)[number];
 }): MarkdownPdfTemplateCodexCoverLayout {
+  if (input.style === "profile-text") {
+    return "none";
+  }
   if (!input.enabled) {
     return "none";
   }
   return input.composition === "media-background-overlay" ? "full-bleed-media" : "contained-media";
 }
 
-function coverTitlePlacementFromComposition(
-  enabled: boolean,
-): MarkdownPdfTemplateCodexCoverTitlePlacement {
-  return enabled ? "below-media" : "document-title";
+function coverTitlePlacementFromComposition(input: {
+  enabled: boolean;
+  style: (typeof COVER_STYLE_VALUES)[number];
+}): MarkdownPdfTemplateCodexCoverTitlePlacement {
+  return input.style === "profile-text"
+    ? "text-cover"
+    : input.enabled
+      ? "below-media"
+      : "document-title";
 }
 
 function parseSlots(value: unknown): MarkdownPdfTemplateCodexResolvedSlots {
@@ -168,6 +177,7 @@ function parseSlots(value: unknown): MarkdownPdfTemplateCodexResolvedSlots {
   const typography = parseRecord(slots.typography, "slots.typography");
   const colors = parseRecord(slots.colors, "slots.colors");
   const coverEnabled = parseBoolean(cover.enabled, "slots.cover.enabled");
+  const coverStyle = parseEnum(cover.style, COVER_STYLE_VALUES, "slots.cover.style");
   const coverComposition = parseEnum(
     cover.composition,
     MARKDOWN_PDF_TEMPLATE_CODEX_COVER_COMPOSITIONS,
@@ -208,6 +218,7 @@ function parseSlots(value: unknown): MarkdownPdfTemplateCodexResolvedSlots {
       layout: coverLayoutFromComposition({
         composition: coverComposition,
         enabled: coverEnabled,
+        style: coverStyle,
       }),
       mediaAlign: parseEnum(
         cover.media_align,
@@ -219,13 +230,16 @@ function parseSlots(value: unknown): MarkdownPdfTemplateCodexResolvedSlots {
         MARKDOWN_PDF_TEMPLATE_CODEX_COVER_MEDIA_SCALES,
         "slots.cover.media_scale",
       ),
-      titlePlacement: coverTitlePlacementFromComposition(coverEnabled),
+      titlePlacement: coverTitlePlacementFromComposition({
+        enabled: coverEnabled,
+        style: coverStyle,
+      }),
       textAlign: parseEnum(
         cover.text_align,
         MARKDOWN_PDF_TEMPLATE_CODEX_COVER_TEXT_ALIGNS,
         "slots.cover.text_align",
       ),
-      style: parseEnum(cover.style, COVER_STYLE_VALUES, "slots.cover.style"),
+      style: coverStyle,
       orientationBucket: parseEnum(
         cover.orientation_bucket,
         ORIENTATION_BUCKET_VALUES,
@@ -353,6 +367,7 @@ export function applyMarkdownPdfTemplateCodexDecision(input: {
     decision: validateMarkdownPdfTemplateCodexDecision({
       decision: input.decision,
       outputPlan: input.request.outputPlan,
+      projectTextCover: input.request.projectTextCover,
       signals: input.request.signals,
     }),
   };
