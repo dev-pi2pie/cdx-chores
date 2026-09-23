@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Interactive Codex Page Information Implementation"
 created-date: 2026-09-23
-modified-date: 2026-09-24
+modified-date: 2026-09-23
 status: active
 agent: codex
 ---
@@ -526,40 +526,40 @@ phase. Never silently override a choice.
 
 ### Phase 6: Guidance And Lifecycle Closeout
 
-- [ ] Compare the current Interactive, Profile helper, and Project helper
+- [x] Compare the current Interactive, Profile helper, and Project helper
       guides, CLI help, and examples with the Phase 5 and cover follow-up
       results. Keep Markdown PDF Usage as the canonical Profile/page-number
       contract.
-- [ ] In Markdown PDF Usage, show how to choose a preset, page size
+- [x] In Markdown PDF Usage, show how to choose a preset, page size
       (`A3`, `A4`, `A5`, `Letter`, `Legal`, or `Tabloid`), portrait or landscape
       orientation, and margins. Add a direct landscape render example and a
       reusable Profile example; explain how render-time flags override Profile
       settings, while a saved Project stylesheet keeps its prepared `@page`
       size and margins. In the Interactive guide, distinguish Formal
       Guide layout choices from Codex intent and reviewed Profile output.
-- [ ] In Markdown PDF Usage, explain that the built-in text cover with
+- [x] In Markdown PDF Usage, explain that the built-in text cover with
       `cover.style: report` adds a fixed blue left bar, while
       `cover.style: plain` omits it. A cover image supplied to the Template or
       Project helper uses the media cover without that bar, even when the saved
       Profile keeps `cover.style: report`; present this as a known case. The
       Profile has no separate bar-color setting.
-- [ ] In Markdown PDF Usage, explain that one-render number-OFF can reveal
+- [x] In Markdown PDF Usage, explain that one-render number-OFF can reveal
       retained text in a released number slot, while repeating-content OFF
       clears the saved text slots.
-- [ ] Update the Interactive Markdown PDF usage guide with the page-information
+- [x] Update the Interactive Markdown PDF usage guide with the page-information
       questions, three-state meaning, base/revision behavior, exact Profile
       authority, deterministic path, consent, terminal presentation, review,
       rendered-PDF checks, and Project handoff.
       Adjust helper guides only where their direct-command boundaries need
       clarification. Link the existing Codex execution guide for model choice;
       do not present `gpt-6-luna` as a required product setting.
-- [ ] Add concise PDF-intent prompt references for a built-in report text cover
+- [x] Add concise PDF-intent prompt references for a built-in report text cover
       and an image cover. Name each artifact owner and expected visible result,
       including the known case of an image cover paired with saved
       `cover.style: report`. Explain that selecting a cover image is a cover
       signal even when intent does not mention one, and that explicit cover
       intent without an image uses a text cover after the follow-up is verified.
-- [ ] Check changed wording and examples against the Phase 5 and cover
+- [x] Check changed wording and examples against the Phase 5 and cover
       follow-up validation results. Route any product mismatch back to the
       implementation follow-up before describing the behavior as shipped.
 - [ ] Link the completed unified job record from this plan and the research.

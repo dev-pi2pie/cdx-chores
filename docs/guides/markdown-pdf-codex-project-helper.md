@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Project Helper"
 created-date: 2026-07-05
-modified-date: 2026-09-24
+modified-date: 2026-09-23
 status: completed
 agent: codex
 ---

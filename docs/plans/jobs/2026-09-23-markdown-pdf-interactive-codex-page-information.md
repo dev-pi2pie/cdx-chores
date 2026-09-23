@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Interactive Codex page information implementation"
 created-date: 2026-09-23
-modified-date: 2026-09-24
+modified-date: 2026-09-23
 status: in-progress
 agent: codex
 plan: ../plan-2026-09-23-markdown-pdf-interactive-codex-page-information.md
@@ -67,8 +67,8 @@ Interactive authoring and verified its PDF comparison and commit range.
 | Phase 3 | Complete | Final Profile, Project handoff, first PDF render review |
 | Phase 4 | Complete | Candidate lifecycle, report projection, PDF comparison, and commit-range review |
 | Phase 5 | Complete | Constrain: integrated checks and exact code range review passed; Project text-cover constraint found |
-| Phase 5 follow-up | Complete | Cover policy, saved text-cover handoff, PDF review, and exact-range review |
-| Phase 6 | Pending | Guide alignment and documentation closeout |
+| Phase 5 follow-up | Complete | Cover policy, saved text-cover handoff, PDF review, and review correction |
+| Phase 6 | In review | Guide alignment and documentation checks; final range audit pending |
 
 For each phase, record the exact commit range, checks, accepted review fixes,
 public-safe visual conclusions, and verdict. Keep machine-specific setup and
@@ -244,7 +244,36 @@ raw artifacts out of this record.
   successful Interactive revision check, and duplicated scaffold markup.
   These were fixed in the range above; the final exact-range re-review found
   no actionable issues.
+- **Whole-plan review correction:** A later review found that negative cover
+  directions and numbering-only references could enable a cover. The focused
+  fix in `8243351c..263c561b` recognizes those phrases without changing
+  positive text/image cover choices. Forty cover-policy tests and 28 focused
+  Project application tests passed; build, scoped lint/format, and whitespace
+  checks passed. Targeted re-review found the issue resolved.
 - **Verdict:** Complete. Phase 6 remains documentation-only.
+
+### Phase 6: Guidance And Lifecycle Closeout
+
+- **Guide checkpoint:** `d9fa193b..8243351c`; final editorial changes and
+  lifecycle updates follow in the documentation checkpoint.
+- **Guidance:** Markdown PDF Usage now owns layout examples, Profile and render
+  precedence, cover appearance, and number-OFF slot behavior. Interactive
+  guidance distinguishes Formal Guide layout prompts from Codex intent and
+  documents structured page information, consent, review, report omission,
+  deterministic preparation, and Project handoff. Project helper guidance
+  explains its saved stylesheet's `@page` boundary.
+- **Checks:** Built CLI help, Phase 5 PDF conclusions, relative links/anchors,
+  scoped Markdown formatting, build, and whitespace checks matched the guide
+  wording.
+- **Review:** The guide review requested explicit Interactive versus direct
+  cover-conflict outcomes and a link to Codex execution settings; both were
+  resolved. Whole-plan behavior, security, and maintainability review found
+  one cover-intent defect, corrected in the Phase 5 follow-up above. The test
+  review suggested a future automated multilingual PDF extraction regression;
+  existing Traditional Chinese and Japanese render checks supply the current
+  visual evidence.
+- **Verdict:** Guide alignment is complete; final range review and lifecycle
+  closure remain.
 
 ## Related Research
 

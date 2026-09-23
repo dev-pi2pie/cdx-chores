@@ -50,7 +50,7 @@ The accepted renderer meanings and page roles remain in
 
 The Profile data, conflict semantics, optional report projection, and local
 consent/review text display below are settled. The linked plan and job record
-track implementation and verification.
+contain the implementation and verification evidence.
 
 ## Report Data Contract
 
@@ -438,6 +438,10 @@ contract itself does not change.
 
 - [Markdown PDF Interactive Codex page information implementation](../plans/plan-2026-09-23-markdown-pdf-interactive-codex-page-information.md)
 - [Markdown PDF page-number configuration implementation](../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md)
+
+## Implementation Record
+
+- [Interactive Codex page information implementation](../plans/jobs/2026-09-23-markdown-pdf-interactive-codex-page-information.md)
 
 [^formal-guide]: [Interactive Markdown PDF Usage](../guides/markdown-pdf-interactive-usage.md) and [Formal Guide collection](../../src/cli/interactive/markdown/formal-guide/collection.ts).
 

@@ -1,7 +1,7 @@
 ---
 title: "Interactive Markdown PDF Usage"
 created-date: 2026-07-22
-modified-date: 2026-09-24
+modified-date: 2026-09-23
 status: completed
 agent: codex
 ---
@@ -236,8 +236,10 @@ configuration rather than Codex signals.
 ### Page information in Codex Assistant
 
 Profile and Project setup asks whether to specify page information before PDF
-intent. Page numbers and repeating content are separate groups, each with three
-states:
+intent. Formal Guide has explicit preset, page size, orientation, and margin
+questions; Codex Assistant takes layout direction through intent, so inspect
+the prepared Profile's page settings in candidate review. Page numbers and
+repeating content are separate groups, each with three states:
 
 | Choice      | Page numbers                                                        | Repeating header/footer content                              |
 | ----------- | ------------------------------------------------------------------- | ------------------------------------------------------------ |
@@ -270,14 +272,17 @@ requested choices, final Profile fields, any retained-slot warning, and the
 effective render settings before saving or rendering. The rendered PDF is the
 check for visible page placement and glyphs, especially with a cover, ToC, or
 mixed-language text. The optional diagnostic report keeps requested and final
-stored page-information metadata, but omits the entered label/header/footer
-text and Codex echoes. It is not a substitute for the saved Profile or PDF.
+stored page-information metadata, but omits the entered page-number label and
+header/footer text, including echoes of that text in Codex result fields.
+Independently entered intent and font hints keep their normal report behavior.
+The report is not a substitute for the saved Profile or PDF.
 
 For Project covers, a selected image signals an image cover even without cover
 prose in the intent. Cover intent without an image produces a managed text
 cover whose content comes from the final Profile. See
-[Markdown PDF Usage](markdown-pdf-usage.md#cover-and-page-roles) for both cover
-results and layout examples.
+[Markdown PDF Usage](markdown-pdf-usage.md#cover-and-page-roles) for cover
+results and [Layout Options](markdown-pdf-usage.md#layout-options) for page
+shape.
 
 The setup review shows the signals before consent. During the request,
 Interactive mode presents one artifact-specific waiting status and clears it

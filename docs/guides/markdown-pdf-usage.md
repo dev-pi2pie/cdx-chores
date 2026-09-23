@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-09-24
+modified-date: 2026-09-23
 status: completed
 agent: codex
 ---
@@ -296,7 +296,8 @@ cdx-chores md to-pdf \
   --output ./tables.pdf
 ```
 
-For a reusable page shape, put the settings in a Profile and render with it:
+For a reusable page shape, save these settings as `./wide-profile.yml` and
+render with it:
 
 ```yaml
 schemaVersion: 3
