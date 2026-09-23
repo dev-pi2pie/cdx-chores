@@ -14,6 +14,8 @@ import {
   createMarkdownPdfCodexProfileOrchestrationContext,
   runMarkdownPdfCodexProfileOrchestration,
   serializeMarkdownPdfProfileCodexProfile,
+  applyMarkdownPdfCodexPageInformation,
+  type MarkdownPdfPageInformationSlotResolution,
 } from "../profile-codex";
 import type { NormalizedMarkdownPdfProfileIdentity } from "../profile/types";
 import { CliError } from "../../errors";
@@ -108,6 +110,7 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
   state: NormalizedMdPdfProjectCodexCommandState;
   timeoutMs?: number;
   codexExecution?: CodexExecutionOptions;
+  slotResolution?: MarkdownPdfPageInformationSlotResolution;
 }): Promise<MdPdfProjectCodexProfilePhaseResult> {
   const codexExecution = resolveCodexExecution(input.codexExecution);
   input = { ...input, codexExecution };
@@ -181,7 +184,11 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
     decisionMode: decision.decisionMode,
     fallbackReason:
       decision.kind === "codex-profile" ? decision.codexResult.decision.fallbackReason : undefined,
-    finalProfile: decision.finalProfile,
+    finalProfile: applyMarkdownPdfCodexPageInformation({
+      profile: decision.finalProfile,
+      pageInformation: input.signals.profile.pageInformation,
+      slotResolution: input.slotResolution,
+    }),
     identity: decision.identity,
     outputPlan: input.outputPlan,
     selectedCandidate: decision.selectedCandidate,

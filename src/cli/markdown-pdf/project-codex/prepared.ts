@@ -331,6 +331,7 @@ export async function prepareMdPdfProjectCodex(
       state,
       timeoutMs: options.timeoutMs,
       codexExecution: options.codexExecution,
+      slotResolution: options.internalPageInformationSlotResolution,
     });
     const completeTemplatePhase = await runMdPdfProjectCodexTemplatePhase({
       outputPlan,

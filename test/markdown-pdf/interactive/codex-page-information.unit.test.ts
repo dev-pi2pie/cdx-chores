@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { normalizeMarkdownPdfProfile } from "../../../src/cli/markdown-pdf/profile";
 import {
   collectMarkdownPdfCodexPageInformation,
+  reviseMarkdownPdfCodexPageInformationConflict,
   type MarkdownPdfCodexPageInformationAction,
   type MarkdownPdfCodexPageInformationPrompts,
 } from "../../../src/cli/interactive/markdown/codex-page-information";
@@ -52,6 +53,59 @@ const base = normalizeMarkdownPdfProfile({
 }).profile;
 
 describe("internal Markdown PDF Codex page-information collection", () => {
+  test("late candidate conflict asks clear/retain and binds the exact text", async () => {
+    const { promptSet } = prompts([], {
+      clearOccupiedPageNumberPosition: ({ position, current }) => {
+        expect(position).toBe("bottom-center");
+        expect(current).toBe("Model-selected text");
+        return true;
+      },
+    });
+    expect(
+      await reviseMarkdownPdfCodexPageInformationConflict({
+        conflict: {
+          position: "bottom-center",
+          text: "Model-selected text",
+          source: "candidate",
+        },
+        current: { pageNumbers: { ...base.pageNumbers, enabled: true } },
+        prompts: promptSet,
+      }),
+    ).toMatchObject({
+      kind: "answers",
+      answers: {
+        occupiedNumberSlot: {
+          position: "bottom-center",
+          choice: "clear",
+          conflictingText: "Model-selected text",
+        },
+      },
+    });
+  });
+
+  test("late explicit-text conflict returns to group revision", async () => {
+    const { promptSet, events } = prompts(["continue", "remove-repeating", "continue"]);
+    const result = await reviseMarkdownPdfCodexPageInformationConflict({
+      conflict: { position: "top-left", text: "Exact text", source: "explicit" },
+      current: {
+        repeatingContent: {
+          enabled: true,
+          selected: ["top-left"],
+          text: { "top-left": "Exact text" },
+        },
+      },
+      prompts: promptSet,
+    });
+    expect(result).toEqual({ kind: "answers" });
+    expect(events).toEqual([
+      "conflict:top-left",
+      "continue",
+      "conflict:top-left",
+      "remove-repeating",
+      "continue",
+    ]);
+  });
+
   test("keeps both groups unspecified when skipped", async () => {
     const { promptSet, events } = prompts([]);
     promptSet.initial = async () => {
@@ -260,7 +314,7 @@ describe("internal Markdown PDF Codex page-information collection", () => {
         occupiedNumberSlot: {
           position: "bottom-center",
           choice: "retain",
-          inheritedText: "Base center",
+          conflictingText: "Base center",
         },
       },
     });
@@ -345,14 +399,14 @@ describe("internal Markdown PDF Codex page-information collection", () => {
         occupiedNumberSlot: {
           position: "bottom-center",
           choice: "retain",
-          inheritedText: "Base center",
+          conflictingText: "Base center",
         },
       },
     });
     expect(occupied).toEqual(["Replaced center"]);
     expect(result).toMatchObject({
       kind: "answers",
-      answers: { occupiedNumberSlot: { choice: "clear", inheritedText: "Replaced center" } },
+      answers: { occupiedNumberSlot: { choice: "clear", conflictingText: "Replaced center" } },
     });
   });
 
@@ -382,7 +436,7 @@ describe("internal Markdown PDF Codex page-information collection", () => {
         occupiedNumberSlot: {
           position: "bottom-center",
           choice: "retain",
-          inheritedText: "Base center",
+          conflictingText: "Base center",
         },
       },
     });

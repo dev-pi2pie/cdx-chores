@@ -48,6 +48,10 @@ import {
   prepareMarkdownPdfCodexPageInformationSignal,
 } from "./page-information-signals";
 import type { MdPdfProfileCodexOptions } from "./types";
+import {
+  applyMarkdownPdfCodexPageInformation,
+  MarkdownPdfPageInformationConflictError,
+} from "./page-information-materialization";
 
 export type MarkdownPdfProfileCodexReportPayload = Omit<
   Parameters<typeof createMarkdownPdfCodexReportArtifact>[0],
@@ -311,11 +315,16 @@ export async function prepareMarkdownPdfProfileCodex(
         },
       };
     }
+    const finalProfile = applyMarkdownPdfCodexPageInformation({
+      profile: decision.finalProfile,
+      pageInformation,
+      slotResolution: options.internalPageInformationSlotResolution,
+    });
     return {
       ...destinationSource,
       createdAt,
       decisionMode: decision.decisionMode,
-      finalProfile: decision.finalProfile,
+      finalProfile,
       identity: decision.identity,
       kind: "profile",
       reportPayload: {
@@ -329,6 +338,7 @@ export async function prepareMarkdownPdfProfileCodex(
       signalMode: decision.kind === "deterministic" ? signalMode : undefined,
     };
   } catch (error) {
+    if (error instanceof MarkdownPdfPageInformationConflictError) throw error;
     const failureKind = classifyMarkdownPdfCodexProfileFailure(error);
     if (failureKind === "unavailable" && error instanceof CliError) {
       throw error;

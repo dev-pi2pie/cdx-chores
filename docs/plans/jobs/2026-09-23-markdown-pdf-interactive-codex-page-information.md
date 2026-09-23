@@ -27,7 +27,7 @@ choices only after Phase 4 verifies local review and report omission.
       the shared redactor.
 - [x] Decide local consent/review text display against the existing terminal
       color rules and define the escaping checks for implementation.
-- [x] Define Phase 3, 4, and 5 rendered-page review and cleanup timing.
+- [x] Define Phase 3, 4, and 5 rendered-page review checkpoints.
 - [x] Review the research and plan direction, then record the decision here.
 
 ### Gate outcome
@@ -69,8 +69,8 @@ choices only after Phase 4 verifies local review and report omission.
 | Phase 6 | Pending | Guide alignment and documentation closeout |
 
 For each phase, record the exact commit range, checks, accepted review fixes,
-visual conclusions and cleanup when applicable, and verdict. Keep
-machine-specific setup and raw artifacts out of this record.
+public-safe visual conclusions, and verdict. Keep machine-specific setup and
+raw artifacts out of this record.
 
 ### Phase 1: Sparse Answers And Guided Collection
 

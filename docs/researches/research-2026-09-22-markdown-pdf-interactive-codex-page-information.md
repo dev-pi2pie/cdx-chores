@@ -343,10 +343,8 @@ Both paths use the same candidate review and final Profile validation.
   renderer. The existing Interactive one-render page-number choice remains a
   separate transient override.
 - Render representative PDFs after final Profile materialization and again
-  from saved recipes. Inspect extracted text and rasterized pages, then show
-  labeled page snapshots to the user before closing those phase gates. Retain
-  review snapshots until that visual review closes; cleanup of owned test
-  artifacts must not make the reported images unavailable first.
+  from saved recipes. Inspect extracted text and rasterized representative
+  pages before closing those phase gates.
 
 The implementation plan should verify fresh and revised Interactive Profile
 and Project paths, explicit ON/OFF versus omission, page-info-only input,

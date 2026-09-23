@@ -7,6 +7,7 @@ import {
   classifyMarkdownPdfProfileCodexSignalMode,
   executionModeForMarkdownPdfProfileCodexSignalMode,
   prepareMarkdownPdfCodexPageInformationSignal,
+  MarkdownPdfPageInformationConflictError,
   type MarkdownPdfCodexPageInformationSignal,
   type MdPdfProfileCodexOptions,
 } from "../../markdown-pdf/profile-codex";
@@ -181,6 +182,15 @@ export function createMarkdownPdfPageInformationPreparationSession(
     async prepare(setup: MarkdownPdfCodexSetup): Promise<
       | { kind: "declined"; plan: MarkdownPdfPageInformationRequestPlan }
       | {
+          kind: "needs-revision";
+          plan: MarkdownPdfPageInformationRequestPlan;
+          conflict: {
+            position: MarkdownPdfPageInformationConflictError["position"];
+            text: string;
+            source: MarkdownPdfPageInformationConflictError["source"];
+          };
+        }
+      | {
           kind: "prepared";
           candidate: PreparedMarkdownPdfCodexCandidate;
           plan: MarkdownPdfPageInformationRequestPlan;
@@ -197,13 +207,24 @@ export function createMarkdownPdfPageInformationPreparationSession(
             });
         if (!accepted) return { kind: "declined", plan };
       }
-      const candidate = await prepareCandidate(runtime, setup, {
-        timeoutMs: options.timeoutMs,
-        codexExecution,
-        internalPageInformation: setup.pageInformation,
-        internalProfileCodexRunner: options.internalProfileCodexRunner,
-        internalTemplateCodexRunner: options.internalTemplateCodexRunner,
-      });
+      let candidate: PreparedMarkdownPdfCodexCandidate;
+      try {
+        candidate = await prepareCandidate(runtime, setup, {
+          timeoutMs: options.timeoutMs,
+          codexExecution,
+          internalPageInformation: setup.pageInformation,
+          internalPageInformationSlotResolution: setup.pageInformation?.occupiedNumberSlot,
+          internalProfileCodexRunner: options.internalProfileCodexRunner,
+          internalTemplateCodexRunner: options.internalTemplateCodexRunner,
+        });
+      } catch (error) {
+        if (!(error instanceof MarkdownPdfPageInformationConflictError)) throw error;
+        return {
+          kind: "needs-revision",
+          plan,
+          conflict: { position: error.position, text: error.text, source: error.source },
+        };
+      }
       renderMarkdownPdfPageInformationPhaseModes(runtime, candidate, plan);
       return { kind: "prepared", candidate, plan };
     },

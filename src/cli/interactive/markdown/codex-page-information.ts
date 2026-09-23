@@ -9,6 +9,7 @@ import {
 } from "../../markdown-pdf/profile";
 import { loadMarkdownPdfBaseProfileCandidate } from "../../markdown-pdf/profile/candidates";
 import { normalizeMarkdownPdfProfile } from "../../markdown-pdf/profile";
+import type { MarkdownPdfPageInformationConflictError } from "../../markdown-pdf/profile-codex";
 import type { InteractivePathPromptContext } from "../shared";
 import {
   compileMarkdownPdfFormalGuidePageNumbers,
@@ -29,12 +30,12 @@ export interface MarkdownPdfCodexPageInformationAnswers {
   pageNumbers?: MarkdownPdfFormalGuidePageNumberAnswers;
   /** Omission means preserve the candidate's repeating-content choice. */
   repeatingContent?: MarkdownPdfCodexRepeatingContentAnswers;
-  /** Only an inherited occupied number slot can be retained. */
+  /** An existing candidate slot can be cleared or retained after exact review. */
   occupiedNumberSlot?: {
     position: MarkdownPdfPageChromePosition;
     choice: "clear" | "retain";
     /** Internal comparison only; never print or include in a diagnostic report. */
-    inheritedText: string;
+    conflictingText: string;
   };
 }
 
@@ -118,19 +119,19 @@ async function reconcileOccupiedNumberSlot(
     return rest;
   }
   if (selectedConflict(answers, base)) return answers;
-  const inheritedText = contentAt(base, reserved);
+  const conflictingText = contentAt(base, reserved);
   if (
     answers.occupiedNumberSlot?.position === reserved &&
-    answers.occupiedNumberSlot.inheritedText === inheritedText
+    answers.occupiedNumberSlot.conflictingText === conflictingText
   )
     return answers;
   const clear = await prompts.formalGuide.clearOccupiedPageNumberPosition({
     position: reserved,
-    current: inheritedText,
+    current: conflictingText,
   });
   return {
     ...answers,
-    occupiedNumberSlot: { position: reserved, choice: clear ? "clear" : "retain", inheritedText },
+    occupiedNumberSlot: { position: reserved, choice: clear ? "clear" : "retain", conflictingText },
   };
 }
 
@@ -262,6 +263,53 @@ export async function collectMarkdownPdfCodexPageInformation(input: {
     // The decision belongs to this base and effective number position only.
     answers = await reconcileOccupiedNumberSlot(answers, input.base, input.prompts);
   }
+}
+
+/** Resolve a post-preparation conflict in Interactive, without prompting inside a helper. */
+export async function reviseMarkdownPdfCodexPageInformationConflict(input: {
+  base?: Readonly<NormalizedMarkdownPdfProfile>;
+  conflict: Pick<MarkdownPdfPageInformationConflictError, "position" | "text" | "source">;
+  current: Readonly<MarkdownPdfCodexPageInformationAnswers>;
+  prompts: MarkdownPdfCodexPageInformationPrompts;
+}): Promise<MarkdownPdfCodexPageInformationOutcome> {
+  if (input.conflict.source === "explicit") {
+    await input.prompts.conflict(input.conflict.position);
+    let current = input.current;
+    while (true) {
+      const outcome = await collectMarkdownPdfCodexPageInformation({
+        base: input.base,
+        current,
+        mode: "revision",
+        prompts: input.prompts,
+      });
+      if (outcome.kind !== "answers") return outcome;
+      const answers = outcome.answers;
+      const stillSelected =
+        answers?.repeatingContent?.enabled &&
+        answers.repeatingContent.selected.includes(input.conflict.position);
+      const movedOrDisabledNumber =
+        answers?.pageNumbers &&
+        (!answers.pageNumbers.enabled || answers.pageNumbers.position !== input.conflict.position);
+      if (!stillSelected || movedOrDisabledNumber) return outcome;
+      await input.prompts.conflict(input.conflict.position);
+      current = answers;
+    }
+  }
+  const clear = await input.prompts.formalGuide.clearOccupiedPageNumberPosition({
+    position: input.conflict.position,
+    current: input.conflict.text,
+  });
+  return {
+    kind: "answers",
+    answers: {
+      ...input.current,
+      occupiedNumberSlot: {
+        position: input.conflict.position,
+        choice: clear ? "clear" : "retain",
+        conflictingText: input.conflict.text,
+      },
+    },
+  };
 }
 
 export async function loadMarkdownPdfCodexPageInformationBase(

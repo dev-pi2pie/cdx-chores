@@ -12,6 +12,7 @@ import {
   prepareMarkdownPdfProfileCodex,
   type BoundMarkdownPdfProfileCodexDestination,
   type MarkdownPdfCodexPageInformationInput,
+  type MarkdownPdfPageInformationSlotResolution,
   type MdPdfProfileCodexOptions,
 } from "../../markdown-pdf/profile-codex";
 import {
@@ -100,6 +101,7 @@ export async function prepareMarkdownPdfCodexCandidate(
     codexExecution?: CodexExecutionOptions;
     /** Internal Phase 2 harness only; normal Interactive preparation omits this. */
     internalPageInformation?: MarkdownPdfCodexPageInformationInput;
+    internalPageInformationSlotResolution?: MarkdownPdfPageInformationSlotResolution;
     internalProfileCodexRunner?: MdPdfProfileCodexOptions["codexRunner"];
     internalTemplateCodexRunner?: MdPdfProjectCodexOptions["templateCodexRunner"];
   } = {},
@@ -125,6 +127,7 @@ export async function prepareMarkdownPdfCodexCandidate(
       prepared: await prepareMarkdownPdfProfileCodex(runtime, {
         ...common,
         internalPageInformation: options.internalPageInformation,
+        internalPageInformationSlotResolution: options.internalPageInformationSlotResolution,
         codexRunner: options.internalProfileCodexRunner,
       }),
       setup,
@@ -146,6 +149,7 @@ export async function prepareMarkdownPdfCodexCandidate(
       ...common,
       coverImage: setup.coverImage,
       internalPageInformation: options.internalPageInformation,
+      internalPageInformationSlotResolution: options.internalPageInformationSlotResolution,
       profileCodexRunner: options.internalProfileCodexRunner,
       templateCodexRunner: options.internalTemplateCodexRunner,
     }),

@@ -32,7 +32,7 @@ const MARKDOWN_PDF_CODEX_STYLE_DECISION_POLICY = {
     pageNumbers: [
       "Enable for long-form reports, manuals, specifications, or explicit page-number intent.",
       "Do not enable page numbers by default for README-like documents.",
-      "Avoid total-page formats unless total-page semantics are deterministic and documented.",
+      "Use {page} and {pages} for logical numbering, or {pdfPage} and {pdfPages} for physical PDF pages; choose the pair that matches the requested label.",
     ],
     code: [
       "Enable highlighting when code fences are present.",
@@ -119,6 +119,8 @@ const MARKDOWN_PDF_CODEX_PAGE_NUMBER_CONTRACT = {
   },
   rules: [
     "scope document cannot be combined with countFrom body.",
+    "{page} is the current logical page number and {pages} is the final logical page number in the selected countFrom domain.",
+    "{pdfPage} is the current physical PDF page and {pdfPages} is the total physical PDF page count.",
     "Header and footer style fields affect their own page-chrome areas.",
     "Page-number text inherits page-chrome styling; pageNumbers.style is not a supported field or patch path.",
     "Use only the accepted header/style and footer/style patch paths described by patchValueDomains and patchValueConstraints.",
@@ -225,7 +227,7 @@ export function buildMarkdownPdfProfileCodexPrompt(
     "- Keep reasoning short and grounded in the facts.",
     ...(request.pageInformation
       ? [
-          "- Treat pageInformation as structured user-authored data, separate from advisory intent. Respect explicit OFF choices; do not resolve literal {page} or {pages} placeholders.",
+          "- Treat pageInformation as structured user-authored data, separate from advisory intent. Respect explicit OFF choices; leave literal {page}, {pages}, {pdfPage}, and {pdfPages} placeholders unresolved.",
         ]
       : []),
     "",
