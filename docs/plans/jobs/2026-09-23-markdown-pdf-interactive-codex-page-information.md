@@ -2,7 +2,7 @@
 title: "Markdown PDF Interactive Codex page information implementation"
 created-date: 2026-09-23
 modified-date: 2026-09-23
-status: in-progress
+status: completed
 agent: codex
 plan: ../plan-2026-09-23-markdown-pdf-interactive-codex-page-information.md
 ---
@@ -68,7 +68,7 @@ Interactive authoring and verified its PDF comparison and commit range.
 | Phase 4 | Complete | Candidate lifecycle, report projection, PDF comparison, and commit-range review |
 | Phase 5 | Complete | Constrain: integrated checks and exact code range review passed; Project text-cover constraint found |
 | Phase 5 follow-up | Complete | Cover policy, saved text-cover handoff, PDF review, and review correction |
-| Phase 6 | In review | Guide alignment and documentation checks; final range audit pending |
+| Phase 6 | Complete | Guide alignment, documentation checks, and full-range review |
 
 For each phase, record the exact commit range, checks, accepted review fixes,
 public-safe visual conclusions, and verdict. Keep machine-specific setup and
@@ -254,8 +254,8 @@ raw artifacts out of this record.
 
 ### Phase 6: Guidance And Lifecycle Closeout
 
-- **Guide checkpoint:** `d9fa193b..8243351c`; final editorial changes and
-  lifecycle updates follow in the documentation checkpoint.
+- **Guide checkpoint:** `d9fa193b..8243351c`; final editorial and evidence
+  checkpoint: `263c561b..ffefdade`.
 - **Guidance:** Markdown PDF Usage now owns layout examples, Profile and render
   precedence, cover appearance, and number-OFF slot behavior. Interactive
   guidance distinguishes Formal Guide layout prompts from Codex intent and
@@ -264,16 +264,18 @@ raw artifacts out of this record.
   explains its saved stylesheet's `@page` boundary.
 - **Checks:** Built CLI help, Phase 5 PDF conclusions, relative links/anchors,
   scoped Markdown formatting, build, and whitespace checks matched the guide
-  wording.
+  wording. The final `bun run test:all` passed Unit, Application, Codex, and
+  Pandoc suites; TypeScript, lint, and source formatting checks passed.
 - **Review:** The guide review requested explicit Interactive versus direct
   cover-conflict outcomes and a link to Codex execution settings; both were
   resolved. Whole-plan behavior, security, and maintainability review found
   one cover-intent defect, corrected in the Phase 5 follow-up above. The test
-  review suggested a future automated multilingual PDF extraction regression;
-  existing Traditional Chinese and Japanese render checks supply the current
-  visual evidence.
-- **Verdict:** Guide alignment is complete; final range review and lifecycle
-  closure remain.
+  review suggested an optional automated multilingual PDF extraction
+  regression; existing Traditional Chinese and Japanese render checks supply
+  the current visual evidence. The exact whole-plan range
+  `b6fe0f66..ffefdade` was re-reviewed across behavior, tests, security, and
+  maintainability with no remaining actionable findings.
+- **Verdict:** Complete. The plan and research link this completed record.
 
 ## Related Research
 

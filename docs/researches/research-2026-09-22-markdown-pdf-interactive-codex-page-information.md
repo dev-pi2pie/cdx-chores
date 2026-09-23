@@ -2,7 +2,7 @@
 title: "Interactive Markdown PDF Codex Page Information Signals"
 created-date: 2026-09-22
 modified-date: 2026-09-23
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -49,8 +49,8 @@ The accepted renderer meanings and page roles remain in
 [Page Roles And Counter Semantics](research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md).
 
 The Profile data, conflict semantics, optional report projection, and local
-consent/review text display below are settled. The linked plan and job record
-contain the implementation and verification evidence.
+consent/review text display below are settled. The linked plan and completed
+job record contain the implementation and verification evidence.
 
 ## Report Data Contract
 

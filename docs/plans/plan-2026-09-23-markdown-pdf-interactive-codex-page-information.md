@@ -2,7 +2,7 @@
 title: "Markdown PDF Interactive Codex Page Information Implementation"
 created-date: 2026-09-23
 modified-date: 2026-09-23
-status: active
+status: completed
 agent: codex
 ---
 
@@ -562,12 +562,12 @@ phase. Never silently override a choice.
 - [x] Check changed wording and examples against the Phase 5 and cover
       follow-up validation results. Route any product mismatch back to the
       implementation follow-up before describing the behavior as shipped.
-- [ ] Link the completed unified job record from this plan and the research.
+- [x] Link the completed unified job record from this plan and the research.
       Record public-safe validation conclusions and documentation decisions,
       then set the guide, research, and plan statuses from the evidence. Keep
       the research `in-progress` and this plan `active` while required work
       remains.
-- [ ] Review the exact documentation change range, resolve accepted findings,
+- [x] Review the exact documentation change range, resolve accepted findings,
       and run Markdown link, formatting, and `git diff --check` checks on the
       documentation closeout.
 
