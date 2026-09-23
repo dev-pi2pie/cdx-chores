@@ -15,7 +15,7 @@ export interface MarkdownPdfCodexSetup {
   fontHints: string[];
   intent?: string;
   sample?: string;
-  /** Internal collection only until the page-information preparation path is connected. */
+  /** Sparse guided page-information choices for Profile and Project preparation. */
   pageInformation?: MarkdownPdfCodexPageInformationAnswers;
 }
 

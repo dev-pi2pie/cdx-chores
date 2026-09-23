@@ -111,6 +111,7 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
   timeoutMs?: number;
   codexExecution?: CodexExecutionOptions;
   slotResolution?: MarkdownPdfPageInformationSlotResolution;
+  onModelRequestAttempt?: () => void;
 }): Promise<MdPdfProjectCodexProfilePhaseResult> {
   const codexExecution = resolveCodexExecution(input.codexExecution);
   input = { ...input, codexExecution };
@@ -139,6 +140,7 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
       runtime: input.runtime,
       timeoutMs: input.timeoutMs,
       codexExecution: input.codexExecution,
+      onModelRequestAttempt: input.onModelRequestAttempt,
     });
   } catch (error) {
     const failureKind = classifyMarkdownPdfCodexProfileFailure(error);

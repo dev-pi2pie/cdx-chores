@@ -4,6 +4,7 @@ import {
   type ResolvedCodexExecution,
 } from "../../../utils/codex-execution";
 import { select } from "@inquirer/prompts";
+import { isDeepStrictEqual } from "node:util";
 
 import type { CliRuntime } from "../../types";
 import type { InteractivePathPromptContext } from "../shared";
@@ -16,6 +17,8 @@ import {
 import { saveMarkdownPdfCodexCandidate } from "./codex-save";
 import { prepareMarkdownPdfCodexCandidate } from "./codex-service";
 import { collectMarkdownPdfCodexSetup } from "./codex-setup";
+import { createMarkdownPdfPageInformationPreparationSession } from "./codex-page-information-preparation";
+import { createMarkdownPdfCodexPageInformationPrompts } from "./codex-page-information";
 import type {
   MarkdownPdfCodexArtifact,
   MarkdownPdfCodexSetup,
@@ -66,7 +69,7 @@ async function prepareWithConsent(
   return await prepareMarkdownPdfCodexCandidate(runtime, setup, { timeoutMs, codexExecution });
 }
 
-function sameCodexSetup(left: MarkdownPdfCodexSetup, right: MarkdownPdfCodexSetup): boolean {
+export function sameCodexSetup(left: MarkdownPdfCodexSetup, right: MarkdownPdfCodexSetup): boolean {
   return (
     left.artifact === right.artifact &&
     left.baseProfile === right.baseProfile &&
@@ -74,7 +77,8 @@ function sameCodexSetup(left: MarkdownPdfCodexSetup, right: MarkdownPdfCodexSetu
     left.intent === right.intent &&
     left.sample === right.sample &&
     left.fontHints.length === right.fontHints.length &&
-    left.fontHints.every((hint, index) => hint === right.fontHints[index])
+    left.fontHints.every((hint, index) => hint === right.fontHints[index]) &&
+    isDeepStrictEqual(left.pageInformation, right.pageInformation)
   );
 }
 
@@ -93,6 +97,10 @@ export async function runMarkdownPdfCodexAuthoring(
   },
 ): Promise<MarkdownPdfCodexAuthoringOutcome> {
   const codexExecution = resolveCodexExecution(input.codexExecution);
+  const pageInformationSession = createMarkdownPdfPageInformationPreparationSession(runtime, {
+    codexExecution,
+    timeoutMs: input.codexTimeoutMs,
+  });
   let setup: MarkdownPdfCodexSetup | undefined;
   let acceptedCandidate: PreparedMarkdownPdfCodexCandidate | undefined;
   let renderContext:
@@ -118,10 +126,44 @@ export async function runMarkdownPdfCodexAuthoring(
     }
     setup = setupOutcome.setup;
 
-    let prepared =
-      acceptedCandidate && sameCodexSetup(acceptedCandidate.setup, setup)
-        ? acceptedCandidate
-        : await prepareWithConsent(runtime, setup, input.codexTimeoutMs, codexExecution);
+    let prepared: PreparedMarkdownPdfCodexCandidate | "revise" | "change-artifact" | "cancel";
+    if (acceptedCandidate && sameCodexSetup(acceptedCandidate.setup, setup)) {
+      prepared = acceptedCandidate;
+    } else if (setup.pageInformation) {
+      while (true) {
+        const outcome = await pageInformationSession.prepare(setup);
+        if (outcome.kind === "prepared") {
+          prepared = outcome.candidate;
+          break;
+        }
+        if (outcome.kind === "declined") {
+          const next = await promptDeclinedConsentAction();
+          prepared =
+            next === "setup" ? "revise" : next === "artifact" ? "change-artifact" : "cancel";
+          break;
+        }
+        const revision = await pageInformationSession.revise(
+          setup,
+          outcome.conflict,
+          createMarkdownPdfCodexPageInformationPrompts(pathPromptContext),
+        );
+        if (revision.kind === "cancel") {
+          prepared = "cancel";
+          break;
+        }
+        if (revision.kind === "back") {
+          prepared = "revise";
+          break;
+        }
+        setup = { ...setup, pageInformation: revision.answers };
+        if (!revision.answers) {
+          prepared = "revise";
+          break;
+        }
+      }
+    } else {
+      prepared = await prepareWithConsent(runtime, setup, input.codexTimeoutMs, codexExecution);
+    }
     if (prepared === "cancel") {
       return { kind: "complete" };
     }
@@ -146,23 +188,47 @@ export async function runMarkdownPdfCodexAuthoring(
         break;
       }
       if (action === "regenerate") {
-        const regenerated = await prepareWithConsent(
-          runtime,
-          setup,
-          input.codexTimeoutMs,
-          codexExecution,
-        );
-        if (regenerated === "cancel") {
-          return { kind: "complete" };
-        }
-        if (regenerated === "change-artifact") {
-          return { kind: "change-artifact" };
-        }
-        if (regenerated === "revise") {
+        const regenerated = setup.pageInformation
+          ? await pageInformationSession.prepare(setup)
+          : await prepareWithConsent(runtime, setup, input.codexTimeoutMs, codexExecution);
+        if (
+          typeof regenerated !== "string" &&
+          "kind" in regenerated &&
+          regenerated.kind !== "prepared"
+        ) {
+          if (regenerated.kind === "needs-revision") {
+            const revision = await pageInformationSession.revise(
+              setup,
+              regenerated.conflict,
+              createMarkdownPdfCodexPageInformationPrompts(pathPromptContext),
+            );
+            if (revision.kind === "cancel") return { kind: "complete" };
+            if (revision.kind === "back") break;
+            setup = { ...setup, pageInformation: revision.answers };
+            break;
+          }
+          const next = await promptDeclinedConsentAction();
+          if (next === "cancel") return { kind: "complete" };
+          if (next === "artifact") return { kind: "change-artifact" };
           break;
         }
-        prepared = regenerated;
-        acceptedCandidate = regenerated;
+        const regeneratedCandidate =
+          typeof regenerated === "string"
+            ? regenerated
+            : "candidate" in regenerated
+              ? regenerated.candidate
+              : regenerated;
+        if (regeneratedCandidate === "cancel") {
+          return { kind: "complete" };
+        }
+        if (regeneratedCandidate === "change-artifact") {
+          return { kind: "change-artifact" };
+        }
+        if (regeneratedCandidate === "revise") {
+          break;
+        }
+        prepared = regeneratedCandidate;
+        acceptedCandidate = regeneratedCandidate;
         continue;
       }
       if (action === "save") {

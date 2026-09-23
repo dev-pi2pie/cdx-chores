@@ -104,10 +104,14 @@ describe("Markdown adapter execution policy", () => {
   test("adapters reject invalid policies before reading request evidence or invoking runners", async () => {
     let touched = false;
     let invoked = false;
+    let attempts = 0;
     await expect(
       suggestMarkdownPdfProfileWithCodex({
         ...profileRequest,
         codexExecution: { model: " " },
+        onModelRequestAttempt: () => {
+          attempts += 1;
+        },
         get candidates(): never {
           touched = true;
           throw new Error("Evidence accessed");
@@ -122,6 +126,9 @@ describe("Markdown adapter execution policy", () => {
       suggestMarkdownPdfTemplateWithCodex({
         ...templateRequest(),
         codexExecution: { provider: " " },
+        onModelRequestAttempt: () => {
+          attempts += 1;
+        },
         get signals(): never {
           touched = true;
           throw new Error("Evidence accessed");
@@ -134,5 +141,6 @@ describe("Markdown adapter execution policy", () => {
     ).rejects.toThrow("provider");
     expect(touched).toBe(false);
     expect(invoked).toBe(false);
+    expect(attempts).toBe(0);
   });
 });

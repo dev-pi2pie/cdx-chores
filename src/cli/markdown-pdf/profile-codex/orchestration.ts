@@ -130,6 +130,7 @@ async function suggestMarkdownPdfCodexProfileWithProgress(input: {
   runtime: CliRuntime;
   timeoutMs?: number;
   codexExecution?: CodexExecutionOptions;
+  onModelRequestAttempt?: () => void;
 }): Promise<MarkdownPdfCodexProfileResult> {
   const ownsProgressSession = !input.progressSession;
   const codexProgress =
@@ -146,11 +147,13 @@ async function suggestMarkdownPdfCodexProfileWithProgress(input: {
           runner: input.profileCodexRunner,
           timeoutMs: input.timeoutMs,
           codexExecution: input.codexExecution,
+          onModelRequestAttempt: input.onModelRequestAttempt,
         })
       : await suggestMarkdownPdfProfileWithCodex({
           ...input.context.request,
           timeoutMs: input.timeoutMs,
           codexExecution: input.codexExecution,
+          onModelRequestAttempt: input.onModelRequestAttempt,
         });
     codexProgressStatus = result.profile
       ? result.decision.decisionMode === "conservative-fallback"
@@ -205,6 +208,7 @@ export async function runMarkdownPdfCodexProfileOrchestration(input: {
   runtime: CliRuntime;
   timeoutMs?: number;
   codexExecution?: CodexExecutionOptions;
+  onModelRequestAttempt?: () => void;
 }): Promise<MarkdownPdfCodexProfileOrchestrationResult> {
   const codexExecution = resolveCodexExecution(input.codexExecution);
   input = { ...input, codexExecution };

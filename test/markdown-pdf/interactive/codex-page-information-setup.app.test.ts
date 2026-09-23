@@ -113,7 +113,7 @@ function context() {
   };
 }
 
-describe("internal Markdown PDF Codex setup entry", () => {
+describe("Markdown PDF Codex setup entry", () => {
   test("asks for page information after the sample and before PDF intent", async () => {
     selectQueue = [
       "none",
@@ -130,7 +130,6 @@ describe("internal Markdown PDF Codex setup entry", () => {
       artifact: "profile",
       entry: "pdf-recipes",
       fontHintEditor,
-      internalPageInformation: {},
     });
     expect(result.kind).toBe("setup");
     if (result.kind !== "setup") return;
@@ -150,24 +149,20 @@ describe("internal Markdown PDF Codex setup entry", () => {
     ]);
   });
 
-  test("keeps the normal and Template setup routes unchanged", async () => {
-    for (const [artifact, internal] of [
-      ["profile", false],
-      ["template-bundle", true],
-    ] as const) {
+  test("offers page information in normal Profile setup but not Template setup", async () => {
+    for (const artifact of ["profile", "template-bundle"] as const) {
       calls = [];
-      selectQueue = ["none", "continue"];
+      selectQueue = artifact === "profile" ? ["none", "skip", "continue"] : ["none", "continue"];
       const { runtime, pathPromptContext, fontHintEditor } = context();
       const result = await collectMarkdownPdfCodexSetup(runtime, pathPromptContext, {
         artifact,
         entry: "pdf-recipes",
         fontHintEditor,
-        ...(internal ? { internalPageInformation: {} } : {}),
       });
       expect(result.kind).toBe("setup");
-      expect(calls).not.toContain("select:Specify page information in this Profile?");
       expect(calls).toEqual([
         "select:Markdown preparation sample",
+        ...(artifact === "profile" ? ["select:Specify page information in this Profile?"] : []),
         "confirm:Use multiline editor?",
         "input:PDF intent (optional)\n ",
         `select:${artifact === "profile" ? "Profile" : "Template bundle"} setup next step`,
@@ -182,7 +177,6 @@ describe("internal Markdown PDF Codex setup entry", () => {
       artifact: "project-bundle",
       entry: "pdf-recipes",
       fontHintEditor,
-      internalPageInformation: {},
     });
     expect(result.kind).toBe("setup");
     expect(calls).toContain("select:Specify page information in this Profile?");

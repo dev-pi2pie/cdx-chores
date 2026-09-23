@@ -114,6 +114,16 @@ export function installPromptMocks(context: HarnessRunnerContext): void {
       }
       context.result.selectChoicesByMessage[message] = choices;
 
+      // Legacy scenarios omit the new optional Profile page-information choice.
+      // Preserve their queued setup actions while explicit scenarios supply skip or edit.
+      if (
+        message === "Specify page information in this Profile?" &&
+        context.scenario.selectQueue?.[0] !== "skip" &&
+        context.scenario.selectQueue?.[0] !== "edit"
+      ) {
+        return "skip";
+      }
+
       return context.shiftQueueValue(context.scenario.selectQueue ?? [], `select:${message}`);
     },
     checkbox: async (options: BooleanPromptOptions) => {

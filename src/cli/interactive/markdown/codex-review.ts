@@ -1,6 +1,10 @@
 import { confirm, select } from "@inquirer/prompts";
 
 import { displayPath, printLine } from "../../actions/shared";
+import { getCliColors } from "../../colors";
+import { styleCliDiagnosticLabel } from "../../diagnostic-color";
+import { collectMarkdownPdfOccupiedPageNumberSlotDiagnostic } from "../../markdown-pdf/diagnostics";
+import { escapeMarkdownPdfPageInformationTerminalText } from "../../markdown-pdf/page-information-terminal";
 import { promptRequiredPathWithConfig } from "../../prompts/path";
 import type { CliRuntime } from "../../types";
 import type { InteractivePathPromptContext } from "../shared";
@@ -23,6 +27,9 @@ import {
 } from "../../markdown-pdf/profile-authoring-review";
 import { hasExplicitMarkdownPdfCodexPageInformation } from "../../markdown-pdf/profile-codex/page-information-signals";
 import { formatMdPdfProjectCodexHandoffReview } from "../../markdown-pdf/project-codex/summary";
+import { collectMdPdfProjectCodexUnsupportedDirections } from "../../markdown-pdf/project-codex/diagnostics";
+import type { MarkdownPdfCodexPageInformationAnswers } from "./codex-page-information";
+import { planMarkdownPdfPageInformationRequest } from "./codex-page-information-preparation";
 
 export type MarkdownPdfCodexReviewAction =
   | "save"
@@ -100,6 +107,31 @@ function reusableCode(
   return resolveGeneratedReusableMarkdownPdfCode({ kind: "codex", candidate });
 }
 
+function requestedPageInformationLines(
+  answers: MarkdownPdfCodexPageInformationAnswers | undefined,
+): string[] {
+  if (!answers?.pageNumbers && !answers?.repeatingContent) return [];
+  return [
+    "Requested page information:",
+    `- Page numbers: ${answers.pageNumbers ? `explicit ${answers.pageNumbers.enabled ? "ON" : "OFF"}` : "unspecified (preserve prepared choice)"}`,
+    ...(answers.pageNumbers?.enabled
+      ? [`- Entered page-number label: ${JSON.stringify(answers.pageNumbers.format)}`]
+      : []),
+    `- Repeating content: ${answers.repeatingContent ? `explicit ${answers.repeatingContent.enabled ? "ON" : "OFF"}${answers.repeatingContent.enabled ? ` at ${answers.repeatingContent.selected.join(", ") || "no positions"}` : ""}` : "unspecified (preserve prepared choice)"}`,
+    ...(answers.repeatingContent?.enabled
+      ? answers.repeatingContent.selected.map(
+          (position) =>
+            `- Entered ${position} text: ${JSON.stringify(answers.repeatingContent?.text[position] ?? "")}`,
+        )
+      : []),
+    ...(answers.occupiedNumberSlot
+      ? [
+          `- Occupied number slot: ${answers.occupiedNumberSlot.choice} ${answers.occupiedNumberSlot.position}`,
+        ]
+      : []),
+  ];
+}
+
 export function renderMarkdownPdfCodexConsent(
   runtime: CliRuntime,
   setup: MarkdownPdfCodexSetup,
@@ -152,6 +184,16 @@ export function renderMarkdownPdfCodexCandidateReview(
   runtime: CliRuntime,
   candidate: PreparedMarkdownPdfCodexCandidate,
 ): void {
+  const colors = getCliColors(runtime, runtime.stderr);
+  const hasPageInformation = hasExplicitMarkdownPdfCodexPageInformation(
+    candidate.setup.pageInformation,
+  );
+  const printReviewLine = (line: string): void => {
+    printLine(
+      runtime.stderr,
+      hasPageInformation ? escapeMarkdownPdfPageInformationTerminalText(line) : line,
+    );
+  };
   printLine(runtime.stderr, "Markdown PDF recipe review");
   printLine(runtime.stderr, "");
   if (candidate.setup.sample) {
@@ -163,27 +205,32 @@ export function renderMarkdownPdfCodexCandidateReview(
     printLine(runtime.stderr, `Signal mode: ${candidateSignalMode(candidate)}`);
     printLine(runtime.stderr, `Decision: ${candidateDecision(candidate)}`);
   }
-  printLine(
-    runtime.stderr,
-    `Codex request: ${isUsableMarkdownPdfCodexCandidate(candidate) ? "completed" : "no usable candidate"}`,
-  );
+  const requestStatus =
+    hasPageInformation && !planMarkdownPdfPageInformationRequest(candidate.setup).needsConsent
+      ? "not needed (deterministic)"
+      : isUsableMarkdownPdfCodexCandidate(candidate)
+        ? "completed"
+        : "no usable candidate";
+  printLine(runtime.stderr, `Codex request: ${requestStatus}`);
+  const requestedPageInformation = requestedPageInformationLines(candidate.setup.pageInformation);
+  if (requestedPageInformation.length > 0) {
+    printLine(runtime.stderr, "");
+    printLine(runtime.stderr, colors.bold(requestedPageInformation[0]!));
+    for (const line of requestedPageInformation.slice(1)) printReviewLine(line);
+  }
   const fontReview = collectMarkdownPdfInteractiveFontReview(candidate);
   if (fontReview.applied.length > 0) {
     printLine(runtime.stderr, "");
     printLine(runtime.stderr, "Applied font mappings:");
     for (const mapping of fontReview.applied) {
-      printLine(
-        runtime.stderr,
-        `- ${mapping.layer} ${mapping.role}/${mapping.key} → ${mapping.family}`,
-      );
+      printReviewLine(`- ${mapping.layer} ${mapping.role}/${mapping.key} → ${mapping.family}`);
     }
   }
   if (fontReview.blocked.length > 0) {
     printLine(runtime.stderr, "");
     printLine(runtime.stderr, "Blocked font mappings:");
     for (const mapping of fontReview.blocked) {
-      printLine(
-        runtime.stderr,
+      printReviewLine(
         `- ${mapping.layer} ${mapping.role}/${mapping.key} → ${mapping.family} (${mapping.reason})`,
       );
     }
@@ -192,7 +239,7 @@ export function renderMarkdownPdfCodexCandidateReview(
     printLine(runtime.stderr, "");
     printLine(runtime.stderr, "Unresolved directions:");
     for (const direction of fontReview.unresolved) {
-      printLine(runtime.stderr, `- ${direction}`);
+      printReviewLine(`- ${direction}`);
     }
   }
   const profileReview =
@@ -205,8 +252,15 @@ export function renderMarkdownPdfCodexCandidateReview(
     renderReusableMarkdownPdfCodeReview(runtime, code);
   }
   if (profileReview) {
-    for (const line of formatMarkdownPdfProfileAuthoringReview(profileReview)) {
-      printLine(runtime.stderr, line);
+    for (const line of formatMarkdownPdfProfileAuthoringReview(profileReview, {
+      alreadyShownPageNumberLabel: candidate.setup.pageInformation?.pageNumbers?.enabled
+        ? candidate.setup.pageInformation.pageNumbers.format
+        : undefined,
+      alreadyShownRepeatingText: candidate.setup.pageInformation?.repeatingContent?.enabled
+        ? candidate.setup.pageInformation.repeatingContent.text
+        : undefined,
+    })) {
+      printReviewLine(line);
     }
   }
   if (candidate.artifact === "project-bundle") {
@@ -216,15 +270,52 @@ export function renderMarkdownPdfCodexCandidateReview(
       hasExplicitPageInformation: hasExplicitMarkdownPdfCodexPageInformation(
         candidate.setup.pageInformation,
       ),
+      includeRepeatingContent: true,
+      alreadyShownPageNumberLabel: candidate.setup.pageInformation?.pageNumbers?.enabled
+        ? candidate.setup.pageInformation.pageNumbers.format
+        : undefined,
+      alreadyShownRepeatingText: candidate.setup.pageInformation?.repeatingContent?.enabled
+        ? candidate.setup.pageInformation.repeatingContent.text
+        : undefined,
+      profilePhaseMode: candidate.prepared.profilePhase.phase.signalMode,
+      templatePhaseMode: candidate.prepared.templatePhase.phase.signalMode,
+      localDetails: {
+        fallbackReason: candidate.prepared.binding.validation.fallbackReason,
+        unsupportedDirections: collectMdPdfProjectCodexUnsupportedDirections({
+          profilePhase: candidate.prepared.profilePhase,
+          templatePhase: candidate.prepared.templatePhase,
+        }),
+        validationResults: candidate.prepared.binding.validation.results,
+        diagnostics: candidate.prepared.binding.validation.diagnostics.conditions,
+      },
       reportArtifact: candidate.prepared.binding.reportArtifact,
     })) {
-      printLine(runtime.stderr, line);
+      printReviewLine(line);
     }
   } else {
     printLine(runtime.stderr, "");
     printLine(runtime.stderr, "Planned recipe files:");
     for (const file of plannedFiles(candidate)) {
       printLine(runtime.stderr, `- ${file}`);
+    }
+  }
+  const effectiveProfile =
+    profileReview ??
+    (candidate.artifact === "project-bundle"
+      ? collectMarkdownPdfProfileAuthoringReview(candidate.prepared.profilePhase.finalProfile)
+      : undefined);
+  if (effectiveProfile) {
+    const occupiedSlot = collectMarkdownPdfOccupiedPageNumberSlotDiagnostic({
+      profile: effectiveProfile.normalizedProfile,
+      pageNumbers: effectiveProfile.normalizedProfile.pageNumbers,
+    });
+    if (occupiedSlot) {
+      const retained = candidate.setup.pageInformation?.occupiedNumberSlot?.choice === "retain";
+      printLine(runtime.stderr, "");
+      printLine(
+        runtime.stderr,
+        `${styleCliDiagnosticLabel(runtime, runtime.stderr, "warning", "Warning:")} ${escapeMarkdownPdfPageInformationTerminalText(`${retained ? "Retained text is stored but cannot render while page numbering owns this position. " : ""}${occupiedSlot.message}`)}`,
+      );
     }
   }
   printLine(runtime.stderr, "");

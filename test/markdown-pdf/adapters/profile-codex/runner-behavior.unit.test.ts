@@ -13,6 +13,7 @@ afterEach(() => {
 
 describe("Markdown PDF Codex profile adapter", () => {
   test("starts the default Codex runner in the request working directory", async () => {
+    const requestEvents: string[] = [];
     let capturedThreadOptions: unknown;
     let capturedRunMessages: unknown;
     let capturedRunOptions: unknown;
@@ -33,9 +34,11 @@ describe("Markdown PDF Codex profile adapter", () => {
     mock.module("@openai/codex-sdk", () => ({
       Codex: class {
         startThread(options: unknown) {
+          requestEvents.push("start-thread");
           capturedThreadOptions = options;
           return {
             run: async (messages: unknown, options: unknown) => {
+              requestEvents.push("run");
               capturedRunMessages = messages;
               capturedRunOptions = options;
               return {
@@ -58,7 +61,10 @@ describe("Markdown PDF Codex profile adapter", () => {
 
     let result: Awaited<ReturnType<typeof suggestMarkdownPdfProfileWithCodex>>;
     try {
-      result = await suggestMarkdownPdfProfileWithCodex(requestBase);
+      result = await suggestMarkdownPdfProfileWithCodex({
+        ...requestBase,
+        onModelRequestAttempt: () => requestEvents.push("attempt"),
+      });
     } finally {
       Object.defineProperty(AbortSignal, "timeout", originalTimeoutDescriptor);
     }
@@ -91,14 +97,18 @@ describe("Markdown PDF Codex profile adapter", () => {
     expect(runOptions.outputSchema).toBe(MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA);
     expect(runOptions.signal).toBeInstanceOf(AbortSignal);
     expect(timeoutCalls).toEqual([MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS]);
+    expect(requestEvents).toEqual(["start-thread", "attempt", "run"]);
   });
 
   test("passes the request working directory to explicit profile runners", async () => {
     let capturedWorkingDirectory = "";
+    const requestEvents: string[] = [];
 
     await suggestMarkdownPdfProfileWithCodex({
       ...requestBase,
+      onModelRequestAttempt: () => requestEvents.push("attempt"),
       runner: async (options) => {
+        requestEvents.push("run");
         capturedWorkingDirectory = options.workingDirectory;
         return JSON.stringify({
           decision_mode: "adapted",
@@ -114,5 +124,43 @@ describe("Markdown PDF Codex profile adapter", () => {
     });
 
     expect(capturedWorkingDirectory).toBe("/repo");
+    expect(requestEvents).toEqual(["attempt", "run"]);
+  });
+
+  test("does not mark a request when the default thread cannot start", async () => {
+    let attempts = 0;
+    mock.module("@openai/codex-sdk", () => ({
+      Codex: class {
+        startThread(): never {
+          throw new Error("thread setup failed");
+        }
+      },
+    }));
+
+    await expect(
+      suggestMarkdownPdfProfileWithCodex({
+        ...requestBase,
+        onModelRequestAttempt: () => {
+          attempts += 1;
+        },
+      }),
+    ).rejects.toThrow("thread setup failed");
+    expect(attempts).toBe(0);
+  });
+
+  test("marks a failed injected runner invocation", async () => {
+    let attempts = 0;
+    await expect(
+      suggestMarkdownPdfProfileWithCodex({
+        ...requestBase,
+        onModelRequestAttempt: () => {
+          attempts += 1;
+        },
+        runner: async () => {
+          throw new Error("request failed");
+        },
+      }),
+    ).rejects.toThrow("request failed");
+    expect(attempts).toBe(1);
   });
 });

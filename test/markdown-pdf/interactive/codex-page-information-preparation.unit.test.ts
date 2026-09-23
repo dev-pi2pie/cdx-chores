@@ -12,7 +12,6 @@ import type {
   PreparedMarkdownPdfCodexCandidate,
 } from "../../../src/cli/interactive/markdown/codex-types";
 import type { MarkdownPdfCodexPageInformationAnswers } from "../../../src/cli/interactive/markdown/codex-page-information";
-import { bindMarkdownPdfCodexCandidate } from "../../../src/cli/interactive/markdown/codex-service";
 
 const pageInformation: MarkdownPdfCodexPageInformationAnswers = {
   pageNumbers: {
@@ -176,38 +175,6 @@ describe("internal Markdown PDF page-information preparation", () => {
         await session.prepare(setup(artifact, { intent: "Use a custom cover layout" })),
       ).toMatchObject({ kind: "declined" });
       expect(consentCalls).toBe(1);
-    },
-  );
-
-  test("binding an internal page-information candidate cannot retain a diagnostic report", async () => {
-    const { runtime: cli } = runtime();
-    await expect(
-      bindMarkdownPdfCodexCandidate(cli, candidate("profile"), {
-        output: "unused.yml",
-        overwrite: false,
-        report: { kind: "with-artifact" },
-      }),
-    ).rejects.toMatchObject({ code: "INVALID_INPUT" });
-  });
-
-  test.each(["profile", "project-bundle"] as const)(
-    "%s report binding uses prepared page-information state even when setup omits it",
-    async (artifact) => {
-      const { runtime: cli } = runtime();
-      const preparedCandidate = candidate(artifact);
-      preparedCandidate.setup = { artifact, fontHints: [] };
-      preparedCandidate.prepared = (
-        artifact === "profile"
-          ? { hasExplicitPageInformation: true }
-          : { signals: { profile: { pageInformation: { repeatingContent: { enabled: false } } } } }
-      ) as never;
-      await expect(
-        bindMarkdownPdfCodexCandidate(cli, preparedCandidate, {
-          output: "unused",
-          overwrite: false,
-          report: { kind: "with-artifact" },
-        }),
-      ).rejects.toMatchObject({ code: "INVALID_INPUT" });
     },
   );
 

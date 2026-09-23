@@ -163,15 +163,14 @@ export async function collectMarkdownPdfCodexSetup(
     initialSetup?: MarkdownPdfCodexSetup;
     fontHintEditor: MarkdownPdfInteractiveFontHintEditorSession;
     markdownInput?: string;
-    /** Explicit internal harness entry; normal Interactive callers omit it. */
+    /** Optional prompt and base-loader overrides for injected tests. */
     internalPageInformation?: {
       prompts?: MarkdownPdfCodexPageInformationPrompts;
       loadBase?: (path: string) => Promise<NormalizedMarkdownPdfProfile>;
     };
   },
 ): Promise<CodexSetupOutcome> {
-  const pageInformationEnabled =
-    Boolean(context.internalPageInformation) && context.artifact !== "template-bundle";
+  const pageInformationEnabled = context.artifact !== "template-bundle";
   const pageInformationPrompts =
     context.internalPageInformation?.prompts ??
     createMarkdownPdfCodexPageInformationPrompts(pathPromptContext);

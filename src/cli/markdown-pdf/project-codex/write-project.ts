@@ -18,17 +18,19 @@ import type {
 import type { MdPdfProjectCodexProfilePhaseResult } from "./profile-phase";
 import type { MdPdfProjectCodexTemplatePhaseResult } from "./template-phase";
 import type { MarkdownPdfProjectCodexReportArtifact } from "./types-report";
+import type { MarkdownPdfPageInformationSlotResolution } from "../profile-codex";
 import type { MarkdownPdfProjectCodexValidationSummary } from "./validate-project";
-import { assertNoPageInformationDiagnosticReport } from "../profile-codex/page-information-signals";
 
 type MdPdfProjectCodexWriteInput = {
   managedAssetContents?: readonly MarkdownPdfProjectCodexManagedAssetContent[];
+  modelCallAttempted?: boolean;
   outputPlan: MarkdownPdfProjectCodexOutputPlan;
   overwrite?: boolean;
   profilePhase: MdPdfProjectCodexProfilePhaseResult;
   reportArtifact?: MarkdownPdfProjectCodexReportArtifact;
   runtime: CliRuntime;
   signals: MdPdfProjectCodexSignalCollection;
+  slotResolution?: MarkdownPdfPageInformationSlotResolution;
   state: NormalizedMdPdfProjectCodexCommandState;
   templatePhase: MdPdfProjectCodexTemplatePhaseResult;
   validation: MarkdownPdfProjectCodexValidationSummary;
@@ -151,10 +153,6 @@ async function validateMdPdfProjectCodexReportIfRequested(
   if (!input.outputPlan.report) {
     return;
   }
-  assertNoPageInformationDiagnosticReport({
-    pageInformation: input.signals.profile.pageInformation,
-    reportPlanned: true,
-  });
   await validateMdPdfProjectCodexReportWritability({
     plan: input.outputPlan,
     runtime: input.runtime,

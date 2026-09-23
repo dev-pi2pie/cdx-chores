@@ -1,7 +1,14 @@
+import { isDeepStrictEqual } from "node:util";
+
 import { writeTextFileSafe } from "../../file-io";
+import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
 import { publicPathBasename, publicPathDisplay } from "../codex-path-display";
-import { assertNoPageInformationDiagnosticReport } from "../profile-codex/page-information-signals";
+import {
+  createMarkdownPdfCodexReportPageInformation,
+  validateMarkdownPdfCodexReportPageInformation,
+} from "../codex-report/page-information";
+import type { MarkdownPdfPageInformationSlotResolution } from "../profile-codex/page-information-materialization";
 import { collectMdPdfProjectCodexUnsupportedDirections } from "./diagnostics";
 import { createMdPdfProjectCodexHandoffProjection } from "./handoff-projection";
 import {
@@ -180,9 +187,19 @@ export function createMdPdfProjectCodexReportArtifact(input: {
   state: NormalizedMdPdfProjectCodexCommandState;
   templatePhase: MdPdfProjectCodexTemplatePhaseResult;
   validation: MarkdownPdfProjectCodexValidationSummary;
+  slotResolution?: MarkdownPdfPageInformationSlotResolution;
+  modelCallAttempted?: boolean;
 }): MarkdownPdfProjectCodexReportArtifact {
   const coverImage = inputCoverImageReport(input);
   const handoff = createMdPdfProjectCodexHandoffProjection(input);
+  const pageInformation = createMarkdownPdfCodexReportPageInformation({
+    pageInformation: input.signals.profile.pageInformation,
+    finalProfile: input.profilePhase.finalProfile,
+    slotResolution: input.slotResolution,
+    modelCallAttempted:
+      input.modelCallAttempted ??
+      Boolean(input.profilePhase.codexResult || input.templatePhase.codexResult),
+  });
   return {
     artifactType: MARKDOWN_PDF_PROJECT_CODEX_REPORT_ARTIFACT_TYPE,
     advisoryOnly: true,
@@ -248,6 +265,7 @@ export function createMdPdfProjectCodexReportArtifact(input: {
               : [];
           }),
     validationResults: sanitizeValidationResults(input.validation.results),
+    ...(pageInformation ? { pageInformation } : {}),
     ...(handoff.render.usability === "unavailable"
       ? {}
       : { followUpRenderCommand: handoff.render.command }),
@@ -258,7 +276,25 @@ export function createMdPdfProjectCodexReportArtifact(input: {
 export function serializeMdPdfProjectCodexReportArtifact(
   report: MarkdownPdfProjectCodexReportArtifact,
 ): string {
-  return `${JSON.stringify(report, null, 2)}\n`;
+  const projected = report.pageInformation
+    ? {
+        ...report,
+        project: { ...report.project, fallbackReason: undefined },
+        phases: {
+          profile: { ...report.phases.profile, fallbackReason: undefined, warnings: [] },
+          template: { ...report.phases.template, fallbackReason: undefined, warnings: [] },
+        },
+        unsupportedDirections: [],
+        validationResults: report.validationResults.map(
+          ({ message: _message, ...result }) => result,
+        ),
+        diagnosticConditionIds: [
+          ...new Set(report.handoff.diagnostics.map((item) => item.conditionId)),
+        ],
+        handoff: { ...report.handoff, diagnostics: [] },
+      }
+    : report;
+  return `${JSON.stringify(projected, null, 2)}\n`;
 }
 
 export async function writeMdPdfProjectCodexReportArtifact(input: {
@@ -273,15 +309,53 @@ export async function writeMdPdfProjectCodexReportArtifact(input: {
   state: NormalizedMdPdfProjectCodexCommandState;
   templatePhase: MdPdfProjectCodexTemplatePhaseResult;
   validation: MarkdownPdfProjectCodexValidationSummary;
+  slotResolution?: MarkdownPdfPageInformationSlotResolution;
+  modelCallAttempted?: boolean;
 }): Promise<void> {
   if (!input.outputPlan.report) {
     return;
   }
-  assertNoPageInformationDiagnosticReport({
-    pageInformation: input.signals.profile.pageInformation,
-    reportPlanned: true,
-  });
   const reportArtifact = input.reportArtifact ?? createMdPdfProjectCodexReportArtifact(input);
+  validateMarkdownPdfCodexReportPageInformation(reportArtifact.pageInformation);
+  const expectedPageInformation = createMarkdownPdfCodexReportPageInformation({
+    pageInformation: input.signals.profile.pageInformation,
+    finalProfile: input.profilePhase.finalProfile,
+    slotResolution: input.slotResolution,
+    modelCallAttempted: reportArtifact.pageInformation?.modelResultDetails === "omitted",
+  });
+  const actual = reportArtifact.pageInformation;
+  if (
+    Boolean(expectedPageInformation) !== Boolean(actual) ||
+    (expectedPageInformation &&
+      (!isDeepStrictEqual(
+        actual?.pageNumbers.requested,
+        expectedPageInformation.pageNumbers.requested,
+      ) ||
+        !isDeepStrictEqual(actual?.pageNumbers.final, expectedPageInformation.pageNumbers.final) ||
+        !isDeepStrictEqual(
+          actual?.repeatingContent.requested,
+          expectedPageInformation.repeatingContent.requested,
+        ) ||
+        !isDeepStrictEqual(
+          actual?.repeatingContent.final?.storedPositions,
+          expectedPageInformation.repeatingContent.final?.storedPositions,
+        ) ||
+        actual?.repeatingContent.final?.reservedNumberPosition !==
+          expectedPageInformation.repeatingContent.final?.reservedNumberPosition ||
+        (input.slotResolution &&
+          actual?.repeatingContent.final?.reservedSlotOutcome !==
+            expectedPageInformation.repeatingContent.final?.reservedSlotOutcome) ||
+        (input.modelCallAttempted !== undefined &&
+          actual?.modelResultDetails !== (input.modelCallAttempted ? "omitted" : "not-requested"))))
+  ) {
+    throw new CliError(
+      "Project report page-information metadata does not match the prepared Profile.",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
   const { followUpRenderCommand: _followUpRenderCommand, ...reportWithoutRenderCommand } =
     reportArtifact;
   const handoff = createMdPdfProjectCodexHandoffProjection(input);

@@ -12,7 +12,6 @@ import {
 import type { BoundMarkdownPdfProfileCodexDestination } from "./destination";
 import type { PreparedMarkdownPdfProfileCodex } from "./prepare";
 import { serializeMarkdownPdfProfileCodexProfile } from "./write-profile";
-import { assertNoPageInformationDiagnosticReport } from "./page-information-signals";
 import { escapeMarkdownPdfPageInformationTerminalText } from "../page-information-terminal";
 
 function persistedReportPath(runtime: CliRuntime, path: string): string {
@@ -43,10 +42,6 @@ async function writeReportIfRequested(input: {
   if (!input.destination.reportOutputPath) {
     return;
   }
-  assertNoPageInformationDiagnosticReport({
-    hasExplicitPageInformation: input.prepared.hasExplicitPageInformation,
-    reportPlanned: true,
-  });
   await writeMarkdownPdfCodexReportArtifact(
     input.destination.reportOutputPath,
     createMarkdownPdfCodexReportArtifact({
@@ -70,10 +65,16 @@ export async function commitPreparedMarkdownPdfProfileCodex(input: {
   runtime: CliRuntime;
 }): Promise<void> {
   const { destination, prepared, runtime } = input;
-  assertNoPageInformationDiagnosticReport({
-    hasExplicitPageInformation: prepared.hasExplicitPageInformation,
-    reportPlanned: Boolean(destination.reportOutputPath),
-  });
+  if (
+    destination.reportOutputPath &&
+    prepared.hasExplicitPageInformation &&
+    !prepared.reportPayload.pageInformation
+  ) {
+    throw new CliError("Page-information diagnostic report metadata is missing.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
   if (prepared.kind !== "profile") {
     await writeReportIfRequested(input);
     throw new CliError(prepared.failureMessage, {

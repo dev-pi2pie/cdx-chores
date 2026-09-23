@@ -9,5 +9,6 @@ export function recipesCodexSelections(artifact: CodexArtifact): string[] {
     artifact,
     ...(artifact === "project-bundle" ? [] : ["codex-assistant"]),
     "none",
+    ...(artifact === "template-bundle" ? [] : ["skip"]),
   ];
 }

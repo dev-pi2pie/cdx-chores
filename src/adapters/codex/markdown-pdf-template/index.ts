@@ -112,13 +112,16 @@ async function runMarkdownPdfTemplateCodexPrompt(options: {
   codexExecution: ResolvedCodexExecution;
   timeoutMs?: number;
   workingDirectory: string;
+  onModelRequestAttempt?: () => void;
 }): Promise<string> {
   const thread = await startCodexReadOnlyThread(options.workingDirectory, {
     codexExecution: options.codexExecution,
   });
+  const signal = AbortSignal.timeout(options.timeoutMs ?? MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS);
+  options.onModelRequestAttempt?.();
   const turn = await thread.run([{ type: "text", text: options.prompt }], {
     outputSchema: MARKDOWN_PDF_TEMPLATE_CODEX_OUTPUT_SCHEMA,
-    signal: AbortSignal.timeout(options.timeoutMs ?? MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS),
+    signal,
   });
   return turn.finalResponse;
 }
@@ -221,6 +224,7 @@ export async function suggestMarkdownPdfTemplateWithCodex(
     runner?: MarkdownPdfTemplateCodexRunner;
     timeoutMs?: number;
     codexExecution?: CodexExecutionOptions;
+    onModelRequestAttempt?: () => void;
   },
 ): Promise<MarkdownPdfTemplateCodexResult> {
   const codexExecution = resolveCodexExecution(request.codexExecution);
@@ -228,19 +232,25 @@ export async function suggestMarkdownPdfTemplateWithCodex(
     runner: runnerOverride,
     timeoutMs,
     codexExecution: _execution,
+    onModelRequestAttempt,
     ...domainRequest
   } = request;
-  const runner = runnerOverride ?? runMarkdownPdfTemplateCodexPrompt;
   return suggestMarkdownPdfTemplateWithPrompt({
     request: domainRequest,
     timeoutMs: timeoutMs ?? MARKDOWN_PDF_TEMPLATE_CODEX_TIMEOUT_MS,
-    runPrompt: ({ prompt }) =>
-      runner({
+    runPrompt: ({ prompt }) => {
+      const options = {
         prompt,
         timeoutMs,
         codexExecution,
         workingDirectory: request.workingDirectory,
-      }),
+      };
+      if (runnerOverride) {
+        onModelRequestAttempt?.();
+        return runnerOverride(options);
+      }
+      return runMarkdownPdfTemplateCodexPrompt({ ...options, onModelRequestAttempt });
+    },
   });
 }
 

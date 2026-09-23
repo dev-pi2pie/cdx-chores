@@ -144,6 +144,7 @@ async function suggestProjectTemplateWithCodexProgress(input: {
   templateCodexRunner?: MarkdownPdfTemplateCodexRunner;
   timeoutMs?: number;
   codexExecution?: CodexExecutionOptions;
+  onModelRequestAttempt?: () => void;
 }): Promise<MarkdownPdfTemplateCodexResult> {
   const ownsProgressSession = !input.progressSession;
   const codexProgress =
@@ -162,6 +163,7 @@ async function suggestProjectTemplateWithCodexProgress(input: {
           signals: input.signals,
           timeoutMs: input.timeoutMs,
           codexExecution: input.codexExecution,
+          onModelRequestAttempt: input.onModelRequestAttempt,
           workingDirectory: input.runtime.cwd,
         })
       : await suggestMarkdownPdfTemplateWithCodex({
@@ -170,6 +172,7 @@ async function suggestProjectTemplateWithCodexProgress(input: {
           signals: input.signals,
           timeoutMs: input.timeoutMs,
           codexExecution: input.codexExecution,
+          onModelRequestAttempt: input.onModelRequestAttempt,
           workingDirectory: input.runtime.cwd,
         });
     codexProgressStatus =
@@ -196,6 +199,7 @@ export async function runMdPdfProjectCodexTemplatePhase(input: {
   templateCodexRunner?: MarkdownPdfTemplateCodexRunner;
   timeoutMs?: number;
   codexExecution?: CodexExecutionOptions;
+  onModelRequestAttempt?: () => void;
 }): Promise<MdPdfProjectCodexTemplatePhaseResult> {
   const codexExecution = resolveCodexExecution(input.codexExecution);
   input = { ...input, codexExecution };
@@ -228,6 +232,7 @@ export async function runMdPdfProjectCodexTemplatePhase(input: {
         templateCodexRunner: input.templateCodexRunner,
         timeoutMs: input.timeoutMs,
         codexExecution: input.codexExecution,
+        onModelRequestAttempt: input.onModelRequestAttempt,
       })
     : undefined;
   const synthesis = codexResult

@@ -1,4 +1,4 @@
-import { readdir, writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
@@ -133,27 +133,24 @@ describe("internal page-information helper signals", () => {
     });
   });
 
-  test("rejects optional reports for explicit page information before either helper prepares", async () => {
-    await withTempFixtureDir("md-pdf-page-signals-no-diagnostic-report", async (fixtureDir) => {
+  test("allows optional reports for explicit page information in deterministic preparation", async () => {
+    await withTempFixtureDir("md-pdf-page-signals-diagnostic-report", async (fixtureDir) => {
       const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
-      await expectCliError(
-        () =>
-          prepareMarkdownPdfProfileCodex(runtime, {
-            internalPageInformation: pageInformation,
-            keepCodexReport: true,
-            output: "profile.yml",
-          }),
-        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "diagnostic reports" },
-      );
-      await expectCliError(
-        () =>
-          prepareMdPdfProjectCodex(runtime, {
-            codexReportOutput: "report.json",
-            internalPageInformation: pageInformation,
-            output: "project",
-          }),
-        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "diagnostic reports" },
-      );
+      const profile = await prepareMarkdownPdfProfileCodex(runtime, {
+        internalPageInformation: pageInformation,
+        keepCodexReport: true,
+        output: "profile.yml",
+      });
+      expect(profile.kind).toBe("profile");
+      const project = await prepareMdPdfProjectCodex(runtime, {
+        codexReportOutput: "report.json",
+        internalPageInformation: pageInformation,
+        output: "project",
+      });
+      expect(project.binding.reportArtifact.pageInformation).toMatchObject({
+        modelResultDetails: "not-requested",
+        pageNumbers: { requested: { choice: "on", position: "bottom-right" } },
+      });
     });
   });
 
@@ -207,24 +204,21 @@ describe("internal page-information helper signals", () => {
         repeatingContent: { enabled: false },
       });
       expect(calls).toBe(0);
-      await expectCliError(
-        () =>
-          prepareMarkdownPdfProfileCodex(runtime, {
-            internalPageInformation: offOnly,
-            keepCodexReport: true,
-            output: "off-report.yml",
-            codexRunner: async () => {
-              calls += 1;
-              throw new Error("Unexpected model request");
-            },
-          }),
-        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "diagnostic reports" },
-      );
+      const withReport = await prepareMarkdownPdfProfileCodex(runtime, {
+        internalPageInformation: offOnly,
+        keepCodexReport: true,
+        output: "off-report.yml",
+        codexRunner: async () => {
+          calls += 1;
+          throw new Error("Unexpected model request");
+        },
+      });
+      expect(withReport.kind).toBe("profile");
       expect(calls).toBe(0);
     });
   });
 
-  test("rejects late Profile report bindings and forged report destinations before writing", async () => {
+  test("writes safe Profile report after a late report binding", async () => {
     await withTempFixtureDir("md-pdf-profile-page-late-report", async (fixtureDir) => {
       const marker = "MODEL_ECHO_MARKER";
       const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
@@ -247,38 +241,23 @@ describe("internal page-information helper signals", () => {
       expect(prepared.kind).toBe("profile");
       expect(prepared.hasExplicitPageInformation).toBe(true);
       expect(JSON.stringify(prepared.reportPayload.result)).toContain(marker);
-      await expectCliError(
-        () =>
-          bindMarkdownPdfProfileCodexDestination(runtime, prepared, {
-            report: { kind: "with-artifact" },
-          }),
-        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "diagnostic reports" },
-      );
-      await expectCliError(
-        () =>
-          bindMarkdownPdfProfileCodexDestination(runtime, prepared, {
-            report: { kind: "external", path: "late-report.json" },
-          }),
-        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "diagnostic reports" },
-      );
-      await expectCliError(
-        () =>
-          commitPreparedMarkdownPdfProfileCodex({
-            runtime,
-            prepared,
-            destination: {
-              displayOutputPath: "profile.yml",
-              outputPath: join(fixtureDir, "profile.yml"),
-              reportOutputPath: join(fixtureDir, "forged-report.json"),
-            },
-          }),
-        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "diagnostic reports" },
-      );
-      expect(await readdir(fixtureDir)).toEqual([]);
+      const withArtifact = await bindMarkdownPdfProfileCodexDestination(runtime, prepared, {
+        report: { kind: "with-artifact" },
+      });
+      expect(withArtifact.reportOutputPath).toBeDefined();
+      const destination = await bindMarkdownPdfProfileCodexDestination(runtime, prepared, {
+        report: { kind: "external", path: "late-report.json" },
+      });
+      await commitPreparedMarkdownPdfProfileCodex({ runtime, prepared, destination });
+      const reportText = await readFile(join(fixtureDir, "late-report.json"), "utf8");
+      expect(reportText).not.toContain(marker);
+      expect(reportText).not.toContain(pageInformation.pageNumbers?.format);
+      expect(reportText).not.toContain(pageInformation.repeatingContent?.text["top-left"]);
+      expect(JSON.parse(reportText).pageInformation.modelResultDetails).toBe("omitted");
     });
   });
 
-  test("rejects late Project report rebind and direct report writes", async () => {
+  test("writes safe Project report after a late report rebind", async () => {
     await withTempFixtureDir("md-pdf-project-page-late-report", async (fixtureDir) => {
       const marker = "PROJECT_MODEL_ECHO_MARKER";
       const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
@@ -302,16 +281,18 @@ describe("internal page-information helper signals", () => {
         },
       });
       expect(JSON.stringify(prepared.profilePhase)).toContain(marker);
-      await expectCliError(
-        () =>
-          rebindMdPdfProjectCodexPreparedArtifact({
-            prepared,
-            runtime,
-            outputDirectory: "late-project",
-            report: { kind: "with-artifact" },
-          }),
-        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "diagnostic reports" },
-      );
+      const rebound = await rebindMdPdfProjectCodexPreparedArtifact({
+        prepared,
+        runtime,
+        outputDirectory: "late-project",
+        report: { kind: "external", path: "late-project-report.json" },
+      });
+      await writePreparedMdPdfProjectCodexReportIfRequested(runtime, rebound);
+      const reboundReport = await readFile(join(fixtureDir, "late-project-report.json"), "utf8");
+      expect(reboundReport).not.toContain(marker);
+      expect(reboundReport).not.toContain(pageInformation.pageNumbers?.format);
+      expect(reboundReport).not.toContain(pageInformation.repeatingContent?.text["top-left"]);
+      expect(JSON.parse(reboundReport).pageInformation.modelResultDetails).toBe("omitted");
       const report = {
         location: "external" as const,
         path: join(fixtureDir, "forged-project-report.json"),
@@ -323,26 +304,20 @@ describe("internal page-information helper signals", () => {
           outputPlan: { ...prepared.binding.outputPlan, report },
         },
       };
-      await expectCliError(() => writePreparedMdPdfProjectCodexReportIfRequested(runtime, forged), {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-        messageIncludes: "diagnostic reports",
+      await writeMdPdfProjectCodexReportArtifact({
+        outputPlan: forged.binding.outputPlan,
+        profilePhase: forged.profilePhase,
+        reportArtifact: forged.binding.reportArtifact,
+        runtime,
+        signals: forged.signals,
+        state: forged.binding.state,
+        templatePhase: forged.binding.templatePhase,
+        validation: forged.binding.validation,
       });
-      await expectCliError(
-        () =>
-          writeMdPdfProjectCodexReportArtifact({
-            outputPlan: forged.binding.outputPlan,
-            profilePhase: forged.profilePhase,
-            reportArtifact: forged.binding.reportArtifact,
-            runtime,
-            signals: forged.signals,
-            state: forged.binding.state,
-            templatePhase: forged.binding.templatePhase,
-            validation: forged.binding.validation,
-          }),
-        { code: "INVALID_INPUT", exitCode: 2, messageIncludes: "diagnostic reports" },
-      );
-      expect(await readdir(fixtureDir)).toEqual([]);
+      const directReport = await readFile(report.path, "utf8");
+      expect(directReport).not.toContain(marker);
+      expect(directReport).not.toContain(pageInformation.pageNumbers?.format);
+      expect(directReport).not.toContain(pageInformation.repeatingContent?.text["top-left"]);
     });
   });
 });

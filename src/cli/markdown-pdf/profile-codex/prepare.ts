@@ -43,10 +43,7 @@ import {
 } from "./orchestration";
 import { createMarkdownPdfCodexProfileIdentity } from "./profile-identity";
 import { classifyMarkdownPdfProfileCodexSignalMode } from "./signal-mode";
-import {
-  assertNoPageInformationDiagnosticReport,
-  prepareMarkdownPdfCodexPageInformationSignal,
-} from "./page-information-signals";
+import { prepareMarkdownPdfCodexPageInformationSignal } from "./page-information-signals";
 import type { MdPdfProfileCodexOptions } from "./types";
 import {
   applyMarkdownPdfCodexPageInformation,
@@ -207,11 +204,6 @@ export async function prepareMarkdownPdfProfileCodex(
   const pageInformation = prepareMarkdownPdfCodexPageInformationSignal(
     options.internalPageInformation,
   );
-  assertNoPageInformationDiagnosticReport({
-    pageInformation,
-    keepCodexReport: options.keepCodexReport,
-    codexReportOutput: options.codexReportOutput,
-  });
   const inputPath = resolveOptionalInputPath(runtime, options);
   const baseProfilePath = options.baseProfile
     ? resolveFromCwd(runtime, assertNonEmpty(options.baseProfile, "Base profile path"))
@@ -282,8 +274,15 @@ export async function prepareMarkdownPdfProfileCodex(
     displayInputPath: inputPath ? persistedReportPath(runtime, inputPath) : undefined,
     inputSha256: markdown ? fingerprintMarkdownPdfCodexInput(markdown) : undefined,
     request: reportRequest,
+    ...(pageInformation
+      ? {
+          pageInformation,
+          slotResolution: options.internalPageInformationSlotResolution,
+        }
+      : {}),
   };
   const identityBase = { createdAt, profileId };
+  let modelCallAttempted = false;
 
   try {
     const decision = await runMarkdownPdfCodexProfileOrchestration({
@@ -294,6 +293,9 @@ export async function prepareMarkdownPdfProfileCodex(
       runtime,
       timeoutMs: options.timeoutMs,
       codexExecution: options.codexExecution,
+      onModelRequestAttempt: () => {
+        modelCallAttempted = true;
+      },
     });
     if (decision.kind === "no-usable-profile") {
       const failure: MarkdownPdfCodexReportFailure = {
@@ -310,6 +312,7 @@ export async function prepareMarkdownPdfProfileCodex(
         reportPayload: {
           ...reportBase,
           failure,
+          modelCallAttempted,
           profileIdentity: decision.identity,
           selectedCandidate: decision.selectedCandidate,
         },
@@ -330,6 +333,8 @@ export async function prepareMarkdownPdfProfileCodex(
       kind: "profile",
       reportPayload: {
         ...reportBase,
+        finalProfile,
+        modelCallAttempted,
         profileIdentity: decision.identity,
         result: decision.kind === "codex-profile" ? decision.codexResult : undefined,
         selectedCandidate: decision.selectedCandidate,
@@ -367,7 +372,7 @@ export async function prepareMarkdownPdfProfileCodex(
           : `${codexFailureMessage(failureKind)} ${failure.message}`,
       identity,
       kind: "failed",
-      reportPayload: { ...reportBase, failure, profileIdentity: identity },
+      reportPayload: { ...reportBase, failure, modelCallAttempted, profileIdentity: identity },
     };
   }
 }

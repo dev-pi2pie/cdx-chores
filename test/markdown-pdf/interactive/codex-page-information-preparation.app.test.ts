@@ -72,9 +72,30 @@ describe("internal Interactive page-information preparation", () => {
           const bound = await bindMarkdownPdfCodexCandidate(runtime, result.candidate, {
             output,
             overwrite: false,
-            report: { kind: "none" },
+            report: { kind: "with-artifact" },
           });
           await writeBoundMarkdownPdfCodexCandidate(runtime, bound);
+          const reportPath =
+            bound.artifact === "profile"
+              ? bound.destination.reportOutputPath
+              : bound.artifact === "project-bundle"
+                ? bound.candidate.prepared.binding.outputPlan.report?.path
+                : undefined;
+          expect(reportPath).toBeDefined();
+          const report = JSON.parse(await readFile(reportPath!, "utf8"));
+          expect(report.pageInformation).toMatchObject({
+            modelResultDetails: "not-requested",
+            pageNumbers: {
+              requested: { choice: "on", position: "bottom-center" },
+              final: { enabled: true, position: "bottom-center" },
+            },
+            repeatingContent: {
+              requested: { choice: "on", selectedPositions: ["top-left"] },
+              final: { storedPositions: ["top-left"] },
+            },
+          });
+          expect(JSON.stringify(report)).not.toContain("Exact {page} / {pages}");
+          expect(JSON.stringify(report)).not.toContain("Exact {title}");
           const profilePath = join(
             fixtureDir,
             artifact === "profile" ? output : `${output}/profile.yml`,

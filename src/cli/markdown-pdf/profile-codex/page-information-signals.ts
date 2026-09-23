@@ -53,27 +53,6 @@ export function hasExplicitMarkdownPdfCodexPageInformation(
   return input?.pageNumbers !== undefined || input?.repeatingContent !== undefined;
 }
 
-/** Phase 2 keeps authored page text off optional durable diagnostic reports. */
-export function assertNoPageInformationDiagnosticReport(input: {
-  pageInformation?: MarkdownPdfCodexPageInformationSignal;
-  hasExplicitPageInformation?: boolean;
-  keepCodexReport?: boolean;
-  codexReportOutput?: string;
-  reportPlanned?: boolean;
-}): void {
-  if (
-    (input.pageInformation || input.hasExplicitPageInformation) &&
-    (input.keepCodexReport === true ||
-      input.codexReportOutput !== undefined ||
-      input.reportPlanned === true)
-  ) {
-    throw new CliError(
-      "Optional Codex diagnostic reports are unavailable with explicit page information.",
-      { code: "INVALID_INPUT", exitCode: 2 },
-    );
-  }
-}
-
 function assertBoundedPageText(value: string, field: string): void {
   if (value.length > MARKDOWN_PDF_CODEX_PAGE_TEXT_MAX_LENGTH) {
     throw new CliError(

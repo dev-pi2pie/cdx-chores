@@ -8,7 +8,6 @@ import type { MarkdownPdfCodexReportBinding } from "../../markdown-pdf";
 import {
   bindMarkdownPdfProfileCodexDestination,
   commitPreparedMarkdownPdfProfileCodex,
-  hasExplicitMarkdownPdfCodexPageInformation,
   prepareMarkdownPdfProfileCodex,
   type BoundMarkdownPdfProfileCodexDestination,
   type MarkdownPdfCodexPageInformationInput,
@@ -99,7 +98,7 @@ export async function prepareMarkdownPdfCodexCandidate(
   options: {
     timeoutMs?: number;
     codexExecution?: CodexExecutionOptions;
-    /** Internal Phase 2 harness only; normal Interactive preparation omits this. */
+    /** Page-information input or test override for guided preparation. */
     internalPageInformation?: MarkdownPdfCodexPageInformationInput;
     internalPageInformationSlotResolution?: MarkdownPdfPageInformationSlotResolution;
     internalProfileCodexRunner?: MdPdfProfileCodexOptions["codexRunner"];
@@ -107,6 +106,9 @@ export async function prepareMarkdownPdfCodexCandidate(
   } = {},
 ): Promise<PreparedMarkdownPdfCodexCandidate> {
   const codexExecution = resolveCodexExecution(options.codexExecution);
+  const pageInformation = options.internalPageInformation ?? setup.pageInformation;
+  const slotResolution =
+    options.internalPageInformationSlotResolution ?? setup.pageInformation?.occupiedNumberSlot;
   const common = {
     input: setup.sample,
     intent: setup.intent,
@@ -126,8 +128,8 @@ export async function prepareMarkdownPdfCodexCandidate(
       artifact: setup.artifact,
       prepared: await prepareMarkdownPdfProfileCodex(runtime, {
         ...common,
-        internalPageInformation: options.internalPageInformation,
-        internalPageInformationSlotResolution: options.internalPageInformationSlotResolution,
+        internalPageInformation: pageInformation,
+        internalPageInformationSlotResolution: slotResolution,
         codexRunner: options.internalProfileCodexRunner,
       }),
       setup,
@@ -148,8 +150,8 @@ export async function prepareMarkdownPdfCodexCandidate(
     prepared: await prepareMdPdfProjectCodex(runtime, {
       ...common,
       coverImage: setup.coverImage,
-      internalPageInformation: options.internalPageInformation,
-      internalPageInformationSlotResolution: options.internalPageInformationSlotResolution,
+      internalPageInformation: pageInformation,
+      internalPageInformationSlotResolution: slotResolution,
       profileCodexRunner: options.internalProfileCodexRunner,
       templateCodexRunner: options.internalTemplateCodexRunner,
     }),
@@ -187,25 +189,6 @@ export async function bindMarkdownPdfCodexCandidate(
     report: MarkdownPdfCodexReportRetention;
   },
 ): Promise<BoundMarkdownPdfCodexCandidate> {
-  const preparedHasPageInformation =
-    candidate.artifact === "profile"
-      ? candidate.prepared.hasExplicitPageInformation === true
-      : candidate.artifact === "project-bundle"
-        ? Boolean(candidate.prepared.signals.profile.pageInformation)
-        : false;
-  if (
-    (preparedHasPageInformation ||
-      hasExplicitMarkdownPdfCodexPageInformation(candidate.setup.pageInformation)) &&
-    input.report.kind !== "none"
-  ) {
-    throw new CliError(
-      "Optional Codex diagnostic reports are unavailable with explicit page information.",
-      {
-        code: "INVALID_INPUT",
-        exitCode: 2,
-      },
-    );
-  }
   if (candidate.artifact === "profile") {
     return {
       artifact: candidate.artifact,
