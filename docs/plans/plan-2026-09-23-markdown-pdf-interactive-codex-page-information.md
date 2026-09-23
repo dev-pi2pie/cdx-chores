@@ -2,7 +2,7 @@
 title: "Markdown PDF Interactive Codex Page Information Implementation"
 created-date: 2026-09-23
 modified-date: 2026-09-23
-status: draft
+status: active
 agent: codex
 ---
 
@@ -231,31 +231,31 @@ contract pass their checks. Direct commands retain their existing behavior.
 
 ### Phase 1: Sparse Answers And Guided Collection
 
-- [ ] Add separate typed page-number and repeating-content answers to the
+- [x] Add separate typed page-number and repeating-content answers to the
       internal Profile and Project Codex setup collector. An absent group means
       unspecified; explicit OFF and ON retain their own values through
       revision. Do not wire the collector into the normal Interactive route
       yet. Template-bundle setup does not acquire these answers.
-- [ ] In the collector, ask whether to specify page information after optional
+- [x] In the collector, ask whether to specify page information after optional
       sample selection and before PDF intent. Within selected groups, reuse
       Formal Guide's body/document choices, page-number labels, six positions,
       literal text, and placeholder help. Use Profile wording for the
       contained Project Profile without adding a Project Formal Guide mode.
-- [ ] Add a Page information setup action in the collector with separate group
+- [x] Add a Page information setup action in the collector with separate group
       edits. Preselect eligible occupied base-Profile positions on first edit
       when a base is already selected. If the base is chosen later, re-evaluate
       on revision without replacing earlier explicit content choices or adding
       new slots to an explicit ON selection. Newly occupied eligible base slots
       remain unselected and clear unless selected during revision; OFF still clears
       all slots. Recheck the reserved slot after base or number-position changes.
-- [ ] Add `Remove explicit choice` per group for ON/OFF-to-unspecified
+- [x] Add `Remove explicit choice` per group for ON/OFF-to-unspecified
       revision. Preserve the other group's answers, discard obsolete conflict
       decisions, and distinguish removal from OFF or cancelling an edit.
-- [ ] Reuse the clear-or-retain prompt for an occupied number position,
+- [x] Reuse the clear-or-retain prompt for an occupied number position,
       defaulting to retain. Prevent new text in that position. Give explicit
       repeating-content OFF a six-slot clear with no conflict question; keep
       the existing Formal Guide reserved-slot exception unchanged.
-- [ ] Add focused collection, prompt-order, revision, cancellation, and
+- [x] Add focused collection, prompt-order, revision, cancellation, and
       Formal Guide compatibility tests under `test/markdown-pdf/interactive/`.
       Cover later base selection/replacement separately from first-edit base
       preselection, including newly occupied eligible slots under ON and OFF.

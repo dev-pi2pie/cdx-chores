@@ -7,6 +7,14 @@ import type { InteractivePathPromptContext } from "../shared";
 import type { MarkdownPdfCodexArtifact, MarkdownPdfCodexSetup } from "./codex-types";
 import type { MarkdownPdfInteractiveFontHintEditorSession } from "./font-hints";
 import type { MarkdownPdfInteractiveEntry } from "./types";
+import {
+  collectMarkdownPdfCodexPageInformation,
+  createMarkdownPdfCodexPageInformationPrompts,
+  loadMarkdownPdfCodexPageInformationBase,
+  type MarkdownPdfCodexPageInformationAnswers,
+  type MarkdownPdfCodexPageInformationPrompts,
+} from "./codex-page-information";
+import type { NormalizedMarkdownPdfProfile } from "../../markdown-pdf/profile";
 
 type CodexSetupOutcome =
   | { kind: "setup"; setup: MarkdownPdfCodexSetup }
@@ -19,6 +27,7 @@ type CodexSetupAction =
   | "base-profile"
   | "clear-base-profile"
   | "font-hints"
+  | "page-information"
   | "cover-image"
   | "clear-cover-image"
   | "back"
@@ -35,6 +44,20 @@ function artifactLabel(artifact: MarkdownPdfCodexArtifact): string {
 function normalizedOptionalText(value: string): string | undefined {
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function hasExplicitPageInformation(
+  answers: MarkdownPdfCodexPageInformationAnswers | undefined,
+): boolean {
+  return Boolean(answers?.pageNumbers || answers?.repeatingContent);
+}
+
+function withPageInformation(
+  setup: MarkdownPdfCodexSetup,
+  answers: MarkdownPdfCodexPageInformationAnswers | undefined,
+): MarkdownPdfCodexSetup {
+  const { pageInformation: _previous, ...rest } = setup;
+  return answers ? { ...rest, pageInformation: answers } : rest;
 }
 
 const PDF_INTENT_PROMPT = "PDF intent (optional)";
@@ -97,6 +120,16 @@ function renderSetup(runtime: CliRuntime, setup: MarkdownPdfCodexSetup): void {
   printLine(runtime.stderr, `${artifactLabel(setup.artifact)} setup`);
   printLine(runtime.stderr, "");
   printLine(runtime.stderr, `Intent: ${setup.intent ?? "none"}`);
+  if (setup.pageInformation) {
+    printLine(
+      runtime.stderr,
+      `Page numbers: ${setup.pageInformation.pageNumbers ? (setup.pageInformation.pageNumbers.enabled ? "ON" : "OFF") : "unspecified"}`,
+    );
+    printLine(
+      runtime.stderr,
+      `Repeating content: ${setup.pageInformation.repeatingContent ? (setup.pageInformation.repeatingContent.enabled ? "ON" : "OFF") : "unspecified"}`,
+    );
+  }
   printLine(
     runtime.stderr,
     `Markdown sample: ${setup.sample ? displayPath(runtime, setup.sample) : "none"}`,
@@ -130,8 +163,21 @@ export async function collectMarkdownPdfCodexSetup(
     initialSetup?: MarkdownPdfCodexSetup;
     fontHintEditor: MarkdownPdfInteractiveFontHintEditorSession;
     markdownInput?: string;
+    /** Explicit internal harness entry; normal Interactive callers omit it. */
+    internalPageInformation?: {
+      prompts?: MarkdownPdfCodexPageInformationPrompts;
+      loadBase?: (path: string) => Promise<NormalizedMarkdownPdfProfile>;
+    };
   },
 ): Promise<CodexSetupOutcome> {
+  const pageInformationEnabled =
+    Boolean(context.internalPageInformation) && context.artifact !== "template-bundle";
+  const pageInformationPrompts =
+    context.internalPageInformation?.prompts ??
+    createMarkdownPdfCodexPageInformationPrompts(pathPromptContext);
+  const loadBase =
+    context.internalPageInformation?.loadBase ??
+    ((path: string) => loadMarkdownPdfCodexPageInformationBase(runtime.cwd, path));
   let setup = context.initialSetup;
   if (!setup) {
     const sampleOutcome =
@@ -141,11 +187,23 @@ export async function collectMarkdownPdfCodexSetup(
     if (sampleOutcome.kind === "back" || sampleOutcome.kind === "cancel") {
       return sampleOutcome;
     }
+    const pageInformationOutcome = pageInformationEnabled
+      ? await collectMarkdownPdfCodexPageInformation({
+          mode: "initial",
+          prompts: pageInformationPrompts,
+        })
+      : undefined;
+    if (pageInformationOutcome?.kind === "back" || pageInformationOutcome?.kind === "cancel") {
+      return pageInformationOutcome;
+    }
     setup = {
       artifact: context.artifact,
       fontHints: [],
       intent: await promptPdfIntent(),
       sample: sampleOutcome.sample,
+      ...(pageInformationOutcome?.kind === "answers" && pageInformationOutcome.answers
+        ? { pageInformation: pageInformationOutcome.answers }
+        : {}),
     };
   }
 
@@ -168,6 +226,9 @@ export async function collectMarkdownPdfCodexSetup(
             ]
           : []),
         { name: "Edit font hints", value: "font-hints" },
+        ...(pageInformationEnabled
+          ? [{ name: "Page information setup", value: "page-information" as const }]
+          : []),
         { name: "Continue", value: "continue" },
         { name: "Back", value: "back" },
         { name: "Cancel", value: "cancel" },
@@ -193,9 +254,31 @@ export async function collectMarkdownPdfCodexSetup(
       };
       continue;
     }
+    if (action === "page-information") {
+      const outcome = await collectMarkdownPdfCodexPageInformation({
+        mode: "revision",
+        current: setup.pageInformation,
+        ...(setup.baseProfile ? { base: await loadBase(setup.baseProfile) } : {}),
+        prompts: pageInformationPrompts,
+      });
+      if (outcome.kind === "cancel") return outcome;
+      if (outcome.kind === "answers") setup = withPageInformation(setup, outcome.answers);
+      continue;
+    }
     if (action === "clear-base-profile") {
       const { baseProfile: _baseProfile, ...next } = setup;
-      setup = next;
+      if (pageInformationEnabled && hasExplicitPageInformation(next.pageInformation)) {
+        const outcome = await collectMarkdownPdfCodexPageInformation({
+          mode: "revision",
+          current: { ...next.pageInformation, occupiedNumberSlot: undefined },
+          prompts: pageInformationPrompts,
+        });
+        if (outcome.kind === "cancel") return outcome;
+        if (outcome.kind === "back") continue;
+        setup = withPageInformation(next, outcome.answers);
+      } else {
+        setup = next;
+      }
       continue;
     }
     if (action === "clear-cover-image") {
@@ -210,7 +293,25 @@ export async function collectMarkdownPdfCodexSetup(
         ...pathPromptContext,
       },
     );
-    setup =
-      action === "base-profile" ? { ...setup, baseProfile: path } : { ...setup, coverImage: path };
+    if (
+      action === "base-profile" &&
+      pageInformationEnabled &&
+      hasExplicitPageInformation(setup.pageInformation)
+    ) {
+      const outcome = await collectMarkdownPdfCodexPageInformation({
+        mode: "revision",
+        current: { ...setup.pageInformation, occupiedNumberSlot: undefined },
+        base: await loadBase(path),
+        prompts: pageInformationPrompts,
+      });
+      if (outcome.kind === "cancel") return outcome;
+      if (outcome.kind === "back") continue;
+      setup = withPageInformation({ ...setup, baseProfile: path }, outcome.answers);
+    } else {
+      setup =
+        action === "base-profile"
+          ? { ...setup, baseProfile: path }
+          : { ...setup, coverImage: path };
+    }
   }
 }

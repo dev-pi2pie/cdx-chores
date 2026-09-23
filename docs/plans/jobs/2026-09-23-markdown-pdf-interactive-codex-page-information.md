@@ -66,7 +66,7 @@ complete at the contract level. Phase 1 implementation has not started.
 
 | Section | Status | Evidence to record |
 | ------- | ------ | ------------------ |
-| Phase 1 | Pending | Collection and revision checks; reviewed commit range |
+| Phase 1 | In progress | Collection and revision checks; reviewed commit range |
 | Phase 2 | Pending | Signal, consent, and request checks; reviewed commit range |
 | Phase 3 | Pending | Final Profile and Project handoff checks; first PDF extraction and labeled page snapshots; reviewed commit range |
 | Phase 4 | Pending | Review, report projection, and lifecycle checks; saved-recipe and override snapshots; reviewed commit range |
@@ -76,6 +76,16 @@ complete at the contract level. Phase 1 implementation has not started.
 For each phase, record its exact base and tip commits, checks, accepted review
 fixes, visual conclusions where applicable, cleanup, and verdict. Keep
 machine-specific setup and raw artifacts out of this record.
+
+Phase 1 starts from `4ff30540`. Its collector and revision gate is in
+progress. Focused collection and Formal Guide checks passed (64 tests), as did
+focused setup and existing Interactive entry checks (20 tests), TypeScript,
+scoped lint and format checks, and whitespace validation. Later base selection
+and replacement preserve explicit ON selections without adding newly occupied
+slots; OFF remains OFF. The managed application suite stopped before testing
+because its process-observation prerequisite was unavailable here; the focused
+application files passed through direct Bun execution. Commit-range review
+and the Phase 1 gate verdict remain open.
 
 ## Related Research
 
