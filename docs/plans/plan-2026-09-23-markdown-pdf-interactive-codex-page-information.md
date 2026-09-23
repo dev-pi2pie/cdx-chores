@@ -483,6 +483,9 @@ visual-review outcome.
 - [ ] Compare the current Interactive, Profile helper, and Project helper
       guides, CLI help, and examples with the Phase 5 validated behavior. Keep
       Markdown PDF Usage as the canonical Profile/page-number contract.
+- [ ] In Markdown PDF Usage, explain that the built-in `cover.style: report`
+      adds a fixed blue left bar, `cover.style: plain` omits it, and the
+      Profile has no separate bar-color setting.
 - [ ] Update the Interactive Markdown PDF usage guide with the page-information
       questions, three-state meaning, base/revision behavior, exact Profile
       authority, deterministic path, consent, terminal presentation, review,
