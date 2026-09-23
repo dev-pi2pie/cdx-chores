@@ -266,6 +266,49 @@ describe("internal Interactive page-information preparation", () => {
     });
   });
 
+  test("exact answers override conflicting Codex Profile patches", async () => {
+    await withTempFixtureDir("md-pdf-interactive-page-authority", async (fixtureDir) => {
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      const session = createMarkdownPdfPageInformationPreparationSession(runtime, {
+        confirmRequest: async () => true,
+        internalProfileCodexRunner: async () =>
+          JSON.stringify({
+            decision_mode: "adapted",
+            selected_candidate_id: "default",
+            accepted_patches: [
+              { op: "replace", path: "/pageNumbers/format", value: "Model label" },
+              { op: "replace", path: "/header/left", value: "Model header" },
+              { op: "replace", path: "/footer/right", value: "Model footer" },
+            ],
+            accepted_font_patches: [],
+            reasoning: "Use generated chrome.",
+            warnings: [],
+            fallback_reason: "",
+            unmatched_directions: [],
+          }),
+      });
+      const result = await session.prepare({
+        artifact: "profile",
+        fontHints: [],
+        intent: "Use report chrome",
+        pageInformation,
+      });
+      expect(result.kind).toBe("prepared");
+      if (result.kind === "prepared" && result.candidate.artifact === "profile") {
+        expect(result.candidate.prepared.kind).toBe("profile");
+        if (result.candidate.prepared.kind === "profile") {
+          expect(result.candidate.prepared.finalProfile.pageNumbers).toMatchObject({
+            format: " Exact {page} / {pages} ",
+          });
+          expect(result.candidate.prepared.finalProfile.header).toMatchObject({
+            left: "Exact {title}",
+          });
+          expect(result.candidate.prepared.finalProfile.footer).toMatchObject({ right: "" });
+        }
+      }
+    });
+  });
+
   test("mixed Project setup obtains consent before either model phase and reports actual modes", async () => {
     await withTempFixtureDir("md-pdf-interactive-page-project-mixed", async (fixtureDir) => {
       await writeFile(

@@ -63,7 +63,7 @@ choices only after Phase 4 verifies local review and report omission.
 | ------- | ------ | ------------------ |
 | Phase 1 | Complete | Collection and revision |
 | Phase 2 | Complete | Signals, consent, and requests |
-| Phase 3 | Pending | Final Profile, Project handoff, first PDF render review |
+| Phase 3 | Range review pending | Final Profile, Project handoff, first PDF render review |
 | Phase 4 | Pending | Candidate review, report projection, saved-recipe comparison |
 | Phase 5 | Pending | Integrated matrix, built CLI, final visual review |
 | Phase 6 | Pending | Guide alignment and documentation closeout |
@@ -108,6 +108,30 @@ raw artifacts out of this record.
   Profile and Project bind/write paths now reject optional reports; synthetic
   echo, explicit OFF, and declined Project-consent cases passed. Final code,
   test, and security range reviews found no material issue.
+
+### Phase 3: Exact Profile Materialization And Project Handoff
+
+- **Implementation:** One local step applies exact number and repeating-content
+  choices after Profile preparation in standalone and Project paths. Late slot
+  conflicts return to Interactive revision before acceptance or Template
+  preparation. Direct helpers and renderer behavior remain unchanged.
+- **Saved results:** YAML and JSON Profile round trips preserve exact page
+  text. Project Template preparation and the saved bundle use the same final
+  Profile. Explicit OFF clears six content slots while preserving styles and
+  fonts; a reviewed retained number slot remains stored.
+- **Report boundary:** Explicit page-information runs still cannot retain an
+  optional diagnostic report. Phase 4 owns the report projection.
+- **Checks:** Focused unit, app, and command coverage passed, including model
+  conflicts, font-hint coexistence, and direct-helper compatibility. The
+  Profile/Project action suite passed 225 tests. TypeScript, lint, format,
+  build, and whitespace checks passed.
+- **PDF review:** Extracted text and visual inspection matched the accepted
+  Profile and Project: cover chrome was absent, ToC repeating content remained
+  visible without body numbering, and body numbers and repeating text appeared
+  in their selected positions. Retained content at the number-owned slot did
+  not render. Longer and older Markdown inputs also rendered successfully.
+  The built Interactive existing-Profile render matched the direct render.
+- **Review:** Full Phase 3 commit-range review pending.
 
 ## Related Research
 

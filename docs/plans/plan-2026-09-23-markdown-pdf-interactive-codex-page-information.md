@@ -298,20 +298,20 @@ the new page-information path.
 
 ### Phase 3: Exact Profile Materialization And Project Handoff
 
-- [ ] Add one shared local application step for the two groups after the
+- [x] Add one shared local application step for the two groups after the
       default/base/Profile-Codex decision. Call it only when Interactive passes
       explicit answers. Keep direct `md pdf-profile codex` and
       `md pdf-project codex` behavior unchanged when the optional input is
       omitted.
-- [ ] For number ON, compile the chosen scope and count origin together,
+- [x] For number ON, compile the chosen scope and count origin together,
       `start: 1`, `increment: 1`, exact label, and position. Number OFF changes
       enablement and retains valid inert details. An unspecified group changes
       nothing.
-- [ ] For repeating-content ON, set selected text exactly, clear unselected
+- [x] For repeating-content ON, set selected text exactly, clear unselected
       slots, and retain the reserved slot only after an explicit retain choice.
       OFF clears all six slots, including an occupied reserved position, while
       preserving header/footer styles and `fonts.pageChrome.default`.
-- [ ] Apply the step to standalone Profile preparation before acceptance or
+- [x] Apply the step to standalone Profile preparation before acceptance or
       write. Apply it inside the Project Profile phase before Template
       preparation, binding, or write. Do not retain an optional Codex diagnostic
       report from this internal path; Phase 4 owns its safe projection. Normalize and
@@ -319,7 +319,7 @@ the new page-information path.
       existing patch, capability-advisory, and diagnostic behavior. Authoring
       itself does not probe the installed renderer; the phase render check is
       separate QA.
-- [ ] Return unresolved normalized slot conflicts to Interactive revision
+- [x] Return unresolved normalized slot conflicts to Interactive revision
       before acceptance or any Project Template preparation. Use the internal
       session's existing setup revision controls while normal save/render
       remains gated; helpers return conflict details without opening prompts.
@@ -330,12 +330,12 @@ the new page-information path.
       group; bind it to the position and exact text, and recheck on regeneration.
       Apply valid resolutions locally and revalidate. Both groups unspecified
       retain existing behavior; do not automatically retry the model.
-- [ ] Align the Profile helper prompt with logical `{page}` / `{pages}` and
+- [x] Align the Profile helper prompt with logical `{page}` / `{pages}` and
       physical `{pdfPage}` / `{pdfPages}` terms. Test local exact authority over
       conflicting intent and injected Codex decisions, base preservation,
       clear/retain behavior, font-hint coexistence, Profile YAML/JSON round
       trips, and Project Template compatibility.
-- [ ] Render representative accepted Profile and Project results through the
+- [x] Render representative accepted Profile and Project results through the
       existing `md to-pdf` path using synthetic Markdown. Extract page text and
       visually inspect rasterized pages for numbering, repeating content, and
       retained-slot non-rendering, including relevant cover/ToC/body pages.
