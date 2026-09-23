@@ -120,6 +120,7 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
     fontHints: input.signals.profile.fonts.hints,
     fontSignals: input.signals.profile.fonts.profileFonts,
     intent: input.state.intent,
+    pageInformation: input.signals.profile.pageInformation,
     profileId: input.outputPlan.identity.profileId,
     signalMode,
     workingDirectory: input.runtime.cwd,

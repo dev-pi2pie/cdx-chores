@@ -267,31 +267,31 @@ page-information candidate can enter the normal save/render/report path.
 
 ### Phase 2: Signal Classification And Request Consent
 
-- [ ] Carry the sparse answers as bounded structured signals through internal
+- [x] Carry the sparse answers as bounded structured signals through internal
       Interactive Profile and Project preparation. Check a finite length limit
       for each entered page-number label and repeating-content field before
       preparation; reject over-limit input instead of truncating it. Send
       accepted text unchanged, with metadata placeholders unresolved and
       separate from advisory PDF intent.
       Do not add direct-command flags or serialize a second Profile schema.
-- [ ] Make page information sufficient input for both helpers without making
+- [x] Make page information sufficient input for both helpers without making
       it a model trigger. Profile and Project page-information-only paths, with
       or without a base Profile, use deterministic Profile preparation; Project
       also uses deterministic Template preparation. Sample, intent, font hints,
       and Template-owned directions retain their existing mode rules.
-- [ ] Drive Interactive consent from the same phase classifications used by
+- [x] Drive Interactive consent from the same phase classifications used by
       preparation. Skip model consent for deterministic-only work. When a
       Project Template request may depend on Profile-phase directions, keep
       consent before the first possible request and describe possible phases
       without claiming both will run. Report the actual phase modes afterward.
-- [ ] Present the entered text a request would send according to the decided
+- [x] Present the entered text a request would send according to the decided
       local consent display policy. Keep the one session `codexExecution`
       selection through actual requests, retries, and regeneration; the option
       alone must not create a request.
-- [ ] Test signal modes, too-low-signal admission, consent/no-consent, request
+- [x] Test signal modes, too-low-signal admission, consent/no-consent, request
       counts, model-option forwarding, and Project phase combinations with
       injected runners in the Profile, Project, and Interactive suites.
-- [ ] Reclassify after removal, including removal of the last explicit group:
+- [x] Reclassify after removal, including removal of the last explicit group:
       restore the existing default/base and too-low-signal rules rather than
       treating an empty page-information container as sufficient input.
 

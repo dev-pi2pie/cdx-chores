@@ -24,6 +24,7 @@ describe("Markdown PDF Project Codex prepared request lifecycle", () => {
       } as const;
       const executionCalls: unknown[] = [];
       const profileTimeouts: Array<number | undefined> = [];
+      const profilePrompts: string[] = [];
       const templateTimeouts: Array<number | undefined> = [];
       let templateCallCount = 0;
       const { runtime } = createActionTestRuntime({
@@ -38,9 +39,21 @@ describe("Markdown PDF Project Codex prepared request lifecycle", () => {
         dryRun: true,
         input: "report.md",
         intent: "Create a cover-led project.",
+        internalPageInformation: {
+          pageNumbers: {
+            enabled: true,
+            position: "bottom-center",
+            format: "Exact {page} / {pages}",
+            scope: "body",
+            countFrom: "body",
+            start: 1,
+            increment: 1,
+          },
+        },
         output: "project-output",
         profileCodexRunner: async (options) => {
           profileTimeouts.push(options.timeoutMs);
+          profilePrompts.push(options.prompt);
           executionCalls.push(options.codexExecution);
           return adaptedProfileResponse();
         },
@@ -57,6 +70,8 @@ describe("Markdown PDF Project Codex prepared request lifecycle", () => {
 
       expect(prepared.binding.validation.decisionMode).toBe("adapted");
       expect(profileTimeouts).toEqual([120_000]);
+      expect(profilePrompts).toHaveLength(1);
+      expect(profilePrompts[0]).toContain('"format": "Exact {page} / {pages}"');
       expect(templateTimeouts).toEqual([120_000, 120_000]);
       expect(executionCalls).toEqual([codexExecution, codexExecution, codexExecution]);
       expect(JSON.stringify(prepared)).not.toContain("Provider-A");

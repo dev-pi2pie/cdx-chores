@@ -43,6 +43,10 @@ import {
 } from "./orchestration";
 import { createMarkdownPdfCodexProfileIdentity } from "./profile-identity";
 import { classifyMarkdownPdfProfileCodexSignalMode } from "./signal-mode";
+import {
+  assertNoPageInformationDiagnosticReport,
+  prepareMarkdownPdfCodexPageInformationSignal,
+} from "./page-information-signals";
 import type { MdPdfProfileCodexOptions } from "./types";
 
 export type MarkdownPdfProfileCodexReportPayload = Omit<
@@ -196,6 +200,14 @@ export async function prepareMarkdownPdfProfileCodex(
 ): Promise<PreparedMarkdownPdfProfileCodex> {
   const codexExecution = resolveCodexExecution(options.codexExecution);
   options = { ...options, codexExecution };
+  const pageInformation = prepareMarkdownPdfCodexPageInformationSignal(
+    options.internalPageInformation,
+  );
+  assertNoPageInformationDiagnosticReport({
+    pageInformation,
+    keepCodexReport: options.keepCodexReport,
+    codexReportOutput: options.codexReportOutput,
+  });
   const inputPath = resolveOptionalInputPath(runtime, options);
   const baseProfilePath = options.baseProfile
     ? resolveFromCwd(runtime, assertNonEmpty(options.baseProfile, "Base profile path"))
@@ -248,10 +260,12 @@ export async function prepareMarkdownPdfProfileCodex(
       : createAbsentMarkdownPdfDocumentSignals(),
     fontHints,
     intent,
+    pageInformation,
     profileId,
     signalMode,
     workingDirectory: runtime.cwd,
   });
+  const { pageInformation: _pageInformation, ...reportRequest } = orchestrationContext.request;
   const reportBase: Omit<
     MarkdownPdfProfileCodexReportPayload,
     "failure" | "profileIdentity" | "result" | "selectedCandidate"
@@ -262,7 +276,7 @@ export async function prepareMarkdownPdfProfileCodex(
       : undefined,
     displayInputPath: inputPath ? persistedReportPath(runtime, inputPath) : undefined,
     inputSha256: markdown ? fingerprintMarkdownPdfCodexInput(markdown) : undefined,
-    request: orchestrationContext.request,
+    request: reportRequest,
   };
   const identityBase = { createdAt, profileId };
 

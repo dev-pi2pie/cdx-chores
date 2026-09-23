@@ -21,6 +21,7 @@ import {
   collectTemplateOwnedProjectDirections,
 } from "./signal-mode";
 import { sanitizeMdPdfProjectCodexCliError } from "./error-sanitization";
+import type { MarkdownPdfCodexPageInformationSignal } from "../profile-codex/page-information-signals";
 import type {
   MdPdfProjectCodexSignalCollection,
   NormalizedMdPdfProjectCodexCommandState,
@@ -29,6 +30,7 @@ import type {
 export async function collectMdPdfProjectCodexSignals(
   runtime: CliRuntime,
   state: NormalizedMdPdfProjectCodexCommandState,
+  pageInformation?: MarkdownPdfCodexPageInformationSignal,
 ): Promise<MdPdfProjectCodexSignalCollection> {
   const markdown = state.inputPath
     ? await readTextFileRequired(state.inputPath).catch((error: unknown) =>
@@ -75,6 +77,7 @@ export async function collectMdPdfProjectCodexSignals(
     hasFontHints: state.fontHints.length > 0,
     hasInput: Boolean(state.inputPath),
     hasIntent: Boolean(state.intent),
+    hasPageInformation: Boolean(pageInformation),
     hasCoverImage: coverImage.available,
     templateOwnedSignals,
   };
@@ -101,6 +104,7 @@ export async function collectMdPdfProjectCodexSignals(
       },
     },
     profile: {
+      ...(pageInformation ? { pageInformation } : {}),
       baseProfile: {
         available: Boolean(baseProfileCandidate),
         candidate: baseProfileCandidate,

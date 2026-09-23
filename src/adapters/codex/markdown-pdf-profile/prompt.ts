@@ -190,6 +190,7 @@ export function buildMarkdownPdfProfileCodexPrompt(
     fontPatchContract: MARKDOWN_PDF_CODEX_FONT_PATCH_CONTRACT,
     fontSignals: request.fontSignals,
     intent: request.intent ?? "",
+    ...(request.pageInformation ? { pageInformation: request.pageInformation } : {}),
     pageNumberContract: MARKDOWN_PDF_CODEX_PAGE_NUMBER_CONTRACT,
     patchValueConstraints: MARKDOWN_PDF_CODEX_PATCH_VALUE_CONSTRAINTS,
     selectedBaseProfileSummary: request.selectedBaseProfileSummary,
@@ -222,6 +223,11 @@ export function buildMarkdownPdfProfileCodexPrompt(
     "- Use no-usable-profile only when no profile should be written; set selected_candidate_id to none, accepted_patches to [], and accepted_font_patches to [].",
     "- Always include fallback_reason; use an empty string when no fallback reason applies.",
     "- Keep reasoning short and grounded in the facts.",
+    ...(request.pageInformation
+      ? [
+          "- Treat pageInformation as structured user-authored data, separate from advisory intent. Respect explicit OFF choices; do not resolve literal {page} or {pages} placeholders.",
+        ]
+      : []),
     "",
     "Deterministic facts:",
     JSON.stringify(facts, null, 2),

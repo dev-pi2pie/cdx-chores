@@ -4,6 +4,7 @@ import type { MarkdownPdfCodexProfileRunner } from "../../../adapters/codex/mark
 import type { MarkdownPdfTemplateCodexRunner } from "../../../adapters/codex/markdown-pdf-template";
 import type { CodexProgressPresenter } from "../../actions/codex-progress";
 import type { MarkdownPdfProjectCodexIdentityUidFactory } from "./types-identity";
+import type { MarkdownPdfCodexPageInformationInput } from "../profile-codex/page-information-signals";
 
 export interface MdPdfProjectCodexOptions {
   input?: string;
@@ -23,6 +24,8 @@ export interface MdPdfProjectCodexOptions {
   codexProgressPresenter?: CodexProgressPresenter;
   timeoutMs?: number;
   codexExecution?: CodexExecutionOptions;
+  /** Internal Interactive signal; unavailable through direct CLI options. */
+  internalPageInformation?: MarkdownPdfCodexPageInformationInput;
 }
 
 type MdPdfProjectCodexNonCliOption =
@@ -32,7 +35,8 @@ type MdPdfProjectCodexNonCliOption =
   | "profileCodexRunner"
   | "templateCodexRunner"
   | "codexExecution"
-  | "timeoutMs";
+  | "timeoutMs"
+  | "internalPageInformation";
 
 export type MdPdfProjectCodexCliOptions = Omit<
   MdPdfProjectCodexOptions,

@@ -8,13 +8,17 @@ import type { MarkdownPdfCodexReportBinding } from "../../markdown-pdf";
 import {
   bindMarkdownPdfProfileCodexDestination,
   commitPreparedMarkdownPdfProfileCodex,
+  hasExplicitMarkdownPdfCodexPageInformation,
   prepareMarkdownPdfProfileCodex,
   type BoundMarkdownPdfProfileCodexDestination,
+  type MarkdownPdfCodexPageInformationInput,
+  type MdPdfProfileCodexOptions,
 } from "../../markdown-pdf/profile-codex";
 import {
   prepareMdPdfProjectCodex,
   rebindMdPdfProjectCodexPreparedArtifact,
   writePreparedMdPdfProjectCodexBundle,
+  type MdPdfProjectCodexOptions,
 } from "../../markdown-pdf/project-codex";
 import {
   prepareMdPdfTemplateCodex,
@@ -91,7 +95,14 @@ function generatedOutputCollisionMessage(artifact: MarkdownPdfCodexArtifact): st
 export async function prepareMarkdownPdfCodexCandidate(
   runtime: CliRuntime,
   setup: MarkdownPdfCodexSetup,
-  options: { timeoutMs?: number; codexExecution?: CodexExecutionOptions } = {},
+  options: {
+    timeoutMs?: number;
+    codexExecution?: CodexExecutionOptions;
+    /** Internal Phase 2 harness only; normal Interactive preparation omits this. */
+    internalPageInformation?: MarkdownPdfCodexPageInformationInput;
+    internalProfileCodexRunner?: MdPdfProfileCodexOptions["codexRunner"];
+    internalTemplateCodexRunner?: MdPdfProjectCodexOptions["templateCodexRunner"];
+  } = {},
 ): Promise<PreparedMarkdownPdfCodexCandidate> {
   const codexExecution = resolveCodexExecution(options.codexExecution);
   const common = {
@@ -111,7 +122,11 @@ export async function prepareMarkdownPdfCodexCandidate(
   if (setup.artifact === "profile") {
     return {
       artifact: setup.artifact,
-      prepared: await prepareMarkdownPdfProfileCodex(runtime, common),
+      prepared: await prepareMarkdownPdfProfileCodex(runtime, {
+        ...common,
+        internalPageInformation: options.internalPageInformation,
+        codexRunner: options.internalProfileCodexRunner,
+      }),
       setup,
     };
   }
@@ -130,6 +145,9 @@ export async function prepareMarkdownPdfCodexCandidate(
     prepared: await prepareMdPdfProjectCodex(runtime, {
       ...common,
       coverImage: setup.coverImage,
+      internalPageInformation: options.internalPageInformation,
+      profileCodexRunner: options.internalProfileCodexRunner,
+      templateCodexRunner: options.internalTemplateCodexRunner,
     }),
     setup,
   };
@@ -165,6 +183,18 @@ export async function bindMarkdownPdfCodexCandidate(
     report: MarkdownPdfCodexReportRetention;
   },
 ): Promise<BoundMarkdownPdfCodexCandidate> {
+  if (
+    hasExplicitMarkdownPdfCodexPageInformation(candidate.setup.pageInformation) &&
+    input.report.kind !== "none"
+  ) {
+    throw new CliError(
+      "Optional Codex diagnostic reports are unavailable with explicit page information.",
+      {
+        code: "INVALID_INPUT",
+        exitCode: 2,
+      },
+    );
+  }
   if (candidate.artifact === "profile") {
     return {
       artifact: candidate.artifact,

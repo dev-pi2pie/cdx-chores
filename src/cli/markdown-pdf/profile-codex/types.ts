@@ -2,6 +2,7 @@ import type { CodexExecutionOptions } from "../../../utils/codex-execution";
 import type { CodexExecutionCommandOptions } from "../../options/codex-execution-option";
 import type { MarkdownPdfCodexProfileRunner } from "../../../adapters/codex/markdown-pdf-profile";
 import type { CodexProgressPresenter } from "../../actions/codex-progress";
+import type { MarkdownPdfCodexPageInformationInput } from "./page-information-signals";
 
 export interface MdPdfProfileCodexOptions {
   input?: string;
@@ -19,11 +20,18 @@ export interface MdPdfProfileCodexOptions {
   codexRunner?: MarkdownPdfCodexProfileRunner;
   codexProgressPresenter?: CodexProgressPresenter;
   profileUidFactory?: (now: Date) => string;
+  /** Internal Interactive signal; unavailable through direct CLI options. */
+  internalPageInformation?: MarkdownPdfCodexPageInformationInput;
 }
 
 export type MdPdfProfileCodexCliOptions = Omit<
   MdPdfProfileCodexOptions,
-  "codexProgressPresenter" | "codexRunner" | "profileUidFactory" | "timeoutMs" | "codexExecution"
+  | "codexProgressPresenter"
+  | "codexRunner"
+  | "profileUidFactory"
+  | "timeoutMs"
+  | "codexExecution"
+  | "internalPageInformation"
 > &
   CodexExecutionCommandOptions & {
     codexTimeout?: number;

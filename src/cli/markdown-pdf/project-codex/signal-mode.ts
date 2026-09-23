@@ -19,6 +19,7 @@ export interface MdPdfProjectCodexSignalFacts {
   hasFontHints: boolean;
   hasInput: boolean;
   hasIntent: boolean;
+  hasPageInformation?: boolean;
   templateOwnedSignals: Pick<MarkdownPdfProjectCodexTemplateOwnedSignals, "requiresCodex">;
 }
 
@@ -73,6 +74,7 @@ export function classifyMdPdfProjectCodexProfileSignalMode(input: {
   hasFontHints: boolean;
   hasInput: boolean;
   hasIntent: boolean;
+  hasPageInformation?: boolean;
 }): MarkdownPdfProjectCodexProfilePhaseSignalMode {
   return classifyMarkdownPdfProfileCodexSignalMode(input);
 }
@@ -118,6 +120,7 @@ export function classifyMdPdfProjectCodexSignalMode(input: {
   hasFontHints: boolean;
   hasInput: boolean;
   hasIntent: boolean;
+  hasPageInformation?: boolean;
   profileSignalMode: MarkdownPdfProjectCodexProfilePhaseSignalMode;
   templateSignalMode: MarkdownPdfProjectCodexTemplatePhaseSignalMode;
 }): MarkdownPdfProjectCodexSignalMode {
@@ -126,7 +129,8 @@ export function classifyMdPdfProjectCodexSignalMode(input: {
     input.hasCoverImage ||
     input.hasFontHints ||
     input.hasInput ||
-    input.hasIntent;
+    input.hasIntent ||
+    input.hasPageInformation;
   if (!hasAnySignal) {
     return "too-low-signal";
   }

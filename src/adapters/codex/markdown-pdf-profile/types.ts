@@ -8,6 +8,7 @@ import type {
   MarkdownPdfProfileCandidate,
 } from "../../../cli/markdown-pdf/profile/candidates";
 import type { MarkdownPdfPreset } from "../../../cli/markdown-pdf/validation";
+import type { MarkdownPdfCodexPageInformationSignal } from "../../../cli/markdown-pdf/profile-codex/page-information-signals";
 
 export const MARKDOWN_PDF_CODEX_DECISION_MODES = [
   "adapted",
@@ -115,6 +116,7 @@ export interface MarkdownPdfCodexProfileRequest {
   fontHints: string[];
   fontSignals: MarkdownPdfFontSignals;
   intent?: string;
+  pageInformation?: MarkdownPdfCodexPageInformationSignal;
   selectedBaseProfileSummary?: MarkdownPdfProfileCandidateSummary;
   signalMode: MarkdownPdfCodexSignalMode;
   supportedSchemaSummary: string[];

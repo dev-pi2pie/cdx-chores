@@ -73,7 +73,7 @@ describe("Interactive Markdown execution configuration", () => {
       import { mock } from "bun:test";
       const calls = [];
       const capture = (artifact) => async (_runtime, options) => { calls.push({artifact, execution: options.codexExecution, timeoutMs: options.timeoutMs}); return {artifact}; };
-      mock.module("./src/cli/markdown-pdf/profile-codex", () => ({ prepareMarkdownPdfProfileCodex: capture("profile"), bindMarkdownPdfProfileCodexDestination() {}, commitPreparedMarkdownPdfProfileCodex() {} }));
+      mock.module("./src/cli/markdown-pdf/profile-codex", () => ({ prepareMarkdownPdfProfileCodex: capture("profile"), bindMarkdownPdfProfileCodexDestination() {}, commitPreparedMarkdownPdfProfileCodex() {}, hasExplicitMarkdownPdfCodexPageInformation: () => false }));
       mock.module("./src/cli/markdown-pdf/template-codex", () => ({ prepareMdPdfTemplateCodex: capture("template-bundle"), rebindPreparedMdPdfTemplateCodexArtifact() {}, writePreparedMdPdfTemplateCodexBundle() {} }));
       mock.module("./src/cli/markdown-pdf/project-codex", () => ({ prepareMdPdfProjectCodex: capture("project-bundle"), rebindMdPdfProjectCodexPreparedArtifact() {}, writePreparedMdPdfProjectCodexBundle() {} }));
       const { prepareMarkdownPdfCodexCandidate } = await import("./src/cli/interactive/markdown/codex-service");

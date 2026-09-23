@@ -12,6 +12,10 @@ import type { CliRuntime } from "../../types";
 import type { MarkdownPdfCodexReportBinding } from "../codex-report-binding";
 import { collectMdPdfProjectCodexSignals } from "./signals";
 import {
+  assertNoPageInformationDiagnosticReport,
+  prepareMarkdownPdfCodexPageInformationSignal,
+} from "../profile-codex/page-information-signals";
+import {
   MARKDOWN_PDF_PROJECT_CODEX_REPORT_BUNDLE_PATH,
   planMdPdfProjectCodexOutput,
   validateMdPdfProjectCodexOutputWritability,
@@ -296,8 +300,16 @@ export async function prepareMdPdfProjectCodex(
 ): Promise<MarkdownPdfProjectCodexPreparedArtifact> {
   const codexExecution = resolveCodexExecution(options.codexExecution);
   options = { ...options, codexExecution };
+  const pageInformation = prepareMarkdownPdfCodexPageInformationSignal(
+    options.internalPageInformation,
+  );
+  assertNoPageInformationDiagnosticReport({
+    pageInformation,
+    keepCodexReport: options.keepCodexReport,
+    codexReportOutput: options.codexReportOutput,
+  });
   const state = await normalizeMdPdfProjectCodexCommandState(runtime, options);
-  const signals = await collectMdPdfProjectCodexSignals(runtime, state);
+  const signals = await collectMdPdfProjectCodexSignals(runtime, state, pageInformation);
   const outputPlan = await planMdPdfProjectCodexOutput({
     identityUidFactory: options.identityUidFactory,
     runtime,
