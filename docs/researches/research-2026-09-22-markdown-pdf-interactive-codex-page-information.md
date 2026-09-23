@@ -1,6 +1,7 @@
 ---
 title: "Interactive Markdown PDF Codex Page Information Signals"
 created-date: 2026-09-22
+modified-date: 2026-09-23
 status: draft
 agent: codex
 ---
@@ -71,9 +72,16 @@ user did not give exact direction for that group; it is not an instruction to
 disable it. The user can choose either group or both. This sparse distinction
 must survive setup revision, Codex preparation, reports, and final validation.
 
-The common path does not expose independent `scope`/`countFrom`, custom
-`start`/`increment`, typography, separator styling, or advanced cover and ToC
-policy. Those remain in the Profile schema and existing authoring routes.
+The existing [font-hint editor][interactive-font-hints] stays separate. Its
+guided `Page headers and footers` preference can inform Codex's shared
+`fonts.pageChrome.default` choice. A page number uses that family and the style
+of its selected header or footer area. Explicit page-information answers do
+not select or clear fonts.
+
+The new page-information section does not expose independent
+`scope`/`countFrom`, custom `start`/`increment`, header/footer typography,
+separator styling, or advanced cover and ToC policy. Those remain in the
+Profile schema and existing authoring routes.
 
 ## Interactive Flow
 
@@ -224,8 +232,11 @@ base-Profile preservation, unselected-slot clearing, clear/retain conflict
 choices, and OFF clearing even an occupied reserved slot while preserving
 styles. Also verify literal-text preservation, report redaction, no model
 request for page-info-only input, final Profile round trips, and Project
-Template compatibility. Existing renderer evidence can be reused unless
-generated HTML/CSS or effective render behavior changes.
+Template compatibility. Verify that accepted or inherited
+`fonts.pageChrome.default` survives explicit Profile and Project
+page-information answers, including OFF, when a `Page headers and footers` font
+hint is also present. Existing renderer evidence can be reused unless generated
+HTML/CSS or effective render behavior changes.
 
 ## Settled Decisions
 
@@ -300,6 +311,7 @@ generated HTML/CSS or effective render behavior changes.
 [formal-guide-prompts]: ../../src/cli/interactive/markdown/formal-guide/prompts.ts
 [helper-roadmap]: research-2026-06-10-markdown-pdf-codex-profile-and-interactive-flow.md
 [interactive-usage]: ../guides/markdown-pdf-interactive-usage.md
+[interactive-font-hints]: ../guides/markdown-pdf-interactive-usage.md#font-hints
 [interactive-ux]: research-2026-08-14-markdown-pdf-interactive-page-number-and-page-chrome-ux.md
 [page-chrome]: ../../src/cli/markdown-pdf/profile/page-chrome.ts
 [page-number-plan]: ../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md
