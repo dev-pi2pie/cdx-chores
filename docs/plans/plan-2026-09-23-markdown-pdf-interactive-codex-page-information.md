@@ -198,19 +198,27 @@ At the Phase 3, 4, and 5 gates, render real PDFs from synthetic Markdown and
 the accepted Profile or Project. Check extracted text and visually inspect
 rasterized representative pages before marking the phase complete; text-only
 checks are insufficient. Phase 3 owns the first visual proof, Phase 4 compares
-a render from the saved recipe and one-render override, and Phase 5 owns the
-wider page-role matrix and built-CLI smoke. The unified job records public-safe
-visual verdicts, discrepancies, and limits.
+a render from the saved recipe and one-render override across stored
+repeating-content ON/OFF, and Phase 5 owns the wider page-role matrix and
+built-CLI smoke. The unified job records public-safe visual verdicts,
+discrepancies, and limits.
+
+For Phase 4, repeating-content OFF clears saved text during authoring; the
+one-render number-OFF override changes only effective numbering. If retained
+text shares the number slot, numbers ON replace it and numbers OFF allow it to
+render. Compare extracted content and representative pages across these
+states; an OFF render may paginate differently. The saved recipe must remain
+unchanged.
 
 If rendering is unavailable or a visual mismatch remains, record the limit or
 finding and leave the corresponding phase gate open.
 
-The visual review page set is fixed before implementation:
+The visual review page set for each gate is:
 
 | Gate | Representative pages | Evidence to compare |
 | ---- | ------------- | ------------------- |
 | Phase 3 | Cover, ToC, first body, and later body pages from an accepted Profile or Project, including a retained occupied number slot | Extracted number labels and repeating text; visible placement; retained slot text absent where numbering owns its position |
-| Phase 4 | Corresponding body pages from a saved recipe with numbers ON and a one-render number-OFF override | Same saved page text and styling; numbers absent only in the override; saved recipe unchanged |
+| Phase 4 | Profile and Project body pages with numbers ON/OFF, once with retained slot text and once with repeating content cleared | Number wins its slot while ON; retained text appears there when numbers are OFF; cleared slots stay empty; other repeating text and styles follow the saved recipe |
 | Phase 5 | Representative cover, ToC, and body pages from the integrated matrix and built CLI smoke | Page-role boundaries, number scope, header/footer positions, and any visual mismatch |
 
 ## Implementation Phases
@@ -390,11 +398,16 @@ renderer contract changes.
       review, save, and render only after exact Profile materialization, local
       review, and optional report omission are verified together. Test the
       connected Profile and Project save paths for bypasses.
-- [ ] Render from the saved Profile and Project recipe, then compare the
-      extracted text and representative rasterized pages with Phase 3.
-      Exercise the transient one-render page-number override and confirm it
-      does not change the saved recipe. Visually review the saved-recipe and
-      override renders before Phase 4 closeout.
+- [ ] Render saved Profile and Project recipes with stored repeating content ON
+      and OFF, each with numbers ON and a one-render number-OFF override.
+      Compare the retained-content number-ON case with Phase 3 and the cleared
+      case with its saved Profile. Check extracted text and representative
+      rasterized pages.
+      Verify that numbering owns an occupied slot only while ON, retained text
+      can reappear when numbering is OFF, and cleared slots remain empty. Check
+      other repeating text and styles, allow OFF pagination to differ, and
+      confirm each saved recipe is unchanged. Visually review every state
+      before Phase 4 closeout.
 
 Phase gate: review and saved output use the same validated Profile, and any
 reported final stored fields agree with it; request claims match real calls; no
@@ -486,6 +499,9 @@ visual-review outcome.
 - [ ] In Markdown PDF Usage, explain that the built-in `cover.style: report`
       adds a fixed blue left bar, `cover.style: plain` omits it, and the
       Profile has no separate bar-color setting.
+- [ ] In Markdown PDF Usage, explain that one-render number-OFF can reveal
+      retained text in a released number slot, while repeating-content OFF
+      clears the saved text slots.
 - [ ] Update the Interactive Markdown PDF usage guide with the page-information
       questions, three-state meaning, base/revision behavior, exact Profile
       authority, deterministic path, consent, terminal presentation, review,

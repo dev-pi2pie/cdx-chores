@@ -13,10 +13,10 @@ closeout of Interactive Markdown PDF Codex page information in one record.
 Update this job as each phase reaches its gate; the linked plan owns the full
 checklist and product contract.
 
-Phases 1–2 verify the new collection and preparation paths internally. Phase 3
-verifies exact saved and rendered artifacts without retaining an optional Codex
-diagnostic report. The normal Interactive save/render path accepts the new
-choices only after Phase 4 verifies local review and report omission.
+Phases 1–2 verify collection and preparation internally. Phase 3 verifies exact
+saved and rendered artifacts without an optional Codex diagnostic report.
+Phase 4 connects the reviewed local display and report projection to normal
+Interactive authoring; its PDF matrix and final range review govern closeout.
 
 ## Prerequisite Contract Gate
 
@@ -64,7 +64,7 @@ choices only after Phase 4 verifies local review and report omission.
 | Phase 1 | Complete | Collection and revision |
 | Phase 2 | Complete | Signals, consent, and requests |
 | Phase 3 | Complete | Final Profile, Project handoff, first PDF render review |
-| Phase 4 | Pending | Candidate review, report projection, saved-recipe comparison |
+| Phase 4 | In progress | Candidate review and report projection checkpoint; focused PDF comparison remains |
 | Phase 5 | Pending | Integrated matrix, built CLI, final visual review |
 | Phase 6 | Pending | Guide alignment and documentation closeout |
 
@@ -137,6 +137,28 @@ raw artifacts out of this record.
   reviews found no remaining material issue. Accepted fixes recheck reviewed
   slot text after base or model changes, preserve exact structured labels in
   Interactive review, and escape formatting controls in terminal output.
+
+### Phase 4: Review, Reports, And Candidate Lifecycle
+
+- **Checkpoint:** `c6319cd0..c35a9026`; the phase gate remains open.
+- **Implementation:** Normal Interactive Profile and Project preparation now
+  carries page-information choices through candidate reuse, review, and save.
+  Optional diagnostic reports retain requested and final stored
+  metadata while omitting entered page text and Codex echoes.
+- **Checks:** The managed unit suite passed 1,298 cases and the managed app
+  suite passed 2,067 cases. TypeScript, lint, format, build, and whitespace
+  checks passed. A built Interactive deterministic save produced an exact
+  Profile and an optional value-free report without a model request.
+- **PDF review:** Number-ON Profile and Project renders matched the Phase 3
+  extracted text page for page. A one-render number-OFF override removed
+  numbers and allowed retained text in the released slot to render, with body
+  pagination changing. This behavior now has separate number and stored-text
+  checks in the plan. The cleared-content comparison and final visual verdict
+  remain.
+- **Review ahead:** Add full Interactive change/removal and late-conflict
+  lifecycle coverage, make the persisted Project report projection explicit,
+  consolidate preparation outcome handling, and remove implicit test-harness
+  skipping. Review the final Phase 4 commit range after the PDF gate.
 
 ## Related Research
 

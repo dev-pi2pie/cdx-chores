@@ -18,7 +18,7 @@ This feature adds no page-information flags to `md pdf-profile init`,
 continue to write or read an editable Profile. It also adds no model-generated
 clarification round, new Profile schema, or renderer behavior.
 
-## Current Boundary
+## Starting Boundary
 
 - Profile `formal-guide` already asks whether to enable page numbers, which
   ordinary pages to number, the label and position, then whether to add
@@ -30,14 +30,14 @@ clarification round, new Profile schema, or renderer behavior.
   Guide choice instead defaults to body pages starting at 1 and recommends
   `Page {page}`.[^profile-defaults]
 - The Codex Profile helper can patch page-number and header/footer fields, but
-  its Interactive setup currently supplies only a sample, free-form intent,
-  font hints, and an optional base Profile. Supported patch paths do not make
-  an explicit page-information answer authoritative.[^profile-helper]
+  at the start its Interactive setup supplied only a sample, free-form intent,
+  font hints, and an optional base Profile. Supported patch paths alone did not
+  make an explicit page-information answer authoritative.[^profile-helper]
 - Interactive Project preparation uses that Profile helper for its contained
   `profile.yml`, followed by Template preparation from the final Profile.
   Template-only preparation writes HTML/CSS and does not author a Profile.
-  Neither Profile nor Project signal classification recognizes explicit page
-  information today.[^project-helper]
+  Neither Profile nor Project signal classification recognized explicit page
+  information at the starting boundary.[^project-helper]
 - Direct `md to-pdf --page-numbers` and `--no-page-numbers` change only one
   render's enablement. Reusable page policy remains in the Profile.[^usage]
 
@@ -49,8 +49,8 @@ The accepted renderer meanings and page roles remain in
 [Page Roles And Counter Semantics](research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md).
 
 The Profile data, conflict semantics, optional report projection, and local
-consent/review text display below are settled for implementation planning.
-Implementation and verification are planned.
+consent/review text display below are settled. The linked plan and job record
+track implementation and verification.
 
 ## Report Data Contract
 
@@ -329,8 +329,8 @@ Both paths use the same candidate review and final Profile validation.
   in candidate review before save.
 - Show the requested answers, final Profile fields, and material conflicts in
   both Profile and Project candidate review under the decided terminal display
-  policy. The current Project summary includes page-number settings but needs
-  repeating page content visibility.
+  policy. At the starting boundary, the Project summary included page-number
+  settings but lacked repeating page content visibility.
 - Include page-information answers in setup equality, consent, dry-run, and
   success and failure paths. When Codex runs, send the entered text as bounded
   structured input with placeholders unresolved. Consent shows the text being
@@ -396,7 +396,9 @@ contract itself does not change.
    defaulting to No. Yes clears the conflicting slot; No retains its stored
    content and shows a warning in candidate review. The slot remains owned by
    page numbering while enabled, so retaining text does not promise that it
-   will render. Users can move the number through the existing revision flow.
+   will render. A one-render number-OFF override releases the slot, allowing
+   retained text to render without changing the saved Profile. Users can move
+   the number through the existing revision flow.
    Reserve the number position to prevent new collisions. Explicit repeating
    content OFF clears all slots first and needs no conflict question.
    [^conflict-behavior]
