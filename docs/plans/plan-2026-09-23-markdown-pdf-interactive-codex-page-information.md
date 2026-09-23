@@ -114,12 +114,13 @@ Interactive setup and review
 
 ## Prerequisite Contract Gate
 
-Complete this gate before starting Phase 1. The saved Profile retains exact
-page text. The [research](../researches/research-2026-09-22-markdown-pdf-interactive-codex-page-information.md#report-data-contract)
-defines a metadata-only page-information report projection and a safe summary
-of model results for runs with explicit page information. Page information
-needs no generated filesystem path. The shared path redactor does not decide
-the payload.
+Complete this gate before starting Phase 1. The saved Profile keeps exact
+page text, and Codex receives it after consent only when a request is needed.
+The optional diagnostic report omits the entered page-number label and
+header/footer text, including echoes in Codex results. The
+[research](../researches/research-2026-09-22-markdown-pdf-interactive-codex-page-information.md#report-data-contract)
+defines the allowed metadata. Page information needs no generated filesystem
+path or change to the shared path redactor.
 
 - [x] Trace each answer from collection through consent, model input, final
       Profile, candidate review, and optional report. Mark which surfaces need
@@ -145,21 +146,20 @@ Gate: report and local review text boundaries, terminal presentation, and
 rendered-artifact checkpoints are explicit and reviewable. No implementation
 phase begins while a text-retention or display decision is open.
 
-The gate data flow is: exact typed answers in Interactive setup and consent;
-exact structured input to Codex after consent when a request is needed; exact
-validated final Profile for review, save, and render; terminal-safe escaped
-text in local review; metadata-only page-information fields in optional
-reports. For explicit page-information runs, optional reports reduce model
-results to typed metadata and omit raw model prose and patch values. Existing
-free-form intent and font-hint report fields keep their current retention;
-they are separate user input and may independently repeat page text.
+Local consent and review display the text with terminal controls escaped. For
+explicit page-information runs, reports keep choice and result metadata but
+omit the collected text and any Codex echo. Existing free-form intent and
+font-hint report fields keep their current retention; users can independently
+repeat the same text there. Local review must use the in-memory preparation
+and validated Profile, not the text-limited optional report, so report
+omissions do not remove visible warnings or fallback details.
 
 Phase 4 acceptance cases use synthetic label and slot markers, including ESC,
 a C1 control, a bidirectional formatting control, and Unicode line and
-paragraph separators. Assert exact Profile round trips,
-readable escaped local reviews, no structured page marker in report
-page-information or model-result fields even when the model echoes it, and
-accurate requested/effective metadata after clear, retain, OFF, and failure.
+paragraph separators. Assert exact Profile round trips, readable escaped
+local reviews, no structured page marker in report page-information or
+model-result fields even when the model echoes it, and accurate
+requested/effective metadata after clear, retain, OFF, and failure.
 Run an independent case with the marker in existing free-form intent to prove
 that field's current retention is unchanged. The Profile version-4 reader must
 accept the additive projection, and Project bundle recognition must still
@@ -339,6 +339,10 @@ snapshots have been reported; no direct helper or renderer contract changes.
       respectively, without repeating the same values in one review. Include
       Project repeating text, actual preparation modes, and a warning when
       retained reserved text cannot render while numbering owns that slot.
+      Build the Project handoff and font review from the original preparation
+      and validated Profile rather than reduced report fields, preserving
+      fallback and unsupported-direction details. Escape controls in page
+      text without path masking.
 - [ ] Carry sparse answers through dry-run and success/failure handling. Add
       the metadata-only page-information report fields decided at the gate;
       do not copy requested or final Profile text into them. On runs with

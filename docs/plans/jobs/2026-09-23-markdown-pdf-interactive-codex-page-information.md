@@ -25,14 +25,12 @@ checklist and product contract.
 - [x] Define Phase 3, 4, and 5 rendered-page snapshots and cleanup timing.
 - [x] Review the research and plan direction, then record the decision here.
 
-The source trace found that the Profile report stores model patch values and
-prose, and the Project report can retain model phase prose. Both can echo page
-text even if a new report field contains metadata only. For Interactive runs
-with explicit page information, the report contract now uses metadata-only
-requested/effective/provenance fields and typed model-result summaries. It
-omits raw model patch values and prose. Existing free-form input fields and
-runs without explicit page information keep their current retention. The
-shared path redactor is unchanged.
+The saved Profile keeps exact page text. Codex receives it after consent only
+when a request is needed. The optional diagnostic report omits the collected
+page-number label and header/footer text, including Codex echoes. For
+explicit page-information runs, it stores choice/result metadata instead of
+raw model patch values or prose. Existing independent free-form input fields
+keep their current retention; the shared path redactor is unchanged.
 
 The existing Profile version-4 reader accepted a synthetic additive metadata
 field. Project bundle recognition checks its report discriminator; it has no
@@ -44,12 +42,14 @@ and formatting characters escaped, including bidirectional controls. The
 existing Project escape helper does not cover all formatting controls, so
 Phase 4 must verify the expanded display rule. The existing color contract
 remains per stream and styles only fixed labels. The plan fixes the Phase 3–5
-page snapshot set; each gate will report labeled PNGs
-before cleaning its own generated files.
+page snapshot set; each gate will report labeled PNGs before cleaning its own
+generated files.
 
 Contract review added C1 and Unicode separator display cases and an enabled
 number baseline for the Phase 4 saved-recipe comparison. The prerequisite gate
-is complete at the contract level. Phase 1 implementation has not started.
+also requires Project handoff and font review to use in-memory results so
+reduced report fields do not remove visible feedback. The gate is complete at
+the contract level. Phase 1 implementation has not started.
 
 ## Phase Progress
 

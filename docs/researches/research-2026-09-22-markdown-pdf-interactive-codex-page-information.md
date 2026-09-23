@@ -54,15 +54,15 @@ Implementation and verification are planned.
 
 ## Report Data Contract
 
-Page labels and repeating-content text are exact user-authored Profile data.
-The saved Profile preserves them. A Codex request may receive them after
-consent; candidate review shows the choices being accepted. An optional
-diagnostic report is a separate, retainable artifact. These prompts collect
-page text, not file paths: the feature does not discover, resolve, or generate
-a filesystem path from an answer.
+The saved Profile keeps the entered page-number label and header/footer text
+exactly. Codex receives that text only after consent and only when a request
+is needed. These answers are page text, not filesystem paths; the feature does
+not generate paths from them.
 
-For Interactive Profile and Project runs with either group explicit, add a
-page-information report projection containing metadata only:
+The optional diagnostic report omits the collected page-number label and
+header/footer text, including echoes in Codex results. For Interactive Profile
+and Project runs with an explicit page-information choice, it may record only
+this page-information metadata:
 
 | Part | Allowed report values |
 | ---- | --------------------- |
@@ -70,33 +70,27 @@ page-information report projection containing metadata only:
 | Effective | Validated enablement, number scope, count origin, start, increment, and position; occupied repeating-content position IDs; retained-slot outcome |
 | Provenance and execution | Explicit, inherited, default, or Codex-selected source per group; actual deterministic/model mode and request count |
 
-Do not include the requested or effective number label, header/footer text,
-raw Profile fragments, or model-proposed text in that projection. If no usable
-Profile exists, report requested metadata without claiming effective values.
-Leave the projection absent when both groups are unspecified. The final
-Profile, rather than report metadata, remains the authority for rendering.
+If no usable Profile exists, omit effective values. If both groups are
+unspecified, omit the page-information section. The final Profile remains the
+rendering authority.
 
-Existing Profile reports retain free-form request intent and font hints;
-Project reports retain their existing input fields. A user can independently
-repeat page text in those fields, so this contract does not claim that no
-matching string can occur anywhere in an optional report. The new structured
-page answers must never be copied into those fields. Existing generic model
-results pose a different risk: Profile reports store decision patch values and
-prose, and Project reports can store model phase prose. When either page group
-is explicit, project model results into typed status, counts, finite patch
-paths/operations, and reason codes only. Omit raw decision objects, patch
-values, reasoning, and unconstrained warning, fallback, unmatched-direction,
-or error prose from the optional report. Preserve their normal behavior for
-runs without explicit page information; do not change the shared path
-redactor or recursively transform unrelated report fields.
+Existing Profile reports can store Codex patch values and prose; Project
+reports can store Codex phase prose. For a run with explicit page information,
+replace those model-result fields with status, counts, affected field names,
+and fixed reason codes, without raw values or prose, so an echo cannot copy
+page text into the report. Keep runs without explicit page information
+unchanged. Existing free-form intent and font-hint report fields also keep
+their behavior: if the user independently repeats the same text there, those
+fields retain it. Do not copy structured page answers into them or change the
+shared path redactor.
 
 The Profile report reader accepts additive fields at its current artifact
 version. The Project report has no full reader; bundle recognition checks its
 artifact type. Keep those existing checks and report versions. Phase 4 must
 test the projection with synthetic page text, a model echo in patch values and
-prose, and a failure path. Verify that the optional report excludes the page
-text while the saved Profile remains exact. Test existing intent retention
-separately so the privacy assertion does not silently change its contract.
+prose, and a failure path. Verify the report omission and exact saved Profile.
+Test existing intent retention separately so the privacy assertion does not
+silently change its contract.
 Record the gate evidence in the single
 [implementation job record](../plans/jobs/2026-09-23-markdown-pdf-interactive-codex-page-information.md).
 
@@ -113,14 +107,16 @@ PDFs.
 
 Local consent shows entered page text; candidate review shows entered and
 model-proposed page text where applicable. Both use an escaped terminal
-representation without path masking. Escape
-control and formatting characters, including C0/C1, bidirectional controls,
-and Unicode line and paragraph separators, before interpolation. This affects
-display only: save the original text in the Profile and send the original
-entered text as structured model input after consent. Do not use the
-diagnostic-report path redactor as a terminal formatter. Removing ANSI from
-styled output must preserve the same wording, spacing, and stream routing as
-plain output.
+representation without path masking. Escape control and formatting characters,
+including C0/C1, bidirectional controls, and Unicode line and paragraph
+separators before interpolation. This affects display only: save the original
+text in the Profile and send the original entered text as structured model
+input after consent. Do not use the diagnostic-report path redactor as a
+terminal formatter. Build local review
+from the original preparation and validated Profile, separately from the
+reduced optional report, so warnings and fallback details remain visible.
+Removing ANSI from styled output must preserve the same wording, spacing, and
+stream routing as plain output.
 
 ## Proposed Scope
 
