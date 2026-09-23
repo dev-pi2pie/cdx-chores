@@ -20,8 +20,14 @@ describe("Project cover policy", () => {
     ["Use a restrained report layout", "none"],
     ["Add a cover page", "generic"],
     ["Use a text-only cover", "text-only"],
+    ["No cover image, use a text-only cover", "text-only"],
+    ["Use a text cover without a photo", "text-only"],
     ["Use an image cover", "image"],
     ["Skip the cover page", "no-cover"],
+    ["Skip the cover page in page numbering", "none"],
+    ["No page numbers on the cover page", "none"],
+    ["Do not number the cover page", "none"],
+    ["Start page numbering after the cover", "none"],
     ["Use a text-only cover and an image cover", "conflict"],
   ] as const)("classifies explicit intent %p", (intent, expected) => {
     expect(classifyMdPdfProjectCoverIntent(intent)).toBe(expected);
@@ -64,6 +70,8 @@ describe("Project cover policy", () => {
 
   test.each([
     { image: true, base: undefined, intent: "Use a text-only cover" },
+    { image: true, base: undefined, intent: "No cover" },
+    { image: true, base: undefined, intent: "No cover image" },
     { image: false, base: undefined, intent: "Use an image cover" },
     { image: false, base: false, intent: "Add a cover" },
     { image: false, base: true, intent: "No cover" },

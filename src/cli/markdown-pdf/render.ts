@@ -9,11 +9,13 @@ import { highlightMarkdownPdfCodeBlocks } from "./code-highlight";
 import { finalizeMarkdownPdfPageNumberHtml } from "./page-number-html";
 import {
   createMarkdownPdfCoverHtml,
+  createMarkdownPdfCoverScaffold,
   MARKDOWN_PDF_PROFILE_TEXT_COVER_MARKER,
   type EffectiveMarkdownPdfCodeOptions,
   type NormalizedMarkdownPdfPageNumbers,
   type NormalizedMarkdownPdfProfile,
 } from "./profile";
+import { MARKDOWN_PDF_COVER_STYLES } from "./profile/feature-registry";
 import {
   rejectRemoteMarkdownPdfAssetsWhenDisabled,
   rewriteMarkdownPdfTemplateLocalAssets,
@@ -107,9 +109,6 @@ async function createCustomTemplateRenderFile(input: {
   );
 }
 
-const PROFILE_TEXT_COVER_SCAFFOLD =
-  /<section class="pdf-cover pdf-cover--(?:plain|report)" data-cdx-profile-text-cover="true"><\/section>/gu;
-
 function resolveManagedProfileTextCover(input: {
   templateHtml: string;
   profile?: NormalizedMarkdownPdfProfile;
@@ -117,21 +116,29 @@ function resolveManagedProfileTextCover(input: {
   if (!input.templateHtml.includes(MARKDOWN_PDF_PROFILE_TEXT_COVER_MARKER)) {
     return input.templateHtml;
   }
+  const profile = input.profile;
   const markerCount = input.templateHtml.split(MARKDOWN_PDF_PROFILE_TEXT_COVER_MARKER).length - 1;
-  const scaffolds = input.templateHtml.match(PROFILE_TEXT_COVER_SCAFFOLD) ?? [];
+  const matchingScaffolds = profile?.cover.enabled
+    ? MARKDOWN_PDF_COVER_STYLES.map((style) =>
+        createMarkdownPdfCoverScaffold({
+          ...profile,
+          cover: { ...profile.cover, style },
+        }),
+      ).filter((scaffold) => input.templateHtml.includes(scaffold))
+    : [];
   if (
     markerCount !== 1 ||
-    scaffolds.length !== 1 ||
+    matchingScaffolds.length !== 1 ||
     !isManagedMarkdownPdfTemplate(input.templateHtml) ||
-    !input.profile?.cover.enabled
+    !profile?.cover.enabled
   ) {
     throw new CliError("Managed text cover does not match the enabled Profile cover.", {
       code: "MARKDOWN_PDF_COVER_BOUNDARY_REQUIRED",
       exitCode: 2,
     });
   }
-  return input.templateHtml.replace(PROFILE_TEXT_COVER_SCAFFOLD, () =>
-    createMarkdownPdfCoverHtml(input.profile),
+  return input.templateHtml.replace(matchingScaffolds[0]!, () =>
+    createMarkdownPdfCoverHtml(profile),
   );
 }
 

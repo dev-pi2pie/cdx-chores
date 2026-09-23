@@ -67,6 +67,11 @@ describe("managed Project text-cover render", () => {
         template: toRepoRelativePath(templatePath),
         runner: capturingRunner,
       });
+      await writeFile(
+        profilePath,
+        (await readFile(profilePath, "utf8")).replace("style: report", "style: plain"),
+        "utf8",
+      );
       await actionMdToPdf(runtime, {
         input: toRepoRelativePath(secondMarkdown),
         output: toRepoRelativePath(join(fixtureDir, "second.pdf")),
@@ -79,9 +84,11 @@ describe("managed Project text-cover render", () => {
       expect(templates).toHaveLength(2);
       expect(templates[0]).toContain("First Title");
       expect(templates[0]).toContain("First Subtitle");
+      expect(templates[0]).toContain('class="pdf-cover pdf-cover--report"');
       expect(templates[0]).not.toContain("Second Title");
       expect(templates[1]).toContain("Override Title");
       expect(templates[1]).toContain("Second Subtitle");
+      expect(templates[1]).toContain('class="pdf-cover pdf-cover--plain"');
       expect(templates[1]).not.toContain("First Title");
       for (const template of templates) {
         expect(template.match(/<section class="pdf-cover\b/gu)).toHaveLength(1);

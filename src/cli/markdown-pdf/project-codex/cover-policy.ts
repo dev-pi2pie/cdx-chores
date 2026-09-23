@@ -6,6 +6,15 @@ export const MD_PDF_PROJECT_COVER_CONFLICT_CODE = "MARKDOWN_PDF_PROJECT_COVER_CO
 
 type ProjectCoverIntent = "none" | "generic" | "text-only" | "image" | "no-cover" | "conflict";
 
+const NEGATED_COVER_IMAGE =
+  /\b(?:no|without|skip|avoid|exclude|omit)\s+(?:(?:a|an|the|any)\s+)?(?:(?:cover\s+)?(?:image|photo|picture)|(?:image|photo|picture)\s+cover)\b/giu;
+const PAGE_NUMBER_COVER_REFERENCES = [
+  /\b(?:skip|exclude|omit|ignore)\s+(?:the\s+)?cover(?:\s+page)?\s+(?:in|from|for)\s+(?:page\s+)?(?:number(?:s|ing)?|count(?:ing)?)\b/giu,
+  /\b(?:no|without)\s+(?:page\s+)?(?:number(?:s|ing)?|count(?:ing)?)\s+(?:on|for)\s+(?:the\s+)?cover(?:\s+page)?\b/giu,
+  /\b(?:do\s+not|don't|never)\s+(?:number|count)\s+(?:the\s+)?cover(?:\s+page)?\b/giu,
+  /\b(?:start|begin)\s+(?:page\s+)?number(?:s|ing)?\s+after\s+(?:the\s+)?cover(?:\s+page)?\b/giu,
+];
+
 export function explicitMdPdfProjectBaseCoverChoice(
   profile: Record<string, unknown> | undefined,
 ): boolean | undefined {
@@ -20,13 +29,17 @@ function coverConflict(message: string): never {
 }
 
 export function classifyMdPdfProjectCoverIntent(intent: string | undefined): ProjectCoverIntent {
-  const text = intent ?? "";
+  const withoutNumbering = PAGE_NUMBER_COVER_REFERENCES.reduce(
+    (text, reference) => text.replace(reference, " "),
+    intent ?? "",
+  );
+  const text = withoutNumbering.replace(NEGATED_COVER_IMAGE, " ");
   const noCover =
     /\b(?:no|without|skip|disable|avoid)\s+(?:(?:a|the|any)\s+)?(?:cover(?:\s+page)?|title[- ]page)\b/iu.test(
       text,
     );
   const textOnly =
-    /\b(?:text[- ]only|textual|typographic)\s+(?:cover|title[- ]page)\b|\b(?:cover|title[- ]page)\s+(?:with\s+)?text(?:\s+only)?\b/iu.test(
+    /\b(?:text(?:[- ]only)?|textual|typographic)\s+(?:cover|title[- ]page)\b|\b(?:cover|title[- ]page)\s+(?:with\s+)?text(?:\s+only)?\b/iu.test(
       text,
     );
   const image =
@@ -75,13 +88,15 @@ export function applyMdPdfProjectCoverPolicy(input: {
   intent?: string;
 }): Record<string, unknown> {
   const intent = classifyMdPdfProjectCoverIntent(input.intent);
+  const noImageRequested = (input.intent ?? "").match(NEGATED_COVER_IMAGE) !== null;
   if (intent === "conflict") {
     coverConflict(
       "PDF cover directions conflict. Revise the cover request before preparing a Project.",
     );
   }
   if (
-    (input.coverImageAvailable && (intent === "text-only" || intent === "no-cover")) ||
+    (input.coverImageAvailable &&
+      (intent === "text-only" || intent === "no-cover" || noImageRequested)) ||
     (!input.coverImageAvailable && intent === "image") ||
     (input.baseProfileCoverEnabled === false &&
       (input.coverImageAvailable ||

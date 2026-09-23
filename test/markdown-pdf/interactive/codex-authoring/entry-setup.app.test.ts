@@ -24,6 +24,40 @@ describe("interactive Markdown PDF Codex authoring", () => {
     expect(result.markdownPdfCodexWriteCalls).toEqual([]);
   });
 
+  test("saves a Project after revising a post-Profile cover conflict", () => {
+    const result = runInteractiveHarness({
+      mode: "run",
+      markdownPdfMocks: true,
+      markdownPdfCodexPrepareCoverConflictOnCall: 1,
+      selectQueue: [
+        ...recipesCodexSelections("project-bundle"),
+        "continue",
+        "intent",
+        "continue",
+        "save",
+        "none",
+        "suggested",
+        "exit",
+      ],
+      inputQueue: ["", "Use a text-only cover"],
+      confirmQueue: [false, true, false, true, false, true],
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.stderr).toContain("Project cover choices: Cover intent conflicts");
+    expect(result.markdownPdfCodexPrepareCalls).toHaveLength(2);
+    expect(result.markdownPdfCodexPrepareCalls[0]?.intent).toBeUndefined();
+    expect(result.markdownPdfCodexPrepareCalls[1]).toEqual(
+      expect.objectContaining({ intent: "Use a text-only cover" }),
+    );
+    expect(result.markdownPdfCodexWriteCalls).toEqual([
+      expect.objectContaining({
+        artifact: "project-bundle",
+        candidateId: "codex-project-bundle-2",
+      }),
+    ]);
+  });
+
   test("returns an image/base-cover conflict to setup before consent", async () => {
     await withTempFixtureDir("md-pdf-interactive-project-cover-conflict", async (fixtureDir) => {
       const baseProfile = join(fixtureDir, "base.yml");
