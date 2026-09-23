@@ -158,20 +158,26 @@ describe("internal Markdown PDF page-information preparation", () => {
     expect(output()).not.toContain("\u2029");
   });
 
-  test("declining consent prevents preparation", async () => {
-    const { runtime: cli } = runtime();
-    const session = createMarkdownPdfPageInformationPreparationSession(cli, {
-      confirmRequest: async () => false,
-      prepareCandidate: async () => {
-        throw new Error("Preparation must not run without consent");
-      },
-    });
-    expect(
-      await session.prepare(setup("profile", { intent: "Use a compact layout" })),
-    ).toMatchObject({
-      kind: "declined",
-    });
-  });
+  test.each(["profile", "project-bundle"] as const)(
+    "declining %s consent prevents every preparation phase",
+    async (artifact) => {
+      const { runtime: cli } = runtime();
+      let consentCalls = 0;
+      const session = createMarkdownPdfPageInformationPreparationSession(cli, {
+        confirmRequest: async () => {
+          consentCalls += 1;
+          return false;
+        },
+        prepareCandidate: async () => {
+          throw new Error("Preparation must not run without consent");
+        },
+      });
+      expect(
+        await session.prepare(setup(artifact, { intent: "Use a custom cover layout" })),
+      ).toMatchObject({ kind: "declined" });
+      expect(consentCalls).toBe(1);
+    },
+  );
 
   test("binding an internal page-information candidate cannot retain a diagnostic report", async () => {
     const { runtime: cli } = runtime();
@@ -183,6 +189,27 @@ describe("internal Markdown PDF page-information preparation", () => {
       }),
     ).rejects.toMatchObject({ code: "INVALID_INPUT" });
   });
+
+  test.each(["profile", "project-bundle"] as const)(
+    "%s report binding uses prepared page-information state even when setup omits it",
+    async (artifact) => {
+      const { runtime: cli } = runtime();
+      const preparedCandidate = candidate(artifact);
+      preparedCandidate.setup = { artifact, fontHints: [] };
+      preparedCandidate.prepared = (
+        artifact === "profile"
+          ? { hasExplicitPageInformation: true }
+          : { signals: { profile: { pageInformation: { repeatingContent: { enabled: false } } } } }
+      ) as never;
+      await expect(
+        bindMarkdownPdfCodexCandidate(cli, preparedCandidate, {
+          output: "unused",
+          overwrite: false,
+          report: { kind: "with-artifact" },
+        }),
+      ).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    },
+  );
 
   test("escapes controls and format characters without changing ordinary page text", () => {
     expect(escapeMarkdownPdfPageInformationTerminalText("Page {page} / Archive")).toBe(

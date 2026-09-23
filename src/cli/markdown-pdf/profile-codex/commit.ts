@@ -12,6 +12,7 @@ import {
 import type { BoundMarkdownPdfProfileCodexDestination } from "./destination";
 import type { PreparedMarkdownPdfProfileCodex } from "./prepare";
 import { serializeMarkdownPdfProfileCodexProfile } from "./write-profile";
+import { assertNoPageInformationDiagnosticReport } from "./page-information-signals";
 
 function persistedReportPath(runtime: CliRuntime, path: string): string {
   return publicPathDisplay(runtime, path)?.display ?? publicPathBasename(path);
@@ -37,6 +38,10 @@ async function writeReportIfRequested(input: {
   if (!input.destination.reportOutputPath) {
     return;
   }
+  assertNoPageInformationDiagnosticReport({
+    hasExplicitPageInformation: input.prepared.hasExplicitPageInformation,
+    reportPlanned: true,
+  });
   await writeMarkdownPdfCodexReportArtifact(
     input.destination.reportOutputPath,
     createMarkdownPdfCodexReportArtifact({
@@ -60,6 +65,10 @@ export async function commitPreparedMarkdownPdfProfileCodex(input: {
   runtime: CliRuntime;
 }): Promise<void> {
   const { destination, prepared, runtime } = input;
+  assertNoPageInformationDiagnosticReport({
+    hasExplicitPageInformation: prepared.hasExplicitPageInformation,
+    reportPlanned: Boolean(destination.reportOutputPath),
+  });
   if (prepared.kind !== "profile") {
     await writeReportIfRequested(input);
     throw new CliError(prepared.failureMessage, {

@@ -110,6 +110,14 @@ needed its export fixture updated for the new report guard; it now passes.
 No PDF artifact is due at this gate. Commit-range review and the Phase 2 gate
 verdict remain open.
 
+The first Phase 2 commit-range review found a late report-binding path that
+could retain a Codex echo of entered text. Prepared Profile and Project state
+now blocks optional reports at bind and write boundaries, including direct
+report writing. Follow-up checks cover synthetic echoed text, explicit OFF
+with inactive drafts, and declined Project consent. The Profile/Project action
+slice passed again (225 tests); focused follow-up unit and application slices
+passed (14 and 21 tests). The widened range still needs review.
+
 ## Related Research
 
 - [Interactive Markdown PDF Codex Page Information Signals](../../researches/research-2026-09-22-markdown-pdf-interactive-codex-page-information.md)

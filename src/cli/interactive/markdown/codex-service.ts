@@ -183,8 +183,15 @@ export async function bindMarkdownPdfCodexCandidate(
     report: MarkdownPdfCodexReportRetention;
   },
 ): Promise<BoundMarkdownPdfCodexCandidate> {
+  const preparedHasPageInformation =
+    candidate.artifact === "profile"
+      ? candidate.prepared.hasExplicitPageInformation === true
+      : candidate.artifact === "project-bundle"
+        ? Boolean(candidate.prepared.signals.profile.pageInformation)
+        : false;
   if (
-    hasExplicitMarkdownPdfCodexPageInformation(candidate.setup.pageInformation) &&
+    (preparedHasPageInformation ||
+      hasExplicitMarkdownPdfCodexPageInformation(candidate.setup.pageInformation)) &&
     input.report.kind !== "none"
   ) {
     throw new CliError(

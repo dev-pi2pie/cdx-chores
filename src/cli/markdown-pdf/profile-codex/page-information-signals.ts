@@ -56,12 +56,16 @@ export function hasExplicitMarkdownPdfCodexPageInformation(
 /** Phase 2 keeps authored page text off optional durable diagnostic reports. */
 export function assertNoPageInformationDiagnosticReport(input: {
   pageInformation?: MarkdownPdfCodexPageInformationSignal;
+  hasExplicitPageInformation?: boolean;
   keepCodexReport?: boolean;
   codexReportOutput?: string;
+  reportPlanned?: boolean;
 }): void {
   if (
-    input.pageInformation &&
-    (input.keepCodexReport === true || input.codexReportOutput !== undefined)
+    (input.pageInformation || input.hasExplicitPageInformation) &&
+    (input.keepCodexReport === true ||
+      input.codexReportOutput !== undefined ||
+      input.reportPlanned === true)
   ) {
     throw new CliError(
       "Optional Codex diagnostic reports are unavailable with explicit page information.",

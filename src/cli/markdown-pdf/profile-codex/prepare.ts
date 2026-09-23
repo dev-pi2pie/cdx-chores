@@ -236,6 +236,7 @@ export async function prepareMarkdownPdfProfileCodex(
     inputPath,
     profileId,
     suggestedOutputPath,
+    ...(pageInformation ? { hasExplicitPageInformation: true } : {}),
   };
 
   // Keep direct-command validation ahead of orchestration while allowing the

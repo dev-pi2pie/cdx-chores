@@ -409,6 +409,10 @@ export async function rebindMdPdfProjectCodexPreparedArtifact(input: {
     reportOutputPath: input.reportOutputPath,
     runtime: input.runtime,
   });
+  assertNoPageInformationDiagnosticReport({
+    pageInformation: input.prepared.signals.profile.pageInformation,
+    reportPlanned: Boolean(report),
+  });
   const state: NormalizedMdPdfProjectCodexCommandState = {
     ...input.prepared.binding.state,
     dryRun: input.dryRun ?? false,

@@ -19,6 +19,7 @@ import type { MdPdfProjectCodexProfilePhaseResult } from "./profile-phase";
 import type { MdPdfProjectCodexTemplatePhaseResult } from "./template-phase";
 import type { MarkdownPdfProjectCodexReportArtifact } from "./types-report";
 import type { MarkdownPdfProjectCodexValidationSummary } from "./validate-project";
+import { assertNoPageInformationDiagnosticReport } from "../profile-codex/page-information-signals";
 
 type MdPdfProjectCodexWriteInput = {
   managedAssetContents?: readonly MarkdownPdfProjectCodexManagedAssetContent[];
@@ -145,11 +146,15 @@ export async function snapshotMdPdfProjectCodexManagedAssets(input: {
 }
 
 async function validateMdPdfProjectCodexReportIfRequested(
-  input: Pick<MdPdfProjectCodexWriteInput, "outputPlan" | "runtime" | "state">,
+  input: Pick<MdPdfProjectCodexWriteInput, "outputPlan" | "runtime" | "signals" | "state">,
 ): Promise<void> {
   if (!input.outputPlan.report) {
     return;
   }
+  assertNoPageInformationDiagnosticReport({
+    pageInformation: input.signals.profile.pageInformation,
+    reportPlanned: true,
+  });
   await validateMdPdfProjectCodexReportWritability({
     plan: input.outputPlan,
     runtime: input.runtime,

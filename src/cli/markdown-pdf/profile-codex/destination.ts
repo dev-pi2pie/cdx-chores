@@ -8,6 +8,7 @@ import type { CliRuntime } from "../../types";
 import { assertNonEmpty, displayPath } from "../../actions/shared";
 import { assertWritableCodexPlannedFile } from "../codex-output-path-policy";
 import type { MarkdownPdfCodexReportBinding } from "../codex-report-binding";
+import { assertNoPageInformationDiagnosticReport } from "./page-information-signals";
 
 export interface MarkdownPdfProfileCodexDestinationOptions {
   codexReportOutput?: string;
@@ -24,6 +25,8 @@ export interface MarkdownPdfProfileCodexDestinationSource {
   inputPath?: string;
   profileId: string;
   suggestedOutputPath: string;
+  /** Value-free marker retained across prepare and destination rebinding. */
+  hasExplicitPageInformation?: boolean;
 }
 
 export interface BoundMarkdownPdfProfileCodexDestination {
@@ -120,6 +123,11 @@ export async function bindMarkdownPdfProfileCodexDestination(
       : options.keepCodexReport
         ? generatedReportPath(outputPath, source.profileId)
         : undefined;
+
+  assertNoPageInformationDiagnosticReport({
+    hasExplicitPageInformation: source.hasExplicitPageInformation,
+    reportPlanned: Boolean(reportOutputPath),
+  });
 
   inferMarkdownPdfProfileFormat(outputPath);
   if (reportOutputPath && extname(reportOutputPath).toLowerCase() !== ".json") {

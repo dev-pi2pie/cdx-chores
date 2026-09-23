@@ -1,6 +1,7 @@
 import { writeTextFileSafe } from "../../file-io";
 import type { CliRuntime } from "../../types";
 import { publicPathBasename, publicPathDisplay } from "../codex-path-display";
+import { assertNoPageInformationDiagnosticReport } from "../profile-codex/page-information-signals";
 import { collectMdPdfProjectCodexUnsupportedDirections } from "./diagnostics";
 import { createMdPdfProjectCodexHandoffProjection } from "./handoff-projection";
 import {
@@ -276,6 +277,10 @@ export async function writeMdPdfProjectCodexReportArtifact(input: {
   if (!input.outputPlan.report) {
     return;
   }
+  assertNoPageInformationDiagnosticReport({
+    pageInformation: input.signals.profile.pageInformation,
+    reportPlanned: true,
+  });
   const reportArtifact = input.reportArtifact ?? createMdPdfProjectCodexReportArtifact(input);
   const { followUpRenderCommand: _followUpRenderCommand, ...reportWithoutRenderCommand } =
     reportArtifact;
