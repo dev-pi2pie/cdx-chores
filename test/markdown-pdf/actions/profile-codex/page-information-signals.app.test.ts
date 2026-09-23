@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
@@ -254,6 +254,43 @@ describe("internal page-information helper signals", () => {
       expect(reportText).not.toContain(pageInformation.pageNumbers?.format);
       expect(reportText).not.toContain(pageInformation.repeatingContent?.text["top-left"]);
       expect(JSON.parse(reportText).pageInformation.modelResultDetails).toBe("omitted");
+    });
+  });
+
+  test("fails before writing a Profile or requested report when page metadata is missing", async () => {
+    await withTempFixtureDir("md-pdf-profile-page-missing-report-metadata", async (fixtureDir) => {
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      const prepared = await prepareMarkdownPdfProfileCodex(runtime, {
+        internalPageInformation: pageInformation,
+        output: "profile.yml",
+      });
+      if (prepared.kind !== "profile") {
+        throw new Error("Expected a prepared Profile.");
+      }
+      expect(prepared.hasExplicitPageInformation).toBe(true);
+      expect(prepared.reportPayload.pageInformation).toBeDefined();
+      const destination = await bindMarkdownPdfProfileCodexDestination(runtime, prepared, {
+        report: { kind: "external", path: "report.json" },
+      });
+      expect(await readdir(fixtureDir)).toEqual([]);
+
+      await expectCliError(
+        () =>
+          commitPreparedMarkdownPdfProfileCodex({
+            destination,
+            prepared: {
+              ...prepared,
+              reportPayload: { ...prepared.reportPayload, pageInformation: undefined },
+            },
+            runtime,
+          }),
+        {
+          code: "INVALID_INPUT",
+          exitCode: 2,
+          messageIncludes: "diagnostic report metadata is missing",
+        },
+      );
+      expect(await readdir(fixtureDir)).toEqual([]);
     });
   });
 
