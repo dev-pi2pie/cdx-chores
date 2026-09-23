@@ -144,7 +144,7 @@ function positionsArray(value: unknown): boolean {
   return Array.isArray(value) && value.every(position) && new Set(value).size === value.length;
 }
 
-/** Accept old version-4 reports without this optional section. */
+/** Reports omit this section when no explicit page-information choice was collected. */
 export function validateMarkdownPdfCodexReportPageInformation(value: unknown): void {
   if (value === undefined) return;
   const section = object(value);
