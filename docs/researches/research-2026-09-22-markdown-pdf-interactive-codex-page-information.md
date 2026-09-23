@@ -48,28 +48,56 @@ repeating-content slots.
 The accepted renderer meanings and page roles remain in
 [Page Roles And Counter Semantics](research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md).
 
-The Profile data and conflict semantics below are settled for implementation
-planning. The optional report payload and local consent/review text display
-are open decisions. Implementation and verification are planned.
+The Profile data, conflict semantics, optional report projection, and local
+consent/review text display below are settled for implementation planning.
+Implementation and verification are planned.
 
-## Open Report Data Contract
+## Report Data Contract
 
 Page labels and repeating-content text are exact user-authored Profile data.
-The saved Profile must preserve them. A Codex request may receive them after
-consent; candidate review must make the choices being accepted clear. An
-optional diagnostic report is a separate, retainable artifact; its payload
-must not be inferred from the Profile or the model request. These prompts
-collect page text, not file paths: the feature must not discover, resolve, or
-generate a filesystem path from an answer.
+The saved Profile preserves them. A Codex request may receive them after
+consent; candidate review shows the choices being accepted. An optional
+diagnostic report is a separate, retainable artifact. These prompts collect
+page text, not file paths: the feature does not discover, resolve, or generate
+a filesystem path from an answer.
 
-Before implementation, decide whether that report records literal requested
-and effective page text at all, or only choice state, positions, provenance,
-and conflict outcomes. Define the handling of model-proposed text and report
-reader compatibility at the same time. “Include answers” and “follow existing
-redaction” do not decide whether literal page text belongs in a report. Do not
-copy page text into reports or broaden the shared path redactor as an implicit
-answer. Page information requires no generated filesystem path. Record the
-decision in the single
+For Interactive Profile and Project runs with either group explicit, add a
+page-information report projection containing metadata only:
+
+| Part | Allowed report values |
+| ---- | --------------------- |
+| Requested | Unspecified/OFF/ON per group; when numbering is ON, selected scope, count origin, and position plus derived start/increment of 1; selected repeating-content position IDs; explicit conflict choice |
+| Effective | Validated enablement, number scope, count origin, start, increment, and position; occupied repeating-content position IDs; retained-slot outcome |
+| Provenance and execution | Explicit, inherited, default, or Codex-selected source per group; actual deterministic/model mode and request count |
+
+Do not include the requested or effective number label, header/footer text,
+raw Profile fragments, or model-proposed text in that projection. If no usable
+Profile exists, report requested metadata without claiming effective values.
+Leave the projection absent when both groups are unspecified. The final
+Profile, rather than report metadata, remains the authority for rendering.
+
+Existing Profile reports retain free-form request intent and font hints;
+Project reports retain their existing input fields. A user can independently
+repeat page text in those fields, so this contract does not claim that no
+matching string can occur anywhere in an optional report. The new structured
+page answers must never be copied into those fields. Existing generic model
+results pose a different risk: Profile reports store decision patch values and
+prose, and Project reports can store model phase prose. When either page group
+is explicit, project model results into typed status, counts, finite patch
+paths/operations, and reason codes only. Omit raw decision objects, patch
+values, reasoning, and unconstrained warning, fallback, unmatched-direction,
+or error prose from the optional report. Preserve their normal behavior for
+runs without explicit page information; do not change the shared path
+redactor or recursively transform unrelated report fields.
+
+The Profile report reader accepts additive fields at its current artifact
+version. The Project report has no full reader; bundle recognition checks its
+artifact type. Keep those existing checks and report versions. Phase 4 must
+test the projection with synthetic page text, a model echo in patch values and
+prose, and a failure path. Verify that the optional report excludes the page
+text while the saved Profile remains exact. Test existing intent retention
+separately so the privacy assertion does not silently change its contract.
+Record the gate evidence in the single
 [implementation job record](../plans/jobs/2026-09-23-markdown-pdf-interactive-codex-page-information.md).
 
 ## Terminal Presentation Contract
@@ -83,12 +111,16 @@ Style fixed labels or headings only; the warning role emphasizes `Warning:`
 while its body remains plain. Never put ANSI styling in reports, recipes, or
 PDFs.
 
-Escape terminal control characters before showing entered or model-proposed
-text. Terminal safety escaping is separate from deciding whether local consent
-and review show exact text or a masked representation. Settle that display
-policy before Phase 1; do not use the diagnostic-report path redactor as an
-implicit terminal formatter. Removing ANSI from styled output must preserve
-the same wording, spacing, and stream routing as plain output.
+Local consent shows entered page text; candidate review shows entered and
+model-proposed page text where applicable. Both use an escaped terminal
+representation without path masking. Escape
+control and formatting characters, including C0/C1, bidirectional controls,
+and Unicode line and paragraph separators, before interpolation. This affects
+display only: save the original text in the Profile and send the original
+entered text as structured model input after consent. Do not use the
+diagnostic-report path redactor as a terminal formatter. Removing ANSI from
+styled output must preserve the same wording, spacing, and stream routing as
+plain output.
 
 ## Proposed Scope
 
@@ -111,7 +143,7 @@ Each group can be **unspecified**, **OFF**, or **ON**. Unspecified means the
 user did not give exact direction for that group; it is not an instruction to
 disable it. The user can choose either group or both. This sparse distinction
 must survive setup revision, Codex preparation, and final validation. Its
-optional report representation is the open decision above.
+optional report representation follows the metadata-only projection above.
 
 The existing [font-hint editor](../guides/markdown-pdf-interactive-usage.md#font-hints) stays separate. Its
 guided `Page headers and footers` preference can inform Codex's shared
@@ -272,10 +304,9 @@ Both paths use the same candidate review and final Profile validation.
   success and failure paths. When Codex runs, send the entered text as bounded
   structured input with placeholders unresolved. Consent shows the text being
   sent under the decided terminal display policy; local materialization
-  preserves the exact collected values. Define the optional report projection
-  through the open contract above before
-  implementing it. Reports must accurately identify deterministic preparation
-  versus model requests.
+  preserves the exact collected values. Apply the metadata-only optional
+  report projection above. Reports must accurately identify deterministic
+  preparation versus model requests.
 - Continue to use shared Profile normalization, patch validation, capability
   advisories, and diagnostics. Authoring does not probe the installed
   renderer. The existing Interactive one-render page-number choice remains a
@@ -321,7 +352,7 @@ contract itself does not change.
    must not rewrite explicit content; final materialization applies the local
    values regardless of the model's response. Reuse the existing consent flow
    without adding a model-generated clarification round. The optional report
-   payload is a separate open decision and must not be derived automatically
+   follows the metadata-only projection above and is not derived automatically
    from the text sent to Codex.
 3. **Page-info-only preparation is deterministic.** Apply exact answers to
    the normalized base Profile or default Profile without calling Codex.

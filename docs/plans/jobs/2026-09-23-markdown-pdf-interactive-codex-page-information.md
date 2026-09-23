@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Interactive Codex page information implementation"
 created-date: 2026-09-23
-status: draft
+status: in-progress
 agent: codex
 plan: ../plan-2026-09-23-markdown-pdf-interactive-codex-page-information.md
 ---
@@ -15,15 +15,41 @@ checklist and product contract.
 
 ## Prerequisite Contract Gate
 
-- [ ] Decide which page-information values may be stored in optional Profile
+- [x] Decide which page-information values may be stored in optional Profile
       and Project reports, separately from exact saved Profile content and
       user-visible consent/review.
-- [ ] Define report compatibility and privacy cases before changing code or
+- [x] Define report compatibility and privacy cases before changing code or
       the shared redactor.
-- [ ] Decide local consent/review text display and verify it follows the
-      existing terminal color and control-escaping contract.
-- [ ] Agree on Phase 3, 4, and 5 rendered-page snapshots and cleanup timing.
-- [ ] Review the research and plan direction, then record the decision here.
+- [x] Decide local consent/review text display against the existing terminal
+      color rules and define the escaping checks for implementation.
+- [x] Define Phase 3, 4, and 5 rendered-page snapshots and cleanup timing.
+- [x] Review the research and plan direction, then record the decision here.
+
+The source trace found that the Profile report stores model patch values and
+prose, and the Project report can retain model phase prose. Both can echo page
+text even if a new report field contains metadata only. For Interactive runs
+with explicit page information, the report contract now uses metadata-only
+requested/effective/provenance fields and typed model-result summaries. It
+omits raw model patch values and prose. Existing free-form input fields and
+runs without explicit page information keep their current retention. The
+shared path redactor is unchanged.
+
+The existing Profile version-4 reader accepted a synthetic additive metadata
+field. Project bundle recognition checks its report discriminator; it has no
+full report reader. Phase 4 will run the synthetic marker, model-echo,
+failure, and existing-intent cases against the implemented projection.
+
+Local consent and candidate review show exact page text with terminal control
+and formatting characters escaped, including bidirectional controls. The
+existing Project escape helper does not cover all formatting controls, so
+Phase 4 must verify the expanded display rule. The existing color contract
+remains per stream and styles only fixed labels. The plan fixes the Phase 3–5
+page snapshot set; each gate will report labeled PNGs
+before cleaning its own generated files.
+
+Contract review added C1 and Unicode separator display cases and an enabled
+number baseline for the Phase 4 saved-recipe comparison. The prerequisite gate
+is complete at the contract level. Phase 1 implementation has not started.
 
 ## Phase Progress
 

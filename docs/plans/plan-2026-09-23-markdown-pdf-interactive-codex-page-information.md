@@ -94,8 +94,8 @@ Interactive setup and review
 
 - Keep unspecified answers absent in typed Interactive setup. Store explicit
   OFF/ON and entered text separately from free-form intent, so omission cannot
-  become a default or an implicit clear during revision or requests. Any
-  reported state follows the separately decided report projection.
+  become a default or an implicit clear during revision or requests. Reported
+  state follows the metadata-only projection in the research.
 - Reuse Formal Guide prompt controls and Profile compilation where their
   behavior matches. Give explicit Interactive OFF its own clearing policy so
   the existing Formal Guide reserved-slot exception does not change silently.
@@ -106,8 +106,8 @@ Interactive setup and review
   Profile and Project preparation. The overlay is optional internal helper
   input supplied only by Interactive; direct invocations retain their current
   behavior. Build review and saved artifacts from the same validated final
-  Profile. Design an optional report projection separately; the final Profile
-  is not itself a safe diagnostic-report payload.
+  Profile. Use the separately defined report projection; the final Profile is
+  not itself a safe diagnostic-report payload.
 - Keep the existing Project Profile-then-Template order, renderer capability
   advisories, and save/render/recovery lifecycle. Reuse the completed renderer
   evidence unless effective HTML/CSS or render behavior changes.
@@ -115,32 +115,55 @@ Interactive setup and review
 ## Prerequisite Contract Gate
 
 Complete this gate before starting Phase 1. The saved Profile retains exact
-page text, but the [research](../researches/research-2026-09-22-markdown-pdf-interactive-codex-page-information.md#open-report-data-contract)
-has not settled what literal text, if any, an optional diagnostic report may
-retain. Page information needs no generated filesystem path. A broader global
-path redactor is not a substitute for deciding the report payload.
+page text. The [research](../researches/research-2026-09-22-markdown-pdf-interactive-codex-page-information.md#report-data-contract)
+defines a metadata-only page-information report projection and a safe summary
+of model results for runs with explicit page information. Page information
+needs no generated filesystem path. The shared path redactor does not decide
+the payload.
 
-- [ ] Trace each answer from collection through consent, model input, final
+- [x] Trace each answer from collection through consent, model input, final
       Profile, candidate review, and optional report. Mark which surfaces need
       exact text and which may retain a durable copy.
-- [ ] Decide the optional Profile and Project report fields, including
+- [x] Decide the optional Profile and Project report fields, including
       requested versus effective values, model-proposed text, redaction or
-      omission rules, and compatibility with existing readers. Keep unrelated
-      report fields unchanged. Test the chosen contract with synthetic content
-      without introducing real local paths.
-- [ ] Decide whether local consent and candidate review show exact entered
-      page text with terminal controls escaped or an explicitly masked preview.
-      Keep this separate from report retention and color styling.
-- [ ] Define the first rendered-PDF review after Phase 3, the saved-recipe
+      omission rules, and compatibility with existing readers. Define
+      synthetic acceptance cases here and run them when Phase 4 adds the
+      projection; verify existing reader compatibility at this gate without
+      introducing real local paths.
+- [x] Show entered page text in local consent and entered or model-proposed
+      text in candidate review, with terminal controls and Unicode formatting
+      characters escaped. Keep this separate from report retention and color
+      styling.
+- [x] Define the first rendered-PDF review after Phase 3, the saved-recipe
       comparison after Phase 4, and the final Phase 5 matrix. Identify the
       page snapshots to show before owned test artifacts are cleaned.
-- [ ] Review the revised research and plan contract before implementation.
+- [x] Review the revised research and plan contract before implementation.
       Record the decision and its evidence in the single
       [implementation job record](jobs/2026-09-23-markdown-pdf-interactive-codex-page-information.md).
 
 Gate: report and local review text boundaries, terminal presentation, and
 rendered-artifact checkpoints are explicit and reviewable. No implementation
 phase begins while a text-retention or display decision is open.
+
+The gate data flow is: exact typed answers in Interactive setup and consent;
+exact structured input to Codex after consent when a request is needed; exact
+validated final Profile for review, save, and render; terminal-safe escaped
+text in local review; metadata-only page-information fields in optional
+reports. For explicit page-information runs, optional reports reduce model
+results to typed metadata and omit raw model prose and patch values. Existing
+free-form intent and font-hint report fields keep their current retention;
+they are separate user input and may independently repeat page text.
+
+Phase 4 acceptance cases use synthetic label and slot markers, including ESC,
+a C1 control, a bidirectional formatting control, and Unicode line and
+paragraph separators. Assert exact Profile round trips,
+readable escaped local reviews, no structured page marker in report
+page-information or model-result fields even when the model echoes it, and
+accurate requested/effective metadata after clear, retain, OFF, and failure.
+Run an independent case with the marker in existing free-form intent to prove
+that field's current retention is unchanged. The Profile version-4 reader must
+accept the additive projection, and Project bundle recognition must still
+identify its report. Phase 1–3 checks cover their own earlier boundaries.
 
 ## Terminal And Render Evidence Rules
 
@@ -150,10 +173,11 @@ helper for new terminal output. Style only fixed labels or headings; style
 words, spacing, and stream routing when ANSI is removed. Runtime color,
 `NO_COLOR` including an empty value, global `--no-color`, and each target
 stream's TTY state control eligibility; `FORCE_COLOR` does not override them.
-Escape terminal controls in untrusted text before display. Do not let report
-redaction silently decide the local preview policy. Keep ANSI out of JSON,
-reports, saved recipes, and PDFs. Check these rules as each new terminal
-surface appears, including setup and consent in Phases 1–2, conflict warnings
+Escape control and formatting characters, including C0/C1, bidirectional
+controls, and Unicode line and paragraph separators, in untrusted text before
+display. Do not mask path-like page text in local consent or review. Keep ANSI
+out of JSON, reports, saved recipes, and PDFs. Check these rules as each new
+terminal surface appears, including setup and consent in Phases 1–2, conflict warnings
 in Phase 3, and candidate and handoff review in Phase 4.
 
 At the Phase 3, 4, and 5 gates, render real PDFs from synthetic Markdown and
@@ -168,6 +192,18 @@ generated media or record local artifact paths in public docs. The unified job
 records public-safe visual conclusions and cleanup, not the images themselves.
 If rendering is unavailable or a visual mismatch remains, record the limit or
 finding and leave the corresponding phase gate open.
+
+The snapshot set is fixed before implementation:
+
+| Gate | Pages to show | Evidence to compare |
+| ---- | ------------- | ------------------- |
+| Phase 3 | Cover, ToC, first body, and later body pages from an accepted Profile or Project, including a retained occupied number slot | Extracted number labels and repeating text; visible placement; retained slot text absent where numbering owns its position |
+| Phase 4 | Corresponding body pages from a saved recipe with numbers ON and a one-render number-OFF override | Same saved page text and styling; numbers absent only in the override; saved recipe unchanged |
+| Phase 5 | Representative cover, ToC, and body pages from the integrated matrix and built CLI smoke | Page-role boundaries, number scope, header/footer positions, and any visual mismatch |
+
+Show labeled PNGs inline at each gate before clearing it. Keep those review
+copies through the user discussion, then clean only generated files owned by
+the verification run.
 
 ## Implementation Phases
 
@@ -304,11 +340,12 @@ snapshots have been reported; no direct helper or renderer contract changes.
       Project repeating text, actual preparation modes, and a warning when
       retained reserved text cannot render while numbering owns that slot.
 - [ ] Carry sparse answers through dry-run and success/failure handling. Add
-      only the optional report fields decided at the prerequisite gate; do not
-      copy requested or final Profile text into a report by default. Keep
-      report additions field-specific and compatible with existing readers;
-      do not recursively transform unrelated report fields or change the
-      shared redactor to compensate for an undefined payload. Describe actual
+      the metadata-only page-information report fields decided at the gate;
+      do not copy requested or final Profile text into them. On runs with
+      explicit page information, project model results to typed metadata and
+      omit raw patch values and model prose from Profile and Project reports.
+      Keep unrelated input fields and runs without page information unchanged;
+      do not change the shared redactor. Verify existing readers and actual
       deterministic/model work. Execution settings remain command-local and
       absent from saved recipes.
 - [ ] Test candidate reuse and invalidation, regeneration, consent text,
