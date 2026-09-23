@@ -120,7 +120,8 @@ available; earlier phases exercise the new choices through internal harnesses.
 
 Complete this gate before starting Phase 1. The saved Profile keeps exact
 page text, and Codex receives it after consent only when a request is needed.
-The optional diagnostic report omits the entered page-number label and
+The existing optional Profile or Project Codex diagnostic report gains
+page-information metadata but omits the entered page-number label and
 header/footer text, including echoes in Codex results. The
 [research](../researches/research-2026-09-22-markdown-pdf-interactive-codex-page-information.md#report-data-contract)
 defines the allowed metadata. Page information needs no generated filesystem
@@ -130,10 +131,10 @@ path or change to the shared path redactor.
       Profile, candidate review, and optional report. Mark which surfaces need
       exact text and which may retain a durable copy.
 - [x] Decide the optional Profile and Project report fields, including
-      requested versus effective values, model-proposed text, redaction or
-      omission rules, and compatibility with existing readers. Define
-      synthetic acceptance cases here and run them when Phase 4 adds the
-      projection; verify existing reader compatibility at this gate without
+      requested versus validated final stored values, model-result omission,
+      and structural reader compatibility. Define synthetic acceptance cases
+      here and run them when Phase 4 adds the projection; verify existing
+      reader compatibility at this gate without
       introducing real local paths.
 - [x] Show entered page text in local consent and entered or model-proposed
       text in candidate review, with terminal controls and Unicode formatting
@@ -151,8 +152,13 @@ rendered-artifact checkpoints are explicit and reviewable. No implementation
 phase begins while a text-retention or display decision is open.
 
 Local consent and review display the text with terminal controls escaped. For
-explicit page-information runs, reports keep choice and result metadata but
-omit the collected text and any Codex echo. Existing free-form intent and
+explicit page-information runs, the existing optional reports keep choice and
+final stored metadata but mark model-result detail omission. They copy no
+structured page text or Codex echo. Repeating-content positions describe
+stored Profile slots, not rendered text; retained number-slot conflicts are
+marked. Do not assign provenance to stored slots in the report; local review
+may show it when verified. The omission marker follows actual model attempts,
+including failure before or after a call. Existing free-form intent and
 font-hint report fields keep their current retention; users can independently
 repeat the same text there. Local review must use the in-memory preparation
 and validated Profile, not the text-limited optional report, so report
@@ -161,13 +167,17 @@ omissions do not remove visible warnings or fallback details.
 Phase 4 acceptance cases use synthetic label and slot markers, including ESC,
 a C1 control, a bidirectional formatting control, and Unicode line and
 paragraph separators. Assert exact Profile round trips, readable escaped
-local reviews, no structured page marker in report page-information or
-model-result fields even when the model echoes it, and accurate
-requested/effective metadata after clear, retain, OFF, and failure.
-Run an independent case with the marker in existing free-form intent to prove
+local reviews, absence of a marker placed only in structured page text from the
+entire serialized report even when the model echoes it, an omission marker
+consistent with actual calls across deterministic, pre-call failure, attempted
+failure, and success paths, and accurate requested/final stored metadata after
+clear, retain, OFF, and failure. Assert that a retained number-slot conflict
+is not called rendered and no slot provenance is inferred.
+Run an independent case with a different marker in free-form intent to prove
 that field's current retention is unchanged. The Profile version-4 reader must
 accept the additive projection, and Project bundle recognition must still
-identify its report. Phase 1–3 checks cover their own earlier boundaries.
+identify its report. Direct-command reports retain their current behavior.
+Phase 1–3 checks cover their own earlier boundaries.
 
 ## Terminal And Render Evidence Rules
 
@@ -214,8 +224,8 @@ the verification run.
 Keep the new page-information path out of the normal Interactive save/render
 flow while its contracts are incomplete. Phases 1–2 exercise collection,
 signals, and consent through focused harnesses; Phase 3 uses the internal path
-to validate, save, and render exact Profile/Project artifacts without writing
-an optional page-information report. Phase 4 connects the path to the normal
+to validate, save, and render exact Profile/Project artifacts without retaining
+an optional Codex diagnostic report. Phase 4 connects the path to the normal
 Interactive lifecycle only after candidate review and the report omission
 contract pass their checks. Direct commands retain their existing behavior.
 
@@ -309,8 +319,8 @@ the new page-information path.
       preserving header/footer styles and `fonts.pageChrome.default`.
 - [ ] Apply the step to standalone Profile preparation before acceptance or
       write. Apply it inside the Project Profile phase before Template
-      preparation, binding, or write. Do not persist an optional report from
-      this internal path; Phase 4 owns its safe projection. Normalize and
+      preparation, binding, or write. Do not retain an optional Codex diagnostic
+      report from this internal path; Phase 4 owns its safe projection. Normalize and
       validate the same final Profile used by all those consumers; retain
       existing patch, capability-advisory, and diagnostic behavior. Authoring
       itself does not probe the installed renderer; the phase render check is
@@ -340,8 +350,8 @@ Phase gate: an internally accepted Profile matches every explicit answer after
 normalization; unresolved conflicts cannot reach acceptance or Project Template
 preparation; Project Template preparation consumes that Profile; bundle and
 saved Profile values agree; the first rendered pages and extracted text match
-that Profile and their snapshots have been reported; the internal path writes
-no optional page-information report; page-information answers remain
+that Profile and their snapshots have been reported; the internal path retains
+no optional Codex diagnostic report; page-information answers remain
 inaccessible through normal Interactive save/render; no direct helper or
 renderer contract changes.
 
@@ -364,13 +374,16 @@ renderer contract changes.
       fallback and unsupported-direction details. Escape controls in page
       text without path masking.
 - [ ] Carry sparse answers through dry-run and success/failure handling. Add
-      the metadata-only page-information report fields decided at the gate;
-      do not copy requested or final Profile text into them. On runs with
-      explicit page information, project model results to typed metadata and
-      omit raw patch values and model prose from Profile and Project reports.
-      Keep unrelated input fields and runs without page information unchanged;
-      do not change the shared redactor. Verify existing readers and actual
-      deterministic/model work. Execution settings remain command-local and
+      the requested and final stored page-information metadata decided at the
+      gate to the existing optional Profile and Project reports. Mark model
+      details as omitted on explicit page-information runs; retain only safe
+      status, field names, and fixed codes instead of raw model values
+      or prose. Keep independent input fields and runs without explicit page
+      information unchanged; do not change the shared redactor. Validate the
+      optional section in the Profile reader while accepting old version-4
+      reports without it; test the Project writer projection and bundle
+      recognition, plus actual deterministic/model
+      work. Execution settings remain command-local and
       absent from saved recipes.
 - [ ] Test candidate reuse and invalidation, regeneration, consent text,
       the decided report projection and privacy, no-usable candidates,
@@ -389,7 +402,7 @@ renderer contract changes.
       Phase 4 closeout; keep review copies until that discussion closes.
 
 Phase gate: review and saved output use the same validated Profile, and any
-reported effective fields agree with it; request claims match real calls; no
+reported final stored fields agree with it; request claims match real calls; no
 unaccepted candidate or page text beyond the decided report contract is
 written; saved-recipe and override renders have been visually reported;
 existing cleanup and recovery behavior still applies.

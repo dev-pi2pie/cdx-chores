@@ -59,38 +59,73 @@ exactly. Codex receives that text only after consent and only when a request
 is needed. These answers are page text, not filesystem paths; the feature does
 not generate paths from them.
 
-The optional diagnostic report omits the collected page-number label and
-header/footer text, including echoes in Codex results. For Interactive Profile
-and Project runs with an explicit page-information choice, it may record only
-this page-information metadata:
+The report is the existing optional Codex diagnostic report for a Profile or
+Project, not a separate page-information artifact. When either group has an
+explicit answer, add the same small page-information section to either
+report:
 
-| Part | Allowed report values |
-| ---- | --------------------- |
-| Requested | Unspecified/OFF/ON per group; when numbering is ON, selected scope, count origin, and position plus derived start/increment of 1; selected repeating-content position IDs; explicit conflict choice |
-| Effective | Validated enablement, number scope, count origin, start, increment, and position; occupied repeating-content position IDs; retained-slot outcome |
-| Provenance and execution | Explicit, inherited, default, or Codex-selected source per group; actual deterministic/model mode and request count |
+| Group | Requested choice | Final metadata (when a Profile is validated) |
+| ----- | ---------------- | -------------------------------- |
+| Page numbers | Unspecified/OFF/ON; for ON, selected scope, count origin, and position with derived start/increment of 1 | Enabled state, scope, count origin, start, increment, and position. Details retained while OFF are stored but inactive. |
+| Repeating content | Unspecified/OFF/ON; for ON, selected header/footer positions | Positions with nonempty text stored in the final Profile. Record a reserved number position and its clear/retain outcome when relevant. |
 
-If no usable Profile exists, omit effective values. If both groups are
-unspecified, omit the page-information section. The final Profile remains the
-rendering authority.
+The stored positions do not claim that text rendered. A retained reserved slot
+remains in the Profile while page numbering owns its position. If no usable
+Profile exists, omit final metadata. If both groups are unspecified, omit the
+section. Do not report content provenance for the group or individual slots:
+slots can mix entered, inherited, and Codex-selected text, and position alone
+does not establish its source. The requested state records the explicit choice,
+not the origin of every stored value. Local review may show verified
+provenance. Existing report fields describe execution, so the new section does
+not repeat request modes or counts.
 
-Existing Profile reports can store Codex patch values and prose; Project
-reports can store Codex phase prose. For a run with explicit page information,
-replace those model-result fields with status, counts, affected field names,
-and fixed reason codes, without raw values or prose, so an echo cannot copy
-page text into the report. Keep runs without explicit page information
-unchanged. Existing free-form intent and font-hint report fields also keep
-their behavior: if the user independently repeats the same text there, those
-fields retain it. Do not copy structured page answers into them or change the
-shared path redactor.
+The new page-information and model-result fields never copy the collected or
+final page-number label or header/footer text, nor any preview, length, hash,
+or raw Profile fragment. Codex can echo that text in existing report fields.
+For explicit page-information runs, use this projection:
 
-The Profile report reader accepts additive fields at its current artifact
-version. The Project report has no full reader; bundle recognition checks its
-artifact type. Keep those existing checks and report versions. Phase 4 must
-test the projection with synthetic page text, a model echo in patch values and
-prose, and a failure path. Verify the report omission and exact saved Profile.
-Test existing intent retention separately so the privacy assertion does not
-silently change its contract.
+| Report | Keep | Omit or replace with fixed, value-free detail |
+| ------ | ---- | ---------------------------------------------- |
+| Profile | Result status, selected preset, changed top-level field names, and failure kind | Full `decision`, accepted patch and font values, unmatched-direction text, warning/fallback prose, and raw failure messages |
+| Project | Project and phase modes, validation status, and fixed diagnostic condition IDs | Phase/project fallback and warning prose, unsupported-direction text, raw validation and handoff messages, and diagnostic contexts |
+
+For Project reports, retain diagnostic condition IDs in the value-free summary
+and leave persisted `handoff.diagnostics` empty on these runs; local review
+uses the original diagnostics. Keep required warning and direction arrays
+present but empty when their source text is withheld. The presence of the
+page-information section identifies this value-free projection, including
+deterministic runs; empty arrays do not claim that no warnings occurred.
+
+Set `pageInformation.modelResultDetails` from actual execution: `not-requested`
+when no model call was attempted, including failure before a call; `omitted`
+when any call was attempted, including an unsuccessful one. Result status and
+failure kind distinguish success from failure. Keep required messages
+structurally valid with fixed text; never serialize original prose in those
+placeholders. Local consent and review use the original in-memory result so
+report omission does not remove
+feedback there.
+
+This is a field-specific projection for Interactive runs with explicit page
+information. Direct commands and runs with both groups unspecified keep their
+existing reports. Independently entered intent and font hints retain their
+current report behavior, even if a user repeats the same words there. Do not
+copy structured page answers into those fields or change the shared path
+redactor.
+
+Keep the Profile report at version 4: its reader accepts an absent optional
+decision and additional metadata. Keep the Project report discriminator; it
+has no full reader. This preserves structural reading, while the marker makes
+the deliberate loss of model prose visible to consumers that inspect it.
+Existing consumers may no longer receive that prose on explicit
+page-information runs. In Phase 4, validate the new optional section when the
+Profile reader encounters it while continuing to accept older version-4
+reports without the section. Check the Project writer's projection directly;
+bundle recognition only checks its discriminator. Test deterministic, model,
+and failure cases, direct commands, and a model echo in patches and prose.
+Use one synthetic marker only in structured page text and assert it is absent
+from the entire serialized report. Separately test an independent intent
+marker that remains in its existing input field. Assert that the saved Profile
+keeps the exact page text.
 Record the gate evidence in the single
 [implementation job record](../plans/jobs/2026-09-23-markdown-pdf-interactive-codex-page-information.md).
 

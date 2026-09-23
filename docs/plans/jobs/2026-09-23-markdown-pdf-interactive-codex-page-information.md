@@ -14,9 +14,9 @@ Update this job as each phase reaches its gate; the linked plan owns the full
 checklist and product contract.
 
 Phases 1–2 verify the new collection and preparation paths internally. Phase 3
-verifies exact saved and rendered artifacts without an optional page-information
-report. The normal Interactive save/render path accepts the new choices only
-after Phase 4 verifies local review and report omission.
+verifies exact saved and rendered artifacts without retaining an optional Codex
+diagnostic report. The normal Interactive save/render path accepts the new
+choices only after Phase 4 verifies local review and report omission.
 
 ## Prerequisite Contract Gate
 
@@ -31,16 +31,20 @@ after Phase 4 verifies local review and report omission.
 - [x] Review the research and plan direction, then record the decision here.
 
 The saved Profile keeps exact page text. Codex receives it after consent only
-when a request is needed. The optional diagnostic report omits the collected
-page-number label and header/footer text, including Codex echoes. For
-explicit page-information runs, it stores choice/result metadata instead of
-raw model patch values or prose. Existing independent free-form input fields
-keep their current retention; the shared path redactor is unchanged.
+when a request is needed. The existing optional Profile and Project diagnostic
+reports gain requested-choice and validated final stored metadata: number
+settings, selected and stored header/footer positions, and reserved-slot
+clear/retain outcome. The new fields do not copy labels, repeating text,
+previews, or rendering claims, and they do not infer slot provenance. An attempt-based
+omission marker and safe result summary replace raw Codex result values and
+prose on these runs; independently entered intent and font hints retain
+their existing behavior. The shared path redactor is unchanged.
 
-The existing Profile version-4 reader accepted a synthetic additive metadata
-field. Project bundle recognition checks its report discriminator; it has no
-full report reader. Phase 4 will run the synthetic marker, model-echo,
-failure, and existing-intent cases against the implemented projection.
+The Profile version-4 reader accepts additive fields and an absent optional
+decision; the Project bundle recognizes its existing report discriminator.
+These are structural compatibility checks, not a promise to retain model
+prose. Phase 4 will test the omission marker, synthetic model echoes,
+failure, direct-command compatibility, and independently entered intent.
 
 Local consent and candidate review show exact page text with terminal control
 and formatting characters escaped, including bidirectional controls. The
@@ -53,8 +57,10 @@ generated files.
 Contract review added C1 and Unicode separator display cases and an enabled
 number baseline for the Phase 4 saved-recipe comparison. The prerequisite gate
 also requires Project handoff and font review to use in-memory results so
-reduced report fields do not remove visible feedback. The gate is complete at
-the contract level. Phase 1 implementation has not started.
+reduced report fields do not remove visible feedback. The revised report
+contract distinguishes stored positions from rendered output, omits slot
+provenance, and ties the omission marker to actual model attempts. The gate is
+complete at the contract level. Phase 1 implementation has not started.
 
 ## Phase Progress
 
