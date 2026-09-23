@@ -417,18 +417,18 @@ existing save and recovery behavior still applies.
 
 ### Phase 5: Integrated Validation
 
-- [ ] Run a focused matrix for both groups' unspecified/OFF/ON states across
+- [x] Run a focused matrix for both groups' unspecified/OFF/ON states across
       fresh and revised Profile and Project paths. Cover page-information-only
       with and without a base, occupied-slot clear/retain, literal text and
       placeholders, font preservation including OFF, and Project Template
       consumption of the final Profile.
-- [ ] Cover ON/OFF-to-unspecified for each group with the other group intact,
+- [x] Cover ON/OFF-to-unspecified for each group with the other group intact,
       last-signal removal, and injected model decisions that put a number over
       explicit text or text under an explicit number. Assert that unresolved
       conflicts start no Template preparation and write no artifact, that local
       resolutions preserve unrelated fields, and that changed conflict text or
       position requires a fresh decision.
-- [ ] Prove Template-only, direct Profile/Project commands, Profile
+- [x] Prove Template-only, direct Profile/Project commands, Profile
       initialization defaults, and the Interactive one-render override remain
       compatible. Reuse existing page-role and renderer evidence unless the
       implementation changes effective HTML/CSS or rendered behavior; rerun
@@ -437,7 +437,7 @@ existing save and recovery behavior still applies.
       TypeScript, lint, format, build, and `git diff --check`. Run the bounded
       built-CLI smoke below and distinguish its deterministic, model, and PDF
       outcomes from automated coverage.
-- [ ] Complete the wider page-role render matrix. Compare extracted text and
+- [x] Complete the wider page-role render matrix. Compare extracted text and
       representative rasterized pages; record any visual mismatch. Include a
       Project with an assigned cover image whose saved Profile has
       `cover.style: report`; verify that the image cover has no built-in blue

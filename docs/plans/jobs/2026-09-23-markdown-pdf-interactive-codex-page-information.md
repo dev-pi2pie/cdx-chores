@@ -65,7 +65,7 @@ Interactive authoring and verified its PDF comparison and commit range.
 | Phase 2 | Complete | Signals, consent, and requests |
 | Phase 3 | Complete | Final Profile, Project handoff, first PDF render review |
 | Phase 4 | Complete | Candidate lifecycle, report projection, PDF comparison, and commit-range review |
-| Phase 5 | Pending | Integrated matrix, built CLI, final visual review |
+| Phase 5 | In progress | Formal matrix and deterministic built-CLI/PDF checks passed; live model smoke remains open |
 | Phase 6 | Pending | Guide alignment and documentation closeout |
 
 For each phase, record the exact commit range, checks, accepted review fixes,
@@ -164,6 +164,34 @@ raw artifacts out of this record.
   accepted test was added and the widened exact-range review found no material
   gap. Initial conflict revision and regeneration keep their distinct
   navigation paths.
+
+### Phase 5: Integrated Validation
+
+- **Starting point:** `4ce46c6e`. The phase gate remains open.
+- **Formal coverage:** Added the nine page-number and repeating-content choice
+  combinations, removal of either explicit choice while preserving the other,
+  and the Project image-cover case with a saved report-style Profile. A review
+  finding added a Project handoff assertion: Template preparation sees the
+  bounded final-Profile summary while exact page text stays Profile-owned.
+  Existing lifecycle and renderer evidence covers revisions, conflicts, direct
+  commands, and page roles.
+- **Checks:** The managed Unit, Application, Codex, and Pandoc suites passed
+  with 1,304, 2,082, 2, and 3 cases respectively. TypeScript, lint, format,
+  build, and whitespace checks passed. After the handoff assertion, the
+  affected managed Application suite passed again with 2,082 cases.
+- **Built CLI:** A page-information-only Profile followed the deterministic
+  path without a model request. Reloading its saved recipe confirmed numbers
+  ON, six cleared content slots, and preserved page-chrome styles and font.
+  The model-backed Project smoke has not been verified in this checkpoint.
+- **PDF review:** A saved Profile and a deterministic Project with an assigned
+  cover image each rendered seven pages. Extracted text and representative
+  cover, ToC, first-body, and later-body images showed no page labels on the
+  cover or ToC and body labels 1–5 without overlap. The text report cover had
+  the built-in blue bar; the image cover omitted it while its saved Profile
+  retained report style, as expected.
+- **Verdict:** Constrain. The live model-backed Project, its optional report,
+  and the final exact-range review remain open before the Phase 5 gate can
+  close.
 
 ## Related Research
 
