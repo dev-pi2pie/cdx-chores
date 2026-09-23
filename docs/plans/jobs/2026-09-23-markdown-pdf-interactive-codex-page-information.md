@@ -1,6 +1,7 @@
 ---
 title: "Markdown PDF Interactive Codex page information implementation"
 created-date: 2026-09-23
+modified-date: 2026-09-23
 status: in-progress
 agent: codex
 plan: ../plan-2026-09-23-markdown-pdf-interactive-codex-page-information.md
@@ -65,7 +66,8 @@ Interactive authoring and verified its PDF comparison and commit range.
 | Phase 2 | Complete | Signals, consent, and requests |
 | Phase 3 | Complete | Final Profile, Project handoff, first PDF render review |
 | Phase 4 | Complete | Candidate lifecycle, report projection, PDF comparison, and commit-range review |
-| Phase 5 | Complete | Constrain: integrated checks and exact code range review passed; Project text-cover direction remains open |
+| Phase 5 | Complete | Constrain: integrated checks and exact code range review passed; Project text-cover constraint found |
+| Phase 5 follow-up | Pending | Resolve Project cover signals and managed text-cover synthesis |
 | Phase 6 | Pending | Guide alignment and documentation closeout |
 
 For each phase, record the exact commit range, checks, accepted review fixes,
@@ -206,16 +208,23 @@ raw artifacts out of this record.
   reached the existing fail-closed compatibility check and wrote no Project.
   The Template helper supports image covers, while Project validation
   requires a live cover element for that Profile setting. The controlled
-  cover-disabled run succeeded; the product direction for this unsupported
-  combination remains to be decided.
+  cover-disabled run succeeded. The Project text-cover contract is tracked in
+  the Phase 5 follow-up below.
 - **Review:** A focused review found that materialization-only state coverage
   did not prove saved Profile/Project combinations, so the application matrix
   was added. A later review asked for direct revised-save proof, so Profile
   and Project lifecycle regressions were added. Final test, maintainability,
   and security reviews of the exact code/test range found no remaining
   material issue; accepted fixes passed affected checks.
-- **Verdict:** Constrain. Phase 5 validation is complete; the Project
-  text-cover contract is an explicit open direction for Phase 6.
+- **Verdict:** Constrain. Phase 5 validation is complete; Project text-cover
+  support remains for its follow-up before Phase 6 documentation.
+
+### Phase 5 Follow-up: Project Cover Signals
+
+- **Status:** Pending. The plan now tracks cover-image precedence, text-cover
+  synthesis without an image, conflicting choices, Project compatibility,
+  representative PDF checks, and an exact follow-up range review. Record
+  implementation evidence here after those checks complete.
 
 ## Related Research
 

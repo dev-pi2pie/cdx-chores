@@ -15,10 +15,10 @@ Template preparation. The [research](../researches/research-2026-09-22-markdown-
 answer, default, and page-role contract; this plan organizes implementation
 and evidence.
 
-This work adds no direct command flags, Profile fields, renderer behavior,
-Template-owned page settings, or model-generated clarification round. The
-existing Interactive one-render page-number override remains separate from
-reusable Profile policy.
+The page-information work adds no direct command flags, Profile fields,
+renderer behavior, Template-owned page settings, or model-generated
+clarification round. The existing Interactive one-render page-number override
+remains separate from reusable Profile policy.
 
 ## Starting Boundary
 
@@ -494,16 +494,48 @@ Project preparation, their saved artifacts, and the render handoff. The Phase
 from actual results, including any unavailable model or renderer path and the
 visual-review outcome.
 
+#### Phase 5 Follow-up: Project Cover Signals
+
+- [ ] Resolve cover signals according to this table before guide closeout:
+
+| Image | Interpreted intent | Base cover | Result |
+| ----- | ------------------ | ---------- | ------ |
+| Yes | None, generic, or image cover | Not OFF | Image cover |
+| No | Generic or text-only cover | Not OFF | Text cover |
+| No | None | ON | Text cover |
+| No | None or no-cover | OFF or absent | No cover |
+| Any | Conflicting choices | Any | Revise setup; direct command fails |
+
+Conflicts include image with text-only/no-cover intent, image intent without an
+image, cover intent with base OFF, and no-cover intent with base ON. Image and
+base settings are known at setup; prose intent is interpreted after the Profile
+phase. Never silently override a choice.
+
+- [ ] Make the no-image text-cover case usable in a managed Project Template
+      while keeping the final Profile's `cover.enabled`, `cover.style`,
+      `cover.fields` (title, subtitle, author, company, date), and
+      `titleBlock.metadataTitle` authoritative. Verify exactly one live
+      `.pdf-cover`, resolved cover text, and no unintended duplicate body
+      title. Check direct Template behavior and retain final Project
+      compatibility validation. Catch setup-known conflicts before consent;
+      recheck the final Profile before Template preparation after any Profile
+      model decision.
+- [ ] Verify the cover decision cases, saved Project handoff, and representative
+      portrait and landscape PDF renders. Record the checks and exact reviewed
+      follow-up commit range in the unified job before Phase 6 begins.
+
 ### Phase 6: Guidance And Lifecycle Closeout
 
-- [ ] Decide the Project contract for an enabled Profile text cover without a
-      cover image, which Phase 5 found cannot produce a usable managed Template.
-      Either support that cover in Project synthesis or reject the unsupported
-      combination before a Codex request. Verify the chosen behavior before
-      describing it in the guides.
 - [ ] Compare the current Interactive, Profile helper, and Project helper
-      guides, CLI help, and examples with the Phase 5 validated behavior. Keep
-      Markdown PDF Usage as the canonical Profile/page-number contract.
+      guides, CLI help, and examples with the Phase 5 and cover follow-up
+      results. Keep Markdown PDF Usage as the canonical Profile/page-number
+      contract.
+- [ ] In Markdown PDF Usage, show how to choose a preset, page size
+      (`A3`, `A4`, `A5`, `Letter`, `Legal`, or `Tabloid`), portrait or landscape
+      orientation, and margins. Add a direct landscape render example and a
+      reusable Profile example; explain that render-time flags override
+      matching Profile settings. In the Interactive guide, distinguish Formal
+      Guide layout choices from Codex intent and reviewed Profile output.
 - [ ] In Markdown PDF Usage, explain that the built-in text cover with
       `cover.style: report` adds a fixed blue left bar, while
       `cover.style: plain` omits it. A cover image supplied to the Template or
@@ -523,11 +555,12 @@ visual-review outcome.
 - [ ] Add concise PDF-intent prompt references for a built-in report text cover
       and an image cover. Name each artifact owner and expected visible result,
       including the known case of an image cover paired with saved
-      `cover.style: report`.
-- [ ] Check changed wording and examples against the Phase 5 built CLI and
-      recorded validation results. If a mismatch exposes a product defect,
-      correct the affected implementation and rerun its gates before
-      describing the behavior as shipped.
+      `cover.style: report`. Explain that selecting a cover image is a cover
+      signal even when intent does not mention one, and that explicit cover
+      intent without an image uses a text cover after the follow-up is verified.
+- [ ] Check changed wording and examples against the Phase 5 and cover
+      follow-up validation results. Route any product mismatch back to the
+      implementation follow-up before describing the behavior as shipped.
 - [ ] Link the completed unified job record from this plan and the research.
       Record public-safe validation conclusions and documentation decisions,
       then set the guide, research, and plan statuses from the evidence. Keep
@@ -540,6 +573,7 @@ visual-review outcome.
 Phase gate: current guides describe the validated behavior with correct
 surface ownership, every required implementation/evidence record is linked,
 documentation checks and review pass, and statuses match the achieved state.
+Phase 6 changes documentation only.
 
 ## Unified Job Record
 
@@ -550,8 +584,9 @@ for the whole plan. Update its phase entries as work proceeds: starting
 boundary, affected contract, focused checks, exact reviewed change range,
 accepted fixes, public-safe visual verdict, and phase verdict.
 Its Phase 5 entry owns built-CLI smoke outcomes and model or renderer
-limitations; Phase 6 owns guide review and lifecycle decisions. Do not create
-separate phase job files.
+limitations; its short Phase 5 follow-up entry owns the cover checks and exact
+reviewed change range. Phase 6 owns guide review and lifecycle decisions. Do
+not create separate phase job files.
 
 Keep machine-specific setup and raw report contents out of public records.
 Move this plan from `draft` to `active` when implementation starts; mark it
