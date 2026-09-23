@@ -45,6 +45,9 @@ reusable Profile policy.
 - `codex-execution-configuration.md` already documents the command-local
   `--codex-model` option. It selects a model for actual requests; it does not
   cause a deterministic path to call Codex.
+- [CLI Output And Color](../guides/cli-output-and-color.md) owns the existing
+  per-stream picocolors rules. New Markdown PDF setup, consent, review, and
+  warning lines must retain canonical plain text and current stream routing.
 
 ## Product Contract
 
@@ -91,7 +94,8 @@ Interactive setup and review
 
 - Keep unspecified answers absent in typed Interactive setup. Store explicit
   OFF/ON and entered text separately from free-form intent, so omission cannot
-  become a default or an implicit clear during revision, requests, or reports.
+  become a default or an implicit clear during revision or requests. Any
+  reported state follows the separately decided report projection.
 - Reuse Formal Guide prompt controls and Profile compilation where their
   behavior matches. Give explicit Interactive OFF its own clearing policy so
   the existing Formal Guide reserved-slot exception does not change silently.
@@ -101,12 +105,69 @@ Interactive setup and review
 - Apply exact answers once at the Profile boundary shared by standalone
   Profile and Project preparation. The overlay is optional internal helper
   input supplied only by Interactive; direct invocations retain their current
-  behavior. Build review, reports, and saved artifacts from the same validated
-  final Profile.
+  behavior. Build review and saved artifacts from the same validated final
+  Profile. Design an optional report projection separately; the final Profile
+  is not itself a safe diagnostic-report payload.
 - Keep the existing Project Profile-then-Template order, renderer capability
-  advisories, report redaction, and save/render/recovery lifecycle. Reuse the
-  completed renderer evidence unless effective HTML/CSS or render behavior
-  changes.
+  advisories, and save/render/recovery lifecycle. Reuse the completed renderer
+  evidence unless effective HTML/CSS or render behavior changes.
+
+## Prerequisite Contract Gate
+
+Complete this gate before starting Phase 1. The saved Profile retains exact
+page text, but the [research](../researches/research-2026-09-22-markdown-pdf-interactive-codex-page-information.md#open-report-data-contract)
+has not settled what literal text, if any, an optional diagnostic report may
+retain. Page information needs no generated filesystem path. A broader global
+path redactor is not a substitute for deciding the report payload.
+
+- [ ] Trace each answer from collection through consent, model input, final
+      Profile, candidate review, and optional report. Mark which surfaces need
+      exact text and which may retain a durable copy.
+- [ ] Decide the optional Profile and Project report fields, including
+      requested versus effective values, model-proposed text, redaction or
+      omission rules, and compatibility with existing readers. Keep unrelated
+      report fields unchanged. Test the chosen contract with synthetic content
+      without introducing real local paths.
+- [ ] Decide whether local consent and candidate review show exact entered
+      page text with terminal controls escaped or an explicitly masked preview.
+      Keep this separate from report retention and color styling.
+- [ ] Define the first rendered-PDF review after Phase 3, the saved-recipe
+      comparison after Phase 4, and the final Phase 5 matrix. Identify the
+      page snapshots to show before owned test artifacts are cleaned.
+- [ ] Review the revised research and plan contract before implementation.
+      Record the decision and its evidence in the single
+      [implementation job record](jobs/2026-09-23-markdown-pdf-interactive-codex-page-information.md).
+
+Gate: report and local review text boundaries, terminal presentation, and
+rendered-artifact checkpoints are explicit and reviewable. No implementation
+phase begins while a text-retention or display decision is open.
+
+## Terminal And Render Evidence Rules
+
+Use the shared per-stream picocolors wrapper and existing diagnostic-label
+helper for new terminal output. Style only fixed labels or headings; style
+`Warning:` without styling its message or user-entered text. Preserve the same
+words, spacing, and stream routing when ANSI is removed. Runtime color,
+`NO_COLOR` including an empty value, global `--no-color`, and each target
+stream's TTY state control eligibility; `FORCE_COLOR` does not override them.
+Escape terminal controls in untrusted text before display. Do not let report
+redaction silently decide the local preview policy. Keep ANSI out of JSON,
+reports, saved recipes, and PDFs. Check these rules as each new terminal
+surface appears, including setup and consent in Phases 1–2, conflict warnings
+in Phase 3, and candidate and handoff review in Phase 4.
+
+At the Phase 3, 4, and 5 gates, render real PDFs from synthetic Markdown and
+the accepted Profile or Project artifact. Check extracted text and rasterized
+pages, then display labeled PNG snapshots in the conversation before marking
+the phase complete; a text-only claim or a file path is insufficient. Phase 3
+owns the first visual proof, Phase 4 compares a render from the saved recipe
+and one-render override, and Phase 5 owns the wider page-role matrix and
+built-CLI smoke. Keep selected review PNGs available until the visual review
+closes; clean only owned temporary PDFs and scratch meanwhile. Do not commit
+generated media or record local artifact paths in public docs. The unified job
+records public-safe visual conclusions and cleanup, not the images themselves.
+If rendering is unavailable or a visual mismatch remains, record the limit or
+finding and leave the corresponding phase gate open.
 
 ## Implementation Phases
 
@@ -163,9 +224,10 @@ Template setup remains unchanged; Back/Cancel writes nothing.
       Project Template request may depend on Profile-phase directions, keep
       consent before the first possible request and describe possible phases
       without claiming both will run. Report the actual phase modes afterward.
-- [ ] Show the entered text that a request would send. Keep the one session
-      `codexExecution` selection through actual requests, retries, and
-      regeneration; the option alone must not create a request.
+- [ ] Present the entered text a request would send according to the decided
+      local consent display policy. Keep the one session `codexExecution`
+      selection through actual requests, retries, and regeneration; the option
+      alone must not create a request.
 - [ ] Test signal modes, too-low-signal admission, consent/no-consent, request
       counts, model-option forwarding, and Project phase combinations with
       injected runners in the Profile, Project, and Interactive suites.
@@ -197,7 +259,8 @@ before requests and retain current model-selection rules.
       Template preparation, binding, report construction, or write. Normalize
       and validate the same final Profile used by all those consumers; retain
       existing patch, capability-advisory, and diagnostic behavior. Authoring
-      does not probe the installed renderer.
+      itself does not probe the installed renderer; the phase render check is
+      separate QA.
 - [ ] Return unresolved normalized slot conflicts to Interactive revision
       before acceptance or any Project Template preparation. Keep prompts in
       Interactive. Protect explicit text from model-selected numbering; offer
@@ -212,38 +275,59 @@ before requests and retain current model-selection rules.
       conflicting intent and injected Codex decisions, base preservation,
       clear/retain behavior, font-hint coexistence, Profile YAML/JSON round
       trips, and Project Template compatibility.
+- [ ] Render representative accepted Profile and Project results through the
+      existing `md to-pdf` path using synthetic Markdown. Extract page text and
+      inspect PNGs for numbering, repeating content, and retained-slot
+      non-rendering, including relevant cover/ToC/body pages. Show labeled
+      snapshots to the user before Phase 3 closeout and retain the review
+      copies until that discussion closes.
 
 Phase gate: an accepted Profile matches every explicit answer after
 normalization; unresolved conflicts cannot reach acceptance or Project Template
-preparation; Project Template preparation consumes that Profile; report,
-bundle, and saved Profile values agree; no direct helper or renderer contract
-changes.
+preparation; Project Template preparation consumes that Profile; bundle and
+saved Profile values agree, and any reported effective fields agree with them;
+the first rendered pages and extracted text match that Profile and their
+snapshots have been reported; no direct helper or renderer contract changes.
 
 ### Phase 4: Review, Reports, And Candidate Lifecycle
 
 - [ ] Add page information and conflict decisions to setup equality. An edited
       or removed group invalidates its prepared candidate; unchanged setup,
-      Back, and applicable save/render
-      recovery retain it. A one-render page-number override remains transient
-      and does not cause another artifact or Codex preparation.
-- [ ] Show requested answers, explicit versus inherited/Codex-selected
-      provenance, final Profile fields, preparation modes, and material
-      conflicts in Profile and Project candidate review. Show repeating text
-      in the Project handoff summary and warn when retained reserved text will
-      not render while numbering owns that slot.
-- [ ] Carry sparse answers through dry-run, optional reports, success, and
-      failure. Keep report additions compatible with existing readers, apply
-      established redaction, and describe actual deterministic/model work.
-      Execution settings remain command-local and absent from saved recipes.
+      Back, and applicable save/render recovery retain it. A one-render
+      page-number override remains transient and does not cause another
+      artifact or Codex preparation.
+- [ ] Show requested answers and explicit versus inherited/Codex-selected
+      provenance once in Profile and Project candidate review under the
+      decided local text-display policy. Show effective Profile fields and
+      material conflicts in the Profile review and Project handoff summary
+      respectively, without repeating the same values in one review. Include
+      Project repeating text, actual preparation modes, and a warning when
+      retained reserved text cannot render while numbering owns that slot.
+- [ ] Carry sparse answers through dry-run and success/failure handling. Add
+      only the optional report fields decided at the prerequisite gate; do not
+      copy requested or final Profile text into a report by default. Keep
+      report additions field-specific and compatible with existing readers;
+      do not recursively transform unrelated report fields or change the
+      shared redactor to compensate for an undefined payload. Describe actual
+      deterministic/model work. Execution settings remain command-local and
+      absent from saved recipes.
 - [ ] Test candidate reuse and invalidation, regeneration, consent text,
-      report privacy, no-usable candidates, failure/recovery, and save-only
-      versus render lifecycles. Cover Profile and Project review independently.
+      the decided report projection and privacy, no-usable candidates,
+      failure/recovery, and save-only versus render lifecycles. Cover Profile
+      and Project review independently.
       Include late-conflict revision/cancellation, stale resolution rejection,
       and removal that restores base/Codex authority without reusing old overlays.
+- [ ] Render from the saved Profile and Project recipe, then compare the
+      extracted text and representative PNGs with Phase 3. Exercise the
+      transient one-render page-number override and confirm it does not change
+      the saved recipe. Show the saved-artifact and override snapshots before
+      Phase 4 closeout; keep review copies until that discussion closes.
 
-Phase gate: review, reports, and saved output describe the same validated
-Profile; request claims match real calls; no unaccepted candidate or private
-report data is written; existing cleanup and recovery behavior still applies.
+Phase gate: review and saved output use the same validated Profile, and any
+reported effective fields agree with it; request claims match real calls; no
+unaccepted candidate or page text beyond the decided report contract is
+written; saved-recipe and override renders have been visually reported;
+existing cleanup and recovery behavior still applies.
 
 ### Phase 5: Integrated Validation
 
@@ -267,10 +351,14 @@ report data is written; existing cleanup and recovery behavior still applies.
       TypeScript, lint, format, build, and `git diff --check`. Run the bounded
       built-CLI smoke below and distinguish its deterministic, model, and PDF
       outcomes from automated coverage.
+- [ ] Complete the wider page-role render matrix and show a final labeled PNG
+      snapshot report with extraction findings and any visual mismatch.
+      Preserve selected review copies through the discussion, then record
+      scoped cleanup of the owned PDFs, scratch, and review copies.
 - [ ] Review the complete implementation range after the gates and smoke;
       resolve accepted findings and rerun affected checks. Record the final
       validated tip, model and renderer limitations, extraction/visual results,
-      and cleanup state in the Phase 5 job record.
+      and cleanup state in the unified job record's Phase 5 entry.
 
 #### Bounded Built-CLI Smoke
 
@@ -301,25 +389,29 @@ bun run cli interactive --codex-model gpt-6-luna
    Template preparation may be deterministic. Save the bundle and verify
    exact final `profile.yml` content, preserved page-chrome font choice, and
    Template compatibility. Check that the optional report describes the
-   actual requests and follows redaction rules; model selection is not
-   persisted.
+   actual requests and follows the decided payload contract; model selection
+   is not persisted.
 3. Render the saved Project through the normal `to-pdf` handoff with the
    one-render page-number choice set to `Use recipe setting`. Extract the page
-   label and repeating text by page and inspect a representative PDF page for
-   position and overlap. This is a workflow sanity check; existing renderer
-   evidence owns the broader version and page-role matrix.
+   label and repeating text by page and inspect rasterized representative
+   pages for position and overlap. Show the labeled PNGs in the final snapshot
+   report. This is a workflow sanity check; existing renderer evidence owns
+   the broader version and page-role matrix.
 
 Keep the full state and failure matrix in automated tests rather than in long
 terminal sessions. Record only sanitized outcomes, relevant public versions,
-limitations, and cleanup state. Remove only the owned smoke artifacts; do not
-commit generated PDFs, raw requests, reports, or local paths. If a model or
-installed renderer cannot be used, identify that limitation separately from
-automated contract results.
+limitations, and cleanup state. Remove only the owned smoke artifacts after
+capturing selected review PNGs. Keep those PNGs available until the visual
+review closes, then clean them separately. Do not commit generated PDFs,
+images, raw requests, reports, or local paths. If a model or installed
+renderer cannot be used, identify that limitation separately from automated
+contract results.
 
 Phase gate: the automated matrix and built-CLI checks account for Profile and
 Project preparation, their saved artifacts, and the render handoff. The Phase
-5 job records a Continue, Constrain, or Stop verdict from actual results, including
-any unavailable model or renderer path, and confirms scoped smoke cleanup.
+5 entry of the unified job records a Continue, Constrain, or Stop verdict
+from actual results, including any unavailable model or renderer path,
+reported snapshots, and scoped cleanup.
 
 ### Phase 6: Guidance And Lifecycle Closeout
 
@@ -328,15 +420,16 @@ any unavailable model or renderer path, and confirms scoped smoke cleanup.
       Markdown PDF Usage as the canonical Profile/page-number contract.
 - [ ] Update the Interactive Markdown PDF usage guide with the page-information
       questions, three-state meaning, base/revision behavior, exact Profile
-      authority, deterministic path, consent, review, and Project handoff.
+      authority, deterministic path, consent, terminal presentation, review,
+      rendered-artifact checkpoints, and Project handoff.
       Adjust helper guides only where their direct-command boundaries need
       clarification. Link the existing Codex execution guide for model choice;
       do not present `gpt-6-luna` as a required product setting.
-- [ ] Check changed wording and examples against the already built CLI and
-      recorded Phase 5 artifacts. If a mismatch exposes a product defect,
-      return to the affected implementation phase and refresh its evidence
-      before describing the behavior as shipped.
-- [ ] Link the completed phase job records from this plan and the research.
+- [ ] Check changed wording and examples against the Phase 5 built CLI and
+      recorded artifacts. If a mismatch exposes a product defect, correct the
+      affected implementation and rerun its gates before describing the
+      behavior as shipped.
+- [ ] Link the completed unified job record from this plan and the research.
       Record public-safe validation conclusions and documentation decisions,
       then set the guide, research, and plan statuses from the evidence. Keep
       the research `in-progress` and this plan `active` while required work
@@ -349,14 +442,17 @@ Phase gate: current guides describe the validated behavior with correct
 surface ownership, every required implementation/evidence record is linked,
 documentation checks and review pass, and statuses match the achieved state.
 
-## Phase Records
+## Unified Job Record
 
 Use the current [testing guide](../guides/testing.md) for the focused checks in each
-phase and the final Phase 5 gate. Create a concise job record when each phase
-begins. Record the starting boundary, affected contract, focused checks,
-exact reviewed change range, accepted fixes, and phase verdict. The Phase 5
-record owns built-CLI smoke outcomes, any model or renderer limitation, and
-cleanup state; Phase 6 owns guide review and lifecycle decisions.
+phase and the final Phase 5 gate. Keep one
+[implementation job record](jobs/2026-09-23-markdown-pdf-interactive-codex-page-information.md)
+for the whole plan. Update its phase entries as work proceeds: starting
+boundary, affected contract, focused checks, exact reviewed change range,
+accepted fixes, user-visible snapshot report, cleanup, and phase verdict.
+Its Phase 5 entry owns built-CLI smoke outcomes and model or renderer
+limitations; Phase 6 owns guide review and lifecycle decisions. Do not create
+separate phase job files.
 
 Keep machine-specific setup and raw report contents out of public records.
 Move this plan from `draft` to `active` when implementation starts; mark it

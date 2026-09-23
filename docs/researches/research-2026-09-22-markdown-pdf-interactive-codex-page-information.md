@@ -41,14 +41,54 @@ clarification round, new Profile schema, or renderer behavior.
 - Direct `md to-pdf --page-numbers` and `--no-page-numbers` change only one
   render's enablement. Reusable page policy remains in the Profile.[^usage]
 
-The completed [Interactive page-number UX research](research-2026-08-14-markdown-pdf-interactive-page-number-and-page-chrome-ux.md) deferred
-structured Profile/Project Codex authority. This research addresses that
-follow-up and the repeating-content slots coupled to page-number placement.
+The completed [Interactive page-number UX research](research-2026-08-14-markdown-pdf-interactive-page-number-and-page-chrome-ux.md) covers
+the existing guided page-number and page-chrome choices. This research defines
+structured Profile/Project Codex authority for those choices and their
+repeating-content slots.
 The accepted renderer meanings and page roles remain in
 [Page Roles And Counter Semantics](research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md).
 
-The decisions below are settled for implementation planning. Implementation
-and verification remain pending.
+The Profile data and conflict semantics below are settled for implementation
+planning. The optional report payload and local consent/review text display
+are open decisions. Implementation and verification are planned.
+
+## Open Report Data Contract
+
+Page labels and repeating-content text are exact user-authored Profile data.
+The saved Profile must preserve them. A Codex request may receive them after
+consent; candidate review must make the choices being accepted clear. An
+optional diagnostic report is a separate, retainable artifact; its payload
+must not be inferred from the Profile or the model request. These prompts
+collect page text, not file paths: the feature must not discover, resolve, or
+generate a filesystem path from an answer.
+
+Before implementation, decide whether that report records literal requested
+and effective page text at all, or only choice state, positions, provenance,
+and conflict outcomes. Define the handling of model-proposed text and report
+reader compatibility at the same time. “Include answers” and “follow existing
+redaction” do not decide whether literal page text belongs in a report. Do not
+copy page text into reports or broaden the shared path redactor as an implicit
+answer. Page information requires no generated filesystem path. Record the
+decision in the single
+[implementation job record](../plans/jobs/2026-09-23-markdown-pdf-interactive-codex-page-information.md).
+
+## Terminal Presentation Contract
+
+Follow [CLI Output And Color](../guides/cli-output-and-color.md) for all new
+setup, consent, review, and warning lines. Keep plain text canonical and use
+the shared per-stream picocolors wrapper for eligible TTY presentation. Respect
+runtime color, `NO_COLOR` even when empty, global `--no-color`, and redirected
+stdout or stderr independently. `FORCE_COLOR` does not override that policy.
+Style fixed labels or headings only; the warning role emphasizes `Warning:`
+while its body remains plain. Never put ANSI styling in reports, recipes, or
+PDFs.
+
+Escape terminal control characters before showing entered or model-proposed
+text. Terminal safety escaping is separate from deciding whether local consent
+and review show exact text or a masked representation. Settle that display
+policy before Phase 1; do not use the diagnostic-report path redactor as an
+implicit terminal formatter. Removing ANSI from styled output must preserve
+the same wording, spacing, and stream routing as plain output.
 
 ## Proposed Scope
 
@@ -70,7 +110,8 @@ The Interactive input has two independent groups:
 Each group can be **unspecified**, **OFF**, or **ON**. Unspecified means the
 user did not give exact direction for that group; it is not an instruction to
 disable it. The user can choose either group or both. This sparse distinction
-must survive setup revision, Codex preparation, reports, and final validation.
+must survive setup revision, Codex preparation, and final validation. Its
+optional report representation is the open decision above.
 
 The existing [font-hint editor](../guides/markdown-pdf-interactive-usage.md#font-hints) stays separate. Its
 guided `Page headers and footers` preference can inform Codex's shared
@@ -196,8 +237,9 @@ accepted final normalized Profile must be checked against the explicit
 answers before save or Project Template preparation. Apply the locally
 collected answers deterministically after candidate preparation, then
 normalize and validate. Prompt instructions alone do not enforce this
-contract. Review and reports distinguish explicit answers from inherited or
-Codex-selected values and show any retained slot conflict.
+contract. Candidate review distinguishes explicit answers from inherited or
+Codex-selected values and shows any retained slot conflict. Report content
+follows the separately decided projection.
 
 Page information alone must be valid Interactive input. Today the Profile
 signal mode uses sample, intent, and font hints, while Project can classify a
@@ -223,18 +265,26 @@ Both paths use the same candidate review and final Profile validation.
   decision 6 below for unresolved conflicts; retained conflicts must be visible
   in candidate review before save.
 - Show the requested answers, final Profile fields, and material conflicts in
-  both Profile and Project candidate review. The current Project summary
-  includes page-number settings but needs repeating page content visibility.
-- Include page-information answers in setup equality, consent, dry-run,
-  optional reports, and success and failure paths. When Codex runs, send the
-  entered text as bounded structured input with placeholders unresolved.
-  Consent shows the text being sent; local materialization preserves the
-  exact collected values. Reports follow existing redaction rules and
-  accurately identify deterministic preparation versus model requests.
+  both Profile and Project candidate review under the decided terminal display
+  policy. The current Project summary includes page-number settings but needs
+  repeating page content visibility.
+- Include page-information answers in setup equality, consent, dry-run, and
+  success and failure paths. When Codex runs, send the entered text as bounded
+  structured input with placeholders unresolved. Consent shows the text being
+  sent under the decided terminal display policy; local materialization
+  preserves the exact collected values. Define the optional report projection
+  through the open contract above before
+  implementing it. Reports must accurately identify deterministic preparation
+  versus model requests.
 - Continue to use shared Profile normalization, patch validation, capability
   advisories, and diagnostics. Authoring does not probe the installed
   renderer. The existing Interactive one-render page-number choice remains a
   separate transient override.
+- Render representative PDFs after final Profile materialization and again
+  from saved recipes. Inspect extracted text and rasterized pages, then show
+  labeled page snapshots to the user before closing those phase gates. Retain
+  review snapshots until that visual review closes; cleanup of owned test
+  artifacts must not make the reported images unavailable first.
 
 The implementation plan should verify fresh and revised Interactive Profile
 and Project paths, explicit ON/OFF versus omission, page-info-only input,
@@ -242,13 +292,15 @@ base-Profile preservation, unselected-slot clearing, clear/retain conflict
 choices, and OFF clearing even an occupied reserved slot while preserving
 styles. Cover ON/OFF-to-unspecified revision, last-signal removal, and both
 directions of model-introduced slot conflicts before Project Template work.
-Also verify literal-text preservation, report redaction, no model
-request for page-info-only input, final Profile round trips, and Project
+Also verify literal-text preservation, the decided report payload and privacy,
+no model request for page-info-only input, final Profile round trips, and Project
 Template compatibility. Verify that accepted or inherited
 `fonts.pageChrome.default` survives explicit Profile and Project
 page-information answers, including OFF, when a `Page headers and footers` font
 hint is also present. Existing renderer evidence can be reused unless generated
-HTML/CSS or effective render behavior changes.
+HTML/CSS or effective render behavior changes. The focused visual checks after
+materialization and saved-recipe handoff are required even when the renderer
+contract itself does not change.
 
 ## Settled Decisions
 
@@ -267,9 +319,10 @@ HTML/CSS or effective render behavior changes.
    include exact entered text in bounded structured signals so it can account
    for language and length. Keep metadata placeholders unresolved. The model
    must not rewrite explicit content; final materialization applies the local
-   values regardless of the model's response. Reuse the existing consent and
-   report-redaction flow rather than adding a text-summary mechanism or
-   another clarification round.
+   values regardless of the model's response. Reuse the existing consent flow
+   without adding a model-generated clarification round. The optional report
+   payload is a separate open decision and must not be derived automatically
+   from the text sent to Codex.
 3. **Page-info-only preparation is deterministic.** Apply exact answers to
    the normalized base Profile or default Profile without calling Codex.
    Project accepts this as sufficient input and uses its existing
