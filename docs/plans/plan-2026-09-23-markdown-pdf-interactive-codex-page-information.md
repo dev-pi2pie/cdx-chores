@@ -90,6 +90,10 @@ Interactive setup and review
   -> review, save, or render through the existing lifecycle
 ```
 
+This is the target flow after Phase 4 connects page information to the normal
+Interactive lifecycle. The phase gates below govern when each part becomes
+available; earlier phases exercise the new choices through internal harnesses.
+
 ## Implementation Approach
 
 - Keep unspecified answers absent in typed Interactive setup. Store explicit
@@ -207,23 +211,32 @@ the verification run.
 
 ## Implementation Phases
 
+Keep the new page-information path out of the normal Interactive save/render
+flow while its contracts are incomplete. Phases 1–2 exercise collection,
+signals, and consent through focused harnesses; Phase 3 uses the internal path
+to validate, save, and render exact Profile/Project artifacts without writing
+an optional page-information report. Phase 4 connects the path to the normal
+Interactive lifecycle only after candidate review and the report omission
+contract pass their checks. Direct commands retain their existing behavior.
+
 ### Phase 1: Sparse Answers And Guided Collection
 
-- [ ] Add separate typed page-number and repeating-content answers to Profile
-      and Project Codex setup. An absent group means unspecified; explicit OFF
-      and ON retain their own values through revision. Template-bundle setup
-      does not acquire these answers.
-- [ ] Ask whether to specify page information after optional sample selection
-      and before PDF intent. Within selected groups, reuse Formal Guide's
-      body/document choices, page-number labels, six positions, literal text,
-      and placeholder help. Use Profile wording for the contained Project
-      Profile without adding a Project Formal Guide mode.
-- [ ] Add a Page information setup action with separate group edits. Preselect
-      eligible occupied base-Profile positions on first edit when a base is
-      already selected. If the base is chosen later, re-evaluate on revision
-      without replacing earlier explicit content choices or adding new slots
-      to an explicit ON selection. Newly occupied eligible base slots remain
-      unselected and clear unless selected during revision; OFF still clears
+- [ ] Add separate typed page-number and repeating-content answers to the
+      internal Profile and Project Codex setup collector. An absent group means
+      unspecified; explicit OFF and ON retain their own values through
+      revision. Do not wire the collector into the normal Interactive route
+      yet. Template-bundle setup does not acquire these answers.
+- [ ] In the collector, ask whether to specify page information after optional
+      sample selection and before PDF intent. Within selected groups, reuse
+      Formal Guide's body/document choices, page-number labels, six positions,
+      literal text, and placeholder help. Use Profile wording for the
+      contained Project Profile without adding a Project Formal Guide mode.
+- [ ] Add a Page information setup action in the collector with separate group
+      edits. Preselect eligible occupied base-Profile positions on first edit
+      when a base is already selected. If the base is chosen later, re-evaluate
+      on revision without replacing earlier explicit content choices or adding
+      new slots to an explicit ON selection. Newly occupied eligible base slots
+      remain unselected and clear unless selected during revision; OFF still clears
       all slots. Recheck the reserved slot after base or number-position changes.
 - [ ] Add `Remove explicit choice` per group for ON/OFF-to-unspecified
       revision. Preserve the other group's answers, discard obsolete conflict
@@ -237,13 +250,14 @@ the verification run.
       Cover later base selection/replacement separately from first-edit base
       preselection, including newly occupied eligible slots under ON and OFF.
 
-Phase gate: omission, OFF, and ON remain distinct across first setup, base
-selection, and revision; the existing Formal Guide path keeps its behavior;
-Template setup remains unchanged; Back/Cancel writes nothing.
+Phase gate: the collection harness keeps omission, OFF, and ON distinct across
+first setup, base selection, and revision; the existing Formal Guide path and
+Template setup remain unchanged; Back/Cancel writes nothing. No partial
+page-information candidate can enter the normal save/render/report path.
 
 ### Phase 2: Signal Classification And Request Consent
 
-- [ ] Carry the sparse answers as bounded structured signals through
+- [ ] Carry the sparse answers as bounded structured signals through internal
       Interactive Profile and Project preparation. Check a finite length limit
       for each entered page-number label and repeating-content field before
       preparation; reject over-limit input instead of truncating it. Send
@@ -271,9 +285,12 @@ Template setup remains unchanged; Back/Cancel writes nothing.
       restore the existing default/base and too-low-signal rules rather than
       treating an empty page-information container as sufficient input.
 
-Phase gate: page-information-only Profile and Project candidates reach review
-with zero model requests and no Codex consent; mixed-signal paths ask consent
-before requests and retain current model-selection rules.
+Phase gate: injected Profile, Project, and Interactive harnesses show that
+page-information-only preparation makes zero model requests and needs no Codex
+consent; mixed-signal preparation asks consent before any request and retains
+current model-selection rules. Final candidate content and Project Template
+handoff belong to Phase 3; normal save/render/report remains unavailable for
+the new page-information path.
 
 ### Phase 3: Exact Profile Materialization And Project Handoff
 
@@ -290,10 +307,11 @@ before requests and retain current model-selection rules.
       slots, and retain the reserved slot only after an explicit retain choice.
       OFF clears all six slots, including an occupied reserved position, while
       preserving header/footer styles and `fonts.pageChrome.default`.
-- [ ] Apply the step to standalone Profile preparation before acceptance and
-      report construction. Apply it inside the Project Profile phase before
-      Template preparation, binding, report construction, or write. Normalize
-      and validate the same final Profile used by all those consumers; retain
+- [ ] Apply the step to standalone Profile preparation before acceptance or
+      write. Apply it inside the Project Profile phase before Template
+      preparation, binding, or write. Do not persist an optional report from
+      this internal path; Phase 4 owns its safe projection. Normalize and
+      validate the same final Profile used by all those consumers; retain
       existing patch, capability-advisory, and diagnostic behavior. Authoring
       itself does not probe the installed renderer; the phase render check is
       separate QA.
@@ -318,12 +336,14 @@ before requests and retain current model-selection rules.
       snapshots to the user before Phase 3 closeout and retain the review
       copies until that discussion closes.
 
-Phase gate: an accepted Profile matches every explicit answer after
+Phase gate: an internally accepted Profile matches every explicit answer after
 normalization; unresolved conflicts cannot reach acceptance or Project Template
 preparation; Project Template preparation consumes that Profile; bundle and
-saved Profile values agree, and any reported effective fields agree with them;
-the first rendered pages and extracted text match that Profile and their
-snapshots have been reported; no direct helper or renderer contract changes.
+saved Profile values agree; the first rendered pages and extracted text match
+that Profile and their snapshots have been reported; the internal path writes
+no optional page-information report; page-information answers remain
+inaccessible through normal Interactive save/render; no direct helper or
+renderer contract changes.
 
 ### Phase 4: Review, Reports, And Candidate Lifecycle
 
@@ -358,6 +378,10 @@ snapshots have been reported; no direct helper or renderer contract changes.
       and Project review independently.
       Include late-conflict revision/cancellation, stale resolution rejection,
       and removal that restores base/Codex authority without reusing old overlays.
+- [ ] Connect the completed page-information path to normal Interactive
+      review, save, and render only after exact Profile materialization, local
+      review, and optional report omission are verified together. Test the
+      connected Profile and Project save paths for bypasses.
 - [ ] Render from the saved Profile and Project recipe, then compare the
       extracted text and representative PNGs with Phase 3. Exercise the
       transient one-render page-number override and confirm it does not change

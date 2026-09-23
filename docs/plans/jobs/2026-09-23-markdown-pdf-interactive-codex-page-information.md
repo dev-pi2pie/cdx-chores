@@ -13,6 +13,11 @@ closeout of Interactive Markdown PDF Codex page information in one record.
 Update this job as each phase reaches its gate; the linked plan owns the full
 checklist and product contract.
 
+Phases 1–2 verify the new collection and preparation paths internally. Phase 3
+verifies exact saved and rendered artifacts without an optional page-information
+report. The normal Interactive save/render path accepts the new choices only
+after Phase 4 verifies local review and report omission.
+
 ## Prerequisite Contract Gate
 
 - [x] Decide which page-information values may be stored in optional Profile
