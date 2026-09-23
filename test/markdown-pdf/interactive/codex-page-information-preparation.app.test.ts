@@ -562,6 +562,16 @@ describe("internal Interactive page-information preparation", () => {
         internalTemplateCodexRunner: async (options) => {
           events.push("template");
           expect(options.codexExecution).toMatchObject({ model: "test-model" });
+          const factsMarker = "Deterministic facts:\n";
+          const factsStart = options.prompt.indexOf(factsMarker);
+          expect(factsStart).toBeGreaterThanOrEqual(0);
+          const facts = JSON.parse(options.prompt.slice(factsStart + factsMarker.length)) as {
+            selectedBaseProfile: { summary: { fields: string[] } };
+          };
+          expect(facts.selectedBaseProfile.summary.fields).toContain("header");
+          expect(facts.selectedBaseProfile.summary.fields).not.toContain("pageNumbers");
+          expect(options.prompt).not.toContain(" Exact {page} / {pages} ");
+          expect(options.prompt).not.toContain("Exact {title}");
           return adaptedTemplateResponse();
         },
       });

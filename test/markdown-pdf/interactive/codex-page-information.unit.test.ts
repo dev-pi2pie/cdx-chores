@@ -324,6 +324,44 @@ describe("internal Markdown PDF Codex page-information collection", () => {
     });
   });
 
+  test.each(["remove-numbers", "remove-repeating"] as const)(
+    "%s leaves the other explicit group intact",
+    async (action) => {
+      const current = {
+        pageNumbers: {
+          enabled: true,
+          scope: "body" as const,
+          countFrom: "body" as const,
+          start: 1,
+          increment: 1,
+          format: "Page {page}",
+          position: "bottom-center" as const,
+        },
+        repeatingContent: {
+          enabled: true,
+          selected: ["top-left" as const],
+          text: { "top-left": "Exact {title}" },
+        },
+      };
+      const { promptSet } = prompts([action, "continue"]);
+      const result = await collectMarkdownPdfCodexPageInformation({
+        mode: "revision",
+        prompts: promptSet,
+        current,
+      });
+
+      expect(result).toEqual({
+        kind: "answers",
+        answers:
+          action === "remove-numbers"
+            ? { repeatingContent: current.repeatingContent }
+            : { pageNumbers: current.pageNumbers },
+      });
+      expect(current.pageNumbers.enabled).toBe(true);
+      expect(current.repeatingContent.text["top-left"]).toBe("Exact {title}");
+    },
+  );
+
   test("blocks a newly reserved explicit repeating position until revised", async () => {
     const { promptSet, events } = prompts(["numbers", "continue", "repeating", "continue"], {
       repeatingContentPositions: () => [],

@@ -99,6 +99,54 @@ describe("Interactive Codex page-information materialization", () => {
     expect(final.footer).toBe(original.footer);
   });
 
+  test.each(["unspecified", "off", "on"] as const)(
+    "keeps repeating content independent when numbers are %s",
+    (numberState) => {
+      for (const repeatingState of ["unspecified", "off", "on"] as const) {
+        const original = profile();
+        original.pageNumbers = { ...numbersOn, enabled: false };
+        original.footer = { left: "Candidate footer", style: { color: "#123456" } };
+        const pageInformation = {
+          ...(numberState === "unspecified"
+            ? {}
+            : { pageNumbers: numberState === "off" ? { enabled: false } : numbersOn }),
+          ...(repeatingState === "unspecified"
+            ? {}
+            : {
+                repeatingContent:
+                  repeatingState === "off"
+                    ? { enabled: false }
+                    : {
+                        enabled: true,
+                        selected: ["top-left"],
+                        text: { "top-left": "Exact {title} / Page {page}" },
+                      },
+              }),
+        } as MarkdownPdfCodexPageInformationSignal;
+
+        const final = applyMarkdownPdfCodexPageInformation({ profile: original, pageInformation });
+        expect(final.pageNumbers).toMatchObject({
+          enabled: numberState === "on",
+          position: "bottom-center",
+        });
+        expect((final.header as Record<string, unknown>).left).toBe(
+          repeatingState === "unspecified"
+            ? "Old header"
+            : repeatingState === "on"
+              ? "Exact {title} / Page {page}"
+              : "",
+        );
+        expect((final.footer as Record<string, unknown>).left).toBe(
+          repeatingState === "unspecified" ? "Candidate footer" : "",
+        );
+        expect((final.header as Record<string, unknown>).style).toEqual({ fontSize: "9pt" });
+        expect((final.footer as Record<string, unknown>).style).toEqual({ color: "#123456" });
+        expect(final.fonts).toEqual({ pageChrome: { default: "Example Serif" } });
+        expect((original.header as Record<string, unknown>).left).toBe("Old header");
+      }
+    },
+  );
+
   test("requires a resolution bound to the candidate slot and exact text", () => {
     const original = profile();
     const apply = (conflictingText?: string, choice: "clear" | "retain" = "clear") =>
