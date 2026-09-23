@@ -438,7 +438,10 @@ existing save and recovery behavior still applies.
       built-CLI smoke below and distinguish its deterministic, model, and PDF
       outcomes from automated coverage.
 - [ ] Complete the wider page-role render matrix. Compare extracted text and
-      representative rasterized pages; record any visual mismatch.
+      representative rasterized pages; record any visual mismatch. Include a
+      Project with an assigned cover image whose saved Profile has
+      `cover.style: report`; verify that the image cover has no built-in blue
+      bar and record this as expected behavior.
 - [ ] Review the complete implementation range after the gates and smoke;
       resolve accepted findings and rerun affected checks. Record the final
       validated tip, model and renderer limitations, and extraction/visual
@@ -496,8 +499,11 @@ visual-review outcome.
 - [ ] Compare the current Interactive, Profile helper, and Project helper
       guides, CLI help, and examples with the Phase 5 validated behavior. Keep
       Markdown PDF Usage as the canonical Profile/page-number contract.
-- [ ] In Markdown PDF Usage, explain that the built-in `cover.style: report`
-      adds a fixed blue left bar, `cover.style: plain` omits it, and the
+- [ ] In Markdown PDF Usage, explain that the built-in text cover with
+      `cover.style: report` adds a fixed blue left bar, while
+      `cover.style: plain` omits it. A cover image supplied to the Template or
+      Project helper uses the media cover without that bar, even when the saved
+      Profile keeps `cover.style: report`; present this as a known case. The
       Profile has no separate bar-color setting.
 - [ ] In Markdown PDF Usage, explain that one-render number-OFF can reveal
       retained text in a released number slot, while repeating-content OFF
@@ -509,6 +515,10 @@ visual-review outcome.
       Adjust helper guides only where their direct-command boundaries need
       clarification. Link the existing Codex execution guide for model choice;
       do not present `gpt-6-luna` as a required product setting.
+- [ ] Add concise PDF-intent prompt references for a built-in report text cover
+      and an image cover. Name each artifact owner and expected visible result,
+      including the known case of an image cover paired with saved
+      `cover.style: report`.
 - [ ] Check changed wording and examples against the Phase 5 built CLI and
       recorded validation results. If a mismatch exposes a product defect,
       correct the affected implementation and rerun its gates before
