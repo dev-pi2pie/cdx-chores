@@ -15,8 +15,8 @@ checklist and product contract.
 
 Phases 1–2 verify collection and preparation internally. Phase 3 verifies exact
 saved and rendered artifacts without an optional Codex diagnostic report.
-Phase 4 connects the reviewed local display and report projection to normal
-Interactive authoring; its PDF matrix and final range review govern closeout.
+Phase 4 connected the reviewed local display and report projection to normal
+Interactive authoring and verified its PDF comparison and commit range.
 
 ## Prerequisite Contract Gate
 
@@ -34,11 +34,11 @@ Interactive authoring; its PDF matrix and final range review govern closeout.
 
 - **Exact text:** The saved Profile keeps entered page text. Codex receives it
   after consent only when a request is needed.
-- **Report metadata:** Profile and Project reports will keep
+- **Report metadata:** Profile and Project reports keep
   requested-choice and validated final stored metadata: number settings,
   selected and stored header/footer positions, and reserved-slot clear/retain
   outcomes.
-- **Report omissions:** They will omit literal page text, previews, Codex
+- **Report omissions:** They omit literal page text, previews, Codex
   result echoes, rendering claims, and inferred slot provenance. An
   attempt-based omission marker and value-free result summary replace model
   values and prose. Independently entered intent and font hints retain their
@@ -47,12 +47,12 @@ Interactive authoring; its PDF matrix and final range review govern closeout.
   an absent optional decision. The Project bundle retains its report
   discriminator. This is structural compatibility, not retention of model
   prose.
-- **Local display contract:** Consent and candidate review must show exact text
+- **Local display contract:** Consent and candidate review show exact text
   with C0/C1, bidirectional controls, and Unicode line/paragraph separators
-  escaped. Per-stream color styles fixed labels and headings only. Phase 4
-  will use in-memory results for Project handoff and font review so report
+  escaped. Per-stream color styles fixed labels and headings only. Interactive
+  uses in-memory results for Project handoff and font review so report
   omissions do not remove visible feedback.
-- **Verification ahead:** Phase 4 checks the omission marker, model echoes,
+- **Verification:** Phase 4 checked the omission marker, model echoes,
   failures, direct-command compatibility, independent intent, and a saved
   recipe with numbers enabled against a one-render OFF override.
 - **Verdict:** Complete at the contract level.
@@ -64,7 +64,7 @@ Interactive authoring; its PDF matrix and final range review govern closeout.
 | Phase 1 | Complete | Collection and revision |
 | Phase 2 | Complete | Signals, consent, and requests |
 | Phase 3 | Complete | Final Profile, Project handoff, first PDF render review |
-| Phase 4 | In progress | Candidate review and report projection checkpoint; focused PDF comparison remains |
+| Phase 4 | Complete | Candidate lifecycle, report projection, PDF comparison, and commit-range review |
 | Phase 5 | Pending | Integrated matrix, built CLI, final visual review |
 | Phase 6 | Pending | Guide alignment and documentation closeout |
 
@@ -140,25 +140,30 @@ raw artifacts out of this record.
 
 ### Phase 4: Review, Reports, And Candidate Lifecycle
 
-- **Checkpoint:** `c6319cd0..c35a9026`; the phase gate remains open.
-- **Implementation:** Normal Interactive Profile and Project preparation now
-  carries page-information choices through candidate reuse, review, and save.
-  Optional diagnostic reports retain requested and final stored
-  metadata while omitting entered page text and Codex echoes.
-- **Checks:** The managed unit suite passed 1,298 cases and the managed app
-  suite passed 2,067 cases. TypeScript, lint, format, build, and whitespace
-  checks passed. A built Interactive deterministic save produced an exact
-  Profile and an optional value-free report without a model request.
-- **PDF review:** Number-ON Profile and Project renders matched the Phase 3
-  extracted text page for page. A one-render number-OFF override removed
-  numbers and allowed retained text in the released slot to render, with body
-  pagination changing. This behavior now has separate number and stored-text
-  checks in the plan. The cleared-content comparison and final visual verdict
-  remain.
-- **Review ahead:** Add full Interactive change/removal and late-conflict
-  lifecycle coverage, make the persisted Project report projection explicit,
-  consolidate preparation outcome handling, and remove implicit test-harness
-  skipping. Review the final Phase 4 commit range after the PDF gate.
+- **Range:** `c6319cd0..644b5887`. Gate complete.
+- **Delivered:** Normal Interactive Profile and Project paths carry exact page
+  answers through candidate review, change/removal, save, render, and recovery.
+  Optional reports retain requested and final stored metadata while omitting
+  entered page text and Codex echoes. Project persistence uses explicit
+  report fields; the shared path redactor is unchanged.
+- **Checks:** The full managed Unit, Application, Codex, and Pandoc gate passed.
+  After the final review fix, the managed Application suite passed 2,081 cases.
+  TypeScript, lint, format, build, and whitespace checks passed. Deterministic
+  Profile and Project preparation preserved exact saved values and wrote
+  value-free optional reports without a model request; a built Interactive
+  deterministic Profile save also passed.
+- **PDF review:** Saved Profile and Project recipes were rendered with retained
+  and cleared repeating content, each with numbers ON and a one-render OFF
+  override. For retained-content recipes, number-ON extracted text matched
+  Phase 3 page for page. With numbers OFF, retained text appeared in the
+  released slot; cleared slots stayed empty. Extracted content and
+  representative page images matched expected placement and styles. Body
+  content shifted between ON and OFF renders; saved recipes remained unchanged.
+- **Review:** Security and maintainability reviews found no material issue.
+  Test review identified a missing fail-closed Profile report regression; the
+  accepted test was added and the widened exact-range review found no material
+  gap. Initial conflict revision and regeneration keep their distinct
+  navigation paths.
 
 ## Related Research
 

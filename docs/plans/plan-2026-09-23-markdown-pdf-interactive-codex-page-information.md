@@ -360,12 +360,12 @@ renderer contract changes.
 
 ### Phase 4: Review, Reports, And Candidate Lifecycle
 
-- [ ] Add page information and conflict decisions to setup equality. An edited
+- [x] Add page information and conflict decisions to setup equality. An edited
       or removed group invalidates its prepared candidate; unchanged setup,
       Back, and applicable save/render recovery retain it. A one-render
       page-number override remains transient and does not cause another
       artifact or Codex preparation.
-- [ ] Show requested answers and explicit versus inherited/Codex-selected
+- [x] Show requested answers and explicit versus inherited/Codex-selected
       provenance once in Profile and Project candidate review under the
       decided local text-display policy. Show effective Profile fields and
       material conflicts in the Profile review and Project handoff summary
@@ -376,7 +376,7 @@ renderer contract changes.
       and validated Profile rather than reduced report fields, preserving
       fallback and unsupported-direction details. Escape controls in page
       text without path masking.
-- [ ] Carry sparse answers through dry-run and success/failure handling. Add
+- [x] Carry sparse answers through dry-run and success/failure handling. Add
       the requested and final stored page-information metadata decided at the
       gate to the existing optional Profile and Project reports. Mark model
       details as omitted on explicit page-information runs; retain only safe
@@ -388,17 +388,17 @@ renderer contract changes.
       recognition, plus actual deterministic/model
       work. Execution settings remain command-local and
       absent from saved recipes.
-- [ ] Test candidate reuse and invalidation, regeneration, consent text,
+- [x] Test candidate reuse and invalidation, regeneration, consent text,
       the decided report projection and privacy, no-usable candidates,
       failure/recovery, and save-only versus render lifecycles. Cover Profile
       and Project review independently.
       Include late-conflict revision/cancellation, stale resolution rejection,
       and removal that restores base/Codex authority without reusing old overlays.
-- [ ] Connect the completed page-information path to normal Interactive
+- [x] Connect the completed page-information path to normal Interactive
       review, save, and render only after exact Profile materialization, local
       review, and optional report omission are verified together. Test the
       connected Profile and Project save paths for bypasses.
-- [ ] Render saved Profile and Project recipes with stored repeating content ON
+- [x] Render saved Profile and Project recipes with stored repeating content ON
       and OFF, each with numbers ON and a one-render number-OFF override.
       Compare the retained-content number-ON case with Phase 3 and the cleared
       case with its saved Profile. Check extracted text and representative
