@@ -2,7 +2,7 @@
 title: "Interactive Markdown PDF Codex Page Information Signals"
 created-date: 2026-09-22
 modified-date: 2026-09-23
-status: draft
+status: in-progress
 agent: codex
 ---
 
@@ -289,6 +289,7 @@ HTML/CSS or effective render behavior changes.
 
 ## Related Plans
 
+- [Markdown PDF Interactive Codex page information implementation](../plans/plan-2026-09-23-markdown-pdf-interactive-codex-page-information.md)
 - [Markdown PDF page-number configuration implementation][page-number-plan]
 
 [^formal-guide]: [Interactive Markdown PDF Usage][interactive-usage] and [Formal Guide collection][formal-guide-collection].
