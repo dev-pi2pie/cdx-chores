@@ -206,7 +206,7 @@ async function editRepeating(
   return { enabled: true, selected: [...positions], text };
 }
 
-/** Internal collector. No normal Interactive call site enables this path before Phase 4. */
+/** Collect optional page-information choices during setup or revision. */
 export async function collectMarkdownPdfCodexPageInformation(input: {
   base?: Readonly<NormalizedMarkdownPdfProfile>;
   current?: Readonly<MarkdownPdfCodexPageInformationAnswers>;
