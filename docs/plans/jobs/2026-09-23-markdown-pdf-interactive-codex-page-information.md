@@ -65,7 +65,7 @@ Interactive authoring and verified its PDF comparison and commit range.
 | Phase 2 | Complete | Signals, consent, and requests |
 | Phase 3 | Complete | Final Profile, Project handoff, first PDF render review |
 | Phase 4 | Complete | Candidate lifecycle, report projection, PDF comparison, and commit-range review |
-| Phase 5 | In progress | Formal matrix and deterministic built-CLI/PDF checks passed; live model smoke remains open |
+| Phase 5 | Complete | Constrain: integrated checks and exact code range review passed; Project text-cover direction remains open |
 | Phase 6 | Pending | Guide alignment and documentation closeout |
 
 For each phase, record the exact commit range, checks, accepted review fixes,
@@ -167,31 +167,53 @@ raw artifacts out of this record.
 
 ### Phase 5: Integrated Validation
 
-- **Starting point:** `4ce46c6e`. The phase gate remains open.
+- **Code/test range:** `4ce46c6e..f0a6b120`. Gate complete with a constrained
+  product direction for Project text covers.
 - **Formal coverage:** Added the nine page-number and repeating-content choice
-  combinations, removal of either explicit choice while preserving the other,
-  and the Project image-cover case with a saved report-style Profile. A review
-  finding added a Project handoff assertion: Template preparation sees the
-  bounded final-Profile summary while exact page text stays Profile-owned.
-  Existing lifecycle and renderer evidence covers revisions, conflicts, direct
-  commands, and page roles.
+  combinations at materialization and 36 saved-state application cases across
+  fresh/base Profile and Project paths. Group removal, later revisions,
+  conflicts, direct commands, and page roles have adjacent coverage. The
+  Project image-cover case keeps a saved report-style Profile while selecting
+  media-cover output. Template preparation sees a bounded final-Profile
+  summary; exact page text remains Profile-owned. Saved lifecycle checks also
+  replace accepted Profile and Project candidates after page-information
+  revision, so only the revised candidates are written.
 - **Checks:** The managed Unit, Application, Codex, and Pandoc suites passed
-  with 1,304, 2,082, 2, and 3 cases respectively. TypeScript, lint, format,
-  build, and whitespace checks passed. After the handoff assertion, the
-  affected managed Application suite passed again with 2,082 cases.
+  at the final matrix checkpoint. TypeScript, lint, format, build, and
+  whitespace checks passed. After the saved-revision follow-up, the affected
+  managed Application suite passed 2,120 cases.
 - **Built CLI:** A page-information-only Profile followed the deterministic
   path without a model request. Reloading its saved recipe confirmed numbers
   ON, six cleared content slots, and preserved page-chrome styles and font.
-  The model-backed Project smoke has not been verified in this checkpoint.
-- **PDF review:** A saved Profile and a deterministic Project with an assigned
-  cover image each rendered seven pages. Extracted text and representative
-  cover, ToC, first-body, and later-body images showed no page labels on the
-  cover or ToC and body labels 1–5 without overlap. The text report cover had
-  the built-in blue bar; the image cover omitted it while its saved Profile
-  retained report style, as expected.
-- **Verdict:** Constrain. The live model-backed Project, its optional report,
-  and the final exact-range review remain open before the Phase 5 gate can
-  close.
+  Using the same cover-disabled styled base, a Project with a synthetic sample,
+  intent, and entered page text used model-assisted Profile and Template phases,
+  saved a usable bundle, and rendered through Interactive. Its optional report
+  kept requested/final stored metadata and actual phase modes while omitting
+  entered page text, Codex echoes, and model selection.
+- **PDF review:** Saved Profile and deterministic image-cover Project renders
+  each had seven pages. The built-Interactive Project render had an unnumbered
+  ToC followed by five numbered body pages; its retained number-slot content
+  stayed stored but did not render. Traditional Chinese and Japanese
+  page-information renders had five and eight pages respectively, exact
+  extracted header/footer text and body labels, unnumbered ToCs, readable
+  glyphs, and no visible overlap on inspected pages. The text report cover
+  had the built-in blue bar; the image cover omitted it while its saved
+  Profile retained report style, as expected.
+- **Constraint:** An enabled Profile text cover without a cover image cannot
+  currently produce a usable Project Template. Two model-backed attempts
+  reached the existing fail-closed compatibility check and wrote no Project.
+  The Template helper supports image covers, while Project validation
+  requires a live cover element for that Profile setting. The controlled
+  cover-disabled run succeeded; the product direction for this unsupported
+  combination remains to be decided.
+- **Review:** A focused review found that materialization-only state coverage
+  did not prove saved Profile/Project combinations, so the application matrix
+  was added. A later review asked for direct revised-save proof, so Profile
+  and Project lifecycle regressions were added. Final test, maintainability,
+  and security reviews of the exact code/test range found no remaining
+  material issue; accepted fixes passed affected checks.
+- **Verdict:** Constrain. Phase 5 validation is complete; the Project
+  text-cover contract is an explicit open direction for Phase 6.
 
 ## Related Research
 

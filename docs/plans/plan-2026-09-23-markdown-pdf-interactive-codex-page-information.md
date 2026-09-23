@@ -433,7 +433,7 @@ existing save and recovery behavior still applies.
       compatible. Reuse existing page-role and renderer evidence unless the
       implementation changes effective HTML/CSS or rendered behavior; rerun
       affected extraction and visual cases if it does.
-- [ ] Run affected managed unit and app suites, the full managed test gate,
+- [x] Run affected managed unit and app suites, the full managed test gate,
       TypeScript, lint, format, build, and `git diff --check`. Run the bounded
       built-CLI smoke below and distinguish its deterministic, model, and PDF
       outcomes from automated coverage.
@@ -442,7 +442,7 @@ existing save and recovery behavior still applies.
       Project with an assigned cover image whose saved Profile has
       `cover.style: report`; verify that the image cover has no built-in blue
       bar and record this as expected behavior.
-- [ ] Review the complete implementation range after the gates and smoke;
+- [x] Review the complete implementation range after the gates and smoke;
       resolve accepted findings and rerun affected checks. Record the final
       validated tip, model and renderer limitations, and extraction/visual
       results in the unified job record's Phase 5 entry.
@@ -496,6 +496,11 @@ visual-review outcome.
 
 ### Phase 6: Guidance And Lifecycle Closeout
 
+- [ ] Decide the Project contract for an enabled Profile text cover without a
+      cover image, which Phase 5 found cannot produce a usable managed Template.
+      Either support that cover in Project synthesis or reject the unsupported
+      combination before a Codex request. Verify the chosen behavior before
+      describing it in the guides.
 - [ ] Compare the current Interactive, Profile helper, and Project helper
       guides, CLI help, and examples with the Phase 5 validated behavior. Keep
       Markdown PDF Usage as the canonical Profile/page-number contract.
