@@ -7,11 +7,13 @@ export const MD_PDF_PROJECT_COVER_CONFLICT_CODE = "MARKDOWN_PDF_PROJECT_COVER_CO
 type ProjectCoverIntent = "none" | "generic" | "text-only" | "image" | "no-cover" | "conflict";
 
 const NEGATED_COVER_IMAGE =
-  /\b(?:no|without|skip|avoid|exclude|omit)\s+(?:(?:a|an|the|any)\s+)?(?:(?:cover\s+)?(?:image|photo|picture)|(?:image|photo|picture)\s+cover)\b/giu;
+  /\b(?:no|without|skip|avoid|exclude|omit|(?:do\s+not|don't|never)\s+(?:use|include|add|show))\s+(?:(?:a|an|the|any)\s+)?(?:(?:cover\s+)?(?:image|photo|picture)|(?:image|photo|picture)\s+cover)\b/giu;
 const PAGE_NUMBER_COVER_REFERENCES = [
   /\b(?:skip|exclude|omit|ignore)\s+(?:the\s+)?cover(?:\s+page)?\s+(?:in|from|for)\s+(?:page\s+)?(?:number(?:s|ing)?|count(?:ing)?)\b/giu,
   /\b(?:no|without)\s+(?:page\s+)?(?:number(?:s|ing)?|count(?:ing)?)\s+(?:on|for)\s+(?:the\s+)?cover(?:\s+page)?\b/giu,
   /\b(?:do\s+not|don't|never)\s+(?:number|count)\s+(?:the\s+)?cover(?:\s+page)?\b/giu,
+  /\b(?:keep|leave)\s+(?:the\s+)?(?:page\s+)?number(?:s|ing)?\s+off\s+(?:the\s+)?cover(?:\s+page)?\b/giu,
+  /\b(?:do\s+not|don't|never)\s+(?:put|place|show|print|display|include)\s+(?:the\s+)?(?:page\s+)?number(?:s|ing)?\s+(?:on|in)\s+(?:the\s+)?cover(?:\s+page)?\b/giu,
   /\b(?:start|begin)\s+(?:page\s+)?number(?:s|ing)?\s+after\s+(?:the\s+)?cover(?:\s+page)?\b/giu,
 ];
 
@@ -35,7 +37,7 @@ export function classifyMdPdfProjectCoverIntent(intent: string | undefined): Pro
   );
   const text = withoutNumbering.replace(NEGATED_COVER_IMAGE, " ");
   const noCover =
-    /\b(?:no|without|skip|disable|avoid)\s+(?:(?:a|the|any)\s+)?(?:cover(?:\s+page)?|title[- ]page)\b/iu.test(
+    /\b(?:no|without|skip|disable|avoid|exclude|omit|(?:do\s+not|don't|never)\s+(?:include|use|add|create|show))\s+(?:(?:a|the|any)\s+)?(?:cover(?:\s+page)?|title[- ]page)\b/iu.test(
       text,
     );
   const textOnly =
