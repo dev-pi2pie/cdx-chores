@@ -63,7 +63,7 @@ choices only after Phase 4 verifies local review and report omission.
 | ------- | ------ | ------------------ |
 | Phase 1 | Complete | Collection and revision |
 | Phase 2 | Complete | Signals, consent, and requests |
-| Phase 3 | Range review pending | Final Profile, Project handoff, first PDF render review |
+| Phase 3 | Complete | Final Profile, Project handoff, first PDF render review |
 | Phase 4 | Pending | Candidate review, report projection, saved-recipe comparison |
 | Phase 5 | Pending | Integrated matrix, built CLI, final visual review |
 | Phase 6 | Pending | Guide alignment and documentation closeout |
@@ -111,6 +111,7 @@ raw artifacts out of this record.
 
 ### Phase 3: Exact Profile Materialization And Project Handoff
 
+- **Range:** `8a9ee54c..6e74d90c`. Gate complete.
 - **Implementation:** One local step applies exact number and repeating-content
   choices after Profile preparation in standalone and Project paths. Late slot
   conflicts return to Interactive revision before acceptance or Template
@@ -123,15 +124,19 @@ raw artifacts out of this record.
   optional diagnostic report. Phase 4 owns the report projection.
 - **Checks:** Focused unit, app, and command coverage passed, including model
   conflicts, font-hint coexistence, and direct-helper compatibility. The
-  Profile/Project action suite passed 225 tests. TypeScript, lint, format,
-  build, and whitespace checks passed.
+  Interactive suite passed 410 tests and the Profile/Project action suite
+  passed 226 tests. TypeScript, lint, format, build, and whitespace checks
+  passed.
 - **PDF review:** Extracted text and visual inspection matched the accepted
   Profile and Project: cover chrome was absent, ToC repeating content remained
   visible without body numbering, and body numbers and repeating text appeared
   in their selected positions. Retained content at the number-owned slot did
   not render. Longer and older Markdown inputs also rendered successfully.
   The built Interactive existing-Profile render matched the direct render.
-- **Review:** Full Phase 3 commit-range review pending.
+- **Review:** Full Phase 3 code, test, security, and maintainability range
+  reviews found no remaining material issue. Accepted fixes recheck reviewed
+  slot text after base or model changes, preserve exact structured labels in
+  Interactive review, and escape formatting controls in terminal output.
 
 ## Related Research
 
