@@ -60,13 +60,13 @@ also requires Project handoff and font review to use in-memory results so
 reduced report fields do not remove visible feedback. The revised report
 contract distinguishes stored positions from rendered output, omits slot
 provenance, and ties the omission marker to actual model attempts. The gate is
-complete at the contract level. Phase 1 implementation has not started.
+complete at the contract level.
 
 ## Phase Progress
 
 | Section | Status | Evidence to record |
 | ------- | ------ | ------------------ |
-| Phase 1 | In progress | Collection and revision checks; reviewed commit range |
+| Phase 1 | Complete | Collection and revision checks; reviewed commit range |
 | Phase 2 | Pending | Signal, consent, and request checks; reviewed commit range |
 | Phase 3 | Pending | Final Profile and Project handoff checks; first PDF extraction and labeled page snapshots; reviewed commit range |
 | Phase 4 | Pending | Review, report projection, and lifecycle checks; saved-recipe and override snapshots; reviewed commit range |
@@ -77,8 +77,8 @@ For each phase, record its exact base and tip commits, checks, accepted review
 fixes, visual conclusions where applicable, cleanup, and verdict. Keep
 machine-specific setup and raw artifacts out of this record.
 
-Phase 1 starts from `4ff30540`. Its collector and revision gate is in
-progress. Focused collection and Formal Guide checks passed (65 tests), as did
+Phase 1 implementation range: `4ff30540..b684afe4`. Its collector and
+revision gate passed. Focused collection and Formal Guide checks passed (65 tests), as did
 focused setup and existing Interactive entry checks (23 tests), TypeScript,
 scoped lint and format checks, and whitespace validation. Later base selection
 and replacement preserve explicit ON selections without adding newly occupied
@@ -88,8 +88,8 @@ application files passed through direct Bun execution. Commit-range review
 found missing base-revision and navigation coverage, plus ambiguity about
 retained text while repeating content is OFF. Follow-up tests cover replacement,
 Back/Cancel, and ON-to-OFF-to-ON revision; the inactive draft rule is explicit
-in the collector. The widened commit-range review and Phase 1 gate verdict
-remain open.
+in the collector. Independent maintainability and test re-reviews of the widened
+range found no remaining material issue. No PDF artifact is due at this gate.
 
 ## Related Research
 
