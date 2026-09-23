@@ -3,6 +3,7 @@ import { extname, resolve } from "node:path";
 
 import { CliError } from "../../../src/cli/errors";
 import { MARKDOWN_PDF_PROFILE_CURRENT_REVISION } from "../../../src/cli/markdown-pdf/profile/feature-registry";
+import { MarkdownPdfPageInformationConflictError } from "../../../src/cli/markdown-pdf/profile-codex";
 import type { HarnessRunnerContext } from "../../cli-foundations/interactive-harness/context";
 import {
   fontDiscoveryModuleUrl,
@@ -190,6 +191,11 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
           : {}),
         unusable,
       });
+      const conflict =
+        context.scenario.markdownPdfCodexPrepareConflicts?.[
+          context.result.markdownPdfCodexPrepareCalls.length - 1
+        ];
+      if (conflict) throw new MarkdownPdfPageInformationConflictError(conflict);
       const prepared =
         artifact === "profile"
           ? unusable
@@ -375,6 +381,13 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
       bound: Record<string, unknown>,
     ) => {
       const candidate = bound.candidate as Record<string, unknown>;
+      const prepared = candidate.prepared as Record<string, unknown>;
+      const savedProfile =
+        bound.artifact === "profile"
+          ? prepared.finalProfile
+          : bound.artifact === "project-bundle"
+            ? (prepared.profilePhase as Record<string, unknown>).finalProfile
+            : undefined;
       context.result.markdownPdfCodexWriteCalls.push({
         artifact: bound.artifact,
         artifactCount: bound.artifactCount,
@@ -384,6 +397,7 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
         overwrite: bound.overwrite,
         report: bound.report,
         suggestedOutput: bound.suggestedOutput,
+        ...(savedProfile ? { savedProfile: structuredClone(savedProfile) } : {}),
       });
     },
   }));

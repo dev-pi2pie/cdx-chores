@@ -14,6 +14,7 @@ describe("Interactive Markdown execution configuration", () => {
       reasoningEffort: "high",
     } as const;
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       codexExecution,

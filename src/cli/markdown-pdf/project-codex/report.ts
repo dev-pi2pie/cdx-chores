@@ -276,25 +276,135 @@ export function createMdPdfProjectCodexReportArtifact(input: {
 export function serializeMdPdfProjectCodexReportArtifact(
   report: MarkdownPdfProjectCodexReportArtifact,
 ): string {
-  const projected = report.pageInformation
-    ? {
-        ...report,
-        project: { ...report.project, fallbackReason: undefined },
-        phases: {
-          profile: { ...report.phases.profile, fallbackReason: undefined, warnings: [] },
-          template: { ...report.phases.template, fallbackReason: undefined, warnings: [] },
-        },
-        unsupportedDirections: [],
-        validationResults: report.validationResults.map(
-          ({ message: _message, ...result }) => result,
-        ),
-        diagnosticConditionIds: [
-          ...new Set(report.handoff.diagnostics.map((item) => item.conditionId)),
-        ],
-        handoff: { ...report.handoff, diagnostics: [] },
-      }
-    : report;
+  const projected = report.pageInformation ? projectPageInformationReport(report) : report;
   return `${JSON.stringify(projected, null, 2)}\n`;
+}
+
+/** Persist only named fields when explicit page information may appear in model prose. */
+function projectPageInformationReport(
+  report: MarkdownPdfProjectCodexReportArtifact,
+): MarkdownPdfProjectCodexReportArtifact {
+  validateMarkdownPdfCodexReportPageInformation(report.pageInformation);
+  const publicPath = (path: { display: string; basename: string; redacted: boolean }) => ({
+    display: path.display,
+    basename: path.basename,
+    redacted: path.redacted,
+  });
+  const managedAsset = (
+    asset: MarkdownPdfProjectCodexReportManagedAsset,
+  ): MarkdownPdfProjectCodexReportManagedAsset => ({
+    role: asset.role,
+    bundlePath: asset.bundlePath,
+    source: publicPath(asset.source),
+    ...(asset.format ? { format: asset.format } : {}),
+    ...(asset.dimensions
+      ? { dimensions: { width: asset.dimensions.width, height: asset.dimensions.height } }
+      : {}),
+    ...(asset.aspectRatio !== undefined ? { aspectRatio: asset.aspectRatio } : {}),
+    orientationBucket: asset.orientationBucket,
+    fitPressure: asset.fitPressure,
+    ...(asset.metadataStatus ? { metadataStatus: asset.metadataStatus } : {}),
+  });
+  const renderCommand = (command: {
+    executable: "cdx-chores";
+    args: string[];
+    display: string;
+  }) => ({
+    executable: command.executable,
+    args: [...command.args],
+    display: command.display,
+  });
+  return {
+    artifactType: report.artifactType,
+    advisoryOnly: report.advisoryOnly,
+    reportId: report.reportId,
+    generatedAt: report.generatedAt,
+    identities: {
+      projectBundleId: report.identities.projectBundleId,
+      profileId: report.identities.profileId,
+      templateBundleId: report.identities.templateBundleId,
+      createdAt: report.identities.createdAt,
+    },
+    project: {
+      signalMode: report.project.signalMode,
+      decisionMode: report.project.decisionMode,
+    },
+    phases: {
+      profile: {
+        phase: report.phases.profile.phase,
+        signalMode: report.phases.profile.signalMode,
+        decisionMode: report.phases.profile.decisionMode,
+        warnings: [],
+      },
+      template: {
+        phase: report.phases.template.phase,
+        signalMode: report.phases.template.signalMode,
+        decisionMode: report.phases.template.decisionMode,
+        warnings: [],
+      },
+    },
+    input: {
+      ...(report.input.markdown ? { markdown: publicPath(report.input.markdown) } : {}),
+      ...(report.input.intent ? { intent: report.input.intent } : {}),
+      fontHints: [...report.input.fontHints],
+      ...(report.input.baseProfile ? { baseProfile: publicPath(report.input.baseProfile) } : {}),
+      ...(report.input.coverImage ? { coverImage: managedAsset(report.input.coverImage) } : {}),
+    },
+    signals: {
+      document: {
+        available: report.signals.document.available,
+        headingCount: report.signals.document.headingCount,
+        maxHeadingDepth: report.signals.document.maxHeadingDepth,
+        maxTableColumns: report.signals.document.maxTableColumns,
+        localAssetCount: report.signals.document.localAssetCount,
+        remoteAssetCount: report.signals.document.remoteAssetCount,
+        dataUriAssetCount: report.signals.document.dataUriAssetCount,
+        scriptBuckets: { ...report.signals.document.scriptBuckets },
+        textTruncated: report.signals.document.textTruncated,
+      },
+      templateOwnedDirections: {
+        document: [...report.signals.templateOwnedDirections.document],
+        intent: [...report.signals.templateOwnedDirections.intent],
+        requiresCodex: report.signals.templateOwnedDirections.requiresCodex,
+      },
+    },
+    unsupportedDirections: [],
+    files: report.files.map((file) => ({
+      role: file.role,
+      ...(file.bundlePath ? { bundlePath: file.bundlePath } : {}),
+      ...(file.path ? { path: file.path } : {}),
+      planned: file.planned,
+    })),
+    managedAssets: report.managedAssets.map(managedAsset),
+    validationResults: report.validationResults.map(({ name, status }) => ({ name, status })),
+    pageInformation: report.pageInformation,
+    diagnosticConditionIds: [
+      ...new Set(report.handoff.diagnostics.map((item) => item.conditionId)),
+    ],
+    ...(report.followUpRenderCommand
+      ? { followUpRenderCommand: renderCommand(report.followUpRenderCommand) }
+      : {}),
+    handoff: {
+      profile: {
+        id: report.handoff.profile.id,
+        bundlePath: report.handoff.profile.bundlePath,
+      },
+      artifacts: { availability: report.handoff.artifacts.availability },
+      render:
+        report.handoff.render.usability === "unavailable"
+          ? { usability: "unavailable" }
+          : {
+              usability: report.handoff.render.usability,
+              command: renderCommand(report.handoff.render.command),
+            },
+      diagnostics: [],
+      capabilityRequirements: report.handoff.capabilityRequirements.map((requirement) => ({
+        capabilityId: requirement.capabilityId,
+        requestedBy: [...requirement.requestedBy],
+        minimumVersion: requirement.minimumVersion,
+      })),
+    },
+  };
 }
 
 export async function writeMdPdfProjectCodexReportArtifact(input: {
