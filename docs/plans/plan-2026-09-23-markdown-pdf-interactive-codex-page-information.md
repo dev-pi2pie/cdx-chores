@@ -10,7 +10,7 @@ agent: codex
 Let Interactive Codex Assistant collect exact page-number and repeating
 header/footer text choices when preparing a Markdown PDF Profile or Project.
 Apply those choices to the final Profile before review, save, or Project
-Template preparation. The [research][page-information-research] owns the full
+Template preparation. The [research](../researches/research-2026-09-22-markdown-pdf-interactive-codex-page-information.md) owns the full
 answer, default, and page-role contract; this plan organizes implementation
 and evidence.
 
@@ -237,7 +237,7 @@ Use one ignored `examples/playground/md-pdf/smoke/page-information/<unique-run>/
 directory with synthetic Markdown and an unchanged base Profile whose bottom
 center footer slot contains text and whose header/footer style and
 `fonts.pageChrome.default` are set. Follow the
-[Codex execution guide][codex-execution-guide] for the public
+[Codex execution guide](../guides/codex-execution-configuration.md) for the public
 `cdx-chores interactive --codex-model <model>` form. In the development
 checkout, build first and exercise the built Node CLI:
 
@@ -310,7 +310,7 @@ documentation checks and review pass, and statuses match the achieved state.
 
 ## Phase Records
 
-Use the current [testing guide][testing-guide] for the focused checks in each
+Use the current [testing guide](../guides/testing.md) for the focused checks in each
 phase and the final Phase 5 gate. Create a concise job record when each phase
 begins. Record the starting boundary, affected contract, focused checks,
 exact reviewed change range, accepted fixes, and phase verdict. The Phase 5
@@ -325,14 +325,10 @@ guidance, or cleanup remains unaccounted for.
 
 ## Related Research
 
-- [Interactive Markdown PDF Codex Page Information Signals][page-information-research]
+- [Interactive Markdown PDF Codex Page Information Signals](../researches/research-2026-09-22-markdown-pdf-interactive-codex-page-information.md)
 - [Markdown PDF Interactive Page Numbers And Repeating Page Content UX](../researches/research-2026-08-14-markdown-pdf-interactive-page-number-and-page-chrome-ux.md)
 - [Markdown PDF Page Roles And Counter Semantics](../researches/research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md)
 
 ## Related Plans
 
 - [Markdown PDF page-number configuration implementation](plan-2026-08-12-markdown-pdf-page-number-configuration.md)
-
-[page-information-research]: ../researches/research-2026-09-22-markdown-pdf-interactive-codex-page-information.md
-[codex-execution-guide]: ../guides/codex-execution-configuration.md
-[testing-guide]: ../guides/testing.md

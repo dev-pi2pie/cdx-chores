@@ -41,11 +41,11 @@ clarification round, new Profile schema, or renderer behavior.
 - Direct `md to-pdf --page-numbers` and `--no-page-numbers` change only one
   render's enablement. Reusable page policy remains in the Profile.[^usage]
 
-The completed [Interactive page-number UX research][interactive-ux] deferred
+The completed [Interactive page-number UX research](research-2026-08-14-markdown-pdf-interactive-page-number-and-page-chrome-ux.md) deferred
 structured Profile/Project Codex authority. This research addresses that
 follow-up and the repeating-content slots coupled to page-number placement.
 The accepted renderer meanings and page roles remain in
-[Page Roles And Counter Semantics][page-roles].
+[Page Roles And Counter Semantics](research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md).
 
 The decisions below are settled for implementation planning. Implementation
 and verification remain pending.
@@ -72,7 +72,7 @@ user did not give exact direction for that group; it is not an instruction to
 disable it. The user can choose either group or both. This sparse distinction
 must survive setup revision, Codex preparation, reports, and final validation.
 
-The existing [font-hint editor][interactive-font-hints] stays separate. Its
+The existing [font-hint editor](../guides/markdown-pdf-interactive-usage.md#font-hints) stays separate. Its
 guided `Page headers and footers` preference can inform Codex's shared
 `fonts.pageChrome.default` choice. A page number uses that family and the style
 of its selected header or footer area. Explicit page-information answers do
@@ -283,45 +283,27 @@ HTML/CSS or effective render behavior changes.
 
 ## Related Research
 
-- [Markdown PDF Page Roles And Counter Semantics][page-roles]
-- [Markdown PDF Interactive Page Numbers And Repeating Page Content UX][interactive-ux]
-- [Markdown PDF Codex Helper Roadmap][helper-roadmap]
+- [Markdown PDF Page Roles And Counter Semantics](research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md)
+- [Markdown PDF Interactive Page Numbers And Repeating Page Content UX](research-2026-08-14-markdown-pdf-interactive-page-number-and-page-chrome-ux.md)
+- [Markdown PDF Codex Helper Roadmap](research-2026-06-10-markdown-pdf-codex-profile-and-interactive-flow.md)
 
 ## Related Plans
 
 - [Markdown PDF Interactive Codex page information implementation](../plans/plan-2026-09-23-markdown-pdf-interactive-codex-page-information.md)
-- [Markdown PDF page-number configuration implementation][page-number-plan]
+- [Markdown PDF page-number configuration implementation](../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md)
 
-[^formal-guide]: [Interactive Markdown PDF Usage][interactive-usage] and [Formal Guide collection][formal-guide-collection].
+[^formal-guide]: [Interactive Markdown PDF Usage](../guides/markdown-pdf-interactive-usage.md) and [Formal Guide collection](../../src/cli/interactive/markdown/formal-guide/collection.ts).
 
-[^profile-defaults]: [Profile defaults][profile-defaults] and [Profile initialization][profile-init].
+[^profile-defaults]: [Profile defaults](../../src/cli/markdown-pdf/profile/defaults.ts) and [Profile initialization](../../src/cli/markdown-pdf/profile/init-service.ts).
 
-[^profile-helper]: [Markdown PDF Codex Profile Helper guide][profile-helper] and [Profile signal mode][profile-signal-mode].
+[^profile-helper]: [Markdown PDF Codex Profile Helper guide](../guides/markdown-pdf-codex-profile-helper.md) and [Profile signal mode](../../src/cli/markdown-pdf/profile-codex/signal-mode.ts).
 
-[^project-helper]: [Markdown PDF Codex Project Helper guide][project-helper], [Project signal mode][project-signal-mode], and [Template output plan][template-output-plan].
+[^project-helper]: [Markdown PDF Codex Project Helper guide](../guides/markdown-pdf-codex-project-helper.md), [Project signal mode](../../src/cli/markdown-pdf/project-codex/signal-mode.ts), and [Template output plan](../../src/cli/markdown-pdf/template-codex/output-plan.ts).
 
-[^usage]: [Markdown PDF Usage][usage].
+[^usage]: [Markdown PDF Usage](../guides/markdown-pdf-usage.md).
 
-[^page-roles]: [Completed page-role research][page-roles].
+[^page-roles]: [Completed page-role research](research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md).
 
-[^conflict-behavior]: [Formal Guide prompts][formal-guide-prompts], [Formal Guide collection][formal-guide-collection], and [Page chrome generation][page-chrome].
+[^conflict-behavior]: [Formal Guide prompts](../../src/cli/interactive/markdown/formal-guide/prompts.ts), [Formal Guide collection](../../src/cli/interactive/markdown/formal-guide/collection.ts), and [Page chrome generation](../../src/cli/markdown-pdf/profile/page-chrome.ts).
 
-[^off-behavior]: [Formal Guide collection][formal-guide-collection] and [Page chrome generation][page-chrome].
-
-[formal-guide-collection]: ../../src/cli/interactive/markdown/formal-guide/collection.ts
-[formal-guide-prompts]: ../../src/cli/interactive/markdown/formal-guide/prompts.ts
-[helper-roadmap]: research-2026-06-10-markdown-pdf-codex-profile-and-interactive-flow.md
-[interactive-usage]: ../guides/markdown-pdf-interactive-usage.md
-[interactive-font-hints]: ../guides/markdown-pdf-interactive-usage.md#font-hints
-[interactive-ux]: research-2026-08-14-markdown-pdf-interactive-page-number-and-page-chrome-ux.md
-[page-chrome]: ../../src/cli/markdown-pdf/profile/page-chrome.ts
-[page-number-plan]: ../plans/plan-2026-08-12-markdown-pdf-page-number-configuration.md
-[page-roles]: research-2026-08-15-markdown-pdf-page-roles-and-counter-semantics.md
-[profile-defaults]: ../../src/cli/markdown-pdf/profile/defaults.ts
-[profile-helper]: ../guides/markdown-pdf-codex-profile-helper.md
-[profile-init]: ../../src/cli/markdown-pdf/profile/init-service.ts
-[profile-signal-mode]: ../../src/cli/markdown-pdf/profile-codex/signal-mode.ts
-[project-helper]: ../guides/markdown-pdf-codex-project-helper.md
-[project-signal-mode]: ../../src/cli/markdown-pdf/project-codex/signal-mode.ts
-[template-output-plan]: ../../src/cli/markdown-pdf/template-codex/output-plan.ts
-[usage]: ../guides/markdown-pdf-usage.md
+[^off-behavior]: [Formal Guide collection](../../src/cli/interactive/markdown/formal-guide/collection.ts) and [Page chrome generation](../../src/cli/markdown-pdf/profile/page-chrome.ts).
