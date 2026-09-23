@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Interactive Codex page information implementation"
 created-date: 2026-09-23
-modified-date: 2026-09-23
+modified-date: 2026-09-24
 status: in-progress
 agent: codex
 plan: ../plan-2026-09-23-markdown-pdf-interactive-codex-page-information.md
@@ -67,7 +67,7 @@ Interactive authoring and verified its PDF comparison and commit range.
 | Phase 3 | Complete | Final Profile, Project handoff, first PDF render review |
 | Phase 4 | Complete | Candidate lifecycle, report projection, PDF comparison, and commit-range review |
 | Phase 5 | Complete | Constrain: integrated checks and exact code range review passed; Project text-cover constraint found |
-| Phase 5 follow-up | Pending | Resolve Project cover signals and managed text-cover synthesis |
+| Phase 5 follow-up | Complete | Cover policy, saved text-cover handoff, PDF review, and exact-range review |
 | Phase 6 | Pending | Guide alignment and documentation closeout |
 
 For each phase, record the exact commit range, checks, accepted review fixes,
@@ -221,10 +221,30 @@ raw artifacts out of this record.
 
 ### Phase 5 Follow-up: Project Cover Signals
 
-- **Status:** Pending. The plan now tracks cover-image precedence, text-cover
-  synthesis without an image, conflicting choices, Project compatibility,
-  representative PDF checks, and an exact follow-up range review. Record
-  implementation evidence here after those checks complete.
+- **Range:** `df9e1ebc..c2e140a7`. Gate complete.
+- **Delivered:** A selected image signals a Project cover to the Profile phase.
+  Conflicting base and image choices fail before consent; later intent conflicts
+  return Interactive to setup or fail the direct command. A Project without an
+  image can save one managed text-cover scaffold, then resolve the final
+  Profile's cover fields against each render's metadata. Direct Template cover
+  behavior stays image-backed.
+- **Checks:** `bun run test:all` passed 1,341 unit, 2,131 Application, 2 Codex,
+  and 3 Pandoc cases. Build, TypeScript, lint, formatting, and diff checks
+  passed. Focused tests covered the decision table, model decision boundary,
+  saved Project reuse, and Interactive revision.
+- **PDF review:** Built CLI Project renders produced portrait and landscape A4
+  PDFs with one resolved text cover, a separate body page, correct page shape,
+  and no repeated body title or visible overlap. A model-assisted Project
+  passed validation and rendered its saved text cover. Its final Profile chose
+  plain styling; the deterministic report-style cover retained the blue bar.
+- **Layout finding:** A saved Project stylesheet keeps its prepared `@page`
+  shape, so a later orientation flag alone does not change that Project's PDF.
+  Phase 6 guidance now includes this boundary.
+- **Review:** The first range review found ambiguous cover prose, a missing
+  successful Interactive revision check, and duplicated scaffold markup.
+  These were fixed in the range above; the final exact-range re-review found
+  no actionable issues.
+- **Verdict:** Complete. Phase 6 remains documentation-only.
 
 ## Related Research
 

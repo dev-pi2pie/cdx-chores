@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Interactive Codex Page Information Implementation"
 created-date: 2026-09-23
-modified-date: 2026-09-23
+modified-date: 2026-09-24
 status: active
 agent: codex
 ---
@@ -496,7 +496,7 @@ visual-review outcome.
 
 #### Phase 5 Follow-up: Project Cover Signals
 
-- [ ] Resolve cover signals according to this table before guide closeout:
+- [x] Resolve cover signals according to this table before guide closeout:
 
 | Image | Interpreted intent | Base cover | Result |
 | ----- | ------------------ | ---------- | ------ |
@@ -511,7 +511,7 @@ image, cover intent with base OFF, and no-cover intent with base ON. Image and
 base settings are known at setup; prose intent is interpreted after the Profile
 phase. Never silently override a choice.
 
-- [ ] Make the no-image text-cover case usable in a managed Project Template
+- [x] Make the no-image text-cover case usable in a managed Project Template
       while keeping the final Profile's `cover.enabled`, `cover.style`,
       `cover.fields` (title, subtitle, author, company, date), and
       `titleBlock.metadataTitle` authoritative. Verify exactly one live
@@ -520,7 +520,7 @@ phase. Never silently override a choice.
       compatibility validation. Catch setup-known conflicts before consent;
       recheck the final Profile before Template preparation after any Profile
       model decision.
-- [ ] Verify the cover decision cases, saved Project handoff, and representative
+- [x] Verify the cover decision cases, saved Project handoff, and representative
       portrait and landscape PDF renders. Record the checks and exact reviewed
       follow-up commit range in the unified job before Phase 6 begins.
 
