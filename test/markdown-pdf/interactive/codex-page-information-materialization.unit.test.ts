@@ -122,6 +122,7 @@ describe("Interactive Codex page-information materialization", () => {
       candidate.footer = { center: "" };
       const final = applyMarkdownPdfCodexPageInformation({
         profile: candidate,
+        baseProfile: { footer: { center: "Reviewed base text" } },
         pageInformation: {
           pageNumbers: numbersOn,
           ...(repeatingOn
@@ -144,6 +145,39 @@ describe("Interactive Codex page-information materialization", () => {
       if (repeatingOn) expect(final.header).toMatchObject({ left: "Exact header" });
     });
   }
+
+  test("does not resurrect retained text after its base slot is cleared", () => {
+    const candidate = profile();
+    candidate.footer = { center: "" };
+    const final = applyMarkdownPdfCodexPageInformation({
+      profile: candidate,
+      baseProfile: { footer: { center: "" } },
+      pageInformation: { pageNumbers: numbersOn },
+      slotResolution: {
+        position: "bottom-center",
+        choice: "retain",
+        conflictingText: "Reviewed base text",
+      },
+    });
+    expect(final.footer).toMatchObject({ center: "" });
+  });
+
+  test("requires a new decision when the base slot changes despite an empty candidate slot", () => {
+    const candidate = profile();
+    candidate.footer = { center: "" };
+    expect(() =>
+      applyMarkdownPdfCodexPageInformation({
+        profile: candidate,
+        baseProfile: { footer: { center: "Changed base text" } },
+        pageInformation: { pageNumbers: numbersOn },
+        slotResolution: {
+          position: "bottom-center",
+          choice: "retain",
+          conflictingText: "Reviewed base text",
+        },
+      }),
+    ).toThrow(MarkdownPdfPageInformationConflictError);
+  });
 
   test("does not allow model-selected numbering to hide explicit repeating text", () => {
     const original = profile();

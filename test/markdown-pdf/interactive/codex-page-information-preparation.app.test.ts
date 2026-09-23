@@ -278,6 +278,27 @@ describe("internal Interactive page-information preparation", () => {
             conflict: { position: "bottom-center", text: "Changed", source: "candidate" },
           });
           expect(templateCalls).toBe(0);
+          await writeFile(
+            join(fixtureDir, "base.yml"),
+            `${BASE_PROFILE}pageNumbers:\n  enabled: true\n  position: bottom-center\nfooter:\n  center: ""\n`,
+            "utf8",
+          );
+          const afterClear = await session.prepare({
+            ...setup,
+            pageInformation: revision.answers,
+          });
+          expect(afterClear.kind).toBe("prepared");
+          if (afterClear.kind === "prepared") {
+            const final =
+              afterClear.candidate.artifact === "profile"
+                ? afterClear.candidate.prepared.kind === "profile"
+                  ? afterClear.candidate.prepared.finalProfile
+                  : undefined
+                : afterClear.candidate.artifact === "project-bundle"
+                  ? afterClear.candidate.prepared.profilePhase.finalProfile
+                  : undefined;
+            expect(final?.footer).toMatchObject({ center: "" });
+          }
         },
       );
     },
@@ -285,7 +306,7 @@ describe("internal Interactive page-information preparation", () => {
 
   test("mixed Profile setup obtains consent before its one request and forwards the model choice", async () => {
     await withTempFixtureDir("md-pdf-interactive-page-mixed", async (fixtureDir) => {
-      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      const { runtime, stdout } = createActionTestRuntime({ cwd: fixtureDir });
       const events: string[] = [];
       const session = createMarkdownPdfPageInformationPreparationSession(runtime, {
         codexExecution: { model: "test-model", reasoningEffort: "high" },
@@ -308,7 +329,7 @@ describe("internal Interactive page-information preparation", () => {
             accepted_font_patches: [],
             reasoning: "Use the chosen layout.",
             warnings: [],
-            fallback_reason: "",
+            fallback_reason: "Echo\u202e\u2028 page text",
             unmatched_directions: [],
           });
         },
@@ -328,6 +349,9 @@ describe("internal Interactive page-information preparation", () => {
           report: { kind: "none" },
         });
         await writeBoundMarkdownPdfCodexCandidate(runtime, bound);
+        expect(stdout.text).toContain("Fallback reason: Echo\\u202e\\u2028 page text");
+        expect(stdout.text).not.toContain("\u202e");
+        expect(stdout.text).not.toContain("\u2028");
         const saved = await readMarkdownPdfProfileFile(join(fixtureDir, "accepted-profile.json"));
         expect(saved.pageNumbers).toMatchObject({ format: " Exact {page} / {pages} " });
         expect(saved.header).toMatchObject({ left: "Exact {title}" });

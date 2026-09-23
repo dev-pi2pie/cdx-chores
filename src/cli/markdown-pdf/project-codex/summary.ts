@@ -20,8 +20,13 @@ function publicSummaryPath(runtime: CliRuntime, path: string): string {
   );
 }
 
+function safeCodexResultText(value: string): string {
+  return escapeMarkdownPdfPageInformationTerminalText(sanitizeMdPdfProjectCodexTerminalText(value));
+}
+
 export function formatMdPdfProjectCodexHandoffReview(input: {
   finalProfile: Record<string, unknown>;
+  hasExplicitPageInformation?: boolean;
   reportArtifact: MarkdownPdfProjectCodexReportArtifact;
 }): string[] {
   const profileReview = collectMarkdownPdfProfileAuthoringReview(input.finalProfile);
@@ -34,7 +39,7 @@ export function formatMdPdfProjectCodexHandoffReview(input: {
     `Profile identity: ${handoff.profile.id}`,
     `Profile: ${handoff.profile.bundlePath}`,
     `Profile decision mode: ${phases.profile.decisionMode}`,
-    `Effective page numbers: enabled=${pageNumbers.enabled ? "yes" : "no"}, scope=${pageNumbers.scope}, countFrom=${pageNumbers.countFrom}, start=${pageNumbers.start}, increment=${pageNumbers.increment}, position=${pageNumbers.position}, format=${JSON.stringify(escapeMarkdownPdfPageInformationTerminalText(sanitizeMdPdfProjectCodexTerminalText(pageNumbers.format)))}`,
+    `Effective page numbers: enabled=${pageNumbers.enabled ? "yes" : "no"}, scope=${pageNumbers.scope}, countFrom=${pageNumbers.countFrom}, start=${pageNumbers.start}, increment=${pageNumbers.increment}, position=${pageNumbers.position}, format=${JSON.stringify(input.hasExplicitPageInformation ? escapeMarkdownPdfPageInformationTerminalText(pageNumbers.format) : sanitizeMdPdfProjectCodexTerminalText(pageNumbers.format))}`,
   ];
 
   if (handoff.capabilityRequirements.length === 0) {
@@ -64,10 +69,10 @@ export function formatMdPdfProjectCodexHandoffReview(input: {
   );
 
   if (project.fallbackReason) {
-    lines.push(`Fallback reason: ${sanitizeMdPdfProjectCodexTerminalText(project.fallbackReason)}`);
+    lines.push(`Fallback reason: ${safeCodexResultText(project.fallbackReason)}`);
   }
   for (const direction of input.reportArtifact.unsupportedDirections) {
-    lines.push(`Unsupported direction: ${sanitizeMdPdfProjectCodexTerminalText(direction)}`);
+    lines.push(`Unsupported direction: ${safeCodexResultText(direction)}`);
   }
   for (const result of input.reportArtifact.validationResults.filter(
     (result) => result.status === "failed",
@@ -76,7 +81,7 @@ export function formatMdPdfProjectCodexHandoffReview(input: {
   }
   for (const diagnostic of handoff.diagnostics) {
     lines.push(
-      `Project ${diagnostic.severity} [${diagnostic.conditionId}]: ${sanitizeMdPdfProjectCodexTerminalText(diagnostic.message)}`,
+      `Project ${diagnostic.severity} [${diagnostic.conditionId}]: ${safeCodexResultText(diagnostic.message)}`,
     );
   }
   if (handoff.render.usability !== "unavailable") {

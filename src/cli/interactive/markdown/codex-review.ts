@@ -21,6 +21,7 @@ import {
   collectMarkdownPdfProfileAuthoringReview,
   formatMarkdownPdfProfileAuthoringReview,
 } from "../../markdown-pdf/profile-authoring-review";
+import { hasExplicitMarkdownPdfCodexPageInformation } from "../../markdown-pdf/profile-codex/page-information-signals";
 import { formatMdPdfProjectCodexHandoffReview } from "../../markdown-pdf/project-codex/summary";
 
 export type MarkdownPdfCodexReviewAction =
@@ -212,6 +213,9 @@ export function renderMarkdownPdfCodexCandidateReview(
     printLine(runtime.stderr, "");
     for (const line of formatMdPdfProjectCodexHandoffReview({
       finalProfile: candidate.prepared.profilePhase.finalProfile,
+      hasExplicitPageInformation: hasExplicitMarkdownPdfCodexPageInformation(
+        candidate.setup.pageInformation,
+      ),
       reportArtifact: candidate.prepared.binding.reportArtifact,
     })) {
       printLine(runtime.stderr, line);

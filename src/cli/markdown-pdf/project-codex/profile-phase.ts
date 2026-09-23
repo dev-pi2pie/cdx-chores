@@ -186,6 +186,7 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
       decision.kind === "codex-profile" ? decision.codexResult.decision.fallbackReason : undefined,
     finalProfile: applyMarkdownPdfCodexPageInformation({
       profile: decision.finalProfile,
+      baseProfile: input.signals.profile.baseProfile.candidate?.fullProfile,
       pageInformation: input.signals.profile.pageInformation,
       slotResolution: input.slotResolution,
     }),

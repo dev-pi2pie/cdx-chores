@@ -317,6 +317,7 @@ export async function prepareMarkdownPdfProfileCodex(
     }
     const finalProfile = applyMarkdownPdfCodexPageInformation({
       profile: decision.finalProfile,
+      baseProfile: baseProfileCandidate?.fullProfile,
       pageInformation,
       slotResolution: options.internalPageInformationSlotResolution,
     });

@@ -94,7 +94,11 @@ export async function commitPreparedMarkdownPdfProfileCodex(input: {
     printLine(runtime.stdout, `Preset: ${prepared.identity.preset}`);
   }
   if (prepared.result?.decision.fallbackReason) {
-    printLine(runtime.stdout, `Fallback reason: ${prepared.result.decision.fallbackReason}`);
+    const reason = prepared.result.decision.fallbackReason;
+    printLine(
+      runtime.stdout,
+      `Fallback reason: ${prepared.hasExplicitPageInformation ? escapeMarkdownPdfPageInformationTerminalText(reason) : reason}`,
+    );
   }
   printLine(runtime.stdout, `Profile: ${destination.displayOutputPath}`);
   printMarkdownPdfProfileAuthoringSummary({

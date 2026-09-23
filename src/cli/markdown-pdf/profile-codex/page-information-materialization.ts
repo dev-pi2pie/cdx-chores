@@ -55,6 +55,7 @@ function setSlotText(
 /** Apply Interactive authority after the base/Codex decision, before any consumer sees the Profile. */
 export function applyMarkdownPdfCodexPageInformation(input: {
   profile: Record<string, unknown>;
+  baseProfile?: Record<string, unknown>;
   pageInformation?: MarkdownPdfCodexPageInformationSignal;
   slotResolution?: MarkdownPdfPageInformationSlotResolution;
 }): Record<string, unknown> {
@@ -76,13 +77,20 @@ export function applyMarkdownPdfCodexPageInformation(input: {
       ? repeating.text[reserved]
       : undefined;
   const candidateText = reserved ? slotText(header, footer, reserved) : undefined;
+  const currentBase = input.baseProfile
+    ? normalizeMarkdownPdfProfile({ profile: input.baseProfile }).profile
+    : undefined;
+  const baseText =
+    reserved && currentBase
+      ? slotText(currentBase.header, currentBase.footer, reserved)
+      : undefined;
   const reviewedRetainedText =
     reserved &&
     repeating?.enabled !== false &&
     input.slotResolution?.position === reserved &&
     input.slotResolution.choice === "retain" &&
     !candidateText?.trim()
-      ? input.slotResolution.conflictingText
+      ? baseText
       : undefined;
   const conflictingText =
     explicitText ??
