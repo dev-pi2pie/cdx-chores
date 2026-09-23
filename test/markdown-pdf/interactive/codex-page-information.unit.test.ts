@@ -117,6 +117,48 @@ describe("internal Markdown PDF Codex page-information collection", () => {
     expect(result.answers?.occupiedNumberSlot).toBeUndefined();
   });
 
+  test("keeps ON text as inactive draft through OFF and restores it when re-enabled", async () => {
+    const enabledQueue = [true, false, true];
+    const { promptSet } = prompts(["repeating", "repeating", "repeating", "continue"], {
+      repeatingContentEnabled: () => {
+        const enabled = enabledQueue.shift();
+        if (enabled === undefined) throw new Error("Unexpected repeating-content prompt");
+        return enabled;
+      },
+      repeatingContentPositions: ({ current }) => (current?.length ? current : ["top-left"]),
+      repeatingContent: ({ current }) => current ?? "Exact authored text",
+    });
+    const nextAction = promptSet.action;
+    let actionCount = 0;
+    promptSet.action = async (answers) => {
+      if (actionCount === 2) {
+        expect(answers.repeatingContent).toEqual({
+          enabled: false,
+          selected: ["top-left"],
+          text: { "top-left": "Exact authored text" },
+        });
+        expect(answers.occupiedNumberSlot).toBeUndefined();
+      }
+      actionCount += 1;
+      return await nextAction(answers);
+    };
+    const result = await collectMarkdownPdfCodexPageInformation({
+      mode: "revision",
+      prompts: promptSet,
+    });
+    expect(enabledQueue).toEqual([]);
+    expect(result).toEqual({
+      kind: "answers",
+      answers: {
+        repeatingContent: {
+          enabled: true,
+          selected: ["top-left"],
+          text: { "top-left": "Exact authored text" },
+        },
+      },
+    });
+  });
+
   test("preselects eligible occupied base slots only on the first repeating edit", async () => {
     const seen: Array<readonly string[] | undefined> = [];
     const { promptSet } = prompts(["repeating", "continue"], {

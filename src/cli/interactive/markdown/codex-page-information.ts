@@ -19,7 +19,7 @@ import {
 
 export interface MarkdownPdfCodexRepeatingContentAnswers {
   enabled: boolean;
-  /** Retained while OFF, but never materialized while OFF. */
+  /** Inactive draft while OFF: never materialize, send as a signal, or report these values. */
   selected: MarkdownPdfPageChromePosition[];
   text: Partial<Record<MarkdownPdfPageChromePosition, string>>;
 }

@@ -78,14 +78,18 @@ fixes, visual conclusions where applicable, cleanup, and verdict. Keep
 machine-specific setup and raw artifacts out of this record.
 
 Phase 1 starts from `4ff30540`. Its collector and revision gate is in
-progress. Focused collection and Formal Guide checks passed (64 tests), as did
-focused setup and existing Interactive entry checks (20 tests), TypeScript,
+progress. Focused collection and Formal Guide checks passed (65 tests), as did
+focused setup and existing Interactive entry checks (23 tests), TypeScript,
 scoped lint and format checks, and whitespace validation. Later base selection
 and replacement preserve explicit ON selections without adding newly occupied
 slots; OFF remains OFF. The managed application suite stopped before testing
 because its process-observation prerequisite was unavailable here; the focused
 application files passed through direct Bun execution. Commit-range review
-and the Phase 1 gate verdict remain open.
+found missing base-revision and navigation coverage, plus ambiguity about
+retained text while repeating content is OFF. Follow-up tests cover replacement,
+Back/Cancel, and ON-to-OFF-to-ON revision; the inactive draft rule is explicit
+in the collector. The widened commit-range review and Phase 1 gate verdict
+remain open.
 
 ## Related Research
 

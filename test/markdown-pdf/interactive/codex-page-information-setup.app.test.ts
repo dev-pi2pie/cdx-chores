@@ -298,4 +298,130 @@ describe("internal Markdown PDF Codex setup entry", () => {
     });
     expect(result.setup.pageInformation?.occupiedNumberSlot).toBeUndefined();
   });
+
+  test("revises ON after base replacement without importing unselected base content", async () => {
+    selectQueue = [
+      "none",
+      "base-profile",
+      "page-information",
+      "base-profile",
+      "page-information",
+      "page-information",
+      "continue",
+    ];
+    pathQueue = ["base-a.yml", "base-b.yml"];
+    const selectedAtPrompt: Array<readonly MarkdownPdfPageChromePosition[] | undefined> = [];
+    let positionEdit = 0;
+    const actions: MarkdownPdfCodexPageInformationAction[] = [
+      "repeating",
+      "continue", // first edit with base A
+      "continue", // base B recheck
+      "repeating",
+      "continue", // review B without choosing its new slot
+      "repeating",
+      "continue", // choose B's new slot
+    ];
+    const prompts = pagePrompts(actions, {
+      repeatingEnabled: true,
+      selected: (current) => {
+        selectedAtPrompt.push(current);
+        positionEdit += 1;
+        return positionEdit === 3 ? ["top-left", "top-center"] : ["top-left"];
+      },
+    });
+    prompts.initial = async () => "skip";
+    const bases = {
+      "base-a.yml": normalizeMarkdownPdfProfile({
+        profile: { header: { left: "A selected", right: "A only" } },
+      }).profile,
+      "base-b.yml": normalizeMarkdownPdfProfile({
+        profile: {
+          header: { left: "B replacement", center: "B new" },
+          footer: { right: "B unselected" },
+        },
+      }).profile,
+    };
+    const loadCalls: string[] = [];
+    const { runtime, pathPromptContext, fontHintEditor } = context();
+    const result = await collectMarkdownPdfCodexSetup(runtime, pathPromptContext, {
+      artifact: "profile",
+      entry: "pdf-recipes",
+      fontHintEditor,
+      internalPageInformation: {
+        prompts,
+        loadBase: async (path) => {
+          loadCalls.push(path);
+          const base = bases[path as keyof typeof bases];
+          if (!base) throw new Error(`Unknown base: ${path}`);
+          return base;
+        },
+      },
+    });
+    expect(result.kind).toBe("setup");
+    if (result.kind !== "setup") return;
+    expect(actions).toEqual([]);
+    expect(loadCalls).toEqual(["base-a.yml", "base-b.yml", "base-b.yml", "base-b.yml"]);
+    expect(selectedAtPrompt).toEqual([
+      ["top-left", "top-right"], // first edit preselects base A's occupied slots
+      ["top-left"], // replacement B does not auto-add top-center
+      ["top-left"], // B's new slot appears only after explicit selection
+    ]);
+    expect(result.setup.baseProfile).toBe("base-b.yml");
+    expect(result.setup.pageInformation?.repeatingContent).toEqual({
+      enabled: true,
+      selected: ["top-left", "top-center"],
+      text: { "top-left": "A selected", "top-center": "B new" },
+    });
+    expect(JSON.stringify(result.setup.pageInformation)).not.toContain("A only");
+    expect(JSON.stringify(result.setup.pageInformation)).not.toContain("B unselected");
+  });
+
+  test.each(["back", "cancel"] as const)(
+    "%s at a base-change recheck discards draft edits and the new base",
+    async (navigation) => {
+      selectQueue = navigation === "back" ? ["base-profile", "continue"] : ["base-profile"];
+      pathQueue = ["base-new.yml"];
+      const actions: MarkdownPdfCodexPageInformationAction[] = ["repeating", navigation];
+      const prompts = pagePrompts(actions, {
+        repeatingEnabled: true,
+        selected: () => ["top-center"],
+      });
+      prompts.formalGuide.repeatingContent = () => "Changed draft";
+      const base = normalizeMarkdownPdfProfile({
+        profile: { header: { center: "New base content" } },
+      }).profile;
+      const initialSetup = {
+        artifact: "profile" as const,
+        baseProfile: "base-old.yml",
+        fontHints: [],
+        pageInformation: {
+          repeatingContent: {
+            enabled: true,
+            selected: ["top-left" as const],
+            text: { "top-left": "Old exact" },
+          },
+        },
+      };
+      const { runtime, pathPromptContext, fontHintEditor } = context();
+      const result = await collectMarkdownPdfCodexSetup(runtime, pathPromptContext, {
+        artifact: "profile",
+        entry: "pdf-recipes",
+        fontHintEditor,
+        initialSetup,
+        internalPageInformation: { prompts, loadBase: async () => base },
+      });
+      expect(actions).toEqual([]);
+      expect(pathQueue).toEqual([]);
+      expect(initialSetup.pageInformation.repeatingContent).toEqual({
+        enabled: true,
+        selected: ["top-left"],
+        text: { "top-left": "Old exact" },
+      });
+      if (navigation === "back") {
+        expect(result).toEqual({ kind: "setup", setup: initialSetup });
+      } else {
+        expect(result).toEqual({ kind: "cancel" });
+      }
+    },
+  );
 });
