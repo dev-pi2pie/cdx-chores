@@ -167,8 +167,10 @@ raw artifacts out of this record.
 
 ### Phase 5: Integrated Validation
 
-- **Code/test range:** `4ce46c6e..f0a6b120`. Gate complete with a constrained
-  product direction for Project text covers.
+- **Review ranges:** Code and tests were reviewed over
+  `4ce46c6e..f0a6b120`; documentation closeout commit `10cbc133` was reviewed
+  separately after commit. Gate complete with a constrained product direction
+  for Project text covers.
 - **Formal coverage:** Added the nine page-number and repeating-content choice
   combinations at materialization and 36 saved-state application cases across
   fresh/base Profile and Project paths. Group removal, later revisions,
