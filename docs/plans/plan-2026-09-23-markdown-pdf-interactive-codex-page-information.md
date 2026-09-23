@@ -142,7 +142,7 @@ path or change to the shared path redactor.
       styling.
 - [x] Define the first rendered-PDF review after Phase 3, the saved-recipe
       comparison after Phase 4, and the final Phase 5 matrix. Identify the
-      page snapshots to show before owned test artifacts are cleaned.
+      pages to show in chat before owned test artifacts are cleaned.
 - [x] Review the revised research and plan contract before implementation.
       Record the decision and its evidence in the single
       [implementation job record](jobs/2026-09-23-markdown-pdf-interactive-codex-page-information.md).
@@ -196,18 +196,20 @@ in Phase 3, and candidate and handoff review in Phase 4.
 
 At the Phase 3, 4, and 5 gates, render real PDFs from synthetic Markdown and
 the accepted Profile or Project artifact. Check extracted text and rasterized
-pages, then display labeled PNG snapshots in the conversation before marking
-the phase complete; a text-only claim or a file path is insufficient. Phase 3
+pages, then display labeled PNGs in the chat thread before marking the phase
+complete; a text-only claim or a file path is insufficient. Phase 3
 owns the first visual proof, Phase 4 compares a render from the saved recipe
 and one-render override, and Phase 5 owns the wider page-role matrix and
-built-CLI smoke. Keep selected review PNGs available until the visual review
-closes; clean only owned temporary PDFs and scratch meanwhile. Do not commit
-generated media or record local artifact paths in public docs. The unified job
-records public-safe visual conclusions and cleanup, not the images themselves.
+built-CLI smoke. PNG files are temporary local review copies; keep them through
+the chat discussion, then clean them with the owned PDFs and scratch. The chat
+thread is the visual review surface. Do not commit generated media or record
+local artifact paths in public docs. The unified job records only public-safe
+visual verdicts, discrepancies or limits, and cleanup outcomes.
+
 If rendering is unavailable or a visual mismatch remains, record the limit or
 finding and leave the corresponding phase gate open.
 
-The snapshot set is fixed before implementation:
+The chat review page set is fixed before implementation:
 
 | Gate | Pages to show | Evidence to compare |
 | ---- | ------------- | ------------------- |
@@ -215,9 +217,9 @@ The snapshot set is fixed before implementation:
 | Phase 4 | Corresponding body pages from a saved recipe with numbers ON and a one-render number-OFF override | Same saved page text and styling; numbers absent only in the override; saved recipe unchanged |
 | Phase 5 | Representative cover, ToC, and body pages from the integrated matrix and built CLI smoke | Page-role boundaries, number scope, header/footer positions, and any visual mismatch |
 
-Show labeled PNGs inline at each gate before clearing it. Keep those review
-copies through the user discussion, then clean only generated files owned by
-the verification run.
+Show labeled PNGs inline at each gate before clearing it. Keep temporary
+review copies through the user discussion, then clean only files owned by the
+verification run.
 
 ## Implementation Phases
 
@@ -343,14 +345,14 @@ the new page-information path.
       existing `md to-pdf` path using synthetic Markdown. Extract page text and
       inspect PNGs for numbering, repeating content, and retained-slot
       non-rendering, including relevant cover/ToC/body pages. Show labeled
-      snapshots to the user before Phase 3 closeout and retain the review
+      PNGs in chat before Phase 3 closeout and retain the temporary review
       copies until that discussion closes.
 
 Phase gate: an internally accepted Profile matches every explicit answer after
 normalization; unresolved conflicts cannot reach acceptance or Project Template
 preparation; Project Template preparation consumes that Profile; bundle and
 saved Profile values agree; the first rendered pages and extracted text match
-that Profile and their snapshots have been reported; the internal path retains
+that Profile and their images have been shown in chat; the internal path retains
 no optional Codex diagnostic report; page-information answers remain
 inaccessible through normal Interactive save/render; no direct helper or
 renderer contract changes.
@@ -398,13 +400,13 @@ renderer contract changes.
 - [ ] Render from the saved Profile and Project recipe, then compare the
       extracted text and representative PNGs with Phase 3. Exercise the
       transient one-render page-number override and confirm it does not change
-      the saved recipe. Show the saved-artifact and override snapshots before
+      the saved recipe. Show the saved-artifact and override PNGs in chat before
       Phase 4 closeout; keep review copies until that discussion closes.
 
 Phase gate: review and saved output use the same validated Profile, and any
 reported final stored fields agree with it; request claims match real calls; no
 unaccepted candidate or page text beyond the decided report contract is
-written; saved-recipe and override renders have been visually reported;
+written; saved-recipe and override renders have been reviewed in chat;
 existing cleanup and recovery behavior still applies.
 
 ### Phase 5: Integrated Validation
@@ -429,10 +431,10 @@ existing cleanup and recovery behavior still applies.
       TypeScript, lint, format, build, and `git diff --check`. Run the bounded
       built-CLI smoke below and distinguish its deterministic, model, and PDF
       outcomes from automated coverage.
-- [ ] Complete the wider page-role render matrix and show a final labeled PNG
-      snapshot report with extraction findings and any visual mismatch.
-      Preserve selected review copies through the discussion, then record
-      scoped cleanup of the owned PDFs, scratch, and review copies.
+- [ ] Complete the wider page-role render matrix and show labeled PNGs in chat
+      alongside extraction findings and any visual mismatch. Preserve
+      temporary review copies through the discussion, then record scoped
+      cleanup of the owned PDFs, scratch, and review copies.
 - [ ] Review the complete implementation range after the gates and smoke;
       resolve accepted findings and rerun affected checks. Record the final
       validated tip, model and renderer limitations, extraction/visual results,
@@ -440,9 +442,9 @@ existing cleanup and recovery behavior still applies.
 
 #### Bounded Built-CLI Smoke
 
-Use one ignored `examples/playground/md-pdf/smoke/page-information/<unique-run>/`
-directory with synthetic Markdown and an unchanged base Profile whose bottom
-center footer slot contains text and whose header/footer style and
+Use one unique, ignored scratch directory under `examples/playground/` for the
+smoke run. It contains synthetic Markdown and an unchanged base Profile whose
+bottom-center footer slot contains text and whose header/footer style and
 `fonts.pageChrome.default` are set. Follow the
 [Codex execution guide](../guides/codex-execution-configuration.md) for the public
 `cdx-chores interactive --codex-model <model>` form. In the development
@@ -472,24 +474,23 @@ bun run cli interactive --codex-model gpt-6-luna
 3. Render the saved Project through the normal `to-pdf` handoff with the
    one-render page-number choice set to `Use recipe setting`. Extract the page
    label and repeating text by page and inspect rasterized representative
-   pages for position and overlap. Show the labeled PNGs in the final snapshot
-   report. This is a workflow sanity check; existing renderer evidence owns
-   the broader version and page-role matrix.
+   pages for position and overlap. Show the labeled PNGs in chat. This is a
+   workflow sanity check; existing renderer evidence owns the broader version
+   and page-role matrix.
 
 Keep the full state and failure matrix in automated tests rather than in long
 terminal sessions. Record only sanitized outcomes, relevant public versions,
-limitations, and cleanup state. Remove only the owned smoke artifacts after
-capturing selected review PNGs. Keep those PNGs available until the visual
-review closes, then clean them separately. Do not commit generated PDFs,
-images, raw requests, reports, or local paths. If a model or installed
-renderer cannot be used, identify that limitation separately from automated
-contract results.
+limitations, and cleanup state. Keep selected PNGs locally through the chat
+review. After discussion, remove those PNGs and other artifacts owned by the
+smoke run. Do not commit generated PDFs, images, raw requests, reports, or
+local paths. If a model or installed renderer cannot be used, identify that
+limitation separately from automated contract results.
 
 Phase gate: the automated matrix and built-CLI checks account for Profile and
 Project preparation, their saved artifacts, and the render handoff. The Phase
 5 entry of the unified job records a Continue, Constrain, or Stop verdict
 from actual results, including any unavailable model or renderer path,
-reported snapshots, and scoped cleanup.
+visual-review outcome, and scoped cleanup.
 
 ### Phase 6: Guidance And Lifecycle Closeout
 
@@ -527,7 +528,7 @@ phase and the final Phase 5 gate. Keep one
 [implementation job record](jobs/2026-09-23-markdown-pdf-interactive-codex-page-information.md)
 for the whole plan. Update its phase entries as work proceeds: starting
 boundary, affected contract, focused checks, exact reviewed change range,
-accepted fixes, user-visible snapshot report, cleanup, and phase verdict.
+accepted fixes, public-safe visual verdict, cleanup, and phase verdict.
 Its Phase 5 entry owns built-CLI smoke outcomes and model or renderer
 limitations; Phase 6 owns guide review and lifecycle decisions. Do not create
 separate phase job files.

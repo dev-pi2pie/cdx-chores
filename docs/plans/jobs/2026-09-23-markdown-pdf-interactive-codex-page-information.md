@@ -27,96 +27,87 @@ choices only after Phase 4 verifies local review and report omission.
       the shared redactor.
 - [x] Decide local consent/review text display against the existing terminal
       color rules and define the escaping checks for implementation.
-- [x] Define Phase 3, 4, and 5 rendered-page snapshots and cleanup timing.
+- [x] Define Phase 3, 4, and 5 rendered-page review and cleanup timing.
 - [x] Review the research and plan direction, then record the decision here.
 
-The saved Profile keeps exact page text. Codex receives it after consent only
-when a request is needed. The existing optional Profile and Project diagnostic
-reports gain requested-choice and validated final stored metadata: number
-settings, selected and stored header/footer positions, and reserved-slot
-clear/retain outcome. The new fields do not copy labels, repeating text,
-previews, or rendering claims, and they do not infer slot provenance. An attempt-based
-omission marker and safe result summary replace raw Codex result values and
-prose on these runs; independently entered intent and font hints retain
-their existing behavior. The shared path redactor is unchanged.
+### Gate outcome
 
-The Profile version-4 reader accepts additive fields and an absent optional
-decision; the Project bundle recognizes its existing report discriminator.
-These are structural compatibility checks, not a promise to retain model
-prose. Phase 4 will test the omission marker, synthetic model echoes,
-failure, direct-command compatibility, and independently entered intent.
-
-Local consent and candidate review show exact page text with terminal control
-and formatting characters escaped, including bidirectional controls. The
-existing Project escape helper does not cover all formatting controls, so
-Phase 4 must verify the expanded display rule. The existing color contract
-remains per stream and styles only fixed labels. The plan fixes the Phase 3–5
-page snapshot set; each gate will report labeled PNGs before cleaning its own
-generated files.
-
-Contract review added C1 and Unicode separator display cases and an enabled
-number baseline for the Phase 4 saved-recipe comparison. The prerequisite gate
-also requires Project handoff and font review to use in-memory results so
-reduced report fields do not remove visible feedback. The revised report
-contract distinguishes stored positions from rendered output, omits slot
-provenance, and ties the omission marker to actual model attempts. The gate is
-complete at the contract level.
+- **Exact text:** The saved Profile keeps entered page text. Codex receives it
+  after consent only when a request is needed.
+- **Report metadata:** Profile and Project reports will keep
+  requested-choice and validated final stored metadata: number settings,
+  selected and stored header/footer positions, and reserved-slot clear/retain
+  outcomes.
+- **Report omissions:** They will omit literal page text, previews, Codex
+  result echoes, rendering claims, and inferred slot provenance. An
+  attempt-based omission marker and value-free result summary replace model
+  values and prose. Independently entered intent and font hints retain their
+  current behavior; the shared path redactor stays unchanged.
+- **Compatibility:** The Profile version-4 reader accepts additive fields and
+  an absent optional decision. The Project bundle retains its report
+  discriminator. This is structural compatibility, not retention of model
+  prose.
+- **Local display contract:** Consent and candidate review must show exact text
+  with C0/C1, bidirectional controls, and Unicode line/paragraph separators
+  escaped. Per-stream color styles fixed labels and headings only. Phase 4
+  will use in-memory results for Project handoff and font review so report
+  omissions do not remove visible feedback.
+- **Verification ahead:** Phase 4 checks the omission marker, model echoes,
+  failures, direct-command compatibility, independent intent, and a saved
+  recipe with numbers enabled against a one-render OFF override.
+- **Verdict:** Complete at the contract level.
 
 ## Phase Progress
 
-| Section | Status | Evidence to record |
+| Section | Status | Gate evidence |
 | ------- | ------ | ------------------ |
-| Phase 1 | Complete | Collection and revision checks; reviewed commit range |
-| Phase 2 | Complete | Signal, consent, and request checks; reviewed commit range |
-| Phase 3 | Pending | Final Profile and Project handoff checks; first PDF extraction and labeled page snapshots; reviewed commit range |
-| Phase 4 | Pending | Review, report projection, and lifecycle checks; saved-recipe and override snapshots; reviewed commit range |
-| Phase 5 | Pending | Integrated matrix, built-CLI smoke, final snapshot report, limitations, cleanup, final verdict |
-| Phase 6 | Pending | Guide alignment, documentation review, lifecycle closeout |
+| Phase 1 | Complete | Collection and revision |
+| Phase 2 | Complete | Signals, consent, and requests |
+| Phase 3 | Pending | Final Profile, Project handoff, first PDF render review |
+| Phase 4 | Pending | Candidate review, report projection, saved-recipe comparison |
+| Phase 5 | Pending | Integrated matrix, built CLI, final visual review |
+| Phase 6 | Pending | Guide alignment and documentation closeout |
 
-For each phase, record its exact base and tip commits, checks, accepted review
-fixes, visual conclusions where applicable, cleanup, and verdict. Keep
+For each phase, record the exact commit range, checks, accepted review fixes,
+visual conclusions and cleanup when applicable, and verdict. Keep
 machine-specific setup and raw artifacts out of this record.
 
-Phase 1 implementation range: `4ff30540..b684afe4`. Its collector and
-revision gate passed. Focused collection and Formal Guide checks passed (65 tests), as did
-focused setup and existing Interactive entry checks (23 tests), TypeScript,
-scoped lint and format checks, and whitespace validation. Later base selection
-and replacement preserve explicit ON selections without adding newly occupied
-slots; OFF remains OFF. The managed application suite stopped before testing
-because its process-observation prerequisite was unavailable here; the focused
-application files passed through direct Bun execution. Commit-range review
-found missing base-revision and navigation coverage, plus ambiguity about
-retained text while repeating content is OFF. Follow-up tests cover replacement,
-Back/Cancel, and ON-to-OFF-to-ON revision; the inactive draft rule is explicit
-in the collector. Independent maintainability and test re-reviews of the widened
-range found no remaining material issue. No PDF artifact is due at this gate.
+### Phase 1: Sparse Answers And Guided Collection
 
-Phase 2 implementation range: `d970f0b9..38d3675e`. Its signal, consent, and
-request gate passed. The internal structured signal keeps exact active text and
-placeholders, drops inactive OFF drafts and conflict data, and rejects invalid
-guided number settings or page text over 512 characters. Page-information-only
-Profile and Project paths make zero model requests; removing the last explicit
-group restores Project's low-signal result. Mixed runs obtain consent before
-Profile or Project requests and retain one model selection across phases and
-retries. Local consent escapes controls and formatting characters while
-preserving plain text and per-stream heading styling. Optional diagnostic
-report retention is guarded until Phase 4 implements its safe projection.
+- **Range:** `4ff30540..d970f0b9`. Gate complete.
+- **Delivered:** Internal collection keeps unspecified, OFF, and ON separate.
+  Base replacement preserves explicit selections without adding newly
+  occupied slots; OFF stays OFF. The normal Interactive route remains gated.
+- **Checks:** 65 collection/Formal Guide tests and 23 setup/entry tests passed,
+  along with TypeScript, scoped lint and format checks, and whitespace
+  validation. The managed app suite stopped at its process-observation
+  prerequisite; focused app files passed through direct Bun execution.
+- **Review:** Added base-revision, Back/Cancel, and ON-to-OFF-to-ON coverage;
+  clarified inactive OFF drafts. Final maintainability and test range reviews
+  found no material issue.
 
-The initial Profile/Project action regression slice passed (222 tests). Focused
-collector/signal/consent unit checks passed (27 tests), as did adjacent
-Interactive and helper application checks (29 tests), TypeScript, scoped lint
-and format checks, and whitespace validation. An existing mocked service test
-needed its export fixture updated for the new report guard; it now passes.
-No PDF artifact is due at this gate.
+### Phase 2: Signal Classification And Request Consent
 
-The first Phase 2 commit-range review found a late report-binding path that
-could retain a Codex echo of entered text. Prepared Profile and Project state
-now blocks optional reports at bind and write boundaries, including direct
-report writing. Follow-up checks cover synthetic echoed text, explicit OFF
-with inactive drafts, and declined Project consent. The Profile/Project action
-slice passed again (225 tests); focused follow-up unit and application slices
-passed (14 and 21 tests). Independent code, test, and security re-reviews of
-the widened range found no remaining material issue.
+- **Range:** `d970f0b9..890042ad`. Gate complete.
+- **Signals:** Structured data preserves exact active text and placeholders,
+  omits OFF drafts and conflict data, and rejects invalid guided numbers or
+  page text over 512 characters.
+- **Requests:** Page-information-only Profile and Project runs make zero model
+  requests; removing the last choice restores Project's low-signal result.
+  Mixed runs obtain consent before requests and keep one model selection
+  across phases and retries.
+- **Consent display:** Local text escapes controls and formatting characters;
+  fixed headings follow per-stream styling.
+- **Report boundary:** Optional reports remain unavailable on explicit
+  page-information runs until Phase 4 adds the safe projection.
+- **Checks:** 225 Profile/Project action tests passed. Focused unit and app
+  checks passed (27 and 29 tests); follow-up guard checks passed (14 and 21
+  tests). TypeScript, scoped lint and format checks, and whitespace validation
+  passed.
+- **Review:** Closed a late report-binding path that could retain a Codex echo.
+  Profile and Project bind/write paths now reject optional reports; synthetic
+  echo, explicit OFF, and declined Project-consent cases passed. Final code,
+  test, and security range reviews found no material issue.
 
 ## Related Research
 
