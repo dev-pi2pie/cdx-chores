@@ -23,6 +23,27 @@ Implementation base: `205bc290` (subsequent canary version update).
   cover request still produces a conflict; existing image and base-Profile
   conflict checks remain in force.
 
+### Cover dollar escaping
+
+Pandoc interprets `$...$` as template syntax and `$$` as one literal dollar
+sign. After resolving Profile placeholders such as `{title}` and escaping
+HTML-sensitive characters, the shared cover helper doubles each dollar sign
+once when constructing template source:
+
+| Original cover text | Pandoc template source | Rendered text |
+| --- | --- | --- |
+| `$100` | `$$100` | `$100` |
+| `$$` | `$$$$` | `$$` |
+| `$title$` | `$$title$$` | `$title$` |
+
+An original `$$` therefore remains two literal dollars in the PDF; users do
+not need to pre-escape their text. Saved Profile values remain unchanged.
+This applies only to resolved cover-field text, preserving intentional Pandoc
+instructions elsewhere in the template and normal Markdown body parsing.
+HTML entities alone are insufficient because managed-template asset rewriting
+decodes them before Pandoc runs. The real-Pandoc regressions and synthetic PDF
+smoke already verify literal `$$` alongside currency and template-like text.
+
 ## Verification
 
 - Added real-Pandoc regressions for both cover paths covering currency,
