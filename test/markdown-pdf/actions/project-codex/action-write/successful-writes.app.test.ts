@@ -75,6 +75,7 @@ function duplicateTitleProfileRunner(): MarkdownPdfCodexProfileRunner {
       decision_mode: "adapted",
       selected_candidate_id: "article",
       accepted_patches: [{ op: "replace", path: "/titleBlock/metadataTitle", value: "auto" }],
+      project_cover_intent: "unspecified",
       accepted_font_patches: [],
       reasoning: "The first H1 already provides the visible title.",
       warnings: [],

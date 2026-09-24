@@ -124,7 +124,20 @@ export interface MarkdownPdfCodexProfileRequest {
   workingDirectory: string;
 }
 
+export const MARKDOWN_PDF_PROJECT_COVER_INTENTS = [
+  "unspecified",
+  "requested",
+  "text-only",
+  "image",
+  "no-cover",
+  "conflict",
+] as const;
+
+export type MarkdownPdfProjectCoverIntent = (typeof MARKDOWN_PDF_PROJECT_COVER_INTENTS)[number];
+
 export interface MarkdownPdfCodexDecision {
+  /** Project-only interpretation of advisory intent, separate from the chosen Profile. */
+  projectCoverIntent?: MarkdownPdfProjectCoverIntent;
   acceptedFontPatches: MarkdownPdfCodexProfileFontPatch[];
   acceptedPatches: MarkdownPdfCodexProfilePatch[];
   decisionMode: MarkdownPdfCodexDecisionMode;

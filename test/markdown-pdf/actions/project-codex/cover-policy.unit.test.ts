@@ -166,3 +166,60 @@ describe("Project cover policy", () => {
     ).toThrow("conflict");
   });
 });
+
+describe("Project structured cover intent", () => {
+  test.each(["請加入文字封面", "表紙を追加してください", "Add a titlepage"])(
+    "honors the interpreted request for %s",
+    (intent) => {
+      expect(
+        applyMdPdfProjectCoverPolicy({
+          intent,
+          modelCoverIntent: "text-only",
+          coverImageAvailable: false,
+          finalProfile: { cover: { enabled: true } },
+        }).cover,
+      ).toMatchObject({ enabled: true });
+    },
+  );
+  test.each(["Use readable typography", "Start page numbering after the cover"])(
+    "does not infer a cover from the model profile for %s",
+    (intent) => {
+      expect(
+        applyMdPdfProjectCoverPolicy({
+          intent,
+          modelCoverIntent: "unspecified",
+          coverImageAvailable: false,
+          finalProfile: { cover: { enabled: true } },
+        }).cover,
+      ).toMatchObject({ enabled: false });
+    },
+  );
+  test("ignores a model request when advisory intent is absent", () => {
+    expect(
+      applyMdPdfProjectCoverPolicy({
+        modelCoverIntent: "requested",
+        coverImageAvailable: false,
+        finalProfile: { cover: { enabled: true } },
+      }).cover,
+    ).toMatchObject({ enabled: false });
+  });
+  test.each([
+    { intent: "請不要加入封面", modelCoverIntent: "no-cover" as const, coverImageAvailable: true },
+    { intent: "請加入圖片封面", modelCoverIntent: "image" as const, coverImageAvailable: false },
+    { intent: "請加入文字封面", modelCoverIntent: "text-only" as const, coverImageAvailable: true },
+    {
+      intent: "請加入文字封面",
+      modelCoverIntent: "text-only" as const,
+      coverImageAvailable: false,
+      baseProfileCoverEnabled: false,
+    },
+    {
+      intent: "請不要加入封面",
+      modelCoverIntent: "no-cover" as const,
+      coverImageAvailable: false,
+      baseProfileCoverEnabled: true,
+    },
+  ])("rejects interpreted constraints for $intent", (row) => {
+    expect(() => applyMdPdfProjectCoverPolicy({ ...row, finalProfile: {} })).toThrow("conflict");
+  });
+});

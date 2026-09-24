@@ -2,6 +2,7 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import {
   MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA,
+  MARKDOWN_PDF_PROJECT_PROFILE_OUTPUT_SCHEMA,
   MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS,
   suggestMarkdownPdfProfileWithCodex,
 } from "../../../../src/adapters/codex/markdown-pdf-profile";
@@ -12,7 +13,7 @@ afterEach(() => {
 });
 
 describe("Markdown PDF Codex profile adapter", () => {
-  test("starts the default Codex runner in the request working directory", async () => {
+  test.each([false, true])("starts the default runner with Project schema=%s", async (project) => {
     const requestEvents: string[] = [];
     let capturedThreadOptions: unknown;
     let capturedRunMessages: unknown;
@@ -43,6 +44,7 @@ describe("Markdown PDF Codex profile adapter", () => {
               capturedRunOptions = options;
               return {
                 finalResponse: JSON.stringify({
+                  ...(project ? { project_cover_intent: "unspecified" } : {}),
                   decision_mode: "adapted",
                   selected_candidate_id: "wide-table",
                   accepted_patches: [],
@@ -63,6 +65,7 @@ describe("Markdown PDF Codex profile adapter", () => {
     try {
       result = await suggestMarkdownPdfProfileWithCodex({
         ...requestBase,
+        ...(project ? { projectCoverImageAvailable: false } : {}),
         onModelRequestAttempt: () => requestEvents.push("attempt"),
       });
     } finally {
@@ -94,7 +97,11 @@ describe("Markdown PDF Codex profile adapter", () => {
         type: "text",
       }),
     ]);
-    expect(runOptions.outputSchema).toBe(MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA);
+    expect(runOptions.outputSchema).toBe(
+      project
+        ? MARKDOWN_PDF_PROJECT_PROFILE_OUTPUT_SCHEMA
+        : MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA,
+    );
     expect(runOptions.signal).toBeInstanceOf(AbortSignal);
     expect(timeoutCalls).toEqual([MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS]);
     expect(requestEvents).toEqual(["start-thread", "attempt", "run"]);

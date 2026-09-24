@@ -1,3 +1,4 @@
+import type { MarkdownPdfProjectCoverIntent } from "../../../adapters/codex/markdown-pdf-profile/types";
 import { CliError } from "../../errors";
 import { normalizeMarkdownPdfProfile } from "../profile";
 import { loadMarkdownPdfBaseProfileCandidate } from "../profile/candidates";
@@ -119,8 +120,20 @@ export function applyMdPdfProjectCoverPolicy(input: {
   coverImageAvailable: boolean;
   finalProfile: Record<string, unknown>;
   intent?: string;
+  modelCoverIntent?: MarkdownPdfProjectCoverIntent;
 }): Record<string, unknown> {
-  const intent = classifyMdPdfProjectCoverIntent(input.intent);
+  const localIntent = classifyMdPdfProjectCoverIntent(input.intent);
+  // Bounded local rules retain their authority. The model interprets other prose,
+  // including requests without English cover words; it does not invent intent.
+  const interpreted = input.intent?.trim() ? input.modelCoverIntent : undefined;
+  const intent =
+    (localIntent === "none" || localIntent === "ambiguous") && interpreted
+      ? interpreted === "requested"
+        ? "generic"
+        : interpreted === "unspecified"
+          ? "none"
+          : interpreted
+      : localIntent;
   const noImageRequested = (input.intent ?? "").match(NEGATED_COVER_IMAGE) !== null;
   if (intent === "conflict") {
     coverConflict(
