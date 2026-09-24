@@ -368,6 +368,7 @@ describe("internal page-information helper signals", () => {
             decision_mode: "adapted",
             selected_candidate_id: "default",
             accepted_patches: [],
+            project_cover_intent: "unspecified",
             accepted_font_patches: [],
             reasoning: `Echo: ${marker}`,
             warnings: [],

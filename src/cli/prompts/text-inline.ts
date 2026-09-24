@@ -1,4 +1,6 @@
 import { input } from "@inquirer/prompts";
+import { resolveCliColorEnabled } from "../colors";
+import { styleCliDiagnosticLabel } from "../diagnostic-color";
 
 import {
   beep,
@@ -31,6 +33,7 @@ export interface InlineTextPromptOptions {
   stdin?: NodeJS.ReadStream;
   stdout?: NodeJS.WritableStream;
   validate: ValidationFn;
+  colorEnabled?: boolean;
   promptImpls?: {
     simpleInput?: typeof input;
     advancedInline?: typeof promptTextInlineGhost;
@@ -100,6 +103,7 @@ export async function promptTextWithGhost(options: InlineTextPromptOptions): Pro
         stdin: options.stdin!,
         stdout: options.stdout!,
         validate: options.validate,
+        colorEnabled: options.colorEnabled,
       });
     } catch (error) {
       if (isPromptCancelError(error)) {
@@ -137,6 +141,7 @@ export async function promptTextInlineGhost(options: {
   stdin: NodeJS.ReadStream;
   stdout: NodeJS.WritableStream;
   validate: ValidationFn;
+  colorEnabled?: boolean;
 }): Promise<string> {
   if (!supportsRawSessionIO(options.stdin, options.stdout)) {
     throw new Error("Inline text prompt requires TTY stdin/stdout with raw mode support");
@@ -335,7 +340,16 @@ export async function promptTextInlineGhost(options: {
             settleResolve(value);
             return;
           }
-          beep(stdout);
+          inlineRenderer.clear();
+          const label = styleCliDiagnosticLabel(
+            { colorEnabled: options.colorEnabled ?? resolveCliColorEnabled() },
+            stdout,
+            "error",
+            "Error:",
+          );
+          // Validation text is explanatory; never let control characters alter the prompt.
+          const message = validation.replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, " ");
+          stdout.write(`${label} ${message}\n`);
           scheduleRender();
           return;
         }
