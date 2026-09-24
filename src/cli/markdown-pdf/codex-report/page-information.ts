@@ -184,7 +184,7 @@ export function validateMarkdownPdfCodexReportPageInformation(value: unknown): v
       !scopes.has(String(finalNumbers.scope)) ||
       !origins.has(String(finalNumbers.countFrom)) ||
       !Number.isSafeInteger(finalNumbers.start) ||
-      (finalNumbers.start as number) < 1 ||
+      (finalNumbers.start as number) < 0 ||
       !Number.isSafeInteger(finalNumbers.increment) ||
       (finalNumbers.increment as number) < 1 ||
       !position(finalNumbers.position)
