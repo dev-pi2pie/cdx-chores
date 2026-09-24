@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Project Helper"
 created-date: 2026-07-05
-modified-date: 2026-09-23
+modified-date: 2026-09-24
 status: completed
 agent: codex
 ---
@@ -163,6 +163,11 @@ Without a cover image, a requested or enabled cover uses the final Profile's
 text fields in the managed Template. A selected cover image signals an image
 cover even when `--intent` is silent about covers. It has no built-in report
 text-cover bar, even if the saved Profile retains `cover.style: report`.
+Recognized explicit cover requests and image/base-Profile conflicts retain
+their local checks. Other cover wording follows the validated Profile decision,
+subject to the selected image and explicit base-Profile cover setting; a cover
+keyword alone does not enable a cover. Review the prepared cover choice before
+saving.
 
 Before exposing a usable bundle or follow-up command, Project validation checks
 the normalized final Profile, one live `.document-body` containing the single

@@ -19,6 +19,12 @@ describe("Project cover policy", () => {
     [undefined, "none"],
     ["Use a restrained report layout", "none"],
     ["Add a cover page", "generic"],
+    ["Report with a text cover", "text-only"],
+    ["Leave the cover out", "ambiguous"],
+    ["Leave the text-only cover out", "ambiguous"],
+    ["A cover is unnecessary", "ambiguous"],
+    ["I don't want to add a cover", "ambiguous"],
+    ["Only add a cover if requested later", "ambiguous"],
     ["Use a text-only cover", "text-only"],
     ["No cover image, use a text-only cover", "text-only"],
     ["Use a text cover without a photo", "text-only"],
@@ -56,6 +62,48 @@ describe("Project cover policy", () => {
         baseProfileCoverEnabled: false,
       }),
     ).toThrow("conflicts with the base Profile");
+  });
+
+  test.each([true, false])(
+    "preserves the validated cover decision %s for ambiguous prose",
+    (enabled) => {
+      for (const intent of [
+        "Leave the cover out",
+        "Leave the text-only cover out",
+        "A cover is unnecessary",
+        "I don't want to add a cover",
+        "Only add a cover if requested later",
+      ]) {
+        const profile = { cover: { enabled, style: "plain", fields: { title: "{title}" } } };
+        expect(
+          applyMdPdfProjectCoverPolicy({
+            coverImageAvailable: false,
+            finalProfile: profile,
+            intent,
+          }),
+        ).toBe(profile);
+      }
+    },
+  );
+
+  test.each([true, false])("retains explicit base cover %s under ambiguous prose", (enabled) => {
+    const result = applyMdPdfProjectCoverPolicy({
+      baseProfileCoverEnabled: enabled,
+      coverImageAvailable: false,
+      finalProfile: { cover: { enabled: !enabled } },
+      intent: "Cover placement details",
+    });
+    expect(result.cover).toMatchObject({ enabled });
+  });
+
+  test("retains a selected image under ambiguous prose", () => {
+    expect(
+      applyMdPdfProjectCoverPolicy({
+        coverImageAvailable: true,
+        finalProfile: { cover: { enabled: false } },
+        intent: "Cover placement details",
+      }).cover,
+    ).toMatchObject({ enabled: true });
   });
 
   test.each([
