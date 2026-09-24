@@ -254,6 +254,14 @@ repeating content are separate groups, each with three states:
 For fresh number-ON setup, the defaults are body pages starting at 1, label
 `Page {page}`, and bottom-center placement. The six header/footer positions
 and label tokens follow [Markdown PDF Usage](markdown-pdf-usage.md#covers-repeating-content-and-page-numbers).
+
+> [!CAUTION]
+> An explicit page-number ON choice in Codex Assistant sets
+> `pageNumbers.start: 1` and `pageNumbers.increment: 1`, even when a base
+> Profile has different values. This setup does not ask for either value.
+> Review the prepared Profile before saving or rendering. For a custom
+> sequence, render with an existing or edited Profile YAML or JSON file.
+
 `Remove explicit ... choice` returns one group to unspecified without changing
 the other. Revising the base Profile rechecks an occupied number slot; newly
 selected text cannot use it. An inherited or Codex-selected collision asks
