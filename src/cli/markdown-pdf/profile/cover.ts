@@ -48,7 +48,11 @@ function htmlEscape(value: string): string {
 }
 
 function coverField(value: string, profile: NormalizedMarkdownPdfProfile): string {
-  return htmlEscape(resolveMarkdownPdfPlaceholderText(value, profile.metadata));
+  // Pandoc needs doubled dollars; HTML entities are decoded by local-asset rewriting.
+  return htmlEscape(resolveMarkdownPdfPlaceholderText(value, profile.metadata)).replace(
+    /\$/g,
+    () => "$$",
+  );
 }
 
 export function resolveMarkdownPdfCoverFields(
