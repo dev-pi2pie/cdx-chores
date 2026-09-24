@@ -18,7 +18,10 @@ export function resolveCliColorEnabled(
   return !isNoColorEnvSet(options.env);
 }
 
-export function getCliColors(runtime: CliRuntime, targetStream: NodeJS.WritableStream) {
+export function getCliColors(
+  runtime: Pick<CliRuntime, "colorEnabled">,
+  targetStream: NodeJS.WritableStream,
+) {
   const stream = targetStream as NodeJS.WritableStream & { isTTY?: boolean };
   return createColors(runtime.colorEnabled && Boolean(stream.isTTY));
 }

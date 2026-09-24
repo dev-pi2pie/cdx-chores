@@ -399,3 +399,55 @@ describe("interactive Markdown PDF formal-guide prompt adapter", () => {
     });
   });
 });
+
+describe("Codex page text prompt limits", () => {
+  async function codexPrompts() {
+    const { createMarkdownPdfCodexPageInformationPrompts } =
+      await import("../../../src/cli/interactive/markdown/codex-page-information");
+    return createMarkdownPdfCodexPageInformationPrompts({
+      cwd: process.cwd(),
+      stdin: process.stdin,
+      stdout: process.stdout,
+      colorEnabled: false,
+      runtimeConfig: {
+        mode: "simple",
+        autocomplete: { enabled: false, minChars: 1, maxSuggestions: 12, includeHidden: false },
+      },
+    }).formalGuide;
+  }
+  test("rejects an oversized label in-place and accepts the corrected 512-character label", async () => {
+    const accepted = "{page}" + "x".repeat(506);
+    queue(state.selects, "Page-number label", "custom");
+    queue(state.inputs, "Custom page-number label", accepted + "x", accepted);
+    const result = await (await codexPrompts()).pageNumberLabel({ current: "Old {page}" });
+    expect(result).toBe(accepted);
+    expect(state.rejected.get("Custom page-number label")).toEqual([
+      {
+        error: "Maximum 512 characters; entered 513. Shorten the text to continue.",
+        value: accepted + "x",
+      },
+    ]);
+    expect(state.ghostPrompts.get("Custom page-number label")?.[0]).toMatchObject({
+      initialValue: "Old {page}",
+      colorEnabled: false,
+    });
+  });
+  test("rejects oversized repeating text and keeps its current value available for editing", async () => {
+    queue(state.inputs, "Header left content", "x".repeat(513), "x".repeat(512));
+    const result = await (
+      await codexPrompts()
+    ).repeatingContent({ position: "top-left", current: "Existing header" });
+    expect(result).toBe("x".repeat(512));
+    expect(state.rejected.get("Header left content")?.[0]?.error).toContain("entered 513");
+    expect(state.ghostPrompts.get("Header left content")?.[0]?.initialValue).toBe(
+      "Existing header",
+    );
+  });
+  test("keeps the ordinary Formal Guide free of the Codex-only bound", async () => {
+    queue(state.inputs, "Header left content", "x".repeat(513));
+    expect(
+      await createMarkdownPdfFormalGuidePrompts().repeatingContent({ position: "top-left" }),
+    ).toBe("x".repeat(513));
+    expect(state.rejected.size).toBe(0);
+  });
+});

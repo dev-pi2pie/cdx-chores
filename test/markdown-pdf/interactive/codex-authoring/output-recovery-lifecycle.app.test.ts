@@ -6,6 +6,7 @@ import { TO_PDF_ENTRY, recipesCodexSelections } from "../codex-authoring-fixture
 describe("interactive Markdown PDF Codex output recovery and lifecycle", () => {
   test("changes output and report binding without preparing the candidate again", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfCodexBindErrorMessage: "Output already exists",
@@ -84,6 +85,7 @@ describe("interactive Markdown PDF Codex output recovery and lifecycle", () => {
     const escape = "\u001B";
     const bell = "\u0007";
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfCodexFinalProfile: {
@@ -115,6 +117,7 @@ describe("interactive Markdown PDF Codex output recovery and lifecycle", () => {
     "offers immediate %s from output selection without destination binding",
     (next) => {
       const result = runInteractiveHarness({
+        pageInformationInitialChoice: "skip",
         mode: "run",
         markdownPdfMocks: true,
         selectQueue: [
@@ -142,6 +145,7 @@ describe("interactive Markdown PDF Codex output recovery and lifecycle", () => {
     "treats the custom output path %s as a destination instead of navigation",
     (output) => {
       const result = runInteractiveHarness({
+        pageInformationInitialChoice: "skip",
         mode: "run",
         markdownPdfMocks: true,
         selectQueue: [
@@ -164,6 +168,7 @@ describe("interactive Markdown PDF Codex output recovery and lifecycle", () => {
 
   test("uses an explicit Project save output exactly for a durable save", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -188,6 +193,7 @@ describe("interactive Markdown PDF Codex output recovery and lifecycle", () => {
     "removes acceptance actions for an unusable %s candidate",
     (artifact) => {
       const result = runInteractiveHarness({
+        pageInformationInitialChoice: "skip",
         mode: "run",
         markdownPdfMocks: true,
         markdownPdfCodexUnusableArtifacts: [artifact],
@@ -214,6 +220,7 @@ describe("interactive Markdown PDF Codex output recovery and lifecycle", () => {
     "renders one generated %s with an enabled override and correct Profile ownership",
     (artifact) => {
       const result = runInteractiveHarness({
+        pageInformationInitialChoice: "skip",
         mode: "run",
         markdownPdfMocks: true,
         selectQueue: [
@@ -251,6 +258,7 @@ describe("interactive Markdown PDF Codex output recovery and lifecycle", () => {
 
   test("temporary Project rendering resolves output only after lifecycle choice", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -279,6 +287,7 @@ describe("interactive Markdown PDF Codex output recovery and lifecycle", () => {
     "handles initial Project code-highlighting %s before report output collection",
     (action) => {
       const result = runInteractiveHarness({
+        pageInformationInitialChoice: "skip",
         mode: "run",
         markdownPdfMocks: true,
         selectQueue: [
@@ -310,6 +319,7 @@ describe("interactive Markdown PDF Codex output recovery and lifecycle", () => {
     "retains the same generated %s candidate and override across a lifecycle change",
     (artifact) => {
       const result = runInteractiveHarness({
+        pageInformationInitialChoice: "skip",
         mode: "run",
         markdownPdfMocks: true,
         selectQueue: [
@@ -353,6 +363,7 @@ describe("interactive Markdown PDF Codex output recovery and lifecycle", () => {
 
   test("changes generated final-review highlighting without regenerating or rebinding outputs", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -406,6 +417,7 @@ describe("interactive Markdown PDF Codex output recovery and lifecycle", () => {
     "changes generated Codex %s page numbers at final review without regenerating or rebinding",
     (artifact) => {
       const result = runInteractiveHarness({
+        pageInformationInitialChoice: "skip",
         mode: "run",
         markdownPdfMocks: true,
         selectQueue: [
@@ -442,6 +454,7 @@ describe("interactive Markdown PDF Codex output recovery and lifecycle", () => {
 
   test("changes highlighting after Codex durable recovery without rewriting the recipe", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfPrepareErrorMessages: ["bundle admission failed"],
@@ -491,6 +504,7 @@ describe("interactive Markdown PDF Codex output recovery and lifecycle", () => {
 
   test("changes PDF output after Codex durable recovery without rewriting the recipe", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfPrepareErrorMessages: ["bundle admission failed"],
@@ -542,6 +556,7 @@ describe("interactive Markdown PDF Codex output recovery and lifecycle", () => {
     "handles %s from generated final-review code highlighting without regenerating or rebinding",
     (action, renders) => {
       const result = runInteractiveHarness({
+        pageInformationInitialChoice: "skip",
         mode: "run",
         markdownPdfMocks: true,
         selectQueue: [
@@ -592,6 +607,7 @@ describe("interactive Markdown PDF Codex output recovery and lifecycle", () => {
         requiredPathQueue.push("reports/render.json");
       }
       const result = runInteractiveHarness({
+        pageInformationInitialChoice: "skip",
         mode: "run",
         markdownPdfMocks: true,
         selectQueue: [

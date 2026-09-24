@@ -133,6 +133,99 @@ describe("Markdown PDF template Codex adapter: decision parsing", () => {
     });
   });
 
+  test("accepts a Project-owned text cover without an image or managed asset", async () => {
+    const result = await suggestMarkdownPdfTemplateWithCodex({
+      ...requestBase({ projectTextCover: true }),
+      runner: async () =>
+        responseFromDecision({
+          coverEnabled: true,
+          coverStyle: "profile-text",
+          imageFit: "",
+          managedAssets: [],
+          templateFamily: "document-layered",
+        }),
+    });
+
+    expect(result.decision).toMatchObject({
+      decisionMode: "adapted",
+      templateFamily: "document-layered",
+      managedAssets: [],
+      slots: {
+        cover: {
+          enabled: true,
+          style: "profile-text",
+          imageFit: undefined,
+          layout: "none",
+          titlePlacement: "text-cover",
+        },
+      },
+    });
+  });
+
+  test("accepts a Project decision that leaves its Profile text cover to synthesis", async () => {
+    const result = await suggestMarkdownPdfTemplateWithCodex({
+      ...requestBase({ projectTextCover: true }),
+      runner: async () =>
+        responseFromDecision({
+          coverEnabled: false,
+          managedAssets: [],
+          templateFamily: "document-layered",
+        }),
+    });
+
+    expect(result.decision).toMatchObject({
+      decisionMode: "adapted",
+      templateFamily: "document-layered",
+      managedAssets: [],
+      slots: { cover: { enabled: false, style: "none", imageFit: undefined } },
+    });
+  });
+
+  test("rejects a text-cover decision in the direct Template contract", () => {
+    const decision = parseMarkdownPdfTemplateCodexDecision(
+      responseFromDecision({
+        coverEnabled: true,
+        coverStyle: "profile-text",
+        imageFit: "",
+        managedAssets: [],
+        templateFamily: "document-layered",
+      }),
+    );
+    expect(() =>
+      applyMarkdownPdfTemplateCodexDecision({ decision, request: requestBase() }),
+    ).toThrow("profile-text requires an enabled Project text cover");
+  });
+
+  test("rejects image-family and asset claims for a Project text cover", () => {
+    const request = requestBase({ projectTextCover: true });
+    const response = {
+      coverEnabled: true,
+      coverStyle: "profile-text",
+      imageFit: "",
+      managedAssets: [],
+      templateFamily: "document-layered",
+    };
+    expect(() =>
+      applyMarkdownPdfTemplateCodexDecision({
+        decision: parseMarkdownPdfTemplateCodexDecision(
+          responseFromDecision({ ...response, templateFamily: "cover-media-layered" }),
+        ),
+        request,
+      }),
+    ).toThrow("requires a managed cover image");
+    expect(() =>
+      applyMarkdownPdfTemplateCodexDecision({
+        decision: parseMarkdownPdfTemplateCodexDecision(
+          responseFromDecision({
+            ...response,
+            managedAssets: [{ bundle_path: "assets/cover.png", source_label: "cover.png" }],
+          }),
+        ),
+        request,
+      }),
+    ).toThrow("managed_assets must be empty for a Project text cover");
+  });
+
   test("rejects usable decisions that ignore an explicit cover image signal", async () => {
     const result = await suggestMarkdownPdfTemplateWithCodex({
       ...requestBase({ coverImage: true }),

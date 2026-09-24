@@ -31,6 +31,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
     (lifecycle, choice, compiled) => {
       const durable = lifecycle === "save-and-render";
       const result = runInteractiveHarness({
+        pageInformationInitialChoice: "skip",
         mode: "run",
         markdownPdfMocks: true,
         selectQueue: [
@@ -73,6 +74,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
   )("passes deterministic %s page numbers %s to the materialized artifact", (artifact, choice) => {
     const compiled = choice === "inherit" ? undefined : choice === "enable";
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -113,6 +115,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
     "handles initial code-highlighting %s before output selection or materialization",
     (action) => {
       const result = runInteractiveHarness({
+        pageInformationInitialChoice: "skip",
         mode: "run",
         markdownPdfMocks: true,
         selectQueue: [
@@ -143,6 +146,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
     "handles initial page-number %s before output selection or materialization",
     (action) => {
       const result = runInteractiveHarness({
+        pageInformationInitialChoice: "skip",
         mode: "run",
         markdownPdfMocks: true,
         selectQueue: [
@@ -171,6 +175,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("retains an override while returning to the same candidate lifecycle", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -203,6 +208,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("retains both overrides while returning to the same candidate lifecycle", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -237,6 +243,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("changes generated final-review page numbers without rebinding or rewriting", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -267,6 +274,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("resets an override after revising a deterministic candidate", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -307,6 +315,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("resets an override after changing the deterministic artifact", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -341,6 +350,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("resets an override after changing deterministic preparation mode", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -379,6 +389,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("removes the exact owned session after a successful temporary render", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: temporaryProfileSelections(),
@@ -394,6 +405,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("retries the same render plan without preparing or writing again", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfRenderErrorMessages: ["first render failed"],
@@ -413,6 +425,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("retains diagnostics and returns to the same candidate review", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfRenderErrorMessages: ["render failed"],
@@ -429,6 +442,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("retains an enabled override through recovery review for the same candidate", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfRenderErrorMessages: ["render failed"],
@@ -461,6 +475,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("keeps a failed temporary session and exits", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfRenderErrorMessages: ["render failed"],
@@ -477,6 +492,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("deletes only the confirmed failed temporary session", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfRenderErrorMessages: ["render failed"],
@@ -491,6 +507,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("keeps a successful PDF when temporary cleanup fails", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfCleanupErrorMessage: "cleanup denied",
@@ -511,6 +528,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("retains a temporary session when renderer preparation fails", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfPrepareErrorMessage: "bundle admission failed",
@@ -526,6 +544,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("rejects a PDF output inside the owned temporary session", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -553,6 +572,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("rejects a PDF output that would overwrite a durable recipe file", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -585,6 +605,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("rejects a PDF output equal to a durable bundle directory", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -616,6 +637,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("rejects a PDF output that would contain a generated recipe", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -643,6 +665,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("rejects a PDF output that would overwrite a with-artifact Codex report", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -675,6 +698,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("rejects a PDF output that would overwrite an external Codex report", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -703,6 +727,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("re-prompts generated PDF output after a recoverable resolution error", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfOutputErrorMessages: ["Output already exists"],
@@ -729,6 +754,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("returns from final render confirmation to the same generated recipe review", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: temporaryProfileSelections("review", "cancel"),
@@ -744,6 +770,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("retries durable renderer preparation without rewriting the recipe", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfPrepareErrorMessages: ["bundle admission failed"],
@@ -771,6 +798,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("retries durable materialization from the same accepted candidate", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfDeterministicWriteErrorMessages: ["transient write failure"],
@@ -799,6 +827,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("returns from durable renderer preparation failure to the same recipe review", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfPrepareErrorMessage: "bundle admission failed",
@@ -827,6 +856,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("changes highlighting after durable preparation recovery without rewriting the recipe", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfPrepareErrorMessages: ["bundle admission failed"],
@@ -861,6 +891,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("changes PDF output after durable preparation recovery without rewriting the recipe", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfPrepareErrorMessages: ["bundle admission failed"],
@@ -904,6 +935,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("re-prompts a colliding PDF output after durable preparation recovery", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfPrepareErrorMessages: ["bundle admission failed"],
@@ -949,6 +981,7 @@ describe("interactive Markdown PDF generated lifecycle", () => {
 
   test("retries durable rendering without cleanup or regeneration", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfRenderErrorMessages: ["durable render failed"],

@@ -12,7 +12,11 @@ import type {
   MarkdownPdfCodexProfileResult,
   MarkdownPdfCodexProfileRunner,
 } from "./types";
-import { MARKDOWN_PDF_CODEX_FONT_PATCH_ROLES, MARKDOWN_PDF_CODEX_PATCH_PATHS } from "./types";
+import {
+  MARKDOWN_PDF_CODEX_FONT_PATCH_ROLES,
+  MARKDOWN_PDF_CODEX_PATCH_PATHS,
+  MARKDOWN_PDF_PROJECT_COVER_INTENTS,
+} from "./types";
 
 export const MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS = DEFAULT_CODEX_REQUEST_TIMEOUT_MS;
 
@@ -72,6 +76,16 @@ export const MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA = {
   additionalProperties: false,
 } as const;
 
+/** Standalone Profile requests keep their existing output contract. */
+export const MARKDOWN_PDF_PROJECT_PROFILE_OUTPUT_SCHEMA = {
+  ...MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA,
+  properties: {
+    ...MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.properties,
+    project_cover_intent: { type: "string", enum: [...MARKDOWN_PDF_PROJECT_COVER_INTENTS] },
+  },
+  required: [...MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA.required, "project_cover_intent"],
+} as const;
+
 export type MarkdownPdfCodexProfileFailureKind =
   | "structured-output-schema"
   | "malformed-output"
@@ -96,9 +110,12 @@ function isCodexStructuredOutputSchemaError(error: unknown): boolean {
 function applyMarkdownPdfProfileCodexFinalResponse(input: {
   candidates: MarkdownPdfCodexProfileRequest["candidates"];
   finalResponse: string;
+  projectRequest: boolean;
 }): MarkdownPdfCodexProfileResult {
   try {
-    const decision = parseMarkdownPdfCodexDecision(input.finalResponse);
+    const decision = parseMarkdownPdfCodexDecision(input.finalResponse, {
+      projectRequest: input.projectRequest,
+    });
     try {
       return applyMarkdownPdfCodexDecision({
         candidates: input.candidates,
@@ -131,13 +148,19 @@ async function runMarkdownPdfProfileCodexPrompt(options: {
   codexExecution: ResolvedCodexExecution;
   timeoutMs?: number;
   workingDirectory: string;
+  projectRequest: boolean;
+  onModelRequestAttempt?: () => void;
 }): Promise<string> {
   const thread = await startCodexReadOnlyThread(options.workingDirectory, {
     codexExecution: options.codexExecution,
   });
+  const signal = AbortSignal.timeout(options.timeoutMs ?? MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS);
+  options.onModelRequestAttempt?.();
   const turn = await thread.run([{ type: "text", text: options.prompt }], {
-    outputSchema: MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA,
-    signal: AbortSignal.timeout(options.timeoutMs ?? MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS),
+    outputSchema: options.projectRequest
+      ? MARKDOWN_PDF_PROJECT_PROFILE_OUTPUT_SCHEMA
+      : MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA,
+    signal,
   });
   return turn.finalResponse;
 }
@@ -147,18 +170,28 @@ export async function suggestMarkdownPdfProfileWithCodex(
     runner?: MarkdownPdfCodexProfileRunner;
     timeoutMs?: number;
     codexExecution?: CodexExecutionOptions;
+    onModelRequestAttempt?: () => void;
   },
 ): Promise<MarkdownPdfCodexProfileResult> {
   const codexExecution = resolveCodexExecution(request.codexExecution);
   let finalResponse: string;
-  const runner = request.runner ?? runMarkdownPdfProfileCodexPrompt;
   try {
-    finalResponse = await runner({
+    const options = {
       prompt: buildMarkdownPdfProfileCodexPrompt(request),
       timeoutMs: request.timeoutMs,
       codexExecution,
       workingDirectory: request.workingDirectory,
-    });
+    };
+    if (request.runner) {
+      request.onModelRequestAttempt?.();
+      finalResponse = await request.runner(options);
+    } else {
+      finalResponse = await runMarkdownPdfProfileCodexPrompt({
+        ...options,
+        projectRequest: request.projectCoverImageAvailable !== undefined,
+        onModelRequestAttempt: request.onModelRequestAttempt,
+      });
+    }
   } catch (error) {
     if (isCodexStructuredOutputSchemaError(error)) {
       const message = error instanceof Error ? error.message : String(error);
@@ -169,6 +202,7 @@ export async function suggestMarkdownPdfProfileWithCodex(
   return applyMarkdownPdfProfileCodexFinalResponse({
     candidates: request.candidates,
     finalResponse,
+    projectRequest: request.projectCoverImageAvailable !== undefined,
   });
 }
 

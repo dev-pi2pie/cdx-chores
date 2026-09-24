@@ -135,6 +135,18 @@ describe("Markdown PDF template Codex adapter: prompt schema", () => {
     expect(prompt).not.toContain("Private Full Profile Sentinel");
   });
 
+  test("describes the Project text-cover capability without Profile fields", () => {
+    const prompt = buildMarkdownPdfTemplateCodexPrompt(requestBase({ projectTextCover: true }));
+    const facts = promptFacts(prompt);
+
+    expect(facts.coverSource).toEqual({ imageAvailable: false, projectTextCover: true });
+    expect(prompt).toContain("slots.cover.style profile-text");
+    expect(prompt).toContain("template_family document-layered");
+    expect(prompt).toContain("managed_assets []");
+    expect(prompt).not.toContain("cover.fields");
+    expect(prompt).not.toContain("cover.subtitle");
+  });
+
   test("uses schema-valid recipe source facts for document-derived wide-table prompts", () => {
     const prompt = buildMarkdownPdfTemplateCodexPrompt(
       requestBase({

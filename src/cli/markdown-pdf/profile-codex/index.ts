@@ -38,3 +38,15 @@ export {
   type MarkdownPdfProfileCodexMaterializedProfile,
 } from "./synthesis";
 export { serializeMarkdownPdfProfileCodexProfile } from "./write-profile";
+export {
+  applyMarkdownPdfCodexPageInformation,
+  MarkdownPdfPageInformationConflictError,
+  type MarkdownPdfPageInformationSlotResolution,
+} from "./page-information-materialization";
+export {
+  hasExplicitMarkdownPdfCodexPageInformation,
+  MARKDOWN_PDF_CODEX_PAGE_TEXT_MAX_LENGTH,
+  prepareMarkdownPdfCodexPageInformationSignal,
+  type MarkdownPdfCodexPageInformationInput,
+  type MarkdownPdfCodexPageInformationSignal,
+} from "./page-information-signals";

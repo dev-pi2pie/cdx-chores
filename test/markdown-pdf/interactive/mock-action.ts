@@ -3,6 +3,7 @@ import { extname, resolve } from "node:path";
 
 import { CliError } from "../../../src/cli/errors";
 import { MARKDOWN_PDF_PROFILE_CURRENT_REVISION } from "../../../src/cli/markdown-pdf/profile/feature-registry";
+import { MarkdownPdfPageInformationConflictError } from "../../../src/cli/markdown-pdf/profile-codex";
 import type { HarnessRunnerContext } from "../../cli-foundations/interactive-harness/context";
 import {
   fontDiscoveryModuleUrl,
@@ -103,6 +104,9 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
   };
 
   mock.module(fontDiscoveryModuleUrl, () => ({
+    defaultFontDiscoveryRunner: async () => {
+      throw new Error("Unexpected direct font discovery in the Interactive harness");
+    },
     discoverSystemFonts: async (input: Record<string, unknown>) => {
       const discoveryIndex = context.result.markdownPdfFontDiscoveryCalls.length;
       context.result.markdownPdfFontDiscoveryCalls.push({
@@ -187,6 +191,20 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
           : {}),
         unusable,
       });
+      if (
+        context.scenario.markdownPdfCodexPrepareCoverConflictOnCall ===
+        context.result.markdownPdfCodexPrepareCalls.length
+      ) {
+        throw new CliError("Cover intent conflicts with the selected Profile.", {
+          code: "MARKDOWN_PDF_PROJECT_COVER_CONFLICT",
+          exitCode: 2,
+        });
+      }
+      const conflict =
+        context.scenario.markdownPdfCodexPrepareConflicts?.[
+          context.result.markdownPdfCodexPrepareCalls.length - 1
+        ];
+      if (conflict) throw new MarkdownPdfPageInformationConflictError(conflict);
       const prepared =
         artifact === "profile"
           ? unusable
@@ -284,6 +302,13 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
                   },
                   validation: {
                     decisionMode: unusable ? "no-usable-project" : "generated",
+                    diagnostics: {
+                      conditions: Array.isArray(
+                        context.scenario.markdownPdfCodexProjectHandoff?.diagnostics,
+                      )
+                        ? context.scenario.markdownPdfCodexProjectHandoff.diagnostics
+                        : [],
+                    },
                     results: [{ name: "profile-normalization", status: "passed" }],
                   },
                 },
@@ -297,9 +322,19 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
                   finalProfile: context.scenario.markdownPdfCodexFinalProfile ?? {
                     code: GENERATED_CODE,
                   },
+                  phase: {
+                    decisionMode: "generated",
+                    signalMode: setup.sample ? "document-informed" : "hint-only",
+                    warnings: [],
+                  },
+                  unmatchedProfileDirections: [],
                 },
                 signals: { modes: { project: setup.sample ? "document-informed" : "intent-only" } },
-                templatePhase: { synthesis: { fontDecisions: [] } },
+                templatePhase: {
+                  phase: { decisionMode: "generated", signalMode: "deterministic", warnings: [] },
+                  forwardedProfileDirections: [],
+                  synthesis: { fontDecisions: [], unsupportedDirections: [] },
+                },
               };
       return { artifact, artifactCount, candidateId, prepared, setup, suggestedOutput };
     },
@@ -355,6 +390,13 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
       bound: Record<string, unknown>,
     ) => {
       const candidate = bound.candidate as Record<string, unknown>;
+      const prepared = candidate.prepared as Record<string, unknown>;
+      const savedProfile =
+        bound.artifact === "profile"
+          ? prepared.finalProfile
+          : bound.artifact === "project-bundle"
+            ? (prepared.profilePhase as Record<string, unknown>).finalProfile
+            : undefined;
       context.result.markdownPdfCodexWriteCalls.push({
         artifact: bound.artifact,
         artifactCount: bound.artifactCount,
@@ -364,6 +406,7 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
         overwrite: bound.overwrite,
         report: bound.report,
         suggestedOutput: bound.suggestedOutput,
+        ...(savedProfile ? { savedProfile: structuredClone(savedProfile) } : {}),
       });
     },
   }));
@@ -494,6 +537,12 @@ export function installMarkdownPdfMocks(context: HarnessRunnerContext): void {
   }));
 
   mock.module(markdownPdfRenderBundleModuleUrl, () => ({
+    discoverMarkdownPdfRenderBundle: async () => {
+      throw new Error("Unexpected direct render-bundle discovery in the Interactive harness");
+    },
+    resolveMarkdownPdfRenderBundleInputs: async () => {
+      throw new Error("Unexpected direct render-bundle resolution in the Interactive harness");
+    },
     previewMarkdownPdfRenderBundle: async (directory: string) => {
       context.result.markdownPdfBundleDiscoveryCalls.push({ directory });
       const roles = context.scenario.markdownPdfBundleRoles ?? ["profile", "template", "css"];

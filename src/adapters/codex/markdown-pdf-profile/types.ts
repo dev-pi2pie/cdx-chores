@@ -8,6 +8,7 @@ import type {
   MarkdownPdfProfileCandidate,
 } from "../../../cli/markdown-pdf/profile/candidates";
 import type { MarkdownPdfPreset } from "../../../cli/markdown-pdf/validation";
+import type { MarkdownPdfCodexPageInformationSignal } from "../../../cli/markdown-pdf/profile-codex/page-information-signals";
 
 export const MARKDOWN_PDF_CODEX_DECISION_MODES = [
   "adapted",
@@ -115,13 +116,28 @@ export interface MarkdownPdfCodexProfileRequest {
   fontHints: string[];
   fontSignals: MarkdownPdfFontSignals;
   intent?: string;
+  projectCoverImageAvailable?: boolean;
+  pageInformation?: MarkdownPdfCodexPageInformationSignal;
   selectedBaseProfileSummary?: MarkdownPdfProfileCandidateSummary;
   signalMode: MarkdownPdfCodexSignalMode;
   supportedSchemaSummary: string[];
   workingDirectory: string;
 }
 
+export const MARKDOWN_PDF_PROJECT_COVER_INTENTS = [
+  "unspecified",
+  "requested",
+  "text-only",
+  "image",
+  "no-cover",
+  "conflict",
+] as const;
+
+export type MarkdownPdfProjectCoverIntent = (typeof MARKDOWN_PDF_PROJECT_COVER_INTENTS)[number];
+
 export interface MarkdownPdfCodexDecision {
+  /** Project-only interpretation of advisory intent, separate from the chosen Profile. */
+  projectCoverIntent?: MarkdownPdfProjectCoverIntent;
   acceptedFontPatches: MarkdownPdfCodexProfileFontPatch[];
   acceptedPatches: MarkdownPdfCodexProfilePatch[];
   decisionMode: MarkdownPdfCodexDecisionMode;

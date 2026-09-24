@@ -6,6 +6,8 @@ import type { MarkdownPdfProfileCandidate } from "../../../cli/markdown-pdf/prof
 import { normalizeMarkdownPdfProfile } from "../../../cli/markdown-pdf/profile/normalize";
 import {
   MARKDOWN_PDF_CODEX_DECISION_MODES,
+  MARKDOWN_PDF_PROJECT_COVER_INTENTS,
+  type MarkdownPdfProjectCoverIntent,
   MARKDOWN_PDF_CODEX_FONT_PATCH_ROLES,
   MARKDOWN_PDF_CODEX_PATCH_PATHS,
   type MarkdownPdfCodexDecision,
@@ -163,8 +165,24 @@ function parseAcceptedFontPatches(value: unknown): MarkdownPdfCodexProfileFontPa
   );
 }
 
-export function parseMarkdownPdfCodexDecision(finalResponse: string): MarkdownPdfCodexDecision {
+export function parseMarkdownPdfCodexDecision(
+  finalResponse: string,
+  options: { projectRequest?: boolean } = {},
+): MarkdownPdfCodexDecision {
   const parsed = parseRecord(JSON.parse(finalResponse), "root");
+  let projectCoverIntent: MarkdownPdfProjectCoverIntent | undefined;
+  if (options.projectRequest) {
+    if (
+      !(MARKDOWN_PDF_PROJECT_COVER_INTENTS as readonly unknown[]).includes(
+        parsed.project_cover_intent,
+      )
+    ) {
+      throw new Error(
+        "Markdown PDF Codex response project_cover_intent must be a supported Project cover intent.",
+      );
+    }
+    projectCoverIntent = parsed.project_cover_intent as MarkdownPdfProjectCoverIntent;
+  }
   const decisionMode = parseDecisionMode(parsed.decision_mode);
   const selectedCandidateId = parseString(parsed.selected_candidate_id, "selected_candidate_id");
   const acceptedPatches = parseAcceptedPatches(parsed.accepted_patches);
@@ -188,6 +206,7 @@ export function parseMarkdownPdfCodexDecision(finalResponse: string): MarkdownPd
   }
 
   return {
+    ...(projectCoverIntent ? { projectCoverIntent } : {}),
     acceptedFontPatches,
     acceptedPatches,
     decisionMode,

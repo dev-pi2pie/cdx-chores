@@ -239,3 +239,69 @@ describe("text inline terminal controller", () => {
     expect(terminal.getVisibleLines()).toEqual(wrapAscii(`Template ${submitted}`, stdout.columns));
   });
 });
+
+describe("visible inline text validation", () => {
+  test.each([true, false])(
+    "shows a diagnostic and permits correction with color=%s",
+    async (colorEnabled) => {
+      const stdin = new FakePromptReadStream();
+      const stdout = new FakePromptWriteStream();
+      stdout.columns = 40;
+      const message = "Maximum 512 characters; entered 513. Shorten the text to continue.";
+      const prompt = promptTextInlineGhost({
+        message: "Header",
+        ghostText: "",
+        initialValue: "x".repeat(513),
+        colorEnabled,
+        stdin: stdin as unknown as NodeJS.ReadStream,
+        stdout: stdout as unknown as NodeJS.WritableStream,
+        validate: (value) => (value.length > 512 ? message : true),
+      });
+      await nextRenderTick();
+      stdin.emit("keypress", "\r", { name: "return" });
+      await nextRenderTick();
+      expect(stdout.text).toContain(message);
+      if (colorEnabled) expect(stdout.text).toContain("\x1b[1m\x1b[31mError:");
+      else expect(stdout.text).not.toContain("\x1b[31m");
+      expect(stdin.rawModeCalls).toEqual([true]);
+      stdin.emit("keypress", "\b", { name: "backspace" });
+      await nextRenderTick();
+      stdin.emit("keypress", "\r", { name: "return" });
+      expect(await prompt).toBe("x".repeat(512));
+      expect(stdin.rawModeCalls).toEqual([true, false]);
+      const terminal = new VirtualTerminal(stdout.columns);
+      terminal.write(stdout.text);
+      expect(terminal.getVisibleLines()).toEqual([
+        ...wrapAscii(`Error: ${message}`, stdout.columns),
+        ...wrapAscii(`Header ${"x".repeat(512)}`, stdout.columns),
+      ]);
+    },
+  );
+  test("honors NO_COLOR when no runtime color override was supplied", async () => {
+    const previous = process.env.NO_COLOR;
+    process.env.NO_COLOR = "";
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    try {
+      const prompt = promptTextInlineGhost({
+        message: "Header",
+        ghostText: "",
+        initialValue: "x",
+        stdin: stdin as unknown as NodeJS.ReadStream,
+        stdout: stdout as unknown as NodeJS.WritableStream,
+        validate: () => "Correct this value",
+      });
+      await nextRenderTick();
+      stdin.emit("keypress", "\r", { name: "return" });
+      await nextRenderTick();
+      expect(stdout.text).toContain("Error: Correct this value");
+      expect(stdout.text).not.toContain("\x1b[31m");
+      stdin.emit("keypress", "\x03", { name: "c", ctrl: true });
+      await expect(prompt).rejects.toMatchObject({ name: "ExitPromptError" });
+      expect(stdin.rawModeCalls).toEqual([true, false]);
+    } finally {
+      if (previous === undefined) delete process.env.NO_COLOR;
+      else process.env.NO_COLOR = previous;
+    }
+  });
+});

@@ -6,6 +6,7 @@ export interface InteractivePathPromptContext {
   cwd: CliRuntime["cwd"];
   stdin: CliRuntime["stdin"];
   stdout: CliRuntime["stdout"];
+  colorEnabled?: boolean;
 }
 
 export type InteractiveNavigationOutcome =

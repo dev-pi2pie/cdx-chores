@@ -192,7 +192,7 @@ describe("cli command: md pdf-project codex", () => {
     });
   });
 
-  test("writes dry-run reports before no-usable project failures from the command layer", async () => {
+  test("writes dry-run reports for supported text-cover Projects from the command layer", async () => {
     await withTempFixtureDir(
       "md-pdf-project-codex-cli-dry-run-no-usable-report",
       async (fixtureDir) => {
@@ -231,16 +231,14 @@ describe("cli command: md pdf-project codex", () => {
           toRepoRelativePath(reportPath),
         ]);
 
-        expect(result.exitCode).toBe(1);
+        expect(result.exitCode).toBe(0);
         expect(result.stdout).toContain("Project signal mode: deterministic");
-        expect(result.stdout).toContain("Final decision mode: no-usable-project");
+        expect(result.stdout).toContain("Final decision mode: deterministic");
         expect(result.stdout).toContain("Dry run only. No project bundle files were written.");
         expect(result.stdout).toContain("Codex report:");
         expect(result.stdout).toContain(toRepoRelativePath(reportPath));
         expect(result.stdout).not.toContain(fixtureDir);
-        expect(result.stderr).toContain(
-          "requires exactly one live .pdf-cover element when the Profile cover is enabled",
-        );
+        expect(result.stderr).not.toContain("requires exactly one live .pdf-cover element");
         expect(await pathExists(join(outputPath, "profile.yml"))).toBe(false);
         expect(await pathExists(join(outputPath, "template.html"))).toBe(false);
         expect(await pathExists(join(outputPath, "style.css"))).toBe(false);
@@ -255,15 +253,13 @@ describe("cli command: md pdf-project codex", () => {
           project: { decisionMode: string; fallbackReason?: string };
         };
         expect(report.project).toMatchObject({
-          decisionMode: "no-usable-project",
-          fallbackReason:
-            "The selected managed Markdown PDF template requires exactly one live .pdf-cover element when the Profile cover is enabled (found 0).",
+          decisionMode: "deterministic",
         });
         expect(report.input.baseProfile.basename).toBe("base.yml");
         expect(report.files.map((file) => file.role)).toEqual(["project-report"]);
         expect(report.files[0]?.path).toBe(toRepoRelativePath(reportPath));
         expect(report.files[0]?.path).not.toContain(fixtureDir);
-        expect(report.followUpRenderCommand).toBeUndefined();
+        expect(report.followUpRenderCommand).toBeDefined();
       },
     );
   });

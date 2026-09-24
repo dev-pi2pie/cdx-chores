@@ -1,5 +1,6 @@
 import type { MarkdownPdfTemplateCodexResolvedSlots } from "./types-synthesis";
 import type { MdPdfTemplateCodexSignalCollection } from "./types-signals";
+import type { MarkdownPdfMetadataTitleBlockMode } from "../profile/types";
 
 export type MarkdownPdfTemplateCodexMetadataTitlePolicy =
   | "hide"
@@ -18,9 +19,28 @@ export interface MarkdownPdfTemplateCodexTitlePolicyDecision {
 export function resolveMdPdfTemplateCodexTitlePolicy(input: {
   signals: MdPdfTemplateCodexSignalCollection;
   slots: MarkdownPdfTemplateCodexResolvedSlots;
+  profileMetadataTitle?: MarkdownPdfMetadataTitleBlockMode;
 }): MarkdownPdfTemplateCodexTitlePolicyDecision {
   const duplicateVisibleTitleRisk = input.signals.documentSignals.title.duplicateVisibleTitleRisk;
   const coverTitleOwnsPlacement = input.slots.cover.enabled;
+  if (input.profileMetadataTitle === "show" || input.profileMetadataTitle === "hide") {
+    return {
+      metadataTitle: input.profileMetadataTitle,
+      visibleMetadataTitle: input.profileMetadataTitle === "show",
+      duplicateVisibleTitleRisk,
+      coverTitleOwnsPlacement,
+      reason: `final profile titleBlock.metadataTitle ${input.profileMetadataTitle}s metadata title output`,
+    };
+  }
+  if (input.profileMetadataTitle === "auto" && coverTitleOwnsPlacement) {
+    return {
+      metadataTitle: "suppress-cover-title",
+      visibleMetadataTitle: false,
+      duplicateVisibleTitleRisk,
+      coverTitleOwnsPlacement,
+      reason: "final profile auto title policy places the title on the cover",
+    };
+  }
   const baseProfileMetadataTitle = input.signals.title.baseProfileMetadataTitle;
 
   if (input.signals.title.explicitHideMetadataTitleIntent) {

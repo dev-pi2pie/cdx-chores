@@ -43,7 +43,12 @@ import {
 } from "./orchestration";
 import { createMarkdownPdfCodexProfileIdentity } from "./profile-identity";
 import { classifyMarkdownPdfProfileCodexSignalMode } from "./signal-mode";
+import { prepareMarkdownPdfCodexPageInformationSignal } from "./page-information-signals";
 import type { MdPdfProfileCodexOptions } from "./types";
+import {
+  applyMarkdownPdfCodexPageInformation,
+  MarkdownPdfPageInformationConflictError,
+} from "./page-information-materialization";
 
 export type MarkdownPdfProfileCodexReportPayload = Omit<
   Parameters<typeof createMarkdownPdfCodexReportArtifact>[0],
@@ -196,6 +201,9 @@ export async function prepareMarkdownPdfProfileCodex(
 ): Promise<PreparedMarkdownPdfProfileCodex> {
   const codexExecution = resolveCodexExecution(options.codexExecution);
   options = { ...options, codexExecution };
+  const pageInformation = prepareMarkdownPdfCodexPageInformationSignal(
+    options.internalPageInformation,
+  );
   const inputPath = resolveOptionalInputPath(runtime, options);
   const baseProfilePath = options.baseProfile
     ? resolveFromCwd(runtime, assertNonEmpty(options.baseProfile, "Base profile path"))
@@ -224,6 +232,7 @@ export async function prepareMarkdownPdfProfileCodex(
     inputPath,
     profileId,
     suggestedOutputPath,
+    ...(pageInformation ? { hasExplicitPageInformation: true } : {}),
   };
 
   // Keep direct-command validation ahead of orchestration while allowing the
@@ -248,10 +257,12 @@ export async function prepareMarkdownPdfProfileCodex(
       : createAbsentMarkdownPdfDocumentSignals(),
     fontHints,
     intent,
+    pageInformation,
     profileId,
     signalMode,
     workingDirectory: runtime.cwd,
   });
+  const { pageInformation: _pageInformation, ...reportRequest } = orchestrationContext.request;
   const reportBase: Omit<
     MarkdownPdfProfileCodexReportPayload,
     "failure" | "profileIdentity" | "result" | "selectedCandidate"
@@ -262,9 +273,16 @@ export async function prepareMarkdownPdfProfileCodex(
       : undefined,
     displayInputPath: inputPath ? persistedReportPath(runtime, inputPath) : undefined,
     inputSha256: markdown ? fingerprintMarkdownPdfCodexInput(markdown) : undefined,
-    request: orchestrationContext.request,
+    request: reportRequest,
+    ...(pageInformation
+      ? {
+          pageInformation,
+          slotResolution: options.internalPageInformationSlotResolution,
+        }
+      : {}),
   };
   const identityBase = { createdAt, profileId };
+  let modelCallAttempted = false;
 
   try {
     const decision = await runMarkdownPdfCodexProfileOrchestration({
@@ -275,6 +293,9 @@ export async function prepareMarkdownPdfProfileCodex(
       runtime,
       timeoutMs: options.timeoutMs,
       codexExecution: options.codexExecution,
+      onModelRequestAttempt: () => {
+        modelCallAttempted = true;
+      },
     });
     if (decision.kind === "no-usable-profile") {
       const failure: MarkdownPdfCodexReportFailure = {
@@ -291,20 +312,29 @@ export async function prepareMarkdownPdfProfileCodex(
         reportPayload: {
           ...reportBase,
           failure,
+          modelCallAttempted,
           profileIdentity: decision.identity,
           selectedCandidate: decision.selectedCandidate,
         },
       };
     }
+    const finalProfile = applyMarkdownPdfCodexPageInformation({
+      profile: decision.finalProfile,
+      baseProfile: baseProfileCandidate?.fullProfile,
+      pageInformation,
+      slotResolution: options.internalPageInformationSlotResolution,
+    });
     return {
       ...destinationSource,
       createdAt,
       decisionMode: decision.decisionMode,
-      finalProfile: decision.finalProfile,
+      finalProfile,
       identity: decision.identity,
       kind: "profile",
       reportPayload: {
         ...reportBase,
+        finalProfile,
+        modelCallAttempted,
         profileIdentity: decision.identity,
         result: decision.kind === "codex-profile" ? decision.codexResult : undefined,
         selectedCandidate: decision.selectedCandidate,
@@ -314,6 +344,7 @@ export async function prepareMarkdownPdfProfileCodex(
       signalMode: decision.kind === "deterministic" ? signalMode : undefined,
     };
   } catch (error) {
+    if (error instanceof MarkdownPdfPageInformationConflictError) throw error;
     const failureKind = classifyMarkdownPdfCodexProfileFailure(error);
     if (failureKind === "unavailable" && error instanceof CliError) {
       throw error;
@@ -341,7 +372,7 @@ export async function prepareMarkdownPdfProfileCodex(
           : `${codexFailureMessage(failureKind)} ${failure.message}`,
       identity,
       kind: "failed",
-      reportPayload: { ...reportBase, failure, profileIdentity: identity },
+      reportPayload: { ...reportBase, failure, modelCallAttempted, profileIdentity: identity },
     };
   }
 }

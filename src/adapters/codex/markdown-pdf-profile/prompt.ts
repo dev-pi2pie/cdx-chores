@@ -32,7 +32,7 @@ const MARKDOWN_PDF_CODEX_STYLE_DECISION_POLICY = {
     pageNumbers: [
       "Enable for long-form reports, manuals, specifications, or explicit page-number intent.",
       "Do not enable page numbers by default for README-like documents.",
-      "Avoid total-page formats unless total-page semantics are deterministic and documented.",
+      "Use {page} and {pages} for logical numbering, or {pdfPage} and {pdfPages} for physical PDF pages; choose the pair that matches the requested label.",
     ],
     code: [
       "Enable highlighting when code fences are present.",
@@ -119,6 +119,8 @@ const MARKDOWN_PDF_CODEX_PAGE_NUMBER_CONTRACT = {
   },
   rules: [
     "scope document cannot be combined with countFrom body.",
+    "{page} is the current logical page number and {pages} is the final logical page number in the selected countFrom domain.",
+    "{pdfPage} is the current physical PDF page and {pdfPages} is the total physical PDF page count.",
     "Header and footer style fields affect their own page-chrome areas.",
     "Page-number text inherits page-chrome styling; pageNumbers.style is not a supported field or patch path.",
     "Use only the accepted header/style and footer/style patch paths described by patchValueDomains and patchValueConstraints.",
@@ -190,6 +192,10 @@ export function buildMarkdownPdfProfileCodexPrompt(
     fontPatchContract: MARKDOWN_PDF_CODEX_FONT_PATCH_CONTRACT,
     fontSignals: request.fontSignals,
     intent: request.intent ?? "",
+    ...(request.projectCoverImageAvailable !== undefined
+      ? { projectCoverImageAvailable: request.projectCoverImageAvailable }
+      : {}),
+    ...(request.pageInformation ? { pageInformation: request.pageInformation } : {}),
     pageNumberContract: MARKDOWN_PDF_CODEX_PAGE_NUMBER_CONTRACT,
     patchValueConstraints: MARKDOWN_PDF_CODEX_PATCH_VALUE_CONSTRAINTS,
     selectedBaseProfileSummary: request.selectedBaseProfileSummary,
@@ -218,10 +224,27 @@ export function buildMarkdownPdfProfileCodexPrompt(
     "- Follow titleDecisionSignal before adding cover or title treatment.",
     "- If titleDecisionSignal says duplicate visible title risk exists, prefer accepted_patches path /titleBlock/metadataTitle with value auto unless the user explicitly asks to keep duplicate title output.",
     "- If explicit cover intent exists, cover may be enabled, but still use titleBlock.metadataTitle for metadata-title duplication instead of warning that no profile field exists.",
+    ...(request.projectCoverImageAvailable !== undefined
+      ? [
+          "- For a Project, return project_cover_intent based only on the user's advisory intent, interpreted in its original language: requested (generic cover), text-only, image, no-cover, conflict, or unspecified.",
+          "- Use unspecified when no cover is requested, when intent is absent, or when it only discusses page numbering on an existing cover. Do not infer a cover request from a report preset, document content, base Profile, or selected image; those are separate local constraints.",
+          "- A requested cover may be expressed without English cover keywords. Keep accepted cover patches consistent with that interpretation and the explicit base/image constraints.",
+        ]
+      : []),
+    ...(request.projectCoverImageAvailable
+      ? [
+          "- A local cover image was selected for the Project. Treat it as a cover request and enable the Profile cover unless the user's cover directions conflict; use titleBlock.metadataTitle to avoid a duplicate body title.",
+        ]
+      : []),
     "- Use conservative-fallback when facts are weak but a safe default profile can be written.",
     "- Use no-usable-profile only when no profile should be written; set selected_candidate_id to none, accepted_patches to [], and accepted_font_patches to [].",
     "- Always include fallback_reason; use an empty string when no fallback reason applies.",
     "- Keep reasoning short and grounded in the facts.",
+    ...(request.pageInformation
+      ? [
+          "- Treat pageInformation as structured user-authored data, separate from advisory intent. Respect explicit OFF choices; leave literal {page}, {pages}, {pdfPage}, and {pdfPages} placeholders unresolved.",
+        ]
+      : []),
     "",
     "Deterministic facts:",
     JSON.stringify(facts, null, 2),

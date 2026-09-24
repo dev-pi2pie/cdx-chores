@@ -10,7 +10,9 @@ import { CliError } from "../../errors";
 import { resolveFromCwd } from "../../path-utils";
 import type { CliRuntime } from "../../types";
 import type { MarkdownPdfCodexReportBinding } from "../codex-report-binding";
+import type { MarkdownPdfPageInformationSlotResolution } from "../profile-codex";
 import { collectMdPdfProjectCodexSignals } from "./signals";
+import { prepareMarkdownPdfCodexPageInformationSignal } from "../profile-codex/page-information-signals";
 import {
   MARKDOWN_PDF_PROJECT_CODEX_REPORT_BUNDLE_PATH,
   planMdPdfProjectCodexOutput,
@@ -83,6 +85,9 @@ export interface MarkdownPdfProjectCodexPreparedArtifact {
   signals: MdPdfProjectCodexSignalCollection;
   templatePhase: MdPdfProjectCodexAcceptedTemplatePhase;
   binding: MarkdownPdfProjectCodexPreparedBinding;
+  /** Value-free execution fact retained for report rebinding. */
+  modelCallAttempted?: boolean;
+  slotResolution?: MarkdownPdfPageInformationSlotResolution;
 }
 
 function initialWriteMode(input: {
@@ -252,10 +257,12 @@ function bindTemplatePhase(input: {
 
 function createBinding(input: {
   generatedAt?: string;
+  modelCallAttempted?: boolean;
   outputPlan: MarkdownPdfProjectCodexOutputPlan;
   profilePhase: MdPdfProjectCodexProfilePhaseResult;
   runtime: CliRuntime;
   signals: MdPdfProjectCodexSignalCollection;
+  slotResolution?: MarkdownPdfPageInformationSlotResolution;
   state: NormalizedMdPdfProjectCodexCommandState;
   templatePhase: MdPdfProjectCodexAcceptedTemplatePhase;
 }): MarkdownPdfProjectCodexPreparedBinding {
@@ -271,10 +278,12 @@ function createBinding(input: {
     templatePhase,
   });
   const reportArtifact = createMdPdfProjectCodexReportArtifact({
+    modelCallAttempted: input.modelCallAttempted,
     outputPlan: input.outputPlan,
     profilePhase: input.profilePhase,
     runtime: input.runtime,
     signals: input.signals,
+    slotResolution: input.slotResolution,
     state: input.state,
     templatePhase,
     validation,
@@ -296,8 +305,11 @@ export async function prepareMdPdfProjectCodex(
 ): Promise<MarkdownPdfProjectCodexPreparedArtifact> {
   const codexExecution = resolveCodexExecution(options.codexExecution);
   options = { ...options, codexExecution };
+  const pageInformation = prepareMarkdownPdfCodexPageInformationSignal(
+    options.internalPageInformation,
+  );
   const state = await normalizeMdPdfProjectCodexCommandState(runtime, options);
-  const signals = await collectMdPdfProjectCodexSignals(runtime, state);
+  const signals = await collectMdPdfProjectCodexSignals(runtime, state, pageInformation);
   const outputPlan = await planMdPdfProjectCodexOutput({
     identityUidFactory: options.identityUidFactory,
     runtime,
@@ -309,6 +321,7 @@ export async function prepareMdPdfProjectCodex(
     ? createCodexProgressSession(options.codexProgressPresenter)
     : undefined;
   let progressStatus: DirectCodexProgressStatus = "error";
+  let modelCallAttempted = false;
   try {
     const profilePhase = await runMdPdfProjectCodexProfilePhase({
       outputPlan,
@@ -319,6 +332,10 @@ export async function prepareMdPdfProjectCodex(
       state,
       timeoutMs: options.timeoutMs,
       codexExecution: options.codexExecution,
+      slotResolution: options.internalPageInformationSlotResolution,
+      onModelRequestAttempt: () => {
+        modelCallAttempted = true;
+      },
     });
     const completeTemplatePhase = await runMdPdfProjectCodexTemplatePhase({
       outputPlan,
@@ -330,6 +347,9 @@ export async function prepareMdPdfProjectCodex(
       templateCodexRunner: options.templateCodexRunner,
       timeoutMs: options.timeoutMs,
       codexExecution: options.codexExecution,
+      onModelRequestAttempt: () => {
+        modelCallAttempted = true;
+      },
     });
     const completedPhaseProgressStatus = projectProgressStatus({
       profilePhase,
@@ -337,10 +357,12 @@ export async function prepareMdPdfProjectCodex(
     });
     const templatePhase = acceptedTemplatePhase(completeTemplatePhase);
     const binding = createBinding({
+      modelCallAttempted,
       outputPlan,
       profilePhase,
       runtime,
       signals,
+      slotResolution: options.internalPageInformationSlotResolution,
       state,
       templatePhase,
     });
@@ -371,6 +393,8 @@ export async function prepareMdPdfProjectCodex(
       signals,
       templatePhase,
       binding,
+      modelCallAttempted,
+      slotResolution: options.internalPageInformationSlotResolution,
     };
   } finally {
     progressSession?.stop(progressStatus);
@@ -414,10 +438,12 @@ export async function rebindMdPdfProjectCodexPreparedArtifact(input: {
   });
   const binding = createBinding({
     generatedAt: input.prepared.binding.reportArtifact.generatedAt,
+    modelCallAttempted: input.prepared.modelCallAttempted,
     outputPlan,
     profilePhase: input.prepared.profilePhase,
     runtime: input.runtime,
     signals: input.prepared.signals,
+    slotResolution: input.prepared.slotResolution,
     state,
     templatePhase: input.prepared.templatePhase,
   });
@@ -438,12 +464,14 @@ function preparedWriteInput(
 ) {
   return {
     managedAssetContents: prepared.managedAssetContents,
+    modelCallAttempted: prepared.modelCallAttempted,
     outputPlan: prepared.binding.outputPlan,
     overwrite: prepared.binding.state.overwrite,
     profilePhase: prepared.profilePhase,
     reportArtifact: prepared.binding.reportArtifact,
     runtime,
     signals: prepared.signals,
+    slotResolution: prepared.slotResolution,
     state: prepared.binding.state,
     templatePhase: prepared.binding.templatePhase,
     validation: prepared.binding.validation,

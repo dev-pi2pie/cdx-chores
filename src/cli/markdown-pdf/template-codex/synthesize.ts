@@ -16,6 +16,7 @@ import {
   type MarkdownPdfTemplateCodexFontOwnership,
 } from "./font-ownership";
 import type { MarkdownPdfTemplateCodexDecision } from "./codex-decision";
+import type { NormalizedMarkdownPdfProfile } from "../profile";
 import type {
   MarkdownPdfTemplateCodexManagedAssetBinding,
   MarkdownPdfTemplateCodexOutputPlan,
@@ -39,21 +40,53 @@ function bindManagedAssets(
   ];
 }
 
+function useTextCoverProfile(input: {
+  signals: MdPdfTemplateCodexSignalCollection;
+  textCoverProfile?: NormalizedMarkdownPdfProfile;
+}): NormalizedMarkdownPdfProfile | undefined {
+  return !input.signals.coverImage.available && input.textCoverProfile?.cover.enabled
+    ? input.textCoverProfile
+    : undefined;
+}
+
+function withTextCoverSlots(
+  slots: MarkdownPdfTemplateCodexSynthesisResult["slots"],
+  profile: NormalizedMarkdownPdfProfile | undefined,
+): MarkdownPdfTemplateCodexSynthesisResult["slots"] {
+  return profile
+    ? {
+        ...slots,
+        cover: {
+          ...slots.cover,
+          enabled: true,
+          style: profile.cover.style,
+          titlePlacement: "text-cover",
+        },
+      }
+    : slots;
+}
+
 export function synthesizeMdPdfTemplateCodex(input: {
   fontOwnership?: MarkdownPdfTemplateCodexFontOwnership;
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
   signals: MdPdfTemplateCodexSignalCollection;
+  textCoverProfile?: NormalizedMarkdownPdfProfile;
 }): MarkdownPdfTemplateCodexSynthesisResult {
   const templateFamily = resolveMdPdfTemplateCodexFamily(input.signals);
   const family = MARKDOWN_PDF_TEMPLATE_CODEX_FAMILIES[templateFamily];
-  const slots = resolveMdPdfTemplateCodexSlots({
-    family: templateFamily,
-    signals: input.signals,
-  });
+  const textCoverProfile = useTextCoverProfile(input);
+  const slots = withTextCoverSlots(
+    resolveMdPdfTemplateCodexSlots({
+      family: templateFamily,
+      signals: input.signals,
+    }),
+    textCoverProfile,
+  );
   const themeTokens = resolveMdPdfTemplateCodexThemeTokens(input.signals, slots);
   const titlePolicy = resolveMdPdfTemplateCodexTitlePolicy({
     signals: input.signals,
     slots,
+    profileMetadataTitle: textCoverProfile?.titleBlock.metadataTitle,
   });
   const managedAssets = bindManagedAssets(input.outputPlan);
   const templateHtml = synthesizeMdPdfTemplateCodexHtml({
@@ -63,6 +96,7 @@ export function synthesizeMdPdfTemplateCodex(input: {
     signals: input.signals,
     slots,
     titlePolicy,
+    textCoverProfile,
   });
   const styleCss = synthesizeMdPdfTemplateCodexCss({
     family: templateFamily,
@@ -72,6 +106,7 @@ export function synthesizeMdPdfTemplateCodex(input: {
     signals: input.signals,
     slots,
     themeTokens,
+    textCoverProfile,
   });
   assertMarkdownPdfTemplateCodexFamilyHooksPresent({ family, styleCss, templateHtml });
 
@@ -123,10 +158,13 @@ export function synthesizeMdPdfTemplateCodexFromDecision(input: {
   fontOwnership?: MarkdownPdfTemplateCodexFontOwnership;
   outputPlan: MarkdownPdfTemplateCodexOutputPlan;
   signals: MdPdfTemplateCodexSignalCollection;
+  textCoverProfile?: NormalizedMarkdownPdfProfile;
 }): MarkdownPdfTemplateCodexSynthesisResult {
   const templateFamily =
     input.decision.templateFamily ?? resolveMdPdfTemplateCodexFamily(input.signals);
-  const slots = input.decision.slots;
+  const textCoverProfile =
+    input.decision.decisionMode === "no-usable-template" ? undefined : useTextCoverProfile(input);
+  const slots = withTextCoverSlots(input.decision.slots, textCoverProfile);
   const fontDecisions = materializeMdPdfTemplateCodexFontDecisions({
     decisions: input.decision.fontDecisions,
     fontOwnership: input.fontOwnership,
@@ -136,6 +174,7 @@ export function synthesizeMdPdfTemplateCodexFromDecision(input: {
   const titlePolicy = resolveMdPdfTemplateCodexTitlePolicy({
     signals: input.signals,
     slots,
+    profileMetadataTitle: textCoverProfile?.titleBlock.metadataTitle,
   });
 
   if (input.decision.decisionMode === "no-usable-template") {
@@ -167,6 +206,7 @@ export function synthesizeMdPdfTemplateCodexFromDecision(input: {
     signals: input.signals,
     slots,
     titlePolicy,
+    textCoverProfile,
   });
   const styleCss = appendDecisionCssBlocks(
     synthesizeMdPdfTemplateCodexCss({
@@ -177,6 +217,7 @@ export function synthesizeMdPdfTemplateCodexFromDecision(input: {
       signals: input.signals,
       slots,
       themeTokens,
+      textCoverProfile,
     }),
     input.decision,
   );

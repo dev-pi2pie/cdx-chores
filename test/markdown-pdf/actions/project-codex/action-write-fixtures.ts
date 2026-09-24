@@ -32,6 +32,7 @@ export function adaptedProfileRunner(
       decision_mode: "adapted",
       selected_candidate_id: prompt.includes('"id": "base-profile"') ? "base-profile" : "article",
       accepted_patches: [{ op: "replace", path: "/toc/enabled", value: true }],
+      project_cover_intent: "unspecified",
       accepted_font_patches: [],
       reasoning: "The project profile should adapt to the document signals.",
       warnings: [],

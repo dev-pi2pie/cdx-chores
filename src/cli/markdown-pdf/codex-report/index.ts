@@ -11,6 +11,13 @@ import { readTextFileRequired, writeTextFileSafe } from "../../file-io";
 import type { MarkdownPdfProfileCandidate } from "../profile/candidates";
 import { MARKDOWN_PDF_PROFILE_ROOT_KEYS } from "../profile/schema";
 import type { NormalizedMarkdownPdfProfileIdentity } from "../profile/types";
+import type { MarkdownPdfPageInformationSlotResolution } from "../profile-codex/page-information-materialization";
+import type { MarkdownPdfCodexPageInformationSignal } from "../profile-codex/page-information-signals";
+import {
+  createMarkdownPdfCodexReportPageInformation,
+  validateMarkdownPdfCodexReportPageInformation,
+  type MarkdownPdfCodexReportPageInformation,
+} from "./page-information";
 
 export const MARKDOWN_PDF_CODEX_REPORT_ARTIFACT_TYPE = "markdown-pdf-codex-profile-report";
 export const MARKDOWN_PDF_CODEX_REPORT_ARTIFACT_VERSION = 4;
@@ -62,6 +69,7 @@ export interface MarkdownPdfCodexReportArtifact {
   documentSignals: MarkdownPdfCodexProfileRequest["documentSignals"];
   fontSignals: MarkdownPdfCodexProfileRequest["fontSignals"];
   signalMode: MarkdownPdfCodexProfileRequest["signalMode"];
+  pageInformation?: MarkdownPdfCodexReportPageInformation;
   result: {
     status: "success" | "failed";
     decision?: MarkdownPdfCodexDecision;
@@ -120,9 +128,14 @@ export function createMarkdownPdfCodexReportArtifact(input: {
   selectedCandidate?: MarkdownPdfProfileCandidate;
   result?: MarkdownPdfCodexProfileResult;
   failure?: MarkdownPdfCodexReportFailure;
+  pageInformation?: MarkdownPdfCodexPageInformationSignal;
+  finalProfile?: Record<string, unknown>;
+  slotResolution?: MarkdownPdfPageInformationSlotResolution;
+  modelCallAttempted?: boolean;
 }): MarkdownPdfCodexReportArtifact {
   const status = input.failure ? "failed" : "success";
   const decision = input.result?.decision;
+  const pageInformation = createMarkdownPdfCodexReportPageInformation(input);
 
   return {
     artifact: {
@@ -150,20 +163,36 @@ export function createMarkdownPdfCodexReportArtifact(input: {
     documentSignals: input.request.documentSignals,
     fontSignals: input.request.fontSignals,
     signalMode: input.request.signalMode,
+    ...(pageInformation ? { pageInformation } : {}),
     result: {
       status,
-      decision,
+      ...(pageInformation ? {} : { decision }),
       selectedPreset: input.selectedCandidate?.summary.preset,
       changedTopLevelFields: changedTopLevelFields(
         input.selectedCandidate?.fullProfile,
-        input.result?.profile,
+        input.finalProfile ?? input.result?.profile,
       ),
-      acceptedPatches: decision?.acceptedPatches,
-      acceptedFontPatches: decision?.acceptedFontPatches,
-      unmatchedDirections: decision?.unmatchedDirections ?? [],
-      fallbackReason: decision?.fallbackReason,
-      warnings: decision?.warnings ?? [],
-      failure: input.failure,
+      ...(pageInformation
+        ? {
+            unmatchedDirections: [],
+            warnings: [],
+            ...(input.failure
+              ? {
+                  failure: {
+                    kind: input.failure.kind,
+                    message: "Codex Profile preparation failed.",
+                  },
+                }
+              : {}),
+          }
+        : {
+            acceptedPatches: decision?.acceptedPatches,
+            acceptedFontPatches: decision?.acceptedFontPatches,
+            unmatchedDirections: decision?.unmatchedDirections ?? [],
+            fallbackReason: decision?.fallbackReason,
+            warnings: decision?.warnings ?? [],
+            failure: input.failure,
+          }),
     },
   };
 }
@@ -212,6 +241,7 @@ function validateReportArtifact(value: unknown): MarkdownPdfCodexReportArtifact 
   if (artifact.result?.status !== "success" && artifact.result?.status !== "failed") {
     throw new Error("Markdown PDF Codex report result status is invalid.");
   }
+  validateMarkdownPdfCodexReportPageInformation(artifact.pageInformation);
   return artifact;
 }
 

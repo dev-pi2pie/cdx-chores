@@ -14,6 +14,7 @@ import type {
   MarkdownPdfProjectCodexValidationResult,
 } from "./validate-project";
 import type { MarkdownPdfProfileAuthoringCapabilityRequirement } from "../profile-authoring-review";
+import type { MarkdownPdfCodexReportPageInformation } from "../codex-report/page-information";
 
 export const MARKDOWN_PDF_PROJECT_CODEX_REPORT_ARTIFACT_TYPE = "markdown-pdf-codex-project-report";
 
@@ -123,6 +124,8 @@ export interface MarkdownPdfProjectCodexReportArtifact {
   }>;
   managedAssets: MarkdownPdfProjectCodexReportManagedAsset[];
   validationResults: MarkdownPdfProjectCodexValidationResult[];
+  pageInformation?: MarkdownPdfCodexReportPageInformation;
+  diagnosticConditionIds?: MarkdownPdfProjectCodexHandoffDiagnostic["conditionId"][];
   followUpRenderCommand?: MarkdownPdfProjectCodexRenderCommand;
   handoff: MarkdownPdfProjectCodexHandoffProjection;
 }

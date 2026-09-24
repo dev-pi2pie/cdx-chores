@@ -4,6 +4,7 @@ import type { PreparedMdPdfTemplateCodexArtifact } from "../../markdown-pdf/temp
 import type { PreparedMarkdownPdfDeterministicRecipe } from "./deterministic-authoring";
 import type { MarkdownPdfRenderCodeHighlightChoice } from "./render-code-highlighting";
 import type { MarkdownPdfRenderPageNumberChoice } from "./render-page-numbers";
+import type { MarkdownPdfCodexPageInformationAnswers } from "./codex-page-information";
 
 export type MarkdownPdfCodexArtifact = "profile" | "template-bundle" | "project-bundle";
 
@@ -14,6 +15,8 @@ export interface MarkdownPdfCodexSetup {
   fontHints: string[];
   intent?: string;
   sample?: string;
+  /** Sparse guided page-information choices for Profile and Project preparation. */
+  pageInformation?: MarkdownPdfCodexPageInformationAnswers;
 }
 
 export type MarkdownPdfCodexReportRetention =

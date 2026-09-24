@@ -4,7 +4,7 @@ import type { CliRuntime } from "./types";
 export type CliDiagnosticPresentationRole = "error" | "notice" | "warning";
 
 export function styleCliDiagnosticLabel(
-  runtime: CliRuntime,
+  runtime: Pick<CliRuntime, "colorEnabled">,
   targetStream: NodeJS.WritableStream,
   role: CliDiagnosticPresentationRole,
   label: string,

@@ -172,6 +172,12 @@ function assertProjectCompatibility(input: {
       },
     );
   }
+  if (!profile.cover.enabled && input.templatePhase.synthesis.slots.cover.enabled) {
+    throw new CliError("Project template enables a cover that the final Profile disables.", {
+      code: "MARKDOWN_PDF_PROJECT_VALIDATION_FAILED",
+      exitCode: 2,
+    });
+  }
 
   if (
     profile.titleBlock.metadataTitle === "show" &&
@@ -199,11 +205,19 @@ function assertProjectCompatibility(input: {
         fontOwnership,
         outputPlan: input.templatePhase.outputPlan,
         signals: input.templatePhase.signals,
+        textCoverProfile:
+          !input.templatePhase.signals.coverImage.available && profile.cover.enabled
+            ? profile
+            : undefined,
       })
     : synthesizeMdPdfTemplateCodex({
         fontOwnership,
         outputPlan: input.templatePhase.outputPlan,
         signals: input.templatePhase.signals,
+        textCoverProfile:
+          !input.templatePhase.signals.coverImage.available && profile.cover.enabled
+            ? profile
+            : undefined,
       });
   if (input.templatePhase.synthesis.styleCss !== expectedSynthesis.styleCss) {
     throw new CliError(

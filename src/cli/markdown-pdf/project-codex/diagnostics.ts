@@ -3,7 +3,10 @@ import type { MdPdfProjectCodexTemplatePhaseResult } from "./template-phase";
 
 export function collectMdPdfProjectCodexUnsupportedDirections(input: {
   profilePhase: MdPdfProjectCodexProfilePhaseResult;
-  templatePhase: MdPdfProjectCodexTemplatePhaseResult;
+  templatePhase: Pick<
+    MdPdfProjectCodexTemplatePhaseResult,
+    "phase" | "forwardedProfileDirections" | "synthesis"
+  >;
 }): string[] {
   const templateHandledForwardedDirections =
     input.templatePhase.phase.decisionMode === "adapted"

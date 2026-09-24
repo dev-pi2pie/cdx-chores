@@ -4,6 +4,7 @@ import type { MarkdownPdfOrientation, MarkdownPdfPageSize } from "../validation"
 import type { NormalizedMarkdownPdfProfile } from "./types";
 
 export const MARKDOWN_PDF_COVER_HOOK_CLASS = "pdf-cover";
+export const MARKDOWN_PDF_PROFILE_TEXT_COVER_MARKER = 'data-cdx-profile-text-cover="true"';
 
 export interface ResolvedMarkdownPdfCoverFields {
   title: string;
@@ -47,7 +48,11 @@ function htmlEscape(value: string): string {
 }
 
 function coverField(value: string, profile: NormalizedMarkdownPdfProfile): string {
-  return htmlEscape(resolveMarkdownPdfPlaceholderText(value, profile.metadata));
+  // Pandoc needs doubled dollars; HTML entities are decoded by local-asset rewriting.
+  return htmlEscape(resolveMarkdownPdfPlaceholderText(value, profile.metadata)).replace(
+    /\$/g,
+    () => "$$",
+  );
 }
 
 export function resolveMarkdownPdfCoverFields(
@@ -99,6 +104,12 @@ ${company ? `    <p class="${MARKDOWN_PDF_COVER_HOOK_CLASS}__company">${company}
 ${subtitle ? `    <p class="${MARKDOWN_PDF_COVER_HOOK_CLASS}__subtitle">${subtitle}</p>\n` : ""}${metaParts.length > 0 ? `    <p class="${MARKDOWN_PDF_COVER_HOOK_CLASS}__meta">${metaParts.join(" | ")}</p>\n` : ""}  </div>
 </section>
 `;
+}
+
+/** A managed Template placeholder; the renderer fills it from the effective Profile. */
+export function createMarkdownPdfCoverScaffold(profile: NormalizedMarkdownPdfProfile): string {
+  if (!profile.cover.enabled) return "";
+  return `<section class="${MARKDOWN_PDF_COVER_HOOK_CLASS} ${MARKDOWN_PDF_COVER_HOOK_CLASS}--${profile.cover.style}" ${MARKDOWN_PDF_PROFILE_TEXT_COVER_MARKER}></section>\n`;
 }
 
 export function createMarkdownPdfCoverCss(

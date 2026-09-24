@@ -1,6 +1,6 @@
 {
   "name": "cdx-chores",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "keywords": [
     "automation",
     "cli",
@@ -52,28 +52,28 @@
     "format:check": "oxfmt --check src test scripts package.json tsconfig.json .oxlintrc.json .oxfmtrc.json"
   },
   "dependencies": {
-    "@duckdb/node-api": "^1.5.5-r.4",
-    "@inquirer/prompts": "8.7.1",
-    "@inquirer/search": "4.3.2",
-    "@openai/codex-sdk": "^0.153.4",
+    "@duckdb/node-api": "^1.5.5-r.5",
+    "@inquirer/prompts": "8.7.2",
+    "@inquirer/search": "4.3.3",
+    "@openai/codex-sdk": "^0.156.1",
     "@shikijs/transformers": "^4.4.3",
     "commander": "^15.0.0",
     "fast-xml-parser": "5.11.1",
-    "mammoth": "^1.12.2",
+    "mammoth": "^1.12.3",
     "papaparse": "^5.7.0",
     "parse5": "^8.0.1",
     "pdfjs-dist": "^6.3.289",
     "shiki": "^4.4.3",
-    "yaml": "^2.9.0",
+    "yaml": "^2.9.1",
     "yauzl": "^3.4.0"
   },
   "devDependencies": {
-    "@types/bun": "1.4.1",
-    "@types/node": "26.4.1",
-    "oxfmt": "0.66.0",
-    "oxlint": "1.81.0",
+    "@types/bun": "1.4.2",
+    "@types/node": "26.6.2",
+    "oxfmt": "0.70.0",
+    "oxlint": "1.85.0",
     "picocolors": "^1.1.1",
-    "tsdown": "0.22.14",
+    "tsdown": "0.23.0",
     "typescript": "^7.0.2"
   },
   "engines": {

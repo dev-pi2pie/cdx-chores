@@ -1,7 +1,7 @@
 ---
 title: "Interactive Markdown PDF Usage"
 created-date: 2026-07-22
-modified-date: 2026-09-05
+modified-date: 2026-09-24
 status: completed
 agent: codex
 ---
@@ -136,9 +136,9 @@ The authoring matrix is the same under `to-pdf -> Create a recipe` and
 | Project bundle  | no        | no             | yes               |
 
 Project bundle enters Codex Assistant directly because there is no direct
-deterministic Project initializer. It therefore has no Formal Guide cover or
-page-number questions; review and edit its contained Profile for the full
-reusable contract.
+deterministic Project initializer. It has no Formal Guide branch, but its Codex
+Assistant setup asks the same structured page-information questions as Profile
+setup. Review its contained Profile for the full reusable contract.
 
 Project bundle has no `starter` or `formal-guide` branch and no
 preparation-mode menu. Its Codex-generated contained Profile may own reusable
@@ -224,12 +224,77 @@ candidate:
 - optional PDF intent, entered in single-line or multiline form
 - optional base Profile
 - optional cover image for Template and Project bundles
+- optional structured page-number and repeating header/footer choices for
+  Profile and Project; Template-only setup has no Profile to store them
 - an ordered, repeatable font-hint collection
 - for `pdf-recipes`, an optional Markdown preparation sample
 
 The `to-pdf` entry reuses its selected Markdown input as the preparation
 sample. Artifact and PDF output paths are chosen later; they are local lifecycle
 configuration rather than Codex signals.
+
+### Page information in Codex Assistant
+
+Custom page-number labels and repeating header/footer text are limited to 512
+characters in this flow. Oversized input stays in the editor with a validation
+message so it can be shortened without restarting setup.
+
+Profile and Project setup asks whether to specify page information before PDF
+intent. Formal Guide has explicit preset, page size, orientation, and margin
+questions; Codex Assistant takes layout direction through intent, so inspect
+the prepared Profile's page settings in candidate review. Page numbers and
+repeating content are separate groups, each with three states:
+
+| Choice      | Page numbers                                                        | Repeating header/footer content                              |
+| ----------- | ------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Unspecified | Keep the base or prepared choice.                                   | Keep the base or prepared slots.                             |
+| OFF         | Disable numbers; retain valid inactive label and placement details. | Clear all six saved text slots; keep their styles and fonts. |
+| ON          | Choose body or whole-document numbering, label, and position.       | Choose slots and enter their exact text.                     |
+
+For fresh number-ON setup, the defaults are body pages starting at 1, label
+`Page {page}`, and bottom-center placement. The six header/footer positions
+and label tokens follow [Markdown PDF Usage](markdown-pdf-usage.md#covers-repeating-content-and-page-numbers).
+
+> [!CAUTION]
+> An explicit page-number ON choice in Codex Assistant sets
+> `pageNumbers.start: 1` and `pageNumbers.increment: 1`, even when a base
+> Profile has different values. This setup does not ask for either value.
+> Review the prepared Profile before saving or rendering. For a custom
+> sequence, render with an existing or edited Profile YAML or JSON file.
+
+`Remove explicit ... choice` returns one group to unspecified without changing
+the other. Revising the base Profile rechecks an occupied number slot; newly
+selected text cannot use it. An inherited or Codex-selected collision asks
+whether to clear or retain the stored text, defaulting to retain. Retained text
+is visible in review but the enabled number owns that position in the PDF.
+
+The entered answers outrank free-form intent and Codex suggestions. Preparation
+applies them to the final Profile before candidate review and, for a Project,
+before Template preparation. The saved Profile keeps the entered label and
+header/footer text exactly. Page information alone can prepare a Profile or
+Project deterministically without a Codex request. If other signals require a
+request, setup review shows the exact page text and asks for consent before it
+is sent. Model selection affects only a request that actually runs; see
+[Codex Execution Configuration](codex-execution-configuration.md) for the
+model choice.
+
+Setup, consent, and candidate review escape terminal control characters in
+entered page text; color styles headings and fixed labels only. Review the
+requested choices, final Profile fields, any retained-slot warning, and the
+effective render settings before saving or rendering. The rendered PDF is the
+check for visible page placement and glyphs, especially with a cover, ToC, or
+mixed-language text. The optional diagnostic report keeps requested and final
+stored page-information metadata, but omits the entered page-number label and
+header/footer text, including echoes of that text in Codex result fields.
+Independently entered intent and font hints keep their normal report behavior.
+The report is not a substitute for the saved Profile or PDF.
+
+For Project covers, a selected image signals an image cover even without cover
+prose in the intent. Cover intent without an image produces a managed text
+cover whose content comes from the final Profile. See
+[Markdown PDF Usage](markdown-pdf-usage.md#cover-and-page-roles) for cover
+results and [Layout Options](markdown-pdf-usage.md#layout-options) for page
+shape.
 
 The setup review shows the signals before consent. During the request,
 Interactive mode presents one artifact-specific waiting status and clears it
@@ -405,6 +470,8 @@ this PDF`:
 `Keep recipe setting` is the default. This override changes only whether page
 numbers are enabled; reusable label, position, scope, counting origin, start,
 and increment values still come from the Profile or renderer defaults.
+Turning numbers off can reveal retained text in the released number slot; it
+does not clear saved repeating content or rewrite the Profile.
 
 The code and page-number choices are independent retained state for the current
 render source. `Back` from page numbers returns to code highlighting. Returning

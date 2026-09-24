@@ -110,7 +110,12 @@ async function promptMargin(message: string, current = "18mm"): Promise<string> 
 
 export function createMarkdownPdfFormalGuidePrompts(
   pathPromptContext?: InteractivePathPromptContext,
+  options: { pageTextMaxLength?: number } = {},
 ): MarkdownPdfFormalGuidePrompts {
+  const validatePageTextLength = (value: string): true | string =>
+    options.pageTextMaxLength !== undefined && value.length > options.pageTextMaxLength
+      ? `Maximum ${options.pageTextMaxLength} characters; entered ${value.length}. Shorten the text to continue.`
+      : true;
   return {
     async coverEnabled({ current }) {
       return await confirm({
@@ -196,7 +201,11 @@ export function createMarkdownPdfFormalGuidePrompts(
         runtimeConfig: pathPromptContext?.runtimeConfig,
         stdin: pathPromptContext?.stdin,
         stdout: pathPromptContext?.stdout,
-        validate: validatePageNumberLabel,
+        colorEnabled: pathPromptContext?.colorEnabled,
+        validate: (value) => {
+          const validLabel = validatePageNumberLabel(value);
+          return validLabel === true ? validatePageTextLength(value) : validLabel;
+        },
       });
     },
 
@@ -254,7 +263,9 @@ export function createMarkdownPdfFormalGuidePrompts(
         runtimeConfig: pathPromptContext?.runtimeConfig,
         stdin: pathPromptContext?.stdin,
         stdout: pathPromptContext?.stdout,
-        validate: (value) => (value.trim() ? true : "Repeating content is required"),
+        colorEnabled: pathPromptContext?.colorEnabled,
+        validate: (value) =>
+          value.trim() ? validatePageTextLength(value) : "Repeating content is required",
       });
     },
 

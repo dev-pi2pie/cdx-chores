@@ -78,6 +78,7 @@ describe("Markdown PDF Interactive post-Codex font review", () => {
       setup: { artifact: "project-bundle", fontHints: ["Prefer Inter"] },
       prepared: {
         profilePhase: {
+          unmatchedProfileDirections: [],
           codexResult: {
             decision: {
               acceptedFontPatches: [
@@ -87,6 +88,8 @@ describe("Markdown PDF Interactive post-Codex font review", () => {
           },
         },
         templatePhase: {
+          forwardedProfileDirections: [],
+          phase: { decisionMode: "adapted" },
           synthesis: {
             fontDecisions: [
               {
@@ -97,9 +100,10 @@ describe("Markdown PDF Interactive post-Codex font review", () => {
                 status: "applied",
               },
             ],
+            unsupportedDirections: ["Use font for side notes"],
           },
         },
-        binding: { reportArtifact: { unsupportedDirections: ["Use font for side notes"] } },
+        binding: { reportArtifact: { unsupportedDirections: [] } },
       },
     } as unknown as PreparedMarkdownPdfCodexCandidate;
 

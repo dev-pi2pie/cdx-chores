@@ -24,6 +24,8 @@ export interface MarkdownPdfProfileCodexDestinationSource {
   inputPath?: string;
   profileId: string;
   suggestedOutputPath: string;
+  /** Value-free marker retained across prepare and destination rebinding. */
+  hasExplicitPageInformation?: boolean;
 }
 
 export interface BoundMarkdownPdfProfileCodexDestination {

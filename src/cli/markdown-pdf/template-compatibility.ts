@@ -2,7 +2,10 @@ import { parse, type DefaultTreeAdapterTypes } from "parse5";
 
 import { CliError } from "../errors";
 import type { NormalizedMarkdownPdfProfile } from "./profile";
-import { MARKDOWN_PDF_COVER_HOOK_CLASS } from "./profile/cover";
+import {
+  MARKDOWN_PDF_COVER_HOOK_CLASS,
+  MARKDOWN_PDF_PROFILE_TEXT_COVER_MARKER,
+} from "./profile/cover";
 import {
   inspectMarkdownPdfTemplateBody,
   type MarkdownPdfTemplateBodyInspection,
@@ -54,8 +57,12 @@ function isManagedTemplateNode(node: DefaultTreeAdapterTypes.Node): boolean {
   );
 }
 
+export function isManagedMarkdownPdfTemplate(templateHtml: string): boolean {
+  return isManagedTemplateNode(parse(templateHtml));
+}
+
 function isManagedTemplate(templateHtml: string, builtIn: boolean): boolean {
-  return builtIn || isManagedTemplateNode(parse(templateHtml));
+  return builtIn || isManagedMarkdownPdfTemplate(templateHtml);
 }
 
 export function assessMarkdownPdfTemplateCoverCompatibility(input: {
@@ -64,6 +71,12 @@ export function assessMarkdownPdfTemplateCoverCompatibility(input: {
   templateHtml: string;
 }): Pick<MarkdownPdfTemplateCompatibilityResult, "coverBoundary"> {
   if (!input.profile.cover.enabled) {
+    if (input.templateHtml.includes(MARKDOWN_PDF_PROFILE_TEXT_COVER_MARKER)) {
+      throw new CliError("Managed text cover requires an enabled Profile cover.", {
+        code: "MARKDOWN_PDF_COVER_BOUNDARY_REQUIRED",
+        exitCode: 2,
+      });
+    }
     return {};
   }
   if (input.builtIn) {

@@ -10,11 +10,15 @@ import {
   commitPreparedMarkdownPdfProfileCodex,
   prepareMarkdownPdfProfileCodex,
   type BoundMarkdownPdfProfileCodexDestination,
+  type MarkdownPdfCodexPageInformationInput,
+  type MarkdownPdfPageInformationSlotResolution,
+  type MdPdfProfileCodexOptions,
 } from "../../markdown-pdf/profile-codex";
 import {
   prepareMdPdfProjectCodex,
   rebindMdPdfProjectCodexPreparedArtifact,
   writePreparedMdPdfProjectCodexBundle,
+  type MdPdfProjectCodexOptions,
 } from "../../markdown-pdf/project-codex";
 import {
   prepareMdPdfTemplateCodex,
@@ -91,9 +95,20 @@ function generatedOutputCollisionMessage(artifact: MarkdownPdfCodexArtifact): st
 export async function prepareMarkdownPdfCodexCandidate(
   runtime: CliRuntime,
   setup: MarkdownPdfCodexSetup,
-  options: { timeoutMs?: number; codexExecution?: CodexExecutionOptions } = {},
+  options: {
+    timeoutMs?: number;
+    codexExecution?: CodexExecutionOptions;
+    /** Page-information input or test override for guided preparation. */
+    internalPageInformation?: MarkdownPdfCodexPageInformationInput;
+    internalPageInformationSlotResolution?: MarkdownPdfPageInformationSlotResolution;
+    internalProfileCodexRunner?: MdPdfProfileCodexOptions["codexRunner"];
+    internalTemplateCodexRunner?: MdPdfProjectCodexOptions["templateCodexRunner"];
+  } = {},
 ): Promise<PreparedMarkdownPdfCodexCandidate> {
   const codexExecution = resolveCodexExecution(options.codexExecution);
+  const pageInformation = options.internalPageInformation ?? setup.pageInformation;
+  const slotResolution =
+    options.internalPageInformationSlotResolution ?? setup.pageInformation?.occupiedNumberSlot;
   const common = {
     input: setup.sample,
     intent: setup.intent,
@@ -111,7 +126,12 @@ export async function prepareMarkdownPdfCodexCandidate(
   if (setup.artifact === "profile") {
     return {
       artifact: setup.artifact,
-      prepared: await prepareMarkdownPdfProfileCodex(runtime, common),
+      prepared: await prepareMarkdownPdfProfileCodex(runtime, {
+        ...common,
+        internalPageInformation: pageInformation,
+        internalPageInformationSlotResolution: slotResolution,
+        codexRunner: options.internalProfileCodexRunner,
+      }),
       setup,
     };
   }
@@ -130,6 +150,10 @@ export async function prepareMarkdownPdfCodexCandidate(
     prepared: await prepareMdPdfProjectCodex(runtime, {
       ...common,
       coverImage: setup.coverImage,
+      internalPageInformation: pageInformation,
+      internalPageInformationSlotResolution: slotResolution,
+      profileCodexRunner: options.internalProfileCodexRunner,
+      templateCodexRunner: options.internalTemplateCodexRunner,
     }),
     setup,
   };

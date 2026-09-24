@@ -101,6 +101,10 @@ export function buildMarkdownPdfTemplateCodexPrompt(
         "Use cover.text_align, cover.media_align, cover.image_anchor, and cover.media_scale for bounded layout control instead of CSS pixels.",
       ],
     },
+    coverSource: {
+      imageAvailable: request.signals.coverImage.available,
+      projectTextCover: request.projectTextCover === true,
+    },
     disallowedBehavior: [
       "remote URLs",
       "absolute local paths",
@@ -185,6 +189,9 @@ export function buildMarkdownPdfTemplateCodexPrompt(
     "- Do not rewrite Markdown to add language labels; body.<language-tag> decisions only apply when rendered content already has matching lang attributes.",
     "- Use managed_assets only for bundle_path values listed in outputPlan.managedAssets.",
     "- Managed asset references must be bundle-relative paths, never source-local absolute paths.",
+    "- When coverSource.projectTextCover is true, the Profile owns the text cover. Use template_family document-layered and managed_assets []. Prefer slots.cover.enabled true, slots.cover.style profile-text, and slots.cover.image_fit empty. You may also leave the Template cover slot disabled with style none and image_fit empty; managed synthesis will insert the Profile text cover. The renderer supplies exact cover fields and style later; do not invent or request them.",
+    "- When coverSource.projectTextCover is false, slots.cover.style profile-text is unavailable. A cover without a selected image is unavailable in direct Template decisions.",
+    "- A selected cover image uses cover-media-layered, slots.cover.style media, and its one planned managed asset.",
     "- Use cover.image_fit contain or cover for image sizing; never use raw pixel width or height directives.",
     "- Use cover.composition for title/image/subtitle ordering; use title-media-subtitle for title above the image and subtitle below it.",
     "- Use cover.byline none unless intent asks for author, date, or author/date on the cover; when requested, byline renders after subtitle.",

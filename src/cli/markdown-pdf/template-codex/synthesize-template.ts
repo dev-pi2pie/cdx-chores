@@ -8,6 +8,7 @@ import type {
   MdPdfTemplateCodexSignalCollection,
 } from "./types";
 import { MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT } from "./families";
+import { createMarkdownPdfCoverScaffold, type NormalizedMarkdownPdfProfile } from "../profile";
 
 function identityComment(input: {
   family: MarkdownPdfTemplateCodexTemplateFamily;
@@ -123,6 +124,7 @@ export function synthesizeMdPdfTemplateCodexHtml(input: {
   signals: MdPdfTemplateCodexSignalCollection;
   slots: MarkdownPdfTemplateCodexResolvedSlots;
   titlePolicy: MarkdownPdfTemplateCodexTitlePolicyDecision;
+  textCoverProfile?: NormalizedMarkdownPdfProfile;
 }): string {
   return `<!doctype html>
 ${identityComment(input)}
@@ -133,7 +135,7 @@ ${identityComment(input)}
   <title>$if(title)$$title$$else$Markdown PDF$endif$</title>
 </head>
 <body class="template-family-${input.family}">
-${coverMediaHtml({ managedAssets: input.managedAssets, slots: input.slots })}
+${input.textCoverProfile?.cover.enabled ? createMarkdownPdfCoverScaffold(input.textCoverProfile) : coverMediaHtml({ managedAssets: input.managedAssets, slots: input.slots })}
 $if(toc)$
 <nav id="${MARKDOWN_PDF_TEMPLATE_CODEX_CONTRACT.html.tocId}" role="doc-toc">
 $toc$

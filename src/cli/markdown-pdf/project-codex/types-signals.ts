@@ -12,6 +12,7 @@ import type {
   MarkdownPdfProjectCodexTemplatePhaseSignalMode,
 } from "./types-phase";
 import type { MarkdownPdfProjectCodexSignalMode } from "./types-modes";
+import type { MarkdownPdfCodexPageInformationSignal } from "../profile-codex/page-information-signals";
 
 export interface MarkdownPdfProjectCodexBaseProfileSignals {
   available: boolean;
@@ -61,6 +62,7 @@ export interface MdPdfProjectCodexProfileSignals {
   baseProfile: MarkdownPdfProjectCodexBaseProfileSignals;
   basis: MarkdownPdfProjectCodexProfileBasisSignals;
   fonts: MarkdownPdfProjectCodexFontSignals;
+  pageInformation?: MarkdownPdfCodexPageInformationSignal;
 }
 
 export interface MdPdfProjectCodexTemplateSignals {

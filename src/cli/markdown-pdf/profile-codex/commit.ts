@@ -12,6 +12,7 @@ import {
 import type { BoundMarkdownPdfProfileCodexDestination } from "./destination";
 import type { PreparedMarkdownPdfProfileCodex } from "./prepare";
 import { serializeMarkdownPdfProfileCodexProfile } from "./write-profile";
+import { escapeMarkdownPdfPageInformationTerminalText } from "../page-information-terminal";
 
 function persistedReportPath(runtime: CliRuntime, path: string): string {
   return publicPathDisplay(runtime, path)?.display ?? publicPathBasename(path);
@@ -19,13 +20,17 @@ function persistedReportPath(runtime: CliRuntime, path: string): string {
 
 function printMarkdownPdfProfileAuthoringSummary(input: {
   finalProfile: Record<string, unknown>;
+  hasExplicitPageInformation?: boolean;
   runtime: CliRuntime;
 }): void {
   const profileFields = { ...input.finalProfile };
   delete profileFields.profile;
   const review = collectMarkdownPdfProfileAuthoringReview(profileFields);
   for (const line of formatMarkdownPdfProfileAuthoringReview(review)) {
-    printLine(input.runtime.stdout, line);
+    printLine(
+      input.runtime.stdout,
+      input.hasExplicitPageInformation ? escapeMarkdownPdfPageInformationTerminalText(line) : line,
+    );
   }
 }
 
@@ -60,6 +65,16 @@ export async function commitPreparedMarkdownPdfProfileCodex(input: {
   runtime: CliRuntime;
 }): Promise<void> {
   const { destination, prepared, runtime } = input;
+  if (
+    destination.reportOutputPath &&
+    prepared.hasExplicitPageInformation &&
+    !prepared.reportPayload.pageInformation
+  ) {
+    throw new CliError("Page-information diagnostic report metadata is missing.", {
+      code: "INVALID_INPUT",
+      exitCode: 2,
+    });
+  }
   if (prepared.kind !== "profile") {
     await writeReportIfRequested(input);
     throw new CliError(prepared.failureMessage, {
@@ -80,10 +95,18 @@ export async function commitPreparedMarkdownPdfProfileCodex(input: {
     printLine(runtime.stdout, `Preset: ${prepared.identity.preset}`);
   }
   if (prepared.result?.decision.fallbackReason) {
-    printLine(runtime.stdout, `Fallback reason: ${prepared.result.decision.fallbackReason}`);
+    const reason = prepared.result.decision.fallbackReason;
+    printLine(
+      runtime.stdout,
+      `Fallback reason: ${prepared.hasExplicitPageInformation ? escapeMarkdownPdfPageInformationTerminalText(reason) : reason}`,
+    );
   }
   printLine(runtime.stdout, `Profile: ${destination.displayOutputPath}`);
-  printMarkdownPdfProfileAuthoringSummary({ finalProfile: prepared.finalProfile, runtime });
+  printMarkdownPdfProfileAuthoringSummary({
+    finalProfile: prepared.finalProfile,
+    hasExplicitPageInformation: prepared.hasExplicitPageInformation,
+    runtime,
+  });
 
   if (destination.dryRun) {
     printLine(runtime.stdout, "Dry run only. No profile was written.");

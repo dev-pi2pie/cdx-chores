@@ -6,7 +6,7 @@ import { parse as parseYaml } from "yaml";
 
 import {
   MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS,
-  MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA,
+  MARKDOWN_PDF_PROJECT_PROFILE_OUTPUT_SCHEMA,
   type MarkdownPdfCodexProfileRunner,
 } from "../../../../src/adapters/codex/markdown-pdf-profile";
 import {
@@ -36,6 +36,7 @@ function adaptedProfileRunner(candidateId = "wide-table", unmatchedDirections: s
       decision_mode: "adapted",
       selected_candidate_id: candidateId,
       accepted_patches: [{ op: "replace", path: "/toc/enabled", value: true }],
+      project_cover_intent: "unspecified",
       accepted_font_patches: [
         { op: "replace-font", role: "body", key: "default", value: "Source Serif 4" },
       ],
@@ -52,6 +53,7 @@ function noUsableProfileRunner() {
       decision_mode: "no-usable-profile",
       selected_candidate_id: "none",
       accepted_patches: [],
+      project_cover_intent: "unspecified",
       accepted_font_patches: [],
       reasoning: "The requested profile directions are not representable.",
       warnings: ["unsupported profile direction"],
@@ -66,6 +68,7 @@ function conservativeFallbackProfileRunner(candidateId = "wide-table") {
       decision_mode: "conservative-fallback",
       selected_candidate_id: candidateId,
       accepted_patches: [{ op: "replace", path: "/toc/enabled", value: true }],
+      project_cover_intent: "unspecified",
       accepted_font_patches: [],
       reasoning: "Use a conservative fallback for unsupported profile details.",
       warnings: ["fallback warning"],
@@ -318,6 +321,7 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
                 { op: "replace", path: "/pageNumbers/start", value: 0 },
                 { op: "replace", path: "/footer/style/separator/gap", value: 0 },
               ],
+              project_cover_intent: "unspecified",
               accepted_font_patches: [],
               reasoning: "Apply the bounded reusable page-number profile fields.",
               warnings: [],
@@ -369,6 +373,7 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
               accepted_patches: [
                 { op: "replace", path: "/pageNumbers/countFrom", value: "document" },
               ],
+              project_cover_intent: "unspecified",
               accepted_font_patches: [],
               reasoning: "Revise only the page-number count origin.",
               warnings: [],
@@ -424,6 +429,7 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
               accepted_patches: [
                 { op: "replace", path: "/pageNumbers/position", value: "top-right" },
               ],
+              project_cover_intent: "unspecified",
               accepted_font_patches: [],
               reasoning: "Revise only the page-number position.",
               warnings: [],
@@ -513,6 +519,7 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
                     decision_mode: "adapted",
                     selected_candidate_id: invalidDecision.selectedCandidateId,
                     accepted_patches: invalidDecision.patches,
+                    project_cover_intent: "unspecified",
                     accepted_font_patches: [],
                     reasoning: invalidDecision.name,
                     warnings: [],
@@ -592,6 +599,7 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
                     decision_mode: "adapted",
                     selected_candidate_id: "wide-table",
                     accepted_patches: [],
+                    project_cover_intent: "unspecified",
                     accepted_font_patches: [],
                     reasoning: "Wide table candidate matches the document facts.",
                     warnings: [],
@@ -644,7 +652,7 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
           type: "text",
         }),
       ]);
-      expect(runOptions.outputSchema).toBe(MARKDOWN_PDF_CODEX_PROFILE_OUTPUT_SCHEMA);
+      expect(runOptions.outputSchema).toBe(MARKDOWN_PDF_PROJECT_PROFILE_OUTPUT_SCHEMA);
       expect(runOptions.signal).toBeInstanceOf(AbortSignal);
       expect(timeoutCalls).toEqual([MARKDOWN_PDF_CODEX_PROFILE_TIMEOUT_MS]);
       expect(facts).toMatchObject({
@@ -695,6 +703,7 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
                       decision_mode: "adapted",
                       selected_candidate_id: "base-profile",
                       accepted_patches: [{ op: "replace", path: "/toc/enabled", value: true }],
+                      project_cover_intent: "unspecified",
                       accepted_font_patches: [],
                       reasoning: "The base profile matches the mixed project facts.",
                       warnings: [],
@@ -778,6 +787,7 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
                       decision_mode: "no-usable-profile",
                       selected_candidate_id: "none",
                       accepted_patches: [],
+                      project_cover_intent: "unspecified",
                       accepted_font_patches: [],
                       reasoning: "The requested profile directions are not representable.",
                       warnings: ["unsupported profile direction"],
@@ -1038,6 +1048,7 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
                     decision_mode: "adapted",
                     selected_candidate_id: "not-a-candidate",
                     accepted_patches: [],
+                    project_cover_intent: "unspecified",
                     accepted_font_patches: [],
                     reasoning: "Unknown candidate.",
                     warnings: [],
@@ -1223,6 +1234,7 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
             { op: "replace", path: "/pageNumbers/scope", value: "document" },
             { op: "replace", path: "/pageNumbers/countFrom", value: "body" },
           ],
+          project_cover_intent: "unspecified",
           accepted_font_patches: [],
           reasoning: "Invalid counting combination.",
           warnings: [],
@@ -1247,6 +1259,7 @@ describe("cli action modules: md pdf-project codex profile phase", () => {
           decision_mode: "adapted",
           selected_candidate_id: "default",
           accepted_patches: [{ op: "replace", path: "/header/style/fontSize", value: "13pt" }],
+          project_cover_intent: "unspecified",
           accepted_font_patches: [],
           reasoning: "Invalid page chrome value.",
           warnings: [],

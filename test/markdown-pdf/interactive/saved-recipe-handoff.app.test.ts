@@ -30,6 +30,7 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
     const compiled = choice === "inherit" ? undefined : choice === "enable";
     const output = artifact === "profile" ? "recipes/saved.yml" : "recipes/saved-template";
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [...deterministicSaveSelections(artifact), "inherit", choice, "cancel"],
@@ -53,6 +54,7 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
 
   test("preselects a saved bundle and uses its sample only after explicit selection", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [...projectSaveSelections("choose"), "sample", "inherit", "inherit", "default"],
@@ -79,6 +81,7 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
 
   test("uses the current saved Project Profile instead of stale candidate state", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       markdownPdfCodexFinalProfile: {
@@ -113,6 +116,7 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
   for (const choice of ["enable", "disable"] as const) {
     test(`applies the ${choice} code-highlighting override to a saved Project bundle`, () => {
       const result = runInteractiveHarness({
+        pageInformationInitialChoice: "skip",
         mode: "run",
         markdownPdfMocks: true,
         selectQueue: [...projectSaveSelections("choose"), "sample", choice, "inherit", "cancel"],
@@ -138,6 +142,7 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
   for (const choice of ["enable", "disable"] as const) {
     test(`applies the ${choice} page-number override to a saved Project bundle`, () => {
       const result = runInteractiveHarness({
+        pageInformationInitialChoice: "skip",
         mode: "run",
         markdownPdfMocks: true,
         selectQueue: [...projectSaveSelections("choose"), "sample", "inherit", choice, "cancel"],
@@ -160,6 +165,7 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
 
   test("returns from the handoff override to Markdown input selection", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -192,6 +198,7 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
 
   test("returns from page numbers to code highlighting without losing the code choice", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -218,6 +225,7 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
 
   test("cancels a saved-recipe handoff before authoritative preparation", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [...projectSaveSelections("choose"), "sample", "cancel"],
@@ -241,6 +249,7 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
     (_condition, completenessError) => {
       const result = runInteractiveHarness(
         {
+          pageInformationInitialChoice: "skip",
           mode: "run",
           markdownPdfMocks: true,
           markdownPdfProjectCompletenessErrorMessage: completenessError,
@@ -263,6 +272,7 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
 
   test("keeps preparation sample and render input distinct when another file is chosen", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [...projectSaveSelections("choose"), "choose", "inherit", "inherit", "default"],
@@ -277,6 +287,7 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
 
   test("requires normal Markdown selection when preparation had no sample", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [...projectSaveSelections("none"), "inherit", "inherit", "default"],
@@ -295,6 +306,7 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
 
   test("changes a saved Project handoff override without rewriting or replanning", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [
@@ -328,6 +340,7 @@ describe("interactive Markdown PDF saved-recipe handoff", () => {
 
   test("can create another recipe after a durable save", () => {
     const result = runInteractiveHarness({
+      pageInformationInitialChoice: "skip",
       mode: "run",
       markdownPdfMocks: true,
       selectQueue: [...RECIPES_ENTRY, "profile", "starter", "save", "create", "cancel"],
