@@ -18,8 +18,10 @@ Implementation base: `205bc290` (subsequent canary version update).
 
 - Escape literal dollars with Pandoc's doubled-dollar syntax in the shared
   helper, preserving cover text in built-in and managed Project templates.
-- Pending: recognize negated text-cover phrases without treating the same
-  phrase as a positive cover request.
+- Consume recognized negative cover phrases before positive matching, including
+  text-only, textual, typographic, and trailing-text forms. A separate positive
+  cover request still produces a conflict; existing image and base-Profile
+  conflict checks remain in force.
 
 ## Verification
 
@@ -30,10 +32,15 @@ Implementation base: `205bc290` (subsequent canary version update).
 - Escaping checkpoint: the Pandoc lane passed all 5 cases, including both new
   regressions. TypeScript, focused lint/format checks, and `git diff --check`
   passed.
-- Pending negation regressions, synthetic PDF smoke, full static checks,
+- Negation checkpoint: 54 policy unit cases and 6 Project handoff cases passed.
+  The new negative intents now reach the Template phase with text-cover support
+  disabled and save a Profile and Template without a cover. TypeScript,
+  focused lint/format checks, and `git diff --check` passed.
+- Pending synthetic PDF smoke, full static checks,
   and review of the complete new commit range. All reproduction inputs and
   public evidence are independently authored synthetic examples.
 
 ## Checkpoints and Review
 
-Pending validated implementation checkpoints and final range review.
+- `fd377ede`: shared cover escaping and real-Pandoc regressions.
+- Pending negation checkpoint and final range review.

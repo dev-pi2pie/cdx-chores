@@ -8,6 +8,8 @@ type ProjectCoverIntent = "none" | "generic" | "text-only" | "image" | "no-cover
 
 const NEGATED_COVER_IMAGE =
   /\b(?:no|without|skip|avoid|exclude|omit|(?:do\s+not|don't|never)\s+(?:use|include|add|show))\s+(?:(?:a|an|the|any)\s+)?(?:(?:cover\s+)?(?:image|photo|picture)|(?:image|photo|picture)\s+cover)\b/giu;
+const NEGATED_COVER =
+  /\b(?:no|without|skip|disable|avoid|exclude|omit|(?:do\s+not|don't|never)\s+(?:include|use|add|create|show))\s+(?:(?:a|the|any)\s+)?(?:(?:text(?:[- ]only)?|textual|typographic)\s+)?(?:cover(?:\s+page)?|title[- ]page)(?:\s+(?:with\s+)?text(?:\s+only)?)?\b/giu;
 const PAGE_NUMBER_COVER_REFERENCES = [
   /\b(?:skip|exclude|omit|ignore)\s+(?:the\s+)?cover(?:\s+page)?\s+(?:in|from|for)\s+(?:page\s+)?(?:number(?:s|ing)?|count(?:ing)?)\b/giu,
   /\b(?:no|without)\s+(?:page\s+)?(?:number(?:s|ing)?|count(?:ing)?)\s+(?:on|for)\s+(?:the\s+)?cover(?:\s+page)?\b/giu,
@@ -35,11 +37,10 @@ export function classifyMdPdfProjectCoverIntent(intent: string | undefined): Pro
     (text, reference) => text.replace(reference, " "),
     intent ?? "",
   );
-  const text = withoutNumbering.replace(NEGATED_COVER_IMAGE, " ");
-  const noCover =
-    /\b(?:no|without|skip|disable|avoid|exclude|omit|(?:do\s+not|don't|never)\s+(?:include|use|add|create|show))\s+(?:(?:a|the|any)\s+)?(?:cover(?:\s+page)?|title[- ]page)\b/iu.test(
-      text,
-    );
+  const withoutImageNegations = withoutNumbering.replace(NEGATED_COVER_IMAGE, " ");
+  // A negative phrase must not also supply a positive cover match.
+  const text = withoutImageNegations.replace(NEGATED_COVER, " ");
+  const noCover = text !== withoutImageNegations;
   const textOnly =
     /\b(?:text(?:[- ]only)?|textual|typographic)\s+(?:cover|title[- ]page)\b|\b(?:cover|title[- ]page)\s+(?:with\s+)?text(?:\s+only)?\b/iu.test(
       text,
@@ -49,7 +50,7 @@ export function classifyMdPdfProjectCoverIntent(intent: string | undefined): Pro
       text,
     );
   const cover = /\b(?:cover|title[- ]page)\b/iu.test(text);
-  if (Number(noCover) + Number(textOnly) + Number(image) > 1) return "conflict";
+  if ((noCover && cover) || (textOnly && image)) return "conflict";
   if (noCover) return "no-cover";
   if (textOnly) return "text-only";
   if (image) return "image";
