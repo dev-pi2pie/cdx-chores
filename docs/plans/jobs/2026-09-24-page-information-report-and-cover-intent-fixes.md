@@ -1,7 +1,7 @@
 ---
 title: "Page-information report and cover-intent fixes"
 created-date: 2026-09-24
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -25,6 +25,7 @@ Regression tests and independently authored synthetic smoke resources cover both
 
 ### Cover-intent checkpoint
 
+- Commit: `d265a27c` (`fix(md-pdf): preserve profile cover choice for ambiguous intent`).
 - Only bounded affirmative request clauses establish a local positive cover choice. Unrecognized cover wording preserves the validated Profile decision when no explicit image/base constraint owns it.
 - Recognized negative requests, text/image conflicts, and image/base constraints remain checked. Coordinated affirmative text/image requests still conflict.
 - This local matcher is deliberately incomplete: ambiguous means unrecognized by the matcher, not that a human could not interpret the request. It does not replace model interpretation of free-form prose.
@@ -40,4 +41,11 @@ Regression tests and independently authored synthetic smoke resources cover both
 - Both zero-start artifacts save their reports; the Project PDF has two body pages numbered 0 and 1 with repeating text cleared. The negative cover request renders one body page; the positive request renders a cover plus one body page.
 - PDF.js verified text and page counts for all three PDFs. All five rasterized pages were inspected without clipping, overlap, or missing glyphs. Scripts, verification output, and images remain local smoke evidence; committed regression tests are the durable coverage.
 
-The second checkpoint commit reference and final commit-range review remain pending.
+## Commit-range review
+
+Reviewed the complete implementation range
+`4d5909fa1be48148912802b331e504c5bce970e8..d265a27c95914e26b31d3951dd23f8a66d542af7`,
+including call sites and regression assertions. No actionable findings remained.
+The final closeout changes only this job record to record the validated commits
+and completed review. Public records and committed tests contain no private
+resource content or identifiers.
