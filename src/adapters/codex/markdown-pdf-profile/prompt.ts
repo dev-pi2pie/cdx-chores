@@ -224,6 +224,13 @@ export function buildMarkdownPdfProfileCodexPrompt(
     "- Follow titleDecisionSignal before adding cover or title treatment.",
     "- If titleDecisionSignal says duplicate visible title risk exists, prefer accepted_patches path /titleBlock/metadataTitle with value auto unless the user explicitly asks to keep duplicate title output.",
     "- If explicit cover intent exists, cover may be enabled, but still use titleBlock.metadataTitle for metadata-title duplication instead of warning that no profile field exists.",
+    ...(request.projectCoverImageAvailable !== undefined
+      ? [
+          "- For a Project, return project_cover_intent based only on the user's advisory intent, interpreted in its original language: requested (generic cover), text-only, image, no-cover, conflict, or unspecified.",
+          "- Use unspecified when no cover is requested, when intent is absent, or when it only discusses page numbering on an existing cover. Do not infer a cover request from a report preset, document content, base Profile, or selected image; those are separate local constraints.",
+          "- A requested cover may be expressed without English cover keywords. Keep accepted cover patches consistent with that interpretation and the explicit base/image constraints.",
+        ]
+      : []),
     ...(request.projectCoverImageAvailable
       ? [
           "- A local cover image was selected for the Project. Treat it as a cover request and enable the Profile cover unless the user's cover directions conflict; use titleBlock.metadataTitle to avoid a duplicate body title.",

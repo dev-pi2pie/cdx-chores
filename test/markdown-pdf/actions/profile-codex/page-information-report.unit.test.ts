@@ -10,6 +10,7 @@ import {
   writeMarkdownPdfCodexReportArtifact,
 } from "../../../../src/cli/markdown-pdf/codex-report";
 import { withTempFixtureDir } from "../../../helpers/cli-test-utils";
+import { validateMarkdownPdfCodexReportPageInformation } from "../../../../src/cli/markdown-pdf/codex-report/page-information";
 
 const PAGE_LABEL = "PRIVATE_PAGE_LABEL_7b2";
 const HEADER_TEXT = "PRIVATE_HEADER_TEXT_8c3";
@@ -91,6 +92,28 @@ function createReport(input: {
 }
 
 describe("Profile Codex page-information diagnostic report", () => {
+  test("accepts final start zero without relaxing guided requests or invalid final values", () => {
+    const metadata = createReport({ modelCallAttempted: false }).pageInformation!;
+    metadata.pageNumbers.final!.start = 0;
+    expect(() => validateMarkdownPdfCodexReportPageInformation(metadata)).not.toThrow();
+    for (const start of [-1, 0.5, Number.MAX_SAFE_INTEGER + 1]) {
+      metadata.pageNumbers.final!.start = start;
+      expect(() => validateMarkdownPdfCodexReportPageInformation(metadata)).toThrow(
+        "final numbers are invalid",
+      );
+    }
+    metadata.pageNumbers.final!.start = 0;
+    expect(() =>
+      validateMarkdownPdfCodexReportPageInformation({
+        ...metadata,
+        pageNumbers: {
+          ...metadata.pageNumbers,
+          requested: { ...metadata.pageNumbers.requested, start: 0 },
+        },
+      }),
+    ).toThrow("number request is invalid");
+  });
+
   test("keeps only requested and validated final metadata on attempted calls", () => {
     const report = createReport({ modelCallAttempted: true });
     const json = JSON.stringify(report);

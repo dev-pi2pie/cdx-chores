@@ -134,6 +134,7 @@ describe("internal Interactive page-information preparation", () => {
           confirmRequest: async () => true,
           internalProfileCodexRunner: async () =>
             JSON.stringify({
+              ...(artifact === "project-bundle" ? { project_cover_intent: "unspecified" } : {}),
               decision_mode: "adapted",
               selected_candidate_id: artifact === "profile" ? "default" : "base-profile",
               accepted_patches:

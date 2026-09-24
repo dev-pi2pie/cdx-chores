@@ -1,4 +1,5 @@
 import { select } from "@inquirer/prompts";
+import { MARKDOWN_PDF_CODEX_PAGE_TEXT_MAX_LENGTH } from "../../markdown-pdf/profile-codex/page-information-signals";
 
 import {
   DEFAULT_NORMALIZED_MARKDOWN_PDF_PROFILE,
@@ -336,7 +337,9 @@ export function createMarkdownPdfCodexPageInformationPrompts(
   pathPromptContext: InteractivePathPromptContext,
 ): MarkdownPdfCodexPageInformationPrompts {
   return {
-    formalGuide: createMarkdownPdfFormalGuidePrompts(pathPromptContext),
+    formalGuide: createMarkdownPdfFormalGuidePrompts(pathPromptContext, {
+      pageTextMaxLength: MARKDOWN_PDF_CODEX_PAGE_TEXT_MAX_LENGTH,
+    }),
     initial: async () =>
       await select({
         message: "Specify page information in this Profile?",

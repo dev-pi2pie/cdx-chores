@@ -17,6 +17,7 @@ function adaptedProfile(candidateId: string): string {
     decision_mode: "adapted",
     selected_candidate_id: candidateId,
     accepted_patches: [],
+    project_cover_intent: "unspecified",
     accepted_font_patches: [],
     reasoning: "Use the reviewed cover signals.",
     warnings: [],
@@ -26,42 +27,83 @@ function adaptedProfile(candidateId: string): string {
 }
 
 describe("Project text-cover handoff", () => {
-  test.each(["Do not add a text-only cover", "No text cover"])(
-    "saves a cover-disabled model decision for %s",
-    async (intent) => {
-      await withTempFixtureDir("md-pdf-project-negated-text-cover", async (fixtureDir) => {
-        let profileCalls = 0;
-        let templateCalls = 0;
-        const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
-        await actionMdPdfProjectCodex(runtime, {
-          intent,
-          output: "project",
-          profileCodexRunner: async () => {
-            profileCalls += 1;
-            const decision = JSON.parse(adaptedProfile("article"));
-            decision.accepted_patches = [{ op: "replace", path: "/cover/enabled", value: false }];
-            return JSON.stringify(decision);
-          },
-          templateCodexRunner: async ({ prompt }) => {
-            templateCalls += 1;
-            expect(prompt).toContain('"projectTextCover": false');
-            return responseFromDecision({
-              coverEnabled: false,
-              templateFamily: "document-layered",
-              recipeSource: "base-profile",
-            });
-          },
-        });
-        expect(profileCalls).toBe(1);
-        expect(templateCalls).toBe(1);
-        const profile = parse(await readFile(join(fixtureDir, "project/profile.yml"), "utf8"));
-        expect(profile.cover.enabled).toBe(false);
-        const template = await readFile(join(fixtureDir, "project/template.html"), "utf8");
-        expect(template).not.toContain('<section class="pdf-cover');
-        expect(template).not.toContain("data-cdx-profile-text-cover");
+  test.each([
+    "Do not add a text-only cover",
+    "No text cover",
+    "Leave the cover out",
+    "Leave the text-only cover out",
+    "A cover is unnecessary",
+    "I don't want to add a cover",
+  ])("saves a cover-disabled model decision for %s", async (intent) => {
+    await withTempFixtureDir("md-pdf-project-negated-text-cover", async (fixtureDir) => {
+      let profileCalls = 0;
+      let templateCalls = 0;
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      await actionMdPdfProjectCodex(runtime, {
+        intent,
+        output: "project",
+        profileCodexRunner: async () => {
+          profileCalls += 1;
+          const decision = JSON.parse(adaptedProfile("article"));
+          decision.accepted_patches = [{ op: "replace", path: "/cover/enabled", value: false }];
+          return JSON.stringify(decision);
+        },
+        templateCodexRunner: async ({ prompt }) => {
+          templateCalls += 1;
+          expect(prompt).toContain('"projectTextCover": false');
+          return responseFromDecision({
+            coverEnabled: false,
+            templateFamily: "document-layered",
+            recipeSource: "base-profile",
+          });
+        },
       });
-    },
-  );
+      expect(profileCalls).toBe(1);
+      expect(templateCalls).toBe(1);
+      const profile = parse(await readFile(join(fixtureDir, "project/profile.yml"), "utf8"));
+      expect(profile.cover.enabled).toBe(false);
+      const template = await readFile(join(fixtureDir, "project/template.html"), "utf8");
+      expect(template).not.toContain('<section class="pdf-cover');
+      expect(template).not.toContain("data-cdx-profile-text-cover");
+    });
+  });
+
+  test.each([
+    ["請加入文字封面", "text-only", true],
+    ["Add a titlepage", "requested", true],
+    ["Use readable typography", "unspecified", false],
+    ["請不要加入封面", "no-cover", false],
+    ["Start page numbering after the cover", "unspecified", false],
+  ] as const)("saves interpreted cover intent for %s", async (intent, interpretation, enabled) => {
+    await withTempFixtureDir("md-pdf-interpreted-cover", async (fixtureDir) => {
+      const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+      await actionMdPdfProjectCodex(runtime, {
+        intent,
+        output: "project",
+        profileCodexRunner: async ({ prompt }) => {
+          expect(prompt).toContain("project_cover_intent");
+          const response = JSON.parse(adaptedProfile("article"));
+          response.project_cover_intent = interpretation;
+          // Even an inferred model cover must remain OFF when no cover was requested.
+          response.accepted_patches = [{ op: "replace", path: "/cover/enabled", value: true }];
+          return JSON.stringify(response);
+        },
+        templateCodexRunner: async () =>
+          responseFromDecision({
+            coverEnabled: false,
+            templateFamily: "document-layered",
+            recipeSource: "base-profile",
+          }),
+      });
+      const saved = parse(await readFile(join(fixtureDir, "project/profile.yml"), "utf8"));
+      expect(saved.cover.enabled).toBe(enabled);
+      expect(
+        (await readFile(join(fixtureDir, "project/template.html"), "utf8")).includes(
+          "data-cdx-profile-text-cover",
+        ),
+      ).toBe(enabled);
+    });
+  });
 
   test("saves a reusable Profile cover hook and resolves later document metadata", async () => {
     await withTempFixtureDir("md-pdf-project-text-cover-handoff", async (fixtureDir) => {

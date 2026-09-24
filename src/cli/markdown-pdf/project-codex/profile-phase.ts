@@ -189,6 +189,10 @@ export async function runMdPdfProjectCodexProfilePhase(input: {
     fallbackReason:
       decision.kind === "codex-profile" ? decision.codexResult.decision.fallbackReason : undefined,
     finalProfile: applyMdPdfProjectCoverPolicy({
+      modelCoverIntent:
+        decision.kind === "codex-profile"
+          ? decision.codexResult.decision.projectCoverIntent
+          : undefined,
       baseProfileCoverEnabled: explicitMdPdfProjectBaseCoverChoice(
         input.signals.profile.baseProfile.candidate?.fullProfile,
       ),

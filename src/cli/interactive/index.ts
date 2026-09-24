@@ -27,6 +27,7 @@ export async function runInteractiveMode(
     cwd: runtime.cwd,
     stdin: runtime.stdin,
     stdout: runtime.stdout,
+    colorEnabled: runtime.colorEnabled,
   };
   const selectInteractiveActionImpl = impls.selectInteractiveActionImpl ?? selectInteractiveAction;
   const selectInteractiveDoctorOutputImpl =

@@ -1,7 +1,7 @@
 ---
 title: "Interactive Markdown PDF Usage"
 created-date: 2026-07-22
-modified-date: 2026-09-23
+modified-date: 2026-09-24
 status: completed
 agent: codex
 ---
@@ -234,6 +234,10 @@ sample. Artifact and PDF output paths are chosen later; they are local lifecycle
 configuration rather than Codex signals.
 
 ### Page information in Codex Assistant
+
+Custom page-number labels and repeating header/footer text are limited to 512
+characters in this flow. Oversized input stays in the editor with a validation
+message so it can be shortened without restarting setup.
 
 Profile and Project setup asks whether to specify page information before PDF
 intent. Formal Guide has explicit preset, page size, orientation, and margin

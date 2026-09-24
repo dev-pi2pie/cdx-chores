@@ -13,6 +13,7 @@ export function adaptedProfileResponse(): string {
     decision_mode: "adapted",
     selected_candidate_id: "base-profile",
     accepted_patches: [{ op: "replace", path: "/toc/enabled", value: true }],
+    project_cover_intent: "unspecified",
     accepted_font_patches: [],
     reasoning: "Adapt the project profile to the document.",
     warnings: [],

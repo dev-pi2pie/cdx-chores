@@ -1,5 +1,7 @@
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { readMarkdownPdfCodexReportArtifact } from "../../../../src/cli/markdown-pdf/codex-report";
+import { readMarkdownPdfProfileFile } from "../../../../src/cli/markdown-pdf/profile";
 
 import { describe, expect, test } from "bun:test";
 
@@ -14,6 +16,7 @@ import {
   rebindMdPdfProjectCodexPreparedArtifact,
   writeMdPdfProjectCodexReportArtifact,
   writePreparedMdPdfProjectCodexReportIfRequested,
+  writePreparedMdPdfProjectCodexBundle,
 } from "../../../../src/cli/markdown-pdf/project-codex";
 import { createActionTestRuntime, expectCliError } from "../../../helpers/cli-action-test-utils";
 import { withTempFixtureDir } from "../../../helpers/cli-test-utils";
@@ -37,6 +40,64 @@ const pageInformation: MarkdownPdfCodexPageInformationInput = {
 };
 
 describe("internal page-information helper signals", () => {
+  test.each([true, false])(
+    "saves inherited start zero and reports with numbering enabled=%s",
+    async (enabled) => {
+      await withTempFixtureDir("md-pdf-page-zero-report", async (fixtureDir) => {
+        await writeFile(
+          join(fixtureDir, "base.yml"),
+          `pageNumbers:\n  enabled: ${enabled}\n  start: 0\nfooter:\n  left: Synthetic retained text\n`,
+        );
+        const { runtime } = createActionTestRuntime({ cwd: fixtureDir });
+        const common = {
+          baseProfile: "base.yml",
+          internalPageInformation: {
+            repeatingContent: { enabled: false, selected: [], text: {} },
+          },
+        };
+        const profile = await prepareMarkdownPdfProfileCodex(runtime, {
+          ...common,
+          output: "profile.yml",
+        });
+        const destination = await bindMarkdownPdfProfileCodexDestination(runtime, profile, {
+          report: { kind: "external", path: "profile-report.json" },
+        });
+        await commitPreparedMarkdownPdfProfileCodex({ runtime, prepared: profile, destination });
+        const profileReport = await readMarkdownPdfCodexReportArtifact(
+          join(fixtureDir, "profile-report.json"),
+        );
+        const project = await prepareMdPdfProjectCodex(runtime, {
+          ...common,
+          output: "project",
+          codexReportOutput: "project-report.json",
+        });
+        await writePreparedMdPdfProjectCodexBundle(runtime, project);
+        const projectReport = JSON.parse(
+          await readFile(join(fixtureDir, "project-report.json"), "utf8"),
+        );
+        for (const report of [profileReport, projectReport]) {
+          expect(report.pageInformation.pageNumbers).toMatchObject({
+            requested: { choice: "unspecified" },
+            final: { start: 0, enabled },
+          });
+          expect(report.pageInformation.repeatingContent).toMatchObject({
+            requested: { choice: "off" },
+            final: { storedPositions: [] },
+          });
+        }
+        for (const path of ["profile.yml", "project/profile.yml"]) {
+          const saved = await readMarkdownPdfProfileFile(join(fixtureDir, path));
+          expect(saved.pageNumbers).toMatchObject({ start: 0, enabled });
+          expect(saved.footer).toMatchObject({ left: "" });
+        }
+        expect(await readFile(join(fixtureDir, "project/template.html"), "utf8")).toContain(
+          "$body$",
+        );
+        expect(await readFile(join(fixtureDir, "project/style.css"), "utf8")).toContain("@page");
+      });
+    },
+  );
+
   test("Profile page information alone stays deterministic with and without a base", async () => {
     await withTempFixtureDir("md-pdf-profile-page-signals", async (fixtureDir) => {
       await writeFile(join(fixtureDir, "base.yml"), BASE_PROFILE, "utf8");
@@ -307,6 +368,7 @@ describe("internal page-information helper signals", () => {
             decision_mode: "adapted",
             selected_candidate_id: "default",
             accepted_patches: [],
+            project_cover_intent: "unspecified",
             accepted_font_patches: [],
             reasoning: `Echo: ${marker}`,
             warnings: [],

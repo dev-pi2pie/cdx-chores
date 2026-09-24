@@ -39,6 +39,7 @@ function adaptedProfileRunner(candidateId = "wide-table", unmatchedDirections: s
       decision_mode: "adapted",
       selected_candidate_id: candidateId,
       accepted_patches: [{ op: "replace", path: "/toc/enabled", value: true }],
+      project_cover_intent: "unspecified",
       accepted_font_patches: [
         { op: "replace-font", role: "body", key: "default", value: "Source Serif 4" },
       ],
