@@ -10,7 +10,7 @@ agent: codex
 Starting commit: `61450fecd96063ed557107c17103652ebe1cfd03`.
 
 - Preserve requested Project covers expressed outside the local intent matcher's vocabulary, while retaining explicit base/image constraints and the no-request default.
-- Enforce the Codex page-information text limit during editing, preserve answers during correction, and display validation feedback in advanced prompts using the existing diagnostic presentation.
+- Validate Codex page-information text on submission, keep rejected entries editable for correction, and display feedback in advanced prompts using the existing diagnostic presentation.
 - Use independently authored synthetic regression and rendering cases. Keep local resources and environment setup out of this record.
 
 ## Verification
@@ -35,7 +35,15 @@ Starting commit: `61450fecd96063ed557107c17103652ebe1cfd03`.
 
 ### Interactive page text
 
-- Codex page-information prompts enforce the 512-character bound while editing. The ordinary Formal Guide retains its existing input contract.
+- The 512-character page-information limit is checked when an entry is submitted, not while it is typed. An overlong entry stays editable for correction. The check uses JavaScript string length (UTF-16 code units), so some visible characters count as more than one.
+
+  | Input                                                      | This 512-character limit          |
+  | ---------------------------------------------------------- | --------------------------------- |
+  | Codex Assistant custom page-number label                   | Applies to the label              |
+  | Codex Assistant repeating header/footer text               | Applies to each selected position |
+  | PDF intent, in the single-line prompt or multiline editor  | Does not apply                    |
+  | Ordinary Formal Guide page-number label and repeating text | Does not apply                    |
+
 - Advanced text prompts show the shared error-label styling and retain editable input after rejection. Runtime color preferences flow to the prompt; diagnostics remain plain when colors are disabled.
 - Focused prompt and collector tests: 67 passed / 218 assertions, including 512/513 boundaries, correction, wrapped rows, and color-disabled output. TypeScript, lint, formatting, and build passed.
 - Commit: `72fe0846` (`fix(cli): keep page text validation recoverable`).
