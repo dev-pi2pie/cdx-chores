@@ -14,13 +14,7 @@ Today, this command is most valuable for source-shaping work, especially Excel-o
 
 This guide reflects the current shipped split where `data extract` owns direct shaped-table materialization and reviewed source-shape generation, while `data query` is the SQL lane that can later replay an accepted reviewed shape.
 
-For the shared reviewed header-mapping artifact contract, see `docs/guides/data-schema-and-mapping-usage.md`.
-For the shared reviewed source-shape artifact contract and the current shape-first query relationship, see `docs/guides/data-source-shape-usage.md`.
-For DuckDB extension setup used by Excel and SQLite inputs, see `docs/guides/data-duckdb-usage.md`.
-For SQL execution instead of direct materialization, use `docs/guides/data-query-usage.md`.
-For multi-file or multi-directory assembly before later materialization or SQL, use `docs/guides/data-stack-usage.md`.
-For the shared Codex request-timeout and recovery contract, see
-[Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md).
+For the shared reviewed header-mapping artifact contract, see `docs/guides/data-schema-and-mapping-usage.md`. For the shared reviewed source-shape artifact contract and the current shape-first query relationship, see `docs/guides/data-source-shape-usage.md`. For DuckDB extension setup used by Excel and SQLite inputs, see `docs/guides/data-duckdb-usage.md`. For SQL execution instead of direct materialization, use `docs/guides/data-query-usage.md`. For multi-file or multi-directory assembly before later materialization or SQL, use `docs/guides/data-stack-usage.md`. For the shared Codex request-timeout and recovery contract, see [Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md).
 
 Current boundary:
 
@@ -103,8 +97,7 @@ That does not mean every tricky case belongs in `data extract`. The current desi
 - DuckDB-file: table or view selector, using `schema.table` where needed
 - Excel: sheet name
 
-`--range` is valid only for Excel inputs and narrows the selected sheet before the shaped table is materialized.
-Other input formats reject `--range`.
+`--range` is valid only for Excel inputs and narrows the selected sheet before the shaped table is materialized. Other input formats reject `--range`.
 
 `--no-header` is valid only for CSV and TSV inputs:
 
@@ -191,8 +184,7 @@ Interactive `data extract` is available through:
 cdx-chores interactive
 ```
 
-To use a different per-attempt deadline for Interactive Codex source-shape and
-semantic-header requests, pass the option to the `interactive` command.
+To use a different per-attempt deadline for Interactive Codex source-shape and semantic-header requests, pass the option to the `interactive` command.
 
 ✅ Correct:
 
@@ -206,22 +198,11 @@ cdx-chores interactive --codex-timeout 2m
 cdx-chores --codex-timeout 2m
 ```
 
-The root-level form is rejected. If the option is omitted, Interactive mode
-uses the 30-second default and the extract flow does not prompt for timeout
-configuration. Each new source-shape or header-suggestion request receives its
-own window using the same session value, which is preserved through review and
-backtracking.
+The root-level form is rejected. If the option is omitted, Interactive mode uses the 30-second default and the extract flow does not prompt for timeout configuration. Each new source-shape or header-suggestion request receives its own window using the same session value, which is preserved through review and backtracking.
 
-The direct embedded helpers `data extract --codex-suggest-shape` and
-`data extract --codex-suggest-headers` remain default-only and do not accept a
-command-local `--codex-timeout` option in this release.
+The direct embedded helpers `data extract --codex-suggest-shape` and `data extract --codex-suggest-headers` remain default-only and do not accept a command-local `--codex-timeout` option in this release.
 
-Those direct helpers also do not accept `--codex-model`, `--codex-provider`, or
-`--codex-reasoning-effort`: they inherit model/provider and request effort `low`.
-Interactive suggestions instead receive the execution settings supplied to the
-explicit `interactive` command, preserved across review and backtracking. See
-[Codex Execution Configuration](codex-execution-configuration.md) for the
-supported flags and session behavior.
+Those direct helpers also do not accept `--codex-model`, `--codex-provider`, or `--codex-reasoning-effort`: they inherit model/provider and request effort `low`. Interactive suggestions instead receive the execution settings supplied to the explicit `interactive` command, preserved across review and backtracking. See [Codex Execution Configuration](codex-execution-configuration.md) for the supported flags and session behavior.
 
 Choose:
 

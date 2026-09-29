@@ -64,8 +64,7 @@ Avoid direct SDK/tool-client complexity inside action modules when an adapter bo
 
 The Codex SDK baseline for `v0.2.0-canary.2` is `@openai/codex-sdk` `0.159.0`.
 
-`src/adapters/codex/shared.ts` loads the Codex SDK on demand. Feature-specific
-adapters provide Codex assistance for rename, Markdown PDF, and data workflows.
+`src/adapters/codex/shared.ts` loads the Codex SDK on demand. Feature-specific adapters provide Codex assistance for rename, Markdown PDF, and data workflows.
 
 When adding or expanding Codex-backed features:
 
@@ -86,32 +85,13 @@ Recommended shape for rename semantic assistance:
 
 ### Execution settings and discovery
 
-Use `src/cli/options/codex-execution-option.ts` to register the three execution
-options on an adopted command node. The shared resolver in
-`src/utils/codex-execution.ts` validates action and adapter inputs and supplies
-the default effort `low`; omitted model/provider stay absent. Forward the
-resolved `codexExecution` object through every request, batch, retry, repair,
-and regeneration seam to `startCodexReadOnlyThread()`. Keep timeout resolution
-separate and retain lazy SDK loading for Node ESM/CJS compatibility.
+Use `src/cli/options/codex-execution-option.ts` to register the three execution options on an adopted command node. The shared resolver in `src/utils/codex-execution.ts` validates action and adapter inputs and supplies the default effort `low`; omitted model/provider stay absent. Forward the resolved `codexExecution` object through every request, batch, retry, repair, and regeneration seam to `startCodexReadOnlyThread()`. Keep timeout resolution separate and retain lazy SDK loading for Node ESM/CJS compatibility.
 
-Interactive mode owns one selection in `src/cli/interactive/session.ts`.
-Do not put execution settings into prompts, saved PDF profiles, data plans,
-advisory reports, or recovery artifacts. Existing helpers keep their own
-enablement and consent boundaries. Do not change selection to recover from
-an incompatible model/provider/effort response.
+Interactive mode owns one selection in `src/cli/interactive/session.ts`. Do not put execution settings into prompts, saved PDF profiles, data plans, advisory reports, or recovery artifacts. Existing helpers keep their own enablement and consent boundaries. Do not change selection to recover from an incompatible model/provider/effort response.
 
-`codex-info` uses the separate read-only discovery adapter at
-`src/adapters/codex/discovery/` to ask the Codex app-server for configuration and
-catalog metadata. `src/cli/codex-info/` projects only curated fields and renders
-human or JSON output; raw configuration must not be printed. Discovery reports
-are for inspection and are not passed back into execution as configuration
-snapshots. Preserve inherited process environment, including dynamic
-`CODEX_HOME`, without mutating it.
+`codex-info` uses the separate read-only discovery adapter at `src/adapters/codex/discovery/` to ask the Codex app-server for configuration and catalog metadata. `src/cli/codex-info/` projects only curated fields and renders human or JSON output; raw configuration must not be printed. Discovery reports are for inspection and are not passed back into execution as configuration snapshots. Preserve inherited process environment, including dynamic `CODEX_HOME`, without mutating it.
 
-For current command scope and configuration semantics, see
-[Codex Execution Configuration](codex-execution-configuration.md). For
-environment ownership and parsing, see
-[Environment Variables](environment-variables.md).
+For current command scope and configuration semantics, see [Codex Execution Configuration](codex-execution-configuration.md). For environment ownership and parsing, see [Environment Variables](environment-variables.md).
 
 ## Rename-Specific Integration Guidance (Important)
 

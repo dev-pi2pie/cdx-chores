@@ -85,14 +85,11 @@ cdx-chores data query codex ./input.csv --intent "summarize revenue by month" \
   --codex-reasoning-effort medium
 ```
 
-These options belong to `data query codex`, not the parent `data query` command.
-See [Codex Execution Configuration](codex-execution-configuration.md) for
-accepted efforts, provider/model inheritance, and compatibility failures.
+These options belong to `data query codex`, not the parent `data query` command. See [Codex Execution Configuration](codex-execution-configuration.md) for accepted efforts, provider/model inheritance, and compatibility failures.
 
 ### Request timeout
 
-Use the command-local shared option to change the per-attempt limit for the SQL
-drafting request:
+Use the command-local shared option to change the per-attempt limit for the SQL drafting request:
 
 ```bash
 cdx-chores data query codex ./examples/playground/data-query/basic.csv \
@@ -100,14 +97,9 @@ cdx-chores data query codex ./examples/playground/data-query/basic.csv \
   --codex-timeout 2m
 ```
 
-`data query codex` does not issue a workflow retry after a failed drafting
-request. The value applies to the drafting request attempt and does not change
-source inspection, output mode, or the advisory-only execution boundary.
+`data query codex` does not issue a workflow retry after a failed drafting request. The value applies to the drafting request attempt and does not change source inspection, output mode, or the advisory-only execution boundary.
 
-See
-[Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md)
-for the shared duration grammar, default and maximum, and failure-recovery
-guidance.
+See [Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md) for the shared duration grammar, default and maximum, and failure-recovery guidance.
 
 ### Execution split
 
@@ -203,7 +195,6 @@ The doctor report exposes `data query codex` separately from DuckDB format capab
 - auth/session availability
 - ready-to-draft availability
 
-Use `cdx-chores doctor --details` for complete human-readable evidence and
-`cdx-chores doctor --json` for automation.
+Use `cdx-chores doctor --details` for complete human-readable evidence and `cdx-chores doctor --json` for automation.
 
 `ready-to-draft` is true only when both Codex drafting signals and DuckDB introspection support are available in the current environment.

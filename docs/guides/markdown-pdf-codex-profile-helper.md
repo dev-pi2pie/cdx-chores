@@ -8,13 +8,9 @@ agent: codex
 
 ## Goal
 
-Document the direct `md pdf-profile codex` helper for drafting reusable Markdown
-PDF profiles from bounded document signals, user intent, font hints, existing
-profiles, and deterministic fallback defaults.
+Document the direct `md pdf-profile codex` helper for drafting reusable Markdown PDF profiles from bounded document signals, user intent, font hints, existing profiles, and deterministic fallback defaults.
 
-This guide covers the direct profile helper only. For guided Profile
-preparation, temporary or durable rendering, and saved-recipe handoff, see
-[Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md).
+This guide covers the direct profile helper only. For guided Profile preparation, temporary or durable rendering, and saved-recipe handoff, see [Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md).
 
 ## Command Shape
 
@@ -34,17 +30,12 @@ Common options:
 - `--keep-codex-report`: write a diagnostic Codex report sidecar.
 - `--codex-report-output <path>`: explicit diagnostic report JSON path.
 - `--overwrite`: allow selected output artifacts to be replaced.
-- `--codex-timeout <duration>`: command-local deadline for each Codex profile
-  request attempt.
+- `--codex-timeout <duration>`: command-local deadline for each Codex profile request attempt.
 - `--codex-model <model>`: override the inherited Codex model.
 - `--codex-provider <provider-id>`: override the inherited Codex provider.
 - `--codex-reasoning-effort <effort>`: requested effort; defaults to `low`.
 
-Execution options affect helper requests and are not saved in the PDF profile.
-They do not force the signal ladder to call Codex. See
-[Codex Execution Configuration](codex-execution-configuration.md) for the
-shared validation and failure contract. The render command's `--profile`
-continues to select a PDF profile file; it is unrelated to Codex configuration.
+Execution options affect helper requests and are not saved in the PDF profile. They do not force the signal ladder to call Codex. See [Codex Execution Configuration](codex-execution-configuration.md) for the shared validation and failure contract. The render command's `--profile` continues to select a PDF profile file; it is unrelated to Codex configuration.
 
 Example:
 
@@ -55,14 +46,9 @@ cdx-chores md pdf-profile codex ./report.md \
   --output ./report-profile.yml
 ```
 
-The timeout option changes request timing only; it does not change whether the
-signal ladder calls Codex. When omitted, Codex profile requests keep the
-30-second default. Each request receives its own per-attempt window rather than
-sharing one command-wide budget.
+The timeout option changes request timing only; it does not change whether the signal ladder calls Codex. When omitted, Codex profile requests keep the 30-second default. Each request receives its own per-attempt window rather than sharing one command-wide budget.
 
-For the shared duration grammar and the distinction between timeouts, retries,
-and recovery, see
-[Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md).
+For the shared duration grammar and the distinction between timeouts, retries, and recovery, see [Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md).
 
 Render with the accepted profile:
 
@@ -73,20 +59,11 @@ cdx-chores md to-pdf \
   --output ./report.pdf
 ```
 
-The render step is deterministic. Once the profile is written, `md to-pdf` does
-not need Codex.
+The render step is deterministic. Once the profile is written, `md to-pdf` does not need Codex.
 
-`--profile` directly selects the accepted profile and remains the clearest form
-when the helper writes one profile file. If a profile is later stored alone in
-a render-input directory, `--bundle <directory>` may discover it as a
-profile-only bundle; this is optional convenience rather than a different
-profile-rendering mode.
+`--profile` directly selects the accepted profile and remains the clearest form when the helper writes one profile file. If a profile is later stored alone in a render-input directory, `--bundle <directory>` may discover it as a profile-only bundle; this is optional convenience rather than a different profile-rendering mode.
 
-`--font-hint` is intentionally repeatable, but repeated flags are collected into
-the same Codex profile request. Use one flag per distinct font preference when a
-document needs several font decisions, such as separate body, CJK, code, or
-symbol choices. Keep non-font rendering direction in `--intent` instead of
-packing layout, cover, or table requests into font hints.
+`--font-hint` is intentionally repeatable, but repeated flags are collected into the same Codex profile request. Use one flag per distinct font preference when a document needs several font decisions, such as separate body, CJK, code, or symbol choices. Keep non-font rendering direction in `--intent` instead of packing layout, cover, or table requests into font hints.
 
 ## Common Use Cases
 
@@ -98,8 +75,7 @@ cdx-chores md pdf-profile codex ./quarterly-report.md \
   --output ./quarterly-report-profile.yml
 ```
 
-Use intent without a sample when you want a reusable starter profile from a
-direction:
+Use intent without a sample when you want a reusable starter profile from a direction:
 
 ```bash
 cdx-chores md pdf-profile codex \
@@ -107,10 +83,7 @@ cdx-chores md pdf-profile codex \
   --output ./internal-reference-profile.yml
 ```
 
-Use repeatable font hints when typography is the main decision. Each
-`--font-hint` is one bounded preference signal in the same Codex request; Codex
-still validates the result through the supported font role/key contract before
-writing the profile:
+Use repeatable font hints when typography is the main decision. Each `--font-hint` is one bounded preference signal in the same Codex request; Codex still validates the result through the supported font role/key contract before writing the profile:
 
 ```bash
 cdx-chores md pdf-profile codex ./multilingual-notes.md \
@@ -121,8 +94,7 @@ cdx-chores md pdf-profile codex ./multilingual-notes.md \
   --output ./multilingual-profile.yml
 ```
 
-Use a base profile when you want to refine an existing reviewed profile without
-mutating it:
+Use a base profile when you want to refine an existing reviewed profile without mutating it:
 
 ```bash
 cdx-chores md pdf-profile codex ./release-notes.md \
@@ -156,13 +128,9 @@ Decision
         -> write deterministic basic defaults, Codex skipped
 ```
 
-The positional input and `--input <path>` are aliases. Passing both is valid only
-when they resolve to the same file.
+The positional input and `--input <path>` are aliases. Passing both is valid only when they resolve to the same file.
 
-No raw document body, raw remote URLs, absolute input paths, or local font file
-paths are sent to Codex. Document and font inputs are reduced to bounded facts
-such as heading counts, table pressure, script buckets, code-fence summaries,
-declared content languages, font family names, and coverage statuses.
+No raw document body, raw remote URLs, absolute input paths, or local font file paths are sent to Codex. Document and font inputs are reduced to bounded facts such as heading counts, table pressure, script buckets, code-fence summaries, declared content languages, font family names, and coverage statuses.
 
 ## Preview Then Decide
 
@@ -174,16 +142,11 @@ cdx-chores md pdf-profile codex ./report.md \
   --dry-run
 ```
 
-Dry-run still validates the recommendation path. It does not write the profile
-or diagnostic report.
+Dry-run still validates the recommendation path. It does not write the profile or diagnostic report.
 
-When `--output` is omitted, the helper generates a profile path with a stable
-profile UID. With an input file, the generated profile is written next to the
-input. Without an input file, it is written in the current working directory.
+When `--output` is omitted, the helper generates a profile path with a stable profile UID. With an input file, the generated profile is written next to the input. Without an input file, it is written in the current working directory.
 
-Use `--overwrite` when the selected profile or report path already exists and
-should be replaced. The helper rejects unsafe artifact collisions such as writing
-the profile over the Markdown input, base profile, or report path.
+Use `--overwrite` when the selected profile or report path already exists and should be replaced. The helper rejects unsafe artifact collisions such as writing the profile over the Markdown input, base profile, or report path.
 
 ## Diagnostic Reports
 
@@ -196,21 +159,15 @@ cdx-chores md pdf-profile codex ./report.md \
   --keep-codex-report
 ```
 
-The report records the bounded request facts, candidate summaries, decision
-mode, accepted profile patches, accepted font patches, warnings, unmatched
-directions, selected preset, and failure details when applicable.
+The report records the bounded request facts, candidate summaries, decision mode, accepted profile patches, accepted font patches, warnings, unmatched directions, selected preset, and failure details when applicable.
 
-If `--codex-report-output <path>` is passed, report writing is enabled and the
-report is written to that exact JSON path. Otherwise the report sidecar is
-derived from the actual profile output path and profile UID.
+If `--codex-report-output <path>` is passed, report writing is enabled and the report is written to that exact JSON path. Otherwise the report sidecar is derived from the actual profile output path and profile UID.
 
-Reports are diagnostic artifacts. They explain why a profile was proposed, but
-the replayable rendering input is the profile itself.
+Reports are diagnostic artifacts. They explain why a profile was proposed, but the replayable rendering input is the profile itself.
 
 ## Generated Profile Identity
 
-Codex-assisted profiles materialize the current Profile contract as
-`schemaVersion: 3` and include a `profile` identity section:
+Codex-assisted profiles materialize the current Profile contract as `schemaVersion: 3` and include a `profile` identity section:
 
 ```yaml
 schemaVersion: 3
@@ -222,48 +179,33 @@ profile:
   createdAt: 2026-06-16T08:15:00Z
 ```
 
-Deterministic fallback profiles use `source: deterministic`. Older profiles
-without a `profile` section remain valid for rendering and as `--base-profile`
-inputs.
+Deterministic fallback profiles use `source: deterministic`. Older profiles without a `profile` section remain valid for rendering and as `--base-profile` inputs.
 
-When the helper derives a new Profile from an older or unversioned base, the
-new output declares revision `3`; the original base file is not rewritten.
-`schemaVersion` describes the serialized feature set rather than locking out
-otherwise supported content. See [Markdown PDF Usage](markdown-pdf-usage.md)
-for the canonical revision, validation, migration, and renderer-capability
-contract.
+When the helper derives a new Profile from an older or unversioned base, the new output declares revision `3`; the original base file is not rewritten. `schemaVersion` describes the serialized feature set rather than locking out otherwise supported content. See [Markdown PDF Usage](markdown-pdf-usage.md) for the canonical revision, validation, migration, and renderer-capability contract.
 
-`profile.preset` is replayable. Rendering with `md to-pdf --profile <path>`
-consumes the preset identity before renderer defaults. Direct render-time CLI
-flags still override matching profile-derived settings.
+`profile.preset` is replayable. Rendering with `md to-pdf --profile <path>` consumes the preset identity before renderer defaults. Direct render-time CLI flags still override matching profile-derived settings.
 
 ## Candidate Adaptation
 
-The helper chooses from known profile candidates instead of generating arbitrary
-YAML from scratch:
+The helper chooses from known profile candidates instead of generating arbitrary YAML from scratch:
 
 - built-in basic default profile
-- preset-derived candidates such as `article`, `report`, `wide-table`,
-  `compact`, and `reader`
+- preset-derived candidates such as `article`, `report`, `wide-table`, `compact`, and `reader`
 - one validated `--base-profile <path>`, when provided
 
-A base profile is never mutated in place. The helper writes the adapted profile
-to `--output` or a generated profile path.
+A base profile is never mutated in place. The helper writes the adapted profile to `--output` or a generated profile path.
 
 Decision modes:
 
 - `adapted`: Codex selected a candidate and accepted bounded changes.
-- `conservative-fallback`: Codex chose a safe profile because signals were weak
-  or ambiguous.
+- `conservative-fallback`: Codex chose a safe profile because signals were weak or ambiguous.
 - `no-usable-profile`: Codex could not produce a usable profile decision.
 
-Unavailable Codex, malformed structured output, invalid patch values, and
-invalid final profiles fail without silently writing a fake Codex profile.
+Unavailable Codex, malformed structured output, invalid patch values, and invalid final profiles fail without silently writing a fake Codex profile.
 
 ## Supported Profile Patch Boundary
 
-Codex can only recommend supported profile fields through strict patches. The
-normal patch contract covers these bounded groups:
+Codex can only recommend supported profile fields through strict patches. The normal patch contract covers these bounded groups:
 
 - page size, orientation, and margins
 - ToC enabled/depth/page-break settings
@@ -274,22 +216,13 @@ normal patch contract covers these bounded groups:
 - `titleBlock.metadataTitle`
 - code highlighting, theme, line numbers, and transformer notation
 
-The helper validates every patch before writing a profile. Unknown paths,
-unsupported value types, invalid enum values, deletion, reset, arbitrary object
-writes, and raw CSS/template changes are rejected.
+The helper validates every patch before writing a profile. Unknown paths, unsupported value types, invalid enum values, deletion, reset, arbitrary object writes, and raw CSS/template changes are rejected.
 
-This is a strict Codex patch allowlist, not the complete Profile authoring
-surface. The Interactive Formal Guide exposes common cover, ToC, page-number,
-and repeating-content choices; the direct helper does not receive those guided
-answers. A supported patch path also does not mean Codex will author that field
-in every request. Edit Profile YAML or JSON when exact or advanced values must
-be explicit. The canonical field meanings, defaults, combinations, and
-examples live in [Markdown PDF Usage](markdown-pdf-usage.md).
+This is a strict Codex patch allowlist, not the complete Profile authoring surface. The Interactive Formal Guide exposes common cover, ToC, page-number, and repeating-content choices; the direct helper does not receive those guided answers. A supported patch path also does not mean Codex will author that field in every request. Edit Profile YAML or JSON when exact or advanced values must be explicit. The canonical field meanings, defaults, combinations, and examples live in [Markdown PDF Usage](markdown-pdf-usage.md).
 
 ## Font Patch Contract
 
-Fonts use a dedicated strict font patch contract because body fonts can be keyed
-by language tag while other font roles are single-slot settings.
+Fonts use a dedicated strict font patch contract because body fonts can be keyed by language tag while other font roles are single-slot settings.
 
 Supported role/key combinations:
 
@@ -313,14 +246,9 @@ fonts:
     symbols: "Noto Sans Symbols 2"
 ```
 
-See [Profile Fonts And Mixed Language](markdown-pdf-usage.md#profile-fonts-and-mixed-language)
-for exact mixed-language assignment. A language-keyed body entry emits a
-matching `:lang(...)` rule, but it does not detect or label content; rendered
-Markdown still needs a matching bracketed inline span or fenced block Div.
+See [Profile Fonts And Mixed Language](markdown-pdf-usage.md#profile-fonts-and-mixed-language) for exact mixed-language assignment. A language-keyed body entry emits a matching `:lang(...)` rule, but it does not detect or label content; rendered Markdown still needs a matching bracketed inline span or fenced block Div.
 
-Use `font list`, `font inspect`, and `font check` when you need local evidence
-for exact family names or glyph coverage before writing a hint. `--font-hint`
-does not install fonts and does not bypass profile validation.
+Use `font list`, `font inspect`, and `font check` when you need local evidence for exact family names or glyph coverage before writing a hint. `--font-hint` does not install fonts and does not bypass profile validation.
 
 ## Title And Cover Deduplication
 
@@ -333,29 +261,19 @@ titleBlock:
 
 Supported values:
 
-- `auto`: suppress the metadata title block only when frontmatter `title` and
-  the first Markdown H1 normalize to the same visible title.
+- `auto`: suppress the metadata title block only when frontmatter `title` and the first Markdown H1 normalize to the same visible title.
 - `show`: preserve metadata title output.
 - `hide`: suppress metadata title output.
 
-`auto` is the default. It avoids the common duplicate-title result while keeping
-the Markdown H1 and frontmatter unchanged.
+`auto` is the default. It avoids the common duplicate-title result while keeping the Markdown H1 and frontmatter unchanged.
 
-Explicit cover or title-page intent can still enable supported cover behavior.
-The profile helper does not rewrite Markdown, remove the first H1, mutate
-frontmatter, or add unsupported title-suppression fields.
+Explicit cover or title-page intent can still enable supported cover behavior. The profile helper does not rewrite Markdown, remove the first H1, mutate frontmatter, or add unsupported title-suppression fields.
 
 ## Table And Layout Signals
 
-When a Markdown sample is available, table pressure influences layout selection.
-Strong wide-table signals such as high column count, long table-like lines, or
-overflow risk should outweigh generic wording such as "clean" or "professional"
-unless the user explicitly asks for portrait output.
+When a Markdown sample is available, table pressure influences layout selection. Strong wide-table signals such as high column count, long table-like lines, or overflow risk should outweigh generic wording such as "clean" or "professional" unless the user explicitly asks for portrait output.
 
-The profile helper can choose reusable page shape, margins, ToC, text
-cover/title-page fields, page numbers, and table-friendly presets. It does not
-tune individual column widths, rotate individual pages, or generate per-table
-CSS.
+The profile helper can choose reusable page shape, margins, ToC, text cover/title-page fields, page numbers, and table-friendly presets. It does not tune individual column widths, rotate individual pages, or generate per-table CSS.
 
 Use a custom template or CSS when table presentation needs exact layout control.
 
@@ -363,15 +281,11 @@ Use a custom template or CSS when table presentation needs exact layout control.
 
 Use `md pdf-profile init` when you want a deterministic starter profile.
 
-Use `md pdf-profile codex` when you want Codex to select or adapt a reusable
-profile from bounded signals and hints.
+Use `md pdf-profile codex` when you want Codex to select or adapt a reusable profile from bounded signals and hints.
 
-Prefer `md pdf-profile codex` for reusable render policy: page shape, margins,
-ToC, page numbers, page chrome, text cover fields, fonts, and Shiki
-code-highlight settings.
+Prefer `md pdf-profile codex` for reusable render policy: page shape, margins, ToC, page numbers, page chrome, text cover fields, fonts, and Shiki code-highlight settings.
 
-Use `md pdf-template init` when you need the low-level HTML/CSS recipe snapshot.
-Templates are the right boundary for:
+Use `md pdf-template init` when you need the low-level HTML/CSS recipe snapshot. Templates are the right boundary for:
 
 - local cover images or custom cover media
 - arbitrary CSS
@@ -380,18 +294,11 @@ Templates are the right boundary for:
 - unsupported profile directions
 - template-only rendering behavior
 
-The profile helper still does not generate HTML or CSS. It reports these
-directions as template-backed work instead of inventing profile fields.
+The profile helper still does not generate HTML or CSS. It reports these directions as template-backed work instead of inventing profile fields.
 
-The direct `md pdf-template codex` helper now owns reviewable template artifacts.
-Its `--output` remains aligned with `md pdf-template init`: it names the
-template bundle directory, not the rendered PDF. Use that helper when Codex
-should draft bounded `template.html`, `style.css`, and managed local assets for
-later deterministic rendering.
+The direct `md pdf-template codex` helper now owns reviewable template artifacts. Its `--output` remains aligned with `md pdf-template init`: it names the template bundle directory, not the rendered PDF. Use that helper when Codex should draft bounded `template.html`, `style.css`, and managed local assets for later deterministic rendering.
 
-Prefer `md pdf-template codex` for reviewable HTML/CSS/assets: local
-cover-image assets, cover composition, custom layout, custom CSS, and
-template-only behavior.
+Prefer `md pdf-template codex` for reviewable HTML/CSS/assets: local cover-image assets, cover composition, custom layout, custom CSS, and template-only behavior.
 
 ## Related Docs
 

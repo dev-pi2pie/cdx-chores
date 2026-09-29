@@ -16,9 +16,7 @@ If the main task is multi-file assembly rather than SQL authoring, use `data sta
 
 The current interactive flow mirrors the same shipped product split as the direct CLI: in-session shaping and header review can happen before SQL authoring, but reusable reviewed source-shape and header-mapping artifacts are still produced by the direct CLI reviewed flows.
 
-For the shared JSON artifact contract used by reviewed semantic header suggestions, see `docs/guides/data-schema-and-mapping-usage.md`.
-For reviewed source-shape artifacts and the shape-first direct CLI relationship, see `docs/guides/data-source-shape-usage.md`.
-For assembling many local files or directories into one table before later SQL, see `docs/guides/data-stack-usage.md`.
+For the shared JSON artifact contract used by reviewed semantic header suggestions, see `docs/guides/data-schema-and-mapping-usage.md`. For reviewed source-shape artifacts and the shape-first direct CLI relationship, see `docs/guides/data-source-shape-usage.md`. For assembling many local files or directories into one table before later SQL, see `docs/guides/data-stack-usage.md`.
 
 Start the flow with:
 
@@ -32,16 +30,9 @@ To select execution settings for every Codex helper in this session:
 cdx-chores interactive --codex-reasoning-effort medium
 ```
 
-The explicit `interactive` command also accepts `--codex-model <model>` and
-`--codex-provider <provider-id>`. Omitted model/provider inherit Codex
-configuration; omitted effort requests `low`. These session settings apply to
-source-shape and header suggestions, SQL drafting, and regeneration. They
-persist through backtracking, do not enable Codex without the workflow's
-consent, and are not saved. See
-[Codex Execution Configuration](codex-execution-configuration.md).
+The explicit `interactive` command also accepts `--codex-model <model>` and `--codex-provider <provider-id>`. Omitted model/provider inherit Codex configuration; omitted effort requests `low`. These session settings apply to source-shape and header suggestions, SQL drafting, and regeneration. They persist through backtracking, do not enable Codex without the workflow's consent, and are not saved. See [Codex Execution Configuration](codex-execution-configuration.md).
 
-To use a different per-attempt deadline for Codex-backed work throughout this
-Interactive session, pass the option to the `interactive` command.
+To use a different per-attempt deadline for Codex-backed work throughout this Interactive session, pass the option to the `interactive` command.
 
 ✅ Correct:
 
@@ -55,19 +46,11 @@ cdx-chores interactive --codex-timeout 2m
 cdx-chores --codex-timeout 2m
 ```
 
-The root-level form is rejected. If the option is omitted, Interactive mode
-uses the 30-second default and the query flow does not prompt for timeout
-configuration.
+The root-level form is rejected. If the option is omitted, Interactive mode uses the 30-second default and the query flow does not prompt for timeout configuration.
 
-The session value applies independently to Codex source-shape suggestions,
-semantic header suggestions, and SQL drafting requests. Backtracking, revising
-intent, or returning to SQL review preserves the value. `Regenerate SQL` starts
-a new request with the same per-attempt window; the flow does not retry a failed
-request automatically.
+The session value applies independently to Codex source-shape suggestions, semantic header suggestions, and SQL drafting requests. Backtracking, revising intent, or returning to SQL review preserves the value. `Regenerate SQL` starts a new request with the same per-attempt window; the flow does not retry a failed request automatically.
 
-For the shared duration grammar and the distinction between timeouts, retries,
-and user-triggered regeneration, see
-[Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md).
+For the shared duration grammar and the distinction between timeouts, retries, and user-triggered regeneration, see [Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md).
 
 Choose:
 

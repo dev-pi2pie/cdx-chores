@@ -10,24 +10,15 @@ agent: codex
 
 `data query` is the direct DuckDB-backed SQL lane for querying one local input file.
 
-Single-source runs expose the logical table name `file`.
-Workspace runs expose one or more explicit relation bindings instead.
+Single-source runs expose the logical table name `file`. Workspace runs expose one or more explicit relation bindings instead.
 
 It is also the current general-purpose lane for tricky transformations that go beyond the shaping/materialization boundary of `data extract`.
 
 This guide documents the current stable split where direct `data query` owns SQL execution, accepted header-mapping reuse, and accepted source-shape replay, while reviewed source-shape generation begins on the `data extract` lane.
 
-For natural-language SQL drafting, use the separate `data query codex` lane documented in `docs/guides/data-query-codex-usage.md`.
-For materializing one shaped table without SQL, use `docs/guides/data-extract-usage.md`.
-For assembling many local sources into one table before later SQL, use `docs/guides/data-stack-usage.md`.
-For reviewed source-shape artifacts and the current shape-first direct CLI workflow, see `docs/guides/data-source-shape-usage.md`.
-For reviewed semantic header suggestions and the shared JSON artifact contract, see `docs/guides/data-schema-and-mapping-usage.md`.
+For natural-language SQL drafting, use the separate `data query codex` lane documented in `docs/guides/data-query-codex-usage.md`. For materializing one shaped table without SQL, use `docs/guides/data-extract-usage.md`. For assembling many local sources into one table before later SQL, use `docs/guides/data-stack-usage.md`. For reviewed source-shape artifacts and the current shape-first direct CLI workflow, see `docs/guides/data-source-shape-usage.md`. For reviewed semantic header suggestions and the shared JSON artifact contract, see `docs/guides/data-schema-and-mapping-usage.md`.
 
-The direct embedded `--codex-suggest-headers` helper inherits model/provider and
-requests reasoning effort `low`. The parent `data query` command does not accept
-`--codex-model`, `--codex-provider`, or `--codex-reasoning-effort`. The drafting
-child `data query codex` and explicit `interactive` session do support these
-options; see [Codex Execution Configuration](codex-execution-configuration.md).
+The direct embedded `--codex-suggest-headers` helper inherits model/provider and requests reasoning effort `low`. The parent `data query` command does not accept `--codex-model`, `--codex-provider`, or `--codex-reasoning-effort`. The drafting child `data query codex` and explicit `interactive` session do support these options; see [Codex Execution Configuration](codex-execution-configuration.md).
 
 Current stable boundary:
 
@@ -73,8 +64,7 @@ Current usage guidance:
 
 ### Direct CLI vs interactive mode
 
-Use direct CLI when you already know the SQL or want a scriptable one-shot command.
-Use interactive mode when you want the CLI to inspect the source first, help shape it, and guide SQL authoring before execution.
+Use direct CLI when you already know the SQL or want a scriptable one-shot command. Use interactive mode when you want the CLI to inspect the source first, help shape it, and guide SQL authoring before execution.
 
 ```text
 Direct CLI: cdx-chores data query ...
@@ -166,8 +156,7 @@ cdx-chores data query ./examples/playground/data-query/generic.csv --header-mapp
 - workspace mode does not inject `file` implicitly, but it does allow `file` as an explicit alias when you bind it yourself
 - that means `--relation file` and `--relation file=users` are both valid workspace bindings
 
-`--range` is valid only for Excel inputs and narrows the selected sheet before the logical table `file` is created.
-Other input formats reject `--range`.
+`--range` is valid only for Excel inputs and narrows the selected sheet before the logical table `file` is created. Other input formats reject `--range`.
 
 `--no-header` is valid only for CSV and TSV inputs:
 
@@ -302,8 +291,7 @@ The report distinguishes:
 - extension-backed formats that also depend on DuckDB extension loadability
 - whether extension installability appears blocked by the current environment
 
-Use `cdx-chores doctor --details` for complete human-readable evidence and
-`cdx-chores doctor --json` for automation.
+Use `cdx-chores doctor --details` for complete human-readable evidence and `cdx-chores doctor --json` for automation.
 
 For extension-backed formats, `detected support=yes` does not mean the format is queryable right now. The capability line turns green only when the required DuckDB extension is currently loadable.
 
