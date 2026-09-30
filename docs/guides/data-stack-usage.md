@@ -16,9 +16,7 @@ This command is the multi-source assembly lane in the current data-command split
 - use `data extract` when you need to shape one local input file into one clean output table
 - use `data query` when you need SQL
 
-For one-input shaping without SQL, see `docs/guides/data-extract-usage.md`.
-For SQL over one local source or a query workspace, see `docs/guides/data-query-usage.md`.
-For the interactive SQL flow, see `docs/guides/data-query-interactive-usage.md`.
+For one-input shaping without SQL, see `docs/guides/data-extract-usage.md`. For SQL over one local source or a query workspace, see `docs/guides/data-query-usage.md`. For the interactive SQL flow, see `docs/guides/data-query-interactive-usage.md`.
 
 Current command boundary:
 
@@ -144,16 +142,11 @@ Duplicate and unique-key behavior:
 Codex assist behavior:
 
 - direct `--codex-assist` is valid only with `--dry-run`
-- `--codex-model <model>` and `--codex-provider <provider-id>` override the
-  corresponding inherited Codex selections for this invocation
-- `--codex-reasoning-effort <effort>` selects the requested effort; omission
-  requests `low`
-- execution options do not enable assist or remove its dry-run requirement;
-  settings are not saved in the stack plan or advisory report
-- `--codex-timeout <duration>` changes the per-attempt limit for the direct
-  Codex assist request
-- `--codex-timeout` alone does not enable `--codex-assist`; without assist, the
-  deterministic stack flow remains unchanged
+- `--codex-model <model>` and `--codex-provider <provider-id>` override the corresponding inherited Codex selections for this invocation
+- `--codex-reasoning-effort <effort>` selects the requested effort; omission requests `low`
+- execution options do not enable assist or remove its dry-run requirement; settings are not saved in the stack plan or advisory report
+- `--codex-timeout <duration>` changes the per-attempt limit for the direct Codex assist request
+- `--codex-timeout` alone does not enable `--codex-assist`; without assist, the deterministic stack flow remains unchanged
 - direct Codex assist does not automatically retry a failed request
 - `--codex-report-output <path>` writes the advisory report to a custom JSON path
 - interactive Codex review uses the same advisory report model, but it appears as a contextual checkpoint only when deterministic diagnostics show useful signals
@@ -163,9 +156,7 @@ Codex assist behavior:
 - stack replay executes only stack-plan artifacts, not Codex report artifacts
 - supported recommendation areas are headerless column names, union exclusions, unique-key selection, duplicate policy selection, and schema-drift explanation
 
-See [Codex Execution Configuration](codex-execution-configuration.md) for the
-shared selection and failure contract. Interactive stack review receives the
-execution settings supplied when starting the `interactive` session.
+See [Codex Execution Configuration](codex-execution-configuration.md) for the shared selection and failure contract. Interactive stack review receives the execution settings supplied when starting the `interactive` session.
 
 ### Examples
 
@@ -241,10 +232,7 @@ Write an advisory Codex report during dry-run:
 cdx-chores data stack ./examples/playground/stack-cases/csv-union --pattern "*.csv" --schema-mode union-by-name --output ./examples/playground/.tmp-tests/union.stack.json --dry-run --codex-assist --codex-timeout 2m --codex-report-output ./examples/playground/.tmp-tests/union.codex-report.json
 ```
 
-See
-[Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md)
-for the shared duration grammar, default and maximum, and failure-recovery
-guidance.
+See [Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md) for the shared duration grammar, default and maximum, and failure-recovery guidance.
 
 Recursive directory discovery:
 

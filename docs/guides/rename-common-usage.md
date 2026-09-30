@@ -295,20 +295,14 @@ cdx-chores rename batch ./docs --codex-docs --dry-run
 cdx-chores rename batch ./images --codex-images --dry-run
 ```
 
-`rename file`, `rename batch`, and `batch-rename` also accept
-`--codex-model <model>`, `--codex-provider <provider-id>`, and
-`--codex-reasoning-effort <effort>`. One selection applies to both enabled
-analyzers, including their batches and retries. Omitted model/provider inherit
-Codex configuration; omitted effort requests `low`. These options do not enable
-analyzers by themselves.
+`rename file`, `rename batch`, and `batch-rename` also accept `--codex-model <model>`, `--codex-provider <provider-id>`, and `--codex-reasoning-effort <effort>`. One selection applies to both enabled analyzers, including their batches and retries. Omitted model/provider inherit Codex configuration; omitted effort requests `low`. These options do not enable analyzers by themselves.
 
 ```bash
 cdx-chores rename batch ./mixed-folder --codex \
   --codex-reasoning-effort medium --dry-run
 ```
 
-See [Codex Execution Configuration](codex-execution-configuration.md) for
-selection validation, inheritance, and failure behavior.
+See [Codex Execution Configuration](codex-execution-configuration.md) for selection validation, inheritance, and failure behavior.
 
 Shared and analyzer-scoped timeout examples:
 
@@ -324,25 +318,15 @@ Flag notes:
 - `--codex` routes eligible files by file type after normal rename filtering.
 - `--codex-images` and `--codex-docs` override `--codex` when combined.
 - `--codex-timeout` supplies a shared per-attempt value to each enabled analyzer.
-- `--codex-images-timeout` and `--codex-docs-timeout` override the shared value
-  only for their respective analyzers.
-- timeout options configure enabled analyzers; they do not enable `--codex`,
-  `--codex-images`, or `--codex-docs` by themselves.
-- `--codex-images-retries` and `--codex-docs-retries` count additional attempts
-  after the initial request, per batch. Total request time can therefore grow
-  with the number of batches and retries.
-- the deprecated `--codex-images-timeout-ms` and
-  `--codex-docs-timeout-ms` compatibility options print migration guidance;
-  use `--codex-images-timeout <duration>` and
-  `--codex-docs-timeout <duration>` for new invocations.
+- `--codex-images-timeout` and `--codex-docs-timeout` override the shared value only for their respective analyzers.
+- timeout options configure enabled analyzers; they do not enable `--codex`, `--codex-images`, or `--codex-docs` by themselves.
+- `--codex-images-retries` and `--codex-docs-retries` count additional attempts after the initial request, per batch. Total request time can therefore grow with the number of batches and retries.
+- the deprecated `--codex-images-timeout-ms` and `--codex-docs-timeout-ms` compatibility options print migration guidance; use `--codex-images-timeout <duration>` and `--codex-docs-timeout <duration>` for new invocations.
 - unsupported files remain deterministic rename only.
 - `--preview-skips summary` is the default compact dry-run preview mode.
 - `--preview-skips detailed` keeps the skipped summary and also shows a bounded per-item skipped section.
 
-See
-[Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md)
-for the shared duration grammar, default and maximum, legacy compatibility,
-per-attempt meaning, and cross-workflow recovery comparison.
+See [Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md) for the shared duration grammar, default and maximum, legacy compatibility, per-attempt meaning, and cross-workflow recovery comparison.
 
 Interactive mode now asks once for assistant enablement, then one scope selector:
 

@@ -8,27 +8,20 @@ agent: codex
 
 ## Goal
 
-Provide the canonical lookup from historical test paths to their current
-contract owners after the test catalog reorganization.
+Provide the canonical lookup from historical test paths to their current contract owners after the test catalog reorganization.
 
-The table is organized by named catalog change sets instead of plan numbering.
-The completed implementation job retains execution order, validation detail,
-and exact review decisions.
+The table is organized by named catalog change sets instead of plan numbering. The completed implementation job retains execution order, validation detail, and exact review decisions.
 
 ## Lookup Contract
 
-Each historical path appears once for each accepted move, split, merge, or
-removal. Current-owner cells point directly to existing terminal owners; readers
-do not need to follow intermediate migration chains.
+Each historical path appears once for each accepted move, split, merge, or removal. Current-owner cells point directly to existing terminal owners; readers do not need to follow intermediate migration chains.
 
 - `moved` names the current path that owns the same contract.
 - `split` names every current path that owns part of the former contract.
 - `merged` names the current path that absorbed the contract.
 - `removed` names the retained current test that protects the useful contract.
 
-A change set records the acceptance date, evidence range, and implementation
-record once for the related path group. Later path changes update current-owner
-cells and append a new change set without rewriting completed job evidence.
+A change set records the acceptance date, evidence range, and implementation record once for the related path group. Later path changes update current-owner cells and append a new change set without rewriting completed job evidence.
 
 ## Catalog Change Sets
 
@@ -552,13 +545,9 @@ The completed lookup contains 296 accepted transitions:
 - 2 merged
 - 2 removed
 
-Every current-owner path was reconciled against the final `test/**` tree on
-2026-08-24. Current guides and reference docs use current paths; historical
-commands and plan wording remain in their dated implementation records.
+Every current-owner path was reconciled against the final `test/**` tree on 2026-08-24. Current guides and reference docs use current paths; historical commands and plan wording remain in their dated implementation records.
 
-Later isolated migrations may append a named change set and update
-`modified-date` without reopening this reference unless its lookup schema
-changes materially.
+Later isolated migrations may append a named change set and update `modified-date` without reopening this reference unless its lookup schema changes materially.
 
 ## Related Records
 

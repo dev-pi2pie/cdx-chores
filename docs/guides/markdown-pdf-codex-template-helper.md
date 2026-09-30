@@ -8,13 +8,9 @@ agent: codex
 
 ## Goal
 
-Document the direct `md pdf-template codex` helper for drafting reviewable
-Markdown PDF template bundles from bounded document signals, intent, font hints,
-base-profile signals, and local cover-image signals.
+Document the direct `md pdf-template codex` helper for drafting reviewable Markdown PDF template bundles from bounded document signals, intent, font hints, base-profile signals, and local cover-image signals.
 
-This guide covers the direct template helper only. For guided Template bundle
-preparation, temporary or durable rendering, and saved-recipe handoff, see
-[Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md).
+This guide covers the direct template helper only. For guided Template bundle preparation, temporary or durable rendering, and saved-recipe handoff, see [Interactive Markdown PDF Usage](markdown-pdf-interactive-usage.md).
 
 ## Command Shape
 
@@ -35,17 +31,12 @@ Common options:
 - `--keep-codex-report`: write a diagnostic Codex report sidecar.
 - `--codex-report-output <path>`: explicit diagnostic report JSON path.
 - `--overwrite`: allow selected generated artifacts to be replaced.
-- `--codex-timeout <duration>`: command-local deadline for each Codex template
-  request attempt.
+- `--codex-timeout <duration>`: command-local deadline for each Codex template request attempt.
 - `--codex-model <model>`: override the inherited Codex model.
 - `--codex-provider <provider-id>`: override the inherited Codex provider.
 - `--codex-reasoning-effort <effort>`: requested effort; defaults to `low`.
 
-The initial request and any application-repair request use the same execution
-selection. Settings are not saved in generated artifacts and do not enable an
-additional Codex path. See
-[Codex Execution Configuration](codex-execution-configuration.md) for accepted
-efforts, inheritance, and failure behavior.
+The initial request and any application-repair request use the same execution selection. Settings are not saved in generated artifacts and do not enable an additional Codex path. See [Codex Execution Configuration](codex-execution-configuration.md) for accepted efforts, inheritance, and failure behavior.
 
 Example:
 
@@ -57,16 +48,9 @@ cdx-chores md pdf-template codex ./report.md \
   --output ./report-template
 ```
 
-The timeout option changes request timing only; it does not enable another
-Codex path. When omitted, Codex template requests keep the 30-second default.
-The initial template request and any validation-driven application-repair
-request each receive an independent per-attempt window using the same value.
-An application repair is semantic recovery, not a generic automatic retry of a
-failed request.
+The timeout option changes request timing only; it does not enable another Codex path. When omitted, Codex template requests keep the 30-second default. The initial template request and any validation-driven application-repair request each receive an independent per-attempt window using the same value. An application repair is semantic recovery, not a generic automatic retry of a failed request.
 
-For the shared duration grammar and the distinction between timeouts, retries,
-and recovery, see
-[Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md).
+For the shared duration grammar and the distinction between timeouts, retries, and recovery, see [Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md).
 
 Render by selecting the accepted template and stylesheet directly:
 
@@ -87,8 +71,7 @@ cdx-chores md to-pdf \
   --output ./report.pdf
 ```
 
-Both forms use the same deterministic render path. Once the template bundle is
-written, `md to-pdf` does not need Codex.
+Both forms use the same deterministic render path. Once the template bundle is written, `md to-pdf` does not need Codex.
 
 ## Generated Bundle
 
@@ -102,12 +85,9 @@ report-template/
     cover.jpg
 ```
 
-`template.html` and `style.css` are generated from repo-owned template families
-and bounded slot decisions. Managed assets are copied into the bundle and
-referenced with bundle-relative paths.
+`template.html` and `style.css` are generated from repo-owned template families and bounded slot decisions. Managed assets are copied into the bundle and referenced with bundle-relative paths.
 
-The diagnostic report is written only when requested through
-`--keep-codex-report` or `--codex-report-output`.
+The diagnostic report is written only when requested through `--keep-codex-report` or `--codex-report-output`.
 
 When requested, the default report sidecar is written in the same bundle:
 
@@ -116,15 +96,13 @@ report-template/
   template.codex-report.json
 ```
 
-When `--output` is omitted, the helper creates a non-colliding default directory
-with this shape:
+When `--output` is omitted, the helper creates a non-colliding default directory with this shape:
 
 ```text
 md-pdf-template-YYYYMMDDTHHMMSSZ-xxxxxxxx/
 ```
 
-The generated name intentionally does not repeat the Markdown input extension.
-Pass `--output` when the bundle needs a project-specific directory name.
+The generated name intentionally does not repeat the Markdown input extension. Pass `--output` when the bundle needs a project-specific directory name.
 
 ## Signal Ladder
 
@@ -147,9 +125,7 @@ Decision
   +-- no-usable-template ------ no bundle files written
 ```
 
-Low-signal runs fail before output planning; use `md pdf-template init` when you
-want deterministic defaults without template-specific signals. Unsupported
-directions are reported instead of being converted into arbitrary HTML or CSS.
+Low-signal runs fail before output planning; use `md pdf-template init` when you want deterministic defaults without template-specific signals. Unsupported directions are reported instead of being converted into arbitrary HTML or CSS.
 
 ## Preview Then Decide
 
@@ -172,15 +148,11 @@ cdx-chores md pdf-template codex ./report.md \
   --keep-codex-report
 ```
 
-`--codex-report-output <path>` writes the report to a specific JSON path and
-implies report writing.
+`--codex-report-output <path>` writes the report to a specific JSON path and implies report writing.
 
 ## Render Boundary
 
-`md pdf-template codex` does not render the PDF automatically. Render the
-accepted artifacts through `md to-pdf` by selecting `--template` and `--css`
-directly, or by using `--bundle` to discover both files from their directory.
-For example, the discovery form is:
+`md pdf-template codex` does not render the PDF automatically. Render the accepted artifacts through `md to-pdf` by selecting `--template` and `--css` directly, or by using `--bundle` to discover both files from their directory. For example, the discovery form is:
 
 ```bash
 cdx-chores md to-pdf \
@@ -189,17 +161,9 @@ cdx-chores md to-pdf \
   --output ./report.pdf
 ```
 
-`--bundle` discovers the helper's top-level `template.html` and `style.css`; it
-does not replace or deprecate the direct options. Either form makes the renderer
-use the custom template and apply the helper stylesheet after the built-in
-default stylesheet. This layered render keeps built-in renderer behavior,
-profile-derived repeating content, and newer code-highlighting hooks available
-when the managed structural compatibility rules below remain satisfied.
+`--bundle` discovers the helper's top-level `template.html` and `style.css`; it does not replace or deprecate the direct options. Either form makes the renderer use the custom template and apply the helper stylesheet after the built-in default stylesheet. This layered render keeps built-in renderer behavior, profile-derived repeating content, and newer code-highlighting hooks available when the managed structural compatibility rules below remain satisfied.
 
-The direct form remains fully supported. It is especially useful when the files
-live in different directories, when the selected paths should be visible in the
-command, or when the template bundle is intentionally self-contained with
-`--no-default-css`:
+The direct form remains fully supported. It is especially useful when the files live in different directories, when the selected paths should be visible in the command, or when the template bundle is intentionally self-contained with `--no-default-css`:
 
 ```bash
 cdx-chores md to-pdf \
@@ -210,36 +174,17 @@ cdx-chores md to-pdf \
   --output ./report.pdf
 ```
 
-In that posture, the custom stylesheet owns all print, font, page, cover, and
-code-block styling.
+In that posture, the custom stylesheet owns all print, font, page, cover, and code-block styling.
 
 ### Managed Hooks And Profile Compatibility
 
-Generated Template bundles are managed artifacts with stable structural hooks.
-They contain exactly one `.document-body` element that owns the single live
-Pandoc `$body$` insertion point. This boundary lets a selected base Profile use
-body-scoped visibility and body-origin numbering without copying page-number
-policy into the Template.
+Generated Template bundles are managed artifacts with stable structural hooks. They contain exactly one `.document-body` element that owns the single live Pandoc `$body$` insertion point. This boundary lets a selected base Profile use body-scoped visibility and body-origin numbering without copying page-number policy into the Template.
 
-When a selected base Profile enables its metadata cover, the generated managed
-Template must preserve exactly one live `.pdf-cover` element. An arbitrary
-custom Template is not treated as a compatible substitute: `md to-pdf` rejects
-it rather than silently discarding the enabled Profile cover. Use the built-in
-Template or a validated managed Template that retains the cover hook.
+When a selected base Profile enables its metadata cover, the generated managed Template must preserve exactly one live `.pdf-cover` element. An arbitrary custom Template is not treated as a compatible substitute: `md to-pdf` rejects it rather than silently discarding the enabled Profile cover. Use the built-in Template or a validated managed Template that retains the cover hook.
 
-The Template owns HTML structure, cover and ToC presentation, document layout,
-and its later stylesheet layer. Ordinary page-number enablement, visibility,
-sequence, label content, position, and repeating header/footer policy remain
-Profile-owned. For the canonical Profile fields and renderer behavior, see
-[Markdown PDF Usage](markdown-pdf-usage.md).
+The Template owns HTML structure, cover and ToC presentation, document layout, and its later stylesheet layer. Ordinary page-number enablement, visibility, sequence, label content, position, and repeating header/footer policy remain Profile-owned. For the canonical Profile fields and renderer behavior, see [Markdown PDF Usage](markdown-pdf-usage.md).
 
-The default layered render keeps generated Profile page chrome active and
-applies Template CSS afterward. `--no-default-css` deliberately transfers CSS
-ownership to the custom stylesheet: an enabled Profile cover produces a
-warning that custom CSS now owns its page break, layout, and chrome reset, while
-effectively enabled Profile page numbers are rejected because their generated
-stylesheet has been disabled. Custom counters remain possible when Profile page
-numbers are disabled.
+The default layered render keeps generated Profile page chrome active and applies Template CSS afterward. `--no-default-css` deliberately transfers CSS ownership to the custom stylesheet: an enabled Profile cover produces a warning that custom CSS now owns its page break, layout, and chrome reset, while effectively enabled Profile page numbers are rejected because their generated stylesheet has been disabled. Custom counters remain possible when Profile page numbers are disabled.
 
 ## Cover Images
 
@@ -249,13 +194,9 @@ numbers are disabled.
 - JPEG
 - WebP
 
-The image is copied into the generated bundle under `assets/` and referenced
-relatively from `template.html`. Remote URLs, SVG, and animated media are not
-part of the v1 helper surface.
+The image is copied into the generated bundle under `assets/` and referenced relatively from `template.html`. Remote URLs, SVG, and animated media are not part of the v1 helper surface.
 
-Image dimensions and format are collected as bounded signals. They help choose
-safe cover slots, but generated CSS uses page-relative sizing instead of raw
-source pixel dimensions.
+Image dimensions and format are collected as bounded signals. They help choose safe cover slots, but generated CSS uses page-relative sizing instead of raw source pixel dimensions.
 
 Cover layout remains intent-driven rather than flag-driven. For example:
 
@@ -266,8 +207,7 @@ cdx-chores md pdf-template codex ./tool-overview.md \
   --output ./tool-overview-template
 ```
 
-For that style of cover, the Markdown frontmatter should include the fields the
-cover needs to reveal:
+For that style of cover, the Markdown frontmatter should include the fields the cover needs to reveal:
 
 ```yaml
 ---
@@ -278,16 +218,11 @@ date: 2026-06-25
 ---
 ```
 
-The bounded cover slots can express title/image/subtitle order, cover text
-alignment, media alignment, image anchor, media scale, image fit, and optional
-byline output. Byline output is hidden by default and appears only when intent
-asks for author, date, or author/date metadata on the cover.
+The bounded cover slots can express title/image/subtitle order, cover text alignment, media alignment, image anchor, media scale, image fit, and optional byline output. Byline output is hidden by default and appears only when intent asks for author, date, or author/date metadata on the cover.
 
 ## Font Hints
 
-`--font-hint` is repeatable. Use one flag per distinct font preference when the
-template needs several font decisions, such as body, CJK, code, or symbol
-preferences:
+`--font-hint` is repeatable. Use one flag per distinct font preference when the template needs several font decisions, such as body, CJK, code, or symbol preferences:
 
 ```bash
 cdx-chores md pdf-template codex ./multilingual-report.md \
@@ -298,55 +233,29 @@ cdx-chores md pdf-template codex ./multilingual-report.md \
   --output ./multilingual-template
 ```
 
-Language-specific Template decisions still require matching rendered `lang`
-attributes for exact assignment. See
-[Profile Fonts And Mixed Language](markdown-pdf-usage.md#profile-fonts-and-mixed-language)
-for the shared content-label contract. A hint for Traditional Chinese body text
-does not classify or rewrite the Markdown; mark the intended content with a
-bracketed inline span or fenced block Div.
+Language-specific Template decisions still require matching rendered `lang` attributes for exact assignment. See [Profile Fonts And Mixed Language](markdown-pdf-usage.md#profile-fonts-and-mixed-language) for the shared content-label contract. A hint for Traditional Chinese body text does not classify or rewrite the Markdown; mark the intended content with a bracketed inline span or fenced block Div.
 
-Without a compatibility Profile, an accepted ordinary font hint can own an
-unowned document slot and emit its family through generated `style.css`. When a
-concrete `--base-profile` owns that slot, generated `style.css` instead omits
-the competing family while retaining non-font styling and Template-owned cover
-typography. The Template bundle remains partial and does not contain the
-compatibility Profile, so supply that Profile separately through the renderer's
-`--profile` input when rendering the preservation case.
+Without a compatibility Profile, an accepted ordinary font hint can own an unowned document slot and emit its family through generated `style.css`. When a concrete `--base-profile` owns that slot, generated `style.css` instead omits the competing family while retaining non-font styling and Template-owned cover typography. The Template bundle remains partial and does not contain the compatibility Profile, so supply that Profile separately through the renderer's `--profile` input when rendering the preservation case.
 
-An explicit template-level style decision may still emit a bounded deliberate
-override. The renderer's stylesheet order does not change: Profile CSS loads
-before the Template stylesheet, and preservation comes from ownership-aware
-Template output rather than from giving Profile CSS higher cascade priority.
+An explicit template-level style decision may still emit a bounded deliberate override. The renderer's stylesheet order does not change: Profile CSS loads before the Template stylesheet, and preservation comes from ownership-aware Template output rather than from giving Profile CSS higher cascade priority.
 
-Use `md pdf-profile codex` first when the main goal is reusable typography,
-page numbers, page shape, page chrome, or Shiki code-highlight settings. Use
-`md pdf-template codex` when the main goal is a reviewable HTML/CSS bundle,
-local cover-image assets, cover composition, custom CSS, or template-only
-layout.
+Use `md pdf-profile codex` first when the main goal is reusable typography, page numbers, page shape, page chrome, or Shiki code-highlight settings. Use `md pdf-template codex` when the main goal is a reviewable HTML/CSS bundle, local cover-image assets, cover composition, custom CSS, or template-only layout.
 
-`md pdf-template codex` can emit Shiki-compatible code-block CSS, but it does
-not enable Shiki. Enable highlighting during `md to-pdf` with
-`--code-highlight` or a profile with `code.highlight: true`.
+`md pdf-template codex` can emit Shiki-compatible code-block CSS, but it does not enable Shiki. Enable highlighting during `md to-pdf` with `--code-highlight` or a profile with `code.highlight: true`.
 
 ## Diagnostics And Redaction
 
-Diagnostic reports are review artifacts. They record decisions, selected slots,
-fallback reasons, managed asset metadata, and unsupported directions.
+Diagnostic reports are review artifacts. They record decisions, selected slots, fallback reasons, managed asset metadata, and unsupported directions.
 
-Persisted reports and generated bundle files should not expose local source
-directories. Managed assets are reported by bundle-relative paths and redacted
-source metadata such as basenames and dimensions. Terminal output can still use
-normal user-facing display paths for ergonomics.
+Persisted reports and generated bundle files should not expose local source directories. Managed assets are reported by bundle-relative paths and redacted source metadata such as basenames and dimensions. Terminal output can still use normal user-facing display paths for ergonomics.
 
-Do not commit reports that contain project-sensitive intent text unless that
-intent is intended to be public.
+Do not commit reports that contain project-sensitive intent text unless that intent is intended to be public.
 
 ## Collision And Overwrite Behavior
 
 The helper refuses to overwrite existing generated artifacts by default.
 
-Use `--overwrite` only when replacing selected generated files in the target
-bundle is intended:
+Use `--overwrite` only when replacing selected generated files in the target bundle is intended:
 
 ```bash
 cdx-chores md pdf-template codex ./report.md \
@@ -356,8 +265,7 @@ cdx-chores md pdf-template codex ./report.md \
   --overwrite
 ```
 
-An existing output directory is treated as an output target only. V1 does not
-read an existing `template.html` or `style.css` as a refinement input.
+An existing output directory is treated as an output target only. V1 does not read an existing `template.html` or `style.css` as a refinement input.
 
 ## Related Docs
 

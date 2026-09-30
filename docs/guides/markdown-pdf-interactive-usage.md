@@ -8,18 +8,13 @@ agent: codex
 
 ## Goal
 
-Use Interactive mode to render Markdown with an existing recipe or prepare a
-reviewable Profile, Template bundle, or Project bundle without translating the
-workflow into direct CLI flags first.
+Use Interactive mode to render Markdown with an existing recipe or prepare a reviewable Profile, Template bundle, or Project bundle without translating the workflow into direct CLI flags first.
 
-Interactive mode orchestrates the same helpers and render inputs as the direct
-commands. It does not introduce another recipe format or renderer:
+Interactive mode orchestrates the same helpers and render inputs as the direct commands. It does not introduce another recipe format or renderer:
 
 - `to-pdf` owns PDF rendering.
-- `pdf-recipes` owns durable recipe authoring and can hand a saved recipe to
-  `to-pdf`.
-- Profile files and Template or Project bundles remain usable by the direct
-  CLI.
+- `pdf-recipes` owns durable recipe authoring and can hand a saved recipe to `to-pdf`.
+- Profile files and Template or Project bundles remain usable by the direct CLI.
 
 ## Requirements
 
@@ -35,16 +30,9 @@ To select execution settings for Codex-backed preparation in the session:
 cdx-chores interactive --codex-reasoning-effort medium
 ```
 
-The explicit `interactive` command also accepts `--codex-model <model>` and
-`--codex-provider <provider-id>`. Omitted model/provider inherit Codex
-configuration; omitted effort requests `low`. One session selection applies to
-Profile, Template, Project, repair, and regeneration requests. Existing consent
-still controls whether Codex runs. Execution settings are not stored in recipes
-or recovery artifacts; rendering or saving prepared outputs needs no new Codex
-request. See [Codex Execution Configuration](codex-execution-configuration.md).
+The explicit `interactive` command also accepts `--codex-model <model>` and `--codex-provider <provider-id>`. Omitted model/provider inherit Codex configuration; omitted effort requests `low`. One session selection applies to Profile, Template, Project, repair, and regeneration requests. Existing consent still controls whether Codex runs. Execution settings are not stored in recipes or recovery artifacts; rendering or saving prepared outputs needs no new Codex request. See [Codex Execution Configuration](codex-execution-configuration.md).
 
-To use a longer per-attempt deadline for Codex-backed work throughout this
-Interactive session, pass the option to the `interactive` command.
+To use a longer per-attempt deadline for Codex-backed work throughout this Interactive session, pass the option to the `interactive` command.
 
 ✅ Correct:
 
@@ -58,22 +46,17 @@ cdx-chores interactive --codex-timeout 2m
 cdx-chores --codex-timeout 2m
 ```
 
-The root-level form is rejected. If the option is omitted, Interactive mode
-uses the 30-second default and does not prompt for timeout configuration in the
-Markdown workflows.
+The root-level form is rejected. If the option is omitted, Interactive mode uses the 30-second default and does not prompt for timeout configuration in the Markdown workflows.
 
 Choose `md`, then choose `to-pdf` or `pdf-recipes`.
 
-Rendering requires Pandoc 2.0 or newer and WeasyPrint. Codex-assisted
-preparation also requires configured Codex support. Check available
-capabilities with:
+Rendering requires Pandoc 2.0 or newer and WeasyPrint. Codex-assisted preparation also requires configured Codex support. Check available capabilities with:
 
 ```bash
 cdx-chores doctor
 ```
 
-From Interactive mode, choose `doctor`, then select `Summary`, `Details`, or
-`JSON` for the same three doctor projections.
+From Interactive mode, choose `doctor`, then select `Summary`, `Details`, or `JSON` for the same three doctor projections.
 
 ## Choose An Entry Goal
 
@@ -99,8 +82,7 @@ md -> pdf-recipes
   -> optionally hand it to to-pdf
 ```
 
-Both entries prepare the same artifact families. Their lifecycle choices are
-different because `pdf-recipes` does not own rendering.
+Both entries prepare the same artifact families. Their lifecycle choices are different because `pdf-recipes` does not own rendering.
 
 ## Render With `to-pdf`
 
@@ -114,20 +96,13 @@ After selecting the Markdown input, choose one recipe source:
 | Custom inputs    | Select explicit roles, optionally filling unselected roles from a bundle.      |
 | Create a recipe  | Prepare a new Profile, Template bundle, or Project bundle before rendering.    |
 
-Custom inputs use two layers. First choose either `Explicit inputs` or
-`Bundle + explicit inputs`. Then select one or more explicit roles: Profile,
-Template, and Stylesheet. Explicit selections remain authoritative for their
-roles; a selected bundle fills only unresolved roles.
+Custom inputs use two layers. First choose either `Explicit inputs` or `Bundle + explicit inputs`. Then select one or more explicit roles: Profile, Template, and Stylesheet. Explicit selections remain authoritative for their roles; a selected bundle fills only unresolved roles.
 
-The recipe review shows the selected source, resolved role provenance,
-effective page settings, ToC behavior, separate reusable Profile settings,
-the two one-render overrides, their effective results, and any bundle warnings.
-No PDF is written before this review.
+The recipe review shows the selected source, resolved role provenance, effective page settings, ToC behavior, separate reusable Profile settings, the two one-render overrides, their effective results, and any bundle warnings. No PDF is written before this review.
 
 ## Prepare A Recipe
 
-The authoring matrix is the same under `to-pdf -> Create a recipe` and
-`pdf-recipes`:
+The authoring matrix is the same under `to-pdf -> Create a recipe` and `pdf-recipes`:
 
 | Artifact        | `starter` | `formal-guide` | `Codex Assistant` |
 | --------------- | --------- | -------------- | ----------------- |
@@ -135,34 +110,22 @@ The authoring matrix is the same under `to-pdf -> Create a recipe` and
 | Template bundle | yes       | yes            | yes               |
 | Project bundle  | no        | no             | yes               |
 
-Project bundle enters Codex Assistant directly because there is no direct
-deterministic Project initializer. It has no Formal Guide branch, but its Codex
-Assistant setup asks the same structured page-information questions as Profile
-setup. Review its contained Profile for the full reusable contract.
+Project bundle enters Codex Assistant directly because there is no direct deterministic Project initializer. It has no Formal Guide branch, but its Codex Assistant setup asks the same structured page-information questions as Profile setup. Review its contained Profile for the full reusable contract.
 
-Project bundle has no `starter` or `formal-guide` branch and no
-preparation-mode menu. Its Codex-generated contained Profile may own reusable
-code settings; the Project itself does not add another settings schema.
+Project bundle has no `starter` or `formal-guide` branch and no preparation-mode menu. Its Codex-generated contained Profile may own reusable code settings; the Project itself does not add another settings schema.
 
 ### Deterministic preparation
 
 `starter` uses the deterministic starter configuration.
 
-`formal-guide` asks Profile and Template artifacts for document preset, page
-size, orientation, margins, and table-of-contents behavior. A Profile uses this
-exact group order:
+`formal-guide` asks Profile and Template artifacts for document preset, page size, orientation, margins, and table-of-contents behavior. A Profile uses this exact group order:
 
 ```text
 layout -> margins -> cover -> table of contents -> code highlighting
   -> page numbers -> repeating header or footer text
 ```
 
-The cover decision comes before ToC so the front matter is settled before the
-ToC that follows it. `Add a cover page?` defaults to no. Enabling it uses the
-Profile's metadata-backed cover fields; their full schema and placeholder rules
-are documented in
-[Covers, Repeating Content, And Page Numbers](markdown-pdf-usage.md#covers-repeating-content-and-page-numbers).
-Recipe review offers `Revise cover page` without recollecting the other groups.
+The cover decision comes before ToC so the front matter is settled before the ToC that follows it. `Add a cover page?` defaults to no. Enabling it uses the Profile's metadata-backed cover fields; their full schema and placeholder rules are documented in [Covers, Repeating Content, And Page Numbers](markdown-pdf-usage.md#covers-repeating-content-and-page-numbers). Recipe review offers `Revise cover page` without recollecting the other groups.
 
 For a Profile, `formal-guide` also adds a Code highlighting section:
 
@@ -170,80 +133,40 @@ For a Profile, `formal-guide` also adds a Code highlighting section:
 2. When enabled, the code highlighting `Theme` chooses one of the supported light themes.
 3. Line numbers and transformer notation are optional and default to off.
 
-`Theme` is part of Code highlighting. When highlighting is disabled,
-Interactive mode skips Theme, line-number, and transformer prompts, retains a
-valid inert theme, and forces both dependent features off. Recipe review
-offers `Revise code highlighting` for this Profile section.
+`Theme` is part of Code highlighting. When highlighting is disabled, Interactive mode skips Theme, line-number, and transformer prompts, retains a valid inert theme, and forces both dependent features off. Recipe review offers `Revise code highlighting` for this Profile section.
 
-The page-number section first asks whether to enable reusable numbering. When
-enabled, it keeps common authoring concise:
+The page-number section first asks whether to enable reusable numbering. When enabled, it keeps common authoring concise:
 
-1. `Number which pages?` chooses `Body pages, starting at 1` (the default) or
-   `Entire document, starting at 1`.
-2. `Page-number label` chooses `Page 1` (recommended), `1` (compact), or a
-   custom label.
+1. `Number which pages?` chooses `Body pages, starting at 1` (the default) or `Entire document, starting at 1`.
+2. `Page-number label` chooses `Page 1` (recommended), `1` (compact), or a custom label.
 3. `Page-number position` chooses one of the six header and footer slots.
 
-The two numbering outcomes set the visible scope and counting origin together,
-with start and increment fixed at `1`. A custom label uses the same inline
-ghost-completion interaction as other guided text: `Page {page} of {pages}` is
-suggested, Right Arrow accepts the suggestion, and the prompt explains the
-logical `{page}`/`{pages}` and physical `{pdfPage}`/`{pdfPages}` tokens. The
-label must contain a current-page token, `{page}` or `{pdfPage}`. See
-[Covers, Repeating Content, And Page Numbers](markdown-pdf-usage.md#covers-repeating-content-and-page-numbers)
-for the canonical token semantics and migration notes.
+The two numbering outcomes set the visible scope and counting origin together, with start and increment fixed at `1`. A custom label uses the same inline ghost-completion interaction as other guided text: `Page {page} of {pages}` is suggested, Right Arrow accepts the suggestion, and the prompt explains the logical `{page}`/`{pages}` and physical `{pdfPage}`/`{pdfPages}` tokens. The label must contain a current-page token, `{page}` or `{pdfPage}`. See [Covers, Repeating Content, And Page Numbers](markdown-pdf-usage.md#covers-repeating-content-and-page-numbers) for the canonical token semantics and migration notes.
 
-`Add repeating header or footer text?` then selects only the slots the Profile
-needs instead of asking six unconditional questions. When page numbers are
-enabled, their slot is shown as reserved and cannot also be selected for
-repeating text. Revising page-number placement does not silently erase existing
-content in the newly occupied slot: Interactive asks before clearing the
-conflict. Each selected slot accepts literal text or `{title}`, `{company}`,
-`{author}`, and `{date}` placeholders, shows a slot-aware ghost suggestion, and
-explains that values resolve from CLI metadata, Markdown frontmatter, then
-Profile metadata. Recipe review offers separate `Revise page numbers` and
-`Revise repeating page content` actions.
+`Add repeating header or footer text?` then selects only the slots the Profile needs instead of asking six unconditional questions. When page numbers are enabled, their slot is shown as reserved and cannot also be selected for repeating text. Revising page-number placement does not silently erase existing content in the newly occupied slot: Interactive asks before clearing the conflict. Each selected slot accepts literal text or `{title}`, `{company}`, `{author}`, and `{date}` placeholders, shows a slot-aware ghost suggestion, and explains that values resolve from CLI metadata, Markdown frontmatter, then Profile metadata. Recipe review offers separate `Revise page numbers` and `Revise repeating page content` actions.
 
-Formal Guide deliberately does not expose every Profile field. Use the Profile
-YAML or JSON directly for independent `scope` and `countFrom` values, custom
-start or increment values, page-role visibility, cover fields and style, or
-other advanced combinations. The canonical schema remains in
-[Markdown PDF Usage](markdown-pdf-usage.md#profiles).
+Formal Guide deliberately does not expose every Profile field. Use the Profile YAML or JSON directly for independent `scope` and `countFrom` values, custom start or increment values, page-role visibility, cover fields and style, or other advanced combinations. The canonical schema remains in [Markdown PDF Usage](markdown-pdf-usage.md#profiles).
 
-This opinionated default applies only to Interactive Profile
-`formal-guide`. Profile `starter` and direct Profile initialization remain off
-by default. Template `formal-guide` continues to ask only about layout,
-margins, and ToC; a Template owns compatible CSS presentation but no reusable
-code settings.
+This opinionated default applies only to Interactive Profile `formal-guide`. Profile `starter` and direct Profile initialization remain off by default. Template `formal-guide` continues to ask only about layout, margins, and ToC; a Template owns compatible CSS presentation but no reusable code settings.
 
 ### Codex Assistant
 
-Codex Assistant collects only preparation signals before requesting a
-candidate:
+Codex Assistant collects only preparation signals before requesting a candidate:
 
 - optional PDF intent, entered in single-line or multiline form
 - optional base Profile
 - optional cover image for Template and Project bundles
-- optional structured page-number and repeating header/footer choices for
-  Profile and Project; Template-only setup has no Profile to store them
+- optional structured page-number and repeating header/footer choices for Profile and Project; Template-only setup has no Profile to store them
 - an ordered, repeatable font-hint collection
 - for `pdf-recipes`, an optional Markdown preparation sample
 
-The `to-pdf` entry reuses its selected Markdown input as the preparation
-sample. Artifact and PDF output paths are chosen later; they are local lifecycle
-configuration rather than Codex signals.
+The `to-pdf` entry reuses its selected Markdown input as the preparation sample. Artifact and PDF output paths are chosen later; they are local lifecycle configuration rather than Codex signals.
 
 ### Page information in Codex Assistant
 
-Custom page-number labels and repeating header/footer text are limited to 512
-characters in this flow. Oversized input stays in the editor with a validation
-message so it can be shortened without restarting setup.
+Custom page-number labels and repeating header/footer text are limited to 512 characters in this flow. Oversized input stays in the editor with a validation message so it can be shortened without restarting setup.
 
-Profile and Project setup asks whether to specify page information before PDF
-intent. Formal Guide has explicit preset, page size, orientation, and margin
-questions; Codex Assistant takes layout direction through intent, so inspect
-the prepared Profile's page settings in candidate review. Page numbers and
-repeating content are separate groups, each with three states:
+Profile and Project setup asks whether to specify page information before PDF intent. Formal Guide has explicit preset, page size, orientation, and margin questions; Codex Assistant takes layout direction through intent, so inspect the prepared Profile's page settings in candidate review. Page numbers and repeating content are separate groups, each with three states:
 
 | Choice      | Page numbers                                                        | Repeating header/footer content                              |
 | ----------- | ------------------------------------------------------------------- | ------------------------------------------------------------ |
@@ -251,9 +174,7 @@ repeating content are separate groups, each with three states:
 | OFF         | Disable numbers; retain valid inactive label and placement details. | Clear all six saved text slots; keep their styles and fonts. |
 | ON          | Choose body or whole-document numbering, label, and position.       | Choose slots and enter their exact text.                     |
 
-For fresh number-ON setup, the defaults are body pages starting at 1, label
-`Page {page}`, and bottom-center placement. The six header/footer positions
-and label tokens follow [Markdown PDF Usage](markdown-pdf-usage.md#covers-repeating-content-and-page-numbers).
+For fresh number-ON setup, the defaults are body pages starting at 1, label `Page {page}`, and bottom-center placement. The six header/footer positions and label tokens follow [Markdown PDF Usage](markdown-pdf-usage.md#covers-repeating-content-and-page-numbers).
 
 > [!CAUTION]
 > An explicit page-number ON choice in Codex Assistant sets
@@ -262,57 +183,19 @@ and label tokens follow [Markdown PDF Usage](markdown-pdf-usage.md#covers-repeat
 > Review the prepared Profile before saving or rendering. For a custom
 > sequence, render with an existing or edited Profile YAML or JSON file.
 
-`Remove explicit ... choice` returns one group to unspecified without changing
-the other. Revising the base Profile rechecks an occupied number slot; newly
-selected text cannot use it. An inherited or Codex-selected collision asks
-whether to clear or retain the stored text, defaulting to retain. Retained text
-is visible in review but the enabled number owns that position in the PDF.
+`Remove explicit ... choice` returns one group to unspecified without changing the other. Revising the base Profile rechecks an occupied number slot; newly selected text cannot use it. An inherited or Codex-selected collision asks whether to clear or retain the stored text, defaulting to retain. Retained text is visible in review but the enabled number owns that position in the PDF.
 
-The entered answers outrank free-form intent and Codex suggestions. Preparation
-applies them to the final Profile before candidate review and, for a Project,
-before Template preparation. The saved Profile keeps the entered label and
-header/footer text exactly. Page information alone can prepare a Profile or
-Project deterministically without a Codex request. If other signals require a
-request, setup review shows the exact page text and asks for consent before it
-is sent. Model selection affects only a request that actually runs; see
-[Codex Execution Configuration](codex-execution-configuration.md) for the
-model choice.
+The entered answers outrank free-form intent and Codex suggestions. Preparation applies them to the final Profile before candidate review and, for a Project, before Template preparation. The saved Profile keeps the entered label and header/footer text exactly. Page information alone can prepare a Profile or Project deterministically without a Codex request. If other signals require a request, setup review shows the exact page text and asks for consent before it is sent. Model selection affects only a request that actually runs; see [Codex Execution Configuration](codex-execution-configuration.md) for the model choice.
 
-Setup, consent, and candidate review escape terminal control characters in
-entered page text; color styles headings and fixed labels only. Review the
-requested choices, final Profile fields, any retained-slot warning, and the
-effective render settings before saving or rendering. The rendered PDF is the
-check for visible page placement and glyphs, especially with a cover, ToC, or
-mixed-language text. The optional diagnostic report keeps requested and final
-stored page-information metadata, but omits the entered page-number label and
-header/footer text, including echoes of that text in Codex result fields.
-Independently entered intent and font hints keep their normal report behavior.
-The report is not a substitute for the saved Profile or PDF.
+Setup, consent, and candidate review escape terminal control characters in entered page text; color styles headings and fixed labels only. Review the requested choices, final Profile fields, any retained-slot warning, and the effective render settings before saving or rendering. The rendered PDF is the check for visible page placement and glyphs, especially with a cover, ToC, or mixed-language text. The optional diagnostic report keeps requested and final stored page-information metadata, but omits the entered page-number label and header/footer text, including echoes of that text in Codex result fields. Independently entered intent and font hints keep their normal report behavior. The report is not a substitute for the saved Profile or PDF.
 
-For Project covers, a selected image signals an image cover even without cover
-prose in the intent. Cover intent without an image produces a managed text
-cover whose content comes from the final Profile. See
-[Markdown PDF Usage](markdown-pdf-usage.md#cover-and-page-roles) for cover
-results and [Layout Options](markdown-pdf-usage.md#layout-options) for page
-shape.
+For Project covers, a selected image signals an image cover even without cover prose in the intent. Cover intent without an image produces a managed text cover whose content comes from the final Profile. See [Markdown PDF Usage](markdown-pdf-usage.md#cover-and-page-roles) for cover results and [Layout Options](markdown-pdf-usage.md#layout-options) for page shape.
 
-The setup review shows the signals before consent. During the request,
-Interactive mode presents one artifact-specific waiting status and clears it
-before the next prompt.
+The setup review shows the signals before consent. During the request, Interactive mode presents one artifact-specific waiting status and clears it before the next prompt.
 
-The session timeout is passed to Profile, Template, and Project preparation.
-Each Profile, Template, or validation-driven application-repair request receives
-an independent per-attempt window using the same session value; a Project does
-not share one total timeout budget across its phases. Backtracking, revising the
-setup, and returning to an accepted candidate preserve the session value.
-User-triggered regeneration creates a new request with the same per-attempt
-window, but Interactive mode does not retry a failed request automatically.
-The timeout remains session state and is not written into saved recipe identity
-or generated artifacts.
+The session timeout is passed to Profile, Template, and Project preparation. Each Profile, Template, or validation-driven application-repair request receives an independent per-attempt window using the same session value; a Project does not share one total timeout budget across its phases. Backtracking, revising the setup, and returning to an accepted candidate preserve the session value. User-triggered regeneration creates a new request with the same per-attempt window, but Interactive mode does not retry a failed request automatically. The timeout remains session state and is not written into saved recipe identity or generated artifacts.
 
-For the shared duration grammar and the distinction between timeouts,
-workflow-owned retries, semantic repair, and user-triggered regeneration, see
-[Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md).
+For the shared duration grammar and the distinction between timeouts, workflow-owned retries, semantic repair, and user-triggered regeneration, see [Codex Timeouts, Retries, and Recovery](codex-timeouts-retries-and-recovery.md).
 
 ### Font hints
 
@@ -321,55 +204,21 @@ The font-hint editor supports two direct addition paths:
 - `Add guided font hint` builds a font preference and intended use.
 - `Add complete custom hint` accepts the full direct-equivalent hint text.
 
-Guided intended uses include general or body text, language-specific body text,
-headings and titles, code text, code symbols, and artifact-supported page
-headers and footers. The editor previews the compiled direct equivalent before
-adding it. Accepted hints can be edited, removed, or reordered.
+Guided intended uses include general or body text, language-specific body text, headings and titles, code text, code symbols, and artifact-supported page headers and footers. The editor previews the compiled direct equivalent before adding it. Accepted hints can be edited, removed, or reordered.
 
-Choosing a language-specific intended use records a preference for that Profile
-language slot; it does not annotate or classify the Markdown. For exact
-mixed-language assignment, mark the relevant content with Pandoc attributes
-such as a bracketed inline span or fenced block Div. Without those markers, the
-selected family only participates in fallback ordering and an earlier family
-that covers the same characters may be used instead. See
-[Profile Fonts And Mixed Language](markdown-pdf-usage.md#profile-fonts-and-mixed-language)
-for the full contract.
+Choosing a language-specific intended use records a preference for that Profile language slot; it does not annotate or classify the Markdown. For exact mixed-language assignment, mark the relevant content with Pandoc attributes such as a bracketed inline span or fenced block Div. Without those markers, the selected family only participates in fallback ordering and an earlier family that covers the same characters may be used instead. See [Profile Fonts And Mixed Language](markdown-pdf-usage.md#profile-fonts-and-mixed-language) for the full contract.
 
-Interactive searches a local fontconfig inventory only. It groups each primary
-family with its reported aliases and full names, ranks exact, prefix,
-token-prefix, substring, and ordered-subsequence matches deterministically, and
-returns at most six installed suggestions. An alias or styled full-name match
-still selects the primary family reported by fontconfig. Custom text remains
-the first choice and preserves what the user entered.
+Interactive searches a local fontconfig inventory only. It groups each primary family with its reported aliases and full names, ranks exact, prefix, token-prefix, substring, and ordered-subsequence matches deterministically, and returns at most six installed suggestions. An alias or styled full-name match still selects the primary family reported by fontconfig. Custom text remains the first choice and preserves what the user entered.
 
-Interactive waits automatically for up to three seconds. If discovery is still
-running, it offers one choice between continuing with custom input and waiting
-for installed fonts. Continued waiting reuses the same discovery attempt under
-one ten-second total safety ceiling measured from the original start. The
-result is cached for the Interactive session. Missing, empty, failed, cancelled,
-or timed-out discovery falls back to ordinary custom input.
+Interactive waits automatically for up to three seconds. If discovery is still running, it offers one choice between continuing with custom input and waiting for installed fonts. Continued waiting reuses the same discovery attempt under one ten-second total safety ceiling measured from the original start. The result is cached for the Interactive session. Missing, empty, failed, cancelled, or timed-out discovery falls back to ordinary custom input.
 
-There is no network catalogue, native platform fallback, or discovery-source
-prompt in this flow. Fonts visible only through Font Book or a third-party font
-manager—including some Adobe Fonts configurations—may therefore be absent when
-fontconfig cannot report them. The local inventory is never sent to Codex; only
-accepted hint text is included after the user reviews the setup and confirms
-the request.
+There is no network catalogue, native platform fallback, or discovery-source prompt in this flow. Fonts visible only through Font Book or a third-party font manager—including some Adobe Fonts configurations—may therefore be absent when fontconfig cannot report them. The local inventory is never sent to Codex; only accepted hint text is included after the user reviews the setup and confirms the request.
 
-Installed suggestions and manually entered preferences do not prove glyph
-coverage, WeasyPrint availability, or final font-role assignment. A custom
-preference can name a font outside the fontconfig inventory, but the renderer
-must still be able to resolve it.
+Installed suggestions and manually entered preferences do not prove glyph coverage, WeasyPrint availability, or final font-role assignment. A custom preference can name a font outside the fontconfig inventory, but the renderer must still be able to resolve it.
 
-The candidate review reports applied, blocked, and unresolved font directions
-where the direct helper returns that information.
+The candidate review reports applied, blocked, and unresolved font directions where the direct helper returns that information.
 
-Codex Profile review shows reusable settings from the generated Profile.
-Project review shows reusable font choices from its generated contained
-Profile, with non-competing Template CSS beside it. Template review has no
-reusable code-settings block; applied ordinary font directions for unowned
-slots are reflected in generated `style.css`, while compatibility-Profile-owned
-directions are reported as blocked.
+Codex Profile review shows reusable settings from the generated Profile. Project review shows reusable font choices from its generated contained Profile, with non-competing Template CSS beside it. Template review has no reusable code-settings block; applied ordinary font directions for unowned slots are reflected in generated `style.css`, while compatibility-Profile-owned directions are reported as blocked.
 
 ## Prepare Once, Then Commit
 
@@ -386,18 +235,13 @@ A render-capable `to-pdf` continuation then:
 6. choose outputs and review the effective render
 7. materialize and render without implicit regeneration
 
-The `pdf-recipes` save-only path instead chooses a durable destination and
-writes the reviewed candidate. Its optional render handoff starts the shared
-`to-pdf` flow after that save.
+The `pdf-recipes` save-only path instead chooses a durable destination and writes the reviewed candidate. Its optional render handoff starts the shared `to-pdf` flow after that save.
 
-Changing Codex setup invalidates the previous candidate. Changing only a local
-destination or either one-render override does not request another candidate,
-change artifact identity, or rewrite an already saved recipe.
+Changing Codex setup invalidates the previous candidate. Changing only a local destination or either one-render override does not request another candidate, change artifact identity, or rewrite an already saved recipe.
 
 ## Code Highlighting For One Render
 
-Every `to-pdf` render path asks `Code highlighting for this PDF` after its
-render source is settled:
+Every `to-pdf` render path asks `Code highlighting for this PDF` after its render source is settled:
 
 | Interactive choice        | Renderer input | Result                                                                                                            |
 | ------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------- |
@@ -405,9 +249,7 @@ render source is settled:
 | `Enable for this render`  | `true`         | Enable highlighting without changing the Profile. Without Profile settings, use the default `github-light` theme. |
 | `Disable for this render` | `false`        | Disable highlighting, line numbers, and transformer notation for this PDF only.                                   |
 
-`Use recipe setting` is the default. Theme, line numbers, and transformer
-notation remain reusable Profile settings; Interactive mode does not offer
-render-time overrides for them.
+`Use recipe setting` is the default. Theme, line numbers, and transformer notation remain reusable Profile settings; Interactive mode does not offer render-time overrides for them.
 
 The prompt appears at the boundary appropriate to the source:
 
@@ -435,31 +277,17 @@ saved-recipe handoff
 
 Recipe and final render reviews keep three concepts separate:
 
-- `Reusable Profile settings` appears only when a Profile is actually
-  resolved, including the contained Profile of a Project.
+- `Reusable Profile settings` appears only when a Profile is actually resolved, including the contained Profile of a Project.
 - `Render override` shows the selected one-render choice.
-- `Effective render` shows what the renderer will use after precedence is
-  applied.
+- `Effective render` shows what the renderer will use after precedence is applied.
 
-A Template-only or built-in render omits the reusable block but still shows
-the override and effective result. `Change code highlighting` revisits the
-one-render prompt without changing the selected source, accepted generated
-candidate, resolved outputs, or applicable Codex report choice. It does not
-regenerate an artifact, repeat a Codex request, or rewrite an already saved
-recipe.
+A Template-only or built-in render omits the reusable block but still shows the override and effective result. `Change code highlighting` revisits the one-render prompt without changing the selected source, accepted generated candidate, resolved outputs, or applicable Codex report choice. It does not regenerate an artifact, repeat a Codex request, or rewrite an already saved recipe.
 
-`Back` from the initial prompt returns existing sources to recipe-source
-selection, generated sources to the same accepted candidate review, and a
-saved-recipe handoff to Markdown-input selection. Re-entering the same
-generated candidate retains its override, including after a lifecycle change.
-Changing the Markdown input, source, artifact, preparation mode, or generated
-candidate resets the choice to `Use recipe setting`. `Cancel` performs no
-implicit write or render.
+`Back` from the initial prompt returns existing sources to recipe-source selection, generated sources to the same accepted candidate review, and a saved-recipe handoff to Markdown-input selection. Re-entering the same generated candidate retains its override, including after a lifecycle change. Changing the Markdown input, source, artifact, preparation mode, or generated candidate resets the choice to `Use recipe setting`. `Cancel` performs no implicit write or render.
 
 ## Page Numbers For One Render
 
-Immediately after code highlighting, every `to-pdf` path asks `Page numbers for
-this PDF`:
+Immediately after code highlighting, every `to-pdf` path asks `Page numbers for this PDF`:
 
 | Interactive choice           | Renderer input | Result                                                                                        |
 | ---------------------------- | -------------- | --------------------------------------------------------------------------------------------- |
@@ -467,20 +295,9 @@ this PDF`:
 | `Turn on for this PDF only`  | `true`         | Enable page numbers for this PDF without changing the Profile.                                |
 | `Turn off for this PDF only` | `false`        | Disable page numbers for this PDF without changing the Profile.                               |
 
-`Keep recipe setting` is the default. This override changes only whether page
-numbers are enabled; reusable label, position, scope, counting origin, start,
-and increment values still come from the Profile or renderer defaults.
-Turning numbers off can reveal retained text in the released number slot; it
-does not clear saved repeating content or rewrite the Profile.
+`Keep recipe setting` is the default. This override changes only whether page numbers are enabled; reusable label, position, scope, counting origin, start, and increment values still come from the Profile or renderer defaults. Turning numbers off can reveal retained text in the released number slot; it does not clear saved repeating content or rewrite the Profile.
 
-The code and page-number choices are independent retained state for the current
-render source. `Back` from page numbers returns to code highlighting. Returning
-to the same accepted generated candidate or recovering output planning retains
-both choices. Final review offers `Change code highlighting` and `Change page
-numbers` without rebinding or rewriting a saved recipe. Changing the Markdown
-input, recipe source, artifact, preparation mode, or generated candidate resets
-both choices to their recipe-setting defaults. `Cancel` performs no implicit
-write or render.
+The code and page-number choices are independent retained state for the current render source. `Back` from page numbers returns to code highlighting. Returning to the same accepted generated candidate or recovering output planning retains both choices. Final review offers `Change code highlighting` and `Change page numbers` without rebinding or rewriting a saved recipe. Changing the Markdown input, recipe source, artifact, preparation mode, or generated candidate resets both choices to their recipe-setting defaults. `Cancel` performs no implicit write or render.
 
 ## Lifecycle Choices
 
@@ -506,65 +323,34 @@ accepted candidate
        failure -> retain and print the canonical session path
 ```
 
-The PDF output and any separately retained report must be outside the temporary
-session. A report cannot be kept with a temporary artifact because successful
-cleanup would remove it.
+The PDF output and any separately retained report must be outside the temporary session. A report cannot be kept with a temporary artifact because successful cleanup would remove it.
 
-After a successful render, cleanup targets only the exact CLI-owned session.
-If cleanup itself fails, the completed PDF remains valid and the CLI prints the
-retained session path.
+After a successful render, cleanup targets only the exact CLI-owned session. If cleanup itself fails, the completed PDF remains valid and the CLI prints the retained session path.
 
-After a render failure, the retained-session recovery menu can retry the
-render, return to recipe review, keep the session and exit, or explicitly
-delete the exact session after confirmation. A failure before materialization
-and renderer preparation complete retains the session and offers revision,
-retention, or confirmed deletion without claiming that a render can already be
-retried.
+After a render failure, the retained-session recovery menu can retry the render, return to recipe review, keep the session and exit, or explicitly delete the exact session after confirmation. A failure before materialization and renderer preparation complete retains the session and offers revision, retention, or confirmed deletion without claiming that a render can already be retried.
 
-The owned recipe session is different from the renderer's internal scratch
-directory. Pandoc and WeasyPrint use separate renderer scratch space, which is
-removed on a best-effort basis when the renderer finishes. That internal
-cleanup has no Interactive recovery menu. Only the generated recipe session can
-be retained and shown for Interactive recovery.
+The owned recipe session is different from the renderer's internal scratch directory. Pandoc and WeasyPrint use separate renderer scratch space, which is removed on a best-effort basis when the renderer finishes. That internal cleanup has no Interactive recovery menu. Only the generated recipe session can be retained and shown for Interactive recovery.
 
 ### Cross-platform temporary location
 
-The session is created below the operating-system temporary directory returned
-by Node.js `os.tmpdir()`, not below the current working directory.[^node-tmp]
+The session is created below the operating-system temporary directory returned by Node.js `os.tmpdir()`, not below the current working directory.[^node-tmp]
 
 | Platform                                    | Temporary-directory selection                                    |
 | ------------------------------------------- | ---------------------------------------------------------------- |
 | Windows                                     | `TEMP`, then `TMP`, then the Windows system temporary directory. |
 | macOS, Linux, and other non-Windows systems | `TMPDIR`, then `TMP`, then `TEMP`, then `/tmp`.                  |
 
-The actual directory therefore varies by operating system, distribution,
-login session, and environment configuration. A session child uses the prefix
-`cdx-chores-markdown-pdf-` plus a unique suffix.
+The actual directory therefore varies by operating system, distribution, login session, and environment configuration. A session child uses the prefix `cdx-chores-markdown-pdf-` plus a unique suffix.
 
-The CLI canonicalizes the newly created directory before using it. If the
-platform exposes its temporary root through a symlink alias, materialization,
-recovery display, and cleanup all use the same canonical session path. When a
-session is retained, use the exact path printed by the CLI rather than assuming
-one of the fallback locations in the table.
+The CLI canonicalizes the newly created directory before using it. If the platform exposes its temporary root through a symlink alias, materialization, recovery display, and cleanup all use the same canonical session path. When a session is retained, use the exact path printed by the CLI rather than assuming one of the fallback locations in the table.
 
 ### Durable save and render
 
-`Save ... and render` writes the accepted recipe to its durable destination,
-then prepares `to-pdf` from that saved artifact. A successful durable write is
-not repeated when renderer preparation or rendering is retried. Durable
-materialization and renderer-preparation failures keep the selected output and
-offer retry, recipe revision, or exit.
+`Save ... and render` writes the accepted recipe to its durable destination, then prepares `to-pdf` from that saved artifact. A successful durable write is not repeated when renderer preparation or rendering is retried. Durable materialization and renderer-preparation failures keep the selected output and offer retry, recipe revision, or exit.
 
-The generated-lifecycle recovery menus apply only to temporary and
-save-and-render candidates. Built-in, existing Profile, existing bundle, and
-Custom-input rendering continues through the direct prepared-render path.
+The generated-lifecycle recovery menus apply only to temporary and save-and-render candidates. Built-in, existing Profile, existing bundle, and Custom-input rendering continues through the direct prepared-render path.
 
-The final review shows recipe output, PDF output, report retention, overwrite
-behavior, cleanup ownership, reusable Profile settings when present, the
-one-render overrides, and their effective results before rendering starts.
-Changing only code highlighting or page numbers from this review preserves the
-applicable outputs, report, cleanup ownership, and accepted artifact. Generated
-materialization is not repeated.
+The final review shows recipe output, PDF output, report retention, overwrite behavior, cleanup ownership, reusable Profile settings when present, the one-render overrides, and their effective results before rendering starts. Changing only code highlighting or page numbers from this review preserves the applicable outputs, report, cleanup ownership, and accepted artifact. Generated materialization is not repeated.
 
 ## Codex Reports
 
@@ -574,38 +360,24 @@ Report choices appear only for Codex-assisted candidates:
 - keep it with a durably saved recipe
 - write it to a separate path
 
-Temporary rendering supports no report or a separate report path only. The
-separate report must not collide with the PDF or temporary session.
-For a generated Codex candidate, report retention is chosen after the
-code-highlighting and page-number prompts. `Back` or `Cancel` at either
-override boundary therefore does not collect a report output path.
+Temporary rendering supports no report or a separate report path only. The separate report must not collide with the PDF or temporary session. For a generated Codex candidate, report retention is chosen after the code-highlighting and page-number prompts. `Back` or `Cancel` at either override boundary therefore does not collect a report output path.
 
 ## `pdf-recipes` Handoff
 
-After a successful save, `pdf-recipes` can open `to-pdf` with the accepted
-artifact already selected:
+After a successful save, `pdf-recipes` can open `to-pdf` with the accepted artifact already selected:
 
 - a Profile enters as `Existing profile`
 - a Template or Project bundle enters as `Existing bundle`
 
-If Codex preparation used a Markdown sample, the handoff asks whether to reuse
-it or choose another Markdown input. Without a saved sample, the handoff asks
-for the render input. Rendering still occurs only inside the shared `to-pdf`
-flow. The same `Code highlighting for this PDF` prompt appears after the
-Markdown input is chosen or reused, followed by `Page numbers for this PDF`.
-The saved Profile, or a Profile contained by the saved bundle, remains reusable
-state; the handoff choices remain one-render state.
+If Codex preparation used a Markdown sample, the handoff asks whether to reuse it or choose another Markdown input. Without a saved sample, the handoff asks for the render input. Rendering still occurs only inside the shared `to-pdf` flow. The same `Code highlighting for this PDF` prompt appears after the Markdown input is chosen or reused, followed by `Page numbers for this PDF`. The saved Profile, or a Profile contained by the saved bundle, remains reusable state; the handoff choices remain one-render state.
 
 ## Navigation And Safety
 
-- `Back` returns to the nearest meaningful recipe, artifact, mode, setup, or
-  output checkpoint.
+- `Back` returns to the nearest meaningful recipe, artifact, mode, setup, or output checkpoint.
 - `Cancel` exits without an implicit save or render.
-- `Back` from the initial highlighting prompt returns to the current source,
-  candidate, or handoff-input checkpoint without writing or rendering.
+- `Back` from the initial highlighting prompt returns to the current source, candidate, or handoff-input checkpoint without writing or rendering.
 - `Back` from page numbers returns to code highlighting.
-- Changing only either one-render override reuses the accepted source or
-  candidate and applicable output state.
+- Changing only either one-render override reuses the accepted source or candidate and applicable output state.
 - Existing files are not overwritten unless overwrite is explicitly enabled.
 - Final PDF writes use the shared safe renderer output boundary.
 - Recipe and PDF output paths must not collide.
@@ -623,13 +395,7 @@ md to-pdf [--profile | --template | --css | --bundle]
   [--page-numbers | --no-page-numbers]
 ```
 
-Interactive artifacts remain ordinary Profile files and Template or Project
-bundle directories, so either surface can consume artifacts created by the
-other. Interactive Profile `formal-guide` defaults its reusable highlighting
-setting to enabled. Direct Profile initialization, Interactive Profile
-`starter`, and direct `to-pdf` rendering keep their existing default of
-disabled. Direct render flags remain transient, and renderer precedence is
-unchanged.
+Interactive artifacts remain ordinary Profile files and Template or Project bundle directories, so either surface can consume artifacts created by the other. Interactive Profile `formal-guide` defaults its reusable highlighting setting to enabled. Direct Profile initialization, Interactive Profile `starter`, and direct `to-pdf` rendering keep their existing default of disabled. Direct render flags remain transient, and renderer precedence is unchanged.
 
 ## Related Docs
 

@@ -7,12 +7,9 @@ agent: codex
 
 ## Goal
 
-Help readers choose and use the pattern, regular-expression, placeholder, and
-template languages exposed by `cdx-chores`.
+Help readers choose and use the pattern, regular-expression, placeholder, and template languages exposed by `cdx-chores`.
 
-These surfaces can look similar, but they do not share one grammar, evaluator,
-or execution scope. Some select inputs, some generate filenames or document
-text, and one defines the HTML structure of an entire document.
+These surfaces can look similar, but they do not share one grammar, evaluator, or execution scope. Some select inputs, some generate filenames or document text, and one defines the HTML structure of an entire document.
 
 ## Choose The Right Language
 
@@ -31,8 +28,7 @@ The overloaded option name `--pattern` does not identify one shared language:
 
 ## Rename Filename Templates
 
-Use a rename filename template when the value should construct each output
-basename:
+Use a rename filename template when the value should construct each output basename:
 
 ```bash
 cdx-chores rename batch ./photos \
@@ -40,14 +36,9 @@ cdx-chores rename batch ./photos \
   --dry-run
 ```
 
-Rename templates use brace placeholders. Representative families include
-`{prefix}`, `{stem}`, `{uid}`, date and timestamp variants, and parameterized
-`{serial...}` placeholders. Placeholder values are resolved for each rename
-candidate.
+Rename templates use brace placeholders. Representative families include `{prefix}`, `{stem}`, `{uid}`, date and timestamp variants, and parameterized `{serial...}` placeholders. Placeholder values are resolved for each rename candidate.
 
-Malformed, empty, and unknown placeholders are errors. Serial placeholders
-also have their own validation and precedence rules. Use at most one
-`{serial...}` placeholder in a template.
+Malformed, empty, and unknown placeholders are errors. Serial placeholders also have their own validation and precedence rules. Use at most one `{serial...}` placeholder in a template.
 
 For the complete token, serial, timestamp, and filename-safety contracts, see:
 
@@ -57,8 +48,7 @@ For the complete token, serial, timestamp, and filename-safety contracts, see:
 
 ## Rename Candidate Regular Expressions
 
-Use rename regular-expression filters when the value should select candidates,
-not generate names:
+Use rename regular-expression filters when the value should select candidates, not generate names:
 
 ```bash
 cdx-chores rename batch ./photos \
@@ -67,18 +57,13 @@ cdx-chores rename batch ./photos \
   --dry-run
 ```
 
-`--match-regex` includes basenames that match. `--skip-regex` excludes
-basenames that match. A valid expression that does not match simply filters the
-candidate; an invalid expression is an error.
+`--match-regex` includes basenames that match. `--skip-regex` excludes basenames that match. A valid expression that does not match simply filters the candidate; an invalid expression is an error.
 
-Regular-expression syntax is JavaScript `RegExp` syntax. Quote expressions in
-the shell so characters such as `*`, `$`, parentheses, and backslashes reach
-the CLI unchanged.
+Regular-expression syntax is JavaScript `RegExp` syntax. Quote expressions in the shell so characters such as `*`, `$`, parentheses, and backslashes reach the CLI unchanged.
 
 ## Data Stack Input Globs
 
-Use a data stack input glob when directory discovery should select matching
-input files:
+Use a data stack input glob when directory discovery should select matching input files:
 
 ```bash
 cdx-chores data stack ./exports \
@@ -86,25 +71,17 @@ cdx-chores data stack ./exports \
   --output ./combined.csv
 ```
 
-The glob is tested against both the normalized path relative to each supplied
-directory and that path's basename. This allows basename-oriented values such
-as `*.csv` and path-oriented values such as `reports/*.csv`.
+The glob is tested against both the normalized path relative to each supplied directory and that path's basename. This allows basename-oriented values such as `*.csv` and path-oriented values such as `reports/*.csv`.
 
-`--pattern` filters only candidates expanded from directory sources. A file
-supplied explicitly is included directly and does not need to match the glob.
-A non-match is filtered rather than treated as an error. Recursion, depth,
-hidden-file, format, and schema rules remain part of the data stack contract.
+`--pattern` filters only candidates expanded from directory sources. A file supplied explicitly is included directly and does not need to match the glob. A non-match is filtered rather than treated as an error. Recursion, depth, hidden-file, format, and schema rules remain part of the data stack contract.
 
-Quote globs in the shell so the shell does not expand them before
-`cdx-chores` receives the value.
+Quote globs in the shell so the shell does not expand them before `cdx-chores` receives the value.
 
-For the complete discovery and stacking contract, see
-[Data Stack Usage](data-stack-usage.md).
+For the complete discovery and stacking contract, see [Data Stack Usage](data-stack-usage.md).
 
 ## Markdown PDF Profile Text Placeholders
 
-Markdown PDF Profiles use brace placeholders in text-bearing cover, header,
-footer, and page-number format fields:
+Markdown PDF Profiles use brace placeholders in text-bearing cover, header, footer, and page-number format fields:
 
 ```yaml
 cover:
@@ -121,12 +98,9 @@ pageNumbers:
   format: "Page {page} of {pages}"
 ```
 
-Metadata placeholders resolve after CLI metadata, Markdown frontmatter,
-Profile metadata, and derived defaults are merged. Missing or unknown metadata
-becomes empty text.
+Metadata placeholders resolve after CLI metadata, Markdown frontmatter, Profile metadata, and derived defaults are merged. Missing or unknown metadata becomes empty text.
 
-Page-number and repeating-content text also reserves four exact,
-case-sensitive terms:
+Page-number and repeating-content text also reserves four exact, case-sensitive terms:
 
 | Placeholder  | Meaning                                         |
 | ------------ | ----------------------------------------------- |
@@ -135,18 +109,13 @@ case-sensitive terms:
 | `{pdfPage}`  | one-based physical position in the rendered PDF |
 | `{pdfPages}` | physical page count of the rendered PDF         |
 
-Malformed brace text remains literal. There is currently no literal-brace
-escape syntax or namespaced placeholder form. These placeholders apply only to
-supported text values; CSS and other style fields are not placeholder text.
+Malformed brace text remains literal. There is currently no literal-brace escape syntax or namespaced placeholder form. These placeholders apply only to supported text values; CSS and other style fields are not placeholder text.
 
-For metadata precedence, page roles, numbering domains, diagnostics, and
-renderer requirements, see [Markdown PDF Usage](markdown-pdf-usage.md).
+For metadata precedence, page roles, numbering domains, diagnostics, and renderer requirements, see [Markdown PDF Usage](markdown-pdf-usage.md).
 
 ## Pandoc Markdown PDF Templates
 
-A Pandoc HTML template defines whole-document HTML rather than substituting
-Profile text or generating filenames. It uses Pandoc's `$...$` template
-language:
+A Pandoc HTML template defines whole-document HTML rather than substituting Profile text or generating filenames. It uses Pandoc's `$...$` template language:
 
 ```html
 <main class="document-body">
@@ -156,21 +125,13 @@ language:
 </main>
 ```
 
-Pandoc defines variable, conditional, loop, and escaping behavior. The
-Markdown PDF pipeline additionally requires compatible structural hooks.
-Managed templates contain exactly one live `$body$` insertion point inside one
-`.document-body` element so body-scoped rendering behavior can be applied
-safely.
+Pandoc defines variable, conditional, loop, and escaping behavior. The Markdown PDF pipeline additionally requires compatible structural hooks. Managed templates contain exactly one live `$body$` insertion point inside one `.document-body` element so body-scoped rendering behavior can be applied safely.
 
-Use `md pdf-template init` for a deterministic editable template snapshot or
-`md pdf-template codex` for a bounded generated template bundle. For the
-managed hook, asset, stylesheet, and Profile-compatibility contract, see
-[Markdown PDF Codex Template Helper](markdown-pdf-codex-template-helper.md).
+Use `md pdf-template init` for a deterministic editable template snapshot or `md pdf-template codex` for a bounded generated template bundle. For the managed hook, asset, stylesheet, and Profile-compatibility contract, see [Markdown PDF Codex Template Helper](markdown-pdf-codex-template-helper.md).
 
 ## Quoting And Failure Boundaries
 
-Prefer single quotes for shell values when the value should reach the CLI
-literally:
+Prefer single quotes for shell values when the value should reach the CLI literally:
 
 ```bash
 cdx-chores rename file ./IMG_1024.JPG --pattern '{date}-{stem}' --dry-run
@@ -178,8 +139,7 @@ cdx-chores rename batch ./photos --match-regex '^IMG_\d+$' --dry-run
 cdx-chores data stack ./exports --pattern '**/*.csv' --output ./combined.csv
 ```
 
-Quote Profile text in YAML, especially when it includes braces, punctuation,
-leading special characters, or values that YAML could interpret:
+Quote Profile text in YAML, especially when it includes braces, punctuation, leading special characters, or values that YAML could interpret:
 
 ```yaml
 header:
@@ -198,5 +158,4 @@ The failure boundary depends on the language:
 | PDF Profile placeholder   | malformed braces stay literal                      | missing metadata becomes empty text    |
 | Pandoc HTML template      | Pandoc and Markdown PDF compatibility checks apply | Pandoc-defined                         |
 
-Do not transfer escaping, missing-value, or failure assumptions from one row to
-another. Follow the linked feature guide when exact behavior matters.
+Do not transfer escaping, missing-value, or failure assumptions from one row to another. Follow the linked feature guide when exact behavior matters.
