@@ -1,5 +1,5 @@
 ---
-title: "Video Frame Extraction and Sequence Export"
+title: "Video Frame Selection, Frame Sets, and Sequence Export"
 created-date: 2026-09-30
 status: draft
 agent: codex
@@ -7,33 +7,36 @@ agent: codex
 
 ## Goal, Scope, and Settled Direction
 
-Research `cdx-chores video frames` for extracting one source frame or exporting a sequence of still images. The feature should support direct CLI invocation and a guided Interactive flow, with PNG, JPG, and WebP output.
+Research `cdx-chores video frames` for extracting one source frame, a fixed frame set, or a whole-video sequence of still images. The feature should support direct CLI invocation and a guided Interactive flow, with PNG, JPG, and WebP output.
 
 This is a design draft. Repository observations below describe existing code; new command examples, prompts, defaults, and algorithms are proposals unless identified as agreed direction. No frame-extraction implementation, terminal prototype, encoder smoke test, or visual validation has been completed for this feature.
 
 Agreed direction from the design discussion:
 
-| Area                   | Direction                                                                                  |
-| ---------------------- | ------------------------------------------------------------------------------------------ |
-| Command                | `video frames`; “frame picker” names the Interactive selection control                     |
-| Single-frame selectors | Explicit `--first-frame` and `--last-frame`, plus custom selection                         |
-| Custom selection       | Fixed wave timeline, source frame-number input, and timestamp input                        |
-| Wave appearance        | Mirrored bars; highlighted tallest selected bar; inward-pointing triangles above and below |
-| Terminal adaptation    | Full wave, compact mirrored wave, and direct-input fallback                                |
-| Sequence               | Whole video, sampled by FPS or interval; interval has guided suggestions and custom input  |
-| Outputs                | Default beside the source, or custom `--output`; selection determines file versus folder   |
-| Interval language      | Positive integer plus lowercase `ms`, `s`, or `m`, matching existing duration syntax       |
-| Review                 | Text review of resolved frame identity or sequence settings; export after acceptance       |
-| Dependencies           | FFmpeg and FFprobe required for every `frames` selection method; doctor checks both        |
-| Counts and indexing    | Metadata first; streaming sequential baseline; bounded session reuse; cancellable scans    |
-| Sampling policy        | Preserve requested cadence; disclose repeated source-frame selections                      |
-| Large sources          | No blanket size cap; bounded records/cache, resource diagnostics, and phase progress       |
-| Scaling                | Preserve aspect ratio; presets and custom scale within `0.1–1`                             |
-| Evidence               | Reproducible public synthetic cases and private local visual review                        |
+| Area                   | Direction                                                                                             |
+| ---------------------- | ----------------------------------------------------------------------------------------------------- |
+| Command                | `video frames`; “frame picker” names the Interactive selection control                                |
+| Single-frame selectors | Explicit `--first-frame` and `--last-frame`, plus custom selection                                    |
+| Frame-set picker       | Fixed first + last or first + middle + last presets; resolve all selected identities before review    |
+| Custom selection       | Fixed wave timeline, source frame-number input, and timestamp input                                   |
+| Wave appearance        | Mirrored bars; highlighted tallest selected bar; inward-pointing triangles above and below            |
+| Terminal adaptation    | Fit full/compact mirrored layouts by usable rows/columns; preserve selection in direct-input fallback |
+| Sequence               | Whole video, sampled by FPS or interval; interval has guided suggestions and custom input             |
+| Outputs                | Default beside the source, or custom `--output`; selection determines file versus folder              |
+| Interval language      | Positive integer plus lowercase `ms`, `s`, or `m`, matching existing duration syntax                  |
+| Review                 | Text review of resolved frame identity or sequence settings; export after acceptance                  |
+| Dependencies           | FFmpeg and FFprobe required for every `frames` selection method; doctor checks both                   |
+| Counts and indexing    | Metadata first; streaming sequential baseline; bounded session reuse; cancellable scans               |
+| Sampling policy        | Preserve requested cadence; disclose repeated source-frame selections                                 |
+| Large sources          | No blanket size cap; bounded records/cache, resource diagnostics, and phase progress                  |
+| Quality                | `low` / `medium` / `high` / `full`, default `full`; PNG supports only `full`                          |
+| Color                  | Source-faithful conversion; no look selector or creative color adjustments                            |
+| Scaling                | Preserve displayed aspect ratio; presets and custom scale within `0.1–1`                              |
+| Evidence               | Reproducible public synthetic cases and private local visual review                                   |
 
-Filename direction is serial-based, using the existing rename-style `{stem}`, `{prefix}`, and `{serial}` placeholders. Sequence defaults start at 1 with minimum width 6. FPS input uses positive integers or ordinary decimals; users do not enter fraction expressions. These input/naming choices are agreed direction, while extraction and sampling behavior still need verification. A timestamp index sidecar is outside this initial scope.
+Naming uses a normalized source `{stem}`, named `{selection}` labels for single frames/frame sets, optional verified source `{frame}` numbers, and export `{serial...}` values for sequences. Sequence templates require one serial; the default start is 1 and minimum width is 6. FPS input uses positive integers or ordinary decimals; users do not enter fraction expressions. These input/naming choices are agreed direction, while extraction and sampling behavior still need verification. A timestamp index sidecar is outside this initial scope.
 
-Custom sequence ranges, dual-boundary timeline controls, evenly spaced image counts, and a separate “every source frame” mode are outside this initial scope. Image scaling applies equally to single-frame and sequence exports. Seek/checkpoint/tail optimizations are excluded from this scope; sequential resolution and bounded session reuse are the chosen approach.
+Custom sequence ranges, dual-boundary timeline controls, arbitrary image-count sampling, and a separate “every source frame” mode are outside this initial scope. The two fixed frame-set presets are included; format, quality, color, and scale apply uniformly within every export. Seek/checkpoint/tail optimizations are excluded from this scope; sequential resolution and bounded session reuse are the chosen approach.
 
 The Interactive flow uses a position picker and text review. Image thumbnails, terminal image protocols, external viewer launches, and preview temporary sessions are outside this CLI scope. A web interface with visual scrubbing is a possible separate future direction. Playback editing, scene detection, and cropping are also excluded.
 
@@ -56,13 +59,15 @@ The following baseline was inspected on 2026-09-30:
 
 [Video resize](../guides/video-resize-usage-and-ux.md) already has a scale-first model. Its action rounds video dimensions to even values; that is not evidence that image exports require the same rounding. Existing GIF numeric fallback behavior also should not determine validation for the proposed command.
 
+The [GIF look configuration](../../src/cli/video-gif.ts) separates `faithful` (`format=rgba`) from `vibrant` saturation, contrast, brightness, and channel adjustments. Its quality path also generates and applies a palette with dithering. Frames should reuse the source-faithful intent, while still-image encoding has its own conversion requirements. Existing [GIF action tests](../../test/video/actions/gif.app.test.ts) verify arguments and lifecycle through a fake tool; they do not establish pixel/color fidelity for frame export.
+
 [Filename languages](../guides/patterns-placeholders-and-templates.md) have feature-specific semantics. Reusing their UI does not imply that every rename placeholder or ordering option is meaningful for extracted frames.
 
 ## Command Surface and Interactive Flow
 
 ### Direct CLI Proposal
 
-The command name `frames`, single-frame selectors `--first-frame`, `--last-frame`, `--frame-number`, and `--at`, and reuse of `-o, --output` are agreed naming direction. Filename controls use `--pattern`, `--prefix`, `--serial-start`, and `--serial-width`, following rename terminology. Their supported grammar and semantics are specified below; encoder-specific quality controls remain open. These are design contracts for an unimplemented command.
+Use `frames` with single-frame selectors `--first-frame`, `--last-frame`, `--frame-number`, and `--at`, fixed presets through `--frame-set`, or FPS/interval sampling. Reuse `-o, --output`. Multi-image naming uses `--pattern`; sequence serial controls follow rename terminology. Interactive single-image naming resolves a final file path for the same export action. Quality uses `--quality low|medium|high|full`, defaults to `full`, and permits only `full` for PNG; encoder parameter mappings still require verification. These are design contracts for an unimplemented command.
 
 | Option                    | Proposed role                                                                                |
 | ------------------------- | -------------------------------------------------------------------------------------------- |
@@ -71,18 +76,19 @@ The command name `frames`, single-frame selectors `--first-frame`, `--last-frame
 | `--last-frame`            | Final decoded frame of that stream                                                           |
 | `--frame-number <number>` | Positive integer source-frame number, starting at 1                                          |
 | `--at <timestamp>`        | Video-relative position in `HH:MM:SS[.mmm]` form; zero is valid                              |
+| `--frame-set <preset>`    | Fixed `first-last` or `first-middle-last` selection                                          |
 | `--fps <rate>`            | Whole-video sequence sampled at a positive integer or decimal images-per-second rate         |
 | `--interval <duration>`   | Whole-video sequence sampled at a positive integer duration with lowercase `ms`, `s`, or `m` |
 | `--format <format>`       | PNG, JPG, or WebP                                                                            |
+| `--quality <preset>`      | `low`, `medium`, `high`, or `full` (default); PNG accepts only `full`                        |
 | `--scale <factor>`        | Finite factor within `0.1–1`, inclusive                                                      |
-| `-o, --output <path>`     | Final image file for single-frame selection; output directory for FPS or interval sequence   |
-| `--pattern <template>`    | Sequence filename template using the supported rename-style subset below                     |
-| `--prefix <value>`        | Optional value for `{prefix}`, following rename terminology                                  |
-| `--serial-start <number>` | Non-negative integer export serial start, default 1                                          |
-| `--serial-width <digits>` | Positive integer minimum digit width, default 6                                              |
+| `-o, --output <path>`     | Final image file for one frame; output folder for a frame set or sequence                    |
+| `--pattern <template>`    | Frame-set or sequence basename template using the mode-specific placeholders below           |
+| `--serial-start <number>` | Sequence export serial start: non-negative integer, default 1                                |
+| `--serial-width <digits>` | Sequence minimum digit width: positive integer, fallback 6                                   |
 | `--overwrite`             | Explicit permission to replace conflicting output files                                      |
 
-Require exactly one selection method in direct CLI use. Single-frame selectors are mutually exclusive, FPS and interval are mutually exclusive, and a single-frame selector cannot be combined with a sequence method. Validate explicit invalid values instead of silently substituting defaults. Missing selection should explain the supported choices without starting a picker.
+Require exactly one selection method: one single-frame selector, one `--frame-set` preset, or one FPS/interval method. Presets cannot be combined with individual selectors or sampling options; combining `--first-frame` and `--last-frame` is still invalid. Validate explicit invalid values instead of silently substituting defaults. Missing selection should explain the supported choices without starting a picker. Direct single-frame CLI uses `--output` for an explicit filename and rejects naming flags; `--serial-start`/`--serial-width` apply only to sequences. Interactive templates for one image are the explicit convenience described below.
 
 Illustrative proposed usage; these commands are not implemented:
 
@@ -91,10 +97,16 @@ cdx-chores video frames -i ./clip.mp4 --first-frame
 cdx-chores video frames -i ./clip.mp4 --last-frame
 cdx-chores video frames -i ./clip.mp4 --frame-number 25
 cdx-chores video frames -i ./clip.mp4 --at 00:00:12.500
+cdx-chores video frames -i ./clip.mp4 --frame-set first-last
+cdx-chores video frames -i ./clip.mp4 --frame-set first-middle-last --output ./clip-frames/
+cdx-chores video frames -i ./clip.mp4 --frame-set first-last --pattern '{stem}-{selection}-frame'
 cdx-chores video frames -i ./clip.mp4 --fps 24
 cdx-chores video frames -i ./clip.mp4 --fps 23.976
 cdx-chores video frames -i ./clip.mp4 --interval 2s
 cdx-chores video frames -i ./clip.mp4 --first-frame --output ./cover.png
+cdx-chores video frames -i ./clip.mp4 --first-frame --format png --quality full
+cdx-chores video frames -i ./clip.mp4 --first-frame --format jpg --quality high --scale 0.5
+cdx-chores video frames -i ./clip.mp4 --fps 24 --format webp --quality full
 cdx-chores video frames -i ./clip.mp4 --fps 24 --output ./clip-frames/
 cdx-chores video frames -i ./clip.mp4 --fps 24 --pattern '{stem}-{serial}' --serial-width 6
 ```
@@ -104,26 +116,25 @@ cdx-chores video frames -i ./clip.mp4 --fps 24 --pattern '{stem}-{serial}' --ser
 ```text
 Video -> Frames -> Select source video
   |
-  +-- Single frame
-  |     +-- First frame
-  |     +-- Last frame
-  |     `-- Custom: wave / frame number / timestamp
-  |           |
-  |     Resolve exact source frame
+  +-- One frame
+  |   First / Last / Custom: wave, frame number, or timestamp
+  |   Resolve one exact source identity
+  |
+  +-- Frame set
+  |   First + last / First + middle + last
+  |   Resolve every role; show repeated selections if present
   |
   `-- Sequence: whole video
-        +-- FPS: presets / custom rate
-        `-- Interval: suggestions / custom duration
-              |
-        Show estimated count and repetition notice
-  |
-  `-- Format -> Scale -> Default/custom destination -> Applicable naming
-        `-- Text review -> Export / Change choices / Cancel
+      FPS presets/custom / Interval suggestions/custom
+      Show estimated count and repetition notice
+
+Format -> Quality (JPG/WebP) -> Scale -> Destination -> Applicable naming
+Text review -> Export / Change choices / Cancel
 ```
 
-All single-frame methods resolve exact identity before final review. The wave updates a candidate position; Enter selects it and starts resolution. Show the requested position, resolved frame number, and actual frame start when reliable. Sequence review shows cadence, estimated image count, dimensions, destination, and naming examples.
+Single frames and frame sets resolve exact identities before final review. The wave updates a candidate position; Enter selects it and starts resolution. Show the requested position, resolved frame number, and actual frame start when reliable. Review includes format, quality, dimensions, destination, and concrete filenames. Frame-set review lists each role and its resolved identity; sequence review also shows cadence and estimated count.
 
-Changing format, scale, destination, naming, or terminal layout retains the source and selection. Changing selection resolves the new request; changing the source clears its cached identities and timing validation. No image is generated merely to review a selection. Cancellation before export creates no final output; cancellation during export follows the partial-output rules below.
+Changing format, quality, scale, destination, naming, or terminal layout retains the source and selection. Changing selection resolves the new request; changing the source clears its cached identities and timing validation. No image is generated merely to review a selection. Cancellation before export creates no final output; cancellation during export follows the partial-output rules below.
 
 ## Single-Frame Selection
 
@@ -143,7 +154,7 @@ Custom selection must offer all three entry methods:
 
 ### Timestamp Mapping, Origin, and Stream
 
-Select the frame visible at the requested time: the most recent source frame with a presentation start at or before the target. At an exact next-frame start, select that next frame. Between frame starts, retain the earlier frame; do not jump forward to a nearest future frame. The same mapping applies to FPS and interval targets; their cadence and repetition rules are specified below.
+Select the frame visible at the requested time: the most recent source frame with a presentation start at or before the target. At an exact next-frame start, select that next frame. Between frame starts, retain the earlier frame; do not jump forward to a nearest future frame. The same mapping applies to the frame-set midpoint and FPS/interval targets; their rules are specified below.
 
 ```text
 Frame 1 starts at 00:00:00.000
@@ -156,7 +167,7 @@ Selected: Frame 2 — actual position 00:00:00.040
 
 The first displayed source frame defines video-relative time zero. Subtract its presentation start from source timestamps for user-facing positions; do not use an unrelated audio/container start as the origin. Show requested position, resolved source frame number, and actual frame start in text review when they differ. Preserve that frame identity for final output. Do not derive exact identity from nominal FPS, including for variable-frame-rate sources.
 
-Prefer the default eligible video stream; otherwise choose the first eligible stream by stream index. Exclude attached pictures, thumbnails, and cover images. If multiple eligible streams are marked default, use the lowest stream index to keep selection deterministic. All single-frame and sequence operations use that same chosen stream for frame numbering, timing, dimensions, and extraction. Show the chosen stream in review when multiple eligible video streams exist. A manual stream-selection control is outside the initial scope.
+Prefer the default eligible video stream; otherwise choose the first eligible stream by stream index. Exclude attached pictures, thumbnails, and cover images. If multiple eligible streams are marked default, use the lowest stream index to keep selection deterministic. All single-frame, frame-set, and sequence operations use that same chosen stream for frame numbering, timing, dimensions, and extraction. Show the chosen stream in review when multiple eligible video streams exist. A manual stream-selection control is outside the initial scope.
 
 Validate positions against the selected stream's known end: an explicit timestamp at or after that end is out of range, and `--last-frame` selects the actual final frame without an EOF timestamp guess. If timing/bounds cannot be established reliably, surface that limitation rather than silently clamping or manufacturing an exact mapping. Missing/ambiguous/non-monotonic presentation timing and buffered final frames require decoder verification; the design rules above are not runtime evidence.
 
@@ -164,7 +175,28 @@ Display an exact numeric frame upper bound only when verified. Otherwise say the
 
 The exported image must represent the resolved source frame identified in text review. Selection identity survives format, scale, destination, and layout changes. If frame-number selection is valid but presentation timing is unavailable, show the verified frame number and say the actual time is unavailable; do not manufacture a timestamp.
 
+## Fixed Frame Sets
+
+The frame-set picker offers two presets, also available through `--frame-set <preset>`:
+
+| Preset              | Ordered positions   | Image count |
+| ------------------- | ------------------- | ----------- |
+| `first-last`        | First, last         | 2           |
+| `first-middle-last` | First, middle, last | 3           |
+
+This is a preset selector, not an editable range or wave picker. Values must be one of these two names; a missing/invalid argument fails validation. Custom position lists and arbitrary image counts remain outside scope.
+
+First and last use the actual decoded endpoint frames. Middle targets exactly half the reliable video-relative duration `D / 2`, using checked timestamp/time-base arithmetic and the existing frame-at-time rule. Its selected frame may start earlier than the midpoint; review shows the target and actual start. Middle is defined by duration, not half the source-frame count.
+
+Resolve every role before review or final writes. First + last requires clean EOF and buffered-frame handling, but does not require reliable presentation timing. First + middle + last additionally requires validated strictly increasing starts and a reliable end. If those cannot be established, fail the whole preset and offer first + last or custom single selection; do not silently export a reduced set.
+
+Retain the requested two or three outputs when roles select the same source frame, including a one-frame video. Assign distinct selection-label names and disclose the repeated identities. All outputs share the selected format, quality, and scale; later encoding/write failure uses the common partial-output rules.
+
+Endpoint resolution scans through EOF. If a reliable end is already available, retain the midpoint candidate during that scan. Otherwise establish the end first, then resolve the midpoint in another forward pass using the verified ordering. Revalidate any earlier duration against the scan's reliable end; if it changes, resolve the new midpoint before review. Reuse only verified results for an unchanged source. Progress and cancellation apply to every pass; no full frame table or per-image process is needed.
+
 ## Wave Picker and Adaptive Terminal Layout
+
+The layout selection, glyph fallback, coarse movement, and controls below are settled direction. Renderer geometry and terminal behavior require the prototype verification specified later; the sketches are not fixed screen layouts.
 
 ### Fixed Timeline and Selection
 
@@ -189,29 +221,57 @@ Pick a frame · Duration 01:00.000
 
 00:00           00:30           01:00
 Position: 00:30.000
-Timeline is a coarse overview. Use frame input for exact selection.
+Positions: 9 | Step: ~7.5s
+Timeline is a coarse overview. Use frame/time input for precision.
+Left/Right Move   F Frame   T Time
+A ASCII   Enter Select   Esc Back
 ```
 
-**Sketch only:** This illustrates the visual idea, not a required rendering. Final spacing, glyphs, bar counts, and heights should be determined through terminal prototyping.
+**Sketch only:** This illustrates the visual idea, not a required rendering. Prototype the exact spacing, bar counts, heights, and wrapping within the settled fit/selection rules below.
 
-Use the same thin stroke for selected and neighboring bars. Propose an orange/amber accent for the selected bar and triangles, and muted neighboring bars. The triangles and selection label retain position information without color. Follow [CLI output and color](../guides/cli-output-and-color.md) for styling controls and provide plain-character alternatives if the chosen glyphs cannot be rendered reliably.
+Use the same thin stroke for selected and neighboring bars. An orange/amber accent highlights the selected bar and triangles, with muted neighboring bars; markers and labels retain selection information without color. Follow [CLI output and color](../guides/cli-output-and-color.md): global color settings remove styling without changing selection, controls, wording, or layout behavior.
+
+### Glyphs and Fallback
+
+Prefer the Unicode drawing `▼ │ ▲`. The wave's `A` control toggles the drawing to ASCII `v | ^` and back, replacing corresponding markers/bars while preserving geometry and exact selection. Keep the glyph choice for the current Interactive frames flow across redraws, input-editor round trips, and full/compact layout changes. Show `A ASCII` when Unicode is active and `A Unicode` when ASCII is active.
+
+Automatic font/glyph-support detection is outside this scope. The explicit toggle provides a predictable fallback; disabling color does not switch glyphs. Both drawings use the same thin bars and preserve their mirrored halves. Direct-input layouts have no wave or glyph-toggle control.
 
 ### Controls and Precision Notice
 
-Proposed controls are Left/Right to move one visible division, `F` for source frame input, `T` for timestamp input, Enter to select and resolve, and Escape to return. Home/End and previous/next source-frame refinement are candidates for a later prototype decision, not additional selection modes.
+| Control      | Behavior while the wave is active                                           |
+| ------------ | --------------------------------------------------------------------------- |
+| Left / Right | Move to the preceding/following visible timeline position in that direction |
+| `F`          | Open source frame-number input                                              |
+| `T`          | Open timestamp input                                                        |
+| `A`          | Toggle Unicode/ASCII wave glyphs                                            |
+| Enter        | Select the current candidate and resolve its source-frame identity          |
+| Escape       | Return to the selection choices without starting an export                  |
 
-Show visible position count and approximate seconds per coarse step when duration is known. Label an unresolved wave position as a candidate; arrow movement does not claim an exact source frame. Directly entering a frame can place it between displayed positions: after resolution, highlight the nearest bar while retaining the exact frame and actual timestamp in the label. Subsequent coarse movement intentionally changes that selection. Triangles are indicators, not Up/Down controls.
+Accept either letter case for `F`, `T`, and `A`. Bind these controls only while the wave is active. Frame/time editors own their input and cursor keys; letters are entered as text there. Enter submits the editor's selector through the normal resolution flow, and Escape cancels the editor and returns to the wave with the previous selection and glyph choice intact. Suspend wave handlers while an editor or resolution operation owns input. Resolution cancellation follows the existing scan rules. Whole-flow interruption follows normal cancellation and terminal restoration.
 
-The leftmost wave position resolves the first source frame; the rightmost resolves the final source frame using last-frame semantics and shows its actual start. A duration label at the right edge does not make an EOF timestamp valid for explicit `--at` input.
+Skip Home/End, modified-key acceleration, and previous/next source-frame refinement in this scope. First/last remain dedicated selection choices, and frame/time input supplies precision. The triangles are indicators rather than Up/Down controls.
+
+For a known positive duration `D` and `N` visible positions, positions are `k × D / (N − 1)` for `k = 0 … N − 1`. A usable wave has at least three positions: both endpoints and an interior position. Show the position count and approximate division time `D / (N − 1)`; 60 seconds with 21 positions gives approximately three seconds per division.
+
+Left/Right chooses the nearest visible position strictly before/after the current requested position. At an endpoint, movement further outward leaves the selection unchanged; it never wraps. An exact frame/time input can lie between visible positions: display the nearest indicator while retaining the actual request or resolved identity. A subsequent arrow intentionally replaces that selection with the next coarse position in its requested direction.
+
+Label unresolved positions as candidates; arrow movement does not establish an exact frame number. Show resolved frame identity and actual start when available. The leftmost wave position selects the first source frame; the rightmost uses last-frame semantics and shows the final frame's actual start after resolution. A duration label at the right edge does not make an EOF timestamp valid for explicit `--at` input. Use the endpoint selection role when navigating rather than turning the right-edge marker into an explicit EOF timestamp. If a resolved frame number has no reliable time, retain that identity and use direct input instead of inventing a wave position.
 
 ### Adaptive Layout and Fallback
 
-| Space/capability                     | Proposed presentation                                        |
-| ------------------------------------ | ------------------------------------------------------------ |
-| Comfortable usable columns and rows  | Full mirrored wave and labels                                |
-| Limited width or height              | Fewer bars/height levels; compact wave still has both halves |
-| Insufficient space for a useful wave | Text selection through frame number or timestamp             |
-| No interactive terminal              | Direct CLI options; no attempted visual prompt               |
+Measure usable columns and rows on the stream that renders the picker. Reserve space for source/duration labels, selection details, controls, notices, and the precision warning before sizing the wave. Count actual display widths and wrapped rows; character count alone does not establish fit. Keep all essential instructions visible.
+
+Try the full mirrored layout, then a compact mirrored layout with fewer bars/height levels, then direct frame/time input. A wave candidate must fit both dimensions, both markers/halves, and at least three visible positions. This fit rule replaces guessed fixed terminal-size breakpoints.
+
+| Condition                                                                                                                 | Presentation                                                                   |
+| ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Full layout and reserved content fit                                                                                      | Full mirrored wave                                                             |
+| Full fails, compact layout and reserved content fit                                                                       | Compact mirrored wave                                                          |
+| Neither wave fits                                                                                                         | Direct frame/time input with selection information and range/precision notices |
+| Usable dimensions are unavailable, simple-prompt mode is selected, or raw input is unsupported in an Interactive terminal | Direct frame/time input using existing simple prompts                          |
+| Duration is unavailable/unusable                                                                                          | Direct input; timestamp selection still requires reliable timing               |
+| No interactive terminal                                                                                                   | Direct CLI options; no attempted visual prompt                                 |
 
 Compact sketch:
 
@@ -225,14 +285,18 @@ Compact sketch:
         ▲
 
 Position: 00:30.000
-F Frame   T Time   Enter Select
+Positions: 7 | Step: ~10s
+Coarse timeline; use frame/time input for precision.
+Left/Right Move
+F Frame   T Time   A ASCII
+Enter Select   Esc Back
 ```
 
-**Sketch only:** This compact version illustrates the same idea; its dimensions and character arrangement are not a fixed layout.
+**Sketch only:** This compact version illustrates the same idea; its dimensions and character arrangement are not a fixed layout. Instructions may wrap as long as the complete layout still fits.
 
-The intended mirrored shape and selection should remain clear at every size. A terminal prototype must verify glyph widths, wrapping, symmetry, and triangle alignment. Choose breakpoints from usable rows and columns, accounting for controls and notices. Do not fix thresholds based on these sketches alone.
+Resize changes presentation only: preserve the requested selector and any resolved identity, recalculate visible positions/step information, and project the same selection onto its nearest indicator. First/last selection roles stay anchored to their endpoints; their labels show actual decoded starts. Custom frame identities use their reliable start times for projection. Do not round or replace the selection during projection. Restore a richer layout when it fits again. Direct-input fallback keeps the selection and glyph preference so returning to a wave retains both.
 
-Resize changes presentation only: preserve selected time/frame, recalculate positions, and restore a richer layout when space permits. Keep direct input available in every layout. Redraw on state/layout changes; no continuous animation or video decoding is needed merely to move the wave. Restore terminal input and cursor visibility on completion, cancellation, or failure.
+Redraw only on state/layout changes; arrow movement, glyph toggling, and resize do not start video decoding. If an editor is active during resize, retain its draft and input ownership; redraw the picker after control returns. Restore terminal input and cursor visibility on completion, cancellation, or failure.
 
 ## Whole-Video Sequence Export
 
@@ -326,7 +390,45 @@ Counts derived from metadata stay labeled estimates. Show chronological filename
 
 ## Image Formats and Output Scaling
 
-Propose PNG by default, with JPG and still WebP alternatives. JPG and WebP quality controls and their defaults need encoder verification; do not reuse a numeric quality scale across formats without checking its meaning. WebP here is a still image per selected frame, not an animated sequence file.
+PNG is the default format, with JPG and still WebP alternatives. Quality, source-faithful color, transparency, orientation, and dimension rules below are settled direction. Concrete encoder/filter configurations require the Image Output Verification work below. WebP here is one still image per cadence target, not an animated sequence file.
+
+### Encoder Availability
+
+Check the selected format's encoder and requested mode before final writes. Interactive choices explain unavailable formats/modes; direct CLI reports an actionable error. Both paths retain the requested format and quality rather than substituting another encoder behavior. In particular, WebP `full` requires a verified lossless mode. Dependency readiness in doctor does not establish encoder capability.
+
+### Quality Presets
+
+Use one `--quality <preset>` option with canonical values `low|medium|high|full`. The default is `full` for both single-frame and sequence export. Normalize letter case and surrounding whitespace following existing option-value parsing, then require one supported preset. Reject numeric/custom values, unknown names, empty values, and a missing argument to an explicit option rather than substituting a default. `lossless` describes encoding behavior; it is not a second CLI preset or alias.
+
+| Format | Accepted presets                | Meaning of `full`                                                          | Review label for `full`            |
+| ------ | ------------------------------- | -------------------------------------------------------------------------- | ---------------------------------- |
+| PNG    | `full` only                     | Lossless PNG encoding of the post-transform pixels                         | Full (lossless)                    |
+| JPG    | `low`, `medium`, `high`, `full` | Highest supported image quality for the selected JPEG encoder; still lossy | Full (highest JPEG quality; lossy) |
+| WebP   | `low`, `medium`, `high`, `full` | Lossless WebP encoding                                                     | Full (lossless)                    |
+
+For JPG/WebP, `low`, `medium`, and `high` select increasing lossy-quality presets with encoder-specific mappings. These are named tradeoffs, not percentages or a claim that two formats produce equivalent fidelity or file sizes. WebP `full` explicitly selects lossless encoding rather than merely increasing a lossy quality number; FFmpeg's WebP encoder supports both modes.[^webp-quality]
+
+PNG compression preserves the pixel values supplied to its encoder.[^png-lossless] Resizing, color conversion, or bit-depth conversion before encoding can change those values. `full` therefore describes image encoding, not preservation of the original video's encoded data or the absence of image transformations.
+
+Keep PNG compression separate from the user-facing quality preset. Use a fixed internal compression policy with FFmpeg's documented compression level 9 as the initial setting; this controls encoding effort/file size while retaining lossless pixels.[^png-compression] Verify its cost during encoder experiments. The initial scope exposes no compression-level, palette-reduction, or custom numeric-quality control; `full` remains PNG's sole quality value.
+
+Interactive mode skips the quality selector for PNG and shows `Quality: Full (lossless)` in final review. JPG/WebP offer all four choices, initially selecting `full`; review identifies lossless/lossy behavior. If a user switches to PNG from a lower-quality setting, resolve the quality to `full` and show that effective value; source-frame identity stays unchanged.
+
+Direct CLI accepts an explicit PNG `--quality full` or its omitted default. PNG with `low`, `medium`, or `high` fails validation before extraction/final writes with wording such as “PNG supports only --quality full; choose JPG or WebP for lower-quality presets.” Do not ignore an incompatible quality setting or silently change format.
+
+Quality applies uniformly to every output in a single-frame, frame-set, or sequence export. Scale remains independent: `--quality full --scale 0.5` exports a half-size image using that format's full-quality encoding behavior. Confirm that the selected encoder supports the requested behavior before final writes; unavailable lossless WebP must not fall back to lossy output.
+
+### Source-Faithful Color and Transparency
+
+Frame export preserves the source's intended appearance through necessary pixel/color conversion, without creative adjustments. Expose no color-look option or Interactive styling prompt. Do not add saturation, contrast, brightness, or channel boosts, and do not reuse GIF palette generation or palette dithering. `--quality` controls encoding fidelity and `--scale` controls size; neither selects a color style.
+
+Honor reliable source matrix, range, primaries, and transfer metadata during conversion; output color metadata must describe the encoded pixels. Selecting `format=rgba` alone specifies a pixel representation, not a complete color-management policy.[^image-color] When color fields are missing, use only the tested, documented interpretation of the supported FFmpeg conversion path and disclose inferred values in review/CLI diagnostics. Conflicting metadata or an unsupported conversion produces a specific error rather than a silent color reinterpretation. HDR-to-SDR tone mapping and archival preservation of source bit depth/profiles are outside this scope; a source that requires such a transformation fails clearly.
+
+Preserve non-opaque alpha in PNG and WebP using a supported encoder mode. JPG accepts opaque selected frames, including opaque frames stored in an alpha-capable format. If a selected frame has non-opaque pixels, report that JPG cannot preserve transparency and suggest PNG/WebP; do not choose a background or discard alpha. For a frame set or sequence, a later incompatible frame stops export and retains completed images under the partial-output contract.
+
+Source-faithful describes visual intent, not identical decoded values across formats. Lossy encoding, chroma sampling, scaling, and required representation conversion can change pixels; lossless `full` compares against the agreed post-transform reference.
+
+### Output Scaling
 
 Proposed size menu for a synthetic 1920 × 1080 source:
 
@@ -338,74 +440,120 @@ Proposed size menu for a synthetic 1920 × 1080 source:
 | Quarter            | 0.25               | 480 × 270                              |
 | Custom             | `0.1–1`, inclusive | Calculated and shown before acceptance |
 
-Use one factor for both dimensions, keeping the whole image and source aspect ratio subject to integer-pixel rounding. Propose nearest-pixel rounding and a minimum dimension of one pixel; odd/small sources and display orientation need verification. No automatic upscaling or cropping. Use one selected scale across a sequence, and show effective dimensions in final review. Image-output encoder requirements determine any additional dimension constraints.
+First establish the square-pixel displayed image: normalize a reliable source sample aspect ratio (pixel width versus height), then apply supported display rotation/reflection once. For normalization, retain decoded height and use `max(1, floor(decoded width × sample aspect ratio + 0.5))` for width. When the ratio is unspecified, assume `1:1` and disclose “Pixel aspect ratio unavailable; assuming square pixels” in review and direct CLI diagnostics. An explicitly invalid or conflicting ratio fails rather than receiving that fallback; interpret FFprobe's unspecified-value markers according to its documented representation. Support quarter-turn rotations and horizontal/vertical reflections; reject unsupported display transforms rather than changing framing. FFmpeg applies autorotation at the filtering stage, so verify transform order and avoid applying it twice.[^image-orientation] Saved pixels and review dimensions must agree; remove/reset orientation metadata that would repeat the transform in a viewer.
+
+Use one scale factor for both displayed dimensions, rounding each with `max(1, floor(dimension × scale + 0.5))`. Keep the entire image and displayed aspect ratio subject to this integer rounding. Do not round to even dimensions, crop, or pad silently; an unsupported encoder size receives an explicit error. For example, square-pixel 101 × 51 at half scale becomes 51 × 26. One selected scale applies throughout a frame set or sequence, with effective dimensions shown in review.
+
+`--scale 1` preserves displayed size. Pixel-aspect normalization can increase the stored width to represent that size correctly; this is separate from user upscaling, which remains unavailable. Verify aspect correction with FFmpeg's square-pixel scaling support.[^image-scaling] Validate computed dimensions against the applicable pixel guard and encoder constraints. A later frame-set or sequence image that cannot satisfy these rules stops with completed outputs retained.
 
 ## Output Destinations and Filename Templates
 
 ### Destinations
 
-Propose the following for a synthetic input `./videos/clip.mp4`:
+Defaults for a synthetic input `./videos/clip.mp4`:
 
-| Export    | Default output            | Custom choices                                         |
-| --------- | ------------------------- | ------------------------------------------------------ |
-| One frame | `./videos/clip-frame.png` | Explicit image file, or folder with generated filename |
-| Sequence  | `./videos/clip-frames/`   | Output folder plus filename template                   |
+| Mode      | Default destination       | Meaning of `--output` |
+| --------- | ------------------------- | --------------------- |
+| One frame | `./videos/clip-frame.png` | Final image file      |
+| Frame set | `./videos/clip-frames/`   | Output folder         |
+| Sequence  | `./videos/clip-frames/`   | Output folder         |
 
-Default paths are beside the source. Custom relative paths resolve from the invocation's working directory. Reuse default/custom choice and inline completion. One `--output` option follows the project's existing language: GIF/PDF exports use it for files, while Markdown template/project operations use it for directories. For `frames`, the explicit selection method determines its meaning:
+Defaults are beside the selected source; custom relative paths resolve from the invocation's working directory. Use one operation-aware `--output`, following existing GIF/PDF and template/project conventions. Selection determines file versus folder, including a one-image sequence. Reject an existing path of the wrong kind; do not infer kind from extension, trailing separator, or existence.
 
-| Selection                                                        | Meaning of `--output`                 | Interactive destination prompt |
-| ---------------------------------------------------------------- | ------------------------------------- | ------------------------------ |
-| `--first-frame`, `--last-frame`, or custom single-frame selector | Final image file                      | Output image file              |
-| `--fps` or `--interval`                                          | Directory containing generated images | Sequence output folder         |
+Treat source media as read-only. Reject any final target resolving to the source file, including detected symlink or hard-link aliases, regardless of `--overwrite`. Check before export and again before each final write, using canonical paths and available file identity rather than path strings alone. This applies to explicit single-image paths and every generated frame-set/sequence target.
 
-Do not infer destination kind from filename extension, a trailing separator, or whether the path already exists. A single-frame output that names an existing directory, or a sequence output that names an existing file, should receive a mode-specific validation error. For a new path, the selection method still determines whether to create a file or directory. Help and final review must state that kind explicitly; a separate `--output-dir` option is unnecessary for this scope.
+Interactive one-frame destination choices are default location, custom folder with a generated filename, or an explicit image file. The first two use the naming controls below; an explicit file skips templates and shows “Naming: Explicit filename.” Pass the resolved file path to the same single-image action. Changing its naming requires returning to a generated-filename choice. Frame sets and sequences choose default/custom folders and always review generated names.
 
-Treat source media as read-only. Reject any final target resolving to the source file, including detected symlink or hard-link aliases, regardless of `--overwrite`. Check before export and again before each final write, using canonical paths and available file identity rather than path strings alone. This applies to custom single-image paths and generated sequence targets.
+Create missing destinations and owned staging only after final export acceptance. Text selection/review creates no image folder. Cleanup must never remove source media, completed exports, or user-owned folders.
 
-Interactive single-frame selection may offer a custom folder as an explicit convenience: choose the directory, derive/review the image filename, and pass the resolved file path to the same export action. The directory choice does not change the direct CLI's single-image `--output` meaning. The single-frame default is `{stem}-frame` plus the selected format extension, such as `clip-frame.png`; source positions remain in text review.
+### Stem and Placeholder Meaning
 
-Create missing final destination directories only after final export acceptance. Selection and text review need no temporary image folder. If the encoder/write implementation needs internal scratch files, keep their ownership separate from the source and final targets; cleanup must never remove saved exports or user-owned folders.
+Resolve `{stem}` once from the selected input video's basename: remove its final extension, apply [rename's filename normalization](../../src/utils/slug.ts), then take the first 48 characters, matching the [rename planner](../../src/cli/rename/planner/index.ts). Normalization uses NFKD, removes non-ASCII characters, lowercases, converts non-alphanumeric runs to hyphens, trims edge hyphens, and falls back to `file` if empty. Use the source filename, without a generated title or output-folder substitution. Thus `My Trip.v2.mp4` resolves to `my-trip-v2` for every image from that source.
 
-### Filename Presets and Tokens
+| Placeholder   | Meaning                                                            |
+| ------------- | ------------------------------------------------------------------ |
+| `{stem}`      | Shared normalized source-video name                                |
+| `{selection}` | Requested selection label, independent of source frame number      |
+| `{frame}`     | Verified 1-based source-frame number, independent of export serial |
+| `{serial...}` | Sequence export order, independent of source frame number          |
 
-Use serial-based numbered, prefixed-numbered, and custom template presets. Default sequence naming is `{stem}-{serial}` with start 1 and minimum width 6, producing `clip-000001.png`. The format supplies the extension; the template generates a basename.
+`{selection}` is a named label, not a timestamp, percentage, or source frame number. For one frame it is `first`/`last` for the dedicated selectors and `custom` for wave/frame-number/timestamp selection, even if the result is an endpoint. Frame sets use their preset's `first`, `middle`, and `last` labels. FPS/interval sequences use serials for every output; they do not assign these labels. Review shows exact source frame numbers/times when available; optional `{frame}` also includes the verified frame number in a generated filename.
 
-| Token      | Proposed meaning                                                                             |
-| ---------- | -------------------------------------------------------------------------------------------- |
-| `{stem}`   | Input video's filename without extension                                                     |
-| `{prefix}` | Optional supplied prefix                                                                     |
-| `{serial}` | Chronological export order; configurable start, default 1; distinct from source frame number |
+`{frame}` is the actual presentation-order source ordinal: count displayed frames from the selected stream's beginning, with the first frame numbered 1. FPS multiplied by duration estimates a total; it cannot establish this identity. Timestamp/wave selections use the resolved frame's ordinal, and last-frame selection uses the final ordinal verified through clean EOF and buffered-frame handling.
 
-The initial filename language is limited to these existing placeholder families. Source frame numbers and timestamps remain available in review information. Chronological export order determines serials, including separate serials for repeated source-frame selections. Do not import rename's wall-clock naming, file modification/path ordering, or directory serial scope into video export.
+Single frames and frame sets reuse identities already resolved before review. Sequences resolve the ordinal incrementally for each sampled image under the shared streaming contract; naming adds no full-count pass. If identity cannot be verified, stop rather than substituting an FPS estimate, requested time, or export counter. `{frame}` renders an unpadded decimal such as `25`, accepts no parameters, and is unaffected by serial start/width settings.
 
-Reuse [rename's template interaction and serial terminology](../guides/rename-common-usage.md#pattern-and-template-usage): conditional prefix/start/width prompts, digit-count width input, and completion limited to the supported placeholder subset. Only ask serial questions when the template uses serials, and render concrete filename examples:
+### Naming Rules by Export Mode
+
+| Mode                       | Available placeholders             | Required naming token     | Default template           |
+| -------------------------- | ---------------------------------- | ------------------------- | -------------------------- |
+| Single frame (Interactive) | `{stem}`, `{selection}`, `{frame}` | None                      | `{stem}-frame`             |
+| Frame set                  | `{stem}`, `{selection}`, `{frame}` | `{selection}`             | `{stem}-{selection}-frame` |
+| Sequence                   | `{stem}`, `{serial...}`, `{frame}` | Exactly one `{serial...}` | `{stem}-{serial}`          |
+
+Every sequence template must contain exactly one `{serial...}` placeholder, including parameterized forms. This applies even when the cadence exports only one image; the output stays a sequence folder. Single-frame and frame-set templates reject serial placeholders, and their CLI modes reject serial flags. Frame sets require `{selection}` to distinguish their named images. Sequences reject `{selection}`. `{frame}` is optional in every generated-name mode and replaces neither requirement: two roles or cadence targets can resolve to the same source frame.
+
+These requirements are validated before export, with messages such as “Sequence template must contain exactly one {serial...} placeholder” or “{selection} is available only for single-frame and frame-set naming.” Missing tokens are errors; do not silently append a serial or label.
+
+Direct CLI `--pattern` configures frame sets or sequences. Direct single-image naming uses the final `--output` file path; Interactive generated-name templates resolve that same file path. An explicit image file bypasses template controls and its path is literal. Custom template grammar is shared across modes; permitted values and required tokens follow the table.
+
+For generated names, the template constructs a basename and the selected format appends its extension. Validate safe, unique names and filesystem length limits; do not silently alter names to avoid collisions. Reject unknown/malformed placeholders, path components, duplicate serials/parameters, and rename `order_*` modifiers. Source date/time tokens, serial ordering, and directory scope remain outside this filename language.
+
+Interactive mode offers default and custom templates appropriate to the mode. Follow [rename's template interaction](../guides/rename-common-usage.md#pattern-and-template-usage): completion includes only permitted tokens and serial prompts appear only for sequences. Templates may contain literal text. Show only applicable controls and display the resolved stem, effective template/settings, and concrete names before acceptance. Normalize rendered separators using rename's basename rules and show the actual result.
+
+### How Naming Works
+
+1. Check the template's allowed and required tokens for the selected export mode.
+2. Resolve the shared source stem, optional verified source frame number, and the per-image selection label or sequence serial.
+3. Render/normalize the basename and append the selected format's extension.
+4. Validate names and collisions in the chosen destination; Interactive mode reviews full filenames before acceptance. A sequence with an unknown final count continues checks per output.
+
+Source identity and export order are separate. For example, a custom single-frame pick of source frame 25 defaults to `clip-frame.png`; the second sampled image may come from source frame 49 and is named `clip-000002.png` with default serial settings. Serial values never stand in for source frame numbers. The optional token can expose both values, as these illustrative custom templates show:
 
 ```text
-Template: {stem}-{serial}
-Serial start: 1
-Serial minimum width: 6
+Single frame 25: {stem}-frame-{frame}
+  clip-frame-25.png
 
-clip-000001.png
-clip-000002.png
-clip-000003.png
+Frame-set middle resolving to frame 25: {stem}-{selection}-frame-{frame}
+  clip-middle-frame-25.png
+
+Second sampled image resolving to frame 49: {stem}-{serial}-frame-{frame}
+  clip-000002-frame-49.png
 ```
 
-Support rename's serial start/width forms within this limited filename language:
+The default templates below remain unchanged.
+
+```text
+Source: My Trip.v2.mp4
+Stem:   my-trip-v2
+
+One frame: {stem}-frame
+  my-trip-v2-frame.png
+
+Frame set: {stem}-{selection}-frame
+  my-trip-v2-first-frame.png
+  my-trip-v2-middle-frame.png
+  my-trip-v2-last-frame.png
+
+Sequence: {stem}-{serial}
+  my-trip-v2-000001.png
+  my-trip-v2-000002.png
+```
+
+### Sequence Serial Grammar
+
+Share rename's start/width syntax and parameter-order independence:
 
 | Form                    | Meaning without explicit flags |
 | ----------------------- | ------------------------------ |
 | `{serial}`              | Start 1, minimum width 6       |
-| `{serial_####}`         | Minimum width 4                |
+| `{serial_####}`         | Start 1, minimum width 4       |
 | `{serial_start_3}`      | Start 3, minimum width 6       |
 | `{serial_####_start_3}` | Start 3, minimum width 4       |
 
-Start and width parameters may appear in either order. Resolve each setting using explicit `--serial-start` / `--serial-width` flags first, then an embedded parameter, then the frames defaults of 1 / 6. Serial start accepts a non-negative, safely representable integer; minimum width accepts a positive, safely representable integer. Zero is a valid export serial start even though source frame numbers begin at 1. Keep rendered basenames within filesystem limits and detect unsafe serial increments before writing.
+Resolve each setting as explicit `--serial-start`/`--serial-width`, then an embedded parameter, then frames defaults of 1/6. Interactive effective values follow the same precedence; opening a prompt does not overwrite an embedded parameter. Width input is a digit count, such as `3`, rather than `###`. Start accepts a non-negative safe integer; width accepts a positive safe integer within basename limits. Zero is a valid export serial start while source frame numbers begin at 1.
 
-Allow at most one serial placeholder in a template, following rename's existing validation. Reject duplicate start/width parameters, unknown modifiers, and explicit `order_*` modifiers. Do not expose `--serial-order` or `--serial-scope`: export chronology is fixed, and rename's implicit path ordering must not influence extraction. These forms reuse formatting grammar, not rename's file ordering or directory scope.
-
-If a custom pattern contains no serial placeholder, `--serial-start` and `--serial-width` have no effect, matching rename. Interactive mode omits those prompts, and final review shows the actual rendered names. This does not relax duplicate-name validation for a sequence.
-
-Sequence presets include serials so repeated source frames still have distinct names. Custom templates must produce safe, unique basenames. Reject duplicate rendered names with a clear validation error suggesting serials rather than implicitly renaming outputs. Serial growth beyond the minimum width, unknown final counts, and rerun collisions still need verification.
+Serials follow sampling/export order, including separate serials for repeated source frames. Width is a minimum and grows with the current serial's digits; earlier filenames remain unchanged. Unlike [rename's known-batch padding](../../src/cli/rename/planner/serial.ts), streaming frames do not scan for a final count solely to calculate uniform padding. Detect unsafe serial increments and filename-length exhaustion before writing; do not import path/mtime ordering or directory scope.
 
 ### Review, Collisions, and Partial Output
 
@@ -415,35 +563,54 @@ Scope: Whole video
 Sampling: 24 FPS
 Images: Approximately 24
 Format: PNG
+Quality: Full (lossless)
 Scale: 0.5 — 960 × 540
 Folder: ./clip-frames/
 First name: clip-000001.png
 Last name: clip-000024.png (estimated)
 Overwrite: Disabled
 
-Export images / Change sampling / Change size / Change output / Change naming / Cancel
+Export images / Change sampling / Change format/quality / Change size / Change output / Change naming / Cancel
 ```
 
-Default overwrite is disabled. Validate template safety and uniqueness before export, check collisions for the known output set without decoding solely to discover its count, and enforce no-overwrite for each final target at write time. An unknown count can reveal a later collision; stop and report completed images rather than replacing it. A folder's existence alone is not permission to replace its contents.
+Default overwrite is disabled. Validate safe, unique names and check known targets before export without scanning solely to discover the final count. The publication operation below enforces collisions again at write time. A later collision stops the export and reports completed images; an existing folder does not grant overwrite permission.
 
 Explicit overwrite applies only to generated target files. Never clear an existing folder or delete unrelated/stale files. A rerun with fewer images can leave older files beyond the new serial range; disclose this when reusing a nonempty folder. Suggest a fresh output folder when the user wants a clean sequence. Filename serials restart from the configured start on each invocation; retry/resume is outside this scope.
 
-On failure or cancellation during export, report the output location and confirmed written count and retain completed images. Identify any known incomplete current file separately; it does not count as a completed image. Cleanup applies only to internal scratch files owned by the operation. The detailed process/write mechanism needs verification; no image-preview recovery session is part of this feature.
+On failure or cancellation, retain completed images and report their count/location. Identify an incomplete current file separately; it does not count as written. Cleanup removes only owned scratch after tool shutdown is confirmed.
+
+### Completed Writes and Publication
+
+```text
+Encode -> Complete staged image -> Publish final file -> Written count +1
+```
+
+Stage images in an owned private directory on the destination volume. Establish completion through the writer's successful close or FFmpeg's completed-file rename; FFmpeg's image muxer provides `atomic_writing` for the latter.[^image-write] Progress counters, file existence, or stable size alone do not establish completion.
+
+The initial staging limits are two image files and 256 MiB of encoded image data in total, including a file being written. Reserve a file slot before starting an image and enforce the byte limit during streamed writes. When capacity is full, apply backpressure while publishing/removing completed staged files. If one image exceeds the byte limit or capacity cannot be released safely, stop with a staging-limit error and retain published images. The writer must enforce these limits; an uncontrolled encoder-to-directory spool does not satisfy the contract. These are disk-staging limits, separate from source size and CLI/decoder memory.
+
+Publish completed images in selection order: one target for a single frame, preset role order for a frame set, or serial order for a sequence. Repeat source-alias and target-kind checks immediately before publication:
+
+- **No overwrite:** link the completed staged file to the final target where supported, following [template output's staging pattern](../../src/cli/markdown-pdf/template/init-service.ts). If hard links are unsupported, exclusively create the final file (`O_EXCL`) and stream-copy into it. A collision stops processing; it never triggers the fallback. An interrupted copy leaves a reported incomplete file.
+- **Explicit overwrite:** replace the generated target from its completed staging file. If safe replacement fails, stop; do not delete the existing target to make replacement succeed.
+- **Written count:** increment only after publication succeeds and any copy handle closes successfully. Scratch cleanup never reverses that count. This confirms ordinary file saving; it does not promise durability through a power failure.
+
+Exclusive creation must enforce the destination's no-overwrite contract. Record supported filesystem behavior, including case-insensitive names and network-filesystem limitations; fail where that protection cannot be provided.[^file-publication] Preserve the existing source-alias, folder ownership, and partial-output rules. Overall success also requires the specified EOF/end validation and tool closure.
 
 ## Technical Feasibility and Dependencies
 
 Repository review supports reusing the FFmpeg-backed command structure and small terminal helpers. It does not prove sequential resolution performance, multi-line picker behavior, or still-image encoder support.
 
-| Question               | Evidence to gather                                                                                              |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Metadata and indexing  | Verify sequential stop conditions, bounded session reuse, invalidation, cancellation, and scan/render cost      |
-| Stream and time origin | Verify default/first eligible stream selection, cover exclusion, and first-frame time-zero normalization        |
-| Timestamp selection    | Verify most recent frame at/before the target, exact next-frame boundaries, and reported actual position        |
-| Final frame            | Verify decoder EOF and buffered-frame handling instead of subtracting nominal frame duration                    |
-| FPS and interval       | Verify specified cadence, repeated selection disclosure, exact arithmetic, ordering, and end behavior           |
-| Image output           | Verify PNG/JPG/WebP availability, quality settings, odd sizes, orientation, and relevant pixel/color conversion |
-| Terminal prompt        | Verify key ownership, multi-line redraw, resize, fallbacks, and restoration using existing helpers              |
-| Doctor integration     | Verify independent executable checks, frames capability, Video states, remediation, and additive JSON fields    |
+| Question               | Evidence to gather                                                                                           |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Metadata and indexing  | Verify sequential stop conditions, bounded session reuse, invalidation, cancellation, and scan/render cost   |
+| Stream and time origin | Verify default/first eligible stream selection, cover exclusion, and first-frame time-zero normalization     |
+| Timestamp selection    | Verify most recent frame at/before the target, exact next-frame boundaries, and reported actual position     |
+| Final frame            | Verify decoder EOF and buffered-frame handling instead of subtracting nominal frame duration                 |
+| FPS and interval       | Verify specified cadence, repeated selection disclosure, exact arithmetic, ordering, and end behavior        |
+| Image output           | Verify the settled encoder, quality, source-faithful conversion, alpha, orientation, and dimension contracts |
+| Terminal prompt        | Verify key ownership, multi-line redraw, resize, fallbacks, and restoration using existing helpers           |
+| Doctor integration     | Verify independent executable checks, frames capability, Video states, remediation, and additive JSON fields |
 
 FFmpeg documents different input/output seek behavior; input seeking may land at an earlier seek point before decoding/discarding to the target.[^seek] FFprobe also warns that interval seeking may begin at a different position from the one requested.[^probe] These limitations support choosing resolution and extraction from the selected stream's beginning with the stopping rules below. No seek-path implementation or comparison is required by this research.
 
@@ -478,15 +645,15 @@ Reference designs: tui-wave provides waveform navigation and zoom,[^tui-wave] CA
 
 Use one FFprobe/FFmpeg execution path for all frames methods:
 
-| Responsibility | Chosen approach                                                                                                                                                 |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FFprobe        | Inspect required stream metadata and emit only required frame fields incrementally for the chosen stream                                                        |
-| CLI            | Parse bounded records/queues, count presentation-order frames, preserve exact target arithmetic, and retain bounded verified identities                         |
-| FFmpeg         | Decode the same selected stream from its beginning, extract the resolved single frame or process sequence cadence forward, and encode/write the selected format |
+| Responsibility | Chosen approach                                                                                                                                                        |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FFprobe        | Inspect required stream metadata and emit only required frame fields incrementally for the chosen stream                                                               |
+| CLI            | Parse bounded records/queues, count presentation-order frames, preserve exact target arithmetic, and retain bounded verified identities                                |
+| FFmpeg         | Decode the same selected stream from its beginning; extract resolved single/frame-set identities or process sequence cadence forward; encode/write the selected format |
 
 Tool arguments and record serialization must implement the existing frame-identity, cadence, timing, and end contracts. Use structured records; do not introduce a second metadata backend or parse human-readable diagnostics for identity/progress. The implementation prototype records the exact tested arguments and tool builds as verification evidence.
 
-Adopt checked exact arithmetic for decimal-rate rational values, integer-millisecond intervals, and source timestamps/time bases. Values outside the implementation's supported representation receive specific validation errors. Unreliable timing or decoder failure follows the specified stop/partial-output rules; changing tool configuration must not silently approximate targets, clamp positions, or convert an incomplete scan into success.
+Adopt checked exact arithmetic for frame-set midpoints, decimal-rate rational values, integer-millisecond intervals, and source timestamps/time bases. Values outside the implementation's supported representation receive specific validation errors. Unreliable timing or decoder failure follows the specified stop/partial-output rules; changing tool configuration must not silently approximate targets, clamp positions, or convert an incomplete scan into success.
 
 This execution direction is settled. The verification work below proves that the selected tool configuration implements it; no successful runtime result is claimed here.
 
@@ -503,6 +670,7 @@ Container-reported counts remain unverified; duration multiplied by nominal FPS 
 | Frame number N                       | Count displayed frames from the beginning; stop at the requested 1-based number                                                                           |
 | Timestamp / interior wave position   | Initially validate timing through clean EOF; after verified ordering, stop at the first later start or EOF and keep the latest start at/before the target |
 | Last frame / rightmost wave position | Scan through clean EOF, drain buffered frames, and retain the final displayed identity                                                                    |
+| Frame set                            | Resolve endpoints through clean EOF; middle also validates timing/end and may require another forward pass; retain only needed identities                 |
 | Sequence                             | Process cadence forward; validate timing incrementally, verify the end, and report actual completed writes                                                |
 
 Streaming sequential resolution is the correctness baseline. Consume selected frame records incrementally in presentation order, keeping a running ordinal and the candidate/timing needed for the request. A target-stopped scan verifies only that prefix. Only successful EOF with buffered frames accounted for establishes an exact total; truncation or decoder failure cannot establish a valid final frame.
@@ -513,7 +681,7 @@ Near-end selection and initial timestamp validation can be costly on long source
 
 ### Resolution Flow
 
-Single-frame flow; direct CLI supplies configuration and skips Interactive review:
+Single-frame flow; frame sets follow the same source checks/review/export lifecycle with all preset roles resolved as specified above. Direct CLI supplies configuration and skips Interactive review:
 
 ```text
 Select first / last / frame N / time
@@ -566,7 +734,10 @@ Adopt these initial internal defaults for the implementation prototype. They are
 | Initial selected-field metadata response  | 1 MiB                                              |
 | Individual streamed frame/progress record | 64 KiB                                             |
 | Retained diagnostic stderr                | Last 64 KiB, with a truncation notice              |
+| Owned image staging files                 | 2 files, including a file being written            |
+| Total encoded image data in staging       | 256 MiB                                            |
 | Cooperative child termination grace       | 2 seconds, then force termination if still running |
+| Forced-exit confirmation deadline         | 5 seconds after forcing termination                |
 
 Metadata limits apply to selected fields, not arbitrary embedded tags or thumbnails. Frame-record streams may exceed 1 MiB cumulatively; consume them incrementally with bounded queues/backpressure. Limit failures identify the exhausted resource, stop affected processing, and preserve completed outputs. Do not label every limit failure “video too large.” These initial defaults come from this design discussion. Change a default only when recorded measurements justify it, preserving bounded-state and failure-reporting requirements.
 
@@ -574,7 +745,7 @@ CLI record/cache limits do not cap FFmpeg/FFprobe memory. The decoder policy is 
 
 Review estimated image count and effective dimensions before export. If storage estimation is available, label its assumptions and uncertainty; do not perform extra image extraction solely to manufacture an estimate. For illustration, one hour at 24 FPS is approximately 86,400 images; assuming 2 MiB per image would require approximately 169 GiB. Actual image sizes depend on content and encoding. These values are synthetic planning examples, not a restriction or measured result.
 
-Check available space on the destination volume, and on any scratch volume actually used by the implementation, where the platform exposes it. Known insufficient space should give a specific error; an uncertain estimate is informational. Recheck/report write failures because free space can change. No extra confirmation or silent changes to cadence/scale are needed.
+Inspect the destination volume through its path or nearest existing parent using `statfs`; available bytes are `bavail × bsize`, calculated without unsafe numeric truncation.[^volume-space] Check any separate scratch volume actually used, and include staging/copy overhead in estimates. If inspection is unavailable, show “Available space unknown” and continue. Estimated total size is advisory, not reserved capacity or a rejection threshold. Actual disk-full/quota failures stop processing and retain completed images; refresh space information where possible for the diagnostic. No extra confirmation or silent cadence/scale changes are needed.
 
 For excessive output/storage cost, offer ordinary choices: lower FPS, a longer interval, smaller output scale, or another format. Those choices may still require decoding the full source. Decoder-memory failures can suggest a separately prepared lower-resolution source; it becomes a new source with its own frame numbering. Do not promise that output scaling or a preliminary resize always makes an otherwise undecodable source usable.
 
@@ -582,12 +753,14 @@ Long work remains cancellable; do not inherit the Codex per-request timeout or i
 
 ### Processing Phases and Progress
 
-Use applicable phases: inspect source, resolve one frame or validate sequence timing, export image(s), and finish. Sequence timing validation, selection, encoding, and writing can share one forward phase. Reusing verified timestamp ordering should say “Timing validation reused”; it must not imply a new scan ran.
+Use applicable phases: inspect source, resolve one frame or all frame-set roles, or validate sequence timing; export image(s); finish. Frame-set resolution reports endpoint scanning and any midpoint pass separately, followed by confirmed images written out of the preset's known 2/3 outputs. Sequence timing validation, selection, encoding, and writing can share one forward phase. Reusing verified timestamp ordering should say “Timing validation reused”; it must not imply a new scan ran.
 
 ```text
 Inspect source
   |
   +-- Single -> Resolve identity -> Text review -> Export image
+  |
+  +-- Frame set -> Resolve all roles -> Text review -> Export 2/3 named images
   |
   `-- Sequence -> Review settings -> Decode / sample / encode / write
                                                      |
@@ -622,9 +795,11 @@ The current [process helper](../../src/cli/process.ts) buffers complete stdout/s
 
 ### Cancellation and Partial Output
 
-Run at most one resolution/export operation in a flow. Escape cancels the active Interactive operation; direct CLI interruption also stops every child owned by that operation. Show “Stopping…” while requesting termination, applying the initial grace/force policy, and waiting for confirmed child exit and stream closure. Sending a kill signal alone does not prove termination.[^child-cancel] Verify supported-platform behavior and a bounded forced-exit confirmation deadline; never start a replacement scan while an earlier child may still be running. If termination cannot be confirmed, report the failure and stop the flow.
+Run at most one resolution/export operation in a flow. Spawn FFmpeg/FFprobe directly with `shell: false` and register every child under that operation. Escape or direct CLI interruption stops new publications and settles any in-flight write. Show “Stopping…” while terminating all registered children that remain running.
 
-Restore terminal input/cursor state after cancellation, failure, or completion. A cancelled resolution returns to selection without final writes. A cancelled export retains completed images, reports their count/location and any known incomplete file, and allows Interactive choices to be revisited only after children have stopped. Success requires confirmed processing and writes; cancellation is reported as cancellation, never as a successful shorter sequence. Internal scratch cleanup cannot delete source media or completed exports.
+Allow the initial two-second grace where graceful termination is supported, then force remaining children. Allow five seconds after forcing termination to confirm exit and stream closure through each child's `close` event; a sent signal or `killed` flag is insufficient.[^child-cancel] Windows signal behavior may require immediate force rather than a graceful wait. If closure remains unconfirmed, report termination failure and stop the flow; keep affected scratch intact and start no replacement operation. Verify these platform transitions under the same ownership contract.
+
+Restore terminal input/cursor state on every exit path. After confirmed tool shutdown, cancelled resolution returns to selection; cancelled export retains/reports completed images and any incomplete file, then allows choices to be revisited. Report cancellation distinctly from success. Internal scratch cleanup cannot delete source media or completed exports.
 
 ## Verification and Research Completion Criteria
 
@@ -637,13 +812,14 @@ Generate small synthetic videos on demand with visible frame numbers, timestamps
 | One second, 24 constant-FPS source frames | 24-FPS export writes 24 images, ordered correctly                                                                                                                                              |
 | One second, 12 constant-FPS source frames | 24-FPS export writes 24 images from 12 distinct source frames, with disclosed repetition                                                                                                       |
 | First/last and frame-number selection     | Export matches the known labeled source frame; number 1 selects first                                                                                                                          |
+| Fixed frame sets                          | Exact endpoint/midpoint identities, 2/3 selection-named outputs, repeated-role disclosure, and all identities resolved before review/writes                                                    |
 | Timestamp between frames                  | Select the most recent frame starting at/before the target; an exact next-frame start selects that next frame                                                                                  |
 | Variable FPS/non-zero timestamps          | No nominal-FPS indexing assumptions; time origin and repeated targets are handled                                                                                                              |
 | Interval presets/custom input             | Expected cadence, first target, end behavior, and actual counts                                                                                                                                |
-| Formats and scaling                       | Files decode in the selected format; dimensions and recognizable content are correct                                                                                                           |
+| Formats, quality, and scaling             | Files decode in the selected format; full-quality semantics, preset validation/labels, dimensions, and recognizable content are correct                                                        |
 | Destination and naming                    | Default/custom paths, unique names, overwrite boundaries, and partial failures                                                                                                                 |
-| Full/compact/fallback picker              | Alignment and precise selection survive resize and entry-method changes                                                                                                                        |
-| Keyboard lifecycle                        | Cancel/finish/error restore input/cursor state; the next ordinary prompt works                                                                                                                 |
+| Full/compact/fallback picker              | Fit-based layout choice, reserved/wrapped content, Unicode/ASCII toggle, and precise selection survive resize and entry-method changes                                                         |
+| Keyboard lifecycle                        | Wave/editor/scan key ownership, submit/back/interrupt behavior, and input/cursor restoration; next ordinary prompt works                                                                       |
 | Invalid combinations                      | Conflicting methods and invalid values fail before final writes                                                                                                                                |
 | Duration language                         | Presets normalize to integer-unit values; invalid/repeated intervals fail; timeout caps are not copied                                                                                         |
 | Interval limits and notices               | `1ms` minimum, zero/empty/missing/null/undefined input rejection, near/equal/longer duration feedback, unknown-duration handling, and one-image sequences retaining folder output              |
@@ -659,11 +835,14 @@ Selector, rate, and naming verification should also cover:
 - Labeled starts at 0, 40, and 120 ms: 70 ms selects frame 2 at 40 ms, while exactly 120 ms selects frame 3. Verify shifted/negative source timestamps and presentation order with buffered decoding.
 - Multiple streams: eligible default selection, lowest-index default ties, fallback to the first eligible stream, and attached-picture/thumbnail/cover exclusion.
 - Integer/decimal FPS acceptance, fraction-expression rejection, invalid-rate errors, and preservation of the supplied rate during internal conversion.
-- Stem/prefix/serial presets, conditional rename-style controls, parameter order, flag-over-token-over-default precedence, zero serial start, minimum width, no-effect serial flags without a serial placeholder, and rejection of duplicate/ordering/scope controls.
-- Chronological serial identity, growth beyond the minimum width, repeated-source uniqueness, and duplicate custom-name errors.
+- Mode-specific stem/selection/frame/serial templates, conditional prompts/completion, literal text and separator normalization, explicit-file naming bypass, direct single-image naming-flag rejection, required frame-set selection labels/sequence serials, parameter order, flag-over-token-over-default precedence, zero serial start, six-digit fallback, one-image sequences retaining required serials and folder output, verified `{frame}` values versus FPS-derived estimates, unpadded frame-number rendering independent of serial settings, repeated frame identities with distinct required labels/serials, source identity versus export serial, and rejection of unsupported/duplicate/ordering/scope controls.
+- Source stem resolution across case, internal dots, NFKD/diacritics, non-ASCII fallback, 48-character truncation, long names, and output-folder changes. Preserve one resolved stem across all roles and show actual normalized names.
+- Chronological serial identity, growth beyond the minimum width without renaming earlier exports, repeated-source uniqueness, and duplicate custom-name errors.
 - Source protection: direct, canonical-parent, symlink, and hard-link output aliases are rejected with and without overwrite; the original source remains intact.
 
-Use exact pixel/content assertions where appropriate for lossless output; lossy JPG/WebP verification should use suitable tolerances rather than identical file hashes. Test real key input and resize transitions, not just static wave snapshots. Confirm that text review and exported content identify the same source frame, and that selection/review launches no viewer or thumbnail generation.
+For PNG and WebP `full`, compare decoded pixels against an independently prepared post-transform reference, accounting for the chosen pixel representation. For JPG at every preset and WebP `low|medium|high`, use suitable content/quality tolerances rather than identical file hashes. Test real key input and resize transitions, not just static wave snapshots. Confirm that text review and exported content identify the same source frame, and that selection/review launches no viewer or thumbnail generation.
+
+Frame-set verification must cover both presets, conflicting/missing/invalid selectors, known and initially unknown duration, variable-rate midpoint mapping, shifted timestamps, unreliable end/timing, buffered final frames, one/two-frame repeated identities, and cancellation in each pass. Verify errors create no reduced preset, preset output remains a folder, all names are validated before export, and later encoder/write failures retain only confirmed completed outputs.
 
 Verify sequential resolution using labeled synthetic sources with variable FPS, reordered/buffered frames, shifted timestamps, and known final markers. Include source replacement/modification, malformed/truncated input, and out-of-range requests. Seek/checkpoint/tail implementations and comparative benchmarks are outside the verification workload.
 
@@ -673,17 +852,44 @@ Sampling verification must cover sparse/variable starts, targets exactly at boun
 
 Progress/resource verification must cover phase changes, estimated totals reached before EOF, unknown totals, media progress distinct from completed-write counts, terminal/non-terminal output, resize, saturated queues, oversized records, disk-full errors, and a child that ignores cooperative termination. Verify no source-size-only rejection, no source copying into CLI memory, and global ordinals/cadence/serials across batch boundaries. Internal scratch, if needed, requires separate ownership and cleanup checks.
 
+Quality verification must cover omitted/explicit `full`, all JPG/WebP presets, PNG rejection of lower presets, invalid names/numeric/empty/missing values, case normalization, conditional prompts, format changes, review labels, and the independence of scale. Record exact native encoder mappings and confirm WebP `full` selects lossless mode. Verify that changing PNG compression can change file bytes while preserving decoded pixels; assess compression cost separately from visual fidelity. Encoder availability and unsupported modes must produce explicit failure before final writes.
+
+### Image Output Verification
+
+The image behavior is settled; verify the following implementation details with synthetic sources before claiming support:
+
+1. Record available encoders, supported pixel representations, and native preset/compression mappings for the tested builds. Decode real PNG/JPG/WebP outputs; test unavailable encoders, unsupported dimensions, and unavailable lossless WebP without fallback.
+2. Establish an independent color reference using known RGB patches and tagged YUV matrix/range cases. Verify range conversion, color metadata, and the absence of creative adjustments or GIF palette filters. Record the exact supported conversion arguments and any inferred-field defaults/notices; test missing/conflicting fields and explicit rejection of conversions outside scope. A filter-argument assertion alone does not establish fidelity.
+3. Compare PNG/WebP alpha against an independent post-transform reference. Test JPG with opaque alpha-capable input and non-opaque selected frames, including a later sequence failure; no implicit background compositing is allowed.
+4. Use asymmetric markers to verify quarter-turns/reflections, square-pixel normalization, metadata reset, scale order, and review/export dimension agreement. Cover unspecified/non-square pixel ratios, the square-pixel assumption notice, invalid/conflicting ratio errors, odd and one-pixel dimensions, half-pixel rounding, unsupported transforms, and dimension/pixel limits.
+5. Measure PNG compression cost separately from pixel fidelity. Compare lossless outputs to the post-transform reference and lossy outputs using recorded tolerances; retain this evidence alongside exact encoder/filter configurations.
+
 ### Implementation Verification
 
 The execution path and initial internal defaults are settled decisions. Complete the following verification work in order and record public synthetic evidence:
 
 1. Generate labeled constant/variable-rate sources with independently known frame identities, timing boundaries, and final frames. Include sparse starts, shifted timestamps, reordered/buffered output, and invalid timing.
 2. Record the exact FFprobe/FFmpeg argument sets, required record fields/serialization, and tool builds. Prove that both tools agree on the selected stream and presentation-order identity, and that extraction implements the specified cadence and reliable-end rules.
-3. Exercise numeric boundaries, parser/queue pressure, cache eviction, oversized metadata/records, diagnostic truncation, decoder/timing failure, and cooperative/forced cancellation. Prove that limit failures stop processing and preserve/report completed outputs.
+3. Exercise numeric boundaries, frame-set midpoint resolution with known/unknown initial duration, parser/queue pressure, cache eviction, oversized metadata/records, diagnostic truncation, decoder/timing failure, and cooperative/forced cancellation. Prove that limit failures stop processing and preserve/report completed outputs.
 4. Measure first and cached requests, near-end/last-frame resolution, and whole-video sequence export across generated durations, frame rates, dimensions, and codecs. Record scan/extraction latency and parent/child peak memory separately; verify that CLI-held frame data remains bounded as stream length grows. Measurements describe tested cases, not universal speed or process-memory guarantees.
-5. Confirm or calibrate the listed defaults with that evidence. Establish the decoder pixel-guard value consistently in both tools, test below/above its boundary, and record the supported builds and forced-exit confirmation deadline.
+5. Confirm or calibrate the listed defaults with that evidence. Establish the decoder pixel-guard value consistently in both tools and test below/above its boundary. Verify the two-file/256-MiB staging limits before and at capacity, pressure from slow publication, and rejection of a single image that exceeds the byte budget. Record supported builds, limit enforcement, and the tested two-second grace/five-second confirmation policy.
+
+6. Verify completed-file detection, preset-role/serial publication order, exclusive creation/hard-link fallback, safe overwrite, and source-alias checks. Inject competing writers, case-insensitive collisions, interrupted copies, disk-full/quota errors, unknown space, saturated staging, and cleanup failures. Confirm accurate completed/partial counts and retention of existing/source files.
+7. On supported platforms, cancel operations with multiple registered tools and a tool that ignores graceful termination. Verify forced shutdown, exit/stdio closure, confirmation timeout, scratch retention on unconfirmed shutdown, terminal restoration, and prevention of replacement operations.
 
 Configuration and budget verification must pass before claiming those runtime contracts are supported or closing this research. Report a failing prototype case as a verification gap; do not silently change selection/sampling semantics. These tasks require no alternative seek strategy.
+
+### Terminal Picker Verification
+
+The picker contract is settled. Verify it with synthetic duration/selection state before integrating video decoding:
+
+- Exercise wide, narrow, short, and rapidly resized viewports. Include boundary cases where a label, instruction, or notice wraps and changes available rows; verify full → compact → direct-input transitions without hiding essential controls.
+- Verify unknown dimensions, unusable duration, simple-prompt mode, unsupported raw input, and non-interactive invocation follow their defined fallback paths.
+- Verify Unicode/ASCII thin bars, mirrored halves, marker alignment, the toggle's changing hint, and color-disabled output. Glyph choice survives layout/editor round trips and never changes the selected position.
+- Verify `D / (N − 1)` spacing, first/last endpoint semantics, outward no-op movement, and a typed position between divisions moving to the next position in the requested direction. Resize projection retains exact requests/identities.
+- Verify letter-case handling, editor draft/selection retention, Enter/Escape ownership, scan cancellation, whole-flow interruption, and listener/cursor/raw-mode restoration. Arrows, glyph toggles, and resize must not start decoding.
+
+Record terminal prototype results and any renderer geometry adjustments under this fixed contract. Static sketches and document review alone do not verify terminal behavior.
 
 ### Local Visual Review and Privacy
 
@@ -695,21 +901,13 @@ Public research, plans, job records, examples, and PR text must omit private sou
 
 The research is sufficiently answered when selection/sampling/output questions are resolved with evidence, a terminal prototype validates the layouts and fallbacks, real tool experiments establish the extraction/format/scale boundary, and the supported dependency strategy is recorded. Cite public reproducible evidence directly or link the relevant execution records before closing research. Drafting and document review alone do not meet those criteria. No prototype or runtime verification results are claimed by this document.
 
-## Open Questions
+## Decision Status
 
-Remaining unsettled details:
-
-- Terminal layout breakpoints, glyph fallbacks, step sizes, and optional refinement keys.
-- PNG/JPG/WebP encoder availability, quality option naming/grammar and defaults, display orientation, dimension rounding, and pixel/color conversion.
-- Mechanisms for confirming completed writes, enforcing collision protection across platforms, checking volume space, and terminating all owned tool processes.
-
-Settled direction includes the command/selectors and their grammar, source-relative timestamp mapping, eligible-stream choice, whole-video FPS/interval scope, cadence-preserving repeated selection, exact target arithmetic, reliable-end boundaries, serial naming/defaults, mode-aware output, collision/rerun policy, FFmpeg/FFprobe requirements and doctor projections, one structured FFprobe/FFmpeg execution path, sequential streaming resolution, initial internal defaults and their verification steps, bounded in-memory reuse, large-source handling without a blanket size cap, phase progress, cancellation, and partial-output retention. Image preview and seek/checkpoint/tail optimizations are outside this CLI scope.
-
-Product decisions and starting prototype limits are recorded above; they are not runtime verification. Configuration/resource measurements are tracked under Implementation Verification rather than as open design questions. Document review does not establish measured costs, backend compatibility, or platform behavior.
+Feature scope and behavior are settled above. Remaining work is the [verification](#verification-and-research-completion-criteria) of encoder/filter configurations, file operations, resource budgets, and supported-platform behavior. Keep `draft` until reproducible results support the completion criteria; document review alone does not establish runtime support.
 
 ## Recommendations and Next Steps
 
-Retain this focused scope and `draft` status while the unresolved details are investigated. First prototype the wave with synthetic duration/selection state, then verify exact extraction and sampling using generated labeled videos. Complete the specified implementation-verification tasks and investigate the remaining open details without changing existing video behavior.
+First prototype the wave, frame-set preset picker, and mode-aware naming prompts with synthetic state, then verify extraction, sampling, image output, publication, and cancellation using the specified synthetic cases. Keep this scope and existing video behavior.
 
 Once evidence supports a concrete contract, create an implementation plan with reciprocal `Related Plans` / `Related Research` links. The plan should cover shared streaming extraction/sampling, bounded resource handling and progress/cancellation, command/Interactive integration with text review, FFprobe checks and doctor projections, output ownership, focused verification, and a current usage guide. A later shipped guide should own the reader-facing contract; this research owns rationale and feasibility evidence.
 
@@ -741,4 +939,22 @@ Once evidence supports a concrete contract, create an implementation plan with r
 
 [^progress]: [FFmpeg command documentation: progress and stats period](https://ffmpeg.org/ffmpeg.html#Main-options).
 
-[^child-cancel]: [Node.js child processes: kill and termination](https://nodejs.org/api/child_process.html#subprocesskillsignal).
+[^child-cancel]: [Node.js child processes: kill and termination](https://nodejs.org/api/child_process.html#subprocesskillsignal) and [process/stdio closure](https://nodejs.org/api/child_process.html#event-close).
+
+[^webp-quality]: [FFmpeg codecs: WebP modes and quality options](https://ffmpeg.org/ffmpeg-codecs.html#libwebp).
+
+[^png-lossless]: [PNG specification: lossless compression](https://www.w3.org/TR/png-3/#dfn-lossless).
+
+[^png-compression]: [FFmpeg codecs: PNG compression options](https://ffmpeg.org/ffmpeg-codecs.html#png).
+
+[^image-color]: [FFmpeg filters: pixel format](https://ffmpeg.org/ffmpeg-filters.html#format) and [color conversion](https://ffmpeg.org/ffmpeg-filters.html#colorspace).
+
+[^image-orientation]: [FFmpeg command documentation: display transforms and autorotation](https://ffmpeg.org/ffmpeg.html#Video-Options).
+
+[^image-scaling]: [FFmpeg filters: scale and square-pixel output](https://ffmpeg.org/ffmpeg-filters.html#scale).
+
+[^image-write]: [FFmpeg image muxer: atomic writing](https://ffmpeg.org/ffmpeg-formats.html#image2-2).
+
+[^file-publication]: [Node.js filesystem flags and exclusive creation](https://nodejs.org/docs/latest-v22.x/api/fs.html#file-system-flags) and [hard-link publication](https://nodejs.org/docs/latest-v22.x/api/fs.html#fspromiseslinkexistingpath-newpath).
+
+[^volume-space]: [Node.js filesystem statistics: available bytes](https://nodejs.org/docs/latest-v22.x/api/fs.html#statfsbavail).
