@@ -466,6 +466,22 @@ Interactive one-frame destination choices are default location, custom folder wi
 
 Create missing destinations and owned staging only after final export acceptance. Text selection/review creates no image folder. Cleanup must never remove source media, completed exports, or user-owned folders.
 
+### Explicit Image Filenames and Format
+
+The selected format determines the encoded image: direct CLI uses `--format`, defaulting to PNG when omitted, and Interactive uses its format choice. An explicit single-image filename must have a matching final extension, compared case-insensitively: `.png` for PNG, `.jpg` or `.jpeg` for JPG, and `.webp` for WebP. The `.jpeg` extension does not add a `--format jpeg` alias. Generated filenames use `.png`, `.jpg`, or `.webp`.
+
+Reject missing, unsupported, or mismatched extensions before extraction or final writes. Keep explicit paths literal: do not infer the format from the extension, append an extension, or rename the target. Explain how to correct the filename or select its matching format. For example:
+
+| Direct single-frame options                  | Result                                                        |
+| -------------------------------------------- | ------------------------------------------------------------- |
+| `--output cover.png`                         | PNG, using the default format                                 |
+| `--output cover.jpg`                         | Error: select `--format jpg` or use a `.png` filename           |
+| `--format jpg --output cover.JPEG`           | JPG; preserve the explicit filename's spelling                 |
+| `--format webp --output cover.png`           | Error: filename extension conflicts with the selected format   |
+| `--output cover` or `--output cover.gif`     | Error: require an extension supported by the selected format   |
+
+Interactive validates an explicit filename against its format choice and shows the error at the destination prompt. If a later format change makes the retained filename incompatible, require a corrected filename or matching format before export acceptance. Generated names update their extension when the format changes. These filename checks do not apply to frame-set/sequence output folders or Interactive custom folders; selection still determines destination kind.
+
 ### Stem and Placeholder Meaning
 
 Resolve `{stem}` once from the selected input video's basename: remove its final extension, apply [rename's filename normalization](../../src/utils/slug.ts), then take the first 48 characters, matching the [rename planner](../../src/cli/rename/planner/index.ts). Normalization uses NFKD, removes non-ASCII characters, lowercases, converts non-alphanumeric runs to hyphens, trims edge hyphens, and falls back to `file` if empty. Use the source filename, without a generated title or output-folder substitution. Thus `My Trip.v2.mp4` resolves to `my-trip-v2` for every image from that source.
@@ -495,7 +511,7 @@ Every sequence template must contain exactly one `{serial...}` placeholder, incl
 
 These requirements are validated before export, with messages such as “Sequence template must contain exactly one {serial...} placeholder” or “{selection} is available only for single-frame and frame-set naming.” Missing tokens are errors; do not silently append a serial or label.
 
-Direct CLI `--pattern` configures frame sets or sequences. Direct single-image naming uses the final `--output` file path; Interactive generated-name templates resolve that same file path. An explicit image file bypasses template controls and its path is literal. Custom template grammar is shared across modes; permitted values and required tokens follow the table.
+Direct CLI `--pattern` configures frame sets or sequences. Direct single-image naming uses the final `--output` file path; Interactive generated-name templates resolve that same file path. An explicit image file bypasses template controls and its path is literal, subject to the [filename/format validation](#explicit-image-filenames-and-format) above. Custom template grammar is shared across modes; permitted values and required tokens follow the table.
 
 For generated names, the template constructs a basename and the selected format appends its extension. Validate safe, unique names and filesystem length limits; do not silently alter names to avoid collisions. Reject unknown/malformed placeholders, path components, duplicate serials/parameters, and rename `order_*` modifiers. Source date/time tokens, serial ordering, and directory scope remain outside this filename language.
 
@@ -835,6 +851,7 @@ Selector, rate, and naming verification should also cover:
 - Labeled starts at 0, 40, and 120 ms: 70 ms selects frame 2 at 40 ms, while exactly 120 ms selects frame 3. Verify shifted/negative source timestamps and presentation order with buffered decoding.
 - Multiple streams: eligible default selection, lowest-index default ties, fallback to the first eligible stream, and attached-picture/thumbnail/cover exclusion.
 - Integer/decimal FPS acceptance, fraction-expression rejection, invalid-rate errors, and preservation of the supplied rate during internal conversion.
+- Explicit-file format validation: omitted format remains PNG; matching extensions are accepted case-insensitively, including `.jpeg` for JPG, without changing the literal path. Reject missing/unsupported extensions and format conflicts before extraction/final writes. Cover Interactive format changes requiring filename correction, generated-name extension updates, and folder names with image-like suffixes remaining valid folders. Decode successful outputs to verify their actual format agrees with the selected format and extension.
 - Mode-specific stem/selection/frame/serial templates, conditional prompts/completion, literal text and separator normalization, explicit-file naming bypass, direct single-image naming-flag rejection, required frame-set selection labels/sequence serials, parameter order, flag-over-token-over-default precedence, zero serial start, six-digit fallback, one-image sequences retaining required serials and folder output, verified `{frame}` values versus FPS-derived estimates, unpadded frame-number rendering independent of serial settings, repeated frame identities with distinct required labels/serials, source identity versus export serial, and rejection of unsupported/duplicate/ordering/scope controls.
 - Source stem resolution across case, internal dots, NFKD/diacritics, non-ASCII fallback, 48-character truncation, long names, and output-folder changes. Preserve one resolved stem across all roles and show actual normalized names.
 - Chronological serial identity, growth beyond the minimum width without renaming earlier exports, repeated-source uniqueness, and duplicate custom-name errors.
