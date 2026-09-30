@@ -1,6 +1,7 @@
 ---
 title: "Video Frame Selection, Frame Sets, and Sequence Export"
 created-date: 2026-09-30
+modified-date: 2026-09-30
 status: draft
 agent: codex
 ---
@@ -927,7 +928,11 @@ Feature scope and behavior are settled above. Remaining work is the [verificatio
 
 First prototype the wave, frame-set preset picker, and mode-aware naming prompts with synthetic state, then verify extraction, sampling, image output, publication, and cancellation using the specified synthetic cases. Keep this scope and existing video behavior.
 
-Once evidence supports a concrete contract, create an implementation plan with reciprocal `Related Plans` / `Related Research` links. The plan should cover shared streaming extraction/sampling, bounded resource handling and progress/cancellation, command/Interactive integration with text review, FFprobe checks and doctor projections, output ownership, focused verification, and a current usage guide. A later shipped guide should own the reader-facing contract; this research owns rationale and feasibility evidence.
+The draft implementation plan linked below owns that prototype and verification work as opening execution phases before command integration. It also defines bounded, explicitly invoked synthetic stress runs and private real-video smoke checkpoints outside the regular test suites. Creating the plan establishes no runtime support or completed research result. A later shipped guide should own the reader-facing contract; this research owns rationale and feasibility evidence.
+
+## Related Plans
+
+- [Video Frames Implementation Plan](../plans/plan-2026-09-30-video-frames-implementation.md)
 
 ## References
 
