@@ -73,6 +73,38 @@ describe("synthetic frame picker ownership", () => {
     expect(io.actualInput.isRaw).toBe(false);
   });
 
+  for (const durationIsEstimate of [false, undefined])
+    test(
+      "verified duration rejects an out-of-range timestamp before resolution " +
+        String(durationIsEstimate),
+      async () => {
+        const io = streams();
+        const observations: PickerObservation[] = [];
+        let calls = 0;
+        const prompt = promptFramePicker({
+          ...io,
+          durationMs: 100,
+          durationIsEstimate,
+          resolve: async () => {
+            calls++;
+            return { frameNumber: 3, startMs: 120 };
+          },
+          onChange: (value) => observations.push(value),
+        });
+        io.actualInput.write("t00:00:00.120\r");
+        await flush();
+        expect(calls).toBe(0);
+        expect(observations.at(-1)?.editor?.draft).toBe("00:00:00.120");
+        expect(io.actualOutput.text).toContain("Timestamp must be before the video end");
+        await escape(io.actualInput, () => observations.at(-1)?.editor === undefined);
+        await escape(io.actualInput);
+        expect(await prompt).toBeNull();
+        expect(io.actualInput.isRaw).toBe(false);
+        expect(io.actualInput.listenerCount("keypress")).toBe(0);
+        expect(io.actualOutput.listenerCount("resize")).toBe(0);
+      },
+    );
+
   for (const key of ["\x1b", "\x03"])
     test("fatal closure survives picker cancellation " + JSON.stringify(key), async () => {
       const io = streams();
