@@ -918,17 +918,17 @@ Public research, plans, job records, examples, and PR text must omit private sou
 
 ### Completion Criteria
 
-The research is sufficiently answered when selection/sampling/output questions are resolved with evidence, a terminal prototype validates the layouts and fallbacks, real tool experiments establish the extraction/format/scale boundary, and the supported dependency strategy is recorded. Cite public reproducible evidence directly or link the relevant execution records before closing research. Drafting and document review alone do not meet those criteria. No prototype or runtime verification results are claimed by this document.
+The research is sufficiently answered when selection/sampling/output questions are resolved with evidence, a terminal prototype validates the layouts and fallbacks, real tool experiments establish the extraction/format/scale boundary, and the supported dependency strategy is recorded. Cite public reproducible evidence directly or link the relevant execution records before closing research. Drafting and document review alone do not meet those criteria. Prototype evidence belongs in the linked implementation record; it does not establish extraction or encoder support.
 
 ## Decision Status
 
-Feature scope and behavior are settled above. Remaining work is the [verification](#verification-and-research-completion-criteria) of encoder/filter configurations, file operations, resource budgets, and supported-platform behavior. Keep `draft` until reproducible results support the completion criteria; document review alone does not establish runtime support.
+Feature scope and behavior are settled above. Remaining work is the [verification](#verification-and-research-completion-criteria) of encoder/filter configurations, file operations, resource budgets, and supported-platform behavior. Keep `in-progress` until reproducible results support all completion criteria; document review alone does not establish runtime support.
 
 ## Recommendations and Next Steps
 
 First prototype the wave, frame-set preset picker, and mode-aware naming prompts with synthetic state, then verify extraction, sampling, image output, publication, and cancellation using the specified synthetic cases. Keep this scope and existing video behavior.
 
-The draft implementation plan linked below owns that prototype and verification work as opening execution phases before command integration. It also defines bounded, explicitly invoked synthetic stress runs and private real-video smoke checkpoints outside the regular test suites. Creating the plan establishes no runtime support or completed research result. A later shipped guide should own the reader-facing contract; this research owns rationale and feasibility evidence.
+The active implementation plan linked below owns that prototype and verification work as opening execution phases before command integration. It also defines bounded, explicitly invoked synthetic stress runs and private real-video smoke checkpoints outside the regular test suites. The [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md) records verified checkpoints. A later shipped guide should own the reader-facing contract; this research owns rationale and feasibility evidence.
 
 ## Related Plans
 

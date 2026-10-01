@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Contract Ownership Catalog"
 created-date: 2026-08-23
-modified-date: 2026-09-06
+modified-date: 2026-10-01
 status: completed
 agent: codex
 ---
@@ -35,6 +35,12 @@ Use [Test Suite Audit Inventory](test-suite-audit-inventory.md) for the fixed pr
 | Test runner | `test/test-runner/` | suite discovery, prerequisites, process/output ownership, reporting, retention, and terminal presentation |
 | Shared fixtures | `test/fixtures/` | checked-in data consumed by more than one accepted owner |
 | Global helpers | `test/helpers/` | independently reused, feature-neutral test infrastructure only |
+
+### Video Frames Prototype
+
+`test/video/interactive/frames-*.unit.test.ts` owns selector grammar, coarse movement, adaptive display fit, naming tokens, and completion. `frames-controller.app.test.ts` owns input sessions, resolver cancellation, restoration, and isolated checks against the installed prompt library. Its real-library fixture stays beside that consumer under `test/video/interactive/fixtures/`.
+
+`test/video/smoke-budget.unit.test.ts` checks only pure development-budget calculations. Real terminal interactions and generated/private media smoke are explicit plan verification outside regular suites and CI. See the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md) for their evidence. These are new contracts, with no historical-path migration.
 
 ### Global Helpers
 

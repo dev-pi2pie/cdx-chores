@@ -20,6 +20,7 @@ export async function createSyntheticSmokeRun(): Promise<{
   const canonicalParent = await realpath(parent);
   if (canonicalParent !== parent) throw new Error("Smoke workspace has an aliased parent.");
   const path = await mkdtemp(join(parent, "phase1-"));
+  const owner = await lstat(path);
   try {
     execFileSync("git", ["check-ignore", "--quiet", "--", join(path, "evidence.json")], {
       cwd: root,
@@ -32,7 +33,14 @@ export async function createSyntheticSmokeRun(): Promise<{
     path,
     async cleanup() {
       // Call only after owned children have closed. Never accept an arbitrary cleanup path.
-      if ((await realpath(parent)) !== canonicalParent || (await realpath(path)) !== path)
+      const current = await lstat(path);
+      if (
+        current.dev !== owner.dev ||
+        current.ino !== owner.ino ||
+        current.isSymbolicLink() ||
+        (await realpath(parent)) !== canonicalParent ||
+        (await realpath(path)) !== path
+      )
         throw new Error("Smoke workspace ownership changed; retain scratch for inspection.");
       await rm(path, { recursive: true });
     },

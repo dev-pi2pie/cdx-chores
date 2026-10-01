@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { access, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, rename, rmdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { SYNTHETIC_SCAN_RECIPES } from "./fixtures";
 import { checkSmokeProgress, preflightSmokeCase, SMOKE_LIMITS } from "./smoke-budget";
@@ -36,6 +36,21 @@ try {
   await run.cleanup();
 }
 await assert.rejects(access(run.path), { code: "ENOENT" });
+
+const ownership = await createSyntheticSmokeRun();
+const retained = ownership.path + "-retained";
+await rename(ownership.path, retained);
+await mkdir(ownership.path);
+try {
+  await assert.rejects(ownership.cleanup(), /ownership changed/);
+  await access(retained);
+  await access(ownership.path);
+} finally {
+  // The replacement is our empty probe directory; rmdir refuses unexpected contents.
+  await rmdir(ownership.path);
+  await rename(retained, ownership.path);
+  await ownership.cleanup();
+}
 process.stdout.write(
   "Synthetic recipes, budget rejection, ignored workspace, result handling, and cleanup passed. No media created.\n",
 );
