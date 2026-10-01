@@ -15,6 +15,7 @@ import {
   type FramePickerState,
   type FrameRequest,
 } from "./selection";
+import { fatalFrameFailure, runFrameWork } from "./operation";
 
 export interface PickerObservation {
   layout: PickerLayout["kind"];
@@ -29,7 +30,11 @@ export interface FramePickerOptions extends FramePromptIO {
   initialState?: FramePickerState;
   simple?: boolean;
   colorEnabled?: boolean;
-  resolve: (request: FrameRequest, signal: AbortSignal) => Promise<FrameIdentity>;
+  resolve: (
+    request: FrameRequest,
+    signal: AbortSignal,
+    progress?: (frames: number) => void,
+  ) => Promise<FrameIdentity>;
   onChange?: (observation: PickerObservation) => void;
 }
 
@@ -72,6 +77,7 @@ async function runWave(
   let stopping = false;
   let interrupted = false;
   let closed = false;
+  let scanned = 0;
   let session: RawSession | undefined;
   const renderer = createPickerRenderer(options.output);
   return await new Promise<WaveOutcome>((resolve, reject) => {
@@ -111,9 +117,10 @@ async function runWave(
             ...(notice ? [notice] : []),
           ].flatMap((line) => wrapPickerLine(line, width))
         : busy
-          ? [...selectionDetails(state), stopping ? "Stopping…" : "Resolving… Esc Cancel"].flatMap(
-              (line) => wrapPickerLine(line, width),
-            )
+          ? [
+              ...selectionDetails(state),
+              stopping ? "Stopping…" : `Resolving… ${scanned} source frames inspected · Esc Cancel`,
+            ].flatMap((line) => wrapPickerLine(line, width))
           : layout.lines;
       renderer.render(
         lines,
@@ -157,9 +164,13 @@ async function runWave(
       editor = undefined;
       const operation = new AbortController();
       busy = operation;
+      scanned = 0;
       render();
       try {
-        const identity = await options.resolve(request, operation.signal);
+        const identity = await options.resolve(request, operation.signal, (frames) => {
+          scanned = frames;
+          render();
+        });
         if (interrupted) throw abortError();
         if (operation.signal.aborted) {
           busy = undefined;
@@ -169,7 +180,8 @@ async function runWave(
         }
         finish({ kind: "result", result: { ...state, resolved: identity, selection: "custom" } });
       } catch (error) {
-        if (interrupted) fail(abortError());
+        if (fatalFrameFailure(error)) fail(error);
+        else if (interrupted) fail(abortError());
         else if (operation.signal.aborted) {
           busy = undefined;
           stopping = false;
@@ -333,13 +345,17 @@ async function runDirect(
   }
   options.onChange?.({ layout: "direct", state: { ...state, request }, resolving: true });
   try {
-    const identity = await options.resolve(request, options.signal ?? new AbortController().signal);
+    const identity = await runFrameWork(options, "Resolving frame", (signal) =>
+      options.resolve(request, signal),
+    );
+    if (!identity) return { kind: "direct", state };
     if (options.signal?.aborted) throw abortError();
     return {
       kind: "result",
       result: { request, resolved: identity, glyphs: state.glyphs, selection: "custom" },
     };
   } catch (error) {
+    if (fatalFrameFailure(error)) throw error;
     if (options.signal?.aborted) throw abortError();
     throw error;
   }

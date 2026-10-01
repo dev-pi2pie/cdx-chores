@@ -17,6 +17,7 @@ export interface PickerLayout {
 }
 
 export function wrapPickerLine(line: string, columns: number): string[] {
+  line = line.replace(/[\p{Cc}\p{Zl}\p{Zp}]/gu, " ");
   const lines: string[] = [];
   let current = "";
   for (const { segment } of new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(
@@ -40,6 +41,11 @@ export function selectionDetails(state: FramePickerState): string[] {
     lines.push(
       `Resolved: frame ${state.resolved.frameNumber} | Actual: ${state.resolved.startMs === undefined ? "time unavailable" : formatFrameTime(state.resolved.startMs)}`,
     );
+    const actual = state.resolved.startMs;
+    if (typeof actual === "object" && actual.numerator % actual.denominator !== 0n)
+      lines.push(
+        "Actual time retains sub-millisecond precision; the displayed clock is truncated.",
+      );
   }
   return lines;
 }

@@ -24,6 +24,8 @@ class Output extends PassThrough {
   rows = 32;
   constructor() {
     super();
+    // A real terminal's process.stdout survives the prompt's output pipe ending.
+    this.end = (() => this) as typeof this.end;
     this.on("data", () => {});
   }
 }

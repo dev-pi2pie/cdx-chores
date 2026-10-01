@@ -17,7 +17,7 @@ Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation
 | 4 | Verified pixels, alpha/transforms, safe publication, failure accounting, private processing smoke | Completed |
 | 5 | Sampling, retained repeats, destinations and concrete naming | Completed |
 | 6 | Direct command, validation, dependencies and doctor | Completed |
-| 7 | Guided Interactive flow, TUI review/polish, and recovery | Not started |
+| 7 | Guided Interactive flow, TUI review/polish, and recovery | In progress |
 | 8 | Full regression, explicit smoke, documentation and research closure evidence | Not started |
 
 ## Phase 1
@@ -288,9 +288,17 @@ Clarified doctor inspection against the executables used by frames execution, ex
 
 Documentation review found no actionable findings. Phase/checklist preservation and diff checks passed.
 
+## Phase 7
+
+Implementation begins from the Phase 6 acceptance receipt `26754458a11b4c679090066230c26bbdc5e54fcb`. Integration, a dedicated TUI review/polish checkpoint, real terminal verification, and private processing outcomes remain required before acceptance.
+
+### Exact Picker and Operation Checkpoint
+
+Picker projection now retains exact rational decoded timing and its original resolved object; display truncation is identified without changing selection. Direct resolution and other asynchronous stages use one feature operation input owner until work settles, with Escape cancellation and terminal restoration. Fatal child closure takes priority over cancellation recovery. Focused picker/layout/operation verification passed **38 cases / 239 assertions**, including fatal Escape/Ctrl+C, exact timing, pending-input ownership, and next-prompt restoration. TypeScript, lint, formatting, diff checks and build passed. No Phase 7 task is accepted yet.
+
 ## Phase 7 Planning Refinement
 
-Expanded Phase 7's unchecked tasks into integration, TUI review/polish, and verification/acceptance groups. The integrated picker and surrounding flow now have an explicit presentation review, terminal-layout matrix, and finding/fix/recheck checkpoint before acceptance. Phase numbers, completed Phases 1–5 tasks, and the existing smoke/privacy boundaries are preserved; Phase 7 implementation has not started.
+Expanded Phase 7's unchecked tasks into integration, TUI review/polish, and verification/acceptance groups. The integrated picker and surrounding flow now have an explicit presentation review, terminal-layout matrix, and finding/fix/recheck checkpoint before acceptance. Phase numbers, completed Phases 1–5 tasks, and the existing smoke/privacy boundaries are preserved; at this planning checkpoint, Phase 7 implementation had not started.
 
 Documentation review found no actionable findings. Phase/checklist preservation, Phase 7 links, and diff checks passed; this records planning changes rather than implementation acceptance.
 

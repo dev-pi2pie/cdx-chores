@@ -186,4 +186,16 @@ describe("video frame coarse movement", () => {
     expect(moveFrameCandidate(state, 1_000, 5, "right")).toBe(state);
     expect(state.resolved).toEqual({ frameNumber: 2, startMs: 125.5 });
   });
+  test("exact rational decoded timing projects without rounding the retained identity", () => {
+    const actual = { numerator: 251n, denominator: 2n };
+    const state: FramePickerState = {
+      request: { kind: "frame", frameNumber: 2 },
+      resolved: { frameNumber: 2, startMs: actual },
+      glyphs: "unicode",
+    };
+    expect(selectionPosition(state, 1000)).toBe(actual);
+    expect(nearestPosition(state, 1000, 5)).toBe(1);
+    expectTime(moveFrameCandidate(state, 1000, 5, "right").request, 250n);
+    expect(state.resolved?.startMs).toBe(actual);
+  });
 });

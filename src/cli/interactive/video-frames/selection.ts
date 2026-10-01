@@ -4,8 +4,7 @@ export { parseFrameNumber, parseFrameTime } from "../../video-frames/selectors";
 
 export interface FrameIdentity {
   frameNumber: number;
-  // The prototype uses integer milliseconds. Exact tool timing is established in Phase 3.
-  startMs?: number;
+  startMs?: number | FrameTime;
 }
 
 export interface FramePickerState {
@@ -48,12 +47,14 @@ export function selectionPosition(
   if (state.request.kind === "last") return { numerator: BigInt(durationMs), denominator: 1n };
   if (state.request.kind === "time") return state.request.timeMs;
   if (
-    state.resolved?.startMs !== undefined &&
+    typeof state.resolved?.startMs === "number" &&
     Number.isSafeInteger(state.resolved.startMs) &&
     state.resolved.startMs >= 0
   ) {
     return { numerator: BigInt(state.resolved.startMs), denominator: 1n };
   }
+  const time = state.resolved?.startMs;
+  if (typeof time === "object" && time.numerator >= 0n && time.denominator > 0n) return time;
   return undefined;
 }
 

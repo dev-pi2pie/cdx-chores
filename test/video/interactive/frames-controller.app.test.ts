@@ -5,6 +5,7 @@ import {
   type PickerObservation,
 } from "../../../src/cli/interactive/video-frames/picker";
 import type { FrameRequest } from "../../../src/cli/interactive/video-frames/selection";
+import { CliError } from "../../../src/cli/errors";
 
 class Input extends PassThrough {
   isTTY = true;
@@ -52,6 +53,34 @@ function streams() {
 }
 
 describe("synthetic frame picker ownership", () => {
+  for (const key of ["\x1b", "\x03"])
+    test("fatal closure survives picker cancellation " + JSON.stringify(key), async () => {
+      const io = streams();
+      const failure = new CliError("Child closure unconfirmed", {
+        code: "PROCESS_STOP_FAILED",
+        exitCode: 2,
+      });
+      let resolving = false;
+      const prompt = promptFramePicker({
+        ...io,
+        durationMs: 3000,
+        resolve: async (_request, signal) => {
+          resolving = true;
+          return await new Promise((_resolve, reject) =>
+            signal.addEventListener("abort", () => reject(failure), { once: true }),
+          );
+        },
+      });
+      void prompt.catch(() => {});
+      io.actualInput.write("\r");
+      await flush();
+      expect(resolving).toBe(true);
+      io.actualInput.write(key);
+      await expect(prompt).rejects.toBe(failure);
+      expect(io.actualInput.isRaw).toBe(false);
+      expect(io.actualInput.listenerCount("keypress")).toBe(0);
+      expect(io.actualOutput.listenerCount("resize")).toBe(0);
+    });
   test("picker endpoint resolution retains custom naming intent", async () => {
     const io = streams();
     const prompt = promptFramePicker({
