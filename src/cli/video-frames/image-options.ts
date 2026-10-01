@@ -72,3 +72,12 @@ export function assertOpaque(pixels: Buffer) {
         code: "FRAME_ALPHA_UNSUPPORTED",
       });
 }
+export function requireExactWebpPixels(pixels: Buffer, options: ImageOptions) {
+  if (options.format !== "webp" || options.quality !== "full") return;
+  for (let offset = 3; offset < pixels.length; offset += 4)
+    if (pixels[offset] === 0)
+      throw new CliError(
+        "WebP full cannot preserve RGB values under fully transparent pixels with the supported FFmpeg encoder; choose PNG for exact RGBA output.",
+        { code: "FRAME_WEBP_TRANSPARENCY_UNSUPPORTED" },
+      );
+}

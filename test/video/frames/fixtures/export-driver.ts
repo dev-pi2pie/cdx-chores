@@ -13,7 +13,8 @@ async function main() {
   const roles = await resolver.resolveSet("first-middle-last");
   const control = new AbortController();
   let changed = false;
-  const format = mode === "late-alpha" ? "jpg" : mode === "unavailable" ? "webp" : "png";
+  const format =
+    mode === "late-alpha" ? "jpg" : ["unavailable", "webp-zero"].includes(mode) ? "webp" : "png";
   const duplicate = mode.startsWith("duplicate");
   try {
     const result = await exportResolvedFrames(
@@ -71,6 +72,10 @@ async function main() {
       assert.equal(entries.length, error.result.written);
       assert.ok(error.result.written < 3);
       if (mode === "late-alpha") assert.equal(error.code, "FRAME_ALPHA_UNSUPPORTED");
+      if (mode === "webp-zero") {
+        assert.equal(error.code, "FRAME_WEBP_TRANSPARENCY_UNSUPPORTED");
+        assert.ok(error.result.written >= 1);
+      }
       if (mode === "decoder-partial" || mode === "short-encoder")
         assert.equal(error.code, "FRAME_IMAGE_INCOMPLETE");
       if (mode === "encoder-failure")

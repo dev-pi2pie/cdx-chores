@@ -8,6 +8,12 @@ export function imageColor(stream: VideoStream) {
   );
   if (!rgb && !yuv)
     throw unsupported("Only the verified 8-bit RGB/YUV conversion path is supported.");
+  const alpha = /^(?:rgba|bgra|argb|abgr|yuva)/.test(format);
+  if (stream.sourceAlpha && !alpha)
+    throw new CliError(
+      "Source declares alpha that the default decoder does not expose; this source alpha path is unsupported.",
+      { code: "FRAME_ALPHA_UNSUPPORTED" },
+    );
   const notices: string[] = [];
   function field(name: string, value: string | undefined, fallback: string) {
     if (value === undefined || value === "unknown" || value === "unspecified") {
@@ -46,7 +52,7 @@ export function imageColor(stream: VideoStream) {
       `scale=in_color_matrix=${matrix === "bt709" ? "bt709" : "bt601"}:in_range=${range}:out_range=pc`,
       "format=rgb24",
     ];
-  return { filters, notices, alpha: /^(?:rgba|bgra|argb|abgr|yuva)/.test(format) };
+  return { filters, notices, alpha };
 }
 function unsupported(message: string) {
   return new CliError(message, { code: "FRAME_COLOR_UNSUPPORTED" });

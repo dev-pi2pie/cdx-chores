@@ -4,7 +4,7 @@ import { ticksToMs, timeBase, wireInteger } from "./exact";
 import type { FrameRecord, VideoStream } from "./types";
 export const DECODER_PIXELS = 16_777_216;
 export const METADATA_FIELDS =
-  "stream=index,codec_name,codec_type,width,height,pix_fmt,time_base,start_pts,duration_ts,nb_frames,sample_aspect_ratio,color_range,color_space,color_primaries,color_transfer:stream_disposition=default,attached_pic,timed_thumbnails:stream_side_data=side_data_type,rotation,displaymatrix";
+  "stream=index,codec_name,codec_type,width,height,pix_fmt,time_base,start_pts,duration_ts,nb_frames,sample_aspect_ratio,color_range,color_space,color_primaries,color_transfer:stream_disposition=default,attached_pic,timed_thumbnails:stream_side_data=side_data_type,rotation,displaymatrix:stream_tags=alpha_mode";
 export const FRAME_FIELDS =
   "frame=stream_index,best_effort_timestamp,pts,duration,pict_type,width,height,pix_fmt,sample_aspect_ratio,color_range,color_space,color_primaries,color_transfer:frame_side_data=";
 const FRAME_KEYS = new Set([
@@ -131,6 +131,7 @@ export function parseMetadata(text: string): VideoStream {
         : undefined,
     fingerprint: JSON.stringify(selected),
     eligibleStreams: eligible.length,
+    sourceAlpha: declaredAlpha(selected.tags),
     image: Object.freeze({
       sampleAspectRatio: optionalText(selected.sample_aspect_ratio),
       colorRange: optionalText(selected.color_range),
@@ -157,6 +158,16 @@ function optionalText(value: unknown): string | undefined {
   if (typeof value !== "string")
     throw new CliError("Invalid image metadata field.", { code: "FRAME_METADATA_INVALID" });
   return value;
+}
+function declaredAlpha(tags: unknown): boolean | undefined {
+  if (tags === undefined) return;
+  if (!tags || typeof tags !== "object" || Array.isArray(tags))
+    throw new CliError("Invalid source alpha metadata.", { code: "FRAME_METADATA_INVALID" });
+  const value = (tags as Record<string, unknown>).alpha_mode;
+  if (value === undefined) return;
+  if (value !== "0" && value !== "1")
+    throw new CliError("Invalid source alpha declaration.", { code: "FRAME_METADATA_INVALID" });
+  return value === "1";
 }
 export async function inspectVideo(
   operation: ProcessOperation,

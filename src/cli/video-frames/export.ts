@@ -3,17 +3,24 @@ import { CliError } from "../errors";
 import { ProcessOperation } from "../process/streaming";
 import { inspectImageEncoders, requireImageEncoder } from "./encoders";
 import { imagePlan } from "./image-plan";
-import { assertOpaque, encoderArguments, imageOptions, type ImageOptions } from "./image-options";
+import {
+  assertOpaque,
+  requireExactWebpPixels,
+  encoderArguments,
+  imageOptions,
+  type ImageOptions,
+} from "./image-options";
 import { DECODER_PIXELS, inspectVideo, requireClean } from "./metadata";
 import { assertImageBasename, PublicationSession, type PublicationIO } from "./publication";
 import { RawFrames } from "./raw-frames";
+import { frameSelect, EXPORT_GROUP_LIMIT } from "./select-filter";
 import { FrameResolver, type ExportBinding } from "./resolver";
 import { nextOrdinal, scanVideo } from "./scan";
 import { inspectSource } from "./source";
 import { ImageStager } from "./staging";
 import type { FrameRecord, ResolvedFrame } from "./types";
 
-export const EXPORT_GROUP_LIMIT = 128;
+export { EXPORT_GROUP_LIMIT };
 export interface ImageTarget {
   identity: ResolvedFrame;
   name: string;
@@ -28,6 +35,10 @@ export interface ExportOptions {
   progress?: (state: { written: number; decoded: number }) => void;
   /** Internal filesystem seam for controlled failure verification. */
   io?: Partial<PublicationIO>;
+  /** Internal child-launch observation seam for bounded resource verification. */
+  launch?: NonNullable<ConstructorParameters<typeof ProcessOperation>[0]>["launch"];
+  /** Preserve planned operator notices in both completed and partial results. */
+  notices?: readonly string[];
 }
 export interface ImageExportResult {
   completed: boolean;
@@ -171,7 +182,7 @@ export async function exportImageGroups(
 ): Promise<ImageExportResult> {
   const options = imageOptions(input.image);
   const plan = imagePlan(binding.stream, options);
-  const operation = new ProcessOperation({ signal: input.signal });
+  const operation = new ProcessOperation({ signal: input.signal, launch: input.launch });
   let session: PublicationSession | undefined, writer: ImageStager | undefined;
   let failure: unknown,
     cleanupFailed = false,
@@ -186,7 +197,7 @@ export async function exportImageGroups(
     closureConfirmed: true,
     width: plan.width,
     height: plan.height,
-    notices: plan.notices,
+    notices: Object.freeze([...plan.notices, ...(input.notices ?? [])]),
     peaks: { files: 0, bytes: 0, rawFrames: 0, targets: 0 },
   };
   const progress = () => input.progress?.({ written: session?.written ?? 0, decoded });
@@ -278,6 +289,7 @@ export async function exportImageGroups(
                     code: "FRAME_IMAGE_INCOMPLETE",
                   });
                 if (options.format === "jpg") assertOpaque(pixels);
+                requireExactWebpPixels(pixels, options);
                 result.peaks.rawFrames = 1;
                 while (
                   targets[targetIndex]?.identity.frameNumber ===
@@ -290,7 +302,7 @@ export async function exportImageGroups(
                 decoded++;
                 progress();
               });
-              const select = `select='${unique.map((target) => `eq(n,${target.identity.frameNumber - 1})`).join("+")}'`;
+              const select = frameSelect(unique.map((target) => target.identity.frameNumber));
               const selectedPlan = imagePlan(binding.stream, options, select);
               const extracted = await operation.run(
                 input.ffmpeg ?? "ffmpeg",

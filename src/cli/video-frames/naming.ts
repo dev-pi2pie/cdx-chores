@@ -118,7 +118,11 @@ export class FrameNamer {
           code: "FRAME_NUMERIC_LIMIT",
         });
       serial = formatSerialValue(this.serial.start + input.index!, this.serial.width);
-    } else if (!input.selection || (this.mode === "set" && input.selection === "custom"))
+    } else if (
+      !input.selection ||
+      (this.mode === "set" && input.selection === "custom") ||
+      (this.mode === "single" && input.selection === "middle")
+    )
       throw new CliError("Filename requires its requested selection label.", {
         code: "FRAME_SELECTION_REQUIRED",
       });

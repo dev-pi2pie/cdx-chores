@@ -27,6 +27,7 @@ export interface VideoStream {
   fingerprint: string;
   eligibleStreams: number;
   image?: ImageSourceMetadata;
+  sourceAlpha?: boolean;
 }
 export interface ImageSourceMetadata {
   sampleAspectRatio?: string;

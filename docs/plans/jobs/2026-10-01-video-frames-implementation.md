@@ -203,7 +203,48 @@ Moved the prototype's pure naming grammar/defaults into the backend; prompts reu
 
 Destination inspection preserves source-adjacent defaults and invocation-cwd custom paths, literal single-image extensions (including JPG/JPEG case variants), and mode-defined file/folder meaning. It rejects source aliases and wrong existing kinds, detects a nonempty folder with one bounded read, and creates nothing. Available space uses BigInt `bavail × bsize` from the destination or nearest existing parent; unavailable inspection remains advisory.
 
-Managed units passed **1,499 cases / 6,296 assertions** across 182 files. Focused naming/prototype units passed **15 cases / 144 assertions**, destination filesystem cases **2 / 23**, and existing rename rendering cases **13 / 21**. TypeScript, lint, format, and diff checks passed. Sequence integration, real-tool/private sequence smoke, full application regression, and Phase 5 range review remain pending.
+Managed units passed **1,499 cases / 6,296 assertions** across 182 files. Focused naming/prototype units passed **15 cases / 144 assertions**, destination filesystem cases **2 / 23**, and existing rename rendering cases **13 / 21**. TypeScript, lint, format, and diff checks passed. Sequence integration, real-tool/private sequence smoke, full application regression, and range review were pending at this checkpoint.
+
+### Forward Sampling and Export Checkpoint
+
+FPS parsing retains positive ordinary decimals exactly; integer `ms|s|m` intervals have checked amounts/milliseconds without the Codex timeout cap. Every target derives from its global index and the first displayed-frame origin. The sampler retains the previous identity and at most 128 targets, selects the later frame at an exact boundary, preserves repeated selections, and publishes chronologically. Only clean EOF and a positive final decoded duration establish the display end; container/count estimates cannot pad the sequence. Unknown tails, unreliable starts, and late failures retain confirmed images without reporting completion or a final repeat count.
+
+Single/set entrypoints retain requested labels and generated or literal destinations. Sequence naming carries global cadence indices, verified source ordinals, and growing serial widths across groups; even one exported image uses a folder. The shared exporter uses one decoder/encoder per bounded group, one reusable RGBA buffer, and the accepted staging/publication boundary. Sampling uses a forward record stream with backpressure; each export group also performs prefix validation and decoding from the beginning. This is bounded state rather than a single continuous FFmpeg decoding pass, so many groups can add substantial work.
+
+A native 120-target case exposed the FFmpeg expression parser's depth limit with linear additions. Balanced selection expressions now preserve every requested ordinal and keep depth bounded; the full 128-target expression is covered without reducing cadence or group capacity.
+
+Controlled Node cases cover constant/variable/sparse boundaries, decimal rates, oversized intervals, false duration estimates, unknown tails, duplicate/decreasing/missing starts, late probe failure, serial exhaustion, collision, disk-full, overwrite/stale files, and cancellation. Assertions check independent identities in published structural image bytes, global filenames, bounded state/process counts, source preservation, and staging cleanup. The refreshed image/sequence entry suites passed **31 cases / 155 assertions**; these fixtures establish orchestration rather than actual image fidelity.
+
+### Alpha Fidelity Boundaries
+
+Independent synthetic probes exposed two unsupported paths. A generated WebM declared alpha and an alternate decoder exposed it, while the default decoder produced opaque pixels. The backend now rejects that declaration/decoded-format conflict before destination creation. The supported FFmpeg WebP lossless path also changed RGB under alpha zero; it exposes no exact-transparent-RGB control in the tested configuration. WebP documentation distinguishes preserving those invisible colors through an explicit exact option. The backend rejects WebP `full` with fully transparent pixels and suggests PNG; it does not change the format or weaken exact RGBA semantics. See the [WebP encoding documentation](https://developers.google.com/speed/webp/docs/cwebp).
+
+The opt-in `scripts/spikes/video-frames-fidelity.ts` passed under Node ESM and CommonJS, with 137 images per run. PNG preserved alpha-zero RGBA exactly; lossy WebP preserved zero alpha; WebP `full` preserved exact RGBA for tested alpha values 1, 127, 128, 254, and 255. Declared-alpha/default-decoder failures created no destination. A 129-target sequence retained its 128 completed WebP images when the final fully transparent frame failed, confirmed closure, and removed owned staging. Source preservation passed. These are explicitly verified initial support boundaries, not arbitrary source-codec support claims.
+
+### Synthetic Sequence and Resource Evidence
+
+The opt-in `scripts/spikes/video-frames-sequence.ts` Node ESM run passed twelve cases with 694 published images in approximately 86 seconds of active work, including generation and machine verification. Constant sources use lossless qtrle/MOV or FFV1/NUT; independent preflight checks exact timestamps, per-frame duration, count, clean EOF, and endpoint identities before production export. NUT preserves exact 15-FPS ticks rather than rounding them to millisecond Matroska ticks. Expectations are fixed independently of the sampler.
+
+The CommonJS Node bundle passed all nine small sequence/destination/cancellation cases with 244 images; longer cases were not repeated in that lane. The final ESM run owns the increasing-duration measurements below.
+
+- One second at 24 FPS exported identities 1–24. A 12-FPS source sampled at 24 FPS exported 24 images from 12 distinct frames.
+- Decimal 23.976 FPS, shifted/sparse starts `[5000, 5040, 5120, 5500]`, exact boundaries, twelve buffered H.264 frames, and an oversized `15m` interval passed. The shifted `100ms` export decoded as `[1, 2, 3, 3, 3, 4]`; the oversized interval remained a one-image sequence folder.
+- A six-second 5-FPS source sampled at 24 FPS exported 144 images from 30 distinct frames, retaining 114 repeats across the production 128-target boundary. Two decoder/encoder groups passed with slow publication reaching two owned files. Every PNG filename, identity, and independent RGBA reference was checked; the buffered H.264 case checks identities rather than claiming lossless source pixels.
+- Mode-aware default/literal/custom/set exports passed. Native cancellation with slow publication retained three confirmed images, returned cancellation without a completion/repeat count, confirmed closure, preserved the source, and removed staging.
+
+The increasing-duration sources were 320 × 180 at 15 FPS with 450, 1,800, and 4,500 displayed frames; 1-FPS sampling exported 30, 120, and 300 verified PNG identities. Observations below time only the production export, including its scans/revalidation, rather than source generation or independent output verification.
+
+| Source duration | Export | Sampled parent RSS | Sampled aggregate owned-child RSS | Peak owned children | Decoder/encoder groups | Peak targets |
+| --- | --- | --- | --- | --- | --- | --- |
+| 30 seconds | 1,677 ms | 209,321,984 bytes | 54,688 KiB | 2 | 1 | 30 |
+| 2 minutes | 5,835 ms | 221,839,360 bytes | 55,040 KiB | 2 | 1 | 120 |
+| 5 minutes | 23,254 ms | 240,517,120 bytes | 78,640 KiB | 3 | 3 | 128 |
+
+Each long case retained one raw frame and at most one staged image; the shared limits remain two staged files and 256 MiB encoded capacity. RSS observations can miss peaks and include earlier parent allocations; they are not portable memory guarantees. These simple generated sources do not establish heavy real-file/codec performance. The runs stayed inside the declared development budgets, used machine checks without playback, and kept ignored synthetic review artifacts. Product staging/source checks remain distinct from optional developer artifact removal.
+
+Final regression passed: managed units **1,510 cases / 6,393 assertions** across 183 files; managed applications **2,235 cases / 14,036 assertions** across 299 files; TypeScript, lint, format, diff checks, package build, legacy built video help, and ESM/CommonJS package loading. Source backend bundles are separate evidence from future built frames-command integration. Node 26.5.0 on macOS is tested; minimum Node, other platforms, and heavy real content remain unverified.
+
+Private processing outcomes: PNG sequence export **passed**; JPG sequence export **passed**; still-WebP sequence export **passed**; source preservation **passed**; owned staging cleanup **passed**. Only operation outcomes are recorded. Full Phase 5 range review remains pending.
 
 ## Related Research
 

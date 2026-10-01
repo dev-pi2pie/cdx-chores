@@ -4,6 +4,7 @@ import {
   imageOptions,
   encoderArguments,
   assertOpaque,
+  requireExactWebpPixels,
 } from "../../../src/cli/video-frames/image-options";
 import { imagePlan } from "../../../src/cli/video-frames/image-plan";
 import { displayGeometry } from "../../../src/cli/video-frames/display";
@@ -173,6 +174,48 @@ test("image graph selects the exact stream and transforms alpha separately", () 
   expect(plan.filters).toContain("alphaextract");
   expect(plan.filters).toContain("alphamerge");
   expect(plan.frameBytes).toBe(96 * 64 * 4);
+});
+test("declared source alpha requires an alpha-capable decoded format", () => {
+  expect(imageColor(stream({ sourceAlpha: true })).alpha).toBe(true);
+  expect(() => imageColor(stream({ pixelFormat: "yuv420p", sourceAlpha: true }))).toThrow(
+    "default decoder",
+  );
+  const selected = {
+    index: 0,
+    codec_type: "video",
+    codec_name: "vp9",
+    width: 96,
+    height: 64,
+    pix_fmt: "yuv420p",
+    time_base: "1/1000",
+  };
+  expect(
+    parseMetadata(JSON.stringify({ streams: [{ ...selected, tags: { alpha_mode: "1" } }] }))
+      .sourceAlpha,
+  ).toBe(true);
+  expect(
+    parseMetadata(JSON.stringify({ streams: [{ ...selected, tags: { alpha_mode: "0" } }] }))
+      .sourceAlpha,
+  ).toBe(false);
+  for (const alpha_mode of ["2", "true", 1, null])
+    expect(() =>
+      parseMetadata(JSON.stringify({ streams: [{ ...selected, tags: { alpha_mode } }] })),
+    ).toThrow("alpha declaration");
+});
+test("WebP full rejects fully transparent pixels when exact hidden RGB cannot be preserved", () => {
+  const pixels = Buffer.from([70, 110, 60, 0, 40, 50, 60, 128]);
+  expect(() => requireExactWebpPixels(pixels, imageOptions({ format: "webp" }))).toThrow(
+    "choose PNG",
+  );
+  expect(() => requireExactWebpPixels(pixels, imageOptions({ format: "png" }))).not.toThrow();
+  for (const quality of ["low", "medium", "high"] as const)
+    expect(() =>
+      requireExactWebpPixels(pixels, imageOptions({ format: "webp", quality })),
+    ).not.toThrow();
+  for (const alpha of [1, 127, 128, 254, 255])
+    expect(() =>
+      requireExactWebpPixels(Buffer.from([70, 110, 60, alpha]), imageOptions({ format: "webp" })),
+    ).not.toThrow();
 });
 test("metadata retains immutable color/aspect/display fields for image planning", () => {
   const parsed = parseMetadata(

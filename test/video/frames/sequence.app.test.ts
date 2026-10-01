@@ -5,32 +5,30 @@ import { startFixtureProcess } from "../../../scripts/testing/fixtures/fixture-p
 import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
 for (const mode of [
   "normal",
-  "repeat",
-  "unavailable",
-  "late-alpha",
-  "webp-zero",
-  "decoder-partial",
-  "short-encoder",
-  "encoder-failure",
-  "source-changed",
-  "cancel",
+  "variable",
+  "oversized",
+  "conflicting-estimate",
+  "overwrite",
+  "unknown-tail",
   "duplicate",
-  "duplicate-overwrite",
-  "duplicate-case",
-  "duplicate-case-overwrite",
-  "duplicate-unicode",
-  "duplicate-unicode-overwrite",
+  "decreasing",
+  "missing",
+  "sequence-scan-failure",
+  "sequence-cancel",
+  "serial-overflow",
+  "collision",
+  "disk-full",
 ])
   test(
-    `image export under Node: ${mode}`,
+    `sequence exporter under Node: ${mode}`,
     () =>
-      withTempFixtureDir("image-export", async (root) => {
+      withTempFixtureDir("frame-sequence", async (root) => {
         const toolBuild = await Bun.build({
           entrypoints: [join(import.meta.dir, "fixtures/export-tool.ts")],
           target: "node",
         });
         const driverBuild = await Bun.build({
-          entrypoints: [join(import.meta.dir, "fixtures/export-driver.ts")],
+          entrypoints: [join(import.meta.dir, "fixtures/sequence-driver.ts")],
           target: "node",
         });
         expect(toolBuild.success).toBe(true);

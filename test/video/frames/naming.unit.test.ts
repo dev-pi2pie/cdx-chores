@@ -32,6 +32,9 @@ test("set roles retain different names when all resolve to the same frame", () =
   expect(() => names.name({ frameNumber: 1, selection: "custom", format: "png" })).toThrow(
     "selection label",
   );
+  expect(() =>
+    new FrameNamer("single", "clip").name({ frameNumber: 1, selection: "middle", format: "png" }),
+  ).toThrow("selection label");
 });
 test("serial settings use explicit over embedded over default and grow minimum width per value", () => {
   expect(effectiveFrameSerial({ template: "{stem}-{serial}" })).toEqual({ start: 1, width: 6 });

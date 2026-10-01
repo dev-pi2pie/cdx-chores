@@ -167,6 +167,16 @@ export class FrameResolver {
       });
     });
   }
+  async prepareSequence(signal?: AbortSignal): Promise<ExportBinding> {
+    return this.operation(signal, async (op) => {
+      const context = await this.check(op);
+      return Object.freeze({
+        sourcePath: this.path,
+        source: context.source,
+        stream: context.stream,
+      });
+    });
+  }
   private async scan(
     operation: ProcessOperation,
     context: Context,

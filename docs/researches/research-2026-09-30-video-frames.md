@@ -10,7 +10,7 @@ agent: codex
 
 Research `cdx-chores video frames` for extracting one source frame, a fixed frame set, or a whole-video sequence of still images. The feature should support direct CLI invocation and a guided Interactive flow, with PNG, JPG, and WebP output.
 
-This research is in progress. Repository observations below describe existing code; new command examples, prompts, defaults, and algorithms are proposals unless identified as agreed direction. Accepted Phases 1–4, including verified backend image export/private processing, are recorded in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md). Sequence sampling, command/Interactive integration, and integrated stress remain pending.
+This research is in progress. Repository observations below describe existing code; new command examples, prompts, defaults, and algorithms are proposals unless identified as agreed direction. Accepted Phases 1–4, including verified backend image export/private processing, are recorded in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md). Phase 5 backend sampling, destinations, and naming are implemented and verified with range review pending. Command/Interactive integration and integrated stress remain pending.
 
 Agreed direction from the design discussion:
 
@@ -426,6 +426,8 @@ Frame export preserves the source's intended appearance through necessary pixel/
 Honor reliable source matrix, range, primaries, and transfer metadata during conversion; output color metadata must describe the encoded pixels. Selecting `format=rgba` alone specifies a pixel representation, not a complete color-management policy.[^image-color] When color fields are missing, use only the tested, documented interpretation of the supported FFmpeg conversion path and disclose inferred values in review/CLI diagnostics. Conflicting metadata or an unsupported conversion produces a specific error rather than a silent color reinterpretation. HDR-to-SDR tone mapping and archival preservation of source bit depth/profiles are outside this scope; a source that requires such a transformation fails clearly.
 
 Preserve non-opaque alpha in PNG and WebP using a supported encoder mode. JPG accepts opaque selected frames, including opaque frames stored in an alpha-capable format. If a selected frame has non-opaque pixels, report that JPG cannot preserve transparency and suggest PNG/WebP; do not choose a background or discard alpha. For a frame set or sequence, a later incompatible frame stops export and retains completed images under the partial-output contract.
+
+The initial backend rejects sources that declare alpha when the default decoded format does not expose it. Its supported FFmpeg WebP `full` path also rejects fully transparent pixels because it cannot preserve their hidden RGB values; PNG preserves exact RGBA in that case. These are explicit unsupported-path failures, with no decoder/format substitution or weakening of lossless semantics. Independent synthetic verification is recorded in the [Phase 5 execution record](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-5).
 
 Source-faithful describes visual intent, not identical decoded values across formats. Lossy encoding, chroma sampling, scaling, and required representation conversion can change pixels; lossless `full` compares against the agreed post-transform reference.
 
