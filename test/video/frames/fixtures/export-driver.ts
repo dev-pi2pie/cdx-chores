@@ -14,16 +14,25 @@ async function main() {
   const control = new AbortController();
   let changed = false;
   const format = mode === "late-alpha" ? "jpg" : mode === "unavailable" ? "webp" : "png";
+  const duplicate = mode.startsWith("duplicate");
   try {
     const result = await exportResolvedFrames(
       resolver,
-      roles.map((role) => ({ identity: role.identity, name: `${role.selection}.${format}` })),
+      roles.map((role, index) => ({
+        identity: role.identity,
+        name: duplicate
+          ? mode.includes("case") && index > 0
+            ? "SAME.png"
+            : "same.png"
+          : `${role.selection}.${format}`,
+      })),
       {
         folder,
         image: { format },
         ffmpeg: tool,
         ffprobe: tool,
         signal: control.signal,
+        overwrite: mode.endsWith("overwrite"),
         progress: ({ written }) => {
           if (written && !changed && mode === "source-changed") {
             changed = true;
@@ -48,8 +57,8 @@ async function main() {
     assert.equal(error.result.repeatedSelections, undefined);
     assert.equal(error.result.closureConfirmed, true);
     assert.equal(error.result.stopFlow, false);
-    if (mode === "unavailable") {
-      assert.equal(error.code, "FRAME_ENCODER_UNAVAILABLE");
+    if (mode === "unavailable" || duplicate) {
+      assert.equal(error.code, duplicate ? "FRAME_NAME_COLLISION" : "FRAME_ENCODER_UNAVAILABLE");
       assert.equal(error.result.written, 0);
       await assert.rejects(stat(folder), { code: "ENOENT" });
     } else {

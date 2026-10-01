@@ -116,8 +116,15 @@ async function validateGroup(
   if (!targets.length || targets.length > EXPORT_GROUP_LIMIT)
     throw new CliError("Image group exceeds its bounded capacity.", { code: "FRAME_GROUP_LIMIT" });
   let previous = 0;
+  const names = new Set<string>();
   for (const target of targets) {
     assertImageBasename(target.name);
+    const key = target.name.normalize("NFC").toLowerCase();
+    if (names.has(key))
+      throw new CliError("Image selections require distinct output filenames.", {
+        code: "FRAME_NAME_COLLISION",
+      });
+    names.add(key);
     const identity = target.identity;
     if (
       !Number.isSafeInteger(identity.frameNumber) ||

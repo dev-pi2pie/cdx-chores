@@ -149,7 +149,7 @@ Private processing smoke: **not tested**. Ignored synthetic artifacts are retain
 
 ## Phase 4
 
-Started from accepted Phase 3 tip `1165dd2b9755ae714b16c24de8142c5a6a9eb46d`. Implement the verified image configuration and a shared bounded exporter/publication boundary before sequence sampling. Phase 2 recipes remain independent smoke references. Production pixel, filesystem, failure, and private processing evidence is pending; no Phase 4 acceptance is claimed.
+Started from accepted Phase 3 tip `1165dd2b9755ae714b16c24de8142c5a6a9eb46d`. Implement the verified image configuration and a shared bounded exporter/publication boundary before sequence sampling. Phase 2 recipes remain independent smoke references. At phase start, production pixel, filesystem, failure, and private processing evidence was pending. The checkpoints below record verification; phase acceptance still awaits range review.
 
 ### Image Configuration Checkpoint
 
@@ -157,11 +157,11 @@ The shared configuration retains immutable aspect/color/display metadata, valida
 
 Ten independent image-plan unit cases (65 assertions) and the existing metadata/resolver checks passed: 26 cases / 144 assertions together. TypeScript, repository lint/format, and diff checks passed. The explicit `scripts/spikes/video-frames-image-config.ts` Node smoke passed with FFmpeg/FFprobe 9.0.2: all JPG/WebP presets, exact PNG/lossless WebP bytes, exact alpha, and reflected 2:1-aspect MOV output at half scale. The combined nearest RGB resize has up to one level of arithmetic rounding against independently composed coordinates; PNG preserves the resulting pixels exactly. Saved PNG dimensions, square aspect, orientation reset, and BT.709/sRGB tags passed.
 
-The initial source conversion boundary is verified 8-bit RGB/YUV with BT.709 primaries and sRGB/BT.709 transfer; missing fields use disclosed explicit interpretations. Conflicting metadata, unsupported primaries/transfer/bit depth, or unsupported display transforms fail specifically. Expanded conversion/failure evidence and production export/private smoke remain pending. Synthetic review artifacts stay ignored/untracked.
+The initial source conversion boundary is verified 8-bit RGB/YUV with BT.709 primaries and sRGB/BT.709 transfer; missing fields use disclosed explicit interpretations. Conflicting metadata, unsupported primaries/transfer/bit depth, or unsupported display transforms fail specifically. At this checkpoint, expanded conversion/failure evidence and production export/private smoke were pending. Synthetic review artifacts stay ignored/untracked.
 
 ### Encoder Input Checkpoint
 
-Adjacent process support now streams encoder input through awaited native writes with the same 256-KiB queue boundary. Input producers remain part of shutdown acknowledgement after child close; cancellation aborts their signal and closes the pipe. The buffered helper is unchanged. Twelve process unit cases (34 assertions) and eleven controlled Node application cases (44 assertions) passed, including 3,276,800 input bytes through a slow reader, input failure, resistant-child cancellation, oversized input rejection, and a producer that remains pending after child close. TypeScript and focused ownership checks passed; full phase regression and exporter integration remain pending.
+Adjacent process support now streams encoder input through awaited native writes with the same 256-KiB queue boundary. Input producers remain part of shutdown acknowledgement after child close; cancellation aborts their signal and closes the pipe. The buffered helper is unchanged. Twelve process unit cases (34 assertions) and eleven controlled Node application cases (44 assertions) passed, including 3,276,800 input bytes through a slow reader, input failure, resistant-child cancellation, oversized input rejection, and a producer that remains pending after child close. TypeScript and focused ownership checks passed; full phase regression and exporter integration were pending at this checkpoint.
 
 ### Staging and Publication Checkpoint
 
@@ -182,6 +182,10 @@ The opt-in `scripts/spikes/video-frames-export.ts` production-path smoke passed 
 For a labeled 96 × 64 PNG, compression 0 versus 9 took about 34 versus 35 ms including launch and produced 24,801 versus 369 bytes; both preserved pixels. This small synthetic observation is not a heavy-content performance claim. TypeScript, lint, format, package build, legacy built video help, and package ESM/CommonJS imports passed. New backend bundle smoke is distinct from future command integration.
 
 Private processing outcomes: PNG image export **passed**; JPG image export **passed**; still-WebP image export **passed**; source preservation **passed**; owned staging cleanup **passed**. No private-resource details are recorded.
+
+### Review Follow-up
+
+Review of `1165dd2b..35f2ea9b` found a P2 overwrite-accounting issue: duplicate group names could replace an earlier image while counting both writes. A bounded normalized/case-insensitive name set now rejects duplicates before frame scanning or destination creation. Both overwrite policies and case aliases are covered; the refreshed controlled Node exporter suite passed **13 cases / 65 assertions**. TypeScript, lint, format, and diff checks passed. Documentation review also corrected stale pending-evidence summaries and labeled initial checkpoint gaps as historical. Expanded-range review remains pending.
 
 ## Related Research
 

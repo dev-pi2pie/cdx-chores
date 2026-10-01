@@ -48,7 +48,7 @@ Use [Test Suite Audit Inventory](test-suite-audit-inventory.md) for the fixed pr
 
 `image-framing.unit.test.ts` owns bounded format completion parsing; `publication.app.test.ts` owns real Node filesystem staging/publication, collisions, alias protection, injected I/O failures, partial accounting, and safe cleanup. Their tiny structural format fixtures establish lifecycle boundaries; the explicit real-image smoke establishes actual encoding and pixels.
 
-`raw-frames.unit.test.ts` owns bounded reusable RGBA framing. `export.app.test.ts` owns the Node decoder/encoder/publication pipeline, retained roles, encoder preflight, partial output, source mutation, alpha failure, and cancellation with controlled executable responses. Resolver cases also verify that copied or stale selections cannot be exported. Frame records retain selected image metadata for conversion checks without collecting a full frame table.
+`raw-frames.unit.test.ts` owns bounded reusable RGBA framing. `export.app.test.ts` owns the Node decoder/encoder/publication pipeline, retained roles, encoder preflight, duplicate/case-alias names under both overwrite policies, partial output, source mutation, alpha failure, and cancellation with controlled executable responses. Resolver cases also verify that copied or stale selections cannot be exported. Frame records retain selected image metadata for conversion checks without collecting a full frame table.
 
 ### Streaming Process Foundation
 

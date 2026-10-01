@@ -10,7 +10,7 @@ agent: codex
 
 Implement `cdx-chores video frames` for one exact source frame, a fixed frame set, or a whole-video sequence of PNG, JPG, or still WebP images. Deliver the direct CLI and guided Interactive flow without changing convert, resize, or GIF behavior.
 
-Phases 1–3 are complete. Synthetic real-tool evidence establishes the tested feasibility and resolution boundaries; production image export, integrated stress, and private smoke remain unverified. See the [unified execution record](jobs/2026-10-01-video-frames-implementation.md) for evidence and checkpoint reviews.
+Phases 1–3 are complete. Phase 4 backend image export and private image-processing smoke have passed verification and await phase-range review acceptance. Sequence sampling, command/Interactive integration, and integrated stress remain pending. See the [unified execution record](jobs/2026-10-01-video-frames-implementation.md) for evidence and checkpoint reviews.
 
 The research owns selection, sampling, terminal, image, and output semantics. This plan owns implementation order, acceptance checkpoints, development-test cost, and evidence handling. Runtime support claims require recorded results. Implement prototypes and verification support in TypeScript/JavaScript, using Bun for development and Node.js for runtime checks.
 

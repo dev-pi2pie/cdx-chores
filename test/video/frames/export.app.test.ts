@@ -13,6 +13,10 @@ for (const mode of [
   "encoder-failure",
   "source-changed",
   "cancel",
+  "duplicate",
+  "duplicate-overwrite",
+  "duplicate-case",
+  "duplicate-case-overwrite",
 ])
   test(
     `image export under Node: ${mode}`,
