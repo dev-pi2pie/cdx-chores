@@ -12,7 +12,7 @@ Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation
 | Phase | Research obligations | State |
 | --- | --- | --- |
 | 1 | Independent fixture expectations, smoke preparation, real terminal keys/resize, selection retention, fallbacks, prompt ownership/restoration | Completed |
-| 2 | Real-tool timing, stream agreement, encoder/filter feasibility, bounded writer topology, decoder guard, synthetic workload measurements | In progress |
+| 2 | Real-tool timing, stream agreement, encoder/filter feasibility, bounded writer topology, decoder guard, synthetic workload measurements | Completed |
 | 3 | Streaming records, exact identities, bounded cache, source invalidation, cancellation/child closure | Not started |
 | 4 | Verified pixels, alpha/transforms, safe publication, failure accounting, private processing smoke | Not started |
 | 5 | Sampling, retained repeats, destinations and concrete naming | Not started |
@@ -85,7 +85,7 @@ The decoder-boundary experiment declares two one-frame FFV1 sources: 4,096 × 4,
 
 The on-demand entry is `scripts/spikes/video-frames-tools.ts`; bundle with Bun's Node target and run the bundle using `node <bundle> timing|streams|guard`. Expectations and raw labeled pixels are prepared independently of production resolution. The tools execute directly with bounded diagnostics/output and a monitored combined synthetic scratch allowance. The checks passed with Node 26.5.0 and FFmpeg/FFprobe 8.0.1 on macOS. Other builds/platforms remain unverified.
 
-- Constant FFV1 starts `[0, 40, 80, 120]` ms and shifted variable starts `[5000, 5040, 5120, 5500]` ms matched the declared identities in both tools. The latter has video-relative end 540 ms from the final 40-ms frame duration. A 70-ms target selects frame 2; the 270-ms midpoint selects frame 3. Decimal 2.5-FPS and 100-ms target expectations retain repeated identities. Real encoded repeated-output verification remains pending.
+- Constant FFV1 starts `[0, 40, 80, 120]` ms and shifted variable starts `[5000, 5040, 5120, 5500]` ms matched the declared identities in both tools. The latter has video-relative end 540 ms from the final 40-ms frame duration. A 70-ms target selects frame 2; the 270-ms midpoint selects frame 3. Decimal 2.5-FPS targets map to `[1, 3]`; 100-ms interval targets retain `[1, 2, 3, 3, 3, 4]`. Those interval repeats were encoded and verified in the subsequent writer checkpoint below.
 - Twelve H.264 frames actually included B frames, decoded in presentation order, and reached the final marker after draining. One-frame decoding preserved its endpoint identity.
 - Eligible-video inspection uses `-select_streams V`, then an explicit stream index for both tools. A default second stream, tied defaults, no defaults, and an MP4 attached picture passed identity/pixel checks. The no-default fixture uses Matroska because the tested MP4 muxer marks the first video default.
 - Frame records use `-show_frames -show_entries frame=stream_index,best_effort_timestamp,pts,duration,pict_type:frame_side_data= -of compact=p=1:nk=0`. Numeric values remain strings in stream time-base ticks; empty selected side data can produce a trailing separator and blank line. Variable-timing generation requires `-enc_time_base filter` to avoid encoder-time-base rounding.
@@ -117,7 +117,11 @@ Continuous 320 × 180, 15-FPS sources passed declared count/timing/EOF/endpoint 
 
 Cached minimal-identity lookups took under 0.01 ms in this feasibility harness. Prefix stops awaited child close; only the full scan established exact EOF/count. Measurements include process/observation overhead, sampled RSS can miss peaks, and these are not production resolver measurements or hard memory guarantees. Larger file I/O, demanding codecs, heavy real content, minimum Node, and other platforms remain unverified. Private processing smoke: **not tested**.
 
-Synthetic artifacts remain ignored/untracked for local review. The disposable workspace check verified cleanup independently. Phase 2 task evidence is complete; acceptance awaits its full commit-range review.
+Synthetic artifacts remain ignored/untracked for local review. The disposable workspace check verified cleanup independently.
+
+### Review and Acceptance
+
+The complete implementation range `49d37ee3..229a7e39` received maintainability, test/evidence, and documentation review with no actionable findings. The acceptance receipt was reviewed separately. Phase 2 is accepted on 2026-10-01; its experiments remain scoped to feasibility rather than production behavior.
 
 ## Related Research
 
