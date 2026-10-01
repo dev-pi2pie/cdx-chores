@@ -134,7 +134,7 @@ export function renderDetailedDoctorReport(runtime: CliRuntime, report: DoctorRe
     markdownPdf,
     query: queryExtensions,
     queryCodex,
-    tools: { ffmpeg, pandoc, weasyprint },
+    tools: { ffmpeg, ffprobe, pandoc, weasyprint },
   } = report;
   const { formats: queryFormats } = queryExtensions;
   const fontconfigDiscovery = font.discovery.fontconfig;
@@ -145,7 +145,7 @@ export function renderDetailedDoctorReport(runtime: CliRuntime, report: DoctorRe
   printLine(runtime.stdout, `${pc.dim("Platform:")} ${pc.white(report.platform)}`);
   printLine(runtime.stdout, `${pc.dim("Node.js:")} ${pc.white(report.nodeVersion)}`);
   printLine(runtime.stdout);
-  for (const item of [pandoc, ffmpeg, weasyprint]) {
+  for (const item of [pandoc, ffmpeg, ffprobe, weasyprint]) {
     const statusText = item.available
       ? pc.green(`available (${item.version ?? "unknown version"})`)
       : pc.red("missing");
@@ -201,6 +201,23 @@ export function renderDetailedDoctorReport(runtime: CliRuntime, report: DoctorRe
       `- ${pc.bold(capability.id)}: ${status}, minimum=${capability.minimumVersion}${diagnostic}`,
     );
   }
+
+  printLine(runtime.stdout);
+  printLine(runtime.stdout, pc.bold(pc.cyan("Video frames advertised encoder support:")));
+  const encoders = report.videoFrames.encoders;
+  const encoderLabels = [
+    ["PNG (png)", encoders.png],
+    ["JPG (mjpeg)", encoders.jpg],
+    ["Still WebP (libwebp)", encoders.webp],
+    ["libwebp encoder", encoders.webpEncoder],
+    ["WebP BGRA input", encoders.webpBgra],
+    ["WebP full (lossless)", encoders.webpLossless],
+  ] as const;
+  for (const [label, status] of encoderLabels) {
+    const statusText = status === "supported" ? pc.green(status) : pc.yellow(status);
+    printLine(runtime.stdout, `- ${pc.bold(label)}: ${statusText}`);
+  }
+  printLine(runtime.stdout, "Advertised support does not verify source support or image fidelity.");
 
   printLine(runtime.stdout);
   printLine(runtime.stdout, pc.bold(pc.cyan("Font support:")));

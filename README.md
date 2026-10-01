@@ -56,7 +56,7 @@ Runtime requirement:
 | `data`        | `preview`, `extract`, `query`, `query codex`, `stack`, `stack replay`, `parquet preview`, `duckdb doctor`, `duckdb extension install`, `(conversion actions)` | Tabular conversion, preview, extraction, multi-source stacking, DuckDB-backed SQL query, and Codex SQL drafting | lightweight `csv` / `tsv` / `json` preview and conversion stay on the in-memory PapaParse-backed path; `extract` is best suited to shaping one clean table, `stack` assembles many matching local sources before later work, and `query` is the expressive lane for filtering, projection, and output selection |
 | `md`          | `to-docx`, `to-pdf`, `pdf-profile init`, `pdf-profile codex`, `pdf-template init`, `pdf-template codex`, `pdf-project codex`, `frontmatter-to-json`           | Markdown conversion, PDF profile/template/project generation, and metadata extraction                           | `to-docx` requires `pandoc`; `to-pdf` requires Pandoc 2.0+ and `weasyprint`                                                                                                                                                                                                                                     |
 | `rename`      | `file`, `batch`, `cleanup`, `apply`                                                                                                                           | Safe rename previews, cleanup flows, and replayable apply runs                                                  | Codex analyzer routes are optional, not required for standard rename usage                                                                                                                                                                                                                                      |
-| `video`       | `convert`, `resize`, `gif`                                                                                                                                    | `ffmpeg`-backed video wrappers                                                                                  | Requires `ffmpeg`                                                                                                                                                                                                                                                                                               |
+| `video`       | `convert`, `resize`, `gif`, `frames` | Video conversion and still-frame exports | Frames requires `ffmpeg`, `ffprobe`, and the requested image encoder; other video commands require `ffmpeg` |
 | `interactive` | `interactive` or no args                                                                                                                                      | Guided menu flow for supported command groups                                                                   | Requires a TTY                                                                                                                                                                                                                                                                                                  |
 
 Data notes:
@@ -77,12 +77,13 @@ Use `cdx-chores doctor` before relying on a command in a script, a CI job, or a 
 | `md to-docx`                                                            | Markdown-to-DOCX command wrapper                                                         | `pandoc` must be installed on `PATH`                                                                                          | Run `cdx-chores doctor`                                                                                            |
 | `md to-pdf`                                                             | Markdown-to-PDF command wrapper and default HTML/CSS recipe                              | Pandoc 2.0+ and `weasyprint` must be installed on `PATH`                                                                      | Run `cdx-chores doctor`                                                                                            |
 | `video convert`, `video resize`, `video gif`                            | Video command wrappers                                                                   | `ffmpeg` must be installed on `PATH`                                                                                          | Run `cdx-chores doctor`                                                                                            |
+| `video frames` | Frame selection, sampling and still-image exports | `ffmpeg` and `ffprobe` on `PATH`, with the requested image encoder in the FFmpeg build | Run `cdx-chores doctor --details`; doctor reports advertised support. Verify an actual export for the intended source and mode |
 | `data extract`, `data query` for `csv`, `tsv`, `parquet`                | Extract and query command surfaces plus DuckDB integration                               | DuckDB runtime must be available in the current install/runtime                                                               | Run `cdx-chores doctor`                                                                                            |
 | `data extract`, `data query` for `sqlite`, `excel`                      | Extract and query command surfaces                                                       | Required DuckDB extension must be loadable for the current DuckDB runtime                                                     | Run `cdx-chores doctor`, then `cdx-chores data duckdb doctor` or `cdx-chores data duckdb extension install <name>` |
 | `data extract` reviewed suggestions, `data query codex`                 | Codex-assisted source shaping, semantic header review, and natural-language SQL drafting | Codex support must be configured and an auth/session signal must be available                                                 | Run `cdx-chores doctor`                                                                                            |
 | `md pdf-profile codex`, `md pdf-template codex`, `md pdf-project codex` | Codex-assisted Markdown PDF profile, template, and coordinated project drafting          | Codex support must be configured for Codex-assisted decisions; deterministic fallback paths remain available where documented | Run `cdx-chores doctor`                                                                                            |
 
-The Codex SDK baseline for `v0.2.0-canary.2` is `@openai/codex-sdk` `0.159.2`.
+The Codex SDK baseline for `v0.2.0-canary.3` is `@openai/codex-sdk` `0.159.3`.
 
 Adopted helper commands and explicit `interactive` sessions accept
 `--codex-model`, `--codex-provider`, and `--codex-reasoning-effort`. Model and
@@ -109,6 +110,8 @@ authoring with an optional render handoff.
 The default doctor view is a compact workflow summary with detected actions.
 Use `--details` for complete human-readable evidence and `--json` for
 automation or machine-readable checks.
+
+Video frames availability requires both FFmpeg and FFprobe. Doctor separately reports advertised PNG, JPG, still-WebP, and WebP lossless support; unknown assessments remain visible. These checks inspect encoder information without reading media or generating images. Successful export still depends on the source.
 
 Machine-readable check:
 
@@ -390,6 +393,20 @@ Cleanup option comparison:
 | `--conflict-strategy` | Resolve collisions only when the cleaned target conflicts | `skip`, `number`, `uid-suffix`           |
 
 ### Video
+
+Export one frame, a fixed frame set, or a whole-video image sequence:
+
+```bash
+cdx-chores video frames -i ./clip.mp4 --first-frame
+cdx-chores video frames -i ./clip.mp4 --frame-set first-middle-last
+cdx-chores video frames -i ./clip.mp4 --interval 2s --format webp
+```
+
+Choose exactly one selector or cadence. PNG is the default and requires quality `full`; JPG and WebP offer `low`, `medium`, `high`, and `full`. JPG `full` remains lossy. WebP `full` requires advertised lossless support and rejects fully transparent pixels whose RGB values the supported encoder cannot preserve; use PNG for exact RGBA in that case. `--output` names a file for one frame and a folder for sets/sequences. Explicit image extensions must match the selected format. Matching existing files require `--overwrite`; completed images remain after interruption or failure. Use `video frames --help` for selector, template, and serial options.
+
+For guided export, run `cdx-chores` and choose **video → frames**. Select one frame, a fixed set or a whole-video sequence, configure image settings and review the filenames before export. The custom picker offers a timeline and exact frame/time input, with direct-input fallback in small terminals.
+
+See [Video frames usage](docs/guides/video-frames-usage.md) for sampling estimates, naming, dependency capabilities, progress and partial-output rules.
 
 Video to GIF:
 

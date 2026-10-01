@@ -6,6 +6,7 @@ import { installActionMocks } from "./action-mocks";
 import { installFsPromiseMocks } from "./fs-mock";
 import { installPathPromptMocks } from "./path-prompt-mocks";
 import { installPromptMocks } from "./prompt-mocks";
+import { installVideoFramesWorkflowMock } from "../../video/interactive/mock-action";
 
 function hasInteractiveDataCommand(
   context: HarnessRunnerContext,
@@ -42,6 +43,8 @@ export function installHarnessMocks(context: HarnessRunnerContext): void {
   installFsPromiseMocks(context);
   installActionMocks(context);
   installPathPromptMocks(context);
+  if (context.scenario.selectQueue?.includes("video:frames"))
+    installVideoFramesWorkflowMock(context);
   if (context.scenario.markdownPdfMocks) {
     installMarkdownPdfMocks(context);
   }

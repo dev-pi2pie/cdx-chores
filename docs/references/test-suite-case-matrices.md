@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Contract Ownership Catalog"
 created-date: 2026-08-23
-modified-date: 2026-09-06
+modified-date: 2026-10-01
 status: completed
 agent: codex
 ---
@@ -35,6 +35,40 @@ Use [Test Suite Audit Inventory](test-suite-audit-inventory.md) for the fixed pr
 | Test runner | `test/test-runner/` | suite discovery, prerequisites, process/output ownership, reporting, retention, and terminal presentation |
 | Shared fixtures | `test/fixtures/` | checked-in data consumed by more than one accepted owner |
 | Global helpers | `test/helpers/` | independently reused, feature-neutral test infrastructure only |
+
+### Video Frames
+
+`test/video/interactive/frames-*.unit.test.ts` owns selector grammar, coarse movement, adaptive display fit, naming tokens, and completion. `frames-controller.app.test.ts` owns input sessions, resolver cancellation, restoration, and isolated checks against the installed prompt library. Its real-library fixture stays beside that consumer under `test/video/interactive/fixtures/`.
+
+`frames-settings.unit.test.ts` owns pure cadence feedback and advertised format/quality choices. `frames-operation.app.test.ts` owns asynchronous input ownership, confirmed cancellation and fatal closure. `frames-workflow.app.test.ts` owns guided preparation/review/export integration under Node.js with controlled tools, retained identities, source invalidation and recovery. Shared path/text cancellation remains covered by the existing `test/cli-foundations/path-prompts/` and `text-inline/` owners. Interactive routing covers the new peer entry without loading frames prompts in unrelated workflows.
+
+`frames-menus.app.test.ts` owns finite menu pagination, disabled choices, selected descriptions/resize, Back/Escape parent routes, and editable draft retention using the installed prompt library under Node.js. Its fixture stays under `test/video/interactive/fixtures/`; shared path/text draft hooks also retain their existing foundation owners.
+
+`test/video/smoke-budget.unit.test.ts` checks only pure development-budget calculations. Real terminal interactions and generated/private media smoke are explicit plan verification outside regular suites and CI. See the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md) for their evidence. These are new contracts, with no historical-path migration.
+
+`test/video/frames/` owns selected-stream metadata, checked exact timing, EOF/prefix identity resolution, fixed presets, bounded session reuse, and source/stream invalidation. Unit cases use independent records and injected inspection; application cases bundle the resolver for Node and use controlled executable responses. Their fixtures stay beside the consumer. Neither suite reads private media or requires installed FFmpeg.
+
+`image-plan.unit.test.ts` owns format/quality/scale policies, aspect/display geometry, color inference/rejection, transparency checks, and advertised image encoder interpretation. Actual encoded pixels and metadata require the explicit synthetic smoke checkpoint.
+
+`image-framing.unit.test.ts` owns bounded format completion parsing. `staging-boundary.unit.test.ts` owns the default 256-MiB encoded-byte accounting boundary and its one-byte overflow with virtual storage and bounded chunks. It neither creates a 256-MiB file nor establishes native encoding at that size. `publication.app.test.ts` owns real Node filesystem staging/publication, collisions, alias protection, injected I/O failures including `ENOSPC` and `EDQUOT`, partial accounting, and safe cleanup. Their tiny structural format fixtures establish lifecycle boundaries; the explicit real-image smoke establishes actual encoding and pixels.
+
+`raw-frames.unit.test.ts` owns bounded reusable RGBA framing. `export.app.test.ts` owns the Node decoder/encoder/publication pipeline, retained roles, encoder preflight, duplicate/case-alias names under both overwrite policies, partial output, source mutation, alpha failure, and cancellation with controlled executable responses. Resolver cases also verify that copied or stale selections cannot be exported. Frame records retain selected image metadata for conversion checks without collecting a full frame table.
+
+`naming.unit.test.ts` owns shared source stems, concrete mode-specific rendering, serial precedence/width/overflow, filename limits, and exact advisory volume calculations. `destination.app.test.ts` owns mode-defined defaults/custom paths, explicit extensions, existing kinds/aliases, nonempty-folder detection, and inspection without creation. Existing prototype naming and rename rendering tests protect reuse of the shared grammar and separator normalization.
+
+`sampler.unit.test.ts` owns exact FPS/interval grammar, independent cadence targets and count estimates, presentation boundaries, retained repeats, bounded selection expressions, incremental timing rejection, and reliable end/EOF handling. `sequence.app.test.ts` owns the Node sampler/exporter boundary, global ordinals/serials, backpressure, overwrite, partial counts, and late timing/tool/filesystem/cancellation failures with controlled executables. `images.app.test.ts` owns generated/literal single-image and fixed-set destinations, requested labels, overwrite, and pre-write source-alpha rejection. Real sequence content, resource observations, and source/encoder alpha limitations remain explicit synthetic smoke evidence; regular fixtures do not establish pixel fidelity.
+
+### Video Frames Command and Doctor
+
+`test/video/frames/options.unit.test.ts` owns shared direct option validation. `action.app.test.ts` owns the Node command/action boundary with controlled tools, pre-write review, retained identities, all export modes, dependency preflight, and partial failures. Command UX cases cover discovery and repeated cadence rejection. These new contracts introduce no historical test-path migration.
+
+`test/video/frames/progress.unit.test.ts` owns presentation throttling, distinct counts/estimates, quiet activity, measured resize, stopping and renderer release. The action owner also checks result-path layout and per-stream color eligibility. Export/sequence owners check pass-local inspection, selected extractions, confirmed publications and cancellation during finishing/cleanup. The Interactive operation owner checks input ownership through late acknowledgement and fatal closure precedence.
+
+`test/doctor/actions/video-frames.unit.test.ts` owns the FFmpeg/FFprobe availability matrix, exact advertised encoder/input/lossless assessments, unknown successful output, operational failure, and consistent Summary/Details/JSON projections. Controlled dependency/report fixtures preserve existing video capability meanings.
+
+### Streaming Process Foundation
+
+`test/cli-foundations/process/` owns incremental UTF-8 records, bounded metadata/input queues/diagnostic tails, structured progress, direct argument handling, and registered child/input-producer/consumer closure. Application fixtures exercise actual Node pipes, awaited input writes, and cooperative/resistant children; unit cases model queue rejection, unconfirmed closure, and Windows force transitions. Generated media remains an explicitly invoked smoke task, separate from these process contracts.
 
 ### Global Helpers
 

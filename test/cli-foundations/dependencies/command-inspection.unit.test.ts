@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { inspectCommand } from "../../../src/cli/deps";
+import { inspectCommand, requireCommandAvailable } from "../../../src/cli/deps";
 import type { ExecCommandResult } from "../../../src/cli/process";
 
 function ok(stdout = "", stderr = ""): ExecCommandResult {
@@ -14,6 +14,38 @@ function ok(stdout = "", stderr = ""): ExecCommandResult {
 }
 
 describe("CLI dependency command inspection", () => {
+  test.each(["ffmpeg", "ffprobe"] as const)(
+    "parses %s version without fabricating unrecognized output",
+    async (command) => {
+      const calls: string[][] = [];
+      const status = await inspectCommand(command, "darwin", async (_command, args) => {
+        calls.push(args);
+        return ok(`${command} version n8.0.1-build\n`);
+      });
+      expect(calls).toEqual([["-version"]]);
+      expect(status).toMatchObject({ available: true, version: "n8.0.1-build" });
+      for (const output of ["", "unexpected version output", `${command} custom`]) {
+        expect(await inspectCommand(command, "darwin", async () => ok(output))).toMatchObject({
+          available: true,
+          version: null,
+        });
+      }
+    },
+  );
+
+  test("requires FFprobe independently with actionable PATH guidance", async () => {
+    const runner = async () => {
+      throw new Error("spawn ffprobe ENOENT");
+    };
+    expect(await inspectCommand("ffprobe", "darwin", runner)).toMatchObject({
+      available: false,
+      version: null,
+    });
+    await expect(requireCommandAvailable("ffprobe", "darwin", runner)).rejects.toThrow(
+      "ffprobe is on PATH",
+    );
+  });
+
   test("inspectCommand parses WeasyPrint version labels", async () => {
     const versions = [
       ["WeasyPrint version 67.0\n", "67.0"],

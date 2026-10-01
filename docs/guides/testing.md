@@ -1,6 +1,7 @@
 ---
 title: "Contributor Testing Guide"
 created-date: 2026-09-06
+modified-date: 2026-10-01
 status: completed
 agent: codex
 ---
@@ -112,4 +113,6 @@ The formatting command covers the configured source, test, script, and configura
 
 Source tests execute TypeScript with Bun, including the source CLI helper. Verify the built package under Node.js separately: after a build, exercise a representative CLI operation through `bun run cli` and check exported behavior through both `dist/esm/index.mjs` and `dist/cjs/index.cjs`. Choose operations that exercise the behavior affected by the change.
 
-Keep manual smoke-test artifacts under `examples/playground/` and clean only the files created for that check. Record source tests and built-package checks separately in the relevant implementation record.
+Keep manual smoke-test artifacts under ignored paths in `examples/playground/`. Retain them when needed for local review, then clean only the files created for that check. Manual checks have their own retention policy, separate from the managed runner's default cleanup. Record source tests and built-package checks separately in the relevant implementation record.
+
+Video frames regular unit/application tests use controlled fixtures and injected tool behavior. Real-video, installed FFmpeg/FFprobe export checks and bounded synthetic workload measurements are explicit manual smoke checks, outside those suites and CI. Run them under the relevant implementation plan's budgets. Keep private inputs, outputs, captures and identifying details out of public records; record only the processing operation and passed/failed/not-tested outcome. Public synthetic evidence can describe reproducible cases and measured results.

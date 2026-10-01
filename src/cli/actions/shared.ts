@@ -3,6 +3,7 @@ import { stat } from "node:fs/promises";
 import { CliError } from "../errors";
 import { formatPathForDisplay } from "../path-utils";
 import type { CliRuntime } from "../types";
+import { getCliColors } from "../colors";
 
 export function printLine(stream: NodeJS.WritableStream, line = ""): void {
   stream.write(`${line}\n`);
@@ -10,6 +11,16 @@ export function printLine(stream: NodeJS.WritableStream, line = ""): void {
 
 export function displayPath(runtime: CliRuntime, path: string): string {
   return formatPathForDisplay(runtime, path);
+}
+
+export function printDestination(
+  runtime: CliRuntime,
+  stream: NodeJS.WritableStream,
+  message: string,
+  destination: string,
+): void {
+  printLine(stream, message);
+  printLine(stream, `  ${getCliColors(runtime, stream).cyan(displayPath(runtime, destination))}`);
 }
 
 export function assertNonEmpty(value: string | undefined, label: string): string {

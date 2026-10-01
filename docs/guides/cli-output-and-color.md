@@ -1,7 +1,7 @@
 ---
 title: "CLI Output And Color"
 created-date: 2026-08-22
-modified-date: 2026-09-05
+modified-date: 2026-10-01
 status: completed
 agent: codex
 ---
@@ -89,6 +89,8 @@ cdx-chores rename batch ./photos --dry-run 2> diagnostics.log
 Structured and machine-oriented output remains plain data and must not store ANSI presentation. Styling is applied only while rendering eligible terminal text; it does not enter JSON, saved plans, generated documents, SQL-only output, or other artifacts.
 
 ## Domain-Owned Presentation
+
+`video frames` prints completion or partial-output counts followed by each destination or retained-output path on its own indented line. Eligible paths use standard cyan without bold; disabling color preserves the layout and path characters. Results use stdout and partial-output diagnostics use stderr. Its active progress uses compact live stderr status in a terminal and throttled plain lines when redirected. Inspected source frames, selected frames extracted and confirmed images written are distinct counts; estimates and unknown totals never establish completion. Status clears before results, errors or the next prompt.
 
 `codex-info`, `codex-info models`, and `codex-info providers` use the same per-stream color eligibility for their human output. Headings, IDs, and literal selection markers receive restrained emphasis; external text is escaped before styling. Both default and `--details` views remain readable as plain text, and `--json` stays unstyled even on a TTY. See [Codex Execution Configuration](codex-execution-configuration.md) for the three views, configured-provider coverage, and catalog interpretation.
 

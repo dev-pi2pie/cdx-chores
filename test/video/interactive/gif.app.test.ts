@@ -34,5 +34,8 @@ describe("interactive mode routing: video", () => {
       "input:FPS (optional)",
       "confirm:Overwrite if exists?",
     ]);
+    expect(result.pathCalls.find((call) => call.kind === "optional")?.options?.defaultHint).toBe(
+      "GIF file beside the source",
+    );
   });
 });

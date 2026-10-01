@@ -14,3 +14,15 @@ export function withNumericSuffix(value: string, index: number): string {
   }
   return `${value}-${String(index).padStart(2, "0")}`;
 }
+
+export function normalizeRenderedBaseName(value: string, fallback = "file"): string {
+  const sanitized = value
+    .replace(/[\p{Cc}<>:"/\\|?*]/gu, "-")
+    .replace(/\s+/g, " ")
+    .replace(/--+/g, "-")
+    .replace(/__+/g, "_")
+    .replace(/-_+/g, "-")
+    .replace(/_-+/g, "-")
+    .replace(/^[-_.\s]+|[-_.\s]+$/g, "");
+  return sanitized || fallback;
+}

@@ -24,7 +24,8 @@ export type InteractiveActionKey =
   | "rename:apply"
   | "video:convert"
   | "video:resize"
-  | "video:gif";
+  | "video:gif"
+  | "video:frames";
 
 export type DataInteractiveActionKey = Extract<InteractiveActionKey, `data:${string}`>;
 export type MarkdownInteractiveActionKey = Extract<InteractiveActionKey, `md:${string}`>;
@@ -102,6 +103,7 @@ const INTERACTIVE_SUBMENUS: Record<InteractiveSubmenuGroup, InteractiveSubmenuCo
       { name: "convert", value: "video:convert" },
       { name: "resize", value: "video:resize" },
       { name: "gif", value: "video:gif" },
+      { name: "frames", value: "video:frames", description: "Export still images from video" },
     ],
   },
 };
