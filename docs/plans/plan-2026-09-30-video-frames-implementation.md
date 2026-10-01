@@ -213,16 +213,32 @@ Checkpoint: direct invocation implements the settled contract with actionable er
 
 ## Phase 7: Guided Interactive Integration
 
+Build on the accepted Phase 1 prototypes and give the integrated flow its own TUI review and polish checkpoint. Follow the research's [wave and adaptive-layout contract](../researches/research-2026-09-30-video-frames.md#wave-picker-and-adaptive-terminal-layout) and existing [CLI output/color guidance](../guides/cli-output-and-color.md). Styling work preserves selection semantics, input ownership, and the shared export contract.
+
 Tasks:
+
+### Integration
 
 - [ ] Connect one-frame, fixed frame-set, and whole-video sequence branches to the shared resolver/sampler and prototype picker without image previews.
 - [ ] Integrate FPS presets/custom input, bounded interval suggestions/estimates, format/conditional quality, scale, destinations, and applicable templates and serial prompts.
 - [ ] Resolve single/frame-set identities before text review; show concrete names, dimensions, effective settings, chosen stream where relevant, repeat notices, and estimated sequence counts. Review acceptance owns final writes.
 - [ ] Preserve source/selection across option changes and editor/layout round trips; validate retained explicit filenames after format changes and invalidate reuse after observable source/stream changes.
+
+### TUI Review and Polish
+
+- [ ] Review visual hierarchy, spacing, labels, control hints, and notice/error placement across selection menus, frame/time editors, settings, final review, progress, cancellation, and recovery. Keep presentation consistent with existing Interactive flows and essential information readable.
+- [ ] Polish full/compact picker presentation within the settled contract: thin mirrored bars, selected-bar accent, aligned triangles, endpoint labels, and coarse-position/precision notices. Make candidate positions and resolved frame identities clear; retain the synthetic distance cue, exact selection, and glyph preference.
+- [ ] Prepare a built-CLI terminal walkthrough with small synthetic sources for local presentation review; optional captures/transcripts stay in the ignored synthetic smoke workspace. Address actionable findings and recheck affected states before acceptance. Public TUI findings/evidence use synthetic content; private captures and inspection notes stay local under the privacy policy.
+
+### Verification and Acceptance
+
+- [ ] Verify the integrated TUI in real Node.js terminals across wide/narrow and tall/short layouts, long source/output labels, wrapped controls/notices, Unicode/ASCII, and color enabled/disabled. Exercise resize and full/compact/direct-input transitions, including editor drafts and richer-layout restoration; essential controls, selection details, and precision notices must fit the measured display area.
 - [ ] Verify progress/input ownership, scan/export cancellation, failure recovery, direct-input fallbacks, resize, and terminal restoration. Unconfirmed child closure ends the flow and prevents replacement work.
 - [ ] Exercise real terminal interactions with synthetic sources and private real-video smoke through the built CLI. Inspect images locally; keep captures/private diagnostics local and publish processing outcomes only.
 
-Checkpoint: review and exports identify the same selected frames, essential controls survive layout changes, no tool runs on navigation, and the next ordinary prompt works after completion/cancellation/failure.
+Keep layout/state assertions in inexpensive regular tests; assess visual presentation through the explicit built-CLI terminal walkthroughs above. Use the existing smoke budgets and small synthetic sources for presentation work; repeat only affected cases after polishing. Human review time remains outside the active processing budget.
+
+Checkpoint: functional verification and the dedicated TUI review/polish pass are recorded, with actionable presentation findings addressed and affected cases rechecked. Review and exports identify the same selected frames, essential controls survive layout changes, no tool runs on navigation, and the next ordinary prompt works after completion/cancellation/failure.
 
 ## Phase 8: Integrated Verification and Documentation
 
