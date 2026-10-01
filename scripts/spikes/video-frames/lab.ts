@@ -17,6 +17,7 @@ export interface Experiment {
 
 export async function createLab(phase: 2 | 3 | 4 | 5 = 2) {
   const run = await createSyntheticSmokeRun(phase);
+  const scratchRoot = dirname(dirname(run.path)); // Includes retained synthetic and private outputs.
   let activeMs = 0;
   let images = 0;
   const results: object[] = [];
@@ -33,7 +34,7 @@ export async function createLab(phase: 2 | 3 | 4 | 5 = 2) {
       body: (experiment: Experiment) => Promise<object>,
     ): Promise<void> {
       interruption.signal.throwIfAborted();
-      const existing = await scratchBytes(dirname(run.path));
+      const existing = await scratchBytes(scratchRoot);
       if (
         expectedImages > SMOKE_LIMITS.imagesPerCase ||
         expectedImages + images > SMOKE_LIMITS.imagesPerRun ||
@@ -54,7 +55,7 @@ export async function createLab(phase: 2 | 3 | 4 | 5 = 2) {
             checkSmokeProgress({
               caseElapsedMs: Math.floor(performance.now() - started),
               runElapsedMs: Math.floor(activeMs + performance.now() - started),
-              scratchBytes: await scratchBytes(dirname(run.path)),
+              scratchBytes: await scratchBytes(scratchRoot),
             });
           } catch (error) {
             violation = error instanceof Error ? error : new Error(String(error));

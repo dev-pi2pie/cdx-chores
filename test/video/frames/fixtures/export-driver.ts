@@ -21,9 +21,13 @@ async function main() {
       roles.map((role, index) => ({
         identity: role.identity,
         name: duplicate
-          ? mode.includes("case") && index > 0
-            ? "SAME.png"
-            : "same.png"
+          ? mode.includes("unicode")
+            ? index > 0
+              ? "e\u0301.png"
+              : "é.png"
+            : mode.includes("case") && index > 0
+              ? "SAME.png"
+              : "same.png"
           : `${role.selection}.${format}`,
       })),
       {

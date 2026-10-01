@@ -17,6 +17,8 @@ for (const mode of [
   "duplicate-overwrite",
   "duplicate-case",
   "duplicate-case-overwrite",
+  "duplicate-unicode",
+  "duplicate-unicode-overwrite",
 ])
   test(
     `image export under Node: ${mode}`,

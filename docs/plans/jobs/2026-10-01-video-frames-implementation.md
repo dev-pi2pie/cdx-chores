@@ -187,6 +187,8 @@ Private processing outcomes: PNG image export **passed**; JPG image export **pas
 
 Review of `1165dd2b..35f2ea9b` found a P2 overwrite-accounting issue: duplicate group names could replace an earlier image while counting both writes. A bounded normalized/case-insensitive name set now rejects duplicates before frame scanning or destination creation. Both overwrite policies and case aliases are covered; the refreshed controlled Node exporter suite passed **13 cases / 65 assertions**. TypeScript, lint, format, and diff checks passed. Documentation review also corrected stale pending-evidence summaries and labeled initial checkpoint gaps as historical. Expanded-range review remains pending.
 
+The follow-up review added canonical Unicode alias coverage under both overwrite policies; the refreshed exporter suite passed **15 cases / 75 assertions**. The smoke monitor now counts the shared owned scratch root, including retained synthetic and private outputs, against the same 512-MiB budget. Pure smoke-budget cases and TypeScript/lint/diff checks passed; this changes development verification support, not the product export policy.
+
 ## Related Research
 
 - [Video Frame Selection, Frame Sets, and Sequence Export](../../researches/research-2026-09-30-video-frames.md)
