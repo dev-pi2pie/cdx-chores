@@ -13,7 +13,7 @@ Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation
 | --- | --- | --- |
 | 1 | Independent fixture expectations, smoke preparation, real terminal keys/resize, selection retention, fallbacks, prompt ownership/restoration | Completed |
 | 2 | Real-tool timing, stream agreement, encoder/filter feasibility, bounded writer topology, decoder guard, synthetic workload measurements | Completed |
-| 3 | Streaming records, exact identities, bounded cache, source invalidation, cancellation/child closure | In progress |
+| 3 | Streaming records, exact identities, bounded cache, source invalidation, cancellation/child closure | Completed |
 | 4 | Verified pixels, alpha/transforms, safe publication, failure accounting, private processing smoke | Not started |
 | 5 | Sampling, retained repeats, destinations and concrete naming | Not started |
 | 6 | Direct command, validation, dependencies and doctor | Not started |
@@ -125,7 +125,7 @@ The complete implementation range `49d37ee3..229a7e39` received maintainability,
 
 ## Phase 3
 
-Started from accepted Phase 2 tip `2cc3c66794a2e613cc2051de57188bb945d2ded5`. Add adjacent streaming process support without changing the existing buffered process helper. Exact resolution, bounded reuse, source changes, and cancellation remain under implementation; no Phase 3 acceptance is claimed yet.
+Started from accepted Phase 2 tip `2cc3c66794a2e613cc2051de57188bb945d2ded5`. Added adjacent streaming process support without changing the existing buffered process helper. Exact resolution, bounded reuse, source changes, and cancellation are verified within the recorded scope.
 
 ### Streaming and Resolution Checkpoint
 
@@ -141,7 +141,11 @@ Validation passed: managed unit suite 1,468 cases / 5,664 assertions across 177 
 
 Review of `2cc3c667..4437171d` found a P2 cancellation race: a child could close while an asynchronous consumer remained pending, leaving a later abort without a registered shutdown timer. Shutdown registration now lasts until both child close and consumer settlement. A close-before-abort regression verifies bounded confirmation and refusal to reuse unconfirmed ownership. Added ordinal coverage also proves that a low metadata count cannot reject an existing frame, and a high estimate cannot extend actual EOF or produce a cached identity. Focused regressions, both managed suites, and Node ESM/CommonJS real-tool smoke reruns passed after the fix.
 
-Phase 3 task evidence is complete; full commit-range review remains pending. Private processing smoke: **not tested**. Ignored synthetic artifacts are retained for local review; product encoding/publication and doctor projections remain later phases.
+### Review and Acceptance
+
+The complete implementation range `2cc3c66794a2e613cc2051de57188bb945d2ded5..9dae70de348dd5b82e95a8550bff4de057ffb5c8` passed code, test, and documentation review with no remaining actionable findings after the follow-up. Phase 3 is accepted on 2026-10-01; its plan tasks are checked. The plan remains active, the research remains in-progress, and this record remains open for Phases 4–8.
+
+Private processing smoke: **not tested**. Ignored synthetic artifacts are retained for local review; product encoding/publication and doctor projections remain later phases.
 
 ## Related Research
 
