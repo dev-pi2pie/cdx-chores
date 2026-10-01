@@ -159,6 +159,10 @@ Ten independent image-plan unit cases (65 assertions) and the existing metadata/
 
 The initial source conversion boundary is verified 8-bit RGB/YUV with BT.709 primaries and sRGB/BT.709 transfer; missing fields use disclosed explicit interpretations. Conflicting metadata, unsupported primaries/transfer/bit depth, or unsupported display transforms fail specifically. Expanded conversion/failure evidence and production export/private smoke remain pending. Synthetic review artifacts stay ignored/untracked.
 
+### Encoder Input Checkpoint
+
+Adjacent process support now streams encoder input through awaited native writes with the same 256-KiB queue boundary. Input producers remain part of shutdown acknowledgement after child close; cancellation aborts their signal and closes the pipe. The buffered helper is unchanged. Twelve process unit cases (34 assertions) and eleven controlled Node application cases (44 assertions) passed, including 3,276,800 input bytes through a slow reader, input failure, resistant-child cancellation, oversized input rejection, and a producer that remains pending after child close. TypeScript and focused ownership checks passed; full phase regression and exporter integration remain pending.
+
 ## Related Research
 
 - [Video Frame Selection, Frame Sets, and Sequence Export](../../researches/research-2026-09-30-video-frames.md)

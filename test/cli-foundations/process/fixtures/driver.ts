@@ -23,6 +23,51 @@ async function main() {
       assert.equal(result.stdout.length, 0);
       return { count, streamed: true };
     }
+    if (mode === "input") {
+      const result = await operation.run("node", [subject, mode], {
+        input: async (write, signal) => {
+          for (let i = 0; i < 100; i++) {
+            signal.throwIfAborted();
+            await write(Buffer.alloc(32768, 7));
+          }
+        },
+      });
+      assert.equal(result.code, 0);
+      assert.deepEqual(JSON.parse(result.stdout.toString()), { bytes: 3276800, sum: 22937600 });
+      return { inputBytes: 3276800, backpressure: true };
+    }
+    if (mode === "input-failure") {
+      await assert.rejects(() =>
+        operation.run("node", [subject, mode], {
+          input: async (write) => {
+            for (let i = 0; i < 1000; i++) await write(Buffer.alloc(65536));
+          },
+        }),
+      );
+      assert.equal(operation.closureUnconfirmed, false);
+      return { inputFailure: true, closureConfirmed: true };
+    }
+    if (mode === "input-cancel") {
+      const started = performance.now();
+      await assert.rejects(
+        () =>
+          operation.run("node", [subject, mode], {
+            input: async (write, signal) => {
+              for (;;) {
+                signal.throwIfAborted();
+                await write(Buffer.alloc(65536));
+              }
+            },
+            consume: () => {
+              operation.cancel();
+            },
+          }),
+        /cancelled/,
+      );
+      assert.ok(performance.now() - started >= 1900);
+      assert.equal(operation.closureUnconfirmed, false);
+      return { inputCancelled: true, closureConfirmed: true };
+    }
     if (mode === "prefix") {
       let count = 0;
       const reader = new LineRecords(() => ++count < 3);

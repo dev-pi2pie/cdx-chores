@@ -48,7 +48,7 @@ Use [Test Suite Audit Inventory](test-suite-audit-inventory.md) for the fixed pr
 
 ### Streaming Process Foundation
 
-`test/cli-foundations/process/` owns incremental UTF-8 records, bounded metadata/queues/diagnostic tails, structured progress, direct argument handling, and registered child/consumer closure. Application fixtures exercise actual Node pipes and cooperative/resistant children; unit cases model unconfirmed closure and Windows force transitions. Generated media remains an explicitly invoked smoke task, separate from these process contracts.
+`test/cli-foundations/process/` owns incremental UTF-8 records, bounded metadata/input queues/diagnostic tails, structured progress, direct argument handling, and registered child/input-producer/consumer closure. Application fixtures exercise actual Node pipes, awaited input writes, and cooperative/resistant children; unit cases model queue rejection, unconfirmed closure, and Windows force transitions. Generated media remains an explicitly invoked smoke task, separate from these process contracts.
 
 ### Global Helpers
 

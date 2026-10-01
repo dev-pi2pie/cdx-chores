@@ -12,6 +12,10 @@ export const PROCESS_LIMITS = {
 } as const;
 
 type Launcher = (command: string, args: readonly string[], options: SpawnOptions) => ChildProcess;
+export type ToolInput = (
+  write: (chunk: Buffer) => Promise<void>,
+  signal: AbortSignal,
+) => Promise<void>;
 export interface StreamingResult {
   code: number | null;
   signal: NodeJS.Signals | null;
@@ -79,6 +83,7 @@ export class ProcessOperation {
       consume?: (chunk: Buffer, signal: AbortSignal) => void | boolean | Promise<void | boolean>;
       progress?: (progress: ToolProgress) => void | Promise<void>;
       outputLimit?: number;
+      input?: ToolInput;
     } = {},
   ): Promise<StreamingResult> {
     if (this.disposed || this.unsafe || this.control.signal.aborted)
@@ -109,7 +114,9 @@ export class ProcessOperation {
       cwd: options.cwd,
       env: options.env,
       shell: false,
-      stdio: options.progress ? ["ignore", "pipe", "pipe", "pipe"] : ["ignore", "pipe", "pipe"],
+      stdio: options.progress
+        ? [options.input ? "pipe" : "ignore", "pipe", "pipe", "pipe"]
+        : [options.input ? "pipe" : "ignore", "pipe", "pipe"],
     });
     let code: number | null = null,
       signal: NodeJS.Signals | null = null,
@@ -117,6 +124,7 @@ export class ProcessOperation {
     let closed = false,
       stopping = false,
       earlyStop = false;
+    const inputControl = new AbortController();
     let forceTimer: ReturnType<typeof setTimeout> | undefined,
       confirmationTimer: ReturnType<typeof setTimeout> | undefined;
     let rejectConfirmation!: (error: Error) => void;
@@ -158,6 +166,8 @@ export class ProcessOperation {
     const stop = () => {
       if (stopping) return;
       stopping = true;
+      inputControl.abort(this.reason ?? new Error("Tool input stopped."));
+      child.stdin?.destroy();
       if ((this.options.platform ?? process.platform) === "win32") force();
       else {
         if (!closed) send("SIGTERM");
@@ -166,6 +176,30 @@ export class ProcessOperation {
     };
     this.children.set(child, stop);
     if (this.control.signal.aborted) stop();
+    child.stdin?.on("error", (error) => {
+      if (!stopping) this.cancel(error);
+    });
+    const inputTask = (async () => {
+      if (!options.input) return;
+      try {
+        await options.input(async (chunk) => {
+          inputControl.signal.throwIfAborted();
+          if (chunk.length + child.stdin!.writableLength > PROCESS_LIMITS.queuedBytes)
+            throw new CliError("Queued tool input exceeds 256 KiB.", {
+              code: "PROCESS_QUEUE_LIMIT",
+            });
+          await new Promise<void>((resolve, reject) => {
+            child.stdin!.write(chunk, (error) => (error ? reject(error) : resolve()));
+          });
+        }, inputControl.signal);
+        if (!stopping)
+          await new Promise<void>((resolve, reject) => {
+            child.stdin!.end((error?: Error | null) => (error ? reject(error) : resolve()));
+          });
+      } catch (error) {
+        if (!stopping) this.cancel(error);
+      }
+    })();
     let stderr = Buffer.alloc(0),
       stderrTruncated = false;
     const buffers: Buffer[] = [];
@@ -212,7 +246,7 @@ export class ProcessOperation {
       : Promise.resolve();
     try {
       await Promise.race([
-        Promise.all([close, stdoutTask, stderrTask, progressTask]).then(() => {
+        Promise.all([close, stdoutTask, stderrTask, progressTask, inputTask]).then(() => {
           this.children.delete(child);
         }),
         confirmation,

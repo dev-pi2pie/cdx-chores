@@ -13,6 +13,9 @@ describe("Node streaming process ownership", () => {
     "args",
     "missing",
     "cancel",
+    "input",
+    "input-failure",
+    "input-cancel",
   ])
     test(
       mode,

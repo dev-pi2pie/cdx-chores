@@ -166,3 +166,68 @@ test("child close before cancellation still bounds a pending consumer", async ()
     await expect(operation.dispose()).rejects.toThrow("closure unconfirmed");
   }
 });
+
+test("oversized native input is rejected before write and child closure is awaited", async () => {
+  const child = Object.assign(new EventEmitter(), {
+    stdin: new PassThrough(),
+    stdout: new PassThrough(),
+    stderr: new PassThrough(),
+    stdio: [],
+    kill: () => {
+      child.stdout.end();
+      child.stderr.end();
+      queueMicrotask(() => child.emit("close", null, "SIGTERM"));
+      return true;
+    },
+  });
+  const operation = new ProcessOperation({ launch: () => child as unknown as ChildProcess });
+  await expect(
+    operation.run("fake", [], {
+      input: async (write) => {
+        await write(Buffer.alloc(262145));
+      },
+    }),
+  ).rejects.toMatchObject({ code: "PROCESS_QUEUE_LIMIT" });
+  await operation.dispose();
+  expect(child.stdin.readableLength).toBe(0);
+});
+
+test("child close does not release an unsettled input producer", async () => {
+  let release!: () => void, entered!: () => void;
+  const ready = new Promise<void>((resolve) => {
+    entered = resolve;
+  });
+  const child = Object.assign(new EventEmitter(), {
+    stdin: new PassThrough(),
+    stdout: new PassThrough(),
+    stderr: new PassThrough(),
+    stdio: [],
+    kill: () => true,
+  });
+  const operation = new ProcessOperation({
+    launch: () => child as unknown as ChildProcess,
+    graceMs: 5,
+    forceMs: 10,
+  });
+  const pending = operation.run("fake", [], {
+    input: async () => {
+      entered();
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+    },
+  });
+  void pending.catch(() => {});
+  await ready;
+  child.stdout.end();
+  child.stderr.end();
+  child.emit("close", 0, null);
+  operation.cancel();
+  try {
+    await expect(pending).rejects.toThrow("closure unconfirmed");
+    expect(operation.closureUnconfirmed).toBe(true);
+  } finally {
+    release();
+    await expect(operation.dispose()).rejects.toThrow("closure unconfirmed");
+  }
+});

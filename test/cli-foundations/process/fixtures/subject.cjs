@@ -7,7 +7,24 @@ async function main() {
       if (!process.stdout.write(`${i}:` + "x".repeat(96) + "\n"))
         await once(process.stdout, "drain");
   } else if (mode === "metadata") process.stdout.write("x".repeat(1048577));
-  else if (mode === "stderr") {
+  else if (mode === "input") {
+    let bytes = 0,
+      sum = 0;
+    for await (const chunk of process.stdin) {
+      bytes += chunk.length;
+      for (const value of chunk) sum += value;
+      await new Promise((resolve) => setTimeout(resolve, 1));
+    }
+    process.stdout.write(JSON.stringify({ bytes, sum }));
+  } else if (mode === "input-failure") {
+    process.stdin.destroy();
+    process.stderr.write("input decoder failed\n");
+    process.exitCode = 3;
+  } else if (mode === "input-cancel") {
+    process.on("SIGTERM", () => {});
+    process.stdout.write("ready\n");
+    setInterval(() => {}, 1000);
+  } else if (mode === "stderr") {
     process.stderr.write("e".repeat(70000) + "TAIL!");
     process.stdout.write("ok");
   } else if (mode === "progress") {
