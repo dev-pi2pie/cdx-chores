@@ -15,7 +15,7 @@ Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation
 | 2 | Real-tool timing, stream agreement, encoder/filter feasibility, bounded writer topology, decoder guard, synthetic workload measurements | Completed |
 | 3 | Streaming records, exact identities, bounded cache, source invalidation, cancellation/child closure | Completed |
 | 4 | Verified pixels, alpha/transforms, safe publication, failure accounting, private processing smoke | Completed |
-| 5 | Sampling, retained repeats, destinations and concrete naming | Not started |
+| 5 | Sampling, retained repeats, destinations and concrete naming | In progress |
 | 6 | Direct command, validation, dependencies and doctor | Not started |
 | 7 | Guided Interactive flow and recovery | Not started |
 | 8 | Full regression, explicit smoke, documentation and research closure evidence | Not started |
@@ -192,6 +192,18 @@ The follow-up review added canonical Unicode alias coverage under both overwrite
 ### Review and Acceptance
 
 The complete implementation range `1165dd2b9755ae714b16c24de8142c5a6a9eb46d..57e134bd521f666d28c301ba3a290ddf054e973b` passed code, test, security-boundary, and documentation review with no remaining actionable findings after the follow-ups. Phase 4 is accepted on 2026-10-01; all Phase 4 tasks are checked. The plan stays active, the research stays in-progress, and this job remains open for Phases 5–8. Backend bundle evidence does not claim command/Interactive integration, heavy real-content coverage, minimum-Node execution, or portable filesystem proof.
+
+## Phase 5
+
+Started from accepted Phase 4 tip `67827e8456521cb4bfe3d73e764ef1db36994831`. Keep exact forward sampling separate from naming/destination calculation and reuse the accepted bounded image exporter.
+
+### Naming and Destination Checkpoint
+
+Moved the prototype's pure naming grammar/defaults into the backend; prompts reuse it. Generated names use the existing source slug and unchanged shared rename separator normalization, verified unpadded ordinals, explicit selection roles, and per-value growing serial widths. Explicit serial settings override embedded parameters then defaults; unsafe counters, widths, mode scopes, tokens, lengths, and device names fail without adjustment.
+
+Destination inspection preserves source-adjacent defaults and invocation-cwd custom paths, literal single-image extensions (including JPG/JPEG case variants), and mode-defined file/folder meaning. It rejects source aliases and wrong existing kinds, detects a nonempty folder with one bounded read, and creates nothing. Available space uses BigInt `bavail × bsize` from the destination or nearest existing parent; unavailable inspection remains advisory.
+
+Managed units passed **1,499 cases / 6,296 assertions** across 182 files. Focused naming/prototype units passed **15 cases / 144 assertions**, destination filesystem cases **2 / 23**, and existing rename rendering cases **13 / 21**. TypeScript, lint, format, and diff checks passed. Sequence integration, real-tool/private sequence smoke, full application regression, and Phase 5 range review remain pending.
 
 ## Related Research
 

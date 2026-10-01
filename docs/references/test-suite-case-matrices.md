@@ -50,6 +50,8 @@ Use [Test Suite Audit Inventory](test-suite-audit-inventory.md) for the fixed pr
 
 `raw-frames.unit.test.ts` owns bounded reusable RGBA framing. `export.app.test.ts` owns the Node decoder/encoder/publication pipeline, retained roles, encoder preflight, duplicate/case-alias names under both overwrite policies, partial output, source mutation, alpha failure, and cancellation with controlled executable responses. Resolver cases also verify that copied or stale selections cannot be exported. Frame records retain selected image metadata for conversion checks without collecting a full frame table.
 
+`naming.unit.test.ts` owns shared source stems, concrete mode-specific rendering, serial precedence/width/overflow, filename limits, and exact advisory volume calculations. `destination.app.test.ts` owns mode-defined defaults/custom paths, explicit extensions, existing kinds/aliases, nonempty-folder detection, and inspection without creation. Existing prototype naming and rename rendering tests protect reuse of the shared grammar and separator normalization.
+
 ### Streaming Process Foundation
 
 `test/cli-foundations/process/` owns incremental UTF-8 records, bounded metadata/input queues/diagnostic tails, structured progress, direct argument handling, and registered child/input-producer/consumer closure. Application fixtures exercise actual Node pipes, awaited input writes, and cooperative/resistant children; unit cases model queue rejection, unconfirmed closure, and Windows force transitions. Generated media remains an explicitly invoked smoke task, separate from these process contracts.
