@@ -218,6 +218,7 @@ export async function handleVideoFramesInteractive(
                   io,
                   resolver.state.endMs ?? resolver.state.metadata?.estimatedDurationMs,
                   cadenceChoice,
+                  resolver.state.endMs === undefined,
                 );
                 if (!cadence) continue;
                 cadenceChoice = cadence;

@@ -401,6 +401,12 @@ Code/prompt review found inline GIF completion paths, repeated frames review inf
 
 Refined the research wording to lead with findings and presentation rationale. Its current next steps link to the pending Phase 8 follow-up and Phase 9. The plan retains ownership of implementation and acceptance, with task scope and checkpoint status unchanged. Documentation review found no actionable findings. Checklist/history, status, local link/anchor, privacy and diff checks passed.
 
+### Output Information Follow-Up Execution
+
+Interval preset rows now show compact count estimates. Below-list details distinguish preliminary metadata from a decoded end, retain export confirmation wording and identify matching/exceeding intervals. Compact descriptions keep counts, qualifications and controls visible at 28 × 8, with full wording restored after resize. Custom input uses the shared exact cadence calculation and retains validation/drafts. Existing FPS feedback remains intact.
+
+Affected controlled settings, installed Node prompt and workflow checks passed **18 cases / 109 assertions**. They cover ordinary/boundary/unknown counts, valid/invalid custom input, measured narrow layouts, resize and verified-duration qualification. Type, scoped lint/format and diff checks passed. One follow-up task is checked. Remaining output/naming work, built-CLI terminal walkthroughs and complete-range review remain pending.
+
 ## Related Research
 
 - [Video Frame Selection, Frame Sets, and Sequence Export](../../researches/research-2026-09-30-video-frames.md)

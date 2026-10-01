@@ -12,6 +12,8 @@ import { promptFrameNaming, type FrameNamingMode, type FrameNamingSettings } fro
 import { chooseFrameOption, enterFrameValue, type FramePromptIO } from "./simple-prompts";
 import {
   frameCadenceFeedback,
+  frameIntervalEstimate,
+  frameIntervalDetails,
   frameFormatChoices,
   frameQualityChoices,
   validateFrameCadenceValue,
@@ -32,6 +34,7 @@ export async function promptFrameCadence(
   io: FramePromptIO,
   duration?: FrameTime,
   initial?: { fps?: string; interval?: string },
+  durationIsEstimate = true,
 ): Promise<{ fps?: string; interval?: string } | null> {
   let kind: "fps" | "interval" = initial?.interval ? "interval" : "fps";
   const drafts: Partial<Record<"fps" | "interval", string>> = { ...initial };
@@ -65,8 +68,24 @@ export async function promptFrameCadence(
         kind === "fps" ? "Images per second" : "Sampling interval",
         [
           ...presets.map((value) => ({
-            name: kind === "fps" ? value + " FPS" : "Every " + value,
-            description: frameCadenceFeedback(kind, value, duration),
+            name:
+              kind === "fps"
+                ? value + " FPS"
+                : `Every ${value} — ${frameIntervalEstimate(value, duration)}`,
+            description:
+              kind === "fps"
+                ? frameCadenceFeedback(kind, value, duration)
+                : frameIntervalDetails(value, duration, false, durationIsEstimate),
+            ...(kind === "interval"
+              ? {
+                  compactDescription: frameIntervalDetails(
+                    value,
+                    duration,
+                    true,
+                    durationIsEstimate,
+                  ),
+                }
+              : {}),
             value,
           })),
           { name: kind === "fps" ? "Custom FPS" : "Custom interval", value: "custom" },
@@ -91,8 +110,22 @@ export async function promptFrameCadence(
         },
         validate: (value) => validateFrameCadenceValue(kind, value),
         transformer: (value) => {
-          const feedback = frameCadenceFeedback(kind, value || defaultValue, duration);
-          return feedback ? value + " - " + feedback : value;
+          if (kind === "fps") {
+            const feedback = frameCadenceFeedback(kind, value || defaultValue, duration);
+            return feedback ? value + " - " + feedback : value;
+          }
+          const estimate = frameIntervalEstimate(value || defaultValue, duration);
+          const terminal = io.output as NodeJS.WritableStream & { columns?: number; rows?: number };
+          const compact =
+            (terminal.columns !== undefined && terminal.columns < 40) ||
+            (terminal.rows !== undefined && terminal.rows < 12);
+          const details = frameIntervalDetails(
+            value || defaultValue,
+            duration,
+            compact,
+            durationIsEstimate,
+          );
+          return estimate && details ? `${value} — ${estimate}\n${details}` : value;
         },
       });
       if (answer !== undefined) return { [kind]: answer };

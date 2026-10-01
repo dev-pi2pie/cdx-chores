@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import {
   frameCadenceFeedback,
+  frameIntervalEstimate,
+  frameIntervalDetails,
   frameFormatChoices,
   frameQualityChoices,
   frameQualityLabel,
@@ -55,6 +57,46 @@ describe("frame image setting choices", () => {
 });
 
 describe("cadence input feedback", () => {
+  test("interval rows retain compact count estimates and natural plurals", () => {
+    const duration = exact(5_100n);
+    expect(frameIntervalEstimate("1s", duration)).toBe("~6 images");
+    expect(frameIntervalEstimate("10s", duration)).toBe("~1 image");
+    expect(frameIntervalDetails("1s", duration)).toBe(
+      "Duration 00:00:05.100 (metadata estimate)\nCounts confirmed during export",
+    );
+    expect(frameIntervalDetails("1s", duration, false, false)).toBe(
+      "Duration 00:00:05.100 (decoded end)\nCounts confirmed during export",
+    );
+    expect(frameIntervalDetails("1s", duration, true, false)).toBe(
+      "Decoded duration 5.1s\nCounts confirmed at export",
+    );
+    for (const missing of [undefined, exact(0n), exact(-1n)]) {
+      expect(frameIntervalEstimate("1s", missing)).toBe("estimate unavailable");
+      expect(frameIntervalDetails("1s", missing)).toBe(
+        "Duration unavailable\nCounts confirmed during export",
+      );
+    }
+  });
+
+  test("starting-image boundary wording follows rational periods rather than displayed rounding", () => {
+    expect(frameIntervalDetails("1s", exact(1_000n))).toContain(
+      "Matches duration — starting image only",
+    );
+    expect(frameIntervalDetails("1s", exact(999_999n, 1_000n))).toContain(
+      "Beyond duration — starting image only",
+    );
+    expect(frameIntervalDetails("1s", exact(1_000_001n, 1_000n))).not.toContain(
+      "starting image only",
+    );
+    expect(frameIntervalEstimate("1s", exact(1_000_001n, 1_000n))).toBe("~2 images");
+    expect(frameIntervalDetails("10s", exact(5_100n), true)).toBe(
+      "Metadata duration ~5.1s\nCounts confirmed at export\nBeyond: start image only",
+    );
+    for (const invalid of ["0s", "1.5s", "bad"]) {
+      expect(frameIntervalEstimate(invalid, exact(1_000n))).toBeUndefined();
+      expect(frameIntervalDetails(invalid, exact(1_000n))).toBeUndefined();
+    }
+  });
   test("decimal FPS estimates use exact arithmetic at a fractional boundary", () => {
     expect(frameCadenceFeedback("fps", "23.976", exact(1000n))).toContain("Expected 24 images");
     expect(frameCadenceFeedback("fps", "0.5", exact(2000n))).toContain(

@@ -151,6 +151,87 @@ async function cadence(): Promise<void> {
   s.clean();
 }
 
+async function countInformation(): Promise<void> {
+  for (const duration of [exact(5_100n), exact(1_000n), undefined]) {
+    const s = streams();
+    const prompt = promptFrameCadence(s.io, duration, { interval: "1s" });
+    await s.wait("Sequence cadence");
+    await s.step(enter, "Sampling interval");
+    let page = s.actualOutput.text.slice(s.actualOutput.text.lastIndexOf("? Sampling interval"));
+    const expected = duration
+      ? duration.numerator === 5_100n
+        ? "~6 images"
+        : "~1 image"
+      : "estimate unavailable";
+    assert(page.includes("Every 1s — " + expected));
+    assert(page.includes("Counts confirmed during export"));
+    if (!duration) assert(page.includes("Duration unavailable"));
+    else assert(page.includes("metadata estimate"));
+    if (duration?.numerator === 1_000n)
+      assert(page.includes("Matches duration — starting image only"));
+    await s.step(down.repeat(3), "Every 10s");
+    page = s.actualOutput.text.slice(s.actualOutput.text.lastIndexOf("? Sampling interval"));
+    if (duration) assert(page.includes("Beyond duration — starting image only"));
+    s.actualOutput.rows = 8;
+    s.actualOutput.columns = 28;
+    s.actualOutput.emit("resize");
+    await flush();
+    s.actualInput.write(up + down);
+    await flush();
+    page = s.actualOutput.text.slice(s.actualOutput.text.lastIndexOf("? Sampling interval"));
+    assert(
+      page.replaceAll("\n", "").includes(duration ? "~1 image" : "estimate unavailable"),
+      "Wrapped row preserves its count: " + page,
+    );
+    assert(page.includes("Counts confirmed at export"));
+    assert(page.includes("Up/Down | Enter | Esc Back"));
+    if (duration) {
+      assert(page.includes("Metadata duration ~"));
+      assert(page.includes("Beyond: start image only"));
+    }
+    assert(
+      page.trimEnd().split("\n").length <= 8,
+      "Compact interval information fits the measured area",
+    );
+    s.actualOutput.rows = 32;
+    s.actualOutput.columns = 100;
+    s.actualOutput.emit("resize");
+    await flush();
+    s.actualInput.write(up + down);
+    await flush();
+    page = s.actualOutput.text.slice(s.actualOutput.text.lastIndexOf("? Sampling interval"));
+    assert(page.includes("Counts confirmed during export"));
+    s.actualInput.write(enter);
+    assert.deepEqual(await prompt, { interval: "10s" });
+    s.clean();
+  }
+  const verified = streams();
+  const verifiedPrompt = promptFrameCadence(verified.io, exact(5_100n), { interval: "1s" }, false);
+  await verified.wait("Sequence cadence");
+  await verified.step(enter, "Sampling interval");
+  const verifiedPage = verified.actualOutput.text.slice(
+    verified.actualOutput.text.lastIndexOf("? Sampling interval"),
+  );
+  assert(verifiedPage.includes("Every 1s — ~6 images"));
+  assert(verifiedPage.includes("Duration 00:00:05.100 (decoded end)"));
+  assert(!verifiedPage.includes("metadata estimate"));
+  verified.actualInput.write(enter);
+  assert.deepEqual(await verifiedPrompt, { interval: "1s" });
+  verified.clean();
+  const s = streams();
+  const prompt = promptFrameCadence(s.io, exact(5_100n), { interval: "7s" });
+  await s.wait("Sequence cadence");
+  await s.step(enter, "Sampling interval");
+  await s.step(enter, "Interval (positive");
+  assert(s.actualOutput.text.includes("~1 image"));
+  assert(s.actualOutput.text.includes("Beyond duration — starting image only"));
+  await s.step("\x7f\x7f0s" + enter, "positive safe");
+  await s.step("\x7f\x7f1s", "~6 images");
+  s.actualInput.write(enter);
+  assert.deepEqual(await prompt, { interval: "1s" });
+  s.clean();
+}
+
 async function resizedDescriptions(): Promise<void> {
   const s = streams();
   s.actualOutput.rows = 8;
@@ -304,6 +385,7 @@ try {
   if (scenario === "boundaries") await boundaries();
   else if (scenario === "resize") await resizedDescriptions();
   else if (scenario === "cadence") await cadence();
+  else if (scenario === "count-information") await countInformation();
   else if (scenario === "direct") await directDrafts();
   else if (scenario === "naming") {
     await naming(false);

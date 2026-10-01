@@ -47,7 +47,13 @@ async function invokePrompt<T>(
 export async function chooseFrameOption<Value extends string>(
   io: FramePromptIO,
   message: string,
-  choices: { name: string; value: Value; description?: string; disabled?: boolean | string }[],
+  choices: {
+    name: string;
+    value: Value;
+    description?: string;
+    disabled?: boolean | string;
+    compactDescription?: string;
+  }[],
   exitValue: Value,
   defaultValue?: Value,
 ): Promise<Value> {
@@ -56,7 +62,16 @@ export async function chooseFrameOption<Value extends string>(
   const promptChoices = choices.map((choice) => ({
     ...choice,
     name: safeText(choice.name),
-    ...(choice.description ? { description: safeText(choice.description) } : {}),
+    ...(choice.description
+      ? {
+          description: choice.compactDescription
+            ? choice.description.split("\n").map(safeText).join("\n")
+            : safeText(choice.description),
+        }
+      : {}),
+    ...(choice.compactDescription
+      ? { compactDescription: choice.compactDescription.split("\n").map(safeText).join("\n") }
+      : {}),
     ...(typeof choice.disabled === "string" ? { disabled: safeText(choice.disabled) } : {}),
   }));
   const terminalSize = () => {
@@ -71,28 +86,48 @@ export async function chooseFrameOption<Value extends string>(
     terminalSize().columns < 40
       ? "Up/Down | Enter | Esc Back"
       : "Up/Down navigate | Enter select | Esc Back";
+  const textRows = (text: string, columns: number) =>
+    text
+      .split("\n")
+      .reduce((total, line) => total + Math.max(1, Math.ceil(getDisplayWidth(line) / columns)), 0);
   const fitDescription = (text: string) => {
     const { rows, columns } = terminalSize();
     if (rows === undefined) return text;
     const headerRows = Math.ceil(getDisplayWidth(`? ${promptMessage}`) / columns);
     const helpRows = Math.ceil(getDisplayWidth(help()) / columns);
     // Keep a choice row, a separator and a margin visible even with a long description.
-    const width = Math.max(0, rows - headerRows - helpRows - 3) * columns;
-    return getDisplayWidth(text) <= width
+    const availableRows = Math.max(0, rows - headerRows - helpRows - 3);
+    const width = availableRows * columns;
+    const flattened = text.replaceAll("\n", " ");
+    return textRows(text, columns) <= availableRows
       ? text
       : width > 3
-        ? truncateToDisplayWidth(text, width - 3) + "..."
+        ? truncateToDisplayWidth(flattened, width - 3) + "..."
         : "";
+  };
+  const description = (choice: (typeof promptChoices)[number]) => {
+    const { rows, columns } = terminalSize();
+    if (!choice.description) return undefined;
+    const available =
+      rows === undefined
+        ? Infinity
+        : rows -
+          textRows(`? ${promptMessage}`, columns) -
+          textRows(help(), columns) -
+          textRows(`> ${choice.name}`, columns) -
+          2;
+    if (textRows(choice.description, columns) <= available) return choice.description;
+    if (choice.compactDescription && textRows(choice.compactDescription, columns) <= available)
+      return choice.compactDescription;
+    return fitDescription(choice.compactDescription ?? choice.description);
   };
   const pageSize = () => {
     const { rows, columns } = terminalSize();
     if (rows === undefined) return 7;
-    const lines = (text: string) => Math.max(1, Math.ceil(getDisplayWidth(text) / columns));
+    const lines = (text: string) => textRows(text, columns);
     const descriptionRows = Math.max(
       0,
-      ...promptChoices.map((choice) =>
-        choice.description ? lines(fitDescription(choice.description)) : 0,
-      ),
+      ...promptChoices.map((choice) => (choice.description ? lines(description(choice) ?? "") : 0)),
     );
     // Inquirer paginates already wrapped rows. Reserve the header, help, and terminal margin.
     return Math.max(
@@ -114,7 +149,7 @@ export async function chooseFrameOption<Value extends string>(
             get choices() {
               return promptChoices.map((choice) => ({
                 ...choice,
-                ...(choice.description ? { description: fitDescription(choice.description) } : {}),
+                ...(choice.description ? { description: description(choice) } : {}),
               }));
             },
             loop: false,

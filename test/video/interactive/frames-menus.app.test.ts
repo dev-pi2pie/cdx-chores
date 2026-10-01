@@ -3,7 +3,15 @@ import { join } from "node:path";
 import { startFixtureProcess } from "../../../scripts/testing/fixtures/fixture-process";
 import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
-for (const scenario of ["boundaries", "resize", "cadence", "direct", "naming", "settings"])
+for (const scenario of [
+  "boundaries",
+  "resize",
+  "cadence",
+  "count-information",
+  "direct",
+  "naming",
+  "settings",
+])
   test(
     "Node frames menus preserve " + scenario + " and release input ownership",
     () =>

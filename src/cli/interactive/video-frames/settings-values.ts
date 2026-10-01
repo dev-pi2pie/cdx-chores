@@ -1,4 +1,6 @@
 import { expectedSequenceCount, frameCadence } from "../../video-frames/cadence";
+import { compare, exact } from "../../video-frames/exact";
+import { formatFrameTime } from "./selection";
 import type { ImageEncoders, ImageEncoderSupport } from "../../video-frames/encoders";
 import type { ImageFormat, ImageQuality } from "../../video-frames/image-options";
 import type { FrameTime } from "../../video-frames/types";
@@ -67,6 +69,50 @@ export function frameCadenceFeedback(
   if (count === undefined) return "Expected count unavailable; duration is unknown.";
   if (count === 1n) return "Expected 1 image at the start; confirm the end during processing.";
   return `Expected ${count.toLocaleString("en-US")} images (metadata estimate).`;
+}
+
+/** Compact row count, qualified by the highlighted option's details below the list. */
+export function frameIntervalEstimate(value: string, duration?: FrameTime): string | undefined {
+  if (validateFrameCadenceValue("interval", value) !== true) return;
+  const count = expectedSequenceCount(frameCadence({ interval: value }), duration);
+  return count === undefined
+    ? "estimate unavailable"
+    : `~${count.toLocaleString("en-US")} ${count === 1n ? "image" : "images"}`;
+}
+
+export function frameIntervalDetails(
+  value: string,
+  duration?: FrameTime,
+  compact = false,
+  durationIsEstimate = true,
+): string | undefined {
+  if (validateFrameCadenceValue("interval", value) !== true) return;
+  const cadence = frameCadence({ interval: value });
+  const available = duration && compare(duration, exact(0n)) > 0;
+  let clock = available ? formatFrameTime(duration) : undefined;
+  if (compact && clock?.startsWith("00:00:"))
+    clock = `${clock
+      .slice(6)
+      .replace(/^0/, "")
+      .replace(/\.?0+$/, "")}s`;
+  const lines = [
+    available
+      ? compact
+        ? `${durationIsEstimate ? "Metadata duration ~" : "Decoded duration "}${clock}`
+        : `Duration ${clock} (${durationIsEstimate ? "metadata estimate" : "decoded end"})`
+      : "Duration unavailable",
+    compact ? "Counts confirmed at export" : "Counts confirmed during export",
+  ];
+  if (available) {
+    const comparison = compare(cadence.periodMs, duration);
+    if (comparison >= 0)
+      lines.push(
+        compact
+          ? `${comparison === 0 ? "Matches" : "Beyond"}: start image only`
+          : `${comparison === 0 ? "Matches" : "Beyond"} duration — starting image only`,
+      );
+  }
+  return lines.join("\n");
 }
 
 export function validateFrameScale(value: string): true | string {
