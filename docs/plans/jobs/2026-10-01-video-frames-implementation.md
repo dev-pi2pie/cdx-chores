@@ -14,7 +14,7 @@ Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation
 | 1 | Independent fixture expectations, smoke preparation, real terminal keys/resize, selection retention, fallbacks, prompt ownership/restoration | Completed |
 | 2 | Real-tool timing, stream agreement, encoder/filter feasibility, bounded writer topology, decoder guard, synthetic workload measurements | Completed |
 | 3 | Streaming records, exact identities, bounded cache, source invalidation, cancellation/child closure | Completed |
-| 4 | Verified pixels, alpha/transforms, safe publication, failure accounting, private processing smoke | In progress |
+| 4 | Verified pixels, alpha/transforms, safe publication, failure accounting, private processing smoke | Completed |
 | 5 | Sampling, retained repeats, destinations and concrete naming | Not started |
 | 6 | Direct command, validation, dependencies and doctor | Not started |
 | 7 | Guided Interactive flow and recovery | Not started |
@@ -149,7 +149,7 @@ Private processing smoke: **not tested**. Ignored synthetic artifacts are retain
 
 ## Phase 4
 
-Started from accepted Phase 3 tip `1165dd2b9755ae714b16c24de8142c5a6a9eb46d`. Implement the verified image configuration and a shared bounded exporter/publication boundary before sequence sampling. Phase 2 recipes remain independent smoke references. At phase start, production pixel, filesystem, failure, and private processing evidence was pending. The checkpoints below record verification; phase acceptance still awaits range review.
+Started from accepted Phase 3 tip `1165dd2b9755ae714b16c24de8142c5a6a9eb46d`. Implement the verified image configuration and a shared bounded exporter/publication boundary before sequence sampling. Phase 2 recipes remain independent smoke references. At phase start, production pixel, filesystem, failure, and private processing evidence was pending. The checkpoints below record verification and acceptance.
 
 ### Image Configuration Checkpoint
 
@@ -175,7 +175,7 @@ The explicit `scripts/spikes/video-frames-writer.ts` Node smoke passed all three
 
 Resolved selections carry an internal context binding; copied or stale identities require fresh resolution. Export rechecks source/stream fingerprints and actual selected-frame geometry/color/aspect before extraction. Bounded source-ordered groups use one decoder and one encoder, one reusable RGBA frame, 64 KiB awaited encoder writes, and the owned image writer. Repeated roles produce separate files. No full frame table or per-image process is introduced. Structured failure results distinguish confirmed writes, incomplete destination copies, retained staging, and unconfirmed ownership/closure. Encoder preflight creates no destination on failure.
 
-Controlled Node pipeline cases passed **9 cases / 45 assertions**, including repeated roles, unavailable mode, late alpha, partial raw output, short/failed encoding, source mutation, and cancellation. Focused frame units passed **39 cases / 670 assertions**; the full managed unit suite passed **1,493 cases / 6,260 assertions** across 181 files. Managed application regression passed **2,211 cases / 13,903 assertions** across 296 files. Phase-range review is pending.
+Controlled Node pipeline cases passed **9 cases / 45 assertions**, including repeated roles, unavailable mode, late alpha, partial raw output, short/failed encoding, source mutation, and cancellation. Focused frame units passed **39 cases / 670 assertions**; the full managed unit suite passed **1,493 cases / 6,260 assertions** across 181 files. Managed application regression passed **2,211 cases / 13,903 assertions** across 296 files. Phase-range review was pending at this checkpoint.
 
 The opt-in `scripts/spikes/video-frames-export.ts` production-path smoke passed under Node ESM and CommonJS bundles, with 41 images per run: all nine format/quality choices, independently labeled first/middle/last pixels, repeated one-frame roles, reflected 2:1 aspect plus half-scale geometry, and eight tagged YUV matrix/range/transfer combinations. Fixtures verify persisted tags and unchanged source YUV values before applying independent color equations. Maximum color-reference error was one RGB level; transformed RGB tolerance remained one level and alpha exact. PNG/lossless WebP supplied pixels were exact; JPG mean error stayed within nine levels for low and five otherwise, lossy WebP within twelve. Saved codec/extension, dimensions, square aspect, absent display transform, source preservation, and staging removal passed.
 
@@ -185,9 +185,13 @@ Private processing outcomes: PNG image export **passed**; JPG image export **pas
 
 ### Review Follow-up
 
-Review of `1165dd2b..35f2ea9b` found a P2 overwrite-accounting issue: duplicate group names could replace an earlier image while counting both writes. A bounded normalized/case-insensitive name set now rejects duplicates before frame scanning or destination creation. Both overwrite policies and case aliases are covered; the refreshed controlled Node exporter suite passed **13 cases / 65 assertions**. TypeScript, lint, format, and diff checks passed. Documentation review also corrected stale pending-evidence summaries and labeled initial checkpoint gaps as historical. Expanded-range review remains pending.
+Review of `1165dd2b..35f2ea9b` found a P2 overwrite-accounting issue: duplicate group names could replace an earlier image while counting both writes. A bounded normalized/case-insensitive name set now rejects duplicates before frame scanning or destination creation. Both overwrite policies and case aliases are covered; the refreshed controlled Node exporter suite passed **13 cases / 65 assertions**. TypeScript, lint, format, and diff checks passed. Documentation review also corrected stale pending-evidence summaries and labeled initial checkpoint gaps as historical. Expanded-range review was pending at this follow-up.
 
 The follow-up review added canonical Unicode alias coverage under both overwrite policies; the refreshed exporter suite passed **15 cases / 75 assertions**. The smoke monitor now counts the shared owned scratch root, including retained synthetic and private outputs, against the same 512-MiB budget. Pure smoke-budget cases and TypeScript/lint/diff checks passed; this changes development verification support, not the product export policy.
+
+### Review and Acceptance
+
+The complete implementation range `1165dd2b9755ae714b16c24de8142c5a6a9eb46d..57e134bd521f666d28c301ba3a290ddf054e973b` passed code, test, security-boundary, and documentation review with no remaining actionable findings after the follow-ups. Phase 4 is accepted on 2026-10-01; all Phase 4 tasks are checked. The plan stays active, the research stays in-progress, and this job remains open for Phases 5–8. Backend bundle evidence does not claim command/Interactive integration, heavy real-content coverage, minimum-Node execution, or portable filesystem proof.
 
 ## Related Research
 
