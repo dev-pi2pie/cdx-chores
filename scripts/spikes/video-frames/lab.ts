@@ -47,23 +47,22 @@ export async function createLab() {
       const abort = () => control.abort(interruption.signal.reason);
       interruption.signal.addEventListener("abort", abort, { once: true });
       let violation: Error | undefined;
-      let checking = false;
-      const observe = async () => {
-        if (checking) return;
-        checking = true;
-        try {
-          checkSmokeProgress({
-            caseElapsedMs: Math.floor(performance.now() - started),
-            runElapsedMs: Math.floor(activeMs + performance.now() - started),
-            scratchBytes: await scratchBytes(dirname(run.path)),
-          });
-        } catch (error) {
-          violation = error instanceof Error ? error : new Error(String(error));
-          control.abort(violation);
-        } finally {
-          checking = false;
-        }
-      };
+      let observation: Promise<void> | undefined;
+      const observe = () =>
+        (observation ??= (async () => {
+          try {
+            checkSmokeProgress({
+              caseElapsedMs: Math.floor(performance.now() - started),
+              runElapsedMs: Math.floor(activeMs + performance.now() - started),
+              scratchBytes: await scratchBytes(dirname(run.path)),
+            });
+          } catch (error) {
+            violation = error instanceof Error ? error : new Error(String(error));
+            control.abort(violation);
+          } finally {
+            observation = undefined;
+          }
+        })());
       const monitoring = setInterval(() => {
         void observe();
       }, 250);
@@ -117,6 +116,7 @@ export async function createLab() {
         throw violation ?? error;
       } finally {
         clearInterval(monitoring);
+        await observation;
         interruption.signal.removeEventListener("abort", abort);
         activeMs += performance.now() - started;
         await writeFile(

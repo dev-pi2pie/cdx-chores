@@ -44,10 +44,14 @@ export async function generateSmall(
     stream?: number;
     buffered?: boolean;
     alpha?: boolean;
+    width?: number;
+    height?: number;
   } = {},
 ): Promise<string> {
   const path = join(e.path, name);
   const count = options.frames ?? options.starts?.length ?? 4;
+  const width = options.width ?? 96;
+  const height = options.height ?? 64;
   const filters = options.starts
     ? [
         "-vf",
@@ -73,7 +77,11 @@ export async function generateSmall(
   await e.tool(
     FFMPEG,
     [
-      ...GENERATE_RAW,
+      ...GENERATE_RAW.slice(0, -2),
+      "-video_size",
+      `${width}x${height}`,
+      "-i",
+      "pipe:0",
       ...filters,
       ...(options.starts ? ["-enc_time_base", "filter"] : []),
       "-frames:v",
@@ -84,7 +92,7 @@ export async function generateSmall(
       "-y",
       path,
     ],
-    { input: referenceFrames(count, 96, 64, options.alpha, options.stream) },
+    { input: referenceFrames(count, width, height, options.alpha, options.stream) },
   );
   return path;
 }

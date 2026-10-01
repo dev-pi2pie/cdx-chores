@@ -18,6 +18,7 @@ export interface ToolResult {
   milliseconds: number;
   childPeakRssKiB: number | null;
   parentPeakRssBytes: number;
+  earlyStop: boolean;
 }
 
 export async function runTool(
@@ -25,7 +26,7 @@ export async function runTool(
   args: string[],
   options: {
     input?: AsyncIterable<Buffer>;
-    consume?: (chunk: Buffer) => Promise<void> | void;
+    consume?: (chunk: Buffer) => Promise<void | boolean> | void | boolean;
     outputLimit?: number;
     signal?: AbortSignal;
     timeoutMs?: number;
@@ -46,6 +47,7 @@ export async function runTool(
     child.once("close", (code, signal) => resolve({ code, signal }));
   });
   let stopReason: Error | undefined;
+  let earlyStop = false;
   let stoppedAt = 0;
   let force: ReturnType<typeof setTimeout> | undefined;
   const stop = (reason: Error) => {
@@ -96,8 +98,13 @@ export async function runTool(
       for await (const value of child.stdout!) {
         parentPeakRssBytes = Math.max(parentPeakRssBytes, process.memoryUsage().rss);
         const chunk = value as Buffer;
-        if (options.consume) await options.consume(chunk);
-        else {
+        if (stopReason) continue;
+        if (options.consume) {
+          if ((await options.consume(chunk)) === false) {
+            earlyStop = true;
+            stop(new Error("Verified prefix reached; stop and confirm child closure."));
+          }
+        } else {
           bytes += chunk.length;
           if (bytes > (options.outputLimit ?? 1_048_576))
             throw new Error("Synthetic tool output limit exceeded.");
@@ -150,9 +157,10 @@ export async function runTool(
       milliseconds: performance.now() - started,
       childPeakRssKiB,
       parentPeakRssBytes,
+      earlyStop,
     };
-    if (stopReason) throw stopReason;
-    if (!options.allowFailure && (result.code !== 0 || value.stderr.trim()))
+    if (stopReason && !earlyStop) throw stopReason;
+    if (!options.allowFailure && ((!earlyStop && result.code !== 0) || value.stderr.trim()))
       throw new Error(`${command} failed (${result.code ?? result.signal}): ${value.stderr}`);
     return value;
   } finally {

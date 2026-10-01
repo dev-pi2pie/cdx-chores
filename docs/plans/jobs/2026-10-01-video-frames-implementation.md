@@ -75,7 +75,7 @@ The complete implementation range `cfd2d7ca15195fc19b69ce6d2bd940f838d2b560..52c
 
 Started from `49d37ee39ce1dcd278b412d1b2a35fac310aefb7`. Synthetic real-tool experiments remain explicit development tasks outside regular suites. Their ignored outputs are retained for local review; cleanup capability is checked separately with disposable owned fixtures.
 
-WebP encoding verification remains pending. Only synthetic inputs are used in this phase.
+Only synthetic inputs are used in this phase.
 
 Doctor contract refinement adds advertised image-format/mode inspection separately from executable availability. Phase 2 verifies probe interpretation alongside real encoding evidence; Phase 6 owns report integration. No media generation occurs during doctor inspection.
 
@@ -92,7 +92,32 @@ The on-demand entry is `scripts/spikes/video-frames-tools.ts`; bundle with Bun's
 - Damaged H.264 made FFprobe return zero while emitting error-level decode diagnostics. Successful exit alone does not establish clean EOF: the error-level channel must also be empty. Strict FFmpeg validation uses `-xerror -err_detect explode` and failed on that input. A truncated MP4 also failed inspection.
 - `-max_pixels 16777216` was accepted at 4,096 × 4,096 and rejected at 4,097 × 4,096 in both tools. The guard is separate from output dimensions, source size, and process memory. RSS observations are sampled and can miss short-lived peaks; they are not portable hard memory limits.
 
-TypeScript, focused lint, formatting, `git diff --check`, four budget unit tests (12 assertions), and the disposable workspace/cleanup check passed. Image configurations, encoded repeats, writer limits, and increasing-duration measurements remain open.
+TypeScript, focused lint, formatting, `git diff --check`, four budget unit tests (12 assertions), and the disposable workspace/cleanup check passed.
+
+### Images, Probe Interpretation, and Writer Topology
+
+The Node entry also accepts `encoders|images|transforms|display|writer|workloads`. All correctness groups, including timing/streams/guard, passed against FFmpeg/FFprobe 9.0.2. Inventory parsing requires exact video encoder names; still-WebP help requires the exact encoder header, BGRA representation, and a lossless option accepting 1. Controlled negative outputs and actual unknown-encoder help (exit 0) did not establish support. These are advertised capabilities, separate from the encoding results below.
+
+- PNG compression 0 and 9 changed file bytes but preserved independent RGBA pixels. Filter-frame `setparams` was necessary to retain BT.709 primaries/sRGB transfer in the encoded PNG; encoder flags alone did not establish that metadata.
+- JPG quantizers for `low|medium|high|full` are `12|6|3|1`, with full-range 4:4:4 BT.601 conversion. Fixed-reference mean RGB error stayed within 9 for low and 5 for the other presets. Opaque alpha-capable input remained opaque.
+- Still-WebP qualities are `40|70|90|100`; only full uses lossless mode. BGRA input preserved alpha exactly in every preset; lossless output matched all reference bytes. Lossy mean RGB error stayed within 12. Explicit RGB-to-YUVA scaling had changed alpha by one level, so it is not the accepted configuration.
+- Limited-range BT.601/709 patches matched independently declared RGB colors within three levels. BT.709-to-sRGB transfer conversion matched an independent transfer calculation within three levels. Tested scope is 8-bit SDR; HDR/wide-gamut conversion and arbitrary source profiles are unverified and require explicit validation in Phase 4.
+- Actual MOV display matrices, 2:1 sample aspect, quarter/half turns, reflection, and odd-dimension scale rounding passed. Normalize aspect before display transformation; reset input display metadata before manual transformation to avoid orientation surviving in PNG EXIF. Independently transformed alpha required scaling a separate alpha plane; direct packed-alpha scaling changed alpha by one level. Saved pixels decoded correctly with ordinary autorotation enabled, and saved dimensions/aspect agreed with the reference.
+- The PNG-pipe prototype frames data incrementally through IEND, awaits successful file close, and publishes in order through a slow sink. At most two files, including writes in progress, were owned. The configured encoded-byte limit is 256 MiB; a small injected boundary rejected in-progress writes before overshoot. Truncated images were never published. Six actual interval exports decoded as `[1, 2, 3, 3, 3, 4]`, preserving every target before the 540-ms end. This proves a topology; production format framing and safe publication remain Phase 4 work.
+
+### Increasing-Duration Workloads
+
+Continuous 320 × 180, 15-FPS sources passed declared count/timing/EOF/endpoint checks: 450, 1,800, and 4,500 displayed frames. Their time base was 1/15360 with 1,024 ticks per frame. One-FPS exports produced 30, 120, and 300 verified identities, without real-time pacing. All three cases together used approximately 5.5 seconds of active work and 450 output images, within the declared budgets.
+
+| Duration | Initial full scan | First prefix | Near-end prefix | Last prefix | Export | Sampled child RSS | Sampled parent RSS |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 30 seconds | 50 ms | 34 ms | 48 ms | 50 ms | 127 ms | 35,072 KiB | 138,248,192 bytes |
+| 2 minutes | 102 ms | 35 ms | 104 ms | 104 ms | 321 ms | 38,640 KiB | 170,934,272 bytes |
+| 5 minutes | 213 ms | 39 ms | 213 ms | 213 ms | 756 ms | 39,792 KiB | 171,704,320 bytes |
+
+Cached minimal-identity lookups took under 0.01 ms in this feasibility harness. Prefix stops awaited child close; only the full scan established exact EOF/count. Measurements include process/observation overhead, sampled RSS can miss peaks, and these are not production resolver measurements or hard memory guarantees. Larger file I/O, demanding codecs, heavy real content, minimum Node, and other platforms remain unverified. Private processing smoke: **not tested**.
+
+Synthetic artifacts remain ignored/untracked for local review. The disposable workspace check verified cleanup independently. Phase 2 task evidence is complete; acceptance awaits its full commit-range review.
 
 ## Related Research
 
