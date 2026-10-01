@@ -128,7 +128,6 @@ export class ProcessOperation {
         code = exitCode;
         signal = exitSignal;
         closed = true;
-        this.children.delete(child);
         resolve();
       });
     });
@@ -213,7 +212,9 @@ export class ProcessOperation {
       : Promise.resolve();
     try {
       await Promise.race([
-        Promise.all([close, stdoutTask, stderrTask, progressTask]),
+        Promise.all([close, stdoutTask, stderrTask, progressTask]).then(() => {
+          this.children.delete(child);
+        }),
         confirmation,
       ]);
       if (launchError) throw launchError;

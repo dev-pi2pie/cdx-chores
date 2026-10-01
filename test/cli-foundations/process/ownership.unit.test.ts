@@ -126,3 +126,43 @@ test("Windows transition forces immediately but still waits for close", async ()
   await operation.dispose();
   expect(operation.closureUnconfirmed).toBe(false);
 });
+
+test("child close before cancellation still bounds a pending consumer", async () => {
+  let release!: () => void, entered!: () => void;
+  const ready = new Promise<void>((resolve) => {
+    entered = resolve;
+  });
+  const child = Object.assign(new EventEmitter(), {
+    stdout: new PassThrough(),
+    stderr: new PassThrough(),
+    stdio: [],
+    kill: () => true,
+  });
+  const operation = new ProcessOperation({
+    launch: () => child as unknown as ChildProcess,
+    graceMs: 5,
+    forceMs: 10,
+  });
+  const pending = operation.run("fake", [], {
+    consume: async () => {
+      entered();
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+    },
+  });
+  void pending.catch(() => {});
+  child.stdout.write("record\n");
+  await ready;
+  child.stdout.end();
+  child.stderr.end();
+  child.emit("close", 0, null);
+  operation.cancel();
+  try {
+    await expect(pending).rejects.toThrow("closure unconfirmed");
+    expect(operation.closureUnconfirmed).toBe(true);
+  } finally {
+    release();
+    await expect(operation.dispose()).rejects.toThrow("closure unconfirmed");
+  }
+});

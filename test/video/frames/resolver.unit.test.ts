@@ -12,6 +12,7 @@ function fixture(
     calls = 0;
   const counts: number[] = [];
   let estimate: bigint | undefined;
+  let frameEstimate: number | undefined;
   const metadata = (): VideoStream => ({
     index: 2,
     codec: "ffv1",
@@ -20,6 +21,7 @@ function fixture(
     timeBase: exact(1n, 1000n),
     fingerprint: streamFingerprint,
     estimatedDurationMs: estimate === undefined ? undefined : exact(estimate),
+    estimatedFrameCount: frameEstimate,
     eligibleStreams: 2,
   });
   const backend: FrameBackend = {
@@ -64,6 +66,9 @@ function fixture(
     estimate(value: bigint) {
       estimate = value;
     },
+    estimateFrames(value: number) {
+      frameEstimate = value;
+    },
   };
 }
 describe("bounded exact source-frame resolution", () => {
@@ -77,6 +82,19 @@ describe("bounded exact source-frame resolution", () => {
     expect((await f.resolver.resolve({ kind: "last" })).frameNumber).toBe(4);
     expect(f.counts).toEqual([1, 3, 4]);
     expect(f.resolver.state.verifiedFrameCount).toBe(4);
+  });
+  test("frame-count estimates cannot bound real ordinals or extend actual EOF", async () => {
+    const low = fixture();
+    low.estimateFrames(1);
+    expect((await low.resolver.resolve({ kind: "frame", frameNumber: 3 })).frameNumber).toBe(3);
+    expect(low.counts).toEqual([3]);
+    const high = fixture();
+    high.estimateFrames(100);
+    await expect(high.resolver.resolve({ kind: "frame", frameNumber: 5 })).rejects.toMatchObject({
+      code: "FRAME_OUT_OF_RANGE",
+    });
+    expect(high.counts).toEqual([4]);
+    expect(high.resolver.state.cachedIdentities).toBe(0);
   });
   test("first timestamp validates the full stream and later requests stop at the first later start", async () => {
     const f = fixture();
