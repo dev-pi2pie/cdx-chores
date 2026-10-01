@@ -324,6 +324,10 @@ Private guided processing outcomes: one-frame export **passed**; frame-set expor
 
 Final managed units passed **1,580 cases / 6,836 assertions** across 186 files. After the final destination/review changes, the affected prompt, guided workflow, direct command, destination and options checks passed **39 cases / 208 assertions** across seven files. TypeScript, repository lint/format, diff checks and package build passed. The earlier managed application run remains the broad regression baseline; the affected follow-up covers the final polish. Node 26.5.0 on macOS is verified; minimum Node, other platforms and heavy real content remain unverified. Complete Phase 7 range review and acceptance remain pending at this checkpoint.
 
+### Review Follow-up
+
+Full-range review `26754458a11b4c679090066230c26bbdc5e54fcb..4ef1b9c1297261501e011a81d2b2506e543284c8` found no actionable code or security findings. Test review requested a regression for the newly displayed inline validation diagnostics. The added case supplies terminal escape, bell, line-separator and format-control characters; none reaches the terminal as a control, and the original editable draft survives. All **14 affected cases / 46 assertions** passed. TypeScript, lint, format and diff checks passed. Expanded-range review and phase acceptance remain pending at this checkpoint.
+
 ## Phase 7 Planning Refinement
 
 Expanded Phase 7's unchecked tasks into integration, TUI review/polish, and verification/acceptance groups. The integrated picker and surrounding flow now have an explicit presentation review, terminal-layout matrix, and finding/fix/recheck checkpoint before acceptance. Phase numbers, completed Phases 1–5 tasks, and the existing smoke/privacy boundaries are preserved; at this planning checkpoint, Phase 7 implementation had not started.

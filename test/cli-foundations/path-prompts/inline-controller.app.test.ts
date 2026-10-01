@@ -50,6 +50,7 @@ async function createPromptHarness(options?: {
   columns?: number;
   setup?: (fixtureDir: string) => Promise<void>;
   resolveSuggestions?: Parameters<typeof promptPathInlineGhost>[0]["resolveSuggestions"];
+  validate?: Parameters<typeof promptPathInlineGhost>[0]["validate"];
 }): Promise<{
   fixtureDir: string;
   stdin: FakePromptReadStream;
@@ -78,7 +79,7 @@ async function createPromptHarness(options?: {
     },
     stdin: stdin as unknown as NodeJS.ReadStream,
     stdout: stdout as unknown as NodeJS.WritableStream,
-    validate: (value) => (value.trim().length > 0 ? true : "Required"),
+    validate: options?.validate ?? ((value) => (value.trim().length > 0 ? true : "Required")),
     suggestionFilter: { targetKind: "any" },
     resolveSuggestions: options?.resolveSuggestions,
   });
@@ -89,6 +90,36 @@ async function createPromptHarness(options?: {
 }
 
 describe("path inline prompt controller", () => {
+  test("validation diagnostics cannot execute terminal controls and retain the typed draft", async () => {
+    let valid = false;
+    let settled = false;
+    const { fixtureDir, stdin, stdout, prompt } = await createPromptHarness({
+      resolveSuggestions: async () => [],
+      validate: () => (valid ? true : "\x1b[2Jfile\u2028path\x07\u200e"),
+    });
+    void prompt.then(() => {
+      settled = true;
+    });
+    try {
+      stdin.emit("keypress", "clip.png", { name: "c" });
+      stdin.emit("keypress", "\r", { name: "return" });
+      await nextRenderTick();
+      expect(settled).toBe(false);
+      expect(stdout.text).toContain("file path");
+      expect(stdout.text).not.toContain("\x1b[2J");
+      expect(stdout.text).not.toContain("\x07");
+      expect(stdout.text).not.toContain("\u2028");
+      expect(stdout.text).not.toContain("\u200e");
+      expect(stdout.text).toContain("Path clip.png");
+      valid = true;
+      stdin.emit("keypress", "\r", { name: "return" });
+      expect(await prompt).toBe("clip.png");
+      expect(stdin.listenerCount("keypress")).toBe(0);
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
   test("signal abort restores path input before the next editor takes ownership", async () => {
     const stdin = new FakePromptReadStream();
     const stdout = new FakePromptWriteStream();
