@@ -180,6 +180,35 @@ async function verifyDestinationValidation(simple: boolean): Promise<void> {
   assert.equal(io.actualOutput.listenerCount("resize"), 0);
 }
 
+async function verifyEstimatedDuration(targetMs: number): Promise<void> {
+  const io = streams();
+  let resolved = false;
+  const prompt = promptFramePicker({
+    ...io,
+    simple: true,
+    durationMs: 100,
+    durationIsEstimate: true,
+    resolve: async (request) => {
+      assert.equal(request.kind, "time");
+      if (request.kind !== "time") throw new Error("Expected timestamp");
+      assert.equal(request.timeMs.numerator, BigInt(targetMs));
+      resolved = true;
+      if (targetMs >= 540) throw new Error("Outside verified decoded end");
+      return { frameNumber: 3, startMs: 120 };
+    },
+  });
+  void prompt.catch(() => {});
+  await flush();
+  io.actualInput.write("\x1b[B\r");
+  await flush();
+  io.actualInput.write(`00:00:00.${String(targetMs).padStart(3, "0")}\r`);
+  if (targetMs < 540) assert.equal((await prompt)?.resolved.frameNumber, 3);
+  else await assert.rejects(prompt, /Outside verified decoded end/);
+  assert.equal(resolved, true);
+  assert.equal(io.actualInput.isRaw, false);
+  assert.equal(io.actualInput.listenerCount("keypress"), 0);
+}
+
 // The synchronous parent also enforces a hard timeout and output limit.
 const guard = setTimeout(() => {
   process.stderr.write("Real Inquirer cancellation fixture timed out.\n");
@@ -203,6 +232,10 @@ try {
     await verifyDestinationValidation(false);
     await verifyDestinationValidation(true);
     cases = ["inline", "simple"];
+  } else if (scenario === "estimated-duration") {
+    await verifyEstimatedDuration(120);
+    await verifyEstimatedDuration(540);
+    cases = ["resolved", "rejected"];
   } else {
     throw new Error("Unknown real prompt cancellation scenario.");
   }

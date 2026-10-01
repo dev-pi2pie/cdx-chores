@@ -163,6 +163,7 @@ export async function handleVideoFramesInteractive(
                     ...io,
                     initialState: pickerState,
                     durationMs: Number.isSafeInteger(duration) ? duration : undefined,
+                    durationIsEstimate: resolver.state.endMs === undefined,
                     sourceLabel: displayPath(runtime, source),
                     resolve: async (request, taskSignal, progress) => {
                       scanProgress = progress;

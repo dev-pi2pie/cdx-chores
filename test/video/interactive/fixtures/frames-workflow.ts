@@ -126,6 +126,7 @@ async function main() {
     ["single", "custom", "settings", "settings", "export"],
     ({ path }) => ({
       picker: async (options) => {
+        assert.equal(options.durationIsEstimate, true);
         const request = { kind: "time" as const, timeMs: { numerator: 80n, denominator: 1n } };
         const identity = await options.resolve(request, new AbortController().signal);
         return { request, resolved: identity, glyphs: "unicode", selection: "custom" };

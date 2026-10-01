@@ -67,6 +67,7 @@ export function derivePickerLayout(options: {
   columns?: number;
   rows?: number;
   durationMs?: number;
+  durationIsEstimate?: boolean;
   state: FramePickerState;
   sourceLabel?: string;
   simple?: boolean;
@@ -94,7 +95,7 @@ export function derivePickerLayout(options: {
   // Leave the terminal's final cell unused to avoid delayed-autowrap ambiguity.
   const width = columns! - 1;
   if (width < 1) return direct;
-  const header = `Pick a frame${options.sourceLabel ? ` · ${options.sourceLabel}` : ""} · Duration ${formatFrameTime(durationMs)}`;
+  const header = `Pick a frame${options.sourceLabel ? ` · ${options.sourceLabel}` : ""} · ${options.durationIsEstimate ? "Estimated duration" : "Duration"} ${formatFrameTime(durationMs)}`;
   const controls = [
     "Timeline is a coarse overview. Use frame/time input for precision.",
     "Left/Right Move   F Frame   T Time",

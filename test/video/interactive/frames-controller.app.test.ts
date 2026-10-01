@@ -53,6 +53,26 @@ function streams() {
 }
 
 describe("synthetic frame picker ownership", () => {
+  test("estimated duration cannot reject a valid timestamp before resolution", async () => {
+    const io = streams();
+    let requested: FrameRequest | undefined;
+    const prompt = promptFramePicker({
+      ...io,
+      durationMs: 100,
+      durationIsEstimate: true,
+      resolve: async (request) => {
+        requested = request;
+        return { frameNumber: 3, startMs: 120 };
+      },
+    });
+    io.actualInput.write("t00:00:00.120\r");
+    expect((await prompt)?.resolved.frameNumber).toBe(3);
+    expect(requested).toEqual({ kind: "time", timeMs: { numerator: 120n, denominator: 1n } });
+    expect(io.actualOutput.text).toContain("Estimated duration");
+    expect(io.actualInput.listenerCount("keypress")).toBe(0);
+    expect(io.actualInput.isRaw).toBe(false);
+  });
+
   for (const key of ["\x1b", "\x03"])
     test("fatal closure survives picker cancellation " + JSON.stringify(key), async () => {
       const io = streams();
@@ -272,6 +292,10 @@ describe("simple prompt cancellation initialization", () => {
 
   test("explicit image extensions are corrected in the inline and simple destination editors", () => {
     verifyRealPromptCancellation("destination-validation", ["inline", "simple"]);
+  }, 10_000);
+
+  test("direct timestamps use decoded bounds rather than an estimated duration", () => {
+    verifyRealPromptCancellation("estimated-duration", ["resolved", "rejected"]);
   }, 10_000);
 });
 

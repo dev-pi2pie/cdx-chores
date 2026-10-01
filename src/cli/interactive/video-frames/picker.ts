@@ -32,6 +32,8 @@ export interface PickerObservation {
 
 export interface FramePickerOptions extends FramePromptIO {
   durationMs?: number;
+  /** Metadata can guide coarse positions without establishing a valid timestamp bound. */
+  durationIsEstimate?: boolean;
   sourceLabel?: string;
   initialState?: FramePickerState;
   simple?: boolean;
@@ -62,6 +64,7 @@ function layoutFor(options: FramePickerOptions, state: FramePickerState): Picker
     columns: output.columns,
     rows: output.rows,
     durationMs: options.durationMs,
+    durationIsEstimate: options.durationIsEstimate,
     sourceLabel: options.sourceLabel,
     simple: options.simple,
     state,
@@ -220,7 +223,13 @@ async function runWave(
                 const request: FrameRequest =
                   editor.kind === "frame"
                     ? { kind: "frame", frameNumber: parseFrameNumber(editor.draft) }
-                    : { kind: "time", timeMs: parseFrameTime(editor.draft, options.durationMs) };
+                    : {
+                        kind: "time",
+                        timeMs: parseFrameTime(
+                          editor.draft,
+                          options.durationIsEstimate ? undefined : options.durationMs,
+                        ),
+                      };
                 void resolveRequest(request).catch(fail);
                 return;
               } catch (error) {
@@ -331,7 +340,13 @@ async function runDirect(
     const parse = (value: string): FrameRequest =>
       choice === "frame"
         ? { kind: "frame", frameNumber: parseFrameNumber(value) }
-        : { kind: "time", timeMs: parseFrameTime(value, options.durationMs) };
+        : {
+            kind: "time",
+            timeMs: parseFrameTime(
+              value,
+              options.durationIsEstimate ? undefined : options.durationMs,
+            ),
+          };
     const value = await enterFrameValue(options, {
       message:
         choice === "frame"
