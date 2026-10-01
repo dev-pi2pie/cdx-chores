@@ -254,6 +254,12 @@ The complete Phase 5 implementation range `67827e8456521cb4bfe3d73e764ef1db36994
 
 The complete implementation range `67827e8456521cb4bfe3d73e764ef1db36994831..371cc129e93b44def4467913868676710b992d5d` passed phase reviews with no remaining actionable findings after the documentation follow-up. Source/tests were unchanged by that follow-up; expanded-range documentation review confirmed the evidence/currentness correction. Phase 5 is accepted on 2026-10-01; all Phase 5 tasks are checked. The plan stays active, the research stays in-progress, and this record remains open for Phases 6–8. Ignored synthetic smoke artifacts are retained for local review; later removal needs no public cleanup record. Source-dependent alpha limitations and broader support gaps remain scoped as recorded above.
 
+## Phase 6 Planning Refinement
+
+Clarified doctor inspection against the executables used by frames execution, exact encoder entries, the verified WebP BGRA input, and separate lossless-mode support. Version/package labels cannot establish capability. Controlled verification now names supported, absent/unsupported, unknown, and failed-probe cases; routine doctor inspection remains separate from actual encoding/pixel smoke evidence. Phase 6 implementation has not started.
+
+Documentation review found no actionable findings. Phase/checklist preservation and diff checks passed.
+
 ## Phase 7 Planning Refinement
 
 Expanded Phase 7's unchecked tasks into integration, TUI review/polish, and verification/acceptance groups. The integrated picker and surrounding flow now have an explicit presentation review, terminal-layout matrix, and finding/fix/recheck checkpoint before acceptance. Phase numbers, completed Phases 1–5 tasks, and the existing smoke/privacy boundaries are preserved; Phase 7 implementation has not started.
