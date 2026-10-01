@@ -12,7 +12,7 @@ Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation
 | Phase | Research obligations | State |
 | --- | --- | --- |
 | 1 | Independent fixture expectations, smoke preparation, real terminal keys/resize, selection retention, fallbacks, prompt ownership/restoration | Completed |
-| 2 | Real-tool timing, stream agreement, encoder/filter feasibility, bounded writer topology, decoder guard, synthetic workload measurements | Not started |
+| 2 | Real-tool timing, stream agreement, encoder/filter feasibility, bounded writer topology, decoder guard, synthetic workload measurements | In progress |
 | 3 | Streaming records, exact identities, bounded cache, source invalidation, cancellation/child closure | Not started |
 | 4 | Verified pixels, alpha/transforms, safe publication, failure accounting, private processing smoke | Not started |
 | 5 | Sampling, retained repeats, destinations and concrete naming | Not started |
@@ -70,6 +70,27 @@ The prototype uses integer-millisecond fixtures; exact real-tool timing is Phase
 Review of `cfd2d7ca..a1b28cb6` found one P2 issue: interrupting an active resolver could surface its ordinary error and exit 1. The wave and direct paths now wait for acknowledgement and preserve interruption status 130, including a resolver that returns a result after abort. Focused regressions and the managed application rerun passed.
 
 The complete implementation range `cfd2d7ca15195fc19b69ce6d2bd940f838d2b560..52cd73e69b5674f8738da92e217b8440a8599e37` passed code, test, and documentation review with no remaining findings. Phase 1 is accepted and its plan tasks are checked. The plan remains active, the research remains in-progress, and this unified record remains open for Phases 2–8.
+
+## Phase 2
+
+Started from `49d37ee39ce1dcd278b412d1b2a35fac310aefb7`. Synthetic real-tool experiments remain explicit development tasks outside regular suites. Their ignored outputs are retained for local review; cleanup capability is checked separately with disposable owned fixtures.
+
+Tool preflight found PNG and MJPEG encoders in FFmpeg/FFprobe 8.0.1, but no WebP encoder. WebP evidence remains pending a suitable build. No private input is accessed in this phase.
+
+The decoder-boundary experiment declares two one-frame FFV1 sources: 4,096 × 4,096 and 4,097 × 4,096. The proposed guard is 16,777,216 pixels, with acceptance at that boundary and rejection above it. Inputs stream from Node; no raw source file is staged. Its declared additional scratch allowance is 16 MiB and its processing allowance follows the five-minute case/fifteen-minute run limits. This is a pixel-boundary check, not heavy real-content evidence.
+
+### Timing, Streams, and Decoder Guard
+
+The on-demand entry is `scripts/spikes/video-frames-tools.ts`; bundle with Bun's Node target and run the bundle using `node <bundle> timing|streams|guard`. Expectations and raw labeled pixels are prepared independently of production resolution. The tools execute directly with bounded diagnostics/output and a monitored combined synthetic scratch allowance. The checks passed with Node 26.5.0 and FFmpeg/FFprobe 8.0.1 on macOS. Other builds/platforms remain unverified.
+
+- Constant FFV1 starts `[0, 40, 80, 120]` ms and shifted variable starts `[5000, 5040, 5120, 5500]` ms matched the declared identities in both tools. The latter has video-relative end 540 ms from the final 40-ms frame duration. A 70-ms target selects frame 2; the 270-ms midpoint selects frame 3. Decimal 2.5-FPS and 100-ms target expectations retain repeated identities. Real encoded repeated-output verification remains pending.
+- Twelve H.264 frames actually included B frames, decoded in presentation order, and reached the final marker after draining. One-frame decoding preserved its endpoint identity.
+- Eligible-video inspection uses `-select_streams V`, then an explicit stream index for both tools. A default second stream, tied defaults, no defaults, and an MP4 attached picture passed identity/pixel checks. The no-default fixture uses Matroska because the tested MP4 muxer marks the first video default.
+- Frame records use `-show_frames -show_entries frame=stream_index,best_effort_timestamp,pts,duration,pict_type:frame_side_data= -of compact=p=1:nk=0`. Numeric values remain strings in stream time-base ticks; empty selected side data can produce a trailing separator and blank line. Variable-timing generation requires `-enc_time_base filter` to avoid encoder-time-base rounding.
+- Damaged H.264 made FFprobe return zero while emitting error-level decode diagnostics. Successful exit alone does not establish clean EOF: the error-level channel must also be empty. Strict FFmpeg validation uses `-xerror -err_detect explode` and failed on that input. A truncated MP4 also failed inspection.
+- `-max_pixels 16777216` was accepted at 4,096 × 4,096 and rejected at 4,097 × 4,096 in both tools. The guard is separate from output dimensions, source size, and process memory. RSS observations are sampled and can miss short-lived peaks; they are not portable hard memory limits.
+
+TypeScript, focused lint, formatting, `git diff --check`, four budget unit tests (12 assertions), and the disposable workspace/cleanup check passed. Image configurations, encoded repeats, writer limits, and increasing-duration measurements remain open.
 
 ## Related Research
 

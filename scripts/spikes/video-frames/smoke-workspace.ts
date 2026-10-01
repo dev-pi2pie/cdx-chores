@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { lstat, mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
-export async function createSyntheticSmokeRun(): Promise<{
+export async function createSyntheticSmokeRun(phase: 1 | 2 = 1): Promise<{
   path: string;
   cleanup(): Promise<void>;
 }> {
@@ -19,7 +19,7 @@ export async function createSyntheticSmokeRun(): Promise<{
   }
   const canonicalParent = await realpath(parent);
   if (canonicalParent !== parent) throw new Error("Smoke workspace has an aliased parent.");
-  const path = await mkdtemp(join(parent, "phase1-"));
+  const path = await mkdtemp(join(parent, `phase${phase}-`));
   const owner = await lstat(path);
   try {
     execFileSync("git", ["check-ignore", "--quiet", "--", join(path, "evidence.json")], {

@@ -143,12 +143,12 @@ Accepted on 2026-10-01. The [Phase 1 record](jobs/2026-10-01-video-frames-implem
 
 Tasks:
 
-- [ ] Generate and verify the small labeled sources before increasing the scan workload. Record independent counts, starts, endpoint identities, tool builds, encoders, and required frame-field serialization.
-- [ ] Prove selected-stream agreement and presentation-order numbering across both tools, including stream defaults/cover exclusion, shifted timestamps, reordered/buffered frames, decoder failure, and clean EOF.
+- [x] Generate and verify the small labeled sources before increasing the scan workload. Record independent counts, starts, endpoint identities, tool builds, encoders, and required frame-field serialization.
+- [x] Prove selected-stream agreement and presentation-order numbering across both tools, including stream defaults/cover exclusion, shifted timestamps, reordered/buffered frames, decoder failure, and clean EOF.
 - [ ] Verify exact frame-at-time and midpoint mappings, decimal FPS/interval targets, retained repeats, final-frame duration, and reliable-end rules.
 - [ ] Establish tested encoder/pixel/filter configurations for PNG/JPG/WebP, native quality mappings, lossless modes, alpha, color metadata, orientation, square pixels, and dimension rounding using independent references.
 - [ ] Prove a stream/writer topology that enforces per-image completion, two staging files and 256 MiB total encoded staging, including writes in progress and backpressure. Uncontrolled directory spooling is insufficient.
-- [ ] Select and verify a numeric decoder pixel guard in both tools; distinguish it from output dimensions, CLI limits, and child peak memory.
+- [x] Select and verify a numeric decoder pixel guard in both tools; distinguish it from output dimensions, CLI limits, and child peak memory.
 - [ ] Run the initial increasing-duration synthetic checks within the smoke budget. Measure first/cached resolution, near-end/last selection, export, and CLI/child memory separately; record untested workloads/platforms.
 
 Checkpoint: tested arguments, serialization, stream synchronization, image configuration, and writer ownership implement the research contract. Continue production integration only with that evidence. Constrain workload/support claims to tested boundaries; stop dependent work if correctness or resource enforcement fails. Record the gap rather than silently changing semantics.
