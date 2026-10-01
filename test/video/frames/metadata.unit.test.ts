@@ -61,10 +61,10 @@ test("frame records preserve exact ticks, empty side data and missing timing wit
       "frame|stream_index=2|best_effort_timestamp=5000|pts=5000|duration=40|pict_type=B|",
       2,
     ),
-  ).toEqual({ streamIndex: 2, startTicks: 5000n, durationTicks: 40n });
+  ).toMatchObject({ streamIndex: 2, startTicks: 5000n, durationTicks: 40n });
   expect(
     parseFrameRecord("frame|stream_index=0|best_effort_timestamp=N/A|pts=N/A|duration=0|", 0),
-  ).toEqual({ streamIndex: 0, startTicks: undefined, durationTicks: undefined });
+  ).toMatchObject({ streamIndex: 0, startTicks: undefined, durationTicks: undefined });
   expect(() => parseFrameRecord("frame|stream_index=1|pts=0", 0)).toThrow("another stream");
   expect(() => parseFrameRecord("frame|stream_index=0|pts=0|pts=1", 0)).toThrow("Invalid selected");
 });

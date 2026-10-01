@@ -37,7 +37,7 @@ function fixture(
           startTicks: starts[i],
           durationTicks: durations[i],
         };
-        if (consume(frame) === false) {
+        if ((await consume(frame)) === false) {
           counts.push(count);
           return { cleanEof: false };
         }
@@ -72,6 +72,34 @@ function fixture(
   };
 }
 describe("bounded exact source-frame resolution", () => {
+  test("export bindings reject copied identities and identities from another resolver context", async () => {
+    const f = fixture();
+    const identity = await f.resolver.resolve({ kind: "first" });
+    expect((await f.resolver.prepareExport([identity])).stream.index).toBe(2);
+    await expect(f.resolver.prepareExport([{ ...identity }])).rejects.toMatchObject({
+      code: "FRAME_SELECTION_REQUIRED",
+    });
+    const other = fixture();
+    const otherIdentity = await other.resolver.resolve({ kind: "first" });
+    await expect(f.resolver.prepareExport([otherIdentity])).rejects.toMatchObject({
+      code: "FRAME_SELECTION_REQUIRED",
+    });
+    f.changeSource();
+    await expect(f.resolver.prepareExport([identity])).rejects.toMatchObject({
+      code: "FRAME_SOURCE_CHANGED",
+    });
+    await f.resolver.resolve({ kind: "first" });
+    await expect(f.resolver.prepareExport([identity])).rejects.toMatchObject({
+      code: "FRAME_SELECTION_REQUIRED",
+    });
+  });
+  test("every repeated preset role retains a usable resolver binding", async () => {
+    const f = fixture([5000n], [2000n]);
+    const roles = await f.resolver.resolveSet("first-middle-last");
+    expect((await f.resolver.prepareExport(roles.map((role) => role.identity))).stream.index).toBe(
+      2,
+    );
+  });
   test("first/frame-N stop at their ordinal while Last requires EOF", async () => {
     const f = fixture();
     expect((await f.resolver.resolve({ kind: "first" })).frameNumber).toBe(1);

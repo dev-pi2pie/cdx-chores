@@ -6,13 +6,21 @@ export const DECODER_PIXELS = 16_777_216;
 export const METADATA_FIELDS =
   "stream=index,codec_name,codec_type,width,height,pix_fmt,time_base,start_pts,duration_ts,nb_frames,sample_aspect_ratio,color_range,color_space,color_primaries,color_transfer:stream_disposition=default,attached_pic,timed_thumbnails:stream_side_data=side_data_type,rotation,displaymatrix";
 export const FRAME_FIELDS =
-  "frame=stream_index,best_effort_timestamp,pts,duration,pict_type:frame_side_data=";
+  "frame=stream_index,best_effort_timestamp,pts,duration,pict_type,width,height,pix_fmt,sample_aspect_ratio,color_range,color_space,color_primaries,color_transfer:frame_side_data=";
 const FRAME_KEYS = new Set([
   "stream_index",
   "best_effort_timestamp",
   "pts",
   "duration",
   "pict_type",
+  "width",
+  "height",
+  "pix_fmt",
+  "sample_aspect_ratio",
+  "color_range",
+  "color_space",
+  "color_primaries",
+  "color_transfer",
 ]);
 export function requireClean(result: StreamingResult, context: string, allowPrefix = false) {
   if (
@@ -200,5 +208,22 @@ export function parseFrameRecord(line: string, expectedStream: number): FrameRec
     streamIndex: expectedStream,
     startTicks,
     durationTicks: duration !== undefined && duration > 0n ? duration : undefined,
+    width: frameDimension(fields.width),
+    height: frameDimension(fields.height),
+    pixelFormat: fields.pix_fmt,
+    image: {
+      sampleAspectRatio: fields.sample_aspect_ratio,
+      colorRange: fields.color_range,
+      colorSpace: fields.color_space,
+      colorPrimaries: fields.color_primaries,
+      colorTransfer: fields.color_transfer,
+    },
   };
+}
+function frameDimension(text: string | undefined): number | undefined {
+  if (text === undefined) return;
+  const value = wireInteger(text);
+  if (value < 1n || value > BigInt(Number.MAX_SAFE_INTEGER))
+    throw new CliError("Invalid displayed frame dimensions.", { code: "FRAME_RECORD_INVALID" });
+  return Number(value);
 }

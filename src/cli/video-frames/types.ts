@@ -40,6 +40,10 @@ export interface FrameRecord {
   streamIndex: number;
   startTicks?: bigint;
   durationTicks?: bigint;
+  width?: number;
+  height?: number;
+  pixelFormat?: string;
+  image?: Omit<ImageSourceMetadata, "display">;
 }
 export type FrameSetPreset = "first-last" | "first-middle-last";
 export interface FrameSetRole {

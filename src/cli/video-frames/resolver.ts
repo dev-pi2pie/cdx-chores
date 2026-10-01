@@ -14,6 +14,11 @@ import type {
   FrameSetRole,
 } from "./types";
 const CACHE_RECORDS = 128;
+export interface ExportBinding {
+  sourcePath: string;
+  source: SourceSnapshot;
+  stream: VideoStream;
+}
 interface Context {
   source: SourceSnapshot;
   stream: VideoStream;
@@ -41,6 +46,7 @@ export class FrameResolver {
   private context?: Context;
   private summary?: Summary;
   private cache = new Map<string, ResolvedFrame>();
+  private selections = new WeakMap<ResolvedFrame, Context>();
   private busy = false;
   private unsafe = false;
   private backend: FrameBackend;
@@ -75,6 +81,7 @@ export class FrameResolver {
     });
     this.cache.delete(key);
     this.cache.set(key, value);
+    this.selections.set(value, this.context!);
     if (this.cache.size > CACHE_RECORDS) this.cache.delete(this.cache.keys().next().value!);
     return value;
   }
@@ -138,6 +145,26 @@ export class FrameResolver {
       if (!this.cache.size)
         throw new CliError("Resolve a frame before export.", { code: "FRAME_SELECTION_REQUIRED" });
       return (await this.check(op, true)).stream;
+    });
+  }
+  async prepareExport(
+    identities: readonly ResolvedFrame[],
+    signal?: AbortSignal,
+  ): Promise<ExportBinding> {
+    return this.operation(signal, async (op) => {
+      const context = await this.check(op, true);
+      if (
+        !identities.length ||
+        identities.some((identity) => this.selections.get(identity) !== context)
+      )
+        throw new CliError("Resolve every selected frame again before export.", {
+          code: "FRAME_SELECTION_REQUIRED",
+        });
+      return Object.freeze({
+        sourcePath: this.path,
+        source: context.source,
+        stream: context.stream,
+      });
     });
   }
   private async scan(
@@ -303,7 +330,9 @@ export class FrameResolver {
       const summary = firstPass.summary;
       if (!summary)
         throw new CliError("Frame sets require clean EOF.", { code: "FRAME_EOF_REQUIRED" });
-      const roles: FrameSetRole[] = [{ selection: "first", identity: firstPass.first }];
+      const roles: FrameSetRole[] = [
+        { selection: "first", identity: this.remember("first", firstPass.first) },
+      ];
       if (preset === "first-middle-last") {
         if (!summary.ordered) throw timingError();
         if (!summary.endMs)
@@ -316,11 +345,13 @@ export class FrameResolver {
             ? firstPass.candidate
             : (await this.scan(operation, context, { kind: "time", timeMs: midpoint })).candidate;
         if (!candidate) throw timingError();
-        roles.push({ selection: "middle", identity: candidate, targetMs: midpoint });
+        roles.push({
+          selection: "middle",
+          identity: this.remember(`time:${midpoint.numerator}/${midpoint.denominator}`, candidate),
+          targetMs: midpoint,
+        });
       }
-      roles.push({ selection: "last", identity: firstPass.last });
-      this.remember("first", firstPass.first);
-      this.remember("last", firstPass.last);
+      roles.push({ selection: "last", identity: this.remember("last", firstPass.last) });
       return roles;
     });
   }

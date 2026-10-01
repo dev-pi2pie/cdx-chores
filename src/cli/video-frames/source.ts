@@ -9,7 +9,7 @@ export async function inspectSource(path: string): Promise<SourceSnapshot> {
   const file = await stat(canonicalPath, { bigint: true });
   if (!file.isFile())
     throw new CliError("Video source must be a regular file.", { code: "FRAME_SOURCE_INVALID" });
-  return {
+  return Object.freeze({
     canonicalPath,
     fingerprint: JSON.stringify([
       canonicalPath,
@@ -19,5 +19,5 @@ export async function inspectSource(path: string): Promise<SourceSnapshot> {
       String(file.mtimeNs),
       String(file.ctimeNs),
     ]),
-  };
+  });
 }

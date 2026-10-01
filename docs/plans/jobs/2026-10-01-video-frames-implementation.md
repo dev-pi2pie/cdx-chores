@@ -171,7 +171,17 @@ Seven pure framing cases (502 assertions) and 25 controlled Node filesystem case
 
 The explicit `scripts/spikes/video-frames-writer.ts` Node smoke passed all three real image formats with four outputs each. Slow publication reached two owned files without exceeding encoded capacity. PNG and lossless WebP preserved independent RGBA bytes exactly; JPG mean RGB error stayed within five levels and alpha stayed opaque. Structured encoder progress, ordered output, close acknowledgement, and staging removal passed. TypeScript, repository lint/format, and diff checks passed. Real filesystem evidence is macOS-local; unsupported-link/copy and failure paths use controlled injections rather than claims about every filesystem.
 
-Production extraction, full phase regression/review, and private processing smoke remain pending.
+### Source Image Export Checkpoint
+
+Resolved selections carry an internal context binding; copied or stale identities require fresh resolution. Export rechecks source/stream fingerprints and actual selected-frame geometry/color/aspect before extraction. Bounded source-ordered groups use one decoder and one encoder, one reusable RGBA frame, 64 KiB awaited encoder writes, and the owned image writer. Repeated roles produce separate files. No full frame table or per-image process is introduced. Structured failure results distinguish confirmed writes, incomplete destination copies, retained staging, and unconfirmed ownership/closure. Encoder preflight creates no destination on failure.
+
+Controlled Node pipeline cases passed **9 cases / 45 assertions**, including repeated roles, unavailable mode, late alpha, partial raw output, short/failed encoding, source mutation, and cancellation. Focused frame units passed **39 cases / 670 assertions**; the full managed unit suite passed **1,493 cases / 6,260 assertions** across 181 files. Managed application regression passed **2,211 cases / 13,903 assertions** across 296 files. Phase-range review is pending.
+
+The opt-in `scripts/spikes/video-frames-export.ts` production-path smoke passed under Node ESM and CommonJS bundles, with 41 images per run: all nine format/quality choices, independently labeled first/middle/last pixels, repeated one-frame roles, reflected 2:1 aspect plus half-scale geometry, and eight tagged YUV matrix/range/transfer combinations. Fixtures verify persisted tags and unchanged source YUV values before applying independent color equations. Maximum color-reference error was one RGB level; transformed RGB tolerance remained one level and alpha exact. PNG/lossless WebP supplied pixels were exact; JPG mean error stayed within nine levels for low and five otherwise, lossy WebP within twelve. Saved codec/extension, dimensions, square aspect, absent display transform, source preservation, and staging removal passed.
+
+For a labeled 96 × 64 PNG, compression 0 versus 9 took about 34 versus 35 ms including launch and produced 24,801 versus 369 bytes; both preserved pixels. This small synthetic observation is not a heavy-content performance claim. TypeScript, lint, format, package build, legacy built video help, and package ESM/CommonJS imports passed. New backend bundle smoke is distinct from future command integration.
+
+Private processing outcomes: PNG image export **passed**; JPG image export **passed**; still-WebP image export **passed**; source preservation **passed**; owned staging cleanup **passed**. No private-resource details are recorded.
 
 ## Related Research
 

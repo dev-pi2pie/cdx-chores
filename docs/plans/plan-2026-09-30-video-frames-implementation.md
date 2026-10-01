@@ -174,13 +174,13 @@ Accepted on 2026-10-01. The [Phase 3 record](jobs/2026-10-01-video-frames-implem
 
 Tasks:
 
-- [ ] Implement verified format/quality configuration, availability checks, and source-faithful conversion without GIF palette/look behavior or fallback.
-- [ ] Preserve PNG/WebP alpha; reject non-opaque JPG frames. Apply aspect, supported display transforms, scale, dimension/pixel guards, and metadata reset in the tested order; review and saved pixels must agree.
+- [x] Implement verified format/quality configuration, availability checks, and source-faithful conversion without GIF palette/look behavior or fallback.
+- [x] Preserve PNG/WebP alpha; reject non-opaque JPG frames. Apply aspect, supported display transforms, scale, dimension/pixel guards, and metadata reset in the tested order; review and saved pixels must agree.
 - [x] Implement destination-volume owned staging, completed-file detection, enforced staging slots/bytes, backpressure, and selection-order publication.
 - [x] Cover exclusive hard-link publication and supported exclusive-copy fallback, explicit/generated single-file overwrite and multi-image overwrite, target kinds, source aliases, competing writers, interrupted copies, and safe replacement failure. Never clear existing folders or stale/unrelated files.
-- [ ] Report published/incomplete outputs accurately across disk-full, encoder, limit, cancellation, and cleanup failures; count only confirmed publication.
-- [ ] Compare lossless pixels and alpha with independent post-transform references and lossy output with recorded tolerances. Verify actual formats/extensions, unavailable modes, color inference/rejection, asymmetric transforms, and PNG compression cost with small synthetic tool runs.
-- [ ] Perform private local image-export smoke and publish only processing outcomes. Verify source preservation, safe cleanup behavior, and permitted local review-artifact handling.
+- [x] Report published/incomplete outputs accurately across disk-full, encoder, limit, cancellation, and cleanup failures; count only confirmed publication.
+- [x] Compare lossless pixels and alpha with independent post-transform references and lossy output with recorded tolerances. Verify actual formats/extensions, unavailable modes, color inference/rejection, asymmetric transforms, and PNG compression cost with small synthetic tool runs.
+- [x] Perform private local image-export smoke and publish only processing outcomes. Verify source preservation, safe cleanup behavior, and permitted local review-artifact handling.
 
 Checkpoint: resolved frames produce the requested images, filesystem operations enforce the output contract, and failures preserve/report completed exports. Pixel/filter assertions and fake encoders alone cannot close this phase.
 

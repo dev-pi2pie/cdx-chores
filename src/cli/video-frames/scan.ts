@@ -9,14 +9,14 @@ export interface FrameBackend {
     operation: ProcessOperation,
     source: string,
     stream: VideoStream,
-    consume: (frame: FrameRecord) => boolean | void,
+    consume: (frame: FrameRecord) => boolean | void | Promise<boolean | void>,
   ): Promise<{ cleanEof: boolean }>;
 }
 export async function scanVideo(
   operation: ProcessOperation,
   source: string,
   stream: VideoStream,
-  consume: (frame: FrameRecord) => boolean | void,
+  consume: (frame: FrameRecord) => boolean | void | Promise<boolean | void>,
   ffprobe = "ffprobe",
 ): Promise<{ cleanEof: boolean }> {
   const records = new LineRecords((line) => {
