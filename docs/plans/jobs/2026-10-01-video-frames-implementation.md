@@ -11,7 +11,7 @@ Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation
 
 | Phase | Research obligations | State |
 | --- | --- | --- |
-| 1 | Independent fixture expectations, smoke preparation, real terminal keys/resize, selection retention, fallbacks, prompt ownership/restoration | Verification passed; range review pending |
+| 1 | Independent fixture expectations, smoke preparation, real terminal keys/resize, selection retention, fallbacks, prompt ownership/restoration | Completed |
 | 2 | Real-tool timing, stream agreement, encoder/filter feasibility, bounded writer topology, decoder guard, synthetic workload measurements | Not started |
 | 3 | Streaming records, exact identities, bounded cache, source invalidation, cancellation/child closure | Not started |
 | 4 | Verified pixels, alpha/transforms, safe publication, failure accounting, private processing smoke | Not started |
@@ -67,7 +67,9 @@ The prototype uses integer-millisecond fixtures; exact real-tool timing is Phase
 
 ### Review
 
-Review of `cfd2d7ca..a1b28cb6` found one P2 issue: interrupting an active resolver could surface its ordinary error and exit 1. The wave and direct paths now wait for acknowledgement and preserve interruption status 130, including a resolver that returns a result after abort. Focused regressions and the managed application rerun passed. The expanded committed range review remains pending; plan task closeout follows it.
+Review of `cfd2d7ca..a1b28cb6` found one P2 issue: interrupting an active resolver could surface its ordinary error and exit 1. The wave and direct paths now wait for acknowledgement and preserve interruption status 130, including a resolver that returns a result after abort. Focused regressions and the managed application rerun passed.
+
+The complete implementation range `cfd2d7ca15195fc19b69ce6d2bd940f838d2b560..52cd73e69b5674f8738da92e217b8440a8599e37` passed code, test, and documentation review with no remaining findings. Phase 1 is accepted and its plan tasks are checked. The plan remains active, the research remains in-progress, and this unified record remains open for Phases 2–8.
 
 ## Related Research
 

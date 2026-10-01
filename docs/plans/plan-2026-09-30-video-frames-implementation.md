@@ -10,7 +10,7 @@ agent: codex
 
 Implement `cdx-chores video frames` for one exact source frame, a fixed frame set, or a whole-video sequence of PNG, JPG, or still WebP images. Deliver the direct CLI and guided Interactive flow without changing convert, resize, or GIF behavior.
 
-Phase 1 is in progress. The opening phases gather the feasibility evidence required by the research before command integration. Extraction, encoder, stress, and private smoke outcomes remain unverified. See the [unified execution record](jobs/2026-10-01-video-frames-implementation.md) for evidence and checkpoint reviews.
+Phase 1 is complete. The remaining phases gather real-tool feasibility evidence and implement the command. Extraction, encoder, stress, and private smoke outcomes remain unverified. See the [unified execution record](jobs/2026-10-01-video-frames-implementation.md) for evidence and checkpoint reviews.
 
 The research owns selection, sampling, terminal, image, and output semantics. This plan owns implementation order, acceptance checkpoints, development-test cost, and evidence handling. Runtime support claims require recorded results. Implement prototypes and verification support in TypeScript/JavaScript, using Bun for development and Node.js for runtime checks.
 
@@ -124,12 +124,14 @@ Inspect failed runs before cleanup. Keep affected scratch when shutdown or owner
 Tasks:
 
 - [x] Begin the unified execution record and map the research's verification obligations to these phase checkpoints.
-- [ ] Define independent small fixture expectations and the bounded synthetic workload recipes; verify scratch ownership, ignore status, budget checks, and result/cleanup handling before creating media.
-- [ ] Prototype the wave, frame-set preset chooser, and mode-specific naming prompts using synthetic state before integrating video decoding.
-- [ ] Verify full/compact/direct-input fit with actual wrapped display widths, unknown dimensions/duration, simple prompts, and non-interactive paths.
-- [ ] Exercise real keys and resize: endpoint/interior movement, precise request retention, glyph toggle, editor drafts, Enter/Escape ownership, and terminal restoration. Navigation and resize must not launch tools.
+- [x] Define independent small fixture expectations and the bounded synthetic workload recipes; verify scratch ownership, ignore status, budget checks, and result/cleanup handling before creating media.
+- [x] Prototype the wave, frame-set preset chooser, and mode-specific naming prompts using synthetic state before integrating video decoding.
+- [x] Verify full/compact/direct-input fit with actual wrapped display widths, unknown dimensions/duration, simple prompts, and non-interactive paths.
+- [x] Exercise real keys and resize: endpoint/interior movement, precise request retention, glyph toggle, editor drafts, Enter/Escape ownership, and terminal restoration. Navigation and resize must not launch tools.
 
 Checkpoint: the terminal prototype preserves the settled selection/control contract and every fallback remains usable. Record actual interaction results; static screenshots or layout assertions alone do not establish acceptance.
+
+Accepted on 2026-10-01. The [Phase 1 record](jobs/2026-10-01-video-frames-implementation.md#phase-1) contains preparation, real Node terminal, regression, cleanup, and complete implementation-range review evidence.
 
 ## Phase 2: FFprobe/FFmpeg Feasibility and Evidence
 
