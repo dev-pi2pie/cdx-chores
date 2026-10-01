@@ -10,7 +10,7 @@ agent: codex
 
 Research `cdx-chores video frames` for extracting one source frame, a fixed frame set, or a whole-video sequence of still images. The feature should support direct CLI invocation and a guided Interactive flow, with PNG, JPG, and WebP output.
 
-This research is in progress. Repository observations below describe existing code; new command examples, prompts, defaults, and algorithms are proposals unless identified as agreed direction. Accepted Phases 1–5, including verified backend image/sequence export, destinations/naming, and private processing, are recorded in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md). Command/Interactive integration and integrated stress remain pending.
+This research is in progress. Repository observations below describe existing code; new command examples, prompts, defaults, and algorithms are proposals unless identified as agreed direction. Accepted Phases 1–6, including verified backend image/sequence export, destinations/naming, and private processing, are recorded in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md). Direct CLI/doctor integration is accepted in Phase 6; guided Interactive integration and integrated stress remain pending.
 
 Agreed direction from the design discussion:
 
@@ -35,7 +35,7 @@ Agreed direction from the design discussion:
 | Scaling                | Preserve displayed aspect ratio; presets and custom scale within `0.1–1`                              |
 | Evidence               | Reproducible public synthetic cases and private local visual review                                   |
 
-Naming uses a normalized source `{stem}`, named `{selection}` labels for single frames/frame sets, optional verified source `{frame}` numbers, and export `{serial...}` values for sequences. Sequence templates require one serial; the default start is 1 and minimum width is 6. FPS input uses positive integers or ordinary decimals; users do not enter fraction expressions. These input/naming choices are agreed direction. Backend extraction and sampling have passed the scoped synthetic checks in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md); command/Interactive integration remains pending. A timestamp index sidecar is outside this initial scope.
+Naming uses a normalized source `{stem}`, named `{selection}` labels for single frames/frame sets, optional verified source `{frame}` numbers, and export `{serial...}` values for sequences. Sequence templates require one serial; the default start is 1 and minimum width is 6. FPS input uses positive integers or ordinary decimals; users do not enter fraction expressions. These input/naming choices are agreed direction. Backend extraction and sampling have passed the scoped synthetic checks in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md); direct CLI integration is accepted in Phase 6, while guided Interactive integration remains pending. A timestamp index sidecar is outside this initial scope.
 
 Custom sequence ranges, dual-boundary timeline controls, arbitrary image-count sampling, and a separate “every source frame” mode are outside this initial scope. The two fixed frame-set presets are included; format, quality, color, and scale apply uniformly within every export. Seek/checkpoint/tail optimizations are excluded from this scope; sequential resolution and bounded session reuse are the chosen approach.
 
@@ -66,9 +66,9 @@ The [GIF look configuration](../../src/cli/video-gif.ts) separates `faithful` (`
 
 ## Command Surface and Interactive Flow
 
-### Direct CLI Proposal
+### Direct CLI Contract
 
-Use `frames` with single-frame selectors `--first-frame`, `--last-frame`, `--frame-number`, and `--at`, fixed presets through `--frame-set`, or FPS/interval sampling. Reuse `-o, --output`. Multi-image naming uses `--pattern`; sequence serial controls follow rename terminology. Interactive single-image naming resolves a final file path for the same export action. Quality uses `--quality low|medium|high|full`, defaults to `full`, and permits only `full` for PNG; tested native mappings and encoder support boundaries are recorded in [Phase 4](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-4). These are design contracts for an unimplemented command.
+Use `frames` with single-frame selectors `--first-frame`, `--last-frame`, `--frame-number`, and `--at`, fixed presets through `--frame-set`, or FPS/interval sampling. Reuse `-o, --output`. Multi-image naming uses `--pattern`; sequence serial controls follow rename terminology. Interactive single-image naming resolves a final file path for the same export action. Quality uses `--quality low|medium|high|full`, defaults to `full`, and permits only `full` for PNG; tested native mappings and encoder support boundaries are recorded in [Phase 4](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-4). The direct command implements these contracts; guided Interactive integration remains pending.
 
 | Option                    | Proposed role                                                                                |
 | ------------------------- | -------------------------------------------------------------------------------------------- |
@@ -91,7 +91,7 @@ Use `frames` with single-frame selectors `--first-frame`, `--last-frame`, `--fra
 
 Require exactly one selection method: one single-frame selector, one `--frame-set` preset, or one FPS/interval method. Presets cannot be combined with individual selectors or sampling options; combining `--first-frame` and `--last-frame` is still invalid. Validate explicit invalid values instead of silently substituting defaults. Missing selection should explain the supported choices without starting a picker. Direct single-frame CLI uses `--output` for an explicit filename and rejects naming flags; `--serial-start`/`--serial-width` apply only to sequences. Interactive templates for one image are the explicit convenience described below.
 
-Illustrative proposed usage; these commands are not implemented:
+Implemented direct CLI examples:
 
 ```text
 cdx-chores video frames -i ./clip.mp4 --first-frame
@@ -373,7 +373,7 @@ Use a positive integer followed by ms, s, or m:
 
 Interactive mode keeps invalid input in the editor and shows valid-input estimates or the one-image notice beside it and in the existing export review. Do not add a second confirmation step. Direct CLI invalid input fails before writing; a valid oversized interval prints the notice to stderr and proceeds, labeling metadata-based predictions as expected. When duration is unavailable, say the count estimate is unavailable and defer the comparison; do not treat unknown duration as zero or invent a one-image guarantee.
 
-Millisecond input precision does not guarantee distinct source frames. Interval follows the same repetition policy as FPS: preserve cadence, export a separately numbered image for every valid target, and disclose repeated selections. Actual counts and boundaries passed the independent synthetic cases recorded in [Phase 5](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-5); command/Interactive reporting remains pending.
+Millisecond input precision does not guarantee distinct source frames. Interval follows the same repetition policy as FPS: preserve cadence, export a separately numbered image for every valid target, and disclose repeated selections. Actual counts and boundaries passed the independent synthetic cases recorded in [Phase 5](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-5); direct CLI reporting is verified in Phase 6, while Interactive reporting remains pending.
 
 ### Sampling Boundaries, Repetition, and Counts
 

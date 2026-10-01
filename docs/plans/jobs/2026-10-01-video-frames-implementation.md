@@ -16,7 +16,7 @@ Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation
 | 3 | Streaming records, exact identities, bounded cache, source invalidation, cancellation/child closure | Completed |
 | 4 | Verified pixels, alpha/transforms, safe publication, failure accounting, private processing smoke | Completed |
 | 5 | Sampling, retained repeats, destinations and concrete naming | Completed |
-| 6 | Direct command, validation, dependencies and doctor | In progress |
+| 6 | Direct command, validation, dependencies and doctor | Completed |
 | 7 | Guided Interactive flow, TUI review/polish, and recovery | Not started |
 | 8 | Full regression, explicit smoke, documentation and research closure evidence | Not started |
 
@@ -272,11 +272,15 @@ Source evidence: final focused command/options/doctor checks passed **55 cases /
 
 Managed applications passed **2,237 cases / 14,049 assertions** across 300 files, including unaffected command, dependency, doctor and shared-process consumers. Explicit built-CLI smoke support reuses the existing budget/ownership lab for Phases 6–7 and retains ignored synthetic review artifacts. The final preflight verifies generated count/start timing and independent first/last endpoint pixels before product invocation.
 
-Built evidence is separate: the actual Node CLI passed nine small synthetic export cases (**18 images**) covering first/last/number/time, fixed set, repeated FPS targets, oversized interval, PNG/JPG/still-WebP, conflict and extension rejection, and source preservation. PNG/WebP pixels matched independent opaque references; JPG decoded with expected dimensions. ESM/CommonJS package loading passed. This bounded processing proof does not establish heavy real-content or cross-platform support. Phase acceptance and complete-range review remain pending.
+Built evidence is separate: the actual Node CLI passed nine small synthetic export cases (**18 images**) covering first/last/number/time, fixed set, repeated FPS targets, oversized interval, PNG/JPG/still-WebP, conflict and extension rejection, and source preservation. PNG/WebP pixels matched independent opaque references; JPG decoded with expected dimensions. ESM/CommonJS package loading passed. This bounded processing proof does not establish heavy real-content or cross-platform support. At this checkpoint, phase acceptance and complete-range review remained pending.
 
 ### Review Follow-up
 
-The full Phase 6 range `1ce22917a106c18722334f98eb66d6fa80db98b9..091edd73373a65b54fc959e03ebf467f5360f43b` received code, test, security and documentation review. Code review found that premature-input cancellation hid the encoder's captured diagnostic. The process boundary now retains its status and bounded stderr after stream settlement; both two-image command and existing exporter regressions require that diagnostic. All 40 affected process/action/export cases / 164 assertions passed; TypeScript, lint, format and diff checks passed. Other review lanes found no material findings. Expanded-range review and phase acceptance remain pending.
+The full Phase 6 range `1ce22917a106c18722334f98eb66d6fa80db98b9..091edd73373a65b54fc959e03ebf467f5360f43b` received code, test, security and documentation review. Code review found that premature-input cancellation hid the encoder's captured diagnostic. The process boundary now retains its status and bounded stderr after stream settlement; both two-image command and existing exporter regressions require that diagnostic. All 40 affected process/action/export cases / 164 assertions passed; TypeScript, lint, format and diff checks passed. Other review lanes found no material findings. At this checkpoint, expanded-range review and phase acceptance remained pending.
+
+### Review and Acceptance
+
+Expanded full-range review `1ce22917a106c18722334f98eb66d6fa80db98b9..55c480c9aa5a6b7bf996383cdcd284e053963582` found no remaining actionable code, test or security findings. Documentation evidence was consistent; presentation cleanup is included in this receipt. Phase 6 is accepted on 2026-10-01 with all five tasks checked. Managed unit/application evidence is recorded above, and the diagnostic follow-up passed its affected 40-case regression set. The plan stays active, research stays in-progress, and this record remains open for Phases 7–8. The explicit synthetic CLI run retained review artifacts and completed within the existing budget; native lossless pixels, advertised doctor checks, and controlled failures remain distinct evidence.
 
 ## Phase 6 Planning Refinement
 

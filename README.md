@@ -110,10 +110,7 @@ The default doctor view is a compact workflow summary with detected actions.
 Use `--details` for complete human-readable evidence and `--json` for
 automation or machine-readable checks.
 
-Video frames availability requires both FFmpeg and FFprobe. Doctor separately
-reports advertised PNG, JPG, still-WebP, and WebP lossless support; unknown
-assessments remain visible. These checks inspect encoder information without
-reading media or generating images. Successful export still depends on the source.
+Video frames availability requires both FFmpeg and FFprobe. Doctor separately reports advertised PNG, JPG, still-WebP, and WebP lossless support; unknown assessments remain visible. These checks inspect encoder information without reading media or generating images. Successful export still depends on the source.
 
 Machine-readable check:
 
@@ -404,13 +401,7 @@ cdx-chores video frames -i ./clip.mp4 --frame-set first-middle-last
 cdx-chores video frames -i ./clip.mp4 --interval 2s --format webp
 ```
 
-Choose exactly one selector or cadence. PNG is the default and requires quality
-`full`; JPG and WebP offer `low`, `medium`, `high`, and `full`. WebP `full` requires
-advertised lossless support and rejects fully transparent pixels whose RGB values
-the supported encoder cannot preserve; use PNG for exact RGBA in that case.
-`--output` names a file for one frame and a folder for sets/sequences. Existing
-files require `--overwrite`; completed images remain after interruption or failure.
-Use `video frames --help` for strict selector, template, and serial options.
+Choose exactly one selector or cadence. PNG is the default and requires quality `full`; JPG and WebP offer `low`, `medium`, `high`, and `full`. WebP `full` requires advertised lossless support and rejects fully transparent pixels whose RGB values the supported encoder cannot preserve; use PNG for exact RGBA in that case. `--output` names a file for one frame and a folder for sets/sequences. Existing files require `--overwrite`; completed images remain after interruption or failure. Use `video frames --help` for strict selector, template, and serial options.
 
 Video to GIF:
 

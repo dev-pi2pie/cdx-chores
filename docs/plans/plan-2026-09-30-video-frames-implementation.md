@@ -10,7 +10,7 @@ agent: codex
 
 Implement `cdx-chores video frames` for one exact source frame, a fixed frame set, or a whole-video sequence of PNG, JPG, or still WebP images. Deliver the direct CLI and guided Interactive flow without changing convert, resize, or GIF behavior.
 
-Phases 1–5 are complete. The accepted checkpoints cover terminal prototypes, real-tool feasibility, exact resolution, verified backend image export, exact sequence sampling, destinations/naming, and private processing smoke. Command/Interactive integration and integrated stress remain pending. See the [unified execution record](jobs/2026-10-01-video-frames-implementation.md) for evidence and complete-range checkpoint reviews.
+Phases 1–6 are complete. The accepted checkpoints cover terminal prototypes, real-tool feasibility, exact resolution, verified backend image export, exact sequence sampling, destinations/naming, private processing smoke, and direct CLI/doctor integration. Guided Interactive integration and integrated stress remain pending. See the [unified execution record](jobs/2026-10-01-video-frames-implementation.md) for evidence and complete-range checkpoint reviews.
 
 The research owns selection, sampling, terminal, image, and output semantics. This plan owns implementation order, acceptance checkpoints, development-test cost, and evidence handling. Runtime support claims require recorded results. Implement prototypes and verification support in TypeScript/JavaScript, using Bun for development and Node.js for runtime checks.
 
@@ -203,13 +203,15 @@ Checkpoint: small independent fixtures and actual tool outputs agree on target c
 
 Tasks:
 
-- [ ] Register the peer command and action exports; validate exactly one selection method, selector grammar, FPS/interval values, format/quality/scale, naming scope, explicit extensions, and conflicts before extraction/final writes.
-- [ ] Require both executables before source inspection for every frames method; diagnose source and encoder capability separately from tool availability.
-- [ ] Inspect FFmpeg/FFprobe availability and versions using the executables invoked by frames execution; assess advertised PNG/JPG/still-WebP support through exact encoder entries (`png`, `mjpeg`, `libwebp`). Check `libwebp`'s BGRA input support for the verified recipe and assess its lossless mode separately for WebP `full`; version numbers and package labels do not establish capability. Reuse one bounded inspection across Summary, Details, and JSON without reading media or encoding images. Add `video.frames` for executable availability and separate additive format/mode assessments; refine compact Video readiness/remediation for tool absence, unsupported formats/modes, unknown assessments, and operational probe failures while preserving existing capabilities, field meanings, and doctor exit behavior.
-- [ ] Integrate estimated/repeated-selection notices, phase progress, plain stderr output, final actual-result reporting, interruption, and partial failures.
-- [ ] Verify command/action validation and doctor consumers with controlled tools, including present/missing encoder entries, supported/unsupported WebP input and lossless mode, unknown successful probe output, and operational probe failures. Exercise representative direct exports through the built Node.js CLI with small synthetic sources; actual encoding/pixel evidence remains separate from advertised doctor assessments. Record source-test and built-package evidence separately.
+- [x] Register the peer command and action exports; validate exactly one selection method, selector grammar, FPS/interval values, format/quality/scale, naming scope, explicit extensions, and conflicts before extraction/final writes.
+- [x] Require both executables before source inspection for every frames method; diagnose source and encoder capability separately from tool availability.
+- [x] Inspect FFmpeg/FFprobe availability and versions using the executables invoked by frames execution; assess advertised PNG/JPG/still-WebP support through exact encoder entries (`png`, `mjpeg`, `libwebp`). Check `libwebp`'s BGRA input support for the verified recipe and assess its lossless mode separately for WebP `full`; version numbers and package labels do not establish capability. Reuse one bounded inspection across Summary, Details, and JSON without reading media or encoding images. Add `video.frames` for executable availability and separate additive format/mode assessments; refine compact Video readiness/remediation for tool absence, unsupported formats/modes, unknown assessments, and operational probe failures while preserving existing capabilities, field meanings, and doctor exit behavior.
+- [x] Integrate estimated/repeated-selection notices, phase progress, plain stderr output, final actual-result reporting, interruption, and partial failures.
+- [x] Verify command/action validation and doctor consumers with controlled tools, including present/missing encoder entries, supported/unsupported WebP input and lossless mode, unknown successful probe output, and operational probe failures. Exercise representative direct exports through the built Node.js CLI with small synthetic sources; actual encoding/pixel evidence remains separate from advertised doctor assessments. Record source-test and built-package evidence separately.
 
 Checkpoint: direct invocation implements the settled contract with actionable errors, additive doctor fields, and preserved convert/resize/GIF behavior.
+
+Phase 6 is accepted. Implementation, verification, and complete-range review evidence are recorded in the [Phase 6 checkpoint](jobs/2026-10-01-video-frames-implementation.md#phase-6).
 
 ## Phase 7: Guided Interactive Integration
 
