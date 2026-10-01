@@ -1,13 +1,13 @@
 ---
 title: "Video Frames Implementation Record"
 created-date: 2026-10-01
-status: in-progress
+status: completed
 agent: codex
 ---
 
 ## Scope and Checkpoints
 
-Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation.md) from baseline `cfd2d7ca15195fc19b69ce6d2bd940f838d2b560`. This record stays open across all phases. Check off tasks after recording their evidence; close a phase only after reviewing its complete commit range.
+Executed the [implementation plan](../plan-2026-09-30-video-frames-implementation.md) from baseline `cfd2d7ca15195fc19b69ce6d2bd940f838d2b560`. All phases are accepted. This record preserves the phase checkpoints, evidence and complete-range reviews, with final support scope recorded in [Phase 9](#phase-9).
 
 | Phase | Research obligations | State |
 | --- | --- | --- |
@@ -19,7 +19,7 @@ Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation
 | 6 | Direct command, validation, dependencies and doctor | Completed |
 | 7 | Guided Interactive flow, TUI review/polish, and recovery | Completed |
 | 8 | Output path presentation, selection menus and streaming progress UX refinement | Completed, including output information follow-up |
-| 9 | Full regression, explicit smoke, documentation and research closure evidence | Not started |
+| 9 | Full regression, explicit smoke, documentation and research closure evidence | Completed |
 
 ## Phase 1
 
@@ -424,6 +424,59 @@ Complete-range review through `a0a4db8b6c140c0216ea4d314f6efd81c2ba768c` found n
 Final application verification passed **2,268 cases / 14,207 assertions / 303 files**. Expanded complete-range review `b5f8a5e22e7bae47d209c832524d42918b2f3a5a..8e94a1c60ad33ef337f8e2f41729e906ba821058` has no remaining actionable maintainability, security or test findings. The GIF assertion gap is closed. The closing documentation receipt is reviewed separately.
 
 The Phase 8 follow-up is accepted on 2026-10-01 with all seven tasks checked. Controlled and built Node evidence covers counts, default hints, effective naming, retained-file correction, path/color/stream reporting and advisory space. Earlier accepted checklist text and evidence remain intact. Phase 9's seven tasks remain unchecked, the plan stays active, and this record/research stay in-progress. Ignored synthetic artifacts remain locally available for review. Private media and local setup details are absent from this follow-up's public evidence, and earlier support gaps remain open. Documentation review and checklist/history, status, link/anchor, privacy and diff checks passed.
+
+## Phase 9
+
+The final pass starts from `f88d709ed229d947198122313c00c6fd84328ee6`. It reconciles the research obligations with accepted evidence, adds missing boundary checks, verifies the minimum Node runtime, and prepares current usage documentation. Phase 9 acceptance, final regression, private processing review and whole-plan review remain pending at this checkpoint.
+
+### Research Evidence Reconciliation
+
+| Research obligation | Reusable evidence and scope |
+| --- | --- |
+| Exact selectors, fixed sets, timestamps, stream selection and reliable end | [Timing/tool experiments](#timing-streams-and-decoder-guard) establish independent identities, shifted/variable starts, buffered decoding and native error handling. [Production resolution](#streaming-and-resolution-checkpoint) covers exact arithmetic, prefix/EOF behavior, invalid ordering, source changes and bounded reuse. |
+| Cadence, repeated frames, numeric boundaries and batch identity | [Forward sampling](#forward-sampling-and-export-checkpoint) and [synthetic sequence evidence](#synthetic-sequence-and-resource-evidence) cover 12-to-24-FPS repetition, decimal rates, sparse starts, exact boundaries, oversized intervals and identities/serials across the 128-target boundary. Controlled option/sampler cases provide invalid-input and numeric-limit evidence. |
+| Format, quality, color, alpha, scale and display geometry | [Image experiments](#images-probe-interpretation-and-writer-topology) record native mappings and PNG compression cost. [Production exports](#source-image-export-checkpoint) compare decoded images with independent color/transform references. [Alpha fidelity boundaries](#alpha-fidelity-boundaries) record exact-RGBA limitations and explicit failures without fallback. |
+| Naming, destination kinds, overwrite and source protection | [Naming/destination checks](#naming-and-destination-checkpoint), [publication checks](#staging-and-publication-checkpoint) and [output-information checks](#output-information-follow-up-execution) cover mode-aware names, extension correction, explicit-file bypass, safe replacement, competing writers, aliases, partial copies and advisory space. |
+| Resource limits, pressure, shutdown and ownership | [Process ownership](#streaming-and-resolution-checkpoint), [encoder input](#encoder-input-checkpoint) and [publication evidence](#staging-and-publication-checkpoint) cover saturated queues, record/diagnostic limits, slow consumers, two staged files, injected byte limits, resistant-child forced shutdown and unconfirmed closure preventing replacement/cleanup. Controlled cases exercise confirmation timeouts and Windows transitions without claiming native Windows execution. |
+| Increasing-duration performance and bounded frame data | [Production sequence measurements](#synthetic-sequence-and-resource-evidence) cover 30-second, two-minute and five-minute generated sources with independently verified outputs, sampled parent/child memory and bounded groups. Later presentation changes do not alter those exercised processing boundaries, so the accepted longer workloads are reused. |
+| Terminal picker, navigation, progress, interruption and restoration | [Prototype terminal evidence](#terminal-evidence), [integrated walkthroughs](#tui-review-and-native-verification), [progress walkthroughs](#coordinated-presentation-and-terminal-checkpoint) and [follow-up walkthroughs](#output-information-follow-up-execution) cover real key/resize transitions, fallbacks, exact retained selection, navigation without decoding and subsequent-prompt restoration. |
+| Dependencies, doctor and direct command integration | [Direct command/doctor evidence](#direct-command-and-doctor-checkpoint) separates executable availability, advertised image capabilities and operational probe failure. Built command experiments establish actual encoding independently of doctor inspection. Existing convert/resize/GIF behavior remains subject to the final regression audit. |
+
+### Boundary and Minimum-Runtime Checkpoint
+
+Two controlled staging cases passed **2 cases / 9 assertions** at the actual default **256-MiB** encoded-byte limit. A virtual sink checks capacity acceptance and overflow rejection through streamed writes without creating a 256-MiB file. This establishes staging accounting, separate from native encoding or pixel fidelity. The publication fixture now also injects `EDQUOT`; all **26 publication cases / 104 assertions** passed, covering quota failure alongside the existing disk-full, partial-output and ownership checks.
+
+The built Node CLI passed native **1 × 1** PNG, JPG and still-WebP exports on **Node 22.23.0 on macOS** with FFmpeg/FFprobe **9.0.2**. PNG and lossless WebP matched an independent constant-pixel reference exactly, JPG stayed within five RGB levels, and sources remained unchanged. The existing built-command selector, cadence, format and conflict smoke checks also passed on that exact minimum runtime. Controlled minimum-runtime process, installed-menu, workflow and operation checks passed **27 cases / 113 assertions**, including resistant-child cancellation and released input ownership. Built frames help, doctor JSON parsing, and separate ESM/CommonJS package imports passed on the same runtime.
+
+The one-pixel experiment took **2,949 ms** for generation, exports and independent inspection, with three images. The representative built-command experiment took **8,971 ms** with 18 images. Their maximum sampled parent RSS was respectively **57,081,856** and **64,274,432 bytes**; maximum sampled immediate-tool RSS was **158,208** and **158,816 KiB** across generation/probe/CLI/decode invocations. These observations include harness overhead, can miss peaks and do not measure the complete descendant tree. Both runs stayed within existing smoke limits. Accepted increasing-duration production measurements remain recorded separately above.
+
+### Support Scope
+
+Accepted native experiments record FFmpeg/FFprobe builds and arguments at their checkpoints. Native processing and terminal evidence is macOS-local, previously using Node 26.5.0, with the minimum-runtime command evidence added above. Controlled failures and virtual accounting must not be presented as native filesystem, codec or peak-memory measurements.
+
+Larger-file I/O, demanding codecs, heavy real content, native Windows/Linux execution and network filesystems remain unverified. Existing source/color/alpha/display restrictions stay explicit, and sampled RSS remains an observation rather than a hard process-memory guarantee. These limits do not imply universal large-video or filesystem compatibility.
+
+Private processing outcomes: direct CLI export **passed**; Interactive single-frame export **passed**; Interactive frame-set export **passed**; Interactive sequence export **passed**; local decode inspection **passed**; representative local visual inspection **passed**; source preservation **passed**; staging cleanup **passed**; terminal restoration and subsequent prompt **passed**.
+
+### Integrated Verification and Review
+
+Final managed units passed **1,593 cases / 6,915 assertions / 189 files** and managed applications passed **2,269 / 14,211 / 303**, with no failures, errors or skips and confirmed fixture shutdown. TypeScript, repository lint/format, package build and diff checks passed. Existing convert/resize/GIF and shared process/dependency/doctor callers are covered by the application regressions and complete-range code audit. Regular suites use controlled fixtures; installed-tool and private smoke remain outside those suites and CI.
+
+The disposable smoke-workspace check passed budget rejection, ignored ownership, cleanup and refusal to clean a replaced directory. Retained inputs/results/captures remain ignored and untracked. Combined owned scratch stayed below the monitored 512-MiB stop threshold. Intentional review-artifact retention is permitted and requires no later public removal receipt.
+
+Whole-plan code review of `cfd2d7ca15195fc19b69ce6d2bd940f838d2b560..80ca7668` has no remaining actionable maintainability, security or test findings. The minimum-Node evidence gap is closed by the explicit runtime checks above. Documentation review identified ambiguous wording connecting advertised doctor support to an actual export; the dependency table now distinguishes the two. Public-evidence review found no private identifiers, source metadata, images/captures, commands/paths, local setup or reviewer attribution in the new public record.
+
+The [usage guide](../../guides/video-frames-usage.md), README discovery, testing guide and test ownership catalog now describe the implemented contract and its verification boundary. Earlier accepted phase/checklist evidence is preserved.
+
+### Final Acceptance
+
+Phase 9 is accepted on 2026-10-01 with all seven tasks checked. The plan and job are completed. Research completion is assessed separately: its selection/output questions, terminal prototype, real-tool feasibility, image fidelity boundary and dependency strategy have reproducible evidence linked above. The research is completed within that declared scope. Untested platforms, heavy real content and larger-file/codec/filesystem cases remain explicit support gaps, with no claim of compatibility.
+
+Documentation review, checklist/history preservation, lifecycle status, local links/anchors, privacy and diff checks passed. No document is archived. Local ignored review artifacts remain available; subsequent removal needs no public record.
+
+### Guide Naming Correction
+
+Renamed the guide to [Video Frames Usage](../../guides/video-frames-usage.md) and updated incoming links. The name reflects its command-usage scope while retaining the Interactive instructions. This documentation correction preserves completed statuses and accepted checklists. Reference and diff checks passed.
 
 ## Related Research
 

@@ -2,7 +2,7 @@
 title: "Video Frames Implementation Plan"
 created-date: 2026-09-30
 modified-date: 2026-10-01
-status: active
+status: completed
 agent: codex
 ---
 
@@ -10,7 +10,7 @@ agent: codex
 
 Implement `cdx-chores video frames` for one exact source frame, a fixed frame set, or a whole-video sequence of PNG, JPG, or still WebP images. Deliver the direct CLI and guided Interactive flow while preserving convert, resize and GIF processing behavior. The Phase 8 follow-up also aligns GIF output presentation.
 
-Phases 1–8, including the output information follow-up, are complete. The accepted checkpoints cover terminal prototypes, real-tool feasibility, exact resolution, verified backend image export, exact sequence sampling, destinations/naming, private processing smoke, direct CLI/doctor integration, the guided Interactive flow, and output/menu/progress UX refinement. Phase 9's integrated verification, documentation and research closure remain pending. See the [unified execution record](jobs/2026-10-01-video-frames-implementation.md) for evidence and complete-range checkpoint reviews.
+Phases 1–9, including the output information follow-up, are complete. Accepted checkpoints cover terminal prototypes, real-tool feasibility, exact resolution, image/sequence export, destinations/naming, private processing, direct CLI/doctor, guided Interactive flow, UX refinement and final verification. The [unified execution record](jobs/2026-10-01-video-frames-implementation.md#phase-9) records regression results, minimum-Node checks, whole-plan review and the declared support boundary. The [usage guide](../guides/video-frames-usage.md) describes the current reader-facing contract.
 
 The research owns selection, sampling, terminal, image, and output semantics. This plan owns implementation order, acceptance checkpoints, development-test cost, and evidence handling. Runtime support claims require recorded results. Implement prototypes and verification support in TypeScript/JavaScript, using Bun for development and Node.js for runtime checks.
 
@@ -292,13 +292,13 @@ Follow-up checkpoint: frames and GIF output information follows consistent label
 
 Tasks:
 
-- [ ] Reconcile every research verification obligation with recorded results or an explicit unresolved support decision. Revisit stress cases when later changes affect their exercised boundary, without routine expensive reruns.
-- [ ] Run affected regular suites, type/lint/format/build checks, existing-video regression coverage, and representative built Node.js invocation. Audit shared process/dependency/doctor changes for unaffected callers.
-- [ ] Complete the applicable direct/Interactive private smoke checklist and the declared synthetic stress checks; verify accurate failures, cancellation, partial outputs, budget handling, shutdown, safe scratch cleanup, and permitted retention of review artifacts.
-- [ ] Record tested builds/platforms and resource measurements with their scope. Declare larger file I/O, demanding codec, or heavy real-content gaps rather than claiming universal large-video compatibility.
-- [ ] Write a current video-frames usage guide and update command discovery, dependency/doctor guidance, and testing documentation where affected. Keep smoke scratch policy and private operator details out of product UX.
-- [ ] Review public evidence for private source/result identifiers, metadata, captures, images, commands, paths, local setup, and reviewer attribution.
-- [ ] Close the plan/job only after required checkpoints pass; assess research completion against its own recorded evidence. Keep unresolved work visible and retain current documents at their normal locations.
+- [x] Reconcile every research verification obligation with recorded results or an explicit unresolved support decision. Revisit stress cases when later changes affect their exercised boundary, without routine expensive reruns.
+- [x] Run affected regular suites, type/lint/format/build checks, existing-video regression coverage, and representative built Node.js invocation. Audit shared process/dependency/doctor changes for unaffected callers.
+- [x] Complete the applicable direct/Interactive private smoke checklist and the declared synthetic stress checks; verify accurate failures, cancellation, partial outputs, budget handling, shutdown, safe scratch cleanup, and permitted retention of review artifacts.
+- [x] Record tested builds/platforms and resource measurements with their scope. Declare larger file I/O, demanding codec, or heavy real-content gaps rather than claiming universal large-video compatibility.
+- [x] Write a current video-frames usage guide and update command discovery, dependency/doctor guidance, and testing documentation where affected. Keep smoke scratch policy and private operator details out of product UX.
+- [x] Review public evidence for private source/result identifiers, metadata, captures, images, commands, paths, local setup, and reviewer attribution.
+- [x] Close the plan/job only after required checkpoints pass; assess research completion against its own recorded evidence. Keep unresolved work visible and retain current documents at their normal locations.
 
 Checkpoint: the feature, documented support boundary, regression coverage, real tool evidence, terminal behavior, private processing outcomes, and smoke artifact handling are consistent. Budget exhaustion, unrun required cases, or unresolved process/file ownership prevents completion. Intentional local retention of review artifacts does not prevent completion.
 
