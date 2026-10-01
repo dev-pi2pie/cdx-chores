@@ -34,6 +34,7 @@ export interface InlineTextPromptOptions {
   stdout?: NodeJS.WritableStream;
   validate: ValidationFn;
   colorEnabled?: boolean;
+  signal?: AbortSignal;
   promptImpls?: {
     simpleInput?: typeof input;
     advancedInline?: typeof promptTextInlineGhost;
@@ -90,6 +91,7 @@ function shouldUseAdvancedTextPrompt(options: InlineTextPromptOptions): boolean 
 }
 
 export async function promptTextWithGhost(options: InlineTextPromptOptions): Promise<string> {
+  options.signal?.throwIfAborted();
   if (shouldUseAdvancedTextPrompt(options)) {
     try {
       const advancedInline = options.promptImpls?.advancedInline ?? promptTextInlineGhost;
@@ -104,6 +106,7 @@ export async function promptTextWithGhost(options: InlineTextPromptOptions): Pro
         stdout: options.stdout!,
         validate: options.validate,
         colorEnabled: options.colorEnabled,
+        signal: options.signal,
       });
     } catch (error) {
       if (isPromptCancelError(error)) {
@@ -124,11 +127,14 @@ export async function promptTextWithGhost(options: InlineTextPromptOptions): Pro
   ) {
     options.stdout.write(`${dim(`${options.ghostHintLabel}: ${options.ghostText}`)}\n`);
   }
-  return await simpleInput({
-    message: options.message,
-    ...(options.initialValue !== undefined ? { default: options.initialValue } : {}),
-    validate: options.validate,
-  });
+  return await simpleInput(
+    {
+      message: options.message,
+      ...(options.initialValue !== undefined ? { default: options.initialValue } : {}),
+      validate: options.validate,
+    },
+    { input: options.stdin, output: options.stdout, signal: options.signal },
+  );
 }
 
 export async function promptTextInlineGhost(options: {
@@ -142,7 +148,9 @@ export async function promptTextInlineGhost(options: {
   stdout: NodeJS.WritableStream;
   validate: ValidationFn;
   colorEnabled?: boolean;
+  signal?: AbortSignal;
 }): Promise<string> {
+  options.signal?.throwIfAborted();
   if (!supportsRawSessionIO(options.stdin, options.stdout)) {
     throw new Error("Inline text prompt requires TTY stdin/stdout with raw mode support");
   }
@@ -239,8 +247,10 @@ export async function promptTextInlineGhost(options: {
     });
 
     const cleanup = (): void => {
+      options.signal?.removeEventListener("abort", abort);
       session?.close();
     };
+    const abort = (): void => settleReject(createPromptAbortError());
 
     const settleResolve = (result: string): void => {
       if (settled) {
@@ -268,6 +278,7 @@ export async function promptTextInlineGhost(options: {
 
     const keypressHandler = (str: string, key: KeypressInfo = {}): void => {
       void (async () => {
+        if (closed) return;
         const parsed = keyParser.handle(str, key);
 
         if (parsed.kind === "incomplete") {
@@ -336,6 +347,7 @@ export async function promptTextInlineGhost(options: {
 
         if (nextKey.name === "return" || nextKey.name === "enter") {
           const validation = await options.validate(value);
+          if (closed) return;
           if (validation === true) {
             settleResolve(value);
             return;
@@ -399,6 +411,7 @@ export async function promptTextInlineGhost(options: {
     };
 
     try {
+      options.signal?.throwIfAborted();
       session = startRawSession({
         stdin: options.stdin,
         stdout,
@@ -407,6 +420,8 @@ export async function promptTextInlineGhost(options: {
         },
       });
       session.addKeypressListener(keypressHandler);
+      options.signal?.addEventListener("abort", abort, { once: true });
+      if (options.signal?.aborted) abort();
     } catch (error) {
       settleReject(error);
     }

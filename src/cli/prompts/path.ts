@@ -17,6 +17,7 @@ export interface PromptPathOptions {
   cwd?: string;
   stdin?: NodeJS.ReadStream;
   stdout?: NodeJS.WritableStream;
+  signal?: AbortSignal;
   promptImpls?: {
     simpleInput?: typeof input;
     advancedInline?: typeof promptPathInlineGhost;
@@ -61,6 +62,7 @@ function buildPathValidator(options: PromptPathOptions): (value: string) => true
 }
 
 export async function promptPath(options: PromptPathOptions): Promise<string> {
+  options.signal?.throwIfAborted();
   if (shouldUseAdvancedPathPrompt(options)) {
     return await promptPathAdvanced(options);
   }
@@ -130,6 +132,7 @@ async function promptPathAdvanced(options: PromptPathOptions): Promise<string> {
       runtimeConfig: options.runtimeConfig!,
       stdin: options.stdin!,
       stdout: options.stdout!,
+      signal: options.signal,
       validate: buildPathValidator(options),
       suggestionFilter: filter,
     });
@@ -144,11 +147,14 @@ async function promptPathAdvanced(options: PromptPathOptions): Promise<string> {
 
 async function promptPathSimple(options: PromptPathOptions): Promise<string> {
   const simpleInput = options.promptImpls?.simpleInput ?? input;
-  return await simpleInput({
-    message: formatPromptMessage(options),
-    default: options.defaultValue,
-    validate: buildPathValidator(options),
-  });
+  return await simpleInput(
+    {
+      message: formatPromptMessage(options),
+      default: options.defaultValue,
+      validate: buildPathValidator(options),
+    },
+    { input: options.stdin, output: options.stdout, signal: options.signal },
+  );
 }
 
 export async function promptRequiredPath(

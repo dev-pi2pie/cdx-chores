@@ -89,6 +89,40 @@ async function createPromptHarness(options?: {
 }
 
 describe("path inline prompt controller", () => {
+  test("signal abort restores path input before the next editor takes ownership", async () => {
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    const controller = new AbortController();
+    const options = {
+      message: "Output folder",
+      cwd: "/synthetic",
+      runtimeConfig: {
+        mode: "auto" as const,
+        autocomplete: { enabled: true, minChars: 1, maxSuggestions: 12, includeHidden: false },
+      },
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: (value: string) => (value ? (true as const) : "Required"),
+      suggestionFilter: { targetKind: "directory" as const },
+      resolveSuggestions: async () => [],
+    };
+    const prompt = promptPathInlineGhost({ ...options, signal: controller.signal });
+    await nextRenderTick();
+    controller.abort();
+    await expect(prompt).rejects.toMatchObject({ name: "ExitPromptError" });
+    expect(stdin.rawModeCalls).toEqual([true, false]);
+    expect(stdin.listenerCount("keypress")).toBe(0);
+    expect(stdout.text).toContain("\x1b[?25h");
+    const next = promptPathInlineGhost(options);
+    await nextRenderTick();
+    stdin.emit("keypress", "next", { name: "n" });
+    await nextRenderTick();
+    stdin.emit("keypress", "\r", { name: "return" });
+    expect(await next).toBe("next");
+    expect(stdin.rawModeCalls).toEqual([true, false, true, false]);
+    expect(stdin.listenerCount("keypress")).toBe(0);
+  });
+
   test("promptPathInlineGhost renders a dimmed ghost suffix for the best completion", async () => {
     const { fixtureDir, stdin, stdout, prompt } = await createPromptHarness({
       setup: async (dir) => {
