@@ -1,8 +1,8 @@
 ---
 title: "Video Frame Selection, Frame Sets, and Sequence Export"
 created-date: 2026-09-30
-modified-date: 2026-09-30
-status: draft
+modified-date: 2026-10-01
+status: in-progress
 agent: codex
 ---
 
@@ -10,7 +10,7 @@ agent: codex
 
 Research `cdx-chores video frames` for extracting one source frame, a fixed frame set, or a whole-video sequence of still images. The feature should support direct CLI invocation and a guided Interactive flow, with PNG, JPG, and WebP output.
 
-This is a design draft. Repository observations below describe existing code; new command examples, prompts, defaults, and algorithms are proposals unless identified as agreed direction. No frame-extraction implementation, terminal prototype, encoder smoke test, or visual validation has been completed for this feature.
+This research is in progress. Repository observations below describe existing code; new command examples, prompts, defaults, and algorithms are proposals unless identified as agreed direction. Phase 1 prototype verification is underway in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md). Frame extraction, encoder smoke tests, and visual validation remain unverified.
 
 Agreed direction from the design discussion:
 

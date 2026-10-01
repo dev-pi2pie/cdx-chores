@@ -1,7 +1,8 @@
 ---
 title: "Video Frames Implementation Plan"
 created-date: 2026-09-30
-status: draft
+modified-date: 2026-10-01
+status: active
 agent: codex
 ---
 
@@ -9,9 +10,9 @@ agent: codex
 
 Implement `cdx-chores video frames` for one exact source frame, a fixed frame set, or a whole-video sequence of PNG, JPG, or still WebP images. Deliver the direct CLI and guided Interactive flow without changing convert, resize, or GIF behavior.
 
-This is a draft execution plan. No phase has started and no prototype, extraction, encoder, stress, or private smoke result is claimed. The opening phases gather the feasibility evidence required by the research before command integration. Creating this plan does not advance the research's draft status.
+Phase 1 is in progress. The opening phases gather the feasibility evidence required by the research before command integration. Extraction, encoder, stress, and private smoke outcomes remain unverified. See the [unified execution record](jobs/2026-10-01-video-frames-implementation.md) for evidence and checkpoint reviews.
 
-The research owns selection, sampling, terminal, image, and output semantics. This plan owns implementation order, acceptance checkpoints, development-test cost, and evidence handling. Runtime support claims require recorded results.
+The research owns selection, sampling, terminal, image, and output semantics. This plan owns implementation order, acceptance checkpoints, development-test cost, and evidence handling. Runtime support claims require recorded results. Implement prototypes and verification support in TypeScript/JavaScript, using Bun for development and Node.js for runtime checks.
 
 ## Related Research
 
@@ -122,7 +123,7 @@ Inspect failed runs before cleanup. Keep affected scratch when shutdown or owner
 
 Tasks:
 
-- [ ] Begin the unified execution record and map the research's verification obligations to these phase checkpoints.
+- [x] Begin the unified execution record and map the research's verification obligations to these phase checkpoints.
 - [ ] Define independent small fixture expectations and the bounded synthetic workload recipes; verify scratch ownership, ignore status, budget checks, and result/cleanup handling before creating media.
 - [ ] Prototype the wave, frame-set preset chooser, and mode-specific naming prompts using synthetic state before integrating video decoding.
 - [ ] Verify full/compact/direct-input fit with actual wrapped display widths, unknown dimensions/duration, simple prompts, and non-interactive paths.
