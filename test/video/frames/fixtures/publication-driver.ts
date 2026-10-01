@@ -41,10 +41,11 @@ async function main() {
       mode === "copy-close" ||
       mode === "stage-close" ||
       mode === "disk-full" ||
+      mode === "quota" ||
       mode === "fallback-collision"
         ? {
             link: async (from, target) => {
-              if (mode === "stage-close" || mode === "disk-full") {
+              if (mode === "stage-close" || mode === "disk-full" || mode === "quota") {
                 await link(from, target);
                 return;
               }
@@ -56,7 +57,7 @@ async function main() {
               const handle = await open(...args);
               if (
                 String(args[0]).endsWith(".stage") &&
-                (mode === "stage-close" || mode === "disk-full")
+                (mode === "stage-close" || mode === "disk-full" || mode === "quota")
               ) {
                 if (mode === "stage-close") {
                   const close = handle.close.bind(handle);
@@ -68,7 +69,7 @@ async function main() {
                   const write = handle.write.bind(handle);
                   handle.write = async (buffer: unknown) => {
                     if (Buffer.isBuffer(buffer)) await write(buffer, 0, Math.min(buffer.length, 3));
-                    throw errno("ENOSPC");
+                    throw errno(mode === "quota" ? "EDQUOT" : "ENOSPC");
                   };
                 }
                 return handle;
@@ -184,6 +185,7 @@ async function main() {
         "late-collision",
         "stage-close",
         "disk-full",
+        "quota",
         "fallback-collision",
       ].includes(mode)
     ) {

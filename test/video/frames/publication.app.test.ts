@@ -23,6 +23,7 @@ for (const mode of [
   "closure-unconfirmed",
   "stage-close",
   "disk-full",
+  "quota",
   "fallback-collision",
   "direct-source",
   "overwrite-direct-source",
