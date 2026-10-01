@@ -10,7 +10,7 @@ agent: codex
 
 Implement `cdx-chores video frames` for one exact source frame, a fixed frame set, or a whole-video sequence of PNG, JPG, or still WebP images. Deliver the direct CLI and guided Interactive flow without changing convert, resize, or GIF behavior.
 
-Phases 1–6 are complete. The accepted checkpoints cover terminal prototypes, real-tool feasibility, exact resolution, verified backend image export, exact sequence sampling, destinations/naming, private processing smoke, and direct CLI/doctor integration. Guided Interactive integration and integrated stress remain pending. See the [unified execution record](jobs/2026-10-01-video-frames-implementation.md) for evidence and complete-range checkpoint reviews.
+Phases 1–7 are complete. The accepted checkpoints cover terminal prototypes, real-tool feasibility, exact resolution, verified backend image export, exact sequence sampling, destinations/naming, private processing smoke, direct CLI/doctor integration, and the guided Interactive flow with its TUI review. Phase 8's integrated verification, documentation and research closure remain pending. See the [unified execution record](jobs/2026-10-01-video-frames-implementation.md) for evidence and complete-range checkpoint reviews.
 
 The research owns selection, sampling, terminal, image, and output semantics. This plan owns implementation order, acceptance checkpoints, development-test cost, and evidence handling. Runtime support claims require recorded results. Implement prototypes and verification support in TypeScript/JavaScript, using Bun for development and Node.js for runtime checks.
 
@@ -221,26 +221,28 @@ Tasks:
 
 ### Integration
 
-- [ ] Connect one-frame, fixed frame-set, and whole-video sequence branches to the shared resolver/sampler and prototype picker without image previews.
-- [ ] Integrate FPS presets/custom input, bounded interval suggestions/estimates, format/conditional quality, scale, destinations, and applicable templates and serial prompts.
-- [ ] Resolve single/frame-set identities before text review; show concrete names, dimensions, effective settings, chosen stream where relevant, repeat notices, and estimated sequence counts. Review acceptance owns final writes.
-- [ ] Preserve source/selection across option changes and editor/layout round trips; validate retained explicit filenames after format changes and invalidate reuse after observable source/stream changes.
+- [x] Connect one-frame, fixed frame-set, and whole-video sequence branches to the shared resolver/sampler and prototype picker without image previews.
+- [x] Integrate FPS presets/custom input, bounded interval suggestions/estimates, format/conditional quality, scale, destinations, and applicable templates and serial prompts.
+- [x] Resolve single/frame-set identities before text review; show concrete names, dimensions, effective settings, chosen stream where relevant, repeat notices, and estimated sequence counts. Review acceptance owns final writes.
+- [x] Preserve source/selection across option changes and editor/layout round trips; validate retained explicit filenames after format changes and invalidate reuse after observable source/stream changes.
 
 ### TUI Review and Polish
 
-- [ ] Review visual hierarchy, spacing, labels, control hints, and notice/error placement across selection menus, frame/time editors, settings, final review, progress, cancellation, and recovery. Keep presentation consistent with existing Interactive flows and essential information readable.
-- [ ] Polish full/compact picker presentation within the settled contract: thin mirrored bars, selected-bar accent, aligned triangles, endpoint labels, and coarse-position/precision notices. Make candidate positions and resolved frame identities clear; retain the synthetic distance cue, exact selection, and glyph preference.
-- [ ] Prepare a built-CLI terminal walkthrough with small synthetic sources for local presentation review; optional captures/transcripts stay in the ignored synthetic smoke workspace. Address actionable findings and recheck affected states before acceptance. Public TUI findings/evidence use synthetic content; private captures and inspection notes stay local under the privacy policy.
+- [x] Review visual hierarchy, spacing, labels, control hints, and notice/error placement across selection menus, frame/time editors, settings, final review, progress, cancellation, and recovery. Keep presentation consistent with existing Interactive flows and essential information readable.
+- [x] Polish full/compact picker presentation within the settled contract: thin mirrored bars, selected-bar accent, aligned triangles, endpoint labels, and coarse-position/precision notices. Make candidate positions and resolved frame identities clear; retain the synthetic distance cue, exact selection, and glyph preference.
+- [x] Prepare a built-CLI terminal walkthrough with small synthetic sources for local presentation review; optional captures/transcripts stay in the ignored synthetic smoke workspace. Address actionable findings and recheck affected states before acceptance. Public TUI findings/evidence use synthetic content; private captures and inspection notes stay local under the privacy policy.
 
 ### Verification and Acceptance
 
-- [ ] Verify the integrated TUI in real Node.js terminals across wide/narrow and tall/short layouts, long source/output labels, wrapped controls/notices, Unicode/ASCII, and color enabled/disabled. Exercise resize and full/compact/direct-input transitions, including editor drafts and richer-layout restoration; essential controls, selection details, and precision notices must fit the measured display area.
-- [ ] Verify progress/input ownership, scan/export cancellation, failure recovery, direct-input fallbacks, resize, and terminal restoration. Unconfirmed child closure ends the flow and prevents replacement work.
-- [ ] Exercise real terminal interactions with synthetic sources and private real-video smoke through the built CLI. Inspect images locally; keep captures/private diagnostics local and publish processing outcomes only.
+- [x] Verify the integrated TUI in real Node.js terminals across wide/narrow and tall/short layouts, long source/output labels, wrapped controls/notices, Unicode/ASCII, and color enabled/disabled. Exercise resize and full/compact/direct-input transitions, including editor drafts and richer-layout restoration; essential controls, selection details, and precision notices must fit the measured display area.
+- [x] Verify progress/input ownership, scan/export cancellation, failure recovery, direct-input fallbacks, resize, and terminal restoration. Unconfirmed child closure ends the flow and prevents replacement work.
+- [x] Exercise real terminal interactions with synthetic sources and private real-video smoke through the built CLI. Inspect images locally; keep captures/private diagnostics local and publish processing outcomes only.
 
 Keep layout/state assertions in inexpensive regular tests; assess visual presentation through the explicit built-CLI terminal walkthroughs above. Use the existing smoke budgets and small synthetic sources for presentation work; repeat only affected cases after polishing. Human review time remains outside the active processing budget.
 
 Checkpoint: functional verification and the dedicated TUI review/polish pass are recorded, with actionable presentation findings addressed and affected cases rechecked. Review and exports identify the same selected frames, essential controls survive layout changes, no tool runs on navigation, and the next ordinary prompt works after completion/cancellation/failure.
+
+Phase 7 is accepted. Integration, TUI review/polish, native terminal verification, private processing outcomes, and complete-range review evidence are recorded in the [Phase 7 checkpoint](jobs/2026-10-01-video-frames-implementation.md#phase-7).
 
 ## Phase 8: Integrated Verification and Documentation
 

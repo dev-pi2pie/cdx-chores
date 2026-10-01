@@ -17,7 +17,7 @@ Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation
 | 4 | Verified pixels, alpha/transforms, safe publication, failure accounting, private processing smoke | Completed |
 | 5 | Sampling, retained repeats, destinations and concrete naming | Completed |
 | 6 | Direct command, validation, dependencies and doctor | Completed |
-| 7 | Guided Interactive flow, TUI review/polish, and recovery | In progress |
+| 7 | Guided Interactive flow, TUI review/polish, and recovery | Completed |
 | 8 | Full regression, explicit smoke, documentation and research closure evidence | Not started |
 
 ## Phase 1
@@ -290,11 +290,11 @@ Documentation review found no actionable findings. Phase/checklist preservation 
 
 ## Phase 7
 
-Implementation begins from the Phase 6 acceptance receipt `26754458a11b4c679090066230c26bbdc5e54fcb`. Integration, a dedicated TUI review/polish checkpoint, real terminal verification, and private processing outcomes remain required before acceptance.
+Implementation began from the Phase 6 acceptance receipt `26754458a11b4c679090066230c26bbdc5e54fcb`. The checkpoints below record integration, the dedicated TUI review/polish pass, real terminal verification and private processing outcomes.
 
 ### Exact Picker and Operation Checkpoint
 
-Picker projection now retains exact rational decoded timing and its original resolved object; display truncation is identified without changing selection. Direct resolution and other asynchronous stages use one feature operation input owner until work settles, with Escape cancellation and terminal restoration. Fatal child closure takes priority over cancellation recovery. Focused picker/layout/operation verification passed **38 cases / 239 assertions**, including fatal Escape/Ctrl+C, exact timing, pending-input ownership, and next-prompt restoration. TypeScript, lint, formatting, diff checks and build passed. No Phase 7 task is accepted yet.
+Picker projection now retains exact rational decoded timing and its original resolved object; display truncation is identified without changing selection. Direct resolution and other asynchronous stages use one feature operation input owner until work settles, with Escape cancellation and terminal restoration. Fatal child closure takes priority over cancellation recovery. Focused picker/layout/operation verification passed **38 cases / 239 assertions**, including fatal Escape/Ctrl+C, exact timing, pending-input ownership, and next-prompt restoration. TypeScript, lint, formatting, diff checks and build passed. At that checkpoint, Phase 7 acceptance remained pending.
 
 ### Guided Flow Checkpoint
 
@@ -302,7 +302,7 @@ The Interactive video menu now reaches one-frame, fixed-set and whole-video sequ
 
 Shared path/text prompts now forward streams and abort signals through inline editors and simple fallbacks. Controlled workflow checks cover read-only review, custom identity retention across settings, stale extensions, repeated roles, sequence naming, source invalidation and fatal closure. Menu loading stays lazy so unrelated Interactive flows preserve their prompt boundaries.
 
-Managed unit verification passed **1,579 cases / 6,833 assertions** across 186 files; managed application verification passed **2,246 cases / 14,093 assertions** across 302 files. TypeScript, repository lint/format, diff checks and package build passed. A subsequent presentation refinement passed its affected **22 cases / 147 assertions**: the direct picker and export menu retain essential frame/settings details in their titles, and wave styling groups spans without changing stripped geometry. Native terminal and complete-range review evidence remain required before acceptance.
+Managed unit verification passed **1,579 cases / 6,833 assertions** across 186 files; managed application verification passed **2,246 cases / 14,093 assertions** across 302 files. TypeScript, repository lint/format, diff checks and package build passed. A subsequent presentation refinement passed its affected **22 cases / 147 assertions**: the direct picker and export menu retain essential frame/settings details in their titles, and wave styling groups spans without changing stripped geometry. At that checkpoint, native terminal and complete-range review evidence remained required before acceptance.
 
 ### TUI Review and Native Verification
 
@@ -329,6 +329,14 @@ Final managed units passed **1,580 cases / 6,836 assertions** across 186 files. 
 ### Review Follow-up
 
 Full-range review `26754458a11b4c679090066230c26bbdc5e54fcb..4ef1b9c1297261501e011a81d2b2506e543284c8` found no actionable code or security findings. Test review requested a regression for the newly displayed inline validation diagnostics. The added case supplies terminal escape, bell, line-separator and format-control characters; none reaches the terminal as a control, and the original editable draft survives. All **14 affected cases / 46 assertions** passed. TypeScript, lint, format and diff checks passed. Expanded-range review and phase acceptance remain pending at this checkpoint.
+
+An additional boundary check found that the picker treated metadata duration as an exact timestamp limit. Both timestamp editors now distinguish a coarse estimated span from a verified bound and defer authoritative validation to the shared resolver. Existing reliable-duration prototype behavior remains unchanged. Wave/direct regressions accept a 120-ms target beyond a 100-ms estimate and retain frame 3; a target at the independently declared 540-ms end still fails. The guided workflow verifies its metadata-only picker is marked estimated. All **41 affected cases / 245 assertions** passed. The built Node wave recheck labeled the estimate, rejected a request past decoded EOF, recovered and exported the exact requested frame pixels; terminal restoration and the next prompt passed. TypeScript, lint, format, diff checks and build passed.
+
+### Phase 7 Acceptance
+
+Expanded full-range review `26754458a11b4c679090066230c26bbdc5e54fcb..abed572ee86d2f126e969ffe67d65287c4d14024` found no remaining actionable code, test or security findings. Test review requested verified-duration coverage; both explicit and default verified bounds now have regressions proving out-of-range timestamps stay editable and never reach the resolver. All **43 affected cases / 259 assertions** passed. The naming review follow-up passed its controlled Node workflow case and native inline/simple correction/export rechecks; saved PNG pixels remained exact. TypeScript, lint, format, diff checks and build passed. The final documentation receipt was reviewed separately before commit.
+
+Phase 7 is accepted on 2026-10-01 with all ten tasks checked. Direct CLI/doctor and guided Interactive integration are complete. The plan stays active, research stays in-progress, and this record stays open for Phase 8's integrated verification/documentation audit and research closure. Prior accepted checklists remain unchanged. Native/private development smoke remains separate from regular suites and CI; private evidence remains operation outcomes only.
 
 ## Phase 7 Planning Refinement
 

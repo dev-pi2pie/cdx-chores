@@ -403,6 +403,8 @@ cdx-chores video frames -i ./clip.mp4 --interval 2s --format webp
 
 Choose exactly one selector or cadence. PNG is the default and requires quality `full`; JPG and WebP offer `low`, `medium`, `high`, and `full`. WebP `full` requires advertised lossless support and rejects fully transparent pixels whose RGB values the supported encoder cannot preserve; use PNG for exact RGBA in that case. `--output` names a file for one frame and a folder for sets/sequences. Existing files require `--overwrite`; completed images remain after interruption or failure. Use `video frames --help` for strict selector, template, and serial options.
 
+For guided export, run `cdx-chores` and choose **video → frames**. Select one frame, a fixed set or a whole-video sequence, configure image settings and review the filenames before export. The custom picker offers a timeline and exact frame/time input, with direct-input fallback in small terminals.
+
 Video to GIF:
 
 ```bash

@@ -10,7 +10,7 @@ agent: codex
 
 Research `cdx-chores video frames` for extracting one source frame, a fixed frame set, or a whole-video sequence of still images. The feature should support direct CLI invocation and a guided Interactive flow, with PNG, JPG, and WebP output.
 
-This research is in progress. Repository observations below describe existing code; new command examples, prompts, defaults, and algorithms are proposals unless identified as agreed direction. Accepted Phases 1–6, including verified backend image/sequence export, destinations/naming, and private processing, are recorded in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md). Direct CLI/doctor integration is accepted in Phase 6; guided Interactive integration and integrated stress remain pending.
+This research is in progress. Repository observations below describe the implementation baseline; new command examples, prompts, defaults, and algorithms are proposals unless identified as agreed direction or verified implementation. Accepted Phases 1–7, including verified backend image/sequence export, destinations/naming, private processing, direct CLI/doctor and guided Interactive integration, are recorded in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md). Phase 8's integrated verification, documentation and research closure remain pending.
 
 Agreed direction from the design discussion:
 
@@ -35,7 +35,7 @@ Agreed direction from the design discussion:
 | Scaling                | Preserve displayed aspect ratio; presets and custom scale within `0.1–1`                              |
 | Evidence               | Reproducible public synthetic cases and private local visual review                                   |
 
-Naming uses a normalized source `{stem}`, named `{selection}` labels for single frames/frame sets, optional verified source `{frame}` numbers, and export `{serial...}` values for sequences. Sequence templates require one serial; the default start is 1 and minimum width is 6. FPS input uses positive integers or ordinary decimals; users do not enter fraction expressions. These input/naming choices are agreed direction. Backend extraction and sampling have passed the scoped synthetic checks in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md); direct CLI integration is accepted in Phase 6, while guided Interactive integration remains pending. A timestamp index sidecar is outside this initial scope.
+Naming uses a normalized source `{stem}`, named `{selection}` labels for single frames/frame sets, optional verified source `{frame}` numbers, and export `{serial...}` values for sequences. Sequence templates require one serial; the default start is 1 and minimum width is 6. FPS input uses positive integers or ordinary decimals; users do not enter fraction expressions. These input/naming choices are agreed direction. Backend extraction and sampling have passed the scoped synthetic checks in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md); direct CLI and guided Interactive integration are accepted in Phases 6–7. A timestamp index sidecar is outside this initial scope.
 
 Custom sequence ranges, dual-boundary timeline controls, arbitrary image-count sampling, and a separate “every source frame” mode are outside this initial scope. The two fixed frame-set presets are included; format, quality, color, and scale apply uniformly within every export. Seek/checkpoint/tail optimizations are excluded from this scope; sequential resolution and bounded session reuse are the chosen approach.
 
@@ -68,7 +68,7 @@ The [GIF look configuration](../../src/cli/video-gif.ts) separates `faithful` (`
 
 ### Direct CLI Contract
 
-Use `frames` with single-frame selectors `--first-frame`, `--last-frame`, `--frame-number`, and `--at`, fixed presets through `--frame-set`, or FPS/interval sampling. Reuse `-o, --output`. Multi-image naming uses `--pattern`; sequence serial controls follow rename terminology. Interactive single-image naming resolves a final file path for the same export action. Quality uses `--quality low|medium|high|full`, defaults to `full`, and permits only `full` for PNG; tested native mappings and encoder support boundaries are recorded in [Phase 4](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-4). The direct command implements these contracts; guided Interactive integration remains pending.
+Use `frames` with single-frame selectors `--first-frame`, `--last-frame`, `--frame-number`, and `--at`, fixed presets through `--frame-set`, or FPS/interval sampling. Reuse `-o, --output`. Multi-image naming uses `--pattern`; sequence serial controls follow rename terminology. Interactive single-image naming resolves a final file path for the same export action. Quality uses `--quality low|medium|high|full`, defaults to `full`, and permits only `full` for PNG; tested native mappings and encoder support boundaries are recorded in [Phase 4](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-4). Direct and guided Interactive command integration implement these contracts, with scoped verification in Phases 6–7.
 
 | Option                    | Proposed role                                                                                |
 | ------------------------- | -------------------------------------------------------------------------------------------- |
@@ -197,7 +197,7 @@ Endpoint resolution scans through EOF. If a reliable end is already available, r
 
 ## Wave Picker and Adaptive Terminal Layout
 
-The layout selection, glyph fallback, coarse movement, and controls below are settled direction. Renderer geometry and terminal behavior passed the real-terminal prototype cases recorded in [Phase 1](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-1). Production Interactive integration remains pending; the sketches are not fixed screen layouts.
+The layout selection, glyph fallback, coarse movement, and controls below are settled direction. Renderer geometry and terminal behavior passed the real-terminal prototype cases recorded in [Phase 1](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-1). Production integration and the dedicated TUI review passed the scoped terminal cases in [Phase 7](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-7); the sketches are not fixed screen layouts.
 
 ### Fixed Timeline and Selection
 
@@ -373,7 +373,7 @@ Use a positive integer followed by ms, s, or m:
 
 Interactive mode keeps invalid input in the editor and shows valid-input estimates or the one-image notice beside it and in the existing export review. Do not add a second confirmation step. Direct CLI invalid input fails before writing; a valid oversized interval prints the notice to stderr and proceeds, labeling metadata-based predictions as expected. When duration is unavailable, say the count estimate is unavailable and defer the comparison; do not treat unknown duration as zero or invent a one-image guarantee.
 
-Millisecond input precision does not guarantee distinct source frames. Interval follows the same repetition policy as FPS: preserve cadence, export a separately numbered image for every valid target, and disclose repeated selections. Actual counts and boundaries passed the independent synthetic cases recorded in [Phase 5](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-5); direct CLI reporting is verified in Phase 6, while Interactive reporting remains pending.
+Millisecond input precision does not guarantee distinct source frames. Interval follows the same repetition policy as FPS: preserve cadence, export a separately numbered image for every valid target, and disclose repeated selections. Actual counts and boundaries passed the independent synthetic cases recorded in [Phase 5](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-5); direct and Interactive reporting have scoped verification in Phases 6–7.
 
 ### Sampling Boundaries, Repetition, and Counts
 
@@ -658,7 +658,7 @@ Extend the [normalized report](../../src/cli/doctor/report.ts) and [JSON project
 
 Add separate format/mode assessments to the normalized report and JSON rather than overloading executable availability or existing capability booleans. With both tools available, a missing required image encoder or lossless mode makes Video `limited`, naming the affected frames format/mode and recommending an encoder-enabled FFmpeg build. Known absence is a health finding; an operational probe failure follows the existing exit-2/no-partial-report contract and must not be reported as unsupported. An assessment that cannot be established from otherwise successful probe output remains visibly unknown. Advertised support is not tested encoding or pixel-fidelity evidence. Frames execution rechecks its requested encoder/mode before extraction and final writes; source-dependent support remains an execution check.
 
-Keep runtime execution compatible with Node.js. The adjacent streaming process boundary has closure, cancellation, and backpressure evidence in [Phases 3–4](../plans/jobs/2026-10-01-video-frames-implementation.md). The mirrored multi-line wave passed Phase 1 prototype layout checks; its production Interactive integration remains pending.
+Keep runtime execution compatible with Node.js. The adjacent streaming process boundary has closure, cancellation, and backpressure evidence in [Phases 3–4](../plans/jobs/2026-10-01-video-frames-implementation.md). The mirrored multi-line wave passed Phase 1 prototype layout checks and Phase 7 production integration/terminal checks. Minimum-Node execution and other platforms remain unverified.
 
 Reference designs: tui-wave provides waveform navigation and zoom,[^tui-wave] CAVA illustrates terminal bar rendering,[^cava] and Ratatui has bar-chart examples.[^ratatui] These are design references, not chosen dependencies or exact implementations of the proposed distance-based picker.
 
