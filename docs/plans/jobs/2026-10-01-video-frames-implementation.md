@@ -13,7 +13,7 @@ Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation
 | --- | --- | --- |
 | 1 | Independent fixture expectations, smoke preparation, real terminal keys/resize, selection retention, fallbacks, prompt ownership/restoration | Completed |
 | 2 | Real-tool timing, stream agreement, encoder/filter feasibility, bounded writer topology, decoder guard, synthetic workload measurements | Completed |
-| 3 | Streaming records, exact identities, bounded cache, source invalidation, cancellation/child closure | Not started |
+| 3 | Streaming records, exact identities, bounded cache, source invalidation, cancellation/child closure | In progress |
 | 4 | Verified pixels, alpha/transforms, safe publication, failure accounting, private processing smoke | Not started |
 | 5 | Sampling, retained repeats, destinations and concrete naming | Not started |
 | 6 | Direct command, validation, dependencies and doctor | Not started |
@@ -122,6 +122,14 @@ Synthetic artifacts remain ignored/untracked for local review. The disposable wo
 ### Review and Acceptance
 
 The complete implementation range `49d37ee3..229a7e39` received maintainability, test/evidence, and documentation review with no actionable findings. The acceptance receipt was reviewed separately. Phase 2 is accepted on 2026-10-01; its experiments remain scoped to feasibility rather than production behavior.
+
+## Phase 3
+
+Started from accepted Phase 2 tip `2cc3c66794a2e613cc2051de57188bb945d2ded5`. Adjacent `src/cli/process/` support adds incremental records, bounded metadata/queues/diagnostic tails, structured progress, and direct registered child ownership. The existing buffered helper is unchanged.
+
+Focused process verification passed nine unit cases and eight owned Node application cases, including large cumulative output with a slow consumer, literal arguments, metadata limits, diagnostic tails, multiple cooperative/resistant children, and unconfirmed child/consumer closure. Cooperative grace is two seconds, with five seconds after forcing to confirm closure. Windows immediate forcing is modeled; native Windows execution remains unverified.
+
+Exact frame resolution, bounded reuse, and phase acceptance remain pending.
 
 ## Related Research
 

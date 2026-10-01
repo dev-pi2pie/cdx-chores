@@ -42,6 +42,10 @@ Use [Test Suite Audit Inventory](test-suite-audit-inventory.md) for the fixed pr
 
 `test/video/smoke-budget.unit.test.ts` checks only pure development-budget calculations. Real terminal interactions and generated/private media smoke are explicit plan verification outside regular suites and CI. See the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md) for their evidence. These are new contracts, with no historical-path migration.
 
+### Streaming Process Foundation
+
+`test/cli-foundations/process/` owns incremental UTF-8 records, bounded metadata/queues/diagnostic tails, structured progress, direct argument handling, and registered child/consumer closure. Application fixtures exercise actual Node pipes and cooperative/resistant children; unit cases model unconfirmed closure and Windows force transitions. Generated media remains an explicitly invoked smoke task, separate from these process contracts.
+
 ### Global Helpers
 
 The shared helper files have the following responsibilities:
