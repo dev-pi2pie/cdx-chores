@@ -1,7 +1,7 @@
 import type { PreparedVideoFrames } from "../../actions/video-frames";
 import { displayPath } from "../../actions/shared";
 import type { CliRuntime } from "../../types";
-import { FrameNamer } from "../../video-frames/naming";
+import { FrameNamer, sourceStem, type FrameNamingSettings } from "../../video-frames/naming";
 import { describeFrameRequest, formatFrameTime, type FramePickerState } from "./selection";
 import { wrapPickerLine } from "./layout";
 import { frameQualityLabel } from "./settings-values";
@@ -10,6 +10,7 @@ export function frameReviewLines(
   runtime: CliRuntime,
   prepared: PreparedVideoFrames,
   picker?: FramePickerState,
+  naming?: FrameNamingSettings | "explicit",
 ): string[] {
   const { options } = prepared;
   const stream = prepared.resolver.state.metadata!;
@@ -24,6 +25,14 @@ export function frameReviewLines(
     `Destination: ${displayPath(runtime, prepared.destination.path)}`,
     `Overwrite: ${options.overwrite ? "replace conflicting images" : "preserve existing images"}`,
   ];
+  if (naming === "explicit") lines.push("Naming: Explicit filename");
+  else {
+    lines.push(`Stem: ${sourceStem(options.source)}`);
+    if (!options.cadence)
+      lines.push(
+        `Naming: ${new FrameNamer(options.mode, options.source, naming ?? options.naming).settings.template}`,
+      );
+  }
   if (picker) lines.push(`Requested: ${describeFrameRequest(picker.request)}`);
   if (options.cadence) {
     lines.push(
@@ -71,10 +80,11 @@ export function printFrameReview(
   runtime: CliRuntime,
   prepared: PreparedVideoFrames,
   picker?: FramePickerState,
+  naming?: FrameNamingSettings | "explicit",
 ) {
   const columns = (runtime.stdout as NodeJS.WriteStream).columns;
   const width = Number.isSafeInteger(columns) ? Math.max(1, columns - 1) : 79;
-  for (const line of frameReviewLines(runtime, prepared, picker))
+  for (const line of frameReviewLines(runtime, prepared, picker, naming))
     runtime.stdout.write(`${wrapPickerLine(line, width).join("\n")}\n`);
 }
 export function frameReviewTitle(prepared: PreparedVideoFrames): string {

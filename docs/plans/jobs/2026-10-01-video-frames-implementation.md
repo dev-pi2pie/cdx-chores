@@ -308,6 +308,8 @@ Managed unit verification passed **1,579 cases / 6,833 assertions** across 186 f
 
 The opt-in `scripts/spikes/video-frames-interactive.ts` prepares a 60-frame, 96 × 64 lossless synthetic source. Independent preflight checked every start, frame count and endpoint pixels. Built Node.js CLI walkthroughs exercised actual terminal keys and resizing; they did not play media. The presentation pass found and corrected four issues: short menus lost resolved details in scrollback; colored waves styled every character separately; review did not explicitly distinguish lossless/lossy quality; explicit-file errors belonged in the destination editor. The last correction also makes shared inline path validation show sanitized errors while keeping the draft editable. Direct, destination and Interactive checks reuse one filename-extension rule.
 
+Final review also identifies explicit filenames separately from generated naming, and shows the normalized stem and effective template for generated names. This preserves the distinction already made by the destination/naming prompts.
+
 | Walkthrough | Verified outcome |
 | --- | --- |
 | Full/compact/direct layouts | 100 × 32, 100 × 19, 28 × 8 and 80 × 19 terminals; wrapped long source/output labels and controls; essential menu details remained readable |

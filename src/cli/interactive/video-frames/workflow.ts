@@ -257,7 +257,12 @@ export async function handleVideoFramesInteractive(
             );
             if (!prepared) continue;
             reviewLoop: for (;;) {
-              printFrameReview(runtime, prepared, pickerState);
+              printFrameReview(
+                runtime,
+                prepared,
+                pickerState,
+                settings.destination.kind === "file" ? "explicit" : settings.naming,
+              );
               prompts.onReview?.(prepared);
               const decision = await prompts.choose(
                 io,
