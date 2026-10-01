@@ -26,6 +26,15 @@ export interface VideoStream {
   estimatedDurationMs?: FrameTime;
   fingerprint: string;
   eligibleStreams: number;
+  image?: ImageSourceMetadata;
+}
+export interface ImageSourceMetadata {
+  sampleAspectRatio?: string;
+  colorRange?: string;
+  colorSpace?: string;
+  colorPrimaries?: string;
+  colorTransfer?: string;
+  display: readonly { matrix?: string; rotation?: number }[];
 }
 export interface FrameRecord {
   streamIndex: number;

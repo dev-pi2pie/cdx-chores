@@ -14,7 +14,7 @@ Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation
 | 1 | Independent fixture expectations, smoke preparation, real terminal keys/resize, selection retention, fallbacks, prompt ownership/restoration | Completed |
 | 2 | Real-tool timing, stream agreement, encoder/filter feasibility, bounded writer topology, decoder guard, synthetic workload measurements | Completed |
 | 3 | Streaming records, exact identities, bounded cache, source invalidation, cancellation/child closure | Completed |
-| 4 | Verified pixels, alpha/transforms, safe publication, failure accounting, private processing smoke | Not started |
+| 4 | Verified pixels, alpha/transforms, safe publication, failure accounting, private processing smoke | In progress |
 | 5 | Sampling, retained repeats, destinations and concrete naming | Not started |
 | 6 | Direct command, validation, dependencies and doctor | Not started |
 | 7 | Guided Interactive flow and recovery | Not started |
@@ -146,6 +146,18 @@ Review of `2cc3c667..4437171d` found a P2 cancellation race: a child could close
 The complete implementation range `2cc3c66794a2e613cc2051de57188bb945d2ded5..9dae70de348dd5b82e95a8550bff4de057ffb5c8` passed code, test, and documentation review with no remaining actionable findings after the follow-up. Phase 3 is accepted on 2026-10-01; its plan tasks are checked. The plan remains active, the research remains in-progress, and this record remains open for Phases 4–8.
 
 Private processing smoke: **not tested**. Ignored synthetic artifacts are retained for local review; product encoding/publication and doctor projections remain later phases.
+
+## Phase 4
+
+Started from accepted Phase 3 tip `1165dd2b9755ae714b16c24de8142c5a6a9eb46d`. Implement the verified image configuration and a shared bounded exporter/publication boundary before sequence sampling. Phase 2 recipes remain independent smoke references. Production pixel, filesystem, failure, and private processing evidence is pending; no Phase 4 acceptance is claimed.
+
+### Image Configuration Checkpoint
+
+The shared configuration retains immutable aspect/color/display metadata, validates PNG/JPG/WebP quality and scale, and plans aspect correction before one orthogonal display transform and scaling. It preserves alpha on a separate plane and applies the 16,777,216-pixel guard to intermediate/displayed dimensions. Advertised encoder checks require exact inventory/help fields and explicit lossless WebP support; report integration remains Phase 6.
+
+Ten independent image-plan unit cases (65 assertions) and the existing metadata/resolver checks passed: 26 cases / 144 assertions together. TypeScript, repository lint/format, and diff checks passed. The explicit `scripts/spikes/video-frames-image-config.ts` Node smoke passed with FFmpeg/FFprobe 9.0.2: all JPG/WebP presets, exact PNG/lossless WebP bytes, exact alpha, and reflected 2:1-aspect MOV output at half scale. The combined nearest RGB resize has up to one level of arithmetic rounding against independently composed coordinates; PNG preserves the resulting pixels exactly. Saved PNG dimensions, square aspect, orientation reset, and BT.709/sRGB tags passed.
+
+The initial source conversion boundary is verified 8-bit RGB/YUV with BT.709 primaries and sRGB/BT.709 transfer; missing fields use disclosed explicit interpretations. Conflicting metadata, unsupported primaries/transfer/bit depth, or unsupported display transforms fail specifically. Expanded conversion/failure evidence and production export/private smoke remain pending. Synthetic review artifacts stay ignored/untracked.
 
 ## Related Research
 

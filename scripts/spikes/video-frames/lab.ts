@@ -15,7 +15,7 @@ export interface Experiment {
   images(count: number): void;
 }
 
-export async function createLab(phase: 2 | 3 = 2) {
+export async function createLab(phase: 2 | 3 | 4 | 5 = 2) {
   const run = await createSyntheticSmokeRun(phase);
   let activeMs = 0;
   let images = 0;

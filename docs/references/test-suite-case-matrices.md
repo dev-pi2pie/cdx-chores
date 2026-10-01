@@ -44,6 +44,8 @@ Use [Test Suite Audit Inventory](test-suite-audit-inventory.md) for the fixed pr
 
 `test/video/frames/` owns selected-stream metadata, checked exact timing, EOF/prefix identity resolution, fixed presets, bounded session reuse, and source/stream invalidation. Unit cases use independent records and injected inspection; application cases bundle the resolver for Node and use controlled executable responses. Their fixtures stay beside the consumer. Neither suite reads private media or requires installed FFmpeg.
 
+`image-plan.unit.test.ts` owns format/quality/scale policies, aspect/display geometry, color inference/rejection, transparency checks, and advertised image encoder interpretation. Actual encoded pixels and metadata require the explicit synthetic smoke checkpoint.
+
 ### Streaming Process Foundation
 
 `test/cli-foundations/process/` owns incremental UTF-8 records, bounded metadata/queues/diagnostic tails, structured progress, direct argument handling, and registered child/consumer closure. Application fixtures exercise actual Node pipes and cooperative/resistant children; unit cases model unconfirmed closure and Windows force transitions. Generated media remains an explicitly invoked smoke task, separate from these process contracts.

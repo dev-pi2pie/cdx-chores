@@ -123,7 +123,32 @@ export function parseMetadata(text: string): VideoStream {
         : undefined,
     fingerprint: JSON.stringify(selected),
     eligibleStreams: eligible.length,
+    image: Object.freeze({
+      sampleAspectRatio: optionalText(selected.sample_aspect_ratio),
+      colorRange: optionalText(selected.color_range),
+      colorSpace: optionalText(selected.color_space),
+      colorPrimaries: optionalText(selected.color_primaries),
+      colorTransfer: optionalText(selected.color_transfer),
+      display: Object.freeze(
+        Array.isArray(selected.side_data_list)
+          ? selected.side_data_list
+              .filter((side) => side?.side_data_type === "Display Matrix")
+              .map((side) =>
+                Object.freeze({
+                  matrix: optionalText(side.displaymatrix),
+                  rotation: typeof side.rotation === "number" ? side.rotation : undefined,
+                }),
+              )
+          : [],
+      ),
+    }),
   });
+}
+function optionalText(value: unknown): string | undefined {
+  if (value === undefined) return;
+  if (typeof value !== "string")
+    throw new CliError("Invalid image metadata field.", { code: "FRAME_METADATA_INVALID" });
+  return value;
 }
 export async function inspectVideo(
   operation: ProcessOperation,
