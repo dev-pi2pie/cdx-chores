@@ -9,7 +9,7 @@ import {
 import { imageOptions } from "./image-options";
 import { FrameNamer, type FrameNamingSettings } from "./naming";
 import { FrameResolver } from "./resolver";
-import { scanVideo } from "./scan";
+import { nextOrdinal, scanVideo } from "./scan";
 import { ForwardSampler } from "./sampler";
 import type { FrameTime } from "./types";
 export interface SequenceOptions extends Omit<ExportOptions, "folder"> {
@@ -57,9 +57,15 @@ export async function exportFrameSequence(
         ...(input.notices ?? []),
       ],
     },
-    async (emit, operation) => {
+    async (emit, operation, _options, reportActivity) => {
+      let ordinal = 0;
+      const sampling = () => reportActivity({ phase: "sampling", inspected: ordinal });
+      sampling();
       sampler = new ForwardSampler(binding.stream, cadence, {
-        emit,
+        emit: async (targets) => {
+          await emit(targets);
+          sampling();
+        },
         groupSize: input.groupSize,
         signal: operation.signal,
         name: (identity, index) =>
@@ -69,10 +75,16 @@ export async function exportFrameSequence(
         operation,
         binding.source.canonicalPath,
         binding.stream,
-        (frame) => sampler.record(frame),
+        async (frame) => {
+          ordinal = nextOrdinal(ordinal);
+          sampling();
+          await sampler.record(frame);
+        },
         input.ffprobe,
       );
+      reportActivity({ phase: "validating" });
       await revalidateBinding(binding, operation, input.ffprobe);
+      sampling();
       await sampler.finish(scan.cleanEof);
     },
   );

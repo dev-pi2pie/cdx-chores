@@ -14,6 +14,8 @@ for (const mode of [
   "encoder-failure",
   "source-changed",
   "cancel",
+  "finish-cancel",
+  "settlement-cancel",
   "duplicate",
   "duplicate-overwrite",
   "duplicate-case",

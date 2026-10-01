@@ -4,7 +4,10 @@ import { open, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { FrameResolver } from "../../../../src/cli/video-frames/resolver";
 import { exportFrameSequence } from "../../../../src/cli/video-frames/sequence";
-import { FrameExportError } from "../../../../src/cli/video-frames/export";
+import {
+  FrameExportError,
+  type FrameExportProgress,
+} from "../../../../src/cli/video-frames/export";
 const [mode, root, tool] = process.argv.slice(2) as [string, string, string];
 async function main() {
   process.env.CDX_FRAME_MODE = mode;
@@ -40,6 +43,7 @@ async function main() {
   let encoders = 0,
     decoders = 0,
     stages = 0;
+  const progress: FrameExportProgress[] = [];
   try {
     const result = await exportFrameSequence(new FrameResolver(source, { ffprobe: tool }), {
       interval: mode === "variable" ? "100ms" : mode === "oversized" ? "15m" : "40ms",
@@ -58,7 +62,9 @@ async function main() {
         else if (args.includes("rawvideo")) decoders++;
         return spawn(command, args, options);
       },
-      progress: ({ written }) => {
+      progress: (state) => {
+        progress.push(state);
+        const { written } = state;
         if (written === 2 && mode === "sequence-cancel") control.abort();
       },
       io:
@@ -81,6 +87,37 @@ async function main() {
     const expected =
       mode === "variable" ? [1, 2, 3, 3, 3, 4] : mode === "oversized" ? [1] : [1, 2, 3, 4];
     assert.equal(result.completed, true);
+    assert.equal(progress.at(-1)?.phase, "finishing");
+    assert.equal(progress.at(-1)?.written, result.written);
+    assert.equal(progress.at(-1)?.decoded, mode === "variable" ? 5 : expected.length);
+    assert.deepEqual(
+      progress
+        .filter((state) => state.phase === "validating" && state.inspected === 0)
+        .map((state) => state.inspectionTarget),
+      Array.from(
+        { length: Math.ceil(expected.length / 2) },
+        (_, group) => expected[Math.min(group * 2 + 1, expected.length - 1)],
+      ),
+    );
+    assert.deepEqual(
+      [
+        ...new Set(
+          progress.filter((state) => state.phase === "sampling").map((state) => state.inspected),
+        ),
+      ],
+      Array.from({ length: starts.length + 1 }, (_, ordinal) => ordinal),
+    );
+    const exporting = progress.filter((state) => state.phase === "exporting");
+    assert.equal(exporting.length > 0, true);
+    assert.ok(exporting.every((state) => state.inspected === undefined));
+    for (let i = 1; i < progress.length; i++) {
+      if (
+        progress[i]!.phase === "sampling" &&
+        progress[i - 1]!.phase === "validating" &&
+        progress[i - 1]!.written > 0
+      )
+        assert.ok(progress[i]!.inspected! > 0);
+    }
     assert.equal(result.written, expected.length);
     assert.equal(result.targets, expected.length);
     assert.equal(result.sourceFrames, starts.length);
@@ -110,6 +147,7 @@ async function main() {
   } catch (error) {
     assert.ok(error instanceof FrameExportError);
     assert.equal(error.result.completed, false);
+    assert.ok(progress.every((state) => state.phase !== "finishing"));
     assert.equal(error.result.repeatedSelections, undefined);
     assert.equal(error.result.closureConfirmed, true);
     assert.equal(error.result.stopFlow, false);
@@ -138,6 +176,16 @@ async function main() {
     if (mode !== "collision") assert.equal(entries.length, error.result.written);
     assert.equal(await readFile(source, "utf8"), "original source");
     console.log(JSON.stringify({ code: error.code, ...error.result }));
+  }
+  for (let i = 0; i < progress.length; i++) {
+    const state = progress[i]!;
+    assert.ok(!("completed" in state));
+    assert.ok(state.written >= (progress[i - 1]?.written ?? 0));
+    assert.ok(state.written <= (progress[i - 1]?.written ?? 0) + 1);
+    assert.ok(state.decoded >= (progress[i - 1]?.decoded ?? 0));
+    if (state.phase === "validating" && state.inspected !== undefined)
+      assert.ok(state.inspected <= state.inspectionTarget!);
+    else assert.equal(state.inspectionTarget, undefined);
   }
 }
 main().catch((error) => {

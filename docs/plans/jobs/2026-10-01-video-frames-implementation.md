@@ -367,6 +367,12 @@ Frames menus now use finite pagination, concise cadence labels and selected desc
 
 Controlled Node menu/picker checks passed **22 cases / 96 assertions**; settings/naming units passed **17 / 162**; affected shared prompt regressions passed **45 / 170**. Type, scoped lint/format and diff checks passed, and the menu changes had no actionable code-review findings. Workflow integration, native terminal rechecks and full Phase 8 acceptance remain pending.
 
+### Backend Progress Checkpoint
+
+Additive progress fields identify sampling, pass-local validation, extraction/export and finishing without changing existing written/decoded callback fields. Inspected records, selected pixel extractions and confirmed publications remain separate; scan targets reset between validation passes. Finishing is an activity state before disposal/settlement/cleanup, never proof of completion.
+
+Controlled Node export/sequence verification passed **32 cases / 160 assertions**, with a validation-target follow-up of **14 / 70**. The independent variable sequence records four inspected source frames, five selected extractions across groups and six confirmed images; a repeated selection records one extraction and three writes. Late source/timing/tool failures retain failure outcomes. Review also found cancellation during final cleanup could report completion after the operation detached its external signal; both immediate finishing and post-disposal cleanup cancellation now retain all confirmed images while returning incomplete/cancelled results. Type, scoped lint/format and diff checks passed. Presenter/native verification and phase acceptance remain pending.
+
 ## Related Research
 
 - [Video Frame Selection, Frame Sets, and Sequence Export](../../researches/research-2026-09-30-video-frames.md)

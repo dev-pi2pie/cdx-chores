@@ -25,6 +25,20 @@ export interface ImageTarget {
   identity: ResolvedFrame;
   name: string;
 }
+export interface FrameExportProgress {
+  written: number;
+  /** Selected raw frame extractions, including extraction again in a later group. */
+  decoded: number;
+  phase?: "sampling" | "validating" | "exporting" | "finishing";
+  /** Source records inspected in the current sampling or validation pass. */
+  inspected?: number;
+  /** Last requested source ordinal for a bounded selection validation pass. */
+  inspectionTarget?: number;
+}
+export type FrameExportActivity = Pick<
+  FrameExportProgress,
+  "phase" | "inspected" | "inspectionTarget"
+>;
 export interface ExportOptions {
   folder: string;
   image?: Parameters<typeof imageOptions>[0];
@@ -32,7 +46,7 @@ export interface ExportOptions {
   signal?: AbortSignal;
   ffmpeg?: string;
   ffprobe?: string;
-  progress?: (state: { written: number; decoded: number }) => void;
+  progress?: (state: FrameExportProgress) => void;
   /** Internal filesystem seam for controlled failure verification. */
   io?: Partial<PublicationIO>;
   /** Internal child-launch observation seam for bounded resource verification. */
@@ -122,6 +136,7 @@ async function validateGroup(
   operation: ProcessOperation,
   targets: readonly ImageTarget[],
   options: ImageOptions,
+  reportActivity: (activity: FrameExportActivity) => void,
   ffprobe?: string,
 ) {
   if (!targets.length || targets.length > EXPORT_GROUP_LIMIT)
@@ -150,12 +165,15 @@ async function validateGroup(
   }
   let ordinal = 0,
     selected = 0;
+  const inspectionTarget = targets[targets.length - 1]!.identity.frameNumber;
+  reportActivity({ phase: "validating", inspected: 0, inspectionTarget });
   await scanVideo(
     operation,
     binding.source.canonicalPath,
     binding.stream,
     (frame) => {
       ordinal = nextOrdinal(ordinal);
+      reportActivity({ phase: "validating", inspected: ordinal, inspectionTarget });
       while (targets[selected]?.identity.frameNumber === ordinal) {
         validateImageFrame(frame, binding, options);
         if (frame.startTicks !== targets[selected]!.identity.startTicks)
@@ -178,6 +196,7 @@ export async function exportImageGroups(
     emit: (targets: readonly ImageTarget[]) => Promise<void>,
     operation: ProcessOperation,
     options: ImageOptions,
+    reportActivity: (activity: FrameExportActivity) => void,
   ) => Promise<void>,
 ): Promise<ImageExportResult> {
   const options = imageOptions(input.image);
@@ -200,15 +219,21 @@ export async function exportImageGroups(
     notices: Object.freeze([...plan.notices, ...(input.notices ?? [])]),
     peaks: { files: 0, bytes: 0, rawFrames: 0, targets: 0 },
   };
-  const progress = () => input.progress?.({ written: session?.written ?? 0, decoded });
+  let activity: FrameExportActivity = {};
+  const progress = (next?: FrameExportActivity) => {
+    if (next) activity = next;
+    input.progress?.({ written: session?.written ?? 0, decoded, ...activity });
+  };
   try {
     operation.signal.throwIfAborted();
+    progress({ phase: "validating" });
     await revalidateBinding(binding, operation, input.ffprobe);
     requireImageEncoder(await inspectImageEncoders(operation, input.ffmpeg), options);
     await produce(
       async (targets) => {
         operation.signal.throwIfAborted();
-        await validateGroup(binding, operation, targets, options, input.ffprobe);
+        await validateGroup(binding, operation, targets, options, progress, input.ffprobe);
+        progress({ phase: "validating" });
         await revalidateBinding(binding, operation, input.ffprobe);
         if (targets[0]!.identity.frameNumber < previous)
           throw new CliError("Image groups must follow source order.", {
@@ -226,7 +251,7 @@ export async function exportImageGroups(
           overwrite: input.overwrite,
           signal: operation.signal,
           io: input.io,
-          onWritten: progress,
+          onWritten: () => progress(),
         });
         const unique = targets.filter(
           (target, index) =>
@@ -247,6 +272,7 @@ export async function exportImageGroups(
         const activeWriter = writer;
         const writtenBefore = session.written;
         let targetIndex = 0;
+        progress({ phase: "exporting" });
         const encoded = await operation.run(
           input.ffmpeg ?? "ffmpeg",
           [
@@ -360,12 +386,15 @@ export async function exportImageGroups(
           });
         result.peaks.files = Math.max(result.peaks.files, writer.peaks.files);
         result.peaks.bytes = Math.max(result.peaks.bytes, writer.peaks.bytes);
+        progress({ phase: "validating" });
         await revalidateBinding(binding, operation, input.ffprobe);
       },
       operation,
       options,
+      progress,
     );
     if (!session) throw new CliError("No images selected.", { code: "FRAME_EMPTY" });
+    progress({ phase: "finishing" });
   } catch (error) {
     failure = error;
     operation.cancel(error);
@@ -399,6 +428,10 @@ export async function exportImageGroups(
     }
     result.stopFlow = !result.closureConfirmed || cleanupFailed;
   }
+  if (!failure && (operation.signal.aborted || input.signal?.aborted))
+    failure = operation.signal.aborted
+      ? operation.signal.reason
+      : new CliError("Operation cancelled.", { code: "PROCESS_CANCELLED", exitCode: 130 });
   if (failure) throw new FrameExportError(failure, result);
   result.completed = true;
   result.repeatedSelections = repeats;
