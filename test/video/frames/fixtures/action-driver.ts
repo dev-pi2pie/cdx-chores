@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { chmod, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Writable } from "node:stream";
+import { stripVTControlCharacters } from "node:util";
 import { runCli } from "../../../../src/command";
 import {
   prepareVideoFrames,
@@ -43,8 +44,14 @@ async function main() {
       },
     }),
   };
-  const invoke = async (args: string[]) => {
+  const invoke = async (
+    args: string[],
+    presentation: { colorEnabled?: boolean; stdoutTTY?: boolean; absolute?: boolean } = {},
+  ) => {
     stdout = stderr = "";
+    runtime.colorEnabled = presentation.colorEnabled ?? false;
+    Object.assign(runtime.stdout, { isTTY: presentation.stdoutTTY ?? false });
+    runtime.displayPathStyle = presentation.absolute ? "absolute" : "relative";
     process.exitCode = undefined;
     await writeFile(log, "");
     await runCli(["node", "cli", "video", "frames", "-i", "source.bin", ...args], runtime);
@@ -72,12 +79,12 @@ async function main() {
   }
   const first = await invoke(["--first-frame"]);
   assert.equal(first.code, 0, first.stderr);
-  assert.match(first.stdout, /Wrote 1 image/);
+  assert.equal(first.stdout, "Wrote 1 image to\n  source-frame.png\nRepeated selections: 0\n");
   assert.deepEqual(first.calls.slice(0, 2), [["-version"], ["-version"]]);
   assert.equal(first.calls.filter((args) => args.includes("image2pipe")).length, 1);
   const set = await invoke(["--frame-set", "first-middle-last", "--format", "jpg", "-o", "set"]);
   assert.equal(set.code, 0, set.stderr);
-  assert.match(set.stdout, /Wrote 3 image/);
+  assert.equal(set.stdout, "Wrote 3 images to\n  set\nRepeated selections: 0\n");
   assert.deepEqual((await readdir(join(root, "set"))).sort(), [
     "source-first-frame.jpg",
     "source-last-frame.jpg",
@@ -110,6 +117,52 @@ async function main() {
   assert.equal(timestamp.code, 0, timestamp.stderr);
   const selected = await readFile(join(root, "at.png"));
   assert.equal(selected[selected.indexOf("IDAT") + 4], 3);
+  const colored = await invoke(["--first-frame", "-o", "colored path.png"], {
+    colorEnabled: true,
+    stdoutTTY: true,
+  });
+  assert.equal(colored.code, 0, colored.stderr);
+  assert.equal(
+    colored.stdout,
+    "Wrote 1 image to\n  \x1b[36mcolored path.png\x1b[39m\nRepeated selections: 0\n",
+  );
+  assert.equal(
+    stripVTControlCharacters(colored.stdout),
+    "Wrote 1 image to\n  colored path.png\nRepeated selections: 0\n",
+  );
+  for (const [name, flags, stdoutTTY] of [
+    ["redirected path.png", [], false],
+    ["flag path.png", ["--no-color"], true],
+  ] as const) {
+    const plain = await invoke(["--first-frame", "-o", name, ...flags], {
+      colorEnabled: true,
+      stdoutTTY,
+    });
+    assert.equal(plain.code, 0, plain.stderr);
+    assert.equal(plain.stdout, `Wrote 1 image to\n  ${name}\nRepeated selections: 0\n`);
+  }
+  const previousNoColor = process.env.NO_COLOR;
+  try {
+    process.env.NO_COLOR = "";
+    const plain = await invoke(["--first-frame", "-o", "environment path.png"], {
+      colorEnabled: true,
+      stdoutTTY: true,
+    });
+    assert.equal(plain.code, 0, plain.stderr);
+    assert.equal(
+      plain.stdout,
+      "Wrote 1 image to\n  environment path.png\nRepeated selections: 0\n",
+    );
+  } finally {
+    if (previousNoColor === undefined) delete process.env.NO_COLOR;
+    else process.env.NO_COLOR = previousNoColor;
+  }
+  const absolute = await invoke(["--first-frame", "-o", "absolute path.png"], { absolute: true });
+  assert.equal(absolute.code, 0, absolute.stderr);
+  assert.equal(
+    absolute.stdout,
+    `Wrote 1 image to\n  ${join(root, "absolute path.png")}\nRepeated selections: 0\n`,
+  );
   const prepared = await prepareVideoFrames(runtime, {
     input: "source.bin",
     frameNumber: "2",
@@ -126,7 +179,7 @@ async function main() {
   process.env.CDX_FRAME_MODE = "encoder-failure";
   const failure = await invoke(["--frame-set", "first-last", "-o", "partial"]);
   assert.notEqual(failure.code, 0);
-  assert.match(failure.stderr, /Export incomplete: 1 image/);
+  assert.match(failure.stderr, /Export incomplete: 1 image written to\n  partial\n/);
   assert.match(failure.stderr, /Controlled encoder failure/);
   assert.doesNotMatch(failure.stdout, /Wrote|Repeated selections/);
   process.env.CDX_FRAME_MODE = "normal";
@@ -191,6 +244,7 @@ async function main() {
       timestamp: true,
       review: true,
       partial: true,
+      presentation: true,
     }),
   );
 }

@@ -18,7 +18,7 @@ Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation
 | 5 | Sampling, retained repeats, destinations and concrete naming | Completed |
 | 6 | Direct command, validation, dependencies and doctor | Completed |
 | 7 | Guided Interactive flow, TUI review/polish, and recovery | Completed |
-| 8 | Output path presentation, selection menus and streaming progress UX refinement | Not started |
+| 8 | Output path presentation, selection menus and streaming progress UX refinement | In progress |
 | 9 | Full regression, explicit smoke, documentation and research closure evidence | Not started |
 
 ## Phase 1
@@ -352,6 +352,14 @@ Added [Phase 8: UX Review and Polish](../plan-2026-09-30-video-frames-implementa
 The previous final-validation Phase 8 moves intact to [Phase 9](../plan-2026-09-30-video-frames-implementation.md#phase-9-integrated-verification-and-documentation). Earlier acceptance entries use the numbering at their checkpoint; the current overview and plan use the revised numbering. Phases 1–7's accepted checklists and evidence are preserved. The plan stays active and this record/research stay in-progress. Public UX evidence uses synthetic content; private resource details and captures stay local under the existing smoke/privacy policy.
 
 Documentation review found no actionable findings. Accepted-phase/final-audit preservation, unchecked task states, lifecycle statuses, links/anchors, private-source exclusion and diff checks passed. This records planning verification; Phase 8 implementation and acceptance remain pending.
+
+## Phase 8
+
+Implementation begins from `3a9c891ccbba9a10935fae250ee8f5e41747d95b`. Output presentation, menu navigation and streaming progress have separate finding/fix/recheck checkpoints; complete-range review and terminal verification remain required before acceptance. Phase 9 stays pending and prior accepted checklists remain unchanged.
+
+### Output Path Checkpoint
+
+Completion and partial-output reporting now separate indented destinations/retained paths from plain count labels, use standard cyan only on eligible streams, and omit added periods. Image counts use natural plurals. The controlled Node action fixture passed, covering all export modes, relative/absolute paths with spaces, color/plain parity, redirected stdout, `--no-color`, empty `NO_COLOR`, partial results and interruption. Scoped lint/format and diff checks passed; native terminal verification and complete Phase 8 acceptance remain pending.
 
 ## Related Research
 

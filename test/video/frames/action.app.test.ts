@@ -44,6 +44,7 @@ test(
         timestamp: true,
         review: true,
         partial: true,
+        presentation: true,
       });
     }),
   35000,

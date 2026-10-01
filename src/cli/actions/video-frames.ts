@@ -1,4 +1,5 @@
 import { basename } from "node:path";
+import { getCliColors } from "../colors";
 import { requireCommandAvailable } from "../deps";
 import { CliError } from "../errors";
 import { ProcessOperation } from "../process/streaming";
@@ -15,6 +16,20 @@ import { FrameResolver } from "../video-frames/resolver";
 import { exportFrameSequence } from "../video-frames/sequence";
 import { displayPath, printLine } from "./shared";
 export type { VideoFramesOptions } from "../video-frames/options";
+
+function printFrameDestination(
+  runtime: CliRuntime,
+  stream: NodeJS.WritableStream,
+  message: string,
+  destination: string,
+): void {
+  printLine(stream, message);
+  printLine(stream, `  ${getCliColors(runtime, stream).cyan(displayPath(runtime, destination))}`);
+}
+
+function imageCount(count: number): string {
+  return `${count} ${count === 1 ? "image" : "images"}`;
+}
 
 export interface PreparedVideoFrames {
   options: ReturnType<typeof validateVideoFramesOptions>;
@@ -195,27 +210,35 @@ export async function executePreparedVideoFrames(
             ...common,
             mode: options.mode,
           });
-    printLine(
+    printFrameDestination(
+      runtime,
       runtime.stdout,
-      `Wrote ${result.written} image(s) to ${displayPath(runtime, result.destination)}.`,
+      `Wrote ${imageCount(result.written)} to`,
+      result.destination,
     );
-    printLine(runtime.stdout, `Repeated selections: ${result.repeatedSelections ?? 0}.`);
+    printLine(runtime.stdout, `Repeated selections: ${result.repeatedSelections ?? 0}`);
     return result;
   } catch (error) {
     if (error instanceof FrameExportError) {
-      printLine(
+      printFrameDestination(
+        runtime,
         runtime.stderr,
-        `Export incomplete: ${error.result.written} image(s) written to ${displayPath(runtime, error.result.destination)}.`,
+        `Export incomplete: ${imageCount(error.result.written)} written to`,
+        error.result.destination,
       );
       if (error.result.incomplete)
-        printLine(
+        printFrameDestination(
+          runtime,
           runtime.stderr,
-          `Incomplete output retained: ${displayPath(runtime, error.result.incomplete)}.`,
+          "Incomplete output retained:",
+          error.result.incomplete,
         );
       if (error.result.retainedStaging)
-        printLine(
+        printFrameDestination(
+          runtime,
           runtime.stderr,
-          `Staging retained: ${displayPath(runtime, error.result.retainedStaging)}.`,
+          "Staging retained:",
+          error.result.retainedStaging,
         );
     }
     throw error;
