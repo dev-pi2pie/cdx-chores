@@ -6,7 +6,7 @@ import { referenceFrame, referenceFrames } from "./video-frames/pattern";
 import { GENERATE_RAW, STRICT_INPUT } from "./video-frames/timing-evidence";
 import { FFMPEG, FFPROBE } from "./video-frames/tools";
 async function main() {
-  const lab = await createLab(7);
+  const lab = await createLab(process.argv.includes("--ux") ? 8 : 7);
   try {
     await lab.check("terminal", 150, 8 * 1024 * 1024, async (e) => {
       const source = join(e.path, "synthetic-terminal.mov");

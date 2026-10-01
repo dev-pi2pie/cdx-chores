@@ -62,6 +62,8 @@ Use [Test Suite Audit Inventory](test-suite-audit-inventory.md) for the fixed pr
 
 `test/video/frames/options.unit.test.ts` owns shared direct option validation. `action.app.test.ts` owns the Node command/action boundary with controlled tools, pre-write review, retained identities, all export modes, dependency preflight, and partial failures. Command UX cases cover discovery and repeated cadence rejection. These new contracts introduce no historical test-path migration.
 
+`test/video/frames/progress.unit.test.ts` owns presentation throttling, distinct counts/estimates, quiet activity, measured resize, stopping and renderer release. The action owner also checks result-path layout and per-stream color eligibility. Export/sequence owners check pass-local inspection, selected extractions, confirmed publications and cancellation during finishing/cleanup. The Interactive operation owner checks input ownership through late acknowledgement and fatal closure precedence.
+
 `test/doctor/actions/video-frames.unit.test.ts` owns the FFmpeg/FFprobe availability matrix, exact advertised encoder/input/lossless assessments, unknown successful output, operational failure, and consistent Summary/Details/JSON projections. Controlled dependency/report fixtures preserve existing video capability meanings.
 
 ### Streaming Process Foundation

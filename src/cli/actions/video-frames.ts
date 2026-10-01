@@ -15,6 +15,7 @@ import { validateVideoFramesOptions, type VideoFramesOptions } from "../video-fr
 import { FrameResolver } from "../video-frames/resolver";
 import { exportFrameSequence } from "../video-frames/sequence";
 import { displayPath, printLine } from "./shared";
+import { createFrameProgressPresenter, type FrameProgressPresenter } from "./video-frames-progress";
 export type { VideoFramesOptions } from "../video-frames/options";
 
 function printFrameDestination(
@@ -78,126 +79,153 @@ export async function prepareVideoFrames(
     resolver?: FrameResolver;
     selections?: readonly ImageSelection[];
     signal?: AbortSignal;
+    presenter?: FrameProgressPresenter;
   } = {},
 ): Promise<PreparedVideoFrames> {
   const options = validateVideoFramesOptions(input, runtime.cwd);
   context.signal?.throwIfAborted();
-  requireImageEncoder(await inspectVideoFramesTools(runtime, context.signal), options.image);
-  const resolver =
-    context.resolver ??
-    new FrameResolver(options.source, {
-      progress: (frames) =>
-        printLine(runtime.stderr, `Scanning: ${frames} source frames inspected.`),
+  const presenter =
+    context.presenter ??
+    createFrameProgressPresenter(runtime.stderr, {
+      label: "Inspecting video",
+      colorEnabled: runtime.colorEnabled,
     });
-  const selections: readonly ImageSelection[] =
-    options.mode === "sequence"
-      ? []
-      : (context.selections ??
-        (options.mode === "set"
-          ? await resolver.resolveSet(options.preset!, context.signal)
-          : [
-              {
-                identity: await resolver.resolve(options.request!, context.signal),
-                selection:
-                  options.request!.kind === "first"
-                    ? "first"
-                    : options.request!.kind === "last"
-                      ? "last"
-                      : "custom",
-              },
-            ]));
-  const binding =
-    options.mode === "sequence"
-      ? await resolver.prepareSequence(context.signal)
-      : await resolver.prepareExport(
-          selections.map((selection) => selection.identity),
-          context.signal,
-        );
-  const plan = imagePlan(binding.stream, options.image);
-  const namer = new FrameNamer(options.mode, options.source, options.naming);
-  const generatedNames = selections.map((selection) =>
-    namer.name({
-      frameNumber: selection.identity.frameNumber,
+  const stopping = () => presenter.stopping();
+  context.signal?.addEventListener("abort", stopping, { once: true });
+  try {
+    presenter.update({ phase: "inspecting" });
+    requireImageEncoder(await inspectVideoFramesTools(runtime, context.signal), options.image);
+    const resolver =
+      context.resolver ??
+      new FrameResolver(options.source, {
+        progress: (frames) =>
+          presenter.update({
+            phase: "scanning",
+            inspected: frames,
+            inspectionTarget:
+              options.request?.kind === "frame" ? options.request.frameNumber : undefined,
+          }),
+      });
+    const selections: readonly ImageSelection[] =
+      options.mode === "sequence"
+        ? []
+        : (context.selections ??
+          (options.mode === "set"
+            ? await resolver.resolveSet(options.preset!, context.signal)
+            : [
+                {
+                  identity: await resolver.resolve(options.request!, context.signal),
+                  selection:
+                    options.request!.kind === "first"
+                      ? "first"
+                      : options.request!.kind === "last"
+                        ? "last"
+                        : "custom",
+                },
+              ]));
+    presenter.update({ phase: "validating" });
+    const binding =
+      options.mode === "sequence"
+        ? await resolver.prepareSequence(context.signal)
+        : await resolver.prepareExport(
+            selections.map((selection) => selection.identity),
+            context.signal,
+          );
+    const plan = imagePlan(binding.stream, options.image);
+    const namer = new FrameNamer(options.mode, options.source, options.naming);
+    const generatedNames = selections.map((selection) =>
+      namer.name({
+        frameNumber: selection.identity.frameNumber,
+        format: options.image.format,
+        selection: selection.selection,
+      }),
+    );
+    const destination = await frameDestination({
+      mode: options.mode,
+      source: options.source,
       format: options.image.format,
-      selection: selection.selection,
-    }),
-  );
-  const destination = await frameDestination({
-    mode: options.mode,
-    source: options.source,
-    format: options.image.format,
-    output: options.output,
-    singleName: generatedNames[0],
-    cwd: runtime.cwd,
-  });
-  const estimatedCount = options.cadence
-    ? expectedSequenceCount(
-        options.cadence,
-        resolver.state.endMs ?? binding.stream.estimatedDurationMs,
-      )
-    : undefined;
-  const notices = [...plan.notices];
-  if (binding.stream.eligibleStreams > 1)
-    notices.push(`Using video stream ${binding.stream.index} (${binding.stream.codec}).`);
-  if (options.mode === "sequence") {
-    notices.push(
-      "Sampling positions may select the same source frame; each position still exports an image.",
-    );
-    notices.push(
-      estimatedCount === undefined
-        ? "Estimated image count is unavailable."
-        : `Expected image count: ${estimatedCount} (duration-based estimate).`,
-    );
-    if (estimatedCount === 1n)
-      notices.push("The cadence selects one image for the estimated duration.");
-  } else {
-    const repeated =
-      selections.length -
-      new Set(selections.map((selection) => selection.identity.frameNumber)).size;
-    if (repeated) notices.push(`The frame set retains ${repeated} repeated selection(s).`);
+      output: options.output,
+      singleName: generatedNames[0],
+      cwd: runtime.cwd,
+    });
+    const estimatedCount = options.cadence
+      ? expectedSequenceCount(
+          options.cadence,
+          resolver.state.endMs ?? binding.stream.estimatedDurationMs,
+        )
+      : undefined;
+    const notices = [...plan.notices];
+    if (binding.stream.eligibleStreams > 1)
+      notices.push(`Using video stream ${binding.stream.index} (${binding.stream.codec}).`);
+    if (options.mode === "sequence") {
+      notices.push(
+        "Sampling positions may select the same source frame; each position still exports an image.",
+      );
+      notices.push(
+        estimatedCount === undefined
+          ? "Estimated image count is unavailable."
+          : `Expected image count: ${estimatedCount} (duration-based estimate).`,
+      );
+      if (estimatedCount === 1n)
+        notices.push("The cadence selects one image for the estimated duration.");
+    } else {
+      const repeated =
+        selections.length -
+        new Set(selections.map((selection) => selection.identity.frameNumber)).size;
+      if (repeated) notices.push(`The frame set retains ${repeated} repeated selection(s).`);
+    }
+    if (destination.kind === "folder" && destination.nonempty)
+      notices.push(
+        "Output folder is nonempty; only requested targets are written and older files can remain. Use a fresh folder for a clean export.",
+      );
+    return {
+      options,
+      resolver,
+      selections,
+      destination,
+      names: destination.kind === "file" ? [basename(destination.path)] : generatedNames,
+      plan,
+      estimatedCount,
+      notices,
+    };
+  } finally {
+    context.signal?.removeEventListener("abort", stopping);
+    if (!context.presenter) presenter.stop();
   }
-  if (destination.kind === "folder" && destination.nonempty)
-    notices.push(
-      "Output folder is nonempty; only requested targets are written and older files can remain. Use a fresh folder for a clean export.",
-    );
-  return {
-    options,
-    resolver,
-    selections,
-    destination,
-    names: destination.kind === "file" ? [basename(destination.path)] : generatedNames,
-    plan,
-    estimatedCount,
-    notices,
-  };
 }
 export async function executePreparedVideoFrames(
   runtime: CliRuntime,
   prepared: PreparedVideoFrames,
   signal?: AbortSignal,
+  presentation?: FrameProgressPresenter,
 ): Promise<ImageExportResult> {
   const { options } = prepared;
-  for (const notice of prepared.notices) printLine(runtime.stderr, `Tip: ${notice}`);
-  printLine(runtime.stderr, "Exporting frame images...");
-  let last = -Infinity;
-  const progress = (state: { written: number; decoded: number }) => {
-    if (Date.now() - last >= 250) {
-      last = Date.now();
-      printLine(
-        runtime.stderr,
-        `Exporting: ${state.written} images written, ${state.decoded} source frames decoded.`,
-      );
-    }
-  };
-  const common = {
-    image: options.image,
-    output: options.output,
-    naming: options.naming,
-    overwrite: options.overwrite,
-    signal,
-    progress,
-  };
+  const presenter =
+    presentation ??
+    createFrameProgressPresenter(runtime.stderr, {
+      label: "Validating frames",
+      colorEnabled: runtime.colorEnabled,
+    });
+  const stopping = () => presenter.stopping();
+  signal?.addEventListener("abort", stopping, { once: true });
   try {
+    presenter.pause();
+    for (const notice of prepared.notices) printLine(runtime.stderr, `Tip: ${notice}`);
+    presenter.update({
+      phase: "validating",
+      written: 0,
+      total:
+        options.mode === "sequence" ? prepared.estimatedCount : BigInt(prepared.selections.length),
+      totalIsEstimate: options.mode === "sequence",
+    });
+    const common = {
+      image: options.image,
+      output: options.output,
+      naming: options.naming,
+      overwrite: options.overwrite,
+      signal,
+      progress: presenter.update,
+    };
     const result =
       options.mode === "sequence"
         ? await exportFrameSequence(prepared.resolver, {
@@ -210,6 +238,7 @@ export async function executePreparedVideoFrames(
             ...common,
             mode: options.mode,
           });
+    presenter.stop();
     printFrameDestination(
       runtime,
       runtime.stdout,
@@ -219,6 +248,7 @@ export async function executePreparedVideoFrames(
     printLine(runtime.stdout, `Repeated selections: ${result.repeatedSelections ?? 0}`);
     return result;
   } catch (error) {
+    presenter.stop();
     if (error instanceof FrameExportError) {
       printFrameDestination(
         runtime,
@@ -242,6 +272,9 @@ export async function executePreparedVideoFrames(
         );
     }
     throw error;
+  } finally {
+    signal?.removeEventListener("abort", stopping);
+    presenter.stop();
   }
 }
 export async function withVideoFramesSignal<T>(
@@ -269,11 +302,21 @@ export async function actionVideoFrames(
   runtime: CliRuntime,
   options: VideoFramesOptions,
 ): Promise<ImageExportResult> {
-  return withVideoFramesSignal(async (signal) =>
-    executePreparedVideoFrames(
-      runtime,
-      await prepareVideoFrames(runtime, options, { signal }),
-      signal,
-    ),
-  );
+  validateVideoFramesOptions(options, runtime.cwd);
+  return withVideoFramesSignal(async (signal) => {
+    const presenter = createFrameProgressPresenter(runtime.stderr, {
+      label: "Inspecting video",
+      colorEnabled: runtime.colorEnabled,
+    });
+    try {
+      return await executePreparedVideoFrames(
+        runtime,
+        await prepareVideoFrames(runtime, options, { signal, presenter }),
+        signal,
+        presenter,
+      );
+    } finally {
+      presenter.stop();
+    }
+  });
 }

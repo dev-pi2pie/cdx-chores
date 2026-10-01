@@ -60,3 +60,45 @@ test("closure failure survives local Escape and never becomes a recoverable canc
   expect(streams.actualInput.isRaw).toBe(false);
   expect(streams.actualInput.listenerCount("keypress")).toBe(0);
 });
+
+test("Escape holds ownership through a late successful acknowledgement and suppresses stale success", async () => {
+  const streams = io();
+  let signal: AbortSignal | undefined;
+  let acknowledge!: () => void;
+  const task = runFrameWork(streams, "Scanning", (ownedSignal) => {
+    signal = ownedSignal;
+    return new Promise<string>((resolve) => {
+      acknowledge = () => resolve("late result");
+    });
+  });
+  streams.actualInput.write("\x1b");
+  const deadline = Date.now() + 2000;
+  while (!signal?.aborted) {
+    if (Date.now() > deadline) throw new Error("Escape did not reach the operation");
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  expect(streams.actualInput.isRaw).toBe(true);
+  streams.actualInput.write("\x1b");
+  acknowledge();
+  expect(await task).toBeUndefined();
+  expect(streams.actualInput.isRaw).toBe(false);
+  expect(streams.actualInput.listenerCount("keypress")).toBe(0);
+  expect(streams.output.listenerCount("resize")).toBe(0);
+});
+
+test("redirected Interactive progress uses plain stderr while the prompt keeps stdout", async () => {
+  const streams = io();
+  const progressOutput = new PassThrough();
+  let progress = "",
+    prompts = "";
+  progressOutput.on("data", (chunk) => (progress += String(chunk)));
+  streams.output.on("data", (chunk) => (prompts += String(chunk)));
+  expect(
+    await runFrameWork({ ...streams, progressOutput }, "Inspecting video", async () => "ready"),
+  ).toBe("ready");
+  expect(progress).toContain("Inspecting video | Elapsed");
+  expect(progress).not.toContain("\x1b");
+  expect(prompts).not.toContain("Inspecting video");
+  expect(streams.actualInput.isRaw).toBe(false);
+  expect(streams.actualInput.listenerCount("keypress")).toBe(0);
+});

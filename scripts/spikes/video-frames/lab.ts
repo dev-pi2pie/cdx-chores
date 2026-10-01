@@ -15,7 +15,7 @@ export interface Experiment {
   images(count: number): void;
 }
 
-export async function createLab(phase: 2 | 3 | 4 | 5 | 6 | 7 = 2) {
+export async function createLab(phase: 2 | 3 | 4 | 5 | 6 | 7 | 8 = 2) {
   const run = await createSyntheticSmokeRun(phase);
   const scratchRoot = dirname(dirname(run.path)); // Includes retained synthetic and private outputs.
   let activeMs = 0;

@@ -6,6 +6,7 @@ import {
   withVideoFramesSignal,
 } from "../../actions/video-frames";
 import { displayPath } from "../../actions/shared";
+import type { FrameProgressPresenter } from "../../actions/video-frames-progress";
 import { CliError } from "../../errors";
 import type { CliRuntime } from "../../types";
 import { FrameNamer } from "../../video-frames/naming";
@@ -61,6 +62,7 @@ export async function handleVideoFramesInteractive(
     const io = {
       input: runtime.stdin,
       output: runtime.stdout,
+      progressOutput: runtime.stderr,
       signal,
       simple: pathContext.runtimeConfig.mode === "simple",
       colorEnabled: runtime.colorEnabled,
@@ -74,7 +76,10 @@ export async function handleVideoFramesInteractive(
         const resolver = new FrameResolver(source, {
           progress: (frames) => scanProgress?.(frames),
         });
-        const work = async <T>(label: string, body: (signal: AbortSignal) => Promise<T>) => {
+        const work = async <T>(
+          label: string,
+          body: (signal: AbortSignal, presenter: FrameProgressPresenter) => Promise<T>,
+        ) => {
           try {
             return await runFrameWork(io, label, body, (update) => {
               scanProgress = update;
@@ -117,28 +122,34 @@ export async function handleVideoFramesInteractive(
         let selector: Partial<VideoFramesOptions> = {};
         let pickerState: FramePickerState | undefined;
         let settings: FrameImageSettings | undefined;
+        let cadenceChoice: { fps?: string; interval?: string } | undefined;
+        let presetChoice: FrameSetPreset | undefined;
         let stage: "selection" | "settings" = "selection";
         for (;;) {
           try {
             if (stage === "selection") {
-              const selectedMode = await prompts.choose(
-                io,
-                "Frames to export",
-                [
-                  { name: "One frame", value: "single" },
-                  { name: "Frame set", value: "set" },
-                  { name: "Sequence (whole video)", value: "sequence" },
-                  { name: "Back to source", value: "source" },
-                  { name: "Cancel", value: "cancel" },
-                ],
-                "source",
-              );
+              const selectedMode: "single" | "set" | "sequence" | "source" | "cancel" =
+                await prompts.choose(
+                  io,
+                  "Frames to export",
+                  [
+                    { name: "One frame", value: "single" },
+                    { name: "Frame set", value: "set" },
+                    { name: "Sequence (whole video)", value: "sequence" },
+                    { name: "Back to source", value: "source" },
+                    { name: "Cancel", value: "cancel" },
+                  ],
+                  "source",
+                  mode,
+                );
               if (selectedMode === "source") continue sourceLoop;
               if (selectedMode === "cancel") return;
               if (selectedMode !== mode) {
                 settings = undefined;
                 selections = undefined;
                 selector = {};
+                cadenceChoice = undefined;
+                presetChoice = undefined;
               }
               mode = selectedMode;
               if (mode === "single") {
@@ -152,6 +163,7 @@ export async function handleVideoFramesInteractive(
                     { name: "Back", value: "back" },
                   ],
                   "back",
+                  pickerState ? "custom" : selector.lastFrame ? "last" : "first",
                 );
                 if (method === "back") continue;
                 if (method === "custom") {
@@ -191,8 +203,9 @@ export async function handleVideoFramesInteractive(
                   pickerState = undefined;
                 }
               } else if (mode === "set") {
-                const preset = await prompts.preset(io);
+                const preset = await prompts.preset(io, presetChoice);
                 if (!preset) continue;
+                presetChoice = preset;
                 const roles = await work("Resolving frame set", (taskSignal) =>
                   resolver.resolveSet(preset as FrameSetPreset, taskSignal),
                 );
@@ -204,8 +217,10 @@ export async function handleVideoFramesInteractive(
                 const cadence = await prompts.cadence(
                   io,
                   resolver.state.endMs ?? resolver.state.metadata?.estimatedDurationMs,
+                  cadenceChoice,
                 );
                 if (!cadence) continue;
+                cadenceChoice = cadence;
                 selector = cadence;
                 selections = undefined;
                 pickerState = undefined;
@@ -234,7 +249,7 @@ export async function handleVideoFramesInteractive(
                 name,
               );
             }
-            const prepared = await work("Preparing export review", (taskSignal) =>
+            const prepared = await work("Preparing export review", (taskSignal, presenter) =>
               prepareVideoFrames(
                 runtime,
                 {
@@ -253,7 +268,7 @@ export async function handleVideoFramesInteractive(
                         serialWidth: settings!.naming?.serialWidth,
                       }),
                 },
-                { resolver, selections, signal: taskSignal },
+                { resolver, selections, signal: taskSignal, presenter },
               ),
             );
             if (!prepared) continue;
@@ -283,8 +298,8 @@ export async function handleVideoFramesInteractive(
                 stage = decision;
                 break reviewLoop;
               }
-              const result = await work("Exporting images", (taskSignal) =>
-                executePreparedVideoFrames(runtime, prepared, taskSignal),
+              const result = await work("Exporting images", (taskSignal, presenter) =>
+                executePreparedVideoFrames(runtime, prepared, taskSignal, presenter),
               );
               if (result) return;
             }
