@@ -383,6 +383,10 @@ Seven built Node.js terminal walkthroughs passed on macOS with Node 26.5.0: sequ
 
 The `--ux` development entry reuses the existing smoke lab and budgets. Ignored synthetic inputs, outputs and terminal captures remain available for local review. No private resource was used for this checkpoint. Minimum-supported Node, other platforms and heavy real-content behavior were not newly tested; earlier declared support gaps remain. Complete-range review and Phase 8 acceptance are still pending.
 
+### Review Follow-Up
+
+Complete-range review `3a9c891ccbba9a10935fae250ee8f5e41747d95b..e29955773f11b0f4cb63c6e1b2c4f10d3cc6dd1e` found no actionable correctness, maintainability, security or documentation issues. Test review identified missing action-boundary evidence for live renderer cleanup after encoder failure. The existing controlled Node action fixture now checks clearing before the partial/error report, released resize listeners, no further timer/resize writes, and an intact subsequent prompt. That fixture passed **1 case / 6 assertions**; the other nine focused cases also passed. Type, lint, format and diff checks passed. No production change or native rerun is needed for this coverage follow-up; expanded-range review remains required.
+
 ## Related Research
 
 - [Video Frame Selection, Frame Sets, and Sequence Export](../../researches/research-2026-09-30-video-frames.md)

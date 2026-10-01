@@ -45,6 +45,7 @@ test(
         review: true,
         partial: true,
         presentation: true,
+        failureRestoration: true,
       });
     }),
   35000,

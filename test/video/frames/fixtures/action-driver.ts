@@ -46,11 +46,21 @@ async function main() {
   };
   const invoke = async (
     args: string[],
-    presentation: { colorEnabled?: boolean; stdoutTTY?: boolean; absolute?: boolean } = {},
+    presentation: {
+      colorEnabled?: boolean;
+      stdoutTTY?: boolean;
+      stderrTTY?: boolean;
+      absolute?: boolean;
+    } = {},
   ) => {
     stdout = stderr = "";
     runtime.colorEnabled = presentation.colorEnabled ?? false;
     Object.assign(runtime.stdout, { isTTY: presentation.stdoutTTY ?? false });
+    Object.assign(runtime.stderr, {
+      isTTY: presentation.stderrTTY ?? false,
+      columns: 80,
+      rows: 24,
+    });
     runtime.displayPathStyle = presentation.absolute ? "absolute" : "relative";
     process.exitCode = undefined;
     await writeFile(log, "");
@@ -177,11 +187,23 @@ async function main() {
   assert.equal(changed.selections[0]!.identity, prepared.selections[0]!.identity);
   await executePreparedVideoFrames(runtime, changed);
   process.env.CDX_FRAME_MODE = "encoder-failure";
-  const failure = await invoke(["--frame-set", "first-last", "-o", "partial"]);
+  const failure = await invoke(["--frame-set", "first-last", "-o", "partial"], {
+    stderrTTY: true,
+  });
   assert.notEqual(failure.code, 0);
   assert.match(failure.stderr, /Export incomplete: 1 image written to\n  partial\n/);
   assert.match(failure.stderr, /Controlled encoder failure/);
   assert.doesNotMatch(failure.stdout, /Wrote|Repeated selections/);
+  assert(failure.stderr.includes("\x1b[2K"));
+  const reportPosition = failure.stderr.indexOf("Export incomplete:");
+  assert.notEqual(reportPosition, -1);
+  assert(!failure.stderr.slice(reportPosition).includes("\x1b"));
+  assert.equal(runtime.stderr.listenerCount("resize"), 0);
+  runtime.stdout.write("Next prompt\n");
+  const settled = { stdout, stderr };
+  runtime.stderr.emit("resize");
+  await new Promise((resolve) => setTimeout(resolve, 650));
+  assert.deepEqual({ stdout, stderr }, settled);
   process.env.CDX_FRAME_MODE = "normal";
   const interruptWhen = async (args: string[], ready: () => Promise<boolean>) => {
     let checking = false;
@@ -245,6 +267,7 @@ async function main() {
       review: true,
       partial: true,
       presentation: true,
+      failureRestoration: true,
     }),
   );
 }
