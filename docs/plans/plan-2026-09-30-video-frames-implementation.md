@@ -8,9 +8,9 @@ agent: codex
 
 ## Goal and Planning Boundary
 
-Implement `cdx-chores video frames` for one exact source frame, a fixed frame set, or a whole-video sequence of PNG, JPG, or still WebP images. Deliver the direct CLI and guided Interactive flow without changing convert, resize, or GIF behavior.
+Implement `cdx-chores video frames` for one exact source frame, a fixed frame set, or a whole-video sequence of PNG, JPG, or still WebP images. Deliver the direct CLI and guided Interactive flow while preserving convert, resize and GIF processing behavior. The Phase 8 follow-up also aligns GIF output presentation.
 
-Phases 1–8 are complete. The accepted checkpoints cover terminal prototypes, real-tool feasibility, exact resolution, verified backend image export, exact sequence sampling, destinations/naming, private processing smoke, direct CLI/doctor integration, the guided Interactive flow, and output/menu/progress UX refinement. Phase 9's integrated verification, documentation and research closure remain pending. See the [unified execution record](jobs/2026-10-01-video-frames-implementation.md) for evidence and complete-range checkpoint reviews.
+Phases 1–7 and the original Phase 8 checkpoint are complete. The accepted checkpoints cover terminal prototypes, real-tool feasibility, exact resolution, verified backend image export, exact sequence sampling, destinations/naming, private processing smoke, direct CLI/doctor integration, the guided Interactive flow, and output/menu/progress UX refinement. Phase 8's output information follow-up and Phase 9's integrated verification, documentation and research closure remain pending. See the [unified execution record](jobs/2026-10-01-video-frames-implementation.md) for evidence and complete-range checkpoint reviews.
 
 The research owns selection, sampling, terminal, image, and output semantics. This plan owns implementation order, acceptance checkpoints, development-test cost, and evidence handling. Runtime support claims require recorded results. Implement prototypes and verification support in TypeScript/JavaScript, using Bun for development and Node.js for runtime checks.
 
@@ -272,7 +272,21 @@ Use the existing smoke workspace, privacy/retention policy and development budge
 
 Checkpoint: the three UX directions have recorded fixes and affected rechecks; paths, menu navigation and live progress remain readable and accurate through completion, cancellation and failure. All Phase 8 tasks and the complete-range review must pass before Phase 9 begins.
 
-Phase 8 is accepted. Finding/fix/recheck evidence, controlled regression results, built Node.js terminal checks and complete-range review are recorded in the [Phase 8 checkpoint](jobs/2026-10-01-video-frames-implementation.md#phase-8).
+The original Phase 8 checkpoint is accepted. Finding/fix/recheck evidence, controlled regression results, built Node.js terminal checks and complete-range review are recorded in the [Phase 8 checkpoint](jobs/2026-10-01-video-frames-implementation.md#phase-8). The follow-up below remains pending.
+
+### Follow-Up: Prompt and Output Information
+
+Implement the research's [output information consistency findings and presentation rules](../researches/research-2026-09-30-video-frames.md#output-information-consistency) across frames and the relevant GIF output surfaces. This checklist owns implementation and acceptance. Preserve the six accepted tasks above and their evidence. Accept this follow-up before Phase 9 begins. GIF changes concern presentation. Preserve its processing modes, option semantics and destination rules.
+
+- [ ] Use the exact `Use default output` choice label in frames and GIF. Show the highlighted choice's mode-specific location hint below the choices: `Image beside the source`, `Frames folder beside the source` or `GIF file beside the source`. Keep this generic hint free of filenames/paths. Verify active and accepted prompt states with the installed prompt library, including narrow layouts; cover other callers if the shared output-choice helper changes.
+- [ ] Show compact image estimates beside interval presets, with natural plurals and consistent detail placement. Cover ordinary, matching/exceeding-duration and unavailable estimates, plus valid/invalid custom input. Keep estimate qualifications and controls visible through narrow layouts/resize; padding and wrapping must preserve the count.
+- [ ] Reveal the effective default/current naming combination: template, source stem, selected extension, applicable sequence start/minimum width and resulting filename examples. Refresh examples after relevant settings change using the shared naming rules. Keep unresolved source-frame values explicit and preserve explicit-file naming bypass and draft retention.
+- [ ] Revalidate retained explicit output filenames when format changes. An incompatible extension must return to the destination editor with its draft retained before export review. Keep user-entered filenames literal and require a valid extension for the selected format.
+- [ ] Make frames export review and GIF completion reporting follow the accepted path/color layout. Put actual destination paths on separate indented lines and keep filenames readable apart from frame details. Show quality and estimated counts once in frames review; retain the direct CLI's pre-export estimate notice. Use precise collision wording (`Stop on filename conflict` / `Replace matching images`) and preserve existing/nonempty-folder disclosures, partial/retained-output accounting, stream routing and color/plain equivalence. Cover both GIF conversion modes.
+- [ ] Surface the existing destination-volume inspection in frames review and direct pre-export diagnostics: readable available space when known, or `Available space unknown`. Keep it advisory and reuse the research's resource policy; an unavailable inspection continues normally.
+- [ ] Verify the follow-up with affected controlled Node prompt/naming/output/GIF checks, required type/lint/format/build checks and focused built Node.js terminal walkthroughs using small synthetic content. Cover retained-file format changes, count/boundary wording, changing naming inputs, known/unknown space, GIF default/custom choices and both completion paths, color/plain/redirected output, resize and Back/Escape retention without decoding on navigation. Recheck shared-helper consumers where affected. Record finding/fix/recheck evidence and review the complete follow-up change range before acceptance, using the existing smoke/privacy/retention policy and budgets.
+
+Follow-up checkpoint: frames and GIF output information follows consistent labels, hint placement and path layout; frames estimates, naming, collision/space information and retained filenames are accurate before export. Implementation and verification remain pending; documentation review does not check these tasks.
 
 ## Phase 9: Integrated Verification and Documentation
 

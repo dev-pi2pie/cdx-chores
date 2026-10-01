@@ -18,7 +18,7 @@ Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation
 | 5 | Sampling, retained repeats, destinations and concrete naming | Completed |
 | 6 | Direct command, validation, dependencies and doctor | Completed |
 | 7 | Guided Interactive flow, TUI review/polish, and recovery | Completed |
-| 8 | Output path presentation, selection menus and streaming progress UX refinement | Completed |
+| 8 | Output path presentation, selection menus and streaming progress UX refinement | Original checkpoint completed; output information follow-up pending |
 | 9 | Full regression, explicit smoke, documentation and research closure evidence | Not started |
 
 ## Phase 1
@@ -392,6 +392,14 @@ Complete-range review `3a9c891ccbba9a10935fae250ee8f5e41747d95b..e29955773f11b0f
 Expanded complete-range review `3a9c891ccbba9a10935fae250ee8f5e41747d95b..0881623b47cb8b82ba082c0bb89af39e34d9346a` has no remaining actionable code, test or security findings. The failure-restoration coverage gap is closed. The final documentation receipt is reviewed separately; earlier accepted phase sections remain unchanged.
 
 Phase 8 is accepted on 2026-10-01 with all six tasks checked. Output paths, menu navigation and streaming progress have recorded fixes and controlled/native rechecks. The plan remains active and this record/research remain in-progress for Phase 9. Its seven tasks stay unchecked. Ignored review artifacts remain locally available; retention does not prevent this checkpoint's acceptance, and no private resource details or local setup enter the public record.
+
+### Output Information Follow-Up Planning
+
+Expanded the pending work to seven [Phase 8 follow-up tasks](../plan-2026-09-30-video-frames-implementation.md#follow-up-prompt-and-output-information), with a corresponding [research clarification](../../researches/research-2026-09-30-video-frames.md#output-information-consistency). The scope covers frames/GIF default-choice hints and path reporting, interval estimates, effective naming, retained-file format validation, precise review/collision wording, available-space disclosure and focused verification. GIF processing behavior is preserved.
+
+Code/prompt review found inline GIF completion paths, repeated frames review information, ambiguous collision wording and destination space inspected without presentation. A controlled prompt check using synthetic text retained a PNG filename after choosing JPG; subsequent option validation rejected the mismatch. These observations define follow-up work, with implementation and rechecks pending. The original six accepted tasks and implementation evidence remain unchanged; Phase 9 remains unstarted and all parent statuses stay open. Documentation review found no actionable findings; preservation/status/link/anchor, privacy and diff checks passed.
+
+Refined the research wording to lead with findings and presentation rationale. Its current next steps link to the pending Phase 8 follow-up and Phase 9. The plan retains ownership of implementation and acceptance, with task scope and checkpoint status unchanged. Documentation review found no actionable findings. Checklist/history, status, local link/anchor, privacy and diff checks passed.
 
 ## Related Research
 

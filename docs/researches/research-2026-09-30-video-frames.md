@@ -10,7 +10,7 @@ agent: codex
 
 Research `cdx-chores video frames` for extracting one source frame, a fixed frame set, or a whole-video sequence of still images. The feature should support direct CLI invocation and a guided Interactive flow, with PNG, JPG, and WebP output.
 
-This research is in progress. Repository observations below describe the implementation baseline; new command examples, prompts, defaults, and algorithms are proposals unless identified as agreed direction or verified implementation. Accepted Phases 1–8, including verified backend image/sequence export, destinations/naming, private processing, direct CLI/doctor, guided Interactive integration and output/menu/progress UX refinement, are recorded in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md). Phase 9's integrated verification, documentation and research closure remain pending.
+This research is in progress. Repository observations below describe the implementation baseline; new command examples, prompts, defaults, and algorithms are proposals unless identified as agreed direction or verified implementation. Accepted Phases 1–7 and the original Phase 8 checkpoint, including verified backend image/sequence export, destinations/naming, private processing, direct CLI/doctor, guided Interactive integration and output/menu/progress UX refinement, are recorded in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md). Phase 8's output information follow-up and Phase 9's integrated verification, documentation and research closure remain pending.
 
 Agreed direction from the design discussion:
 
@@ -136,6 +136,21 @@ Text review -> Export / Change choices / Cancel
 Single frames and frame sets resolve exact identities before final review. The wave updates a candidate position; Enter selects it and starts resolution. Show the requested position, resolved frame number, and actual frame start when reliable. Review includes format, quality, dimensions, destination, and concrete filenames. Frame-set review lists each role and its resolved identity; sequence review also shows cadence and estimated count.
 
 Changing format, quality, scale, destination, naming, or terminal layout retains the source and selection. Changing selection resolves the new request; changing the source clears its cached identities and timing validation. No image is generated merely to review a selection. Cancellation before export creates no final output; cancellation during export follows the partial-output rules below.
+
+### Output Information Consistency
+
+Code and controlled prompt review identified inconsistent destination wording, estimate placement, filename information and result layout across frames and GIF. Output information should make destinations and effective filenames clear, distinguish estimates from confirmed results, and use consistent placement. Existing prompt, naming and color helpers provide the foundation for these refinements.
+
+- Destination choices use `Use default output` in frames and GIF. The highlighted choice's location hint appears below the choices: `Image beside the source`, `Frames folder beside the source` or `GIF file beside the source`. Generic hints describe the location without filenames or paths. Actual paths belong in review/results under the existing [destination rules](#output-destinations-and-filename-templates).
+- Interval rows pair cadence with a compact count estimate. For a synthetic estimated duration of 5.1 seconds, examples are `Every 1s — ~6 images` and `Every 10s — ~1 image`. Unknown duration uses `estimate unavailable`. Details below the list show the available duration with its estimate qualification and `Counts confirmed during export`. Matching/exceeding intervals add `Matches duration — starting image only` or `Beyond duration — starting image only`. These describe expected sampling against the displayed duration, with actual count/end confirmed during export. Custom input shows valid estimates or validation feedback under the existing [interval semantics](#interval-limits-and-feedback).
+- Naming information combines the effective template, resolved stem, selected extension and concrete filename examples alongside default/current template choices. Sequences also show effective start/minimum width. Examples follow the shared [naming rules](#how-naming-works) and refresh when settings change. Unresolved `{frame}` values remain explicit. Explicit filenames retain their template bypass.
+- Retained explicit filenames require revalidation when the format changes. An incompatible extension returns to the destination editor with its draft retained before export review. User-entered filenames remain literal under the [extension rules](#explicit-image-filenames-and-format).
+- Review presents quality and the qualified image count once, with filenames readable apart from frame details. Collision labels describe the actual behavior: `Stop on filename conflict` or `Replace matching images`. Actual destination/retained paths use separate indented cyan lines under their labels, following [output/color guidance](../guides/cli-output-and-color.md). GIF completion uses the same path layout in both modes. Direct CLI notices, existing-folder disclosures and failure accounting remain intact.
+- Available-space information reports a readable inspected amount or `Available space unknown` in frames review/pre-export diagnostics. Inspection remains advisory under the existing [resource policy](#large-sources-and-resource-limits).
+
+This layout keeps counts in choice rows, details below the list and navigation controls last. Narrow layouts remove padding and wrap while preserving counts and essential details. Short labels/hints use natural plurals and no trailing periods. Color/plain text retains the same layout. Public examples use synthetic names. Sampling, naming, publication and GIF processing semantics remain as specified.
+
+The [Phase 8 follow-up tasks](../plans/plan-2026-09-30-video-frames-implementation.md#follow-up-prompt-and-output-information) track implementation and terminal verification, which remain pending. Verification must establish real prompt visibility and cover affected shared-helper callers. The [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md#output-information-follow-up-planning) records observed findings and will hold verification results.
 
 ## Single-Frame Selection
 
@@ -932,9 +947,9 @@ Feature scope and behavior are settled above. Remaining work is the [verificatio
 
 ## Recommendations and Next Steps
 
-First prototype the wave, frame-set preset picker, and mode-aware naming prompts with synthetic state, then verify extraction, sampling, image output, publication, and cancellation using the specified synthetic cases. Keep this scope and existing video behavior.
+Complete the [Phase 8 follow-up tasks](../plans/plan-2026-09-30-video-frames-implementation.md#follow-up-prompt-and-output-information) for output information consistency. Then reconcile remaining verification obligations and support gaps in [Phase 9](../plans/plan-2026-09-30-video-frames-implementation.md#phase-9-integrated-verification-and-documentation). Accepted earlier checkpoints remain recorded in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md).
 
-The active implementation plan linked below owns that prototype and verification work as opening execution phases before command integration. It also defines bounded, explicitly invoked synthetic stress runs and private real-video smoke checkpoints outside the regular test suites. The [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md) records verified checkpoints. A later shipped guide should own the reader-facing contract; this research owns rationale and feasibility evidence.
+This research owns findings, design rationale and feasibility evidence. The [implementation plan](../plans/plan-2026-09-30-video-frames-implementation.md) owns execution order and acceptance requirements, including bounded synthetic stress runs and private real-video smoke checkpoints outside the regular test suites. The implementation record holds execution results. Phase 9 also includes a current usage guide for the reader-facing contract.
 
 ## Related Plans
 
