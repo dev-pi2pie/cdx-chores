@@ -131,10 +131,13 @@ async function main() {
         const identity = await options.resolve(request, new AbortController().signal);
         return { request, resolved: identity, glyphs: "unicode", selection: "custom" };
       },
-      settings: async () =>
-        ++settingCalls === 1
+      settings: async (_io, _pathContext, _mode, _encoders, _initial, namingContext) => {
+        assert.equal(namingContext?.source, join(path, "source.bin"));
+        assert.equal(namingContext?.selections?.[0]?.identity.frameNumber, 3);
+        return ++settingCalls === 1
           ? settings("png", join(path, "approved.png"))
-          : settings("webp", join(path, settingCalls === 2 ? "approved.png" : "approved.webp")),
+          : settings("webp", join(path, settingCalls === 2 ? "approved.png" : "approved.webp"));
+      },
       onReview: (prepared) => {
         assert.equal(prepared.selections[0]!.identity.frameNumber, 3);
         assert.equal(prepared.destination.nonempty, false);

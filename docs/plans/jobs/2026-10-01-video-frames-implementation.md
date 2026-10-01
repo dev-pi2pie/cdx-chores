@@ -407,6 +407,10 @@ Interval preset rows now show compact count estimates. Below-list details distin
 
 Affected controlled settings, installed Node prompt and workflow checks passed **18 cases / 109 assertions**. They cover ordinary/boundary/unknown counts, valid/invalid custom input, measured narrow layouts, resize and verified-duration qualification. Type, scoped lint/format and diff checks passed. One follow-up task is checked. Remaining output/naming work, built-CLI terminal walkthroughs and complete-range review remain pending.
 
+Default destinations now use the shared label with generic location hints below the choices. Naming information uses resolved selections and shared filename rules, refreshes valid serial/format examples, and identifies unresolved source-frame values. Incompatible retained filenames return to the destination editor before review, with literal drafts and Back correction preserved. Explicit files bypass templates.
+
+Focused naming, installed Node prompt and workflow checks passed **24 cases / 172 assertions**, including compact layouts, resize followed by navigation, active/accepted prompts, inline/simple extension correction and mixed-case JPEG acceptance. Type, scoped lint/format and diff checks passed. GIF hint/routing and both output modes passed **13 controlled cases / 77 assertions**. Two built Node terminal walkthroughs confirmed the GIF default hint, both saved GIF modes, source preservation, terminal restoration and the next prompt. The shared output-choice helper is unchanged. Four follow-up tasks are checked. Reporting, final integrated verification and complete-range review remain pending.
+
 ## Related Research
 
 - [Video Frame Selection, Frame Sets, and Sequence Export](../../researches/research-2026-09-30-video-frames.md)

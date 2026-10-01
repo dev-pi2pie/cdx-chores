@@ -228,7 +228,10 @@ export async function handleVideoFramesInteractive(
               }
               stage = "settings";
             }
-            const nextSettings = await prompts.settings(io, pathContext, mode, encoders, settings);
+            const nextSettings = await prompts.settings(io, pathContext, mode, encoders, settings, {
+              source,
+              selections,
+            });
             if (!nextSettings) {
               stage = "selection";
               continue;

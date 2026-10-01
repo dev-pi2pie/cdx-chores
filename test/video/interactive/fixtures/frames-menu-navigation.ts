@@ -376,6 +376,184 @@ async function settings(simple: boolean): Promise<void> {
   s.clean();
 }
 
+const pathContext = (s: ReturnType<typeof streams>) => ({
+  cwd: process.cwd(),
+  stdin: s.io.input,
+  stdout: s.io.output,
+  runtimeConfig: resolvePathPromptRuntimeConfig({}),
+});
+const selectedFirst = [
+  { selection: "first" as const, identity: { frameNumber: 1, streamIndex: 0 } },
+];
+
+async function destinationInformation(): Promise<void> {
+  for (const mode of ["single", "set", "sequence"] as const) {
+    const s = streams();
+    s.actualOutput.rows = 32;
+    s.actualOutput.columns = 100;
+    const prompt = promptFrameImageSettings(
+      { ...s.io, simple: true },
+      pathContext(s),
+      mode,
+      encoders,
+      undefined,
+      { source: "clip.mov", selections: selectedFirst },
+    );
+    await s.wait("Image format");
+    await s.step(enter, "Output scale");
+    await s.step(enter, "Image destination");
+    let page = s.actualOutput.text.slice(s.actualOutput.text.lastIndexOf("? Image destination"));
+    const hint = mode === "single" ? "Image beside the source" : "Frames folder beside the source";
+    assert(page.includes("Use default output"));
+    assert(page.includes(hint));
+    assert(!page.includes("clip"));
+    s.actualOutput.rows = 8;
+    s.actualOutput.columns = 28;
+    s.actualOutput.emit("resize");
+    await flush();
+    s.actualInput.write(down + up);
+    await flush();
+    page = s.actualOutput.text.slice(s.actualOutput.text.lastIndexOf("? Image destination"));
+    assert(page.replaceAll("\n", "").includes(hint));
+    assert(page.includes("Up/Down | Enter | Esc Back"));
+    assert(page.trimEnd().split("\n").length <= 8);
+    s.actualOutput.rows = 32;
+    s.actualOutput.columns = 100;
+    s.actualOutput.emit("resize");
+    await flush();
+    const acceptedStart = s.actualOutput.text.length;
+    await s.step(enter, "Image naming");
+    assert(
+      s.actualOutput.text.slice(acceptedStart).includes("Image destination Use default output"),
+    );
+    if (mode === "sequence") {
+      await s.step(enter, "Serial start");
+      await s.step(enter, "Minimum serial width");
+    }
+    await s.step(enter, "Existing output images");
+    s.actualInput.write(enter);
+    assert.equal((await prompt)?.destination.kind, "default");
+    s.clean();
+  }
+}
+
+async function namingInformation(): Promise<void> {
+  for (const format of ["png", "webp"] as const) {
+    const s = streams();
+    s.actualOutput.rows = 32;
+    s.actualOutput.columns = 100;
+    const prompt = promptFrameNaming(
+      { ...s.io, simple: true },
+      "sequence",
+      { template: "{stem}-{serial_start_7_##}", serialStart: 9, serialWidth: 3 },
+      { source: "clip.mov", format },
+    );
+    await s.wait("Image naming");
+    let page = s.actualOutput.text.slice(s.actualOutput.text.lastIndexOf("? Image naming"));
+    assert(page.includes("Source stem: clip"));
+    assert(page.includes("Extension: ." + format));
+    assert(page.includes("Serial start: 9 · Minimum width: 3"));
+    assert(page.includes(`Example: clip-009.${format}`));
+    await s.step(down, "Default template");
+    s.actualOutput.rows = 8;
+    s.actualOutput.columns = 28;
+    s.actualOutput.emit("resize");
+    await flush();
+    s.actualInput.write(down + up);
+    await flush();
+    page = s.actualOutput.text.slice(s.actualOutput.text.lastIndexOf("? Image naming"));
+    assert(page.includes("{stem}-{serial} · Stem clip"));
+    assert(page.includes(`Start 9 · Width 3 · .${format}`), page);
+    assert(page.includes(`Example clip-009.${format}`));
+    assert(page.includes("Up/Down | Enter | Esc Back"));
+    assert(page.trimEnd().split("\n").length <= 8);
+    s.actualOutput.rows = 32;
+    s.actualOutput.columns = 100;
+    s.actualOutput.emit("resize");
+    await flush();
+    await s.step(enter, "Serial start");
+    await s.step("\x7f11" + enter, "Minimum serial width");
+    page = s.actualOutput.text.slice(s.actualOutput.text.lastIndexOf("Minimum serial width"));
+    assert(page.includes(`Example: clip-011.${format}`));
+    const refreshedStart = s.actualOutput.text.length;
+    s.actualInput.write("\x7f4");
+    await s.wait(`Example: clip-0011.${format}`, refreshedStart);
+    s.actualInput.write(enter);
+    assert.deepEqual(await prompt, {
+      template: "{stem}-{serial}",
+      serialStart: 11,
+      serialWidth: 4,
+    });
+    s.clean();
+  }
+}
+
+async function retainedFilename(simple: boolean): Promise<void> {
+  const s = streams();
+  const literal = "Literal  My Image.PnG";
+  const initial = {
+    format: "png" as const,
+    quality: "full" as const,
+    scale: 1,
+    destination: { kind: "file" as const, path: literal },
+    overwrite: false,
+  };
+  let complete = false;
+  const prompt = promptFrameImageSettings(
+    { ...s.io, simple },
+    pathContext(s),
+    "single",
+    encoders,
+    initial,
+    { source: "clip.mov", selections: selectedFirst },
+  ).then((value) => {
+    complete = true;
+    return value;
+  });
+  await s.wait("Image format");
+  await s.step(down.repeat(2) + enter, "Image quality");
+  await s.step(enter, "Output scale");
+  await s.step(enter, "Image destination");
+  await s.step(enter, "Output image file (.webp)");
+  assert(
+    s.actualOutput.text
+      .slice(s.actualOutput.text.lastIndexOf("Output image file"))
+      .includes(literal),
+  );
+  await s.step(enter, "extension must match");
+  assert.equal(complete, false);
+  await s.step(escape, "Image destination");
+  await s.step(escape, "Output scale");
+  await s.step(escape, "Image quality");
+  await s.step(escape, "Image format");
+  await s.step(up.repeat(2) + enter, "Output scale");
+  await s.step(enter, "Image destination");
+  await s.step(enter, "Output image file (.png)");
+  await s.step(enter, "Existing output images");
+  s.actualInput.write(enter);
+  assert.deepEqual((await prompt)?.destination, { kind: "file", path: literal });
+  assert(!s.actualOutput.text.includes("Image naming"), "Explicit files bypass template naming");
+  s.clean();
+
+  const jpeg = streams();
+  const jpegPrompt = promptFrameImageSettings(
+    { ...jpeg.io, simple },
+    pathContext(jpeg),
+    "single",
+    encoders,
+    { ...initial, destination: { kind: "file", path: "Literal Image.JPEG" } },
+  );
+  await jpeg.wait("Image format");
+  await jpeg.step(down + enter, "Image quality");
+  await jpeg.step(enter, "Output scale");
+  await jpeg.step(enter, "Image destination");
+  await jpeg.step(enter, "Existing output images");
+  jpeg.actualInput.write(enter);
+  assert.deepEqual((await jpegPrompt)?.destination, { kind: "file", path: "Literal Image.JPEG" });
+  assert(!jpeg.actualOutput.text.includes("Output image file"));
+  jpeg.clean();
+}
+
 const scenario = process.argv[2];
 const guard = setTimeout(() => {
   process.stderr.write("Frame menu navigation fixture timed out: " + scenario + "\n");
@@ -386,6 +564,10 @@ try {
   else if (scenario === "resize") await resizedDescriptions();
   else if (scenario === "cadence") await cadence();
   else if (scenario === "count-information") await countInformation();
+  else if (scenario === "destination-information") await destinationInformation();
+  else if (scenario === "naming-information") await namingInformation();
+  else if (scenario === "retained-filename-inline") await retainedFilename(false);
+  else if (scenario === "retained-filename-simple") await retainedFilename(true);
   else if (scenario === "direct") await directDrafts();
   else if (scenario === "naming") {
     await naming(false);

@@ -8,7 +8,12 @@ import {
 } from "../../video-frames/image-options";
 import type { FrameTime } from "../../video-frames/types";
 import type { InteractivePathPromptContext } from "../shared";
-import { promptFrameNaming, type FrameNamingMode, type FrameNamingSettings } from "./naming";
+import {
+  promptFrameNaming,
+  type FrameNamingMode,
+  type FrameNamingSettings,
+  type FrameNamingContext,
+} from "./naming";
 import { chooseFrameOption, enterFrameValue, type FramePromptIO } from "./simple-prompts";
 import {
   frameCadenceFeedback,
@@ -198,6 +203,7 @@ export async function promptFrameImageSettings(
   mode: FrameNamingMode,
   encoders: ImageEncoders,
   initial?: FrameImageSettings,
+  namingContext?: Omit<FrameNamingContext, "format">,
 ): Promise<FrameImageSettings | null> {
   let step:
     | "format"
@@ -316,7 +322,12 @@ export async function promptFrameImageSettings(
               },
             ]
           : []),
-        { name: "Beside the source", value: "default" },
+        {
+          name: "Use default output",
+          description:
+            mode === "single" ? "Image beside the source" : "Frames folder beside the source",
+          value: "default",
+        },
         { name: "Custom output folder", value: "folder" },
         ...(mode === "single" ? [{ name: "Explicit image file", value: "file" as const }] : []),
         { name: "Back", value: "back" },
@@ -333,6 +344,16 @@ export async function promptFrameImageSettings(
         continue;
       }
       destinationChoice = choice;
+      if (destinationChoice === "keep" && destination.kind === "file") {
+        try {
+          requireImageExtension(destination.path!, format);
+        } catch {
+          destinationChoice = "file";
+          pathDrafts.file ??= destination.path;
+          step = "path";
+          continue;
+        }
+      }
       if (destinationChoice === "default") destination = { kind: "default" };
       step =
         destinationChoice === "file" || destinationChoice === "folder"
@@ -365,7 +386,12 @@ export async function promptFrameImageSettings(
       step = kind === "file" ? "overwrite" : "naming";
     }
     if (step === "naming") {
-      const value = await promptFrameNaming(io, mode, naming);
+      const value = await promptFrameNaming(
+        io,
+        mode,
+        naming,
+        namingContext ? { ...namingContext, format } : undefined,
+      );
       if (value === null) {
         step = beforeNaming();
         continue;

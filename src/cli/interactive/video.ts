@@ -1,11 +1,7 @@
 import { confirm, input, select } from "@inquirer/prompts";
 
 import { actionVideoConvert, actionVideoGif, actionVideoResize } from "../actions";
-import {
-  formatDefaultOutputPathHint,
-  promptOptionalOutputPathChoice,
-  promptRequiredPathWithConfig,
-} from "../prompts/path";
+import { promptOptionalOutputPathChoice, promptRequiredPathWithConfig } from "../prompts/path";
 import type { CliRuntime } from "../types";
 import type { VideoGifLook, VideoGifMode, VideoGifProfile } from "../video-gif";
 import type { VideoInteractiveActionKey } from "./menu";
@@ -75,10 +71,9 @@ export async function handleVideoInteractiveAction(
     kind: "file",
     ...pathPromptContext,
   });
-  const outputHint = formatDefaultOutputPathHint(runtime, inputPath, ".gif");
   const outputPath = await promptOptionalOutputPathChoice({
     message: "Output GIF file",
-    defaultHint: outputHint,
+    defaultHint: "GIF file beside the source",
     kind: "file",
     ...pathPromptContext,
     customMessage: "Custom GIF output path",

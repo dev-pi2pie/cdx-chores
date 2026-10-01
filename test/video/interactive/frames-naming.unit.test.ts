@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   effectiveFrameSerial,
+  frameNamingInformation,
   validateFrameTemplate,
   type FrameNamingMode,
 } from "../../../src/cli/interactive/video-frames/naming";
@@ -9,6 +10,76 @@ import {
   resolveTemplateCompletionMatch,
   type TemplateCompletionKind,
 } from "../../../src/cli/prompts/text-template-candidates";
+
+describe("effective frame naming information", () => {
+  test("resolved custom and set examples preserve real source identities and normalized stems", () => {
+    const source = "synthetic/My__Clip.mov";
+    const single = frameNamingInformation(
+      "single",
+      { template: "{stem}-{selection}-{frame}" },
+      {
+        source,
+        format: "webp",
+        selections: [{ selection: "custom", identity: { frameNumber: 17, streamIndex: 0 } }],
+      },
+    );
+    expect(single.description).toContain("Source stem: my-clip");
+    expect(single.description).toContain("Extension: .webp");
+    expect(single.description).toContain("Example: my-clip-custom-17.webp");
+    const set = frameNamingInformation(
+      "set",
+      { template: "{stem}-{selection}-{frame}" },
+      {
+        source,
+        format: "png",
+        selections: [
+          { selection: "first", identity: { frameNumber: 1, streamIndex: 0 } },
+          { selection: "last", identity: { frameNumber: 1, streamIndex: 0 } },
+        ],
+      },
+    );
+    expect(set.description).toContain("Example: my-clip-first-1.png");
+    expect(set.description).toContain("Example: my-clip-last-1.png");
+  });
+
+  test("sequence examples use effective embedded and explicit serial settings and selected extension", () => {
+    const settings = { template: "{stem}-{serial_start_7_##}", serialWidth: 4 };
+    const png = frameNamingInformation("sequence", settings, { source: "clip.mov", format: "png" });
+    expect(png.description).toContain("Serial start: 7 · Minimum width: 4");
+    expect(png.description).toContain("Example: clip-0007.png");
+    expect(png.description).toContain("Example: clip-0008.png");
+    const webp = frameNamingInformation(
+      "sequence",
+      { ...settings, serialStart: 9 },
+      { source: "clip.mov", format: "webp" },
+    );
+    expect(webp.description).toContain("Example: clip-0009.webp");
+    expect(webp.description).not.toContain("clip-0007.png");
+    const limit = frameNamingInformation(
+      "sequence",
+      { template: "{stem}-{serial}", serialStart: Number.MAX_SAFE_INTEGER },
+      { source: "clip.mov", format: "png" },
+    );
+    expect(limit.description.match(/Example:/g)).toHaveLength(1);
+  });
+
+  test("unresolved frame placeholders and impossible basenames do not invent concrete examples", () => {
+    const unknown = frameNamingInformation(
+      "sequence",
+      { template: "{stem}-{frame}-{serial}" },
+      { source: "clip.mov", format: "png" },
+    );
+    expect(unknown.description).toContain("await resolved {frame}");
+    expect(unknown.description).not.toContain("Example:");
+    expect(unknown.compactDescription).toContain("{frame} unresolved");
+    const oversized = frameNamingInformation(
+      "sequence",
+      { template: "{stem}-{serial}", serialWidth: 250 },
+      { source: "clip.mov", format: "png" },
+    );
+    expect(oversized.description).toContain("Filename example unavailable:");
+  });
+});
 
 describe("video frame naming language", () => {
   test("single, set, and sequence templates admit only their mode's tokens", () => {
