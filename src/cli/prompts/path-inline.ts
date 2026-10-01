@@ -9,6 +9,8 @@ import {
   type RawSessionKeypressInfo,
 } from "../tui";
 import type { PathPromptRuntimeConfig } from "./path-config";
+import { styleCliDiagnosticLabel } from "../diagnostic-color";
+import { resolveCliColorEnabled } from "../colors";
 import {
   advanceSiblingPreview,
   acceptSiblingPreview,
@@ -46,6 +48,7 @@ export interface InlinePathPromptOptions {
   stdin: NodeJS.ReadStream;
   stdout: NodeJS.WritableStream;
   signal?: AbortSignal;
+  colorEnabled?: boolean;
   validate: ValidationFn;
   suggestionFilter: SuggestionFilter;
   resolveSuggestions?: (options: ResolvePathSuggestionsOptions) => Promise<PathSuggestion[]>;
@@ -433,7 +436,15 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
             settleResolve(value);
             return;
           }
-          beep(stdout);
+          inlineRenderer.clear();
+          const label = styleCliDiagnosticLabel(
+            { colorEnabled: options.colorEnabled ?? resolveCliColorEnabled() },
+            stdout,
+            "error",
+            "Error:",
+          );
+          const message = validation.replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, " ");
+          stdout.write(`${label} ${message}\n`);
           scheduleRender();
           return;
         }

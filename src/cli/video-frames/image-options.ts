@@ -1,4 +1,5 @@
 import { CliError } from "../errors";
+import { extname } from "node:path";
 
 export type ImageFormat = "png" | "jpg" | "webp";
 export type ImageQuality = "low" | "medium" | "high" | "full";
@@ -6,6 +7,13 @@ export interface ImageOptions {
   format: ImageFormat;
   quality: ImageQuality;
   scale: number;
+}
+export function requireImageExtension(path: string, format: ImageFormat): void {
+  const extensions = format === "jpg" ? [".jpg", ".jpeg"] : [`.${format}`];
+  if (!extensions.includes(extname(path).toLowerCase()))
+    throw new CliError("Explicit image extension must match the selected format.", {
+      code: "FRAME_EXTENSION_INVALID",
+    });
 }
 export function imageOptions(
   input: {

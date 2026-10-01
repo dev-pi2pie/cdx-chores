@@ -1,6 +1,11 @@
 import { promptPath } from "../../prompts/path";
+import { promptPathInlineGhost } from "../../prompts/path-inline";
 import type { ImageEncoders } from "../../video-frames/encoders";
-import type { ImageFormat, ImageQuality } from "../../video-frames/image-options";
+import {
+  requireImageExtension,
+  type ImageFormat,
+  type ImageQuality,
+} from "../../video-frames/image-options";
 import type { FrameTime } from "../../video-frames/types";
 import type { InteractivePathPromptContext } from "../shared";
 import { promptFrameNaming, type FrameNamingMode, type FrameNamingSettings } from "./naming";
@@ -77,11 +82,23 @@ export async function promptFrameCadence(
 }
 
 export async function promptFramePath(
-  io: FramePromptIO & { simple?: boolean },
+  io: FramePromptIO & { simple?: boolean; colorEnabled?: boolean },
   pathContext: InteractivePathPromptContext,
   message: string,
   kind: "file" | "directory",
+  imageFormat?: ImageFormat,
 ): Promise<string | undefined> {
+  const validate = (value: string): true | string => {
+    if (!value.trim()) return "Enter a path, or press Escape to go back.";
+    if (imageFormat) {
+      try {
+        requireImageExtension(value, imageFormat);
+      } catch (error) {
+        return (error as Error).message;
+      }
+    }
+    return true;
+  };
   try {
     return await promptPath({
       message,
@@ -95,11 +112,12 @@ export async function promptFramePath(
       stdout: io.output,
       signal: io.signal,
       promptImpls: {
+        advancedInline: (config) =>
+          promptPathInlineGhost({ ...config, validate, colorEnabled: io.colorEnabled }),
         simpleInput: async (config) => {
           const answer = await enterFrameValue(io, {
             message: config.message,
-            validate: (value) =>
-              value.trim() ? true : "Enter a path, or press Escape to go back.",
+            validate,
           });
           if (answer === undefined) {
             const error = new Error("User aborted prompt");
@@ -199,6 +217,7 @@ export async function promptFrameImageSettings(
       pathContext,
       destinationChoice === "file" ? `Output image file (.${format})` : "Output image folder",
       destinationChoice === "file" ? "file" : "directory",
+      destinationChoice === "file" ? format : undefined,
     );
     if (path === undefined) return null;
     destination = { kind: destinationChoice, path };

@@ -1,9 +1,9 @@
-import { dirname, extname, join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { lstat, opendir, stat, statfs } from "node:fs/promises";
 import { CliError } from "../errors";
 import { assertImageBasename } from "./publication";
 import { sourceStem, type FrameNamingMode } from "./naming";
-import type { ImageFormat } from "./image-options";
+import { requireImageExtension, type ImageFormat } from "./image-options";
 export interface VolumeSpace {
   status: "known" | "unknown";
   availableBytes?: bigint;
@@ -53,12 +53,7 @@ export async function frameDestination(input: {
   const path =
     input.output === undefined ? join(dirname(source), fallback) : resolve(cwd, input.output);
   if (kind === "file") {
-    const extension = extname(path).toLowerCase();
-    const expected = input.format === "jpg" ? [".jpg", ".jpeg"] : [`.${input.format}`];
-    if (!expected.includes(extension))
-      throw new CliError("Explicit image extension must match the selected format.", {
-        code: "FRAME_EXTENSION_INVALID",
-      });
+    requireImageExtension(path, input.format);
     if (path === source)
       throw new CliError("Image target aliases the video source.", { code: "FRAME_SOURCE_ALIAS" });
   }

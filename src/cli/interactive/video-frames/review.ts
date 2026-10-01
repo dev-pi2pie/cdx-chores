@@ -4,6 +4,7 @@ import type { CliRuntime } from "../../types";
 import { FrameNamer } from "../../video-frames/naming";
 import { describeFrameRequest, formatFrameTime, type FramePickerState } from "./selection";
 import { wrapPickerLine } from "./layout";
+import { frameQualityLabel } from "./settings-values";
 
 export function frameReviewLines(
   runtime: CliRuntime,
@@ -18,6 +19,7 @@ export function frameReviewLines(
     `Stream: ${stream.index} (${stream.codec})`,
     `Mode: ${options.mode}`,
     `Image: ${options.image.format} / ${options.image.quality} · Scale: ${options.image.scale}`,
+    `Quality: ${frameQualityLabel(options.image.format, options.image.quality)}`,
     `Dimensions: ${prepared.plan.width} × ${prepared.plan.height}`,
     `Destination: ${displayPath(runtime, prepared.destination.path)}`,
     `Overwrite: ${options.overwrite ? "replace conflicting images" : "preserve existing images"}`,

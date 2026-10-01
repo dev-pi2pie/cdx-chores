@@ -304,6 +304,26 @@ Shared path/text prompts now forward streams and abort signals through inline ed
 
 Managed unit verification passed **1,579 cases / 6,833 assertions** across 186 files; managed application verification passed **2,246 cases / 14,093 assertions** across 302 files. TypeScript, repository lint/format, diff checks and package build passed. A subsequent presentation refinement passed its affected **22 cases / 147 assertions**: the direct picker and export menu retain essential frame/settings details in their titles, and wave styling groups spans without changing stripped geometry. Native terminal and complete-range review evidence remain required before acceptance.
 
+### TUI Review and Native Verification
+
+The opt-in `scripts/spikes/video-frames-interactive.ts` prepares a 60-frame, 96 × 64 lossless synthetic source. Independent preflight checked every start, frame count and endpoint pixels. Built Node.js CLI walkthroughs exercised actual terminal keys and resizing; they did not play media. The presentation pass found and corrected four issues: short menus lost resolved details in scrollback; colored waves styled every character separately; review did not explicitly distinguish lossless/lossy quality; explicit-file errors belonged in the destination editor. The last correction also makes shared inline path validation show sanitized errors while keeping the draft editable. Direct, destination and Interactive checks reuse one filename-extension rule.
+
+| Walkthrough | Verified outcome |
+| --- | --- |
+| Full/compact/direct layouts | 100 × 32, 100 × 19, 28 × 8 and 80 × 19 terminals; wrapped long source/output labels and controls; essential menu details remained readable |
+| Editors and resize | Draft `00:00:01.234` survived narrowing and restoration; request 1,234 ms resolved to frame 31 at 1,200 ms and remained unchanged through full/compact/direct/full transitions and option changes |
+| Wave presentation | Thin mirrored bars, aligned markers, accent and endpoints; Unicode/ASCII preference survived redraws; color/plain output and grouped-span polish were rechecked |
+| One frame and fixed set | PNG custom selection matched independent pixels; JPG first/middle/last identities were 1/31/60, with verified 48 × 32 half-scale output and successful decoding |
+| Whole-video sequence | A `1s` interval produced WebP identities 1/26/51; saved lossless RGBA matched independent references; serial naming, estimates and actual-result reporting agreed |
+| Destination correction | Inline and simple editors retained invalid filenames for correction; matching case-insensitive extensions exported exact PNG pixels; final review showed lossless quality |
+| Cancellation and recovery | Active scan/export Escape cancellation, picker Ctrl+C interruption and existing-file failure recovery preserved sources/outputs, removed owned staging and restored the terminal; each next ordinary prompt worked |
+
+Controlled checks additionally prove no resolution on navigation, pending-work input ownership, exact rational identities, source/stream invalidation and fatal closure preventing replacement work. Native checks use small generated sources and do not establish heavy real-content performance. Walkthrough artifacts stayed within the declared development budgets and remain available for local review.
+
+Private guided processing outcomes: one-frame export **passed**; frame-set export **passed**; sequence export **passed**; source preservation **passed**; staging cleanup **passed**.
+
+Final managed units passed **1,580 cases / 6,836 assertions** across 186 files. After the final destination/review changes, the affected prompt, guided workflow, direct command, destination and options checks passed **39 cases / 208 assertions** across seven files. TypeScript, repository lint/format, diff checks and package build passed. The earlier managed application run remains the broad regression baseline; the affected follow-up covers the final polish. Node 26.5.0 on macOS is verified; minimum Node, other platforms and heavy real content remain unverified. Complete Phase 7 range review and acceptance remain pending at this checkpoint.
+
 ## Phase 7 Planning Refinement
 
 Expanded Phase 7's unchecked tasks into integration, TUI review/polish, and verification/acceptance groups. The integrated picker and surrounding flow now have an explicit presentation review, terminal-layout matrix, and finding/fix/recheck checkpoint before acceptance. Phase numbers, completed Phases 1–5 tasks, and the existing smoke/privacy boundaries are preserved; at this planning checkpoint, Phase 7 implementation had not started.

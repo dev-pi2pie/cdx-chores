@@ -269,6 +269,10 @@ describe("simple prompt cancellation initialization", () => {
   test("direct resolution preserves interruption after either acknowledgement outcome", () => {
     verifyRealPromptCancellation("direct-interruption", ["rejected", "resolved"]);
   }, 10_000);
+
+  test("explicit image extensions are corrected in the inline and simple destination editors", () => {
+    verifyRealPromptCancellation("destination-validation", ["inline", "simple"]);
+  }, 10_000);
 });
 
 function verifyRealPromptCancellation(scenario: string, cases: string[]): void {
@@ -278,6 +282,8 @@ function verifyRealPromptCancellation(scenario: string, cases: string[]): void {
     stdin: "ignore",
     stdout: "pipe",
     stderr: "pipe",
+    // The injected TTY streams model an editable terminal independently of the caller.
+    env: { ...process.env, TERM: "xterm-256color" },
     timeout: 5_000,
     killSignal: "SIGKILL",
     maxBuffer: 65_536,

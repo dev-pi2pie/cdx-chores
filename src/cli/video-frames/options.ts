@@ -1,7 +1,7 @@
-import { extname, resolve } from "node:path";
+import { resolve } from "node:path";
 import { CliError } from "../errors";
 import { frameCadence } from "./cadence";
-import { imageOptions } from "./image-options";
+import { imageOptions, requireImageExtension } from "./image-options";
 import { FrameNamer, FRAME_NAME_DEFAULTS } from "./naming";
 import { parseFrameNumber, parseFrameTime } from "./selectors";
 import type { FrameRequest, FrameSetPreset } from "./types";
@@ -102,13 +102,7 @@ export function validateVideoFramesOptions(options: VideoFramesOptions, cwd: str
   if (options.output !== undefined && !options.output.trim())
     throw new CliError("Output path cannot be empty.", { code: "FRAME_TARGET_INVALID" });
   const output = options.output === undefined ? undefined : resolve(cwd, options.output);
-  if (mode === "single" && output) {
-    const extensions = image.format === "jpg" ? [".jpg", ".jpeg"] : [`.${image.format}`];
-    if (!extensions.includes(extname(output).toLowerCase()))
-      throw new CliError("Explicit image extension must match the selected format.", {
-        code: "FRAME_EXTENSION_INVALID",
-      });
-  }
+  if (mode === "single" && output) requireImageExtension(output, image.format);
   return Object.freeze({
     mode,
     request,

@@ -6,6 +6,8 @@ import {
   enterFrameValue,
 } from "../../../../src/cli/interactive/video-frames/simple-prompts";
 import { promptFramePicker } from "../../../../src/cli/interactive/video-frames/picker";
+import { promptFramePath } from "../../../../src/cli/interactive/video-frames/settings";
+import { resolvePathPromptRuntimeConfig } from "../../../../src/cli/prompts/path-config";
 
 class Input extends PassThrough {
   isTTY = true;
@@ -22,11 +24,14 @@ class Output extends PassThrough {
   isTTY = true;
   columns = 100;
   rows = 32;
+  text = "";
   constructor() {
     super();
     // A real terminal's process.stdout survives the prompt's output pipe ending.
     this.end = (() => this) as typeof this.end;
-    this.on("data", () => {});
+    this.on("data", (chunk) => {
+      this.text += String(chunk);
+    });
   }
 }
 
@@ -142,6 +147,39 @@ async function verifyDirectInterruption(resolveAfterAbort: boolean): Promise<voi
   assert.equal(io.actualOutput.listenerCount("resize"), 0);
 }
 
+async function verifyDestinationValidation(simple: boolean): Promise<void> {
+  const io = streams();
+  let settled = false;
+  const prompt = promptFramePath(
+    { ...io, simple },
+    {
+      cwd: process.cwd(),
+      stdin: io.input,
+      stdout: io.output,
+      runtimeConfig: resolvePathPromptRuntimeConfig({}),
+    },
+    "Output image file (.png)",
+    "file",
+    "png",
+  ).then((value) => {
+    settled = true;
+    return value;
+  });
+  while (!io.actualInput.isRaw) await new Promise((resolve) => setTimeout(resolve, 10));
+  await flush();
+  io.actualInput.write("result.webp\r");
+  while (!io.actualOutput.text.includes("extension must match"))
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.equal(settled, false);
+  assert(io.actualOutput.text.includes("result.webp"));
+  io.actualInput.write("\x7f".repeat("result.webp".length) + "result.PnG\r");
+  assert.equal(await prompt, "result.PnG");
+  await flush();
+  assert.equal(io.actualInput.isRaw, false);
+  assert.equal(io.actualInput.listenerCount("keypress"), 0);
+  assert.equal(io.actualOutput.listenerCount("resize"), 0);
+}
+
 // The synchronous parent also enforces a hard timeout and output limit.
 const guard = setTimeout(() => {
   process.stderr.write("Real Inquirer cancellation fixture timed out.\n");
@@ -161,6 +199,10 @@ try {
     await verifyDirectInterruption(false);
     await verifyDirectInterruption(true);
     cases = ["rejected", "resolved"];
+  } else if (scenario === "destination-validation") {
+    await verifyDestinationValidation(false);
+    await verifyDestinationValidation(true);
+    cases = ["inline", "simple"];
   } else {
     throw new Error("Unknown real prompt cancellation scenario.");
   }
