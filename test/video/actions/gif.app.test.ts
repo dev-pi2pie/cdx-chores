@@ -165,7 +165,13 @@ describe("actionVideoGif", () => {
             overwrite: true,
           });
           expect(stripVTControlCharacters(stdout.text).endsWith(expected)).toBe(true);
-          expect(stdout.text.includes("\x1b[36m")).toBe(colorEnabled && isTTY);
+          expect(
+            stdout.text.endsWith(
+              colorEnabled && isTTY
+                ? `Wrote GIF to\n  \x1b[36m${toRepoRelativePath(outputPath)}\x1b[39m\n`
+                : expected,
+            ),
+          ).toBe(true);
           expect(stdout.text).not.toContain("\x1b[1m");
         }
       }

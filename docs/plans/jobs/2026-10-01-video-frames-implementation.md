@@ -417,6 +417,8 @@ Controlled output checks passed for both GIF modes, target-stream color eligibil
 
 Five built Node synthetic checks passed: interval sequence with compact-to-wide navigation, retained PNG-to-JPG filename correction, both GIF modes and redirected direct CLI export. Two three-image sequences matched independently expected source frames 1/26/51. The JPEG and GIF files decoded in their selected formats, source bytes stayed unchanged, and interactive cases restored terminal state and accepted the next prompt. Selection descriptions refresh on navigation after resize. Ignored review artifacts remain available locally under the existing budgets. No private media was used, and earlier support gaps remain. Six implementation tasks are checked. Final application-suite reconciliation and complete-range review remain pending.
 
+Complete-range review through `a0a4db8b6c140c0216ea4d314f6efd81c2ba768c` found no actionable maintainability or security issues. Test review identified a weak GIF color assertion that could pass with a styled label and plain destination. Both GIF modes now require the exact raw destination line, including path-only cyan when eligible. Affected GIF checks passed **13 cases / 77 assertions**, with type/lint/format/diff checks passed. Expanded-range acceptance remains pending.
+
 ## Related Research
 
 - [Video Frame Selection, Frame Sets, and Sequence Export](../../researches/research-2026-09-30-video-frames.md)
