@@ -160,11 +160,11 @@ Accepted on 2026-10-01. The [Phase 2 record](jobs/2026-10-01-video-frames-implem
 Tasks:
 
 - [x] Extend the process boundary for incremental records, bounded queues and stderr, structured progress, direct child spawning, and operation ownership while preserving existing process-helper callers.
-- [ ] Implement metadata-first inspection and checked exact arithmetic; reject unsupported numeric representations and keep estimates distinct from verified identities/counts.
-- [ ] Implement first/frame-N prefix stops, last-frame EOF/buffer handling, and initial full-stream timestamp ordering validation followed by cached early-stop requests. Unreliable timing rejects time selection while valid frame-number selection can retain its verified ordinal.
-- [ ] Resolve both fixed frame sets before review; revalidate midpoint duration, perform a second pass when needed, retain repeated roles, and fail the complete preset when its required timing/end evidence is unavailable.
-- [ ] Implement bounded session reuse, eviction, source/stream fingerprint checks, and invalidation before reuse, after scans, and before export.
-- [ ] Verify parser/metadata limits, slow consumers, decoder failures, source changes, and cancellation of multiple registered/resistant children. Apply two-second cooperative grace and five-second forced-close confirmation where supported; unconfirmed closure prevents replacement operations.
+- [x] Implement metadata-first inspection and checked exact arithmetic; reject unsupported numeric representations and keep estimates distinct from verified identities/counts.
+- [x] Implement first/frame-N prefix stops, last-frame EOF/buffer handling, and initial full-stream timestamp ordering validation followed by cached early-stop requests. Unreliable timing rejects time selection while valid frame-number selection can retain its verified ordinal.
+- [x] Resolve both fixed frame sets before review; revalidate midpoint duration, perform a second pass when needed, retain repeated roles, and fail the complete preset when its required timing/end evidence is unavailable.
+- [x] Implement bounded session reuse, eviction, source/stream fingerprint checks, and invalidation before reuse, after scans, and before export.
+- [x] Verify parser/metadata limits, slow consumers, decoder failures, source changes, and cancellation of multiple registered/resistant children. Apply two-second cooperative grace and five-second forced-close confirmation where supported; unconfirmed closure prevents replacement operations.
 
 Checkpoint: exact identities and stop conditions pass deterministic and small real-tool checks, state remains bounded, and cancellation restores ownership. Existing video and other process callers retain their behavior.
 

@@ -1,13 +1,5 @@
-export interface FrameTime {
-  numerator: bigint;
-  denominator: bigint;
-}
-
-export type FrameRequest =
-  | { kind: "first" }
-  | { kind: "last" }
-  | { kind: "frame"; frameNumber: number }
-  | { kind: "time"; timeMs: FrameTime };
+import type { FrameTime, FrameRequest } from "../../video-frames/types";
+export type { FrameTime, FrameRequest } from "../../video-frames/types";
 
 export interface FrameIdentity {
   frameNumber: number;

@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { lstat, mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
-export async function createSyntheticSmokeRun(phase: 1 | 2 = 1): Promise<{
+export async function createSyntheticSmokeRun(phase: 1 | 2 | 3 = 1): Promise<{
   path: string;
   cleanup(): Promise<void>;
 }> {

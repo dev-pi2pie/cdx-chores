@@ -15,8 +15,8 @@ export interface Experiment {
   images(count: number): void;
 }
 
-export async function createLab() {
-  const run = await createSyntheticSmokeRun(2);
+export async function createLab(phase: 2 | 3 = 2) {
+  const run = await createSyntheticSmokeRun(phase);
   let activeMs = 0;
   let images = 0;
   const results: object[] = [];
@@ -121,7 +121,7 @@ export async function createLab() {
         activeMs += performance.now() - started;
         await writeFile(
           join(run.path, "evidence.json"),
-          JSON.stringify({ phase: 2, activeMs, images, results }, null, 2),
+          JSON.stringify({ phase, activeMs, images, results }, null, 2),
         );
       }
     },
