@@ -18,7 +18,8 @@ Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation
 | 5 | Sampling, retained repeats, destinations and concrete naming | Completed |
 | 6 | Direct command, validation, dependencies and doctor | Completed |
 | 7 | Guided Interactive flow, TUI review/polish, and recovery | Completed |
-| 8 | Full regression, explicit smoke, documentation and research closure evidence | Not started |
+| 8 | Output path presentation, selection menus and streaming progress UX refinement | Not started |
+| 9 | Full regression, explicit smoke, documentation and research closure evidence | Not started |
 
 ## Phase 1
 
@@ -343,6 +344,14 @@ Phase 7 is accepted on 2026-10-01 with all ten tasks checked. Direct CLI/doctor 
 Expanded Phase 7's unchecked tasks into integration, TUI review/polish, and verification/acceptance groups. The integrated picker and surrounding flow now have an explicit presentation review, terminal-layout matrix, and finding/fix/recheck checkpoint before acceptance. Phase numbers, completed Phases 1–5 tasks, and the existing smoke/privacy boundaries are preserved; at this planning checkpoint, Phase 7 implementation had not started.
 
 Documentation review found no actionable findings. Phase/checklist preservation, Phase 7 links, and diff checks passed; this records planning changes rather than implementation acceptance.
+
+## Phase 8 Planning Refinement
+
+Added [Phase 8: UX Review and Polish](../plan-2026-09-30-video-frames-implementation.md#phase-8-ux-review-and-polish) for three follow-ups: output path layout/color, selection menus, and streaming progress reporting. Review identified inline paths with added punctuation, circular menu pagination and Back skipping prompt levels, duplicate/accumulating progress output, a selected-frame extraction count labeled as total source decoding, and sampling/validation work without visible updates. Fixes and verification remain pending; no Phase 8 task is accepted by this planning update.
+
+The previous final-validation Phase 8 moves intact to [Phase 9](../plan-2026-09-30-video-frames-implementation.md#phase-9-integrated-verification-and-documentation). Earlier acceptance entries use the numbering at their checkpoint; the current overview and plan use the revised numbering. Phases 1–7's accepted checklists and evidence are preserved. The plan stays active and this record/research stay in-progress. Public UX evidence uses synthetic content; private resource details and captures stay local under the existing smoke/privacy policy.
+
+Documentation review found no actionable findings. Accepted-phase/final-audit preservation, unchecked task states, lifecycle statuses, links/anchors, private-source exclusion and diff checks passed. This records planning verification; Phase 8 implementation and acceptance remain pending.
 
 ## Related Research
 

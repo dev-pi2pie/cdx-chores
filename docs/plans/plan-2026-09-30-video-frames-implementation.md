@@ -10,7 +10,7 @@ agent: codex
 
 Implement `cdx-chores video frames` for one exact source frame, a fixed frame set, or a whole-video sequence of PNG, JPG, or still WebP images. Deliver the direct CLI and guided Interactive flow without changing convert, resize, or GIF behavior.
 
-Phases 1–7 are complete. The accepted checkpoints cover terminal prototypes, real-tool feasibility, exact resolution, verified backend image export, exact sequence sampling, destinations/naming, private processing smoke, direct CLI/doctor integration, and the guided Interactive flow with its TUI review. Phase 8's integrated verification, documentation and research closure remain pending. See the [unified execution record](jobs/2026-10-01-video-frames-implementation.md) for evidence and complete-range checkpoint reviews.
+Phases 1–7 are complete. The accepted checkpoints cover terminal prototypes, real-tool feasibility, exact resolution, verified backend image export, exact sequence sampling, destinations/naming, private processing smoke, direct CLI/doctor integration, and the guided Interactive flow with its TUI review. Phase 8's UX refinement and Phase 9's integrated verification, documentation and research closure remain pending. See the [unified execution record](jobs/2026-10-01-video-frames-implementation.md) for evidence and complete-range checkpoint reviews.
 
 The research owns selection, sampling, terminal, image, and output semantics. This plan owns implementation order, acceptance checkpoints, development-test cost, and evidence handling. Runtime support claims require recorded results. Implement prototypes and verification support in TypeScript/JavaScript, using Bun for development and Node.js for runtime checks.
 
@@ -244,7 +244,35 @@ Checkpoint: functional verification and the dedicated TUI review/polish pass are
 
 Phase 7 is accepted. Integration, TUI review/polish, native terminal verification, private processing outcomes, and complete-range review evidence are recorded in the [Phase 7 checkpoint](jobs/2026-10-01-video-frames-implementation.md#phase-7).
 
-## Phase 8: Integrated Verification and Documentation
+## Phase 8: UX Review and Polish
+
+Review direct CLI and guided frames UX in the three directions below. Reuse existing prompt, terminal and color helpers. Preserve exact frame/cadence semantics, confirmed publication accounting, and operation/input ownership. Follow the research's [progress contract](../researches/research-2026-09-30-video-frames.md#streaming-frame-resolution) and [CLI output/color guidance](../guides/cli-output-and-color.md).
+
+Tasks:
+
+### Output Path Presentation
+
+- [ ] Refine completion and partial-output messages: place each destination/retained-output path on its own indented line in standard cyan without bold; use natural image plurals and remove added sentence periods. Preserve path characters, relative/absolute display policy and stream routing. Respect target-stream TTY eligibility, `NO_COLOR` and `--no-color`; styled and plain output retain identical wording and layout.
+
+### Selection Menus
+
+- [ ] Review frames selection/settings menus for ordering, labels, estimates, controls and disabled choices. Remove circular pagination/wraparound in these menus; use concise preset labels with selected-option descriptions for estimates. Keep long/wrapped content and essential controls readable within the measured terminal area.
+- [ ] Correct Back/Escape parent targets so navigation returns one logical prompt level, including cadence, presets and custom input. Keep explicitly named source/cancel actions distinct; preserve applicable choices and editor drafts when revisiting prompts. Recheck remaining frames menus for consistent labels/routes and verify navigation alone does not start decoding.
+
+### Streaming Progress Reporting
+
+- [ ] Coordinate one frames progress presenter per active operation across direct and Interactive execution. Replace accumulating TTY updates with a compact live status adapted to terminal width; use throttled plain stderr lines for non-TTY progress and stdout for final results. Start near two updates per second, avoid duplicate headings/interleaved renderers, and clear live status before results, errors or the next prompt.
+- [ ] Report actual inspection, scanning, validation, export and finishing activity with honest units: inspected source frames, frames extracted for export and confirmed images written are distinct. Provide elapsed time/activity for unknown totals and label estimates explicitly; reaching an estimate does not establish completion. Show Stopping once while cancellation settles; distinguish cancelled/failed/completed outcomes and retain fatal child-closure precedence.
+
+### Verification and Acceptance
+
+- [ ] Record finding/fix/recheck evidence for each direction. Run affected controlled output/menu/progress tests, type/lint/format/build checks and a built Node.js terminal walkthrough with small synthetic content. Cover single-file/folder and long paths, color/plain/redirected output, narrow layouts/resize, Back/Escape retention, slow stages, cancellation/failure, and next-prompt restoration. Review the complete Phase 8 commit range and resolve actionable findings before acceptance.
+
+Use the existing smoke workspace, privacy/retention policy and development budgets. Regular tests use controlled tools; repeat native image processing only when a changed boundary needs it, without routine heavy-video reruns. Record public findings with synthetic examples and keep private screenshots, resource details and diagnostics local.
+
+Checkpoint: the three UX directions have recorded fixes and affected rechecks; paths, menu navigation and live progress remain readable and accurate through completion, cancellation and failure. All Phase 8 tasks and the complete-range review must pass before Phase 9 begins.
+
+## Phase 9: Integrated Verification and Documentation
 
 Tasks:
 
