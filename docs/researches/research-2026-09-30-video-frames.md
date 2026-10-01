@@ -35,7 +35,7 @@ Agreed direction from the design discussion:
 | Scaling                | Preserve displayed aspect ratio; presets and custom scale within `0.1–1`                              |
 | Evidence               | Reproducible public synthetic cases and private local visual review                                   |
 
-Naming uses a normalized source `{stem}`, named `{selection}` labels for single frames/frame sets, optional verified source `{frame}` numbers, and export `{serial...}` values for sequences. Sequence templates require one serial; the default start is 1 and minimum width is 6. FPS input uses positive integers or ordinary decimals; users do not enter fraction expressions. These input/naming choices are agreed direction, while extraction and sampling behavior still need verification. A timestamp index sidecar is outside this initial scope.
+Naming uses a normalized source `{stem}`, named `{selection}` labels for single frames/frame sets, optional verified source `{frame}` numbers, and export `{serial...}` values for sequences. Sequence templates require one serial; the default start is 1 and minimum width is 6. FPS input uses positive integers or ordinary decimals; users do not enter fraction expressions. These input/naming choices are agreed direction. Backend extraction and sampling have passed the scoped synthetic checks in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md); command/Interactive integration remains pending. A timestamp index sidecar is outside this initial scope.
 
 Custom sequence ranges, dual-boundary timeline controls, arbitrary image-count sampling, and a separate “every source frame” mode are outside this initial scope. The two fixed frame-set presets are included; format, quality, color, and scale apply uniformly within every export. Seek/checkpoint/tail optimizations are excluded from this scope; sequential resolution and bounded session reuse are the chosen approach.
 
@@ -68,7 +68,7 @@ The [GIF look configuration](../../src/cli/video-gif.ts) separates `faithful` (`
 
 ### Direct CLI Proposal
 
-Use `frames` with single-frame selectors `--first-frame`, `--last-frame`, `--frame-number`, and `--at`, fixed presets through `--frame-set`, or FPS/interval sampling. Reuse `-o, --output`. Multi-image naming uses `--pattern`; sequence serial controls follow rename terminology. Interactive single-image naming resolves a final file path for the same export action. Quality uses `--quality low|medium|high|full`, defaults to `full`, and permits only `full` for PNG; encoder parameter mappings still require verification. These are design contracts for an unimplemented command.
+Use `frames` with single-frame selectors `--first-frame`, `--last-frame`, `--frame-number`, and `--at`, fixed presets through `--frame-set`, or FPS/interval sampling. Reuse `-o, --output`. Multi-image naming uses `--pattern`; sequence serial controls follow rename terminology. Interactive single-image naming resolves a final file path for the same export action. Quality uses `--quality low|medium|high|full`, defaults to `full`, and permits only `full` for PNG; tested native mappings and encoder support boundaries are recorded in [Phase 4](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-4). These are design contracts for an unimplemented command.
 
 | Option                    | Proposed role                                                                                |
 | ------------------------- | -------------------------------------------------------------------------------------------- |
@@ -170,9 +170,9 @@ The first displayed source frame defines video-relative time zero. Subtract its 
 
 Prefer the default eligible video stream; otherwise choose the first eligible stream by stream index. Exclude attached pictures, thumbnails, and cover images. If multiple eligible streams are marked default, use the lowest stream index to keep selection deterministic. All single-frame, frame-set, and sequence operations use that same chosen stream for frame numbering, timing, dimensions, and extraction. Show the chosen stream in review when multiple eligible video streams exist. A manual stream-selection control is outside the initial scope.
 
-Validate positions against the selected stream's known end: an explicit timestamp at or after that end is out of range, and `--last-frame` selects the actual final frame without an EOF timestamp guess. If timing/bounds cannot be established reliably, surface that limitation rather than silently clamping or manufacturing an exact mapping. Missing/ambiguous/non-monotonic presentation timing and buffered final frames require decoder verification; the design rules above are not runtime evidence.
+Validate positions against the selected stream's known end: an explicit timestamp at or after that end is out of range, and `--last-frame` selects the actual final frame without an EOF timestamp guess. If timing/bounds cannot be established reliably, surface that limitation rather than silently clamping or manufacturing an exact mapping. Unreliable timing rejection and buffered final-frame handling passed the cases recorded in [Phase 3](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-3); broader source-codec behavior requires equivalent evidence.
 
-Display an exact numeric frame upper bound only when verified. Otherwise say the exact count is unavailable and validate the requested frame when resolving it. Metadata estimates do not establish an exact upper bound. Follow the metadata-first, sequential resolution, and bounded session reuse policy below; correctness, resource limits, and performance still need verification.
+Display an exact numeric frame upper bound only when verified. Otherwise say the exact count is unavailable and validate the requested frame when resolving it. Metadata estimates do not establish an exact upper bound. The metadata-first, sequential resolution, and bounded session reuse policy has scoped correctness/resource evidence in [Phase 3](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-3). Heavy real-content performance, minimum-Node execution, and other platforms remain unverified.
 
 The exported image must represent the resolved source frame identified in text review. Selection identity survives format, scale, destination, and layout changes. If frame-number selection is valid but presentation timing is unavailable, show the verified frame number and say the actual time is unavailable; do not manufacture a timestamp.
 
@@ -197,7 +197,7 @@ Endpoint resolution scans through EOF. If a reliable end is already available, r
 
 ## Wave Picker and Adaptive Terminal Layout
 
-The layout selection, glyph fallback, coarse movement, and controls below are settled direction. Renderer geometry and terminal behavior require the prototype verification specified later; the sketches are not fixed screen layouts.
+The layout selection, glyph fallback, coarse movement, and controls below are settled direction. Renderer geometry and terminal behavior passed the real-terminal prototype cases recorded in [Phase 1](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-1). Production Interactive integration remains pending; the sketches are not fixed screen layouts.
 
 ### Fixed Timeline and Selection
 
@@ -373,7 +373,7 @@ Use a positive integer followed by ms, s, or m:
 
 Interactive mode keeps invalid input in the editor and shows valid-input estimates or the one-image notice beside it and in the existing export review. Do not add a second confirmation step. Direct CLI invalid input fails before writing; a valid oversized interval prints the notice to stderr and proceeds, labeling metadata-based predictions as expected. When duration is unavailable, say the count estimate is unavailable and defer the comparison; do not treat unknown duration as zero or invent a one-image guarantee.
 
-Millisecond input precision does not guarantee distinct source frames. Interval follows the same repetition policy as FPS: preserve cadence, export a separately numbered image for every valid target, and disclose repeated selections. Actual image counts and boundary behavior still require the synthetic verification below.
+Millisecond input precision does not guarantee distinct source frames. Interval follows the same repetition policy as FPS: preserve cadence, export a separately numbered image for every valid target, and disclose repeated selections. Actual counts and boundaries passed the independent synthetic cases recorded in [Phase 5](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-5); command/Interactive reporting remains pending.
 
 ### Sampling Boundaries, Repetition, and Counts
 
@@ -381,7 +381,7 @@ Both methods use the first displayed frame as time zero. For output index `k = 0
 
 Map each target to the most recent source frame whose start is at or before it, using the same rule as custom timestamp selection. A later frame starting exactly at the target wins. Sparse/variable-rate sources can map several targets to one frame; keep all those images and assign consecutive export serials. Show a review notice such as “Sampling positions may select the same source frame; each position still exports an image.” Direct CLI prints the notice to stderr before processing. Use a stronger expected-repeat notice when reliable timing establishes it; otherwise do not claim an exact repeat count. Report actual images written and repeated selections on successful completion.
 
-Preserve decimal FPS exactly as an internal rational value and intervals as integer milliseconds. Calculate each target from its index rather than repeatedly adding a floating-point step. Compare targets with integer source timestamps and their time base using checked exact arithmetic. Reject values that the chosen backend cannot represent safely, with a specific validation error; do not silently approximate a rate or round targets to whole milliseconds. The numeric/backend boundary still needs verification.
+Preserve decimal FPS exactly as an internal rational value and intervals as integer milliseconds. Calculate each target from its index rather than repeatedly adding a floating-point step. Compare targets with integer source timestamps and their time base using checked exact arithmetic. Reject values that the chosen backend cannot represent safely, with a specific validation error; do not silently approximate a rate or round targets to whole milliseconds. The checked numeric boundaries and exact cadence behavior passed the unit/Node cases recorded in [Phases 3–5](../plans/jobs/2026-10-01-video-frames-implementation.md).
 
 For non-final frames, the next presentation start defines the mapping boundary. Establish the final end from a reliable final-frame display duration or a corroborated selected-stream end. A container duration or nominal-FPS product alone is insufficient. If the final end cannot be established, stop with a timing-limitation error, retain any completed images, and report the export as incomplete; do not invent tail padding. A target exactly at the end is excluded.
 
@@ -391,7 +391,7 @@ Counts derived from metadata stay labeled estimates. Show chronological filename
 
 ## Image Formats and Output Scaling
 
-PNG is the default format, with JPG and still WebP alternatives. Quality, source-faithful color, transparency, orientation, and dimension rules below are settled direction. Concrete encoder/filter configurations require the Image Output Verification work below. WebP here is one still image per cadence target, not an animated sequence file.
+PNG is the default format, with JPG and still WebP alternatives. Quality, source-faithful color, transparency, orientation, and dimension rules below are settled direction. Concrete encoder/filter configurations passed the initial 8-bit SDR and transform cases in [Phase 4](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-4), with additional alpha support boundaries recorded in Phase 5. Broader color/source paths remain unverified. WebP here is one still image per cadence target, not an animated sequence file.
 
 ### Encoder Availability
 
@@ -658,7 +658,7 @@ Extend the [normalized report](../../src/cli/doctor/report.ts) and [JSON project
 
 Add separate format/mode assessments to the normalized report and JSON rather than overloading executable availability or existing capability booleans. With both tools available, a missing required image encoder or lossless mode makes Video `limited`, naming the affected frames format/mode and recommending an encoder-enabled FFmpeg build. Known absence is a health finding; an operational probe failure follows the existing exit-2/no-partial-report contract and must not be reported as unsupported. An assessment that cannot be established from otherwise successful probe output remains visibly unknown. Advertised support is not tested encoding or pixel-fidelity evidence. Frames execution rechecks its requested encoder/mode before extraction and final writes; source-dependent support remains an execution check.
 
-Keep runtime execution compatible with Node.js and extend the existing process boundary for the streaming requirements below. The existing inline renderer handles wrapping text; a mirrored multi-line wave needs its own layout verification.
+Keep runtime execution compatible with Node.js. The adjacent streaming process boundary has closure, cancellation, and backpressure evidence in [Phases 3–4](../plans/jobs/2026-10-01-video-frames-implementation.md). The mirrored multi-line wave passed Phase 1 prototype layout checks; its production Interactive integration remains pending.
 
 Reference designs: tui-wave provides waveform navigation and zoom,[^tui-wave] CAVA illustrates terminal bar rendering,[^cava] and Ratatui has bar-chart examples.[^ratatui] These are design references, not chosen dependencies or exact implementations of the proposed distance-based picker.
 
