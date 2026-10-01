@@ -169,7 +169,8 @@ async function runWave(
         }
         finish({ kind: "result", result: { ...state, resolved: identity, selection: "custom" } });
       } catch (error) {
-        if (operation.signal.aborted && !interrupted) {
+        if (interrupted) fail(abortError());
+        else if (operation.signal.aborted) {
           busy = undefined;
           stopping = false;
           render();
@@ -331,11 +332,17 @@ async function runDirect(
     request = parse(value);
   }
   options.onChange?.({ layout: "direct", state: { ...state, request }, resolving: true });
-  const identity = await options.resolve(request, options.signal ?? new AbortController().signal);
-  return {
-    kind: "result",
-    result: { request, resolved: identity, glyphs: state.glyphs, selection: "custom" },
-  };
+  try {
+    const identity = await options.resolve(request, options.signal ?? new AbortController().signal);
+    if (options.signal?.aborted) throw abortError();
+    return {
+      kind: "result",
+      result: { request, resolved: identity, glyphs: state.glyphs, selection: "custom" },
+    };
+  } catch (error) {
+    if (options.signal?.aborted) throw abortError();
+    throw error;
+  }
 }
 
 export async function promptFramePicker(

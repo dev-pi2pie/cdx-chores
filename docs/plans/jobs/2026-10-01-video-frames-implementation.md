@@ -39,7 +39,7 @@ Prototype implementation reuses raw sessions, key parsing, display-width measure
 
 The developer entry is `scripts/spikes/video-frames-terminal.ts`. Bundle it with `bun build scripts/spikes/video-frames-terminal.ts --target=node --outfile <owned-run>/terminal.mjs`, then run `node <owned-run>/terminal.mjs` in a real terminal. It accepts synthetic fixtures only. Optional traces must stay in the owned ignored run; inspect them before cleanup. Use `--mode set|single|set-naming|sequence`, `--simple`, and the explicit fallback/failure switches to repeat the cases below.
 
-Twenty-one Node terminal cases passed on macOS with Node 26.5.0:
+Twenty-one prototype cases and two follow-up interruption cases passed in real Node terminals on macOS with Node 26.5.0:
 
 | Check | Observed result |
 | --- | --- |
@@ -52,20 +52,22 @@ Twenty-one Node terminal cases passed on macOS with Node 26.5.0:
 | Presets | First/last returned roles `[1, 4]`, first/middle/last `[1, 3, 4]`, and the one-frame fixture retained all three repeated roles |
 | Naming | Single/set defaults omitted serial prompts; sequence defaults used start 1/width 6; embedded start 3/width 4 survived accepted defaults and produced `0003` |
 | Glyphs and color | Unicode/ASCII toggled in both directions, hints changed, and disabled color retained geometry and controls |
-| Cancellation and failure | Escape cancelled synthetic resolution before a follow-up prompt; Ctrl+C and resolver failure restored raw mode, cursor visibility, and listeners |
+| Cancellation and failure | Escape cancelled synthetic resolution before a follow-up prompt; Ctrl+C and resolver failure restored raw mode, cursor visibility, and listeners; interrupting active wave/direct resolution exited 130 after acknowledgement |
 
-Real resize used terminal size changes, not injected layout objects. Terminal output and synthetic observations were inspected together. The resize/follow-up case also compared the terminal mode before and after Node. Every owned Node process closed; the prototype bundle and all 21 local traces were removed afterward.
+Real resize used terminal size changes, not injected layout objects. Terminal output and synthetic observations were inspected together. The resize/follow-up case also compared the terminal mode before and after Node. Every owned Node process closed; both prototype bundles and all 23 local traces were removed afterward.
 
 ### Regression Evidence and Limits
 
-- Focused picker checks: 33 unit tests / 282 assertions and 7 application tests / 32 assertions passed.
+- Focused picker checks: 33 unit tests / 282 assertions and 9 application tests / 41 assertions passed.
 - Managed unit suite: 1,442 cases / 5,556 assertions / 173 files passed.
-- Managed application suite: 2,154 cases / 13,665 assertions / 292 files passed; process and fixture cleanup passed. Neither suite retained results.
+- Managed application suite: 2,156 cases / 13,674 assertions / 292 files passed after the interruption fix; process and fixture cleanup passed. Neither suite retained results.
 - TypeScript, lint, formatting, build, built Node video help, and ESM/CommonJS imports passed. The build retains the existing non-blocking TypeScript 7 API warning.
 
 The prototype uses integer-millisecond fixtures; exact real-tool timing is Phase 3 work. Production registration/integration, image names/publication, media extraction, heavy workloads, minimum Node version, and other platforms remain unverified. Private processing smoke: **not tested**. Generated/private video smoke remains outside regular suites and CI.
 
-The complete phase-range review remains pending; plan task closeout follows that review.
+### Review
+
+Review of `cfd2d7ca..a1b28cb6` found one P2 issue: interrupting an active resolver could surface its ordinary error and exit 1. The wave and direct paths now wait for acknowledgement and preserve interruption status 130, including a resolver that returns a result after abort. Focused regressions and the managed application rerun passed. The expanded committed range review remains pending; plan task closeout follows it.
 
 ## Related Research
 

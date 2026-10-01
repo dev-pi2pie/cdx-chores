@@ -5,6 +5,7 @@ import {
   chooseFrameOption,
   enterFrameValue,
 } from "../../../../src/cli/interactive/video-frames/simple-prompts";
+import { promptFramePicker } from "../../../../src/cli/interactive/video-frames/picker";
 
 class Input extends PassThrough {
   isTTY = true;
@@ -98,6 +99,47 @@ async function verifyPreAborted(): Promise<void> {
   assert.equal(io.actualOutput.listenerCount("resize"), 0);
 }
 
+async function verifyDirectInterruption(resolveAfterAbort: boolean): Promise<void> {
+  const io = streams();
+  const controller = new AbortController();
+  let acknowledge!: () => void;
+  let operationSignal: AbortSignal | undefined;
+  let settled = false;
+  const prompt = promptFramePicker({
+    ...io,
+    simple: true,
+    durationMs: 3_000,
+    signal: controller.signal,
+    resolve: (_request, signal) => {
+      operationSignal = signal;
+      return new Promise((resolve, reject) => {
+        acknowledge = () =>
+          resolveAfterAbort
+            ? resolve({ frameNumber: 1, startMs: 0 })
+            : reject(new Error("Resolver acknowledged cancellation"));
+      });
+    },
+  });
+  const outcome = prompt.catch((error: unknown) => {
+    settled = true;
+    return error;
+  });
+  await flush();
+  io.actualInput.write("\x1b[B\x1b[B\r");
+  await flush();
+  assert(operationSignal, "Retained candidate must start direct resolution");
+  controller.abort();
+  await flush();
+  assert.equal(operationSignal.aborted, true);
+  assert.equal(settled, false);
+  acknowledge();
+  assert.equal(((await outcome) as Error).name, "ExitPromptError");
+  await flush();
+  assert.equal(io.actualInput.isRaw, false);
+  assert.equal(io.actualInput.listenerCount("keypress"), 0);
+  assert.equal(io.actualOutput.listenerCount("resize"), 0);
+}
+
 // The synchronous parent also enforces a hard timeout and output limit.
 const guard = setTimeout(() => {
   process.stderr.write("Real Inquirer cancellation fixture timed out.\n");
@@ -113,6 +155,10 @@ try {
   } else if (scenario === "pre-aborted") {
     await verifyPreAborted();
     cases = ["pre-aborted"];
+  } else if (scenario === "direct-interruption") {
+    await verifyDirectInterruption(false);
+    await verifyDirectInterruption(true);
+    cases = ["rejected", "resolved"];
   } else {
     throw new Error("Unknown real prompt cancellation scenario.");
   }

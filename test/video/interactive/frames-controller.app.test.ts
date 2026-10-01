@@ -192,6 +192,40 @@ describe("synthetic frame picker ownership", () => {
     ).rejects.toThrow("direct video frames CLI options");
     expect(io.actualInput.listenerCount("keypress")).toBe(0);
   });
+
+  test("interruption waits for resolver acknowledgement and keeps interruption semantics", async () => {
+    const io = streams();
+    let signal: AbortSignal | undefined;
+    let rejectOperation!: (error: Error) => void;
+    let settled = false;
+    const prompt = promptFramePicker({
+      ...io,
+      durationMs: 3_000,
+      resolve: (_request, operationSignal) => {
+        signal = operationSignal;
+        return new Promise((_resolve, reject) => {
+          rejectOperation = reject;
+        });
+      },
+    });
+    const outcome = prompt.catch((error: unknown) => {
+      settled = true;
+      return error;
+    });
+    io.actualInput.write("\r");
+    await flush();
+    io.actualInput.write("\x03");
+    await flush();
+    expect(signal?.aborted).toBe(true);
+    expect(settled).toBe(false);
+    expect(io.actualInput.isRaw).toBe(true);
+    rejectOperation(new Error("Resolver acknowledged cancellation"));
+    expect(await outcome).toMatchObject({ name: "ExitPromptError" });
+    expect(io.actualInput.isRaw).toBe(false);
+    expect(io.actualInput.listenerCount("keypress")).toBe(0);
+    expect(io.actualOutput.listenerCount("resize")).toBe(0);
+    expect(io.actualOutput.text).toContain("\x1b[?25h");
+  });
 });
 
 describe("simple prompt cancellation initialization", () => {
@@ -201,6 +235,10 @@ describe("simple prompt cancellation initialization", () => {
 
   test("pre-aborted input never starts an Inquirer session", () => {
     verifyRealPromptCancellation("pre-aborted", ["pre-aborted"]);
+  }, 10_000);
+
+  test("direct resolution preserves interruption after either acknowledgement outcome", () => {
+    verifyRealPromptCancellation("direct-interruption", ["rejected", "resolved"]);
   }, 10_000);
 });
 
