@@ -395,7 +395,7 @@ PNG is the default format, with JPG and still WebP alternatives. Quality, source
 
 ### Encoder Availability
 
-Check the selected format's encoder and requested mode before final writes. Interactive choices explain unavailable formats/modes; direct CLI reports an actionable error. Both paths retain the requested format and quality rather than substituting another encoder behavior. In particular, WebP `full` requires a verified lossless mode. Dependency readiness in doctor does not establish encoder capability.
+Check the selected format's encoder and requested mode before extraction/final writes. Interactive choices explain unavailable formats/modes; direct CLI reports an actionable error. Both paths retain the requested format and quality rather than substituting another encoder behavior. In particular, WebP `full` requires a verified lossless mode. Doctor separately reports executable availability and advertised encoder capabilities; its inspection does not establish actual encoding or pixel fidelity.
 
 ### Quality Presets
 
@@ -639,7 +639,9 @@ Check both executables before source inspection or final writes. A missing/unusa
 
 ### Doctor Support for Frames
 
-Add an independent FFprobe availability/version check using `ffprobe -version`, then reuse the existing inspect-once report for Summary, Details, and JSON. Doctor checks the installed tools without reading source media or building frame indexes. Keep the existing compact Video workflow grouping; a separate top-level FFprobe workflow is unnecessary.
+Add an independent FFprobe availability/version check using `ffprobe -version`. When FFmpeg is available, separately inspect its advertised PNG, JPG, and still-WebP encoder capabilities, including WebP lossless mode. Run bounded inventory/encoder-help probes once per inspection and reuse the normalized result for Summary, Details, and JSON. Check exact encoder names and mode options; a build flag, decoder entry, help exit status, or incidental mention of an option does not establish encoder support. Doctor reads no source media, builds no frame indexes, and generates no images. Keep the existing compact Video workflow grouping; a separate top-level FFprobe workflow is unnecessary.
+
+The table describes base executable availability. Encoder findings refine the compact state without changing those availability values:
 
 | FFmpeg           | FFprobe          | `video.frames` capability | Compact Video state                                        |
 | ---------------- | ---------------- | ------------------------- | ---------------------------------------------------------- |
@@ -650,7 +652,9 @@ Add an independent FFprobe availability/version check using `ffprobe -version`, 
 
 Detailed output shows FFprobe availability and detected version as a separate tool entry. Missing FFprobe creates a required remediation action for frames, with wording such as “FFprobe is required for video frames; check its installation and PATH.” This action affects the existing Video grouping while naming the affected subcommand explicitly. When both tools are missing, retain both tool findings and combine shared installation guidance where appropriate. A version that cannot be parsed must remain visibly unknown rather than fabricated; minimum-version/build requirements, if needed, require evidence.
 
-Extend the [normalized report](../../src/cli/doctor/report.ts) and [JSON projection](../../src/cli/doctor/json.ts) deliberately with `tools.ffprobe` and `capabilities["video.frames"]`. The new capability requires both tools; existing `video.convert`, `video.resize`, and `video.gif` capability values remain based on FFmpeg alone. Preserve existing field meanings and exit behavior; test the new fields as additive changes, including consumers/fixtures that previously assumed an exact tool/capability key set. Doctor readiness describes dependency availability, while source/encoder support remains checked during frames execution.
+Extend the [normalized report](../../src/cli/doctor/report.ts) and [JSON projection](../../src/cli/doctor/json.ts) deliberately with `tools.ffprobe` and `capabilities["video.frames"]`. The new capability describes availability of both tools; existing `video.convert`, `video.resize`, and `video.gif` capability values remain based on FFmpeg alone. Preserve existing field meanings and exit behavior; test the new fields as additive changes, including consumers/fixtures that previously assumed an exact tool/capability key set.
+
+Add separate format/mode assessments to the normalized report and JSON rather than overloading executable availability or existing capability booleans. With both tools available, a missing required image encoder or lossless mode makes Video `limited`, naming the affected frames format/mode and recommending an encoder-enabled FFmpeg build. Known absence is a health finding; an operational probe failure follows the existing exit-2/no-partial-report contract and must not be reported as unsupported. An assessment that cannot be established from otherwise successful probe output remains visibly unknown. Advertised support is not tested encoding or pixel-fidelity evidence. Frames execution rechecks its requested encoder/mode before extraction and final writes; source-dependent support remains an execution check.
 
 Keep runtime execution compatible with Node.js and extend the existing process boundary for the streaming requirements below. The existing inline renderer handles wrapping text; a mirrored multi-line wave needs its own layout verification.
 

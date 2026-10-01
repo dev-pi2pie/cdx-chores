@@ -75,7 +75,9 @@ The complete implementation range `cfd2d7ca15195fc19b69ce6d2bd940f838d2b560..52c
 
 Started from `49d37ee39ce1dcd278b412d1b2a35fac310aefb7`. Synthetic real-tool experiments remain explicit development tasks outside regular suites. Their ignored outputs are retained for local review; cleanup capability is checked separately with disposable owned fixtures.
 
-Tool preflight found PNG and MJPEG encoders in FFmpeg/FFprobe 8.0.1, but no WebP encoder. WebP evidence remains pending a suitable build. No private input is accessed in this phase.
+WebP encoding verification remains pending. Only synthetic inputs are used in this phase.
+
+Doctor contract refinement adds advertised image-format/mode inspection separately from executable availability. Phase 2 verifies probe interpretation alongside real encoding evidence; Phase 6 owns report integration. No media generation occurs during doctor inspection.
 
 The decoder-boundary experiment declares two one-frame FFV1 sources: 4,096 × 4,096 and 4,097 × 4,096. The proposed guard is 16,777,216 pixels, with acceptance at that boundary and rejection above it. Inputs stream from Node; no raw source file is staged. Its declared additional scratch allowance is 16 MiB and its processing allowance follows the five-minute case/fifteen-minute run limits. This is a pixel-boundary check, not heavy real-content evidence.
 

@@ -199,7 +199,7 @@ Tasks:
 
 - [ ] Register the peer command and action exports; validate exactly one selection method, selector grammar, FPS/interval values, format/quality/scale, naming scope, explicit extensions, and conflicts before extraction/final writes.
 - [ ] Require both executables before source inspection for every frames method; diagnose source and encoder capability separately from tool availability.
-- [ ] Add FFprobe inspection once and project its version/status through Details and JSON. Add `video.frames` and compact Video readiness/remediation for all four tool-availability combinations without changing other capabilities, existing field meanings, or doctor exit behavior.
+- [ ] Inspect FFprobe availability/version and FFmpeg's advertised PNG/JPG/still-WebP encoders and lossless WebP mode once; reuse bounded probe results across Summary, Details, and JSON without reading media or encoding images. Add `video.frames` for executable availability and separate additive format/mode assessments; refine compact Video readiness/remediation for tool absence, unsupported formats/modes, unknown assessments, and operational probe failures while preserving existing capabilities, field meanings, and doctor exit behavior.
 - [ ] Integrate estimated/repeated-selection notices, phase progress, plain stderr output, final actual-result reporting, interruption, and partial failures.
 - [ ] Verify command/action validation and doctor consumers with controlled tools; exercise representative direct exports through the built Node.js CLI with small synthetic sources. Record source-test and built-package evidence separately.
 
