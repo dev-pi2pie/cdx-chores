@@ -30,58 +30,74 @@ export async function promptFrameSetPreset(io: FramePromptIO): Promise<FrameSetP
 export async function promptFrameNaming(
   io: FramePromptIO & { simple?: boolean; colorEnabled?: boolean },
   mode: FrameNamingMode,
+  initial?: FrameNamingSettings,
 ): Promise<FrameNamingSettings | null> {
   const choice = await chooseFrameOption(
     io,
     "Image naming",
     [
+      ...(initial ? [{ name: `Keep current: ${initial.template}`, value: "keep" as const }] : []),
       { name: `Default: ${defaults[mode]}`, value: "default" },
       { name: "Custom template", value: "custom" },
       { name: "Back", value: "back" },
     ],
     "back",
+    initial ? "keep" : "default",
   );
   if (choice === "back") return null;
+  if (choice === "keep") return { ...initial! };
   let template = defaults[mode];
   if (choice === "custom") {
-    template = await promptTextWithGhost({
-      message: "Filename template",
-      ghostText: defaults[mode],
-      completionKind:
-        mode === "single" ? "video-frame" : mode === "set" ? "video-frame-set" : "video-sequence",
-      helpLines: [
-        mode === "sequence"
-          ? "Tokens: {stem}, {frame}, exactly one {serial...}."
-          : `Tokens: {stem}, {selection}, {frame}.${mode === "set" ? " {selection} is required." : ""}`,
-      ],
-      stdin: io.input,
-      stdout: io.output,
-      colorEnabled: io.colorEnabled,
-      runtimeConfig: {
-        ...resolvePathPromptRuntimeConfig(),
-        ...(io.simple ? { mode: "simple" as const } : {}),
-      },
-      validate: (value) => validateFrameTemplate(mode, value),
-      promptImpls: {
-        simpleInput: async (config) => {
-          const value = await enterFrameValue(io, {
-            message: config.message,
-            default: template,
-            validate: (value) => validateFrameTemplate(mode, value),
-          });
-          if (value === undefined) {
-            const error = new Error("User aborted prompt");
-            error.name = "ExitPromptError";
-            throw error;
-          }
-          return value;
+    try {
+      template = await promptTextWithGhost({
+        message: "Filename template",
+        ghostText: defaults[mode],
+        initialValue: initial?.template,
+        completionKind:
+          mode === "single" ? "video-frame" : mode === "set" ? "video-frame-set" : "video-sequence",
+        helpLines: [
+          mode === "sequence"
+            ? "Tokens: {stem}, {frame}, exactly one {serial...}."
+            : `Tokens: {stem}, {selection}, {frame}.${mode === "set" ? " {selection} is required." : ""}`,
+        ],
+        stdin: io.input,
+        stdout: io.output,
+        colorEnabled: io.colorEnabled,
+        signal: io.signal,
+        runtimeConfig: {
+          ...resolvePathPromptRuntimeConfig(),
+          ...(io.simple ? { mode: "simple" as const } : {}),
         },
-      },
-    });
+        validate: (value) => validateFrameTemplate(mode, value),
+        promptImpls: {
+          simpleInput: async (config) => {
+            const value = await enterFrameValue(io, {
+              message: config.message,
+              default: initial?.template ?? template,
+              validate: (value) => validateFrameTemplate(mode, value),
+            });
+            if (value === undefined) {
+              const error = new Error("User aborted prompt");
+              error.name = "ExitPromptError";
+              throw error;
+            }
+            return value;
+          },
+        },
+      });
+    } catch (error) {
+      if (!io.signal?.aborted && error instanceof Error && error.name === "ExitPromptError")
+        return null;
+      throw error;
+    }
   }
   const settings: FrameNamingSettings = { template };
   if (mode === "sequence") {
-    const effective = effectiveFrameSerial(settings);
+    const effective = effectiveFrameSerial({
+      ...settings,
+      serialStart: initial?.serialStart,
+      serialWidth: initial?.serialWidth,
+    });
     const start = await enterFrameValue(io, {
       message: "Serial start",
       default: String(effective.start),

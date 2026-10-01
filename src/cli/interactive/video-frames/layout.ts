@@ -49,6 +49,19 @@ export function selectionDetails(state: FramePickerState): string[] {
   }
   return lines;
 }
+export function directPickerTitle(state: FramePickerState): string {
+  const request =
+    state.request.kind === "time"
+      ? formatFrameTime(state.request.timeMs)
+      : state.request.kind === "frame"
+        ? `#${state.request.frameNumber}`
+        : state.request.kind === "first"
+          ? "First"
+          : "Last";
+  const actual = state.resolved?.startMs;
+  const truncated = typeof actual === "object" && actual.numerator % actual.denominator !== 0n;
+  return `Frame/time: ${request}${state.resolved ? ` · F${state.resolved.frameNumber}${actual === undefined ? "" : ` @${truncated ? "~" : ""}${formatFrameTime(actual)}`}` : ""}`;
+}
 
 export function derivePickerLayout(options: {
   columns?: number;

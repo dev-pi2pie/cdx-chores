@@ -3,6 +3,14 @@ import { describe, expect, test } from "bun:test";
 import { runInteractiveHarness } from "../../cli-foundations/interactive-harness";
 
 describe("interactive Video routing", () => {
+  test("routes the peer frames menu action to its guided workflow", () => {
+    const result = runInteractiveHarness({ mode: "run", selectQueue: ["video", "video:frames"] });
+    expect(result.actionCalls).toEqual([{ name: "video:frames", options: {} }]);
+    expect(result.promptCalls.map((call) => `${call.kind}:${call.message}`)).toEqual([
+      "select:Choose a command",
+      "select:Choose a video command",
+    ]);
+  });
   test("routes quality GIF profile and look options through interactive video", () => {
     const result = runInteractiveHarness({
       mode: "run",

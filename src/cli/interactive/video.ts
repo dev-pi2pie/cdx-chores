@@ -16,6 +16,11 @@ export async function handleVideoInteractiveAction(
   pathPromptContext: InteractivePathPromptContext,
   action: VideoInteractiveActionKey,
 ): Promise<void> {
+  if (action === "video:frames") {
+    const { handleVideoFramesInteractive } = await import("./video-frames/workflow");
+    await handleVideoFramesInteractive(runtime, pathPromptContext);
+    return;
+  }
   if (action === "video:convert") {
     const inputPath = await promptRequiredPathWithConfig("Input video file", {
       kind: "file",

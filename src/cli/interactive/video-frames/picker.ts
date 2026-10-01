@@ -4,7 +4,13 @@ import {
   createKeypressParser,
   type RawSession,
 } from "../../tui";
-import { derivePickerLayout, selectionDetails, wrapPickerLine, type PickerLayout } from "./layout";
+import {
+  derivePickerLayout,
+  directPickerTitle,
+  selectionDetails,
+  wrapPickerLine,
+  type PickerLayout,
+} from "./layout";
 import { createPickerRenderer } from "./renderer";
 import { chooseFrameOption, enterFrameValue, type FramePromptIO } from "./simple-prompts";
 import {
@@ -304,7 +310,7 @@ async function runDirect(
   try {
     choice = await chooseFrameOption(
       { ...options, signal },
-      "Select a source frame",
+      directPickerTitle(state),
       [
         { name: "Frame number", value: "frame" },
         { name: "Timestamp", value: "time" },

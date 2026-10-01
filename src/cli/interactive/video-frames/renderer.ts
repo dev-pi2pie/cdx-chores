@@ -33,11 +33,11 @@ export function createPickerRenderer(output: NodeJS.WritableStream) {
             const marker = Math.round(
               options.layout.selectedPosition * (options.layout.kind === "full" ? 4 : 2),
             );
-            return [...line]
-              .map((character, index) =>
-                index === marker ? colors.yellow(character) : colors.dim(character),
-              )
-              .join("");
+            return (
+              colors.dim(line.slice(0, marker)) +
+              colors.yellow(line[marker] ?? "") +
+              colors.dim(line.slice(marker + 1))
+            );
           })
         : lines;
       output.write(styled.join("\r\n"));

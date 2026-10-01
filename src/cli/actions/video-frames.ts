@@ -223,6 +223,7 @@ export async function executePreparedVideoFrames(
 }
 export async function withVideoFramesSignal<T>(
   body: (signal: AbortSignal) => Promise<T>,
+  input?: NodeJS.ReadStream,
 ): Promise<T> {
   const controller = new AbortController();
   const interrupt = () =>
@@ -230,10 +231,15 @@ export async function withVideoFramesSignal<T>(
       new CliError("Operation cancelled.", { code: "PROCESS_CANCELLED", exitCode: 130 }),
     );
   process.on("SIGINT", interrupt);
+  const keypress = (_str: string, key: { ctrl?: boolean; name?: string }) => {
+    if (key.ctrl && (key.name === "c" || key.name === "d")) interrupt();
+  };
+  input?.on("keypress", keypress);
   try {
     return await body(controller.signal);
   } finally {
     process.off("SIGINT", interrupt);
+    input?.off("keypress", keypress);
   }
 }
 export async function actionVideoFrames(

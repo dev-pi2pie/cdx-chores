@@ -1,5 +1,6 @@
 import { input, select } from "@inquirer/prompts";
 import { selectInteractiveMenuChoice } from "../menu-prompt";
+import { getDisplayWidth } from "../../text-display-width";
 
 export interface FramePromptIO {
   input: NodeJS.ReadStream;
@@ -46,25 +47,66 @@ async function invokePrompt<T>(
 export async function chooseFrameOption<Value extends string>(
   io: FramePromptIO,
   message: string,
-  choices: { name: string; value: Value }[],
+  choices: { name: string; value: Value; description?: string; disabled?: boolean | string }[],
   exitValue: Value,
+  defaultValue?: Value,
 ): Promise<Value> {
+  const safeText = (value: string) => value.replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, " ");
+  const promptMessage = safeText(message);
+  const promptChoices = choices.map((choice) => ({
+    ...choice,
+    name: safeText(choice.name),
+    ...(choice.description ? { description: safeText(choice.description) } : {}),
+    ...(typeof choice.disabled === "string" ? { disabled: safeText(choice.disabled) } : {}),
+  }));
+  const help = "Up/Down navigate | Enter select | Esc Back";
+  const pageSize = () => {
+    const terminal = io.output as NodeJS.WritableStream & { rows?: number; columns?: number };
+    if (!Number.isSafeInteger(terminal.rows) || terminal.rows! < 1) return 7;
+    const columns =
+      Number.isSafeInteger(terminal.columns) && terminal.columns! > 0 ? terminal.columns! : 80;
+    const lines = (text: string) => Math.max(1, Math.ceil(getDisplayWidth(text) / columns));
+    const descriptionRows = Math.max(
+      0,
+      ...promptChoices.map((choice) => (choice.description ? lines(choice.description) : 0)),
+    );
+    // Inquirer paginates already wrapped rows. Reserve the header, help, and terminal margin.
+    return Math.max(
+      1,
+      Math.min(7, terminal.rows! - lines(`? ${promptMessage}`) - lines(help) - descriptionRows - 2),
+    );
+  };
   return await selectInteractiveMenuChoice({
-    message,
-    choices,
+    message: promptMessage,
+    choices: promptChoices,
     exitValue,
     input: io.input,
     output: io.output,
     selectImpl: (options, context) =>
       invokePrompt([io.signal, context?.signal], (signal) =>
-        select<Value>(options, { ...context, signal }),
+        select<Value>(
+          {
+            ...options,
+            default: defaultValue,
+            get pageSize() {
+              return pageSize();
+            },
+            theme: { style: { keysHelpTip: () => help } },
+          },
+          { ...context, signal },
+        ),
       ),
   });
 }
 
 export async function enterFrameValue(
   io: FramePromptIO,
-  options: { message: string; default?: string; validate: (value: string) => true | string },
+  options: {
+    message: string;
+    default?: string;
+    validate: (value: string) => true | string;
+    transformer?: (value: string, flags: { isFinal: boolean }) => string;
+  },
 ): Promise<string | undefined> {
   // Empty input is invalid for these fields, so it is also an unambiguous Escape result.
   const answer = await selectInteractiveMenuChoice<string>({

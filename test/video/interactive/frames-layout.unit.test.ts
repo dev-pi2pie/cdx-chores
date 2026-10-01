@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   derivePickerLayout,
+  directPickerTitle,
   selectionDetails,
   wrapPickerLine,
 } from "../../../src/cli/interactive/video-frames/layout";
@@ -14,6 +15,12 @@ const state: FramePickerState = {
   glyphs: "unicode",
 };
 const comfortable = { columns: 100, rows: 40, durationMs: 60_000, state };
+test("direct input keeps the precise request and resolved identity in its compact question", () => {
+  const question = directPickerTitle(state);
+  expect(question).toContain("00:00:01.234");
+  expect(question).toContain("F14 @00:00:01.000");
+  expect(wrapPickerLine(`? ${question}`, 27).length).toBeLessThanOrEqual(3);
+});
 
 describe("video frame adaptive layout", () => {
   test("wraps whole graphemes according to their displayed width", () => {

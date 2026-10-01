@@ -100,6 +100,7 @@ export async function runInteractiveMode(
       case "video:convert":
       case "video:resize":
       case "video:gif":
+      case "video:frames":
         await handleVideoInteractiveAction(runtime, pathPromptContext, action);
         return;
     }

@@ -296,6 +296,14 @@ Implementation begins from the Phase 6 acceptance receipt `26754458a11b4c6790900
 
 Picker projection now retains exact rational decoded timing and its original resolved object; display truncation is identified without changing selection. Direct resolution and other asynchronous stages use one feature operation input owner until work settles, with Escape cancellation and terminal restoration. Fatal child closure takes priority over cancellation recovery. Focused picker/layout/operation verification passed **38 cases / 239 assertions**, including fatal Escape/Ctrl+C, exact timing, pending-input ownership, and next-prompt restoration. TypeScript, lint, formatting, diff checks and build passed. No Phase 7 task is accepted yet.
 
+### Guided Flow Checkpoint
+
+The Interactive video menu now reaches one-frame, fixed-set and whole-video sequence exports through the shared preparation/export boundary. Settings include advertised format/quality choices, scale, destinations, applicable naming/serial inputs, and cadence estimates. Text review keeps original resolved identities, concrete names and output dimensions; only Export publishes images. Option changes retain selections and validate retained explicit extensions. Observable source changes restart source inspection; unconfirmed closure ends the flow.
+
+Shared path/text prompts now forward streams and abort signals through inline editors and simple fallbacks. Controlled workflow checks cover read-only review, custom identity retention across settings, stale extensions, repeated roles, sequence naming, source invalidation and fatal closure. Menu loading stays lazy so unrelated Interactive flows preserve their prompt boundaries.
+
+Managed unit verification passed **1,579 cases / 6,833 assertions** across 186 files; managed application verification passed **2,246 cases / 14,093 assertions** across 302 files. TypeScript, repository lint/format, diff checks and package build passed. A subsequent presentation refinement passed its affected **22 cases / 147 assertions**: the direct picker and export menu retain essential frame/settings details in their titles, and wave styling groups spans without changing stripped geometry. Native terminal and complete-range review evidence remain required before acceptance.
+
 ## Phase 7 Planning Refinement
 
 Expanded Phase 7's unchecked tasks into integration, TUI review/polish, and verification/acceptance groups. The integrated picker and surrounding flow now have an explicit presentation review, terminal-layout matrix, and finding/fix/recheck checkpoint before acceptance. Phase numbers, completed Phases 1–5 tasks, and the existing smoke/privacy boundaries are preserved; at this planning checkpoint, Phase 7 implementation had not started.
