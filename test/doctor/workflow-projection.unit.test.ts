@@ -71,6 +71,18 @@ const CONDITION_CONTRACT = {
     affectedWorkflowIds: ["video"],
     message: "FFmpeg is missing",
   },
+  "dependency.ffprobe.missing": {
+    affectedWorkflowIds: ["video"],
+    message: "FFprobe is required for video frames",
+  },
+  "video.frames.encoder.unsupported": {
+    affectedWorkflowIds: ["video"],
+    message: "Video frames encoder support is unavailable: PNG",
+  },
+  "video.frames.encoder.unknown": {
+    affectedWorkflowIds: ["video"],
+    message: "Video frames encoder support could not be verified: PNG",
+  },
   "dependency.fontconfig.discovery.missing": {
     affectedWorkflowIds: ["font.discovery"],
     message: "Fontconfig discovery is unavailable",
@@ -147,6 +159,22 @@ const ACTION_CONTRACT = {
     class: "required",
     command: "brew install ffmpeg",
     message: "Install FFmpeg",
+  },
+  "dependency.ffprobe.install": {
+    affectedWorkflowIds: ["video"],
+    class: "required",
+    command: "Install FFprobe with an FFmpeg package, then ensure ffprobe is on PATH",
+    message: "Check FFprobe installation and PATH for video frames",
+  },
+  "video.frames.encoder.install": {
+    affectedWorkflowIds: ["video"],
+    class: "required",
+    message: "Use an encoder-enabled FFmpeg build for the affected video frames formats/modes",
+  },
+  "video.frames.encoder.verify": {
+    affectedWorkflowIds: ["video"],
+    class: "recommended",
+    message: "Verify the intended FFmpeg encoder capabilities and PATH for video frames",
   },
   "dependency.fontconfig.install": {
     affectedWorkflowIds: ["font.discovery"],

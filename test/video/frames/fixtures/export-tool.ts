@@ -1,6 +1,7 @@
 // Controlled executable; structural image bytes prove orchestration, not fidelity.
 import { once } from "node:events";
 import { setTimeout as delay } from "node:timers/promises";
+import { appendFile } from "node:fs/promises";
 import { png, jpg, webp } from "./framing";
 const args = process.argv.slice(2),
   mode = process.env.CDX_FRAME_MODE ?? "normal";
@@ -17,6 +18,14 @@ async function write(bytes: Buffer | string) {
   if (!process.stdout.write(bytes)) await once(process.stdout, "drain");
 }
 async function main() {
+  if (process.env.CDX_FRAME_LOG)
+    await appendFile(process.env.CDX_FRAME_LOG, `${JSON.stringify(args)}\n`);
+  if (args.includes("-version")) {
+    await write(
+      `${process.argv[1]?.includes("ffprobe") ? "ffprobe" : "ffmpeg"} version controlled\n`,
+    );
+    return;
+  }
   if (args.includes("-encoders")) {
     await write(
       `Encoders:\n V..... png PNG\n V..... mjpeg JPG\n${mode === "unavailable" ? "" : " V..... libwebp WebP\n"}`,
@@ -34,7 +43,7 @@ async function main() {
       await write(
         `frame|stream_index=2|best_effort_timestamp=${sequence ? (sequence.starts[ordinal] ?? "N/A") : ordinal * 40}|duration=${sequence?.durations ? (sequence.durations[ordinal] ?? "N/A") : 40}|width=2|height=2|pix_fmt=bgra|sample_aspect_ratio=1:1|color_range=pc|color_space=gbr|color_primaries=bt709|color_transfer=iec61966-2-1\n`,
       );
-      await delay(2);
+      await delay(mode === "scan-slow" ? 75 : 2);
     }
     if (mode === "sequence-scan-failure") {
       process.stderr.write("Controlled late scan failure.\n");

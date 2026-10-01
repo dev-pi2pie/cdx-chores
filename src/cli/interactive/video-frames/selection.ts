@@ -1,5 +1,6 @@
 import type { FrameTime, FrameRequest } from "../../video-frames/types";
 export type { FrameTime, FrameRequest } from "../../video-frames/types";
+export { parseFrameNumber, parseFrameTime } from "../../video-frames/selectors";
 
 export interface FrameIdentity {
   frameNumber: number;
@@ -11,30 +12,6 @@ export interface FramePickerState {
   request: FrameRequest;
   resolved?: FrameIdentity;
   glyphs: "unicode" | "ascii";
-}
-
-export function parseFrameNumber(value: string): number {
-  if (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value)) || Number(value) < 1) {
-    throw new Error("Enter a positive, safely representable source frame number.");
-  }
-  return Number(value);
-}
-
-export function parseFrameTime(value: string, durationMs?: number): FrameTime {
-  const match = /^(\d{2,}):([0-5]\d):([0-5]\d)(?:\.(\d{1,3}))?$/.exec(value);
-  if (!match) throw new Error("Enter HH:MM:SS[.mmm], with minutes and seconds from 00 to 59.");
-  const milliseconds =
-    BigInt(match[1]!) * 3_600_000n +
-    BigInt(match[2]!) * 60_000n +
-    BigInt(match[3]!) * 1_000n +
-    BigInt((match[4] ?? "").padEnd(3, "0"));
-  if (milliseconds > BigInt(Number.MAX_SAFE_INTEGER)) {
-    throw new Error("Timestamp is too large to represent safely.");
-  }
-  if (isUsableDuration(durationMs) && milliseconds >= BigInt(durationMs)) {
-    throw new Error("Timestamp must be before the video end; use Last for the final frame.");
-  }
-  return { numerator: milliseconds, denominator: 1n };
 }
 
 export function isUsableDuration(durationMs: number | undefined): durationMs is number {

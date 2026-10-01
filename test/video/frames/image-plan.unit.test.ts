@@ -246,22 +246,62 @@ test("encoder inventory/help matches exact encoders and required modes", () => {
   expect(
     parseEncoderNames(
       "Encoders:\n V..... png PNG\n V..... libwebp_anim animated\n ...D.. webp decoder\n",
-    ).has("libwebp"),
+    )?.has("libwebp"),
   ).toBe(false);
-  expect(() => parseEncoderNames("unrelated")).toThrow("inspection failed");
+  expect(parseEncoderNames("unrelated")).toBeUndefined();
   expect(parseWebpHelp("Codec libwebp not recognized. lossless")).toEqual({
-    bgra: false,
-    lossless: undefined,
+    bgra: "unknown",
+    lossless: "unknown",
   });
   expect(
     parseWebpHelp(
       "Encoder libwebp [WebP]\n Supported pixel formats: bgra yuv420p\n -lossless <int> mode (from 0 to 1)\n",
     ),
-  ).toEqual({ bgra: true, lossless: true });
+  ).toEqual({ bgra: "supported", lossless: "supported" });
   expect(() =>
     requireImageEncoder(
-      { png: true, jpg: true, webp: true, webpLossless: false },
+      {
+        png: "supported",
+        jpg: "supported",
+        webp: "supported",
+        webpEncoder: "supported",
+        webpBgra: "supported",
+        webpLossless: "unsupported",
+      },
       imageOptions({ format: "webp" }),
     ),
   ).toThrow("encoder mode");
+});
+
+test("encoder checks keep unknown support distinct and require only the requested mode", () => {
+  const encoders = {
+    png: "supported" as const,
+    jpg: "unsupported" as const,
+    webp: "supported" as const,
+    webpEncoder: "supported" as const,
+    webpBgra: "supported" as const,
+    webpLossless: "unknown" as const,
+  };
+  expect(() => requireImageEncoder(encoders, imageOptions())).not.toThrow();
+  expect(() =>
+    requireImageEncoder(encoders, imageOptions({ format: "webp", quality: "high" })),
+  ).not.toThrow();
+  expect(() =>
+    requireImageEncoder(encoders, imageOptions({ format: "webp", quality: "full" })),
+  ).toThrow("could not be verified");
+  expect(() =>
+    requireImageEncoder({ ...encoders, webp: "unsupported" }, imageOptions({ format: "webp" })),
+  ).toThrow("is unavailable");
+  expect(
+    parseWebpHelp(
+      "Encoder libwebp_anim [WebP]:\n Supported pixel formats: bgra\n -lossless <int> (from 0 to 1)\n",
+    ),
+  ).toEqual({ bgra: "unknown", lossless: "unknown" });
+  expect(
+    parseWebpHelp(
+      "Encoder libwebp [WebP]:\n Supported pixel formats: \nlibwebp AVOptions:\n -lossless <int> (from 0 to 1)\n",
+    ),
+  ).toEqual({ bgra: "unknown", lossless: "supported" });
+  expect(parseEncoderNames("Encoders:\n A..... pcm_s16le PCM\n")?.has("png")).toBe(false);
+  expect(parseEncoderNames("Encoders:\n unknown successful format\n")).toBeUndefined();
 });

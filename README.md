@@ -56,7 +56,7 @@ Runtime requirement:
 | `data`        | `preview`, `extract`, `query`, `query codex`, `stack`, `stack replay`, `parquet preview`, `duckdb doctor`, `duckdb extension install`, `(conversion actions)` | Tabular conversion, preview, extraction, multi-source stacking, DuckDB-backed SQL query, and Codex SQL drafting | lightweight `csv` / `tsv` / `json` preview and conversion stay on the in-memory PapaParse-backed path; `extract` is best suited to shaping one clean table, `stack` assembles many matching local sources before later work, and `query` is the expressive lane for filtering, projection, and output selection |
 | `md`          | `to-docx`, `to-pdf`, `pdf-profile init`, `pdf-profile codex`, `pdf-template init`, `pdf-template codex`, `pdf-project codex`, `frontmatter-to-json`           | Markdown conversion, PDF profile/template/project generation, and metadata extraction                           | `to-docx` requires `pandoc`; `to-pdf` requires Pandoc 2.0+ and `weasyprint`                                                                                                                                                                                                                                     |
 | `rename`      | `file`, `batch`, `cleanup`, `apply`                                                                                                                           | Safe rename previews, cleanup flows, and replayable apply runs                                                  | Codex analyzer routes are optional, not required for standard rename usage                                                                                                                                                                                                                                      |
-| `video`       | `convert`, `resize`, `gif`                                                                                                                                    | `ffmpeg`-backed video wrappers                                                                                  | Requires `ffmpeg`                                                                                                                                                                                                                                                                                               |
+| `video`       | `convert`, `resize`, `gif`, `frames` | Video conversion and still-frame exports | Frames requires `ffmpeg`, `ffprobe`, and the requested image encoder; other video commands require `ffmpeg` |
 | `interactive` | `interactive` or no args                                                                                                                                      | Guided menu flow for supported command groups                                                                   | Requires a TTY                                                                                                                                                                                                                                                                                                  |
 
 Data notes:
@@ -109,6 +109,11 @@ authoring with an optional render handoff.
 The default doctor view is a compact workflow summary with detected actions.
 Use `--details` for complete human-readable evidence and `--json` for
 automation or machine-readable checks.
+
+Video frames availability requires both FFmpeg and FFprobe. Doctor separately
+reports advertised PNG, JPG, still-WebP, and WebP lossless support; unknown
+assessments remain visible. These checks inspect encoder information without
+reading media or generating images. Successful export still depends on the source.
 
 Machine-readable check:
 
@@ -390,6 +395,22 @@ Cleanup option comparison:
 | `--conflict-strategy` | Resolve collisions only when the cleaned target conflicts | `skip`, `number`, `uid-suffix`           |
 
 ### Video
+
+Export one frame, a fixed frame set, or a whole-video image sequence:
+
+```bash
+cdx-chores video frames -i ./clip.mp4 --first-frame
+cdx-chores video frames -i ./clip.mp4 --frame-set first-middle-last
+cdx-chores video frames -i ./clip.mp4 --interval 2s --format webp
+```
+
+Choose exactly one selector or cadence. PNG is the default and requires quality
+`full`; JPG and WebP offer `low`, `medium`, `high`, and `full`. WebP `full` requires
+advertised lossless support and rejects fully transparent pixels whose RGB values
+the supported encoder cannot preserve; use PNG for exact RGBA in that case.
+`--output` names a file for one frame and a folder for sets/sequences. Existing
+files require `--overwrite`; completed images remain after interruption or failure.
+Use `video frames --help` for strict selector, template, and serial options.
 
 Video to GIF:
 

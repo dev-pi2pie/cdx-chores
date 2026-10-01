@@ -1,7 +1,13 @@
 import { CliError } from "./errors";
 import { execCommand, type ExecCommandResult } from "./process";
 
-export type DependencyCommand = "pandoc" | "ffmpeg" | "weasyprint" | "fc-list" | "fc-query";
+export type DependencyCommand =
+  | "pandoc"
+  | "ffmpeg"
+  | "ffprobe"
+  | "weasyprint"
+  | "fc-list"
+  | "fc-query";
 export type DependencyCommandRunner = (
   command: string,
   args: string[],
@@ -87,7 +93,14 @@ const DEPENDENCIES: Record<DependencyCommand, DependencyDescriptor> = {
       default: "Install via your package manager (examples: apt/dnf/pacman) for ffmpeg",
     },
     probes: [{ args: ["-version"], output: commandOutput }],
-    parseVersion: (output) => parseFirstLineWithPattern(output, /^ffmpeg version\s+([^\s]+)/i),
+    parseVersion: (output) => firstLine(output).match(/^ffmpeg version\s+([^\s]+)/i)?.[1] ?? null,
+  },
+  ffprobe: {
+    installHints: {
+      default: "Install FFprobe with an FFmpeg package, then ensure ffprobe is on PATH",
+    },
+    probes: [{ args: ["-version"], output: commandOutput }],
+    parseVersion: (output) => firstLine(output).match(/^ffprobe version\s+([^\s]+)/i)?.[1] ?? null,
   },
   weasyprint: {
     installHints: {

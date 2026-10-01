@@ -262,6 +262,16 @@ Implementation begins from `1ce22917a106c18722334f98eb66d6fa80db98b9`. Direct co
 
 A controlled two-image encoder failure exposed a pending input-end callback after child closure. The shared process boundary now starts its existing cancellation/confirmation policy automatically when a child closes before input settlement. This prevents a pending action from disappearing with a successful Node exit. Seven process-ownership unit cases / 21 assertions passed; the new controlled Node command scenario confirms bounded partial-failure reporting. Existing export verification accepts the additional premature-input error while retaining closure, source, and staging checks.
 
+### Direct Command and Doctor Checkpoint
+
+The thin frames action separates read-only preparation from export and retains exact resolver-bound selections. Direct validation covers selector/cadence conflicts, image settings, naming scope and explicit extensions before tool/source work. Both tools and requested advertised encoder support are checked with bounded, cancellable metadata probes before source inspection. Progress/notices use stderr; success reports actual writes/repeats, while failures report only confirmed partial outputs. Controlled Node command checks cover all modes, read-only review, retained identity, missing FFprobe, early encoder failure, scan/export interruption, and signal restoration.
+
+Doctor adds `tools.ffprobe`, availability-only `video.frames`, and separate `videoFrames.encoders` assessments. Exact entries, BGRA input, and WebP lossless mode remain supported/unsupported/unknown; operational probe failures keep exit 2 without a partial report. Controlled availability/projection and parser tests passed. Existing video capabilities retain their FFmpeg-only dependency.
+
+Source evidence: final focused command/options/doctor checks passed **55 cases / 361 assertions**; action/export failures passed **17 cases / 86 assertions**, with scan/export interruption rechecked afterward. Managed units passed **1,568 cases / 6,768 assertions** across 185 files. TypeScript, lint, formatting, diff checks and package build passed. Managed application results follow in phase acceptance evidence.
+
+Built evidence is separate: the actual Node CLI passed nine small synthetic export cases (**18 images**) covering first/last/number/time, fixed set, repeated FPS targets, oversized interval, PNG/JPG/still-WebP, conflict and extension rejection, and source preservation. PNG/WebP pixels matched independent opaque references; JPG decoded with expected dimensions. ESM/CommonJS package loading passed. This bounded processing proof does not establish heavy real-content or cross-platform support. Phase acceptance and complete-range review remain pending.
+
 ## Phase 6 Planning Refinement
 
 Clarified doctor inspection against the executables used by frames execution, exact encoder entries, the verified WebP BGRA input, and separate lossless-mode support. Version/package labels cannot establish capability. Controlled verification now names supported, absent/unsupported, unknown, and failed-probe cases; routine doctor inspection remains separate from actual encoding/pixel smoke evidence. At this planning checkpoint, Phase 6 implementation had not started.

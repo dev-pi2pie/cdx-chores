@@ -1,6 +1,13 @@
 import type { Command } from "commander";
 
-import { actionVideoConvert, actionVideoGif, actionVideoResize } from "../actions";
+import { InvalidArgumentError } from "commander";
+import {
+  actionVideoConvert,
+  actionVideoFrames,
+  actionVideoGif,
+  actionVideoResize,
+  type VideoFramesOptions,
+} from "../actions";
 import { parsePositiveIntegerOption, parsePositiveNumberOption } from "../options/parsers";
 import type { CliRuntime } from "../types";
 import {
@@ -14,6 +21,54 @@ import {
 
 export function registerVideoCommands(program: Command, runtime: CliRuntime): void {
   const videoCommand = program.command("video").description("Video utilities (ffmpeg-backed)");
+
+  const once = (flag: string) => (value: string, previous?: string) => {
+    if (previous !== undefined)
+      throw new InvalidArgumentError(`${flag} may be supplied only once.`);
+    return value;
+  };
+  videoCommand
+    .command("frames")
+    .description("Export one frame, a fixed frame set, or a whole-video image sequence")
+    .requiredOption("-i, --input <path>", "Input video file")
+    .option("--first-frame", "First displayed source frame")
+    .option("--last-frame", "Final displayed source frame")
+    .option("--frame-number <number>", "Source frame number (1-based)", once("--frame-number"))
+    .option("--at <timestamp>", "Position HH:MM:SS[.mmm] from the first frame", once("--at"))
+    .option("--frame-set <preset>", "first-last or first-middle-last", once("--frame-set"))
+    .option("--fps <rate>", "Positive integer or decimal sampling rate", once("--fps"))
+    .option(
+      "--interval <duration>",
+      "Sampling interval, for example 500ms, 2s, or 1m",
+      once("--interval"),
+    )
+    .option("--format <format>", "png (default), jpg, or webp", once("--format"))
+    .option(
+      "--quality <preset>",
+      "low, medium, high, or full (default); PNG requires full",
+      once("--quality"),
+    )
+    .option("--scale <factor>", "Output scale from 0.1 to 1 (default 1)", once("--scale"))
+    .option(
+      "-o, --output <path>",
+      "Image file for one frame; folder for sets/sequences",
+      once("--output"),
+    )
+    .option("--pattern <template>", "Frame-set/sequence filename template", once("--pattern"))
+    .option("--serial-start <number>", "Sequence serial start (default 1)", once("--serial-start"))
+    .option(
+      "--serial-width <digits>",
+      "Sequence minimum serial width (default 6)",
+      once("--serial-width"),
+    )
+    .option("--overwrite", "Replace conflicting image files", false)
+    .addHelpText(
+      "after",
+      "\nChoose exactly one selector, frame-set preset, FPS, or interval.\nExamples:\n  video frames -i clip.mp4 --first-frame\n  video frames -i clip.mp4 --frame-set first-middle-last\n  video frames -i clip.mp4 --interval 2s --format webp",
+    )
+    .action(async (options: VideoFramesOptions) => {
+      await actionVideoFrames(runtime, options);
+    });
 
   videoCommand
     .command("convert")

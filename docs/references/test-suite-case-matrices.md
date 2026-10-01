@@ -54,6 +54,19 @@ Use [Test Suite Audit Inventory](test-suite-audit-inventory.md) for the fixed pr
 
 `sampler.unit.test.ts` owns exact FPS/interval grammar, independent cadence targets and count estimates, presentation boundaries, retained repeats, bounded selection expressions, incremental timing rejection, and reliable end/EOF handling. `sequence.app.test.ts` owns the Node sampler/exporter boundary, global ordinals/serials, backpressure, overwrite, partial counts, and late timing/tool/filesystem/cancellation failures with controlled executables. `images.app.test.ts` owns generated/literal single-image and fixed-set destinations, requested labels, overwrite, and pre-write source-alpha rejection. Real sequence content, resource observations, and source/encoder alpha limitations remain explicit synthetic smoke evidence; regular fixtures do not establish pixel fidelity.
 
+### Video Frames Command and Doctor
+
+`test/video/frames/options.unit.test.ts` owns shared direct option validation.
+`action.app.test.ts` owns the Node command/action boundary with controlled tools,
+pre-write review, retained identities, all export modes, dependency preflight, and
+partial failures. Command UX cases cover discovery and repeated cadence rejection.
+These new contracts introduce no historical test-path migration.
+
+`test/doctor/actions/video-frames.unit.test.ts` owns the FFmpeg/FFprobe availability
+matrix, exact advertised encoder/input/lossless assessments, unknown successful
+output, operational failure, and consistent Summary/Details/JSON projections.
+Controlled dependency/report fixtures preserve existing video capability meanings.
+
 ### Streaming Process Foundation
 
 `test/cli-foundations/process/` owns incremental UTF-8 records, bounded metadata/input queues/diagnostic tails, structured progress, direct argument handling, and registered child/input-producer/consumer closure. Application fixtures exercise actual Node pipes, awaited input writes, and cooperative/resistant children; unit cases model queue rejection, unconfirmed closure, and Windows force transitions. Generated media remains an explicitly invoked smoke task, separate from these process contracts.

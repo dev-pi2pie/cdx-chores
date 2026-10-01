@@ -3,6 +3,26 @@ import { describe, expect, test } from "bun:test";
 import { runCli } from "../../helpers/cli-test-utils";
 
 describe("Video command UX", () => {
+  test("frames help exposes exact selectors and repeated cadence options fail", () => {
+    const help = runCli(["video", "frames", "--help"]);
+    expect(help.exitCode).toBe(0);
+    expect(help.stdout).toContain("--frame-number <number>");
+    expect(help.stdout).toContain("--at <timestamp>");
+    expect(help.stdout).toContain("--interval <duration>");
+    const repeated = runCli([
+      "video",
+      "frames",
+      "-i",
+      "missing.mp4",
+      "--interval",
+      "2s",
+      "--interval",
+      "3s",
+    ]);
+    expect(repeated.exitCode).not.toBe(0);
+    expect(repeated.stderr).toContain("--interval may be supplied only once");
+    expect(repeated.stderr).not.toContain("Missing required dependency");
+  });
   test("video resize help documents scale-first and explicit-dimension modes", () => {
     const result = runCli(["video", "resize", "--help"]);
 

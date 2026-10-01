@@ -121,6 +121,8 @@ export type {
   SuggestRenameCleanupWithCodexOptions,
 } from "./rename/index";
 export { actionVideoConvert, actionVideoGif, actionVideoResize } from "./video";
+export { actionVideoFrames, prepareVideoFrames, executePreparedVideoFrames } from "./video-frames";
+export type { VideoFramesOptions, PreparedVideoFrames } from "./video-frames";
 export type {
   VideoConvertOptions,
   VideoGifLook,
