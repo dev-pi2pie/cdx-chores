@@ -10,7 +10,7 @@ agent: codex
 
 Implement `cdx-chores video frames` for one exact source frame, a fixed frame set, or a whole-video sequence of PNG, JPG, or still WebP images. Deliver the direct CLI and guided Interactive flow without changing convert, resize, or GIF behavior.
 
-Phases 1–4 are complete. The accepted checkpoints cover terminal prototypes, real-tool feasibility, exact resolution, and verified backend image export/private image-processing smoke. Phase 5 sampling, destinations, naming, and sequence smoke are implemented and verified, with complete-range review pending. Command/Interactive integration and integrated stress remain pending. See the [unified execution record](jobs/2026-10-01-video-frames-implementation.md) for evidence and checkpoint reviews.
+Phases 1–5 are complete. The accepted checkpoints cover terminal prototypes, real-tool feasibility, exact resolution, verified backend image export, exact sequence sampling, destinations/naming, and private processing smoke. Command/Interactive integration and integrated stress remain pending. See the [unified execution record](jobs/2026-10-01-video-frames-implementation.md) for evidence and complete-range checkpoint reviews.
 
 The research owns selection, sampling, terminal, image, and output semantics. This plan owns implementation order, acceptance checkpoints, development-test cost, and evidence handling. Runtime support claims require recorded results. Implement prototypes and verification support in TypeScript/JavaScript, using Bun for development and Node.js for runtime checks.
 
@@ -195,7 +195,7 @@ Tasks:
 - [x] Verify constant/variable/sparse timing, exact boundaries, unknown/conflicting ends, duplicate/decreasing/missing starts, decimal rates, oversized intervals, repeated source identities, and late failures. Preserve requested cadence and report actual writes/repeats only on verified completion.
 - [x] Exercise bounded synthetic sequence/resource runs and private sequence smoke; verify output content/order, backpressure, cancellation, reporting, source preservation, safe cleanup behavior, and permitted local review-artifact handling.
 
-Implementation and verification evidence are recorded in the [Phase 5 checkpoint](jobs/2026-10-01-video-frames-implementation.md#phase-5); full-range review is pending.
+Phase 5 is accepted. Implementation, verification, and complete-range review evidence are recorded in the [Phase 5 checkpoint](jobs/2026-10-01-video-frames-implementation.md#phase-5).
 
 Checkpoint: small independent fixtures and actual tool outputs agree on target count, source identity, and filename order. No incomplete timing/export result is promoted to success, and the manual workload stays within its declared budget.
 

@@ -15,7 +15,7 @@ Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation
 | 2 | Real-tool timing, stream agreement, encoder/filter feasibility, bounded writer topology, decoder guard, synthetic workload measurements | Completed |
 | 3 | Streaming records, exact identities, bounded cache, source invalidation, cancellation/child closure | Completed |
 | 4 | Verified pixels, alpha/transforms, safe publication, failure accounting, private processing smoke | Completed |
-| 5 | Sampling, retained repeats, destinations and concrete naming | In progress |
+| 5 | Sampling, retained repeats, destinations and concrete naming | Completed |
 | 6 | Direct command, validation, dependencies and doctor | Not started |
 | 7 | Guided Interactive flow and recovery | Not started |
 | 8 | Full regression, explicit smoke, documentation and research closure evidence | Not started |
@@ -244,11 +244,15 @@ Each long case retained one raw frame and at most one staged image; the shared l
 
 Final regression passed: managed units **1,510 cases / 6,393 assertions** across 183 files; managed applications **2,235 cases / 14,036 assertions** across 299 files; TypeScript, lint, format, diff checks, package build, legacy built video help, and ESM/CommonJS package loading. Source backend bundles are separate evidence from future built frames-command integration. Node 26.5.0 on macOS is tested; minimum Node, other platforms, and heavy real content remain unverified.
 
-Private processing outcomes: PNG sequence export **passed**; JPG sequence export **passed**; still-WebP sequence export **passed**; source preservation **passed**; owned staging cleanup **passed**. Only operation outcomes are recorded. Full Phase 5 range review remains pending.
+Private processing outcomes: PNG sequence export **passed**; JPG sequence export **passed**; still-WebP sequence export **passed**; source preservation **passed**; owned staging cleanup **passed**. Only operation outcomes are recorded. Full Phase 5 range review was pending at this checkpoint.
 
 ### Review Follow-up
 
-The complete Phase 5 implementation range `67827e8456521cb4bfe3d73e764ef1db36994831..4094954c3904834bd63c8a19061ba1f0737f2681` received code, test/evidence, security-boundary, and documentation review. No actionable code/test/security findings remained. Documentation review found stale research statements saying verified backend and terminal-prototype behavior still lacked evidence. Those statements now link scoped checkpoint results and keep production command/Interactive integration, broader codecs/color paths, heavy real content, minimum Node, and other platforms open. Expanded-range documentation review remains pending.
+The complete Phase 5 implementation range `67827e8456521cb4bfe3d73e764ef1db36994831..4094954c3904834bd63c8a19061ba1f0737f2681` received code, test/evidence, security-boundary, and documentation review. No actionable code/test/security findings remained. Documentation review found stale research statements saying verified backend and terminal-prototype behavior still lacked evidence. Those statements now link scoped checkpoint results and keep production command/Interactive integration, broader codecs/color paths, heavy real content, minimum Node, and other platforms open. Expanded-range documentation review was pending at this follow-up.
+
+### Review and Acceptance
+
+The complete implementation range `67827e8456521cb4bfe3d73e764ef1db36994831..371cc129e93b44def4467913868676710b992d5d` passed phase reviews with no remaining actionable findings after the documentation follow-up. Source/tests were unchanged by that follow-up; expanded-range documentation review confirmed the evidence/currentness correction. Phase 5 is accepted on 2026-10-01; all Phase 5 tasks are checked. The plan stays active, the research stays in-progress, and this record remains open for Phases 6–8. Ignored synthetic smoke artifacts are retained for local review; later removal needs no public cleanup record. Source-dependent alpha limitations and broader support gaps remain scoped as recorded above.
 
 ## Related Research
 

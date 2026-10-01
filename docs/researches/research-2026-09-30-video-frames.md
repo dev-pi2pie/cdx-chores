@@ -10,7 +10,7 @@ agent: codex
 
 Research `cdx-chores video frames` for extracting one source frame, a fixed frame set, or a whole-video sequence of still images. The feature should support direct CLI invocation and a guided Interactive flow, with PNG, JPG, and WebP output.
 
-This research is in progress. Repository observations below describe existing code; new command examples, prompts, defaults, and algorithms are proposals unless identified as agreed direction. Accepted Phases 1–4, including verified backend image export/private processing, are recorded in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md). Phase 5 backend sampling, destinations, and naming are implemented and verified with range review pending. Command/Interactive integration and integrated stress remain pending.
+This research is in progress. Repository observations below describe existing code; new command examples, prompts, defaults, and algorithms are proposals unless identified as agreed direction. Accepted Phases 1–5, including verified backend image/sequence export, destinations/naming, and private processing, are recorded in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md). Command/Interactive integration and integrated stress remain pending.
 
 Agreed direction from the design discussion:
 
