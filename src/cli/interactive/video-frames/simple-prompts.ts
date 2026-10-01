@@ -1,6 +1,6 @@
 import { input, select } from "@inquirer/prompts";
 import { selectInteractiveMenuChoice } from "../menu-prompt";
-import { getDisplayWidth } from "../../text-display-width";
+import { getDisplayWidth, truncateToDisplayWidth } from "../../text-display-width";
 
 export interface FramePromptIO {
   input: NodeJS.ReadStream;
@@ -59,21 +59,45 @@ export async function chooseFrameOption<Value extends string>(
     ...(choice.description ? { description: safeText(choice.description) } : {}),
     ...(typeof choice.disabled === "string" ? { disabled: safeText(choice.disabled) } : {}),
   }));
-  const help = "Up/Down navigate | Enter select | Esc Back";
-  const pageSize = () => {
+  const terminalSize = () => {
     const terminal = io.output as NodeJS.WritableStream & { rows?: number; columns?: number };
-    if (!Number.isSafeInteger(terminal.rows) || terminal.rows! < 1) return 7;
-    const columns =
-      Number.isSafeInteger(terminal.columns) && terminal.columns! > 0 ? terminal.columns! : 80;
+    return {
+      rows: Number.isSafeInteger(terminal.rows) && terminal.rows! > 0 ? terminal.rows! : undefined,
+      columns:
+        Number.isSafeInteger(terminal.columns) && terminal.columns! > 0 ? terminal.columns! : 80,
+    };
+  };
+  const help = () =>
+    terminalSize().columns < 40
+      ? "Up/Down | Enter | Esc Back"
+      : "Up/Down navigate | Enter select | Esc Back";
+  const fitDescription = (text: string) => {
+    const { rows, columns } = terminalSize();
+    if (rows === undefined) return text;
+    const headerRows = Math.ceil(getDisplayWidth(`? ${promptMessage}`) / columns);
+    const helpRows = Math.ceil(getDisplayWidth(help()) / columns);
+    // Keep a choice row, a separator and a margin visible even with a long description.
+    const width = Math.max(0, rows - headerRows - helpRows - 3) * columns;
+    return getDisplayWidth(text) <= width
+      ? text
+      : width > 3
+        ? truncateToDisplayWidth(text, width - 3) + "..."
+        : "";
+  };
+  const pageSize = () => {
+    const { rows, columns } = terminalSize();
+    if (rows === undefined) return 7;
     const lines = (text: string) => Math.max(1, Math.ceil(getDisplayWidth(text) / columns));
     const descriptionRows = Math.max(
       0,
-      ...promptChoices.map((choice) => (choice.description ? lines(choice.description) : 0)),
+      ...promptChoices.map((choice) =>
+        choice.description ? lines(fitDescription(choice.description)) : 0,
+      ),
     );
     // Inquirer paginates already wrapped rows. Reserve the header, help, and terminal margin.
     return Math.max(
       1,
-      Math.min(7, terminal.rows! - lines(`? ${promptMessage}`) - lines(help) - descriptionRows - 2),
+      Math.min(7, rows - lines(`? ${promptMessage}`) - lines(help()) - descriptionRows - 2),
     );
   };
   return await selectInteractiveMenuChoice({
@@ -87,11 +111,22 @@ export async function chooseFrameOption<Value extends string>(
         select<Value>(
           {
             ...options,
-            default: defaultValue,
+            get choices() {
+              return promptChoices.map((choice) => ({
+                ...choice,
+                ...(choice.description ? { description: fitDescription(choice.description) } : {}),
+              }));
+            },
+            loop: false,
+            default: promptChoices.some(
+              (choice) => choice.value === defaultValue && !choice.disabled,
+            )
+              ? defaultValue
+              : promptChoices.find((choice) => !choice.disabled)?.value,
             get pageSize() {
               return pageSize();
             },
-            theme: { style: { keysHelpTip: () => help } },
+            theme: { style: { keysHelpTip: help } },
           },
           { ...context, signal },
         ),
@@ -106,6 +141,9 @@ export async function enterFrameValue(
     default?: string;
     validate: (value: string) => true | string;
     transformer?: (value: string, flags: { isFinal: boolean }) => string;
+    onChange?: (value: string) => void;
+    /** Revisited drafts are editable; ordinary defaults remain suggestions. */
+    editableDefault?: boolean;
   },
 ): Promise<string | undefined> {
   // Empty input is invalid for these fields, so it is also an unambiguous Escape result.
@@ -117,7 +155,21 @@ export async function enterFrameValue(
     output: io.output,
     selectImpl: (_choices, context) =>
       invokePrompt([io.signal, context?.signal], (signal) =>
-        input(options, { ...context, signal }),
+        input(
+          {
+            ...options,
+            prefill: options.editableDefault ? "editable" : "tab",
+            ...(options.onChange
+              ? {
+                  transformer: (value: string, flags: { isFinal: boolean }) => {
+                    options.onChange!(value);
+                    return options.transformer?.(value, flags) ?? value;
+                  },
+                }
+              : {}),
+          },
+          { ...context, signal },
+        ),
       ),
   });
   return answer === "" ? undefined : answer;

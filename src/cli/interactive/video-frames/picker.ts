@@ -302,6 +302,7 @@ async function runWave(
 async function runDirect(
   options: FramePickerOptions,
   state: FramePickerState,
+  drafts: { choice?: "frame" | "time"; frame?: string; time?: string },
 ): Promise<WaveOutcome | "retry"> {
   const restoreWave = new AbortController();
   const resize = () => {
@@ -327,6 +328,7 @@ async function runDirect(
         { name: "Back", value: "back" },
       ],
       "back",
+      drafts.choice,
     );
   } catch (error) {
     if (restoreWave.signal.aborted && !options.signal?.aborted) return "retry";
@@ -337,6 +339,7 @@ async function runDirect(
   if (choice === "back") return { kind: "result", result: null };
   let request = state.request;
   if (choice !== "current") {
+    drafts.choice = choice;
     const parse = (value: string): FrameRequest =>
       choice === "frame"
         ? { kind: "frame", frameNumber: parseFrameNumber(value) }
@@ -352,6 +355,11 @@ async function runDirect(
         choice === "frame"
           ? "Source frame (1-based; upper bound verified on resolution)"
           : "Time HH:MM:SS[.mmm]",
+      default: drafts[choice],
+      editableDefault: drafts[choice] !== undefined,
+      onChange: (value) => {
+        drafts[choice] = value;
+      },
       validate: (value) => {
         try {
           parse(value);
@@ -391,12 +399,15 @@ export async function promptFramePicker(
     );
   }
   let state = options.initialState ?? { request: { kind: "first" }, glyphs: "unicode" };
+  const drafts: { choice?: "frame" | "time"; frame?: string; time?: string } = {};
   for (;;) {
     if (options.signal?.aborted) throw abortError();
     const useWave =
       supportsRawSessionIO(options.input, options.output) &&
       layoutFor(options, state).kind !== "direct";
-    const outcome = useWave ? await runWave(options, state) : await runDirect(options, state);
+    const outcome = useWave
+      ? await runWave(options, state)
+      : await runDirect(options, state, drafts);
     if (outcome === "retry") continue;
     if (outcome.kind === "result") return outcome.result;
     state = outcome.state;

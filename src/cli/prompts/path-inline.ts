@@ -48,6 +48,8 @@ export interface InlinePathPromptOptions {
   stdin: NodeJS.ReadStream;
   stdout: NodeJS.WritableStream;
   signal?: AbortSignal;
+  initialValue?: string;
+  onChange?: (value: string) => void;
   colorEnabled?: boolean;
   validate: ValidationFn;
   suggestionFilter: SuggestionFilter;
@@ -111,7 +113,7 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
   const stdout = options.stdout;
   const resolveSuggestions = options.resolveSuggestions ?? resolvePathSuggestions;
 
-  let value = "";
+  let value = options.initialValue ?? "";
   let ghostSuffix = "";
   let interactionState: InlinePromptInteractionState = clearInteractionState();
   let renderScheduled = false;
@@ -132,6 +134,7 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
   };
 
   const scheduleRender = (): void => {
+    if (!closed) options.onChange?.(value);
     if (closed) {
       return;
     }
@@ -375,6 +378,7 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
         return;
       }
       settled = true;
+      options.onChange?.(value);
       closed = true;
       activeRefreshSeq += 1;
       cleanup();

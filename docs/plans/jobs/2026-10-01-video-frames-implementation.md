@@ -361,6 +361,12 @@ Implementation begins from `3a9c891ccbba9a10935fae250ee8f5e41747d95b`. Output pr
 
 Completion and partial-output reporting now separate indented destinations/retained paths from plain count labels, use standard cyan only on eligible streams, and omit added periods. Image counts use natural plurals. The controlled Node action fixture passed, covering all export modes, relative/absolute paths with spaces, color/plain parity, redirected stdout, `--no-color`, empty `NO_COLOR`, partial results and interruption. Scoped lint/format and diff checks passed; native terminal verification and complete Phase 8 acceptance remain pending.
 
+### Selection Menu Checkpoint
+
+Frames menus now use finite pagination, concise cadence labels and selected descriptions. Local cadence, settings and naming loops return Back/Escape to their parent prompt and retain applicable choices/drafts. Direct frame/time editors retain escaped drafts without resolving until acceptance. Optional shared path/text draft hooks preserve other callers. Narrow descriptions fit the measured display and expand after resize; disabled choices remain unselectable.
+
+Controlled Node menu/picker checks passed **22 cases / 96 assertions**; settings/naming units passed **17 / 162**; affected shared prompt regressions passed **45 / 170**. Type, scoped lint/format and diff checks passed, and the menu changes had no actionable code-review findings. Workflow integration, native terminal rechecks and full Phase 8 acceptance remain pending.
+
 ## Related Research
 
 - [Video Frame Selection, Frame Sets, and Sequence Export](../../researches/research-2026-09-30-video-frames.md)

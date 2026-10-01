@@ -31,54 +31,73 @@ export interface FrameImageSettings {
 export async function promptFrameCadence(
   io: FramePromptIO,
   duration?: FrameTime,
+  initial?: { fps?: string; interval?: string },
 ): Promise<{ fps?: string; interval?: string } | null> {
-  const kind = await chooseFrameOption(
-    io,
-    "Sequence cadence",
-    [
-      { name: "Images per second (FPS)", value: "fps" },
-      { name: "Time between images (interval)", value: "interval" },
-      { name: "Back", value: "back" },
-    ],
-    "back",
-  );
-  if (kind === "back") return null;
-  const presets =
-    kind === "fps" ? ["24", "25", "30", "60"] : ["500ms", "1s", "2s", "5s", "10s", "30s", "1m"];
-  const choices = presets.map((value) => ({
-    name: `${kind === "fps" ? `${value} FPS` : `Every ${value}`} - ${frameCadenceFeedback(kind, value, duration)}`,
-    value,
-  }));
-  const selected = await chooseFrameOption(
-    io,
-    kind === "fps" ? "Images per second" : "Sampling interval",
-    [
-      ...choices,
-      { name: kind === "fps" ? "Custom FPS" : "Custom interval", value: "custom" },
-      { name: "Back", value: "back" },
-    ],
-    "back",
-  );
-  if (selected === "back") return null;
-  let value = selected;
-  if (selected === "custom") {
-    const defaultValue = kind === "fps" ? "24" : "1s";
-    const answer = await enterFrameValue(io, {
-      message:
-        kind === "fps"
-          ? "FPS (positive integer or decimal)"
-          : "Interval (positive integer + ms, s, or m)",
-      default: defaultValue,
-      validate: (value) => validateFrameCadenceValue(kind, value),
-      transformer: (value) => {
-        const feedback = frameCadenceFeedback(kind, value || defaultValue, duration);
-        return feedback ? `${value} - ${feedback}` : value;
-      },
-    });
-    if (answer === undefined) return null;
-    value = answer;
+  let kind: "fps" | "interval" = initial?.interval ? "interval" : "fps";
+  const drafts: Partial<Record<"fps" | "interval", string>> = { ...initial };
+  const selectedValues: Partial<Record<"fps" | "interval", string>> = {};
+  for (;;) {
+    const selectedKind = await chooseFrameOption(
+      io,
+      "Sequence cadence",
+      [
+        { name: "Images per second (FPS)", value: "fps" },
+        { name: "Time between images (interval)", value: "interval" },
+        { name: "Back", value: "back" },
+      ],
+      "back",
+      kind,
+    );
+    if (selectedKind === "back") return null;
+    kind = selectedKind;
+    const presets =
+      kind === "fps" ? ["24", "25", "30", "60"] : ["500ms", "1s", "2s", "5s", "10s", "30s", "1m"];
+    let selected =
+      selectedValues[kind] ??
+      (drafts[kind] === undefined
+        ? presets[0]
+        : presets.includes(drafts[kind]!)
+          ? drafts[kind]
+          : "custom");
+    for (;;) {
+      selected = await chooseFrameOption(
+        io,
+        kind === "fps" ? "Images per second" : "Sampling interval",
+        [
+          ...presets.map((value) => ({
+            name: kind === "fps" ? value + " FPS" : "Every " + value,
+            description: frameCadenceFeedback(kind, value, duration),
+            value,
+          })),
+          { name: kind === "fps" ? "Custom FPS" : "Custom interval", value: "custom" },
+          { name: "Back", value: "back" },
+        ],
+        "back",
+        selected,
+      );
+      if (selected === "back") break;
+      selectedValues[kind] = selected;
+      if (selected !== "custom") return { [kind]: selected };
+      const defaultValue = drafts[kind] ?? (kind === "fps" ? "24" : "1s");
+      const answer = await enterFrameValue(io, {
+        message:
+          kind === "fps"
+            ? "FPS (positive integer or decimal)"
+            : "Interval (positive integer + ms, s, or m)",
+        default: defaultValue,
+        editableDefault: drafts[kind] !== undefined,
+        onChange: (value) => {
+          drafts[kind] = value;
+        },
+        validate: (value) => validateFrameCadenceValue(kind, value),
+        transformer: (value) => {
+          const feedback = frameCadenceFeedback(kind, value || defaultValue, duration);
+          return feedback ? value + " - " + feedback : value;
+        },
+      });
+      if (answer !== undefined) return { [kind]: answer };
+    }
   }
-  return { [kind]: value };
 }
 
 export async function promptFramePath(
@@ -87,6 +106,7 @@ export async function promptFramePath(
   message: string,
   kind: "file" | "directory",
   imageFormat?: ImageFormat,
+  draft?: { initialValue?: string; onChange?: (value: string) => void },
 ): Promise<string | undefined> {
   const validate = (value: string): true | string => {
     if (!value.trim()) return "Enter a path, or press Escape to go back.";
@@ -111,6 +131,8 @@ export async function promptFramePath(
       stdin: io.input,
       stdout: io.output,
       signal: io.signal,
+      initialValue: draft?.initialValue,
+      onChange: draft?.onChange,
       promptImpls: {
         advancedInline: (config) =>
           promptPathInlineGhost({ ...config, validate, colorEnabled: io.colorEnabled }),
@@ -118,6 +140,9 @@ export async function promptFramePath(
           const answer = await enterFrameValue(io, {
             message: config.message,
             validate,
+            default: draft?.initialValue,
+            editableDefault: draft?.initialValue !== undefined,
+            onChange: draft?.onChange,
           });
           if (answer === undefined) {
             const error = new Error("User aborted prompt");
@@ -141,108 +166,207 @@ export async function promptFrameImageSettings(
   encoders: ImageEncoders,
   initial?: FrameImageSettings,
 ): Promise<FrameImageSettings | null> {
-  const format = await chooseFrameOption<ImageFormat | "back">(
-    io,
-    "Image format",
-    [...frameFormatChoices(encoders), { name: "Back", value: "back" }],
-    "back",
-    initial?.format ?? "png",
-  );
-  if (format === "back") return null;
-  const quality =
-    format === "png"
-      ? "full"
-      : await chooseFrameOption<ImageQuality | "back">(
-          io,
-          "Image quality",
-          [...frameQualityChoices(format, encoders), { name: "Back", value: "back" }],
-          "back",
-          initial?.quality ?? "full",
-        );
-  if (quality === "back") return null;
-  const initialScale = initial?.scale ?? 1;
-  const scalePresets = ["1", "0.75", "0.5", "0.25", "0.1"];
-  const scales: FrameSettingChoice<string>[] = scalePresets.map((value) => ({
-    name: `${value} (${Number(value) * 100}% size)`,
-    value,
-  }));
-  if (!scalePresets.includes(String(initialScale)))
-    scales.unshift({ name: `${initialScale} (current scale)`, value: String(initialScale) });
-  const scaleChoice = await chooseFrameOption(
-    io,
-    "Output scale",
-    [...scales, { name: "Custom scale", value: "custom" }, { name: "Back", value: "back" }],
-    "back",
-    String(initialScale),
-  );
-  if (scaleChoice === "back") return null;
-  const scaleValue =
-    scaleChoice === "custom"
-      ? await enterFrameValue(io, {
-          message: "Scale from 0.1 to 1",
-          default: String(initialScale),
-          validate: validateFrameScale,
-        })
-      : scaleChoice;
-  if (scaleValue === undefined) return null;
-  const destinationChoices: FrameSettingChoice<"keep" | "default" | "folder" | "file" | "back">[] =
-    [
-      ...(initial?.destination.path
-        ? [
-            {
-              name: `Keep current ${initial.destination.kind}: ${initial.destination.path}`,
-              value: "keep" as const,
-            },
-          ]
-        : []),
-      { name: "Default destination beside the source", value: "default" },
-      { name: "Custom output folder", value: "folder" },
-      ...(mode === "single" ? [{ name: "Explicit image file", value: "file" as const }] : []),
-      { name: "Back", value: "back" },
-    ];
-  const destinationChoice = await chooseFrameOption(
-    io,
-    "Image destination",
-    destinationChoices,
-    "back",
-    initial?.destination.path ? "keep" : "default",
-  );
-  if (destinationChoice === "back") return null;
-  let destination: FrameImageSettings["destination"];
-  if (destinationChoice === "keep") destination = { ...initial!.destination };
-  else if (destinationChoice === "default") destination = { kind: "default" };
-  else {
-    const path = await promptFramePath(
+  let step:
+    | "format"
+    | "quality"
+    | "scale"
+    | "scale-value"
+    | "destination"
+    | "path"
+    | "naming"
+    | "overwrite" = "format";
+  let format = initial?.format ?? "png";
+  let quality: ImageQuality = initial?.quality ?? "full";
+  const qualities: Partial<Record<ImageFormat, ImageQuality>> = initial
+    ? { [initial.format]: initial.quality }
+    : {};
+  let scale = initial?.scale ?? 1;
+  let scaleDraft: string | undefined;
+  let scaleChoice = String(scale);
+  let destination: FrameImageSettings["destination"] = initial?.destination
+    ? { ...initial.destination }
+    : { kind: "default" };
+  let destinationChoice: "keep" | "default" | "folder" | "file" | "back" = destination.path
+    ? "keep"
+    : "default";
+  const pathDrafts: Partial<Record<"folder" | "file", string>> =
+    destination.path && destination.kind !== "default"
+      ? { [destination.kind]: destination.path }
+      : {};
+  let naming = initial?.naming;
+  let overwrite = initial?.overwrite ?? false;
+  const beforeDestination = () =>
+    scaleChoice === "custom" ? ("scale-value" as const) : ("scale" as const);
+  const beforeNaming = () =>
+    destinationChoice === "folder" || destinationChoice === "file"
+      ? ("path" as const)
+      : ("destination" as const);
+  for (;;) {
+    if (step === "format") {
+      const value = await chooseFrameOption<ImageFormat | "back">(
+        io,
+        "Image format",
+        [...frameFormatChoices(encoders), { name: "Back", value: "back" }],
+        "back",
+        format,
+      );
+      if (value === "back") return null;
+      format = value;
+      quality = format === "png" ? "full" : (qualities[format] ?? "full");
+      step = format === "png" ? "scale" : "quality";
+    }
+    if (step === "quality") {
+      const value = await chooseFrameOption<ImageQuality | "back">(
+        io,
+        "Image quality",
+        [...frameQualityChoices(format, encoders), { name: "Back", value: "back" }],
+        "back",
+        quality,
+      );
+      if (value === "back") {
+        step = "format";
+        continue;
+      }
+      quality = value;
+      qualities[format] = quality;
+      step = "scale";
+    }
+    if (step === "scale") {
+      const presets = ["1", "0.75", "0.5", "0.25", "0.1"];
+      const scales: FrameSettingChoice<string>[] = presets.map((value) => ({
+        name: Number(value) * 100 + "% size",
+        value,
+      }));
+      if (!presets.includes(String(scale)))
+        scales.unshift({ name: Number(scale) * 100 + "% size (current)", value: String(scale) });
+      const value = await chooseFrameOption(
+        io,
+        "Output scale",
+        [...scales, { name: "Custom scale", value: "custom" }, { name: "Back", value: "back" }],
+        "back",
+        scaleChoice,
+      );
+      if (value === "back") {
+        step = format === "png" ? "format" : "quality";
+        continue;
+      }
+      scaleChoice = value;
+      if (value !== "custom") scale = Number(value);
+      step = value === "custom" ? "scale-value" : "destination";
+    }
+    if (step === "scale-value") {
+      const value = await enterFrameValue(io, {
+        message: "Scale from 0.1 to 1",
+        default: scaleDraft ?? String(scale),
+        editableDefault: scaleDraft !== undefined,
+        onChange: (value) => {
+          scaleDraft = value;
+        },
+        validate: validateFrameScale,
+      });
+      if (value === undefined) {
+        step = "scale";
+        continue;
+      }
+      scale = Number(value);
+      scaleDraft = value;
+      step = "destination";
+    }
+    if (step === "destination") {
+      const choices: FrameSettingChoice<"keep" | "default" | "folder" | "file" | "back">[] = [
+        ...(destination.path
+          ? [
+              {
+                name: "Keep current " + destination.kind,
+                description: destination.path,
+                value: "keep" as const,
+              },
+            ]
+          : []),
+        { name: "Beside the source", value: "default" },
+        { name: "Custom output folder", value: "folder" },
+        ...(mode === "single" ? [{ name: "Explicit image file", value: "file" as const }] : []),
+        { name: "Back", value: "back" },
+      ];
+      const choice: "keep" | "default" | "folder" | "file" | "back" = await chooseFrameOption(
+        io,
+        "Image destination",
+        choices,
+        "back",
+        destinationChoice,
+      );
+      if (choice === "back") {
+        step = beforeDestination();
+        continue;
+      }
+      destinationChoice = choice;
+      if (destinationChoice === "default") destination = { kind: "default" };
+      step =
+        destinationChoice === "file" || destinationChoice === "folder"
+          ? "path"
+          : destination.kind === "file"
+            ? "overwrite"
+            : "naming";
+    }
+    if (step === "path") {
+      const kind = destinationChoice === "file" ? "file" : "folder";
+      const path = await promptFramePath(
+        io,
+        pathContext,
+        kind === "file" ? "Output image file (." + format + ")" : "Output image folder",
+        kind === "file" ? "file" : "directory",
+        kind === "file" ? format : undefined,
+        {
+          initialValue: pathDrafts[kind],
+          onChange: (value) => {
+            pathDrafts[kind] = value;
+          },
+        },
+      );
+      if (path === undefined) {
+        step = "destination";
+        continue;
+      }
+      pathDrafts[kind] = path;
+      destination = { kind, path };
+      step = kind === "file" ? "overwrite" : "naming";
+    }
+    if (step === "naming") {
+      const value = await promptFrameNaming(io, mode, naming);
+      if (value === null) {
+        step = beforeNaming();
+        continue;
+      }
+      naming = value;
+      step = "overwrite";
+    }
+    const value = await chooseFrameOption(
       io,
-      pathContext,
-      destinationChoice === "file" ? `Output image file (.${format})` : "Output image folder",
-      destinationChoice === "file" ? "file" : "directory",
-      destinationChoice === "file" ? format : undefined,
+      "Existing output images",
+      [
+        { name: "Keep existing images", description: "Fail on a matching filename", value: "keep" },
+        {
+          name: "Overwrite matching images",
+          description: "Replace matches after encoding completes",
+          value: "overwrite",
+        },
+        { name: "Back", value: "back" },
+      ],
+      "back",
+      overwrite ? "overwrite" : "keep",
     );
-    if (path === undefined) return null;
-    destination = { kind: destinationChoice, path };
+    if (value === "back") {
+      step = destination.kind === "file" ? beforeNaming() : "naming";
+      continue;
+    }
+    overwrite = value === "overwrite";
+    return {
+      format,
+      quality,
+      scale,
+      destination,
+      ...(destination.kind !== "file" && naming ? { naming } : {}),
+      overwrite,
+    };
   }
-  const naming =
-    destination.kind === "file" ? undefined : await promptFrameNaming(io, mode, initial?.naming);
-  if (naming === null) return null;
-  const overwrite = await chooseFrameOption(
-    io,
-    "Existing output images",
-    [
-      { name: "Keep existing images; fail on a matching filename", value: "keep" },
-      { name: "Overwrite matching images after encoding completes", value: "overwrite" },
-      { name: "Back", value: "back" },
-    ],
-    "back",
-    initial?.overwrite ? "overwrite" : "keep",
-  );
-  if (overwrite === "back") return null;
-  return {
-    format,
-    quality,
-    scale: Number(scaleValue),
-    destination,
-    ...(naming ? { naming } : {}),
-    overwrite: overwrite === "overwrite",
-  };
 }

@@ -7,6 +7,7 @@ export interface FrameSettingChoice<Value extends string> {
   name: string;
   value: Value;
   disabled?: string;
+  description?: string;
 }
 
 const unavailable = (support: ImageEncoderSupport): string | undefined =>

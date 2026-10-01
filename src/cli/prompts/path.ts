@@ -18,6 +18,8 @@ export interface PromptPathOptions {
   stdin?: NodeJS.ReadStream;
   stdout?: NodeJS.WritableStream;
   signal?: AbortSignal;
+  initialValue?: string;
+  onChange?: (value: string) => void;
   promptImpls?: {
     simpleInput?: typeof input;
     advancedInline?: typeof promptPathInlineGhost;
@@ -133,6 +135,8 @@ async function promptPathAdvanced(options: PromptPathOptions): Promise<string> {
       stdin: options.stdin!,
       stdout: options.stdout!,
       signal: options.signal,
+      initialValue: options.initialValue,
+      onChange: options.onChange,
       validate: buildPathValidator(options),
       suggestionFilter: filter,
     });
@@ -150,7 +154,16 @@ async function promptPathSimple(options: PromptPathOptions): Promise<string> {
   return await simpleInput(
     {
       message: formatPromptMessage(options),
-      default: options.defaultValue,
+      default: options.initialValue ?? options.defaultValue,
+      ...(options.onChange
+        ? {
+            prefill: "editable" as const,
+            transformer: (value: string) => {
+              options.onChange!(value);
+              return value;
+            },
+          }
+        : {}),
       validate: buildPathValidator(options),
     },
     { input: options.stdin, output: options.stdout, signal: options.signal },
