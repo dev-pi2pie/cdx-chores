@@ -9,6 +9,11 @@ import {
   executePreparedVideoFrames,
 } from "../../../../src/cli/actions/video-frames";
 import type { CliRuntime } from "../../../../src/cli/types";
+import {
+  frameReviewLines,
+  printFrameReview,
+} from "../../../../src/cli/interactive/video-frames/review";
+import { validateVideoFramesOptions } from "../../../../src/cli/video-frames/options";
 const [root, tool] = process.argv.slice(2) as [string, string];
 async function main() {
   const bin = join(root, "bin"),
@@ -89,6 +94,7 @@ async function main() {
   }
   const first = await invoke(["--first-frame"]);
   assert.equal(first.code, 0, first.stderr);
+  assert.match(first.stderr, /Available space: .* \(advisory\)/);
   assert.equal(first.stdout, "Wrote 1 image to\n  source-frame.png\nRepeated selections: 0\n");
   assert.deepEqual(first.calls.slice(0, 2), [["-version"], ["-version"]]);
   assert.equal(first.calls.filter((args) => args.includes("image2pipe")).length, 1);
@@ -179,13 +185,57 @@ async function main() {
     output: "review.png",
   });
   assert.equal((await readdir(root)).includes("review.png"), false);
+  const lines = frameReviewLines(runtime, prepared);
+  assert(lines.includes("Destination:"));
+  assert(lines.includes("  review.png"));
+  assert(lines.includes("Existing images: Stop on filename conflict"));
+  assert.equal(lines.filter((line) => line.startsWith("Quality:")).length, 1);
+  assert(!lines.some((line) => line.startsWith("Image:") && line.includes("full")));
+  const sequenceReview = {
+    ...prepared,
+    options: validateVideoFramesOptions({ input: "source.bin", interval: "1s" }, root),
+    estimatedCount: 6n,
+    destination: { ...prepared.destination, space: { status: "unknown" as const } },
+    notices: ["Expected image count: 6 (duration-based estimate).", "Other notice"],
+  };
+  const sequenceLines = frameReviewLines(runtime, sequenceReview);
+  assert.equal(sequenceLines.filter((line) => /image.*count|Expected images/.test(line)).length, 1);
+  assert(sequenceLines.includes("Available space unknown"));
+  assert(sequenceLines.includes("Tip: Other notice"));
+  const unknownCountLines = frameReviewLines(runtime, {
+    ...sequenceReview,
+    estimatedCount: undefined,
+    notices: ["Estimated image count is unavailable.", "Other notice"],
+  });
+  assert.equal(
+    unknownCountLines.filter((line) => /image.*count|Estimated images/.test(line)).length,
+    1,
+  );
+  assert(unknownCountLines.includes("Estimated images: unavailable"));
+  const renderReview = (colorEnabled: boolean, tty: boolean) => {
+    stdout = "";
+    runtime.colorEnabled = colorEnabled;
+    Object.assign(runtime.stdout, { isTTY: tty, columns: 28 });
+    printFrameReview(runtime, prepared);
+    return stdout;
+  };
+  const colorReview = renderReview(true, true);
+  assert(colorReview.includes("\x1b[36m  review.png\x1b[39m"));
+  assert.equal(stripVTControlCharacters(colorReview), renderReview(false, true));
+  assert.equal(renderReview(true, false), renderReview(false, false));
+  runtime.colorEnabled = false;
   const changed = await prepareVideoFrames(
     runtime,
     { input: "source.bin", frameNumber: "2", format: "jpg", output: "review.jpg" },
     { resolver: prepared.resolver, selections: prepared.selections },
   );
   assert.equal(changed.selections[0]!.identity, prepared.selections[0]!.identity);
-  await executePreparedVideoFrames(runtime, changed);
+  stderr = "";
+  await executePreparedVideoFrames(runtime, {
+    ...changed,
+    destination: { ...changed.destination, space: { status: "unknown" } },
+  });
+  assert.match(stderr, /Available space unknown/);
   process.env.CDX_FRAME_MODE = "encoder-failure";
   const failure = await invoke(["--frame-set", "first-last", "-o", "partial"], {
     stderrTTY: true,

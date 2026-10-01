@@ -411,6 +411,12 @@ Default destinations now use the shared label with generic location hints below 
 
 Focused naming, installed Node prompt and workflow checks passed **24 cases / 172 assertions**, including compact layouts, resize followed by navigation, active/accepted prompts, inline/simple extension correction and mixed-case JPEG acceptance. Type, scoped lint/format and diff checks passed. GIF hint/routing and both output modes passed **13 controlled cases / 77 assertions**. Two built Node terminal walkthroughs confirmed the GIF default hint, both saved GIF modes, source preservation, terminal restoration and the next prompt. The shared output-choice helper is unchanged. Four follow-up tasks are checked. Reporting, final integrated verification and complete-range review remain pending.
 
+Frames review and both GIF completion modes now use separate indented cyan destination lines through the existing display/color policy. Review separates filenames from frame details, presents quality/count information once and uses precise collision labels. Direct estimate notices and confirmed success/partial/retained-output accounting remain intact. Existing volume inspection appears as readable advisory capacity or an explicit unknown result in review/pre-export diagnostics.
+
+Controlled output checks passed for both GIF modes, target-stream color eligibility, redirected/no-color paths, known/unknown space, count deduplication and failure/terminal restoration. The final Node action fixture passed **1 case / 6 assertions** after adding unknown-count review coverage. The managed unit suite passed **1,591 cases / 6,906 assertions / 188 files**, and type/lint/format/build/diff checks passed.
+
+Five built Node synthetic checks passed: interval sequence with compact-to-wide navigation, retained PNG-to-JPG filename correction, both GIF modes and redirected direct CLI export. Two three-image sequences matched independently expected source frames 1/26/51. The JPEG and GIF files decoded in their selected formats, source bytes stayed unchanged, and interactive cases restored terminal state and accepted the next prompt. Selection descriptions refresh on navigation after resize. Ignored review artifacts remain available locally under the existing budgets. No private media was used, and earlier support gaps remain. Six implementation tasks are checked. Final application-suite reconciliation and complete-range review remain pending.
+
 ## Related Research
 
 - [Video Frame Selection, Frame Sets, and Sequence Export](../../researches/research-2026-09-30-video-frames.md)

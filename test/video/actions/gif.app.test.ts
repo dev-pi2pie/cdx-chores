@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { chmod, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
+import { stripVTControlCharacters } from "node:util";
 
 import { actionVideoGif } from "../../../src/cli/actions/video";
 import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
@@ -143,6 +144,35 @@ afterEach(() => {
 });
 
 describe("actionVideoGif", () => {
+  test("both GIF modes put literal paths on their own line and honor output-stream color eligibility", async () => {
+    const fixtureDir = await createTempFixtureDir("video-gif-output");
+    try {
+      const { inputPath } = await createFakeFfmpegEnvironment(fixtureDir);
+      const outputPath = join(fixtureDir, "output with spaces.gif");
+      const expected = `Wrote GIF to\n  ${toRepoRelativePath(outputPath)}\n`;
+      for (const mode of ["compressed", "quality"] as const) {
+        for (const [colorEnabled, isTTY] of [
+          [true, true],
+          [true, false],
+          [false, true],
+        ] as const) {
+          const { runtime, stdout } = createActionTestRuntime({ colorEnabled });
+          Object.assign(runtime.stdout, { isTTY });
+          await actionVideoGif(runtime, {
+            input: inputPath,
+            output: outputPath,
+            mode,
+            overwrite: true,
+          });
+          expect(stripVTControlCharacters(stdout.text).endsWith(expected)).toBe(true);
+          expect(stdout.text.includes("\x1b[36m")).toBe(colorEnabled && isTTY);
+          expect(stdout.text).not.toContain("\x1b[1m");
+        }
+      }
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
   test("runs compressed mode as a one-pass ffmpeg invocation with phase messages", async () => {
     const fixtureDir = await createTempFixtureDir("video-gif-action");
     try {
@@ -174,7 +204,8 @@ describe("actionVideoGif", () => {
         "Starting GIF conversion...",
         "Mode: compressed",
         "Rendering GIF...",
-        `Wrote GIF: ${toRepoRelativePath(outputPath)}`,
+        "Wrote GIF to",
+        `  ${toRepoRelativePath(outputPath)}`,
       ]);
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
@@ -211,7 +242,8 @@ describe("actionVideoGif", () => {
         "Starting GIF conversion...",
         "Mode: compressed",
         "Rendering GIF...",
-        `Wrote GIF: ${toRepoRelativePath(outputPath)}`,
+        "Wrote GIF to",
+        `  ${toRepoRelativePath(outputPath)}`,
       ]);
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
@@ -274,7 +306,8 @@ describe("actionVideoGif", () => {
         "GIF look: faithful",
         "Generating GIF palette...",
         "Rendering GIF from palette...",
-        `Wrote GIF: ${toRepoRelativePath(outputPath)}`,
+        "Wrote GIF to",
+        `  ${toRepoRelativePath(outputPath)}`,
       ]);
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
@@ -417,7 +450,8 @@ describe("actionVideoGif", () => {
         "GIF look: faithful",
         "Generating GIF palette...",
         "Rendering GIF from palette...",
-        `Wrote GIF: ${toRepoRelativePath(outputPath)}`,
+        "Wrote GIF to",
+        `  ${toRepoRelativePath(outputPath)}`,
       ]);
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
@@ -471,7 +505,8 @@ describe("actionVideoGif", () => {
         "GIF look: faithful",
         "Generating GIF palette...",
         "Rendering GIF from palette...",
-        `Wrote GIF: ${toRepoRelativePath(outputPath)}`,
+        "Wrote GIF to",
+        `  ${toRepoRelativePath(outputPath)}`,
       ]);
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
@@ -551,7 +586,8 @@ describe("actionVideoGif", () => {
         "GIF look: vibrant",
         "Generating GIF palette...",
         "Rendering GIF from palette...",
-        `Wrote GIF: ${toRepoRelativePath(outputPath)}`,
+        "Wrote GIF to",
+        `  ${toRepoRelativePath(outputPath)}`,
       ]);
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });
@@ -606,7 +642,8 @@ describe("actionVideoGif", () => {
         "GIF look: vibrant",
         "Generating GIF palette...",
         "Rendering GIF from palette...",
-        `Wrote GIF: ${toRepoRelativePath(outputPath)}`,
+        "Wrote GIF to",
+        `  ${toRepoRelativePath(outputPath)}`,
       ]);
     } finally {
       await rm(fixtureDir, { recursive: true, force: true });

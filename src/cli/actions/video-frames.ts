@@ -1,11 +1,11 @@
 import { basename } from "node:path";
-import { getCliColors } from "../colors";
 import { requireCommandAvailable } from "../deps";
 import { CliError } from "../errors";
 import { ProcessOperation } from "../process/streaming";
 import type { CliRuntime } from "../types";
 import { expectedSequenceCount } from "../video-frames/cadence";
 import { frameDestination } from "../video-frames/destination";
+import { frameSpaceLabel } from "../video-frames/space-label";
 import { inspectImageEncoders, requireImageEncoder } from "../video-frames/encoders";
 import { FrameExportError, type ImageExportResult } from "../video-frames/export";
 import { imagePlan } from "../video-frames/image-plan";
@@ -14,19 +14,9 @@ import { FrameNamer } from "../video-frames/naming";
 import { validateVideoFramesOptions, type VideoFramesOptions } from "../video-frames/options";
 import { FrameResolver } from "../video-frames/resolver";
 import { exportFrameSequence } from "../video-frames/sequence";
-import { displayPath, printLine } from "./shared";
+import { printDestination, printLine } from "./shared";
 import { createFrameProgressPresenter, type FrameProgressPresenter } from "./video-frames-progress";
 export type { VideoFramesOptions } from "../video-frames/options";
-
-function printFrameDestination(
-  runtime: CliRuntime,
-  stream: NodeJS.WritableStream,
-  message: string,
-  destination: string,
-): void {
-  printLine(stream, message);
-  printLine(stream, `  ${getCliColors(runtime, stream).cyan(displayPath(runtime, destination))}`);
-}
 
 function imageCount(count: number): string {
   return `${count} ${count === 1 ? "image" : "images"}`;
@@ -210,6 +200,7 @@ export async function executePreparedVideoFrames(
   signal?.addEventListener("abort", stopping, { once: true });
   try {
     presenter.pause();
+    printLine(runtime.stderr, frameSpaceLabel(prepared.destination.space));
     for (const notice of prepared.notices) printLine(runtime.stderr, `Tip: ${notice}`);
     presenter.update({
       phase: "validating",
@@ -239,7 +230,7 @@ export async function executePreparedVideoFrames(
             mode: options.mode,
           });
     presenter.stop();
-    printFrameDestination(
+    printDestination(
       runtime,
       runtime.stdout,
       `Wrote ${imageCount(result.written)} to`,
@@ -250,21 +241,21 @@ export async function executePreparedVideoFrames(
   } catch (error) {
     presenter.stop();
     if (error instanceof FrameExportError) {
-      printFrameDestination(
+      printDestination(
         runtime,
         runtime.stderr,
         `Export incomplete: ${imageCount(error.result.written)} written to`,
         error.result.destination,
       );
       if (error.result.incomplete)
-        printFrameDestination(
+        printDestination(
           runtime,
           runtime.stderr,
           "Incomplete output retained:",
           error.result.incomplete,
         );
       if (error.result.retainedStaging)
-        printFrameDestination(
+        printDestination(
           runtime,
           runtime.stderr,
           "Staging retained:",
