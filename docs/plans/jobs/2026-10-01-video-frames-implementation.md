@@ -18,7 +18,7 @@ Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation
 | 5 | Sampling, retained repeats, destinations and concrete naming | Completed |
 | 6 | Direct command, validation, dependencies and doctor | Completed |
 | 7 | Guided Interactive flow, TUI review/polish, and recovery | Completed |
-| 8 | Output path presentation, selection menus and streaming progress UX refinement | In progress |
+| 8 | Output path presentation, selection menus and streaming progress UX refinement | Completed |
 | 9 | Full regression, explicit smoke, documentation and research closure evidence | Not started |
 
 ## Phase 1
@@ -386,6 +386,12 @@ The `--ux` development entry reuses the existing smoke lab and budgets. Ignored 
 ### Review Follow-Up
 
 Complete-range review `3a9c891ccbba9a10935fae250ee8f5e41747d95b..e29955773f11b0f4cb63c6e1b2c4f10d3cc6dd1e` found no actionable correctness, maintainability, security or documentation issues. Test review identified missing action-boundary evidence for live renderer cleanup after encoder failure. The existing controlled Node action fixture now checks clearing before the partial/error report, released resize listeners, no further timer/resize writes, and an intact subsequent prompt. That fixture passed **1 case / 6 assertions**; the other nine focused cases also passed. Type, lint, format and diff checks passed. No production change or native rerun is needed for this coverage follow-up; expanded-range review remains required.
+
+### Acceptance
+
+Expanded complete-range review `3a9c891ccbba9a10935fae250ee8f5e41747d95b..0881623b47cb8b82ba082c0bb89af39e34d9346a` has no remaining actionable code, test or security findings. The failure-restoration coverage gap is closed. The final documentation receipt is reviewed separately; earlier accepted phase sections remain unchanged.
+
+Phase 8 is accepted on 2026-10-01 with all six tasks checked. Output paths, menu navigation and streaming progress have recorded fixes and controlled/native rechecks. The plan remains active and this record/research remain in-progress for Phase 9. Its seven tasks stay unchecked. Ignored review artifacts remain locally available; retention does not prevent this checkpoint's acceptance, and no private resource details or local setup enter the public record.
 
 ## Related Research
 
