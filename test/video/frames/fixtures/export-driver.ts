@@ -78,12 +78,14 @@ async function main() {
       }
       if (mode === "decoder-partial" || mode === "short-encoder")
         assert.equal(error.code, "FRAME_IMAGE_INCOMPLETE");
-      if (mode === "encoder-failure")
+      if (mode === "encoder-failure") {
+        assert.match(error.message, /Controlled encoder failure/);
         assert.ok(
           ["FRAME_TOOL_FAILED", "FRAME_EXPORT_FAILED", "PROCESS_INPUT_INCOMPLETE"].includes(
             error.code,
           ),
         );
+      }
       if (mode === "cancel") {
         assert.equal(error.exitCode, 130);
         assert.ok(error.result.written >= 1);

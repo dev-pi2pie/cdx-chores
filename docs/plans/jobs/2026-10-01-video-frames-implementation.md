@@ -274,6 +274,10 @@ Managed applications passed **2,237 cases / 14,049 assertions** across 300 files
 
 Built evidence is separate: the actual Node CLI passed nine small synthetic export cases (**18 images**) covering first/last/number/time, fixed set, repeated FPS targets, oversized interval, PNG/JPG/still-WebP, conflict and extension rejection, and source preservation. PNG/WebP pixels matched independent opaque references; JPG decoded with expected dimensions. ESM/CommonJS package loading passed. This bounded processing proof does not establish heavy real-content or cross-platform support. Phase acceptance and complete-range review remain pending.
 
+### Review Follow-up
+
+The full Phase 6 range `1ce22917a106c18722334f98eb66d6fa80db98b9..091edd73373a65b54fc959e03ebf467f5360f43b` received code, test, security and documentation review. Code review found that premature-input cancellation hid the encoder's captured diagnostic. The process boundary now retains its status and bounded stderr after stream settlement; both two-image command and existing exporter regressions require that diagnostic. All 40 affected process/action/export cases / 164 assertions passed; TypeScript, lint, format and diff checks passed. Other review lanes found no material findings. Expanded-range review and phase acceptance remain pending.
+
 ## Phase 6 Planning Refinement
 
 Clarified doctor inspection against the executables used by frames execution, exact encoder entries, the verified WebP BGRA input, and separate lossless-mode support. Version/package labels cannot establish capability. Controlled verification now names supported, absent/unsupported, unknown, and failed-probe cases; routine doctor inspection remains separate from actual encoding/pixel smoke evidence. At this planning checkpoint, Phase 6 implementation had not started.

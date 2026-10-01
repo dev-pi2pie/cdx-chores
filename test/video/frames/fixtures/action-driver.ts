@@ -127,6 +127,7 @@ async function main() {
   const failure = await invoke(["--frame-set", "first-last", "-o", "partial"]);
   assert.notEqual(failure.code, 0);
   assert.match(failure.stderr, /Export incomplete: 1 image/);
+  assert.match(failure.stderr, /Controlled encoder failure/);
   assert.doesNotMatch(failure.stdout, /Wrote|Repeated selections/);
   process.env.CDX_FRAME_MODE = "normal";
   const interruptWhen = async (args: string[], ready: () => Promise<boolean>) => {

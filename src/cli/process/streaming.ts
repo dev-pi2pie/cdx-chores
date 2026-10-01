@@ -125,6 +125,7 @@ export class ProcessOperation {
       stopping = false,
       earlyStop = false,
       inputFinished = !options.input;
+    let inputFailure: CliError | undefined;
     const inputControl = new AbortController();
     let forceTimer: ReturnType<typeof setTimeout> | undefined,
       confirmationTimer: ReturnType<typeof setTimeout> | undefined;
@@ -137,13 +138,13 @@ export class ProcessOperation {
         code = exitCode;
         signal = exitSignal;
         closed = true;
-        if (options.input && !inputFinished && !stopping)
-          this.cancel(
-            new CliError("Tool exited before its input completed.", {
-              code: "PROCESS_INPUT_INCOMPLETE",
-              exitCode: 2,
-            }),
-          );
+        if (options.input && !inputFinished && !stopping) {
+          inputFailure = new CliError("Tool exited before its input completed.", {
+            code: "PROCESS_INPUT_INCOMPLETE",
+            exitCode: 2,
+          });
+          this.cancel(inputFailure);
+        }
         resolve();
       });
     });
@@ -262,7 +263,11 @@ export class ProcessOperation {
         confirmation,
       ]);
       if (launchError) throw launchError;
-      if (this.reason) throw this.reason;
+      if (this.reason) {
+        if (this.reason === inputFailure)
+          inputFailure!.message = `Tool exited (${code ?? signal ?? "unknown"}) before its input completed.${stderr.length ? ` ${stderrTruncated ? "[diagnostics truncated] " : ""}${stderr.toString("utf8").trim()}` : ""}`;
+        throw this.reason;
+      }
       if (!earlyStop) progress?.finish();
       return {
         code,
