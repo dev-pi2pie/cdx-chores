@@ -163,6 +163,16 @@ The initial source conversion boundary is verified 8-bit RGB/YUV with BT.709 pri
 
 Adjacent process support now streams encoder input through awaited native writes with the same 256-KiB queue boundary. Input producers remain part of shutdown acknowledgement after child close; cancellation aborts their signal and closes the pipe. The buffered helper is unchanged. Twelve process unit cases (34 assertions) and eleven controlled Node application cases (44 assertions) passed, including 3,276,800 input bytes through a slow reader, input failure, resistant-child cancellation, oversized input rejection, and a producer that remains pending after child close. TypeScript and focused ownership checks passed; full phase regression and exporter integration remain pending.
 
+### Staging and Publication Checkpoint
+
+The common writer frames PNG/JPG/still-WebP incrementally, awaits staged-file close, and publishes in order. It enforces two staged files and 256 MiB including writes in progress, waiting for publication to release capacity. Publication pins the canonical destination, rejects non-regular/symlink/source-alias targets, uses exclusive hard links with exclusive streamed-copy fallback only for unsupported-link errors, and replaces overwritten targets by rename without delete-first. Completed outputs and reported incomplete copies survive failures; cleanup removes only verified owned staging after closure confirmation.
+
+Seven pure framing cases (502 assertions) and 25 controlled Node filesystem cases (100 assertions) passed. Cases cover fragmented/container-aware completion, animation rejection, slow sinks, byte/file backpressure, injected limit/disk-full/close failures, direct and hard-link/symlink source protection with both overwrite states, unrelated hardlinks, competing writers in link/copy paths, late collisions, incomplete images/copies, failed replacement, foreign staging, changed parents, cleanup failure, and refusal to clean without closure confirmation. These structural fixtures are not pixel-fidelity evidence.
+
+The explicit `scripts/spikes/video-frames-writer.ts` Node smoke passed all three real image formats with four outputs each. Slow publication reached two owned files without exceeding encoded capacity. PNG and lossless WebP preserved independent RGBA bytes exactly; JPG mean RGB error stayed within five levels and alpha stayed opaque. Structured encoder progress, ordered output, close acknowledgement, and staging removal passed. TypeScript, repository lint/format, and diff checks passed. Real filesystem evidence is macOS-local; unsupported-link/copy and failure paths use controlled injections rather than claims about every filesystem.
+
+Production extraction, full phase regression/review, and private processing smoke remain pending.
+
 ## Related Research
 
 - [Video Frame Selection, Frame Sets, and Sequence Export](../../researches/research-2026-09-30-video-frames.md)

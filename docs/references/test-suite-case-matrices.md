@@ -46,6 +46,8 @@ Use [Test Suite Audit Inventory](test-suite-audit-inventory.md) for the fixed pr
 
 `image-plan.unit.test.ts` owns format/quality/scale policies, aspect/display geometry, color inference/rejection, transparency checks, and advertised image encoder interpretation. Actual encoded pixels and metadata require the explicit synthetic smoke checkpoint.
 
+`image-framing.unit.test.ts` owns bounded format completion parsing; `publication.app.test.ts` owns real Node filesystem staging/publication, collisions, alias protection, injected I/O failures, partial accounting, and safe cleanup. Their tiny structural format fixtures establish lifecycle boundaries; the explicit real-image smoke establishes actual encoding and pixels.
+
 ### Streaming Process Foundation
 
 `test/cli-foundations/process/` owns incremental UTF-8 records, bounded metadata/input queues/diagnostic tails, structured progress, direct argument handling, and registered child/input-producer/consumer closure. Application fixtures exercise actual Node pipes, awaited input writes, and cooperative/resistant children; unit cases model queue rejection, unconfirmed closure, and Windows force transitions. Generated media remains an explicitly invoked smoke task, separate from these process contracts.

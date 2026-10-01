@@ -176,8 +176,8 @@ Tasks:
 
 - [ ] Implement verified format/quality configuration, availability checks, and source-faithful conversion without GIF palette/look behavior or fallback.
 - [ ] Preserve PNG/WebP alpha; reject non-opaque JPG frames. Apply aspect, supported display transforms, scale, dimension/pixel guards, and metadata reset in the tested order; review and saved pixels must agree.
-- [ ] Implement destination-volume owned staging, completed-file detection, enforced staging slots/bytes, backpressure, and selection-order publication.
-- [ ] Cover exclusive hard-link publication and supported exclusive-copy fallback, explicit/generated single-file overwrite and multi-image overwrite, target kinds, source aliases, competing writers, interrupted copies, and safe replacement failure. Never clear existing folders or stale/unrelated files.
+- [x] Implement destination-volume owned staging, completed-file detection, enforced staging slots/bytes, backpressure, and selection-order publication.
+- [x] Cover exclusive hard-link publication and supported exclusive-copy fallback, explicit/generated single-file overwrite and multi-image overwrite, target kinds, source aliases, competing writers, interrupted copies, and safe replacement failure. Never clear existing folders or stale/unrelated files.
 - [ ] Report published/incomplete outputs accurately across disk-full, encoder, limit, cancellation, and cleanup failures; count only confirmed publication.
 - [ ] Compare lossless pixels and alpha with independent post-transform references and lossy output with recorded tolerances. Verify actual formats/extensions, unavailable modes, color inference/rejection, asymmetric transforms, and PNG compression cost with small synthetic tool runs.
 - [ ] Perform private local image-export smoke and publish only processing outcomes. Verify source preservation, safe cleanup behavior, and permitted local review-artifact handling.
