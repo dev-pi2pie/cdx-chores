@@ -192,7 +192,7 @@ test("oversized native input is rejected before write and child closure is await
   expect(child.stdin.readableLength).toBe(0);
 });
 
-test("child close does not release an unsettled input producer", async () => {
+test("premature child close starts bounded input settlement without external cancellation", async () => {
   let release!: () => void, entered!: () => void;
   const ready = new Promise<void>((resolve) => {
     entered = resolve;
@@ -222,7 +222,6 @@ test("child close does not release an unsettled input producer", async () => {
   child.stdout.end();
   child.stderr.end();
   child.emit("close", 0, null);
-  operation.cancel();
   try {
     await expect(pending).rejects.toThrow("closure unconfirmed");
     expect(operation.closureUnconfirmed).toBe(true);

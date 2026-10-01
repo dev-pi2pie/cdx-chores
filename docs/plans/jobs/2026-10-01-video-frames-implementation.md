@@ -16,7 +16,7 @@ Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation
 | 3 | Streaming records, exact identities, bounded cache, source invalidation, cancellation/child closure | Completed |
 | 4 | Verified pixels, alpha/transforms, safe publication, failure accounting, private processing smoke | Completed |
 | 5 | Sampling, retained repeats, destinations and concrete naming | Completed |
-| 6 | Direct command, validation, dependencies and doctor | Not started |
+| 6 | Direct command, validation, dependencies and doctor | In progress |
 | 7 | Guided Interactive flow, TUI review/polish, and recovery | Not started |
 | 8 | Full regression, explicit smoke, documentation and research closure evidence | Not started |
 
@@ -254,9 +254,17 @@ The complete Phase 5 implementation range `67827e8456521cb4bfe3d73e764ef1db36994
 
 The complete implementation range `67827e8456521cb4bfe3d73e764ef1db36994831..371cc129e93b44def4467913868676710b992d5d` passed phase reviews with no remaining actionable findings after the documentation follow-up. Source/tests were unchanged by that follow-up; expanded-range documentation review confirmed the evidence/currentness correction. Phase 5 is accepted on 2026-10-01; all Phase 5 tasks are checked. The plan stays active, the research stays in-progress, and this record remains open for Phases 6–8. Ignored synthetic smoke artifacts are retained for local review; later removal needs no public cleanup record. Source-dependent alpha limitations and broader support gaps remain scoped as recorded above.
 
+## Phase 6
+
+Implementation begins from `1ce22917a106c18722334f98eb66d6fa80db98b9`. Direct command/action integration, advertised doctor assessments, and built-command verification are in progress. No Phase 6 task is accepted yet.
+
+### Input-closure Follow-up
+
+A controlled two-image encoder failure exposed a pending input-end callback after child closure. The shared process boundary now starts its existing cancellation/confirmation policy automatically when a child closes before input settlement. This prevents a pending action from disappearing with a successful Node exit. Seven process-ownership unit cases / 21 assertions passed; the new controlled Node command scenario confirms bounded partial-failure reporting. Existing export verification accepts the additional premature-input error while retaining closure, source, and staging checks.
+
 ## Phase 6 Planning Refinement
 
-Clarified doctor inspection against the executables used by frames execution, exact encoder entries, the verified WebP BGRA input, and separate lossless-mode support. Version/package labels cannot establish capability. Controlled verification now names supported, absent/unsupported, unknown, and failed-probe cases; routine doctor inspection remains separate from actual encoding/pixel smoke evidence. Phase 6 implementation has not started.
+Clarified doctor inspection against the executables used by frames execution, exact encoder entries, the verified WebP BGRA input, and separate lossless-mode support. Version/package labels cannot establish capability. Controlled verification now names supported, absent/unsupported, unknown, and failed-probe cases; routine doctor inspection remains separate from actual encoding/pixel smoke evidence. At this planning checkpoint, Phase 6 implementation had not started.
 
 Documentation review found no actionable findings. Phase/checklist preservation and diff checks passed.
 

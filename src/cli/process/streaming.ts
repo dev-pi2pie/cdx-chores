@@ -123,7 +123,8 @@ export class ProcessOperation {
       launchError: Error | undefined;
     let closed = false,
       stopping = false,
-      earlyStop = false;
+      earlyStop = false,
+      inputFinished = !options.input;
     const inputControl = new AbortController();
     let forceTimer: ReturnType<typeof setTimeout> | undefined,
       confirmationTimer: ReturnType<typeof setTimeout> | undefined;
@@ -136,6 +137,13 @@ export class ProcessOperation {
         code = exitCode;
         signal = exitSignal;
         closed = true;
+        if (options.input && !inputFinished && !stopping)
+          this.cancel(
+            new CliError("Tool exited before its input completed.", {
+              code: "PROCESS_INPUT_INCOMPLETE",
+              exitCode: 2,
+            }),
+          );
         resolve();
       });
     });
@@ -198,6 +206,8 @@ export class ProcessOperation {
           });
       } catch (error) {
         if (!stopping) this.cancel(error);
+      } finally {
+        inputFinished = true;
       }
     })();
     let stderr = Buffer.alloc(0),
