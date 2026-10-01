@@ -10,7 +10,7 @@ agent: codex
 
 Research `cdx-chores video frames` for extracting one source frame, a fixed frame set, or a whole-video sequence of still images. The feature should support direct CLI invocation and a guided Interactive flow, with PNG, JPG, and WebP output.
 
-This research is in progress. Repository observations below describe the implementation baseline; new command examples, prompts, defaults, and algorithms are proposals unless identified as agreed direction or verified implementation. Accepted Phases 1–7 and the original Phase 8 checkpoint, including verified backend image/sequence export, destinations/naming, private processing, direct CLI/doctor, guided Interactive integration and output/menu/progress UX refinement, are recorded in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md). Phase 8's output information follow-up and Phase 9's integrated verification, documentation and research closure remain pending.
+This research is in progress. Repository observations below describe the implementation baseline; new command examples, prompts, defaults, and algorithms are proposals unless identified as agreed direction or verified implementation. Accepted Phases 1–8, including verified backend image/sequence export, destinations/naming, private processing, direct CLI/doctor, guided Interactive integration and output/menu/progress UX refinement, are recorded in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md). Phase 8's output information follow-up is accepted with scoped evidence. Phase 9's integrated verification, documentation and research closure remain pending.
 
 Agreed direction from the design discussion:
 
@@ -150,7 +150,7 @@ Code and controlled prompt review identified inconsistent destination wording, e
 
 This layout keeps counts in choice rows, details below the list and navigation controls last. Narrow layouts remove padding and wrap while preserving counts and essential details. Short labels/hints use natural plurals and no trailing periods. Color/plain text retains the same layout. Public examples use synthetic names. Sampling, naming, publication and GIF processing semantics remain as specified.
 
-The [Phase 8 follow-up tasks](../plans/plan-2026-09-30-video-frames-implementation.md#follow-up-prompt-and-output-information) track implementation and terminal verification, which remain pending. Verification must establish real prompt visibility and cover affected shared-helper callers. The [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md#output-information-follow-up-planning) records observed findings and will hold verification results.
+The [Phase 8 follow-up tasks](../plans/plan-2026-09-30-video-frames-implementation.md#follow-up-prompt-and-output-information) are accepted with controlled prompt/output checks and built Node terminal verification. The [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md#output-information-follow-up-execution) holds findings, fixes, result inspection and complete-range review. Selection descriptions refresh on navigation after resize. Broader verification and support gaps remain part of Phase 9.
 
 ## Single-Frame Selection
 
@@ -947,7 +947,7 @@ Feature scope and behavior are settled above. Remaining work is the [verificatio
 
 ## Recommendations and Next Steps
 
-Complete the [Phase 8 follow-up tasks](../plans/plan-2026-09-30-video-frames-implementation.md#follow-up-prompt-and-output-information) for output information consistency. Then reconcile remaining verification obligations and support gaps in [Phase 9](../plans/plan-2026-09-30-video-frames-implementation.md#phase-9-integrated-verification-and-documentation). Accepted earlier checkpoints remain recorded in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md).
+Reconcile remaining verification obligations and support gaps in [Phase 9](../plans/plan-2026-09-30-video-frames-implementation.md#phase-9-integrated-verification-and-documentation). Use the accepted [Phase 8 output information follow-up](../plans/jobs/2026-10-01-video-frames-implementation.md#output-information-follow-up-execution) as the presentation checkpoint. Accepted earlier checkpoints remain recorded in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md).
 
 This research owns findings, design rationale and feasibility evidence. The [implementation plan](../plans/plan-2026-09-30-video-frames-implementation.md) owns execution order and acceptance requirements, including bounded synthetic stress runs and private real-video smoke checkpoints outside the regular test suites. The implementation record holds execution results. Phase 9 also includes a current usage guide for the reader-facing contract.
 

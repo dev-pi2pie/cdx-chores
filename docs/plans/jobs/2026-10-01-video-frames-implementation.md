@@ -18,7 +18,7 @@ Execute the [implementation plan](../plan-2026-09-30-video-frames-implementation
 | 5 | Sampling, retained repeats, destinations and concrete naming | Completed |
 | 6 | Direct command, validation, dependencies and doctor | Completed |
 | 7 | Guided Interactive flow, TUI review/polish, and recovery | Completed |
-| 8 | Output path presentation, selection menus and streaming progress UX refinement | Original checkpoint completed; output information follow-up pending |
+| 8 | Output path presentation, selection menus and streaming progress UX refinement | Completed, including output information follow-up |
 | 9 | Full regression, explicit smoke, documentation and research closure evidence | Not started |
 
 ## Phase 1
@@ -418,6 +418,12 @@ Controlled output checks passed for both GIF modes, target-stream color eligibil
 Five built Node synthetic checks passed: interval sequence with compact-to-wide navigation, retained PNG-to-JPG filename correction, both GIF modes and redirected direct CLI export. Two three-image sequences matched independently expected source frames 1/26/51. The JPEG and GIF files decoded in their selected formats, source bytes stayed unchanged, and interactive cases restored terminal state and accepted the next prompt. Selection descriptions refresh on navigation after resize. Ignored review artifacts remain available locally under the existing budgets. No private media was used, and earlier support gaps remain. Six implementation tasks are checked. Final application-suite reconciliation and complete-range review remain pending.
 
 Complete-range review through `a0a4db8b6c140c0216ea4d314f6efd81c2ba768c` found no actionable maintainability or security issues. Test review identified a weak GIF color assertion that could pass with a styled label and plain destination. Both GIF modes now require the exact raw destination line, including path-only cyan when eligible. Affected GIF checks passed **13 cases / 77 assertions**, with type/lint/format/diff checks passed. Expanded-range acceptance remains pending.
+
+### Output Information Follow-Up Acceptance
+
+Final application verification passed **2,268 cases / 14,207 assertions / 303 files**. Expanded complete-range review `b5f8a5e22e7bae47d209c832524d42918b2f3a5a..8e94a1c60ad33ef337f8e2f41729e906ba821058` has no remaining actionable maintainability, security or test findings. The GIF assertion gap is closed. The closing documentation receipt is reviewed separately.
+
+The Phase 8 follow-up is accepted on 2026-10-01 with all seven tasks checked. Controlled and built Node evidence covers counts, default hints, effective naming, retained-file correction, path/color/stream reporting and advisory space. Earlier accepted checklist text and evidence remain intact. Phase 9's seven tasks remain unchecked, the plan stays active, and this record/research stay in-progress. Ignored synthetic artifacts remain locally available for review. Private media and local setup details are absent from this follow-up's public evidence, and earlier support gaps remain open. Documentation review and checklist/history, status, link/anchor, privacy and diff checks passed.
 
 ## Related Research
 
