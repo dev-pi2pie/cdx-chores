@@ -81,6 +81,8 @@ For each recipe, cap generation at its expected frame count and verify the gener
 
 These are provisional development-run limits to verify and calibrate. They are separate from the research's production resource settings and do not cap users' source duration, file size, scan time, or requested cadence.
 
+Active work is elapsed wall-clock time spent generating, decoding, encoding, and checking results. Machine checks use no real-time playback pacing or media-player playback. Human review time is outside this processing budget.
+
 | Resource | Initial development limit |
 | --- | --- |
 | Active work per case | 5 minutes, including generation and processing |
@@ -90,11 +92,11 @@ These are provisional development-run limits to verify and calibrate. They are s
 | Exported images | At most 1,000 per case and 1,500 across the run |
 | Combined owned scratch usage | 512 MiB monitored stop threshold |
 
-Preflight expected output counts and artifact cost before starting a case. Configure the test cadence to fit its declared workload. For example, a five-minute source sampled at 1 FPS has 300 targets while resolution still inspects up to 4,500 source frames. Use short sources for dense-output checks. Account for generated inputs, staged/final images, copy overhead, and diagnostics in the scratch allowance; existing read-only private inputs are outside it.
+Preflight expected output counts and artifact cost before starting a case. Configure the test cadence to fit its declared workload. For example, a five-minute source sampled at 1 FPS has 300 targets while resolution still inspects up to 4,500 source frames. Use short sources for dense-output checks. Account for generated inputs, staged/final images, copy overhead, and diagnostics in the scratch allowance; existing read-only private inputs are outside it. Inspect current owned scratch usage, including retained review artifacts, before planning further work. Reaching the budget does not authorize deleting retained artifacts.
 
 Observe scratch usage during work. The disk threshold is a stop trigger, not a filesystem quota or a guarantee against transient overshoot. Time, image, or storage exhaustion stops the case and reports `budget exceeded` with incomplete verification. Preserve requested product semantics: do not truncate a sequence or lower its cadence and call the case successful.
 
-Active-work deadlines do not replace shutdown confirmation. Stop owned processes using the verified termination policy and perform cleanup only after closure is confirmed. An unresolved process or cleanup failure is a failed checkpoint, even if content assertions passed.
+Active-work deadlines do not replace shutdown confirmation. Stop owned processes using the verified termination policy and confirm closure and file ownership before removing artifacts or accepting a completed run with retained files. Unresolved process/file ownership prevents checkpoint acceptance. When removal is selected, verify cleanup; a failed removal is a lifecycle failure even if content assertions passed. Intentional retention for review follows the policy below and does not prevent acceptance.
 
 Measure CLI and child-process memory separately; observation alone does not establish a portable hard process-memory cap. Exercise deterministic resource failures with small injected limits, then verify real writer/tool enforcement under the research's configured limits. A larger resolution, file-size, codec, or production-boundary experiment needs a separately declared workload and budget before execution. Record changes with their measured justification. Heavy real-content behavior remains unverified without suitable evidence.
 
@@ -102,22 +104,26 @@ Measure CLI and child-process memory separately; observation alone does not esta
 
 Use `examples/playground/.tmp-smoke/video-frames/synthetic/<run-id>/` for owned generated-source runs. Keep generated sources, exports, and diagnostics in that run. Regular suite fixtures continue to use their existing `.tmp-tests` ownership; these manual runs do not share that runner's scratch lifecycle.
 
+Manual smoke artifacts may be removed after inspection or retained locally for review. Retention may cover selected evidence or the complete owned run. Honor requested retention and keep retained artifacts ignored and untracked. The user may later remove them independently without a cleanup receipt, retention registry, or documentation update; no artifact manifest is required.
+
+Verify safe cleanup behavior with small disposable owned fixtures when review artifacts are retained. Product staging cleanup and source protection remain required correctness checks. Retention of developer review artifacts does not excuse a product cleanup failure.
+
 Private smoke uses a separate ignored local run area. Resolve private inputs locally and keep original sources outside the owned output tree, read-only. Neither private input nor result locations belong in the public plan or job record. Confirm sources and derived artifacts are ignored and untracked before retaining them. Never register private images, logs, or captures as regular test-result exports.
 
 ```text
 Create uniquely owned run
   -> generate synthetic input or select private read-only input locally
   -> verify recipe/budget and run checks
-  -> inspect outputs and write a public-safe processing summary
   -> confirm child shutdown
-  -> remove only that run's owned files
+  -> inspect outputs and write a public-safe processing summary
+  -> remove owned run artifacts or retain them for local review
 ```
 
-Public synthetic evidence may record recipes, tool builds, tested arguments, expected/actual values, and resource measurements. Private evidence stays local: source names/paths, identifiers, metadata, commands containing private paths, raw diagnostics, images, contact sheets, captures, and inspection notes. Publish only the operation checked and `passed`, `failed`, or `not tested` for private smoke. Omit source-specific counts, dimensions, timing, and performance measurements. Construct the public summary separately from the private report.
+Public synthetic evidence may record recipes, tool builds, tested arguments, expected/actual values, and resource measurements. This plan describes general artifact-handling rules; actual private-run details stay local: source names/paths, identifiers, metadata, commands containing private paths, raw diagnostics, images, contact sheets, captures, and inspection notes. Publish only the operation checked and `passed`, `failed`, or `not tested` for private smoke. Omit source-specific counts, dimensions, timing, and performance measurements, as well as private artifact inventories and run-specific retention/cleanup history. Construct the public processing summary separately from local evidence; later manual deletion needs no public record.
 
 If private content exposes a defect, retain the original investigation locally and create a synthetic reproduction before publishing detailed findings. The private failure remains an unresolved acceptance issue until fixed or its support boundary is explicitly decided; it is not an automatic skip.
 
-Inspect failed runs before cleanup. Keep affected scratch when shutdown or ownership is uncertain, and report the incomplete lifecycle. Cleanup may remove inspected smoke outputs owned by that run; the product itself retains completed exports on failure/cancellation. Never remove the private source library, another run, user-owned folders, or unrelated outputs.
+Inspect failed runs before deciding whether to remove or retain artifacts. Keep affected scratch when shutdown or ownership is uncertain, and report the incomplete verification within the privacy rules above. Cleanup may remove inspected smoke outputs owned by that run; the product itself retains completed exports on failure/cancellation. Never remove the private source library, another run, user-owned folders, or unrelated outputs.
 
 ## Phase 1: Synthetic Fixtures and Terminal Prototype
 
@@ -170,7 +176,7 @@ Tasks:
 - [ ] Cover exclusive hard-link publication and supported exclusive-copy fallback, explicit/generated single-file overwrite and multi-image overwrite, target kinds, source aliases, competing writers, interrupted copies, and safe replacement failure. Never clear existing folders or stale/unrelated files.
 - [ ] Report published/incomplete outputs accurately across disk-full, encoder, limit, cancellation, and cleanup failures; count only confirmed publication.
 - [ ] Compare lossless pixels and alpha with independent post-transform references and lossy output with recorded tolerances. Verify actual formats/extensions, unavailable modes, color inference/rejection, asymmetric transforms, and PNG compression cost with small synthetic tool runs.
-- [ ] Perform private local image-export smoke and publish only processing outcomes. Verify source preservation and owned smoke cleanup.
+- [ ] Perform private local image-export smoke and publish only processing outcomes. Verify source preservation, safe cleanup behavior, and permitted local review-artifact handling.
 
 Checkpoint: resolved frames produce the requested images, filesystem operations enforce the output contract, and failures preserve/report completed exports. Pixel/filter assertions and fake encoders alone cannot close this phase.
 
@@ -183,7 +189,7 @@ Tasks:
 - [ ] Implement mode-aware default/custom destinations and explicit-file extension validation. One-image sequences remain folders with sequence naming.
 - [ ] Implement normalized shared stem, mode-specific placeholders, required selection/serial tokens, verified unpadded frame numbers, serial parameter precedence/start/width, safe names, collisions, and numeric/length exhaustion.
 - [ ] Verify constant/variable/sparse timing, exact boundaries, unknown/conflicting ends, duplicate/decreasing/missing starts, decimal rates, oversized intervals, repeated source identities, and late failures. Preserve requested cadence and report actual writes/repeats only on verified completion.
-- [ ] Exercise bounded synthetic sequence/resource runs and private sequence smoke; verify output content/order, backpressure, cancellation, reporting, source preservation, and owned-run cleanup.
+- [ ] Exercise bounded synthetic sequence/resource runs and private sequence smoke; verify output content/order, backpressure, cancellation, reporting, source preservation, safe cleanup behavior, and permitted local review-artifact handling.
 
 Checkpoint: small independent fixtures and actual tool outputs agree on target count, source identity, and filename order. No incomplete timing/export result is promoted to success, and the manual workload stays within its declared budget.
 
@@ -218,13 +224,13 @@ Tasks:
 
 - [ ] Reconcile every research verification obligation with recorded results or an explicit unresolved support decision. Revisit stress cases when later changes affect their exercised boundary, without routine expensive reruns.
 - [ ] Run affected regular suites, type/lint/format/build checks, existing-video regression coverage, and representative built Node.js invocation. Audit shared process/dependency/doctor changes for unaffected callers.
-- [ ] Complete the applicable direct/Interactive private smoke checklist and the declared synthetic stress checks; verify accurate failures, cancellation, partial outputs, budget handling, shutdown, and scratch cleanup.
+- [ ] Complete the applicable direct/Interactive private smoke checklist and the declared synthetic stress checks; verify accurate failures, cancellation, partial outputs, budget handling, shutdown, safe scratch cleanup, and permitted retention of review artifacts.
 - [ ] Record tested builds/platforms and resource measurements with their scope. Declare larger file I/O, demanding codec, or heavy real-content gaps rather than claiming universal large-video compatibility.
 - [ ] Write a current video-frames usage guide and update command discovery, dependency/doctor guidance, and testing documentation where affected. Keep smoke scratch policy and private operator details out of product UX.
 - [ ] Review public evidence for private source/result identifiers, metadata, captures, images, commands, paths, local setup, and reviewer attribution.
 - [ ] Close the plan/job only after required checkpoints pass; assess research completion against its own recorded evidence. Keep unresolved work visible and retain current documents at their normal locations.
 
-Checkpoint: the feature, documented support boundary, regression coverage, real tool evidence, terminal behavior, private processing outcomes, and cleanup are consistent. Budget exhaustion, unrun required cases, or unresolved process/file ownership prevents completion.
+Checkpoint: the feature, documented support boundary, regression coverage, real tool evidence, terminal behavior, private processing outcomes, and smoke artifact handling are consistent. Budget exhaustion, unrun required cases, or unresolved process/file ownership prevents completion. Intentional local retention of review artifacts does not prevent completion.
 
 ## Execution Records and Completion Rules
 
