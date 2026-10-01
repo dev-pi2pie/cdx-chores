@@ -270,6 +270,8 @@ Doctor adds `tools.ffprobe`, availability-only `video.frames`, and separate `vid
 
 Source evidence: final focused command/options/doctor checks passed **55 cases / 361 assertions**; action/export failures passed **17 cases / 86 assertions**, with scan/export interruption rechecked afterward. Managed units passed **1,568 cases / 6,768 assertions** across 185 files. TypeScript, lint, formatting, diff checks and package build passed. Managed application results follow in phase acceptance evidence.
 
+Managed applications passed **2,237 cases / 14,049 assertions** across 300 files, including unaffected command, dependency, doctor and shared-process consumers. Explicit built-CLI smoke support reuses the existing budget/ownership lab for Phases 6–7 and retains ignored synthetic review artifacts. The final preflight verifies generated count/start timing and independent first/last endpoint pixels before product invocation.
+
 Built evidence is separate: the actual Node CLI passed nine small synthetic export cases (**18 images**) covering first/last/number/time, fixed set, repeated FPS targets, oversized interval, PNG/JPG/still-WebP, conflict and extension rejection, and source preservation. PNG/WebP pixels matched independent opaque references; JPG decoded with expected dimensions. ESM/CommonJS package loading passed. This bounded processing proof does not establish heavy real-content or cross-platform support. Phase acceptance and complete-range review remain pending.
 
 ## Phase 6 Planning Refinement
