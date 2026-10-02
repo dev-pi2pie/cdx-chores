@@ -9,12 +9,12 @@ agent: codex
 
 Reopened the [implementation plan](../plan-2026-09-30-video-frames-implementation.md) and [frame research](../../researches/research-2026-09-30-video-frames.md) for color/output enhancements. The separate [color research](../../researches/research-2026-10-02-video-frames-color-space-preservation.md) is the primary design reference for current color-preservation rules and feasibility. The frame research owns the wider feature contract and historical color context. Phase 10 owns implementation and focused acceptance; Phase 11 owns integrated verification, documentation and final closure.
 
-The [original implementation record](2026-10-01-video-frames-implementation.md) remains completed for Phases 1–9. Its checked tasks, results and acceptance history are preserved. The plan is active and both researches are in-progress; no Phase 10 or Phase 11 task is accepted by this preparation.
+The [original implementation record](2026-10-01-video-frames-implementation.md) remains completed for Phases 1–9. Its checked tasks, results and acceptance history are preserved. Initial preparation reopened the plan and both researches without accepting new implementation tasks.
 
 | Phase | Responsibility | State |
 | --- | --- | --- |
-| 10 | Verified source-color/profile path, capacity-disclosure removal, destination/collision/review wording across all modes and focused review | In progress |
-| 11 | Independent color/integrated verification, regressions, current docs, privacy audit and final review | Pending Phase 10 acceptance |
+| 10 | Verified source-color/profile path, capacity-disclosure removal, destination/collision/review wording across all modes and focused review | Accepted |
+| 11 | Independent color/integrated verification, regressions, current docs, privacy audit and final review | Pending |
 
 ## Planning Evidence
 
@@ -96,7 +96,13 @@ After the scaling fix, the built CLI exported **eight images** across One frame 
 
 Private checks: export **passed**; independent decoded-pixel comparison **passed**; saved-profile validation **passed**; source preservation **passed**; viewer appearance **not tested**. Private inputs and derived evidence remain ignored, untracked and outside public records.
 
-The focused tool/terminal gate is accepted. Complete-range review remains open. Visual comparison, minimum-Node/integrated verification and usage-guide reconciliation remain Phase 11 tasks.
+At the focused checkpoint, the tool/terminal gate was accepted and complete-range review was still open. Visual comparison, minimum-Node/integrated verification and usage-guide reconciliation remain Phase 11 tasks.
+
+### Review and Acceptance
+
+Reviewed the complete implementation range **`6e3d765c7c53418acdd5a37cd1a6a93aad06ee62..71b899ef3a36bb9e4f446df3f62f57cda9acb97c`**, covering all four implementation/evidence checkpoints. The source-policy coverage finding was resolved by the focused regressions. Extended code review found no remaining material issues. Documentation review accepted the explicit defaults, evidence scope, historical checkpoint wording and ownership boundaries.
+
+Local links/anchors, lifecycle, checklist preservation, formatting/diff and public-evidence privacy checks passed. Phases 1–9 retain their original acceptance. Phase 10's nine tasks are accepted. Phase 11's seven tasks remain unchecked; the plan stays active and both researches and this follow-up record stay in-progress.
 
 ## Related Research
 

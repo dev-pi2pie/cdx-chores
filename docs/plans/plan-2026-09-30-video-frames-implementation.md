@@ -320,7 +320,7 @@ Tasks:
 - [x] Align existing-file choices and hints with review's collision wording and actual stop/replace behavior while preserving publication and partial-output semantics.
 - [x] Use readable mode names and file/folder labels in review and retain actual paths, filenames, qualified counts and output styling.
 - [x] Run focused controlled and bounded real-tool/terminal checks for changed boundaries and all three Interactive modes under the existing verification, smoke and privacy policies.
-- [ ] Record results, review the complete Phase 10 change range and resolve actionable findings before Phase 11.
+- [x] Record results, review the complete Phase 10 change range and resolve actionable findings before Phase 11.
 
 Checkpoint: the linked contracts, focused checks and complete-range review pass. The plan and research remain open.
 
@@ -344,6 +344,6 @@ Checkpoint: implementation evidence, integrated checks, review and current docum
 
 Keep the [original record](jobs/2026-10-01-video-frames-implementation.md) completed for Phases 1–9. Use the [follow-up record](jobs/2026-10-02-video-frames-enhancement-follow-up.md) for new work, recording outcomes, support gaps and reviewed change ranges.
 
-The plan is active during follow-up execution. Phase 10 is in progress and Phase 11 remains pending. Check tasks only after recording their required results. Unresolved prerequisites keep the affected gate open. Use `blocked` when execution cannot proceed.
+The plan is active during follow-up execution. Phase 10 is accepted and Phase 11 remains pending. Check tasks only after recording their required results. Unresolved prerequisites keep the affected gate open. Use `blocked` when execution cannot proceed.
 
 Documentation preparation alone does not establish implementation or research completion. Completion does not trigger archiving.
