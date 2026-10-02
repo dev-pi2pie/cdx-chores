@@ -13,7 +13,7 @@ The [original implementation record](2026-10-01-video-frames-implementation.md) 
 
 | Phase | Responsibility | State |
 | --- | --- | --- |
-| 10 | Verified source-color/profile path, capacity-disclosure removal, destination/collision/review wording across all modes and focused review | Accepted |
+| 10 | Source/display color interpretation, capacity-disclosure removal, destination/collision/review wording across all modes and focused review | Color acceptance reopened; destination/capacity tasks accepted |
 | 11 | Independent color/integrated verification, regressions, current docs, privacy audit and final review | Pending |
 
 ## Planning Evidence
@@ -94,7 +94,7 @@ Real terminal walkthroughs used the bundled Node.js Interactive workflow and ins
 
 After the scaling fix, the built CLI exported **eight images** across One frame PNG at half size, a three-image JPG frame set and a four-image WebP sequence. Nested destinations, final counts, saved profiles and absence of capacity disclosure passed. Expected stderr progress/notices were captured separately from exit-code validation.
 
-Private checks: export **passed**; independent decoded-pixel comparison **passed**; saved-profile validation **passed**; source preservation **passed**; viewer appearance **not tested**. Private inputs and derived evidence remain ignored, untracked and outside public records.
+At the focused checkpoint, private checks reported: export **passed**; independent decoded-pixel comparison **passed**; saved-profile validation **passed**; source preservation **passed**; viewer appearance **not tested**. Private inputs and derived evidence remain ignored, untracked and outside public records.
 
 At the focused checkpoint, the tool/terminal gate was accepted and complete-range review was still open. Visual comparison, minimum-Node/integrated verification and usage-guide reconciliation remain Phase 11 tasks.
 
@@ -102,7 +102,15 @@ At the focused checkpoint, the tool/terminal gate was accepted and complete-rang
 
 Reviewed the complete implementation range **`6e3d765c7c53418acdd5a37cd1a6a93aad06ee62..71b899ef3a36bb9e4f446df3f62f57cda9acb97c`**, covering all four implementation/evidence checkpoints. The source-policy coverage finding was resolved by the focused regressions. Extended code review found no remaining material issues. Documentation review accepted the explicit defaults, evidence scope, historical checkpoint wording and ownership boundaries.
 
-Local links/anchors, lifecycle, checklist preservation, formatting/diff and public-evidence privacy checks passed. Phases 1–9 retain their original acceptance. Phase 10's nine tasks are accepted. Phase 11's seven tasks remain unchecked; the plan stays active and both researches and this follow-up record stay in-progress.
+At that checkpoint, local links/anchors, lifecycle, checklist preservation, formatting/diff and public-evidence privacy checks passed, and all nine Phase 10 tasks were accepted. The color acceptance is reopened below. Phases 1–9 retain their original acceptance. Phase 11's seven tasks remain unchecked; the plan stays active and both researches and this follow-up record stay in-progress.
+
+### Color Acceptance Reopened
+
+Local appearance review: **failed (operator reported)**. The remaining dark-color mismatch withdraws color acceptance. Earlier pixel, source-preservation, profile-structure, curve-arithmetic and scaling results remain valid within their tested assumptions; they do not prove the chosen profile reproduces the source's intended displayed appearance.
+
+The current BT.709 ICC path uses inverse signal transfer. The [ICC BT.709 display reference](https://registry.color.org/rgb-registry/bt709) instead specifies a BT.1886 display curve. This establishes a gap in the interpretation used by the implementation and its references. It does not establish the exact local player interpretation or an accepted replacement profile.
+
+The [color research](../../researches/research-2026-10-02-video-frames-color-space-preservation.md#display-interpretation-and-resolution) owns the renewed source/display investigation. Phase 10 reopens its reference, implementation, color verification and final review tasks. Its five destination/capacity tasks remain accepted, and Phase 11 remains pending. Runtime code is unchanged by this reopening.
 
 ## Related Research
 

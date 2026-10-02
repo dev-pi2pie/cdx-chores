@@ -13,7 +13,7 @@ This is the primary design reference for the new preservation approach. The fram
 
 The scope is the existing 8-bit source boundary. HDR, wider-gamut/higher-bit-depth support and archival profile preservation require separate scope and evidence. Selection, sampling, quality presets, transparency, scaling and destination behavior remain in the [frame feature research](research-2026-09-30-video-frames.md).
 
-The preservation approach is implemented with focused pixel/profile evidence. Integrated acceptance and local appearance review remain pending. The [follow-up job](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#production-color-preservation) holds inspection and experiment results.
+The implemented path has focused pixel/profile evidence, but local appearance review failed. Color acceptance is [reopened](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#color-acceptance-reopened) to resolve the source-to-display interpretation. Earlier mechanical checks remain valid within their tested assumptions.
 
 ## Earlier Conversion and Observation
 
@@ -26,7 +26,8 @@ Source color information governs interpretation; the saved description must matc
 | Source field | Preservation rule |
 | --- | --- |
 | Primaries | Retain the source color primaries |
-| Transfer characteristics | Retain the source transfer curve |
+| Transfer characteristics | Interpret signal encoding and intended display behavior together; describe the saved image accordingly |
+| Additional color descriptions | Inspect available profiles/gamma descriptions and resolve conflicts before choosing an interpretation |
 | Matrix | Decode with the source matrix; describe the resulting image representation correctly |
 | Range | Interpret the source range and translate it as required by the image representation |
 
@@ -36,7 +37,7 @@ Apply no brightness, contrast, saturation, compensating gamma, channel boosts, G
 
 ## Color Preservation Approach
 
-Carry the defined source color interpretation through the raw-pixel boundary into encoding. Embed a matching RGB ICC profile that explicitly describes the output primaries and transfer behavior.
+Carry the verified source color interpretation through the raw-pixel boundary into encoding. Embed an RGB ICC profile that describes the output primaries and intended display behavior. Retaining a transfer label does not by itself establish that interpretation.
 
 | Format | Saved color description |
 | --- | --- |
@@ -48,7 +49,7 @@ These formats support ICC embedding.[^image-profiles] Saved-image evidence estab
 
 Define accepted/rejected source, profile and encoder combinations in a support matrix. Missing fields use only verified, documented defaults with disclosure. Conflicting metadata or unsupported preservation fails clearly without format substitution. A later export failure retains completed images.
 
-Absent, `unknown` and `unspecified` fields use these defaults, with a notice for each inferred field:
+The current implementation uses these fallbacks for absent, `unknown` and `unspecified` fields, with a notice for each inferred field. Their notices and numeric behavior were tested. Their display interpretation remains part of the reopened investigation:
 
 | Field | Packed RGB | YUV |
 | --- | --- | --- |
@@ -61,9 +62,11 @@ Accept each preservation path only after the [evidence and completion criteria](
 
 ## Encoder and Profile Path
 
-Use a self-contained ICC matrix/shaper profile and attach it to the encoded stream before publication. Profile generation describes source-coded RGB rather than changing its samples. Attachment preserves compressed image/alpha payloads and counts metadata against staging limits. The tested FFmpeg build lacks `iccgen`, and its bare PNG/JPG/WebP outputs do not embed ICC profiles.
+The implementation generates a self-contained ICC matrix/shaper profile and attaches it to the encoded stream before publication. Attachment preserves compressed image/alpha payloads and counts metadata against staging limits. These mechanisms remain verified. The tested FFmpeg build lacks `iccgen`, and its bare PNG/JPG/WebP outputs do not embed ICC profiles.
 
-The BT.709 profile uses the inverse signal transfer with ICC parametric curve type 3: `g = 1/0.45`, `a = 1/1.099296826809442`, `b = 1-a`, `c = 1/4.5`, and `d = 0.0812428582986315`. The sRGB profile uses its inverse piecewise transfer. Both profiles describe BT.709 primaries, with D65-to-D50 chromatic adaptation for ICC's XYZ connection space. This is distinct from a gamma-2.4 reference-display profile.[^profile-definition]
+The current BT.709 profile uses inverse signal transfer with ICC parametric curve type 3: `g = 1/0.45`, `a = 1/1.099296826809442`, `b = 1-a`, `c = 1/4.5`, and `d = 0.0812428582986315`. The sRGB profile uses its inverse piecewise transfer. Both describe BT.709 primaries with D65-to-D50 chromatic adaptation. Mathematical and LittleCMS checks verified those chosen curves; they did not establish that the BT.709 curve gives the intended displayed appearance.
+
+ICC's output-referred BT.709 reference specifies a BT.1886 display curve, represented by `L = V^2.4`, rather than inverse signal transfer.[^profile-definition] This distinction requires revisiting the profile-selection rule. It does not establish a universal gamma-2.4 replacement for every source carrying a BT.709 transfer label.
 
 The [candidate evidence](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#color-feasibility) verifies the following combinations before production integration:
 
@@ -76,19 +79,30 @@ The [candidate evidence](../plans/jobs/2026-10-02-video-frames-enhancement-follo
 | Outputs | PNG and WebP `full` exact RGBA, JPG `full` with recorded lossy tolerance |
 | Alpha and dimensions | Partial alpha and odd dimensions in PNG/WebP |
 
-The [production evidence](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#production-color-preservation) verifies the candidate matrix through actual exports, plus all quality presets and representative scales. Additional native PNG/WebP exports cover ten packed RGB aliases, NV12/NV21 and YUVA420/422/444 using disclosed defaults. Their rawvideo NUT sources do not retain color metadata. Explicit definitions for those aliases are tested separately through the native filter path, without claiming tagged-container export coverage.
+The [production evidence](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#production-color-preservation) verifies the candidate matrix's decoding, encoding and profile mechanics through actual exports, plus all quality presets and representative scales. Additional native PNG/WebP exports cover ten packed RGB aliases, NV12/NV21 and YUVA420/422/444 using disclosed defaults. Their rawvideo NUT sources do not retain color metadata. Explicit definitions for those aliases are tested separately through the native filter path, without claiming tagged-container export coverage.
 
 The [spatial color checks](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#spatial-color-and-scaling) also verify point-sampled color and partial alpha through resizing. Broad uniform patches alone did not expose the scaler's sample changes. The verified route retains complete chroma during nearest-neighbor scaling.
 
-Higher bit depths, HDR, wider primaries and conflicting fields remain rejected. Missing fields retain only the disclosed interpretations exercised by controlled and native checks. Saved ICC interpretation is verified independently; viewer appearance and broader native platforms remain outside the focused evidence.
+Higher bit depths, HDR, wider primaries and conflicting fields remain rejected. Profile structure and chosen-curve arithmetic are verified independently. Correct source/display interpretation and appearance remain unresolved; broader native platforms remain outside the focused evidence.
+
+## Display Interpretation and Resolution
+
+Resolve the mismatch before accepting the color path again:
+
+1. Inspect the available source matrix, range, primaries and transfer declarations, plus container color/profile/gamma descriptions where present. Record how supported interpretations are identified and how incomplete or conflicting descriptions are handled. This does not expand HDR, gamut or archival-profile scope.
+2. Establish a display reference from published standards and an external reference profile. Compare signal and display curves through black, near-black, shadows, midtones and colors. Expected display results must not be derived solely from the current profile generator or its equations.
+3. Generate a local reference frame with AVFoundation, preserving the returned image's color description.[^native-reference] Verify the actual frame time and geometry, then use an independent color-management transform to put the reference and export into one explicit comparison space. Start at full size and apply the same geometry/sampling policy for scaled checks. Native extraction is an additional macOS reference, not proof of QuickTime equivalence or a portable runtime dependency.
+4. Choose and verify the output profile from the established source/display interpretation. Retain source-coded samples where that representation is correct; any necessary representation conversion must have an explicit reference. Validate synthetic results and bounded local appearance without grading or viewer-specific compensating adjustments.
+
+Public evidence remains synthetic. Local source metadata, images, comparisons and inspection details remain private. The execution record publishes only generic local outcomes.
 
 ## Evidence and Completion Criteria
 
 Public evidence uses synthetic sources. Private inspection remains local under the [privacy policy](research-2026-09-30-video-frames.md#local-visual-review-and-privacy). Lossless `full` compares against the specified post-transform reference. Lossy encoding and scaling can change pixels.
 
-The [feasibility checkpoint](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#color-feasibility) established independent pixel/profile references before implementation. The support matrix and production evidence record source definitions, inferred defaults and per-format encoder/profile paths. Changes to those paths require evidence for the affected combinations and failure handling.
+The [feasibility checkpoint](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#color-feasibility) established pixel/profile references for the chosen inverse-signal model. The support matrix and production evidence record those definitions, inferred defaults and encoder/profile paths. New acceptance requires independent source/display interpretation references as well as checks for affected combinations and failure handling.
 
-Closure requires real saved-image evidence for the accepted paths, independent decoded-pixel and color-description checks, and bounded local visual comparison. Cover affected formats, quality modes, scales, black/shadow/midtone/color patches and alpha; link results and required support decisions from the execution record. Equation-based conversion checks, copied tags or a viewer match alone cannot close this question.
+Closure requires verified source/display semantics, real saved-image evidence, independent decoded-pixel and color-description checks, and bounded local visual comparison. Cover affected formats, quality modes, scales, black/shadow/midtone/color patches and alpha; link results and required support decisions from the execution record. Agreement with the chosen curve's equations, copied tags or a viewer match alone cannot close this question. An unresolved local appearance failure keeps color acceptance open.
 
 The plan owns implementation and integrated acceptance. Reuse original evidence only where its exercised boundary is unchanged. Drafting and documentation review do not establish color feasibility or support.
 
@@ -105,3 +119,5 @@ The plan owns implementation and integrated acceptance. Reuse original evidence 
 [^image-profiles]: [PNG specification: color space information](https://www.w3.org/TR/png-3/#11colorinfo), [ICC profile embedding, including JPEG](https://www.color.org/profile_embedding/) and [WebP container specification: color profile](https://developers.google.com/speed/webp/docs/riff_container#color-profile).
 
 [^profile-definition]: [ICC v4 profile specification](https://www.color.org/specification/ICC.1-2022-05.pdf), [FFmpeg profile-generation coefficients](https://github.com/FFmpeg/FFmpeg/blob/master/libavcodec/fflcms2.c) and [ICC BT.709 reference-display registry](https://registry.color.org/rgb-registry/bt709).
+
+[^native-reference]: [Apple AVAssetImageGenerator](https://developer.apple.com/documentation/avfoundation/avassetimagegenerator) and [QuickTime container color descriptions](https://developer.apple.com/documentation/quicktime-file-format/color_parameter_atom).
