@@ -314,11 +314,11 @@ Tasks:
 
 - [ ] Establish independent color references and record accepted/rejected source and encoder/profile paths before implementation.
 - [ ] Implement source-color preservation through decoding and encoding, with accurate saved descriptions and explicit unsupported-path handling.
-- [ ] Remove capacity messages and unused volume inspection while preserving resource guards and actual disk-full/quota failure handling.
-- [ ] Make One frame custom destinations image file paths and create missing parent folders on export.
-- [ ] Use folder destinations with filename patterns for Frame set and Sequence and create missing folders on export.
-- [ ] Align existing-file choices and hints with review's collision wording and actual stop/replace behavior while preserving publication and partial-output semantics.
-- [ ] Use readable mode names and file/folder labels in review and retain actual paths, filenames, qualified counts and output styling.
+- [x] Remove capacity messages and unused volume inspection while preserving resource guards and actual disk-full/quota failure handling.
+- [x] Make One frame custom destinations image file paths and create missing parent folders on export.
+- [x] Use folder destinations with filename patterns for Frame set and Sequence and create missing folders on export.
+- [x] Align existing-file choices and hints with review's collision wording and actual stop/replace behavior while preserving publication and partial-output semantics.
+- [x] Use readable mode names and file/folder labels in review and retain actual paths, filenames, qualified counts and output styling.
 - [ ] Run focused controlled and bounded real-tool/terminal checks for changed boundaries and all three Interactive modes under the existing verification, smoke and privacy policies.
 - [ ] Record results, review the complete Phase 10 change range and resolve actionable findings before Phase 11.
 
@@ -344,6 +344,6 @@ Checkpoint: implementation evidence, integrated checks, review and current docum
 
 Keep the [original record](jobs/2026-10-01-video-frames-implementation.md) completed for Phases 1–9. Use the [follow-up record](jobs/2026-10-02-video-frames-enhancement-follow-up.md) for new work, recording outcomes, support gaps and reviewed change ranges.
 
-The plan is active during follow-up preparation and execution. Phases 10–11 remain pending. Check tasks only after recording their required results. Unresolved prerequisites keep the affected gate open. Use `blocked` when execution cannot proceed.
+The plan is active during follow-up execution. Phase 10 is in progress and Phase 11 remains pending. Check tasks only after recording their required results. Unresolved prerequisites keep the affected gate open. Use `blocked` when execution cannot proceed.
 
 Documentation preparation alone does not establish implementation or research completion. Completion does not trigger archiving.

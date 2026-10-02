@@ -1,38 +1,9 @@
 import { dirname, join, resolve } from "node:path";
-import { lstat, opendir, stat, statfs } from "node:fs/promises";
+import { lstat, opendir, stat } from "node:fs/promises";
 import { CliError } from "../errors";
 import { assertImageBasename } from "./publication";
 import { sourceStem, type FrameNamingMode } from "./naming";
 import { requireImageExtension, type ImageFormat } from "./image-options";
-export interface VolumeSpace {
-  status: "known" | "unknown";
-  availableBytes?: bigint;
-}
-/** Advisory only; neither an estimate nor available bytes reserves capacity. */
-export async function availableSpace(
-  folder: string,
-  query: (path: string) => Promise<{ bavail: bigint; bsize: bigint }> = (path) =>
-    statfs(path, { bigint: true }),
-): Promise<VolumeSpace> {
-  let path = resolve(folder);
-  for (;;) {
-    try {
-      const value = await query(path);
-      if (
-        typeof value.bavail !== "bigint" ||
-        typeof value.bsize !== "bigint" ||
-        value.bavail < 0n ||
-        value.bsize < 1n
-      )
-        return { status: "unknown" };
-      return { status: "known", availableBytes: value.bavail * value.bsize };
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException)?.code !== "ENOENT" || dirname(path) === path)
-        return { status: "unknown" };
-      path = dirname(path);
-    }
-  }
-}
 export async function frameDestination(input: {
   mode: FrameNamingMode;
   source: string;
@@ -84,5 +55,5 @@ export async function frameDestination(input: {
     }
   }
   const folder = kind === "file" ? dirname(path) : path;
-  return Object.freeze({ kind, path, folder, stem, nonempty, space: await availableSpace(folder) });
+  return Object.freeze({ kind, path, folder, stem, nonempty });
 }

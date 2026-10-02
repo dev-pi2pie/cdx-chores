@@ -238,7 +238,7 @@ export async function handleVideoFramesInteractive(
             }
             settings = nextSettings;
             let output = settings.destination.path;
-            if (mode === "single" && settings.destination.kind !== "file") {
+            if (mode === "single" && settings.destination.kind === "default") {
               const namer = new FrameNamer("single", source, settings.naming);
               const selected = selections![0]!;
               const name = namer.name({
@@ -246,12 +246,7 @@ export async function handleVideoFramesInteractive(
                 selection: selected.selection,
                 format: settings.format,
               });
-              output = join(
-                settings.destination.kind === "folder"
-                  ? resolve(runtime.cwd, output!)
-                  : dirname(source),
-                name,
-              );
+              output = join(dirname(source), name);
             }
             const prepared = await work("Preparing export review", (taskSignal, presenter) =>
               prepareVideoFrames(

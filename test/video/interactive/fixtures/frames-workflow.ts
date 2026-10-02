@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { chmod, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { PassThrough } from "node:stream";
@@ -76,7 +77,7 @@ async function main() {
       const next = decisions.shift();
       assert.ok(
         choices.some((choice) => choice.value === next),
-        `${message}: unexpected ${next}`,
+        `${name}: ${message}: unexpected ${next}. ${errors}`,
       );
       return next as never;
     };
@@ -105,6 +106,18 @@ async function main() {
     assert.equal(input.isRaw, false);
     assert.equal(input.listenerCount("keypress"), 0);
     assert.equal(process.listenerCount("SIGINT"), 0);
+    for (const prepared of reviews) {
+      assert(
+        text.includes(
+          `Mode: ${{ single: "One frame", set: "Frame set", sequence: "Sequence" }[prepared.options.mode]}`,
+        ),
+      );
+      assert(
+        text.includes(prepared.destination.kind === "file" ? "Output file:" : "Output folder:"),
+      );
+    }
+    assert(!text.includes("Available space:"));
+    assert(!text.includes("Available-space check"));
     return { path, text, errors, reviews, used };
   };
   const settings = (
@@ -157,6 +170,28 @@ async function main() {
     settings: async () => ({ ...settings("png", "unused.png"), destination: { kind: "default" } }),
   }));
   assert.equal((await readdir(cancelled.path)).includes("source-frame.png"), false);
+  const single = await run("nested-single", ["single", "first", "export"], ({ path }) => ({
+    settings: async () => settings("png", "example/Literal Image.PnG"),
+    onReview: () => assert.equal(existsSync(join(path, "example")), false),
+  }));
+  assert.equal(existsSync(join(single.path, "example", "Literal Image.PnG")), true);
+  assert.match(single.text, /Naming: Explicit filename/);
+  for (const mode of ["single", "set", "sequence"] as const) {
+    const cancelledNested = await run(
+      "nested-cancel-" + mode,
+      [mode, ...(mode === "single" ? ["first"] : []), "cancel"],
+      ({ path }) => ({
+        settings: async () =>
+          settings(
+            "png",
+            mode === "single" ? "example/image.png" : "example/images",
+            mode === "single" ? "file" : "folder",
+          ),
+        onReview: () => assert.equal(existsSync(join(path, "example")), false),
+      }),
+    );
+    assert.deepEqual(await readdir(cancelledNested.path), ["source.bin"]);
+  }
   const sequence = await run("sequence", ["sequence", "export"], () => ({
     settings: async () =>
       settings("webp", "images", "folder", "{stem}-{frame}-{serial_start_3_##}"),
@@ -164,17 +199,52 @@ async function main() {
   assert.match(sequence.text, /Source \{frame\} numbers will be resolved/);
   assert.match(sequence.text, /Wrote 8 image/);
   assert.equal((await readdir(join(sequence.path, "images"))).length, 8);
+  process.env.CDX_FRAME_SEQUENCE = JSON.stringify({
+    starts: [0, 40, 80, 120],
+    durationEstimate: 160,
+  });
+  const oneImageSequence = await run("one-image-sequence", ["sequence", "export"], ({ path }) => ({
+    cadence: async () => ({ interval: "1s" }),
+    settings: async () => settings("png", "example/images", "folder", "{stem}-{serial}"),
+    onReview: (prepared) => {
+      assert.equal(prepared.destination.kind, "folder");
+      assert.equal(prepared.estimatedCount, 1n);
+      assert.equal(existsSync(join(path, "example")), false);
+    },
+  }));
+  assert.deepEqual(await readdir(join(oneImageSequence.path, "example", "images")), [
+    "source-000001.png",
+  ]);
+  delete process.env.CDX_FRAME_SEQUENCE;
   process.env.CDX_FRAME_MODE = "repeat";
-  const repeated = await run("fixed-set", ["set", "export"], () => ({
-    settings: async () => settings("png", "images", "folder", "{stem}-{selection}"),
+  const repeated = await run("fixed-set", ["set", "export"], ({ path }) => ({
+    settings: async () => settings("png", "example/images", "folder", "{stem}-{selection}"),
+    onReview: () => assert.equal(existsSync(join(path, "example")), false),
   }));
   assert.match(repeated.text, /retains 2 repeated selection/);
-  assert.deepEqual((await readdir(join(repeated.path, "images"))).sort(), [
+  assert.deepEqual((await readdir(join(repeated.path, "example", "images"))).sort(), [
     "source-first.png",
     "source-last.png",
     "source-middle.png",
   ]);
   process.env.CDX_FRAME_MODE = "normal";
+  for (const mode of ["single", "set", "sequence"] as const) {
+    const conflicts = await run(
+      "path-kind-" + mode,
+      [mode, ...(mode === "single" ? ["first"] : []), "cancel"],
+      ({ path }) => {
+        const target = join(path, mode === "single" ? "blocked.png" : "blocked");
+        if (mode === "single") mkdirSync(target);
+        else writeFileSync(target, "existing file");
+        return {
+          settings: async () => settings("png", target, mode === "single" ? "file" : "folder"),
+        };
+      },
+    );
+    assert.equal(conflicts.reviews.length, 0);
+    assert.match(conflicts.errors, /destination must be an ordinary/);
+    assert.equal((await readdir(conflicts.path)).length, 2);
+  }
   let selectedSource = 0;
   const sourceChanged = await run("source-change", ["single", "first", "export"], ({ path }) => ({
     path: async () => (++selectedSource === 1 ? "source.bin" : undefined),
@@ -210,7 +280,10 @@ async function main() {
       exactIdentity: true,
       extension: true,
       reviewCancel: true,
+      nestedDestinations: true,
+      pathKindConflicts: true,
       sequence: true,
+      oneImageSequence: true,
       repeatedSet: true,
       sourceChange: true,
       fatalStop: true,

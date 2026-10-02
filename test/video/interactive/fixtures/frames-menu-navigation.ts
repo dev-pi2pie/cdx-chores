@@ -351,19 +351,19 @@ async function settings(simple: boolean): Promise<void> {
   await flush();
   await s.step(escape, "Output scale");
   await s.step(enter, "Scale from 0.1 to 1");
-  await s.step(enter, "Image destination");
-  await s.step(down.repeat(2) + enter, "Output image file (.jpg)");
+  await s.step(enter, "Where to save the image");
+  await s.step(down + enter, "Image file path (.jpg)");
   s.actualInput.write("synthetic-image.jp");
   await flush();
-  await s.step(escape, "Image destination");
-  await s.step(enter, "Output image file (.jpg)");
+  await s.step(escape, "Where to save the image");
+  await s.step(enter, "Image file path (.jpg)");
   assert(
     s.actualOutput.text
-      .slice(s.actualOutput.text.lastIndexOf("Output image file"))
+      .slice(s.actualOutput.text.lastIndexOf("Image file path"))
       .includes("synthetic-image.jp"),
   );
   await s.step("g" + enter, "Existing output images");
-  await s.step(escape, "Output image file (.jpg)");
+  await s.step(escape, "Image file path (.jpg)");
   await s.step(enter, "Existing output images");
   s.actualInput.write(enter);
   assert.deepEqual(await prompt, {
@@ -388,6 +388,8 @@ const selectedFirst = [
 
 async function destinationInformation(): Promise<void> {
   for (const mode of ["single", "set", "sequence"] as const) {
+    const destinationLabel =
+      mode === "single" ? "Where to save the image" : "Where to save the images";
     const s = streams();
     s.actualOutput.rows = 32;
     s.actualOutput.columns = 100;
@@ -401,10 +403,12 @@ async function destinationInformation(): Promise<void> {
     );
     await s.wait("Image format");
     await s.step(enter, "Output scale");
-    await s.step(enter, "Image destination");
-    let page = s.actualOutput.text.slice(s.actualOutput.text.lastIndexOf("? Image destination"));
+    await s.step(enter, destinationLabel);
+    let page = s.actualOutput.text.slice(s.actualOutput.text.lastIndexOf("? " + destinationLabel));
     const hint = mode === "single" ? "Image beside the source" : "Frames folder beside the source";
     assert(page.includes("Use default output"));
+    assert(page.includes(mode === "single" ? "Custom image file" : "Custom folder"));
+    assert(!page.includes(mode === "single" ? "Custom folder" : "Custom image file"));
     assert(page.includes(hint));
     assert(!page.includes("clip"));
     s.actualOutput.rows = 8;
@@ -413,7 +417,7 @@ async function destinationInformation(): Promise<void> {
     await flush();
     s.actualInput.write(down + up);
     await flush();
-    page = s.actualOutput.text.slice(s.actualOutput.text.lastIndexOf("? Image destination"));
+    page = s.actualOutput.text.slice(s.actualOutput.text.lastIndexOf("? " + destinationLabel));
     assert(page.replaceAll("\n", "").includes(hint));
     assert(page.includes("Up/Down | Enter | Esc Back"));
     assert(page.trimEnd().split("\n").length <= 8);
@@ -424,7 +428,7 @@ async function destinationInformation(): Promise<void> {
     const acceptedStart = s.actualOutput.text.length;
     await s.step(enter, "Image naming");
     assert(
-      s.actualOutput.text.slice(acceptedStart).includes("Image destination Use default output"),
+      s.actualOutput.text.slice(acceptedStart).includes(destinationLabel + " Use default output"),
     );
     if (mode === "sequence") {
       await s.step(enter, "Serial start");
@@ -488,6 +492,75 @@ async function namingInformation(): Promise<void> {
   }
 }
 
+async function customDestinations(simple: boolean): Promise<void> {
+  for (const mode of ["single", "set", "sequence"] as const) {
+    const s = streams();
+    s.actualOutput.rows = 32;
+    s.actualOutput.columns = 100;
+    const prompt = promptFrameImageSettings({ ...s.io, simple }, pathContext(s), mode, encoders);
+    const destinationLabel =
+      mode === "single" ? "Where to save the image" : "Where to save the images";
+    const pathLabel = mode === "single" ? "Image file path (.png)" : "Folder path";
+    const literal = mode === "single" ? "example/Literal Image.PnG" : "example/images";
+    await s.wait("Image format");
+    await s.step(enter, "Output scale");
+    await s.step(enter, destinationLabel);
+    await s.step(down + enter, pathLabel);
+    assert(
+      s.actualOutput.text.includes(
+        mode === "single" ? "Include the filename" : "Images are saved inside this folder",
+      ),
+    );
+    assert(s.actualOutput.text.includes("Relative paths start from where you ran the command"));
+    s.actualInput.write(literal);
+    await flush();
+    await s.step(escape, destinationLabel);
+    await s.step(enter, pathLabel);
+    assert(s.actualOutput.text.slice(s.actualOutput.text.lastIndexOf(pathLabel)).includes(literal));
+    await s.step(enter, mode === "single" ? "Existing output images" : "Image naming");
+    if (mode !== "single") {
+      if (mode === "sequence") {
+        await s.step(enter, "Serial start");
+        await s.step(enter, "Minimum serial width");
+      }
+      await s.step(enter, "Existing output images");
+    }
+    let page = s.actualOutput.text.slice(
+      s.actualOutput.text.lastIndexOf("? Existing output images"),
+    );
+    assert(page.includes("Stop on filename conflict"));
+    assert(page.includes("Stops export on a matching filename"));
+    await s.step(down, "Replace each matching file after encoding its image");
+    s.actualInput.write(enter);
+    const result = await prompt;
+    assert.deepEqual(result?.destination, {
+      kind: mode === "single" ? "file" : "folder",
+      path: literal,
+    });
+    assert.equal(result?.overwrite, true);
+    assert.equal(result?.naming === undefined, mode === "single");
+    s.clean();
+    const retained = promptFrameImageSettings(
+      { ...s.io, simple },
+      pathContext(s),
+      mode,
+      encoders,
+      result!,
+    );
+    await s.wait("Image format", s.actualOutput.text.lastIndexOf("Existing output images"));
+    await s.step(enter, "Output scale");
+    await s.step(enter, destinationLabel);
+    page = s.actualOutput.text.slice(s.actualOutput.text.lastIndexOf("? " + destinationLabel));
+    assert(page.includes(mode === "single" ? "Keep selected image file" : "Keep selected folder"));
+    assert(page.includes(literal));
+    await s.step(escape, "Output scale");
+    await s.step(down.repeat(6) + enter, "Image format");
+    s.actualInput.write(down.repeat(3) + enter);
+    assert.equal(await retained, null);
+    s.clean();
+  }
+}
+
 async function retainedFilename(simple: boolean): Promise<void> {
   const s = streams();
   const literal = "Literal  My Image.PnG";
@@ -513,22 +586,20 @@ async function retainedFilename(simple: boolean): Promise<void> {
   await s.wait("Image format");
   await s.step(down.repeat(2) + enter, "Image quality");
   await s.step(enter, "Output scale");
-  await s.step(enter, "Image destination");
-  await s.step(enter, "Output image file (.webp)");
+  await s.step(enter, "Where to save the image");
+  await s.step(enter, "Image file path (.webp)");
   assert(
-    s.actualOutput.text
-      .slice(s.actualOutput.text.lastIndexOf("Output image file"))
-      .includes(literal),
+    s.actualOutput.text.slice(s.actualOutput.text.lastIndexOf("Image file path")).includes(literal),
   );
   await s.step(enter, "extension must match");
   assert.equal(complete, false);
-  await s.step(escape, "Image destination");
+  await s.step(escape, "Where to save the image");
   await s.step(escape, "Output scale");
   await s.step(escape, "Image quality");
   await s.step(escape, "Image format");
   await s.step(up.repeat(2) + enter, "Output scale");
-  await s.step(enter, "Image destination");
-  await s.step(enter, "Output image file (.png)");
+  await s.step(enter, "Where to save the image");
+  await s.step(enter, "Image file path (.png)");
   await s.step(enter, "Existing output images");
   s.actualInput.write(enter);
   assert.deepEqual((await prompt)?.destination, { kind: "file", path: literal });
@@ -546,11 +617,11 @@ async function retainedFilename(simple: boolean): Promise<void> {
   await jpeg.wait("Image format");
   await jpeg.step(down + enter, "Image quality");
   await jpeg.step(enter, "Output scale");
-  await jpeg.step(enter, "Image destination");
+  await jpeg.step(enter, "Where to save the image");
   await jpeg.step(enter, "Existing output images");
   jpeg.actualInput.write(enter);
   assert.deepEqual((await jpegPrompt)?.destination, { kind: "file", path: "Literal Image.JPEG" });
-  assert(!jpeg.actualOutput.text.includes("Output image file"));
+  assert(!jpeg.actualOutput.text.includes("Image file path"));
   jpeg.clean();
 }
 
@@ -565,6 +636,8 @@ try {
   else if (scenario === "cadence") await cadence();
   else if (scenario === "count-information") await countInformation();
   else if (scenario === "destination-information") await destinationInformation();
+  else if (scenario === "custom-destinations-inline") await customDestinations(false);
+  else if (scenario === "custom-destinations-simple") await customDestinations(true);
   else if (scenario === "naming-information") await namingInformation();
   else if (scenario === "retained-filename-inline") await retainedFilename(false);
   else if (scenario === "retained-filename-simple") await retainedFilename(true);

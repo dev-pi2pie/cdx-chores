@@ -9,6 +9,8 @@ for (const scenario of [
   "cadence",
   "count-information",
   "destination-information",
+  "custom-destinations-inline",
+  "custom-destinations-simple",
   "naming-information",
   "retained-filename-inline",
   "retained-filename-simple",

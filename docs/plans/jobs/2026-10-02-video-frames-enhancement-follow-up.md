@@ -13,7 +13,7 @@ The [original implementation record](2026-10-01-video-frames-implementation.md) 
 
 | Phase | Responsibility | State |
 | --- | --- | --- |
-| 10 | Verified source-color/profile path, capacity-disclosure removal, destination/collision/review wording across all modes and focused review | Implementation pending |
+| 10 | Verified source-color/profile path, capacity-disclosure removal, destination/collision/review wording across all modes and focused review | In progress |
 | 11 | Independent color/integrated verification, regressions, current docs, privacy audit and final review | Pending Phase 10 acceptance |
 
 ## Planning Evidence
@@ -38,7 +38,19 @@ A wording refinement makes the earlier approach's implemented and checked status
 
 The color research now defines a preservation approach with matching ICC profiles for PNG/JPG/WebP and a source/profile/encoder support matrix. Broad questions and the QuickTime paragraph were removed, with verification and privacy requirements consolidated under the evidence gate. Profile generation and encoder support remain unverified. Documentation review found no material issues. Link/anchor, lifecycle, privacy, checklist and diff checks passed.
 
-The accepted/rejected source and encoder/profile matrix requirement remains in color research and is linked from the plan. Documentation review found no material gaps in the destination clarification. Local links, anchors, lifecycle wording, privacy boundaries and preserved acceptance checklists passed integrity checks, and `git diff --check` passed. All nine Phase 10 tasks and seven Phase 11 tasks remain unchecked, and implementation and integrated acceptance are unstarted.
+At the documentation checkpoint, all nine Phase 10 tasks and seven Phase 11 tasks were unchecked. Local links, anchors, lifecycle wording, privacy boundaries and preserved acceptance checklists passed integrity checks. Execution results follow below.
+
+## Phase 10
+
+### Destinations and Capacity
+
+Interactive One frame now accepts custom image file paths and preserves default generated naming. Frame set and Sequence use folder destinations and filename patterns, including one-image sequences. Relative-path hints, retained destinations, collision choices and review's mode/file/folder labels follow the research. Review and navigation create no output folders. Export uses the existing recursive folder creation after validation.
+
+Removed the frames capacity formatter, volume inspection and direct/Interactive capacity output. Resource guards, staging accounting and real write-failure handling remain intact.
+
+Focused managed Node application checks passed **29 cases / 133 assertions** across action, destination and publication owners, including disk-full/quota failures, source protection and retained outputs. Interactive menu/workflow checks passed **14 cases / 57 assertions**, covering inline/simple prompts, all modes, nested paths, format correction, cancellation, path-kind conflicts and one-image sequences. TypeScript and affected lint/format/diff checks passed. The new menu fixture was split into separate editor cases to fit its existing timeout rather than increasing the budget.
+
+Five destination/output tasks are checked. Color feasibility, production preservation, the bounded terminal/tool gate and complete-range review remain open. Phase 11 is unstarted.
 
 ## Related Research
 
