@@ -3,7 +3,7 @@ import { lstat, mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 export async function createSyntheticSmokeRun(
-  phase: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 = 1,
+  phase: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 = 1,
 ): Promise<{
   path: string;
   cleanup(): Promise<void>;

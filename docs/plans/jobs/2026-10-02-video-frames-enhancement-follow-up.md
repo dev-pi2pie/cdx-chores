@@ -52,6 +52,16 @@ Focused managed Node application checks passed **29 cases / 133 assertions** acr
 
 Five destination/output tasks are checked. Color feasibility, production preservation, the bounded terminal/tool gate and complete-range review remain open. Phase 11 is unstarted.
 
+### Color Feasibility
+
+The opt-in [color preservation experiment](../../../scripts/spikes/video-frames-color-preservation.ts) passed **39 cases / 224 images** on FFmpeg/FFprobe **9.0.2** under Node.js **26.5.0**. The bounded run used **21.262 seconds** active processing and **2,575,625 bytes** owned scratch.
+
+Candidate cases cover 8-bit YUV420/422/444, ordinary/full-range variants, three matrices, both ranges and BT.709/sRGB transfer, plus full-range BGRA and partial-alpha odd dimensions. Raw source samples were verified independently of production extraction. Matrix/range conversion differed from declared equations by at most one code value. Limited neutral luma 32 produced RGB 19. PNG/WebP `full` preserved reference RGBA exactly, and JPG `full` center error was at most one code value. ICC attachment preserved compressed payload and decoded samples in all three formats.
+
+The build lacks `iccgen`, and bare encoder outputs contain no ICC. Independent matrix/shaper profiles describe inverse source transfer and BT.709 primaries. LittleCMS independently verified profile IDs and RGB-to-XYZ interpretation with maximum error **0.00001341**. The macOS `sips` inspector reported an MD5 warning despite the independent ICC-standard ID match. That inspector result is a warning, not a claimed pass or a visual-fidelity result. LittleCMS is used only by explicit development evidence and is not a runtime dependency.
+
+The candidate matrix is recorded in [color research](../../researches/research-2026-10-02-video-frames-color-space-preservation.md#encoder-and-profile-path). Production integration, additional source representations, quality/scale combinations, missing/conflicting metadata handling and viewer appearance require separate results. This accepts the feasibility prerequisite, not production preservation or research closure.
+
 ## Related Research
 
 - [Video Frame Selection, Frame Sets, and Sequence Export](../../researches/research-2026-09-30-video-frames.md)

@@ -312,7 +312,7 @@ Follow the [color-space research](../researches/research-2026-10-02-video-frames
 
 Tasks:
 
-- [ ] Establish independent color references and record accepted/rejected source and encoder/profile paths before implementation.
+- [x] Establish independent color references and record accepted/rejected source and encoder/profile paths before implementation.
 - [ ] Implement source-color preservation through decoding and encoding, with accurate saved descriptions and explicit unsupported-path handling.
 - [x] Remove capacity messages and unused volume inspection while preserving resource guards and actual disk-full/quota failure handling.
 - [x] Make One frame custom destinations image file paths and create missing parent folders on export.

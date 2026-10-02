@@ -50,6 +50,25 @@ Define accepted/rejected source, profile and encoder combinations in a support m
 
 Accept each preservation path only after the [evidence and completion criteria](#evidence-and-completion-criteria) pass.
 
+## Encoder and Profile Path
+
+Use a self-contained ICC matrix/shaper profile and attach it to the encoded stream before publication. Profile generation describes source-coded RGB rather than changing its samples. Attachment preserves compressed image/alpha payloads and counts metadata against staging limits. The tested FFmpeg build lacks `iccgen`, and its bare PNG/JPG/WebP outputs do not embed ICC profiles.
+
+The BT.709 profile uses the inverse signal transfer with ICC parametric curve type 3: `g = 1/0.45`, `a = 1/1.099296826809442`, `b = 1-a`, `c = 1/4.5`, and `d = 0.0812428582986315`. The sRGB profile uses its inverse piecewise transfer. Both profiles describe BT.709 primaries, with D65-to-D50 chromatic adaptation for ICC's XYZ connection space. This is distinct from a gamma-2.4 reference-display profile.[^profile-definition]
+
+The [candidate evidence](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#color-feasibility) verifies the following combinations before production integration:
+
+| Boundary | Tested candidate |
+| --- | --- |
+| YUV | 8-bit 420/422/444, including full-range variants |
+| Primaries and transfer | BT.709 primaries with BT.709 or sRGB transfer |
+| Matrix and range | BT.709, SMPTE170M or BT470BG, each at limited/full range |
+| RGB | Full-range BGRA/GBR with either transfer |
+| Outputs | PNG and WebP `full` exact RGBA, JPG `full` with recorded lossy tolerance |
+| Alpha and dimensions | Partial alpha and odd dimensions in PNG/WebP |
+
+Higher bit depths, HDR, wider primaries and conflicting fields remain rejected. Missing fields retain only the disclosed interpretations exercised by controlled checks. Other packed RGB aliases, semiplanar/YUVA paths, lower-quality presets, scaling and viewer appearance are not established by this candidate experiment. Production-path results and any additional support decisions belong in the follow-up record.
+
 ## Evidence and Completion Criteria
 
 Public evidence uses synthetic sources. Private inspection remains local under the [privacy policy](research-2026-09-30-video-frames.md#local-visual-review-and-privacy). Lossless `full` compares against the specified post-transform reference. Lossy encoding and scaling can change pixels.
@@ -71,3 +90,5 @@ The plan owns implementation and integrated acceptance. Reuse original evidence 
 [^image-color]: [FFmpeg filters: pixel format](https://ffmpeg.org/ffmpeg-filters.html#format) and [color conversion](https://ffmpeg.org/ffmpeg-filters.html#colorspace).
 
 [^image-profiles]: [PNG specification: color space information](https://www.w3.org/TR/png-3/#11colorinfo), [ICC profile embedding, including JPEG](https://www.color.org/profile_embedding/) and [WebP container specification: color profile](https://developers.google.com/speed/webp/docs/riff_container#color-profile).
+
+[^profile-definition]: [ICC v4 profile specification](https://www.color.org/specification/ICC.1-2022-05.pdf), [FFmpeg profile-generation coefficients](https://github.com/FFmpeg/FFmpeg/blob/master/libavcodec/fflcms2.c) and [ICC BT.709 reference-display registry](https://registry.color.org/rgb-registry/bt709).
