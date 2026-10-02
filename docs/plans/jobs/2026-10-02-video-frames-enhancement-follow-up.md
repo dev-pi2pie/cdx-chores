@@ -13,7 +13,7 @@ The [original implementation record](2026-10-01-video-frames-implementation.md) 
 
 | Phase | Responsibility | State |
 | --- | --- | --- |
-| 10 | Source/display color interpretation, capacity-disclosure removal, destination/collision/review wording across all modes and focused review | Color acceptance reopened; destination/capacity tasks accepted |
+| 10 | Source/display color interpretation, capacity-disclosure removal, destination/collision/review wording across all modes and focused review | Focused correction verified; complete-range review pending |
 | 11 | Independent color/integrated verification, regressions, current docs, privacy audit and final review | Pending |
 
 ## Planning Evidence
@@ -117,6 +117,33 @@ The [color research](../../researches/research-2026-10-02-video-frames-color-spa
 Synthetic and private smoke now share one run factory under the plan's scratch root, with separate family folders. The bounded lab uses the same scratch accounting, image/time limits and child lifecycle for either family. Invalid family/phase values fail before workspace creation. Inputs remain outside private output runs and outputs use explicit destinations.
 
 The managed Node preparation regression passed **one case / four assertions**, exercising both families, ignore checks, directory/symlink ownership changes, sibling retention and safe cleanup. No media is created by that regression. TypeScript, affected lint/format and diff checks passed. Existing retained artifacts were not relocated or removed. Color acceptance remains open.
+
+### Native Image Interpretation and Conversion
+
+The correction separates source signal transfer from saved RGB image interpretation. Supported 8-bit BT.709-primary frames use a CoreMedia709-compatible image profile for BT.709 transfer and the existing sRGB profile for sRGB transfer. The CoreMedia709 curve is `L = V^(502/256)`, distinct from inverse signal transfer and the external BT.1886 reference-display profile. This is the bounded native-appearance policy in the [color research](../../researches/research-2026-10-02-video-frames-color-space-preservation.md#color-preservation-approach), not a claim that all video rendering policies agree.
+
+YUV decoding now uses accurate rounding with full chroma handling. This changes numeric conversion precision without grading. Reported source ICC profiles are refused at both stream inspection and selected-frame validation, including packet/frame spelling variants. Frame inspection requests side-data descriptions without ingesting profile payloads or frame tags.
+
+The opt-in [native display proof](../../../scripts/spikes/video-frames/color-display-reference-proof.ts) passed **two cases / four images** in **3.875 seconds**, with **38 successful, closed tool calls**. Its BT.709 and sRGB sources contain 16 in-gamut controls. Production RGB matched independent matrix/range equations exactly; native RGB differed by at most one code. Across 282 identical RGB samples, generated/native ICC transforms differed by at most one sRGB code. Comparing separately decoded images through their own profiles differed by at most two codes. Native CGImage and ImageIO PNG profiles were identical. Both stream-ICC and frame-only ICC sources were rejected with no prohibited image published.
+
+Native out-of-gamut observations remain outside that comparison's acceptance. Independent equations and the image representation remain the clipping reference. AVFoundation and installed LittleCMS are development references, with no portable runtime dependency. The Objective-C helper avoids the Swift compiler's large module cache; its bounded build is separate from the unchanged media smoke limits.
+
+The correction's bundled Node checks passed:
+
+| Check | Result |
+| --- | --- |
+| Production matrix | 39 cases / 336 images, including 112 production exports, in 74.713 seconds |
+| Spatial RGB/YUV/partial alpha | 18 PNG/WebP exports with exact independent samples, in 7.840 seconds |
+| Quality and scale | 54 production exports / 54 bare references across both transfers, all presets and three scales, in 26.236 seconds |
+| Source representations | 15 cases / 30 exports plus 60 explicit native filter checks, in 18.038 seconds |
+
+The representation proof retains its rawvideo NUT metadata limit: exports exercise disclosed defaults, while explicit definitions use separate filter checks. Lossy preset comparisons remain scoped to matching native references. The matrix/conversion and saved-profile references now exercise the selected image interpretation rather than the earlier inverse-signal curve.
+
+Full managed units passed **1,619 cases / 37,485 assertions**. The affected video application lane passed **140 cases / 665 assertions**, including existing GIF, Interactive navigation, publication, cancellation and terminal ownership. TypeScript, full lint/format and the Node-target build passed. Review identified the frame-only ICC gap and its regression is included. The proposed transfer-mismatch finding was withdrawn after checking the final graph's existing transfer tags.
+
+The built CLI exported **six images** across a nested One frame PNG at half size, a three-role JPG frame set and an interval WebP sequence. Saved image profiles, counts, file/folder destinations and absence of capacity messages passed. The earlier terminal UX acceptance remains valid; integrated and minimum-Node verification stay pending.
+
+Private outcomes: export **passed**; decoded dark-region reference comparison **passed**; saved-profile comparison **passed**; source and snapshot preservation **passed**; bounded local image inspection **passed**. Private inputs, inspection details and derived outputs remain ignored and untracked in owned private smoke runs. No private evidence is published here. Complete-range review remains pending before accepting the final task.
 
 ## Related Research
 

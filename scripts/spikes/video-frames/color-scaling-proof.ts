@@ -198,7 +198,7 @@ export async function investigateScaling(e: Experiment) {
       "-i",
       yuvSource,
       "-vf",
-      "scale=in_color_matrix=bt709:in_range=tv:out_range=pc,format=rgb24",
+      "scale=in_color_matrix=bt709:in_range=tv:out_range=pc:flags=accurate_rnd+full_chroma_int+full_chroma_inp,format=rgb24",
       "-frames:v",
       "1",
       "-pix_fmt",
@@ -221,7 +221,7 @@ export async function investigateScaling(e: Experiment) {
             yuvSource,
             "-vf",
             [
-              `scale=in_color_matrix=bt709:in_range=tv:out_range=pc,format=${intermediate}`,
+              `scale=in_color_matrix=bt709:in_range=tv:out_range=pc:flags=accurate_rnd+full_chroma_int+full_chroma_inp,format=${intermediate}`,
               ...(earlyTags
                 ? ["setparams=range=pc:color_primaries=bt709:color_trc=bt709:colorspace=gbr"]
                 : []),

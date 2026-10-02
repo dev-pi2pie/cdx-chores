@@ -12,6 +12,7 @@ import {
   requireClean,
 } from "../../../src/cli/video-frames/metadata";
 import type { StreamingResult } from "../../../src/cli/process/streaming";
+import { imageColor } from "../../../src/cli/video-frames/color";
 const stream = (index: number, flags: object = {}) => ({
   index,
   codec_type: "video",
@@ -54,6 +55,26 @@ test("metadata rejects absent streams, unsafe integers and oversized decoded ima
   expect(() =>
     parseMetadata(JSON.stringify({ streams: [{ ...stream(0), width: 4097, height: 4096 }] })),
   ).toThrow("pixels");
+});
+test("reported source ICC stays distinct from color labels and cannot be replaced", () => {
+  for (const side_data_type of ["ICC Profile", "ICC profile"]) {
+    const selected = parseMetadata(
+      JSON.stringify({
+        streams: [
+          {
+            ...stream(0),
+            pix_fmt: "rgb24",
+            color_primaries: "bt709",
+            color_transfer: "bt709",
+            side_data_list: [{ side_data_type }],
+          },
+        ],
+      }),
+    );
+    expect(selected.image?.colorProfile).toBe(true);
+    expect(selected.image?.colorTransfer).toBe("bt709");
+    expect(() => imageColor(selected)).toThrow("Embedded source ICC interpretation");
+  }
 });
 test("frame records preserve exact ticks, empty side data and missing timing without guessing", () => {
   expect(

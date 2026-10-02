@@ -80,7 +80,7 @@ export async function proveSourceFormat(e: Experiment, format: Format) {
   assert.ok(metadata.color_transfer === undefined || metadata.color_transfer === "unknown");
   const conversion = rgb
     ? "format=rgba"
-    : "scale=in_color_matrix=bt601:in_range=tv:out_range=pc,format=rgb24";
+    : "scale=in_color_matrix=bt601:in_range=tv:out_range=pc:flags=accurate_rnd+full_chroma_int+full_chroma_inp,format=rgb24";
   const components = (
     await e.tool(FFMPEG, [
       ...TOOL,

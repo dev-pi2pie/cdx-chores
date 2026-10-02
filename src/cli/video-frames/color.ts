@@ -1,11 +1,12 @@
 import { CliError } from "../errors";
 import type { VideoStream } from "./types";
-import type { ImageTransfer } from "./color-profile";
+import type { ImageTransfer, RgbImageInterpretation } from "./color-profile";
 export function imageColor(stream: VideoStream): {
   filters: string[];
   notices: string[];
   alpha: boolean;
   transfer: ImageTransfer;
+  interpretation: RgbImageInterpretation;
 } {
   const format = stream.pixelFormat ?? "";
   const rgb = /^(?:rgba|bgra|argb|abgr|rgb24|bgr24|rgb0|bgr0|0rgb|0bgr)$/.test(format);
@@ -29,6 +30,10 @@ export function imageColor(stream: VideoStream): {
     return value;
   }
   const image = stream.image;
+  if (image?.colorProfile)
+    throw unsupported(
+      "Embedded source ICC interpretation is unsupported; it cannot be replaced by inferred color tags.",
+    );
   const matrix = field("matrix", image?.colorSpace, rgb ? "gbr" : "smpte170m");
   const range = field("range", image?.colorRange, rgb || format.startsWith("yuvj") ? "pc" : "tv");
   const primaries = field("primaries", image?.colorPrimaries, "bt709");
@@ -46,10 +51,12 @@ export function imageColor(stream: VideoStream): {
   const filters = rgb
     ? ["format=rgb24"]
     : [
-        `scale=in_color_matrix=${matrix === "bt709" ? "bt709" : "bt601"}:in_range=${range}:out_range=pc`,
+        `scale=in_color_matrix=${matrix === "bt709" ? "bt709" : "bt601"}:in_range=${range}:out_range=pc:flags=accurate_rnd+full_chroma_int+full_chroma_inp`,
         "format=rgb24",
       ];
-  return { filters, notices, alpha, transfer };
+  // Source signal tags and the accepted still-image interpretation are separate contracts.
+  const interpretation = transfer === "bt709" ? "coremedia709" : "srgb";
+  return { filters, notices, alpha, transfer, interpretation };
 }
 function unsupported(message: string) {
   return new CliError(message, { code: "FRAME_COLOR_UNSUPPORTED" });

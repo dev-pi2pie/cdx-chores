@@ -5,8 +5,8 @@ import { deflateSync, inflateSync } from "node:zlib";
 
 export type Transfer = "bt709" | "iec61966-2-1";
 
-// ICC v4 matrix/shaper profile. BT.709 means inverse signal transfer, not BT.1886.
-// Coefficients: https://raw.githubusercontent.com/FFmpeg/FFmpeg/master/libavcodec/fflcms2.c
+// ICC v4 matrix/shaper image reference. BT.709 selects the bounded CoreMedia709 model.
+// Gamma is independently observed in the native CoreMedia709 ICC by the display-reference proof.
 // Tag layout: https://www.color.org/specification/ICC.1-2022-05.pdf
 // Colorants: D50-adapted BT.709/sRGB, independently inspected through inverse chad.
 export function referenceProfile(transfer: Transfer): Buffer {
@@ -25,21 +25,18 @@ export function referenceProfile(transfer: Transfer): Buffer {
     return result;
   };
   const coefficients =
-    transfer === "bt709"
-      ? [
-          1 / 0.45,
-          1 / 1.099296826809442,
-          1 - 1 / 1.099296826809442,
-          1 / 4.5,
-          4.5 * 0.018053968510807,
-        ]
-      : [2.4, 1 / 1.055, 1 - 1 / 1.055, 1 / 12.92, 0.04045];
-  const curve = Buffer.alloc(32);
+    transfer === "bt709" ? [502 / 256] : [2.4, 1 / 1.055, 1 - 1 / 1.055, 1 / 12.92, 0.04045];
+  const curve = Buffer.alloc(12 + coefficients.length * 4);
   curve.write("para");
-  curve.writeUInt16BE(3, 8);
+  curve.writeUInt16BE(transfer === "bt709" ? 0 : 3, 8);
   coefficients.forEach((value, i) => curve.writeInt32BE(Math.round(value * 65536), 12 + i * 4));
   const tags: [string, Buffer][] = [
-    ["desc", mluc(`BT.709 primaries / ${transfer} inverse signal transfer`)],
+    [
+      "desc",
+      mluc(
+        `BT.709 primaries / ${transfer === "bt709" ? "CoreMedia709" : "sRGB"} image interpretation`,
+      ),
+    ],
     ["cprt", mluc("Synthetic verification profile. Public domain.")],
     ["wtpt", xyz([0.9642, 1, 0.8249])],
     [
@@ -140,9 +137,7 @@ export function inspectProfile(profile: Buffer, transfer: Transfer) {
   const probes = [0, 1 / 255, 19 / 255, 0.08125, 0.25, 0.5, 1];
   const expected = (v: number) =>
     transfer === "bt709"
-      ? v < 0.0812428582986315
-        ? v / 4.5
-        : ((v + 0.099296826809442) / 1.099296826809442) ** (1 / 0.45)
+      ? v ** (502 / 256)
       : v <= 0.04045
         ? v / 12.92
         : ((v + 0.055) / 1.055) ** 2.4;
@@ -150,13 +145,13 @@ export function inspectProfile(profile: Buffer, transfer: Transfer) {
   for (const name of ["rTRC", "gTRC", "bTRC"]) {
     const body = tags.get(name)!;
     assert.equal(body.toString("ascii", 0, 4), "para");
-    assert.equal(body.readUInt16BE(8), 3);
+    assert.equal(body.readUInt16BE(8), transfer === "bt709" ? 0 : 3);
     const [g, a, b, c, d] = Array.from(
-      { length: 5 },
+      { length: transfer === "bt709" ? 1 : 5 },
       (_, i) => body.readInt32BE(12 + i * 4) / 65536,
     );
     for (const v of probes) {
-      const actual = v >= d! ? (a! * v + b!) ** g! : c! * v;
+      const actual = transfer === "bt709" ? v ** g! : v >= d! ? (a! * v + b!) ** g! : c! * v;
       maximumCurveError = Math.max(maximumCurveError, Math.abs(actual - expected(v)));
       assert.ok(Math.abs(actual - expected(v)) < 0.00004);
     }

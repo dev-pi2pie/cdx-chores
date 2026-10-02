@@ -2,25 +2,26 @@ import { createHash } from "node:crypto";
 import { CliError } from "../errors";
 
 export type ImageTransfer = "bt709" | "iec61966-2-1";
+export type RgbImageInterpretation = "coremedia709" | "srgb";
 
-/** ICC v4 matrix/shaper description of full-range source-coded BT.709 RGB.
- * The BT.709 curve is the inverse signal transfer, not a BT.1886 display gamma.
+/** ICC v4 description of full-range BT.709-primary image samples.
+ * CoreMedia709 is a native-video image interpretation, distinct from BT.1886.
  */
-export function sourceRgbProfile(transfer: ImageTransfer): Buffer {
-  if (transfer !== "bt709" && transfer !== "iec61966-2-1")
-    throw new CliError("Unsupported source transfer for the RGB color profile.", {
+export function imageRgbProfile(interpretation: RgbImageInterpretation): Buffer {
+  if (interpretation !== "coremedia709" && interpretation !== "srgb")
+    throw new CliError("Unsupported RGB image interpretation.", {
       code: "FRAME_COLOR_UNSUPPORTED",
     });
   const coefficients =
-    transfer === "bt709"
-      ? [1 / 0.45, 1 / 1.099296826809442, 1 - 1 / 1.099296826809442, 1 / 4.5, 0.0812428582986315]
+    interpretation === "coremedia709"
+      ? [502 / 256] // Verified against the native CoreMedia709 ICC, not an OETF inverse.
       : [2.4, 1 / 1.055, 0.055 / 1.055, 1 / 12.92, 0.04045];
-  const curve = Buffer.alloc(32);
+  const curve = Buffer.alloc(12 + coefficients.length * 4);
   curve.write("para");
-  curve.writeUInt16BE(3, 8);
+  curve.writeUInt16BE(interpretation === "coremedia709" ? 0 : 3, 8);
   coefficients.forEach((value, index) => fixed(curve, 12 + index * 4, value));
   const tags: [string, Buffer][] = [
-    ["desc", text(`BT.709 RGB with inverse ${transfer} signal transfer`)],
+    ["desc", text(`BT.709 RGB / ${interpretation} image interpretation`)],
     ["cprt", text("cdx-chores color profile")],
     ["wtpt", numbers("XYZ ", [0.9642, 1, 0.8249])],
     [

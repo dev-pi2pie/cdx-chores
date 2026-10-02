@@ -40,7 +40,8 @@ probes = [(0, 0, 0), (19/255, 19/255, 19/255), (0.5, 0.5, 0.5), (1, 0, 0), (0, 1
 matrix = [(0.4360747, 0.3850649, 0.1430804), (0.2225045, 0.7168786, 0.0606169), (0.0139322, 0.0971045, 0.7141733)]
 def decode(v):
     if transfer == "bt709":
-        return v / 4.5 if v < 0.0812428582986315 else ((v + 0.099296826809442) / 1.099296826809442) ** (1/0.45)
+        # Native CoreMedia709 image interpretation, independently checked by the display proof.
+        return v ** (502 / 256)
     return v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4
 
 maximum_error = 0

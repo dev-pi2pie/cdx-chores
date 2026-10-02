@@ -1,6 +1,9 @@
 import { expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { sourceRgbProfile, type ImageTransfer } from "../../../src/cli/video-frames/color-profile";
+import {
+  imageRgbProfile,
+  type RgbImageInterpretation,
+} from "../../../src/cli/video-frames/color-profile";
 
 function tags(profile: Buffer) {
   const result = new Map<string, Buffer>();
@@ -19,6 +22,7 @@ function tags(profile: Buffer) {
 }
 function decode(curve: Buffer, value: number) {
   expect(curve.toString("ascii", 0, 4)).toBe("para");
+  if (curve.readUInt16BE(8) === 0) return value ** (curve.readInt32BE(12) / 65536);
   expect(curve.readUInt16BE(8)).toBe(3);
   const [g, a, b, c, d] = Array.from(
     { length: 5 },
@@ -26,10 +30,10 @@ function decode(curve: Buffer, value: number) {
   );
   return value >= d! ? (a! * value + b!) ** g! : c! * value;
 }
-for (const transfer of ["bt709", "iec61966-2-1"] as const) {
-  test(`${transfer} profile has bounded, deterministic RGB/XYZ metadata and a standard ICC ID`, () => {
-    const profile = sourceRgbProfile(transfer);
-    expect(profile).toEqual(sourceRgbProfile(transfer));
+for (const interpretation of ["coremedia709", "srgb"] as const) {
+  test(`${interpretation} profile has bounded, deterministic RGB/XYZ metadata and a standard ICC ID`, () => {
+    const profile = imageRgbProfile(interpretation);
+    expect(profile).toEqual(imageRgbProfile(interpretation));
     expect(profile.length).toBeLessThan(4096);
     expect(profile.readUInt32BE(0)).toBe(profile.length);
     expect(profile.toString("ascii", 16, 24)).toBe("RGB XYZ ");
@@ -43,26 +47,28 @@ for (const transfer of ["bt709", "iec61966-2-1"] as const) {
     canonical.fill(0, 84, 100);
     expect(profile.subarray(84, 100)).toEqual(createHash("md5").update(canonical).digest());
   });
-  test(`${transfer} profile describes shadows and midtones using inverse source transfer`, () => {
-    const described = tags(sourceRgbProfile(transfer));
+  test(`${interpretation} profile describes the selected image interpretation through shadows and midtones`, () => {
+    const described = tags(imageRgbProfile(interpretation));
     for (const input of [0, 1 / 255, 19 / 255, 0.08125, 0.25, 0.5, 1]) {
       const expected =
-        transfer === "bt709"
-          ? input < 0.0812428582986315
-            ? input / 4.5
-            : ((input + 0.099296826809442) / 1.099296826809442) ** (1 / 0.45)
+        interpretation === "coremedia709"
+          ? input ** (502 / 256)
           : input <= 0.04045
             ? input / 12.92
             : ((input + 0.055) / 1.055) ** 2.4;
       for (const name of ["rTRC", "gTRC", "bTRC"])
         expect(Math.abs(decode(described.get(name)!, input) - expected)).toBeLessThan(0.00003);
     }
-    if (transfer === "bt709")
-      expect(Math.abs(decode(described.get("rTRC")!, 0.5) - 0.5 ** 2.4)).toBeGreaterThan(0.05);
+    if (interpretation === "coremedia709") {
+      const dark = decode(described.get("rTRC")!, 19 / 255);
+      expect(Math.abs(dark - 19 / 255 / 4.5)).toBeGreaterThan(0.009);
+      expect(Math.abs(dark - (19 / 255) ** 2.4)).toBeGreaterThan(0.003);
+    }
   });
 }
-test("unverified transfers never receive a substitute profile", () => {
-  expect(() => sourceRgbProfile("smpte2084" as ImageTransfer)).toThrow(
-    "Unsupported source transfer",
-  );
+test("signal labels and unverified interpretations never receive a substitute profile", () => {
+  for (const value of ["bt709", "smpte2084"])
+    expect(() => imageRgbProfile(value as RgbImageInterpretation)).toThrow(
+      "Unsupported RGB image interpretation",
+    );
 });

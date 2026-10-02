@@ -47,7 +47,7 @@ export async function proveQualityAndScale(e: Experiment, source: string, transf
       "-frames:v",
       "1",
       "-vf",
-      `scale=in_color_matrix=${matrix}:in_range=${metadata.color_range}:out_range=pc,format=rgba`,
+      `scale=in_color_matrix=${matrix}:in_range=${metadata.color_range}:out_range=pc:flags=accurate_rnd+full_chroma_int+full_chroma_inp,format=rgba`,
       "-pix_fmt",
       "rgba",
       "-f",

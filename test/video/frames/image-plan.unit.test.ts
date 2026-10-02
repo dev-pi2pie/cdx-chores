@@ -159,7 +159,10 @@ test("color policy separates disclosed inference from unsupported and conflictin
   );
   expect(yuv.notices).toHaveLength(0);
   expect(yuv.transfer).toBe("bt709");
-  expect(yuv.filters[0]).toBe("scale=in_color_matrix=bt709:in_range=tv:out_range=pc");
+  expect(yuv.interpretation).toBe("coremedia709");
+  expect(yuv.filters[0]).toBe(
+    "scale=in_color_matrix=bt709:in_range=tv:out_range=pc:flags=accurate_rnd+full_chroma_int+full_chroma_inp",
+  );
   expect(yuv.filters.join(",")).not.toContain("trc=");
   for (const values of [
     { pixelFormat: "yuv420p10le" },
@@ -193,6 +196,7 @@ test("source-transfer preservation keeps declared alpha on packed RGB", () => {
       }),
     );
     expect(result.transfer).toBe("bt709");
+    expect(result.interpretation).toBe("coremedia709");
     expect(result.alpha).toBe(true);
     expect(result.notices).toEqual([]);
     expect(result.filters).toEqual(["format=rgb24"]);
@@ -212,10 +216,11 @@ test("sRGB YUVA retains source transfer and separate alpha interpretation", () =
   });
   const result = imageColor(source);
   expect(result.transfer).toBe("iec61966-2-1");
+  expect(result.interpretation).toBe("srgb");
   expect(result.alpha).toBe(true);
   expect(result.notices).toEqual([]);
   expect(result.filters).toEqual([
-    "scale=in_color_matrix=bt709:in_range=tv:out_range=pc",
+    "scale=in_color_matrix=bt709:in_range=tv:out_range=pc:flags=accurate_rnd+full_chroma_int+full_chroma_inp",
     "format=rgb24",
   ]);
   expect(imagePlan(source, imageOptions()).filters).toContain("alphaextract");
@@ -225,7 +230,9 @@ test("semiplanar sources disclose defaults rather than guessing color from layou
     const result = imageColor(stream({ pixelFormat }));
     expect(result.transfer).toBe("bt709");
     expect(result.alpha).toBe(false);
-    expect(result.filters[0]).toBe("scale=in_color_matrix=bt601:in_range=tv:out_range=pc");
+    expect(result.filters[0]).toBe(
+      "scale=in_color_matrix=bt601:in_range=tv:out_range=pc:flags=accurate_rnd+full_chroma_int+full_chroma_inp",
+    );
     expect(result.notices).toEqual([
       "Color matrix unavailable; assuming smpte170m.",
       "Color range unavailable; assuming tv.",

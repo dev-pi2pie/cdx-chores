@@ -155,7 +155,7 @@ async function main() {
                     "-frames:v",
                     "1",
                     "-vf",
-                    `scale=in_color_matrix=${matrix === "bt709" ? "bt709" : "bt601"}:in_range=${range}:out_range=pc,format=rgba`,
+                    `scale=in_color_matrix=${matrix === "bt709" ? "bt709" : "bt601"}:in_range=${range}:out_range=pc:flags=accurate_rnd+full_chroma_int+full_chroma_inp,format=rgba`,
                     "-f",
                     "rawvideo",
                     "pipe:1",

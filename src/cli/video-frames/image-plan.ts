@@ -1,7 +1,7 @@
 import { displayGeometry } from "./display";
 import { imageColor } from "./color";
 import { imageColorTags, type ImageOptions } from "./image-options";
-import { sourceRgbProfile } from "./color-profile";
+import { imageRgbProfile } from "./color-profile";
 import type { VideoStream } from "./types";
 export function imagePlan(stream: VideoStream, options: ImageOptions, select?: string) {
   const geometry = displayGeometry(stream, options.scale);
@@ -19,8 +19,9 @@ export function imagePlan(stream: VideoStream, options: ImageOptions, select?: s
     frameBytes: geometry.width * geometry.height * 4,
     filters,
     transfer: color.transfer,
+    interpretation: color.interpretation,
     profile: Object.freeze({
-      icc: sourceRgbProfile(color.transfer),
+      icc: imageRgbProfile(color.interpretation),
       width: geometry.width,
       height: geometry.height,
     }),
