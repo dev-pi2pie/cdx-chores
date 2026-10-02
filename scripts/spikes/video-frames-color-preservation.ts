@@ -4,6 +4,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { createLab } from "./video-frames/lab";
 import { FFMPEG, FFPROBE } from "./video-frames/tools";
+import { proveProduction } from "./video-frames/color-production-proof";
 import {
   embedReference,
   extractedProfile,
@@ -18,6 +19,7 @@ const BASE = ["-nostdin", "-v", "error", "-threads", "1", "-filter_threads", "1"
 const WIDTH = 256;
 const HEIGHT = 32;
 const PATCHES = 8;
+const production = process.argv.includes("--production");
 
 async function main() {
   const lab = await createLab(10);
@@ -66,7 +68,7 @@ async function main() {
           for (const sampling of ["420", "422", "444"] as const)
             await lab.check(
               `${matrix}-${range}-${transfer}-${sampling}`,
-              6,
+              production ? 9 : 6,
               2 * 1024 * 1024,
               async (e) => {
                 const patches = yuvPatches(range);
@@ -297,88 +299,47 @@ async function main() {
                     darkPatch: decoded[1],
                   });
                 }
-                return { metadata, expected, actual, maximumConversionError, formats };
+                return {
+                  metadata,
+                  expected,
+                  actual,
+                  maximumConversionError,
+                  formats,
+                  ...(production
+                    ? {
+                        production: await proveProduction(
+                          e,
+                          source,
+                          rgba,
+                          WIDTH,
+                          HEIGHT,
+                          transfer,
+                          true,
+                        ),
+                      }
+                    : {}),
+                };
               },
             );
 
     for (const transfer of ["bt709", "iec61966-2-1"] as const)
-      await lab.check(`rgb-alpha-and-odd-size-${transfer}`, 4, 2 * 1024 * 1024, async (e) => {
-        const width = 17;
-        const height = 9;
-        const pixels = Buffer.alloc(width * height * 4);
-        for (let i = 0; i < pixels.length; i += 4) {
-          pixels[i] = (i * 3) % 256;
-          pixels[i + 1] = 19;
-          pixels[i + 2] = 128;
-          pixels[i + 3] = i % 8 === 0 ? 127 : 255;
-        }
-        const raw = join(e.path, "source.rgba");
-        await writeFile(raw, pixels);
-        const source = join(e.path, "source.mkv");
-        await e.tool(FFMPEG, [
-          ...BASE,
-          "-f",
-          "rawvideo",
-          "-pixel_format",
-          "rgba",
-          "-video_size",
-          `${width}x${height}`,
-          "-i",
-          raw,
-          "-vf",
-          `setparams=range=pc:color_primaries=bt709:color_trc=${transfer}:colorspace=gbr`,
-          "-frames:v",
-          "1",
-          "-c:v",
-          "ffv1",
-          "-pix_fmt",
-          "bgra",
-          "-color_range",
-          "pc",
-          "-colorspace",
-          "rgb",
-          "-color_primaries",
-          "bt709",
-          "-color_trc",
-          transfer,
-          "-y",
-          source,
-        ]);
-        const metadata = JSON.parse(
-          (
-            await e.tool(FFPROBE, [
-              "-v",
-              "error",
-              "-show_entries",
-              "stream=pix_fmt,color_space,color_range,color_primaries,color_transfer",
-              "-of",
-              "json",
-              source,
-            ])
-          ).stdout.toString("utf8"),
-        ).streams[0];
-        assert.equal(metadata.pix_fmt, "bgra");
-        assert.equal(metadata.color_space, "gbr");
-        assert.equal(metadata.color_range, "pc");
-        assert.equal(metadata.color_primaries, "bt709");
-        assert.equal(metadata.color_transfer, transfer);
-        const sourcePixels = (
-          await e.tool(FFMPEG, [
-            ...BASE,
-            "-i",
-            source,
-            "-vf",
-            "format=rgba",
-            "-frames:v",
-            "1",
-            "-f",
-            "rawvideo",
-            "pipe:1",
-          ])
-        ).stdout;
-        assert.deepEqual(sourcePixels, pixels);
-        for (const format of ["png", "webp"] as const) {
-          const bare = join(e.path, `bare.${format}`);
+      await lab.check(
+        `rgb-alpha-and-odd-size-${transfer}`,
+        production ? 6 : 4,
+        2 * 1024 * 1024,
+        async (e) => {
+          const width = 17;
+          const height = 9;
+          const pixels = Buffer.alloc(width * height * 4);
+          for (let i = 0; i < pixels.length; i += 4) {
+            pixels[i] = (i * 3) % 256;
+            pixels[i + 1] = 19;
+            pixels[i + 2] = 128;
+            pixels[i + 3] = i % 8 === 0 ? 127 : 255;
+          }
+          const raw = join(e.path, "source.rgba");
+          await writeFile(raw, pixels);
+          const source = join(e.path, "source.mkv");
           await e.tool(FFMPEG, [
             ...BASE,
             "-f",
@@ -389,52 +350,130 @@ async function main() {
             `${width}x${height}`,
             "-i",
             raw,
+            "-vf",
+            `setparams=range=pc:color_primaries=bt709:color_trc=${transfer}:colorspace=gbr`,
             "-frames:v",
             "1",
-            "-vf",
-            format === "png" ? "format=rgba" : "format=bgra",
             "-c:v",
-            format === "png" ? "png" : "libwebp",
-            ...(format === "webp" ? ["-lossless", "1", "-quality", "100"] : []),
-            "-f",
-            "image2",
-            "-update",
-            "1",
+            "ffv1",
+            "-pix_fmt",
+            "bgra",
+            "-color_range",
+            "pc",
+            "-colorspace",
+            "rgb",
+            "-color_primaries",
+            "bt709",
+            "-color_trc",
+            transfer,
             "-y",
-            bare,
+            source,
           ]);
-          e.images(1);
-          const encoded = await readFile(bare);
-          const profile = referenceProfile(transfer);
-          const saved = embedReference(encoded, format, profile, width, height, true);
-          const output = join(e.path, `profiled.${format}`);
-          await writeFile(output, saved);
-          e.images(1);
-          assert.deepEqual(imagePayload(encoded, format), imagePayload(saved, format));
-          assert.deepEqual(extractedProfile(saved, format), profile);
-          const actual = (
+          const metadata = JSON.parse(
+            (
+              await e.tool(FFPROBE, [
+                "-v",
+                "error",
+                "-show_entries",
+                "stream=pix_fmt,color_space,color_range,color_primaries,color_transfer",
+                "-of",
+                "json",
+                source,
+              ])
+            ).stdout.toString("utf8"),
+          ).streams[0];
+          assert.equal(metadata.pix_fmt, "bgra");
+          assert.equal(metadata.color_space, "gbr");
+          assert.equal(metadata.color_range, "pc");
+          assert.equal(metadata.color_primaries, "bt709");
+          assert.equal(metadata.color_transfer, transfer);
+          const sourcePixels = (
             await e.tool(FFMPEG, [
               ...BASE,
               "-i",
-              output,
+              source,
+              "-vf",
+              "format=rgba",
               "-frames:v",
               "1",
-              "-pix_fmt",
-              "rgba",
               "-f",
               "rawvideo",
               "pipe:1",
             ])
           ).stdout;
-          assert.deepEqual(actual, pixels);
-        }
-        return {
-          metadata,
-          alpha: "preserved",
-          dimensions: [width, height],
-          pngAndWebpFull: "exact",
-        };
-      });
+          assert.deepEqual(sourcePixels, pixels);
+          for (const format of ["png", "webp"] as const) {
+            const bare = join(e.path, `bare.${format}`);
+            await e.tool(FFMPEG, [
+              ...BASE,
+              "-f",
+              "rawvideo",
+              "-pixel_format",
+              "rgba",
+              "-video_size",
+              `${width}x${height}`,
+              "-i",
+              raw,
+              "-frames:v",
+              "1",
+              "-vf",
+              format === "png" ? "format=rgba" : "format=bgra",
+              "-c:v",
+              format === "png" ? "png" : "libwebp",
+              ...(format === "webp" ? ["-lossless", "1", "-quality", "100"] : []),
+              "-f",
+              "image2",
+              "-update",
+              "1",
+              "-y",
+              bare,
+            ]);
+            e.images(1);
+            const encoded = await readFile(bare);
+            const profile = referenceProfile(transfer);
+            const saved = embedReference(encoded, format, profile, width, height, true);
+            const output = join(e.path, `profiled.${format}`);
+            await writeFile(output, saved);
+            e.images(1);
+            assert.deepEqual(imagePayload(encoded, format), imagePayload(saved, format));
+            assert.deepEqual(extractedProfile(saved, format), profile);
+            const actual = (
+              await e.tool(FFMPEG, [
+                ...BASE,
+                "-i",
+                output,
+                "-frames:v",
+                "1",
+                "-pix_fmt",
+                "rgba",
+                "-f",
+                "rawvideo",
+                "pipe:1",
+              ])
+            ).stdout;
+            assert.deepEqual(actual, pixels);
+          }
+          return {
+            ...(production
+              ? {
+                  production: await proveProduction(
+                    e,
+                    source,
+                    pixels,
+                    width,
+                    height,
+                    transfer,
+                    false,
+                  ),
+                }
+              : {}),
+            metadata,
+            alpha: "preserved",
+            dimensions: [width, height],
+            pngAndWebpFull: "exact",
+          };
+        },
+      );
   } finally {
     lab.finish();
   }

@@ -1,5 +1,6 @@
 import { CliError } from "../errors";
 import { extname } from "node:path";
+import type { ImageTransfer } from "./color-profile";
 
 export type ImageFormat = "png" | "jpg" | "webp";
 export type ImageQuality = "low" | "medium" | "high" | "full";
@@ -42,15 +43,20 @@ export function imageOptions(
 function normalize(value: unknown): string {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
-export const RGB_TAGS =
-  "setparams=range=full:color_primaries=bt709:color_trc=iec61966-2-1:colorspace=gbr";
-export function encoderArguments(options: ImageOptions): string[] {
+export function imageColorTags(transfer: ImageTransfer, matrix = "gbr") {
+  return `setparams=range=full:color_primaries=bt709:color_trc=${transfer}:colorspace=${matrix}`;
+}
+export function encoderArguments(
+  options: ImageOptions,
+  transfer: ImageTransfer = "iec61966-2-1",
+): string[] {
+  const tags = imageColorTags(transfer);
   if (options.format === "png")
-    return ["-vf", `format=rgba,setsar=1,${RGB_TAGS}`, "-c:v", "png", "-compression_level", "9"];
+    return ["-vf", `format=rgba,setsar=1,${tags}`, "-c:v", "png", "-compression_level", "9"];
   if (options.format === "jpg")
     return [
       "-vf",
-      "scale=in_range=pc:out_range=pc:out_color_matrix=bt601,format=yuvj444p,setsar=1",
+      `scale=in_range=pc:out_range=pc:out_color_matrix=bt601,format=yuvj444p,setsar=1,${imageColorTags(transfer, "smpte170m")}`,
       "-c:v",
       "mjpeg",
       "-q:v",
@@ -62,7 +68,7 @@ export function encoderArguments(options: ImageOptions): string[] {
     ];
   return [
     "-vf",
-    `format=bgra,setsar=1,${RGB_TAGS}`,
+    `format=bgra,setsar=1,${tags}`,
     "-c:v",
     "libwebp",
     "-lossless",

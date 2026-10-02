@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Contract Ownership Catalog"
 created-date: 2026-08-23
-modified-date: 2026-10-01
+modified-date: 2026-10-02
 status: completed
 agent: codex
 ---
@@ -50,11 +50,13 @@ Use [Test Suite Audit Inventory](test-suite-audit-inventory.md) for the fixed pr
 
 `image-plan.unit.test.ts` owns format/quality/scale policies, aspect/display geometry, color inference/rejection, transparency checks, and advertised image encoder interpretation. Actual encoded pixels and metadata require the explicit synthetic smoke checkpoint.
 
-`image-framing.unit.test.ts` owns bounded format completion parsing. `staging-boundary.unit.test.ts` owns the default 256-MiB encoded-byte accounting boundary and its one-byte overflow with virtual storage and bounded chunks. It neither creates a 256-MiB file nor establishes native encoding at that size. `publication.app.test.ts` owns real Node filesystem staging/publication, collisions, alias protection, injected I/O failures including `ENOSPC` and `EDQUOT`, partial accounting, and safe cleanup. Their tiny structural format fixtures establish lifecycle boundaries; the explicit real-image smoke establishes actual encoding and pixels.
+`color-profile.unit.test.ts` owns deterministic ICC headers, tag bounds, profile IDs, source-transfer curves and primaries. `image-framing.unit.test.ts` owns bounded format completion parsing and streaming ICC attachment, including conflicting descriptions, compressed-payload preservation, byte accounting and backpressure. Native saved-image and independent color-management evidence belongs in the [follow-up record](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#production-color-preservation).
+
+`staging-boundary.unit.test.ts` owns the default 256-MiB encoded-byte accounting boundary and its one-byte overflow with virtual storage and bounded chunks. It neither creates a 256-MiB file nor establishes native encoding at that size. `publication.app.test.ts` owns real Node filesystem staging/publication, collisions, alias protection, injected I/O failures including `ENOSPC` and `EDQUOT`, partial accounting, and safe cleanup. Their tiny structural format fixtures establish lifecycle boundaries; the explicit real-image smoke establishes actual encoding and pixels.
 
 `raw-frames.unit.test.ts` owns bounded reusable RGBA framing. `export.app.test.ts` owns the Node decoder/encoder/publication pipeline, retained roles, encoder preflight, duplicate/case-alias names under both overwrite policies, partial output, source mutation, alpha failure, and cancellation with controlled executable responses. Resolver cases also verify that copied or stale selections cannot be exported. Frame records retain selected image metadata for conversion checks without collecting a full frame table.
 
-`naming.unit.test.ts` owns shared source stems, concrete mode-specific rendering, serial precedence/width/overflow, filename limits, and exact advisory volume calculations. `destination.app.test.ts` owns mode-defined defaults/custom paths, explicit extensions, existing kinds/aliases, nonempty-folder detection, and inspection without creation. Existing prototype naming and rename rendering tests protect reuse of the shared grammar and separator normalization.
+`naming.unit.test.ts` owns shared source stems, concrete mode-specific rendering, serial precedence/width/overflow and filename limits. `destination.app.test.ts` owns mode-defined defaults/custom paths, explicit extensions, existing kinds/aliases, nonempty-folder detection, and inspection without creation. Existing prototype naming and rename rendering tests protect reuse of the shared grammar and separator normalization.
 
 `sampler.unit.test.ts` owns exact FPS/interval grammar, independent cadence targets and count estimates, presentation boundaries, retained repeats, bounded selection expressions, incremental timing rejection, and reliable end/EOF handling. `sequence.app.test.ts` owns the Node sampler/exporter boundary, global ordinals/serials, backpressure, overwrite, partial counts, and late timing/tool/filesystem/cancellation failures with controlled executables. `images.app.test.ts` owns generated/literal single-image and fixed-set destinations, requested labels, overwrite, and pre-write source-alpha rejection. Real sequence content, resource observations, and source/encoder alpha limitations remain explicit synthetic smoke evidence; regular fixtures do not establish pixel fidelity.
 

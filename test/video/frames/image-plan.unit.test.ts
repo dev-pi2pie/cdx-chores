@@ -158,7 +158,9 @@ test("color policy separates disclosed inference from unsupported and conflictin
     }),
   );
   expect(yuv.notices).toHaveLength(0);
-  expect(yuv.filters[0]).toContain("itrc=bt709");
+  expect(yuv.transfer).toBe("bt709");
+  expect(yuv.filters[0]).toBe("scale=in_color_matrix=bt709:in_range=tv:out_range=pc");
+  expect(yuv.filters.join(",")).not.toContain("trc=");
   for (const values of [
     { pixelFormat: "yuv420p10le" },
     { image: { display: [], colorPrimaries: "bt2020" } },

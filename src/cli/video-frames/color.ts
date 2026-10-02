@@ -1,6 +1,12 @@
 import { CliError } from "../errors";
 import type { VideoStream } from "./types";
-export function imageColor(stream: VideoStream) {
+import type { ImageTransfer } from "./color-profile";
+export function imageColor(stream: VideoStream): {
+  filters: string[];
+  notices: string[];
+  alpha: boolean;
+  transfer: ImageTransfer;
+} {
   const format = stream.pixelFormat ?? "";
   const rgb = /^(?:rgba|bgra|argb|abgr|rgb24|bgr24|rgb0|bgr0|0rgb|0bgr)$/.test(format);
   const yuv = /^(?:yuv(?:420|422|444)p|yuvj(?:420|422|444)p|yuva(?:420|422|444)p|nv12|nv21)$/.test(
@@ -33,26 +39,17 @@ export function imageColor(stream: VideoStream) {
     );
   if (
     (range !== "tv" && range !== "pc") ||
-    (rgb && (matrix !== "gbr" || range !== "pc" || transfer !== "iec61966-2-1")) ||
+    (rgb && (matrix !== "gbr" || range !== "pc")) ||
     (yuv && !["bt709", "smpte170m", "bt470bg"].includes(matrix))
   )
     throw unsupported("Conflicting or unsupported color matrix/range.");
-  let filters: string[];
-  if (rgb) filters = ["format=rgb24"];
-  else if (transfer === "bt709") {
-    if (stream.width % 2 || stream.height % 2)
-      throw unsupported("The verified transfer-conversion path requires even decoded dimensions.");
-    filters = [
-      `colorspace=ispace=${matrix}:irange=${range}:iprimaries=bt709:itrc=bt709:space=bt709:primaries=bt709:trc=iec61966-2-1:range=pc:format=yuv444p`,
-      "scale=in_color_matrix=bt709:in_range=pc:out_range=pc",
-      "format=rgb24",
-    ];
-  } else
-    filters = [
-      `scale=in_color_matrix=${matrix === "bt709" ? "bt709" : "bt601"}:in_range=${range}:out_range=pc`,
-      "format=rgb24",
-    ];
-  return { filters, notices, alpha };
+  const filters = rgb
+    ? ["format=rgb24"]
+    : [
+        `scale=in_color_matrix=${matrix === "bt709" ? "bt709" : "bt601"}:in_range=${range}:out_range=pc`,
+        "format=rgb24",
+      ];
+  return { filters, notices, alpha, transfer };
 }
 function unsupported(message: string) {
   return new CliError(message, { code: "FRAME_COLOR_UNSUPPORTED" });

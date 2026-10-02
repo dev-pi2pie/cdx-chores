@@ -1,5 +1,5 @@
 import { CliError } from "../errors";
-import { imageFramer } from "./image-framing";
+import { imageFramer, type ImageProfile } from "./image-framing";
 import type { ImageFormat } from "./image-options";
 import { PublicationSession, type StageFile } from "./publication";
 export const IMAGE_STAGING_LIMITS = { files: 2, bytes: 256 * 1024 * 1024 } as const;
@@ -16,15 +16,23 @@ export class ImageStager {
     readonly session: PublicationSession,
     format: ImageFormat,
     private target: (index: number) => string,
-    private options: { bytes?: number; onFailure?: (error: unknown) => void } = {},
+    private options: {
+      bytes?: number;
+      profile?: ImageProfile;
+      onFailure?: (error: unknown) => void;
+    } = {},
   ) {
     const limit = options.bytes ?? IMAGE_STAGING_LIMITS.bytes;
     if (!Number.isSafeInteger(limit) || limit < 1) throw new Error("Invalid image staging limit.");
-    this.framer = imageFramer(format, {
-      begin: () => this.begin(),
-      write: (bytes) => this.write(bytes),
-      complete: () => this.complete(),
-    });
+    this.framer = imageFramer(
+      format,
+      {
+        begin: () => this.begin(),
+        write: (bytes) => this.write(bytes),
+        complete: () => this.complete(),
+      },
+      options.profile,
+    );
   }
   private check() {
     this.session.signal.throwIfAborted();

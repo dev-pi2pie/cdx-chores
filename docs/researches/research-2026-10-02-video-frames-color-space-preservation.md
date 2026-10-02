@@ -13,11 +13,11 @@ This is the primary design reference for the new preservation approach. The fram
 
 The scope is the existing 8-bit source boundary. HDR, wider-gamut/higher-bit-depth support and archival profile preservation require separate scope and evidence. Selection, sampling, quality presets, transparency, scaling and destination behavior remain in the [frame feature research](research-2026-09-30-video-frames.md).
 
-The preservation approach is defined below. Encoder/profile support and appearance fidelity still need evidence. The [follow-up job](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#planning-evidence) holds inspection and experiment results.
+The preservation approach is implemented with focused pixel/profile evidence. Integrated acceptance and local appearance review remain pending. The [follow-up job](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#production-color-preservation) holds inspection and experiment results.
 
-## Current Conversion and Evidence
+## Earlier Conversion and Observation
 
-The [color planner](../../src/cli/video-frames/color.ts) converts BT.709 transfer to sRGB, and the [encoder configuration](../../src/cli/video-frames/image-options.ts) supplies fixed RGB tags. The [synthetic observation](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#planning-evidence) shows lighter dark patches than matrix/range conversion alone. It establishes the effect of that choice, not a complete correction. Original equation-based checks validate the conversion they reference, rather than preservation of source transfer or viewer equivalence.
+The earlier color planner converted BT.709 transfer to sRGB, and the encoder configuration supplied fixed RGB tags. The [planning observation](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#planning-evidence) showed lighter dark patches than matrix/range conversion alone. It established the effect of that choice. Original equation-based checks validated that conversion, rather than preservation of source transfer or viewer equivalence.
 
 ## Source Definitions and Image Representation
 
@@ -44,9 +44,18 @@ Carry the defined source color interpretation through the raw-pixel boundary int
 | JPG | Embedded ICC metadata describing the decoded RGB interpretation |
 | WebP | `ICCP` profile in the extended WebP container |
 
-These formats support ICC embedding.[^image-profiles] The profile-generation route and encoder support must be established by saved-image evidence. Filter flags, probe labels or format-level capability alone do not establish a supported preservation path.
+These formats support ICC embedding.[^image-profiles] Saved-image evidence establishes the profile-generation route and encoder support. Filter flags, probe labels or format-level capability alone do not establish a supported preservation path.
 
 Define accepted/rejected source, profile and encoder combinations in a support matrix. Missing fields use only verified, documented defaults with disclosure. Conflicting metadata or unsupported preservation fails clearly without format substitution. A later export failure retains completed images.
+
+Absent, `unknown` and `unspecified` fields use these defaults, with a notice for each inferred field:
+
+| Field | Packed RGB | YUV |
+| --- | --- | --- |
+| Primaries | BT.709 | BT.709 |
+| Transfer | sRGB | BT.709 |
+| Matrix | GBR | SMPTE170M |
+| Range | Full | Limited, or full for `yuvj` formats |
 
 Accept each preservation path only after the [evidence and completion criteria](#evidence-and-completion-criteria) pass.
 
@@ -67,13 +76,15 @@ The [candidate evidence](../plans/jobs/2026-10-02-video-frames-enhancement-follo
 | Outputs | PNG and WebP `full` exact RGBA, JPG `full` with recorded lossy tolerance |
 | Alpha and dimensions | Partial alpha and odd dimensions in PNG/WebP |
 
-Higher bit depths, HDR, wider primaries and conflicting fields remain rejected. Missing fields retain only the disclosed interpretations exercised by controlled checks. Other packed RGB aliases, semiplanar/YUVA paths, lower-quality presets, scaling and viewer appearance are not established by this candidate experiment. Production-path results and any additional support decisions belong in the follow-up record.
+The [production evidence](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#production-color-preservation) verifies the candidate matrix through actual exports, plus all quality presets and representative scales. Additional native PNG/WebP exports cover ten packed RGB aliases, NV12/NV21 and YUVA420/422/444 using disclosed defaults. Their rawvideo NUT sources do not retain color metadata. Explicit definitions for those aliases are tested separately through the native filter path, without claiming tagged-container export coverage.
+
+Higher bit depths, HDR, wider primaries and conflicting fields remain rejected. Missing fields retain only the disclosed interpretations exercised by controlled and native checks. Saved ICC interpretation is verified independently; viewer appearance and broader native platforms remain outside the focused evidence.
 
 ## Evidence and Completion Criteria
 
 Public evidence uses synthetic sources. Private inspection remains local under the [privacy policy](research-2026-09-30-video-frames.md#local-visual-review-and-privacy). Lossless `full` compares against the specified post-transform reference. Lossy encoding and scaling can change pixels.
 
-Before implementation, establish independent pixel/profile references and record accepted/rejected source pixel formats, matrix/range/primaries/transfer combinations, inferred defaults and per-format encoder/profile paths. Include tested builds and missing/conflicting metadata or unsupported-path handling.
+The [feasibility checkpoint](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#color-feasibility) established independent pixel/profile references before implementation. The support matrix and production evidence record source definitions, inferred defaults and per-format encoder/profile paths. Changes to those paths require evidence for the affected combinations and failure handling.
 
 Closure requires real saved-image evidence for the accepted paths, independent decoded-pixel and color-description checks, and bounded local visual comparison. Cover affected formats, quality modes, scales, black/shadow/midtone/color patches and alpha; link results and required support decisions from the execution record. Equation-based conversion checks, copied tags or a viewer match alone cannot close this question.
 
