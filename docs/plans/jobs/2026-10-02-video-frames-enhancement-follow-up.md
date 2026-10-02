@@ -157,6 +157,12 @@ Refined profile-generation provenance, platform verification limits and custom I
 
 Documentation review found no material issues. Local link/anchor, footnote, lifecycle, scope/privacy and diff checks passed.
 
+### Integrated Verification
+
+The opt-in [built-CLI proof](../../../scripts/spikes/video-frames-phase11.ts) passed four cases and 43 exports in 27.96 seconds of active work. All five tested selections passed across PNG/JPG/WebP, with independent post-scale lossless pixels and recipe-scoped JPEG tolerances. Saved profiles, dimensions, counts, literal/nested paths, collisions, replacement, unrelated-file retention, source aliases and wrong path kinds passed. Unsupported wider primaries failed before output creation. Node.js 22.23.0 loaded ESM/CommonJS and exported 1 × 1 images in all three formats. Sources remained unchanged and no capacity messages appeared.
+
+The full unit suite passed 1,619 cases / 37,485 assertions. TypeScript, lint, formatting and the Node-target build passed, with the existing non-blocking TypeScript 7 build warning. The full application invocation reached its 240-second deadline near the final guided-flow case; it is a failed invocation. That case passed separately. All 304 application files then passed in four disjoint managed batches: 2,272 cases / 14,223 assertions, with verified shutdown and cleanup. Real Interactive checks and final review remain in progress.
+
 ## Related Research
 
 - [Video Frame Selection, Frame Sets, and Sequence Export](../../researches/research-2026-09-30-video-frames.md)
