@@ -1,7 +1,7 @@
 ---
 title: "PNG IDAT Chunk Limit Fix"
 created-date: 2026-10-02
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -34,7 +34,9 @@ This establishes the tested PNG export boundary; it adds no new platform or view
 - [x] Reproduce failure before changing the parser.
 - [x] Implement the narrow counter fix and regression coverage.
 - [x] Pass focused unit/app checks and built native export verification.
-- [ ] Review the exact implementation commit range and resolve findings.
-- [ ] Record final range review and complete closeout.
+- [x] Review the exact implementation commit range and resolve findings.
+- [x] Record the accepted implementation review and complete documentation closeout.
 
-Starting commit: `385b654997d3c76d62ef9c125658af82e1151203`. Implementation commit and range-review results will be recorded after the checkpoint lands.
+Implementation commit: `9a53f2ef57bd88de22a403faf454d13ba72d008c` (`fix(video): allow PNG exports with many IDAT chunks`). Review of `385b654997d3c76d62ef9c125658af82e1151203..9a53f2ef57bd88de22a403faf454d13ba72d008c` found no actionable issues. The two affected unit files were independently rerun: **30 pass / 0 fail**.
+
+The [test ownership catalog](../../references/test-suite-case-matrices.md#video-frames) now identifies the valid segmented-PNG and staging-accounting coverage. The earlier enhancement record, implementation plan and research retain their completed history; this narrow correction changes no accepted user-facing limits or color policy.
