@@ -5,8 +5,6 @@ import {
   effectiveFrameSerial,
   validateFrameTemplate,
 } from "../../../src/cli/video-frames/naming";
-import { availableSpace } from "../../../src/cli/video-frames/destination";
-import { join, resolve } from "node:path";
 test("one normalized source stem is shared across every naming mode", () => {
   expect(sourceStem("/source/Crème Clip.MOV")).toBe("creme-clip");
   expect(sourceStem("/source/影片.mp4")).toBe("file");
@@ -105,23 +103,4 @@ test("name length and numeric exhaustion are errors rather than changed settings
     }),
   ).toThrow("reserved");
   expect(() => overflow.name({ frameNumber: 0, index: 0, format: "png" })).toThrow("verified");
-});
-test("volume space walks missing parents, keeps BigInt precision, and unavailable inspection is advisory", async () => {
-  const calls: string[] = [];
-  const root = resolve("synthetic");
-  const bytes = await availableSpace(join(root, "missing", "folder"), async (path) => {
-    calls.push(path);
-    if (path !== root) throw Object.assign(new Error("Missing"), { code: "ENOENT" });
-    return { bavail: 9007199254740993n, bsize: 4096n };
-  });
-  expect(calls).toEqual([join(root, "missing", "folder"), join(root, "missing"), root]);
-  expect(bytes.availableBytes).toBe(36893488147419107328n);
-  expect(
-    await availableSpace("/synthetic", async () => {
-      throw new Error("Unavailable");
-    }),
-  ).toEqual({ status: "unknown" });
-  expect(await availableSpace("/synthetic", async () => ({ bavail: -1n, bsize: 4096n }))).toEqual({
-    status: "unknown",
-  });
 });

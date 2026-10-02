@@ -35,6 +35,7 @@ export interface ImageSourceMetadata {
   colorSpace?: string;
   colorPrimaries?: string;
   colorTransfer?: string;
+  colorProfile?: boolean;
   display: readonly { matrix?: string; rotation?: number }[];
 }
 export interface FrameRecord {

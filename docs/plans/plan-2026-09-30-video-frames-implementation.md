@@ -1,7 +1,7 @@
 ---
 title: "Video Frames Implementation Plan"
 created-date: 2026-09-30
-modified-date: 2026-10-01
+modified-date: 2026-10-02
 status: completed
 agent: codex
 ---
@@ -10,13 +10,14 @@ agent: codex
 
 Implement `cdx-chores video frames` for one exact source frame, a fixed frame set, or a whole-video sequence of PNG, JPG, or still WebP images. Deliver the direct CLI and guided Interactive flow while preserving convert, resize and GIF processing behavior. The Phase 8 follow-up also aligns GIF output presentation.
 
-Phases 1–9, including the output information follow-up, are complete. Accepted checkpoints cover terminal prototypes, real-tool feasibility, exact resolution, image/sequence export, destinations/naming, private processing, direct CLI/doctor, guided Interactive flow, UX refinement and final verification. The [unified execution record](jobs/2026-10-01-video-frames-implementation.md#phase-9) records regression results, minimum-Node checks, whole-plan review and the declared support boundary. The [usage guide](../guides/video-frames-usage.md) describes the current reader-facing contract.
+All phases are complete. Phases 1–9 retain their acceptance in the [original execution record](jobs/2026-10-01-video-frames-implementation.md#phase-9). The [follow-up record](jobs/2026-10-02-video-frames-enhancement-follow-up.md#final-review-and-closure) records acceptance of Phase 10's color/output enhancements and Phase 11's integrated gate on 2026-10-02. The [usage guide](../guides/video-frames-usage.md) describes shipped behavior.
 
-The research owns selection, sampling, terminal, image, and output semantics. This plan owns implementation order, acceptance checkpoints, development-test cost, and evidence handling. Runtime support claims require recorded results. Implement prototypes and verification support in TypeScript/JavaScript, using Bun for development and Node.js for runtime checks.
+The frame research owns feature contracts and historical color context. The color research is the primary design reference for current color-preservation rules and feasibility. This plan owns execution order and acceptance gates, and job records hold results. Runtime support claims require recorded evidence. Use Bun for development and Node.js for runtime checks.
 
 ## Related Research
 
 - [Video Frame Selection, Frame Sets, and Sequence Export](../researches/research-2026-09-30-video-frames.md)
+- [Video Frames Color Space Preservation](../researches/research-2026-10-02-video-frames-color-space-preservation.md)
 
 ## Scope and Contract Sources
 
@@ -28,7 +29,8 @@ Use the research's contracts directly rather than maintaining a second option sp
 | Frame identity | [Single selection](../researches/research-2026-09-30-video-frames.md#single-frame-selection) and [frame sets](../researches/research-2026-09-30-video-frames.md#fixed-frame-sets): presentation-order ordinals, first-frame origin, exact endpoint identities, and duration-based midpoint |
 | Picker | [Adaptive wave](../researches/research-2026-09-30-video-frames.md#wave-picker-and-adaptive-terminal-layout): synthetic distance cue, full/compact/direct-input layouts, precise selection retention, and no decoding on navigation |
 | Sequence | [Whole-video sampling](../researches/research-2026-09-30-video-frames.md#whole-video-sequence-export): checked exact targets, frame-at-time mapping, retained repeats, and reliable end verification |
-| Images | [Formats and scaling](../researches/research-2026-09-30-video-frames.md#image-formats-and-output-scaling): quality presets, faithful conversion, alpha, display transforms, square pixels, and scale within `0.1–1` |
+| Images | [Formats and scaling](../researches/research-2026-09-30-video-frames.md#image-formats-and-output-scaling): quality presets, alpha, display transforms, square pixels, and scale within `0.1–1` |
+| Color | [Color-space research](../researches/research-2026-10-02-video-frames-color-space-preservation.md): source interpretation, encoder/profile feasibility and required evidence |
 | Files | [Destinations and naming](../researches/research-2026-09-30-video-frames.md#output-destinations-and-filename-templates): mode-aware paths, filename/format agreement, source ordinals versus export serials, safe publication, and partial-output accounting |
 | Execution | [Streaming resolution](../researches/research-2026-09-30-video-frames.md#streaming-frame-resolution) and [dependencies](../researches/research-2026-09-30-video-frames.md#technical-feasibility-and-dependencies): one FFprobe/FFmpeg path, bounded state, progress, cancellation, and doctor projections |
 | Evidence | [Verification criteria](../researches/research-2026-09-30-video-frames.md#verification-and-research-completion-criteria): independent synthetic expectations, real tool experiments, terminal behavior, and private visual smoke |
@@ -102,13 +104,13 @@ Measure CLI and child-process memory separately; observation alone does not esta
 
 ### Smoke Workspace and Privacy
 
-Use `examples/playground/.tmp-smoke/video-frames/synthetic/<run-id>/` for owned generated-source runs. Keep generated sources, exports, and diagnostics in that run. Regular suite fixtures continue to use their existing `.tmp-tests` ownership; these manual runs do not share that runner's scratch lifecycle.
+Use owned runs under `examples/playground/.tmp-smoke/video-frames/`: `synthetic/<run-id>/` for generated sources and `private/<run-id>/` for private comparisons. Keep generated sources, exports, profiles, measurements and diagnostics inside their run. Both families share ownership, ignore, budget and cleanup checks. Regular suite fixtures continue to use their existing `.tmp-tests` ownership.
 
 Manual smoke artifacts may be removed after inspection or retained locally for review. Retention may cover selected evidence or the complete owned run. Honor requested retention and keep retained artifacts ignored and untracked. The user may later remove them independently without a cleanup receipt, retention registry, or documentation update; no artifact manifest is required.
 
 Verify safe cleanup behavior with small disposable owned fixtures when review artifacts are retained. Product staging cleanup and source protection remain required correctness checks. Retention of developer review artifacts does not excuse a product cleanup failure.
 
-Private smoke uses a separate ignored local run area. Resolve private inputs locally and keep original sources outside the owned output tree, read-only. Neither private input nor result locations belong in the public plan or job record. Confirm sources and derived artifacts are ignored and untracked before retaining them. Never register private images, logs, or captures as regular test-result exports.
+Resolve private video and screenshot inputs locally and keep originals outside the owned output tree, read-only. Always set an explicit output destination inside the private run. Test default destinations only with synthetic inputs inside their run. Actual private input and run locations stay out of public records. Confirm inputs and derived artifacts are ignored and untracked before use or retention. Never register private images, logs, or captures as regular test-result exports.
 
 ```text
 Create uniquely owned run
@@ -286,9 +288,11 @@ Implement the research's [output information consistency findings and presentati
 - [x] Surface the existing destination-volume inspection in frames review and direct pre-export diagnostics: readable available space when known, or `Available space unknown`. Keep it advisory and reuse the research's resource policy; an unavailable inspection continues normally.
 - [x] Verify the follow-up with affected controlled Node prompt/naming/output/GIF checks, required type/lint/format/build checks and focused built Node.js terminal walkthroughs using small synthetic content. Cover retained-file format changes, count/boundary wording, changing naming inputs, known/unknown space, GIF default/custom choices and both completion paths, color/plain/redirected output, resize and Back/Escape retention without decoding on navigation. Recheck shared-helper consumers where affected. Record finding/fix/recheck evidence and review the complete follow-up change range before acceptance, using the existing smoke/privacy/retention policy and budgets.
 
-Follow-up checkpoint: frames and GIF output information follows consistent labels, hint placement and path layout; frames estimates, naming, collision/space information and retained filenames are accurate before export. Accepted on 2026-10-01 with scoped controlled/built-CLI evidence and complete-range review in the [follow-up execution record](jobs/2026-10-01-video-frames-implementation.md#output-information-follow-up-execution). Phase 9 remains pending.
+Follow-up checkpoint: frames and GIF output information follows consistent labels, hint placement and path layout; frames estimates, naming, collision/space information and retained filenames are accurate before export. Accepted on 2026-10-01 with scoped controlled/built-CLI evidence and complete-range review in the [follow-up execution record](jobs/2026-10-01-video-frames-implementation.md#output-information-follow-up-execution). Phase 9 subsequently passed. Phase 10 replaces the capacity-disclosure direction while preserving this acceptance history.
 
 ## Phase 9: Integrated Verification and Documentation
+
+The original implementation gate was [accepted on 2026-10-01](jobs/2026-10-01-video-frames-implementation.md#phase-9). Phase 11 gates completion of the reopened scope.
 
 Tasks:
 
@@ -298,14 +302,53 @@ Tasks:
 - [x] Record tested builds/platforms and resource measurements with their scope. Declare larger file I/O, demanding codec, or heavy real-content gaps rather than claiming universal large-video compatibility.
 - [x] Write a current video-frames usage guide and update command discovery, dependency/doctor guidance, and testing documentation where affected. Keep smoke scratch policy and private operator details out of product UX.
 - [x] Review public evidence for private source/result identifiers, metadata, captures, images, commands, paths, local setup, and reviewer attribution.
-- [x] Close the plan/job only after required checkpoints pass; assess research completion against its own recorded evidence. Keep unresolved work visible and retain current documents at their normal locations.
+- [x] Record original-scope acceptance and independently assess research closure; retain support gaps and current document locations.
 
-Checkpoint: the feature, documented support boundary, regression coverage, real tool evidence, terminal behavior, private processing outcomes, and smoke artifact handling are consistent. Budget exhaustion, unrun required cases, or unresolved process/file ownership prevents completion. Intentional local retention of review artifacts does not prevent completion.
+Checkpoint: the original implementation, support boundary and required verification agree with the recorded acceptance.
+
+## Phase 10: Source Color Preservation and Output UX Enhancements
+
+Follow the [color-space research](../researches/research-2026-10-02-video-frames-color-space-preservation.md) and the frame research's [destination](../researches/research-2026-09-30-video-frames.md#destinations) and [output-information](../researches/research-2026-09-30-video-frames.md#output-information-consistency) rules.
+
+Tasks:
+
+- [x] Establish source-to-display interpretation against independent standard and native-video references.
+- [x] Correct the color path and saved descriptions for verified interpretations with explicit unsupported-path handling.
+- [x] Keep synthetic and private smoke outputs in owned run folders with shared isolation and budget checks.
+- [x] Remove capacity messages and unused volume inspection while preserving resource guards and actual disk-full/quota failure handling.
+- [x] Make One frame custom destinations image file paths and create missing parent folders on export.
+- [x] Use folder destinations with filename patterns for Frame set and Sequence and create missing folders on export.
+- [x] Align existing-file choices and hints with review's collision wording and actual stop/replace behavior while preserving publication and partial-output semantics.
+- [x] Use readable mode names and file/folder labels in review and retain actual paths, filenames, qualified counts and output styling.
+- [x] Verify dark appearance and pixel/profile interpretation through focused checks under the existing smoke and privacy policies.
+- [x] Record new results and review the complete Phase 10 follow-up range before Phase 11.
+
+Checkpoint: verified source/display interpretation, focused appearance checks and complete-range review pass. Destination/capacity work and unaffected checks retain their recorded acceptance.
+
+Accepted on 2026-10-02. The [follow-up receipt](jobs/2026-10-02-video-frames-enhancement-follow-up.md#follow-up-review-and-focused-acceptance) records the corrected interpretation, focused checks and reviewed ranges. Phase 11 records integrated acceptance below.
+
+## Phase 11: Integrated Verification and Documentation
+
+Final gate for the reopened scope. Reuse original evidence only where the exercised boundary is unchanged.
+
+Tasks:
+
+- [x] Verify Phase 10's accepted/rejected color paths against independent pixel/profile references and bounded local visual comparison.
+- [x] Verify built Node.js direct/Interactive single-frame, frame-set and sequence exports and changed output UX, including failure, cancellation, publication and terminal recovery.
+- [x] Run affected suites, type/lint/format/build checks, existing-video/shared-helper regressions and minimum-Node built invocations. Rerun stress cases only where changes require them.
+- [x] Update the usage guide and affected references to verified behavior and support limits.
+- [x] Audit public documentation, fixtures and evidence under the privacy policy.
+- [x] Review the complete follow-up change range and resolve actionable findings and required support decisions.
+- [x] Close the follow-up record and plan after all gates pass. Assess research closure independently against recorded evidence.
+
+Checkpoint: implementation evidence, integrated checks, review and current documentation support closure. Unrun required cases, unresolved support decisions, exhausted budgets or uncertain process/file ownership keep the gate open.
+
+Accepted on 2026-10-02. The [integrated verification receipt](jobs/2026-10-02-video-frames-enhancement-follow-up.md#integrated-verification) records new results and reuse of unchanged evidence. [Final review and closure](jobs/2026-10-02-video-frames-enhancement-follow-up.md#final-review-and-closure) record reviewed ranges, the public audit and independent research assessments. Support gaps remain explicit.
 
 ## Execution Records and Completion Rules
 
-Create one `docs/plans/jobs/YYYY-MM-DD-video-frames-implementation.md` when Phase 1 begins. Link it from this plan and record each phase's implementation boundary, checks, synthetic results, generic private processing outcomes, support gaps, and checkpoint conclusion without copying the research or private report. Record the reviewed change range when implementation checkpoints use commits.
+Keep the [original record](jobs/2026-10-01-video-frames-implementation.md) completed for Phases 1–9. Use the [follow-up record](jobs/2026-10-02-video-frames-enhancement-follow-up.md) for new work, recording outcomes, support gaps and reviewed change ranges.
 
-The plan becomes `active` when execution starts. Check a task only after its required outcome is recorded, and review coherent phase changes before accepting dependent work. An unresolved feasibility prerequisite or support decision keeps the affected checkpoint open; use `blocked` if execution cannot proceed. A successful narrow experiment is not completion of the whole feature.
+The plan and follow-up record are completed with every gate accepted. Both researches are completed against their own evidence criteria. The original record remains completed, and all documents retain their current locations.
 
-Drafting and documentation review alone do not meet implementation or research completion criteria. There is no automatic archive action on completion.
+Documentation preparation alone does not establish implementation or research completion. Completion does not trigger archiving.

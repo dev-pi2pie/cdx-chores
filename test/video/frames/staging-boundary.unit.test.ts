@@ -2,6 +2,9 @@ import { expect, test } from "bun:test";
 import type { FileHandle } from "node:fs/promises";
 import { ImageStager, IMAGE_STAGING_LIMITS } from "../../../src/cli/video-frames/staging";
 import type { PublicationSession, StageFile } from "../../../src/cli/video-frames/publication";
+import { imageRgbProfile } from "../../../src/cli/video-frames/color-profile";
+import { pngProfileChunk } from "../../../src/cli/video-frames/profile-chunks";
+import { segmentedPng } from "./fixtures/framing";
 
 // Virtual storage exercises the real framer/stager and default accounting without
 // allocating or persisting a 256-MiB image. Native small-image writes are separate evidence.
@@ -81,4 +84,34 @@ test("one byte above the default staging ceiling fails before publication or exc
   expect(storage.state().written).toBe(0);
   expect(storage.state().admitted).toBeLessThanOrEqual(256 * 1024 * 1024);
   expect(writer.peaks.bytes).toBeLessThanOrEqual(IMAGE_STAGING_LIMITS.bytes);
+});
+
+test("many PNG IDAT chunks remain bounded by staged container and profile bytes", async () => {
+  const source = segmentedPng();
+  const profile = { icc: imageRgbProfile("srgb"), width: source.width, height: source.height };
+  const total = source.bytes.length + pngProfileChunk(profile.icc).length;
+  for (const limit of [total, total - 1]) {
+    const storage = virtualStorage();
+    const writer = new ImageStager(storage.session, "png", () => "image.png", {
+      bytes: limit,
+      profile,
+    });
+    const exporting = async () => {
+      for (let offset = 0; offset < source.bytes.length; offset += 4093)
+        await writer.chunk(source.bytes.subarray(offset, offset + 4093));
+      await writer.finish();
+    };
+    if (limit === total) {
+      await exporting();
+      expect(storage.state().written).toBe(1);
+      expect(storage.state().admitted).toBe(total);
+      expect(storage.session.files.size).toBe(0);
+    } else {
+      await expect(exporting()).rejects.toMatchObject({ code: "FRAME_STAGING_LIMIT" });
+      await writer.settle();
+      expect(storage.state().written).toBe(0);
+      expect(storage.state().admitted).toBeLessThanOrEqual(limit);
+    }
+    expect(writer.peaks.bytes).toBeLessThanOrEqual(limit);
+  }
 });

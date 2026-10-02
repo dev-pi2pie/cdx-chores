@@ -6,7 +6,7 @@ export const DECODER_PIXELS = 16_777_216;
 export const METADATA_FIELDS =
   "stream=index,codec_name,codec_type,width,height,pix_fmt,time_base,start_pts,duration_ts,nb_frames,sample_aspect_ratio,color_range,color_space,color_primaries,color_transfer:stream_disposition=default,attached_pic,timed_thumbnails:stream_side_data=side_data_type,rotation,displaymatrix:stream_tags=alpha_mode";
 export const FRAME_FIELDS =
-  "frame=stream_index,best_effort_timestamp,pts,duration,pict_type,width,height,pix_fmt,sample_aspect_ratio,color_range,color_space,color_primaries,color_transfer:frame_side_data=";
+  "frame=stream_index,best_effort_timestamp,pts,duration,pict_type,width,height,pix_fmt,sample_aspect_ratio,color_range,color_space,color_primaries,color_transfer:frame_tags=:frame_side_data=side_data_type";
 const FRAME_KEYS = new Set([
   "stream_index",
   "best_effort_timestamp",
@@ -138,6 +138,13 @@ export function parseMetadata(text: string): VideoStream {
       colorSpace: optionalText(selected.color_space),
       colorPrimaries: optionalText(selected.color_primaries),
       colorTransfer: optionalText(selected.color_transfer),
+      colorProfile:
+        Array.isArray(selected.side_data_list) &&
+        selected.side_data_list.some(
+          (side) =>
+            typeof side?.side_data_type === "string" &&
+            side.side_data_type.toLowerCase() === "icc profile",
+        ),
       display: Object.freeze(
         Array.isArray(selected.side_data_list)
           ? selected.side_data_list
@@ -198,10 +205,22 @@ export function parseFrameRecord(line: string, expectedStream: number): FrameRec
   if (parts.shift() !== "frame")
     throw new CliError("Unexpected frame record.", { code: "FRAME_RECORD_INVALID" });
   const fields: Record<string, string> = Object.create(null);
+  let colorProfile: boolean | undefined;
   for (const part of parts) {
     if (!part) continue;
     const equal = part.indexOf("=");
     const key = part.slice(0, equal);
+    if (
+      key === "side_data_type" ||
+      /^(?:side_data|side_datum)(?:\/[^:\\|]+)?:side_data_type$/.test(key)
+    ) {
+      if (equal < 1 || part.includes("\\"))
+        throw new CliError("Invalid frame side-data description.", {
+          code: "FRAME_RECORD_INVALID",
+        });
+      if (part.slice(equal + 1).toLowerCase() === "icc profile") colorProfile = true;
+      continue;
+    }
     if (equal < 1 || !FRAME_KEYS.has(key) || key in fields || part.includes("\\"))
       throw new CliError("Invalid selected frame fields.", { code: "FRAME_RECORD_INVALID" });
     fields[key] = part.slice(equal + 1);
@@ -228,6 +247,7 @@ export function parseFrameRecord(line: string, expectedStream: number): FrameRec
       colorSpace: fields.color_space,
       colorPrimaries: fields.color_primaries,
       colorTransfer: fields.color_transfer,
+      colorProfile,
     },
   };
 }

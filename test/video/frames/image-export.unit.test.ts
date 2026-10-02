@@ -50,3 +50,23 @@ test("dynamic unsupported geometry, bit depth, transfer, range, and aspect canno
   ])
     expect(() => validateImageFrame({ ...frame, ...changed }, binding, imageOptions())).toThrow();
 });
+test("frame-only ICC descriptions cannot bypass the source-profile refusal", () => {
+  for (const [key, value] of [
+    ["side_data_type", "ICC profile"],
+    ["side_datum/icc_profile:side_data_type", "ICC Profile"],
+  ]) {
+    const described = parseFrameRecord(
+      `frame|stream_index=2|width=2|height=2|pix_fmt=bgra|sample_aspect_ratio=1:1|color_range=pc|color_space=gbr|color_primaries=bt709|color_transfer=iec61966-2-1|${key}=${value}`,
+      2,
+    )!;
+    expect(described.image?.colorProfile).toBe(true);
+    expect(() => validateImageFrame(described, binding, imageOptions())).toThrow(
+      "Embedded source ICC interpretation",
+    );
+  }
+  const ordinary = parseFrameRecord(
+    "frame|stream_index=2|side_datum/h_26_45__user_data_unregistered_sei_message:side_data_type=H.26[45] User Data Unregistered SEI message|side_datum/exif_metadata:side_data_type=EXIF metadata",
+    2,
+  )!;
+  expect(ordinary.image?.colorProfile).toBeUndefined();
+});

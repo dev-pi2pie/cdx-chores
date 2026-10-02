@@ -8,6 +8,7 @@ import {
 } from "../../video-frames/image-options";
 import type { FrameTime } from "../../video-frames/types";
 import type { InteractivePathPromptContext } from "../shared";
+import { wrapPickerLine } from "./layout";
 import {
   promptFrameNaming,
   type FrameNamingMode,
@@ -145,6 +146,7 @@ export async function promptFramePath(
   kind: "file" | "directory",
   imageFormat?: ImageFormat,
   draft?: { initialValue?: string; onChange?: (value: string) => void },
+  hint?: string,
 ): Promise<string | undefined> {
   const validate = (value: string): true | string => {
     if (!value.trim()) return "Enter a path, or press Escape to go back.";
@@ -158,6 +160,11 @@ export async function promptFramePath(
     return true;
   };
   try {
+    if (hint) {
+      const columns = (io.output as NodeJS.WriteStream).columns;
+      const width = Number.isSafeInteger(columns) ? Math.max(1, columns - 1) : 79;
+      for (const line of wrapPickerLine(hint, width)) io.output.write(line + "\n");
+    }
     return await promptPath({
       message,
       kind,
@@ -316,7 +323,8 @@ export async function promptFrameImageSettings(
         ...(destination.path
           ? [
               {
-                name: "Keep current " + destination.kind,
+                name:
+                  destination.kind === "file" ? "Keep selected image file" : "Keep selected folder",
                 description: destination.path,
                 value: "keep" as const,
               },
@@ -328,13 +336,14 @@ export async function promptFrameImageSettings(
             mode === "single" ? "Image beside the source" : "Frames folder beside the source",
           value: "default",
         },
-        { name: "Custom output folder", value: "folder" },
-        ...(mode === "single" ? [{ name: "Explicit image file", value: "file" as const }] : []),
+        mode === "single"
+          ? { name: "Custom image file", value: "file" }
+          : { name: "Custom folder", value: "folder" },
         { name: "Back", value: "back" },
       ];
       const choice: "keep" | "default" | "folder" | "file" | "back" = await chooseFrameOption(
         io,
-        "Image destination",
+        mode === "single" ? "Where to save the image" : "Where to save the images",
         choices,
         "back",
         destinationChoice,
@@ -367,7 +376,7 @@ export async function promptFrameImageSettings(
       const path = await promptFramePath(
         io,
         pathContext,
-        kind === "file" ? "Output image file (." + format + ")" : "Output image folder",
+        kind === "file" ? "Image file path (." + format + ")" : "Folder path",
         kind === "file" ? "file" : "directory",
         kind === "file" ? format : undefined,
         {
@@ -376,6 +385,8 @@ export async function promptFrameImageSettings(
             pathDrafts[kind] = value;
           },
         },
+        (kind === "file" ? "Include the filename. " : "Images are saved inside this folder. ") +
+          "Relative paths start from where you ran the command.",
       );
       if (path === undefined) {
         step = "destination";
@@ -403,10 +414,14 @@ export async function promptFrameImageSettings(
       io,
       "Existing output images",
       [
-        { name: "Keep existing images", description: "Fail on a matching filename", value: "keep" },
         {
-          name: "Overwrite matching images",
-          description: "Replace matches after encoding completes",
+          name: "Stop on filename conflict",
+          description: "Stops export on a matching filename",
+          value: "keep",
+        },
+        {
+          name: "Replace matching images",
+          description: "Replace each matching file after encoding its image",
           value: "overwrite",
         },
         { name: "Back", value: "back" },

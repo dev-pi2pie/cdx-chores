@@ -84,7 +84,7 @@ test("aspect precedes display transform and exact half-up scale preserves odd di
   );
   expect([result.width, result.height]).toEqual([32, 96]);
   expect(result.filters.slice(0, 3)).toEqual([
-    "scale=192:64:flags=neighbor",
+    "scale=192:64:flags=neighbor+full_chroma_int+full_chroma_inp",
     "setsar=1",
     "transpose=cclock",
   ]);
@@ -158,7 +158,12 @@ test("color policy separates disclosed inference from unsupported and conflictin
     }),
   );
   expect(yuv.notices).toHaveLength(0);
-  expect(yuv.filters[0]).toContain("itrc=bt709");
+  expect(yuv.transfer).toBe("bt709");
+  expect(yuv.interpretation).toBe("coremedia709");
+  expect(yuv.filters[0]).toBe(
+    "scale=in_color_matrix=bt709:in_range=tv:out_range=pc:flags=accurate_rnd+full_chroma_int+full_chroma_inp",
+  );
+  expect(yuv.filters.join(",")).not.toContain("trc=");
   for (const values of [
     { pixelFormat: "yuv420p10le" },
     { image: { display: [], colorPrimaries: "bt2020" } },
@@ -174,6 +179,72 @@ test("image graph selects the exact stream and transforms alpha separately", () 
   expect(plan.filters).toContain("alphaextract");
   expect(plan.filters).toContain("alphamerge");
   expect(plan.frameBytes).toBe(96 * 64 * 4);
+});
+test("source-transfer preservation keeps declared alpha on packed RGB", () => {
+  for (const pixelFormat of ["rgba", "bgra"]) {
+    const result = imageColor(
+      stream({
+        pixelFormat,
+        sourceAlpha: true,
+        image: {
+          display: [],
+          colorSpace: "gbr",
+          colorRange: "pc",
+          colorPrimaries: "bt709",
+          colorTransfer: "bt709",
+        },
+      }),
+    );
+    expect(result.transfer).toBe("bt709");
+    expect(result.interpretation).toBe("coremedia709");
+    expect(result.alpha).toBe(true);
+    expect(result.notices).toEqual([]);
+    expect(result.filters).toEqual(["format=rgb24"]);
+  }
+});
+test("sRGB YUVA retains source transfer and separate alpha interpretation", () => {
+  const source = stream({
+    pixelFormat: "yuva420p",
+    sourceAlpha: true,
+    image: {
+      display: [],
+      colorSpace: "bt709",
+      colorRange: "tv",
+      colorPrimaries: "bt709",
+      colorTransfer: "iec61966-2-1",
+    },
+  });
+  const result = imageColor(source);
+  expect(result.transfer).toBe("iec61966-2-1");
+  expect(result.interpretation).toBe("srgb");
+  expect(result.alpha).toBe(true);
+  expect(result.notices).toEqual([]);
+  expect(result.filters).toEqual([
+    "scale=in_color_matrix=bt709:in_range=tv:out_range=pc:flags=accurate_rnd+full_chroma_int+full_chroma_inp",
+    "format=rgb24",
+  ]);
+  expect(imagePlan(source, imageOptions()).filters).toContain("alphaextract");
+});
+test("semiplanar sources disclose defaults rather than guessing color from layout", () => {
+  for (const pixelFormat of ["nv12", "nv21"]) {
+    const result = imageColor(stream({ pixelFormat }));
+    expect(result.transfer).toBe("bt709");
+    expect(result.alpha).toBe(false);
+    expect(result.filters[0]).toBe(
+      "scale=in_color_matrix=bt601:in_range=tv:out_range=pc:flags=accurate_rnd+full_chroma_int+full_chroma_inp",
+    );
+    expect(result.notices).toEqual([
+      "Color matrix unavailable; assuming smpte170m.",
+      "Color range unavailable; assuming tv.",
+      "Color primaries unavailable; assuming bt709.",
+      "Color transfer unavailable; assuming bt709.",
+    ]);
+  }
+});
+test("RGB padding does not satisfy a declared source alpha channel", () => {
+  expect(() => imageColor(stream({ pixelFormat: "rgb0", sourceAlpha: true }))).toThrow(
+    "default decoder",
+  );
 });
 test("declared source alpha requires an alpha-capable decoded format", () => {
   expect(imageColor(stream({ sourceAlpha: true })).alpha).toBe(true);

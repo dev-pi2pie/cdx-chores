@@ -5,7 +5,6 @@ import { ProcessOperation } from "../process/streaming";
 import type { CliRuntime } from "../types";
 import { expectedSequenceCount } from "../video-frames/cadence";
 import { frameDestination } from "../video-frames/destination";
-import { frameSpaceLabel } from "../video-frames/space-label";
 import { inspectImageEncoders, requireImageEncoder } from "../video-frames/encoders";
 import { FrameExportError, type ImageExportResult } from "../video-frames/export";
 import { imagePlan } from "../video-frames/image-plan";
@@ -200,7 +199,6 @@ export async function executePreparedVideoFrames(
   signal?.addEventListener("abort", stopping, { once: true });
   try {
     presenter.pause();
-    printLine(runtime.stderr, frameSpaceLabel(prepared.destination.space));
     for (const notice of prepared.notices) printLine(runtime.stderr, `Tip: ${notice}`);
     presenter.update({
       phase: "validating",

@@ -267,7 +267,7 @@ export async function exportImageGroups(
               });
             return targets[index - 1]!.name;
           },
-          { onFailure: (error) => operation.cancel(error) },
+          { profile: plan.profile, onFailure: (error) => operation.cancel(error) },
         );
         const activeWriter = writer;
         const writtenBefore = session.written;
@@ -293,7 +293,7 @@ export async function exportImageGroups(
             "0",
             "-i",
             "pipe:0",
-            ...encoderArguments(options),
+            ...encoderArguments(options, plan.transfer),
             "-threads",
             "1",
             "-map_metadata",

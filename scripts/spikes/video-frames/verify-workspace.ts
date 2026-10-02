@@ -1,9 +1,23 @@
 import assert from "node:assert/strict";
-import { access, mkdir, readFile, rename, rmdir, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import {
+  access,
+  mkdir,
+  readFile,
+  rename,
+  rmdir,
+  symlink,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
+import { basename, dirname, join } from "node:path";
 import { SYNTHETIC_SCAN_RECIPES } from "./fixtures";
 import { checkSmokeProgress, preflightSmokeCase, SMOKE_LIMITS } from "./smoke-budget";
-import { createSyntheticSmokeRun } from "./smoke-workspace";
+import {
+  createSmokeRun,
+  createSyntheticSmokeRun,
+  type SmokeFamily,
+  type SmokePhase,
+} from "./smoke-workspace";
 
 // Explicit preparation check: no media generation, decoding, or private inputs.
 let previousImages = 0;
@@ -27,6 +41,8 @@ assert.throws(
   /incomplete/,
 );
 const run = await createSyntheticSmokeRun();
+assert.equal(basename(dirname(run.path)), "synthetic");
+assert.match(basename(run.path), /^phase1-/);
 try {
   const file = join(run.path, "evidence.json");
   const result = { operation: "synthetic preparation", status: "passed", mediaCreated: false };
@@ -37,20 +53,42 @@ try {
 }
 await assert.rejects(access(run.path), { code: "ENOENT" });
 
-const ownership = await createSyntheticSmokeRun();
-const retained = ownership.path + "-retained";
-await rename(ownership.path, retained);
-await mkdir(ownership.path);
-try {
-  await assert.rejects(ownership.cleanup(), /ownership changed/);
-  await access(retained);
-  await access(ownership.path);
-} finally {
-  // The replacement is our empty probe directory; rmdir refuses unexpected contents.
-  await rmdir(ownership.path);
-  await rename(retained, ownership.path);
-  await ownership.cleanup();
+for (const family of ["", "../private", "synthetic/../private", "Private"])
+  await assert.rejects(createSmokeRun(family as SmokeFamily, 10), /family must be/);
+for (const phase of [0, 12, 1.5, NaN])
+  await assert.rejects(createSmokeRun("private", phase as SmokePhase), /phase must be/);
+
+for (const family of ["synthetic", "private"] as const) {
+  const sibling = await createSmokeRun(family, 10);
+  const ownership = await createSmokeRun(family, 10);
+  assert.equal(basename(dirname(ownership.path)), family);
+  assert.match(basename(ownership.path), /^phase10-/);
+  const retained = ownership.path + "-retained";
+  await writeFile(join(ownership.path, "evidence.json"), "synthetic preparation evidence");
+  await rename(ownership.path, retained);
+  await mkdir(ownership.path);
+  let replacement: "directory" | "symlink" | "missing" = "directory";
+  try {
+    await assert.rejects(ownership.cleanup(), /ownership changed/);
+    await access(join(retained, "evidence.json"));
+    await access(ownership.path);
+    // This replacement is our empty probe directory; rmdir refuses unexpected contents.
+    await rmdir(ownership.path);
+    replacement = "missing";
+    await symlink(retained, ownership.path, "dir");
+    replacement = "symlink";
+    await assert.rejects(ownership.cleanup(), /ownership changed/);
+    await access(join(retained, "evidence.json"));
+  } finally {
+    if (replacement === "directory") await rmdir(ownership.path);
+    if (replacement === "symlink") await unlink(ownership.path);
+    await rename(retained, ownership.path);
+    await ownership.cleanup();
+    await assert.rejects(access(ownership.path), { code: "ENOENT" });
+    await access(sibling.path);
+    await sibling.cleanup();
+  }
 }
 process.stdout.write(
-  "Synthetic recipes, budget rejection, ignored workspace, result handling, and cleanup passed. No media created.\n",
+  "Smoke recipes, budgets, families, ignored workspaces, ownership and cleanup passed. No media created.\n",
 );

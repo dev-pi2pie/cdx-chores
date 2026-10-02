@@ -2,17 +2,25 @@ import { execFileSync } from "node:child_process";
 import { lstat, mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
-export async function createSyntheticSmokeRun(
-  phase: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 = 1,
+export type SmokeFamily = "synthetic" | "private";
+export type SmokePhase = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
+
+export async function createSmokeRun(
+  family: SmokeFamily,
+  phase: SmokePhase = 1,
 ): Promise<{
   path: string;
   cleanup(): Promise<void>;
 }> {
+  if (family !== "synthetic" && family !== "private")
+    throw new Error("Smoke workspace family must be synthetic or private.");
+  if (!Number.isInteger(phase) || phase < 1 || phase > 11)
+    throw new Error("Smoke workspace phase must be an integer from 1 to 11.");
   const root = resolve(
     execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim(),
   );
   let parent = root;
-  for (const part of ["examples", "playground", ".tmp-smoke", "video-frames", "synthetic"]) {
+  for (const part of ["examples", "playground", ".tmp-smoke", "video-frames", family]) {
     parent = join(parent, part);
     await mkdir(parent, { recursive: true });
     const entry = await lstat(parent);
@@ -29,7 +37,7 @@ export async function createSyntheticSmokeRun(
     });
   } catch (error) {
     await rm(path, { recursive: true });
-    throw new Error("Synthetic scratch must be ignored before use.", { cause: error });
+    throw new Error("Smoke scratch must be ignored before use.", { cause: error });
   }
   return {
     path,
@@ -47,4 +55,8 @@ export async function createSyntheticSmokeRun(
       await rm(path, { recursive: true });
     },
   };
+}
+
+export function createSyntheticSmokeRun(phase: SmokePhase = 1) {
+  return createSmokeRun("synthetic", phase);
 }

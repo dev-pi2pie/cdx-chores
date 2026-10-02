@@ -2,7 +2,6 @@ import type { PreparedVideoFrames } from "../../actions/video-frames";
 import { displayPath } from "../../actions/shared";
 import type { CliRuntime } from "../../types";
 import { getCliColors } from "../../colors";
-import { frameSpaceLabel } from "../../video-frames/space-label";
 import { FrameNamer, sourceStem, type FrameNamingSettings } from "../../video-frames/naming";
 import { describeFrameRequest, formatFrameTime, type FramePickerState } from "./selection";
 import { wrapPickerLine } from "./layout";
@@ -20,13 +19,12 @@ export function frameReviewLines(
     "Frame export review",
     `Source: ${displayPath(runtime, options.source)}`,
     `Stream: ${stream.index} (${stream.codec})`,
-    `Mode: ${options.mode}`,
+    `Mode: ${{ single: "One frame", set: "Frame set", sequence: "Sequence" }[options.mode]}`,
     `Image: ${options.image.format} · Scale: ${options.image.scale}`,
     `Quality: ${frameQualityLabel(options.image.format, options.image.quality)}`,
     `Dimensions: ${prepared.plan.width} × ${prepared.plan.height}`,
-    "Destination:",
+    prepared.destination.kind === "file" ? "Output file:" : "Output folder:",
     `  ${displayPath(runtime, prepared.destination.path)}`,
-    frameSpaceLabel(prepared.destination.space),
     `Existing images: ${options.overwrite ? "Replace matching images" : "Stop on filename conflict"}`,
   ];
   if (naming === "explicit") lines.push("Naming: Explicit filename");

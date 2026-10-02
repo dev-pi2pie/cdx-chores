@@ -94,7 +94,7 @@ async function main() {
   }
   const first = await invoke(["--first-frame"]);
   assert.equal(first.code, 0, first.stderr);
-  assert.match(first.stderr, /Available space: .* \(advisory\)/);
+  assert.doesNotMatch(first.stderr, /Available space|capacity.*(?:available|unknown)/i);
   assert.equal(first.stdout, "Wrote 1 image to\n  source-frame.png\nRepeated selections: 0\n");
   assert.deepEqual(first.calls.slice(0, 2), [["-version"], ["-version"]]);
   assert.equal(first.calls.filter((args) => args.includes("image2pipe")).length, 1);
@@ -186,7 +186,8 @@ async function main() {
   });
   assert.equal((await readdir(root)).includes("review.png"), false);
   const lines = frameReviewLines(runtime, prepared);
-  assert(lines.includes("Destination:"));
+  assert(lines.includes("Mode: One frame"));
+  assert(lines.includes("Output file:"));
   assert(lines.includes("  review.png"));
   assert(lines.includes("Existing images: Stop on filename conflict"));
   assert.equal(lines.filter((line) => line.startsWith("Quality:")).length, 1);
@@ -195,12 +196,11 @@ async function main() {
     ...prepared,
     options: validateVideoFramesOptions({ input: "source.bin", interval: "1s" }, root),
     estimatedCount: 6n,
-    destination: { ...prepared.destination, space: { status: "unknown" as const } },
     notices: ["Expected image count: 6 (duration-based estimate).", "Other notice"],
   };
   const sequenceLines = frameReviewLines(runtime, sequenceReview);
   assert.equal(sequenceLines.filter((line) => /image.*count|Expected images/.test(line)).length, 1);
-  assert(sequenceLines.includes("Available space unknown"));
+  assert(!sequenceLines.some((line) => line.includes("Available space")));
   assert(sequenceLines.includes("Tip: Other notice"));
   const unknownCountLines = frameReviewLines(runtime, {
     ...sequenceReview,
@@ -231,11 +231,8 @@ async function main() {
   );
   assert.equal(changed.selections[0]!.identity, prepared.selections[0]!.identity);
   stderr = "";
-  await executePreparedVideoFrames(runtime, {
-    ...changed,
-    destination: { ...changed.destination, space: { status: "unknown" } },
-  });
-  assert.match(stderr, /Available space unknown/);
+  await executePreparedVideoFrames(runtime, changed);
+  assert.doesNotMatch(stderr, /Available space/);
   process.env.CDX_FRAME_MODE = "encoder-failure";
   const failure = await invoke(["--frame-set", "first-last", "-o", "partial"], {
     stderrTTY: true,
