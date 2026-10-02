@@ -151,6 +151,12 @@ Reviewed the complete Phase 10 implementation range **`6e3d765c7c53418acdd5a37cd
 
 All ten current Phase 10 tasks are accepted. Local links/anchors, preserved original checklists, lifecycle, formatting/diff and staged public-content privacy checks passed. Original acceptance remains unchanged. Phase 11's seven tasks remain unchecked, including integrated/minimum-Node verification and usage-guide reconciliation. The plan remains active, both researches and this follow-up record remain in-progress, and no archival action follows this focused acceptance.
 
+### Profile Portability and Custom ICC Context
+
+Refined profile-generation provenance, platform verification limits and custom ICC context in the [color research](../../researches/research-2026-10-02-video-frames-color-space-preservation.md#platform-compatibility). Added checked ICC references. Custom ICC support has no established need or implementation plan. Implementation scope and acceptance remain unchanged.
+
+Documentation review found no material issues. Local link/anchor, footnote, lifecycle, scope/privacy and diff checks passed.
+
 ## Related Research
 
 - [Video Frame Selection, Frame Sets, and Sequence Export](../../researches/research-2026-09-30-video-frames.md)

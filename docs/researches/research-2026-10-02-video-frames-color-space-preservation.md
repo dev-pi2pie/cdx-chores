@@ -70,7 +70,9 @@ Accept each preservation path only after the [evidence and completion criteria](
 
 ## Encoder and Profile Path
 
-The implementation generates a self-contained ICC matrix/shaper profile and attaches it to the encoded stream before publication. Attachment preserves compressed image/alpha payloads and counts metadata against staging limits. These mechanisms remain verified. The tested FFmpeg build lacks `iccgen`, and its bare PNG/JPG/WebP outputs do not embed ICC profiles.
+The implementation generates a self-contained ICC matrix/shaper profile and attaches it to the encoded stream before publication.[^icc-format] Attachment preserves compressed image/alpha payloads and counts metadata against staging limits. These mechanisms remain verified. The tested FFmpeg build lacks `iccgen`, and its bare PNG/JPG/WebP outputs do not embed ICC profiles.
+
+The [built-in generator](../../src/cli/video-frames/color-profile.ts) constructs profile bytes from the two supported RGB definitions using shared Node.js code. Export requires no Apple runtime, profile download or system-profile lookup. Native Apple extraction supplies development reference evidence.
 
 The earlier BT.709 profile used inverse signal transfer. Its mathematical and LittleCMS checks verified the chosen curve, not native appearance. The correction uses the CoreMedia709 image curve, `L = V^(502/256)`, represented by ICC parametric curve type 0. The sRGB profile retains its inverse piecewise curve. Both describe BT.709 primaries with D65-to-D50 chromatic adaptation. Independent native-profile comparisons own the CoreMedia709 equivalence evidence.
 
@@ -92,7 +94,13 @@ The [production evidence](../plans/jobs/2026-10-02-video-frames-enhancement-foll
 
 The [spatial color checks](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#spatial-color-and-scaling) also verify point-sampled color and partial alpha through resizing. Broad uniform patches alone did not expose the scaler's sample changes. The verified route retains complete chroma during nearest-neighbor scaling.
 
-Higher bit depths, HDR, wider primaries, conflicting fields and reported source ICC profiles remain rejected. Broader native platforms and rendering policies remain outside the focused evidence. The execution record distinguishes historical inverse-signal checks from verification of the correction.
+Higher bit depths, HDR, wider primaries, conflicting fields and reported source ICC profiles remain rejected. Broader rendering policies remain outside the focused evidence. The execution record distinguishes historical inverse-signal checks from verification of the correction.
+
+## Platform Compatibility
+
+ICC defines a portable profile format for compliant applications and operating systems. An embedded profile carries the color description with the image, without requiring a separately installed CoreMedia709 profile.[^icc-format] Consumers must support the embedded profile's version and structure. ICC's v4 readiness examples illustrate application-level profile handling.[^icc-compatibility]
+
+The current profile generator is shared across macOS, Linux and Windows. Native Linux/Windows export, saved-profile interpretation and viewer behavior remain unverified. Format portability and macOS reference agreement alone do not establish those results or universal display matching.
 
 ## Display Interpretation and Resolution
 
@@ -115,6 +123,12 @@ Closure requires verified source/display semantics, real saved-image evidence, i
 
 The plan owns implementation and integrated acceptance. Reuse original evidence only where its exercised boundary is unchanged. Drafting and documentation review do not establish color feasibility or support.
 
+## Possible Route: Custom ICC Loading
+
+ICC profiles can also be supplied as external binary `.icc` or `.icm` files. They contain a header and tagged color descriptions, including matrix/curve or lookup-table representations. Published profiles provide examples.[^icc-format][^icc-files]
+
+Loading user-supplied profiles is a possible route separate from the built-in generator. A need for a custom ICC loader has not been established, and no loader entry is planned. The current profile-generation approach does not require one. This possibility adds no implementation or acceptance requirements.
+
 ## Related Research
 
 - [Video Frame Selection, Frame Sets, and Sequence Export](research-2026-09-30-video-frames.md)
@@ -127,7 +141,13 @@ The plan owns implementation and integrated acceptance. Reuse original evidence 
 
 [^image-profiles]: [PNG specification: color space information](https://www.w3.org/TR/png-3/#11colorinfo), [ICC profile embedding, including JPEG](https://www.color.org/profile_embedding/) and [WebP container specification: color profile](https://developers.google.com/speed/webp/docs/riff_container#color-profile).
 
-[^profile-definition]: [ICC v4 profile specification](https://www.color.org/specification/ICC.1-2022-05.pdf), [FFmpeg profile-generation coefficients](https://github.com/FFmpeg/FFmpeg/blob/master/libavcodec/fflcms2.c) and [ICC BT.709 reference-display registry](https://registry.color.org/rgb-registry/bt709).
+[^icc-format]: [ICC v4.4 profile specification](https://www.color.org/specification/ICC.1-2022-05.pdf), including profile structure and computational models, and [ICC profile-format introduction](https://www.color.org/getting-started/), including embedded profiles and cross-platform interpretation.
+
+[^profile-definition]: [FFmpeg profile-generation coefficients](https://github.com/FFmpeg/FFmpeg/blob/master/libavcodec/fflcms2.c) and [ICC BT.709 reference-display registry](https://registry.color.org/rgb-registry/bt709).
+
+[^icc-compatibility]: [ICC v4 application-readiness examples](https://www.color.org/version4ready/). These examples are compatibility background, not recorded verification of this feature or display calibration.
+
+[^icc-files]: [ICC FAQ: profile structures and `.icc`/`.icm` extensions](https://www.color.org/faqs/) and [ICC profile library](https://registry.color.org/profile-library/).
 
 [^native-reference]: [Apple AVAssetImageGenerator](https://developer.apple.com/documentation/avfoundation/avassetimagegenerator) and [QuickTime container color descriptions](https://developer.apple.com/documentation/quicktime-file-format/color_parameter_atom).
 
