@@ -9,13 +9,13 @@ agent: codex
 
 Investigate preserving a video's color interpretation in exported PNG, JPG and still-WebP frames without grading or automatic normalization to sRGB. This research owns the current color-preservation direction, source/output interpretation rules, encoder/profile feasibility, color support decisions and evidence requirements under the [documentation ownership](research-2026-09-30-video-frames.md#documentation-ownership) rules.
 
-This is the primary design reference for the new preservation approach. The frame research retains the [earlier approach and completed checks](research-2026-09-30-video-frames.md#earlier-color-approach-and-verification-limit) for historical review and continues to own the wider feature contract. The new preservation path needs its own evidence.
+This is the primary design reference for the preservation approach. The frame research retains the [earlier approach and completed checks](research-2026-09-30-video-frames.md#earlier-color-approach-and-verification-limit) for historical review and continues to own the wider feature contract. Revised-path evidence is recorded separately below.
 
 The scope is the existing 8-bit source boundary. HDR, wider-gamut/higher-bit-depth support and archival profile preservation require separate scope and evidence. Selection, sampling, quality presets, transparency, scaling and destination behavior remain in the [frame feature research](research-2026-09-30-video-frames.md).
 
 The earlier profile path failed local appearance review. The [reopened investigation](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#color-acceptance-reopened) distinguishes source signal transfer, native image interpretation and reference-display rendering. Earlier mechanical checks remain valid within their tested assumptions.
 
-The [focused correction and review](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#follow-up-review-and-focused-acceptance) are accepted within the boundary below. Integrated acceptance and research closure remain pending.
+The [focused correction and review](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#follow-up-review-and-focused-acceptance) are accepted within the boundary below. [Integrated verification and public audit](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#integrated-verification) are complete. Final complete-range review and research closure remain open.
 
 ## Earlier Conversion and Observation
 
@@ -117,7 +117,7 @@ Public evidence remains synthetic. Local source metadata, images, comparisons an
 
 Public evidence uses synthetic sources. Private inspection remains local under the [privacy policy](research-2026-09-30-video-frames.md#local-visual-review-and-privacy). Lossless `full` compares against the specified post-transform reference. Lossy encoding and scaling can change pixels.
 
-The [feasibility checkpoint](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#color-feasibility) established pixel/profile references for the chosen inverse-signal model. The support matrix and production evidence record those definitions, inferred defaults and encoder/profile paths. New acceptance requires independent source/display interpretation references as well as checks for affected combinations and failure handling.
+The [feasibility checkpoint](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#color-feasibility) validated the earlier inverse-signal model. The [corrected native/profile proof](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#native-image-interpretation-and-conversion) establishes the current source/display interpretation, and [integrated verification](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#integrated-verification) records saved-image, affected-path and failure checks. The support matrix retains the verified definitions, inferred defaults and encoder/profile limits.
 
 Closure requires verified source/display semantics, real saved-image evidence, independent decoded-pixel and color-description checks, and bounded local visual comparison. Cover affected formats, quality modes, scales, black/shadow/midtone/color patches and alpha; link results and required support decisions from the execution record. Agreement with the chosen curve's equations, copied tags or a viewer match alone cannot close this question. An unresolved local appearance failure keeps color acceptance open.
 

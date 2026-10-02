@@ -10,7 +10,7 @@ agent: codex
 
 Implement `cdx-chores video frames` for one exact source frame, a fixed frame set, or a whole-video sequence of PNG, JPG, or still WebP images. Deliver the direct CLI and guided Interactive flow while preserving convert, resize and GIF processing behavior. The Phase 8 follow-up also aligns GIF output presentation.
 
-Phases 1–9 remain accepted in the [original execution record](jobs/2026-10-01-video-frames-implementation.md#phase-9). The plan is reopened for Phase 10's color/output enhancements and Phase 11's verification/documentation gate. Implementation is pending; the [follow-up record](jobs/2026-10-02-video-frames-enhancement-follow-up.md) tracks the work. The [usage guide](../guides/video-frames-usage.md) describes shipped behavior.
+Phases 1–9 remain accepted in the [original execution record](jobs/2026-10-01-video-frames-implementation.md#phase-9). Phase 10's color/output enhancements are accepted in the [follow-up record](jobs/2026-10-02-video-frames-enhancement-follow-up.md#follow-up-review-and-focused-acceptance). Phase 11's verification and public audit are complete, with final review and closure open. The [usage guide](../guides/video-frames-usage.md) describes shipped behavior.
 
 The frame research owns feature contracts and historical color context. The color research is the primary design reference for current color-preservation rules and feasibility. This plan owns execution order and acceptance gates, and job records hold results. Runtime support claims require recorded evidence. Use Bun for development and Node.js for runtime checks.
 
@@ -333,20 +333,22 @@ Final gate for the reopened scope. Reuse original evidence only where the exerci
 
 Tasks:
 
-- [ ] Verify Phase 10's accepted/rejected color paths against independent pixel/profile references and bounded local visual comparison.
-- [ ] Verify built Node.js direct/Interactive single-frame, frame-set and sequence exports and changed output UX, including failure, cancellation, publication and terminal recovery.
-- [ ] Run affected suites, type/lint/format/build checks, existing-video/shared-helper regressions and minimum-Node built invocations. Rerun stress cases only where changes require them.
-- [ ] Update the usage guide and affected references to verified behavior and support limits.
-- [ ] Audit public documentation, fixtures and evidence under the privacy policy.
+- [x] Verify Phase 10's accepted/rejected color paths against independent pixel/profile references and bounded local visual comparison.
+- [x] Verify built Node.js direct/Interactive single-frame, frame-set and sequence exports and changed output UX, including failure, cancellation, publication and terminal recovery.
+- [x] Run affected suites, type/lint/format/build checks, existing-video/shared-helper regressions and minimum-Node built invocations. Rerun stress cases only where changes require them.
+- [x] Update the usage guide and affected references to verified behavior and support limits.
+- [x] Audit public documentation, fixtures and evidence under the privacy policy.
 - [ ] Review the complete follow-up change range and resolve actionable findings and required support decisions.
 - [ ] Close the follow-up record and plan after all gates pass. Assess research closure independently against recorded evidence.
 
 Checkpoint: implementation evidence, integrated checks, review and current documentation support closure. Unrun required cases, unresolved support decisions, exhausted budgets or uncertain process/file ownership keep the gate open.
 
+The [integrated verification receipt](jobs/2026-10-02-video-frames-enhancement-follow-up.md#integrated-verification) records new results, reuse of unchanged evidence and the passed public-content audit. Complete-range review and closure remain open.
+
 ## Execution Records and Completion Rules
 
 Keep the [original record](jobs/2026-10-01-video-frames-implementation.md) completed for Phases 1–9. Use the [follow-up record](jobs/2026-10-02-video-frames-enhancement-follow-up.md) for new work, recording outcomes, support gaps and reviewed change ranges.
 
-The plan is active during follow-up execution. Phase 10 is accepted and Phase 11 remains pending. Check tasks only after recording their required results. Unresolved prerequisites keep the affected gate open. Use `blocked` when execution cannot proceed.
+The plan remains active for final review and closure. Phase 10 is accepted, and Phase 11's verification and public audit are complete. Check tasks only after recording their required results. Unresolved prerequisites keep the affected gate open. Use `blocked` when execution cannot proceed.
 
 Documentation preparation alone does not establish implementation or research completion. Completion does not trigger archiving.

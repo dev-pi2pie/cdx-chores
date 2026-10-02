@@ -14,7 +14,7 @@ The [original implementation record](2026-10-01-video-frames-implementation.md) 
 | Phase | Responsibility | State |
 | --- | --- | --- |
 | 10 | Source/display color interpretation, capacity-disclosure removal, destination/collision/review wording across all modes and focused review | Accepted after correction and complete-range review |
-| 11 | Independent color/integrated verification, regressions, current docs, privacy audit and final review | Pending |
+| 11 | Independent color/integrated verification, regressions, current docs, privacy audit and final review | Verification and public audit complete, final review pending |
 
 ## Planning Evidence
 
@@ -159,9 +159,29 @@ Documentation review found no material issues. Local link/anchor, footnote, life
 
 ### Integrated Verification
 
-The opt-in [built-CLI proof](../../../scripts/spikes/video-frames-phase11.ts) passed four cases and 43 exports in 27.96 seconds of active work. All five tested selections passed across PNG/JPG/WebP, with independent post-scale lossless pixels and recipe-scoped JPEG tolerances. Saved profiles, dimensions, counts, literal/nested paths, collisions, replacement, unrelated-file retention, source aliases and wrong path kinds passed. Unsupported wider primaries failed before output creation. Node.js 22.23.0 loaded ESM/CommonJS and exported 1 × 1 images in all three formats. Sources remained unchanged and no capacity messages appeared.
+The opt-in [built-CLI proof](../../../scripts/spikes/video-frames-phase11.ts) passed four cases and 43 exports in 27.96 seconds of active work, retaining 251,819 bytes. All five tested selections passed across PNG/JPG/WebP, with independent post-scale lossless pixels and recipe-scoped JPEG tolerances. Saved profiles, dimensions, counts, literal/nested paths, collisions, replacement, unrelated-file retention, source aliases and wrong path kinds passed. Unsupported wider primaries failed before output creation. Node.js 22.23.0 loaded ESM/CommonJS and exported 1 × 1 images in all three formats. Sources remained unchanged and no capacity messages appeared.
 
-The full unit suite passed 1,619 cases / 37,485 assertions. TypeScript, lint, formatting and the Node-target build passed, with the existing non-blocking TypeScript 7 build warning. The full application invocation reached its 240-second deadline near the final guided-flow case; it is a failed invocation. That case passed separately. All 304 application files then passed in four disjoint managed batches: 2,272 cases / 14,223 assertions, with verified shutdown and cleanup. Real Interactive checks and final review remain in progress.
+The full unit suite passed 1,619 cases / 37,485 assertions. TypeScript, lint, formatting and the Node-target build passed, with the existing non-blocking TypeScript 7 build warning. The full application invocation reached its 240-second deadline near the final guided-flow case. It is a failed invocation. That case passed separately. All 304 application files then passed in four disjoint managed batches: 2,272 cases / 14,223 assertions, with verified shutdown and cleanup. The batches covered the discovered manifest exactly and used unchanged managed isolation and deadlines. This verifies every application file without claiming that the single full-suite invocation passed.
+
+Real built Node.js terminal walkthroughs exported six images: a half-size One frame PNG, three half-size Frame set JPGs at medium quality and two full-size Sequence WebPs at a one-second interval. All flows exited successfully with cursor restoration. Plain and colored review/results, wrapped text at narrow width, Back navigation, retained settings, file/folder wording and naming were inspected. Folder creation followed confirmed export. The sequence correctly showed an unavailable estimate and reported two confirmed writes. No capacity message appeared.
+
+Independent inspection of all six saved terminal images passed. PNG/WebP RGBA was exact, and JPG maximum error was one code value within the declared medium-quality tolerance of eight for this synthetic recipe. Profiles, dimensions, filenames, counts and source preservation passed.
+
+Fresh private outcomes: export **passed**; decoded dark-region reference comparison **passed**; saved-profile comparison **passed**; source and snapshot preservation **passed**; bounded local image inspection **passed**. The accepted independent references and tolerances were retained. Private inputs and derived evidence remain ignored and untracked, with no private inspection details published.
+
+Evidence reconciliation:
+
+| Boundary | Evidence used for this gate |
+| --- | --- |
+| Source/display interpretation | [Corrected native/profile proof](#native-image-interpretation-and-conversion), fresh built saved-image checks and generic local outcomes above |
+| Matrix/range, formats, alpha, quality and scale | Corrected production, representation, spatial and quality proofs above, with fresh selection/format exports and all regular policy regressions |
+| Rejected interpretations | Fresh wider-primaries CLI rejection and regular stream/frame ICC, conflict, HDR and bit-depth rejection checks |
+| Destination, collision, publication and recovery | Fresh built direct/terminal results and full application coverage of injected write failures, cancellation, partial outputs, process shutdown and input ownership |
+| Timing, geometry and stress limits | [Original reconciliation](2026-10-01-video-frames-implementation.md#research-evidence-reconciliation) for unchanged boundaries, plus current process/cache/staging regressions |
+
+No new runtime change follows the focused correction. Unchanged stress and historical color checks were not repeated. The integrated smoke used FFmpeg/FFprobe 9.0.2 on macOS arm64 with Node.js 26.5.0 and the minimum Node.js 22.23.0. Observed peak child RSS was 160,112 KiB for the built-CLI proof, not a portable memory cap. Smoke budgets remained unchanged. Native Linux/Windows execution and viewer behavior, larger-file I/O, demanding codecs, heavy real content and network filesystems remain unverified. Custom ICC loading has no implementation or acceptance requirement.
+
+The usage guide and test ownership reference now describe the verified preservation policy, destinations, capacity behavior and support limits. Public-content audit, local links/anchors, unchanged original checklists, historical color retention and scratch-budget checks passed. No private or machine-specific identifiers were found in the follow-up patch or changed tracked content. Final complete-range review and closure remain open.
 
 ## Related Research
 
