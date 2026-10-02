@@ -319,7 +319,7 @@ Tasks:
 - [x] Use folder destinations with filename patterns for Frame set and Sequence and create missing folders on export.
 - [x] Align existing-file choices and hints with review's collision wording and actual stop/replace behavior while preserving publication and partial-output semantics.
 - [x] Use readable mode names and file/folder labels in review and retain actual paths, filenames, qualified counts and output styling.
-- [ ] Run focused controlled and bounded real-tool/terminal checks for changed boundaries and all three Interactive modes under the existing verification, smoke and privacy policies.
+- [x] Run focused controlled and bounded real-tool/terminal checks for changed boundaries and all three Interactive modes under the existing verification, smoke and privacy policies.
 - [ ] Record results, review the complete Phase 10 change range and resolve actionable findings before Phase 11.
 
 Checkpoint: the linked contracts, focused checks and complete-range review pass. The plan and research remain open.

@@ -176,10 +176,15 @@ export async function scratchBytes(path: string): Promise<number> {
   let bytes = 0;
   for (const entry of await readdir(path, { withFileTypes: true })) {
     const child = join(path, entry.name);
-    const stat = await lstat(child);
-    if (stat.isSymbolicLink())
-      throw new Error("Synthetic scratch contains an alias; ownership requires inspection.");
-    bytes += stat.isDirectory() ? await scratchBytes(child) : stat.size;
+    try {
+      const stat = await lstat(child);
+      if (stat.isSymbolicLink())
+        throw new Error("Synthetic scratch contains an alias; ownership requires inspection.");
+      bytes += stat.isDirectory() ? await scratchBytes(child) : stat.size;
+    } catch (error) {
+      // Publication can remove a completed staging entry between enumeration and inspection.
+      if (!(error instanceof Error) || !("code" in error) || error.code !== "ENOENT") throw error;
+    }
   }
   return bytes;
 }

@@ -5,6 +5,8 @@ const invalid = () =>
   new CliError("Unsupported or conflicting display transform.", {
     code: "FRAME_DISPLAY_UNSUPPORTED",
   });
+// Both chroma flags keep packed RGB point samples intact during native resizing.
+const pointScaleFlags = "neighbor+full_chroma_int+full_chroma_inp";
 const transforms: Record<string, string[]> = {
   "1,0,0,1": [],
   "-1,0,0,1": ["hflip"],
@@ -97,10 +99,10 @@ export function displayGeometry(stream: VideoStream, scale: number) {
     height,
     notices,
     filters: [
-      `scale=${aspectWidth}:${stream.height}:flags=neighbor`,
+      `scale=${aspectWidth}:${stream.height}:flags=${pointScaleFlags}`,
       "setsar=1",
       ...transform,
-      `scale=${width}:${height}:flags=neighbor`,
+      `scale=${width}:${height}:flags=${pointScaleFlags}`,
       "setsar=1",
     ],
   };

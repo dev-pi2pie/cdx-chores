@@ -72,11 +72,13 @@ The [candidate evidence](../plans/jobs/2026-10-02-video-frames-enhancement-follo
 | YUV | 8-bit 420/422/444, including full-range variants |
 | Primaries and transfer | BT.709 primaries with BT.709 or sRGB transfer |
 | Matrix and range | BT.709, SMPTE170M or BT470BG, each at limited/full range |
-| RGB | Full-range BGRA/GBR with either transfer |
+| RGB | Full-range BGRA with GBR matrix and either transfer |
 | Outputs | PNG and WebP `full` exact RGBA, JPG `full` with recorded lossy tolerance |
 | Alpha and dimensions | Partial alpha and odd dimensions in PNG/WebP |
 
 The [production evidence](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#production-color-preservation) verifies the candidate matrix through actual exports, plus all quality presets and representative scales. Additional native PNG/WebP exports cover ten packed RGB aliases, NV12/NV21 and YUVA420/422/444 using disclosed defaults. Their rawvideo NUT sources do not retain color metadata. Explicit definitions for those aliases are tested separately through the native filter path, without claiming tagged-container export coverage.
+
+The [spatial color checks](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#spatial-color-and-scaling) also verify point-sampled color and partial alpha through resizing. Broad uniform patches alone did not expose the scaler's sample changes. The verified route retains complete chroma during nearest-neighbor scaling.
 
 Higher bit depths, HDR, wider primaries and conflicting fields remain rejected. Missing fields retain only the disclosed interpretations exercised by controlled and native checks. Saved ICC interpretation is verified independently; viewer appearance and broader native platforms remain outside the focused evidence.
 
