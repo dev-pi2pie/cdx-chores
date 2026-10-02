@@ -2,7 +2,7 @@
 title: "Video Frame Selection, Frame Sets, and Sequence Export"
 created-date: 2026-09-30
 modified-date: 2026-10-02
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -10,7 +10,7 @@ agent: codex
 
 Research `cdx-chores video frames` for extracting one source frame, a fixed frame set, or a whole-video sequence of still images. The feature should support direct CLI invocation and a guided Interactive flow, with PNG, JPG, and WebP output.
 
-Capacity-disclosure removal, clearer Interactive destinations and the focused color correction are [accepted](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#follow-up-review-and-focused-acceptance). [Integrated verification](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#integrated-verification) is complete. Final review and closure remain open in the [enhancement plan](../plans/plan-2026-09-30-video-frames-implementation.md). The separate [color-space research](research-2026-10-02-video-frames-color-space-preservation.md) owns current interpretation rules and color feasibility. This document retains the [earlier color approach](#earlier-color-approach-and-verification-limit) as historical context. The [original implementation evidence](../plans/jobs/2026-10-01-video-frames-implementation.md#integrated-verification-and-review) remains valid within its recorded scope. Repository observations below describe that baseline. Use the [usage guide](../guides/video-frames-usage.md) for current behavior.
+Capacity-disclosure removal, clearer Interactive destinations and the focused color correction are [accepted](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#follow-up-review-and-focused-acceptance). [Integrated verification](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#integrated-verification) and [final review](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#final-review-and-closure) support research closure. The separate [color-space research](research-2026-10-02-video-frames-color-space-preservation.md) owns current interpretation rules and color feasibility. This document retains the [earlier color approach](#earlier-color-approach-and-verification-limit) as historical context. The [original implementation evidence](../plans/jobs/2026-10-01-video-frames-implementation.md#integrated-verification-and-review) remains valid within its recorded scope. Repository observations below describe that baseline. Use the [usage guide](../guides/video-frames-usage.md) for current behavior.
 
 Current research direction:
 
@@ -995,13 +995,13 @@ Reclosing requires verified capacity-disclosure removal, destination/collision/r
 
 ## Decision Status
 
-The revised source-color and output direction defines the follow-up contract. Destination/capacity work and the [focused color correction](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#native-image-interpretation-and-conversion) have recorded acceptance. [Integrated verification and public audit](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#integrated-verification) are complete, with final complete-range review and independent research closure still open. The [original evidence reconciliation](../plans/jobs/2026-10-01-video-frames-implementation.md#research-evidence-reconciliation) remains accepted for unchanged boundaries. Historical color checks retain their original reference and scope.
+The research is completed within its declared scope. Destination/capacity work and the [focused color correction](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#native-image-interpretation-and-conversion) have recorded acceptance. [Integrated verification and public audit](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#integrated-verification) and [final review](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#final-review-and-closure) answer the reopened obligations. The [original evidence reconciliation](../plans/jobs/2026-10-01-video-frames-implementation.md#research-evidence-reconciliation) remains accepted for unchanged boundaries. Historical color checks retain their original reference and scope.
 
 Native verification covers macOS with the recorded tool builds and Node 22.23.0/26.5.0. Controlled platform/failure cases establish modeled transitions without proving native execution elsewhere. Larger-file I/O, demanding codecs, heavy real content, native Windows/Linux and network filesystems remain unverified. Closure does not expand those support claims.
 
 ## Recommendations and Next Steps
 
-The [implementation plan](../plans/plan-2026-09-30-video-frames-implementation.md) remains active for final review and closure. The [follow-up record](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#integrated-verification) records completed verification and retained limits. Consult the [usage guide](../guides/video-frames-usage.md) for shipped behavior and the [original implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md#support-scope) for prior verification scope. New support claims require separate evidence before documentation expands that boundary.
+The [implementation plan](../plans/plan-2026-09-30-video-frames-implementation.md) and [follow-up record](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#final-review-and-closure) are completed. Consult the [usage guide](../guides/video-frames-usage.md) for shipped behavior and the [original implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md#support-scope) for prior verification scope. New support claims require separate evidence before documentation expands that boundary.
 
 Use the [documentation ownership](#documentation-ownership) rules to keep feature contracts, color feasibility, execution gates and results in their respective documents.
 

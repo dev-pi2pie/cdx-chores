@@ -1,7 +1,7 @@
 ---
 title: "Video Frames Color Space Preservation"
 created-date: 2026-10-02
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -15,7 +15,7 @@ The scope is the existing 8-bit source boundary. HDR, wider-gamut/higher-bit-dep
 
 The earlier profile path failed local appearance review. The [reopened investigation](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#color-acceptance-reopened) distinguishes source signal transfer, native image interpretation and reference-display rendering. Earlier mechanical checks remain valid within their tested assumptions.
 
-The [focused correction and review](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#follow-up-review-and-focused-acceptance) are accepted within the boundary below. [Integrated verification and public audit](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#integrated-verification) are complete. Final complete-range review and research closure remain open.
+The [focused correction and review](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#follow-up-review-and-focused-acceptance), [integrated verification](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#integrated-verification) and [final review](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#final-review-and-closure) support completion within the boundary below.
 
 ## Earlier Conversion and Observation
 
@@ -122,6 +122,8 @@ The [feasibility checkpoint](../plans/jobs/2026-10-02-video-frames-enhancement-f
 Closure requires verified source/display semantics, real saved-image evidence, independent decoded-pixel and color-description checks, and bounded local visual comparison. Cover affected formats, quality modes, scales, black/shadow/midtone/color patches and alpha; link results and required support decisions from the execution record. Agreement with the chosen curve's equations, copied tags or a viewer match alone cannot close this question. An unresolved local appearance failure keeps color acceptance open.
 
 The plan owns implementation and integrated acceptance. Reuse original evidence only where its exercised boundary is unchanged. Drafting and documentation review do not establish color feasibility or support.
+
+The research is completed for the declared 8-bit BT.709-primary interpretations. Independent standard/native references resolve the signal-versus-image interpretation, actual PNG/JPG/WebP exports verify matching profiles and decoded samples, and bounded local comparison passes. The [final assessment](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#final-review-and-closure) records these evidence criteria separately from plan acceptance. Platform, viewer, source-description and wider-color limits remain as stated above.
 
 ## Possible Route: Custom ICC Loading
 
