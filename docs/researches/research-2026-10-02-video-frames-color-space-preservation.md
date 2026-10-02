@@ -15,6 +15,8 @@ The scope is the existing 8-bit source boundary. HDR, wider-gamut/higher-bit-dep
 
 The earlier profile path failed local appearance review. The [reopened investigation](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#color-acceptance-reopened) distinguishes source signal transfer, native image interpretation and reference-display rendering. Earlier mechanical checks remain valid within their tested assumptions.
 
+The [focused correction and review](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#follow-up-review-and-focused-acceptance) are accepted within the boundary below. Integrated acceptance and research closure remain pending.
+
 ## Earlier Conversion and Observation
 
 The earlier color planner converted BT.709 transfer to sRGB, and the encoder configuration supplied fixed RGB tags. The [planning observation](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#planning-evidence) showed lighter dark patches than matrix/range conversion alone. It established the effect of that choice. Original equation-based checks validated that conversion, rather than preservation of source transfer or viewer equivalence.

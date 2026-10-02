@@ -13,7 +13,7 @@ The [original implementation record](2026-10-01-video-frames-implementation.md) 
 
 | Phase | Responsibility | State |
 | --- | --- | --- |
-| 10 | Source/display color interpretation, capacity-disclosure removal, destination/collision/review wording across all modes and focused review | Focused correction verified; complete-range review pending |
+| 10 | Source/display color interpretation, capacity-disclosure removal, destination/collision/review wording across all modes and focused review | Accepted after correction and complete-range review |
 | 11 | Independent color/integrated verification, regressions, current docs, privacy audit and final review | Pending |
 
 ## Planning Evidence
@@ -143,7 +143,13 @@ Full managed units passed **1,619 cases / 37,485 assertions**. The affected vide
 
 The built CLI exported **six images** across a nested One frame PNG at half size, a three-role JPG frame set and an interval WebP sequence. Saved image profiles, counts, file/folder destinations and absence of capacity messages passed. The earlier terminal UX acceptance remains valid; integrated and minimum-Node verification stay pending.
 
-Private outcomes: export **passed**; decoded dark-region reference comparison **passed**; saved-profile comparison **passed**; source and snapshot preservation **passed**; bounded local image inspection **passed**. Private inputs, inspection details and derived outputs remain ignored and untracked in owned private smoke runs. No private evidence is published here. Complete-range review remains pending before accepting the final task.
+Private outcomes: export **passed**; decoded dark-region reference comparison **passed**; saved-profile comparison **passed**; source and snapshot preservation **passed**; bounded local image inspection **passed**. Private inputs, inspection details and derived outputs remain ignored and untracked in owned private smoke runs. No private evidence is published here.
+
+### Follow-Up Review and Focused Acceptance
+
+Reviewed the complete Phase 10 implementation range **`6e3d765c7c53418acdd5a37cd1a6a93aad06ee62..a4fd3dd0998a72f300557c5fedba2dbf22596dcf`** and the correction range **`1247717e0ba73ad5e7646616244b664521dec510..a4fd3dd0998a72f300557c5fedba2dbf22596dcf`**. No material test, maintainability or security findings remain. The frame-only ICC finding was resolved before the reviewed checkpoint. Documentation review accepted the interpretation boundary, evidence scope, privacy and ownership wording.
+
+All ten current Phase 10 tasks are accepted. Local links/anchors, preserved original checklists, lifecycle, formatting/diff and staged public-content privacy checks passed. Original acceptance remains unchanged. Phase 11's seven tasks remain unchecked, including integrated/minimum-Node verification and usage-guide reconciliation. The plan remains active, both researches and this follow-up record remain in-progress, and no archival action follows this focused acceptance.
 
 ## Related Research
 

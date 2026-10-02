@@ -321,9 +321,11 @@ Tasks:
 - [x] Align existing-file choices and hints with review's collision wording and actual stop/replace behavior while preserving publication and partial-output semantics.
 - [x] Use readable mode names and file/folder labels in review and retain actual paths, filenames, qualified counts and output styling.
 - [x] Verify dark appearance and pixel/profile interpretation through focused checks under the existing smoke and privacy policies.
-- [ ] Record new results and review the complete Phase 10 follow-up range before Phase 11.
+- [x] Record new results and review the complete Phase 10 follow-up range before Phase 11.
 
 Checkpoint: verified source/display interpretation, focused appearance checks and complete-range review pass. Destination/capacity work and unaffected checks retain their recorded acceptance.
+
+Accepted on 2026-10-02. The [follow-up receipt](jobs/2026-10-02-video-frames-enhancement-follow-up.md#follow-up-review-and-focused-acceptance) records the corrected interpretation, focused checks and reviewed ranges. Integrated acceptance remains pending.
 
 ## Phase 11: Integrated Verification and Documentation
 
@@ -345,6 +347,6 @@ Checkpoint: implementation evidence, integrated checks, review and current docum
 
 Keep the [original record](jobs/2026-10-01-video-frames-implementation.md) completed for Phases 1–9. Use the [follow-up record](jobs/2026-10-02-video-frames-enhancement-follow-up.md) for new work, recording outcomes, support gaps and reviewed change ranges.
 
-The plan is active during follow-up execution. Phase 10's focused correction is verified and complete-range review remains open. Phase 11 remains pending. Check tasks only after recording their required results. Unresolved prerequisites keep the affected gate open. Use `blocked` when execution cannot proceed.
+The plan is active during follow-up execution. Phase 10 is accepted and Phase 11 remains pending. Check tasks only after recording their required results. Unresolved prerequisites keep the affected gate open. Use `blocked` when execution cannot proceed.
 
 Documentation preparation alone does not establish implementation or research completion. Completion does not trigger archiving.
