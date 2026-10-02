@@ -1,13 +1,16 @@
 ---
 title: "Video Frames Implementation Record"
 created-date: 2026-10-01
+modified-date: 2026-10-02
 status: completed
 agent: codex
 ---
 
 ## Scope and Checkpoints
 
-Executed the [implementation plan](../plan-2026-09-30-video-frames-implementation.md) from baseline `cfd2d7ca15195fc19b69ce6d2bd940f838d2b560`. All phases are accepted. This record preserves the phase checkpoints, evidence and complete-range reviews, with final support scope recorded in [Phase 9](#phase-9).
+Executed the original scope of the [implementation plan](../plan-2026-09-30-video-frames-implementation.md) from baseline `cfd2d7ca15195fc19b69ce6d2bd940f838d2b560`. Phases 1–9 are accepted. This completed record preserves their checkpoints, evidence and complete-range reviews, with original support scope recorded in [Phase 9](#phase-9).
+
+The plan and research were reopened on 2026-10-02 for source-color preservation, capacity-disclosure removal and clearer one-frame destinations. [Phases 10–11](../plan-2026-09-30-video-frames-implementation.md#phase-10-source-color-preservation-and-output-ux-enhancements) and the separate [follow-up record](2026-10-02-video-frames-enhancement-follow-up.md) own that pending work. Earlier acceptance reflects the original conversion/output contract; it does not verify the revised direction. This job remains completed for its original scope.
 
 | Phase | Research obligations | State |
 | --- | --- | --- |
@@ -470,7 +473,7 @@ The [usage guide](../../guides/video-frames-usage.md), README discovery, testing
 
 ### Final Acceptance
 
-Phase 9 is accepted on 2026-10-01 with all seven tasks checked. The plan and job are completed. Research completion is assessed separately: its selection/output questions, terminal prototype, real-tool feasibility, image fidelity boundary and dependency strategy have reproducible evidence linked above. The research is completed within that declared scope. Untested platforms, heavy real content and larger-file/codec/filesystem cases remain explicit support gaps, with no claim of compatibility.
+Phase 9 is accepted on 2026-10-01 with all seven tasks checked. At that checkpoint the original plan scope and this job were completed. Research completion was assessed separately: its selection/output questions, terminal prototype, real-tool feasibility, original image fidelity reference and dependency strategy had reproducible evidence linked above. The research was completed within that declared scope and is now reopened for the separate follow-up described above. Untested platforms, heavy real content and larger-file/codec/filesystem cases remain explicit support gaps, with no claim of compatibility.
 
 Documentation review, checklist/history preservation, lifecycle status, local links/anchors, privacy and diff checks passed. No document is archived. Local ignored review artifacts remain available; subsequent removal needs no public record.
 

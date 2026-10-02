@@ -1,18 +1,18 @@
 ---
 title: "Video Frame Selection, Frame Sets, and Sequence Export"
 created-date: 2026-09-30
-modified-date: 2026-10-01
-status: completed
+modified-date: 2026-10-02
+status: in-progress
 agent: codex
 ---
 
-## Goal, Scope, and Settled Direction
+## Goal, Scope, and Direction
 
 Research `cdx-chores video frames` for extracting one source frame, a fixed frame set, or a whole-video sequence of still images. The feature should support direct CLI invocation and a guided Interactive flow, with PNG, JPG, and WebP output.
 
-This research is completed within the recorded verification boundary. Repository observations below describe the original research baseline. Accepted Phases 1–9 establish the implemented selection, sampling, image/output and terminal contracts in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-9). Its final evidence reconciliation links each verification area to reproducible results and declares untested scope. Use the [usage guide](../guides/video-frames-usage.md) for current command behavior.
+This research remains open for capacity-disclosure removal, clearer destinations across Interactive modes and integration of the linked color contract. The separate [color-space research](research-2026-10-02-video-frames-color-space-preservation.md) owns the current color-preservation direction, interpretation rules and feasibility. This document retains the [earlier color approach and its verification limit](#earlier-color-approach-and-verification-limit) as historical context. The [original implementation evidence](../plans/jobs/2026-10-01-video-frames-implementation.md#integrated-verification-and-review) remains valid within its recorded scope. Repository observations below describe the original research baseline. The revised direction is pending implementation and verification in the [enhancement plan](../plans/plan-2026-09-30-video-frames-implementation.md), with findings and execution tracked in the [follow-up record](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md). Use the [usage guide](../guides/video-frames-usage.md) for current shipped behavior.
 
-Agreed direction from the design discussion:
+Current research direction:
 
 | Area                   | Direction                                                                                             |
 | ---------------------- | ----------------------------------------------------------------------------------------------------- |
@@ -31,17 +31,29 @@ Agreed direction from the design discussion:
 | Sampling policy        | Preserve requested cadence; disclose repeated source-frame selections                                 |
 | Large sources          | No blanket size cap; bounded records/cache, resource diagnostics, and phase progress                  |
 | Quality                | `low` / `medium` / `high` / `full`, default `full`; PNG supports only `full`                          |
-| Color                  | Source-faithful conversion; no look selector or creative color adjustments                            |
+| Color                  | Follow the [color-preservation research](research-2026-10-02-video-frames-color-space-preservation.md); implementation and verification pending |
 | Scaling                | Preserve displayed aspect ratio; presets and custom scale within `0.1–1`                              |
 | Evidence               | Reproducible public synthetic cases and private local visual review                                   |
 
-Naming uses a normalized source `{stem}`, named `{selection}` labels for single frames/frame sets, optional verified source `{frame}` numbers, and export `{serial...}` values for sequences. Sequence templates require one serial; the default start is 1 and minimum width is 6. FPS input uses positive integers or ordinary decimals; users do not enter fraction expressions. These input/naming choices are agreed direction. Backend extraction and sampling have passed the scoped synthetic checks in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md); direct CLI and guided Interactive integration are accepted in Phases 6–7. A timestamp index sidecar is outside this initial scope.
+Naming uses a normalized source `{stem}`, named `{selection}` labels for single frames/frame sets, optional verified source `{frame}` numbers, and export `{serial...}` values for sequences. Sequence templates require one serial; the default start is 1 and minimum width is 6. FPS input uses positive integers or ordinary decimals; users do not enter fraction expressions. These input/naming rules define the command contract. Backend extraction and sampling have passed the scoped synthetic checks in the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md); direct CLI and guided Interactive integration have recorded [command](../plans/jobs/2026-10-01-video-frames-implementation.md#direct-command-and-doctor-checkpoint) and [guided-flow](../plans/jobs/2026-10-01-video-frames-implementation.md#guided-flow-checkpoint) verification. A timestamp index sidecar is outside this initial scope.
 
 Custom sequence ranges, dual-boundary timeline controls, arbitrary image-count sampling, and a separate “every source frame” mode are outside this initial scope. The two fixed frame-set presets are included; format, quality, color, and scale apply uniformly within every export. Seek/checkpoint/tail optimizations are excluded from this scope; sequential resolution and bounded session reuse are the chosen approach.
 
 The Interactive flow uses a position picker and text review. Image thumbnails, terminal image protocols, external viewer launches, and preview temporary sessions are outside this CLI scope. A web interface with visual scrubbing is a possible separate future direction. Playback editing, scene detection, and cropping are also excluded.
 
-## Current Feature and Reusable Patterns
+## Documentation Ownership
+
+| Document | Owns |
+| --- | --- |
+| This frame research | Feature behavior, selection/sampling, format/quality options, transparency, scaling and output rules, plus historical color intent and verification limits |
+| [Color-space research](research-2026-10-02-video-frames-color-space-preservation.md) | Current color-preservation direction, source/output interpretation rules, encoder/profile feasibility, color support decisions and evidence requirements |
+| [Implementation plan](../plans/plan-2026-09-30-video-frames-implementation.md) | Execution order, tasks and acceptance gates |
+| [Job records](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md) | Observations, decisions, verification results and review receipts; original acceptance stays in the completed record |
+| [Usage guide](../guides/video-frames-usage.md) | Current shipped behavior and support limits |
+
+The color-space research replaces the earlier color approach as the primary design reference for color work. This research continues to own the wider frames feature contract. Earlier conversion results retain their recorded scope and do not establish the revised preservation path.
+
+## Original Baseline and Reusable Patterns
 
 The following baseline was inspected on 2026-09-30:
 
@@ -58,7 +70,7 @@ The following baseline was inspected on 2026-09-30:
 | [Path prompts](../../src/cli/prompts/path.ts)                                                                     | File/directory prompts and default/custom output choices                                     | Use explicit destination kinds and existing completion                           |
 | [Terminal helpers](../../src/cli/tui/index.ts)                                                                    | Raw sessions, key parsing, cursor operations, and inline redraw support                      | Evaluate a small multi-line picker using the existing foundation                 |
 
-[Video resize](../guides/video-resize-usage-and-ux.md) already has a scale-first model. Its action rounds video dimensions to even values; that is not evidence that image exports require the same rounding. Existing GIF numeric fallback behavior also should not determine validation for the proposed command.
+[Video resize](../guides/video-resize-usage-and-ux.md) already has a scale-first model. Its action rounds video dimensions to even values; that is not evidence that image exports require the same rounding. Existing GIF numeric fallback behavior also should not determine validation for the frames command.
 
 The [GIF look configuration](../../src/cli/video-gif.ts) separates `faithful` (`format=rgba`) from `vibrant` saturation, contrast, brightness, and channel adjustments. Its quality path also generates and applies a palette with dithering. Frames should reuse the source-faithful intent, while still-image encoding has its own conversion requirements. Existing [GIF action tests](../../test/video/actions/gif.app.test.ts) verify arguments and lifecycle through a fake tool; they do not establish pixel/color fidelity for frame export.
 
@@ -68,9 +80,9 @@ The [GIF look configuration](../../src/cli/video-gif.ts) separates `faithful` (`
 
 ### Direct CLI Contract
 
-Use `frames` with single-frame selectors `--first-frame`, `--last-frame`, `--frame-number`, and `--at`, fixed presets through `--frame-set`, or FPS/interval sampling. Reuse `-o, --output`. Multi-image naming uses `--pattern`; sequence serial controls follow rename terminology. Interactive single-image naming resolves a final file path for the same export action. Quality uses `--quality low|medium|high|full`, defaults to `full`, and permits only `full` for PNG; tested native mappings and encoder support boundaries are recorded in [Phase 4](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-4). Direct and guided Interactive command integration implement these contracts, with scoped verification in Phases 6–7.
+Use `frames` with single-frame selectors `--first-frame`, `--last-frame`, `--frame-number`, and `--at`, fixed presets through `--frame-set`, or FPS/interval sampling. Reuse `-o, --output`. Multi-image naming uses `--pattern`; sequence serial controls follow rename terminology. Interactive single-image naming resolves a final file path for the same export action. Quality uses `--quality low|medium|high|full`, defaults to `full`, and permits only `full` for PNG; tested native mappings and encoder support boundaries are recorded in the [source image export checkpoint](../plans/jobs/2026-10-01-video-frames-implementation.md#source-image-export-checkpoint). Direct and guided Interactive command integration implement these contracts, with scoped [command](../plans/jobs/2026-10-01-video-frames-implementation.md#direct-command-and-doctor-checkpoint) and [terminal](../plans/jobs/2026-10-01-video-frames-implementation.md#tui-review-and-native-verification) evidence.
 
-| Option                    | Proposed role                                                                                |
+| Option                    | Role                                                                                         |
 | ------------------------- | -------------------------------------------------------------------------------------------- |
 | `-i, --input <path>`      | Source video                                                                                 |
 | `--first-frame`           | First decoded frame of the selected video stream                                             |
@@ -112,7 +124,7 @@ cdx-chores video frames -i ./clip.mp4 --fps 24 --output ./clip-frames/
 cdx-chores video frames -i ./clip.mp4 --fps 24 --pattern '{stem}-{serial}' --serial-width 6
 ```
 
-### Interactive Proposal
+### Interactive Flow
 
 ```text
 Video -> Frames -> Select source video
@@ -146,11 +158,12 @@ Code and controlled prompt review identified inconsistent destination wording, e
 - Naming information combines the effective template, resolved stem, selected extension and concrete filename examples alongside default/current template choices. Sequences also show effective start/minimum width. Examples follow the shared [naming rules](#how-naming-works) and refresh when settings change. Unresolved `{frame}` values remain explicit. Explicit filenames retain their template bypass.
 - Retained explicit filenames require revalidation when the format changes. An incompatible extension returns to the destination editor with its draft retained before export review. User-entered filenames remain literal under the [extension rules](#explicit-image-filenames-and-format).
 - Review presents quality and the qualified image count once, with filenames readable apart from frame details. Collision labels describe the actual behavior: `Stop on filename conflict` or `Replace matching images`. Actual destination/retained paths use separate indented cyan lines under their labels, following [output/color guidance](../guides/cli-output-and-color.md). GIF completion uses the same path layout in both modes. Direct CLI notices, existing-folder disclosures and failure accounting remain intact.
-- Available-space information reports a readable inspected amount or `Available space unknown` in frames review/pre-export diagnostics. Inspection remains advisory under the existing [resource policy](#large-sources-and-resource-limits).
+- Destination questions, custom/retained choices and path hints follow the mode-specific [Interactive destination wording](#interactive-destination-wording). Review uses readable mode names and explicit file/folder labels; collision choices match the [review wording and behavior](#review-collisions-and-partial-output).
+- Frames review, execution and failure diagnostics disclose no available-capacity amount or unknown-space message. Remove the unused volume inspection. Actual disk-full/quota failures, staging limits and partial-output reporting remain required under the [resource policy](#large-sources-and-resource-limits); developer smoke-budget monitoring is separate.
 
 This layout keeps counts in choice rows, details below the list and navigation controls last. Narrow layouts remove padding and wrap while preserving counts and essential details. Short labels/hints use natural plurals and no trailing periods. Color/plain text retains the same layout. Public examples use synthetic names. Sampling, naming, publication and GIF processing semantics remain as specified.
 
-The [Phase 8 follow-up tasks](../plans/plan-2026-09-30-video-frames-implementation.md#follow-up-prompt-and-output-information) are accepted with controlled prompt/output checks and built Node terminal verification. The [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md#output-information-follow-up-execution) holds findings, fixes, result inspection and complete-range review. Selection descriptions refresh on navigation after resize. [Phase 9](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-9) records final verification and support limits.
+The original [output-information refinements](../plans/jobs/2026-10-01-video-frames-implementation.md#output-information-follow-up-acceptance) have controlled prompt/output checks and built Node terminal verification. The [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md#output-information-follow-up-execution) preserves those findings, fixes, result inspection and complete-range review, including the former capacity-disclosure direction. Selection descriptions refresh on navigation after resize. The [integrated verification record](../plans/jobs/2026-10-01-video-frames-implementation.md#integrated-verification-and-review) preserves original-scope results and support limits. Mode-specific destination, collision/review wording and capacity changes remain pending under the enhancement plan's gates.
 
 ## Single-Frame Selection
 
@@ -185,9 +198,9 @@ The first displayed source frame defines video-relative time zero. Subtract its 
 
 Prefer the default eligible video stream; otherwise choose the first eligible stream by stream index. Exclude attached pictures, thumbnails, and cover images. If multiple eligible streams are marked default, use the lowest stream index to keep selection deterministic. All single-frame, frame-set, and sequence operations use that same chosen stream for frame numbering, timing, dimensions, and extraction. Show the chosen stream in review when multiple eligible video streams exist. A manual stream-selection control is outside the initial scope.
 
-Validate positions against the selected stream's known end: an explicit timestamp at or after that end is out of range, and `--last-frame` selects the actual final frame without an EOF timestamp guess. If timing/bounds cannot be established reliably, surface that limitation rather than silently clamping or manufacturing an exact mapping. Unreliable timing rejection and buffered final-frame handling passed the cases recorded in [Phase 3](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-3); broader source-codec behavior requires equivalent evidence.
+Validate positions against the selected stream's known end: an explicit timestamp at or after that end is out of range, and `--last-frame` selects the actual final frame without an EOF timestamp guess. If timing/bounds cannot be established reliably, surface that limitation rather than silently clamping or manufacturing an exact mapping. Unreliable timing rejection and buffered final-frame handling passed the cases recorded in [streaming and resolution checkpoint](../plans/jobs/2026-10-01-video-frames-implementation.md#streaming-and-resolution-checkpoint); broader source-codec behavior requires equivalent evidence.
 
-Display an exact numeric frame upper bound only when verified. Otherwise say the exact count is unavailable and validate the requested frame when resolving it. Metadata estimates do not establish an exact upper bound. The metadata-first, sequential resolution, and bounded session reuse policy has scoped correctness/resource evidence in [Phase 3](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-3). Heavy real-content performance, minimum-Node execution, and other platforms remain unverified.
+Display an exact numeric frame upper bound only when verified. Otherwise say the exact count is unavailable and validate the requested frame when resolving it. Metadata estimates do not establish an exact upper bound. The metadata-first, sequential resolution, and bounded session reuse policy has scoped correctness/resource evidence in [streaming and resolution checkpoint](../plans/jobs/2026-10-01-video-frames-implementation.md#streaming-and-resolution-checkpoint). Heavy real-content performance and native execution on other platforms remain unverified. The [minimum-runtime checkpoint](../plans/jobs/2026-10-01-video-frames-implementation.md#boundary-and-minimum-runtime-checkpoint) records scoped built-command and controlled lifecycle checks.
 
 The exported image must represent the resolved source frame identified in text review. Selection identity survives format, scale, destination, and layout changes. If frame-number selection is valid but presentation timing is unavailable, show the verified frame number and say the actual time is unavailable; do not manufacture a timestamp.
 
@@ -212,7 +225,7 @@ Endpoint resolution scans through EOF. If a reliable end is already available, r
 
 ## Wave Picker and Adaptive Terminal Layout
 
-The layout selection, glyph fallback, coarse movement, and controls below are settled direction. Renderer geometry and terminal behavior passed the real-terminal prototype cases recorded in [Phase 1](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-1). Production integration and the dedicated TUI review passed the scoped terminal cases in [Phase 7](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-7); the sketches are not fixed screen layouts.
+The layout selection, glyph fallback, coarse movement and controls below define the picker contract. Renderer geometry and terminal behavior passed the real-terminal prototype cases recorded in the [terminal prototype evidence](../plans/jobs/2026-10-01-video-frames-implementation.md#terminal-evidence). Production integration and the dedicated TUI review passed the scoped [native terminal cases](../plans/jobs/2026-10-01-video-frames-implementation.md#tui-review-and-native-verification); the sketches are not fixed screen layouts.
 
 ### Fixed Timeline and Selection
 
@@ -243,7 +256,7 @@ Left/Right Move   F Frame   T Time
 A ASCII   Enter Select   Esc Back
 ```
 
-**Sketch only:** This illustrates the visual idea, not a required rendering. Prototype the exact spacing, bar counts, heights, and wrapping within the settled fit/selection rules below.
+**Sketch only:** This illustrates the visual idea, not a required rendering. Exact spacing, bar counts, heights and wrapping follow the fit/selection rules below and the available terminal dimensions.
 
 Use the same thin stroke for selected and neighboring bars. An orange/amber accent highlights the selected bar and triangles, with muted neighboring bars; markers and labels retain selection information without color. Follow [CLI output and color](../guides/cli-output-and-color.md): global color settings remove styling without changing selection, controls, wording, or layout behavior.
 
@@ -353,7 +366,7 @@ Show the estimated result before accepting custom input. Keep duration, timestam
 
 ### Interval Limits and Feedback
 
-Use expected sampling positions to explain the effect of an interval instead of an arbitrary “almost too large” percentage. For a synthetic video with a known eight-second duration, the proposed cadence gives:
+Use expected sampling positions to explain the effect of an interval instead of an arbitrary “almost too large” percentage. For a synthetic video with a known eight-second duration, the interval rule gives:
 
 | Interval               | Target positions   | Feedback                                             |
 | ---------------------- | ------------------ | ---------------------------------------------------- |
@@ -388,7 +401,7 @@ Use a positive integer followed by ms, s, or m:
 
 Interactive mode keeps invalid input in the editor and shows valid-input estimates or the one-image notice beside it and in the existing export review. Do not add a second confirmation step. Direct CLI invalid input fails before writing; a valid oversized interval prints the notice to stderr and proceeds, labeling metadata-based predictions as expected. When duration is unavailable, say the count estimate is unavailable and defer the comparison; do not treat unknown duration as zero or invent a one-image guarantee.
 
-Millisecond input precision does not guarantee distinct source frames. Interval follows the same repetition policy as FPS: preserve cadence, export a separately numbered image for every valid target, and disclose repeated selections. Actual counts and boundaries passed the independent synthetic cases recorded in [Phase 5](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-5); direct and Interactive reporting have scoped verification in Phases 6–7.
+Millisecond input precision does not guarantee distinct source frames. Interval follows the same repetition policy as FPS: preserve cadence, export a separately numbered image for every valid target, and disclose repeated selections. Actual counts and boundaries passed the independent synthetic cases recorded in [sequence evidence](../plans/jobs/2026-10-01-video-frames-implementation.md#synthetic-sequence-and-resource-evidence); direct and Interactive reporting have scoped [command](../plans/jobs/2026-10-01-video-frames-implementation.md#direct-command-and-doctor-checkpoint) and [guided-flow](../plans/jobs/2026-10-01-video-frames-implementation.md#guided-flow-checkpoint) verification.
 
 ### Sampling Boundaries, Repetition, and Counts
 
@@ -396,7 +409,7 @@ Both methods use the first displayed frame as time zero. For output index `k = 0
 
 Map each target to the most recent source frame whose start is at or before it, using the same rule as custom timestamp selection. A later frame starting exactly at the target wins. Sparse/variable-rate sources can map several targets to one frame; keep all those images and assign consecutive export serials. Show a review notice such as “Sampling positions may select the same source frame; each position still exports an image.” Direct CLI prints the notice to stderr before processing. Use a stronger expected-repeat notice when reliable timing establishes it; otherwise do not claim an exact repeat count. Report actual images written and repeated selections on successful completion.
 
-Preserve decimal FPS exactly as an internal rational value and intervals as integer milliseconds. Calculate each target from its index rather than repeatedly adding a floating-point step. Compare targets with integer source timestamps and their time base using checked exact arithmetic. Reject values that the chosen backend cannot represent safely, with a specific validation error; do not silently approximate a rate or round targets to whole milliseconds. The checked numeric boundaries and exact cadence behavior passed the unit/Node cases recorded in [Phases 3–5](../plans/jobs/2026-10-01-video-frames-implementation.md).
+Preserve decimal FPS exactly as an internal rational value and intervals as integer milliseconds. Calculate each target from its index rather than repeatedly adding a floating-point step. Compare targets with integer source timestamps and their time base using checked exact arithmetic. Reject values that the chosen backend cannot represent safely, with a specific validation error; do not silently approximate a rate or round targets to whole milliseconds. The checked numeric boundaries and exact cadence behavior passed the unit/Node cases recorded in [streaming resolution](../plans/jobs/2026-10-01-video-frames-implementation.md#streaming-and-resolution-checkpoint) and [forward sampling](../plans/jobs/2026-10-01-video-frames-implementation.md#forward-sampling-and-export-checkpoint).
 
 For non-final frames, the next presentation start defines the mapping boundary. Establish the final end from a reliable final-frame display duration or a corroborated selected-stream end. A container duration or nominal-FPS product alone is insufficient. If the final end cannot be established, stop with a timing-limitation error, retain any completed images, and report the export as incomplete; do not invent tail padding. A target exactly at the end is excluded.
 
@@ -406,7 +419,7 @@ Counts derived from metadata stay labeled estimates. Show chronological filename
 
 ## Image Formats and Output Scaling
 
-PNG is the default format, with JPG and still WebP alternatives. Quality, source-faithful color, transparency, orientation, and dimension rules below are settled direction. Concrete encoder/filter configurations passed the initial 8-bit SDR and transform cases in [Phase 4](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-4), with additional alpha support boundaries recorded in Phase 5. Broader color/source paths remain unverified. WebP here is one still image per cadence target, not an animated sequence file.
+PNG is the default format, with JPG and still WebP alternatives. Quality, transparency, orientation and dimension rules remain the documented contract. The [color-space preservation](research-2026-10-02-video-frames-color-space-preservation.md) follow-up has pending encoder/profile feasibility and appearance verification. Concrete encoder/filter configurations passed the original 8-bit SDR and transform cases in the [source image export checkpoint](../plans/jobs/2026-10-01-video-frames-implementation.md#source-image-export-checkpoint), with additional [alpha fidelity boundaries](../plans/jobs/2026-10-01-video-frames-implementation.md#alpha-fidelity-boundaries); those checks validate the original conversion reference. Broader color/source paths remain unverified. WebP here is one still image per cadence target, not an animated sequence file.
 
 ### Encoder Availability
 
@@ -436,19 +449,23 @@ Quality applies uniformly to every output in a single-frame, frame-set, or seque
 
 ### Source-Faithful Color and Transparency
 
-Frame export preserves the source's intended appearance through necessary pixel/color conversion, without creative adjustments. Expose no color-look option or Interactive styling prompt. Do not add saturation, contrast, brightness, or channel boosts, and do not reuse GIF palette generation or palette dithering. `--quality` controls encoding fidelity and `--scale` controls size; neither selects a color style.
+The color discussion below records the earlier approach for historical review. That approach was implemented and checked. The [new color-space research](research-2026-10-02-video-frames-color-space-preservation.md#goal-and-scope) investigates a different approach based on preserving source color interpretation.
 
-Honor reliable source matrix, range, primaries, and transfer metadata during conversion; output color metadata must describe the encoded pixels. Selecting `format=rgba` alone specifies a pixel representation, not a complete color-management policy.[^image-color] When color fields are missing, use only the tested, documented interpretation of the supported FFmpeg conversion path and disclose inferred values in review/CLI diagnostics. Conflicting metadata or an unsupported conversion produces a specific error rather than a silent color reinterpretation. HDR-to-SDR tone mapping and archival preservation of source bit depth/profiles are outside this scope; a source that requires such a transformation fails clearly.
+#### Earlier Color Approach and Verification Limit
+
+The original approach aimed to preserve source appearance through necessary conversion, without creative adjustments. It required source metadata to govern conversion and output descriptions to match encoded pixels. These principles remain relevant.
+
+The original implementation converted BT.709 transfer to sRGB. The [recorded image checks](../plans/jobs/2026-10-01-video-frames-implementation.md#source-image-export-checkpoint) validated that conversion reference. Those results remain valid for the earlier approach. They do not establish preservation of the source transfer or equivalent viewer appearance.
+
+#### Transparency
 
 Preserve non-opaque alpha in PNG and WebP using a supported encoder mode. JPG accepts opaque selected frames, including opaque frames stored in an alpha-capable format. If a selected frame has non-opaque pixels, report that JPG cannot preserve transparency and suggest PNG/WebP; do not choose a background or discard alpha. For a frame set or sequence, a later incompatible frame stops export and retains completed images under the partial-output contract.
 
-The initial backend rejects sources that declare alpha when the default decoded format does not expose it. Its supported FFmpeg WebP `full` path also rejects fully transparent pixels because it cannot preserve their hidden RGB values; PNG preserves exact RGBA in that case. These are explicit unsupported-path failures, with no decoder/format substitution or weakening of lossless semantics. Independent synthetic verification is recorded in the [Phase 5 execution record](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-5).
-
-Source-faithful describes visual intent, not identical decoded values across formats. Lossy encoding, chroma sampling, scaling, and required representation conversion can change pixels; lossless `full` compares against the agreed post-transform reference.
+The initial backend rejects sources that declare alpha when the default decoded format does not expose it. Its supported FFmpeg WebP `full` path also rejects fully transparent pixels because it cannot preserve their hidden RGB values; PNG preserves exact RGBA in that case. These are explicit unsupported-path failures, with no decoder/format substitution or weakening of lossless semantics. Independent synthetic verification is recorded in the [alpha fidelity evidence](../plans/jobs/2026-10-01-video-frames-implementation.md#alpha-fidelity-boundaries).
 
 ### Output Scaling
 
-Proposed size menu for a synthetic 1920 × 1080 source:
+Scaling examples for a synthetic 1920 × 1080 source:
 
 | Choice             | Factor             | Output dimensions                      |
 | ------------------ | ------------------ | -------------------------------------- |
@@ -480,9 +497,32 @@ Defaults are beside the selected source; custom relative paths resolve from the 
 
 Treat source media as read-only. Reject any final target resolving to the source file, including detected symlink or hard-link aliases, regardless of `--overwrite`. Check before export and again before each final write, using canonical paths and available file identity rather than path strings alone. This applies to explicit single-image paths and every generated frame-set/sequence target.
 
-Interactive one-frame destination choices are default location, custom folder with a generated filename, or an explicit image file. The first two use the naming controls below; an explicit file skips templates and shows “Naming: Explicit filename.” Pass the resolved file path to the same single-image action. Changing its naming requires returning to a generated-filename choice. Frame sets and sequences choose default/custom folders and always review generated names.
+Interactive destinations follow the output kind defined by the mode. A custom One frame destination is a complete image file path with a literal filename and no pattern step. Default single-image output retains generated-name controls. Frame set and Sequence use a folder path plus a filename pattern, including a sequence that exports one image. Implementation of this revision remains pending.
 
-Create missing destinations and owned staging only after final export acceptance. Text selection/review creates no image folder. Cleanup must never remove source media, completed exports, or user-owned folders.
+Synthetic custom inputs with JPG selected for `clip.mp4`:
+
+| Mode | Destination input | Filename behavior |
+| --- | --- | --- |
+| One frame | `example/file.jpg` | Write the literal `file.jpg` inside `example/` |
+| Frame set | `example/frames/` | Generate names with `{stem}-{selection}-frame` and append `.jpg` |
+| Sequence | `example/frames/` | Generate names with `{stem}-{serial}` and append `.jpg` |
+
+Folder paths and filename patterns are separate inputs. Patterns construct basenames inside the chosen folder under the [mode-specific naming rules](#naming-rules-by-export-mode).
+
+#### Interactive Destination Wording
+
+| Surface | One frame | Frame set and Sequence |
+| --- | --- | --- |
+| Destination question | `Where to save the image` | `Where to save the images` |
+| Custom choice | `Custom image file` | `Custom folder` |
+| Path input | `Image file path (.<format>)` | `Folder path` |
+| Retained-path choice | `Keep selected image file` | `Keep selected folder` |
+
+Keep `Use default output` and the generic hints `Image beside the source` / `Frames folder beside the source`. The retained-path choice appears only when applicable and shows the chosen path in its description. One frame offers no custom-folder choice.
+
+File input explains `Include the filename`. Folder input explains `Images are saved inside this folder`. Both explain `Relative paths start from where you ran the command`. Keep these hints readable in inline and simple prompts. Preserve literal paths, format/extension correction, editor drafts and Back/Escape navigation. Changing settings must not change the selected frame identities. Direct CLI output meaning is unchanged.
+
+After final export acceptance and applicable validation, create any missing parent folders for the single-image file or missing output folders for a frame set/sequence, including necessary ancestors. Thus `example/file.jpg` creates `example/` if absent before writing the image. Existing path-kind conflicts fail rather than altering the destination or replacing a folder component. Path entry, review and cancellation before export create no folders or images. Owned staging follows the same acceptance boundary. Cleanup must never remove source media, completed exports or user-owned folders.
 
 ### Explicit Image Filenames and Format
 
@@ -498,7 +538,7 @@ Reject missing, unsupported, or mismatched extensions before extraction or final
 | `--format webp --output cover.png`           | Error: filename extension conflicts with the selected format   |
 | `--output cover` or `--output cover.gif`     | Error: require an extension supported by the selected format   |
 
-Interactive validates an explicit filename against its format choice and shows the error at the destination prompt. If a later format change makes the retained filename incompatible, require a corrected filename or matching format before export acceptance. Generated names update their extension when the format changes. These filename checks do not apply to frame-set/sequence output folders or Interactive custom folders; selection still determines destination kind.
+Interactive validates an explicit filename against its format choice and shows the error at the destination prompt. If a later format change makes the retained filename incompatible, require a corrected filename or matching format before export acceptance. Generated names update their extension when the format changes. These filename checks do not apply to frame-set/sequence output folders; selection still determines destination kind.
 
 ### Stem and Placeholder Meaning
 
@@ -592,22 +632,30 @@ Serials follow sampling/export order, including separate serials for repeated so
 ### Review, Collisions, and Partial Output
 
 ```text
-Sequence export review
-Scope: Whole video
-Sampling: 24 FPS
-Images: Approximately 24
+Frame export review
+Mode: Sequence
+Cadence: 24 FPS
+Estimated images: 24
 Format: PNG
 Quality: Full (lossless)
-Scale: 0.5 — 960 × 540
-Folder: ./clip-frames/
-First name: clip-000001.png
-Last name: clip-000024.png (estimated)
-Overwrite: Disabled
+Scale: 0.5
+Dimensions: 960 × 540
+Output folder:
+  ./clip-frames/
+First filename:
+  clip-000001.png
+Estimated last filename:
+  clip-000024.png
+Existing images: Stop on filename conflict
 
-Export images / Change sampling / Change format/quality / Change size / Change output / Change naming / Cancel
+Export / Change settings / Change selection / Choose another source / Cancel
 ```
 
-Default overwrite is disabled. Validate safe, unique names and check known targets before export without scanning solely to discover the final count. The publication operation below enforces collisions again at write time. A later collision stops the export and reports completed images; an existing folder does not grant overwrite permission.
+Review uses `One frame`, `Frame set` or `Sequence` for the mode, and labels the actual destination `Output file:` or `Output folder:`. Paths remain on separate indented lines under the existing color/display policy. Preserve concrete filenames, selected-frame details, qualified counts and partial-result reporting.
+
+The existing-file menu and review use the same `Stop on filename conflict` / `Replace matching images` wording. The stop choice explains `Stops export on a matching filename`. Replacement explains `Replace each matching file after encoding its image`. Replacement affects matching output files only and leaves unrelated files intact. Failure or cancellation retains confirmed completed images under the publication contract.
+
+By default, a matching filename stops export. Validate safe, unique names and check known targets before export without scanning solely to discover the final count. The publication operation below enforces collisions again at write time. A later collision stops the export and reports completed images; an existing folder does not grant overwrite permission.
 
 `--overwrite` permits replacing conflicting output files selected by the current export: the resolved single-image target, including an explicit `--output` filename, or generated frame-set/sequence targets. Source-protection rules still apply. Never clear an existing folder or delete unrelated/stale files. A rerun with fewer images can leave older files beyond the new serial range; disclose this when reusing a nonempty folder. Suggest a fresh output folder when the user wants a clean sequence. Filename serials restart from the configured start on each invocation; retry/resume is outside this scope.
 
@@ -642,7 +690,7 @@ Repository review supports reusing the FFmpeg-backed command structure and small
 | Timestamp selection    | Verify most recent frame at/before the target, exact next-frame boundaries, and reported actual position     |
 | Final frame            | Verify decoder EOF and buffered-frame handling instead of subtracting nominal frame duration                 |
 | FPS and interval       | Verify specified cadence, repeated selection disclosure, exact arithmetic, ordering, and end behavior        |
-| Image output           | Verify the settled encoder, quality, source-faithful conversion, alpha, orientation, and dimension contracts |
+| Image output           | Verify encoder/quality behavior, source-color preservation, alpha, orientation and dimensions |
 | Terminal prompt        | Verify key ownership, multi-line redraw, resize, fallbacks, and restoration using existing helpers           |
 | Doctor integration     | Verify independent executable checks, frames capability, Video states, remediation, and additive JSON fields |
 
@@ -650,7 +698,7 @@ FFmpeg documents different input/output seek behavior; input seeking may land at
 
 ### Required Tools
 
-Require both FFmpeg and FFprobe for all `video frames` methods, including first/last-frame export. FFmpeg performs extraction and image encoding; FFprobe supplies structured stream/frame information and can count decoded frames.[^probe] This is an agreed dependency contract for the proposed command, not an implemented check. Using one metadata backend avoids a second path that parses FFmpeg's human-readable output when FFprobe is absent.
+Require both FFmpeg and FFprobe for all `video frames` methods, including first/last-frame export. FFmpeg performs extraction and image encoding; FFprobe supplies structured stream/frame information and can count decoded frames.[^probe] The both-tool requirement was implemented and verified in the [command and doctor checkpoint](../plans/jobs/2026-10-01-video-frames-implementation.md#direct-command-and-doctor-checkpoint). Using one metadata backend avoids a second path that parses FFmpeg's human-readable output when FFprobe is absent.
 
 Check both executables before source inspection or final writes. A missing/unusable tool should identify the dependency and provide installation/PATH guidance through the existing [dependency-check boundary](../../src/cli/deps.ts). Existing convert, resize, and GIF commands continue to require only FFmpeg. Tool availability does not guarantee that a particular source has trustworthy timing or a supported codec; the frames action must diagnose those source-specific limitations separately.
 
@@ -673,13 +721,13 @@ Extend the [normalized report](../../src/cli/doctor/report.ts) and [JSON project
 
 Add separate format/mode assessments to the normalized report and JSON rather than overloading executable availability or existing capability booleans. With both tools available, a missing required image encoder or lossless mode makes Video `limited`, naming the affected frames format/mode and recommending an encoder-enabled FFmpeg build. Known absence is a health finding; an operational probe failure follows the existing exit-2/no-partial-report contract and must not be reported as unsupported. An assessment that cannot be established from otherwise successful probe output remains visibly unknown. Advertised support is not tested encoding or pixel-fidelity evidence. Frames execution rechecks its requested encoder/mode before extraction and final writes; source-dependent support remains an execution check.
 
-Keep runtime execution compatible with Node.js. The adjacent streaming process boundary has closure, cancellation, and backpressure evidence in [Phases 3–4](../plans/jobs/2026-10-01-video-frames-implementation.md). The mirrored multi-line wave passed Phase 1 prototype layout checks and Phase 7 production integration/terminal checks. Minimum-Node execution and other platforms remain unverified.
+Keep runtime execution compatible with Node.js. The adjacent streaming process boundary has closure, cancellation, and backpressure evidence in the [process ownership](../plans/jobs/2026-10-01-video-frames-implementation.md#streaming-and-resolution-checkpoint) and [encoder input](../plans/jobs/2026-10-01-video-frames-implementation.md#encoder-input-checkpoint) checkpoints. The mirrored multi-line wave has [prototype](../plans/jobs/2026-10-01-video-frames-implementation.md#terminal-evidence) and [integrated terminal](../plans/jobs/2026-10-01-video-frames-implementation.md#tui-review-and-native-verification) evidence. The [minimum-runtime checkpoint](../plans/jobs/2026-10-01-video-frames-implementation.md#boundary-and-minimum-runtime-checkpoint) establishes scoped macOS execution; native execution on other platforms remains unverified.
 
-Reference designs: tui-wave provides waveform navigation and zoom,[^tui-wave] CAVA illustrates terminal bar rendering,[^cava] and Ratatui has bar-chart examples.[^ratatui] These are design references, not chosen dependencies or exact implementations of the proposed distance-based picker.
+Reference designs: tui-wave provides waveform navigation and zoom,[^tui-wave] CAVA illustrates terminal bar rendering,[^cava] and Ratatui has bar-chart examples.[^ratatui] These are design references, not chosen dependencies or exact implementations of the distance-based picker.
 
 ## Streaming Frame Resolution
 
-### Settled Execution Contract
+### Execution Contract
 
 Use one FFprobe/FFmpeg execution path for all frames methods:
 
@@ -689,11 +737,11 @@ Use one FFprobe/FFmpeg execution path for all frames methods:
 | CLI            | Parse bounded records/queues, count presentation-order frames, preserve exact target arithmetic, and retain bounded verified identities                                |
 | FFmpeg         | Decode the same selected stream from its beginning; extract resolved single/frame-set identities or process sequence cadence forward; encode/write the selected format |
 
-Tool arguments and record serialization must implement the existing frame-identity, cadence, timing, and end contracts. Use structured records; do not introduce a second metadata backend or parse human-readable diagnostics for identity/progress. The implementation prototype records the exact tested arguments and tool builds as verification evidence.
+Tool arguments and record serialization must implement the existing frame-identity, cadence, timing, and end contracts. Use structured records; do not introduce a second metadata backend or parse human-readable diagnostics for identity/progress. The execution records identify the exact tested arguments and tool builds.
 
 Adopt checked exact arithmetic for frame-set midpoints, decimal-rate rational values, integer-millisecond intervals, and source timestamps/time bases. Values outside the implementation's supported representation receive specific validation errors. Unreliable timing or decoder failure follows the specified stop/partial-output rules; changing tool configuration must not silently approximate targets, clamp positions, or convert an incomplete scan into success.
 
-This execution direction is settled. The verification work below proves that the selected tool configuration implements it; no successful runtime result is claimed here.
+The [original execution evidence](../plans/jobs/2026-10-01-video-frames-implementation.md#research-evidence-reconciliation) verifies the processing contract within its recorded scope. Follow-up changes require their own evidence; the original conversion results do not verify source-transfer preservation.
 
 ### Metadata, Counts, and Scan Stop Conditions
 
@@ -764,9 +812,9 @@ Format/scale changes retain identity. Evict older entries at the limit and resol
 
 Do not adopt a blanket input-file-size cap such as 2 GB. Existing [video actions](../../src/cli/actions/video.ts) pass the source path to FFmpeg, and [file validation](../../src/cli/actions/shared.ts) checks existence/type without imposing a size cap. Source bytes affect I/O; duration, frame count, resolution, codec, bit depth, and decoder buffering also affect work and memory. The frames design must stream the source through its tools instead of copying/loading the entire file into the CLI.
 
-Adopt these initial internal defaults for the implementation prototype. They are policy choices to verify and calibrate, not measured performance guarantees:
+The original implementation uses these internal defaults. The [resource evidence](../plans/jobs/2026-10-01-video-frames-implementation.md#research-evidence-reconciliation) records scoped limit/ownership checks; these values do not guarantee total process memory or performance:
 
-| Resource                                  | Initial default                                    |
+| Resource                                  | Configured default                                    |
 | ----------------------------------------- | -------------------------------------------------- |
 | Minimal cached frame identities           | 128 records per Interactive session                |
 | Initial selected-field metadata response  | 1 MiB                                              |
@@ -777,13 +825,13 @@ Adopt these initial internal defaults for the implementation prototype. They are
 | Cooperative child termination grace       | 2 seconds, then force termination if still running |
 | Forced-exit confirmation deadline         | 5 seconds after forcing termination                |
 
-Metadata limits apply to selected fields, not arbitrary embedded tags or thumbnails. Frame-record streams may exceed 1 MiB cumulatively; consume them incrementally with bounded queues/backpressure. Limit failures identify the exhausted resource, stop affected processing, and preserve completed outputs. Do not label every limit failure “video too large.” These initial defaults come from this design discussion. Change a default only when recorded measurements justify it, preserving bounded-state and failure-reporting requirements.
+Metadata limits apply to selected fields, not arbitrary embedded tags or thumbnails. Frame-record streams may exceed 1 MiB cumulatively; consume them incrementally with bounded queues/backpressure. Limit failures identify the exhausted resource, stop affected processing, and preserve completed outputs. Do not label every limit failure “video too large.” The original implementation and resource checks use these defaults. Change a default only when recorded measurements justify it, preserving bounded-state and failure-reporting requirements.
 
-CLI record/cache limits do not cap FFmpeg/FFprobe memory. The decoder policy is to apply a per-image pixel guard consistently in both tools. Establish and record its numeric value and supported-build behavior during implementation verification, including acceptance below the limit and a specific failure above it. FFmpeg documents `max_pixels` as a per-image guard against very large images.[^codec-limits] Treat decoder buffering and peak child-process memory separately. Output scaling happens after decoding in the usual pipeline, so it can reduce image encoding/storage costs without guaranteeing lower decode memory.[^pipeline]
+CLI record/cache limits do not cap FFmpeg/FFprobe memory. The decoder policy is to apply a per-image pixel guard consistently in both tools. The configured guard is 16,777,216 pixels per decoded/display-corrected image. The [decoder-guard evidence](../plans/jobs/2026-10-01-video-frames-implementation.md#timing-streams-and-decoder-guard) records tested below/above-boundary behavior; changed tool configurations need equivalent checks. FFmpeg documents `max_pixels` as a per-image guard against very large images.[^codec-limits] Treat decoder buffering and peak child-process memory separately. Output scaling happens after decoding in the usual pipeline, so it can reduce image encoding/storage costs without guaranteeing lower decode memory.[^pipeline]
 
 Review estimated image count and effective dimensions before export. If storage estimation is available, label its assumptions and uncertainty; do not perform extra image extraction solely to manufacture an estimate. For illustration, one hour at 24 FPS is approximately 86,400 images; assuming 2 MiB per image would require approximately 169 GiB. Actual image sizes depend on content and encoding. These values are synthetic planning examples, not a restriction or measured result.
 
-Inspect the destination volume through its path or nearest existing parent using `statfs`; available bytes are `bavail × bsize`, calculated without unsafe numeric truncation.[^volume-space] Check any separate scratch volume actually used, and include staging/copy overhead in estimates. If inspection is unavailable, show “Available space unknown” and continue. Estimated total size is advisory, not reserved capacity or a rejection threshold. Actual disk-full/quota failures stop processing and retain completed images; refresh space information where possible for the diagnostic. No extra confirmation or silent cadence/scale changes are needed.
+Do not inspect or disclose destination/scratch available capacity for frames presentation or diagnostics. Remove available-capacity amounts and unknown-space messages while preserving staging/copy accounting and configured resource guards. Actual disk-full/quota failures stop processing with actionable errors and retain completed images; diagnostics must not add capacity details. No extra confirmation or silent cadence/scale changes are needed. This product-output rule does not remove the plan's separate developer smoke-budget monitoring.
 
 For excessive output/storage cost, offer ordinary choices: lower FPS, a longer interval, smaller output scale, or another format. Those choices may still require decoding the full source. Decoder-memory failures can suggest a separately prepared lower-resolution source; it becomes a new source with its own frame numbering. Do not promise that output scaling or a preliminary resize always makes an otherwise undecodable source usable.
 
@@ -866,6 +914,8 @@ Generate small synthetic videos on demand with visible frame numbers, timestamps
 | Sequential resolution                     | Target/prefix/EOF stop conditions, buffered final frames, decoder failure, bounded cache eviction, and source-change checks                                                                    |
 | Frames dependencies and doctor            | Both tools required for every frames method; all four availability combinations, three doctor projections, scoped remediation, unchanged existing video capabilities, and additive JSON fields |
 
+Interactive output verification covers One frame, Frame set and Sequence, including one-image sequences. Check complete literal single-image paths, separate multi-image folders/patterns, default/custom/retained destinations, relative-path interpretation and filename correction. Cover absent nested parents/output folders, existing directories, path-kind conflicts and creation only after confirmed export. Verify Back/Escape, resize, readable mode/file/folder labels and identical collision wording in menus/review. Cover matching-file stops, replacement and retained partial outputs in color/plain layouts. Path entry and text review must not create folders or publish images. Navigation alone must not start decoding.
+
 Selector, rate, and naming verification should also cover:
 
 - Positive integer source frame numbers, invalid zero/decimal values, and upper-bound resolution without invented counts.
@@ -896,32 +946,32 @@ Quality verification must cover omitted/explicit `full`, all JPG/WebP presets, P
 
 ### Image Output Verification
 
-The image behavior is settled; verify the following implementation details with synthetic sources before claiming support:
+Image support claims require the following synthetic evidence. Reuse recorded results for unchanged boundaries; the revised source-color contract needs new pixel/profile evidence:
 
 1. Record available encoders, supported pixel representations, and native preset/compression mappings for the tested builds. Decode real PNG/JPG/WebP outputs; test unavailable encoders, unsupported dimensions, and unavailable lossless WebP without fallback.
-2. Establish an independent color reference using known RGB patches and tagged YUV matrix/range cases. Verify range conversion, color metadata, and the absence of creative adjustments or GIF palette filters. Record the exact supported conversion arguments and any inferred-field defaults/notices; test missing/conflicting fields and explicit rejection of conversions outside scope. A filter-argument assertion alone does not establish fidelity.
+2. Verify color integration against the [color research's evidence criteria](research-2026-10-02-video-frames-color-space-preservation.md#evidence-and-completion-criteria), using independent references and checking actual saved color descriptions.
 3. Compare PNG/WebP alpha against an independent post-transform reference. Test JPG with opaque alpha-capable input and non-opaque selected frames, including a later sequence failure; no implicit background compositing is allowed.
 4. Use asymmetric markers to verify quarter-turns/reflections, square-pixel normalization, metadata reset, scale order, and review/export dimension agreement. Cover unspecified/non-square pixel ratios, the square-pixel assumption notice, invalid/conflicting ratio errors, odd and one-pixel dimensions, half-pixel rounding, unsupported transforms, and dimension/pixel limits.
 5. Measure PNG compression cost separately from pixel fidelity. Compare lossless outputs to the post-transform reference and lossy outputs using recorded tolerances; retain this evidence alongside exact encoder/filter configurations.
 
 ### Implementation Verification
 
-The execution path and initial internal defaults are settled decisions. Complete the following verification work in order and record public synthetic evidence:
+Processing support claims require the following public synthetic evidence. The original reconciliation links recorded results; the plan owns execution order and acceptance of additional checks:
 
 1. Generate labeled constant/variable-rate sources with independently known frame identities, timing boundaries, and final frames. Include sparse starts, shifted timestamps, reordered/buffered output, and invalid timing.
 2. Record the exact FFprobe/FFmpeg argument sets, required record fields/serialization, and tool builds. Prove that both tools agree on the selected stream and presentation-order identity, and that extraction implements the specified cadence and reliable-end rules.
 3. Exercise numeric boundaries, frame-set midpoint resolution with known/unknown initial duration, parser/queue pressure, cache eviction, oversized metadata/records, diagnostic truncation, decoder/timing failure, and cooperative/forced cancellation. Prove that limit failures stop processing and preserve/report completed outputs.
-4. Measure first and cached requests, near-end/last-frame resolution, and whole-video sequence export across generated durations, frame rates, dimensions, and codecs. Record scan/extraction latency and parent/child peak memory separately; verify that CLI-held frame data remains bounded as stream length grows. Measurements describe tested cases, not universal speed or process-memory guarantees.
-5. Confirm or calibrate the listed defaults with that evidence. Establish the decoder pixel-guard value consistently in both tools and test below/above its boundary. Verify the two-file/256-MiB staging limits before and at capacity, pressure from slow publication, and rejection of a single image that exceeds the byte budget. Record supported builds, limit enforcement, and the tested two-second grace/five-second confirmation policy.
+4. Measure first and cached requests, near-end/last-frame resolution, and whole-video sequence export across generated durations, frame rates, dimensions, and codecs. Record scan/extraction latency and sampled parent/child memory separately, stating whether measurements can miss peaks; verify that CLI-held frame data remains bounded as stream length grows. Measurements describe tested cases, not universal speed or process-memory guarantees.
+5. Verify configured defaults against that evidence and record any recalibration. Apply the configured decoder pixel guard consistently in both tools and test below/above its boundary. Verify the two-file/256-MiB staging limits before and at capacity, pressure from slow publication, and rejection of a single image that exceeds the byte budget. Record supported builds, limit enforcement, and the tested two-second grace/five-second confirmation policy.
 
-6. Verify completed-file detection, preset-role/serial publication order, exclusive creation/hard-link fallback, safe overwrite, and source-alias checks. Inject competing writers, case-insensitive collisions, interrupted copies, disk-full/quota errors, unknown space, saturated staging, and cleanup failures. Confirm accurate completed/partial counts and retention of existing/source files.
+6. Verify completed-file detection, preset-role/serial publication order, exclusive creation/hard-link fallback, safe overwrite, and source-alias checks. Inject competing writers, case-insensitive collisions, interrupted copies, disk-full/quota errors, saturated staging and cleanup failures. Check that diagnostics disclose no available capacity or unknown-space status. Confirm accurate completed/partial counts and retention of existing/source files.
 7. On supported platforms, cancel operations with multiple registered tools and a tool that ignores graceful termination. Verify forced shutdown, exit/stdio closure, confirmation timeout, scratch retention on unconfirmed shutdown, terminal restoration, and prevention of replacement operations.
 
-Configuration and budget verification must pass before claiming those runtime contracts are supported or closing this research. Report a failing prototype case as a verification gap; do not silently change selection/sampling semantics. These tasks require no alternative seek strategy.
+Configuration and budget verification must pass before claiming those runtime contracts are supported or closing this research. Report a failing case as a verification gap; do not silently change selection/sampling semantics. These tasks require no alternative seek strategy.
 
 ### Terminal Picker Verification
 
-The picker contract is settled. Verify it with synthetic duration/selection state before integrating video decoding:
+Use synthetic duration/selection state to verify the picker contract independently of decoding. Existing terminal evidence remains valid where the layout/input boundary is unchanged:
 
 - Exercise wide, narrow, short, and rapidly resized viewports. Include boundary cases where a label, instruction, or notice wraps and changes available rows; verify full → compact → direct-input transitions without hiding essential controls.
 - Verify unknown dimensions, unusable duration, simple-prompt mode, unsupported raw input, and non-interactive invocation follow their defined fallback paths.
@@ -929,7 +979,7 @@ The picker contract is settled. Verify it with synthetic duration/selection stat
 - Verify `D / (N − 1)` spacing, first/last endpoint semantics, outward no-op movement, and a typed position between divisions moving to the next position in the requested direction. Resize projection retains exact requests/identities.
 - Verify letter-case handling, editor draft/selection retention, Enter/Escape ownership, scan cancellation, whole-flow interruption, and listener/cursor/raw-mode restoration. Arrows, glyph toggles, and resize must not start decoding.
 
-Record terminal prototype results and any renderer geometry adjustments under this fixed contract. Static sketches and document review alone do not verify terminal behavior.
+Record terminal findings and any renderer geometry adjustments under this contract. Static sketches and document review alone do not verify terminal behavior.
 
 ### Local Visual Review and Privacy
 
@@ -941,15 +991,21 @@ Public research, plans, job records, examples, and PR text must omit private sou
 
 The research is sufficiently answered when selection/sampling/output questions are resolved with evidence, a terminal prototype validates the layouts and fallbacks, real tool experiments establish the extraction/format/scale boundary, and the supported dependency strategy is recorded. Cite public reproducible evidence directly or link the relevant execution records before closing research. Drafting and document review alone do not meet those criteria. Prototype evidence belongs in the linked implementation record; it does not establish extraction or encoder support.
 
+Reclosing requires verified capacity-disclosure removal, destination/collision/review wording across all Interactive modes, file-only one-frame destinations and integration of the linked color contract. Detailed color feasibility and closure criteria belong to the [color research](research-2026-10-02-video-frames-color-space-preservation.md#evidence-and-completion-criteria). Reuse original evidence only where its exercised boundary is unchanged.
+
 ## Decision Status
 
-Feature scope and behavior are settled above. The [final evidence reconciliation](../plans/jobs/2026-10-01-video-frames-implementation.md#research-evidence-reconciliation) answers the completion criteria with terminal, real-tool, pixel, filesystem, resource and dependency evidence. Native verification covers macOS with the recorded tool builds and Node 22.23.0/26.5.0. Controlled platform/failure cases establish modeled transitions without proving native execution elsewhere. Larger-file I/O, demanding codecs, heavy real content, native Windows/Linux and network filesystems remain unverified. Completion makes no support claim for those untested cases.
+The revised source-color and output direction defines the follow-up contract, with implementation and verification pending. The [original evidence reconciliation](../plans/jobs/2026-10-01-video-frames-implementation.md#research-evidence-reconciliation) remains accepted for its original reference and scope. It does not establish the reopened color/profile or destination/output changes. Native verification covers macOS with the recorded tool builds and Node 22.23.0/26.5.0. Controlled platform/failure cases establish modeled transitions without proving native execution elsewhere. Larger-file I/O, demanding codecs, heavy real content, native Windows/Linux and network filesystems remain unverified. The reopened research stays in-progress until the additional evidence supports closure, without expanding those support claims.
 
 ## Recommendations and Next Steps
 
-The [implementation plan](../plans/plan-2026-09-30-video-frames-implementation.md#phase-9-integrated-verification-and-documentation) is complete. Consult the [usage guide](../guides/video-frames-usage.md) for the current contract and the [implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md#phase-9) for verification scope. New support claims for the untested cases above require separate evidence before documentation expands that boundary.
+The [implementation plan](../plans/plan-2026-09-30-video-frames-implementation.md) is active for source-color/output enhancements and the subsequent verification/documentation gate. The [follow-up record](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md) tracks their pending acceptance. Consult the [usage guide](../guides/video-frames-usage.md) for shipped behavior and the [original implementation record](../plans/jobs/2026-10-01-video-frames-implementation.md#support-scope) for accepted prior verification scope. New support claims require separate evidence before documentation expands that boundary.
 
-This research owns findings, design rationale and feasibility evidence. The implementation plan owns execution order and acceptance requirements, including bounded synthetic stress runs and private real-video smoke checkpoints outside the regular test suites. The implementation record holds execution results. These documents remain at their current locations.
+Use the [documentation ownership](#documentation-ownership) rules to keep feature contracts, color feasibility, execution gates and results in their respective documents.
+
+## Related Research
+
+- [Video Frames Color Space Preservation](research-2026-10-02-video-frames-color-space-preservation.md)
 
 ## Related Plans
 
@@ -991,8 +1047,6 @@ This research owns findings, design rationale and feasibility evidence. The impl
 
 [^png-compression]: [FFmpeg codecs: PNG compression options](https://ffmpeg.org/ffmpeg-codecs.html#png).
 
-[^image-color]: [FFmpeg filters: pixel format](https://ffmpeg.org/ffmpeg-filters.html#format) and [color conversion](https://ffmpeg.org/ffmpeg-filters.html#colorspace).
-
 [^image-orientation]: [FFmpeg command documentation: display transforms and autorotation](https://ffmpeg.org/ffmpeg.html#Video-Options).
 
 [^image-scaling]: [FFmpeg filters: scale and square-pixel output](https://ffmpeg.org/ffmpeg-filters.html#scale).
@@ -1000,5 +1054,3 @@ This research owns findings, design rationale and feasibility evidence. The impl
 [^image-write]: [FFmpeg image muxer: atomic writing](https://ffmpeg.org/ffmpeg-formats.html#image2-2).
 
 [^file-publication]: [Node.js filesystem flags and exclusive creation](https://nodejs.org/docs/latest-v22.x/api/fs.html#file-system-flags) and [hard-link publication](https://nodejs.org/docs/latest-v22.x/api/fs.html#fspromiseslinkexistingpath-newpath).
-
-[^volume-space]: [Node.js filesystem statistics: available bytes](https://nodejs.org/docs/latest-v22.x/api/fs.html#statfsbavail).
