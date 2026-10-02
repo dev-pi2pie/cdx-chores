@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { SMOKE_LIMITS, checkSmokeProgress } from "./smoke-budget";
-import { createSyntheticSmokeRun } from "./smoke-workspace";
+import { createSmokeRun, type SmokeFamily } from "./smoke-workspace";
 import { runTool, scratchBytes, type ToolResult } from "./tools";
 
 export interface Experiment {
@@ -15,8 +15,11 @@ export interface Experiment {
   images(count: number): void;
 }
 
-export async function createLab(phase: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 = 2) {
-  const run = await createSyntheticSmokeRun(phase);
+export async function createLab(
+  phase: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 = 2,
+  family: SmokeFamily = "synthetic",
+) {
+  const run = await createSmokeRun(family, phase);
   const scratchRoot = dirname(dirname(run.path)); // Includes retained synthetic and private outputs.
   let activeMs = 0;
   let images = 0;
@@ -129,7 +132,7 @@ export async function createLab(phase: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 =
     finish() {
       process.off("SIGINT", interrupt);
       process.off("SIGTERM", interrupt);
-      console.log(`Retained synthetic review artifacts: ${run.path}`);
+      console.log(`Retained ${family} review artifacts: ${run.path}`);
     },
   };
 }

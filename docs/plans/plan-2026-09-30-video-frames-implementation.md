@@ -104,13 +104,13 @@ Measure CLI and child-process memory separately; observation alone does not esta
 
 ### Smoke Workspace and Privacy
 
-Use `examples/playground/.tmp-smoke/video-frames/synthetic/<run-id>/` for owned generated-source runs. Keep generated sources, exports, and diagnostics in that run. Regular suite fixtures continue to use their existing `.tmp-tests` ownership; these manual runs do not share that runner's scratch lifecycle.
+Use owned runs under `examples/playground/.tmp-smoke/video-frames/`: `synthetic/<run-id>/` for generated sources and `private/<run-id>/` for private comparisons. Keep generated sources, exports, profiles, measurements and diagnostics inside their run. Both families share ownership, ignore, budget and cleanup checks. Regular suite fixtures continue to use their existing `.tmp-tests` ownership.
 
 Manual smoke artifacts may be removed after inspection or retained locally for review. Retention may cover selected evidence or the complete owned run. Honor requested retention and keep retained artifacts ignored and untracked. The user may later remove them independently without a cleanup receipt, retention registry, or documentation update; no artifact manifest is required.
 
 Verify safe cleanup behavior with small disposable owned fixtures when review artifacts are retained. Product staging cleanup and source protection remain required correctness checks. Retention of developer review artifacts does not excuse a product cleanup failure.
 
-Private smoke uses a separate ignored local run area. Resolve private inputs locally and keep original sources outside the owned output tree, read-only. Neither private input nor result locations belong in the public plan or job record. Confirm sources and derived artifacts are ignored and untracked before retaining them. Never register private images, logs, or captures as regular test-result exports.
+Resolve private video and screenshot inputs locally and keep originals outside the owned output tree, read-only. Always set an explicit output destination inside the private run. Test default destinations only with synthetic inputs inside their run. Actual private input and run locations stay out of public records. Confirm inputs and derived artifacts are ignored and untracked before use or retention. Never register private images, logs, or captures as regular test-result exports.
 
 ```text
 Create uniquely owned run
@@ -314,6 +314,7 @@ Tasks:
 
 - [ ] Establish source-to-display interpretation against independent standard and native-video references.
 - [ ] Correct the color path and saved descriptions for verified interpretations with explicit unsupported-path handling.
+- [x] Keep synthetic and private smoke outputs in owned run folders with shared isolation and budget checks.
 - [x] Remove capacity messages and unused volume inspection while preserving resource guards and actual disk-full/quota failure handling.
 - [x] Make One frame custom destinations image file paths and create missing parent folders on export.
 - [x] Use folder destinations with filename patterns for Frame set and Sequence and create missing folders on export.

@@ -112,6 +112,12 @@ The current BT.709 ICC path uses inverse signal transfer. The [ICC BT.709 displa
 
 The [color research](../../researches/research-2026-10-02-video-frames-color-space-preservation.md#display-interpretation-and-resolution) owns the renewed source/display investigation. Phase 10 reopens its reference, implementation, color verification and final review tasks. Its five destination/capacity tasks remain accepted, and Phase 11 remains pending. Runtime code is unchanged by this reopening.
 
+### Smoke Workspace Follow-Up
+
+Synthetic and private smoke now share one run factory under the plan's scratch root, with separate family folders. The bounded lab uses the same scratch accounting, image/time limits and child lifecycle for either family. Invalid family/phase values fail before workspace creation. Inputs remain outside private output runs and outputs use explicit destinations.
+
+The managed Node preparation regression passed **one case / four assertions**, exercising both families, ignore checks, directory/symlink ownership changes, sibling retention and safe cleanup. No media is created by that regression. TypeScript, affected lint/format and diff checks passed. Existing retained artifacts were not relocated or removed. Color acceptance remains open.
+
 ## Related Research
 
 - [Video Frame Selection, Frame Sets, and Sequence Export](../../researches/research-2026-09-30-video-frames.md)
