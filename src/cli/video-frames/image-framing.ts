@@ -64,7 +64,7 @@ class PngFrames implements Framer {
   private metadata = new Header();
   private seen = new Set<string>();
   private capture = false;
-  private chunks = 0;
+  private nonDataChunks = 0;
   private profileChunk?: Buffer;
   constructor(
     private sink: ImageSink,
@@ -122,7 +122,7 @@ class PngFrames implements Framer {
             this.first = true;
             this.data = false;
             this.seen.clear();
-            this.chunks = 0;
+            this.nonDataChunks = 0;
           } else this.state = "header";
         }
         continue;
@@ -149,7 +149,8 @@ class PngFrames implements Framer {
           !!this.profile && ["IHDR", "iCCP", "sRGB", "cICP", "gAMA", "cHRM"].includes(this.type);
         if (this.profile) {
           if (
-            ++this.chunks > 4096 ||
+            // IDAT streams through the sink's byte limit; encoded size determines its count.
+            (this.type !== "IDAT" && ++this.nonDataChunks > 4096) ||
             length > 0x7fffffff ||
             ["acTL", "fcTL", "fdAT"].includes(this.type)
           )

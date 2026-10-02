@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { imageFramer } from "../../../src/cli/video-frames/image-framing";
-import { png, jpg, webp, pngChunk } from "./fixtures/framing";
+import { png, jpg, webp, pngChunk, segmentedPng } from "./fixtures/framing";
 import type { ImageFormat } from "../../../src/cli/video-frames/image-options";
 import type { ImageProfile } from "../../../src/cli/video-frames/image-framing";
 import { deflateSync, inflateSync } from "node:zlib";
@@ -138,6 +138,38 @@ async function framed(format: ImageFormat, source: Buffer, color = profile(), wi
   framer.finish();
   return completed;
 }
+
+test("PNG preserves valid pixels and profile across more than 4096 IDAT chunks", async () => {
+  const source = segmentedPng();
+  const color = { ...profile(), width: source.width, height: source.height };
+  const inputChunks = pngChunks(source.bytes);
+  expect(inputChunks.filter((chunk) => chunk.type === "IDAT").length).toBeGreaterThan(4096);
+  for (const fragment of [7, 4093]) {
+    const output = await framed(
+      "png",
+      Buffer.concat([source.bytes, source.bytes]),
+      color,
+      fragment,
+    );
+    expect(output).toHaveLength(2);
+    for (const image of output) {
+      const chunks = pngChunks(image);
+      const data = chunks.filter((chunk) => chunk.type === "IDAT");
+      expect(data.map((chunk) => chunk.bytes)).toEqual(
+        inputChunks.filter((chunk) => chunk.type === "IDAT").map((chunk) => chunk.bytes),
+      );
+      expect(inflateSync(Buffer.concat(data.map((chunk) => chunk.data)))).toEqual(source.scanlines);
+      const descriptor = chunks.filter((chunk) => chunk.type === "iCCP");
+      expect(descriptor).toHaveLength(1);
+      const body = descriptor[0]!.data;
+      expect(inflateSync(body.subarray(body.indexOf(0) + 2)).equals(color.icc)).toBe(true);
+    }
+  }
+  const { framer, completed } = capture("png", color);
+  await framer.chunk(Buffer.concat([source.bytes, source.bytes.subarray(0, -1)]));
+  expect(() => framer.finish()).toThrow("incomplete");
+  expect(completed).toHaveLength(1);
+});
 
 for (const [format, fixture] of [
   ["png", png],
@@ -376,11 +408,12 @@ test("injected metadata awaits sink backpressure and contributes to its byte lim
   );
   await expect(limited.chunk(png())).rejects.toThrow("staging byte limit");
 });
-test("profiled framing bounds container chunk counts", async () => {
+test("profiled framing bounds PNG non-data chunks and JPEG/WebP container counts", async () => {
   const excessive = 4097;
   const manyPng = Buffer.concat([
     png().subarray(0, 33),
-    ...Array.from({ length: excessive }, () => pngChunk("IDAT")),
+    ...Array.from({ length: excessive }, () => pngChunk("tEXt", Buffer.from("Note\0test"))),
+    pngChunk("IDAT"),
     pngChunk("IEND"),
   ]);
   const manyJpeg = Buffer.concat([
@@ -398,6 +431,14 @@ test("profiled framing bounds container chunk counts", async () => {
     ["webp", manyWebp],
   ] as [ImageFormat, Buffer][])
     await expect(framed(format, source, profile(), source.length)).rejects.toThrow("image stream");
+});
+test("PNG resets the non-data chunk allowance between consecutive images", async () => {
+  const source = Buffer.concat([
+    png().subarray(0, 33),
+    ...Array.from({ length: 2049 }, () => pngChunk("tEXt", Buffer.from("Note\0test"))),
+    png().subarray(33),
+  ]);
+  expect(await framed("png", Buffer.concat([source, source]), profile(), 4093)).toHaveLength(2);
 });
 test("profile attachment streams large payloads before the image is complete", async () => {
   const source = Buffer.concat([

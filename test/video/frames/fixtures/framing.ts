@@ -1,4 +1,6 @@
-// Structural stream fixtures only; real encoder/pixel evidence is manual smoke.
+import { deflateSync } from "node:zlib";
+
+// Structural stream fixtures unless explicitly constructed with valid pixel data below.
 export const pngChunk = (type: string, data: Buffer = Buffer.alloc(0)) => {
   const header = Buffer.alloc(8);
   header.writeUInt32BE(data.length);
@@ -27,6 +29,36 @@ export const png = () =>
     pngChunk("IDAT", Buffer.from("IEND\xff\xd9")),
     pngChunk("IEND"),
   ]);
+
+/** A valid small RGB PNG with more than 4,096 nonempty image-data chunks. */
+export function segmentedPng() {
+  const width = 64,
+    height = 64;
+  const scanlines = Buffer.alloc(height * (1 + width * 3));
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width * 3; x++)
+      scanlines[y * (1 + width * 3) + 1 + x] = (x * 17 + y * 31) & 255;
+  const compressed = deflateSync(scanlines, { level: 0 });
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width);
+  header.writeUInt32BE(height, 4);
+  header[8] = 8;
+  header[9] = 2;
+  const data: Buffer[] = [];
+  for (let offset = 0; offset < compressed.length; offset += 2)
+    data.push(pngChunk("IDAT", compressed.subarray(offset, offset + 2)));
+  return {
+    width,
+    height,
+    scanlines,
+    bytes: Buffer.concat([
+      Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+      pngChunk("IHDR", header),
+      ...data,
+      pngChunk("IEND"),
+    ]),
+  };
+}
 export const jpg = () =>
   Buffer.from([
     255, 216, 255, 225, 0, 6, 255, 217, 20, 30, 255, 218, 0, 3, 0, 10, 255, 0, 217, 30, 255, 208,
