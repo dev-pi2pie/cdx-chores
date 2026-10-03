@@ -8,6 +8,7 @@ import {
   type MarkdownPdfRequirements,
 } from "../markdown-pdf/requirements";
 import type { DoctorInspection } from "./inspect";
+import type { ImageEncoders } from "../video-frames/encoders";
 
 export const DOCTOR_CAPABILITY_IDS = [
   "md.to-docx",
@@ -15,6 +16,7 @@ export const DOCTOR_CAPABILITY_IDS = [
   "video.convert",
   "video.resize",
   "video.gif",
+  "video.frames",
   "data.query.csv",
   "data.query.tsv",
   "data.query.parquet",
@@ -95,7 +97,11 @@ export interface DoctorReport {
   tools: {
     pandoc: CommandStatus;
     ffmpeg: CommandStatus;
+    ffprobe: CommandStatus;
     weasyprint: CommandStatus;
+  };
+  videoFrames: {
+    encoders: ImageEncoders;
   };
 }
 
@@ -165,6 +171,7 @@ export function buildDoctorReport(
     "video.convert": inspection.ffmpeg.available,
     "video.resize": inspection.ffmpeg.available,
     "video.gif": inspection.ffmpeg.available,
+    "video.frames": inspection.ffmpeg.available && inspection.ffprobe.available,
     "data.query.csv": queryFormats.csv.detectedSupport,
     "data.query.tsv": queryFormats.tsv.detectedSupport,
     "data.query.parquet": queryFormats.parquet.detectedSupport,
@@ -182,9 +189,11 @@ export function buildDoctorReport(
     tools: {
       pandoc: inspection.pandoc,
       ffmpeg: inspection.ffmpeg,
+      ffprobe: inspection.ffprobe,
       weasyprint: inspection.weasyprint,
     },
     markdownPdf,
+    videoFrames: { encoders: inspection.imageEncoders },
     query: {
       available: queryExtensions.available,
       detail: queryExtensions.detail,

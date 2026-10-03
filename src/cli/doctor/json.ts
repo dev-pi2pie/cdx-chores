@@ -10,6 +10,7 @@ type DoctorLegacyJsonFields = Pick<
   | "queryCodex"
   | "font"
   | "capabilities"
+  | "videoFrames"
 >;
 
 export type DoctorJsonPayload = DoctorLegacyJsonFields & {
@@ -30,6 +31,7 @@ export function createDoctorJsonPayload(
     queryCodex: report.queryCodex,
     font: report.font,
     capabilities: report.capabilities,
+    videoFrames: report.videoFrames,
   };
 }
 

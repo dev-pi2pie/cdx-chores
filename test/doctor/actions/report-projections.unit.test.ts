@@ -46,6 +46,7 @@ describe("doctor evidence report and legacy JSON projection", () => {
       tools: {
         pandoc: fixture.commands.pandoc,
         ffmpeg: fixture.commands.ffmpeg,
+        ffprobe: fixture.commands.ffprobe,
         weasyprint: fixture.commands.weasyprint,
       },
       markdownPdf: {
@@ -93,6 +94,7 @@ describe("doctor evidence report and legacy JSON projection", () => {
         "video.convert": true,
         "video.resize": true,
         "video.gif": true,
+        "video.frames": true,
         "data.query.csv": true,
         "data.query.tsv": true,
         "data.query.parquet": true,
@@ -103,6 +105,7 @@ describe("doctor evidence report and legacy JSON projection", () => {
         "font.discovery.fontconfig": true,
         "font.coverage.fontconfig": true,
       },
+      videoFrames: { encoders: fixture.encoders },
     });
     expect(Object.keys(payload)).toEqual([
       "generatedAt",
@@ -114,6 +117,7 @@ describe("doctor evidence report and legacy JSON projection", () => {
       "queryCodex",
       "font",
       "capabilities",
+      "videoFrames",
     ]);
     expect(Object.keys(payload.query.formats)).toEqual([
       "csv",
@@ -124,7 +128,8 @@ describe("doctor evidence report and legacy JSON projection", () => {
       "excel",
     ]);
     expect(fixture.calls).toEqual({
-      commands: ["pandoc", "ffmpeg", "weasyprint", "fc-list", "fc-query"],
+      commands: ["pandoc", "ffmpeg", "ffprobe", "weasyprint", "fc-list", "fc-query"],
+      encoders: 1,
       query: 1,
       codex: 1,
     });
@@ -182,7 +187,8 @@ describe("doctor evidence report and legacy JSON projection", () => {
       "data.query.codex": false,
     });
     expect(fixture.calls).toEqual({
-      commands: ["pandoc", "ffmpeg", "weasyprint", "fc-list", "fc-query"],
+      commands: ["pandoc", "ffmpeg", "ffprobe", "weasyprint", "fc-list", "fc-query"],
+      encoders: 1,
       query: 1,
       codex: 1,
     });

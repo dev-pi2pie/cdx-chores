@@ -51,8 +51,7 @@ cdx-chores data duckdb extension install --all-supported
 - per-extension installability
 - per-extension cache path information reported by DuckDB when available
 
-This backend view is separate from top-level `cdx-chores doctor`, which reports
-workflow-level capability impact.
+This backend view is separate from top-level `cdx-chores doctor`, which reports workflow-level capability impact.
 
 User-facing cache paths are sanitized to use `$HOME/.duckdb/...` instead of revealing machine-specific absolute home paths.
 

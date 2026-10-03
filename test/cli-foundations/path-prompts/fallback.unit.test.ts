@@ -3,6 +3,26 @@ import { describe, expect, test } from "bun:test";
 import { promptPath } from "../../../src/cli/prompts/path";
 
 describe("path prompt routing", () => {
+  test("simple path input receives explicit streams and cancellation", async () => {
+    const signal = new AbortController().signal;
+    const stdin = { isTTY: false } as NodeJS.ReadStream;
+    const stdout = { write: () => true } as unknown as NodeJS.WritableStream;
+    await promptPath({
+      message: "Path",
+      stdin,
+      stdout,
+      signal,
+      promptImpls: {
+        simpleInput: async (_config, context) => {
+          expect(context?.input).toBe(stdin);
+          expect(context?.output).toBe(stdout);
+          expect(context?.signal).toBe(signal);
+          return "chosen";
+        },
+      },
+    });
+  });
+
   test("promptPath uses simple fallback when advanced mode is unavailable", async () => {
     let advancedCalled = 0;
     let simpleCalled = 0;

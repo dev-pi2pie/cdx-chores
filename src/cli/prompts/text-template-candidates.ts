@@ -2,6 +2,9 @@ import { MARKDOWN_PDF_PAGE_NUMBER_FORMAT_TOKENS } from "../markdown-pdf/profile/
 
 export type TemplateCompletionKind =
   | "rename-template"
+  | "video-frame"
+  | "video-frame-set"
+  | "video-sequence"
   | "markdown-pdf-page-label"
   | "markdown-pdf-repeating-content";
 
@@ -79,6 +82,16 @@ function getTemplateCandidates(
   candidates: readonly string[];
   scope: TemplateCandidateScope;
 } {
+  if (kind === "video-frame" || kind === "video-frame-set" || kind === "video-sequence") {
+    // Keep completion within this mode's filename language.
+    return {
+      candidates:
+        kind === "video-sequence"
+          ? ["{stem}", "{serial}", "{frame}"]
+          : ["{stem}", "{selection}", "{frame}"],
+      scope: "root",
+    };
+  }
   if (kind === "markdown-pdf-page-label") {
     return {
       candidates: MARKDOWN_PDF_PAGE_LABEL_CANDIDATES,

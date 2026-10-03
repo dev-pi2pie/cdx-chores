@@ -9,6 +9,67 @@ const { promptTextInlineGhost } = (await import(
 )) as typeof import("../../../src/cli/prompts/text-inline");
 
 describe("text inline terminal controller", () => {
+  test("signal abort restores the editor and suppresses delayed validation before the next prompt", async () => {
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    const controller = new AbortController();
+    let release!: (value: string) => void;
+    const validation = new Promise<string>((resolve) => {
+      release = resolve;
+    });
+    const prompt = promptTextInlineGhost({
+      message: "Template",
+      ghostText: "",
+      initialValue: "candidate",
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      signal: controller.signal,
+      validate: () => validation,
+    });
+    await nextRenderTick();
+    stdin.emit("keypress", "\r", { name: "return" });
+    controller.abort();
+    await expect(prompt).rejects.toMatchObject({ name: "ExitPromptError" });
+    expect(stdin.rawModeCalls).toEqual([true, false]);
+    expect(stdin.listenerCount("keypress")).toBe(0);
+    expect(stdout.text).toContain("\x1b[?25h");
+    const next = promptTextInlineGhost({
+      message: "Next prompt",
+      ghostText: "",
+      initialValue: "ready",
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      validate: () => true,
+    });
+    await nextRenderTick();
+    release("Stale validation error");
+    await nextRenderTick();
+    expect(stdout.text).not.toContain("Stale validation error");
+    stdin.emit("keypress", "\r", { name: "return" });
+    expect(await next).toBe("ready");
+    expect(stdin.rawModeCalls).toEqual([true, false, true, false]);
+    expect(stdin.listenerCount("keypress")).toBe(0);
+  });
+
+  test("pre-aborted text input does not take raw terminal ownership", async () => {
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      promptTextInlineGhost({
+        message: "Template",
+        ghostText: "",
+        stdin: stdin as unknown as NodeJS.ReadStream,
+        stdout: stdout as unknown as NodeJS.WritableStream,
+        signal: controller.signal,
+        validate: () => true,
+      }),
+    ).rejects.toMatchObject({ name: "AbortError" });
+    expect(stdin.rawModeCalls).toEqual([]);
+    expect(stdin.listenerCount("keypress")).toBe(0);
+  });
+
   test("promptTextInlineGhost prints help lines once while rerendering only the input line", async () => {
     const stdin = new FakePromptReadStream();
     const stdout = new FakePromptWriteStream();

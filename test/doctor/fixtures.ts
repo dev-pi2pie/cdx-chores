@@ -7,6 +7,7 @@ import {
   assessMarkdownPdfRendererCapabilities,
   assessMarkdownPdfRequirements,
 } from "../../src/cli/markdown-pdf";
+import { unknownImageEncoders, type ImageEncoders } from "../../src/cli/video-frames/encoders";
 
 export const DOCTOR_FIXTURE_COMMANDS: Record<DependencyCommand, CommandStatus> = {
   pandoc: {
@@ -20,6 +21,12 @@ export const DOCTOR_FIXTURE_COMMANDS: Record<DependencyCommand, CommandStatus> =
     available: true,
     version: "8.0.1",
     installHint: "brew install ffmpeg",
+  },
+  ffprobe: {
+    name: "ffprobe",
+    available: true,
+    version: "8.0.1",
+    installHint: "Install FFprobe with an FFmpeg package, then ensure ffprobe is on PATH",
   },
   weasyprint: {
     name: "weasyprint",
@@ -63,9 +70,19 @@ export const DOCTOR_FIXTURE_CODEX: CodexEnvironmentInspection = {
   authSessionAvailable: true,
 };
 
+export const DOCTOR_FIXTURE_ENCODERS: ImageEncoders = {
+  png: "supported",
+  jpg: "supported",
+  webp: "supported",
+  webpEncoder: "supported",
+  webpBgra: "supported",
+  webpLossless: "supported",
+};
+
 export interface DoctorFixtureCalls {
   codex: number;
   commands: string[];
+  encoders: number;
   query: number;
 }
 
@@ -73,29 +90,37 @@ export function createDoctorFixture(
   options: {
     codex?: CodexEnvironmentInspection;
     commands?: Partial<Record<DependencyCommand, CommandStatus>>;
+    encoders?: ImageEncoders;
     query?: DoctorQueryInspection;
   } = {},
 ): {
   calls: DoctorFixtureCalls;
   codex: CodexEnvironmentInspection;
   commands: Record<DependencyCommand, CommandStatus>;
+  encoders: ImageEncoders;
   inspectors: DoctorInspectorOverrides;
   query: DoctorQueryInspection;
 } {
-  const calls: DoctorFixtureCalls = { codex: 0, commands: [], query: 0 };
+  const calls: DoctorFixtureCalls = { codex: 0, commands: [], encoders: 0, query: 0 };
   const commands = { ...DOCTOR_FIXTURE_COMMANDS, ...options.commands };
   const query = options.query ?? DOCTOR_FIXTURE_QUERY;
   const codex = options.codex ?? DOCTOR_FIXTURE_CODEX;
+  const encoders = options.encoders ?? DOCTOR_FIXTURE_ENCODERS;
 
   return {
     calls,
     codex,
     commands,
+    encoders,
     query,
     inspectors: {
       inspectCommand: async (command) => {
         calls.commands.push(command);
         return commands[command];
+      },
+      inspectAdvertisedImageEncoders: async () => {
+        calls.encoders += 1;
+        return encoders;
       },
       inspectDataQueryExtensions: async () => {
         calls.query += 1;
@@ -161,6 +186,7 @@ export function createExpectedDoctorJsonPayload(
     tools: {
       pandoc: fixture.commands.pandoc,
       ffmpeg: fixture.commands.ffmpeg,
+      ffprobe: fixture.commands.ffprobe,
       weasyprint: fixture.commands.weasyprint,
     },
     markdownPdf,
@@ -193,6 +219,7 @@ export function createExpectedDoctorJsonPayload(
       "video.convert": fixture.commands.ffmpeg.available,
       "video.resize": fixture.commands.ffmpeg.available,
       "video.gif": fixture.commands.ffmpeg.available,
+      "video.frames": fixture.commands.ffmpeg.available && fixture.commands.ffprobe.available,
       "data.query.csv": queryFormats.csv.detectedSupport,
       "data.query.tsv": queryFormats.tsv.detectedSupport,
       "data.query.parquet": queryFormats.parquet.detectedSupport,
@@ -202,6 +229,9 @@ export function createExpectedDoctorJsonPayload(
       "data.query.codex": queryCodex.readyToDraft,
       "font.discovery.fontconfig": fixture.commands["fc-list"].available,
       "font.coverage.fontconfig": fixture.commands["fc-query"].available,
+    },
+    videoFrames: {
+      encoders: fixture.commands.ffmpeg.available ? fixture.encoders : unknownImageEncoders(),
     },
   };
 }
@@ -215,6 +245,8 @@ export function createDoctorReportFromFixture(
     {
       codexEnvironment: fixture.codex,
       ffmpeg: fixture.commands.ffmpeg,
+      ffprobe: fixture.commands.ffprobe,
+      imageEncoders: fixture.commands.ffmpeg.available ? fixture.encoders : unknownImageEncoders(),
       fontconfigCoverage: fixture.commands["fc-query"],
       fontconfigDiscovery: fixture.commands["fc-list"],
       pandoc: fixture.commands.pandoc,
@@ -235,6 +267,7 @@ export function createExpectedAllReadyDoctorHumanOutput(
     "",
     `- pandoc: available (${payload.tools.pandoc.version})`,
     `- ffmpeg: available (${payload.tools.ffmpeg.version})`,
+    `- ffprobe: available (${payload.tools.ffprobe.version})`,
     `- weasyprint: available (${payload.tools.weasyprint.version})`,
     "",
     "Capabilities:",
@@ -248,6 +281,15 @@ export function createExpectedAllReadyDoctorHumanOutput(
       (capability) =>
         `- ${capability.id}: ${capability.status}, minimum=${capability.minimumVersion}${capability.diagnosticConditionId ? `, diagnostic=${capability.diagnosticConditionId}` : ""}`,
     ),
+    "",
+    "Video frames advertised encoder support:",
+    "- PNG (png): supported",
+    "- JPG (mjpeg): supported",
+    "- Still WebP (libwebp): supported",
+    "- libwebp encoder: supported",
+    "- WebP BGRA input: supported",
+    "- WebP full (lossless): supported",
+    "Advertised support does not verify source support or image fidelity.",
     "",
     "Font support:",
     `- fontconfig discovery: available (${payload.font.discovery.fontconfig.version})`,

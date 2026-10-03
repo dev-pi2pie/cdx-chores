@@ -17,7 +17,13 @@ import {
   type VideoGifProfile,
 } from "../video-gif";
 import { slugifyName } from "../../utils/slug";
-import { assertNonEmpty, displayPath, ensureFileExists, printLine } from "./shared";
+import {
+  assertNonEmpty,
+  displayPath,
+  ensureFileExists,
+  printDestination,
+  printLine,
+} from "./shared";
 
 export type { VideoGifLook, VideoGifMode, VideoGifProfile } from "../video-gif";
 
@@ -247,7 +253,7 @@ export async function actionVideoGif(runtime: CliRuntime, options: VideoGifOptio
       Boolean(options.overwrite),
       videoFilter,
     );
-    printLine(runtime.stdout, `Wrote GIF: ${displayPath(runtime, outputPath)}`);
+    printDestination(runtime, runtime.stdout, "Wrote GIF to", outputPath);
     return;
   }
 
@@ -261,5 +267,5 @@ export async function actionVideoGif(runtime: CliRuntime, options: VideoGifOptio
     look,
   );
 
-  printLine(runtime.stdout, `Wrote GIF: ${displayPath(runtime, outputPath)}`);
+  printDestination(runtime, runtime.stdout, "Wrote GIF to", outputPath);
 }

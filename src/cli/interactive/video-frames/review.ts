@@ -1,0 +1,113 @@
+import type { PreparedVideoFrames } from "../../actions/video-frames";
+import { displayPath } from "../../actions/shared";
+import type { CliRuntime } from "../../types";
+import { getCliColors } from "../../colors";
+import { FrameNamer, sourceStem, type FrameNamingSettings } from "../../video-frames/naming";
+import { describeFrameRequest, formatFrameTime, type FramePickerState } from "./selection";
+import { wrapPickerLine } from "./layout";
+import { frameQualityLabel } from "./settings-values";
+
+export function frameReviewLines(
+  runtime: CliRuntime,
+  prepared: PreparedVideoFrames,
+  picker?: FramePickerState,
+  naming?: FrameNamingSettings | "explicit",
+): string[] {
+  const { options } = prepared;
+  const stream = prepared.resolver.state.metadata!;
+  const lines = [
+    "Frame export review",
+    `Source: ${displayPath(runtime, options.source)}`,
+    `Stream: ${stream.index} (${stream.codec})`,
+    `Mode: ${{ single: "One frame", set: "Frame set", sequence: "Sequence" }[options.mode]}`,
+    `Image: ${options.image.format} · Scale: ${options.image.scale}`,
+    `Quality: ${frameQualityLabel(options.image.format, options.image.quality)}`,
+    `Dimensions: ${prepared.plan.width} × ${prepared.plan.height}`,
+    prepared.destination.kind === "file" ? "Output file:" : "Output folder:",
+    `  ${displayPath(runtime, prepared.destination.path)}`,
+    `Existing images: ${options.overwrite ? "Replace matching images" : "Stop on filename conflict"}`,
+  ];
+  if (naming === "explicit") lines.push("Naming: Explicit filename");
+  else {
+    lines.push(`Stem: ${sourceStem(options.source)}`);
+    if (!options.cadence)
+      lines.push(
+        `Naming: ${new FrameNamer(options.mode, options.source, naming ?? options.naming).settings.template}`,
+      );
+  }
+  if (picker) lines.push(`Requested: ${describeFrameRequest(picker.request)}`);
+  if (options.cadence) {
+    lines.push(
+      `Cadence: ${options.cadence.value}${options.cadence.kind === "fps" ? " FPS" : " interval"}`,
+    );
+    lines.push(
+      prepared.estimatedCount === undefined
+        ? "Estimated images: unavailable"
+        : `Expected images: ${prepared.estimatedCount} (duration-based estimate)`,
+    );
+    const namer = new FrameNamer("sequence", options.source, options.naming);
+    lines.push(
+      `Naming: ${namer.settings.template} · Serial start ${namer.serial.start}, minimum width ${namer.serial.width}`,
+    );
+    // A template containing {frame} needs decoded identities, never metadata-derived ordinals.
+    if (!namer.settings.template.includes("{frame}")) {
+      lines.push(
+        "First filename:",
+        `  ${namer.name({ frameNumber: 1, format: options.image.format, index: 0 })}`,
+      );
+      if (
+        prepared.estimatedCount !== undefined &&
+        prepared.estimatedCount > 1n &&
+        prepared.estimatedCount <= BigInt(Number.MAX_SAFE_INTEGER)
+      )
+        lines.push(
+          "Expected last filename:",
+          `  ${namer.name({ frameNumber: 1, format: options.image.format, index: Number(prepared.estimatedCount - 1n) })}`,
+        );
+    } else lines.push("Source {frame} numbers will be resolved during export.");
+  } else
+    for (let i = 0; i < prepared.selections.length; i++) {
+      const selection = prepared.selections[i]!,
+        actual = selection.identity.startMs;
+      lines.push(
+        `${selection.selection}: frame ${selection.identity.frameNumber} · start ${actual === undefined ? "unavailable" : formatFrameTime(actual)}`,
+        `  ${prepared.names[i]}`,
+      );
+      if (actual && actual.numerator % actual.denominator !== 0n)
+        lines.push(
+          `Exact start: ${actual.numerator}/${actual.denominator} ms (displayed clock truncated).`,
+        );
+    }
+  lines.push(
+    ...prepared.notices
+      .filter(
+        (notice) =>
+          !options.cadence ||
+          (!notice.startsWith("Expected image count:") &&
+            notice !== "Estimated image count is unavailable." &&
+            notice !== "The cadence selects one image for the estimated duration."),
+      )
+      .map((notice) => `Tip: ${notice}`),
+  );
+  return lines;
+}
+export function printFrameReview(
+  runtime: CliRuntime,
+  prepared: PreparedVideoFrames,
+  picker?: FramePickerState,
+  naming?: FrameNamingSettings | "explicit",
+) {
+  const columns = (runtime.stdout as NodeJS.WriteStream).columns;
+  const width = Number.isSafeInteger(columns) ? Math.max(1, columns - 1) : 79;
+  const colors = getCliColors(runtime, runtime.stdout);
+  for (const line of frameReviewLines(runtime, prepared, picker, naming))
+    for (const wrapped of wrapPickerLine(line, width))
+      runtime.stdout.write(`${line.startsWith("  ") ? colors.cyan(wrapped) : wrapped}\n`);
+}
+export function frameReviewTitle(prepared: PreparedVideoFrames): string {
+  const { options, plan } = prepared;
+  const selection = options.cadence
+    ? `${options.cadence.value}${options.cadence.kind === "fps" ? " FPS" : " interval"}`
+    : prepared.selections.map(({ identity }) => `F${identity.frameNumber}`).join(", ");
+  return `Export ${options.image.format.toUpperCase()}/${options.image.quality} ${plan.width}×${plan.height} · ${selection}?`;
+}

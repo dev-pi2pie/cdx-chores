@@ -1,0 +1,199 @@
+---
+title: "Video Frames Enhancement Follow-Up"
+created-date: 2026-10-02
+status: completed
+agent: codex
+---
+
+## Scope and Checkpoints
+
+Reopened the [implementation plan](../plan-2026-09-30-video-frames-implementation.md) and [frame research](../../researches/research-2026-09-30-video-frames.md) for color/output enhancements. The separate [color research](../../researches/research-2026-10-02-video-frames-color-space-preservation.md) is the primary design reference for current color-preservation rules and feasibility. The frame research owns the wider feature contract and historical color context. Phase 10 owns implementation and focused acceptance; Phase 11 owns integrated verification, documentation and final closure.
+
+The [original implementation record](2026-10-01-video-frames-implementation.md) remains completed for Phases 1–9. Its checked tasks, results and acceptance history are preserved. Initial preparation reopened the plan and both researches without accepting new implementation tasks.
+
+| Phase | Responsibility | State |
+| --- | --- | --- |
+| 10 | Source/display color interpretation, capacity-disclosure removal, destination/collision/review wording across all modes and focused review | Accepted after correction and complete-range review |
+| 11 | Independent color/integrated verification, regressions, current docs, privacy audit and final review | Accepted |
+
+## Planning Evidence
+
+Code review found an explicit BT.709-to-sRGB transfer conversion in the color planner and fixed RGB tags in the encoder configuration. A small synthetic neutral limited-range BT.709 YUV420P grayscale check used constant chroma values of 128 and known luma patches. At luma 32, the production image-plan path produced RGB 34 while matrix/range conversion alone produced RGB 19; black and white endpoints remained 0 and 255. These observations establish the transfer choice's effect, not a validated correction or viewer equivalence.
+
+At planning, the [color research](../../researches/research-2026-10-02-video-frames-color-space-preservation.md) defined the preservation direction. Encoder/profile support needed evidence before implementation. The execution results below establish the focused support boundary.
+
+Code review also confirmed capacity information, singular destination wording shared by frame sets/sequences, a one-frame custom-folder choice and `Keep current` path labels. Existing-file choices say `Keep existing images` while review says `Stop on filename conflict`; review also exposes internal mode values and a generic destination label. The frame research records consistent destination, path-hint, collision and review wording across all three modes. This finding is code-based; revised prompts remain unimplemented and untested.
+
+Publication setup already uses recursive folder creation. The destination contract now explicitly separates complete single-image file paths from multi-image folders and filename patterns, with missing-folder creation during confirmed export. This clarification adds no implementation or native verification claim.
+
+Private processing outcomes: local existing-export pipeline comparison **passed**; source preservation **passed**; source-color-preserving correction **not tested**; viewer appearance equivalence **not tested**. Private inputs, derived images and inspection details stay local and are not verification fixtures or public correctness evidence.
+
+## Documentation Checkpoint
+
+Reopened the research/plan, preserved the original acceptance and added unchecked Phases 10–11. Feature rules and color feasibility have separate research owners. The destination work has separate single-file and folder/pattern tasks, with missing-folder creation and validation timing defined in research. New plan tasks use short sentences without semicolons. Collision/review scope remains across all modes. The usage guide describes shipped behavior. Runtime code is unchanged.
+
+Ownership wording now identifies the color research as the primary design reference for color preservation. The frame research retains a short historical note explaining the original intent and conversion checks' limits. Both documents link that boundary, and neither claims a verified replacement path. Documentation review found no material ownership conflicts.
+
+A wording refinement makes the earlier approach's implemented and checked status explicit and identifies the new research as investigation of a different preservation path. Historical color verification was not repeated for this edit.
+
+At this documentation checkpoint, the color research defined a preservation approach with matching ICC profiles for PNG/JPG/WebP and a source/profile/encoder support matrix. Broad questions and the QuickTime paragraph were removed, with verification and privacy requirements consolidated under the evidence gate. Profile generation and encoder support were still unverified. Documentation review found no material issues. Link/anchor, lifecycle, privacy, checklist and diff checks passed.
+
+At the documentation checkpoint, all nine Phase 10 tasks and seven Phase 11 tasks were unchecked. Local links, anchors, lifecycle wording, privacy boundaries and preserved acceptance checklists passed integrity checks. Execution results follow below.
+
+## Phase 10
+
+### Destinations and Capacity
+
+Interactive One frame now accepts custom image file paths and preserves default generated naming. Frame set and Sequence use folder destinations and filename patterns, including one-image sequences. Relative-path hints, retained destinations, collision choices and review's mode/file/folder labels follow the research. Review and navigation create no output folders. Export uses the existing recursive folder creation after validation.
+
+Removed the frames capacity formatter, volume inspection and direct/Interactive capacity output. Resource guards, staging accounting and real write-failure handling remain intact.
+
+Focused managed Node application checks passed **29 cases / 133 assertions** across action, destination and publication owners, including disk-full/quota failures, source protection and retained outputs. Interactive menu/workflow checks passed **14 cases / 57 assertions**, covering inline/simple prompts, all modes, nested paths, format correction, cancellation, path-kind conflicts and one-image sequences. TypeScript and affected lint/format/diff checks passed. The new menu fixture was split into separate editor cases to fit its existing timeout rather than increasing the budget.
+
+This checkpoint accepted the five destination/output tasks. Later color and verification results follow below. Phase 11 is unstarted.
+
+### Color Feasibility
+
+The opt-in [color preservation experiment](../../../scripts/spikes/video-frames-color-preservation.ts) passed **39 cases / 224 images** on FFmpeg/FFprobe **9.0.2** under Node.js **26.5.0**. The bounded run used **21.262 seconds** active processing and **2,575,625 bytes** owned scratch.
+
+Candidate cases cover 8-bit YUV420/422/444, ordinary/full-range variants, three matrices, both ranges and BT.709/sRGB transfer, plus full-range BGRA and partial-alpha odd dimensions. Raw source samples were verified independently of production extraction. Matrix/range conversion differed from declared equations by at most one code value. Limited neutral luma 32 produced RGB 19. PNG/WebP `full` preserved reference RGBA exactly, and JPG `full` center error was at most one code value. ICC attachment preserved compressed payload and decoded samples in all three formats.
+
+The build lacks `iccgen`, and bare encoder outputs contain no ICC. Independent matrix/shaper profiles describe inverse source transfer and BT.709 primaries. LittleCMS independently verified profile IDs and RGB-to-XYZ interpretation with maximum error **0.00001341**. The macOS `sips` inspector reported an MD5 warning despite the independent ICC-standard ID match. That inspector result is a warning, not a claimed pass or a visual-fidelity result. LittleCMS is used only by explicit development evidence and is not a runtime dependency.
+
+At the feasibility checkpoint, the candidate matrix was recorded in [color research](../../researches/research-2026-10-02-video-frames-color-space-preservation.md#encoder-and-profile-path). Production integration, additional source representations, quality/scale combinations, missing/conflicting metadata handling and viewer appearance needed separate results. This checkpoint accepted the feasibility prerequisite, not production preservation or research closure.
+
+### Production Color Preservation
+
+The decoder now performs matrix/range conversion without changing source transfer. PNG, JPG and WebP exports receive matching BT.709-primary ICC profiles through the bounded image staging path. Encoded payloads are preserved, profile bytes count against staging limits, and unsupported/conflicting definitions retain explicit failures.
+
+Built Node.js results on the recorded tool builds:
+
+- The [production matrix](../../../scripts/spikes/video-frames-color-preservation.ts) passed **39 cases / 336 images**, including **112 production exports**, in **60.117 seconds** active processing. Lossless pixels matched independent references exactly. JPG center error remained at most one code value. Extracted profiles passed independent curve, primaries, profile-ID and LittleCMS checks.
+- The [quality/scale proof](../../../scripts/spikes/video-frames/color-quality-proof.ts) passed both transfers across all PNG/JPG/WebP presets at scales **1, 0.5 and 0.1**, including odd output dimensions. Its broad color patches checked **54 production exports** against **54 independent bare references**. PNG/WebP `full` pixels were exact, lossy decoded comparisons stayed within the declared three-code-value tolerance, and compressed payloads were unchanged by profile attachment.
+- The [format proof](../../../scripts/spikes/video-frames/color-format-proof.ts) passed **15 cases / 30 production PNG/WebP exports** in **22.945 seconds**, with **401,994 bytes** scratch. All ten packed RGB aliases, NV12/NV21 and YUVA420/422/444 remained native, with exact RGBA and partial/opaque alpha. Rawvideo NUT drops color fields, so these exports verify disclosed defaults. **60 additional native filter checks** exercise explicit definitions separately from tagged-container exports.
+
+Full managed unit verification passed **1,613 cases / 37,468 assertions**. The affected video application lane passed **139 cases / 661 assertions**, including existing GIF behavior, cancellation, publication and terminal ownership. TypeScript, full lint/format and the Node-target build passed. The existing TypeScript 7 build warning remains non-blocking.
+
+At the production checkpoint, preservation was accepted for these focused paths. Local private checks, the focused terminal receipt and complete-range review were still open. Viewer appearance and integrated acceptance remain Phase 11 obligations.
+
+### Spatial Color and Scaling
+
+A spatially varying synthetic grid exposed a gap in the broad-patch evidence. Plain nearest-neighbor scaling changed selected RGB samples by up to **107 code values** for the RGB source and **136** for the YUV source, while unscaled exports were exact. Adding both `full_chroma_int` and `full_chroma_inp` preserves the declared point samples without transfer conversion or grading.
+
+The [spatial acceptance proof](../../../scripts/spikes/video-frames/color-scaling-proof.ts) passed **18 PNG/WebP full exports** across RGB, YUV and partial-alpha RGB at scales **1, 0.5 and 0.1**. RGBA matched independent references exactly, and saved profiles passed independent inspection and LittleCMS checks. Active processing was **7.590 seconds**, with **153,585 bytes** scratch.
+
+The quality/scale proof was repeated after the fix: **54 production exports / 54 bare references**, **23.394 seconds** and **544,669 bytes** scratch. Decoded comparisons were exact against the matching native presets, and profile attachment preserved every compressed payload. This does not make lossy presets lossless relative to source pixels.
+
+An earlier expanded spatial run stopped at a smoke-monitor `ENOENT` race during staging cleanup and is not accepted. The monitor now tolerates disappearance of enumerated child entries while retaining root-read, alias and other failures. The complete rerun passed with child closure confirmed.
+
+Regular policy regressions now cover explicit BT.709 RGB alpha, sRGB YUVA, disclosed NV12/NV21 defaults and padded-RGB alpha rejection. These pin interpretation and alpha eligibility, while native format evidence owns channel/plane fidelity. The updated full unit suite passed **1,617 cases / 37,490 assertions**; type/lint/format and the Node-target build passed.
+
+### Focused CLI and Local Checks
+
+Real terminal walkthroughs used the bundled Node.js Interactive workflow and installed tools with a four-frame synthetic source. One frame exported a nested custom file, Frame set exported three named roles, and Sequence exported 25 serial filenames with 21 repeated selections. File/folder hints, readable mode names, naming previews, collision choices and wrapped text were inspected. Destination folders were absent at review and created only after confirmed export. All three flows returned with terminal ownership restored and no capacity message.
+
+After the scaling fix, the built CLI exported **eight images** across One frame PNG at half size, a three-image JPG frame set and a four-image WebP sequence. Nested destinations, final counts, saved profiles and absence of capacity disclosure passed. Expected stderr progress/notices were captured separately from exit-code validation.
+
+At the focused checkpoint, private checks reported: export **passed**; independent decoded-pixel comparison **passed**; saved-profile validation **passed**; source preservation **passed**; viewer appearance **not tested**. Private inputs and derived evidence remain ignored, untracked and outside public records.
+
+At the focused checkpoint, the tool/terminal gate was accepted and complete-range review was still open. Visual comparison, minimum-Node/integrated verification and usage-guide reconciliation remain Phase 11 tasks.
+
+### Review and Acceptance
+
+Reviewed the complete implementation range **`6e3d765c7c53418acdd5a37cd1a6a93aad06ee62..71b899ef3a36bb9e4f446df3f62f57cda9acb97c`**, covering all four implementation/evidence checkpoints. The source-policy coverage finding was resolved by the focused regressions. Extended code review found no remaining material issues. Documentation review accepted the explicit defaults, evidence scope, historical checkpoint wording and ownership boundaries.
+
+At that checkpoint, local links/anchors, lifecycle, checklist preservation, formatting/diff and public-evidence privacy checks passed, and all nine Phase 10 tasks were accepted. The color acceptance is reopened below. Phases 1–9 retain their original acceptance. Phase 11's seven tasks remain unchecked; the plan stays active and both researches and this follow-up record stay in-progress.
+
+### Color Acceptance Reopened
+
+Local appearance review: **failed (operator reported)**. The remaining dark-color mismatch withdraws color acceptance. Earlier pixel, source-preservation, profile-structure, curve-arithmetic and scaling results remain valid within their tested assumptions; they do not prove the chosen profile reproduces the source's intended displayed appearance.
+
+The current BT.709 ICC path uses inverse signal transfer. The [ICC BT.709 display reference](https://registry.color.org/rgb-registry/bt709) instead specifies a BT.1886 display curve. This establishes a gap in the interpretation used by the implementation and its references. It does not establish the exact local player interpretation or an accepted replacement profile.
+
+The [color research](../../researches/research-2026-10-02-video-frames-color-space-preservation.md#display-interpretation-and-resolution) owns the renewed source/display investigation. Phase 10 reopens its reference, implementation, color verification and final review tasks. Its five destination/capacity tasks remain accepted, and Phase 11 remains pending. Runtime code is unchanged by this reopening.
+
+### Smoke Workspace Follow-Up
+
+Synthetic and private smoke now share one run factory under the plan's scratch root, with separate family folders. The bounded lab uses the same scratch accounting, image/time limits and child lifecycle for either family. Invalid family/phase values fail before workspace creation. Inputs remain outside private output runs and outputs use explicit destinations.
+
+The managed Node preparation regression passed **one case / four assertions**, exercising both families, ignore checks, directory/symlink ownership changes, sibling retention and safe cleanup. No media is created by that regression. TypeScript, affected lint/format and diff checks passed. Existing retained artifacts were not relocated or removed. Color acceptance remains open.
+
+### Native Image Interpretation and Conversion
+
+The correction separates source signal transfer from saved RGB image interpretation. Supported 8-bit BT.709-primary frames use a CoreMedia709-compatible image profile for BT.709 transfer and the existing sRGB profile for sRGB transfer. The CoreMedia709 curve is `L = V^(502/256)`, distinct from inverse signal transfer and the external BT.1886 reference-display profile. This is the bounded native-appearance policy in the [color research](../../researches/research-2026-10-02-video-frames-color-space-preservation.md#color-preservation-approach), not a claim that all video rendering policies agree.
+
+YUV decoding now uses accurate rounding with full chroma handling. This changes numeric conversion precision without grading. Reported source ICC profiles are refused at both stream inspection and selected-frame validation, including packet/frame spelling variants. Frame inspection requests side-data descriptions without ingesting profile payloads or frame tags.
+
+The opt-in [native display proof](../../../scripts/spikes/video-frames/color-display-reference-proof.ts) passed **two cases / four images** in **3.875 seconds**, with **38 successful, closed tool calls**. Its BT.709 and sRGB sources contain 16 in-gamut controls. Production RGB matched independent matrix/range equations exactly; native RGB differed by at most one code. Across 282 identical RGB samples, generated/native ICC transforms differed by at most one sRGB code. Comparing separately decoded images through their own profiles differed by at most two codes. Native CGImage and ImageIO PNG profiles were identical. Both stream-ICC and frame-only ICC sources were rejected with no prohibited image published.
+
+Native out-of-gamut observations remain outside that comparison's acceptance. Independent equations and the image representation remain the clipping reference. AVFoundation and installed LittleCMS are development references, with no portable runtime dependency. The Objective-C helper avoids the Swift compiler's large module cache; its bounded build is separate from the unchanged media smoke limits.
+
+The correction's bundled Node checks passed:
+
+| Check | Result |
+| --- | --- |
+| Production matrix | 39 cases / 336 images, including 112 production exports, in 74.713 seconds |
+| Spatial RGB/YUV/partial alpha | 18 PNG/WebP exports with exact independent samples, in 7.840 seconds |
+| Quality and scale | 54 production exports / 54 bare references across both transfers, all presets and three scales, in 26.236 seconds |
+| Source representations | 15 cases / 30 exports plus 60 explicit native filter checks, in 18.038 seconds |
+
+The representation proof retains its rawvideo NUT metadata limit: exports exercise disclosed defaults, while explicit definitions use separate filter checks. Lossy preset comparisons remain scoped to matching native references. The matrix/conversion and saved-profile references now exercise the selected image interpretation rather than the earlier inverse-signal curve.
+
+Full managed units passed **1,619 cases / 37,485 assertions**. The affected video application lane passed **140 cases / 665 assertions**, including existing GIF, Interactive navigation, publication, cancellation and terminal ownership. TypeScript, full lint/format and the Node-target build passed. Review identified the frame-only ICC gap and its regression is included. The proposed transfer-mismatch finding was withdrawn after checking the final graph's existing transfer tags.
+
+The built CLI exported **six images** across a nested One frame PNG at half size, a three-role JPG frame set and an interval WebP sequence. Saved image profiles, counts, file/folder destinations and absence of capacity messages passed. The earlier terminal UX acceptance remains valid; integrated and minimum-Node verification stay pending.
+
+Private outcomes: export **passed**; decoded dark-region reference comparison **passed**; saved-profile comparison **passed**; source and snapshot preservation **passed**; bounded local image inspection **passed**. Private inputs, inspection details and derived outputs remain ignored and untracked in owned private smoke runs. No private evidence is published here.
+
+### Follow-Up Review and Focused Acceptance
+
+Reviewed the complete Phase 10 implementation range **`6e3d765c7c53418acdd5a37cd1a6a93aad06ee62..a4fd3dd0998a72f300557c5fedba2dbf22596dcf`** and the correction range **`1247717e0ba73ad5e7646616244b664521dec510..a4fd3dd0998a72f300557c5fedba2dbf22596dcf`**. No material test, maintainability or security findings remain. The frame-only ICC finding was resolved before the reviewed checkpoint. Documentation review accepted the interpretation boundary, evidence scope, privacy and ownership wording.
+
+All ten current Phase 10 tasks are accepted. Local links/anchors, preserved original checklists, lifecycle, formatting/diff and staged public-content privacy checks passed. Original acceptance remains unchanged. Phase 11's seven tasks remain unchecked, including integrated/minimum-Node verification and usage-guide reconciliation. The plan remains active, both researches and this follow-up record remain in-progress, and no archival action follows this focused acceptance.
+
+### Profile Portability and Custom ICC Context
+
+Refined profile-generation provenance, platform verification limits and custom ICC context in the [color research](../../researches/research-2026-10-02-video-frames-color-space-preservation.md#platform-compatibility). Added checked ICC references. Custom ICC support has no established need or implementation plan. Implementation scope and acceptance remain unchanged.
+
+Documentation review found no material issues. Local link/anchor, footnote, lifecycle, scope/privacy and diff checks passed.
+
+### Integrated Verification
+
+The opt-in [built-CLI proof](../../../scripts/spikes/video-frames-phase11.ts) passed four cases and 43 exports in 27.96 seconds of active work, retaining 251,819 bytes. All five tested selections passed across PNG/JPG/WebP, with independent post-scale lossless pixels and recipe-scoped JPEG tolerances. Saved profiles, dimensions, counts, literal/nested paths, collisions, replacement, unrelated-file retention, source aliases and wrong path kinds passed. Unsupported wider primaries failed before output creation. Node.js 22.23.0 loaded ESM/CommonJS and exported 1 × 1 images in all three formats. Sources remained unchanged and no capacity messages appeared.
+
+The full unit suite passed 1,619 cases / 37,485 assertions. TypeScript, lint, formatting and the Node-target build passed, with the existing non-blocking TypeScript 7 build warning. The full application invocation reached its 240-second deadline near the final guided-flow case. It is a failed invocation. That case passed separately. All 304 application files then passed in four disjoint managed batches: 2,272 cases / 14,223 assertions, with verified shutdown and cleanup. The batches covered the discovered manifest exactly and used unchanged managed isolation and deadlines. This verifies every application file without claiming that the single full-suite invocation passed.
+
+Real built Node.js terminal walkthroughs exported six images: a half-size One frame PNG, three half-size Frame set JPGs at medium quality and two full-size Sequence WebPs at a one-second interval. All flows exited successfully with cursor restoration. Plain review/results, colored menus, wrapped text at narrow width, Back navigation, retained settings, file/folder wording and naming were inspected. Folder creation followed confirmed export. The sequence correctly showed an unavailable estimate and reported two confirmed writes. No capacity message appeared.
+
+Independent inspection of all six saved terminal images passed. PNG/WebP RGBA was exact, and JPG maximum error was one code value within the declared medium-quality tolerance of eight for this synthetic recipe. Profiles, dimensions, filenames, counts and source preservation passed.
+
+One additional direct terminal PNG export verified cyan result-path styling with coloring enabled. Its bytes matched the independently inspected One frame image exactly.
+
+Fresh private outcomes: export **passed**; decoded dark-region reference comparison **passed**; saved-profile comparison **passed**; source and snapshot preservation **passed**; bounded local image inspection **passed**. The accepted independent references and tolerances were retained. Private inputs and derived evidence remain ignored and untracked, with no private inspection details published.
+
+Evidence reconciliation:
+
+| Boundary | Evidence used for this gate |
+| --- | --- |
+| Source/display interpretation | [Corrected native/profile proof](#native-image-interpretation-and-conversion), fresh built saved-image checks and generic local outcomes above |
+| Matrix/range, formats, alpha, quality and scale | Corrected production, representation, spatial and quality proofs above, with fresh selection/format exports and all regular policy regressions |
+| Rejected interpretations | Fresh wider-primaries CLI rejection and regular stream/frame ICC, conflict, HDR and bit-depth rejection checks |
+| Destination, collision, publication and recovery | Fresh built direct/terminal results and full application coverage of injected write failures, cancellation, partial outputs, process shutdown and input ownership |
+| Timing, geometry and stress limits | [Original reconciliation](2026-10-01-video-frames-implementation.md#research-evidence-reconciliation) for unchanged boundaries, plus current process/cache/staging regressions |
+
+No new runtime change follows the focused correction. Unchanged stress and historical color checks were not repeated. The integrated smoke used FFmpeg/FFprobe 9.0.2 on macOS arm64 with Node.js 26.5.0 and the minimum Node.js 22.23.0. Observed peak child RSS was 160,112 KiB for the built-CLI proof, not a portable memory cap. Smoke budgets remained unchanged. Native Linux/Windows execution and viewer behavior, larger-file I/O, demanding codecs, heavy real content and network filesystems remain unverified. Custom ICC loading has no implementation or acceptance requirement.
+
+The usage guide and test ownership reference now describe the verified preservation policy, destinations, capacity behavior and support limits. Public-content audit, local links/anchors, unchanged original checklists, historical color retention and scratch-budget checks passed. No private or machine-specific identifiers were found in the follow-up patch or changed tracked content.
+
+### Final Review and Closure
+
+Reviewed the complete follow-up range **`6e3d765c7c53418acdd5a37cd1a6a93aad06ee62..982043d807bd1de5e372daabb1b520da741620f4`** and Phase 11 range **`0ea4503b2d857a602610647c8aed3dee718319ff..982043d807bd1de5e372daabb1b520da741620f4`**. No material test, maintainability or security findings remain. The built Interactive coverage gap was closed by terminal walkthroughs and independent saved-image checks. Documentation review accepted evidence accounting, currentness, ownership, privacy and support limits.
+
+Phase 11 is accepted on 2026-10-02. All seven tasks passed, and the plan and follow-up record are completed. Original acceptance is preserved.
+
+Research closure was assessed separately. The frame research's selection, sampling, terminal, dependency and output questions have original evidence for unchanged boundaries plus new destination/capacity and integrated results. The color research's source/display interpretation, saved-profile and pixel questions have independent native/standard references, actual saved images, rejection checks and bounded local comparison. Both researches are completed for their declared scope. Historical color evidence retains its original meaning. Unverified platform/workload limits and the unplanned custom ICC possibility remain explicit. Documents stay at their current locations.
+
+## Related Research
+
+- [Video Frame Selection, Frame Sets, and Sequence Export](../../researches/research-2026-09-30-video-frames.md)
+- [Video Frames Color Space Preservation](../../researches/research-2026-10-02-video-frames-color-space-preservation.md)

@@ -78,7 +78,7 @@ describe("doctor command routing", () => {
     );
     expect(program.stderr.text).toContain("Usage: cdx-chores doctor [options]");
     expect(actionCalls).toBe(0);
-    expect(fixture.calls).toEqual({ commands: [], query: 0, codex: 0 });
+    expect(fixture.calls).toEqual({ commands: [], encoders: 0, query: 0, codex: 0 });
   });
 
   test("exposes accepted help text and built-CLI conflict behavior", () => {

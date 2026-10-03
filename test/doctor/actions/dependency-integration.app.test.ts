@@ -23,7 +23,16 @@ function ok(stdout = "", stderr = ""): ExecCommandResult {
 function doctorDependencyRunner(
   statuses: Record<string, ExecCommandResult>,
 ): DependencyCommandRunner {
-  return async (command) => {
+  return async (command, args) => {
+    if (command === "ffmpeg" && args.includes("-encoders")) {
+      return ok("Encoders:\n V..... png PNG\n V..... mjpeg JPG\n V..... libwebp WebP\n");
+    }
+    if (command === "ffmpeg" && args.includes("encoder=libwebp")) {
+      return ok(
+        "Encoder libwebp [WebP]:\n Supported pixel formats: bgra\n -lossless <int> (from 0 to 1)\n",
+      );
+    }
+    if (command === "ffprobe" && !statuses.ffprobe) return ok("ffprobe version 8.0.1\n");
     const result = statuses[command];
     if (!result) {
       throw new Error(`spawn ${command} ENOENT`);
@@ -333,6 +342,7 @@ describe("doctor action dependency integration", () => {
       if (command === "ffmpeg") {
         return ok("ffmpeg version 8.0.1\n");
       }
+      if (command === "ffprobe") return ok("ffprobe version 8.0.1\n");
       if (command === "fc-list" || command === "fc-query") {
         return ok("fontconfig version 2.15.0\n");
       }

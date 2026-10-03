@@ -9,6 +9,8 @@ import {
   type RawSessionKeypressInfo,
 } from "../tui";
 import type { PathPromptRuntimeConfig } from "./path-config";
+import { styleCliDiagnosticLabel } from "../diagnostic-color";
+import { resolveCliColorEnabled } from "../colors";
 import {
   advanceSiblingPreview,
   acceptSiblingPreview,
@@ -45,6 +47,10 @@ export interface InlinePathPromptOptions {
   runtimeConfig: PathPromptRuntimeConfig;
   stdin: NodeJS.ReadStream;
   stdout: NodeJS.WritableStream;
+  signal?: AbortSignal;
+  initialValue?: string;
+  onChange?: (value: string) => void;
+  colorEnabled?: boolean;
   validate: ValidationFn;
   suggestionFilter: SuggestionFilter;
   resolveSuggestions?: (options: ResolvePathSuggestionsOptions) => Promise<PathSuggestion[]>;
@@ -99,6 +105,7 @@ function moveToParentPathSegmentValue(value: string): string | undefined {
 }
 
 export async function promptPathInlineGhost(options: InlinePathPromptOptions): Promise<string> {
+  options.signal?.throwIfAborted();
   if (!supportsRawSessionIO(options.stdin, options.stdout)) {
     throw new Error("Inline path prompt requires TTY stdin/stdout with raw mode support");
   }
@@ -106,7 +113,7 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
   const stdout = options.stdout;
   const resolveSuggestions = options.resolveSuggestions ?? resolvePathSuggestions;
 
-  let value = "";
+  let value = options.initialValue ?? "";
   let ghostSuffix = "";
   let interactionState: InlinePromptInteractionState = clearInteractionState();
   let renderScheduled = false;
@@ -127,6 +134,7 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
   };
 
   const scheduleRender = (): void => {
+    if (!closed) options.onChange?.(value);
     if (closed) {
       return;
     }
@@ -339,6 +347,7 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
   };
 
   await refreshGhost();
+  options.signal?.throwIfAborted();
   scheduleRender();
 
   return await new Promise<string>((resolve, reject) => {
@@ -349,6 +358,7 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
         settleReject(createPromptAbortError());
       },
     });
+    const abort = (): void => settleReject(createPromptAbortError());
 
     const settleResolve = (result: string): void => {
       if (settled) {
@@ -368,6 +378,7 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
         return;
       }
       settled = true;
+      options.onChange?.(value);
       closed = true;
       activeRefreshSeq += 1;
       cleanup();
@@ -378,6 +389,7 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
 
     const keypressHandler = (str: string, key: KeypressInfo = {}): void => {
       void (async () => {
+        if (closed) return;
         const parsed = keyParser.handle(str, key);
 
         if (parsed.kind === "incomplete") {
@@ -423,11 +435,20 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
 
         if (nextKey.name === "return" || nextKey.name === "enter") {
           const validation = await options.validate(value);
+          if (closed) return;
           if (validation === true) {
             settleResolve(value);
             return;
           }
-          beep(stdout);
+          inlineRenderer.clear();
+          const label = styleCliDiagnosticLabel(
+            { colorEnabled: options.colorEnabled ?? resolveCliColorEnabled() },
+            stdout,
+            "error",
+            "Error:",
+          );
+          const message = validation.replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, " ");
+          stdout.write(`${label} ${message}\n`);
           scheduleRender();
           return;
         }
@@ -483,10 +504,12 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
     };
 
     const cleanup = (): void => {
+      options.signal?.removeEventListener("abort", abort);
       session?.close();
     };
 
     try {
+      options.signal?.throwIfAborted();
       if (options.defaultHint && options.defaultHint.trim().length > 0) {
         const label = options.defaultHintLabel?.trim() || "Default path";
         stdout.write(`${dim(`${label}: ${options.defaultHint}`)}\n`);
@@ -499,6 +522,8 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
         },
       });
       session.addKeypressListener(keypressHandler);
+      options.signal?.addEventListener("abort", abort, { once: true });
+      if (options.signal?.aborted) abort();
     } catch (error) {
       settleReject(error);
     }

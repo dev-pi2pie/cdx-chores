@@ -8,6 +8,28 @@ const { promptTextWithGhost } = (await import(
 )) as typeof import("../../../src/cli/prompts/text-inline");
 
 describe("text inline fallback", () => {
+  test("simple text input receives explicit streams and cancellation", async () => {
+    const signal = new AbortController().signal;
+    const stdin = { isTTY: false } as NodeJS.ReadStream;
+    const stdout = new FakePromptWriteStream();
+    await promptTextWithGhost({
+      message: "Template",
+      ghostText: "",
+      stdin,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      signal,
+      validate: () => true,
+      promptImpls: {
+        simpleInput: async (_config, context) => {
+          expect(context?.input).toBe(stdin);
+          expect(context?.output).toBe(stdout as unknown as NodeJS.WritableStream);
+          expect(context?.signal).toBe(signal);
+          return "chosen";
+        },
+      },
+    });
+  });
+
   test("promptTextWithGhost falls back to simple input when advanced prompt fails", async () => {
     const calls: string[] = [];
     const stdout = new FakePromptWriteStream();

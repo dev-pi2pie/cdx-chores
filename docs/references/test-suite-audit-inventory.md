@@ -8,14 +8,9 @@ agent: codex
 
 ## Goal
 
-Preserve the dated file-level audit baseline used to review test ownership,
-overlap, and catalog placement before the reorganization.
+Preserve the dated file-level audit baseline used to review test ownership, overlap, and catalog placement before the reorganization.
 
-This is a snapshot at commit `2f3013ca`, not a live path index. Use
-[Test Catalog Path Correspondence](test-catalog-path-correspondence.md) for
-historical-to-current paths and
-[Test Suite Contract Ownership Catalog](test-suite-case-matrices.md) for the
-settled current ownership rules.
+This is a snapshot at commit `2f3013ca`, not a live path index. Use [Test Catalog Path Correspondence](test-catalog-path-correspondence.md) for historical-to-current paths and [Test Suite Contract Ownership Catalog](test-suite-case-matrices.md) for the settled current ownership rules.
 
 ## Audit Baseline
 
@@ -26,8 +21,7 @@ Recorded on 2026-08-23 before test edits or path migration:
 - 197 root test files, 78 one directory below root, and 14 two directories below root
 - 2,625 passing tests, 14,983 assertions, and 99.37 seconds
 
-File size, runtime, and matcher shape were context only; none was a removal
-criterion.
+File size, runtime, and matcher shape were context only; none was a removal criterion.
 
 ## Inventory Fields
 
@@ -49,9 +43,7 @@ criterion.
 - `fixture/helper review` — support ownership was duplicated, broad, or misplaced
 - `keep pending evidence` — evidence was insufficient, so removal was not admitted
 
-The completed ownership review resolved every admitted `case audit` and `split
-review`. Exact execution and removal evidence remains in the completed
-[implementation job](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md).
+The completed ownership review resolved every admitted `case audit` and `split review`. Exact execution and removal evidence remains in the completed [implementation job](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md).
 
 ## Audited Test Files
 
@@ -351,9 +343,7 @@ Rows remain in exact sorted baseline-manifest order.
 
 ## Audited Support Files
 
-The baseline contained 66 TypeScript support files outside `*.test.ts`. A row
-marked `ownership review required` crossed feature or platform boundaries at
-the audit baseline; the completed catalog records the settled current rule.
+The baseline contained 66 TypeScript support files outside `*.test.ts`. A row marked `ownership review required` crossed feature or platform boundaries at the audit baseline; the completed catalog records the settled current rule.
 
 | Audited support path | Baseline owner | Baseline review state |
 | --- | --- | --- |
