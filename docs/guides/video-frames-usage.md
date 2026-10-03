@@ -1,7 +1,7 @@
 ---
 title: "Video Frames Usage"
 created-date: 2026-10-01
-modified-date: 2026-10-02
+modified-date: 2026-10-03
 status: completed
 agent: codex
 ---
@@ -88,7 +88,7 @@ Missing color fields use disclosed defaults: BT.709 primaries for both RGB and Y
 
 Decoded and display-corrected images are guarded at 16,777,216 pixels per image. Scaling reduces output dimensions and storage cost after decoding. It does not guarantee lower decoder memory or bypass the decoded-image guard. Sources stream through the tools without a blanket input-file-size cap. Child-tool memory still depends on the decoder and source.
 
-Verification covers built direct and Interactive exports on macOS with Node.js 26.5.0, plus ESM/CommonJS loading and PNG/JPG/WebP exports on the minimum Node.js 22.23.0. Independent synthetic pixel/profile checks and controlled lifecycle tests establish the tested boundary. Native Linux/Windows execution, viewer behavior elsewhere, larger-file I/O, demanding codecs, heavy real content and network filesystems remain unverified. The [original record](../plans/jobs/2026-10-01-video-frames-implementation.md#support-scope) and [enhancement verification](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#integrated-verification) record the evidence and limits.
+Direct and Interactive frame exports have been verified on macOS. Basic package-loading and export checks also passed on the minimum supported Node.js version. Linux/Windows, other viewer environments, larger files, demanding codecs, heavy workloads and network filesystems remain unverified.
 
 ## Destinations and Filenames
 
@@ -145,7 +145,7 @@ Destination → Applicable naming → Review → Export
 
 Menus use Up/Down and Enter. Escape goes Back or cancels the active operation; Ctrl+C exits the flow. Back retains applicable drafts/settings. Changing source invalidates resolved identities. Merely navigating choices or moving the timeline does not decode or create final outputs.
 
-The custom timeline is a coarse position overview, not an audio waveform or image preview. Left/Right moves the candidate, `F` opens frame-number input, `T` opens timestamp input, `A` switches Unicode/ASCII, and Enter resolves the chosen position. Escape cancels an editor or returns from the picker. Small terminals, missing duration or unavailable raw controls use direct frame/time input. Requested and resolved identities remain distinct in review. Selection descriptions refresh after resize on the next navigation key.
+One frame mode includes a terminal timeline for quickly choosing an approximate position. Use frame-number or timestamp input for precise selection. Left/Right moves the candidate, `F` opens frame-number input, `T` opens timestamp input, `A` switches Unicode/ASCII, and Enter resolves the chosen position. Escape cancels an editor or returns from the picker. Small terminals, missing duration or unavailable raw controls use direct frame/time input. Requested and resolved identities remain distinct in review. Selection descriptions refresh after resize on the next navigation key.
 
 Frames and GIF share the `Use default output` choice. Its below-list hint describes only the location: `Image beside the source`, `Frames folder beside the source` or `GIF file beside the source`. Review/results show concrete paths on separate indented lines, using cyan where color is enabled. Short hints/result lines omit trailing periods. Plain output carries the same information. See [CLI output and color](cli-output-and-color.md).
 
