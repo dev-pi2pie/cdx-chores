@@ -2,7 +2,7 @@
 title: "DOCX reader review follow-up"
 created-date: 2026-10-16
 modified-date: 2026-10-16
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -59,8 +59,8 @@ Address the remaining XML accounting, hyperlink compatibility, and manual harnes
 - [x] Preserve empty-ID and unresolved-target hyperlink behavior, with independent evidence and prompt regressions.
 - [x] Decode numeric XML references once, preserve literal escapes/CDATA, and reject undeclared named entities without an additional built-in expansion cap.
 - [x] Require POSIX process groups before manual execution creates artifacts; remove ineffective Windows handling and redundant options.
-- [ ] Pass focused, routine, built-runtime, measurement, and packed-consumer checks.
-- [ ] Review the complete follow-up range and combined implementation, resolve findings, and confirm cleanup.
+- [x] Pass focused, routine, built-runtime, measurement, and packed-consumer checks.
+- [x] Review the complete follow-up range and combined implementation, resolve findings, and confirm cleanup.
 
 | Area | Outcome |
 | --- | --- |
@@ -68,5 +68,8 @@ Address the remaining XML accounting, hyperlink compatibility, and manual harnes
 | XML references | Five baseline-compatible cases and one additional accepted CDATA-preservation case passed; single-pass decoding and selected-part/result bounds checked |
 | Hyperlinks | Twenty-four named cases match historical behavior, including empty/duplicate targets, fragment merging, suppression, unused notes/comments, and explicit empty-anchor fields; focused unit and compiled evidence/prompt checks passed |
 | Manual harness | Shared prerequisite rejects unsupported execution before workspaces/children; lifecycle, help, and simulated platform probes passed; ineffective Windows branch and redundant flags removed |
-| Verification | Pending |
-| Review / cleanup | Pending |
+| Routine verification | 1,751 unit and 2,331 application cases passed; application 220.58 seconds under unchanged 240-second deadline; lint, format, types, and shipping build passed |
+| Built runtime comparisons | 134 historical and 52 follow-up cases per format on primary/minimum Node passed; complete evidence/prompts checked |
+| Measurements / packed consumers | Eighteen workloads per runtime and eight fresh npm/Bun × runtime × format consumer paths passed; deadline, RSS, and lifecycle checks passed |
+| Full-range review | `97cdb606..190b54c6` reviewed with integration checks across `bc6e3e98..190b54c6`; empty-anchor field and XML-reference findings fixed; no remaining material findings; closing docs checked separately |
+| Artifact cleanup | Owned manual and managed-test workspaces removed after settlement; frozen captures unchanged; no smoke artifacts retained |
