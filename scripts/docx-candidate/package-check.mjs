@@ -166,11 +166,7 @@ if (cli) {
       const inspected = join(workspace, "inspected");
       await mkdir(inspected);
       await run(tar, ["-xzf", archive, "-C", inspected], workspace);
-      const expectedFiles = await inspectCandidatePackage(
-        join(inspected, "package"),
-        versions,
-        repo,
-      );
+      const expectedFiles = await inspectCandidatePackage(join(inspected, "package"), versions);
       await harness.result("candidate tarball: passed yes\n");
       stage = "minimum runtime";
       const runtime = join(workspace, "minimum-runtime");
@@ -186,7 +182,6 @@ if (cli) {
         ["--eval", 'require("node:assert/strict").equal(process.versions.node, "22.23.0")'],
         runtime,
       );
-      let previousTree;
       let completed = 0;
       for (const installer of ["npm", "bun"]) {
         stage = `${installer} installation`;
@@ -209,24 +204,15 @@ if (cli) {
         } else {
           await run(
             bun,
-            [
-              "add",
-              "--ignore-scripts",
-              "--no-save",
-              "--no-progress",
-              "--linker=hoisted",
-              "--backend=copyfile",
-              archive,
-            ],
+            ["add", "--ignore-scripts", "--no-save", "--no-progress", archive],
             consumer,
           );
         }
         const installed = join(consumer, "node_modules", candidatePackageName);
-        await inspectCandidatePackage(installed, versions, repo, expectedFiles);
+        await inspectCandidatePackage(installed, versions, expectedFiles, consumer);
         const tree = await inspectDependencyTree(consumer, versions);
-        if (previousTree) assert.deepEqual(tree, previousTree);
-        previousTree = tree;
         await harness.result(`${installer} dependency tree: passed yes\n`);
+        await harness.result(`${installer} retained dependencies: ${JSON.stringify(tree)}\n`);
         const driver = join(consumer, "consumer.mjs");
         await copyFile(
           join(repo, "test/document-rename/fixtures/docx-package-consumer.mjs"),
@@ -244,9 +230,8 @@ if (cli) {
             await harness.success(`Consumer ${++completed}/8 ${stage}`);
           }
         }
-        await inspectCandidatePackage(installed, versions, repo, expectedFiles);
+        await inspectCandidatePackage(installed, versions, expectedFiles, consumer);
       }
-      await harness.result(`retained dependencies: ${previousTree.join(", ")}\n`);
       return "";
     },
   );

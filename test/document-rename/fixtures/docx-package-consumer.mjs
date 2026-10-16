@@ -1,15 +1,18 @@
 import assert from "node:assert/strict";
 import { readFile, realpath, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
-import { dirname, join, sep } from "node:path";
+import { dirname, isAbsolute, join, relative, sep } from "node:path";
 
 const require = createRequire(import.meta.url);
 const packageName = "@cdx-chores-private/docx-reader-evaluation";
 const [format, input] = process.argv.slice(2);
 assert.ok(format === "esm" || format === "cjs");
 assert.equal(process.env.NODE_PATH, undefined);
-const entry = await realpath(require.resolve(packageName));
-assert.ok(entry.startsWith(`${process.cwd()}${sep}node_modules${sep}`));
+const entry = await realpath(
+  format === "esm" ? new URL(import.meta.resolve(packageName)) : require.resolve(packageName),
+);
+const location = relative(await realpath(process.cwd()), entry);
+assert.ok(location !== ".." && !location.startsWith(`..${sep}`) && !isAbsolute(location));
 const candidate = format === "esm" ? await import(packageName) : require(packageName);
 const expectedHeadings = [
   { level: 1, text: "Installed Ω ∀🕿 report" },
