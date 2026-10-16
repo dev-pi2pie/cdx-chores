@@ -212,7 +212,7 @@ These rules govern evaluation and any later implementation:
 
 ## Resource Isolation and Content-Support Contract
 
-This section separates runtime accounting from document compatibility. The maintainer accepted the Phase 2 design, initial-reader scope, and validation method: one fresh extraction process per admitted request and baseline-led content handling. The diagrams describe that contract; the private candidate's implemented boundary is assessed below. Phase 6 supplies technical evidence; final numeric budget/support acceptance belongs to Phase 7 after Phases 6.1–6.2.
+This section separates runtime accounting from document compatibility. The maintainer accepted the Phase 2 design, initial-reader scope, and validation method: one fresh extraction process per admitted request and baseline-led content handling. The diagrams describe that contract; the private candidate's implemented boundary is assessed below. Phase 6 supplies technical evidence; final numeric budget/support acceptance belongs to Phase 7 after Phases 6.1–6.3.
 
 ### Memory accounting alternatives
 
@@ -543,7 +543,7 @@ The [structural cases](../../scripts/docx-baseline/resource-cases.ts) isolate se
 
 ### Demonstrated candidate envelope
 
-The numerical proposal is unchanged and awaits acceptance within Phase 7 after Phase 6.1 harness verification and Phase 6.2 package-verification refinement. Every supported input must fit all applicable limits; separate at-cap probes do not establish that every simultaneous combination of maximum dimensions is supported.
+The numerical proposal is unchanged and awaits acceptance within Phase 7 after Phase 6.1 harness verification, Phase 6.2 package-verification refinement, and Phase 6.3 full-suite verification. Every supported input must fit all applicable limits; separate at-cap probes do not establish that every simultaneous combination of maximum dimensions is supported.
 
 | Scope | Proposed limit or behavior |
 | --- | --- |
@@ -586,6 +586,10 @@ Renewed comparisons, measurements, candidate runtime/package checks, and full im
 
 The verifier accepts additional ordinary package files and contained package-manager links, removes regex import inspection and layout-only installer restrictions, and retains required assets/exports, isolated resolution, candidate Mammoth absence, and actual consumer behavior. Byte-integrity checks cover only the eight required runtime assets. The [execution record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-62-package-compatibility-verification) tracks renewed consumer evidence, focused regressions, cleanup, and review. This changes verification policy without changing dependency versions, content support, or numerical budgets; prior phase evidence remains scoped to its reviewed revision.
 
+### Full application suite timeout follow-up
+
+The [Phase 6.2 record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-62-package-compatibility-verification) reports the full application process reaching its shared 240-second deadline and a passing scoped control for the interrupted video workflow. The full suite's natural completion time and main runtime contributors remain unmeasured. [Phase 6.3](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-resolve-the-full-application-suite-timeout) is unstarted; bounded diagnostics will guide a minimal correction and verification of the ordinary full managed command before Phase 7 acceptance. A scoped pass does not establish a full-suite pass. This follow-up preserves the DOCX content contract and extraction budgets.
+
 ### Maintenance assessment
 
 Assess the benefit of owning the narrow extraction contract against the ongoing cost of OOXML semantics, resource handling, editor compatibility, and corpus upkeep. Record:
@@ -600,7 +604,7 @@ The maintainer must explicitly accept responsibility for dependency/security upd
 
 ### Research decision
 
-Recommend proceeding only when the comparison matrix and method establish equivalent useful evidence or accepted differences, Phase 6.1 harness verification and Phase 6.2 package-verification refinement are complete, resource handling meets accepted budgets, and runtime/distribution checks pass for an isolated executable and packed candidate. Record the reviewed revision, acceptance outcome, content/platform limits, justified differences, and maintenance responsibility in a compact decision table. The maintenance assessment must support a focused, maintainable implementation with accepted ownership. Record how existing consumers can migrate or retire and any remaining integration work; completing repository migration is not a prerequisite for this decision.
+Recommend proceeding only when the comparison matrix and method establish equivalent useful evidence or accepted differences, verification for Phases 6.1–6.3 is complete, including a passing ordinary full application suite, resource handling meets accepted budgets, and runtime/distribution checks pass for an isolated executable and packed candidate. Record the reviewed revision, acceptance outcome, content/platform limits, justified differences, and maintenance responsibility in a compact decision table. The maintenance assessment must support a focused, maintainable implementation with accepted ownership. Record how existing consumers can migrate or retire and any remaining integration work; completing repository migration is not a prerequisite for this decision.
 
 Otherwise, recommend deferral and identify unmet criteria. Record the supporting evidence, benefits, limitations, and remaining risks. A supported recommendation may justify a separate implementation plan; research completion is distinct from shipping the replacement.[^doc-policy]
 
@@ -612,7 +616,7 @@ The retained baseline corpus has 70 semantic cases and 21 structural boundary ca
 
 ## Related Plans
 
-- [DOCX reader and Mammoth replacement](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md) — ten main phases and Phases 6.1–6.2 covering contract research, candidate construction and validation, harness progress/lifecycle, package-verification refinement, selection, conditional integration/removal, and documentation closeout.
+- [DOCX reader and Mammoth replacement](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md) — ten main phases and Phases 6.1–6.3 covering contract research, candidate construction and validation, harness progress/lifecycle, package verification, full-suite timing, selection, conditional integration/removal, and documentation closeout.
 
 ## References
 

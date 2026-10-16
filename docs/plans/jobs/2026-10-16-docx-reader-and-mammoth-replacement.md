@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–6 and 6.1–6.2 are complete. Phase 7 owns subsequent budget/support acceptance and selection after Phase 6.2.
+Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–6 and 6.1–6.2 are complete; Phase 6.3 is unstarted. Phase 7 owns subsequent budget/support acceptance and selection after Phase 6.3.
 
 ## Phase 1 Outcomes
 
@@ -140,7 +140,7 @@ Each runtime measurement lane used 108 observed candidate calls, 72 ordinary ESM
 
 The fresh tree differs from the retained repository tree at three transitive versions; its compact inventory is checked independently. License and notice completeness belong to final shipping review; this quick verifier checks inventory and runtime behavior. Manual measurement/package drivers use POSIX process groups; no additional operating-system coverage is claimed. Manual evaluation inputs, builds, tarballs, consumers, caches, logs, and raw reports were removed after confirmed settlement; reviewed fixture definitions remain under their test owner. Managed retention is unchanged.
 
-Phase 6 is complete. Reviewed full range: `fd35e998..4c660031`. The numerical proposal is unchanged; budget/support acceptance belongs to Phase 7 after Phases 6.1–6.2.
+Phase 6 is complete. Reviewed full range: `fd35e998..4c660031`. The numerical proposal is unchanged; budget/support acceptance belongs to Phase 7 after Phases 6.1–6.3.
 
 ## Phase 6.1: Validation Harness Follow-up
 
@@ -222,6 +222,13 @@ Retained runs contain `summary.json` and `esm/<case-id>/` / `cjs/<case-id>/` dir
 | Cleanup | Package workspace, synthetic fixtures, and managed scratch/results removed after confirmed settlement; no verification exports retained |
 | Review | Implementation `b3af2846..0e11d6d3`: passed; closing documentation reviewed separately |
 
+## Phase 6.3: Full Application Suite Timeout
+
+| Item | State |
+| --- | --- |
+| [Timing investigation and minimal correction](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-resolve-the-full-application-suite-timeout) | Planned; determine runtime contributors and justify the correction |
+| Diagnostics, ordinary full-suite verification, cleanup, and phase review | Not started / not run |
+
 ## Later Phases
 
-Phase 6.2 is complete; Phases 7–10 are unstarted. Phase 7 follows Phase 6.2 and reviews numerical budget/support, platform limits, and maintenance acceptance before selection. Phase 8 covers production integration and runtime assets; Phase 9 preserves remaining baseline expectations before Mammoth removal and actual-product checks; Phase 10 reconciles surviving commands and documentation. Mammoth remains the production extractor; the candidate's symbol mapper is a separate pinned dependency.
+Phases 6.3 and 7–10 are unstarted. Phase 7 follows Phase 6.3 and reviews numerical budget/support, platform limits, and maintenance acceptance before selection. Phase 8 covers production integration and runtime assets; Phase 9 preserves remaining baseline expectations before Mammoth removal and actual-product checks; Phase 10 reconciles surviving commands and documentation. Mammoth remains the production extractor; the candidate's symbol mapper is a separate pinned dependency.
