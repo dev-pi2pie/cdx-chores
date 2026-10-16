@@ -323,4 +323,4 @@ Source baseline: `6a9ab121`.
 
 ## Related Follow-up
 
-The full implementation review at `9c6f92ef` identified additional compatibility, verifier, and simplification work. The separate [DOCX reader review follow-up](2026-10-16-docx-reader-review-follow-up.md) owns those corrections and their verification; the completed phase results above remain historical evidence.
+The full implementation review at `9c6f92ef` identified additional compatibility, verifier, and simplification work. The completed [DOCX reader review follow-up](2026-10-16-docx-reader-review-follow-up.md) records those corrections and their verification; the phase results above remain historical evidence.

@@ -1,7 +1,7 @@
 ---
 title: "DOCX reader review follow-up"
 created-date: 2026-10-16
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -20,7 +20,7 @@ The maintainer accepted preserving CDATA as text, including mixed plain text/CDA
 - [x] Make package-version verification read-only and enforce measured processing completion through parent validation.
 - [x] Reuse the production extractor factory in the candidate fixture; remove the unused metadata-helper option and retired resource inspector, and reconcile affected links.
 - [x] Pass focused, routine, built-runtime, comparison, measurement, and packed-consumer verification.
-- [ ] Review the complete follow-up range, resolve findings, update current references, and confirm temporary cleanup.
+- [x] Review the complete follow-up range, resolve findings, update current references, and confirm temporary cleanup.
 
 ## Results
 
@@ -33,8 +33,8 @@ The maintainer accepted preserving CDATA as text, including mixed plain text/CDA
 | Built runtime comparisons | 134 historical and 21 follow-up cases per format on primary/minimum Node passed; complete evidence/prompts checked |
 | Measurements | Eighteen workloads per runtime passed with idle/loaded callers, strict processing deadline, separate API window, RSS, and lifecycle checks |
 | Packed product | Eight fresh npm/Bun × runtime × ESM/CJS public API/bin consumer paths passed; shipping build passed; tracked embedded version unchanged |
-| Full-range review | Pending |
-| Artifact cleanup | Pending |
+| Full-range review | Complete code/test range `9c6f92ef..5f5326e0` reviewed; predicate coverage and merged-span/checkbox regressions strengthened; stale gate wording clarified; no remaining material findings |
+| Artifact cleanup | Owned manual and managed-test workspaces removed after settlement; seven historical frozen files unchanged; no smoke artifacts retained |
 
 ## Verification and Artifacts
 
@@ -48,4 +48,4 @@ node ./scripts/docx-candidate/measure-launch.mjs
 node ./scripts/docx-candidate/package-check.mjs
 ```
 
-Record outcomes, relevant limitations, and the reviewed follow-up range here; keep raw execution reports temporary.
+The follow-up is complete. Earlier platform and validation limitations remain recorded in the [original shipping record](2026-10-16-docx-reader-and-mammoth-replacement.md#phase-9-mammoth-removal-and-shipping-verification). Closing documentation was reviewed separately from the code/test range; raw execution reports remain temporary.

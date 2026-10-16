@@ -220,7 +220,7 @@ These rules govern evaluation and any later implementation:
 
 ### Post-implementation compatibility follow-up
 
-The [reader review follow-up](../plans/jobs/2026-10-16-docx-reader-review-follow-up.md) tracks newly identified Strong character-style, vertical-merge continuation, and checkbox-control evidence gaps. Their correction and new verification are separate from the historical comparison results below.
+The completed [reader review follow-up](../plans/jobs/2026-10-16-docx-reader-review-follow-up.md) corrected newly identified Strong character-style, vertical-merge continuation, and checkbox-control evidence gaps. Its twenty-one named cases include nineteen baseline-compatible expectations and two accepted CDATA departures; their verification is separate from the historical comparison results below.
 
 The maintainer accepted preserving CDATA as ordinary text in heading and raw-text evidence. Plain CDATA may supply evidence Mammoth omitted; mixed plain text/CDATA may succeed where Mammoth failed. This narrowly scoped departure preserves XML text rather than reproducing the former parser's omission/failure behavior. Dedicated follow-up expectations record the difference; historical captures remain unchanged.
 
