@@ -2,7 +2,7 @@
 title: "DOCX reader review follow-up"
 created-date: 2026-10-16
 modified-date: 2026-10-16
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -118,13 +118,16 @@ Address the multiple-root content XML finding from review of `bc6e3e98..0a7b57c5
 Address the namespace and trailing-CDATA findings from review of `bc6e3e98..f72dba64`. Source baseline: `f72dba64`. Earlier results remain historical; accepted CDATA text preservation, optional metadata policy, and resource limits remain unchanged.
 
 - [x] Resolve semantic names through namespace bindings, preserving ignored foreign content and valid aliases.
-- [x] Preserve literal CDATA within content and historical leading/empty-trailing behavior; reject nonempty trailing CDATA.
-- [ ] Pass focused, routine, built-runtime, quality, and renewed workload checks; update coverage references.
-- [ ] Review the complete follow-up and combined DOCX ranges, resolve findings, and clean owned artifacts.
+- [x] Preserve CDATA contents as text within XML elements; retain leading and empty trailing sections; reject nonempty trailing CDATA, including whitespace-only content.
+- [x] Pass focused, routine, built-runtime, quality, and renewed workload checks; update coverage references.
+- [x] Review the complete follow-up and combined DOCX ranges, resolve findings, and clean owned artifacts.
 
 | Area | Outcome |
 | --- | --- |
 | Namespace / CDATA regressions | Twenty-one historical-equivalent DOCX cases and six parser controls added; fifteen pre-fix failures reproduced; focused checks passed |
-| Verification / measurements | 241 focused and 1,847 unit cases passed; lint, format, and types passed; application, built-runtime, and workload checks pending |
+| Routine verification | 241 focused, 1,847 unit, and 2,331 application cases passed; application 229.97 seconds under unchanged 240-second deadline; lint, format, types, and shipping build passed |
+| Built runtime comparisons | 134 historical and 135 follow-up cases per format on primary/minimum Node passed; complete evidence/prompts checked; frozen captures unchanged |
+| Renewed measurements | Eighteen workloads per runtime passed with idle/loaded callers; deadline, RSS, and lifecycle checks passed |
 | Earlier packed-consumer evidence | Retained from the drawing follow-up; repeat only if distribution boundaries change |
-| Full-range review / cleanup | Pending |
+| Full-range review | `f72dba64..e961a8d8` and combined `bc6e3e98..e961a8d8` reviewed; stale summary and CDATA wording clarified; no remaining material findings; closing docs reviewed separately |
+| Artifact cleanup | Owned manual and managed-test workspaces settled and removed; temporary inputs, builds, runtime cache, and logs removed; no smoke artifacts retained |

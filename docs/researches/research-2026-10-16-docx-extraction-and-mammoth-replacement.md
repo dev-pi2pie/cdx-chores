@@ -220,7 +220,7 @@ These rules govern evaluation and any later implementation:
 
 ### Post-implementation compatibility follow-up
 
-The [reader review follow-up](../plans/jobs/2026-10-16-docx-reader-review-follow-up.md) records corrections to character styles, merged cells, checkbox controls, XML accounting/references, and hyperlink boundaries, alongside manual harness simplification. Its independent regressions distinguish baseline-compatible fixes from accepted CDATA preservation; historical comparison results below remain unchanged.
+The [reader review follow-up](../plans/jobs/2026-10-16-docx-reader-review-follow-up.md) records subsequent XML and content compatibility corrections, alongside manual harness simplification. Its independent regressions distinguish baseline-compatible fixes from accepted CDATA preservation; historical comparison results below remain unchanged.
 
 The maintainer accepted preserving CDATA as ordinary text in heading and raw-text evidence. Plain CDATA may supply evidence Mammoth omitted; mixed plain text/CDATA may succeed where Mammoth failed. This narrowly scoped departure preserves XML text rather than reproducing the former parser's omission/failure behavior. Dedicated follow-up expectations record the difference; historical captures remain unchanged.
 
