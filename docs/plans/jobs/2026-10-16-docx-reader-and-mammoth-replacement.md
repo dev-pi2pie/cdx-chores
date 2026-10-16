@@ -222,13 +222,14 @@ Retained runs contain `summary.json` and `esm/<case-id>/` / `cjs/<case-id>/` dir
 | Cleanup | Package workspace, synthetic fixtures, and managed scratch/results removed after confirmed settlement; no verification exports retained |
 | Review | Implementation `b3af2846..0e11d6d3`: passed; closing documentation reviewed separately |
 
-## Phase 6.3: Full Application Suite Timeout
+## Phase 6.3: Manual Script Simplification and Test Ownership
 
 | Item | State |
 | --- | --- |
-| [Timing investigation and minimal correction](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-resolve-the-full-application-suite-timeout) | Planned; determine runtime contributors and justify the correction |
-| Diagnostics, ordinary full-suite verification, cleanup, and phase review | Not started / not run |
+| [DOCX script simplification and manual-tooling test ownership](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-simplify-manual-validation-and-separate-application-regressions) | Planned; preserve product assertions and account for routine coverage changes |
+| Explicit manual checks / remaining full application suite | Not run; further timeout diagnosis only if needed |
+| Cleanup and phase review | Not started / not run |
 
 ## Later Phases
 
-Phases 6.3 and 7–10 are unstarted. Phase 7 follows Phase 6.3 and reviews numerical budget/support, platform limits, and maintenance acceptance before selection. Phase 8 covers production integration and runtime assets; Phase 9 preserves remaining baseline expectations before Mammoth removal and actual-product checks; Phase 10 reconciles surviving commands and documentation. Mammoth remains the production extractor; the candidate's symbol mapper is a separate pinned dependency.
+Phases 6.3 and 7–10 are unstarted. Phase 7 follows verified script simplification, test ownership, explicit manual checks, and the remaining full application suite, then reviews budget/support and maintenance acceptance before selection. Phase 8 integrates the reader with direct product regressions; Phase 9 preserves expectations before Mammoth removal and actual-product checks; Phase 10 reconciles surviving manual commands, ownership, and documentation. Mammoth remains the production extractor; the candidate's symbol mapper is a separate pinned dependency.

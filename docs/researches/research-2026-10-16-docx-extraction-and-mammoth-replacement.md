@@ -543,7 +543,7 @@ The [structural cases](../../scripts/docx-baseline/resource-cases.ts) isolate se
 
 ### Demonstrated candidate envelope
 
-The numerical proposal is unchanged and awaits acceptance within Phase 7 after Phase 6.1 harness verification, Phase 6.2 package-verification refinement, and Phase 6.3 full-suite verification. Every supported input must fit all applicable limits; separate at-cap probes do not establish that every simultaneous combination of maximum dimensions is supported.
+The numerical proposal is unchanged and awaits acceptance within Phase 7 after Phase 6.1 harness verification, Phase 6.2 package-verification refinement, and Phase 6.3 manual-script simplification, ownership, and verification. Every supported input must fit all applicable limits; separate at-cap probes do not establish that every simultaneous combination of maximum dimensions is supported.
 
 | Scope | Proposed limit or behavior |
 | --- | --- |
@@ -586,9 +586,11 @@ Renewed comparisons, measurements, candidate runtime/package checks, and full im
 
 The verifier accepts additional ordinary package files and contained package-manager links, removes regex import inspection and layout-only installer restrictions, and retains required assets/exports, isolated resolution, candidate Mammoth absence, and actual consumer behavior. Byte-integrity checks cover only the eight required runtime assets. The [execution record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-62-package-compatibility-verification) tracks renewed consumer evidence, focused regressions, cleanup, and review. This changes verification policy without changing dependency versions, content support, or numerical budgets; prior phase evidence remains scoped to its reviewed revision.
 
-### Full application suite timeout follow-up
+### Manual validation and application-test ownership
 
-The [Phase 6.2 record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-62-package-compatibility-verification) reports the full application process reaching its shared 240-second deadline and a passing scoped control for the interrupted video workflow. The full suite's natural completion time and main runtime contributors remain unmeasured. [Phase 6.3](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-resolve-the-full-application-suite-timeout) is unstarted; bounded diagnostics will guide a minimal correction and verification of the ordinary full managed command before Phase 7 acceptance. A scoped pass does not establish a full-suite pass. This follow-up preserves the DOCX content contract and extraction budgets.
+Manual feature scripts provide explicit comparison, measurement, packaging, and smoke commands. Durable product inputs, frozen expectations, and independent assertions belong under `test/` and exercise product code directly; manual commands may reuse them. Routine suites should not test the manual launchers, evaluation adapters, package inspectors, or smoke-retention machinery. Shared managed-test infrastructure has a separate role. Planned simplification will remove embedded harness self-tests and unnecessary orchestration while preserving useful progress/help, bounded process handling, cleanup, and approved optional smoke retention.
+
+The [Phase 6.2 record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-62-package-compatibility-verification) reports the application selection at that revision reaching its shared 240-second deadline and a passing scoped video-workflow control. Natural completion time and runtime contributors remain unmeasured; manual-tooling coverage has not been established as the cause. [Phase 6.3](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-simplify-manual-validation-and-separate-application-regressions) is unstarted. It will simplify DOCX scripts, review routine manual-tooling coverage across the identified feature owners, preserve product assertions, and verify explicit manual commands separately from the complete revised application selection. Run the ordinary suite first; any further timeout correction requires measured evidence. Phase 7 waits for both verification paths and full-range review. Prior phase outcomes remain historical; a smaller suite is not evidence of faster extraction. Content behavior and extraction budgets are unchanged.
 
 ### Maintenance assessment
 
@@ -596,7 +598,7 @@ Assess the benefit of owning the narrow extraction contract against the ongoing 
 
 - Reused helpers and new parsing responsibilities, including the resulting code surface and difficult compatibility cases.
 - The supported subset, known limitations, and whether preserving evidence requires substantially broader conversion logic.
-- Retained dependencies, licenses/provenance, update obligations, validation-harness upkeep, and remaining migration work, including retiring live Mammoth capture/measurement paths while preserving independent comparison coverage.
+- Retained dependencies, licenses/provenance, update obligations, product-regression corpus and simplified manual-command upkeep, and remaining migration work, including retiring live Mammoth capture/measurement paths while preserving independent comparison coverage.
 
 The maintainer must explicitly accept responsibility for dependency/security updates, editor regressions and corpus upkeep, unsupported-content/diagnostic decisions, and future resource-budget changes before reader selection. A subsystem location alone does not establish that acceptance.
 
@@ -604,19 +606,19 @@ The maintainer must explicitly accept responsibility for dependency/security upd
 
 ### Research decision
 
-Recommend proceeding only when the comparison matrix and method establish equivalent useful evidence or accepted differences, verification for Phases 6.1–6.3 is complete, including a passing ordinary full application suite, resource handling meets accepted budgets, and runtime/distribution checks pass for an isolated executable and packed candidate. Record the reviewed revision, acceptance outcome, content/platform limits, justified differences, and maintenance responsibility in a compact decision table. The maintenance assessment must support a focused, maintainable implementation with accepted ownership. Record how existing consumers can migrate or retire and any remaining integration work; completing repository migration is not a prerequisite for this decision.
+Recommend proceeding only when the comparison matrix and method establish equivalent useful evidence or accepted differences, verification for Phases 6.1–6.3 is complete, the ordinary full application suite for the reviewed ownership passes, resource handling meets accepted budgets, and explicit runtime/distribution checks pass for an isolated executable and packed candidate. Phase 6.3's simplified manual commands and product-test ownership form the current validation baseline; routine tests alone do not establish manual matrix results. Record the reviewed revision, acceptance outcome, content/platform limits, justified differences, and maintenance responsibility in a compact decision table. The maintenance assessment must support a focused, maintainable implementation with accepted ownership. Record how existing consumers can migrate or retire and any remaining integration work; completing repository migration is not a prerequisite for this decision.
 
 Otherwise, recommend deferral and identify unmet criteria. Record the supporting evidence, benefits, limitations, and remaining risks. A supported recommendation may justify a separate implementation plan; research completion is distinct from shipping the replacement.[^doc-policy]
 
 ### Shipping acceptance
 
-The implementation plan must repeat applicable evidence/prompt, fallback, resource, and distribution checks on the final integrated product, including its fixed child/worker/parser assets. Capture and review remaining live-baseline expectations before removing Mammoth; retain historical benchmark findings separately from ongoing candidate checks. Pass affected managed tests and Node.js checks of the CLI and built ESM/CJS entry points. Apply the Phase 6.2 verification approach to actual product installations and confirm consumer migration/retirement and complete Mammoth removal. Record final results, maintenance acceptance, and remaining limitations before claiming shipping acceptance or dependency remediation.
+The implementation plan must repeat applicable evidence/prompt, fallback, resource, and distribution checks on the final integrated product, including its fixed child/worker/parser assets. Capture and review remaining live-baseline expectations before removing Mammoth; retain historical benchmark findings separately from ongoing product checks. Pass affected managed product tests and explicit Node.js checks of the CLI and built ESM/CJS entry points. Apply the Phase 6.2 runtime-focused contract through the simplified manual commands to actual product installations, preserve Phase 6.3's test-ownership boundary, and confirm consumer migration/retirement and complete Mammoth removal. Record routine and manual results separately, maintenance acceptance, and remaining limitations before claiming shipping acceptance or dependency remediation.
 
 The retained baseline corpus has 70 semantic cases and 21 structural boundary cases, supplemented by 33 contract cases linked above and from the [unified execution record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md). Complete candidate comparisons retain these expectations and distinguish default-limit failures from raised-cap semantic checks. Candidate equivalence, concrete support/diagnostic mappings, accepted resource budgets, maintenance acceptance, and both gates require evidence for that contract. Technical validation does not establish maintainer acceptance, selection, or shipping acceptance.
 
 ## Related Plans
 
-- [DOCX reader and Mammoth replacement](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md) — ten main phases and Phases 6.1–6.3 covering contract research, candidate construction and validation, harness progress/lifecycle, package verification, full-suite timing, selection, conditional integration/removal, and documentation closeout.
+- [DOCX reader and Mammoth replacement](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md) — ten main phases and Phases 6.1–6.3 covering contract research, candidate validation, manual-script simplification and test ownership, remaining-suite verification, selection, conditional integration/removal, and documentation closeout.
 
 ## References
 
