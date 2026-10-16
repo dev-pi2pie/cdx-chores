@@ -246,6 +246,10 @@ export function styleProjection(
       }
       return rule.path;
     }
+    if (kind === "r") {
+      work.step();
+      return name === "STRONG" ? [projectionTag("strong")] : undefined;
+    }
     if (kind !== "p") return undefined;
     work.step();
     const idLevel = /^Heading([1-6])$/.exec(id ?? "")?.[1];

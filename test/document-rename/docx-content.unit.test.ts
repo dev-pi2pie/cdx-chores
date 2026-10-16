@@ -19,8 +19,11 @@ import { assembleDocxEvidence } from "../../src/adapters/codex/document-rename/e
 import { resolveDocxLimits, type DocxLimits } from "../../src/docx/limits";
 import { readDocxDocument } from "../../src/docx/reader";
 import { readSymbol } from "../../src/docx/symbols";
+import { styleProjection } from "../../src/docx/styles";
 import type { DocxDocumentFacts } from "../../src/docx/types";
+import { parseXml } from "../../src/docx/xml";
 import { createAdditionalDocxContentProbes } from "./fixtures/docx-content-probes";
+import { createDocxReviewCases } from "./fixtures/docx-review-cases";
 
 function symbol(font: string | undefined, char: string | undefined): string {
   return `<w:r><w:sym${font === undefined ? "" : ` w:font="${xmlEscape(font)}"`}${char === undefined ? "" : ` w:char="${xmlEscape(char)}"`}/></w:r>`;
@@ -55,6 +58,63 @@ async function facts(
 function evidence(value: DocxDocumentFacts) {
   return assembleDocxEvidence("synthetic.docx", { ...value, extractor: "docx-reader" });
 }
+
+describe("DOCX review follow-up content cases", () => {
+  for (const item of createDocxReviewCases()) {
+    test(item.id, async () => {
+      const result = await readDocxDocument(buildDocxPackage(item.options));
+      if (item.diagnostic) {
+        expect(result).toEqual({ ok: false, diagnostic: item.diagnostic });
+        return;
+      }
+      expect(result.ok, JSON.stringify(result)).toBe(true);
+      if (!result.ok) throw new Error(result.diagnostic);
+      expect(result.facts.rawText).toBe(item.rawText!);
+      expect(result.facts.headings).toEqual(item.headings!);
+      expect(result.facts.hasContent).toBe(true);
+    });
+  }
+
+  test("Strong fallback consumes a lookup step after embedded rules", () => {
+    const styles = parseXml(
+      stylesXml(
+        '<w:style w:type="character" w:styleId="Important"><w:name w:val="Strong"/></w:style>',
+      ),
+    );
+    const node = parseXml(
+      `<w:r xmlns:w="${WORD_NS}"><w:rPr><w:rStyle w:val="Important"/></w:rPr></w:r>`,
+    )!;
+    for (const maxStyleTraversalSteps of [1, 2]) {
+      const project = styleProjection(
+        styles,
+        undefined,
+        resolveDocxLimits({ maxStyleTraversalSteps }),
+        new Set(),
+      );
+      if (maxStyleTraversalSteps === 1)
+        expect(() => project("r", node)).toThrow("docx_limit:maxStyleTraversalSteps");
+      else expect(project("r", node)?.[0]?.names).toEqual(["strong"]);
+    }
+    const overridden = styleProjection(
+      styles,
+      "r.Important => !",
+      resolveDocxLimits({ maxStyleTraversalSteps: 2 }),
+      new Set(),
+    );
+    expect(overridden("r", node)).toBeNull();
+    for (const maxStyleTraversalSteps of [2, 3]) {
+      const unmatched = styleProjection(
+        styles,
+        "r.Other => !",
+        resolveDocxLimits({ maxStyleTraversalSteps }),
+        new Set(),
+      );
+      if (maxStyleTraversalSteps === 2)
+        expect(() => unmatched("r", node)).toThrow("docx_limit:maxStyleTraversalSteps");
+      else expect(unmatched("r", node)?.[0]?.names).toEqual(["strong"]);
+    }
+  });
+});
 
 describe("DOCX symbol evidence boundaries", () => {
   test("preserves all 1061 baseline mappings across the complete five-font byte domain", () => {

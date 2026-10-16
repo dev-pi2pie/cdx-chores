@@ -42,6 +42,47 @@ const passthrough = new Set([
   "v:rect",
 ]);
 
+/** Discard vertical continuations only after parsing every cell's semantic content. */
+function filterMergedCells(rows: Content[]): void {
+  if (
+    rows.some((row) => row.kind !== "tr") ||
+    rows.some((row) => "children" in row && row.children.some((cell) => cell.kind !== "td"))
+  )
+    return;
+  const columns = new Set<number>();
+  for (const row of rows) {
+    if (!("children" in row)) continue;
+    let column = 0;
+    row.children = row.children.filter((cell) => {
+      if (!("node" in cell)) return true;
+      const properties = first(cell.node, "w:tcPr");
+      const merge = first(properties, "w:vMerge");
+      const continuation =
+        merge && [undefined, "", "continue"].includes(merge.attributes.get("w:val"));
+      const keep = !continuation || !columns.has(column);
+      columns.add(column);
+      const span = first(properties, "w:gridSpan")?.attributes.get("w:val");
+      column += span ? Number.parseInt(span, 10) : 1;
+      return keep;
+    });
+  }
+}
+
+/** A checkbox replaces its display glyph, retaining later text and enclosing structure. */
+function replaceCheckboxText(values: Content[]): Content[] {
+  let found = false;
+  function replace(value: Content): Content {
+    if (value.kind === "text" && value.value.length && !found) {
+      found = true;
+      return { kind: "checkbox" };
+    }
+    if ("children" in value) value.children = value.children.map(replace);
+    return value;
+  }
+  const replaced = values.map(replace);
+  return found ? replaced : [{ kind: "checkbox" }];
+}
+
 /** Construct semantic children eagerly, before style suppression or note selection. */
 export function readContent(
   parent: Element,
@@ -164,6 +205,7 @@ export function readContent(
       const kind = ({ "w:r": "r", "w:tbl": "table", "w:tr": "tr", "w:tc": "td" } as const)[
         node.name
       ];
+      if (kind === "table") filterMergedCells(read.values);
       if (kind === "r") {
         const link = fields.findLast(
           (field) => field.href !== undefined || field.anchor !== undefined,
@@ -183,7 +225,10 @@ export function readContent(
     }
     if (node.name === "w:sdt") {
       const content = first(node, "w:sdtContent");
-      return content ? nested(content) : empty();
+      const read = content ? nested(content) : empty();
+      if (first(first(node, "w:sdtPr"), "wordml:checkbox"))
+        read.values = replaceCheckboxText(read.values);
+      return read;
     }
     if (node.name === "mc:AlternateContent") {
       const fallback = first(node, "mc:Fallback");

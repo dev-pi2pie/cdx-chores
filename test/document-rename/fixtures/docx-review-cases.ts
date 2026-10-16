@@ -1,0 +1,222 @@
+import type { DocumentTitleEvidence } from "../../../src/adapters/codex/document-rename/types";
+import {
+  buildDocxPackage,
+  paragraph,
+  run,
+  stylesXml,
+  type DocxPackageOptions,
+} from "./docx-baseline/corpus/builder";
+import type { DocxBaselineCase } from "./docx-baseline/corpus/types";
+
+interface ReviewCase {
+  id: string;
+  options: DocxPackageOptions;
+  rawText?: string;
+  headings?: Array<{ level: number; text: string }>;
+  titleCandidates?: string[];
+  leadText?: string;
+  diagnostic?: string;
+  reason?: string;
+}
+
+const strongStyles = stylesXml(
+  '<w:style w:type="character" w:styleId="Important"><w:name w:val="Strong"/></w:style>',
+);
+const strongRun = '<w:r><w:rPr><w:rStyle w:val="Important"/></w:rPr><w:t>Financial</w:t></w:r>';
+const heading = (contents: string) =>
+  `<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr>${contents}</w:p>`;
+const cell = (text: string, properties = "") =>
+  `<w:tc><w:tcPr>${properties}</w:tcPr>${paragraph(text, "Heading1")}</w:tc>`;
+const row = (contents: string) => `<w:tr>${contents}</w:tr>`;
+const table = (contents: string) => `<w:tbl>${contents}</w:tbl>`;
+const checkbox = (contents: string, checked = "1") =>
+  `<w:sdt xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"><w:sdtPr><w14:checkbox><w14:checked w14:val="${checked}"/></w14:checkbox></w:sdtPr><w:sdtContent>${contents}</w:sdtContent></w:sdt>`;
+
+/** Explicit review expectations; original historical captures remain unchanged. */
+export function createDocxReviewCases(): ReviewCase[] {
+  const visible = "Visible report";
+  const hidden = "Hidden continuation";
+  const merged = table(
+    row(cell(visible, '<w:vMerge w:val="restart"/>')) + row(cell(hidden, "<w:vMerge/>")),
+  );
+  return [
+    {
+      id: "review-strong-heading-boundaries",
+      options: { body: heading(run("Annual") + strongRun + run("Report")), styles: strongStyles },
+      rawText: "AnnualFinancialReport\n\n",
+      headings: [{ level: 1, text: "Annual Financial Report" }],
+      titleCandidates: ["Annual Financial Report", "AnnualFinancialReport"],
+      leadText: "AnnualFinancialReport",
+    },
+    ...[
+      { map: "r.Important =>", text: "Annual FinancialReport", suffix: "unwrap" },
+      { map: "r.Important => !", text: "Annual Report", suffix: "suppress" },
+    ].map(({ map, text, suffix }): ReviewCase => ({
+      id: `review-strong-embedded-${suffix}`,
+      options: {
+        body: heading(run("Annual ") + strongRun + run("Report")),
+        styles: strongStyles,
+        extraParts: [["mammoth/style-map", map]],
+      },
+      rawText: "Annual FinancialReport\n\n",
+      headings: [{ level: 1, text }],
+      titleCandidates: [text, ...(suffix === "suppress" ? ["Annual FinancialReport"] : [])],
+      leadText: "Annual FinancialReport",
+    })),
+    ...["b", "i"].map((property): ReviewCase => ({
+      id: `review-direct-${property}-heading-boundaries`,
+      options: {
+        body: heading(
+          run("Annual") +
+            `<w:r><w:rPr><w:${property}/></w:rPr><w:t>Financial</w:t></w:r>` +
+            run("Report"),
+        ),
+      },
+      rawText: "AnnualFinancialReport\n\n",
+      headings: [{ level: 1, text: "Annual Financial Report" }],
+      titleCandidates: ["Annual Financial Report", "AnnualFinancialReport"],
+      leadText: "AnnualFinancialReport",
+    })),
+    {
+      id: "review-vertical-merge-continuation",
+      options: { body: merged },
+      rawText: `${visible}\n\n`,
+      headings: [{ level: 1, text: visible }],
+    },
+    {
+      id: "review-vertical-merge-grid-span",
+      options: {
+        body: table(
+          row(cell("Spanning report", '<w:gridSpan w:val="2"/>') + cell(visible)) +
+            row(
+              cell("Other report", '<w:gridSpan w:val="2"/>') +
+                cell(hidden, '<w:vMerge w:val="continue"/>'),
+            ),
+        ),
+      },
+      rawText: `Spanning report\n\n${visible}\n\nOther report\n\n`,
+      headings: ["Spanning report", visible, "Other report"].map((text) => ({ level: 1, text })),
+    },
+    {
+      id: "review-vertical-merge-orphan-and-restart",
+      options: {
+        body: table(
+          row(cell("Orphan report", "<w:vMerge/>")) +
+            row(cell("Restart report", '<w:vMerge w:val="restart"/>')) +
+            row(cell(hidden, "<w:vMerge/>")),
+        ),
+      },
+      rawText: "Orphan report\n\nRestart report\n\n",
+      headings: ["Orphan report", "Restart report"].map((text) => ({ level: 1, text })),
+    },
+    ...[false, true].map((nonRow): ReviewCase => ({
+      id: `review-vertical-merge-malformed-${nonRow ? "table" : "row"}`,
+      options: {
+        body: table(
+          row(cell(visible)) +
+            row(cell(hidden, "<w:vMerge/>")) +
+            (nonRow ? paragraph("Outside cell") : row(paragraph("Outside cell"))),
+        ),
+      },
+      rawText: `${visible}\n\n${hidden}\n\nOutside cell\n\n`,
+      headings: [visible, hidden].map((text) => ({ level: 1, text })),
+    })),
+    {
+      id: "review-vertical-merge-eager-failure",
+      options: {
+        body: merged.replace(run(hidden), '<w:r><w:sym w:char="28"/></w:r>'),
+      },
+      diagnostic: "docx_symbol_font_missing",
+    },
+    ...["0", "1"].map((checked): ReviewCase => ({
+      id: `review-checkbox-${checked === "1" ? "checked" : "unchecked"}`,
+      options: {
+        body: heading(checkbox(run(checked === "1" ? "☒" : "☐"), checked) + run(" Project Report")),
+      },
+      rawText: " Project Report\n\n",
+      headings: [{ level: 1, text: "Project Report" }],
+    })),
+    {
+      id: "review-checkbox-first-nonempty-text",
+      options: {
+        body: heading(
+          run("Before") +
+            checkbox(
+              `<w:hyperlink w:anchor="report">${run("")}${run("☒")}${run("Project")}</w:hyperlink>${run(" Report")}`,
+            ) +
+            run("After"),
+        ),
+      },
+      rawText: "BeforeProject ReportAfter\n\n",
+      headings: [{ level: 1, text: "Before Project ReportAfter" }],
+      titleCandidates: ["Before Project ReportAfter", "BeforeProject ReportAfter"],
+      leadText: "BeforeProject ReportAfter",
+    },
+    {
+      id: "review-checkbox-no-text",
+      options: { body: checkbox(paragraph("")) + paragraph("Project Report", "Heading1") },
+      rawText: "Project Report\n\n",
+      headings: [{ level: 1, text: "Project Report" }],
+    },
+    {
+      id: "review-checkbox-only-empty",
+      options: { body: checkbox(paragraph("")) },
+      rawText: "",
+      headings: [],
+      reason: "docx_no_title_signal",
+    },
+    {
+      id: "review-checkbox-eager-failure",
+      options: { body: checkbox(`<w:p>${run("☒")}<w:r><w:sym w:char="28"/></w:r></w:p>`) },
+      diagnostic: "docx_symbol_font_missing",
+    },
+    {
+      id: "review-ordinary-content-control",
+      options: {
+        body: heading(
+          `<w:sdt><w:sdtPr/><w:sdtContent>${run("Project Report")}</w:sdtContent></w:sdt>`,
+        ),
+      },
+      rawText: "Project Report\n\n",
+      headings: [{ level: 1, text: "Project Report" }],
+    },
+    ...[
+      { id: "plain", xml: "<![CDATA[CDATA Report]]>", text: "CDATA Report" },
+      { id: "mixed", xml: "Before<![CDATA[ & <Draft> ]]>After", text: "Before & <Draft> After" },
+    ].map(({ id, xml, text }): ReviewCase => ({
+      id: `review-cdata-${id}`,
+      options: { body: heading(`<w:r><w:t>${xml}</w:t></w:r>`) },
+      rawText: `${text}\n\n`,
+      headings: [{ level: 1, text }],
+    })),
+  ];
+}
+
+export function reviewCaseInput(item: ReviewCase): DocxBaselineCase {
+  return {
+    id: item.id,
+    category: "review-follow-up",
+    variations: [item.id],
+    input: { bytes: buildDocxPackage(item.options) },
+    expected: {},
+  };
+}
+
+/** Expected policy fields are authored from the named source-text consequences. */
+export function expectedReviewEvidence(
+  item: ReviewCase,
+): DocumentTitleEvidence | { reason: string } {
+  if (item.diagnostic || item.reason) return { reason: item.reason ?? "docx_extract_error" };
+  const headings = item.headings!.map(({ text }) => text);
+  return {
+    filename: `${item.id}.docx`,
+    extension: ".docx",
+    detectedType: "docx",
+    titleCandidates: item.titleCandidates ?? headings,
+    headings,
+    tocCandidates: headings,
+    leadText: item.leadText ?? item.rawText!.trim().replace(/\n+/g, " "),
+    metadata: { extractor: "docx-reader" },
+    warnings: ["docx_metadata_unavailable"],
+  };
+}

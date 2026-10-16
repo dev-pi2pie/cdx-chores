@@ -13,10 +13,10 @@ The maintainer accepted preserving CDATA as text, including mixed plain text/CDA
 
 ## Checklist
 
-- [ ] Preserve Strong character-style heading boundaries and embedded-rule precedence.
-- [ ] Exclude valid vertical-merge continuation content after eager parsing; preserve orphan/restart, column-span, and failure behavior.
-- [ ] Normalize checkbox content controls through the existing semantic checkbox node.
-- [ ] Add independent content/evidence/prompt regressions, including the accepted CDATA departure.
+- [x] Preserve Strong character-style heading boundaries and embedded-rule precedence.
+- [x] Exclude valid vertical-merge continuation content after eager parsing; preserve orphan/restart, column-span, and failure behavior.
+- [x] Normalize checkbox content controls through the existing semantic checkbox node.
+- [x] Add independent content/evidence/prompt regressions, including the accepted CDATA departure.
 - [ ] Make package-version verification read-only and enforce measured processing completion through parent validation.
 - [ ] Reuse the production extractor factory in the candidate fixture; remove the unused metadata-helper option and retired resource inspector, and reconcile affected links.
 - [ ] Pass focused, routine, built-runtime, comparison, measurement, and packed-consumer verification.
@@ -26,7 +26,7 @@ The maintainer accepted preserving CDATA as text, including mixed plain text/CDA
 
 | Check | Result |
 | --- | --- |
-| Content compatibility / CDATA | Pending; CDATA text preservation accepted |
+| Content compatibility / CDATA | Twenty named cases: eighteen baseline-compatible and two accepted CDATA departures; nine regressions failed before fixes; content unit and compiled-product evidence/prompt checks passed |
 | Verifier corrections | Pending |
 | Simplification / documentation | Pending |
 | Routine / manual verification | Pending |
