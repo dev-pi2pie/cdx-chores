@@ -261,6 +261,10 @@ The implementation plan must repeat applicable evidence/prompt, fallback, resour
 
 This research remains `draft`: no candidate implementation has been evaluated or comparison spike started. Output equivalence, concrete support/diagnostic mappings, resource budgets, maintenance acceptance, and both gates remain unverified; implementation has not been approved.
 
+## Related Plans
+
+- [DOCX reader and Mammoth replacement](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md) — draft phased evaluation and conditional migration plan, ending with docs validation. Creating the plan does not approve implementation or establish candidate compatibility.
+
 ## References
 
 [^rename-guide]: [Rename scope and Codex capabilities](../guides/rename-scope-and-codex-capability-guide.md).
