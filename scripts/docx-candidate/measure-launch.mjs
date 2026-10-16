@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { symlink } from "node:fs/promises";
+import { symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -21,6 +21,7 @@ const relativeToCandidate = (observed, reference) =>
   observed > reference ? "above-reference" : "within-reference";
 
 async function run(harness, workspace, mode, load) {
+  const destination = join(workspace, `${mode}-${load ?? "isolated"}.json`);
   const log = join(workspace, `${mode}-${load ?? "isolated"}.log`);
   const result = await harness.command(
     process.execPath,
@@ -43,6 +44,8 @@ async function run(harness, workspace, mode, load) {
       },
     },
   );
+  // The isolated baseline consumes the saved idle-candidate report.
+  await writeFile(destination, result);
   return JSON.parse(result);
 }
 
