@@ -10,7 +10,7 @@ agent: codex
 
 Evaluate and, if justified, integrate a focused project-owned DOCX reader that preserves semantic rename evidence and fallback behavior while enabling complete Mammoth removal.
 
-This plan includes contract research, candidate evaluation, and conditional production migration. Phases 1–7 establish the research decision; Phases 8–9 proceed only after selection supports replacement. Phase 10 validates documentation before closeout. The [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md) tracks outcomes across all ten phases. Phase 1 is complete; Phase 2 research is in progress and design agreement remains pending. Current execution covers Phases 2–3, with Phase 3 gated on that agreement, and stops before Phase 4. No replacement has been selected.
+This plan includes contract research, candidate evaluation, and conditional production migration. Phases 1–7 establish the research decision; Phases 8–9 proceed only after selection supports replacement. Phase 10 validates documentation before closeout. The [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md) tracks outcomes across all ten phases. Phases 1–2 are complete; the maintainer accepted the Phase 2 design and initial-reader scope. Current execution proceeds to Phase 3 and stops before Phase 4. Numerical budgets and final support acceptance remain Phase 6 work. No replacement has been selected.
 
 ## Scope
 
@@ -45,7 +45,7 @@ src/adapters/codex/document-rename/
 
 The exact file split, reader types, and failure representation remain provisional through evaluation. Avoid a second ZIP/XML implementation. Establish whether an internal non-text-content signal is needed to preserve extraction reasons without generating HTML. Prototype code may be retained after review and validation; it must not become production infrastructure merely because it exists.
 
-The research's [resource-isolation and content-support contract](../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#resource-isolation-and-content-support-contract) governs process accounting, deadline/cleanup scope, communication bounds, symbol policy, and style/note limitations. Its separate-process topology is a design recommendation to evaluate; writing this plan does not accept the architecture, numerical limits, or unsupported-content outcomes. Phase 2 settles implementation scope; Phase 6 accepts the demonstrated budgets and support envelope.
+The research's [resource-isolation and content-support contract](../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#resource-isolation-and-content-support-contract) governs process accounting, deadline/cleanup scope, communication bounds, symbol policy, and style/note limitations. The maintainer accepted its design, implementation scope, and validation method in Phase 2. Phase 6 accepts the demonstrated numerical budgets and support envelope; design agreement alone does not establish either.
 
 ## Candidate Build and Packaging Checks
 
@@ -89,15 +89,15 @@ The required installation matrix for both Phase 6 and Phase 9 is npm and Bun. In
 
 **Deliverable and exit criteria:** a reproducible baseline corpus and comparison harness, a consumer inventory, and proposed resource budgets. Every minimum matrix variation has an identified case; unavailable cases are recorded as gaps and prevent claiming the full comparison is complete. The current adapter is the baseline, not the historical spike's earlier evidence shape or ranking rules.
 
-Phase 1 is complete, with reusable corpus/expectations, consumer inventory, and provisional resource budgets linked from the [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md). Its validation, temporary-output cleanup, and full-range review passed. Those baseline outcomes do not satisfy the revised candidate contract. Phase 2 design decisions remain pending; Phases 3–10 are unstarted.
+Phase 1 is complete, with reusable corpus/expectations, consumer inventory, and provisional resource budgets linked from the [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md). Its validation, temporary-output cleanup, and full-range review passed. Those baseline outcomes do not satisfy the revised candidate contract; the following phases supply that evidence.
 
 ### Phase 2: Research and settle the contract
 
-- [ ] Compare shared-process, RSS-increase, and separate-process accounting; settle the process topology, memory ownership, and sampling limitations.
-- [ ] Define processing-deadline scope, shutdown grace, complete API timing, input/result bounds, active-request limits, environment/loader handling, and offline behavior.
-- [ ] Trace mapped/unmapped/malformed symbols through the baseline and rename evidence. Evaluate mapping dependency/data ownership, provenance, and licenses; record case-specific omission/failure policies and diagnostic mappings.
-- [ ] Define the heading-style mapping grammar, note-expansion/cycle scope, and empty/non-text/metadata-only boundaries. Identify additional corpus cases and expected comparison outcomes.
-- [ ] Record maintainer agreement on the design, implementation scope, and validation method before Phase 3. Keep numerical proposals provisional until Phase 6 measurements and acceptance.
+- [x] Compare shared-process, RSS-increase, and separate-process accounting; settle the process topology, memory ownership, and sampling limitations.
+- [x] Define processing-deadline scope, shutdown grace, complete API timing, input/result bounds, active-request limits, environment/loader handling, and offline behavior.
+- [x] Trace mapped/unmapped/malformed symbols through the baseline and rename evidence. Evaluate mapping dependency/data ownership, provenance, and licenses; record case-specific omission/failure policies and diagnostic mappings.
+- [x] Define the heading-style mapping grammar, note-expansion/cycle scope, and empty/non-text/metadata-only boundaries. Identify additional corpus cases and expected comparison outcomes.
+- [x] Record maintainer agreement on the design, implementation scope, and validation method before Phase 3. Keep numerical proposals provisional until Phase 6 measurements and acceptance.
 
 **Deliverable and exit criteria:** one reviewed contract in the research, with explicit choices and identified verification cases. Drafting diagrams or preferring an architecture does not complete this phase. Unresolved design decisions prevent candidate implementation; they do not require accepting all numeric budgets in advance.
 

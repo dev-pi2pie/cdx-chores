@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phase 1 is complete. Current scope covers Phases 2–3, with design agreement required before Phase 3; stop before Phase 4.
+Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–2 are complete. Current scope proceeds to Phase 3; stop before Phase 4.
 
 ## Phase 1 Outcomes
 
@@ -47,12 +47,14 @@ Phase 2 source baseline: `e21bc413ec52a2b882b4a01f25f527e962331dbf`.
 | Plan renumbered into ten outcome-focused phases | Yes |
 | Documentation review and link/status checks | Yes; no remaining material findings |
 | Additional baseline contract cases | Yes; 33 cases, original 91 unchanged |
-| Runtime and content contract review | Yes; proposed contract recorded |
+| Runtime and content contract review | Yes; agreed design recorded |
 | Lint, formatting, types, build, managed unit/application checks, Node baseline/contract verification | Passed |
-| Phase 2 full-range review | Pending |
-| Phase 2 design agreement | Pending |
+| Phase 2 full-range review | Passed; findings fixed |
+| Phase 2 design agreement | Yes; implementation scope and validation method accepted |
 | New candidate implementation started | No |
+
+Reviewed substantive range: `e21bc413..b3dbe021`. Review fixes distinguish successful empty conversion from converter failure, prove overlapping style-rule precedence, and assert note ordering/ranking before deduplication.
 
 ## Later Phases
 
-Phase 2 remains open; Phases 3–10 are unstarted. Budget/support acceptance, candidate compatibility, maintenance acceptance, and shipping checks remain pending. Production behavior and dependencies are unchanged from the Phase 1 checkpoint.
+Phase 3 is next; Phases 4–10 are unstarted. Numerical budget/support acceptance, candidate compatibility, maintenance acceptance, and shipping checks remain pending. Production behavior and dependencies are unchanged from the Phase 1 checkpoint.

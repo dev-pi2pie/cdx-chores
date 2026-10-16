@@ -212,7 +212,7 @@ These rules govern evaluation and any later implementation:
 
 ## Resource Isolation and Content-Support Contract
 
-This section separates runtime accounting from document compatibility. Phase 2 proposes one fresh extraction process per admitted request and baseline-led content handling. The contract below is awaiting design agreement; the diagrams do not describe implemented behavior. Agreement authorizes the initial reader slice, while resource enforcement belongs to Phase 4 and final numeric budgets/support acceptance belong to Phase 6.
+This section separates runtime accounting from document compatibility. The maintainer accepted the Phase 2 design, initial-reader scope, and validation method: one fresh extraction process per admitted request and baseline-led content handling. The diagrams describe the agreed target rather than implemented behavior. Agreement authorizes the initial reader slice, while resource enforcement belongs to Phase 4 and final numeric budgets/support acceptance belong to Phase 6.
 
 ### Memory accounting alternatives
 
@@ -239,7 +239,7 @@ Shared Node process
 A Node child process has its own memory and V8 instance, with a communication channel to its parent.[^node-child] The proposed design uses one extraction process per request, with a supervisor main thread and a parser worker inside it. This keeps a sampling event loop separate from potentially blocking parsing, without requiring an external process-inspection command. A persistent pool would introduce another lifecycle and memory-retention policy and is outside the initial design.
 
 ```text
-Caller process                       Extraction process [PROPOSED]
+Caller process                       Extraction process [DESIGN]
 +------------------------+           +-----------------------------+
 | Admit / start deadline |  bounded  | Supervisor main thread      |
 | Read with byte cap     |  request  | - sample this process's RSS |
@@ -270,6 +270,7 @@ Use `spawn(process.execPath, [fixedPackagedChildPath])` without a shell, detachm
 | Input | Read the path in capped chunks after admission; an early size check never replaces actual-byte counting. Do not perform an unrestricted read/copy before supervision. |
 | Request | One fixed-version byte frame with bounded metadata length and document length, followed by validated limits and DOCX bytes. No document-derived executable names, module paths, or URLs. |
 | Result | One byte-framed UTF-8 JSON success containing document facts, or a fixed internal failure code. Validate exact schema, strings/collections, actual byte counts, and end-of-frame; reject extra frames, trailing bytes, malformed UTF-8, and truncation. |
+| Standard streams | Reserve stdout for the framed protocol and ignore stderr rather than accumulating unbounded diagnostic output. Report fixed internal startup/protocol failures without transporting raw exception text. |
 | Allocation | Validate declared lengths before receiver payload assembly/decoding, independently count received bytes, and obey write backpressure. Stream buffering thresholds are not byte ceilings. |
 | Memory | Include child runtime, supervisor, worker, decompression, and result encoding in child RSS. Bound caller input/result buffers separately; do not subtract an initial RSS reading. Transfer only an exact dedicated input buffer to the worker. |
 | Admission | One active extraction per internal supervisor owner; reject a concurrent request without queuing. This is not an aggregate limit across separately loaded package instances or caller workers. |
@@ -385,7 +386,7 @@ Embedded style maps require an evidence projection, including rules that can cre
 | Nested paths, run mappings, and table mappings | Preserve headings generated inside ordinary paragraphs, nested targets, or tables. |
 | Empty target and `!` | Preserve unwrapping or subtree suppression, including whether note references are gathered. |
 
-Phase 3 implements only the simple paragraph-heading slice required by its identified cases. The broader style cases remain Phase 5 obligations. This does not require arbitrary HTML rendering, but all heading text/order and content-presence effects must be accounted for before full compatibility can pass.
+Phase 3 includes direct paragraph rules `p.StyleId => hN:fresh` and `p[style-name='…'] => hN:fresh` for its identified embedded-map case. Prefix selectors, nested/run/table paths, merging/separators, unwrapping, and suppression remain Phase 5 obligations. This does not require arbitrary HTML rendering, but all heading text/order and content-presence effects must be accounted for before full compatibility can pass.
 
 Mammoth snapshots note references from the main-document HTML traversal, then renders that list once.[^mammoth-html] It does not recursively resolve references discovered inside notes. Preserve note-body heading evidence after main-document headings, duplicate references, reference labels such as `[1]`, and exclusion of note bodies from raw text. Do not deduplicate reader heading facts: the adapter applies its first-four-heading ranking before deduplication. Self/mutual note cycles therefore do not imply failure or recursive expansion. Missing main-document referenced notes fail conversion, whereas nested missing references are not resolved; eager parsing of malformed unused note content can still fail.
 
@@ -434,7 +435,7 @@ Design agreement authorizes a private, inline buffer-to-facts reader for trusted
 | Metadata boundaries | `metadata-title-only`, `metadata-author-only`, `metadata-conversion-failure`. |
 | Invalid content | `malformed-invalid-zip`, `malformed-main-xml`, `malformed-missing-main`. |
 
-These 22 cases must preserve complete evidence and prompt payloads except the explicitly named candidate extractor identity; synthetic inputs retain independent assertions. Record source footprint, helper changes, difficult semantics, and remaining enforcement/content/packaging work before deciding continue, constrain, or defer. Remaining original/contract/resource cases are untested candidate obligations, not implicitly supported input. The inline reader is unguarded evaluation code; the child/worker boundary and its enforcement tests belong to Phase 4.
+These 22 cases must preserve complete evidence and prompt payloads except extractor identity: `docx-reader+ooxml` when metadata is available, otherwise `docx-reader`, replacing the corresponding `mammoth+ooxml`/`mammoth` value. Synthetic inputs retain independent assertions. Record source footprint, helper changes, difficult semantics, and remaining enforcement/content/packaging work before deciding continue, constrain, or defer. Remaining original/contract/resource cases are untested candidate obligations, not implicitly supported input. The inline reader is unguarded evaluation code; the child/worker boundary and its enforcement tests belong to Phase 4.
 
 ## Validation Matrix and Method
 
