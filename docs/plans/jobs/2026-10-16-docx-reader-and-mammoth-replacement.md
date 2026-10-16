@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–8 and 6.1–6.3 are complete. Phase 9 removal and shipping verification is in progress; Phase 10 is unstarted.
+Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–9 and 6.1–6.3 are complete. Phase 10 is unstarted.
 
 ## Phase 1 Outcomes
 
@@ -21,7 +21,7 @@ The [case manifest](../../../test/document-rename/fixtures/docx-baseline/manifes
 | Resource measurements completed and [provisional budgets](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#resource-budgets) proposed | Yes |
 | Candidate implementation started | No |
 
-Reusable evidence: [harness](../../../scripts/docx-baseline/launch.mjs), [corpus](../../../test/document-rename/fixtures/docx-baseline/corpus/index.ts), [semantic expectations](../../../test/document-rename/fixtures/docx-baseline/expected.json), [resource expectations](../../../test/document-rename/fixtures/docx-baseline/resources.json), and [provisional limits](../../../scripts/docx-baseline/resources.ts). Execution files and raw reports are temporary; no playground entry is needed for this phase.
+Reusable evidence: [corpus](../../../test/document-rename/fixtures/docx-baseline/corpus/index.ts), [semantic expectations](../../../test/document-rename/fixtures/docx-baseline/expected.json), [resource expectations](../../../test/document-rename/fixtures/docx-baseline/resources.json), and [resource inspection](../../../scripts/docx-baseline/resources.ts). The live baseline harness was retired in Phase 9; historical captures remain. Execution files and raw reports are temporary; no playground entry is needed for this phase.
 
 ## Phase 1 Verification and Review
 
@@ -173,7 +173,7 @@ Full Phase 6.1 implementation range reviewed: `4c660031..e9548edb`; final docume
 
 ### Manual validation
 
-These commands explicitly verify the manual tooling. Routine suites cover product reader/runtime behavior through test-owned fixtures and assertions; they do not launch this comparison, measurement, or installation workflow.
+These commands validate the production reader explicitly, using frozen expectations and test-owned inputs. Routine suites cover product behavior directly; they do not launch this comparison, measurement, or installation workflow. Live Mammoth capture and benchmark commands were retired in Phase 9.
 
 Help and invalid arguments return before execution setup. Help uses stdout and exits zero; invalid arguments use stderr and exit nonzero. Help is concise plain text, including in a terminal; detailed requirements and lifecycle instructions follow below.
 
@@ -200,11 +200,11 @@ NO_COLOR=1 node ./scripts/docx-candidate/launch.mjs --smoke
 # Resource measurements and stable summary JSON.
 node ./scripts/docx-candidate/measure-launch.mjs
 
-# Actual candidate package and fresh npm/Bun consumers.
+# Actual product package and fresh npm/Bun consumers.
 node ./scripts/docx-candidate/package-check.mjs
 ```
 
-A passing comparison ends with `guarded reader: passed yes`; measurements report `candidate measurements: passed yes` and summary JSON. Package validation writes tarball, consumer, and cleanup results to stdout, ending with `temporary cleanup: passed yes`. It checks the three direct installed dependencies without traversing or reporting transitive inventories or enforcing Mammoth absence. Check the exit status: zero means the script checks and output delivery passed; complete product Mammoth removal, licenses, and notices remain separate acceptance work. Waiting messages show elapsed time without claiming additional completed work.
+A passing comparison ends with `guarded reader: passed yes`; measurements report `reader measurements: passed yes` and summary JSON. Package validation reports the actual product tarball, public ESM/CJS consumers, installed CLI checks, and cleanup, ending with `temporary cleanup: passed yes`. It checks the three reader dependencies against the product declarations: exact pins stay exact, while declared ranges use package-manager resolution. It does not traverse transitive inventories or enforce Mammoth/license policy. Check the exit status: zero means the script checks and output delivery passed; separate shipping inspection establishes dependency removal and notice findings. Waiting messages show elapsed time without claiming additional completed work.
 
 To check cancellation, repeat a comparison run and press Ctrl+C while it is processing. Expect a cancellation diagnostic and nonzero exit after owned processes settle and temporary cleanup completes. SIGTERM uses the same cleanup path. Generated inputs, builds, packages, installations, caches, and raw reports use owned OS temporary storage and are removed after confirmed settlement; unconfirmed cleanup fails and retains ownership. Only explicit smoke retention exports selected artifacts to the ignored playground entry; frozen expectations are never rewritten.
 
@@ -276,17 +276,27 @@ Source baseline: `63eb0076`. The live Mammoth adapter was isolated at `1b9fc56b`
 
 Validation limitation: minimum-Node ESM case `resource-maxStyleTraversalSteps-below` initially returned `docx_extract_error`; five isolated repetitions and a complete fresh rerun passed. Its cause is unconfirmed, and the passing rerun does not establish deterministic absence of the anomaly. No limits were relaxed.
 
-The [checklist](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-8-integrate-the-selected-reader) is complete. Production uses the supervised reader; Mammoth remains for live baseline and historical tooling until Phase 9.
+The [checklist](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-8-integrate-the-selected-reader) is complete. At Phase 8 closeout, production used the supervised reader and Mammoth remained for live baseline and historical tooling. Phase 9 subsequently retired those consumers and removed the dependency.
 
 ## Phase 9: Mammoth Removal and Shipping Verification
 
-Source baseline: `94dc46c7`. Implementation and verification are in progress.
+Source baseline: `94dc46c7`. Remaining live expectations were frozen at `802f73c4`; migration and removal are at `71234d61`.
 
 | Check | Result |
 | --- | --- |
-| Pre-removal expectations | Ten additional content captures and ten supported measurement expectations frozen from the retained Mammoth adapter; independent input hashes, content assertions, and product comparisons passed |
-| Migration / removal / shipping | Pending |
+| Pre-removal expectations | Ten additional content and ten supported workload captures reviewed before removal; hashes, independent assertions, and product comparisons passed; original five captures/manifests unchanged |
+| Migration / removal | Routine tests observe the product directly; manual comparisons/measurements use frozen expectations; live oracle and benchmarks retired; useful PDF spike retained; Mammoth imports, declarations, and lock entries removed |
+| Routine checks | 1,690 unit / 2,331 application cases passed; application 222.55 seconds under unchanged 240-second deadline; build, lint, format, types, and frozen installation passed |
+| Explicit reader checks | 134 cases per format on primary/minimum Node passed; 18 workloads per runtime passed idle/loaded, ordinary/observed, deadline/RSS/cleanup checks; accepted limits unchanged |
+| Actual packed product | All eight npm/Bun × primary/minimum Node × ESM/CJS public API/bin paths passed; valid/invalid inputs, exact prompts, assets, sticky offline controls, restoration, and unchanged dry-run inputs verified |
+| Dependency / advisory review | Repository and both fresh consumer trees contain no Mammoth, `argparse`, or `sprintf-js`; three reader dependencies unchanged; `bun audit --json` reported zero advisories |
+| Review / maintenance | Full code/test range `94dc46c7..71234d61` reviewed; stale documentation corrected and closeout reviewed separately; accepted Phase 7 ownership/support contract retained |
+| Artifacts | Owned inputs, builds, packages, consumers, caches, logs, and optional smoke export removed after confirmed settlement; reviewed definitions/captures remain under `test/` |
+
+Limitations: the earlier minimum-Node style-boundary anomaly remains unexplained; 40 diagnostic-observed repetitions and complete fresh matrices passed without relaxing limits. Linux/Windows remain unverified. The three direct dependencies include their license files; transitive `@nodable/entities` 3.1.0 still omits its full MIT notice, although it exists at the [published source revision](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#runtime-and-distribution-checks). This is a recorded upstream packaging gap, not a claim of notice completeness. The quick verifier adds no license checker or supplemental notice.
+
+The [Phase 9 checklist](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-9-remove-mammoth-and-verify-shipping-acceptance) is complete. Final-product checks support the scoped Mammoth/Argparse/`sprintf-js` remediation claim; they do not establish that every dependency is vulnerability-free.
 
 ## Later Phases
 
-Phase 9 is in progress. Phase 10's final documentation consistency pass remains unstarted.
+Phase 10's final documentation consistency pass remains unstarted; the plan and unified record remain open.
