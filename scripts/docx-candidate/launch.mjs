@@ -14,7 +14,7 @@ if (cli) {
   const { runCandidateDriver } = await import("./driver.mjs");
   await runCandidateDriver(
     {
-      title: "DOCX candidate verification",
+      title: "Production DOCX verification",
       scope: `${cli.smoke ? "smoke" : "full"} comparisons; ESM and CJS`,
       prefix: "cdx-docx-candidate-",
       failure: () => "guarded reader: passed no\n",
@@ -38,7 +38,7 @@ if (cli) {
       await harness.command(
         process.execPath,
         [join(repo, "scripts/docx-candidate/build-run.mjs"), "comparison", workspace],
-        { stage: "build", label: "Build candidate", cwd: repo, env, timeout: 60_000 },
+        { stage: "build", label: "Build production reader", cwd: repo, env, timeout: 60_000 },
       );
       for (const format of ["esm", "cjs"]) {
         const output = await harness.command(

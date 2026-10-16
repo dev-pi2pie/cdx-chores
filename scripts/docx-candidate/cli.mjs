@@ -2,7 +2,8 @@ import { createOutputWriter } from "./harness/output.mjs";
 
 const commands = {
   comparison: {
-    description: "Compare DOCX candidate output in ESM/CJS (full corpus by default).",
+    description:
+      "Compare production DOCX output with frozen expectations in ESM/CJS (full corpus by default).",
     script: "launch.mjs",
     usage: " [--smoke [--keep-artifacts]]",
     options: [
@@ -12,7 +13,7 @@ const commands = {
     notes: ["Kept artifacts: examples/playground/docx-candidate/smoke/<run-id>/"],
   },
   measurement: {
-    description: "Measure the DOCX candidate and baseline across 18 workloads.",
+    description: "Check production DOCX budgets across 18 workloads with idle and loaded callers.",
     script: "measure-launch.mjs",
     usage: "",
     options: [],

@@ -6,22 +6,10 @@
       "filename": "mixed-report.docx",
       "extension": ".docx",
       "detectedType": "docx",
-      "titleCandidates": [
-        "Measured metadata title",
-        "Measured report",
-        "Measured note"
-      ],
-      "authorCandidates": [
-        "Synthetic author"
-      ],
-      "headings": [
-        "Measured report",
-        "Measured note"
-      ],
-      "tocCandidates": [
-        "Measured report",
-        "Measured note"
-      ],
+      "titleCandidates": ["Measured metadata title", "Measured report", "Measured note"],
+      "authorCandidates": ["Synthetic author"],
+      "headings": ["Measured report", "Measured note"],
+      "tocCandidates": ["Measured report", "Measured note"],
       "leadText": "Measured report Section 0: report discussion and findings. Section 1: report discussion and findings. Section 2: report discussion and findings. Section 3: report discussion and findings. Section 4: report discussion and findings. Section 5: report discussion and findings. Section 6: report discussion and findings. Section 7: report discussion and findings. Section 8: report discussion and findings. Section 9: report discussion and findings. Section 10: report discussion and findings. Section 11: report discussion and findings. Section 12: report discussion and findings. Section 13: report discussion and findings. Section 14: report discussion and findings. Section 15: report discussion and findings. Section 16: report discussion and findings. Section 17: report discussion and findings. Se",
       "metadata": {
         "title": "Measured metadata title",
@@ -38,22 +26,14 @@
       "filename": "text-near-part-cap.docx",
       "extension": ".docx",
       "detectedType": "docx",
-      "titleCandidates": [
-        "Measured report"
-      ],
-      "headings": [
-        "Measured report"
-      ],
-      "tocCandidates": [
-        "Measured report"
-      ],
+      "titleCandidates": ["Measured report"],
+      "headings": ["Measured report"],
+      "tocCandidates": ["Measured report"],
       "leadText": "Measured report Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Repor",
       "metadata": {
         "extractor": "mammoth"
       },
-      "warnings": [
-        "docx_metadata_unavailable"
-      ]
+      "warnings": ["docx_metadata_unavailable"]
     },
     "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"text-near-part-cap.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Measured report\"\n    ],\n    \"headings\": [\n      \"Measured report\"\n    ],\n    \"tocCandidates\": [\n      \"Measured report\"\n    ],\n    \"leadText\": \"Measured report Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Report discussion. Repor\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"text-near-part-cap.docx\"\n  }\n]"
   },
@@ -64,16 +44,12 @@
       "filename": "resource-compressedInputBytes-at.docx",
       "extension": ".docx",
       "detectedType": "docx",
-      "titleCandidates": [
-        "Resource boundary sentinel"
-      ],
+      "titleCandidates": ["Resource boundary sentinel"],
       "leadText": "Resource boundary sentinel",
       "metadata": {
         "extractor": "mammoth"
       },
-      "warnings": [
-        "docx_metadata_unavailable"
-      ]
+      "warnings": ["docx_metadata_unavailable"]
     },
     "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-compressedInputBytes-at.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-compressedInputBytes-at.docx\"\n  }\n]"
   },
@@ -84,16 +60,12 @@
       "filename": "resource-entryCount-at.docx",
       "extension": ".docx",
       "detectedType": "docx",
-      "titleCandidates": [
-        "Resource boundary sentinel"
-      ],
+      "titleCandidates": ["Resource boundary sentinel"],
       "leadText": "Resource boundary sentinel",
       "metadata": {
         "extractor": "mammoth"
       },
-      "warnings": [
-        "docx_metadata_unavailable"
-      ]
+      "warnings": ["docx_metadata_unavailable"]
     },
     "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-entryCount-at.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-entryCount-at.docx\"\n  }\n]"
   },
@@ -104,16 +76,12 @@
       "filename": "resource-maxPartDecompressedBytes-at.docx",
       "extension": ".docx",
       "detectedType": "docx",
-      "titleCandidates": [
-        "Resource boundary sentinel"
-      ],
+      "titleCandidates": ["Resource boundary sentinel"],
       "leadText": "Resource boundary sentinel",
       "metadata": {
         "extractor": "mammoth"
       },
-      "warnings": [
-        "docx_metadata_unavailable"
-      ]
+      "warnings": ["docx_metadata_unavailable"]
     },
     "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-maxPartDecompressedBytes-at.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-maxPartDecompressedBytes-at.docx\"\n  }\n]"
   },
@@ -124,16 +92,12 @@
       "filename": "resource-maxXmlDepth-at.docx",
       "extension": ".docx",
       "detectedType": "docx",
-      "titleCandidates": [
-        "Resource boundary sentinel"
-      ],
+      "titleCandidates": ["Resource boundary sentinel"],
       "leadText": "Resource boundary sentinel",
       "metadata": {
         "extractor": "mammoth"
       },
-      "warnings": [
-        "docx_metadata_unavailable"
-      ]
+      "warnings": ["docx_metadata_unavailable"]
     },
     "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-maxXmlDepth-at.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-maxXmlDepth-at.docx\"\n  }\n]"
   },
@@ -144,16 +108,12 @@
       "filename": "selected-total-at.docx",
       "extension": ".docx",
       "detectedType": "docx",
-      "titleCandidates": [
-        "Selected resource boundary report"
-      ],
+      "titleCandidates": ["Selected resource boundary report"],
       "leadText": "Selected resource boundary report",
       "metadata": {
         "extractor": "mammoth"
       },
-      "warnings": [
-        "docx_metadata_unavailable"
-      ]
+      "warnings": ["docx_metadata_unavailable"]
     },
     "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"selected-total-at.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Selected resource boundary report\"\n    ],\n    \"leadText\": \"Selected resource boundary report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"selected-total-at.docx\"\n  }\n]"
   },
@@ -164,16 +124,12 @@
       "filename": "selected-elements-at.docx",
       "extension": ".docx",
       "detectedType": "docx",
-      "titleCandidates": [
-        "Selected resource boundary report"
-      ],
+      "titleCandidates": ["Selected resource boundary report"],
       "leadText": "Selected resource boundary report",
       "metadata": {
         "extractor": "mammoth"
       },
-      "warnings": [
-        "docx_metadata_unavailable"
-      ]
+      "warnings": ["docx_metadata_unavailable"]
     },
     "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"selected-elements-at.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Selected resource boundary report\"\n    ],\n    \"leadText\": \"Selected resource boundary report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"selected-elements-at.docx\"\n  }\n]"
   },
@@ -184,22 +140,14 @@
       "filename": "selected-style-work-at.docx",
       "extension": ".docx",
       "detectedType": "docx",
-      "titleCandidates": [
-        "Selected resource boundary report"
-      ],
-      "headings": [
-        "Selected resource boundary report"
-      ],
-      "tocCandidates": [
-        "Selected resource boundary report"
-      ],
+      "titleCandidates": ["Selected resource boundary report"],
+      "headings": ["Selected resource boundary report"],
+      "tocCandidates": ["Selected resource boundary report"],
       "leadText": "Selected resource boundary report",
       "metadata": {
         "extractor": "mammoth"
       },
-      "warnings": [
-        "docx_metadata_unavailable"
-      ]
+      "warnings": ["docx_metadata_unavailable"]
     },
     "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"selected-style-work-at.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Selected resource boundary report\"\n    ],\n    \"headings\": [\n      \"Selected resource boundary report\"\n    ],\n    \"tocCandidates\": [\n      \"Selected resource boundary report\"\n    ],\n    \"leadText\": \"Selected resource boundary report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"selected-style-work-at.docx\"\n  }\n]"
   },
@@ -210,22 +158,14 @@
       "filename": "selected-numbering-work-at.docx",
       "extension": ".docx",
       "detectedType": "docx",
-      "titleCandidates": [
-        "Selected resource boundary report"
-      ],
-      "headings": [
-        "Selected resource boundary report"
-      ],
-      "tocCandidates": [
-        "Selected resource boundary report"
-      ],
+      "titleCandidates": ["Selected resource boundary report"],
+      "headings": ["Selected resource boundary report"],
+      "tocCandidates": ["Selected resource boundary report"],
       "leadText": "Selected resource boundary report",
       "metadata": {
         "extractor": "mammoth"
       },
-      "warnings": [
-        "docx_metadata_unavailable"
-      ]
+      "warnings": ["docx_metadata_unavailable"]
     },
     "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"selected-numbering-work-at.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Selected resource boundary report\"\n    ],\n    \"headings\": [\n      \"Selected resource boundary report\"\n    ],\n    \"tocCandidates\": [\n      \"Selected resource boundary report\"\n    ],\n    \"leadText\": \"Selected resource boundary report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"selected-numbering-work-at.docx\"\n  }\n]"
   }

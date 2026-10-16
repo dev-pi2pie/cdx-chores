@@ -1,13 +1,9 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
-import { basename } from "node:path";
-import * as mammoth from "mammoth";
 
-import { buildDocumentPrompt } from "../../../../src/adapters/codex/document-rename/prompt";
-import { readDocxCoreMetadata } from "../../../../src/adapters/docx/ooxml-metadata";
+import type { DocumentTitleEvidence } from "../../../../src/adapters/codex/document-rename/types";
+import type { ReadDocxCoreMetadataResult } from "../../../../src/adapters/docx/ooxml-metadata";
 import type { DocxBaselineCase } from "./corpus/index";
-import { extractBaselineDocxEvidence } from "./extractor";
 
 type Conversion = { value: string; messages: unknown[] } | { error: string };
 
@@ -16,8 +12,8 @@ export interface DocxCapture {
   inputSha256: string;
   html: Conversion;
   rawText: Conversion;
-  metadata: Awaited<ReturnType<typeof readDocxCoreMetadata>>;
-  result: Awaited<ReturnType<typeof extractBaselineDocxEvidence>>;
+  metadata: ReadDocxCoreMetadataResult;
+  result: DocumentTitleEvidence | { reason: string };
   prompt: string | null;
 }
 
@@ -25,54 +21,7 @@ export function sha256(value: string | Buffer): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-export async function exerciseExternalFileRead(path: string): Promise<void> {
-  await mammoth.convertToHtml({ buffer: await readFile(path) }, { externalFileAccess: true });
-}
-
-function conversion(
-  result: PromiseSettledResult<Awaited<ReturnType<typeof mammoth.convertToHtml>>>,
-  path: string,
-): Conversion {
-  if (result.status === "fulfilled") {
-    return { value: result.value.value, messages: result.value.messages };
-  }
-  const error = result.reason instanceof Error ? result.reason.message : String(result.reason);
-  return { error: error.replaceAll(path, basename(path)) };
-}
-
-/** Diagnostic conversions are separate from the baseline adapter and timed measurements. */
-export async function captureDocx(
-  path: string,
-  directory: string,
-  id: string,
-): Promise<DocxCapture> {
-  const buffer = await readFile(path);
-  const [html, rawText] = await Promise.allSettled([
-    mammoth.convertToHtml({ buffer }),
-    mammoth.extractRawText({ buffer }),
-  ]);
-  const metadata = await readDocxCoreMetadata(path);
-  const result = await extractBaselineDocxEvidence(path);
-  return JSON.parse(
-    JSON.stringify({
-      id,
-      inputSha256: sha256(buffer),
-      html: conversion(html, path),
-      rawText: conversion(rawText, path),
-      metadata,
-      result,
-      prompt:
-        "reason" in result
-          ? null
-          : buildDocumentPrompt({
-              evidences: [{ path, evidence: result }],
-              workingDirectory: directory,
-            }),
-    }),
-  ) as DocxCapture;
-}
-
-/** Independent content assertions accompany whole-object baseline comparisons. */
+/** Validate the independent expectations recorded alongside historical captures. */
 export function assertCaseExpectations(item: DocxBaselineCase, capture: DocxCapture): void {
   const expected = item.expected;
   const text = "value" in capture.rawText ? capture.rawText.value : "";

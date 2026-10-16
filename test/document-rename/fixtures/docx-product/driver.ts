@@ -1,15 +1,18 @@
 import assert from "node:assert/strict";
-import { stat, writeFile } from "node:fs/promises";
+import { readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import {
   createDocxEvidenceExtractor,
   extractDocumentTitleEvidenceForPath,
+  buildDocumentPrompt,
+  readCandidateDocx,
   __testOnlySuggestDocumentRenameTitlesWithBatch as suggestWithBatch,
   __testOnlySuggestDocumentRenameTitlesWithThread as suggestWithThread,
 } from "./entry";
 import { selectCodexDocumentTextCandidates } from "../../../../src/cli/actions/rename/codex/candidates";
 import { buildDocxPackage, paragraph } from "../docx-baseline/corpus/builder";
+import type { DocxReadResult } from "../../../../src/docx/types";
 
 const mode = process.argv[2];
 const path = process.argv[3]!;
@@ -31,9 +34,48 @@ async function inputs(root: string) {
   return { first, second, broken };
 }
 
+function createProductObserver() {
+  let read: DocxReadResult | undefined;
+  const extract = createDocxEvidenceExtractor(async (input) => {
+    read = await readCandidateDocx(input);
+    return read;
+  });
+  return async (document: string, directory: string) => {
+    read = undefined;
+    const evidence = await extract(document);
+    assert(read, "Expected the production extractor to read its document");
+    const prompt =
+      "reason" in evidence
+        ? null
+        : buildDocumentPrompt({
+            evidences: [{ path: document, evidence }],
+            workingDirectory: directory,
+          });
+    return { read, evidence, prompt };
+  };
+}
+
 async function main() {
   if (mode === "extract") {
     process.stdout.write(JSON.stringify(await extractDocumentTitleEvidenceForPath(path)));
+  } else if (mode === "observe-many") {
+    const requests = JSON.parse(await readFile(path, "utf8")) as Array<{
+      id: string;
+      path: string;
+      directory: string;
+    }>;
+    assert(
+      requests.length > 0 && requests.length <= 70,
+      "Expected a bounded DOCX regression slice",
+    );
+    const observe = createProductObserver();
+    const observations = [];
+    for (const request of requests)
+      observations.push({
+        id: request.id,
+        observation: await observe(request.path, request.directory),
+      });
+    process.stdout.write(JSON.stringify(observations));
   } else if (mode === "sequential") {
     const { first, second, broken } = await inputs(path);
     const extract = createDocxEvidenceExtractor();

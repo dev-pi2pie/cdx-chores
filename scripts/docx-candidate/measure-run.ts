@@ -1,32 +1,72 @@
 import assert from "node:assert/strict";
-import { spawn, type ChildProcess } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdir, open, readFile, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { buildDocumentPrompt } from "../../src/adapters/codex/document-rename/prompt";
 import { DEFAULT_DOCX_LIMITS } from "../../src/docx/limits";
-import { createDocxSupervisor, createDocxSupervisorForTesting } from "../../src/docx/runtime/index";
+import { createDocxSupervisorForTesting, type DocxSupervisor } from "../../src/docx/runtime/index";
 import type { DocxReadResult } from "../../src/docx/types";
+import { normalizeDocxProvenance } from "../../test/document-rename/fixtures/docx-baseline/assertions";
 import { createDocxMeasureCases } from "../../test/document-rename/fixtures/docx-measure-cases";
 import { createCandidateEvidenceExtractor } from "./adapter";
 import { emitProgress } from "./harness/protocol.mjs";
 import type {
-  BaselineMeasurement,
   CandidateMeasurement,
   ChildMeasurement,
+  FrozenMeasurement,
   MeasurementReport,
 } from "./measure-types";
 
-const [mode, workspace, load] = process.argv.slice(2);
+const [workspace, load] = process.argv.slice(2);
 assert(workspace);
 const repetitions = 3;
 const now = () => performance.timeOrigin + performance.now();
 const shutdown = new AbortController();
-const ownedBaselineChildren = new Set<ChildProcess>();
 process.once("SIGTERM", () => {
   shutdown.abort();
-  for (const child of ownedBaselineChildren) child.kill("SIGKILL");
 });
+
+interface ReaderModule {
+  readCandidateDocx: DocxSupervisor["read"];
+  createCandidateEvidenceExtractor: typeof createCandidateEvidenceExtractor;
+}
+
+function assertFrozenEvidence(
+  expected: FrozenMeasurement,
+  evidence: Awaited<ReturnType<ReturnType<typeof createCandidateEvidenceExtractor>>>,
+  path: string,
+): void {
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(evidence)),
+    expected.result,
+    `${expected.id}: evidence`,
+  );
+  assert(!("reason" in evidence), `${expected.id}: supported evidence`);
+  assert.equal(
+    buildDocumentPrompt({
+      evidences: [{ path, evidence }],
+      workingDirectory: dirname(path),
+    }),
+    expected.prompt,
+    `${expected.id}: prompt`,
+  );
+}
+
+async function ordinary(module: ReaderModule, path: string) {
+  let result: DocxReadResult | undefined;
+  const extract = module.createCandidateEvidenceExtractor(async (input) => {
+    result = await module.readCandidateDocx(input, { signal: shutdown.signal });
+    return result;
+  });
+  const started = now();
+  const evidence = await extract(path);
+  const milliseconds = now() - started;
+  assert(result);
+  return { result, evidence, milliseconds };
+}
 
 function exited(pid: number): boolean {
   try {
@@ -60,6 +100,7 @@ async function transitions(path: string, completed: number): Promise<void> {
         childPath: join(workspace!, `measure-${transition}-${position}.mjs`),
       });
       const result = await supervisor.read(path, {
+        signal: shutdown.signal,
         // No interval can interleave with the fixed transition observations.
         limits: { peakRssBytes: 5, rssSampleMilliseconds: 1_000_000 },
       });
@@ -79,26 +120,54 @@ async function transitions(path: string, completed: number): Promise<void> {
 async function candidate(): Promise<MeasurementReport> {
   assert(load === "idle" || load === "loaded");
   const cases = await materialize();
+  const frozen = (
+    JSON.parse(
+      await readFile(join(workspace!, "measurement-expected.json"), "utf8"),
+    ) as FrozenMeasurement[]
+  ).map((capture) => normalizeDocxProvenance(capture, capture.id));
+  assert.equal(frozen.length, 10, "Supported measurement expectations changed");
+  assert.equal(new Set(frozen.map((capture) => capture.id)).size, frozen.length);
+  assert.deepEqual(
+    frozen.map((capture) => capture.id),
+    cases.filter((item) => item.kind === "supported").map((item) => item.id),
+    "Frozen measurement IDs or order changed",
+  );
+  for (const item of cases.filter((value) => value.kind === "supported")) {
+    const expected = frozen.find((capture) => capture.id === item.id);
+    assert(expected, `${item.id}: missing frozen measurement`);
+    assert.equal(
+      createHash("sha256").update(item.bytes).digest("hex"),
+      expected.inputSha256,
+      item.id,
+    );
+  }
   await emitProgress({ event: "scope", total: cases.length + (load === "idle" ? 6 : 0) });
   let completed = 0;
   // A fresh caller per lane avoids relying on GC to remove the high-memory lane.
   const retained = load === "loaded" ? Buffer.alloc(384 * 1024 * 1024, 0xa5) : undefined;
   if (retained) assert(process.memoryUsage.rss() > DEFAULT_DOCX_LIMITS.peakRssBytes);
   const samples: CandidateMeasurement[] = [];
-  const ordinary = createDocxSupervisor();
-  const cjs = (await import(pathToFileURL(join(workspace!, "reader.cjs")).href)) as {
-    readCandidateDocx: (path: string, options: { signal: AbortSignal }) => Promise<DocxReadResult>;
-  };
+  const esm = (await import(pathToFileURL(join(workspace!, "reader.mjs")).href)) as ReaderModule;
+  const cjs = createRequire(import.meta.url)(join(workspace!, "reader.cjs")) as ReaderModule;
   for (const item of cases) {
     shutdown.signal.throwIfAborted();
     await emitProgress({ event: "start", id: item.id });
-    const esmStarted = now();
-    const ordinaryResult = await ordinary.read(item.path, { signal: shutdown.signal });
-    const ordinaryEsmApiMilliseconds = now() - esmStarted;
-    const cjsStarted = now();
-    const cjsResult = await cjs.readCandidateDocx(item.path, { signal: shutdown.signal });
-    const ordinaryCjsApiMilliseconds = now() - cjsStarted;
-    assert.deepEqual(cjsResult, ordinaryResult, `${item.id}: ordinary built formats differ`);
+    const esmRun = await ordinary(esm, item.path);
+    const cjsRun = await ordinary(cjs, item.path);
+    const ordinaryResult = esmRun.result;
+    const ordinaryEsmApiMilliseconds = esmRun.milliseconds;
+    const ordinaryCjsApiMilliseconds = cjsRun.milliseconds;
+    assert.deepEqual(cjsRun.result, ordinaryResult, `${item.id}: ordinary built formats differ`);
+    assert.deepEqual(cjsRun.evidence, esmRun.evidence, `${item.id}: ordinary evidence differs`);
+    const frozenExpected = frozen.find((capture) => capture.id === item.id);
+    if (item.kind === "supported") {
+      assert(frozenExpected);
+      assertFrozenEvidence(frozenExpected, esmRun.evidence, item.path);
+      assertFrozenEvidence(frozenExpected, cjsRun.evidence, item.path);
+    } else {
+      assert.deepEqual(ordinaryResult, { ok: false, diagnostic: item.diagnostic }, item.id);
+      assert.deepEqual(esmRun.evidence, { reason: "docx_extract_error" }, item.id);
+    }
     for (let repetition = 0; repetition < repetitions; repetition++) {
       const childPath = join(workspace!, "measure-child.mjs");
       const measurementPath = join(workspace!, "child-measurement.json");
@@ -134,6 +203,7 @@ async function candidate(): Promise<MeasurementReport> {
       const finished = now();
       assert(result);
       assert.deepEqual(result, ordinaryResult, `${item.id}: observed wrapper changed results`);
+      if (frozenExpected) assertFrozenEvidence(frozenExpected, evidence, item.path);
       const released = await supervisor.read(item.path, { signal: AbortSignal.abort() });
       const admissionReleased = !released.ok && released.diagnostic === "docx_cancelled";
       let child: ChildMeasurement | null = null;
@@ -204,113 +274,8 @@ async function candidate(): Promise<MeasurementReport> {
   }
   if (load === "idle") await transitions(cases[0]!.path, completed);
   assert.equal(samples.length, cases.length * repetitions);
-  return { kind: "candidate", candidate: samples, passed: samples.every((sample) => sample.fit) };
+  return { candidate: samples, passed: samples.every((sample) => sample.fit) };
 }
 
-async function baseline(): Promise<MeasurementReport> {
-  const cases = await materialize();
-  await emitProgress({ event: "scope", total: cases.length });
-  let completed = 0;
-  const expected = JSON.parse(
-    await readFile(join(workspace!, "candidate-idle.json"), "utf8"),
-  ) as MeasurementReport;
-  const samples: BaselineMeasurement[] = [];
-  for (const item of cases) {
-    await emitProgress({ event: "start", id: item.id });
-    for (let repetition = 0; repetition < repetitions; repetition++) {
-      shutdown.signal.throwIfAborted();
-      const started = performance.now();
-      const run = await new Promise<{
-        output: string;
-        timedOut: boolean;
-        code: number | null;
-        signal: NodeJS.Signals | null;
-      }>((resolve, reject) => {
-        const child = spawn(
-          process.execPath,
-          ["--max-old-space-size=512", join(workspace!, "measure-baseline.mjs"), item.path],
-          {
-            cwd: workspace,
-            detached: false,
-            shell: false,
-            stdio: ["ignore", "pipe", "ignore"],
-            env: {
-              NO_COLOR: "1",
-              TMPDIR: workspace,
-              TMP: workspace,
-              TEMP: workspace,
-              SystemRoot: process.env.SystemRoot ?? process.env.SYSTEMROOT,
-            },
-          },
-        );
-        ownedBaselineChildren.add(child);
-        let output = "";
-        let timedOut = false;
-        const timer = setTimeout(() => {
-          timedOut = true;
-          child.kill("SIGKILL");
-        }, 15_000);
-        child.once("error", (error) => {
-          clearTimeout(timer);
-          ownedBaselineChildren.delete(child);
-          reject(error);
-        });
-        child.stdout.on("data", (chunk: Buffer) => {
-          output += chunk.toString("utf8");
-          if (Buffer.byteLength(output) > 1024 * 1024) {
-            timedOut = true;
-            child.kill("SIGKILL");
-          }
-        });
-        child.once("close", (code, signal) => {
-          clearTimeout(timer);
-          ownedBaselineChildren.delete(child);
-          resolve({ output, timedOut, code, signal });
-        });
-      });
-      const apiMilliseconds = performance.now() - started;
-      let measurement:
-        | { extractionMilliseconds: number; peakRssBytes: number; outcome: string; result: unknown }
-        | undefined;
-      if (!run.timedOut && run.code === 0 && run.signal === null)
-        measurement = JSON.parse(run.output) as typeof measurement;
-      let matched = measurement !== undefined;
-      if (measurement && item.kind === "supported") {
-        const normalized = structuredClone(measurement.result) as {
-          metadata?: { extractor?: string };
-        };
-        if (normalized.metadata?.extractor)
-          normalized.metadata.extractor = normalized.metadata.extractor.replace(
-            /^mammoth/,
-            "docx-reader",
-          );
-        try {
-          assert.deepEqual(
-            normalized,
-            expected.candidate!.find((sample) => sample.id === item.id)!.evidence,
-          );
-        } catch {
-          matched = false;
-        }
-      }
-      if (!matched) await emitProgress({ event: "failure", id: item.id });
-      samples.push({
-        id: item.id,
-        repetition,
-        apiMilliseconds,
-        extractionMilliseconds: measurement?.extractionMilliseconds ?? 0,
-        peakRssBytes: measurement?.peakRssBytes ?? 0,
-        outcome: run.timedOut ? "timeout" : (measurement?.outcome ?? "process-failure"),
-        confirmedClose: true,
-        matched,
-      });
-    }
-    await emitProgress({ event: "complete", id: item.id, completed: ++completed });
-  }
-  return { kind: "baseline", baseline: samples, passed: samples.every((sample) => sample.matched) };
-}
-
-const report =
-  mode === "candidate" ? await candidate() : mode === "baseline" ? await baseline() : undefined;
-assert(report, "Expected candidate or baseline measurement mode");
+const report = await candidate();
 process.stdout.write(JSON.stringify(report));

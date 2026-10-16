@@ -34,20 +34,14 @@ export interface CandidateMeasurement {
   fit: boolean;
 }
 
-export interface BaselineMeasurement {
+export interface FrozenMeasurement {
   id: string;
-  repetition: number;
-  apiMilliseconds: number;
-  extractionMilliseconds: number;
-  peakRssBytes: number;
-  outcome: string;
-  confirmedClose: boolean;
-  matched: boolean;
+  inputSha256: string;
+  result: Awaited<ReturnType<typeof extractCandidateDocxEvidence>>;
+  prompt: string | null;
 }
 
 export interface MeasurementReport {
-  kind: "candidate" | "baseline";
-  candidate?: CandidateMeasurement[];
-  baseline?: BaselineMeasurement[];
+  candidate: CandidateMeasurement[];
   passed: boolean;
 }

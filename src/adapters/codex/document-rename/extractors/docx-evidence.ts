@@ -15,7 +15,7 @@ interface DocxEvidenceOptions {
   rawText: string;
   headings: DocxHeadingSignal[];
   hasContent: boolean;
-  extractor: "mammoth" | "docx-reader";
+  extractor: "docx-reader";
 }
 
 /** Shared rename policy; callers provide extraction facts and their identity. */

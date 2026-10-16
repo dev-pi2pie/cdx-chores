@@ -1,15 +1,10 @@
 import assert from "node:assert/strict";
-import { copyFile, mkdir, realpath, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readdir, realpath, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { candidateCliOptions } from "./cli.mjs";
-import {
-  candidatePackageName,
-  inspectCandidatePackage,
-  json,
-  runtimeDependencies,
-} from "./package-inspect.mjs";
+import { productPackageName, inspectProductPackage, json } from "./package-inspect.mjs";
 import { executable, npmCli } from "./package-process.mjs";
 
 const repo = fileURLToPath(new URL("../../", import.meta.url));
@@ -19,8 +14,8 @@ if (cli) {
   const { runCandidateDriver } = await import("./driver.mjs");
   await runCandidateDriver(
     {
-      title: "DOCX candidate package validation",
-      scope: "npm and Bun; primary and minimum Node; ESM and CJS; 8 consumer paths",
+      title: "DOCX product package validation",
+      scope: "npm and Bun; primary and minimum Node; ESM and CJS; 8 public CLI consumer paths",
       prefix: "cdx-docx-package-",
       stage: () => stage,
       failure: () => `${stage}: passed no\n`,
@@ -73,54 +68,46 @@ if (cli) {
       ])
         if (process.env[name] !== undefined) env[name] = process.env[name];
       let commandIndex = 0;
-      const run = (path, args, cwd, timeout) =>
+      const run = (path, args, cwd, timeout, runtimeEnv) =>
         harness.command(path, args, {
           stage: "runner",
           label: stage,
           posixOnly: true,
           cwd,
-          env,
+          env: { ...env, ...runtimeEnv },
           timeout,
           log: join(workspace, `command-${commandIndex++}.log`),
         });
       const npmRun = (args, cwd) => run(process.execPath, [npm, ...args], cwd);
       stage = "build";
-      const candidate = join(workspace, "candidate");
-      const dist = join(candidate, "dist");
-      await mkdir(dist, { recursive: true });
-      const versions = Object.fromEntries(
-        await Promise.all(
-          runtimeDependencies.map(async (name) => [
-            name,
-            (await json(join(repo, "node_modules", name, "package.json"))).version,
-          ]),
-        ),
-      );
-      await writeFile(
-        join(candidate, "package.json"),
-        JSON.stringify(
-          {
-            name: candidatePackageName,
-            version: "0.0.0",
-            private: true,
-            license: "MIT",
-            type: "module",
-            files: ["dist"],
-            exports: { ".": { import: "./dist/reader.mjs", require: "./dist/reader.cjs" } },
-            dependencies: versions,
-            engines: { node: ">=22.23.0" },
-          },
-          null,
-          2,
-        ),
+      const product = join(workspace, "product");
+      await mkdir(product);
+      const manifest = await json(join(repo, "package.json"));
+      // Use the repository's publish manifest and ordinary package files unchanged.
+      for (const name of await readdir(repo)) {
+        if (name === "package.json" || name === "README.md" || name.startsWith("LICENSE"))
+          await copyFile(join(repo, name), join(product, name));
+      }
+      await run(process.execPath, [join(repo, "scripts/generate-embedded-version.mjs")], repo);
+      await harness.command(
+        process.execPath,
+        [join(repo, "scripts/docx-candidate/build-run.mjs"), "product", product],
+        {
+          stage: "build",
+          label: "Build product package assets",
+          cwd: repo,
+          env,
+          timeout: 120_000,
+          posixOnly: true,
+        },
       );
       const prepared = join(workspace, "prepared");
       await harness.command(
         process.execPath,
-        [join(repo, "scripts/docx-candidate/build-run.mjs"), "package", dist, prepared],
+        [join(repo, "scripts/docx-candidate/build-run.mjs"), "package-input", prepared],
         {
           stage: "build",
-          label: "Build package assets",
+          label: "Build package input",
           cwd: repo,
           env,
           timeout: 60_000,
@@ -134,7 +121,7 @@ if (cli) {
       const packed = JSON.parse(
         await npmRun(
           ["pack", "--json", "--ignore-scripts", "--pack-destination", workspace],
-          candidate,
+          product,
         ),
       );
       assert.equal(packed.length, 1);
@@ -146,8 +133,8 @@ if (cli) {
       const inspected = join(workspace, "inspected");
       await mkdir(inspected);
       await run(tar, ["-xzf", archive, "-C", inspected], workspace);
-      const expectedFiles = await inspectCandidatePackage(join(inspected, "package"), versions);
-      await harness.result("candidate tarball: passed yes\n");
+      const expectedFiles = await inspectProductPackage(join(inspected, "package"), manifest);
+      await harness.result("product tarball: passed yes\n");
       stage = "minimum runtime";
       const runtime = join(workspace, "minimum-runtime");
       await mkdir(runtime);
@@ -188,8 +175,8 @@ if (cli) {
             consumer,
           );
         }
-        const installed = join(consumer, "node_modules", candidatePackageName);
-        await inspectCandidatePackage(installed, versions, expectedFiles, consumer);
+        const installed = join(consumer, "node_modules", productPackageName);
+        await inspectProductPackage(installed, manifest, expectedFiles, consumer);
         const driver = join(consumer, "consumer.mjs");
         await copyFile(
           join(repo, "test/document-rename/fixtures/docx-package-consumer.mjs"),
@@ -201,13 +188,15 @@ if (cli) {
         ]) {
           for (const format of ["esm", "cjs"]) {
             stage = `${installer} ${runtimeName} ${format}`;
-            const output = await run(node, [driver, format, input], consumer, 30_000);
+            const output = await run(node, [driver, format, input], consumer, 30_000, {
+              PATH: [dirname(node), env.PATH].join(":"),
+            });
             assert.equal(output, `${format}: passed yes\n`);
             await harness.result(`${stage}: passed yes\n`);
             await harness.success(`Consumer ${++completed}/8 ${stage}`);
           }
         }
-        await inspectCandidatePackage(installed, versions, expectedFiles, consumer);
+        await inspectProductPackage(installed, manifest, expectedFiles, consumer);
       }
       return "";
     },

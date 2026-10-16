@@ -1,22 +1,44 @@
-import { expect, test } from "bun:test";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { afterAll, beforeAll, expect, test } from "bun:test";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
-import { assertCaseExpectations, captureDocx } from "../fixtures/docx-baseline/capture";
+import { assertDocxProductObservation } from "../fixtures/docx-baseline/assertions";
 import type { DocxCapture } from "../fixtures/docx-baseline/capture";
 import { createBaselineCases } from "../fixtures/docx-baseline/corpus/index";
-import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
+import { createDocxProductFixture } from "../fixtures/docx-product/build";
+import { REPO_ROOT } from "../../helpers/cli-test-utils";
 
+const fixtures = join(REPO_ROOT, "test/document-rename/fixtures/docx-baseline");
 const expected = JSON.parse(
-  await readFile(
-    join(REPO_ROOT, "test/document-rename/fixtures/docx-baseline/expected.json"),
-    "utf8",
-  ),
+  await readFile(join(fixtures, "expected.json"), "utf8"),
 ) as DocxCapture[];
+const manifest = JSON.parse(await readFile(join(fixtures, "manifest.json"), "utf8")) as Array<
+  Record<string, unknown>
+>;
 const cases = createBaselineCases();
+let product: Awaited<ReturnType<typeof createDocxProductFixture>>;
+let observations: Awaited<ReturnType<typeof product.observeCases>>;
+beforeAll(async () => {
+  product = await createDocxProductFixture();
+  observations = await product.observeCases(cases);
+}, 45_000);
+afterAll(async () => {
+  await product?.cleanup();
+});
 
-test("DOCX baseline covers the complete semantic manifest with unique captured inputs", () => {
+test("DOCX product regression covers the complete frozen semantic manifest", () => {
+  expect(cases).toHaveLength(70);
   expect(expected.map((item) => item.id)).toEqual(cases.map((item) => item.id));
+  expect(manifest).toHaveLength(91);
+  expect(manifest.filter((item) => item.category !== "resource")).toEqual(
+    cases.map((item) => ({
+      id: item.id,
+      category: item.category,
+      variations: item.variations,
+      input: "fixture" in item.input ? item.input.fixture : "generated",
+      expected: item.expected,
+    })),
+  );
   expect(new Set(cases.map((item) => item.id)).size).toBe(cases.length);
   expect(cases.filter((item) => "fixture" in item.input)).toHaveLength(7);
   for (const item of cases) {
@@ -26,22 +48,10 @@ test("DOCX baseline covers the complete semantic manifest with unique captured i
 });
 
 for (const item of cases) {
-  test(`DOCX baseline: ${item.id}`, async () => {
-    await withTempFixtureDir("docx-baseline", async (root) => {
-      const directory = join(root, item.id);
-      await mkdir(directory);
-      const name = "fixture" in item.input ? basename(item.input.fixture) : `${item.id}.docx`;
-      const bytes =
-        "fixture" in item.input
-          ? await readFile(join(REPO_ROOT, item.input.fixture))
-          : item.input.bytes;
-      const path = join(directory, name);
-      await writeFile(path, bytes);
-      const captured = await captureDocx(path, root, item.id);
-      assertCaseExpectations(item, captured);
-      const baseline = expected.find((value) => value.id === item.id);
-      if (!baseline) throw new Error(`Missing baseline: ${item.id}`);
-      expect(captured).toEqual(baseline);
-    });
-  }, 15_000);
+  test(`compiled DOCX product preserves semantic evidence and prompt: ${item.id}`, () => {
+    const baseline = expected.find((value) => value.id === item.id);
+    const observed = observations.get(item.id);
+    if (!baseline || !observed) throw new Error(`Missing baseline or observation: ${item.id}`);
+    assertDocxProductObservation(item, baseline, observed.bytes, observed.observation);
+  });
 }

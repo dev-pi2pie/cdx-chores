@@ -9,7 +9,6 @@ import { createAdditionalDocxContentProbes } from "../../test/document-rename/fi
 import { ORIGINAL_RESOURCE_RECONCILIATION } from "../../test/document-rename/fixtures/docx-boundary-probes";
 import {
   assertCaseExpectations,
-  captureDocx,
   type compactResourceCapture,
   type DocxCapture,
 } from "../../test/document-rename/fixtures/docx-baseline/capture";
@@ -30,13 +29,28 @@ const workspace = process.env.DOCX_CANDIDATE_WORKSPACE;
 assert(workspace, "Use the owned temporary-workspace launcher");
 const retain = process.env.DOCX_CANDIDATE_RETAIN_SMOKE === "1";
 assert(!retain || scope === "initial", "Only smoke artifacts may be staged");
+const probes = scope === "initial" ? [] : createAdditionalDocxContentProbes();
+assert.equal(
+  probes.length,
+  scope === "initial" ? 0 : 10,
+  "Additional content probe selection changed",
+);
 const baseline: DocxCapture[] = [];
-for (const file of ["expected.json", "contract.json"]) {
-  baseline.push(
-    ...(JSON.parse(
-      await readFile(`test/document-rename/fixtures/docx-baseline/${file}`, "utf8"),
-    ) as DocxCapture[]),
-  );
+for (const file of [
+  "expected.json",
+  "contract.json",
+  ...(scope === "complete" ? ["additional.json"] : []),
+]) {
+  const captures = JSON.parse(
+    await readFile(`test/document-rename/fixtures/docx-baseline/${file}`, "utf8"),
+  ) as DocxCapture[];
+  if (file === "additional.json")
+    assert.deepEqual(
+      captures.map((capture) => capture.id),
+      probes.map((item) => item.id),
+      "Additional frozen probe IDs or order changed",
+    );
+  baseline.push(...captures);
 }
 const module: CandidateModule =
   format === "esm"
@@ -58,12 +72,7 @@ if (scope === "complete") {
     baseline.push(expandResourceCapture(capture, sentinel));
   }
 }
-const probes = scope === "initial" ? [] : createAdditionalDocxContentProbes();
-assert.equal(
-  probes.length,
-  scope === "initial" ? 0 : 10,
-  "Additional content probe selection changed",
-);
+assert.equal(new Set(baseline.map((capture) => capture.id)).size, baseline.length);
 const cases = [...frozenCases, ...probes];
 assert.equal(new Set(cases.map((item) => item.id)).size, cases.length);
 await emitProgress({ event: "scope", total: cases.length });
@@ -99,11 +108,7 @@ for (const item of cases) {
     await saveArtifact();
   }
   try {
-    // Additional probes are small synthetic inputs; their live captures stay in memory.
-    // Reviewed frozen expectations are never regenerated during verification.
-    const expected = frozenCases.includes(item)
-      ? baseline.find((value) => value.id === item.id)
-      : await captureDocx(path, directory, item.id);
+    const expected = baseline.find((value) => value.id === item.id);
     assert(expected, `${item.id}: missing frozen baseline`);
     assert.equal(createHash("sha256").update(bytes).digest("hex"), expected.inputSha256, item.id);
     assertCaseExpectations(item, expected);

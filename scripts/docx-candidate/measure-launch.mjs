@@ -17,19 +17,15 @@ const headroom = (ratio) =>
         : ratio <= 1
           ? "within-limit"
           : "failed";
-const relativeToCandidate = (observed, reference) =>
-  observed > reference ? "above-reference" : "within-reference";
-
-async function run(harness, workspace, mode, load) {
-  const destination = join(workspace, `${mode}-${load ?? "isolated"}.json`);
-  const log = join(workspace, `${mode}-${load ?? "isolated"}.log`);
+async function run(harness, workspace, load) {
+  const destination = join(workspace, `reader-${load}.json`);
+  const log = join(workspace, `reader-${load}.log`);
   const result = await harness.command(
     process.execPath,
-    [join(workspace, "measure-run.mjs"), mode, workspace, ...(load ? [load] : [])],
+    [join(workspace, "measure-run.mjs"), workspace, load],
     {
       stage: "runner",
-      label:
-        mode === "baseline" ? "Isolated baseline measurements" : `Candidate measurements ${load}`,
+      label: `Production reader measurements ${load}`,
       progress: true,
       posixOnly: true,
       cwd: workspace,
@@ -44,7 +40,6 @@ async function run(harness, workspace, mode, load) {
       },
     },
   );
-  // The isolated baseline consumes the saved idle-candidate report.
   await writeFile(destination, result);
   return JSON.parse(result);
 }
@@ -54,11 +49,11 @@ if (cli) {
   const { runCandidateDriver } = await import("./driver.mjs");
   await runCandidateDriver(
     {
-      title: "DOCX candidate measurements",
-      scope: "18 workloads; idle and loaded callers; isolated baseline",
+      title: "Production DOCX budget checks",
+      scope: "18 workloads; frozen evidence; idle and loaded callers; ESM and CJS",
       prefix: "cdx-docx-measure-",
       stage: () => "Measurement validation",
-      failure: () => "candidate measurements: passed no\n",
+      failure: () => "reader measurements: passed no\n",
     },
     async (harness, workspace) => {
       assert.notEqual(process.platform, "win32", "Measurements require POSIX process groups");
@@ -75,30 +70,25 @@ if (cli) {
           env: { NO_COLOR: "1", TMPDIR: workspace, TMP: workspace, TEMP: workspace },
         },
       );
-      const idle = await run(harness, workspace, "candidate", "idle");
-      const loaded = await run(harness, workspace, "candidate", "loaded");
-      const baseline = await run(harness, workspace, "baseline");
+      const idle = await run(harness, workspace, "idle");
+      const loaded = await run(harness, workspace, "loaded");
       assert.equal(idle.candidate.length, 54);
       assert.equal(loaded.candidate.length, 54);
-      assert.equal(baseline.baseline.length, 54);
       const all = [...idle.candidate, ...loaded.candidate];
       const supported = all.filter((sample) => sample.kind === "supported");
-      const supportedIds = new Set(supported.map((sample) => sample.id));
-      const baselineSupported = baseline.baseline.filter((sample) => supportedIds.has(sample.id));
       const childMeasurements = all.flatMap((sample) => (sample.child ? [sample.child] : []));
       const failureIds = [
         ...new Set(all.filter((sample) => !sample.fit).map((sample) => sample.id)),
       ];
-      const passed = idle.passed && loaded.passed && baseline.passed;
+      const passed = idle.passed && loaded.passed;
       const summary = {
         passed,
         cases: 18,
-        instrumentedCandidateRuns: all.length,
+        instrumentedReaderRuns: all.length,
         ordinaryEsmRuns: 36,
         ordinaryCjsRuns: 36,
         supportedInstrumentedRuns: supported.length,
         expectedLimitInstrumentedRuns: all.length - supported.length,
-        baselineRuns: baseline.baseline.length,
         rssTransitionProbes: 6,
         failureIds,
         apiHeadroom: headroom(Math.max(...all.map((sample) => sample.apiMilliseconds)) / 6_000),
@@ -117,30 +107,13 @@ if (cli) {
         lifecycleConfirmed: all.every(
           (sample) => sample.inputClosed && sample.childExited && sample.admissionReleased,
         ),
-        baselineCompleted: baseline.baseline.every(
-          (sample) => sample.confirmedClose && sample.matched,
-        ),
-        // These are baseline comparisons; candidate caps do not govern baseline success.
-        baselineSupportedApiRelativeToCandidateWindow: relativeToCandidate(
-          Math.max(...baselineSupported.map((sample) => sample.apiMilliseconds)),
-          6_000,
-        ),
-        baselineSupportedPeakRssRelativeToCandidateCap: relativeToCandidate(
-          Math.max(...baselineSupported.map((sample) => sample.peakRssBytes)),
-          256 * 1024 * 1024,
-        ),
+        frozenEvidenceAndPrompts: true,
       };
       if (!summary.passed) {
         process.exitCode = 1;
-        await harness.failure(
-          new HarnessError(
-            "runner",
-            "Measurement validation",
-            failureIds[0] ?? baseline.baseline.find((sample) => !sample.matched)?.id,
-          ),
-        );
+        await harness.failure(new HarnessError("runner", "Measurement validation", failureIds[0]));
       }
-      return `candidate measurements: passed ${summary.passed ? "yes" : "no"}\n${JSON.stringify(summary)}\n`;
+      return `reader measurements: passed ${summary.passed ? "yes" : "no"}\n${JSON.stringify(summary)}\n`;
     },
   );
 }
