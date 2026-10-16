@@ -1,7 +1,7 @@
 ---
 title: "Contributor Testing Guide"
 created-date: 2026-09-06
-modified-date: 2026-10-01
+modified-date: 2026-10-16
 status: completed
 agent: codex
 ---
@@ -89,6 +89,8 @@ Direct Bun commands do not provide the managed runner's prerequisite checks, iso
 ## Add or move tests
 
 Keep tests under their feature or platform owner in `test/`, using one suffix: `.unit.test.ts`, `.app.test.ts`, `.codex.test.ts`, or `.pandoc.test.ts`. Choose the suite by the dependencies the test exercises. Pure transformations around Codex or Pandoc can belong in unit coverage; installed-tool invocations belong in the corresponding integration suite.
+
+Routine suites cover product behavior and shared test infrastructure. Verify manual feature scripts explicitly, including smoke/evidence tools, evaluation launchers, and fixture generators. Keep durable product inputs and assertions under their test owner and exercise product code directly; manual commands may reuse those definitions. Product tests should not launch manual generators or depend on evaluation adapters. Preserve product assertions from mixed tests when retiring script-only checks.
 
 Discovery rejects unknown suffixes, tests outside `test/`, duplicate ownership, and unsupported symlink entries. Paths inside `fixtures/` are inputs, not suite members. Keep feature-specific support beside its consumers; reserve `test/helpers/` for independently reused, feature-neutral infrastructure. Update the [ownership catalog](../references/test-suite-case-matrices.md) and [path correspondence](../references/test-catalog-path-correspondence.md) when a change affects their mappings.
 

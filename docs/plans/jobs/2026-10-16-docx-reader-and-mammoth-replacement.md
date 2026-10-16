@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–6 and 6.1–6.2 are complete; Phase 6.3 is in progress. Phase 7 owns subsequent budget/support acceptance and selection after Phase 6.3.
+Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–6 and 6.1–6.3 are complete. Phase 7 owns subsequent budget/support acceptance and selection and remains unstarted.
 
 ## Phase 1 Outcomes
 
@@ -173,6 +173,8 @@ Full Phase 6.1 implementation range reviewed: `4c660031..e9548edb`; final docume
 
 ### Manual validation
 
+These commands explicitly verify the manual tooling. Routine suites cover product reader/runtime behavior through test-owned fixtures and assertions; they do not launch this comparison, measurement, or installation workflow.
+
 Help and invalid arguments return before execution setup. Help uses stdout and exits zero; invalid arguments use stderr and exit nonzero. Help is concise plain text, including in a terminal; detailed requirements and lifecycle instructions follow below.
 
 Run from the repository root after installing dependencies, using Node.js >=22.23.0. Progress streams to stderr; final comparison status and measurement status/JSON remain on stdout. Full comparisons cover 134 cases per format; measurements check 18 workloads and controlled RSS transitions. Package validation checks eight fresh-consumer paths and requires npm, Bun, tar, and registry access. Measurement/package drivers require POSIX process groups. Comparison has no POSIX-only preflight, but its current Windows path cannot confirm descendant settlement and fails with unconfirmed cleanup, retaining artifacts. Windows execution is unverified.
@@ -230,9 +232,12 @@ Retained runs contain `summary.json` and `esm/<case-id>/` / `cjs/<case-id>/` dir
 | Simplification | Embedded package self-probes and unused harness configuration removed; manual commands preserved |
 | Preserved inputs | 124 DOCX input digests, five frozen captures, and ten synthetic data fixture blobs unchanged |
 | Managed suites | Unit 1,688 / application 2,326 passed; application 213 seconds under unchanged 240-second policy; no failures/errors/skips |
-| Manual / quality | 134 ESM/CJS comparisons, 12 help/error checks, lint/format/types/build passed; measurements, consumers, and lifecycle checks pending |
-| Cleanup / review | Completed checks cleaned; remaining verification and full-range review pending |
+| Manual comparisons / measurements | 134 cases per ESM/CJS format and 18 measurement scenarios passed on both runtime lanes; baseline corpus, contract, and offline commands passed |
+| Fresh consumers | 8/8 npm/Bun × primary/minimum Node × ESM/CJS paths passed |
+| Lifecycle / quality | Help/errors, styled/plain output, smoke retention, SIGINT/SIGTERM, build failure, lint/format/types/build passed |
+| Cleanup | Owned temporary workspace and smoke export removed; no verification artifacts retained |
+| Review | Implementation `6edce2e0..1a15ba1b` passed full-range review; idle-report dependency restored and both deterministic PDF product branches guarded; closing documentation reviewed separately |
 
 ## Later Phases
 
-Phase 6.3 is in progress; Phases 7–10 are unstarted. Phase 7 follows verified script simplification, test ownership, explicit manual checks, and the remaining full application suite, then reviews budget/support and maintenance acceptance before selection. Phase 8 integrates the reader with direct product regressions; Phase 9 preserves expectations before Mammoth removal and actual-product checks; Phase 10 reconciles surviving manual commands, ownership, and documentation. Mammoth remains the production extractor; the candidate's symbol mapper is a separate pinned dependency.
+Phase 6.3 is complete; Phases 7–10 are unstarted. Phase 7 reviews the verified routine/manual evidence, budget/support, and maintenance acceptance before selection. Phase 8 integrates the reader with direct product regressions; Phase 9 preserves expectations before Mammoth removal and actual-product checks; Phase 10 reconciles surviving manual commands, ownership, and documentation. Mammoth remains the production extractor; the candidate's symbol mapper is a separate pinned dependency.
