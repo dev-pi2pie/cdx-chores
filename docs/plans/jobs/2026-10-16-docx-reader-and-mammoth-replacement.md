@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–6 and Phase 6.1 are complete. Phase 7 owns subsequent budget/support acceptance and selection.
+Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–6 and Phase 6.1 are complete; Phase 6.2 is unstarted. Phase 7 owns subsequent budget/support acceptance and selection after Phase 6.2.
 
 ## Phase 1 Outcomes
 
@@ -140,7 +140,7 @@ Each runtime measurement lane used 108 observed candidate calls, 72 ordinary ESM
 
 The fresh tree differs from the retained repository tree at three transitive versions; its compact inventory is checked independently. License and notice completeness belong to final shipping review; this quick verifier checks inventory and runtime behavior. Manual measurement/package drivers use POSIX process groups; no additional operating-system coverage is claimed. Manual evaluation inputs, builds, tarballs, consumers, caches, logs, and raw reports were removed after confirmed settlement; reviewed fixture definitions remain under their test owner. Managed retention is unchanged.
 
-Phase 6 is complete. Reviewed full range: `fd35e998..4c660031`. The numerical proposal is unchanged; budget/support acceptance belongs to Phase 7 after Phase 6.1.
+Phase 6 is complete. Reviewed full range: `fd35e998..4c660031`. The numerical proposal is unchanged; budget/support acceptance belongs to Phase 7 after Phases 6.1–6.2.
 
 ## Phase 6.1: Validation Harness Follow-up
 
@@ -208,6 +208,13 @@ To check cancellation, repeat a comparison run and press Ctrl+C while it is proc
 
 Retained runs contain `summary.json` and `esm/<case-id>/` / `cjs/<case-id>/` directories with `input.docx` and `result.json`. The summary reports comparison outcomes and completeness; failed or interrupted runs may be incomplete. The repository-relative retained location is printed on stderr. Remove only the named run directory when inspection is finished; ordinary temporary working files are still cleaned automatically.
 
+## Phase 6.2: Package Compatibility Verification
+
+| Item | State |
+| --- | --- |
+| [Package-verification refinement](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-62-simplify-package-compatibility-verification) | Planned; retain the three direct dependencies and remove frozen transitive/layout restrictions |
+| Implementation, regressions, eight consumer paths, cleanup, and phase review | Not started / not run |
+
 ## Later Phases
 
-Phase 6.1 is complete; Phases 7–10 are unstarted. Phase 7 reviews numerical budget/support and maintenance acceptance before selection; shipping checks follow later. Mammoth remains the production extractor; the candidate's symbol mapper is a separate pinned dependency.
+Phases 6.2 and 7–10 are unstarted. Phase 7 follows Phase 6.2 and reviews numerical budget/support, platform limits, and maintenance acceptance before selection. Phase 8 covers production integration and runtime assets; Phase 9 preserves remaining baseline expectations before Mammoth removal and actual-product checks; Phase 10 reconciles surviving commands and documentation. Mammoth remains the production extractor; the candidate's symbol mapper is a separate pinned dependency.

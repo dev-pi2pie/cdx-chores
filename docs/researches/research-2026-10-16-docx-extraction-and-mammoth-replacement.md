@@ -212,7 +212,7 @@ These rules govern evaluation and any later implementation:
 
 ## Resource Isolation and Content-Support Contract
 
-This section separates runtime accounting from document compatibility. The maintainer accepted the Phase 2 design, initial-reader scope, and validation method: one fresh extraction process per admitted request and baseline-led content handling. The diagrams describe that contract; the private candidate's implemented boundary is assessed below. Phase 6 supplies technical evidence; final numeric budget/support acceptance belongs to Phase 7 after Phase 6.1.
+This section separates runtime accounting from document compatibility. The maintainer accepted the Phase 2 design, initial-reader scope, and validation method: one fresh extraction process per admitted request and baseline-led content handling. The diagrams describe that contract; the private candidate's implemented boundary is assessed below. Phase 6 supplies technical evidence; final numeric budget/support acceptance belongs to Phase 7 after Phases 6.1–6.2.
 
 ### Memory accounting alternatives
 
@@ -543,7 +543,7 @@ The [structural cases](../../scripts/docx-baseline/resource-cases.ts) isolate se
 
 ### Demonstrated candidate envelope
 
-The numerical proposal is unchanged and awaits acceptance within Phase 7 after Phase 6.1 harness verification. Every supported input must fit all applicable limits; separate at-cap probes do not establish that every simultaneous combination of maximum dimensions is supported.
+The numerical proposal is unchanged and awaits acceptance within Phase 7 after Phase 6.1 harness verification and Phase 6.2 package-verification refinement. Every supported input must fit all applicable limits; separate at-cap probes do not establish that every simultaneous combination of maximum dimensions is supported.
 
 | Scope | Proposed limit or behavior |
 | --- | --- |
@@ -566,7 +566,7 @@ Verify the executable candidate under Node.js `>=22.23.0`, including representat
 
 The build currently externalizes Mammoth, and published files are limited to `dist`, license, and README files. Inspect packed artifacts and their resolved consumer dependency trees through fresh installations with supported package managers, alongside repository declarations and imports. Account for any independent retained Argparse/`sprintf-js` paths.
 
-The private [package check](../../scripts/docx-candidate/package-check.mjs) packs the actual reader and fixed child/worker/parser assets in both formats, then checks the same tarball in fresh npm/Bun consumers with representative content, bounded failures, and installed-worker offline controls. Its package has only `dingbat-to-unicode`, `fast-xml-parser`, and `yauzl` as direct runtime dependencies; the baseline runner and Mammoth are absent. Fresh transitive resolution is inspected independently of the repository tree and guarded against unreviewed inventory changes. The manual measurement/installation drivers require POSIX process groups; these results establish no additional operating-system coverage.
+The private [package check](../../scripts/docx-candidate/package-check.mjs) packs the actual reader and fixed child/worker/parser assets in both formats, then checks the same tarball in fresh npm/Bun consumers with representative content, bounded failures, and installed-worker offline controls. Its package has only `dingbat-to-unicode`, `fast-xml-parser`, and `yauzl` as direct runtime dependencies; the baseline runner and Mammoth are absent. Fresh transitive resolution is inspected independently of the repository tree; the current verifier compares it with a fixed inventory and requires npm/Bun tree equality. The [planned Phase 6.2 refinement](#planned-package-verification-refinement) will remove those restrictions. The manual measurement/installation drivers require POSIX process groups; these results establish no additional operating-system coverage.
 
 The inspected fresh tree has eight transitive packages. This quick verifier checks package assets, dependency inventory, and runtime behavior; it does not enforce license or third-party notice completeness. `fast-xml-parser` remains pinned to 5.11.2; its transitive `@nodable/entities` 3.1.0 omits the full MIT notice from its published package. Review applicable licenses and notices against the actual resolved tree during final product packaging. Candidate distribution results do not establish shipping acceptance or repository-wide Mammoth remediation.
 
@@ -579,6 +579,12 @@ The [Phase 6.1](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md#
 Harness build/run deadlines are separate from extraction budgets. Process-group observation can retry an unknown state within one absolute cleanup deadline; explicit absence, child close, and settled streams are required before temporary cleanup. Persistent uncertainty remains a failure with retained ownership. Comparison remains invocable without POSIX-only preflight, but current Windows handling cannot prove descendant settlement and fails with retained artifacts; no Windows execution coverage is established.
 
 Renewed comparisons, measurements, candidate runtime/package checks, and full implementation review passed in the [record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-61-validation-harness-follow-up), which also provides [manual commands](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#manual-validation). The [ownership catalog](../references/test-suite-case-matrices.md#document-rename-baseline) identifies durable regressions. The smoke-retention and help extension passed renewed verification and full-range review. Help and invalid arguments resolve before execution setup; optional smoke exports preserve selected synthetic inputs/results after settlement in the ignored playground entry, while working builds and dependencies remain temporary. Verification exports were removed after inspection. This work changes neither content support nor the proposed extraction budgets; Phase 7 owns acceptance and selection.
+
+### Planned package verification refinement
+
+[Phase 6.2](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-62-simplify-package-compatibility-verification) is unstarted. Retain the explicit three-package `runtimeDependencies` declaration and repository-installed direct versions. The repository lockfile governs repository installation; fresh consumers independently resolve transitive ranges. A fixed transitive inventory or identical npm/Bun tree is therefore not the runtime compatibility contract, and neither requires a separate approval list for each transitive package.
+
+The planned verifier will accept additional ordinary package files and contained package-manager links, remove regex import inspection and layout-only installer restrictions, and retain required assets/exports, isolated resolution, candidate Mammoth absence, and actual consumer behavior. Transitive inventories become observations; any byte-integrity checks focus on required runtime assets. Renewed eight-path consumer evidence, focused regressions, confirmed cleanup, and phase review remain pending. This changes verification policy without changing dependency versions, content support, or numerical budgets; prior phase evidence remains scoped to its reviewed revision.
 
 ### Maintenance assessment
 
@@ -594,19 +600,19 @@ The maintainer must explicitly accept responsibility for dependency/security upd
 
 ### Research decision
 
-Recommend proceeding only when the comparison matrix and method establish equivalent useful evidence or accepted differences, Phase 6.1 harness verification is complete, resource handling meets accepted budgets, and runtime/distribution checks pass for an isolated executable and packed candidate. The maintenance assessment must support a focused, maintainable implementation with accepted ownership. Record how existing consumers can migrate or retire and any remaining integration work; completing repository migration is not a prerequisite for this decision.
+Recommend proceeding only when the comparison matrix and method establish equivalent useful evidence or accepted differences, Phase 6.1 harness verification and Phase 6.2 package-verification refinement are complete, resource handling meets accepted budgets, and runtime/distribution checks pass for an isolated executable and packed candidate. Record the reviewed revision, acceptance outcome, content/platform limits, justified differences, and maintenance responsibility in a compact decision table. The maintenance assessment must support a focused, maintainable implementation with accepted ownership. Record how existing consumers can migrate or retire and any remaining integration work; completing repository migration is not a prerequisite for this decision.
 
 Otherwise, recommend deferral and identify unmet criteria. Record the supporting evidence, benefits, limitations, and remaining risks. A supported recommendation may justify a separate implementation plan; research completion is distinct from shipping the replacement.[^doc-policy]
 
 ### Shipping acceptance
 
-The implementation plan must repeat applicable evidence/prompt, fallback, resource, and distribution checks on the final integrated product. Pass affected managed tests and Node.js checks of the CLI and built ESM/CJS entry points. Confirm consumer migration/retirement and complete Mammoth removal in repository and fresh packed-product installations. Record final results, maintenance acceptance, and remaining limitations before claiming shipping acceptance or dependency remediation.
+The implementation plan must repeat applicable evidence/prompt, fallback, resource, and distribution checks on the final integrated product, including its fixed child/worker/parser assets. Capture and review remaining live-baseline expectations before removing Mammoth; retain historical benchmark findings separately from ongoing candidate checks. Pass affected managed tests and Node.js checks of the CLI and built ESM/CJS entry points. Apply the Phase 6.2 verification approach to actual product installations and confirm consumer migration/retirement and complete Mammoth removal. Record final results, maintenance acceptance, and remaining limitations before claiming shipping acceptance or dependency remediation.
 
 The retained baseline corpus has 70 semantic cases and 21 structural boundary cases, supplemented by 33 contract cases linked above and from the [unified execution record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md). Complete candidate comparisons retain these expectations and distinguish default-limit failures from raised-cap semantic checks. Candidate equivalence, concrete support/diagnostic mappings, accepted resource budgets, maintenance acceptance, and both gates require evidence for that contract. Technical validation does not establish maintainer acceptance, selection, or shipping acceptance.
 
 ## Related Plans
 
-- [DOCX reader and Mammoth replacement](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md) — ten main phases and Phase 6.1 covering contract research, candidate construction and validation, harness progress/lifecycle, selection, conditional integration/removal, and documentation closeout.
+- [DOCX reader and Mammoth replacement](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md) — ten main phases and Phases 6.1–6.2 covering contract research, candidate construction and validation, harness progress/lifecycle, package-verification refinement, selection, conditional integration/removal, and documentation closeout.
 
 ## References
 
