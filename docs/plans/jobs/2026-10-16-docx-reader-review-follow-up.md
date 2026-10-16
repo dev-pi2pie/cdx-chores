@@ -2,7 +2,7 @@
 title: "DOCX reader review follow-up"
 created-date: 2026-10-16
 modified-date: 2026-10-16
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -179,12 +179,17 @@ Restore punctuation-bearing literals identified by review of `bc6e3e98..87bffa51
 
 - [x] Use one value classifier for validation escaping and named-reference checks, retaining original parsing and physical-part accounting.
 - [x] Add independent text, quoted-attribute, relationship, and reference-boundary regressions; reproduce failures before the fix.
-- [ ] Pass focused, routine, built-runtime, quality, and renewed resource checks; update coverage references.
-- [ ] Review the complete follow-up and combined DOCX ranges, resolve findings, and clean owned artifacts.
+- [x] Pass focused, routine, built-runtime, quality, and renewed resource checks; update coverage references.
+- [x] Review the complete follow-up and combined DOCX ranges, resolve findings, and clean owned artifacts.
 
 | Area | Outcome |
 | --- | --- |
 | Classification / regressions | Sixty DOCX cases and three parser controls added; forty-six pre-fix failures reproduced; punctuation-bearing literals and mixed references recover while recognized undeclared named forms fail |
 | Baseline comparison | Sixty cases match the original Node adapter's complete evidence/prompts after extractor-identity normalization |
 | Allocation / cap boundary | Literal spans escape in chunks; dense 1 MiB XML part accepted, cap + 1 byte rejected, and admission released in all four runtime/format lanes |
-| Initial verification | 373 focused and 1,979 unit cases, lint, format, types, and shipping build passed; 255 follow-up cases passed per format on primary/minimum Node; application, frozen comparisons, and workload checks pending |
+| Routine verification | 373 focused, 1,979 unit, and 2,331 application cases passed; application 237.93 seconds under unchanged 240-second deadline; lint, format, types, and shipping build passed |
+| Built runtime comparisons | 134 frozen and 255 follow-up cases per format on primary/minimum Node passed; complete evidence/prompts checked; frozen captures unchanged |
+| Renewed measurements | Eighteen workloads per runtime passed with idle/loaded callers; deadline, RSS, and lifecycle checks passed |
+| Earlier packed-consumer evidence | Retained from the drawing follow-up; distribution boundaries unchanged |
+| Full-range review | `87bffa51..04b6736b` and combined `bc6e3e98..04b6736b` reviewed; no remaining material findings; closing docs reviewed separately |
+| Artifact cleanup | Owned manual and managed-test workspaces settled and removed; temporary inputs, builds, runtime cache, and logs removed; no smoke artifacts retained |
