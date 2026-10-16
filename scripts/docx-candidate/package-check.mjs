@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
-import { copyFile, mkdir, readdir, realpath, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, realpath, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { candidateCliOptions } from "./cli.mjs";
 import { productPackageName, inspectProductPackage, json } from "./package-inspect.mjs";
 import { executable, npmCli } from "./package-process.mjs";
+import { assertEmbeddedVersion } from "./verify-preflight.mjs";
 
 const repo = fileURLToPath(new URL("../../", import.meta.url));
 let stage = "preflight";
@@ -24,6 +25,15 @@ if (cli) {
     async (harness, temporary) => {
       const workspace = await realpath(temporary);
       assert.notEqual(process.platform, "win32", "Package checks require POSIX process groups");
+      const manifest = await json(join(repo, "package.json"));
+      const embeddedSource = await readFile(
+        join(repo, "src/cli/program/version-embedded.ts"),
+        "utf8",
+      ).catch((error) => {
+        if (error.code === "ENOENT") return undefined;
+        throw error;
+      });
+      assertEmbeddedVersion(embeddedSource, manifest.version);
       const npm = await npmCli();
       const bun = await executable("bun");
       const tar = await executable("tar");
@@ -82,13 +92,11 @@ if (cli) {
       stage = "build";
       const product = join(workspace, "product");
       await mkdir(product);
-      const manifest = await json(join(repo, "package.json"));
       // Use the repository's publish manifest and ordinary package files unchanged.
       for (const name of await readdir(repo)) {
         if (name === "package.json" || name === "README.md" || name.startsWith("LICENSE"))
           await copyFile(join(repo, name), join(product, name));
       }
-      await run(process.execPath, [join(repo, "scripts/generate-embedded-version.mjs")], repo);
       await harness.command(
         process.execPath,
         [join(repo, "scripts/docx-candidate/build-run.mjs"), "product", product],

@@ -13,6 +13,7 @@ import { normalizeDocxProvenance } from "../../test/document-rename/fixtures/doc
 import { createDocxMeasureCases } from "../../test/document-rename/fixtures/docx-measure-cases";
 import { createCandidateEvidenceExtractor } from "./adapter";
 import { emitProgress } from "./harness/protocol.mjs";
+import { measurementWithinTime } from "./measurement-fit.mjs";
 import type {
   CandidateMeasurement,
   ChildMeasurement,
@@ -173,9 +174,13 @@ async function candidate(): Promise<MeasurementReport> {
       const measurementPath = join(workspace!, "child-measurement.json");
       await rm(measurementPath, { force: true });
       let inputClosedAt = 0;
+      let processingMilliseconds: number | null = null;
       let result: DocxReadResult | undefined;
       const supervisor = createDocxSupervisorForTesting({
         childPath,
+        onProcessingFinished(elapsedMilliseconds) {
+          processingMilliseconds = elapsedMilliseconds;
+        },
         async openInput(path, flags) {
           const file = await open(path, flags);
           return {
@@ -219,10 +224,11 @@ async function candidate(): Promise<MeasurementReport> {
       const inputClosed = inputClosedAt >= started && inputClosedAt <= finished;
       const childExited =
         child === null ? item.diagnostic === "docx_limit:compressedInputBytes" : exited(child.pid);
-      const underTime =
-        finished - started <= 6_000 &&
-        ordinaryCjsApiMilliseconds <= 6_000 &&
-        ordinaryEsmApiMilliseconds <= 6_000;
+      const underTime = measurementWithinTime(
+        processingMilliseconds,
+        [finished - started, ordinaryCjsApiMilliseconds, ordinaryEsmApiMilliseconds],
+        DEFAULT_DOCX_LIMITS.elapsedMilliseconds,
+      );
       const underRss =
         child === null || child.observedPeakRssBytes <= DEFAULT_DOCX_LIMITS.peakRssBytes;
       const validSamples =
@@ -243,8 +249,7 @@ async function candidate(): Promise<MeasurementReport> {
         callerLoad: load,
         callerRssBytes,
         apiMilliseconds: finished - started,
-        processingMilliseconds:
-          child?.lastPolicySampleMs === null || !child ? null : child.lastPolicySampleMs - started,
+        processingMilliseconds,
         ordinaryCjsApiMilliseconds,
         ordinaryEsmApiMilliseconds,
         inputMilliseconds: inputClosedAt - started,
@@ -252,11 +257,11 @@ async function candidate(): Promise<MeasurementReport> {
           child?.firstPolicySampleMs === null || !child
             ? null
             : child.firstPolicySampleMs - child.bootMs,
-        supervisedProcessingMilliseconds:
+        policySamplingSpanMilliseconds:
           child?.firstPolicySampleMs === null || child?.lastPolicySampleMs === null || !child
             ? null
             : child.lastPolicySampleMs - child.firstPolicySampleMs,
-        publicationValidationAndCleanupMilliseconds:
+        lastPolicySampleToApiCompletionMilliseconds:
           child?.lastPolicySampleMs === null || !child ? null : finished - child.lastPolicySampleMs,
         child,
         outcome: result.ok ? "evidence" : result.diagnostic,

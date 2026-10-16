@@ -7,14 +7,14 @@ import { candidateCliOptions } from "./cli.mjs";
 import { HarnessError } from "./harness/errors.mjs";
 
 const repo = fileURLToPath(new URL("../../", import.meta.url));
-const headroom = (ratio) =>
+const headroom = (ratio, inclusive = true) =>
   ratio < 0.5
     ? "over-half"
     : ratio < 0.75
       ? "over-quarter"
       : ratio < 0.9
         ? "over-tenth"
-        : ratio <= 1
+        : ratio < 1 || (inclusive && ratio === 1)
           ? "within-limit"
           : "failed";
 async function run(harness, workspace, load) {
@@ -93,7 +93,8 @@ if (cli) {
         failureIds,
         apiHeadroom: headroom(Math.max(...all.map((sample) => sample.apiMilliseconds)) / 6_000),
         processingHeadroom: headroom(
-          Math.max(...supported.map((sample) => sample.processingMilliseconds ?? 0)) / 5_000,
+          Math.max(...supported.map((sample) => sample.processingMilliseconds ?? Infinity)) / 5_000,
+          false,
         ),
         sampledRssHeadroom: headroom(
           Math.max(...childMeasurements.map((child) => child.observedPeakRssBytes)) /

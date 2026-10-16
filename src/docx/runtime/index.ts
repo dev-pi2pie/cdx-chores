@@ -27,6 +27,7 @@ interface SupervisorAssets {
   cwd: string;
   execPath: string;
   openInput: (path: string, flags: number) => Promise<DocxInputHandle>;
+  onProcessingFinished?: (elapsedMilliseconds: number) => void;
 }
 
 /** Minimal owned-file interface used by fixed source regression fixtures. */
@@ -97,7 +98,8 @@ function createSupervisor(assets: SupervisorAssets): DocxSupervisor {
         active = false;
         return failure("docx_limits_invalid");
       }
-      const deadlineAt = performance.now() + limits.elapsedMilliseconds;
+      const admittedAt = performance.now();
+      const deadlineAt = admittedAt + limits.elapsedMilliseconds;
       let child: ExtractionChild | undefined;
       let inputSettled = true;
       let candidate: DocxReadResult | undefined;
@@ -164,6 +166,11 @@ function createSupervisor(assets: SupervisorAssets): DocxSupervisor {
       function startCleanup(terminateChild: boolean): void {
         if (!cleanupStarted) {
           cleanupStarted = true;
+          try {
+            assets.onProcessingFinished?.(performance.now() - admittedAt);
+          } catch {
+            // Testing observations cannot affect extraction results or cleanup ownership.
+          }
           clearTimeout(processingTimer);
           cleanupTimer = setTimeout(() => {
             if (ownershipSettled()) return finishCleanup();
@@ -368,5 +375,6 @@ export function createDocxSupervisorForTesting(
     cwd: assets.cwd ?? runtimeWorkingDirectory(moduleUrl),
     execPath: assets.execPath ?? process.execPath,
     openInput: assets.openInput ?? open,
+    onProcessingFinished: assets.onProcessingFinished,
   });
 }

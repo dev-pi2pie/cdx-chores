@@ -274,10 +274,12 @@ describe("private DOCX runtime policy", () => {
       let stats = 0;
       let reads = 0;
       let closes = 0;
+      const processing: number[] = [];
       const clock = spyOn(performance, "now").mockImplementation(() => now);
       try {
         const owner = createDocxSupervisorForTesting({
           childPath: "/synthetic-unused-child",
+          onProcessingFinished: (elapsedMilliseconds) => processing.push(elapsedMilliseconds),
           openInput: async () => {
             opens += 1;
             now = observed;
@@ -307,16 +309,37 @@ describe("private DOCX runtime policy", () => {
           reads: 0,
           closes: 1,
         });
+        expect(processing).toEqual([observed]);
         // Confirmed close releases admission; this second request never opens input.
         expect(await owner.read("/synthetic-input", { signal: AbortSignal.abort() })).toEqual({
           ok: false,
           diagnostic: "docx_cancelled",
         });
         expect(opens).toBe(1);
+        expect(processing).toEqual([observed, 0]);
       } finally {
         clock.mockRestore();
       }
     }
+  });
+
+  test("processing observers cannot change cancellation or admission release", async () => {
+    let observations = 0;
+    const owner = createDocxSupervisorForTesting({
+      childPath: "/synthetic-unused-child",
+      onProcessingFinished(elapsedMilliseconds) {
+        expect(Number.isFinite(elapsedMilliseconds) && elapsedMilliseconds >= 0).toBe(true);
+        observations++;
+        throw new Error("Synthetic observation failure");
+      },
+    });
+    for (let request = 0; request < 2; request++) {
+      expect(await owner.read("/synthetic-input", { signal: AbortSignal.abort() })).toEqual({
+        ok: false,
+        diagnostic: "docx_cancelled",
+      });
+    }
+    expect(observations).toBe(2);
   });
 
   test("child environment excludes loader flags, credentials, proxies and PATH", () => {

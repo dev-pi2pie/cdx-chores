@@ -75,6 +75,7 @@ test("Node DOCX process boundary settles failures and leaves no live work", asyn
     const offlineCases = createBaselineCases().filter((item) => item.id.startsWith("offline-"));
     const modes = [
       "guarded",
+      "processing-observation",
       "caller-heap",
       "deadline",
       "cancel",

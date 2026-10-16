@@ -7,6 +7,7 @@ import { setTimeout as delay } from "node:timers/promises";
 
 import { resolveDocxLimits } from "../../../../src/docx/limits";
 import { createDocxSupervisorForTesting } from "../../../../src/docx/runtime/index";
+import { ResultFrameDecoder } from "../../../../src/docx/runtime/protocol";
 import type { DocxReadResult } from "../../../../src/docx/types";
 import { checkInputStall, checkRejectedInputClose } from "./input-stalls";
 
@@ -65,6 +66,39 @@ if (mode === "input-close-rejected") {
   assert(result.ok, JSON.stringify(result));
   assert.equal(result.facts.rawText, "Independent runtime report\n\n");
   await stopped();
+} else if (mode === "processing-observation") {
+  const originalNow = Object.getOwnPropertyDescriptor(performance, "now");
+  const originalFinish = ResultFrameDecoder.prototype.finish;
+  try {
+    for (const observed of [4_999, 5_000, 5_001]) {
+      let now = 0;
+      let validated = false;
+      const processing: number[] = [];
+      Object.defineProperty(performance, "now", { configurable: true, value: () => now });
+      ResultFrameDecoder.prototype.finish = function () {
+        const result = originalFinish.call(this);
+        validated = true;
+        now = observed;
+        return result;
+      };
+      const owner = supervisor("protocol-valid-child", {
+        onProcessingFinished(elapsedMilliseconds: number) {
+          assert(validated, "Processing must include parent result validation");
+          processing.push(elapsedMilliseconds);
+          throw new Error("Synthetic observation failure");
+        },
+      });
+      const result = await owner.read(input);
+      if (observed < 5_000) assert(result.ok);
+      else failure(result, "docx_limit:elapsedMilliseconds");
+      assert.deepEqual(processing, [observed]);
+      await stopped();
+    }
+  } finally {
+    ResultFrameDecoder.prototype.finish = originalFinish;
+    if (originalNow) Object.defineProperty(performance, "now", originalNow);
+    else Reflect.deleteProperty(performance, "now");
+  }
 } else if (mode === "caller-heap") {
   const retained = Array(32 * 1024 * 1024).fill(7);
   const peakRssBytes = 192 * 1024 * 1024;

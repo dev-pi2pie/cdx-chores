@@ -23,8 +23,8 @@ export interface CandidateMeasurement {
   ordinaryEsmApiMilliseconds: number;
   inputMilliseconds: number;
   bootToFirstPolicySampleMilliseconds: number | null;
-  supervisedProcessingMilliseconds: number | null;
-  publicationValidationAndCleanupMilliseconds: number | null;
+  policySamplingSpanMilliseconds: number | null;
+  lastPolicySampleToApiCompletionMilliseconds: number | null;
   child: ChildMeasurement | null;
   outcome: string;
   evidence: Awaited<ReturnType<typeof extractCandidateDocxEvidence>>;
