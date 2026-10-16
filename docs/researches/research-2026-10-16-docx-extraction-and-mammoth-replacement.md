@@ -2,7 +2,7 @@
 title: "DOCX Extraction and Mammoth Replacement"
 created-date: 2026-10-16
 modified-date: 2026-10-16
-status: draft
+status: in-progress
 agent: codex
 ---
 
@@ -122,7 +122,20 @@ Metadata discovery in `src/adapters/docx/ooxml-part-discovery.ts` already ignore
 
 The reviewed installation uses `mammoth@1.13.0 > argparse@1.0.10 > sprintf-js@1.0.3`. The moderate precision-specifier advisory lists versions through `1.1.3` as affected and no patched version as of this review.[^advisory] The October maintenance record documents the library/CLI boundary and limits of its static assessment; its validation of the existing dependency set is not replacement compatibility evidence.[^maintenance]
 
-An earlier installed-tree inventory and blocked-import diagnostic lack retained commands, harnesses, and full results; neither is decision evidence. Any future use requires linked commands/harnesses, runtime/dependency versions, identified inputs, and full outcomes. Import-blocking checks must install interception before loading Mammoth, demonstrate that deliberate imports of both blocked packages are detected and rejected, and report control and per-fixture conversion attempt counts separately. Neither a lockfile nor successful conversions establish installed-file contents, replacement fidelity, or universal advisory non-reachability.
+An earlier installed-tree inventory and blocked-import diagnostic lack reproducible checks and identified inputs; neither is decision evidence. Any future use requires a linked harness, identified inputs, and asserted outcomes. Import-blocking checks must install interception before loading Mammoth and independently assert positive controls and per-fixture conversion attempts. Neither a lockfile nor successful conversions establish installed-file contents, replacement fidelity, or universal advisory non-reachability.
+
+### Phase 1 consumer inventory
+
+The execution baseline is recorded in the [unified record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md); intervening changes from the research snapshot affected documentation only.
+
+| Surface | Migration responsibility |
+| --- | --- |
+| Production | `src/adapters/codex/document-rename/extractors/docx.ts` imports Mammoth for HTML/raw-text conversion. Preserve dispatch, ranking, prompts, and fallback. |
+| Tests | Current title-evidence and file-rename application tests assert provenance, routing, and failure behavior. OOXML metadata tests remain reusable. |
+| Historical tooling | `scripts/spikes/docx-pdf-title-evidence-spike.ts` imports Mammoth. Preserve useful PDF comparisons and linked historical findings before changing or retiring its DOCX path. |
+| Baseline tooling | `scripts/docx-baseline/capture.ts` imports Mammoth for comparisons and the external-file positive control. Retain expectations when later migrating or retiring this dependency. |
+| Build and declarations | Production ESM/CJS outputs keep Mammoth external; Mammoth supplies its own declarations. No repository ambient declaration needs migration. |
+| Dependencies | The manifest, lockfile, and baseline installed tree retain the Mammoth/Argparse/`sprintf-js` chain above. No independent JavaScript path was found; Python's standard-library `argparse` reference is unrelated. |
 
 ### Existing tests provide a starting comparison corpus
 
@@ -132,7 +145,7 @@ These assertions validate selected evidence fields. They do not exhaustively cov
 
 ### Feature presence and rename evidence need separate tracing
 
-Source inspection confirms several existing parsing paths, but their effect on normalized rename evidence still needs fixture-level validation:
+Source inspection identifies the paths below. Phase 1 captures their current outcomes; candidate compatibility remains unverified:
 
 | Feature                              | Observed path and remaining question                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -142,6 +155,8 @@ Source inspection confirms several existing parsing paths, but their effect on n
 | Notes and comments                   | The DOCX reader loads these separately. HTML conversion can append referenced note content, while raw-text extraction walks document children without separately traversing stored note/comment bodies. Trace each API through the rename consumer; feature parsing alone does not prove that its content becomes title or lead-text evidence.[^mammoth-docx-reader][^mammoth-html][^mammoth-raw] |
 
 Metadata is already supplied by the project's OOXML helper. A replacement needs document text and heading facts sufficient for the existing consumer; it does not need to reproduce Mammoth's full HTML product. However, formatting or secondary content that affects those facts cannot be dropped solely because it looks unrelated to rename.
+
+The [baseline expectations](../../test/document-rename/fixtures/docx-baseline/expected.json) establish several compatibility details: UTF-16 metadata succeeds while UTF-16 main content fails; dot-segment/escaped main targets fail, and equivalent style targets lose heading mapping. Inheritance, outline levels, default paragraph styles, and unmapped localized names do not independently produce headings. Notes can supply HTML-only heading signals while raw text excludes their bodies. Raw text omits explicit breaks, simple-field content is excluded, and later normalized duplicate document parts win. Empty valid documents return `docx_extract_error`; image/table/break-only HTML returns `docx_no_title_signal`. A metadata title can succeed with `docx_no_lead_text`, but does not rescue conversion failure. These observations are comparison inputs, not proposed fixes.
 
 ## Ownership Hypothesis
 
@@ -203,31 +218,44 @@ Existing fixtures and assertions provide seeds. Each variation below needs an id
 
 | Category                         | Minimum cases and questions                                                                                                                                                                                                               | Evidence state                                                      |
 | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Existing evidence                | All seven DOCX fixtures: metadata-rich, heading-rich, weak-heading, no-heading, table-heavy, hyperlink-heavy, and alternate-editor. Preserve existing title-evidence assertions.                                                          | Fixtures exist; full baseline/candidate comparison pending.         |
-| Metadata and part discovery      | Missing/malformed metadata, non-default metadata paths, UTF-16, dot-segments, and percent-escaped paths; non-default main-document/style parts and namespace variants.                                                                    | Metadata tests exist; content-discovery cases pending.              |
-| Text and order                   | Split runs, Unicode and preserved spaces, symbol characters, tabs/breaks, blank lines, lists, and paragraphs before/inside/after tables or content controls.                                                                              | Dedicated comparison cases pending.                                 |
-| Heading styles                   | Standard/custom/localized names, inherited styles, default/embedded style mappings, outline levels, missing definitions, and cyclic inheritance.                                                                                          | Dedicated comparison cases pending.                                 |
-| Links and fields                 | Visible hyperlink text and complex fields with quoted/unquoted targets; displayed results versus instruction text. Include the historical hyperlink-syntax concern.[^historical]                                                          | Hyperlink fixture exists; targeted field cases pending.             |
-| Revisions and secondary content  | Insertions/deletions, hidden runs, text boxes, headers/footers, notes, and comments. Trace inclusion and order separately through HTML and raw text.                                                                                      | Dedicated comparison cases pending.                                 |
-| Empty and non-text content       | Valid empty documents, image-only documents, and structure-only content such as empty tables or line breaks, all without usable title metadata. Trace whether nonempty HTML changes the no-evidence reason despite empty normalized text. | Dedicated failure-boundary cases pending.                           |
-| Metadata-only evidence           | A usable core title with an empty body and successful conversion; assert evidence with `docx_no_lead_text`. Contrast author-only metadata with no title/body/headings, and available metadata with a conversion failure.                  | Dedicated failure-boundary cases pending.                           |
-| Partial and malformed extraction | Usable text with unsupported content; invalid ZIP/XML; missing/invalid required parts; duplicate normalized part names. Distinguish limitations, empty output, and extraction failure under the compatibility policy.                     | Some metadata failure tests exist; content cases pending.           |
-| Resource and I/O boundaries      | A body above the metadata reader's 256 KiB cap; below/at/above each proposed resource cap; external relationship targets, deterministic cleanup, no external URL/file loading, and no executable-content evaluation.                      | Some metadata no-fetch tests exist; content/resource cases pending. |
+| Existing evidence                | All seven DOCX fixtures: metadata-rich, heading-rich, weak-heading, no-heading, table-heavy, hyperlink-heavy, and alternate-editor. Preserve existing title-evidence assertions.                                                          | Baseline captured; candidate comparison pending.         |
+| Metadata and part discovery      | Missing/malformed metadata, non-default metadata paths, UTF-16, dot-segments, and percent-escaped paths; non-default main-document/style parts and namespace variants.                                                                    | Baseline captured; candidate comparison pending.              |
+| Text and order                   | Split runs, Unicode and preserved spaces, symbol characters, tabs/breaks, blank lines, lists, and paragraphs before/inside/after tables or content controls.                                                                              | Baseline captured; candidate comparison pending.                                 |
+| Heading styles                   | Standard/custom/localized names, inherited styles, default/embedded style mappings, outline levels, missing definitions, and cyclic inheritance.                                                                                          | Baseline captured; candidate comparison pending.                                 |
+| Links and fields                 | Visible hyperlink text and complex fields with quoted/unquoted targets; displayed results versus instruction text. Include the historical hyperlink-syntax concern.[^historical]                                                          | Baseline captured; candidate comparison pending.             |
+| Revisions and secondary content  | Insertions/deletions, hidden runs, text boxes, headers/footers, notes, and comments. Trace inclusion and order separately through HTML and raw text.                                                                                      | Baseline captured; candidate comparison pending.                                 |
+| Empty and non-text content       | Valid empty documents, image-only documents, and structure-only content such as empty tables or line breaks, all without usable title metadata. Trace whether nonempty HTML changes the no-evidence reason despite empty normalized text. | Baseline captured; candidate comparison pending.                           |
+| Metadata-only evidence           | A usable core title with an empty body and successful conversion; assert evidence with `docx_no_lead_text`. Contrast author-only metadata with no title/body/headings, and available metadata with a conversion failure.                  | Baseline captured; candidate comparison pending.                           |
+| Partial and malformed extraction | Usable text with unsupported content; invalid ZIP/XML; missing/invalid required parts; duplicate normalized part names. Distinguish limitations, empty output, and extraction failure under the compatibility policy.                     | Baseline captured; candidate comparison pending.           |
+| Resource and I/O boundaries      | A body above the metadata reader's 256 KiB cap; below/at/above each proposed resource cap; external relationship targets, deterministic cleanup, no external URL/file loading, and no executable-content evaluation.                      | Structural/offline baseline captured; candidate enforcement pending. |
 
 Image-only cases check structural outcomes and binary-part handling; they do not require image interpretation or OCR. Expected reasons for empty/non-text cases must come from identified baseline cases, not an assumption that all empty text has the same outcome.
 
 ### Comparison method
 
-1. Run the current Mammoth integration and candidate over the same identified corpus. Retain commands/harnesses, runtime and resolved dependency versions, inputs, expected content policy, and captured outcomes. Trace HTML, raw text, metadata, and final evidence separately; synthetic cases also need independent expected results.
+1. Run the current Mammoth integration and candidate over the same identified corpus. Retain reproducible harness source, identified cases, reviewed expectations, and concise check outcomes. Trace HTML, raw text, metadata, and final evidence separately; synthetic cases also need independent expected results. Keep execution files and raw reports temporary, following the plan's output-handling rules.
 2. Compare complete normalized evidence: candidate ordering, headings/TOC candidates, author and metadata fields, lead text, warnings, and failure reasons. Verify that the proposed reader outputs preserve these results or identify the additional internal signals needed.
 3. Compare resulting prompt payloads, including filename identity, warnings, and metadata. Allow only specifically recorded intentional differences such as the extractor label; do not exclude whole fields. Use stubbed batch/thread checks for routing, execution-option forwarding, retries/batching, and reason propagation.
 4. Classify each difference as equivalent under the stated normalization, intentional and justified, or an unresolved regression. Unresolved consequential differences prevent candidate selection; missing cases remain pending evidence. Nonempty output, byte-identical HTML, and matching live model-generated titles are not substitutes for these comparisons.
 
 ### Resource budgets
 
-Define a supported workload from identified representative documents and measure the current Mammoth baseline. Record compressed input size, per-part and total decompressed bytes, entry/node counts, XML depth, style traversal steps, peak memory, and elapsed processing time. Derive provisional structural caps and memory/time thresholds with a stated headroom rationale. The maintainer must accept these budgets and the support envelope before candidate results are classified as passing; the metadata cap alone is insufficient.
+Define a supported workload from identified representative documents and measure the current Mammoth baseline. Inspect compressed input size, per-part and total decompressed bytes, entry/node counts, XML depth, style traversal steps, peak memory, and elapsed processing time. Retain proposed limits and their headroom rationale rather than raw execution reports. The maintainer must accept these budgets and the support envelope before candidate results are classified as passing; the metadata cap alone is insufficient.
 
-Test every cap below, at, and above its boundary with expected limitation/failure outcomes. Measure representative and adversarial cases under a recorded runtime and measurement setup. The candidate must stay within accepted budgets or terminate with the defined outcome. Later budget/support-policy changes require a rationale and renewed checks of affected cases. Numeric budgets remain unselected and unmeasured.
+Test every cap below, at, and above its boundary with expected limitation/failure outcomes. Use the reproducible harness to measure representative and adversarial cases; record check outcomes without local environment details. The candidate must stay within accepted budgets or terminate with the defined outcome. Later budget/support-policy changes require a rationale and renewed checks of affected cases.
+
+Phase 1 measured the baseline and defined the [provisional limits](../../scripts/docx-baseline/resources.ts) below. These are exploratory limits, not accepted support policy or production enforcement. Per-run measurements remain temporary.
+
+| Dimension | Proposal | Headroom rationale |
+| --- | --- | --- |
+| Compressed input | 8 MiB | Allows larger packages; decompressed limits may bind earlier. |
+| Decompressed part / total | 1 MiB / 4 MiB | About 33 / 46 times the corresponding seed maxima. |
+| ZIP entries | 256 | Sixteen times the seed maximum. |
+| XML elements / depth | 100,000 / 64 | About 40 / seven times the corresponding seed maxima. |
+| Distinct style traversal steps | 128 | Thirty-two times the seed maximum. |
+| Extraction time / peak RSS | 5 seconds / 256 MiB | More than 80 / two times the corresponding bounded baseline maxima; candidate enforcement remains untested. |
+
+The [structural cases](../../scripts/docx-baseline/resource-cases.ts) isolate seven exact below/at/above dimensions; some exceed other proposed caps and are not examples of fully supported inputs. Inspector safety ceilings are separate from candidate limits. Controlled candidate elapsed-time and RSS enforcement checks remain unrun because those are not deterministic DOCX fixture dimensions. Maintainer acceptance and candidate enforcement remain pending.
 
 ### Runtime and distribution checks
 
@@ -259,11 +287,11 @@ Otherwise, recommend deferral and identify unmet criteria. Record the supporting
 
 The implementation plan must repeat applicable evidence/prompt, fallback, resource, and distribution checks on the final integrated product. Pass affected managed tests and Node.js checks of the CLI and built ESM/CJS entry points. Confirm consumer migration/retirement and complete Mammoth removal in repository and fresh packed-product installations. Record final results, maintenance acceptance, and remaining limitations before claiming shipping acceptance or dependency remediation.
 
-This research remains `draft`: no candidate implementation has been evaluated or comparison spike started. Output equivalence, concrete support/diagnostic mappings, resource budgets, maintenance acceptance, and both gates remain unverified; implementation has not been approved.
+Phase 1 is complete in the [unified execution record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md). The retained corpus has 70 semantic cases and 21 structural boundary cases, with reviewed expectations, scoped offline checks, and provisional budgets. Validation, temporary-output cleanup, and full-range review passed. No candidate implementation or comparison has started. Output equivalence, concrete support/diagnostic mappings, accepted resource budgets, maintenance acceptance, and both gates remain unverified. Execution stops before Phase 2.
 
 ## Related Plans
 
-- [DOCX reader and Mammoth replacement](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md) — draft phased evaluation and conditional migration plan, ending with docs validation. Creating the plan does not approve implementation or establish candidate compatibility.
+- [DOCX reader and Mammoth replacement](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md) — active phased evaluation and conditional migration plan. Phase 1 is complete; execution stops before Phase 2. Candidate compatibility and selection remain unverified.
 
 ## References
 

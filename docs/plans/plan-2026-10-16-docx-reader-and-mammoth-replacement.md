@@ -1,7 +1,8 @@
 ---
 title: "DOCX reader and Mammoth replacement"
 created-date: 2026-10-16
-status: draft
+modified-date: 2026-10-16
+status: active
 agent: codex
 ---
 
@@ -9,7 +10,7 @@ agent: codex
 
 Evaluate and, if justified, integrate a focused project-owned DOCX reader that preserves semantic rename evidence and fallback behavior while enabling complete Mammoth removal.
 
-This plan includes candidate evaluation and conditional production migration. Drafting it does not select a replacement or approve implementation. Phases 1–3 establish the research decision; Phases 4–5 proceed only after that decision supports replacement. Phase 6 validates documentation before closeout. No execution phase has started.
+This plan includes candidate evaluation and conditional production migration. Phases 1–3 establish the research decision; Phases 4–5 proceed only after that decision supports replacement. Phase 6 validates documentation before closeout. The [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md) tracks Phase 1 baseline capture, validation, and review. Execution stops before Phase 2 under the current scope; no replacement has been selected.
 
 ## Scope
 
@@ -45,23 +46,25 @@ The exact file split, reader types, and failure representation remain provisiona
 
 ## Candidate Build and Packaging Checks
 
-Use a private evaluation harness that imports the actual candidate reader and builds separate ESM and CJS entry points with the repository's bundling tooling. Keep its build configuration separate from production entry points and write generated outputs under `examples/playground/`. Record the source entry points, build commands, runtime versions, and fixture assertions so the checks demonstrate candidate extraction rather than only a successful module import.
+Use a private evaluation harness that imports the actual candidate reader and builds separate ESM and CJS entry points with the repository's bundling tooling. Keep its build configuration separate from production entry points. Builds, generated inputs, package tarballs, consumer installations, caches, logs, and raw reports belong in owned OS temporary directories with cleanup on success and failure. Keep source entry points and fixture assertions reproducible in the harness; record concise outcomes rather than local setup or run metadata.
 
-Pack those built entry points into an evaluation-only package with `private: true`, scratch exports for both formats, and the reader's actual runtime dependencies declared at repository-resolved versions. Keep those dependencies external to the harness build so installation exercises their resolution. The Mammoth baseline/comparison runner stays outside this package. Inspect the tarball for the candidate code and required files; packing the unchanged production package does not establish candidate inclusion. This harness does not add a public reader API or publish a package.
+Pack those built entry points into an evaluation-only package with `private: true`, scratch exports for both formats, and the reader's actual runtime dependencies declared at repository-resolved versions. Keep those dependencies external to the harness build so installation exercises their resolution. The Mammoth baseline/comparison runner stays outside this package. Inspect the temporary tarball for the candidate code and required files; packing the unchanged production package does not establish candidate inclusion. This harness does not add a public reader API or publish a package.
 
-The required installation matrix for both Phase 2 and Phase 5 is npm and Bun. Record exact package-manager versions and install the same stage-specific tarball in separate fresh consumer directories, without links or module-resolution fallbacks to the repository's `node_modules`. After each installation, invoke both built formats with Node.js, including the minimum supported version, and assert representative extraction results. Inspect the installed dependency trees. Candidate-package checks establish isolated feasibility; Phase 5 must repeat the checks on the actual integrated product and cannot use the evaluation package as shipping evidence.
+The required installation matrix for both Phase 2 and Phase 5 is npm and Bun. Install the same stage-specific tarball in separate fresh temporary consumer directories, without links or module-resolution fallbacks to the repository's `node_modules`. After each installation, invoke both built formats with Node.js, including the minimum supported version, and assert representative extraction results. Inspect the installed dependency trees, then clean up temporary installations and caches. Record whether each required check passed, failed, or was not run. Candidate-package checks establish isolated feasibility; Phase 5 must repeat the checks on the actual integrated product and cannot use the evaluation package as shipping evidence.
 
 ## Phased Execution
 
 ### Phase 1: Capture baseline
 
-- [ ] When Phase 1 begins, create one unified execution job record under `docs/plans/jobs/`, link it from this plan and the research, and record the source revision, Node/Bun and resolved dependency versions, commands, harnesses, and fixture identities. Continue updating that same record through all phases.
-- [ ] Reuse the seven existing DOCX title-evidence fixtures and OOXML metadata tests; add reproducible cases for the research's missing content, style, secondary-content, malformed-input, and failure-boundary variations.
-- [ ] Capture current HTML, raw text, metadata, complete normalized evidence, and prompt payloads separately. Give synthetic cases independent expected content assertions.
-- [ ] Inventory production, test, script, build, declaration, lockfile, and installed-tree Mammoth consumers, including the historical DOCX/PDF spike and references to it.
-- [ ] Measure the baseline on identified representative inputs and propose the supported workload, structural caps, and memory/time thresholds using the research's resource metrics and a recorded headroom rationale.
+- [x] When Phase 1 begins, create one unified execution job record under `docs/plans/jobs/`, link it from this plan and the research, and record the source baseline, reusable evidence references, and concise outcomes. Continue updating that same record through all phases. See the [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md).
+- [x] Reuse the seven existing DOCX title-evidence fixtures and OOXML metadata tests; add reproducible cases for the research's missing content, style, secondary-content, malformed-input, and failure-boundary variations.
+- [x] Capture current HTML, raw text, metadata, complete normalized evidence, and prompt payloads separately. Give synthetic cases independent expected content assertions.
+- [x] Inventory production, test, script, build, declaration, lockfile, and installed-tree Mammoth consumers, including the historical DOCX/PDF spike and references to it.
+- [x] Measure the baseline on identified representative inputs and propose the supported workload, structural caps, and memory/time thresholds using the research's resource metrics and a recorded headroom rationale.
 
 **Deliverable and exit criteria:** a reproducible baseline corpus and comparison harness, a consumer inventory, and proposed resource budgets. Every minimum matrix variation has an identified case; unavailable cases are recorded as gaps and prevent claiming the full comparison is complete. The current adapter is the baseline, not the historical spike's earlier evidence shape or ranking rules.
+
+Phase 1 is complete, with reusable corpus/expectations, consumer inventory, and provisional resource budgets linked from the [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md). Validation, temporary-output cleanup, and full-range review passed. Candidate time/RSS enforcement cases remain explicitly unrun; no candidate comparison or budget acceptance is claimed. Phase 2 is unstarted.
 
 ### Phase 2: Build candidate reader
 
@@ -81,7 +84,7 @@ The required installation matrix for both Phase 2 and Phase 5 is npm and Bun. Re
 - [ ] Implement selected-part reading, resource enforcement, deterministic cleanup, and offline handling. Do not load external URLs/files or evaluate executable content.
 - [ ] Compare complete evidence and prompt payloads through a test-only adapter path. Classify every difference as equivalent under normalization, intentional and justified, or unresolved regression.
 - [ ] Measure resource behavior and test below/at/above each proposed cap. Obtain maintainer acceptance of the budgets and support envelope before labeling candidate results as passing.
-- [ ] Build and pack the actual candidate through the private harness described in **Candidate Build and Packaging Checks**. Verify extraction through both ESM/CJS entry points under Node.js `>=22.23.0`, including the minimum supported version, after fresh npm and Bun installations. Retain the artifact inspection, fixture results, and resolved dependency trees.
+- [ ] Build and pack the actual candidate through the private harness described in **Candidate Build and Packaging Checks**. Verify extraction through both ESM/CJS entry points under Node.js `>=22.23.0`, including the minimum supported version, after fresh npm and Bun installations. Record inspection, extraction, and dependency-tree check outcomes; clean up temporary artifacts.
 
 **Deliverable and exit criteria:** an executable candidate, complete comparison results, resource measurements, and runtime/distribution evidence ready for a selection decision. Missing cases, failed checks, and unaccepted budgets remain explicit gaps. A successful text extraction or Bun-only test run is insufficient.
 
@@ -113,7 +116,7 @@ If deferred, preserve the findings and identify unmet criteria; do not start Pha
 - [ ] Remove Mammoth imports, runtime/development declarations, build externalization, obsolete type references, and lockfile entries; regenerate repository installation state through the package manager.
 - [ ] Confirm production code, tests, scripts, and historical tooling no longer require Mammoth. Explanatory historical references may remain.
 - [ ] Run applicable lint, formatting, build, and managed test checks under the testing guide; repeat the final evidence/prompt, fallback, and resource acceptance checks.
-- [ ] Verify the final CLI and built ESM/CJS entry points under supported Node.js, including the minimum supported version. Record exact runtimes and exercised paths.
+- [ ] Verify the final CLI and built ESM/CJS entry points under supported Node.js, including the minimum supported version. Record the outcome for each required path.
 - [ ] Inspect the actual packed product and repeat the npm/Bun fresh-consumer installation checks defined in **Candidate Build and Packaging Checks**, alongside repository installed trees. Exercise the integrated DOCX path under Node.js; the private candidate harness is not final-product evidence. Confirm Mammoth absence and account for any independent retained `argparse`/`sprintf-js` paths.
 - [ ] Record final results, maintenance acceptance, limitations, and the precise dependency/audit outcome. Claim dependency remediation only when the installed-tree evidence supports it.
 
@@ -138,13 +141,15 @@ Use reviewable phase boundaries and record tested revisions so a failed integrat
 
 ## Evidence and Documentation Handling
 
-The research owns findings and the proceed/defer recommendation; this plan owns execution steps and gates; one unified execution job record owns commands, tested revisions, comparisons, measurements, results, and accepted decisions across all six phases. Create and link the record only when Phase 1 execution begins, using the actual creation date under the documentation policy. Do not create a job record for drafting or revising this plan. Organize the same record by plan phase and update it throughout execution; do not create separate per-phase job records by default.
+The research owns findings and the proceed/defer recommendation; this plan owns execution steps and gates; one unified execution job record owns concise phase outcomes, pending checks, and links to reusable evidence across all six phases. Keep substantive compatibility decisions and budget rationale in the research or accepted contract, not a local execution diary. Create and link the record only when Phase 1 execution begins, using the actual creation date under the documentation policy. Do not create a job record for drafting or revising this plan. Organize the same record by plan phase and update it throughout execution; do not create separate per-phase job records by default.
 
 Keep the unified record `in-progress` while execution continues. Completing the evaluation or research decision alone does not complete the record while integration, removal, or final docs validation remains pending. Mark it `completed` only when all six phases have passed. If the replacement is deferred, record the evidence and unexecuted phases and use `blocked` when execution is expected to resume or `cancelled` when it is intentionally abandoned, consistent with the plan's deferral route even after Phase 6 documents that outcome.
 
-Keep generated manual artifacts under `examples/playground/` and retain reproducible harnesses and public-safe results sufficient to assess the decision without relying solely on transient output.
+Use owned OS temporary directories for execution files and remove them on success or failure. Keep reviewed synthetic regression fixtures and expectations under their test owner. Record only concise check outcomes; do not commit raw execution reports, host details, local setup, cache locations, or run-specific paths. Baseline expectation updates require an explicit export and review; ordinary verification must not rewrite them.
 
-Update documentation during each phase; Phase 6 is the final consistency pass. Plan creation leaves both this plan and the current research `draft`. When evaluation starts, use `active` for the plan and `in-progress` for the research. Research completion may precede shipping only when its decision gate has supporting evidence.
+`examples/playground/` is reserved for deliberately chosen, inspectable smoke-test examples and outputs. Before adding an entry, discuss its purpose, exact input/output files, inspection needs, and retention with the maintainer. This plan does not authorize a playground entry; Phase 1 needs none. Do not change shared managed-test fixture handling as part of the manual evaluation harness.
+
+Update documentation during each phase; Phase 6 is the final consistency pass. Plan creation leaves both this plan and the current research `draft`. When execution starts, use `active` for the plan and `in-progress` for the research. Research completion may precede shipping only when its decision gate has supporting evidence.
 
 ## Related Research
 

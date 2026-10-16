@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Contract Ownership Catalog"
 created-date: 2026-08-23
-modified-date: 2026-10-02
+modified-date: 2026-10-16
 status: completed
 agent: codex
 ---
@@ -35,6 +35,10 @@ Use [Test Suite Audit Inventory](test-suite-audit-inventory.md) for the fixed pr
 | Test runner | `test/test-runner/` | suite discovery, prerequisites, process/output ownership, reporting, retention, and terminal presentation |
 | Shared fixtures | `test/fixtures/` | checked-in data consumed by more than one accepted owner |
 | Global helpers | `test/helpers/` | independently reused, feature-neutral test infrastructure only |
+
+### Document Rename Baseline
+
+`test/document-rename/adapters/docx-baseline.app.test.ts` owns the current-adapter DOCX corpus, independently asserted content/failure outcomes, and complete evidence and prompt comparisons. Reviewed expectations remain under `test/document-rename/fixtures/docx-baseline/`; ordinary checks do not export reports. `docx-baseline-resources.unit.test.ts` owns in-memory ZIP/XML instrumentation, bounded cleanup, and exact structural boundary dimensions. `docx-baseline-lifecycle.app.test.ts` checks temporary-workspace cleanup, dependency-link preservation, and explicit capture-export opt-in. The private `scripts/docx-baseline/launch.mjs` harness owns manual Node runtime checks, scoped offline API interception, and resource measurements in OS temporary storage. Those measurements do not run in regular suites or establish replacement acceptance. See the [execution record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md).
 
 ### Video Frames
 
