@@ -12,6 +12,7 @@ import {
 import { openGuardedDocxPackage } from "../../src/docx/package";
 import { readDocxDocument } from "../../src/docx/reader";
 import { XmlBudget } from "../../src/docx/xml-budget";
+import { ampersandHeavyDocument } from "./fixtures/docx-ampersand-cases";
 import {
   BOUNDARY_SENTINEL,
   createSelectedBoundaryProbes,
@@ -19,6 +20,21 @@ import {
 } from "./fixtures/docx-boundary-probes";
 
 describe("private DOCX limit policy", () => {
+  test("ampersand-heavy content uses original selected bytes at the part cap", async () => {
+    for (const offset of [0, 1]) {
+      const { xml, rawText } = ampersandHeavyDocument(
+        DEFAULT_DOCX_LIMITS.maxPartDecompressedBytes + offset,
+      );
+      const result = await readDocxDocument(buildStoredZip([["word/document.xml", xml]]));
+      if (offset)
+        expect(result).toEqual({ ok: false, diagnostic: "docx_limit:maxPartDecompressedBytes" });
+      else {
+        expect(result.ok, JSON.stringify(result)).toBe(true);
+        if (result.ok) expect(result.facts.rawText).toBe(rawText);
+      }
+    }
+  });
+
   test("byte and structural cap checks accept equality and reject only above", () => {
     for (const key of [
       "compressedInputBytes",

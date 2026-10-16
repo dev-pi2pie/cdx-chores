@@ -2,7 +2,7 @@
 title: "DOCX reader review follow-up"
 created-date: 2026-10-16
 modified-date: 2026-10-16
-status: completed
+status: in-progress
 agent: codex
 ---
 
@@ -151,3 +151,18 @@ Address the attribute-whitespace finding from review of `bc6e3e98..bc9e9d9c`. So
 | Earlier packed-consumer evidence | Retained from the drawing follow-up; distribution boundaries unchanged |
 | Full-range review | `bc9e9d9c..351481b7` and combined `bc6e3e98..351481b7` reviewed; no remaining material findings; closing docs reviewed separately |
 | Artifact cleanup | Owned manual and managed-test workspaces settled and removed; temporary inputs, builds, runtime cache, and logs removed; no smoke artifacts retained |
+
+## Bare Ampersand Follow-Up
+
+Restore the historical literal-ampersand behavior identified by review of `bc6e3e98..0e6f6748`. Source baseline: `0e6f6748`. This narrowly scoped recovery preserves existing entity and structural failures; it is a baseline-compatible correction. Earlier results remain historical; accepted departures, limits, and frozen captures remain unchanged.
+
+- [x] Recover bare ampersands in text and quoted attributes while preserving references, literal sections, attribute whitespace, and physical-part accounting.
+- [x] Add independent evidence/prompt regressions and ampersand-heavy cap checks; reproduce failures before the fix.
+- [ ] Pass focused, routine, built-runtime, quality, and renewed resource checks; update coverage references.
+- [ ] Review the complete follow-up and combined DOCX ranges, resolve findings, and clean owned artifacts.
+
+| Area | Outcome |
+| --- | --- |
+| Recovery / references | Literal ampersands recovered in values; numeric/predefined references decode once; unknown named references and malformed markup retain failures |
+| Regressions | Thirty-five historical-equivalent DOCX cases, four parser controls, and one selected-part cap test added; ten pre-fix failures reproduced |
+| Initial verification | 310 focused and 1,916 unit cases passed; lint, format, and types passed; application and runtime checks pending |

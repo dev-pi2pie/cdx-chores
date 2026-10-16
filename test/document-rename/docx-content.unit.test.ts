@@ -26,6 +26,7 @@ import { children, elementText, first, parseXml } from "../../src/docx/xml";
 import { createAdditionalDocxContentProbes } from "./fixtures/docx-content-probes";
 import { createDocxReviewCases } from "./fixtures/docx-review-cases";
 import { createDocxXmlCases } from "./fixtures/docx-xml-cases";
+import { createDocxAmpersandCases } from "./fixtures/docx-ampersand-cases";
 
 function symbol(font: string | undefined, char: string | undefined): string {
   return `<w:r><w:sym${font === undefined ? "" : ` w:font="${xmlEscape(font)}"`}${char === undefined ? "" : ` w:char="${xmlEscape(char)}"`}/></w:r>`;
@@ -62,6 +63,51 @@ function evidence(value: DocxDocumentFacts) {
 }
 
 describe("DOCX review follow-up content cases", () => {
+  test("bare ampersands in XML values remain literal alongside references", () => {
+    for (const quote of ['"', "'"]) {
+      const root = parseXml(
+        `<root value=${quote}AT&T & &amp; &#38; &#x26; &amp;#38; &copy &;${quote}>Research & Development &amp; &#38; &#x26; &amp;#38; &copy &;</root>`,
+      )!;
+      expect(root.attributes.get("value")).toBe("AT&T & & & & &#38; &copy &;");
+      expect(elementText(root)).toBe("Research & Development & & & &#38; &copy &;");
+    }
+  });
+
+  test("bare-ampersand recovery leaves comments, instructions, and CDATA literal", () => {
+    const root = parseXml(
+      `<!-- <ignored value="&unknown;"/> --><?before value="&unknown;"?><root value="A&B\t&#9;"><![CDATA[A&B &unknown; &#38;]]> & C</root>`,
+    )!;
+    expect(root.attributes.get("value")).toBe("A&B \t");
+    expect(elementText(root)).toBe("A&B &unknown; &#38; & C");
+  });
+
+  test("bare-ampersand recovery cannot repair markup or hide entity failures", () => {
+    for (const xml of [
+      '<root value="A&B">&unknown;</root>',
+      '<root value="A&B &copy;"/>',
+      '<root value="A&B">&#xZZ;</root>',
+      '<root value="A&B">&#</root>',
+      '<r&oot value="A&B"/>',
+      '<root a&b="A&B"/>',
+      "<root value=A&B/>",
+      '<root value="A&B"/><extra/>',
+      '<root value="A&B"></wrong>',
+      '<root value="A&B"/><![CDATA[&]]>',
+    ])
+      expect(() => parseXml(xml), xml).toThrow("docx_xml_invalid");
+    expect(() => parseXml('<!DOCTYPE root><root value="A&B"/>')).toThrow(
+      "docx_xml_declaration_unsupported",
+    );
+  });
+
+  test("bare-ampersand recovery preserves original physical-part charging", () => {
+    const budget = new XmlBudget(resolveDocxLimits({ xmlElementCount: 1 }));
+    const part = {};
+    for (let attempt = 0; attempt < 2; attempt++)
+      expect(parseXml('<root value="A&B"/>', budget, part)?.attributes.get("value")).toBe("A&B");
+    expect(() => parseXml("<over/>", budget, {})).toThrow("docx_limit:xmlElementCount");
+  });
+
   test("literal attribute whitespace normalizes before references decode", () => {
     for (const quote of ['"', "'"]) {
       const root = parseXml(
@@ -197,7 +243,11 @@ describe("DOCX review follow-up content cases", () => {
     expect(elementText(root)).toBe("&copy; &#169;A");
   });
 
-  for (const item of [...createDocxReviewCases(), ...createDocxXmlCases()]) {
+  for (const item of [
+    ...createDocxReviewCases(),
+    ...createDocxXmlCases(),
+    ...createDocxAmpersandCases(),
+  ]) {
     test(item.id, async () => {
       const result = await readDocxDocument(buildDocxPackage(item.options));
       if (item.diagnostic) {
