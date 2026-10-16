@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { createHash } from "node:crypto";
 
 import {
   buildDocxPackage,
@@ -17,6 +18,7 @@ import {
 import { assembleDocxEvidence } from "../../src/adapters/codex/document-rename/extractors/docx-evidence";
 import { resolveDocxLimits, type DocxLimits } from "../../src/docx/limits";
 import { readDocxDocument } from "../../src/docx/reader";
+import { readSymbol } from "../../src/docx/symbols";
 import type { DocxDocumentFacts } from "../../src/docx/types";
 import { createAdditionalDocxContentProbes } from "./fixtures/docx-content-probes";
 
@@ -55,6 +57,39 @@ function evidence(value: DocxDocumentFacts) {
 }
 
 describe("DOCX symbol evidence boundaries", () => {
+  test("preserves all 1061 baseline mappings across the complete five-font byte domain", () => {
+    const rows: [string, string, string][] = [];
+    const counts: number[] = [];
+    for (const font of ["Symbol", "Webdings", "Wingdings", "Wingdings 2", "Wingdings 3"]) {
+      let mapped = 0;
+      for (let code = 0; code <= 255; code += 1) {
+        const character = code.toString(16).toUpperCase().padStart(2, "0");
+        const text = readSymbol(
+          {
+            name: "w:sym",
+            attributes: new Map([
+              ["w:font", font],
+              ["w:char", character],
+            ]),
+            children: [],
+          },
+          new Set(),
+        );
+        if (text) mapped += 1;
+        rows.push([font, character, text]);
+      }
+      counts.push(mapped);
+    }
+    expect(rows).toHaveLength(1280);
+    expect(counts).toEqual([190, 223, 223, 217, 208]);
+    expect(counts.reduce((sum, count) => sum + count, 0)).toBe(1061);
+    // Derived once from baseline dingbat-to-unicode 1.0.1: ordered [font, uppercase hex, output]
+    // rows, including omissions, serialized with JSON.stringify and hashed as UTF-8.
+    expect(createHash("sha256").update(JSON.stringify(rows), "utf8").digest("hex")).toBe(
+      "ccdc785bce8ad6a1e9fc934846ae2a9185faab6a43a02ec7545d23e5669d8024",
+    );
+  });
+
   test("preserves ordinary Unicode and all five mapped fonts inside a heading", async () => {
     const value = await facts({
       body: styled(

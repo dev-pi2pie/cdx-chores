@@ -365,6 +365,8 @@ Use the standalone `dingbat-to-unicode` mapper already used by Mammoth rather th
 
 Archive integrity, tag/source identity, packaged notice, and complete mapping equivalence were verified before adoption. Keep the mapper external and retain its packaged notice; actual candidate distribution inspection remains Phase 6 work. No mapping data is copied into project source. Mammoth remains the production extractor, and its removal remains mandatory on the shipping path.
 
+The content unit suite protects all 1,061 baseline mappings with per-font counts and a stable digest over the complete five-font byte domain, including unmapped inputs. The expectation was derived independently from the baseline mapper; the regression test has no Mammoth dependency or copied mapping table.
+
 | Symbol input | Required baseline outcome |
 | --- | --- |
 | Ordinary Unicode in `w:t` | Preserve independently of font mapping. |
