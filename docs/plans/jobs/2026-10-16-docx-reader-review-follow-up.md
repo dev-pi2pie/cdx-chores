@@ -2,7 +2,7 @@
 title: "DOCX reader review follow-up"
 created-date: 2026-10-16
 modified-date: 2026-10-16
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -101,12 +101,14 @@ Address the multiple-root content XML finding from review of `bc6e3e98..0a7b57c5
 
 - [x] Reject a second document element while preserving valid declarations, comments, processing instructions, and nested elements.
 - [x] Add independent selected-part and complete evidence/prompt regressions; preserve metadata behavior and physical-part accounting.
-- [ ] Pass focused, routine, built-runtime, and quality checks; update coverage references.
-- [ ] Review the complete follow-up and combined DOCX ranges, resolve findings, and clean owned artifacts.
+- [x] Pass focused, routine, built-runtime, and quality checks; update coverage references.
+- [x] Review the complete follow-up and combined DOCX ranges, resolve findings, and clean owned artifacts.
 
 | Area | Outcome |
 | --- | --- |
 | XML root policy / regressions | Eight historical-equivalent cases and seven parser/metadata/accounting tests added; empty/prolog-only rejection covered after review |
-| Verification | 214 focused, 1,820 unit, and 2,331 application cases passed; application 227.03 seconds under unchanged 240-second deadline; lint, format, types, and shipping build passed; built-runtime checks pending |
+| Routine verification | 214 focused, 1,820 unit, and 2,331 application cases passed; application 227.03 seconds under unchanged 240-second deadline; lint, format, types, and shipping build passed |
+| Built runtime comparisons | 134 historical and 114 follow-up cases per format on primary/minimum Node passed; complete evidence/prompts checked; frozen captures unchanged |
 | Earlier measurement / package evidence | Retained from the drawing follow-up; repeat only if affected boundaries change |
-| Full-range review / cleanup | Pending |
+| Full-range review | `0a7b57c5..b58d2f28` and combined `bc6e3e98..b58d2f28` reviewed; rootless-input coverage added; no remaining material findings; closing docs reviewed separately |
+| Artifact cleanup | Owned manual and managed-test workspaces settled and removed; temporary builds, runtime cache, inputs, and logs removed; no smoke artifacts retained |
