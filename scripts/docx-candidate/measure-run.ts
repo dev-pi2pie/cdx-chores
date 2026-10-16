@@ -9,6 +9,7 @@ import { createDocxSupervisor, createDocxSupervisorForTesting } from "../../src/
 import type { DocxReadResult } from "../../src/docx/types";
 import { createDocxMeasureCases } from "../../test/document-rename/fixtures/docx-measure-cases";
 import { createCandidateEvidenceExtractor } from "./adapter";
+import { emitProgress } from "./harness/protocol.mjs";
 import type {
   BaselineMeasurement,
   CandidateMeasurement,
@@ -49,9 +50,11 @@ async function materialize() {
   );
 }
 
-async function transitions(path: string): Promise<void> {
+async function transitions(path: string, completed: number): Promise<void> {
   for (const transition of ["postparse", "postencode"]) {
     for (const position of ["below", "at", "above"]) {
+      const id = `rss-${transition}-${position}`;
+      await emitProgress({ event: "start", id });
       await rm(join(workspace!, "child-transition.json"), { force: true });
       const supervisor = createDocxSupervisorForTesting({
         childPath: join(workspace!, `measure-${transition}-${position}.mjs`),
@@ -68,6 +71,7 @@ async function transitions(path: string): Promise<void> {
       ) as { pid: number; samples: number };
       assert(exited(observation.pid));
       assert.equal(observation.samples, 4);
+      await emitProgress({ event: "complete", id, completed: ++completed });
     }
   }
 }
@@ -75,6 +79,8 @@ async function transitions(path: string): Promise<void> {
 async function candidate(): Promise<MeasurementReport> {
   assert(load === "idle" || load === "loaded");
   const cases = await materialize();
+  await emitProgress({ event: "scope", total: cases.length + (load === "idle" ? 6 : 0) });
+  let completed = 0;
   // A fresh caller per lane avoids relying on GC to remove the high-memory lane.
   const retained = load === "loaded" ? Buffer.alloc(384 * 1024 * 1024, 0xa5) : undefined;
   if (retained) assert(process.memoryUsage.rss() > DEFAULT_DOCX_LIMITS.peakRssBytes);
@@ -85,6 +91,7 @@ async function candidate(): Promise<MeasurementReport> {
   };
   for (const item of cases) {
     shutdown.signal.throwIfAborted();
+    await emitProgress({ event: "start", id: item.id });
     const esmStarted = now();
     const ordinaryResult = await ordinary.read(item.path, { signal: shutdown.signal });
     const ordinaryEsmApiMilliseconds = now() - esmStarted;
@@ -189,23 +196,27 @@ async function candidate(): Promise<MeasurementReport> {
         admissionReleased,
         fit,
       });
-      if (!fit) process.stderr.write(`measurement ${item.id}: failed\n`);
+      if (!fit) await emitProgress({ event: "failure", id: item.id });
       // Touch again so the retained allocation cannot become dead before the final request.
       if (retained) retained[(repetition * 4096) % retained.length]! ^= 1;
     }
+    await emitProgress({ event: "complete", id: item.id, completed: ++completed });
   }
-  if (load === "idle") await transitions(cases[0]!.path);
+  if (load === "idle") await transitions(cases[0]!.path, completed);
   assert.equal(samples.length, cases.length * repetitions);
   return { kind: "candidate", candidate: samples, passed: samples.every((sample) => sample.fit) };
 }
 
 async function baseline(): Promise<MeasurementReport> {
   const cases = await materialize();
+  await emitProgress({ event: "scope", total: cases.length });
+  let completed = 0;
   const expected = JSON.parse(
     await readFile(join(workspace!, "candidate-idle.json"), "utf8"),
   ) as MeasurementReport;
   const samples: BaselineMeasurement[] = [];
   for (const item of cases) {
+    await emitProgress({ event: "start", id: item.id });
     for (let repetition = 0; repetition < repetitions; repetition++) {
       shutdown.signal.throwIfAborted();
       const started = performance.now();
@@ -282,7 +293,7 @@ async function baseline(): Promise<MeasurementReport> {
           matched = false;
         }
       }
-      if (!matched) process.stderr.write(`baseline measurement ${item.id}: failed\n`);
+      if (!matched) await emitProgress({ event: "failure", id: item.id });
       samples.push({
         id: item.id,
         repetition,
@@ -294,6 +305,7 @@ async function baseline(): Promise<MeasurementReport> {
         matched,
       });
     }
+    await emitProgress({ event: "complete", id: item.id, completed: ++completed });
   }
   return { kind: "baseline", baseline: samples, passed: samples.every((sample) => sample.matched) };
 }

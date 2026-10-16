@@ -18,6 +18,7 @@ import { createInitialReaderCases, createValidationReaderCases } from "./cases";
 import { compareDocxReader } from "./compare";
 import type { CandidateModule } from "./compare";
 import { expandResourceCapture } from "./resource-comparison";
+import { emitProgress } from "./harness/protocol.mjs";
 
 const [format, scope] = process.argv.slice(2);
 assert(format === "esm" || format === "cjs");
@@ -60,7 +61,10 @@ assert.equal(
 );
 const cases = [...frozenCases, ...probes];
 assert.equal(new Set(cases.map((item) => item.id)).size, cases.length);
+await emitProgress({ event: "scope", total: cases.length });
+let completed = 0;
 for (const item of cases) {
+  await emitProgress({ event: "start", id: item.id });
   const bytes = "fixture" in item.input ? await readFile(item.input.fixture) : item.input.bytes;
   const name = "fixture" in item.input ? basename(item.input.fixture) : `${item.id}.docx`;
   await mkdir(join(directory, item.id));
@@ -105,6 +109,7 @@ for (const item of cases) {
         directory,
       );
     } else await compareDocxReader(module, item, expected, bytes, path, directory);
+    await emitProgress({ event: "complete", id: item.id, completed: ++completed });
   } catch {
     process.stderr.write(`case ${item.id}: failed\n`);
     process.exitCode = 1;

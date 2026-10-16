@@ -2,13 +2,12 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { runPackageCommand } from "../../../scripts/docx-candidate/package-process.mjs";
-
 /** Manual package checks cover ownership without expanding regular app-test work. */
-export async function verifyPackageProcessOwnership(workspace, env) {
+export async function verifyPackageProcessOwnership(workspace, env, runCommand) {
+  assert.equal(typeof runCommand, "function");
   let index = 0;
   const run = (path, args, timeout) =>
-    runPackageCommand(path, args, {
+    runCommand(path, args, {
       cwd: workspace,
       env,
       timeout,
