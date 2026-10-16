@@ -22,9 +22,10 @@ import { readSymbol } from "../../src/docx/symbols";
 import { styleProjection } from "../../src/docx/styles";
 import { XmlBudget } from "../../src/docx/xml-budget";
 import type { DocxDocumentFacts } from "../../src/docx/types";
-import { elementText, parseXml } from "../../src/docx/xml";
+import { children, elementText, first, parseXml } from "../../src/docx/xml";
 import { createAdditionalDocxContentProbes } from "./fixtures/docx-content-probes";
 import { createDocxReviewCases } from "./fixtures/docx-review-cases";
+import { createDocxXmlCases } from "./fixtures/docx-xml-cases";
 
 function symbol(font: string | undefined, char: string | undefined): string {
   return `<w:r><w:sym${font === undefined ? "" : ` w:font="${xmlEscape(font)}"`}${char === undefined ? "" : ` w:char="${xmlEscape(char)}"`}/></w:r>`;
@@ -61,6 +62,53 @@ function evidence(value: DocxDocumentFacts) {
 }
 
 describe("DOCX review follow-up content cases", () => {
+  test("unbound prefixes cannot become semantic element or attribute names", () => {
+    expect(parseXml("<w:p/>")?.name).not.toBe("w:p");
+    const root = parseXml(`<x:p xmlns:x="${WORD_NS}" w:val="unbound" val="plain"/>`)!;
+    expect(root.name).toBe("w:p");
+    expect(root.attributes.has("w:val")).toBe(false);
+    expect(root.attributes.get("val")).toBe("plain");
+  });
+
+  test("namespace bindings inherit and local rebinding ends with its element", () => {
+    const root = parseXml(
+      `<p xmlns="${WORD_NS}" xmlns:w="${WORD_NS}"><w:r xmlns:w="urn:foreign"/><w:r/></p>`,
+    )!;
+    expect(root.name).toBe("w:p");
+    expect(children(root).map((child) => child.name)).toEqual(["{urn:foreign}:r", "w:r"]);
+  });
+
+  test("nonempty trailing CDATA fails, including whitespace and literal markup", () => {
+    for (const text of ["extra", " ", "\n", "<extra/>"])
+      expect(() => parseXml(`<root/><?after data?><![CDATA[${text}]]>`)).toThrow(
+        "docx_xml_invalid",
+      );
+  });
+
+  test("leading and empty trailing CDATA preserve their historical root behavior", () => {
+    const root = parseXml("<![CDATA[leading]]><root/><!-- after --><![CDATA[]]><?after data?>");
+    expect(root?.name).toBe("root");
+  });
+
+  test("CDATA stays literal and ordered alongside ordinary and empty text", () => {
+    const root = parseXml(
+      "<root>Before<![CDATA[]]><![CDATA[ ]]><![CDATA[&#65; &copy; <extra/>]]>After</root>",
+    )!;
+    expect(elementText(root)).toBe("Before &#65; &copy; <extra/>After");
+  });
+
+  test("CDATA records do not consume XML element budget", () => {
+    const budget = new XmlBudget(resolveDocxLimits({ xmlElementCount: 2 }));
+    const part = {};
+    const xml = "<root><![CDATA[<extra/>]]><child/></root>";
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const root = parseXml(xml, budget, part)!;
+      expect(elementText(root)).toBe("<extra/>");
+      expect(first(root, "child")?.name).toBe("child");
+    }
+    expect(() => parseXml("<over/>", budget, {})).toThrow("docx_limit:xmlElementCount");
+  });
+
   test("empty and prolog-only XML remain invalid", () => {
     for (const xml of ["", '<?xml version="1.0"?>', "<?only data?>"])
       expect(() => parseXml(xml)).toThrow("docx_xml_invalid");
@@ -110,7 +158,7 @@ describe("DOCX review follow-up content cases", () => {
     expect(elementText(root)).toBe("&copy; &#169;A");
   });
 
-  for (const item of createDocxReviewCases()) {
+  for (const item of [...createDocxReviewCases(), ...createDocxXmlCases()]) {
     test(item.id, async () => {
       const result = await readDocxDocument(buildDocxPackage(item.options));
       if (item.diagnostic) {

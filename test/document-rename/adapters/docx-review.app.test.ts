@@ -4,6 +4,7 @@ import { buildDocumentPrompt } from "../../../src/adapters/codex/document-rename
 import { createDocxProductFixture } from "../fixtures/docx-product/build";
 import { createDocxDrawingCases } from "../fixtures/docx-drawing-cases";
 import { createDocxFallbackCases } from "../fixtures/docx-fallback-cases";
+import { createDocxXmlCases } from "../fixtures/docx-xml-cases";
 import {
   createDocxReviewCases,
   expectedReviewEvidence,
@@ -17,6 +18,7 @@ test("compiled DOCX product preserves complete review-case evidence and prompts"
       createDocxReviewCases,
       createDocxDrawingCases,
       createDocxFallbackCases,
+      createDocxXmlCases,
     ]) {
       const cases = createCases();
       const observations = await product.observeCases(cases.map(reviewCaseInput));

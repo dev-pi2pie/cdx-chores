@@ -2,7 +2,7 @@
 title: "DOCX reader review follow-up"
 created-date: 2026-10-16
 modified-date: 2026-10-16
-status: completed
+status: in-progress
 agent: codex
 ---
 
@@ -112,3 +112,19 @@ Address the multiple-root content XML finding from review of `bc6e3e98..0a7b57c5
 | Earlier measurement / package evidence | Retained from the drawing follow-up; repeat only if affected boundaries change |
 | Full-range review | `0a7b57c5..b58d2f28` and combined `bc6e3e98..b58d2f28` reviewed; rootless-input coverage added; no remaining material findings; closing docs reviewed separately |
 | Artifact cleanup | Owned manual and managed-test workspaces settled and removed; temporary builds, runtime cache, inputs, and logs removed; no smoke artifacts retained |
+
+## XML Namespace and CDATA Follow-Up
+
+Address the namespace and trailing-CDATA findings from review of `bc6e3e98..f72dba64`. Source baseline: `f72dba64`. Earlier results remain historical; accepted CDATA text preservation, optional metadata policy, and resource limits remain unchanged.
+
+- [x] Resolve semantic names through namespace bindings, preserving ignored foreign content and valid aliases.
+- [x] Preserve literal CDATA within content and historical leading/empty-trailing behavior; reject nonempty trailing CDATA.
+- [ ] Pass focused, routine, built-runtime, quality, and renewed workload checks; update coverage references.
+- [ ] Review the complete follow-up and combined DOCX ranges, resolve findings, and clean owned artifacts.
+
+| Area | Outcome |
+| --- | --- |
+| Namespace / CDATA regressions | Twenty-one historical-equivalent DOCX cases and six parser controls added; fifteen pre-fix failures reproduced; focused checks passed |
+| Verification / measurements | 241 focused and 1,847 unit cases passed; lint, format, and types passed; application, built-runtime, and workload checks pending |
+| Earlier packed-consumer evidence | Retained from the drawing follow-up; repeat only if distribution boundaries change |
+| Full-range review / cleanup | Pending |

@@ -31,6 +31,7 @@ const parser = new XMLParser({
   trimValues: false,
   parseTagValue: false,
   parseAttributeValue: false,
+  cdataPropName: "#cdata",
   htmlEntities: true,
   // Declarations are rejected before parsing; part/result limits bound built-in references.
   processEntities: { maxExpandedLength: Infinity },
@@ -43,7 +44,14 @@ function resolveName(name: string, namespaces: Map<string, string>, attribute = 
   const local = separator < 0 ? name : name.slice(separator + 1);
   if (attribute && !prefix) return local;
   const uri = namespaces.get(prefix);
-  return uri ? `${aliases.get(uri) ?? `{${uri}}`}:${local}` : name;
+  if (uri) return `${aliases.get(uri) ?? `{${uri}}`}:${local}`;
+  // Unbound prefixes must not collide with canonical semantic names.
+  return prefix ? `{unbound:${prefix}}:${local}` : name;
+}
+
+function cdataText(value: Record<string, unknown>): string | undefined {
+  const records = value["#cdata"] as Record<string, string>[] | undefined;
+  return records?.map((record) => record["#text"] ?? "").join("");
 }
 
 function element(
@@ -65,7 +73,8 @@ function element(
   }
   const children: (Element | string)[] = [];
   for (const child of (value[name] ?? []) as Record<string, unknown>[]) {
-    if (typeof child["#text"] === "string") children.push(child["#text"]);
+    const text = typeof child["#text"] === "string" ? child["#text"] : cdataText(child);
+    if (text !== undefined) children.push(text);
     else {
       const parsed = element(child, namespaces);
       if (parsed?.name === "mc:AlternateContent") {
@@ -95,6 +104,12 @@ export function parseXml(
   }
   let root: Element | undefined;
   for (const value of parser.parse(xml) as Record<string, unknown>[]) {
+    const cdata = cdataText(value);
+    if (cdata !== undefined) {
+      // Historical parsing permits leading CDATA and empty trailing sections.
+      if (root && cdata.length) throw new Error("docx_xml_invalid");
+      continue;
+    }
     const parsed = element(value, new Map());
     if (!parsed) continue;
     if (root) throw new Error("docx_xml_invalid");
