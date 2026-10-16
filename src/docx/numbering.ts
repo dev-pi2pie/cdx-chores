@@ -52,7 +52,7 @@ export function createNumberingResolver(
     if (num.name !== "w:num") continue;
     const abstract = first(num, "w:abstractNumId");
     if (!abstract) throw new Error("docx_numbering_invalid");
-    // The baseline ignores lvlOverride, including its replacement level and start value.
+    // Ignore lvlOverride replacement levels and start values for Mammoth compatibility.
     nums.set(num.attributes.get("w:numId"), abstract.attributes.get("w:val"));
   }
 
@@ -65,7 +65,7 @@ export function createNumberingResolver(
   }
 
   const styleLevels = new Map<string, NumberingLevel>();
-  // Object enumeration preserves the baseline's numeric-ID order for duplicate style links.
+  // Keep integer-key enumeration order when resolving duplicate paragraph-style mappings.
   for (const abstract of Object.values(abstracts)) {
     for (const level of Object.values(abstract.levels)) {
       if (level.paragraphStyleId !== undefined) styleLevels.set(level.paragraphStyleId, level);

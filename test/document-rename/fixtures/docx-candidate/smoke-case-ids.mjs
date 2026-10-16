@@ -1,4 +1,4 @@
-/** The frozen initial comparison slice, shared by selection and retained summaries. */
+/** Shared case IDs for smoke comparisons and retained smoke summaries. */
 export const smokeCaseIds = Object.freeze([
   "seed-metadata-rich",
   "seed-heading-rich",

@@ -7,8 +7,8 @@ import yauzl, { type Entry, type ZipFile } from "yauzl";
 import { countXmlDimensions } from "../../test/document-rename/fixtures/docx-baseline/dimensions.ts";
 export { PROPOSED_DOCX_BUDGETS } from "../../test/document-rename/fixtures/docx-baseline/dimensions.ts";
 
-// Inspector ceilings deliberately exceed the proposed boundaries. They bound this
-// measurement tool, not Mammoth or a future content reader.
+// Inspector safety ceilings exceed the fixture thresholds and bound measurement work.
+// Production extraction uses separate reader limits.
 export const DOCX_INSPECTION_LIMITS = {
   compressedInputBytes: 16 * 1024 * 1024,
   entryCount: 1_024,

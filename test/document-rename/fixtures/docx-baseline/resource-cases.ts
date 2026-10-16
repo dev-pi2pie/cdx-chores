@@ -32,7 +32,7 @@ const SENTINEL = "Resource boundary sentinel";
 const SMALL_BODY = paragraph(SENTINEL);
 const POSITIONS = ["below", "at", "above"] as const;
 
-/** Values are measured package dimensions, not future enforcement outcomes. */
+/** Whole-package structural measurements; selected-content enforcement is tested separately. */
 export const RESOURCE_BOUNDARIES: ResourceBoundary[] = (
   [
     "compressedInputBytes",

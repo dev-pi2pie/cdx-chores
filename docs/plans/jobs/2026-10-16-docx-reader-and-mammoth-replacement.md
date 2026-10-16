@@ -310,3 +310,13 @@ Source baseline: `a8a610d7`. This phase changes documentation only.
 | Artifacts / status | Checks created no verification artifacts; all 86 tasks across 13 phase sections checked; research, plan, and record completed in their current locations |
 
 The [Phase 9 limitations](#phase-9-mammoth-removal-and-shipping-verification) remain part of the completed outcome. Completion does not resolve the upstream notice gap or minimum-Node anomaly, extend platform coverage, or archive these documents.
+
+## Follow-up: Code Comment Clarity
+
+Source baseline: `6a9ab121`.
+
+| Check | Result |
+| --- | --- |
+| Scope | Seventeen comments across thirteen reader/runtime, script, and fixture files now explain purpose, boundaries, and compatibility rules without plan-phase context |
+| Verification | Comment-only source diff and identical transpiled JavaScript confirmed; lint, formatting, and diff checks passed; frozen data, dependencies, and build configuration unchanged |
+| Review / artifacts | Complete follow-up from `6a9ab121` reviewed; no verification artifacts generated; runtime suites were not repeated for comment changes; completed document statuses retained |

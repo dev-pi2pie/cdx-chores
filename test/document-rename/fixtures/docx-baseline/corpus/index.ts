@@ -9,7 +9,7 @@ import type { DocxBaselineCase } from "./types.ts";
 
 export type { DocxBaselineCase } from "./types.ts";
 
-/** Expectations describe the current adapter, including its identified limitations. */
+/** Semantic fixtures with historical Mammoth expectations and independent assertions. */
 export function createBaselineCases(): DocxBaselineCase[] {
   return [
     ...existingCases(),

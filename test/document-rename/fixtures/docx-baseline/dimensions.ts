@@ -1,4 +1,4 @@
-/** Proposals for Phase 2 evaluation, neither accepted policy nor production enforcement. */
+/** Frozen thresholds for whole-package resource fixtures; production uses separate reader limits. */
 export const PROPOSED_DOCX_BUDGETS = {
   compressedInputBytes: 8 * 1024 * 1024,
   entryCount: 256,

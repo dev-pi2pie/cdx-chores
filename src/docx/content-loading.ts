@@ -59,7 +59,7 @@ export class ContentLoader {
   }
 
   async parts() {
-    // Content types are optional, but malformed XML fails baseline conversion.
+    // Validate content types when present; malformed XML fails extraction.
     await this.xml("/[Content_Types].xml");
     const main = await this.relatedPart("/_rels/.rels", "officeDocument");
     if (!this.exists(main)) throw new Error("docx_main_document_unavailable");
@@ -101,7 +101,7 @@ export class ContentLoader {
         relationship.attributes.get("Type") !== `${RELATIONSHIP_PREFIX}image`
       )
         continue;
-      // Preserve the baseline's Word-directory media resolution.
+      // Resolve relative image targets under /word/ for Mammoth compatibility.
       const path = target.startsWith("/") ? target : `/word/${target}`;
       if (this.exists(path)) targets.set(`${source}:${id}`, path);
     }

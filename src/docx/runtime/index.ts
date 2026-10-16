@@ -170,7 +170,7 @@ function createSupervisor(assets: SupervisorAssets): DocxSupervisor {
             unconfirmed = true;
             candidate = failure("docx_cleanup_unconfirmed");
             terminate();
-            // Keep input/process ownership and the slot until eventual settlement.
+            // Keep input/process ownership and admission until settlement is confirmed.
             resolveSettled();
           }, limits.cleanupMilliseconds);
         }

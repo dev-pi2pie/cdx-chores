@@ -1,4 +1,4 @@
-/** Internal resource envelope accepted in Phase 7. */
+/** Default resource limits for DOCX reading and extraction. */
 export const DEFAULT_DOCX_LIMITS = {
   compressedInputBytes: 8 * 1024 * 1024,
   entryCount: 256,

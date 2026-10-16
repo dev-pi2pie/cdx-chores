@@ -2,7 +2,7 @@ import { hex } from "dingbat-to-unicode";
 
 import type { Element } from "./xml";
 
-/** Preserve the baseline mapper's permissive parsing and uppercase F0 retry. */
+/** Map font symbols permissively; retry unmapped uppercase F0xx codes using their final byte. */
 export function readSymbol(node: Element, diagnostics: Set<string>): string {
   const font = node.attributes.get("w:font");
   if (font === undefined) throw new Error("docx_symbol_font_missing");

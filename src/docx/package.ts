@@ -9,7 +9,7 @@ import { checkDocxLimit, type DocxLimits } from "./limits";
 
 export interface GuardedDocxPackage {
   readonly entries: ReadonlyMap<string, Entry>;
-  /** Content filenames preserve URI escapes, as the baseline ZIP reader does. */
+  /** Preserve URI escapes in content-part filenames. */
   readonly contentEntries: ReadonlyMap<string, Entry>;
   /** Last metadata-eligible physical entry, independently of content limits. */
   readonly metadataEntries: ReadonlyMap<string, Entry>;
