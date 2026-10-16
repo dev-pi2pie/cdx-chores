@@ -8,11 +8,11 @@ agent: codex
 
 ## Goal
 
-Determine whether cdx-chores should replace Mammoth with a focused, Node-compatible DOCX reader that preserves the document evidence used by semantic rename, with acceptable complexity and maintenance cost.
+Evaluate whether a focused, project-owned TypeScript/Node DOCX reader can replace Mammoth while preserving the document evidence and integration mechanics used by semantic rename, with acceptable complexity and maintenance cost.
 
-Owning DOCX extraction is the architectural question. Removing Mammoth's transitive `argparse > sprintf-js` dependency is a motivation and a distribution acceptance criterion. A project-owned reader, an upstream Mammoth update, and explicit retention/deferral remain alternatives; no replacement has been selected.
+This research focuses on rewrite feasibility. The current Mammoth integration is the compatibility baseline; the outcome is a recommendation to proceed with or defer the rewrite. Removing Mammoth's transitive `argparse > sprintf-js` dependency is a motivation and a distribution acceptance criterion. The rewrite has not yet demonstrated feasibility or been approved for implementation.
 
-For project-owned replacement, success means complete Mammoth removal from runtime and development dependencies, the lockfile, and the installed dependency tree. Production code, tests, and historical tooling must no longer require Mammoth. An upstream update may retain Mammoth while removing the affected branch.
+For the rewrite, success means complete Mammoth removal from runtime and development dependencies, the lockfile, and the installed dependency tree. Production code, tests, and historical tooling must no longer require Mammoth.
 
 This draft records the current contract, an initial ownership hypothesis, and the evidence needed for a decision. Candidate output equivalence, resource budgets, and support for additional DOCX structures remain unverified.
 
@@ -22,22 +22,69 @@ Investigate extraction of metadata, ordered text, and headings for the existing 
 
 Here, a project-owned reader means TypeScript/JavaScript running in Node.js with the existing ZIP/XML dependencies. It does not mean a compiled native addon, another language runtime, or a bundled external converter. Maintaining a Mammoth fork is outside this investigation.
 
-Full DOCX-to-HTML conversion, layout rendering, images/OCR, legacy `.doc` support, new CLI commands, and replacing Markdown-to-DOCX generation are outside this research. The existing `md to-docx` action uses Pandoc.[^to-docx]
+Dependency overrides, patches, and upstream Mammoth upgrade evaluation belong to separate dependency maintenance and are outside this rewrite investigation. Upstream source references remain the basis for understanding current behavior.
+
+Full DOCX-to-HTML conversion, layout rendering, images/OCR, legacy `.doc` support, new CLI commands, and replacing Markdown-to-DOCX generation are outside this research. The existing `md to-docx` action in `src/cli/actions/markdown/to-docx.ts` uses Pandoc.
 
 ## Current Code and Reader-Facing Contract
 
-DOCX files participate in semantic rename under `--codex-docs`; extraction is documented as best-effort and fallback-safe.[^rename-guide] The current path is:
+DOCX files participate in semantic rename under `--codex-docs`; extraction is documented as best-effort and fallback-safe.[^rename-guide] The diagrams describe responsibilities and data flow. Repository code paths are orientation references for the reviewed snapshot, commit `8c75fdb831fab3b8348ae46e4f3b023281db2b25`; they are not a promise that the file layout will remain unchanged during replacement.
+
+### Current flow
+
+The DOCX adapter gathers three inputs before applying consumer policy:
 
 ```text
 DOCX input
-  -> document-rename dispatcher
-  -> Mammoth HTML + raw text, alongside existing OOXML metadata extraction
-  -> heading/text normalization and title ranking
-  -> DocumentTitleEvidence
-  -> existing Codex rename workflow
+    |
+    v
+Existing document dispatcher
+    |
+    v
+Existing DOCX rename adapter
+    |
+    +-- Mammoth HTML --> h1..h6 heading signals --+
+    +-- Mammoth raw text --> body/raw lines ------+--> Adapter policy
+    `-- OOXML metadata --> properties/warnings ---+       |
+                                                        v
+                                          Normalization / ranking / limits
+                                                        |
+                         +------------------------------+------------------+
+                         |                                                 |
+                         v                                                 v
+                DocumentTitleEvidence                               Extraction reason
+                         |                                                 |
+                         v                                                 v
+                Existing prompt / Codex flow                  Existing deterministic fallback
 ```
 
-The format consumer is `extractDocxEvidence()`; the dispatcher routes `.docx` inputs to it.[^extractor][^dispatcher] Its effective contract includes:
+### Current source map
+
+This is a selected map of the reviewed source tree. Each label explains the responsibility so the relationships remain readable if a later implementation moves files.
+
+```text
+src/
+|-- adapters/
+|   |-- codex/document-rename/
+|   |   |-- batch.ts                  DOCX dispatch and Codex batch orchestration
+|   |   |-- extractors/
+|   |   |   |-- docx.ts               DOCX evidence assembly and title ranking
+|   |   |   `-- shared.ts             Normalization and candidate helpers
+|   |   |-- types.ts                  Evidence contract and consumer limits
+|   |   `-- prompt.ts                 Complete evidence-to-prompt projection
+|   `-- docx/
+|       |-- ooxml-package.ts          ZIP reading and XML decoding
+|       |-- ooxml-part-path.ts        Package-part path normalization
+|       |-- ooxml-part-discovery.ts   Metadata-part discovery
+|       |-- ooxml-metadata-parser.ts  Property parsing
+|       `-- ooxml-metadata.ts         Metadata-read orchestration
+|-- cli/actions/
+|   |-- rename/codex/analyzer.ts      Rename integration and fallback reason propagation
+|   `-- markdown/to-docx.ts           Separate Pandoc generation action
+`-- markdown/                        Existing Markdown parsing subsystem
+```
+
+The format consumer is `extractDocxEvidence()` in `src/adapters/codex/document-rename/extractors/docx.ts`; `src/adapters/codex/document-rename/batch.ts` routes `.docx` inputs to it. Its effective contract includes:
 
 | Area             | Current behavior                                                                                                                                                                                                                        |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -49,11 +96,11 @@ The format consumer is `extractDocxEvidence()`; the dispatcher routes `.docx` in
 | Diagnostics      | Preserves metadata warnings, can add `docx_no_lead_text`, and returns `docx_no_title_signal` or `docx_extract_error` when evidence cannot be produced. Mammoth conversion messages are not currently copied into the evidence warnings. |
 | Provenance       | Sets `metadata.extractor` to `mammoth+ooxml` or `mammoth`; a replacement must use an accurate identity and update affected expectations.                                                                                                |
 
-These limits and ranking rules belong to the rename consumer.[^evidence-types][^evidence-helpers] The reusable reader should supply document facts without selecting rename titles.
+The evidence contract and limits live in `src/adapters/codex/document-rename/types.ts`; shared normalization and candidate helpers live in `src/adapters/codex/document-rename/extractors/shared.ts`. These are rename-consumer responsibilities. The reusable reader should supply document facts without selecting rename titles.
 
-The prompt builder forwards the complete evidence object, including warnings and extractor metadata, while adapting filename fields for prompt identity.[^prompt] Adding a parser warning changes model input even when title candidates and lead text are unchanged.
+The prompt builder in `src/adapters/codex/document-rename/prompt.ts` forwards the complete evidence object, including warnings and extractor metadata, while adapting filename fields for prompt identity. Adding a parser warning changes model input even when title candidates and lead text are unchanged.
 
-The historical DOCX/PDF evidence spike also imports Mammoth.[^spike] Project-owned replacement must either migrate its DOCX path and backend labels to the chosen reader, preserving its useful PDF comparisons, or retire the spike after checking its references and preserving any still-needed evidence. Moving Mammoth to development-only dependencies or leaving a broken script does not satisfy complete removal. Production imports and test expectations must also use the selected reader and accurate provenance labels.
+The historical DOCX/PDF evidence spike in `scripts/spikes/docx-pdf-title-evidence-spike.ts` also imports Mammoth. Project-owned replacement must either migrate its DOCX path and backend labels to the chosen reader, preserving its useful PDF comparisons, or retire the spike after checking its references and preserving any still-needed evidence. Moving Mammoth to development-only dependencies or leaving a broken script does not satisfy complete removal. Production imports and test expectations must also use the selected reader and accurate provenance labels.
 
 ## Key Findings
 
@@ -63,23 +110,23 @@ The installed `mammoth@1.13.0` library path uses JavaScript for package reading,
 
 | Component | Observed implementation |
 | --- | --- |
-| Library integration | The rename extractor calls `convertToHtml({ buffer })` and `extractRawText({ buffer })` directly; it does not launch Mammoth's CLI.[^extractor] |
+| Library integration | The DOCX rename adapter shown in the current source map calls `convertToHtml({ buffer })` and `extractRawText({ buffer })` directly; it does not launch Mammoth's CLI. |
 | CLI entry point | `bin/mammoth` is a JavaScript script with a Node shebang. It imports the JavaScript `argparse` package; no Python interpreter is involved.[^mammoth-cli] |
 | ZIP decompression | Mammoth uses JSZip; the installed JSZip implementation uses Pako's JavaScript DEFLATE support.[^mammoth-zip][^jszip-flate] |
 | XML parsing | Mammoth uses the JavaScript `@xmldom/xmldom` package.[^mammoth-xml] |
 | Browser-bundle preparation | Mammoth's package manifest declares a `prepare` command using `make` to build its browser bundle. That command is separate from the library's DOCX parsing path.[^mammoth-manifest] |
 
-An installed-tree inventory is a provisional supporting observation. It followed runtime dependency manifests, including optional dependencies where present, and reported 24 packages including Mammoth with no `.node` addons, `.wasm` modules, `.bin` files, or recognized ELF, PE, or Mach-O executable signatures. A pattern check of non-test JavaScript outside example/documentation/benchmark/distribution directories reported no matches for direct `child_process` require/import patterns, `process.dlopen()` calls, or `WebAssembly` API references. The exact inventory commands/harness and full results are not retained or linked here; add them before relying on these aggregate findings as decision evidence. The lockfile identifies intended resolutions but does not attest installed file contents or reproduce the checks.[^lockfile] The version-pinned sources above independently support the narrower library/CLI findings. Neither the source review nor the provisional inventory is an exhaustive security audit or a guarantee about future versions.
+An installed-tree inventory is a provisional supporting observation. It followed runtime dependency manifests, including optional dependencies where present, and reported 24 packages including Mammoth with no `.node` addons, `.wasm` modules, `.bin` files, or recognized ELF, PE, or Mach-O executable signatures. A pattern check of non-test JavaScript outside example/documentation/benchmark/distribution directories reported no matches for direct `child_process` require/import patterns, `process.dlopen()` calls, or `WebAssembly` API references. The exact inventory commands/harness and full results are not retained or linked here; add them before relying on these aggregate findings as decision evidence. The lockfile, `bun.lock`, identifies intended resolutions but does not attest installed file contents or reproduce the checks. The version-pinned sources above independently support the narrower library/CLI findings. Neither the source review nor the provisional inventory is an exhaustive security audit or a guarantee about future versions.
 
 The reviewed parsing path does not require Word, LibreOffice, Pandoc, an external unzip command, or a separate compiled conversion engine. DOCX ZIP bytes and embedded media are binary input data; reading or base64-encoding image bytes does not require image rendering or OCR.[^mammoth-images] The proposed reader should define handling for embedded binary parts without adding executable-content evaluation. Existing Markdown-to-DOCX generation remains a separate Pandoc workflow.
 
 ### Existing DOCX infrastructure is reusable, with limits
 
-`src/adapters/docx/` already contains ZIP reading through `yauzl`, XML decoding, package-path normalization, metadata-part discovery, and property parsing through `fast-xml-parser`.[^package-reader][^metadata-reader][^metadata-parser][^part-discovery]
+`src/adapters/docx/` already contains ZIP reading through `yauzl`, XML decoding, package-path normalization, metadata-part discovery, and property parsing through `fast-xml-parser`. The current source map identifies these helper responsibilities.
 
-The package reader collects XML/relationship parts and skips parts whose declared uncompressed size exceeds 256 KiB. This is a metadata-oriented limit, not an established document-body budget. Generalizing it requires selected-part reading, explicit oversized-input outcomes, and review of total decompressed bytes, entry count, XML depth, and style traversal limits. The per-part check alone does not establish those aggregate bounds.
+The package reader in `src/adapters/docx/ooxml-package.ts` collects XML/relationship parts and skips parts whose declared uncompressed size exceeds 256 KiB. This is a metadata-oriented limit, not an established document-body budget. Generalizing it requires selected-part reading, explicit oversized-input outcomes, and review of total decompressed bytes, entry count, XML depth, and style traversal limits. The per-part check alone does not establish those aggregate bounds.
 
-Metadata discovery already ignores external relationship targets and tests cover non-default part locations, UTF-16, dot-segments, and percent-escaped paths.[^part-discovery][^metadata-tests] Main-document and style-part discovery need their own relationship/content-type handling; metadata discovery does not already provide a general content reader.
+Metadata discovery in `src/adapters/docx/ooxml-part-discovery.ts` already ignores external relationship targets. The metadata tests described below cover non-default part locations, UTF-16, dot-segments, and percent-escaped paths. Main-document and style-part discovery need their own relationship/content-type handling; metadata discovery does not already provide a general content reader.
 
 ### The dependency issue is separate from DOCX conversion fidelity
 
@@ -91,7 +138,7 @@ Before relying on this diagnostic, add a reproducible evidence record with the e
 
 ### Existing tests provide a starting comparison corpus
 
-The title-evidence tests cover core metadata precedence, weak/no-heading body fallbacks, table-heavy and hyperlink-heavy documents, and an alternate-editor document whose metadata is unavailable.[^title-tests] Metadata-specific tests also cover malformed properties, missing metadata, invalid ZIP bytes, and absence of runtime fetching for relationship identifiers.[^metadata-tests]
+The title-evidence tests in `test/document-rename/adapters/title-evidence.app.test.ts` cover core metadata precedence, weak/no-heading body fallbacks, table-heavy and hyperlink-heavy documents, and an alternate-editor document whose metadata is unavailable. Metadata-specific tests in `test/markdown-docx/adapters/ooxml-metadata.app.test.ts` also cover malformed properties, missing metadata, invalid ZIP bytes, and absence of runtime fetching for relationship identifiers.
 
 These assertions validate selected evidence fields. They do not exhaustively cover Mammoth's supported WordprocessingML structures. DOCX contains paragraphs, runs, text, styles, and additional document parts; simple text-node concatenation is not sufficient to define the intended reading behavior.[^word-structure]
 
@@ -112,11 +159,38 @@ Metadata is already supplied by the project's OOXML helper. A replacement needs 
 
 If project-owned extraction is justified, use an internal `src/docx/` subsystem beside `src/markdown/`. The integration guide already keeps cohesive parsing subsystems outside generic `src/utils/`.[^integration-guide]
 
-| Owner                                                   | Proposed responsibility                                                                                                                                  |
-| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/docx/`                                             | Open/read the DOCX package, discover required parts, supply metadata plus separate ordered heading and body/raw-text outputs, and retain format-level diagnostics. |
-| `src/adapters/codex/document-rename/extractors/docx.ts` | Normalize evidence for rename, rank candidates, apply consumer limits, and preserve current fallback semantics.                                          |
-| Existing Markdown/Pandoc paths                          | Continue owning Markdown parsing and Markdown-to-DOCX generation.                                                                                        |
+### Proposed source ownership
+
+This tree is conceptual and has not been implemented. Only the proposed subsystem location is shown; its internal file split remains undecided. Existing OOXML helpers may be reused or relocated after evaluation.
+
+```text
+src/
+|-- docx/                                 Proposed project-owned package/content reader
+|                                         Reuse existing ZIP/XML and metadata logic
+|-- adapters/codex/document-rename/
+|   `-- extractors/docx.ts                 Existing adapter; retain rename-consumer policy
+|-- cli/actions/markdown/to-docx.ts        Existing Pandoc generation action
+`-- markdown/                             Existing Markdown parsing subsystem
+```
+
+The shared reader would own package access, part discovery, metadata parsing, and separate heading/body outputs. The existing DOCX adapter would continue to own normalization, title ranking, consumer limits, and fallback semantics. Markdown parsing and Markdown-to-DOCX generation retain their current responsibilities.
+
+### Proposed reader relationship
+
+If selected, the project-owned reader would replace the document-reading internals behind the existing adapter. This sketch describes that possible implementation; it does not introduce a runtime backend selector or new public API.
+
+```text
+DOCX input
+    |
+    v
+Project-owned DOCX reader [PROPOSED]
+    |
+    +-- ordered heading signals --+
+    +-- body/raw-text stream -----+--> Existing DOCX rename adapter
+    +-- metadata -----------------+         |
+    `-- parser diagnostics                  +--> Same evidence / prompt / Codex flow
+        (internal initially)                `--> Same reason / deterministic fallback
+```
 
 Reuse or relocate the existing OOXML helpers rather than introduce a second ZIP/XML implementation. A small `index.ts`, shared types, parse entry point, and content/style readers may be sufficient additions. The exact file split and any relocation should follow the chosen implementation scope.
 
@@ -124,19 +198,13 @@ A candidate reader should expose separate ordered heading signals with levels an
 
 Paragraphs and table/list context may remain an internal representation without introducing a full layout model. The adapter projects the reader's outputs into the existing evidence contract under the compatibility decisions below; a shared paragraph list must not force heading and body outputs to include the same content.
 
-## Alternatives and Distribution
+## Rewrite Benefits, Costs, and Distribution
 
-| Option                                            | Benefit                                                                                                                           | Cost or unresolved issue                                                                                                            |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Project-owned TypeScript/Node reader using existing ZIP/XML dependencies | Own the narrow extraction contract and remove Mammoth completely from the repository dependency tree and published installations. | Maintain OOXML semantics, resource bounds, and compatibility across editors; migrate or retire the historical spike before removal. |
-| Upstream Mammoth dependency update                | Preserve the existing conversion engine with little local maintenance.                                                            | Depends on a suitable upstream release; does not establish an owned DOCX subsystem.                                                 |
-| Retain the assessed current integration           | Avoid immediate extraction behavior changes.                                                                                      | Retains the affected installed package and requires reassessment when the integration or upstream changes.                          |
+The intended benefit is ownership of the narrow extraction contract and complete Mammoth removal from the repository dependency tree and published installations. The cost is maintaining the required OOXML semantics, resource bounds, editor compatibility, and comparison corpus, plus migrating or retiring the historical spike. Removing a non-JavaScript engine is not a benefit because the reviewed Mammoth path already runs in JavaScript.
 
-An Argparse override or Bun patch is not sufficient evidence of remediation for published consumers. npm ignores overrides inside installed dependencies; Bun also reads override/patch declarations from the root project.[^npm-overrides][^bun-overrides][^bun-patch] The current build externalizes Mammoth, and the package ships `dist`, license, and README files.[^build][^manifest] A local lockfile or patched installation therefore does not define a downstream consumer's dependency resolution.
+The build configuration in `tsdown.config.ts` currently externalizes Mammoth, and `package.json` limits published files to `dist`, license, and README files. Distribution validation must inspect the packed product and its resolved consumer dependency tree, as well as repository imports and dependency declarations. A clean local dependency tree alone does not establish complete removal for published consumers.
 
-An upstream release that changes CLI dependencies or package composition still needs version-specific compatibility and consumer-installation checks. Upgrading `sprintf-js` within the currently affected range does not resolve the advisory. Replacing the entire DOCX engine with another package would require the same semantic comparison and a separate package/provenance review.
-
-Apply the compatibility and selection decisions below to these alternatives. Removing a non-JavaScript engine is not a benefit because the reviewed Mammoth path already runs in JavaScript.
+Evaluate the rewrite against the compatibility, resource, maintenance, and distribution requirements below. A successful isolated candidate can justify a later implementation plan; it does not establish that repository migration or final shipping checks have passed.
 
 ## Coverage and Safety Questions
 
@@ -170,15 +238,15 @@ DOCX -> existing dispatcher -> extractDocxEvidence(path)
                                 -> reason   -> existing deterministic fallback
 ```
 
-1. Preserve the integration boundary. Keep `.docx` dispatch, the asynchronous `extractDocxEvidence(path)` entry point, and its `DocumentTitleEvidence | { reason: string }` result. Preserve metadata fallback behavior, title ranking and weak-title rules, normalization, deduplication, limits of four titles/eight headings/800 lead-text characters, and `tocCandidates` as the existing heading projection. Keep prompt construction, CLI options, Codex execution settings, batching/retries, and deterministic rename fallback unchanged. Adapt replacement internals inside the DOCX adapter without adding a public API or requiring a full HTML converter.[^extractor][^dispatcher][^rename-analyzer]
+1. Preserve the integration boundary shown in the diagrams. Keep `.docx` dispatch, the asynchronous `extractDocxEvidence(path)` entry point, and its `DocumentTitleEvidence | { reason: string }` result. Preserve metadata fallback behavior, title ranking and weak-title rules, normalization, deduplication, limits of four titles/eight headings/800 lead-text characters, and `tocCandidates` as the existing heading projection. Keep prompt construction, CLI options, Codex execution settings, batching/retries, and deterministic rename fallback unchanged. Adapt replacement internals inside the DOCX adapter without adding a public API or requiring a full HTML converter.
 
-2. Use a compatibility-first selection rule. Prefer a suitable upstream update when it removes the affected dependency branch and preserves needed behavior at acceptable maintenance cost. Select a project-owned reader only when comparison demonstrates equivalent useful evidence, accepted resource handling, a focused maintainable implementation, and accepted maintenance responsibility. If it cannot meet those requirements and no suitable upstream update exists, retain/defer explicitly.
+2. Use a compatibility-first rewrite acceptance rule. Recommend proceeding only when comparison against the current Mammoth integration demonstrates equivalent useful evidence, accepted resource handling, a focused maintainable implementation, feasible complete removal, and accepted maintenance responsibility. If the rewrite cannot meet those requirements, defer it explicitly and record the unmet criteria. Narrowing the research to a rewrite does not establish that it is ready to implement.
 
 3. Preserve existing content contributions. Use the current integration's normalized evidence and extraction outcomes as the baseline for supported documents. Retain relevant text-box content, table/list order, heading/style mappings, field results, and observed revision/hidden-text inclusion rules. Do not introduce a new visible-content-only policy or pre-exclude secondary content. Conversely, parsing a feature in Mammoth does not require reproducing it unless it affects the evidence or extraction outcome; trace both APIs through the consumer before deciding. Any unsupported-content outcome that differs from the baseline must be recorded and accepted explicitly.
 
-4. Preserve separate heading and body outputs. The reader supplies ordered heading signals and body/raw text separately; table/list structure may stay internal unless a named comparison case demonstrates a need for richer output. Apply the existing consumer normalization to those outputs, including removing blank lines before the lead-text helper. Do not change lead-text semantics to match the helper's name or force HTML-only secondary content into the body stream.[^extractor][^evidence-helpers]
+4. Preserve separate heading and body outputs. The reader supplies ordered heading signals and body/raw text separately; table/list structure may stay internal unless a named comparison case demonstrates a need for richer output. Apply the existing consumer normalization to those outputs, including removing blank lines before the lead-text helper. Do not change lead-text semantics to match the helper's name or force HTML-only secondary content into the body stream.
 
-5. Preserve outward diagnostics and use truthful provenance. Keep existing metadata warnings, `docx_no_lead_text`, and the conditions producing `docx_no_title_signal` or `docx_extract_error`. Detailed new parser diagnostics remain internal initially; usable evidence must not automatically acquire new prompt warnings, and existing failures must not silently become partial successes. A replacement must use an accurate `metadata.extractor` identity, with the exact value and expected prompt difference recorded. Additional outward warning codes or changed failure conditions, including those introduced by resource limits, require their own deliberate compatibility decision.[^extractor][^prompt]
+5. Preserve outward diagnostics and use truthful provenance. Keep existing metadata warnings, `docx_no_lead_text`, and the conditions producing `docx_no_title_signal` or `docx_extract_error`. Detailed new parser diagnostics remain internal initially; usable evidence must not automatically acquire new prompt warnings, and existing failures must not silently become partial successes. A replacement must use an accurate `metadata.extractor` identity, with the exact value and expected prompt difference recorded. Additional outward warning codes or changed failure conditions, including those introduced by resource limits, require their own deliberate compatibility decision.
 
 ## Pending Validation
 
@@ -187,10 +255,10 @@ The policy above is settled for this investigation; the following evidence and c
 - Trace the minimum corpus through current HTML, raw-text, metadata, and evidence stages. Record which content and style variations contribute to each output and whether omissions affect extraction outcomes. Preserve independent expected results for synthetic cases as well as the Mammoth baseline.
 - Compare complete normalized evidence, including candidate ordering, headings/TOC candidates, author/metadata fields, lead text, warnings, and failure reasons. Add targeted cases for blank lines, table/list boundaries, text boxes, notes, revisions, and style mappings. Establish whether the separate heading/body outputs preserve these results without a richer reader interface.
 - Compare resulting prompt payloads, including warning arrays, metadata, and filename identity. Permit only specifically recorded intentional differences, such as the chosen extractor label; do not exclude entire metadata or diagnostic fields from comparison.
-- Use stubbed batch/thread checks to verify dispatcher routing, prompt construction, execution-option forwarding, retries/batching, and reason propagation into the existing fallback flow. Live model-generated title comparisons are not required to establish these integration mechanics.[^dispatcher][^prompt][^rename-analyzer]
+- Use stubbed batch/thread checks to verify dispatcher routing, prompt construction, execution-option forwarding, retries/batching, and reason propagation into the existing fallback flow. Live model-generated title comparisons are not required to establish these integration mechanics. The current source map identifies the dispatcher, prompt projection, and rename analyzer roles.
 - Record the exact extractor label, internal-to-existing diagnostic mappings, and any accepted support/resource-related departures. The resource budgets, maintenance acceptance, Node/distribution checks, and reproducibility records required elsewhere in this research also remain pending.
 
-No candidate validation, comparison spike, or implementation has started. Settling compatibility policy alone does not justify selecting a replacement or marking the research complete.
+No candidate validation, comparison spike, or implementation has started. Settling compatibility policy alone does not justify accepting the rewrite or marking the research complete.
 
 ## Minimum Comparison Corpus
 
@@ -206,39 +274,33 @@ The following is the minimum proposed comparison coverage. Existing fixtures and
 | Revisions and secondary content | Insertion/deletion, hidden text, and representative text-box, header/footer, note, and comment content with a stated include/exclude policy.                                                       | Dedicated comparison cases pending.                                                      |
 | Failure and resource bounds     | Invalid ZIP/XML, missing required parts, duplicate normalized part names, external targets, a body above the metadata reader's 256 KiB cap, and cases at/below/above each proposed resource limit. | Some metadata failure/no-fetch tests exist; content and resource-boundary cases pending. |
 
-For each evaluated option, use the same identified corpus and current Mammoth baseline. Record versions, expected content policy, normalized evidence and prompt payloads, diagnostics/failure outcomes, and resource observations. Compare title ordering, headings/TOC candidates, author and metadata fields, lead text, and fallback behavior; do not use nonempty output, byte-identical HTML, or matching generated model titles as a substitute.
+Compare the candidate reader against the current Mammoth integration using the same identified corpus. Record versions, expected content policy, normalized evidence and prompt payloads, diagnostics/failure outcomes, and resource observations. Compare title ordering, headings/TOC candidates, author and metadata fields, lead text, and fallback behavior; do not use nonempty output, byte-identical HTML, or matching generated model titles as a substitute.
 
 Classify every difference as equivalent under the stated normalization, intentional and justified (including truthful extractor-identity changes), or unresolved regression. Record the rationale and expected result before treating an intentional difference as acceptable. Unresolved consequential differences prevent selection of that candidate; missing cases remain pending evidence.
 
 ## Decision Criteria and Research Exit
 
-### Evidence needed to choose a direction
+### Evidence needed to judge rewrite feasibility
 
-Compare all credible options against these requirements, with the additional evidence below. Candidate experiments and package-installation checks may use an isolated evaluation artifact; choosing a direction does not require completing the repository migration first. Deferral must identify unmet requirements rather than imply that the replacement criteria passed.
+Assess the proposed rewrite against these requirements. Candidate experiments and package-installation checks may use an isolated evaluation artifact; recommending implementation does not require completing the repository migration first. Deferral must identify unmet requirements rather than imply that the rewrite criteria passed.
 
 1. Establish evidence quality using the minimum corpus and comparison method. State the supported DOCX subset, explicit limitations, and any consequential difference from the current best-effort contract.
-2. Verify malformed-input and external-I/O behavior, review resource bounds, and record relevant regressions or unresolved limits. Project-owned parsing needs measured results against the accepted budgets above; unchanged upstream code needs evidence about the selected release rather than an assumption of equivalence.
+2. Verify malformed-input and external-I/O behavior, measure resource handling against the accepted budgets above, and record relevant regressions or unresolved limits.
 3. Verify the executable candidate under the Node.js runtime contract (`>=22.23.0`), including representative built ESM/CJS integration. Use relevant managed application cases when evaluating repository filesystem integration; an isolated candidate may use a focused harness with recorded inputs and outcomes. Keep pure parsing checks in unit coverage. Bun source tests alone do not establish Node compatibility.[^testing]
-4. Demonstrate a viable distribution approach through fresh installations of an isolated packed candidate with supported package managers, inspecting its resolved dependency tree. Record removal or retained paths and the remaining repository migration work; a root override, patched workspace, or audit result alone does not establish consumer behavior.
-5. Compare maintenance cost, retained dependencies, licenses/provenance, and update responsibility. Project-owned reader selection requires the project maintainer's explicit acceptance described above. Recommend an option using its observed benefits, limitations, and remaining risk.
+4. Demonstrate a Mammoth-free isolated packed candidate through fresh installations with supported package managers, inspecting its resolved dependency tree. Show that existing Mammoth consumers, including the historical spike, can migrate or retire; record the proposed handling and remaining repository migration work. Account for any independent Argparse/`sprintf-js` paths.
+5. Assess maintenance cost, retained dependencies, licenses/provenance, and update responsibility. Recommending the rewrite requires the project maintainer's explicit acceptance described above. Recommend proceeding or deferring using the observed benefits, limitations, and remaining risk.
 
-### Evidence and selection conditions by option
+### Research outcome
 
-| Option                  | Additional evidence required                                                                                                                                                                                                                                                                                                                                                                                                                                    | Selection or rejection condition                                                                                                                                                                                               |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Project-owned reader    | Demonstrate content/style semantics, accepted resource budgets and failure handling, and evidence-level comparisons. Show that existing Mammoth consumers, including the historical spike, can migrate or retire; record the proposed handling and remaining work. Demonstrate a Mammoth-free isolated candidate package and account for independent Argparse/`sprintf-js` paths. | Select the direction only when the supported contract and resource checks pass, complete removal is feasible, and maintenance responsibility is accepted. Reject or defer for consequential regressions, unbounded handling, or required consumers without a viable migration/retirement path. |
-| Upstream Mammoth update | Review the exact release and dependency diff; run the common comparisons and verify the affected Argparse/`sprintf-js` branch is absent from fresh consumer installations. Check Mammoth CLI compatibility if its parser changes.                                                                                                                                                                                                                               | Select if it preserves needed extraction behavior and resolves the dependency branch with acceptable maintenance cost. Reject a release that retains the affected branch or introduces unresolved consequential regressions.   |
-| Retain/defer            | Reconfirm the installed integration boundary and advisory assessment; identify which alternatives lack sufficient evidence or acceptable cost. Record the retained dependency path and concrete reassessment triggers, such as an upstream fix or a change to Mammoth usage.                                                                                                                                                                                    | Choose deferral explicitly when replacement is not yet justified. It does not count as dependency removal or advisory remediation, and the remaining risk stays documented.                                                    |
-
-Research can close with a justified option or explicit deferral once the applicable decision evidence is recorded. Record the selected option, support contract, accepted budgets and maintenance responsibility where applicable, comparison results, remaining uncertainty, and shipping checks still pending. Link a separate implementation plan if work is justified. Research completion does not assert that repository migration or advisory remediation has shipped.[^doc-policy]
+After validation, record whether the proposed rewrite meets the requirements, any unmet criteria, and the remaining implementation work. A supported recommendation may justify a separate implementation plan. Research completion does not mean the replacement has shipped.[^doc-policy]
 
 ### Shipping acceptance after selection
 
 The later implementation plan must carry these checks through the final integrated product:
 
 1. Preserve the accepted evidence and fallback contract, use accurate extractor provenance, and pass affected managed tests plus Node.js checks of the CLI and built ESM/CJS entry points.
-2. For project-owned replacement, verify migration or retirement of the historical spike and confirm no Mammoth dependency or runtime import remains in source, scripts, tests, declarations, the lockfile, or the installed tree. Explanatory historical references may remain.
-3. Test fresh installations of the final packed product with supported package managers. Project-owned replacement must remove Mammoth completely; an upstream update must remove the affected Argparse/`sprintf-js` branch. Record any independent retained dependency paths rather than imply that all such packages disappeared.
+2. Verify migration or retirement of the historical spike and confirm no Mammoth dependency or runtime import remains in source, scripts, tests, declarations, the lockfile, or the installed tree. Explanatory historical references may remain.
+3. Test fresh installations of the final packed product with supported package managers and verify complete Mammoth removal. Record any independent retained Argparse/`sprintf-js` paths rather than imply that all such packages disappeared.
 4. Record final resource-boundary outcomes, regression results, maintenance acceptance, and any remaining limitations in the implementation record before claiming shipping acceptance or dependency remediation.
 
 The research remains `draft`. No candidate implementation has been evaluated, no comparison spike has started, and neither the research decision requirements nor shipping acceptance checks have passed.
@@ -250,43 +312,11 @@ The research remains `draft`. No candidate implementation has been evaluated, no
 
 ## References
 
-[^extractor]: [DOCX evidence extractor](../../src/adapters/codex/document-rename/extractors/docx.ts).
-
-[^dispatcher]: [Document evidence dispatcher](../../src/adapters/codex/document-rename/batch.ts).
-
-[^prompt]: [Document evidence prompt projection](../../src/adapters/codex/document-rename/prompt.ts).
-
-[^rename-analyzer]: [Document-title analyzer and fallback reason propagation](../../src/cli/actions/rename/codex/analyzer.ts).
-
-[^evidence-types]: [Evidence types and limits](../../src/adapters/codex/document-rename/types.ts).
-
-[^evidence-helpers]: [Evidence normalization and candidate helpers](../../src/adapters/codex/document-rename/extractors/shared.ts).
-
-[^package-reader]: [OOXML package reader](../../src/adapters/docx/ooxml-package.ts).
-
-[^metadata-reader]: [DOCX metadata reader](../../src/adapters/docx/ooxml-metadata.ts).
-
-[^metadata-parser]: [OOXML property parser](../../src/adapters/docx/ooxml-metadata-parser.ts).
-
-[^part-discovery]: [Metadata part discovery](../../src/adapters/docx/ooxml-part-discovery.ts).
-
-[^title-tests]: [Document title-evidence tests](../../test/document-rename/adapters/title-evidence.app.test.ts).
-
-[^metadata-tests]: [OOXML metadata tests](../../test/markdown-docx/adapters/ooxml-metadata.app.test.ts).
-
-[^spike]: [Historical DOCX/PDF evidence spike](../../scripts/spikes/docx-pdf-title-evidence-spike.ts).
-
-[^to-docx]: [Markdown-to-DOCX action](../../src/cli/actions/markdown/to-docx.ts).
-
 [^rename-guide]: [Rename scope and Codex capabilities](../guides/rename-scope-and-codex-capability-guide.md).
 
 [^integration-guide]: [CLI integration and subsystem placement](../guides/cli-action-tool-integration-guide.md#what-belongs-in-srcutils-vs-not).
 
 [^testing]: [Testing guide](../guides/testing.md).
-
-[^build]: [tsdown build configuration](../../tsdown.config.ts).
-
-[^manifest]: [Package manifest](../../package.json).
 
 [^maintenance]: [Dependency refresh and audit assessment](../plans/jobs/2026-10-16-v0.2.1-canary.2-dependency-refresh.md#existing-audit-finding).
 
@@ -297,8 +327,6 @@ The research remains `draft`. No candidate implementation has been evaluated, no
 [^advisory]: [sprintf-js advisory, GHSA-hp3w-g68c-fv3c](https://github.com/advisories/GHSA-hp3w-g68c-fv3c).
 
 [^word-structure]: [Microsoft: WordprocessingML document structure](https://learn.microsoft.com/en-us/office/open-xml/word/structure-of-a-wordprocessingml-document).
-
-[^lockfile]: [Resolved dependency snapshot](../../bun.lock).
 
 [^mammoth-manifest]: [Mammoth 1.13.0 package manifest](https://github.com/mwilliamson/mammoth.js/blob/1.13.0/package.json).
 
@@ -323,9 +351,3 @@ The research remains `draft`. No candidate implementation has been evaluated, no
 [^mammoth-html]: [Mammoth 1.13.0 HTML conversion](https://github.com/mwilliamson/mammoth.js/blob/1.13.0/lib/document-to-html.js).
 
 [^mammoth-raw]: [Mammoth 1.13.0 raw-text extraction](https://github.com/mwilliamson/mammoth.js/blob/1.13.0/lib/raw-text.js).
-
-[^npm-overrides]: [npm override scope](https://docs.npmjs.com/cli/v11/configuring-npm/package-json/#overrides).
-
-[^bun-overrides]: [Bun overrides](https://bun.com/docs/pm/overrides).
-
-[^bun-patch]: [Bun patch scope](https://bun.com/docs/pm/cli/patch).
