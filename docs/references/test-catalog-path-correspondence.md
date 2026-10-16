@@ -457,6 +457,8 @@ The new `test/document-rename/adapters/docx-harness.unit.test.ts` and `docx-harn
 
 The new `test/document-rename/adapters/docx-cli.unit.test.ts`, `docx-retention.unit.test.ts`, and `docx-cli.app.test.ts` own help/argument handling and opt-in smoke exports without historical-path migration. Controlled retention inputs stay in `fixtures/docx-retention-driver.mjs`; generated verification exports are cleaned within their owned fixtures. Manual retained smoke outputs use the ignored playground entry; shared managed-suite retention is unchanged.
 
+The new `test/document-rename/adapters/docx-package.app.test.ts` owns package compatibility and isolation regressions with synthetic OS-temporary package trees and confirmed cleanup. It has no historical-path migration; actual npm/Bun consumer execution remains a separate manual package check.
+
 The new manual measurement/package drivers in `scripts/docx-candidate/` use `test/document-rename/fixtures/docx-measure-cases.ts` and `docx-package-*` input/assertion sources. They have no historical-path migration. Generated execution artifacts remain in owned OS temporary storage; shared managed-suite fixture handling is unchanged. See the [ownership catalog](test-suite-case-matrices.md#document-rename-baseline) for their distinct evidence scope.
 
 ### Markdown DOCX

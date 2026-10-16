@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–6 and Phase 6.1 are complete; Phase 6.2 is unstarted. Phase 7 owns subsequent budget/support acceptance and selection after Phase 6.2.
+Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–6 and 6.1–6.2 are complete. Phase 7 owns subsequent budget/support acceptance and selection after Phase 6.2.
 
 ## Phase 1 Outcomes
 
@@ -178,7 +178,7 @@ Help and invalid arguments return before execution setup. Help uses stdout and e
 Run from the repository root after installing dependencies, using Node.js >=22.23.0. Progress streams to stderr; final comparison status and measurement status/JSON remain on stdout. Full comparisons cover 134 cases per format; measurements check 18 workloads and controlled RSS transitions. Package validation checks eight fresh-consumer paths and requires npm, Bun, tar, and registry access. Measurement/package drivers require POSIX process groups. Comparison has no POSIX-only preflight, but its current Windows path cannot confirm descendant settlement and fails with unconfirmed cleanup, retaining artifacts. Windows execution is unverified.
 
 ```sh
-# Usage, scope, prerequisites, and cleanup policy.
+# Usage, scope, and command requirements.
 node ./scripts/docx-candidate/launch.mjs --help
 node ./scripts/docx-candidate/measure-launch.mjs --help
 node ./scripts/docx-candidate/package-check.mjs --help
@@ -202,7 +202,7 @@ node ./scripts/docx-candidate/measure-launch.mjs
 node ./scripts/docx-candidate/package-check.mjs
 ```
 
-A passing comparison ends with `guarded reader: passed yes`; measurements report `candidate measurements: passed yes` and summary JSON. Package validation writes tarball, dependency-tree, consumer, and cleanup results to stdout, ending with `temporary cleanup: passed yes`. Check the exit status: zero means the script checks and output delivery passed; license and notice completeness are outside this quick verification scope. Waiting messages show elapsed time without claiming additional completed work.
+A passing comparison ends with `guarded reader: passed yes`; measurements report `candidate measurements: passed yes` and summary JSON. Package validation writes tarball, per-manager observed inventories, consumer, and cleanup results to stdout, ending with `temporary cleanup: passed yes`. Inventory equality is not required. Check the exit status: zero means the script checks and output delivery passed; license and notice completeness are outside this quick verification scope. Waiting messages show elapsed time without claiming additional completed work.
 
 To check cancellation, repeat a comparison run and press Ctrl+C while it is processing. Expect a cancellation diagnostic and nonzero exit after owned processes settle and temporary cleanup completes. SIGTERM uses the same cleanup path. Generated inputs, builds, packages, installations, caches, and raw reports use owned OS temporary storage and are removed after confirmed settlement; unconfirmed cleanup fails and retains ownership. Only explicit smoke retention exports selected artifacts to the ignored playground entry; frozen expectations are never rewritten.
 
@@ -210,11 +210,18 @@ Retained runs contain `summary.json` and `esm/<case-id>/` / `cjs/<case-id>/` dir
 
 ## Phase 6.2: Package Compatibility Verification
 
-| Item | State |
+| Check | Result |
 | --- | --- |
-| [Package-verification refinement](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-62-simplify-package-compatibility-verification) | Planned; retain the three direct dependencies and remove frozen transitive/layout restrictions |
-| Implementation, regressions, eight consumer paths, cleanup, and phase review | Not started / not run |
+| Verification policy | Three direct dependencies unchanged; transitive inventories observed; ordinary extra files and contained links accepted |
+| Package regressions | 32 passed; required assets/dependencies, escapes, cycles, integrity, and Mammoth absence |
+| Fresh consumers | 8/8 passed: npm/Bun × primary/minimum Node × ESM/CJS; extraction, bounded failures, and offline controls |
+| Managed unit / scoped application | 1,734 / 207 passed; application selection covers document-rename and the interrupted video-workflow control using the existing discovery seam |
+| Full application suite | Deadline exceeded at 240 seconds: 2,459 passed, final video workflow interrupted; that workflow passes in the scoped run |
+| Quality and entry points | Lint, formatting, type check, build, and help/invalid-argument checks passed |
+| Comparisons and measurements | Not repeated; parser, build policy, and measurement paths unchanged |
+| Cleanup | Package workspace, synthetic fixtures, and managed scratch/results removed after confirmed settlement; no verification exports retained |
+| Review | Implementation `b3af2846..0e11d6d3`: passed; closing documentation reviewed separately |
 
 ## Later Phases
 
-Phases 6.2 and 7–10 are unstarted. Phase 7 follows Phase 6.2 and reviews numerical budget/support, platform limits, and maintenance acceptance before selection. Phase 8 covers production integration and runtime assets; Phase 9 preserves remaining baseline expectations before Mammoth removal and actual-product checks; Phase 10 reconciles surviving commands and documentation. Mammoth remains the production extractor; the candidate's symbol mapper is a separate pinned dependency.
+Phase 6.2 is complete; Phases 7–10 are unstarted. Phase 7 follows Phase 6.2 and reviews numerical budget/support, platform limits, and maintenance acceptance before selection. Phase 8 covers production integration and runtime assets; Phase 9 preserves remaining baseline expectations before Mammoth removal and actual-product checks; Phase 10 reconciles surviving commands and documentation. Mammoth remains the production extractor; the candidate's symbol mapper is a separate pinned dependency.
