@@ -38,8 +38,8 @@ const parser = new XMLParser({
 });
 const xmlEntities = new Set(["amp", "apos", "gt", "lt", "quot"]);
 
-/** Recover literal ampersands only in values; keep entity candidates for validation. */
-function recoverBareAmpersands(xml: string): string {
+/** Escape bare ampersands only for validation; keep entity candidates and opaque sections. */
+function escapeBareAmpersandsForValidation(xml: string): string {
   const escape = (value: string) => value.replace(/&(?!#|[^#;\s<&]+;)/g, "&amp;");
   return xml.replace(
     /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>|<(?:[^"'<>]|"[^"]*"|'[^']*')*>|[^<]+/g,
@@ -118,16 +118,17 @@ export function parseXml(
   part: string | object = "inline",
 ): Element | undefined {
   budget.inspect(part, xml);
-  const source = recoverBareAmpersands(xml);
-  if (XMLValidator.validate(source) !== true) throw new Error("docx_xml_invalid");
+  if (XMLValidator.validate(escapeBareAmpersandsForValidation(xml)) !== true)
+    throw new Error("docx_xml_invalid");
   // Enable numeric decoding without accepting HTML-only names or inspecting literal sections.
-  for (const match of source.matchAll(
+  for (const match of xml.matchAll(
     /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>|&([^#;\s<&]+);/g,
   )) {
     if (match[1] && !xmlEntities.has(match[1])) throw new Error("docx_xml_invalid");
   }
   let root: Element | undefined;
-  for (const value of parser.parse(normalizeAttributeWhitespace(source)) as Record<
+  // The parser already preserves bare ampersands; avoid expanding synthetic references again.
+  for (const value of parser.parse(normalizeAttributeWhitespace(xml)) as Record<
     string,
     unknown
   >[]) {

@@ -163,6 +163,7 @@ Restore the historical literal-ampersand behavior identified by review of `bc6e3
 
 | Area | Outcome |
 | --- | --- |
-| Recovery / references | Literal ampersands recovered in values; numeric/predefined references decode once; unknown named references and malformed markup retain failures |
+| Recovery / references | Literal ampersands recovered in values; numeric/predefined references decode once; undeclared semicolon-terminated named references and malformed markup retain failures |
 | Regressions | Thirty-five historical-equivalent DOCX cases, four parser controls, and one selected-part cap test added; ten pre-fix failures reproduced |
+| Allocation correction | Escaped source is used only for validation; parsing original values avoids synthetic entity expansion; ampersand-heavy at/above-cap runtime checks passed in both formats and runtime lanes |
 | Initial verification | 310 focused and 1,916 unit cases passed; lint, format, and types passed; application and runtime checks pending |
