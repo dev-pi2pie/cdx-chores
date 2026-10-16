@@ -151,6 +151,19 @@ export function createDocxReviewCases(): ReviewCase[] {
       };
     }),
     {
+      id: "review-hyperlink-empty-field-anchor",
+      options: {
+        body: heading(
+          run("Annual") +
+            '<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText>HYPERLINK \\l &quot;&quot;</w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+            run("Financial") +
+            '<w:r><w:fldChar w:fldCharType="end"/></w:r>' +
+            run("Report"),
+        ),
+      },
+      diagnostic: "docx_initial_reader_error",
+    },
+    {
       id: "review-hyperlink-fragment-merge",
       options: {
         body: heading(

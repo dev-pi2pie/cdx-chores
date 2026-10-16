@@ -63,7 +63,7 @@ Address the remaining XML accounting, hyperlink compatibility, and manual harnes
 | Area | Outcome |
 | --- | --- |
 | XML accounting | Failed scans retain their original charge and failure; focused resource/content and compiled evidence/prompt regressions passed |
-| Hyperlinks | Twenty-three named cases match historical behavior, including empty/duplicate targets, fragment merging, suppression, and unused notes/comments; focused unit and compiled evidence/prompt checks passed |
+| Hyperlinks | Twenty-four named cases match historical behavior, including empty/duplicate targets, fragment merging, suppression, unused notes/comments, and explicit empty-anchor fields; focused unit and compiled evidence/prompt checks passed |
 | Manual harness | Shared prerequisite rejects unsupported execution before workspaces/children; lifecycle, help, and simulated platform probes passed; ineffective Windows branch and redundant flags removed |
 | Verification | Pending |
 | Review / cleanup | Pending |

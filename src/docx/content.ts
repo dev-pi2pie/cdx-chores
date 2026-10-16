@@ -216,7 +216,7 @@ export function readContent(
         if (link) {
           const attributes = new Map<string, string>();
           if (link.anchor !== undefined) attributes.set("w:anchor", link.anchor);
-          const linkNode: Element = { name: "w:hyperlink", attributes, children: [] };
+          const linkNode: Element = { name: link.node.name, attributes, children: [] };
           read.values = [{ kind: "link", node: linkNode, href: link.href, children: read.values }];
         }
       }

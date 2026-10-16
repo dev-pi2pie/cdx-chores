@@ -152,7 +152,9 @@ export function documentBodyFacts(input: DocxBodyInput): DocxBodyFacts {
       const tag = projectionTag("a");
       const id = value.node.attributes.get("r:id");
       const anchor = value.node.attributes.get("w:anchor");
-      if (!id && !anchor && value.href === undefined) return render(value.children, source);
+      // Empty XML wrappers unwrap; explicit hyperlink fields retain their target semantics.
+      if (value.node.name === "w:hyperlink" && !id && !anchor && value.href === undefined)
+        return render(value.children, source);
       tag.attributes.href = value.href ?? (!id && anchor ? `#${anchor}` : undefined);
       tag.attributes.target = value.node.attributes.get("w:tgtFrame") ?? "";
       return [budget.element(tag, render(value.children, source))];
