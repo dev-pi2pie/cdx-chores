@@ -511,7 +511,7 @@ Existing fixtures and assertions provide identified cases and expected handling;
 | Empty and non-text content       | Valid empty documents, image-only documents, and structure-only content such as empty tables or line breaks, all without usable title metadata. Trace whether nonempty HTML changes the no-evidence reason despite empty normalized text. | Passed; supervised comparison. |
 | Metadata-only evidence           | A usable core title with an empty body and successful conversion; assert evidence with `docx_no_lead_text`. Contrast author-only metadata with no title/body/headings, and available metadata with a conversion failure.                  | Passed; supervised comparison. |
 | Partial and malformed extraction | Usable text with unsupported content; invalid ZIP/XML; missing/invalid required parts; duplicate normalized part names. Distinguish limitations, empty output, and extraction failure under the compatibility policy.                     | Passed; supervised comparison and failure assertions. |
-| Resource and I/O boundaries      | A body above the metadata reader's 256 KiB cap; below/at/above each proposed resource cap; external relationship targets, deterministic cleanup, no external URL/file loading, and no executable-content evaluation.                      | Original boundaries reconciled; selected-content and runtime checks passed; acceptance pending. |
+| Resource and I/O boundaries      | A body above the metadata reader's 256 KiB cap; below/at/above each proposed resource cap; external relationship targets, deterministic cleanup, no external URL/file loading, and no executable-content evaluation.                      | Original boundaries reconciled; selected-content and runtime checks passed; envelope accepted in Phase 7. |
 
 Image-only cases check structural outcomes and binary-part handling; they do not require image interpretation or OCR. Expected reasons for empty/non-text cases must come from identified baseline cases, not an assumption that all empty text has the same outcome.
 
@@ -528,7 +528,7 @@ Define a supported workload from identified representative documents and measure
 
 Test every cap below, at, and above its boundary with expected limitation/failure outcomes. Use the reproducible harness to measure representative and adversarial cases; record check outcomes without local environment details. The candidate must stay within accepted budgets or terminate with the defined outcome. Later budget/support-policy changes require a rationale and renewed checks of affected cases.
 
-Phase 1 measured the baseline and defined the [provisional limits](../../scripts/docx-baseline/resources.ts) below. These are exploratory limits, not accepted support policy or production enforcement. Per-run measurements remain temporary.
+Phase 1 measured the baseline and defined the [provisional limits](../../scripts/docx-baseline/resources.ts) below. They were exploratory at that revision; the unchanged candidate envelope is now accepted in Phase 7, with production enforcement still requiring Phase 8 integration. Per-run measurements remain temporary.
 
 | Dimension | Proposal | Headroom rationale |
 | --- | --- | --- |
@@ -539,13 +539,13 @@ Phase 1 measured the baseline and defined the [provisional limits](../../scripts
 | Selected style/numbering lookup steps | 128 | Caps each actual lookup; selected below/at/above probes preserve expected semantics or fail explicitly. |
 | Processing time / sampled child RSS | 5 seconds / 256 MiB | Complete candidate measurements retain over half the timing window and over one tenth of sampled memory headroom; the scope and limitations follow the contract above. |
 
-The [structural cases](../../test/document-rename/fixtures/docx-baseline/resource-cases.ts) isolate seven exact below/at/above dimensions; some exceed other proposed caps and are not examples of fully supported inputs. Inspector safety ceilings are separate from candidate limits. Independent [selected-boundary probes](../../test/document-rename/fixtures/docx-boundary-probes.ts) cover actual aggregate bytes, cumulative XML elements, and style/numbering lookup work at default caps. Controlled blocked-parser/process observations establish deadline/RSS/shutdown behavior; real-process measurements separately establish feasibility. Maintainer acceptance remains pending.
+The [structural cases](../../test/document-rename/fixtures/docx-baseline/resource-cases.ts) isolate seven exact below/at/above dimensions; some exceed other proposed caps and are not examples of fully supported inputs. Inspector safety ceilings are separate from candidate limits. Independent [selected-boundary probes](../../test/document-rename/fixtures/docx-boundary-probes.ts) cover actual aggregate bytes, cumulative XML elements, and style/numbering lookup work at default caps. Controlled blocked-parser/process observations establish deadline/RSS/shutdown behavior; real-process measurements separately establish feasibility. The maintainer accepted this envelope in the Phase 7 acceptance record below.
 
 ### Demonstrated candidate envelope
 
-The numerical proposal is unchanged and awaits acceptance within Phase 7 after completed Phase 6.1 harness verification, Phase 6.2 package-verification refinement, and Phase 6.3 manual-script simplification, ownership, and verification. The [acceptance proposal](#phase-7-assessment-and-acceptance-proposal) reconciles that evidence; no reader has been selected. Every supported input must fit all applicable limits; separate at-cap probes do not establish that every simultaneous combination of maximum dimensions is supported.
+The maintainer accepted the unchanged numerical limits and support envelope in Phase 7 after completed Phase 6.1 harness verification, Phase 6.2 package-verification refinement, and Phase 6.3 manual-script simplification, ownership, and verification. The [acceptance record](#phase-7-assessment-and-acceptance-proposal) selects the reader for integration; shipping acceptance remains pending. Every supported input must fit all applicable limits; separate at-cap probes do not establish that every simultaneous combination of maximum dimensions is supported.
 
-| Scope | Proposed limit or behavior |
+| Scope | Accepted limit or behavior |
 | --- | --- |
 | Input and ZIP structure | 8 MiB input; 256 physical entries; 1 MiB per selected part. |
 | Selected content | 4 MiB aggregate; 100,000 cumulative XML elements; depth 64; 128 steps per style-rule or numbering lookup. |
@@ -590,7 +590,7 @@ The verifier accepts additional ordinary package files and contained package-man
 
 Manual feature scripts provide explicit comparison, measurement, packaging, and smoke commands. Durable product inputs, frozen expectations, and independent assertions belong under `test/` and exercise product code directly; manual commands may reuse them. Routine suites should not test the manual launchers, evaluation adapters, package inspectors, or smoke-retention machinery. Shared managed-test infrastructure has a separate role. The current simplification removes embedded harness self-tests and unnecessary orchestration while preserving useful progress/help, bounded process handling, cleanup, and approved optional smoke retention.
 
-The [Phase 6.2 record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-62-package-compatibility-verification) reports the application selection at that revision reaching its shared 240-second deadline and a passing scoped video-workflow control. That selection's natural completion time and runtime contributors remain unmeasured; manual-tooling coverage has not been established as the cause. [Phase 6.3](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-simplify-manual-validation-and-separate-application-regressions) is complete: durable DOCX support is test-owned, manual-only wrappers are retired, and embedded package self-probes are removed. The revised application suite passes in 213 seconds under the unchanged 240-second policy. Explicit full comparisons, measurements on both runtime lanes, fresh consumers, and manual lifecycle checks also pass; the [record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-manual-script-simplification-and-test-ownership) captures coverage, cleanup, and review. Phase 7 assessment is prepared; maintainer acceptance remains pending. Prior phase outcomes remain historical; a smaller suite is not evidence of faster extraction. Content behavior and extraction budgets are unchanged.
+The [Phase 6.2 record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-62-package-compatibility-verification) reports the application selection at that revision reaching its shared 240-second deadline and a passing scoped video-workflow control. That selection's natural completion time and runtime contributors remain unmeasured; manual-tooling coverage has not been established as the cause. [Phase 6.3](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-simplify-manual-validation-and-separate-application-regressions) is complete: durable DOCX support is test-owned, manual-only wrappers are retired, and embedded package self-probes are removed. The revised application suite passes in 213 seconds under the unchanged 240-second policy. Explicit full comparisons, measurements on both runtime lanes, fresh consumers, and manual lifecycle checks also pass; the [record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-manual-script-simplification-and-test-ownership) captures coverage, cleanup, and review. Phase 7 acceptance selects the reader for integration. Prior phase outcomes remain historical; a smaller suite is not evidence of faster extraction. Content behavior and extraction budgets are unchanged.
 
 ### Maintenance assessment
 
@@ -600,11 +600,11 @@ Assess the benefit of owning the narrow extraction contract against the ongoing 
 - The supported subset, known limitations, and whether preserving evidence requires substantially broader conversion logic.
 - Retained dependencies, licenses/provenance, update obligations, product-regression corpus and simplified manual-command upkeep, and remaining migration work, including retiring live Mammoth capture/measurement paths while preserving independent comparison coverage.
 
-The maintainer must explicitly accept responsibility for dependency/security updates, editor regressions and corpus upkeep, unsupported-content/diagnostic decisions, and future resource-budget changes before reader selection. A subsystem location alone does not establish that acceptance.
+Phase 7 records the maintainer’s explicit acceptance of responsibility for dependency/security updates, editor regressions and corpus upkeep, unsupported-content/diagnostic decisions, and future resource-budget changes. This acceptance satisfies the ownership requirement for reader selection; a subsystem location alone would not establish it.
 
 ### Phase 7 assessment and acceptance proposal
 
-Recommend proceeding to Phase 8 only after explicit maintainer acceptance of the proposal below. Candidate revision `244b3e61` preserves the reader/runtime, shared evidence policy, dependency declarations, and lockfile reviewed in Phase 6. All five frozen captures/manifests also match that revision's evidence. The subsequent reviewed work renews comparisons, measurements, and routine-suite results, then simplifies package checks without changing extraction. These are candidate results; integration and shipping remain separate gates.
+The maintainer explicitly accepted the full proposal recorded at `141363f4`, including numerical/support limits, intentional differences, platform scope, and maintenance ownership. Decision: proceed to Phase 8 integration. Assessed candidate `244b3e61` preserves the reader/runtime, shared evidence policy, dependency declarations, and lockfile reviewed in Phase 6. All five frozen captures/manifests also match that revision's evidence. The subsequent reviewed work renews comparisons, measurements, and routine-suite results, then simplifies package checks without changing extraction. These are candidate results; integration and shipping remain separate gates.
 
 | Evidence | Reviewed result |
 | --- | --- |
@@ -618,20 +618,22 @@ The implementation is focused but carries substantial ownership: 1,674 physical 
 
 Direct dependency review retains `dingbat-to-unicode` 1.0.2 (BSD-2-Clause; the verified standalone mapper), `fast-xml-parser` 5.11.2 (MIT), and `yauzl` 3.4.0 (MIT). Installed manifests/notices agree with the recorded provenance; no versions change. The known transitive packaged-notice gap and complete actual-product dependency/notice review remain Phase 9 obligations. The quick verification scripts acquire no license checker, transitive inventory, or Mammoth policy.
 
-| Acceptance area | Proposed contract | State |
+| Acceptance area | Accepted contract | State |
 | --- | --- | --- |
-| Input / selected parts | 8 MiB input; 256 physical ZIP entries; 1 MiB per selected part / 4 MiB selected total | Pending |
-| XML / lookup work | 100,000 cumulative elements; depth 64; 128 steps per style-rule or numbering lookup | Pending |
-| Deadline / memory | 5 seconds from admitted input reading through result validation, expiry at equality; 256 MiB extraction-process RSS including worker, caller excluded; 10 ms and transition samples | Pending |
-| Transport / admission | 4 KiB request metadata; 8 MiB encoded result; one active request per owner, no queue; independent operations have separate budgets | Pending |
-| Cleanup limits | 250 ms TERM grace, 1-second cleanup target, 6-second complete API target; unconfirmed settlement fails and retains ownership/admission. Sampling is not a hard memory ceiling; OS failure can defeat timing/cleanup guarantees | Pending |
-| Content | Preserve identified symbol mappings/omissions/failures, heading-affecting style rules, and snapshot note/comment behavior; no OCR, external-target loading, or general HTML conversion promise | Pending |
-| Intentional differences | Accurate `docx-reader` / `docx-reader+ooxml` identity; default over-cap rejection maps outward to existing `docx_extract_error`. Preserve the 10 MiB CLI prefilter: input above 8 MiB through 10 MiB reaches the reader and fails extraction; above 10 MiB keeps the existing skip reason | Pending |
-| Platform scope | Accept demonstrated macOS/Node scope for integration; Linux and Windows remain unverified, with no replacement support claim before separate validation. Manual process-group tooling does not establish product portability | Pending |
-| Maintenance | Repository maintainer owns dependency/security and provenance review, editor/corpus regressions, manual-command upkeep, diagnostics/unsupported-content decisions, and renewed verification when limits or relevant code/dependencies change | Pending |
-| Selection | Proceed to integration only after acceptance; final product verification, complete Mammoth removal, and shipping acceptance remain pending | Pending |
+| Input / selected parts | 8 MiB input; 256 physical ZIP entries; 1 MiB per selected part / 4 MiB selected total | Accepted |
+| XML / lookup work | 100,000 cumulative elements; depth 64; 128 steps per style-rule or numbering lookup | Accepted |
+| Deadline / memory | 5 seconds from admitted input reading through result validation, expiry at equality; 256 MiB extraction-process RSS including worker, caller excluded; 10 ms and transition samples | Accepted |
+| Transport / admission | 4 KiB request metadata; 8 MiB encoded result; one active request per owner, no queue; independent operations have separate budgets | Accepted |
+| Cleanup limits | 250 ms TERM grace, 1-second cleanup target, 6-second complete API target; unconfirmed settlement fails and retains ownership/admission. Sampling is not a hard memory ceiling; OS failure can defeat timing/cleanup guarantees | Accepted |
+| Content | Preserve identified symbol mappings/omissions/failures, heading-affecting style rules, and snapshot note/comment behavior; no OCR, external-target loading, or general HTML conversion promise | Accepted |
+| Intentional differences | Accurate `docx-reader` / `docx-reader+ooxml` identity; default over-cap rejection maps outward to existing `docx_extract_error`. Preserve the 10 MiB CLI prefilter: input above 8 MiB through 10 MiB reaches the reader and fails extraction; above 10 MiB keeps the existing skip reason | Accepted |
+| Platform scope | Accept demonstrated macOS/Node scope for integration; Linux and Windows remain unverified, with no replacement support claim before separate validation. Manual process-group tooling does not establish product portability | Accepted |
+| Maintenance | Repository maintainer owns dependency/security and provenance review, editor/corpus regressions, manual-command upkeep, diagnostics/unsupported-content decisions, and renewed verification when limits or relevant code/dependencies change | Accepted |
+| Selection | Proceed to Phase 8 integration; final product verification, complete Mammoth removal, and shipping acceptance remain pending | Accepted |
 
 Phase 8 should first separate the live Mammoth oracle from the production adapter, retaining frozen expectations and baseline-only support until Phase 9. Reuse one supervisor throughout each document-title operation's sequential extraction loop; independent operations may run concurrently. A failed owner's retained slot must not be bypassed by making a new owner for the next file. Model-request `timeoutMs` remains separate from the per-document extraction deadline.
+
+Keep `DocxSupervisor.read(path)` and `DocxReadResult` as internal boundaries: success carries `DocxDocumentFacts` (ordered headings, raw text, content presence, metadata result, and internal diagnostics); failure carries a fixed diagnostic. The production adapter owns mapping these facts through `assembleDocxEvidence` or returning existing `docx_extract_error`; it must not import the evaluation adapter or test fixtures.
 
 ```text
 Document-title operation (one supervisor owner)
@@ -650,7 +652,7 @@ Existing sequential extraction loop
                   prompt / batches / retries
 ```
 
-Production builds must include fixed child/worker/parser siblings in both formats. Source application tests need a test-owned compiled Node product driver because the runtime resolves fixed built assets and launches `process.execPath`; no inline production fallback or manual evaluation launcher belongs in routine coverage. Retain reused OOXML helper locations initially, account for metadata-helper consumers, and preserve the existing public `runCli` boundary without exposing a reader API. These are proposed integration constraints, not implemented Phase 8 outcomes.
+Production builds must include fixed child/worker/parser siblings in both formats. Source application tests need a test-owned compiled Node product driver because the runtime resolves fixed built assets and launches `process.execPath`; no inline production fallback or manual evaluation launcher belongs in routine coverage. Retain reused OOXML helper locations initially, account for metadata-helper consumers, and preserve the existing public `runCli` boundary without exposing a reader API. These are accepted integration constraints; Phase 8 implementation remains separate.
 
 ## Decision and Shipping Gates
 

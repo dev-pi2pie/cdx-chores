@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–6 and 6.1–6.3 are complete. Phase 7 assessment is prepared; maintainer acceptance and selection remain pending. Phases 8–10 are unstarted.
+Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–7 and 6.1–6.3 are complete. The maintainer accepted the full Phase 7 proposal and selected the reader for integration. Phases 8–10 are unstarted.
 
 ## Phase 1 Outcomes
 
@@ -249,17 +249,17 @@ Retained runs contain `summary.json` and `esm/<case-id>/` / `cjs/<case-id>/` dir
 
 ## Phase 7: Assessment and Acceptance Proposal
 
-Source baseline and assessed candidate: `244b3e61`. The [research proposal](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#phase-7-assessment-and-acceptance-proposal) recommends proceeding to integration only after maintainer acceptance.
+Source baseline and assessed candidate: `244b3e61`. The maintainer accepted the [full proposal](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#phase-7-assessment-and-acceptance-proposal) recorded at `141363f4`; the reader is selected for Phase 8 integration.
 
 | Check | Result |
 | --- | --- |
 | Evidence audit | Reviewed Phases 6–6.3; candidate code/declarations/lockfile and five frozen captures/manifests unchanged from Phase 6 |
-| Feasibility / maintenance | Conditional proceed proposal; focused reader/runtime responsibilities and upkeep assessed; three direct dependency declarations/notices rechecked |
-| Integration boundaries | Oracle isolation, operation-scoped admission, 8/10 MiB behavior, fixed assets, and test-owned Node execution proposed |
+| Feasibility / maintenance | Proceed; focused reader/runtime responsibilities and upkeep accepted; three direct dependency declarations/notices rechecked |
+| Integration boundaries | Oracle isolation, operation-scoped admission, 8/10 MiB behavior, fixed assets, and test-owned Node execution accepted |
 | Verification / cleanup | Passed: 195 links/status and immutable-evidence checks; prior routine/manual results reused, no pipelines repeated or artifacts created |
-| Review | Acceptance-preparation range from `244b3e61` reviewed; no remaining material findings |
-| Acceptance / selection | Pending; Phase 7 incomplete, Phase 8 unstarted |
+| Review | Full Phase 7 range from `244b3e61`, including acceptance, reviewed; no remaining material findings |
+| Acceptance / selection | Full proposal accepted; Phase 7 complete, Phase 8 unstarted; shipping acceptance remains Phase 9 |
 
 ## Later Phases
 
-Phase 7 awaits numerical/support and maintenance acceptance, selection, and final full-range review. Phase 8 conditionally integrates the reader with direct product regressions; Phase 9 retires live Mammoth support and verifies removal and actual-product shipping acceptance; Phase 10 reconciles surviving manual commands, ownership, and documentation. Mammoth remains the production extractor; the candidate's symbol mapper is a separate pinned dependency.
+Phase 7 is complete. Phase 8 integrates the selected reader with direct product regressions; Phase 9 retires live Mammoth support and verifies removal and actual-product shipping acceptance; Phase 10 reconciles surviving manual commands, ownership, and documentation. Mammoth remains the production extractor until Phase 8; the candidate's symbol mapper is a separate pinned dependency.
