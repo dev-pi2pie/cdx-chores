@@ -449,9 +449,15 @@ Change set: `document-rename`.
 
 The DOCX baseline application, symbol/style/note contract application, temporary-lifecycle, and resource unit tests under this owner are new contracts with no historical-path migration. Their reviewed expectations stay under `test/document-rename/fixtures/docx-baseline/`; see the [ownership catalog](test-suite-case-matrices.md#document-rename-baseline) and [execution record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md).
 
-The private candidate's `test/document-rename/docx-resource.unit.test.ts`, `docx-runtime.unit.test.ts`, and `docx-runtime.app.test.ts` are new enforcement and lifecycle contracts under the same owner, without a historical-path migration. Runtime fixture sources stay under `test/document-rename/fixtures/docx-runtime/`.
+The private candidate's `test/document-rename/docx-resource.unit.test.ts`, `docx-runtime.unit.test.ts`, and `docx-runtime.app.test.ts` are new enforcement and lifecycle contracts under the same owner, without a historical-path migration. Runtime fixture sources stay under `test/document-rename/fixtures/docx-runtime/`; `fixtures/docx-boundary-probes.ts` adds default-cap and original-boundary reconciliation sources.
 
 The DOCX candidate application test is a new private evaluation contract under the same owner. It reuses unchanged frozen expectations and checks complete content through private supervised builds, with additional synthetic probe definitions in `test/document-rename/fixtures/docx-content-probes.ts`. The new `docx-content.unit.test.ts` and `docx-numbering.unit.test.ts` own content interactions and bounded list resolution. These have no historical-path migration and do not establish final workload or package acceptance.
+
+The new `test/document-rename/adapters/docx-harness.unit.test.ts` and `docx-harness.app.test.ts` own the private validation harness's presentation/protocol and subprocess/output lifecycle contracts. Durable synthetic scripts stay in `test/document-rename/fixtures/docx-harness-*`; the existing candidate application test adds real-launcher progress and cancellation checks. These are new contracts without historical-path migration; execution artifacts retain their existing temporary lifecycle.
+
+The new `test/document-rename/adapters/docx-cli.unit.test.ts`, `docx-retention.unit.test.ts`, and `docx-cli.app.test.ts` own help/argument handling and opt-in smoke exports without historical-path migration. Controlled retention inputs stay in `fixtures/docx-retention-driver.mjs`; generated verification exports are cleaned within their owned fixtures. Manual retained smoke outputs use the ignored playground entry; shared managed-suite retention is unchanged.
+
+The new manual measurement/package drivers in `scripts/docx-candidate/` use `test/document-rename/fixtures/docx-measure-cases.ts` and `docx-package-*` input/assertion sources. They have no historical-path migration. Generated execution artifacts remain in owned OS temporary storage; shared managed-suite fixture handling is unchanged. See the [ownership catalog](test-suite-case-matrices.md#document-rename-baseline) for their distinct evidence scope.
 
 ### Markdown DOCX
 

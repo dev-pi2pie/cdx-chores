@@ -10,7 +10,7 @@ agent: codex
 
 Evaluate and, if justified, integrate a focused project-owned DOCX reader that preserves semantic rename evidence and fallback behavior while enabling complete Mammoth removal.
 
-This plan includes contract research, candidate evaluation, and conditional production migration. Phases 1–7 establish the research decision; Phases 8–9 proceed only after selection supports replacement. Phase 10 validates documentation before closeout. The [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md) tracks outcomes across all ten phases. Phases 1–5 are complete; Phase 6 is in progress. Numerical budgets and final support acceptance remain Phase 6 work. No replacement has been selected.
+This plan includes contract research, candidate evaluation, and conditional production migration. Phases 1–7, including Phase 6.1, establish the research decision; Phases 8–9 proceed only after selection supports replacement. Phase 10 validates documentation before closeout. The [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md) tracks outcomes across the ten main phases and Phase 6.1. Phases 1–6 and Phase 6.1 are complete. Phase 7 owns numerical budget/support acceptance and selection after Phase 6.1. No replacement has been selected.
 
 ## Scope
 
@@ -45,7 +45,7 @@ src/adapters/codex/document-rename/
 
 The exact file split, reader types, and failure representation remain provisional through evaluation. Avoid a second ZIP/XML implementation. Establish whether an internal non-text-content signal is needed to preserve extraction reasons without generating HTML. Prototype code may be retained after review and validation; it must not become production infrastructure merely because it exists.
 
-The research's [resource-isolation and content-support contract](../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#resource-isolation-and-content-support-contract) governs process accounting, deadline/cleanup scope, communication bounds, symbol policy, and style/note limitations. The maintainer accepted its design, implementation scope, and validation method in Phase 2. Phase 6 accepts the demonstrated numerical budgets and support envelope; design agreement alone does not establish either.
+The research's [resource-isolation and content-support contract](../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#resource-isolation-and-content-support-contract) governs process accounting, deadline/cleanup scope, communication bounds, symbol policy, and style/note limitations. The maintainer accepted its design, implementation scope, and validation method in Phase 2. Phase 6 supplies technical evidence; Phase 7 owns acceptance of the demonstrated numerical budgets and support envelope after Phase 6.1. Design agreement alone does not establish either acceptance.
 
 ## Candidate Build and Packaging Checks
 
@@ -68,9 +68,11 @@ The required installation matrix for both Phase 6 and Phase 9 is npm and Bun. In
     |
 5 Complete content compatibility
     |
-6 Complete candidate validation and budget acceptance
-    |  selection evidence ready
-7 Selection and maintenance decision
+6 Complete candidate technical validation
+    |
+6.1 Validation progress, presentation, and interruption handling
+    |  harness verification and selection evidence ready
+7 Budget/support acceptance, selection, and maintenance decision
     |  production integration boundary
 8 Integration
     |
@@ -97,7 +99,7 @@ Phase 1 is complete, with reusable corpus/expectations, consumer inventory, and 
 - [x] Define processing-deadline scope, shutdown grace, complete API timing, input/result bounds, active-request limits, environment/loader handling, and offline behavior.
 - [x] Trace mapped/unmapped/malformed symbols through the baseline and rename evidence. Evaluate mapping dependency/data ownership, provenance, and licenses; record case-specific omission/failure policies and diagnostic mappings.
 - [x] Define the heading-style mapping grammar, note-expansion/cycle scope, and empty/non-text/metadata-only boundaries. Identify additional corpus cases and expected comparison outcomes.
-- [x] Record maintainer agreement on the design, implementation scope, and validation method before Phase 3. Keep numerical proposals provisional until Phase 6 measurements and acceptance.
+- [x] Record maintainer agreement on the design, implementation scope, and validation method before Phase 3. Keep numerical proposals provisional through Phase 6 measurements and Phase 7 acceptance.
 
 **Deliverable and exit criteria:** one reviewed contract in the research, with explicit choices and identified verification cases. Drafting diagrams or preferring an architecture does not complete this phase. Unresolved design decisions prevent candidate implementation; they do not require accepting all numeric budgets in advance.
 
@@ -124,7 +126,7 @@ Phase 3 is complete with a continue outcome. The identified comparisons, built-f
 - [x] Install scoped offline checks and independent positive controls inside the actual parser process/worker. Verify no external URL/file loading or executable-content evaluation.
 - [x] Measure prototype overhead and reassess the cost of the execution boundary. Return unresolved accounting, cleanup, or portability issues to the contract before expanding evaluation.
 
-**Deliverable and exit criteria:** an independently tested execution/resource boundary with honest sampling limitations and cleanup behavior. Threshold-policy tests are distinct from real-process feasibility; final budget acceptance remains in Phase 6.
+**Deliverable and exit criteria:** an independently tested execution/resource boundary with honest sampling limitations and cleanup behavior. Threshold-policy tests are distinct from real-process feasibility; final budget acceptance belongs to Phase 7.
 
 Phase 4 is complete. The [record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-4-resource-isolation) retains guard, runtime, built-format, managed-check, and review outcomes. Stalled input and child cleanup retain ownership when settlement cannot be confirmed; the research describes this infrastructure exception explicitly.
 
@@ -138,24 +140,44 @@ Phase 4 is complete. The [record](jobs/2026-10-16-docx-reader-and-mammoth-replac
 
 **Deliverable and exit criteria:** every required content variation has identified cases and complete comparison results. Unresolved consequential regressions prevent selection; restrictions do not become accepted merely because the reader emits text.
 
-Phase 5 is complete. The [record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-5-content-compatibility) retains full supervised content comparisons, independent regressions, applicable checks, cleanup, and phase review. Only the agreed extractor identity differs; numerical budgets, final support, and distribution acceptance remain Phase 6 work.
+Phase 5 is complete. The [record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-5-content-compatibility) retains full supervised content comparisons, independent regressions, applicable checks, cleanup, and phase review. Only the agreed extractor identity differs; complete measurements and distribution checks belong to Phase 6, and numerical budget/support acceptance belongs to Phase 7.
 
 ### Phase 6: Validate the complete candidate
 
-- [ ] Run the complete comparison corpus and reconcile all normalization, intentional-difference, and unresolved-regression classifications with the research contract.
-- [ ] Independently test below/at/above each structural/runtime threshold with other limits isolated. Distinguish raised-cap compatibility observations from inputs supported by the default workload envelope.
-- [ ] Measure representative/adversarial cases in isolated processes, including agreed startup, communication, extraction, and cleanup costs. Check actual memory scope, complete API timing, active-request bounds, offline behavior, and temporary cleanup.
-- [ ] Build and pack the actual candidate through **Candidate Build and Packaging Checks**. Inspect all reader/child/worker assets and dependency trees; verify ESM/CJS extraction after fresh npm and Bun installations under Node.js `>=22.23.0`, including the minimum supported version.
-- [ ] Pass applicable lint, formatting, type, build, and managed unit/application checks. Source tests and the baseline production package alone are insufficient candidate evidence.
-- [ ] Obtain maintainer acceptance of the demonstrated numerical budgets, memory/deadline semantics, support envelope, and specifically justified differences. Revisit affected design/implementation and checks when proposed limits or policies change.
+- [x] Run the complete comparison corpus and reconcile all normalization, intentional-difference, and unresolved-regression classifications with the research contract.
+- [x] Independently test below/at/above each structural/runtime threshold with other limits isolated. Distinguish raised-cap compatibility observations from inputs supported by the default workload envelope.
+- [x] Measure representative/adversarial cases in isolated processes, including agreed startup, communication, extraction, and cleanup costs. Check actual memory scope, complete API timing, active-request bounds, offline behavior, and temporary cleanup.
+- [x] Build and pack the actual candidate through **Candidate Build and Packaging Checks**. Inspect all reader/child/worker assets and dependency trees; verify ESM/CJS extraction after fresh npm and Bun installations under Node.js `>=22.23.0`, including the minimum supported version.
+- [x] Pass applicable lint, formatting, type, build, and managed unit/application checks. Source tests and the baseline production package alone are insufficient candidate evidence.
 
-**Deliverable and exit criteria:** an executable candidate, complete comparison results, resource measurements, and runtime/distribution evidence ready for a selection decision. Missing cases, failed checks, and unaccepted budgets remain explicit gaps. A successful text extraction or Bun-only test run is insufficient.
+**Deliverable and exit criteria:** an executable candidate, complete comparison results, resource measurements, and runtime/distribution evidence ready for assessment. Missing cases and failed checks remain explicit gaps. Budget/support acceptance and selection belong to Phase 7. A successful text extraction or Bun-only test run is insufficient.
+
+Phase 6 is complete. Its technical checks and full-range review passed at the revision identified in the [record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-6-complete-candidate-validation), which links complete comparisons, threshold reconciliation, measurements, and all eight fresh-consumer paths. Those results do not establish Phase 6.1 implementation or verification. Phase 7 follows Phase 6.1 and assesses the research's [demonstrated candidate envelope](../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#demonstrated-candidate-envelope), including budget/support acceptance before selection.
+
+### Phase 6.1: Improve validation progress, presentation, and interruption handling
+
+- [x] Stream bounded, append-only progress from the comparison, measurement, and package drivers, including selected scope/counts, active stage/case, actual completed work, and elapsed waiting status during quiet periods. Heartbeats report waiting without advancing completion counts.
+- [x] Use the existing `picocolors` development dependency and [terminal presentation conventions](../../scripts/testing/terminal/presentation.ts): bold headings, cyan stages, green success, yellow cancellation/warnings, red failure, and dim timing. Style only a terminal progress destination; honor the presence of `NO_COLOR`, keep redirected progress plain, and retain readable text labels.
+- [x] Send human progress to stderr while preserving final stdout status and measurement JSON contracts. Accept only recognized, sanitized progress events; bound buffering/output delivery and report output failures without exposing raw document data, local paths, environment details, or dependency logs.
+- [x] Use asynchronous owned-process handling with explicit build/run stage deadlines separate from the reader's extraction deadline. Coordinate Ctrl+C/SIGTERM, startup errors, timeout/escalation, and output failures; confirm owned subprocess/input settlement before deleting temporary artifacts. Unconfirmed cleanup fails and retains ownership. Keep comparison invocable without a POSIX-only preflight and existing POSIX-only driver restrictions explicit; unavailable process-tree settlement must fail with retained ownership.
+- [x] Identify failures by stage, synthetic case ID where applicable, and category: build, comparison, runner, startup, timeout, cancellation, output, or cleanup. Use the runner category for measurement/package command or validation failures not covered by a more specific category. Preserve nonzero failure/cancellation outcomes and emit final success only after confirmed cleanup. Keep progress outside the measured parser/RSS-sampling loop and retain the existing corpus, support policy, and extraction budgets.
+- [x] Verify progress arrives before completion, truthful counts/waiting, terminal and plain output, `NO_COLOR`, final stdout compatibility, bounded/fragmented output, and interruption/failure cleanup with controlled fixtures. Repeat smoke/full ESM/CJS comparisons under supported Node, including the minimum version; recheck resource measurements and all eight fresh-consumer paths after process/output changes. Pass applicable lint, format, types, build, and managed unit/application checks.
+- [x] Reconcile harness-method and test-ownership documentation with verified behavior and record concise outcomes and a manual-validation command subsection in the existing job. Keep durable synthetic fixture/assertion definitions under their test owner and execution artifacts in owned OS temporary storage; preserve frozen expectations and shared managed-test retention.
+- [x] Add explicit opt-in smoke retention under `examples/playground/docx-candidate/smoke/<run-id>/`, with unique, owned run directories and no overwrite. Keep generated artifacts Git-ignored and untracked; durable fixture definitions and frozen expectations remain under their existing owners. Ordinary `--smoke` continues automatic cleanup.
+- [x] After confirmed process settlement, export only synthetic DOCX inputs, readable extraction results grouped by ESM/CJS and case ID, and a compact `summary.json` containing outcomes and completeness. Print the repository-relative retained location. Clean temporary builds, dependency links, caches, and working files automatically. Failure/cancellation may retain available partial evidence with an explicit incomplete outcome; unconfirmed settlement must fail and must not publish a completed artifact set. Retained runs remain until explicitly removed by the user.
+- [x] Verify default cleanup, opt-in retention, artifact contents, unique destinations, destination ownership/symlink safety, failure/cancellation handling, and Git exclusion. Preserve output contracts and shared managed-test retention; document the implemented command, retained layout, and removal responsibility with concise results in the job record. Review the extension commit range and fix findings before closing Phase 6.1 again.
+- [x] Add `--help` and `-h` to `launch.mjs`, `measure-launch.mjs`, and `package-check.mjs`. Resolve help and invalid arguments before creating a harness/workspace, building, starting subprocesses, or checking execution prerequisites. Help writes usage to stdout and exits zero; invalid arguments write an actionable error and usage to stderr and exit nonzero. Reject unknown options and invalid combinations, including smoke retention without `--smoke`.
+- [x] Keep each entry point's help concise: usage, options, default scope, and command-specific requirements. Keep detailed platform, output, and cleanup/retention instructions in the job's manual-validation section. Keep help readable when redirected; any styling follows destination TTY detection and the presence of `NO_COLOR`.
+- [x] Verify both help aliases, output destinations and exit codes, invalid options/combinations, plain/terminal presentation, and absence of workspace/build/subprocess side effects. Update manual commands and concise verification records only after implementation; include help changes in the extension-range review.
+
+**Deliverable and exit criteria:** observable, styled, interruptible validation with stable result output, verified deadlines/cleanup, and renewed candidate evidence after harness changes. The original harness work passed renewed checks, cleanup, and full implementation review in the [record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-61-validation-harness-follow-up). The smoke-retention and help extension also passed renewed verification, cleanup, and full-range review. Numerical budget/support acceptance and selection remain in Phase 7. Retained smoke outputs use the ignored playground entry; no new runtime dependency is required.
 
 ### Phase 7: Assess and select
 
-- [ ] Review the full comparison matrix, exact accepted differences, diagnostic mappings, resource results, and candidate runtime/distribution checks against the research decision gate.
-- [ ] Assess reused code, new parsing responsibilities, difficult compatibility cases, supported scope, limitations, retained dependencies, licenses/provenance, and ongoing corpus costs.
-- [ ] Record maintainer acceptance of dependency/security updates, editor regressions, corpus upkeep, diagnostic decisions, and future resource-budget changes.
+- [ ] Confirm Phase 6 and Phase 6.1 completion, then review the full comparison matrix, proposed differences, diagnostic mappings, resource results, and candidate runtime/distribution checks against the research decision gate.
+- [ ] Obtain maintainer acceptance of the demonstrated numerical budgets, memory/deadline semantics, support envelope, and specifically justified differences before selecting the reader. Revisit affected design/implementation and checks when proposed limits or policies change.
+- [ ] Assess reused code, new parsing responsibilities, difficult compatibility cases, demonstrated workload suitability, supported scope, limitations, retained dependencies, licenses/provenance, and ongoing corpus/harness costs.
+- [ ] Record maintainer acceptance of dependency/security updates, editor regressions, corpus and validation-harness upkeep, diagnostic decisions, and future resource-budget changes.
 - [ ] Record a supported proceed-or-defer recommendation in the research, linked to execution evidence and the remaining consumer migration work.
 - [ ] If proceeding, settle reader boundaries and types and refine Phases 8–9 from the demonstrated implementation requirements before integration begins.
 
@@ -167,7 +189,7 @@ If deferred, preserve the findings and identify unmet criteria; do not start Pha
 
 - [ ] Integrate the selected reader behind the existing DOCX rename adapter and reuse or relocate OOXML helpers with their existing consumers accounted for.
 - [ ] Preserve adapter normalization, title ranking, limits, prompt construction, and outward failure behavior; apply only the differences accepted at the decision gate.
-- [ ] Repeat complete evidence/prompt comparisons on the integrated path, retaining baseline expectations after Mammoth is removed from the repository.
+- [ ] Repeat complete evidence/prompt comparisons on the integrated path using the Phase 6.1-verified harness process/output handling, retaining baseline expectations after Mammoth is removed from the repository.
 - [ ] Run affected pure parsing and managed application tests. Use stubbed batch/thread checks for dispatch, option forwarding, retries/batching, and reason propagation without relying on live model-generated titles.
 - [ ] Update affected extractor identity assertions and current behavior documentation as integration settles.
 
@@ -175,12 +197,12 @@ If deferred, preserve the findings and identify unmet criteria; do not start Pha
 
 ### Phase 9: Remove Mammoth and verify shipping acceptance
 
-- [ ] Migrate or retire remaining Mammoth consumers. For the historical spike, check references and preserve still-needed findings and useful PDF comparisons before changing or retiring its DOCX path.
+- [ ] Migrate or retire remaining Mammoth consumers, including live baseline capture and baseline measurement paths in the evaluation harness. Preserve reviewed expectations and independent probe assertions before retiring those paths, and keep complete candidate verification executable without Mammoth. For the historical spike, check references and preserve still-needed findings and useful PDF comparisons before changing or retiring its DOCX path.
 - [ ] Remove Mammoth imports, runtime/development declarations, build externalization, obsolete type references, and lockfile entries; regenerate repository installation state through the package manager.
 - [ ] Confirm production code, tests, scripts, and historical tooling no longer require Mammoth. Explanatory historical references may remain.
 - [ ] Run applicable lint, formatting, build, and managed test checks under the testing guide; repeat the final evidence/prompt, fallback, and resource acceptance checks.
 - [ ] Verify the final CLI and built ESM/CJS entry points under supported Node.js, including the minimum supported version. Record the outcome for each required path.
-- [ ] Inspect the actual packed product and repeat the npm/Bun fresh-consumer installation checks defined in **Candidate Build and Packaging Checks**, alongside repository installed trees. Exercise the integrated DOCX path under Node.js; the private candidate harness is not final-product evidence. Confirm Mammoth absence and account for any independent retained `argparse`/`sprintf-js` paths.
+- [ ] Inspect the actual packed product and repeat the npm/Bun fresh-consumer installation checks defined in **Candidate Build and Packaging Checks**, alongside repository installed trees. Reuse verified harness progress/interruption/cleanup handling and exercise the integrated DOCX path under Node.js; the private candidate package is not final-product evidence. Review applicable licenses and packaged notices against the actual dependency inventory; the quick candidate verifier does not establish license or notice completeness. Confirm Mammoth absence and account for any independent retained `argparse`/`sprintf-js` paths.
 - [ ] Record final results, maintenance acceptance, limitations, and the precise dependency/audit outcome. Claim dependency remediation only when the installed-tree evidence supports it.
 
 **Deliverable and exit criteria:** final integrated-product evidence satisfies the research's shipping gate and complete Mammoth removal goal. Technical acceptance does not complete this plan until Phase 10 passes.
@@ -189,12 +211,12 @@ If deferred, preserve the findings and identify unmet criteria; do not start Pha
 
 - [ ] Check that current guides describe verified extraction behavior, supported scope, provenance where relevant, fallback behavior, and limitations; do not publish unverified candidate behavior as shipped guidance.
 - [ ] Check that the research records the supported recommendation, accepted differences, ownership, and links to evidence. A selected direction alone does not justify `completed`.
-- [ ] Reconcile plan checkboxes and the unified execution job record's phase sections, results, and status with actual work, including pending checks or deferral reasons. Preserve the distinction between candidate selection and shipping acceptance.
+- [ ] Reconcile plan checkboxes and the unified execution job record's phase sections, including Phase 6.1, results, and status with actual work, including pending checks or deferral reasons. Preserve the distinction between harness verification, budget/support acceptance, candidate selection, and shipping acceptance.
 - [ ] Check current extractor/dependency descriptions and clearly contextualize retained historical Mammoth references. Do not rewrite historical findings as if they described the replacement.
 - [ ] Validate repository-relative links, required research/plan backlinks, UTC dates, front matter, paragraph formatting, and document placement against the documentation policy. Apply release-note policy if release notes are affected.
 - [ ] Record documentation validation results and set final statuses from the demonstrated outcome. Keep research and plans in their current locations unless a separate archive review justifies moving them.
 
-**Deliverable and exit criteria:** documentation consistently describes the verified result and its limits. On the shipping path, all ten phases must be complete before the plan is marked `completed`. On the deferral path, documentation reflects deferral without presenting unexecuted candidate/integration/removal phases as complete.
+**Deliverable and exit criteria:** documentation consistently describes the verified result and its limits. On the shipping path, all ten main phases and Phase 6.1 must be complete before the plan is marked `completed`. On the deferral path, documentation reflects deferral without presenting unexecuted candidate/integration/removal phases as complete.
 
 ## Phase Review and Recording
 
@@ -202,15 +224,15 @@ For each authorized phase, validate coherent changes, checkpoint meaningful veri
 
 ## Stop Conditions and Recovery
 
-Keep the working Mammoth production path during candidate evaluation. Stop selection or integration when required compatibility evidence is missing, consequential differences are unresolved, budgets are unaccepted or unmet, Node/distribution checks fail, or maintenance responsibility is unaccepted. Broader-than-expected OOXML complexity is grounds to reassess the benefit and defer.
+Keep the working Mammoth production path during candidate evaluation. Stop selection or integration when required compatibility or Phase 6.1 harness evidence is missing, consequential differences are unresolved, budgets are unaccepted or unmet, Node/distribution checks fail, or maintenance responsibility is unaccepted. Broader-than-expected OOXML complexity is grounds to reassess the benefit and defer.
 
 Use reviewable phase boundaries and record tested revisions so a failed integration can be reverted coherently with its dependency declarations and lockfile. Before shipping, verify the candidate can be removed or the integration reverted without losing the baseline corpus and findings. Any rollback that restores Mammoth also restores its dependency exposure; update remediation claims accordingly. Do not introduce a permanent runtime backend switch for recovery.
 
 ## Evidence and Documentation Handling
 
-The research owns findings and the proceed/defer recommendation; this plan owns execution steps and gates; one unified execution job record owns concise phase outcomes, pending checks, and links to reusable evidence across all ten phases. Keep substantive compatibility decisions and budget rationale in the research or accepted contract, not a local execution diary. Create and link the record only when Phase 1 execution begins, using the actual creation date under the documentation policy. Do not create a job record for drafting or revising this plan. Organize the same record by plan phase and update it throughout execution; do not create separate per-phase job records by default.
+The research owns findings and the proceed/defer recommendation; this plan owns execution steps and gates; one unified execution job record owns concise phase outcomes, pending checks, and links to reusable evidence across the ten main phases and Phase 6.1. Keep substantive compatibility decisions and budget rationale in the research or accepted contract, not a local execution diary. Create and link the record only when Phase 1 execution begins, using the actual creation date under the documentation policy. Do not create a job record for drafting or revising this plan. Organize the same record by plan phase and update it throughout execution; do not create separate per-phase job records by default.
 
-Keep the unified record `in-progress` while execution continues. Completing the evaluation or research decision alone does not complete the record while integration, removal, or final docs validation remains pending. Mark it `completed` only when all ten phases have passed. If the replacement is deferred, record the evidence and unexecuted phases and use `blocked` when execution is expected to resume or `cancelled` when it is intentionally abandoned, consistent with the plan's deferral route even after Phase 10 documents that outcome.
+Keep the unified record `in-progress` while execution continues. Completing the evaluation or research decision alone does not complete the record while integration, removal, or final docs validation remains pending. Mark it `completed` only when all ten main phases and Phase 6.1 have passed. If the replacement is deferred, record the evidence and unexecuted phases and use `blocked` when execution is expected to resume or `cancelled` when it is intentionally abandoned, consistent with the plan's deferral route even after Phase 10 documents that outcome.
 
 Use owned OS temporary directories for execution files and remove them on success or failure. Keep reviewed synthetic regression fixtures and expectations under their test owner. Record only concise check outcomes; do not commit raw execution reports, host details, local setup, cache locations, or run-specific paths. Baseline expectation updates require an explicit export and review; ordinary verification must not rewrite them.
 

@@ -212,7 +212,7 @@ These rules govern evaluation and any later implementation:
 
 ## Resource Isolation and Content-Support Contract
 
-This section separates runtime accounting from document compatibility. The maintainer accepted the Phase 2 design, initial-reader scope, and validation method: one fresh extraction process per admitted request and baseline-led content handling. The diagrams describe that contract; the private candidate's implemented boundary is assessed below. Final numeric budgets/support acceptance belong to Phase 6.
+This section separates runtime accounting from document compatibility. The maintainer accepted the Phase 2 design, initial-reader scope, and validation method: one fresh extraction process per admitted request and baseline-led content handling. The diagrams describe that contract; the private candidate's implemented boundary is assessed below. Phase 6 supplies technical evidence; final numeric budget/support acceptance belongs to Phase 7 after Phase 6.1.
 
 ### Memory accounting alternatives
 
@@ -363,7 +363,7 @@ Invalid font/code data --> establish explicit diagnostic/outcome expectations
 
 Use the standalone `dingbat-to-unicode` mapper already used by Mammoth rather than an owned mapping table.[^dingbat-mapper] The baseline's `js-1.0.1` has 1,061 mapping rows across Symbol, Webdings, Wingdings, Wingdings 2, and Wingdings 3, but its package lacks the BSD notice declared by the manifest.[^dingbat-pinned] The candidate therefore pins 1.0.2: its published archive includes the BSD-2-Clause notice matching exact source commit `9eb2d1d8b8463b7bd3cd125597eabcfa9df42128`, all 1,061 mappings match the baseline, and it has no runtime dependencies.[^dingbat-candidate]
 
-Archive integrity, tag/source identity, packaged notice, and complete mapping equivalence were verified before adoption. Keep the mapper external and retain its packaged notice; actual candidate distribution inspection remains Phase 6 work. No mapping data is copied into project source. Mammoth remains the production extractor, and its removal remains mandatory on the shipping path.
+Archive integrity, tag/source identity, packaged notice, and complete mapping equivalence were verified before adoption. Keep the mapper external and retain its packaged notice; the private candidate's packed distribution also preserves that notice. No mapping data is copied into project source. Mammoth remains the production extractor, and its removal remains mandatory on the shipping path.
 
 The content unit suite protects all 1,061 baseline mappings with per-font counts and a stable digest over the complete five-font byte domain, including unmapped inputs. The expectation was derived independently from the baseline mapper; the regression test has no Mammoth dependency or copied mapping table.
 
@@ -463,7 +463,7 @@ The existing package helper still skips parts above 256 KiB; this is an initial-
 | --- | --- |
 | Phase 4: isolation | Substantial: supervisor, child/worker assets, bounded framing, input reading, admission, sampled RSS, deadline/cancellation, cleanup, and fault observations. |
 | Phase 5: content | Substantial: heading-affecting style projection, mapper provenance/adoption, note snapshots/duplicates/failures, remaining text/discovery/secondary-content cases, and diagnostic mappings. |
-| Phase 6: complete validation | Measurements and all-case comparison, required runtime assets in both formats, fresh npm/Bun consumers, installed trees, and maintainer budget/support acceptance. |
+| Phase 6: complete validation | Measurements and all-case comparison, required runtime assets in both formats, fresh npm/Bun consumers, and installed trees; acceptance belongs to Phase 7. |
 
 The Phase 3 complexity checkpoint supported **continue**: the demonstrated slice shares package/metadata/rename policy rather than introducing parallel implementations. That initial feasibility result does not select the replacement. The resource and content implementations are assessed below. The maintenance decision must retain the complete corpus and reconsider deferral if those responsibilities exceed the focused reader's benefit.
 
@@ -471,17 +471,17 @@ The Phase 3 complexity checkpoint supported **continue**: the demonstrated slice
 
 The private candidate now indexes every physical ZIP entry and inflates only selected parts. Actual selected bytes count toward per-part and aggregate decompression caps; cached reads count once. Selected XML parts share an element budget and have a depth cap checked before parser allocation. Declarations that could introduce entity expansion fail explicitly. Style-rule matching and paragraph-numbering resolution each cap their actual lookup steps; these are separate per-lookup bounds, with XML limits bounding the number of selected nodes. Unused inheritance chains are not traversed. Metadata retains its separate 256 KiB eligibility rule.
 
-The original resource inspector measures whole-package dimensions, including unselected binary/XML parts and declared inheritance graphs. Those measurements remain frozen; they are not enforcement assertions for the selected-part reader. [Independent guard tests](../../test/document-rename/docx-resource.unit.test.ts) exercise the implemented dimensions and archive/stream cleanup. The initial 22 reader-facts comparisons and unchanged baseline captures still pass.
+The original resource inspector measures whole-package dimensions, including unselected binary/XML parts and declared inheritance graphs. Those measurements remain frozen; they are not enforcement assertions for the selected-part reader. [Independent guard tests](../../test/document-rename/docx-resource.unit.test.ts) reconcile all 21 original boundaries and exercise actual selected-content limits with other caps unchanged. Unselected binary/XML content and unused inheritance chains do not consume selected decompression, XML, or lookup budgets; physical ZIP headers still count toward the entry cap.
 
-The [private process boundary](../../src/docx/runtime/index.ts) implements the agreed child/worker topology, capped file reading, strict byte frames, sanitized environment, independent deadline/RSS supervision, and confirmed closure. Its eight modules add about 1,000 lines of lifecycle, protocol, and offline instrumentation. A fresh extraction process adds startup and transport cost; the prototype probe remained inside the provisional complete-API window. This supports continuing the content evaluation, while representative/adversarial cost and final budget acceptance remain Phase 6 work.
+The [private process boundary](../../src/docx/runtime/index.ts) implements the agreed child/worker topology, capped file reading, strict byte frames, sanitized environment, independent deadline/RSS supervision, and confirmed closure. Its eight modules add about 1,000 lines of lifecycle, protocol, and offline instrumentation. A fresh extraction process adds startup and transport cost; complete candidate measurements and acceptance are assessed below.
 
-[Runtime tests](../../test/document-rename/docx-runtime.app.test.ts) cover caller-memory independence, blocked parsing, controlled and actual RSS observations, malformed transport, crashes, cancellation, parent loss, escalation, and offline controls before parser imports. Unconfirmed cleanup remains an infrastructure failure and retains admission until eventual closure. The initial 22 complete comparisons pass through supervised ESM/CJS builds under Node, including the minimum supported runtime. Sampled RSS can miss brief peaks; these private builds do not establish fresh-consumer distribution acceptance or broader content support.
+[Runtime tests](../../test/document-rename/docx-runtime.app.test.ts) cover caller-memory independence, blocked parsing, controlled and actual RSS observations, malformed transport, crashes, cancellation, parent loss, escalation, and offline controls before parser imports. Unconfirmed cleanup remains an infrastructure failure and retains admission until eventual closure. Default transport-cap tests count encoded UTF-8 bytes; controlled parent-input observations establish expiry at the exact deadline. Controlled RSS observations cover worker termination and encoded-result publication as well as periodic sampling. Sampled RSS can miss brief peaks; successful checks do not establish a kernel memory ceiling.
 
 ### Content implementation assessment
 
 The private reader separates literal content-part discovery, metadata eligibility, semantic text, numbering, symbol mapping, and heading projection. Raw text remains independent of heading projection. Notes and explicitly mapped comments expand from bounded snapshots, preserving duplicates, ordering, labels, and eager validation of selected unused content. Only projected embedded images are read; hyperlink and field targets remain inert strings. Distinct physical ZIP entries retain separate byte/XML accounting even when their normalized paths coincide.
 
-The [comparison harness](../../scripts/docx-candidate/launch.mjs) compares all 103 frozen semantic/contract cases through supervised ESM/CJS builds. Ten [additional synthetic probes](../../test/document-rename/fixtures/docx-content-probes.ts) compare live baseline facts, complete evidence, and exact prompts for list selectors, comments, literal-percent filenames, and embedded-map lookup/encoding. These captures stay in memory; original expectations are unchanged. The sole normalized difference is `mammoth` → `docx-reader`, including the corresponding `+ooxml` identity. Independent [content](../../test/document-rename/docx-content.unit.test.ts), [numbering](../../test/document-rename/docx-numbering.unit.test.ts), and resource assertions cover additional interaction and failure boundaries.
+The [comparison harness](../../scripts/docx-candidate/launch.mjs) covers 124 frozen semantic/contract/resource cases and ten [additional synthetic probes](../../test/document-rename/fixtures/docx-content-probes.ts) through supervised ESM/CJS builds. The additional probes compare live baseline facts, complete evidence, and exact prompts for list selectors, comments, literal-percent filenames, and embedded-map lookup/encoding; their captures stay in memory. Original expectations are unchanged. Of 134 cases, 130 preserve default evidence/prompts with only `mammoth` → `docx-reader`, including the corresponding `+ooxml` identity. Four above-cap resource inputs instead fail at default limits; raising only the relevant cap separately preserves their baseline semantics. These raised-cap observations do not expand default support. Independent [content](../../test/document-rename/docx-content.unit.test.ts), [numbering](../../test/document-rename/docx-numbering.unit.test.ts), and resource assertions cover additional interaction and failure boundaries.
 
 | Internal observation | Existing outward behavior |
 | --- | --- |
@@ -492,13 +492,13 @@ The [comparison harness](../../scripts/docx-candidate/launch.mjs) compares all 1
 | Successful conversion without a title signal | Preserve `docx_no_title_signal` versus `docx_extract_error` according to content presence. |
 | Metadata title without body text | Preserve evidence with `docx_no_lead_text`. |
 
-The reader/guard modules now total about 1,700 lines before the separate process boundary. Owning projection, numbering, and editor-specific failure behavior adds material maintenance cost beyond the initial slice. These comparisons support completing the evaluation, not candidate selection: Phase 6 still owns workload measurements, full threshold reconciliation, fresh-consumer packaging, and budget/support acceptance; Phase 7 assesses the complete maintenance tradeoff.
+The reader/guard modules now total about 1,700 lines before the separate process boundary. Owning projection, numbering, and editor-specific failure behavior adds material maintenance cost beyond the initial slice. Complete validation remains distinct from acceptance: Phase 6 supplies measured evidence, and Phase 7 assesses budget/support agreement and the complete maintenance tradeoff before selection.
 
 ## Validation Matrix and Method
 
 ### Minimum comparison corpus
 
-Existing fixtures and assertions provide identified cases and expected handling; one fixture may cover several independently asserted variations. The complete content comparison covers the categories below through the supervised path. Resource measurements, distribution checks, and final support acceptance remain separate pending evidence. Unsupported-content cases establish baseline limitations or failure behavior rather than a promise to support every DOCX feature; later gaps require new independent cases.
+Existing fixtures and assertions provide identified cases and expected handling; one fixture may cover several independently asserted variations. Complete comparisons cover the categories below through the supervised path; resource/distribution checks and budget/support acceptance have separate outcomes in the [execution record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-6-complete-candidate-validation). Unsupported-content cases establish baseline limitations or failure behavior rather than a promise to support every DOCX feature; later gaps require new independent cases.
 
 | Category                         | Minimum cases and questions                                                                                                                                                                                                               | Evidence state                                                      |
 | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
@@ -511,7 +511,7 @@ Existing fixtures and assertions provide identified cases and expected handling;
 | Empty and non-text content       | Valid empty documents, image-only documents, and structure-only content such as empty tables or line breaks, all without usable title metadata. Trace whether nonempty HTML changes the no-evidence reason despite empty normalized text. | Passed; supervised comparison. |
 | Metadata-only evidence           | A usable core title with an empty body and successful conversion; assert evidence with `docx_no_lead_text`. Contrast author-only metadata with no title/body/headings, and available metadata with a conversion failure.                  | Passed; supervised comparison. |
 | Partial and malformed extraction | Usable text with unsupported content; invalid ZIP/XML; missing/invalid required parts; duplicate normalized part names. Distinguish limitations, empty output, and extraction failure under the compatibility policy.                     | Passed; supervised comparison and failure assertions. |
-| Resource and I/O boundaries      | A body above the metadata reader's 256 KiB cap; below/at/above each proposed resource cap; external relationship targets, deterministic cleanup, no external URL/file loading, and no executable-content evaluation.                      | Guard/runtime checks passed; complete workload/packaging acceptance pending. |
+| Resource and I/O boundaries      | A body above the metadata reader's 256 KiB cap; below/at/above each proposed resource cap; external relationship targets, deterministic cleanup, no external URL/file loading, and no executable-content evaluation.                      | Original boundaries reconciled; selected-content and runtime checks passed; acceptance pending. |
 
 Image-only cases check structural outcomes and binary-part handling; they do not require image interpretation or OCR. Expected reasons for empty/non-text cases must come from identified baseline cases, not an assumption that all empty text has the same outcome.
 
@@ -524,7 +524,7 @@ Image-only cases check structural outcomes and binary-part handling; they do not
 
 ### Resource budgets
 
-Define a supported workload from identified representative documents and measure the current Mammoth baseline. Inspect compressed input size, per-part and total decompressed bytes, entry/node counts, XML depth, style traversal steps, peak memory, and elapsed processing time. Retain proposed limits and their headroom rationale rather than raw execution reports. The maintainer must accept these budgets and the support envelope before candidate results are classified as passing; the metadata cap alone is insufficient.
+Define a supported workload from identified representative documents and measure the current Mammoth baseline. Inspect compressed input size, per-part and total decompressed bytes, entry/node counts, XML depth, style traversal steps, peak memory, and elapsed processing time. Retain proposed limits and their headroom rationale rather than raw execution reports. Phase 7 requires maintainer acceptance of these budgets and the support envelope before candidate selection; the metadata cap alone is insufficient.
 
 Test every cap below, at, and above its boundary with expected limitation/failure outcomes. Use the reproducible harness to measure representative and adversarial cases; record check outcomes without local environment details. The candidate must stay within accepted budgets or terminate with the defined outcome. Later budget/support-policy changes require a rationale and renewed checks of affected cases.
 
@@ -536,10 +536,29 @@ Phase 1 measured the baseline and defined the [provisional limits](../../scripts
 | Decompressed part / total | 1 MiB / 4 MiB | About 33 / 46 times the corresponding seed maxima. |
 | ZIP entries | 256 | Sixteen times the seed maximum. |
 | XML elements / depth | 100,000 / 64 | About 40 / seven times the corresponding seed maxima. |
-| Selected style/numbering lookup steps | 128 | Original seed proposal; final rationale requires implemented-lookup measurements. |
-| Extraction time / peak RSS | 5 seconds / 256 MiB | More than 80 / two times the corresponding bounded baseline maxima. Define processing/API timing, shutdown grace, and memory scope under the contract above before candidate measurement or acceptance. |
+| Selected style/numbering lookup steps | 128 | Caps each actual lookup; selected below/at/above probes preserve expected semantics or fail explicitly. |
+| Processing time / sampled child RSS | 5 seconds / 256 MiB | Complete candidate measurements retain over half the timing window and over one tenth of sampled memory headroom; the scope and limitations follow the contract above. |
 
-The [structural cases](../../scripts/docx-baseline/resource-cases.ts) isolate seven exact below/at/above dimensions; some exceed other proposed caps and are not examples of fully supported inputs. Inspector safety ceilings are separate from candidate limits. Candidate enforcement requires independent cap checks with other limits isolated, controlled blocked-parser/process observations for deadline/RSS/shutdown behavior, and real-process measurements. DOCX fixture dimensions alone cannot establish those runtime outcomes. Transport/concurrency cases must also follow the agreed contract. Candidate evidence and maintainer acceptance for that contract remain pending.
+The [structural cases](../../scripts/docx-baseline/resource-cases.ts) isolate seven exact below/at/above dimensions; some exceed other proposed caps and are not examples of fully supported inputs. Inspector safety ceilings are separate from candidate limits. Independent [selected-boundary probes](../../test/document-rename/fixtures/docx-boundary-probes.ts) cover actual aggregate bytes, cumulative XML elements, and style/numbering lookup work at default caps. Controlled blocked-parser/process observations establish deadline/RSS/shutdown behavior; real-process measurements separately establish feasibility. Maintainer acceptance remains pending.
+
+### Demonstrated candidate envelope
+
+The numerical proposal is unchanged and awaits acceptance within Phase 7 after Phase 6.1 harness verification. Every supported input must fit all applicable limits; separate at-cap probes do not establish that every simultaneous combination of maximum dimensions is supported.
+
+| Scope | Proposed limit or behavior |
+| --- | --- |
+| Input and ZIP structure | 8 MiB input; 256 physical entries; 1 MiB per selected part. |
+| Selected content | 4 MiB aggregate; 100,000 cumulative XML elements; depth 64; 128 steps per style-rule or numbering lookup. |
+| Transport and admission | 4 KiB request metadata; 8 MiB encoded result; one active request per owner with no queue. |
+| Runtime | 5-second deadline from admitted input reading through result validation; expiry at equality. |
+| Memory | 256 MiB sampled extraction-process RSS, including worker; caller excluded; 10 ms and transition observations. |
+| Cleanup | TERM grace 250 ms; cleanup target 1 second; complete API target 6 seconds. Unconfirmed settlement is infrastructure failure with retained ownership/admission. |
+| Content | Preserve identified baseline symbol mappings/omissions/failures, heading-affecting style rules, and bounded snapshot note/comment behavior. No OCR or external target loading. |
+| Intentional resource differences | Default rejection above input, entry, selected-part, or depth caps; other selected-content overflows also fail. Internal details map to existing `docx_extract_error`. |
+
+The fixed [measurement workloads](../../test/document-rename/fixtures/docx-measure-cases.ts) contain ten intended-supported rows and eight expected-limit rows, including representative mixed/text reports and actual cap probes. The [measurement harness](../../scripts/docx-candidate/measure-launch.mjs) compares ordinary ESM/CJS results with observed-child runs and isolated Mammoth baselines under normal and loaded callers. It measures complete API cost and grouped input/startup/supervision/publication/cleanup observations; these observations do not isolate parser-only time. Raw reports remain temporary. Sampling and OS termination limitations above remain part of acceptance.
+
+Both required runtime lanes met the proposed candidate processing, complete-API, and sampled-RSS limits, with confirmed input/child settlement and admission release. Timing retained more than half the windows; worst sampled child RSS retained more than one tenth of the cap. The isolated baseline matched supported evidence and completed all rows, but its OS-reported peak RSS exceeded the candidate reference in one lane. Baseline OS peak and candidate sampled child RSS are different observations; these results do not establish a universal memory-reduction ratio. The [execution record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-6-complete-candidate-validation) retains concise outcomes.
 
 ### Runtime and distribution checks
 
@@ -547,7 +566,19 @@ Verify the executable candidate under Node.js `>=22.23.0`, including representat
 
 The build currently externalizes Mammoth, and published files are limited to `dist`, license, and README files. Inspect packed artifacts and their resolved consumer dependency trees through fresh installations with supported package managers, alongside repository declarations and imports. Account for any independent retained Argparse/`sprintf-js` paths.
 
+The private [package check](../../scripts/docx-candidate/package-check.mjs) packs the actual reader and fixed child/worker/parser assets in both formats, then checks the same tarball in fresh npm/Bun consumers with representative content, bounded failures, and installed-worker offline controls. Its package has only `dingbat-to-unicode`, `fast-xml-parser`, and `yauzl` as direct runtime dependencies; the baseline runner and Mammoth are absent. Fresh transitive resolution is inspected independently of the repository tree and guarded against unreviewed inventory changes. The manual measurement/installation drivers require POSIX process groups; these results establish no additional operating-system coverage.
+
+The inspected fresh tree has eight transitive packages. This quick verifier checks package assets, dependency inventory, and runtime behavior; it does not enforce license or third-party notice completeness. `fast-xml-parser` remains pinned to 5.11.2; its transitive `@nodable/entities` 3.1.0 omits the full MIT notice from its published package. Review applicable licenses and notices against the actual resolved tree during final product packaging. Candidate distribution results do not establish shipping acceptance or repository-wide Mammoth remediation.
+
 The historical `scripts/spikes/docx-pdf-title-evidence-spike.ts` also imports Mammoth. Migrate its DOCX path and backend labels while preserving useful PDF comparisons, or retire it after checking references and preserving still-needed evidence. Production code, scripts, tests, declarations, the lockfile, and installed trees must satisfy the removal goal; explanatory historical references may remain.
+
+### Validation harness follow-up
+
+The [Phase 6.1](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-61-improve-validation-progress-presentation-and-interruption-handling) harness streams observable, styled, interruptible comparison/measurement/package progress. Actual completion events establish counts; quiet-period heartbeats report waiting. Bounded human progress uses stderr, with terminal-only `picocolors` styling and plain output under redirection or `NO_COLOR`; final status and measurement JSON contracts remain on stdout. Only recognized, sanitized events reach presentation. Reporting stays outside measured extraction intervals and the parser/RSS-sampling loop.
+
+Harness build/run deadlines are separate from extraction budgets. Process-group observation can retry an unknown state within one absolute cleanup deadline; explicit absence, child close, and settled streams are required before temporary cleanup. Persistent uncertainty remains a failure with retained ownership. Comparison remains invocable without POSIX-only preflight, but current Windows handling cannot prove descendant settlement and fails with retained artifacts; no Windows execution coverage is established.
+
+Renewed comparisons, measurements, candidate runtime/package checks, and full implementation review passed in the [record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-61-validation-harness-follow-up), which also provides [manual commands](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#manual-validation). The [ownership catalog](../references/test-suite-case-matrices.md#document-rename-baseline) identifies durable regressions. The smoke-retention and help extension passed renewed verification and full-range review. Help and invalid arguments resolve before execution setup; optional smoke exports preserve selected synthetic inputs/results after settlement in the ignored playground entry, while working builds and dependencies remain temporary. Verification exports were removed after inspection. This work changes neither content support nor the proposed extraction budgets; Phase 7 owns acceptance and selection.
 
 ### Maintenance assessment
 
@@ -555,7 +586,7 @@ Assess the benefit of owning the narrow extraction contract against the ongoing 
 
 - Reused helpers and new parsing responsibilities, including the resulting code surface and difficult compatibility cases.
 - The supported subset, known limitations, and whether preserving evidence requires substantially broader conversion logic.
-- Retained dependencies, licenses/provenance, update obligations, and remaining migration work.
+- Retained dependencies, licenses/provenance, update obligations, validation-harness upkeep, and remaining migration work, including retiring live Mammoth capture/measurement paths while preserving independent comparison coverage.
 
 The maintainer must explicitly accept responsibility for dependency/security updates, editor regressions and corpus upkeep, unsupported-content/diagnostic decisions, and future resource-budget changes before reader selection. A subsystem location alone does not establish that acceptance.
 
@@ -563,7 +594,7 @@ The maintainer must explicitly accept responsibility for dependency/security upd
 
 ### Research decision
 
-Recommend proceeding only when the comparison matrix and method establish equivalent useful evidence or accepted differences, resource handling meets accepted budgets, and runtime/distribution checks pass for an isolated executable and packed candidate. The maintenance assessment must support a focused, maintainable implementation with accepted ownership. Record how existing consumers can migrate or retire and any remaining integration work; completing repository migration is not a prerequisite for this decision.
+Recommend proceeding only when the comparison matrix and method establish equivalent useful evidence or accepted differences, Phase 6.1 harness verification is complete, resource handling meets accepted budgets, and runtime/distribution checks pass for an isolated executable and packed candidate. The maintenance assessment must support a focused, maintainable implementation with accepted ownership. Record how existing consumers can migrate or retire and any remaining integration work; completing repository migration is not a prerequisite for this decision.
 
 Otherwise, recommend deferral and identify unmet criteria. Record the supporting evidence, benefits, limitations, and remaining risks. A supported recommendation may justify a separate implementation plan; research completion is distinct from shipping the replacement.[^doc-policy]
 
@@ -571,11 +602,11 @@ Otherwise, recommend deferral and identify unmet criteria. Record the supporting
 
 The implementation plan must repeat applicable evidence/prompt, fallback, resource, and distribution checks on the final integrated product. Pass affected managed tests and Node.js checks of the CLI and built ESM/CJS entry points. Confirm consumer migration/retirement and complete Mammoth removal in repository and fresh packed-product installations. Record final results, maintenance acceptance, and remaining limitations before claiming shipping acceptance or dependency remediation.
 
-The retained baseline corpus has 70 semantic cases and 21 structural boundary cases, supplemented by 33 contract cases linked above and from the [unified execution record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md). Resource-isolation cases remain required, and the candidate must compare all identified support cases before full validation. Candidate equivalence, concrete support/diagnostic mappings, accepted resource budgets, maintenance acceptance, and both gates require evidence for that contract. Researching the design does not establish candidate or shipping acceptance.
+The retained baseline corpus has 70 semantic cases and 21 structural boundary cases, supplemented by 33 contract cases linked above and from the [unified execution record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md). Complete candidate comparisons retain these expectations and distinguish default-limit failures from raised-cap semantic checks. Candidate equivalence, concrete support/diagnostic mappings, accepted resource budgets, maintenance acceptance, and both gates require evidence for that contract. Technical validation does not establish maintainer acceptance, selection, or shipping acceptance.
 
 ## Related Plans
 
-- [DOCX reader and Mammoth replacement](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md) — ten numbered phases covering contract research, candidate construction and validation, selection, conditional integration/removal, and documentation closeout.
+- [DOCX reader and Mammoth replacement](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md) — ten main phases and Phase 6.1 covering contract research, candidate construction and validation, harness progress/lifecycle, selection, conditional integration/removal, and documentation closeout.
 
 ## References
 
