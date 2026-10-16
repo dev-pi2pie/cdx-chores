@@ -56,7 +56,7 @@ Address the remaining XML accounting, hyperlink compatibility, and manual harnes
 
 - [x] Charge each physical XML part once, including failed inspections; preserve safety failures and distinct-entry accounting.
 - [x] Preserve empty-ID and unresolved-target hyperlink behavior, with independent evidence and prompt regressions.
-- [ ] Require POSIX process groups before manual execution creates artifacts; remove ineffective Windows handling and redundant options.
+- [x] Require POSIX process groups before manual execution creates artifacts; remove ineffective Windows handling and redundant options.
 - [ ] Pass focused, routine, built-runtime, measurement, and packed-consumer checks.
 - [ ] Review the complete follow-up range and combined implementation, resolve findings, and confirm cleanup.
 
@@ -64,6 +64,6 @@ Address the remaining XML accounting, hyperlink compatibility, and manual harnes
 | --- | --- |
 | XML accounting | Failed scans retain their original charge and failure; focused resource/content and compiled evidence/prompt regressions passed |
 | Hyperlinks | Twenty-three named cases match historical behavior, including empty/duplicate targets, fragment merging, suppression, and unused notes/comments; focused unit and compiled evidence/prompt checks passed |
-| Manual harness | Pending |
+| Manual harness | Shared prerequisite rejects unsupported execution before workspaces/children; lifecycle, help, and simulated platform probes passed; ineffective Windows branch and redundant flags removed |
 | Verification | Pending |
 | Review / cleanup | Pending |

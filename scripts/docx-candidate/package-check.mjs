@@ -24,7 +24,6 @@ if (cli) {
     },
     async (harness, temporary) => {
       const workspace = await realpath(temporary);
-      assert.notEqual(process.platform, "win32", "Package checks require POSIX process groups");
       const manifest = await json(join(repo, "package.json"));
       const embeddedSource = await readFile(
         join(repo, "src/cli/program/version-embedded.ts"),
@@ -82,7 +81,6 @@ if (cli) {
         harness.command(path, args, {
           stage: "runner",
           label: stage,
-          posixOnly: true,
           cwd,
           env: { ...env, ...runtimeEnv },
           timeout,
@@ -106,7 +104,6 @@ if (cli) {
           cwd: repo,
           env,
           timeout: 120_000,
-          posixOnly: true,
         },
       );
       const prepared = join(workspace, "prepared");
@@ -119,7 +116,6 @@ if (cli) {
           cwd: repo,
           env,
           timeout: 60_000,
-          posixOnly: true,
         },
       );
       const input = join(workspace, "representative.docx");

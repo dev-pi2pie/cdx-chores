@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { writeFile } from "node:fs/promises";
-import { isAbsolute, join } from "node:path";
+import { isAbsolute } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
 import { HarnessError, safeLabel } from "./errors.mjs";
@@ -32,44 +32,19 @@ async function waitForProcessGroupSettlement(pid, stage, id, deadline) {
   throw cleanupFailure(stage, id);
 }
 
-async function terminateWindowsTree(pid, stage, id) {
-  const root = process.env.SystemRoot ?? process.env.SYSTEMROOT;
-  if (!root || !isAbsolute(root)) throw cleanupFailure(stage, id);
-  const child = spawn(join(root, "System32", "taskkill.exe"), ["/PID", String(pid), "/T", "/F"], {
-    stdio: "ignore",
-    windowsHide: true,
-  });
-  let timer;
-  try {
-    await new Promise((resolve, reject) => {
-      timer = setTimeout(() => {
-        child.kill();
-        reject(cleanupFailure(stage, id));
-      }, 1_000);
-      child.once("error", () => reject(cleanupFailure(stage, id)));
-      child.once("close", (code) => (code === 0 ? resolve() : reject(cleanupFailure(stage, id))));
-    });
-  } finally {
-    clearTimeout(timer);
-    child.unref();
-  }
-}
-
 /** One bounded command, owning its descendants and both output pipes. */
 export async function runOwnedCommand(path, args, options) {
   const label = safeLabel(options.label);
   const category = options.stage ?? "runner";
-  if (!isAbsolute(path) || (options.posixOnly && process.platform === "win32"))
-    throw new HarnessError("startup", label);
+  if (!isAbsolute(path)) throw new HarnessError("startup", label);
   if (options.signal?.aborted) throw new HarnessError("cancellation", label);
   let child;
   try {
     child = spawn(path, args, {
       cwd: options.cwd,
       env: options.env,
-      detached: process.platform !== "win32",
+      detached: true,
       shell: false,
-      windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"],
     });
   } catch {
@@ -83,7 +58,6 @@ export async function runOwnedCommand(path, args, options) {
   let killTimer;
   let settlementTimer;
   let settlementEnd;
-  let windowsTermination;
   let resolveDeadline;
   const deadline = new Promise((resolve) => {
     resolveDeadline = resolve;
@@ -108,14 +82,8 @@ export async function runOwnedCommand(path, args, options) {
     if (issue) return;
     issue = error;
     beginSettlement();
-    if (process.platform === "win32" && pid) {
-      windowsTermination = terminateWindowsTree(pid, label, decoder.current).catch((failure) => {
-        issue = failure;
-      });
-    } else {
-      kill("SIGTERM");
-      killTimer = setTimeout(() => kill("SIGKILL"), 250);
-    }
+    kill("SIGTERM");
+    killTimer = setTimeout(() => kill("SIGKILL"), 250);
   };
   const abort = () =>
     stop(
@@ -174,12 +142,6 @@ export async function runOwnedCommand(path, args, options) {
   try {
     const outcome = await Promise.race([exited, deadline]);
     if (outcome === false) throw cleanupFailure(label, decoder.current);
-    if (process.platform === "win32" && pid) {
-      // taskkill is best effort only: after the entrypoint exits it cannot prove
-      // that ignored-stdio descendants have settled. Keep artifacts owned.
-      await windowsTermination;
-    }
-    if (process.platform === "win32" && pid) throw cleanupFailure(label, decoder.current);
     // A descendant may keep inherited pipes open after the entrypoint exits.
     if (pid) {
       const state = groupState(pid, label, decoder.current);
@@ -187,7 +149,6 @@ export async function runOwnedCommand(path, args, options) {
       if (state !== "absent")
         await waitForProcessGroupSettlement(pid, label, decoder.current, settlementEnd);
     }
-    await windowsTermination;
     if ((await Promise.race([Promise.all([done, streams]).then(() => true), deadline])) === false)
       throw cleanupFailure(label, decoder.current);
     if (options.log) await writeFile(options.log, Buffer.concat(log));

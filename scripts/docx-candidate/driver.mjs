@@ -13,6 +13,8 @@ export async function runCandidateDriver(options, run) {
   let retained;
   try {
     await harness.start();
+    if (process.platform === "win32")
+      throw new HarnessError("startup", "POSIX process groups required");
     workspace = await mkdtemp(join(tmpdir(), options.prefix));
     result = await run(harness, workspace);
   } catch (error) {

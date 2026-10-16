@@ -10,7 +10,10 @@ const commands = {
       "  --smoke           Run the smoke corpus.",
       "  --keep-artifacts  Keep smoke inputs/results; requires --smoke.",
     ],
-    notes: ["Kept artifacts: examples/playground/docx-candidate/smoke/<run-id>/"],
+    notes: [
+      "Requires POSIX process groups.",
+      "Kept artifacts: examples/playground/docx-candidate/smoke/<run-id>/",
+    ],
   },
   measurement: {
     description: "Check production DOCX budgets across 18 workloads with idle and loaded callers.",

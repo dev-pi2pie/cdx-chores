@@ -27,7 +27,6 @@ async function run(harness, workspace, load) {
       stage: "runner",
       label: `Production reader measurements ${load}`,
       progress: true,
-      posixOnly: true,
       cwd: workspace,
       timeout: 180_000,
       log,
@@ -56,7 +55,6 @@ if (cli) {
       failure: () => "reader measurements: passed no\n",
     },
     async (harness, workspace) => {
-      assert.notEqual(process.platform, "win32", "Measurements require POSIX process groups");
       await symlink(join(repo, "node_modules"), join(workspace, "node_modules"), "junction");
       await harness.command(
         process.execPath,
@@ -66,7 +64,6 @@ if (cli) {
           label: "Build measurement assets",
           cwd: repo,
           timeout: 60_000,
-          posixOnly: true,
           env: { NO_COLOR: "1", TMPDIR: workspace, TMP: workspace, TEMP: workspace },
         },
       );

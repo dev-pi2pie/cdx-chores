@@ -177,7 +177,7 @@ These commands validate the production reader explicitly, using frozen expectati
 
 Help and invalid arguments return before execution setup. Help uses stdout and exits zero; invalid arguments use stderr and exit nonzero. Help is concise plain text, including in a terminal; detailed requirements and lifecycle instructions follow below.
 
-Run from the repository root after installing dependencies, using Node.js >=22.23.0. Progress streams to stderr; final comparison status and measurement status/JSON remain on stdout. Full comparisons cover 134 cases per format; measurements check 18 workloads and controlled RSS transitions. Package validation checks eight fresh-consumer paths and requires npm, Bun, tar, and registry access. Measurement/package drivers require POSIX process groups. Comparison has no POSIX-only preflight, but its current Windows path cannot confirm descendant settlement and fails with unconfirmed cleanup, retaining artifacts. Windows execution is unverified.
+Run from the repository root after installing dependencies, using Node.js >=22.23.0. Progress streams to stderr; final comparison status and measurement status/JSON remain on stdout. Full comparisons cover 134 cases per format; measurements check 18 workloads and controlled RSS transitions. Package validation checks eight fresh-consumer paths and requires npm, Bun, tar, and registry access. All three execution commands require POSIX process groups and reject Windows before creating a workspace or starting children. Help remains available on every platform; this manual tooling does not establish product platform coverage.
 
 ```sh
 # Usage, scope, and command requirements.
