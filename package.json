@@ -55,7 +55,7 @@
     "@duckdb/node-api": "^1.5.6-r.1",
     "@inquirer/prompts": "8.7.3",
     "@inquirer/search": "4.3.4",
-    "@openai/codex-sdk": "^0.161.0",
+    "@openai/codex-sdk": "^0.163.0",
     "@shikijs/transformers": "^4.5.0",
     "commander": "^15.0.0",
     "fast-xml-parser": "5.11.2",
@@ -68,12 +68,12 @@
     "yauzl": "^3.4.0"
   },
   "devDependencies": {
-    "@types/bun": "1.4.2",
-    "@types/node": "26.6.4",
-    "oxfmt": "0.71.0",
-    "oxlint": "1.87.0",
+    "@types/bun": "1.4.3",
+    "@types/node": "26.6.5",
+    "oxfmt": "0.73.0",
+    "oxlint": "1.88.0",
     "picocolors": "^1.1.1",
-    "tsdown": "0.23.0",
+    "tsdown": "0.23.1",
     "typescript": "^7.0.2"
   },
   "engines": {
