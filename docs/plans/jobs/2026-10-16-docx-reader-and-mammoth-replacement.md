@@ -53,8 +53,23 @@ Phase 2 source baseline: `e21bc413ec52a2b882b4a01f25f527e962331dbf`.
 | Phase 2 design agreement | Yes; implementation scope and validation method accepted |
 | New candidate implementation started | No |
 
-Reviewed substantive range: `e21bc413..b3dbe021`. Review fixes distinguish successful empty conversion from converter failure, prove overlapping style-rule precedence, and assert note ordering/ranking before deduplication.
+Reviewed full Phase 2 range: `e21bc413..35bfe746`. Review fixes distinguish successful empty conversion from converter failure, prove overlapping style-rule precedence, and assert note ordering/ranking before deduplication.
+
+## Phase 3: Initial Reader
+
+Source baseline: `35bfe7466bf797bff6d49f0d143ce6a3f83ede03`. The private inline reader is an evaluation slice; production extraction continues through Mammoth.
+
+| Check | Result |
+| --- | --- |
+| [Identified 22-case comparisons](../../../scripts/docx-candidate/cases.ts), complete evidence/prompts, independent expectations | Passed; only agreed extractor identity differs |
+| Built ESM/CJS checks under Node, including minimum supported runtime | Passed |
+| [Footprint and remaining work](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#initial-reader-assessment) assessed | Yes |
+| Lint, formatting, types | Passed |
+| Production build and managed unit checks | Passed |
+| Managed application checks | Passed |
+| Full Phase 3 range review | Pending |
+| Complexity checkpoint | Continue, subject to phase verification/review |
 
 ## Later Phases
 
-Phase 3 is next; Phases 4–10 are unstarted. Numerical budget/support acceptance, candidate compatibility, maintenance acceptance, and shipping checks remain pending. Production behavior and dependencies are unchanged from the Phase 1 checkpoint.
+Phase 3 is in progress; Phases 4–10 are unstarted. Numerical budget/support acceptance, complete candidate compatibility, maintenance acceptance, and shipping checks remain pending. Mammoth remains the production extractor; dependencies are unchanged.

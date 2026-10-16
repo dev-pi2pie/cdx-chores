@@ -437,15 +437,37 @@ Design agreement authorizes a private, inline buffer-to-facts reader for trusted
 
 These 22 cases must preserve complete evidence and prompt payloads except extractor identity: `docx-reader+ooxml` when metadata is available, otherwise `docx-reader`, replacing the corresponding `mammoth+ooxml`/`mammoth` value. Synthetic inputs retain independent assertions. Record source footprint, helper changes, difficult semantics, and remaining enforcement/content/packaging work before deciding continue, constrain, or defer. Remaining original/contract/resource cases are untested candidate obligations, not implicitly supported input. The inline reader is unguarded evaluation code; the child/worker boundary and its enforcement tests belong to Phase 4.
 
+### Initial reader assessment
+
+The [private reader](../../src/docx/reader.ts) and [comparison harness](../../scripts/docx-candidate/launch.mjs) match all 22 identified cases for ordered heading facts, separate raw text, metadata, content presence, complete evidence, and complete prompts. The sole outward difference is the agreed extractor identity. Built ESM/CJS entries also pass under Node, including the minimum supported runtime. These checks use the inline evaluation path rather than an installed or supervised candidate.
+
+| Responsibility | Initial footprint / finding |
+| --- | --- |
+| Package/content reader | 336 lines in five private modules: orchestration, ordered XML, body traversal, direct heading rules, and facts types. |
+| Rename policy | 113-line shared assembly extracted from the existing adapter; ranking and warning/reason policy remain there. |
+| Existing package/metadata helpers | One package read; pure metadata-from-parts helper; fixed embedded-style-map opt-in retaining default behavior and the existing part cap. |
+| Evaluation harness/tests | 321 lines for case selection, test-only adapter, complete comparisons, temporary builds, and application assertions. |
+| Difficult semantics demonstrated | Deferred text-box ordering, direct style mapping without inherited-heading promotion, and HTML-content presence separate from usable text. |
+
+The existing package helper still skips parts above 256 KiB; this is an initial-slice limitation, not the proposed content budget. Image presence is inferred from internal relationship references without validating media bytes. Restricted style maps and unsupported symbol/note/field paths do not establish broader compatibility. Raw parser exceptions are not returned as diagnostics; initial failure codes stay internal. Mammoth remains the production extractor, and all frozen production baseline captures still match after helper extraction.
+
+| Remaining work | Estimated scope |
+| --- | --- |
+| Phase 4: isolation | Substantial: supervisor, child/worker assets, bounded framing, input reading, admission, sampled RSS, deadline/cancellation, cleanup, and fault observations. |
+| Phase 5: content | Substantial: heading-affecting style projection, mapper provenance/adoption, note snapshots/duplicates/failures, remaining text/discovery/secondary-content cases, and diagnostic mappings. |
+| Phase 6: complete validation | Measurements and all-case comparison, required runtime assets in both formats, fresh npm/Bun consumers, installed trees, and maintainer budget/support acceptance. |
+
+The complexity checkpoint supports **continue**: the demonstrated slice remains focused and shares package/metadata/rename policy rather than introducing parallel implementations. This is an initial feasibility result, conditional on phase verification/review; it does not select the replacement. Style-path projection and process lifecycle remain the largest unproved responsibilities. Stop after Phase 3; later expansion must retain the complete corpus and reconsider deferral if those responsibilities exceed the focused reader's benefit.
+
 ## Validation Matrix and Method
 
 ### Minimum comparison corpus
 
-Existing fixtures and assertions provide seeds. Each variation below needs an identifiable case and expected handling; one fixture may cover several independently asserted variations. The retained baseline does not cover every new isolation, font/code, or support-policy decision above. Extend those cases before claiming complete candidate validation under the revised contract. Unsupported-content cases establish a limitation or failure policy rather than a promise to support every DOCX feature.
+Existing fixtures and assertions provide seeds. Each variation below needs an identifiable case and expected handling; one fixture may cover several independently asserted variations. The initial-reader assessment above covers only its 22 identified inputs; complete category validation, including the supervised path, remains pending. The retained baseline does not cover every new isolation, font/code, or support-policy decision above. Extend those cases before claiming complete candidate validation under the revised contract. Unsupported-content cases establish a limitation or failure policy rather than a promise to support every DOCX feature.
 
 | Category                         | Minimum cases and questions                                                                                                                                                                                                               | Evidence state                                                      |
 | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Existing evidence                | All seven DOCX fixtures: metadata-rich, heading-rich, weak-heading, no-heading, table-heavy, hyperlink-heavy, and alternate-editor. Preserve existing title-evidence assertions.                                                          | Baseline captured; candidate comparison pending.         |
+| Existing evidence                | All seven DOCX fixtures: metadata-rich, heading-rich, weak-heading, no-heading, table-heavy, hyperlink-heavy, and alternate-editor. Preserve existing title-evidence assertions.                                                          | Initial slice matched; supervised comparison pending.         |
 | Metadata and part discovery      | Missing/malformed metadata, non-default metadata paths, UTF-16, dot-segments, and percent-escaped paths; non-default main-document/style parts and namespace variants.                                                                    | Baseline captured; candidate comparison pending.              |
 | Text and order                   | Split runs, Unicode and preserved spaces, symbol characters, tabs/breaks, blank lines, lists, and paragraphs before/inside/after tables or content controls.                                                                              | Baseline captured; candidate comparison pending.                                 |
 | Heading styles                   | Standard/custom/localized names, inherited styles, default/embedded style mappings, outline levels, missing definitions, and cyclic inheritance.                                                                                          | Baseline captured; candidate comparison pending.                                 |

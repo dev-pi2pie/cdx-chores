@@ -31,6 +31,13 @@ export async function readDocxCoreMetadata(path: string): Promise<ReadDocxCoreMe
     return parts;
   }
 
+  return readDocxCoreMetadataFromParts(parts);
+}
+
+/** Apply existing metadata policy to an already-read package. */
+export function readDocxCoreMetadataFromParts(
+  parts: Map<string, string>,
+): ReadDocxCoreMetadataResult {
   const { appPropertiesPath, corePropertiesPath } = resolveDocxMetadataPartPaths(parts);
 
   const metadata = parseDocxCoreProperties(

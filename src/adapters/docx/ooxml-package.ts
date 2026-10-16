@@ -6,14 +6,18 @@ import { normalizePackagePartPath } from "./ooxml-part-path";
 const MAX_DOCX_METADATA_PART_BYTES = 256 * 1024;
 type XmlTextEncoding = "utf-8" | "utf-16" | "utf-16le" | "utf-16be";
 
-function shouldReadXmlLikePart(entry: Entry): boolean {
+function shouldReadXmlLikePart(entry: Entry, includeEmbeddedStyleMap: boolean): boolean {
   if (entry.fileName.endsWith("/")) {
     return false;
   }
   if (entry.uncompressedSize > MAX_DOCX_METADATA_PART_BYTES) {
     return false;
   }
-  return entry.fileName.endsWith(".xml") || entry.fileName.endsWith(".rels");
+  return (
+    entry.fileName.endsWith(".xml") ||
+    entry.fileName.endsWith(".rels") ||
+    (includeEmbeddedStyleMap && normalizePackagePartPath(entry.fileName) === "/mammoth/style-map")
+  );
 }
 
 function readZipFileFromBuffer(buffer: Buffer): Promise<ZipFile> {
@@ -138,6 +142,7 @@ function readZipEntryText(zipFile: ZipFile, entry: Entry): Promise<string> {
 
 export async function readDocxXmlParts(
   buffer: Buffer,
+  options: { includeEmbeddedStyleMap?: boolean } = {},
 ): Promise<Map<string, string> | { reason: "docx_extract_error" }> {
   let zipFile: ZipFile | undefined;
 
@@ -154,7 +159,7 @@ export async function readDocxXmlParts(
         resolve(parts);
       });
       openedZipFile.on("entry", async (entry: Entry) => {
-        if (!shouldReadXmlLikePart(entry)) {
+        if (!shouldReadXmlLikePart(entry, options.includeEmbeddedStyleMap === true)) {
           openedZipFile.readEntry();
           return;
         }

@@ -42,6 +42,8 @@ Use [Test Suite Audit Inventory](test-suite-audit-inventory.md) for the fixed pr
 
 `docx-baseline-contract.app.test.ts` owns the separate symbol, style-map, and note contract cases, independent assertions, complete evidence/prompt comparisons, and bounded Node verification. Cycle observations execute only in deadline-bounded Node children; they do not run directly in the application test process. The same private harness provides `verify-contract` and explicit `capture-contract --export-stdout`; ordinary verification preserves both the original and contract expectation files.
 
+`docx-candidate.app.test.ts` owns the initial reader's 22-case facts, complete evidence/prompt comparisons, and embedded-style-map helper opt-in/cap assertions. `scripts/docx-candidate/launch.mjs` builds private ESM/CJS entries and verifies them under Node in owned temporary storage. These are trusted-input slice checks; they do not establish resource enforcement, full content support, or fresh-consumer package acceptance.
+
 ### Video Frames
 
 `test/video/interactive/frames-*.unit.test.ts` owns selector grammar, coarse movement, adaptive display fit, naming tokens, and completion. `frames-controller.app.test.ts` owns input sessions, resolver cancellation, restoration, and isolated checks against the installed prompt library. Its real-library fixture stays beside that consumer under `test/video/interactive/fixtures/`.
