@@ -2,7 +2,7 @@
 title: "DOCX reader review follow-up"
 created-date: 2026-10-16
 modified-date: 2026-10-16
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -82,13 +82,15 @@ Address drawing relationship failures, duplicate fallback handling, and stale ve
 - [x] Add independent inline/anchored drawing evidence and prompt regressions with source-scoped relationship checks.
 - [x] Keep AlternateContent fallback selection in XML parsing and cover nested fallback, absent fallback, and excluded choices.
 - [x] Correct current harness/package wording and related coverage references.
-- [ ] Pass focused, routine, built-runtime, measurement, and packed-consumer verification.
-- [ ] Review the complete follow-up and combined implementation ranges, resolve findings, and confirm cleanup.
+- [x] Pass focused, routine, built-runtime, measurement, and packed-consumer verification.
+- [x] Review the complete follow-up and combined implementation ranges, resolve findings, and confirm cleanup.
 
 | Area | Outcome |
 | --- | --- |
 | Drawing relationships | Fifty independently authored cases match historical conversion; twenty-five reproduced failures before fixes; content and compiled evidence/prompt checks passed |
 | Fallback ownership / wording | Four historical-equivalent fallback cases passed; duplicate semantic handler removed; shared POSIX preflight and product integrity coverage clarified |
-| Verification | Pending |
-| Full-range review | Pending |
-| Artifact cleanup | Pending |
+| Routine verification | 1,805 unit and 2,331 application cases passed; application 216.29 seconds under unchanged 240-second deadline; lint, format, types, and shipping build passed |
+| Built runtime comparisons | 134 historical and 106 follow-up cases per format on primary/minimum Node passed; complete evidence/prompts checked |
+| Measurements / packed consumers | Eighteen workloads per runtime and eight fresh npm/Bun × runtime × format consumer paths passed; deadline, RSS, and lifecycle checks passed |
+| Full-range review | `dfb748ed..3912a814` reviewed with DOCX integration checks across `bc6e3e98..3912a814`; redundant fixture builds replaced by one build with bounded batches; no remaining material findings; closing docs reviewed separately |
+| Artifact cleanup | Owned manual and managed-test workspaces removed after settlement; temporary builds, runtime cache, and logs removed; frozen captures and dependency versions unchanged; no smoke artifacts retained |
