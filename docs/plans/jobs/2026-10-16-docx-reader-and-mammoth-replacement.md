@@ -80,9 +80,12 @@ Source baseline: `13b66b3b9ea7961bae5c897c3d0a56962541611f`.
 | Check | Result |
 | --- | --- |
 | [Selected-part guards and cleanup](../../../test/document-rename/docx-resource.unit.test.ts), initial reader facts, unchanged baseline captures | Passed |
-| Process/worker boundary and transport | In progress |
-| Boundary failures, offline controls, and cleanup checks | Pending |
-| Built-format comparisons and applicable managed checks | Pending |
+| Process/worker boundary and transport | Passed; private candidate only |
+| Boundary failures, offline controls, and cleanup checks | Passed; 27 unit checks and 36 Node scenarios |
+| Guarded 22-case ESM/CJS comparisons, including minimum Node | Passed |
+| Prototype overhead and provisional API window | Measured; passed |
+| Lint, formatting, types, build, and managed unit checks | Passed |
+| Managed application checks | In progress |
 | Full phase review and documentation validation | Pending |
 
 ## Later Phases

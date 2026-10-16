@@ -199,6 +199,23 @@ describe("selected DOCX resource enforcement", () => {
     }
   });
 
+  test("concurrent reads and duplicate close calls settle pending stream creation", async () => {
+    const archive = await openGuardedDocxPackage(
+      buildStoredZip([
+        ["one.xml", "123"],
+        ["two.xml", "456"],
+      ]),
+      resolveDocxLimits(),
+    );
+    const first = archive.readText("/one.xml");
+    const second = archive.readText("/two.xml");
+    const settled = Promise.allSettled([first, second]);
+    await Promise.all([archive.close(), archive.close()]);
+    expect(archive.closed).toBe(true);
+    expect((await settled).map((result) => result.status)).toEqual(["rejected", "rejected"]);
+    await expect(archive.readText("/one.xml")).rejects.toThrow("docx_package_unavailable");
+  });
+
   test("XML scans ignore comment/CDATA markup and bound aggregate distinct selected parts", () => {
     const budget = new XmlBudget(resolveDocxLimits({ xmlElementCount: 3, maxXmlDepth: 2 }));
     const first = '<root value=">"><!--<ignored/>--><![CDATA[<ignored/>]]><child/></root>';

@@ -12,7 +12,8 @@ import type * as candidate from "./adapter";
 export type CandidateModule = Pick<
   typeof candidate,
   "readDocxDocument" | "extractCandidateDocxEvidence"
->;
+> &
+  Partial<Pick<typeof candidate, "readCandidateDocx">>;
 
 /** Match baseline capture serialization, including omitted optional fields. */
 function captured<T>(value: T): T {
@@ -27,7 +28,9 @@ export async function compareInitialReader(
   path: string,
   directory: string,
 ): Promise<void> {
-  const read = await module.readDocxDocument(bytes);
+  const read = module.readCandidateDocx
+    ? await module.readCandidateDocx(path)
+    : await module.readDocxDocument(bytes);
   const result = captured(await module.extractCandidateDocxEvidence(path));
   const expected = structuredClone(baseline.result);
   let expectedPrompt = baseline.prompt;

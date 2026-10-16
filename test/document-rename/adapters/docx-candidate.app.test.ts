@@ -4,7 +4,10 @@ import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promis
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 
-import * as candidate from "../../../scripts/docx-candidate/adapter";
+import {
+  createCandidateEvidenceExtractor,
+  readDocxDocument,
+} from "../../../scripts/docx-candidate/adapter";
 import { createInitialReaderCases } from "../../../scripts/docx-candidate/cases";
 import { compareInitialReader } from "../../../scripts/docx-candidate/compare";
 import type { DocxCapture } from "../../../scripts/docx-baseline/capture";
@@ -18,6 +21,13 @@ const baseline = JSON.parse(
     "utf8",
   ),
 ) as DocxCapture[];
+
+const candidate = {
+  readDocxDocument,
+  extractCandidateDocxEvidence: createCandidateEvidenceExtractor(async (path) =>
+    readDocxDocument(await readFile(path)),
+  ),
+};
 
 for (const item of createInitialReaderCases()) {
   test(`initial DOCX reader preserves complete evidence and prompt: ${item.id}`, async () => {
@@ -67,12 +77,12 @@ test("built ESM/CJS reader comparisons run in Node and clean temporary assets", 
       cwd: REPO_ROOT,
       env: { ...process.env, TMPDIR: parent, TMP: parent, TEMP: parent },
       encoding: "utf8",
-      timeout: 60_000,
+      timeout: 250_000,
       stdio: ["ignore", "pipe", "pipe"],
     });
-    expect(output).toBe("initial reader: passed yes\n");
+    expect(output).toBe("guarded reader: passed yes\n");
     expect(await readdir(parent)).toEqual([]);
   } finally {
     await rm(parent, { recursive: true });
   }
-}, 70_000);
+}, 260_000);

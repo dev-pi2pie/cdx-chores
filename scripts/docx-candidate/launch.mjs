@@ -25,7 +25,12 @@ try {
     };
     await build({
       ...common,
-      entry: { reader: "scripts/docx-candidate/adapter.ts" },
+      entry: {
+        reader: "scripts/docx-candidate/adapter.ts",
+        "docx-child": "src/docx/runtime/docx-child.ts",
+        "docx-worker": "src/docx/runtime/docx-worker.ts",
+        "docx-parser": "src/docx/reader.ts",
+      },
       format: ["esm", "cjs"],
     });
     await build({
@@ -44,7 +49,7 @@ try {
           TEMP: workspace,
           NO_COLOR: "1",
         },
-        timeout: 45_000,
+        timeout: 120_000,
         maxBuffer: 1024 * 1024,
         encoding: "utf8",
         stdio: ["ignore", "pipe", "pipe"],
@@ -52,8 +57,8 @@ try {
       if (output !== `${format}: passed yes\n`) throw new Error("Unexpected comparison output");
     }
   });
-  process.stdout.write("initial reader: passed yes\n");
+  process.stdout.write("guarded reader: passed yes\n");
 } catch {
-  process.stdout.write("initial reader: passed no\n");
+  process.stdout.write("guarded reader: passed no\n");
   process.exitCode = 1;
 }

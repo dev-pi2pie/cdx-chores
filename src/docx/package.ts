@@ -67,12 +67,12 @@ export async function openGuardedDocxPackage(
     // emit an archive close event. Await the actual streams and pending opens.
     zip.close();
     closing = (async () => {
-      await Promise.allSettled([...opening]);
+      await Promise.allSettled(opening);
       for (const stream of active) stream.destroy();
       await Promise.all(
         [...active].map((stream) => finished(stream, { cleanup: true }).catch(() => {})),
       );
-      await Promise.allSettled([...tasks]);
+      await Promise.allSettled(tasks);
       active.clear();
       reads.clear();
     })();

@@ -42,9 +42,11 @@ Use [Test Suite Audit Inventory](test-suite-audit-inventory.md) for the fixed pr
 
 `docx-baseline-contract.app.test.ts` owns the separate symbol, style-map, and note contract cases, independent assertions, complete evidence/prompt comparisons, and bounded Node verification. Cycle observations execute only in deadline-bounded Node children; they do not run directly in the application test process. The same private harness provides `verify-contract` and explicit `capture-contract --export-stdout`; ordinary verification preserves both the original and contract expectation files.
 
-`docx-candidate.app.test.ts` owns the initial reader's 22-case facts, complete evidence/prompt comparisons, and embedded-style-map helper opt-in/cap assertions. `scripts/docx-candidate/launch.mjs` builds private ESM/CJS entries and verifies them under Node in owned temporary storage. These are trusted-input slice checks; they do not establish resource enforcement, full content support, or fresh-consumer package acceptance.
+`docx-candidate.app.test.ts` owns the initial reader's 22-case inline facts, complete evidence/prompt comparisons, and embedded-style-map helper opt-in/cap assertions. `scripts/docx-candidate/launch.mjs` builds private ESM/CJS entries with child, worker, and parser assets and verifies the same comparisons through the supervised Node path in owned temporary storage. These checks do not establish full content support or fresh-consumer package acceptance.
 
 `test/document-rename/docx-resource.unit.test.ts` owns the private candidate's numeric policy, selected ZIP/XML/style work, byte and structure boundaries, and archive/stream cleanup. These enforcement assertions are separate from the baseline inspector's whole-package measurements and final budget acceptance.
+
+`docx-runtime.unit.test.ts` owns strict request/result framing, schema validation, environment policy, and controlled RSS/deadline observations. `docx-runtime.app.test.ts` owns real Node child/worker failures, admission, cancellation, parent loss, sampled RSS, offline controls, and confirmed cleanup. Its durable fixture scripts stay under `test/document-rename/fixtures/docx-runtime/`; generated inputs and builds use the shared managed-test lifecycle and are removed after verification.
 
 ### Video Frames
 
