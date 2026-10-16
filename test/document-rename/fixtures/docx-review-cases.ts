@@ -41,6 +41,21 @@ export function createDocxReviewCases(): ReviewCase[] {
   );
   return [
     {
+      id: "review-shared-malformed-metadata-budget",
+      options: {
+        body: paragraph("Metadata Accounting Report", "Heading1"),
+        extraParts: [["docProps/shared.xml", "<root>" + "<a/>".repeat(50_000)]],
+        replaceParts: [
+          [
+            "[Content_Types].xml",
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/docProps/shared.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/shared.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>',
+          ],
+        ],
+      },
+      rawText: "Metadata Accounting Report\n\n",
+      headings: [{ level: 1, text: "Metadata Accounting Report" }],
+    },
+    {
       id: "review-strong-heading-boundaries",
       options: { body: heading(run("Annual") + strongRun + run("Report")), styles: strongStyles },
       rawText: "AnnualFinancialReport\n\n",

@@ -1,7 +1,7 @@
 ---
 title: "DOCX reader review follow-up"
 created-date: 2026-10-16
-status: completed
+status: in-progress
 agent: codex
 ---
 
@@ -48,4 +48,22 @@ node ./scripts/docx-candidate/measure-launch.mjs
 node ./scripts/docx-candidate/package-check.mjs
 ```
 
-The follow-up is complete. Earlier platform and validation limitations remain recorded in the [original shipping record](2026-10-16-docx-reader-and-mammoth-replacement.md#phase-9-mammoth-removal-and-shipping-verification). Closing documentation was reviewed separately from the code/test range; raw execution reports remain temporary.
+The original follow-up is complete. Earlier platform and validation limitations remain recorded in the [original shipping record](2026-10-16-docx-reader-and-mammoth-replacement.md#phase-9-mammoth-removal-and-shipping-verification). Closing documentation was reviewed separately from the code/test range; raw execution reports remain temporary.
+
+## Additional Review Follow-Up
+
+Address the remaining XML accounting, hyperlink compatibility, and manual harness findings from review of `bc6e3e98..97cdb606`. Source baseline: `97cdb606`. Earlier results above remain historical; the accepted CDATA departure and resource limits are unchanged.
+
+- [x] Charge each physical XML part once, including failed inspections; preserve safety failures and distinct-entry accounting.
+- [ ] Preserve empty-ID and unresolved-target hyperlink behavior, with independent evidence and prompt regressions.
+- [ ] Require POSIX process groups before manual execution creates artifacts; remove ineffective Windows handling and redundant options.
+- [ ] Pass focused, routine, built-runtime, measurement, and packed-consumer checks.
+- [ ] Review the complete follow-up range and combined implementation, resolve findings, and confirm cleanup.
+
+| Area | Outcome |
+| --- | --- |
+| XML accounting | Failed scans retain their original charge and failure; focused resource/content and compiled evidence/prompt regressions passed |
+| Hyperlinks | Pending |
+| Manual harness | Pending |
+| Verification | Pending |
+| Review / cleanup | Pending |

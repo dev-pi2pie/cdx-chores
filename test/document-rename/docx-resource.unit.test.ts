@@ -313,6 +313,29 @@ describe("selected DOCX resource enforcement", () => {
     expect(() => budget.inspect("/three.xml", "<root/>")).toThrow("docx_limit:xmlElementCount");
   });
 
+  test("malformed physical parts consume XML elements once and replay their failure", () => {
+    const budget = new XmlBudget(resolveDocxLimits({ xmlElementCount: 3 }));
+    const part = {};
+    for (let attempt = 0; attempt < 3; attempt += 1)
+      expect(() => budget.inspect(part, "<root><child/>")).toThrow("docx_xml_invalid");
+    // The failed scan consumed two elements; a distinct part still consumes the third.
+    expect(() => budget.inspect({}, "<last/>")).not.toThrow();
+    expect(() => budget.inspect({}, "<overflow/>")).toThrow("docx_limit:xmlElementCount");
+  });
+
+  test("repeated physical parts cannot bypass a cached XML safety failure", () => {
+    for (const [limits, xml, diagnostic] of [
+      [{ xmlElementCount: 1 }, "<root><child/></root>", "docx_limit:xmlElementCount"],
+      [{ maxXmlDepth: 1 }, "<root><child/></root>", "docx_limit:maxXmlDepth"],
+      [{}, "<!DOCTYPE root><root/>", "docx_xml_declaration_unsupported"],
+    ] as const) {
+      const budget = new XmlBudget(resolveDocxLimits(limits));
+      const part = {};
+      for (let attempt = 0; attempt < 2; attempt += 1)
+        expect(() => budget.inspect(part, xml)).toThrow(diagnostic);
+    }
+  });
+
   test("rejects declarations before entity expansion and closes failed selected reads", async () => {
     const result = await readDocxDocument(
       buildStoredZip([

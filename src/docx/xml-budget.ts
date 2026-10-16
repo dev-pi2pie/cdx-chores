@@ -3,12 +3,27 @@ import { checkDocxLimit, type DocxLimits } from "./limits";
 /** Checks structure and allocation bounds before either XML parser sees a part. */
 export class XmlBudget {
   private elements = 0;
-  private readonly inspected = new Set<string | object>();
+  private readonly inspected = new Map<string | object, unknown>();
 
   constructor(private readonly limits: DocxLimits) {}
 
   inspect(part: string | object, xml: string): void {
-    if (this.inspected.has(part)) return;
+    if (this.inspected.has(part)) {
+      const failure = this.inspected.get(part);
+      if (failure !== undefined) throw failure;
+      return;
+    }
+    try {
+      this.scan(xml);
+      this.inspected.set(part, undefined);
+    } catch (error) {
+      // Retain the first scan's charge and replay its failure for every alias.
+      this.inspected.set(part, error);
+      throw error;
+    }
+  }
+
+  private scan(xml: string): void {
     const stack: string[] = [];
     let cursor = 0;
     while (cursor < xml.length) {
@@ -52,6 +67,5 @@ export class XmlBudget {
       cursor = end + 1;
     }
     if (stack.length) throw new Error("docx_xml_invalid");
-    this.inspected.add(part);
   }
 }
