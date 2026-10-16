@@ -2,7 +2,7 @@
 title: "DOCX reader review follow-up"
 created-date: 2026-10-16
 modified-date: 2026-10-16
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -138,11 +138,16 @@ Address the attribute-whitespace finding from review of `bc6e3e98..bc9e9d9c`. So
 
 - [x] Normalize literal attribute whitespace before reference decoding while preserving text, literal sections, namespace resolution, and physical-part accounting.
 - [x] Add independent parser and complete evidence/prompt regressions; reproduce failures before the fix.
-- [ ] Pass focused, routine, built-runtime, quality, and renewed workload checks; update coverage references.
-- [ ] Review the complete follow-up and combined DOCX ranges, resolve findings, and clean owned artifacts.
+- [x] Pass focused, routine, built-runtime, quality, and renewed workload checks; update coverage references.
+- [x] Review the complete follow-up and combined DOCX ranges, resolve findings, and clean owned artifacts.
 
 | Area | Outcome |
 | --- | --- |
 | Attribute normalization | Literal tab/LF/CR become spaces; CRLF becomes one space; numeric references retain decoded controls and repeated spaces remain distinct |
 | Regressions | Twenty-five historical-equivalent DOCX cases and four parser controls added; thirteen pre-fix test failures reproduced; focused checks passed |
-| Initial verification | 270 focused and 1,876 unit cases passed; lint, format, and types passed; application and runtime checks pending |
+| Routine verification | 270 focused, 1,876 unit, and 2,331 application cases passed; application 231.17 seconds under unchanged 240-second deadline; lint, format, types, and shipping build passed |
+| Built runtime comparisons | 134 historical and 160 follow-up cases per format on primary/minimum Node passed; complete evidence/prompts checked; frozen captures unchanged |
+| Renewed measurements | Eighteen workloads per runtime passed with idle/loaded callers; deadline, RSS, and lifecycle checks passed |
+| Earlier packed-consumer evidence | Retained from the drawing follow-up; distribution boundaries unchanged |
+| Full-range review | `bc9e9d9c..351481b7` and combined `bc6e3e98..351481b7` reviewed; no remaining material findings; closing docs reviewed separately |
+| Artifact cleanup | Owned manual and managed-test workspaces settled and removed; temporary inputs, builds, runtime cache, and logs removed; no smoke artifacts retained |
