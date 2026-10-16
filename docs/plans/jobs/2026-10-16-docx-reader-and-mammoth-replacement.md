@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phase 1 is complete. Current scope is research/plan documentation; stop before Phase 3 implementation.
+Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phase 1 is complete. Current scope covers Phases 2–3, with design agreement required before Phase 3; stop before Phase 4.
 
 ## Phase 1 Outcomes
 
@@ -34,9 +34,11 @@ Reusable evidence: [harness](../../../scripts/docx-baseline/launch.mjs), [corpus
 
 Reviewed Phase 1 range: `bc6e3e98..b6299eae`. Result: no remaining material findings.
 
-## Phase 2: Research and Plan Revision
+## Phase 2: Research and Contract
 
 The earlier candidate attempt is preserved on `codex/docx-reader-phase2-preserved` at `2034f31e`. The active work resumed from the completed Phase 1 checkpoint, `b6f456e0`; preserved candidate checks do not satisfy the revised contract.
+
+Phase 2 source baseline: `e21bc413ec52a2b882b4a01f25f527e962331dbf`.
 
 | Check | Result |
 | --- | --- |
@@ -44,6 +46,10 @@ The earlier candidate attempt is preserved on `codex/docx-reader-phase2-preserve
 | [Technical research section and ASCII sketches](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#resource-isolation-and-content-support-contract) added | Yes |
 | Plan renumbered into ten outcome-focused phases | Yes |
 | Documentation review and link/status checks | Yes; no remaining material findings |
+| Additional baseline contract cases | Yes; 33 cases, original 91 unchanged |
+| Runtime and content contract review | Yes; proposed contract recorded |
+| Lint, formatting, types, build, managed unit/application checks, Node baseline/contract verification | Passed |
+| Phase 2 full-range review | Pending |
 | Phase 2 design agreement | Pending |
 | New candidate implementation started | No |
 

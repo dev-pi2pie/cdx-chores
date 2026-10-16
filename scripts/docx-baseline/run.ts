@@ -14,6 +14,7 @@ import {
 } from "./capture";
 import type { DocxCapture } from "./capture";
 import { createBaselineCases } from "./corpus/index";
+import { createContractCases } from "./corpus/contract/index";
 import { createResourceCases } from "./resource-cases";
 import { inspectDocxResources } from "./resources";
 
@@ -22,6 +23,10 @@ const expectedPath = join(repo, "test/document-rename/fixtures/docx-baseline/exp
 const resourceExpectedPath = join(
   repo,
   "test/document-rename/fixtures/docx-baseline/resources.json",
+);
+const contractExpectedPath = join(
+  repo,
+  "test/document-rename/fixtures/docx-baseline/contract.json",
 );
 const timeoutMs = 15_000;
 const self = fileURLToPath(import.meta.url);
@@ -130,14 +135,18 @@ async function main() {
     return;
   }
   assert(
-    ["capture", "verify", "measure", "offline"].includes(mode ?? ""),
-    "Use launch.mjs verify|measure|offline, or capture --export-stdout",
+    ["capture", "verify", "measure", "offline", "capture-contract", "verify-contract"].includes(
+      mode ?? "",
+    ),
+    "Use launch.mjs verify|verify-contract|measure|offline, or capture[-contract] --export-stdout",
   );
   const workspace = process.env.DOCX_BASELINE_WORKSPACE;
   assert(workspace, "Use launch.mjs to own the temporary workspace");
-  assert(mode !== "capture" || input === "--export-stdout", "Capture requires --export-stdout");
-  const cases = createBaselineCases();
-  const resourceCases = createResourceCases();
+  const captureMode = mode === "capture" || mode === "capture-contract";
+  const contractMode = mode === "capture-contract" || mode === "verify-contract";
+  assert(!captureMode || input === "--export-stdout", "Capture requires --export-stdout");
+  const cases = contractMode ? createContractCases() : createBaselineCases();
+  const resourceCases = contractMode ? [] : createResourceCases();
   const all = [...cases, ...resourceCases];
   assert.equal(new Set(all.map((item) => item.id)).size, all.length, "Duplicate case IDs");
   const inputs = join(workspace, "inputs");
@@ -187,19 +196,20 @@ async function main() {
       );
     }
   } else {
-    if (mode === "verify") {
+    if (mode === "verify" || mode === "verify-contract") {
       assert.deepEqual(
         observations,
-        JSON.parse(await readFile(expectedPath, "utf8")),
-        "Complete semantic baseline differs",
+        JSON.parse(await readFile(contractMode ? contractExpectedPath : expectedPath, "utf8")),
+        contractMode ? "Complete contract baseline differs" : "Complete semantic baseline differs",
       );
-      assert.deepEqual(
-        resources,
-        JSON.parse(await readFile(resourceExpectedPath, "utf8")),
-        "Resource baseline differs",
-      );
+      if (!contractMode)
+        assert.deepEqual(
+          resources,
+          JSON.parse(await readFile(resourceExpectedPath, "utf8")),
+          "Resource baseline differs",
+        );
     }
-    if (mode === "capture") {
+    if (captureMode) {
       process.stdout.write(
         JSON.stringify(
           {
@@ -209,6 +219,7 @@ async function main() {
               id: item.id,
               category: item.category,
               variations: item.variations,
+              ...(item.execution ? { execution: item.execution } : {}),
               input: "fixture" in item.input ? item.input.fixture : "generated",
               expected: item.expected,
             })),

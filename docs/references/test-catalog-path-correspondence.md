@@ -447,7 +447,7 @@ Change set: `document-rename`.
 | --- | --- | --- |
 | `test/adapters-codex-document-rename-titles.test.ts` | moved | `test/document-rename/adapters/title-evidence.app.test.ts` |
 
-The DOCX baseline application, temporary-lifecycle, and resource unit tests under this owner are new contracts with no historical-path migration. Their reviewed expectations stay under `test/document-rename/fixtures/docx-baseline/`; see the [ownership catalog](test-suite-case-matrices.md#document-rename-baseline) and [execution record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md).
+The DOCX baseline application, symbol/style/note contract application, temporary-lifecycle, and resource unit tests under this owner are new contracts with no historical-path migration. Their reviewed expectations stay under `test/document-rename/fixtures/docx-baseline/`; see the [ownership catalog](test-suite-case-matrices.md#document-rename-baseline) and [execution record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md).
 
 ### Markdown DOCX
 

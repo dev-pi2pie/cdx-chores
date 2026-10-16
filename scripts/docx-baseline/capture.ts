@@ -89,8 +89,47 @@ export function assertCaseExpectations(item: DocxBaselineCase, capture: DocxCapt
     assert(html.includes(value), `${item.id}: HTML missing ${value}`);
   for (const value of expected.htmlExcludes ?? [])
     assert(!html.includes(value), `${item.id}: HTML unexpectedly includes ${value}`);
-  if (expected.rawEquals !== undefined) assert.equal(text, expected.rawEquals, item.id);
-  if (expected.htmlEquals !== undefined) assert.equal(html, expected.htmlEquals, item.id);
+  for (const [value, count] of Object.entries(expected.htmlOccurrences ?? {}))
+    assert.equal(
+      html.split(value).length - 1,
+      count,
+      `${item.id}: HTML occurrence count for ${value}`,
+    );
+  if (expected.rawEquals !== undefined) {
+    assert("value" in capture.rawText, `${item.id}: expected a completed raw conversion`);
+    assert.equal(text, expected.rawEquals, item.id);
+  }
+  if (expected.htmlEquals !== undefined) {
+    assert("value" in capture.html, `${item.id}: expected a completed HTML conversion`);
+    assert.equal(html, expected.htmlEquals, item.id);
+  }
+  for (const [conversion, messages] of [
+    [capture.html, expected.htmlMessagesInclude],
+    [capture.rawText, expected.rawMessagesInclude],
+  ] as const) {
+    for (const message of messages ?? []) {
+      assert("value" in conversion, `${item.id}: expected a completed conversion`);
+      assert(
+        conversion.messages.some(
+          (value) =>
+            typeof value === "object" &&
+            value !== null &&
+            "message" in value &&
+            String(value.message).includes(message),
+        ),
+        `${item.id}: converter warning missing ${message}`,
+      );
+    }
+  }
+  for (const [conversion, error] of [
+    [capture.html, expected.htmlErrorIncludes],
+    [capture.rawText, expected.rawErrorIncludes],
+  ] as const) {
+    if (error !== undefined) {
+      assert("error" in conversion, `${item.id}: expected a failed conversion`);
+      assert(conversion.error.includes(error), `${item.id}: converter error missing ${error}`);
+    }
+  }
   let previous = -1;
   for (const value of expected.rawOrdered ?? []) {
     const position = text.indexOf(value, previous + 1);
@@ -104,6 +143,8 @@ export function assertCaseExpectations(item: DocxBaselineCase, capture: DocxCapt
     assert(!("reason" in capture.result), `${item.id}: unexpected extraction failure`);
     if (expected.titleFirst !== undefined)
       assert.equal(capture.result.titleCandidates[0], expected.titleFirst, item.id);
+    if (expected.titleCandidates !== undefined)
+      assert.deepEqual(capture.result.titleCandidates, expected.titleCandidates, item.id);
     if (expected.headings !== undefined)
       assert.deepEqual(capture.result.headings ?? [], expected.headings, item.id);
     if (expected.metadataTitle !== undefined)

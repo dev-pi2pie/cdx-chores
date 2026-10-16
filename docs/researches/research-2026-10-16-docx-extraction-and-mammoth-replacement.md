@@ -212,7 +212,7 @@ These rules govern evaluation and any later implementation:
 
 ## Resource Isolation and Content-Support Contract
 
-This section separates runtime accounting from document compatibility. The recommended research direction is a separate extraction process and baseline-led symbol handling. The diagrams describe design alternatives, not implemented or accepted behavior. Architecture agreement must precede candidate implementation; final numeric budgets and support acceptance require measurements and complete comparisons.
+This section separates runtime accounting from document compatibility. Phase 2 proposes one fresh extraction process per admitted request and baseline-led content handling. The contract below is awaiting design agreement; the diagrams do not describe implemented behavior. Agreement authorizes the initial reader slice, while resource enforcement belongs to Phase 4 and final numeric budgets/support acceptance belong to Phase 6.
 
 ### Memory accounting alternatives
 
@@ -241,8 +241,8 @@ A Node child process has its own memory and V8 instance, with a communication ch
 ```text
 Caller process                       Extraction process [PROPOSED]
 +------------------------+           +-----------------------------+
-| Check input size       |  bounded  | Supervisor main thread      |
-| Start deadline         |  request  | - sample this process's RSS |
+| Admit / start deadline |  bounded  | Supervisor main thread      |
+| Read with byte cap     |  request  | - sample this process's RSS |
 | Bound communication    |---------->| - supervise parser worker   |
 |                        |           |              |              |
 | Validate result        |<----------|              v              |
@@ -251,7 +251,7 @@ Caller process                       Extraction process [PROPOSED]
                                      +-----------------------------+
                                      <------- RSS budget ---------->
 
-Deadline scope: startup + communication + extraction
+Deadline scope: input read + startup + communication + extraction + validation
 Return boundary: result/failure and confirmed process cleanup
 ```
 
@@ -261,15 +261,29 @@ RSS sampling can miss brief peaks and can observe an overshoot only after alloca
 
 ### Deadline, transport, and termination contract
 
-The processing deadline should start before child launch and include startup, input transfer, parsing, and result delivery. Shutdown needs its own bounded grace period, including escalation and confirmed exit. Measure complete API latency as well as processing time so cleanup costs remain visible; settle their numeric acceptance thresholds before classifying results as passing.
+The processing deadline starts after admission, before opening/reading input or launching the child. It includes bounded input reading, startup, transfer, parsing, result receipt, decoding, and schema validation. A busy request starts no extraction and enters no queue. Shutdown has a separate grace/escalation policy; measure complete API latency through confirmed closure so cleanup costs remain visible.
 
-Use a fixed packaged Node entry point, bounded request/result messages, and an explicit environment/loader policy. Document relationships must remain inert: the reader must not load external URLs/files or evaluate executable content. The existing adapter continues to own normalization, title ranking, and outward failure mapping.
+Use `spawn(process.execPath, [fixedPackagedChildPath])` without a shell, detachment, inherited runtime arguments, or document-selected code. The worker also uses a fixed packaged entry, an empty `execArgv`, and no evaluated source. Resolve assets relative to packaged modules and use the package directory as the child working directory. Allow only required system-root/temporary-directory variables and `NO_COLOR`; exclude `NODE_OPTIONS`, `NODE_PATH`, credentials, proxies, and caller-selected loaders. Document relationships remain inert: no external target loading or executable-content evaluation. The existing adapter owns normalization, title ranking, and outward failure mapping.
+
+| Boundary | Proposed contract |
+| --- | --- |
+| Input | Read the path in capped chunks after admission; an early size check never replaces actual-byte counting. Do not perform an unrestricted read/copy before supervision. |
+| Request | One fixed-version byte frame with bounded metadata length and document length, followed by validated limits and DOCX bytes. No document-derived executable names, module paths, or URLs. |
+| Result | One byte-framed UTF-8 JSON success containing document facts, or a fixed internal failure code. Validate exact schema, strings/collections, actual byte counts, and end-of-frame; reject extra frames, trailing bytes, malformed UTF-8, and truncation. |
+| Allocation | Validate declared lengths before receiver payload assembly/decoding, independently count received bytes, and obey write backpressure. Stream buffering thresholds are not byte ceilings. |
+| Memory | Include child runtime, supervisor, worker, decompression, and result encoding in child RSS. Bound caller input/result buffers separately; do not subtract an initial RSS reading. Transfer only an exact dedicated input buffer to the worker. |
+| Admission | One active extraction per internal supervisor owner; reject a concurrent request without queuing. This is not an aggregate limit across separately loaded package instances or caller workers. |
+| Sampling | Sample child RSS before worker creation, periodically, after parser completion, and before publishing a result. Above-limit fails; exactly-at-limit passes. |
+| Parent loss | Keep input open after the complete request as a liveness signal. Premature EOF/error cancels work; normal result flushing and child closure do not wait for another request. |
+| Completion | Freeze one outcome, stop input/parser work, confirm child `close`, remove timers/listeners, and release admission once. Result receipt or `child.killed` alone does not prove cleanup. |
+
+Framed byte streams are preferred to Node object IPC because an IPC message has already been deserialized before a handler can validate its size.[^node-child] The receiver can reject an oversized frame declaration before assembling its payload. The child still owns encoding allocations, and RSS remains sampled rather than a hard allocation ceiling. Complete facts need their own output bound because headings may repeat body content and JSON escaping can expand it; reject overflow explicitly instead of silently truncating facts.
 
 ```text
 Start request
      |
      v
-Launch child --> transfer bounded input --> extract --> receive bounded facts
+Bounded read --> launch child --> transfer --> extract --> validate bounded facts
      |                    |                   |                 |
      +--------------------+-------------------+-----------------+
                           |
@@ -285,7 +299,18 @@ Timeout / cancellation / crash / invalid response
      `--> terminate child --> bounded escalation --> confirm exit --> failure
 ```
 
-Tests must cover caller-memory independence, startup failure, a blocked parser, deadline expiry, sampled-RSS overshoot, cancellation, malformed/oversized messages, early exit, parent disconnection, and no activity after completion. Controlled observations establish below/at/above threshold policy; real-process measurements separately establish runtime feasibility. Install offline positive controls inside the actual parsing process/worker before parser imports. Passing checks in an unguarded helper alone does not establish the packaged path's behavior.
+On timeout, cancellation, protocol failure, stream error, or excessive RSS, freeze failure and request termination immediately; escalate from TERM to KILL after the grace period where supported. Await `close`, including stdio closure. A valid result followed by failed cleanup is an infrastructure failure. Portable Node cannot guarantee both a fixed API return deadline and confirmed exit under arbitrary OS termination failure. An unconfirmed close must remain a distinct validation failure with retained process ownership/admission capacity, rather than a passing timeout result. Final acceptance must state this limitation and separately assess processing, cleanup, and total latency.
+
+| Additional provisional proposal | Starting value | Reason to validate |
+| --- | --- | --- |
+| Active requests | 1 per supervisor owner, no queue | Bound process accumulation; current rename extraction is sequential. |
+| Request metadata / result JSON | 4 KiB / 8 MiB | Keep protocol metadata small while allowing complete facts; measure escaping/repetition expansion. |
+| RSS sampling | 10 ms plus transition samples | Observe the isolated process without process-table commands; brief peaks can still be missed. |
+| Processing / child RSS | 5 seconds / 256 MiB | Reassess the Phase 1 proposals with input reading and the new process boundary included. |
+| TERM grace / total cleanup target | 250 ms / 1 second | Exercise graceful stop, escalation, and confirmed closure. |
+| Complete API target | 6 seconds | Include processing and cleanup; not an OS-failure guarantee. |
+
+These values supplement the [structural proposals](#resource-budgets); none is accepted by design agreement alone. Tests must cover caller-memory independence, startup failure, a blocked parser, deadline expiry, sampled-RSS overshoot, cancellation, malformed/oversized messages, early exit, parent disconnection, and no activity after completion. Controlled observations establish below/at/above threshold policy; real-process measurements establish runtime feasibility. Install offline positive controls inside the actual parsing process/worker before parser imports. Passing checks in an unguarded helper alone do not establish the packaged path's behavior.
 
 ### Font-encoded symbols and compatibility
 
@@ -331,15 +356,55 @@ or record a gap    Verify evidence and reason;
 Invalid font/code data --> establish explicit diagnostic/outcome expectations
 ```
 
-Evaluate the standalone mapper already used by Mammoth before growing a project-owned table.[^dingbat-mapper] Keeping a focused mapping dependency may reduce owned data and improve coverage, but requires review of its license, provenance, runtime/dependency surface, and update obligations. A project-owned subset needs documented coverage and upkeep; copying mapping data also retains provenance/license obligations. Complete Mammoth removal remains mandatory, regardless of mapping ownership.
+Prefer the standalone `dingbat-to-unicode` mapper already used by Mammoth over a small owned table, with adoption deferred to Phase 5.[^dingbat-mapper] Its pinned `js-1.0.1` source has 1,061 mapping rows across Symbol, Webdings, Wingdings, Wingdings 2, and Wingdings 3, and no runtime dependencies.[^dingbat-pinned] The manifest declares BSD-2-Clause, but the pinned source/package lacks a license notice; a notice on mutable upstream main is insufficient exact-version proof. Resolve provenance and notice obligations before adoption, or reopen the mapping choice. Do not copy the data to bypass that question. Phases 2–3 add no mapping dependency; complete Mammoth removal remains mandatory.
+
+| Symbol input | Required baseline outcome |
+| --- | --- |
+| Ordinary Unicode in `w:t` | Preserve independently of font mapping. |
+| Recognized font/code | Preserve the mapped Unicode; font comparison is case-insensitive but does not trim whitespace. |
+| Uppercase `F0` prefix | Retry the low-byte code as Mammoth does; lowercase `f0` does not receive that retry. |
+| Unknown font/code or absent/invalid character | Omit with an internal diagnostic; preserve resulting evidence and empty-content reason. |
+| Partially valid hexadecimal character | Preserve the mapper's identified permissive parsing unless a specific departure is accepted. |
+| Missing font attribute | Preserve conversion failure, including when other text or usable metadata exists. |
+
+Converter warnings remain internal: they do not become prompt warnings. A missing-font conversion failure maps to the existing `docx_extract_error`; omission alone does not cause failure when usable evidence remains. This policy preserves the baseline distinctions instead of failing every unsupported glyph.
 
 Add independent cases for mapped/unmapped fonts and codes, prefixed encodings, malformed attributes, and symbols in headings, lead text, and otherwise usable metadata-only evidence. When the baseline maps a character and the candidate cannot, classify it as a gap until the mapping is implemented or a case-specific departure is accepted. When both omit it, verify complete evidence and prompts before accepting the omission. Keep detailed diagnostics internal unless an outward change is specifically accepted.
 
 ### Style maps, notes, and support boundaries
 
-The symbol decision does not settle embedded style maps or secondary content. Define the supported paragraph-heading mapping grammar and compare unsupported rules against both baseline outputs before choosing omission or failure. Formatting rules can affect heading boundaries and normalized text; visual appearance alone does not establish irrelevance. Avoid expanding the reader into a general HTML renderer.
+Embedded style maps require an evidence projection, including rules that can create, merge, separate, or suppress headings. Invalid grammar is ignored with an internal diagnostic, preserving Mammoth's later valid/default rules and unchanged outward warnings. Valid grammar that the candidate cannot project remains a compatibility gap; do not silently ignore it or count a blanket unsupported-input failure as equivalent. Scope decisions require identified evidence/prompt comparisons rather than assumptions about visual formatting.[^mammoth-style-reader]
 
-For notes, distinguish referenced heading evidence from body/raw-text inclusion. Bound expansion work and identify cycle and repeated-reference outcomes. Preserve metadata-only, empty-document, and non-text reason distinctions; usable metadata must not automatically rescue a content-conversion failure. Every restricted grammar or expansion policy needs identified cases and an internal-to-existing diagnostic mapping.
+| Heading-affecting feature | Required behavior |
+| --- | --- |
+| `p.StyleId` | Case-sensitive style-ID match. |
+| `p[style-name='…']` and prefix `^=` | Case-insensitive style-name matching. |
+| Rule order | First matching embedded rule precedes defaults. |
+| `h1`–`h6` and `:fresh` | Preserve level and paragraph separation. |
+| Reused heading path and `:separator('…')` | Preserve merged heading text and literal separators. |
+| Nested paths, run mappings, and table mappings | Preserve headings generated inside ordinary paragraphs, nested targets, or tables. |
+| Empty target and `!` | Preserve unwrapping or subtree suppression, including whether note references are gathered. |
+
+Phase 3 implements only the simple paragraph-heading slice required by its identified cases. The broader style cases remain Phase 5 obligations. This does not require arbitrary HTML rendering, but all heading text/order and content-presence effects must be accounted for before full compatibility can pass.
+
+Mammoth snapshots note references from the main-document HTML traversal, then renders that list once.[^mammoth-html] It does not recursively resolve references discovered inside notes. Preserve note-body heading evidence after main-document headings, duplicate references, reference labels such as `[1]`, and exclusion of note bodies from raw text. Do not deduplicate reader heading facts: the adapter applies its first-four-heading ranking before deduplication. Self/mutual note cycles therefore do not imply failure or recursive expansion. Missing main-document referenced notes fail conversion, whereas nested missing references are not resolved; eager parsing of malformed unused note content can still fail.
+
+```text
+Main-document traversal
+          |
+          +--> ordered main headings / raw text
+          |
+          `--> snapshot referenced notes [A, A, B]
+                              |
+                              v
+                    render A, then A, then B
+                              |
+                    append note heading facts
+                              |
+                 nested references are not expanded
+```
+
+Bound note parsing and snapshot traversal structurally; do not add recursive expansion merely to reject cycles. Preserve metadata-only, empty-document, and non-text reason distinctions using an internal content-presence fact if necessary. Usable metadata never rescues a content-conversion failure. New diagnostics stay internal and retain the existing adapter's outward reason/warning policy.
 
 ### Contract decisions and required evidence
 
@@ -353,6 +418,23 @@ For notes, distinguish referenced heading evidence from body/raw-text inclusion.
 | Final workload and runtime budgets | Independent below/at/above enforcement, representative/adversarial measurements, and the packed candidate's Node/npm/Bun matrix. |
 
 The [plan](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md) separates design agreement, reader construction, resource isolation, content compatibility, and complete candidate validation. Agreement on the design authorizes an implementation scope; it does not accept unmeasured numeric limits or select the replacement. Remaining consequential gaps can justify deferral at the selection gate.
+
+The separate [contract corpus](../../scripts/docx-baseline/corpus/contract/index.ts), [manifest](../../test/document-rename/fixtures/docx-baseline/contract-manifest.json), and [complete captures](../../test/document-rename/fixtures/docx-baseline/contract.json) retain 33 additional baseline cases: 11 symbol, 9 style-map, and 13 note cases. Independent assertions cover content, ordering, converter diagnostics/failures, evidence, and prompts. Overlapping rules prove first-match precedence; repeated note headings prove ordering and ranking before deduplication. Self/mutual-cycle observations run only through bounded Node children; runner termination is never relabeled as an adapter extraction reason. The original 70 semantic and 21 structural expectations remain unchanged. These observations establish contract inputs, not candidate compatibility or resource enforcement.
+
+### Initial reader scope
+
+Design agreement authorizes a private, inline buffer-to-facts reader for trusted evaluation inputs and a test-only adapter comparison. Reuse the current ZIP/XML infrastructure and extract pure metadata/evidence assembly where needed; preserve current production behavior. Reader facts contain ordered heading levels/text, a separate raw stream, optional metadata, internal diagnostics, and content presence. Keep duplicate heading facts and leave ranking/normalization in the adapter. No process supervisor, symbol dependency, public exports, or dispatch changes belong to this slice.
+
+| Initial comparison group | Identified cases |
+| --- | --- |
+| Existing evidence | All seven existing DOCX fixture seeds. |
+| Heading semantics | `heading-custom-id-standard-name`, `heading-inherited`, `heading-embedded-map`. |
+| Mixed ordering | `text-table-content-control-order`, `secondary-textbox-order`. |
+| Empty/non-text reasons | `empty-valid`, `empty-image-only`, `empty-table-only`, `empty-line-break-only`. |
+| Metadata boundaries | `metadata-title-only`, `metadata-author-only`, `metadata-conversion-failure`. |
+| Invalid content | `malformed-invalid-zip`, `malformed-main-xml`, `malformed-missing-main`. |
+
+These 22 cases must preserve complete evidence and prompt payloads except the explicitly named candidate extractor identity; synthetic inputs retain independent assertions. Record source footprint, helper changes, difficult semantics, and remaining enforcement/content/packaging work before deciding continue, constrain, or defer. Remaining original/contract/resource cases are untested candidate obligations, not implicitly supported input. The inline reader is unguarded evaluation code; the child/worker boundary and its enforcement tests belong to Phase 4.
 
 ## Validation Matrix and Method
 
@@ -431,7 +513,7 @@ Otherwise, recommend deferral and identify unmet criteria. Record the supporting
 
 The implementation plan must repeat applicable evidence/prompt, fallback, resource, and distribution checks on the final integrated product. Pass affected managed tests and Node.js checks of the CLI and built ESM/CJS entry points. Confirm consumer migration/retirement and complete Mammoth removal in repository and fresh packed-product installations. Record final results, maintenance acceptance, and remaining limitations before claiming shipping acceptance or dependency remediation.
 
-The retained baseline corpus has 70 semantic cases and 21 structural boundary cases, linked from the [unified execution record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md). Additional resource-isolation and symbol-policy cases are required by the contract above. Candidate equivalence, concrete support/diagnostic mappings, accepted resource budgets, maintenance acceptance, and both gates require evidence for that contract. Researching the design does not establish candidate or shipping acceptance.
+The retained baseline corpus has 70 semantic cases and 21 structural boundary cases, supplemented by 33 contract cases linked above and from the [unified execution record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md). Resource-isolation cases remain required, and the candidate must compare all identified support cases before full validation. Candidate equivalence, concrete support/diagnostic mappings, accepted resource budgets, maintenance acceptance, and both gates require evidence for that contract. Researching the design does not establish candidate or shipping acceptance.
 
 ## Related Plans
 
@@ -486,3 +568,7 @@ The retained baseline corpus has 70 semantic cases and 21 structural boundary ca
 [^node-worker-limits]: [Node.js worker resource limits](https://github.com/nodejs/node/blob/v22.23.0/doc/api/worker_threads.md#new-workerfilename-options).
 
 [^dingbat-mapper]: [Dingbat-to-Unicode mapping library](https://github.com/mwilliamson/dingbat-to-unicode).
+
+[^mammoth-style-reader]: [Mammoth 1.13.0 style-map parser](https://github.com/mwilliamson/mammoth.js/blob/1.13.0/lib/style-reader.js).
+
+[^dingbat-pinned]: [Dingbat-to-Unicode pinned mapping manifest](https://github.com/mwilliamson/dingbat-to-unicode/blob/js-1.0.1/js/package.json), [API](https://github.com/mwilliamson/dingbat-to-unicode/blob/js-1.0.1/js/src/index.ts), and [data generation](https://github.com/mwilliamson/dingbat-to-unicode/blob/js-1.0.1/generate.py).

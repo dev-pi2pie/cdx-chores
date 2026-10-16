@@ -9,8 +9,10 @@ import { withTemporaryWorkspace } from "./workspace.mjs";
 const repo = fileURLToPath(new URL("../../", import.meta.url));
 const [mode = "verify", ...flags] = process.argv.slice(2);
 const valid =
-  (["verify", "measure", "offline"].includes(mode) && flags.length === 0) ||
-  (mode === "capture" && flags.length === 1 && flags[0] === "--export-stdout");
+  (["verify", "verify-contract", "measure", "offline"].includes(mode) && flags.length === 0) ||
+  (["capture", "capture-contract"].includes(mode) &&
+    flags.length === 1 &&
+    flags[0] === "--export-stdout");
 
 try {
   if (!valid) throw new Error("Invalid baseline invocation");

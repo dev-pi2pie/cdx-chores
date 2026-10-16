@@ -74,12 +74,14 @@ test("Node baseline launcher isolates evaluation options and cleans its offline 
 }, 40_000);
 
 test("baseline capture requires an explicit stdout export request", () => {
-  const result = spawnSync(
-    "node",
-    [join(REPO_ROOT, "scripts/docx-baseline/launch.mjs"), "capture"],
-    { cwd: REPO_ROOT, encoding: "utf8", timeout: 15_000 },
-  );
-  expect(result.status).toBe(1);
-  expect(result.stdout).toBe("capture: passed no\n");
-  expect(result.stderr).toBe("");
+  for (const mode of ["capture", "capture-contract"]) {
+    const result = spawnSync("node", [join(REPO_ROOT, "scripts/docx-baseline/launch.mjs"), mode], {
+      cwd: REPO_ROOT,
+      encoding: "utf8",
+      timeout: 15_000,
+    });
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe(`${mode}: passed no\n`);
+    expect(result.stderr).toBe("");
+  }
 });

@@ -10,7 +10,7 @@ agent: codex
 
 Evaluate and, if justified, integrate a focused project-owned DOCX reader that preserves semantic rename evidence and fallback behavior while enabling complete Mammoth removal.
 
-This plan includes contract research, candidate evaluation, and conditional production migration. Phases 1–7 establish the research decision; Phases 8–9 proceed only after selection supports replacement. Phase 10 validates documentation before closeout. The [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md) tracks outcomes across all ten phases. Phase 1 is complete; Phase 2 design agreement remains pending. The current authorization covers research/plan documentation only and stops before Phase 3 implementation; no replacement has been selected.
+This plan includes contract research, candidate evaluation, and conditional production migration. Phases 1–7 establish the research decision; Phases 8–9 proceed only after selection supports replacement. Phase 10 validates documentation before closeout. The [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md) tracks outcomes across all ten phases. Phase 1 is complete; Phase 2 research is in progress and design agreement remains pending. Current execution covers Phases 2–3, with Phase 3 gated on that agreement, and stops before Phase 4. No replacement has been selected.
 
 ## Scope
 
@@ -103,13 +103,15 @@ Phase 1 is complete, with reusable corpus/expectations, consumer inventory, and 
 
 ### Phase 3: Build the initial reader slice
 
-- [ ] Implement an isolated candidate using the existing ZIP/XML and metadata infrastructure, without changing production dispatch.
+- [ ] Implement a private inline candidate using the existing ZIP/XML and metadata infrastructure, without changing production dispatch or public exports. This initial evaluation slice does not provide the Phase 4 runtime guard.
 - [ ] Exercise the seven existing DOCX fixtures plus identified cases for custom/inherited headings, mixed paragraph/table/text-box ordering, and metadata-only/invalid-content outcomes through a test-only adapter path. Capture complete evidence/prompt differences and independent expected results for the synthetic cases.
 - [ ] Expose ordered headings with levels, separate body/raw text, optional metadata, and internal diagnostics. Establish whether content-presence facts are required to preserve failure reasons; keep title ranking in the adapter.
 - [ ] Record the source footprint, helper changes, difficult semantics, and estimated remaining resource/content/packaging work before expanding. Assess whether preserving evidence still fits a focused reader.
 - [ ] Record a continue, constrain, or defer outcome. Continue only if the agreed requirements remain achievable; route a supported deferral to Phase 7 with remaining cases explicitly untested.
 
 **Deliverable and exit criteria:** a small executable reader slice with complete comparisons for identified inputs and a complexity decision. This checkpoint does not establish full compatibility, resource acceptance, or candidate selection. A defer outcome follows the Phase 7 decision and Phase 10 documentation route.
+
+The research's [initial reader scope](../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#initial-reader-scope) identifies the 22 comparison cases; broader contract cases remain Phase 5–6 obligations.
 
 ### Phase 4: Implement resource isolation
 
