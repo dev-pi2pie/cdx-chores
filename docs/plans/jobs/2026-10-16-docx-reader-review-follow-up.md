@@ -80,15 +80,15 @@ Address drawing relationship failures, duplicate fallback handling, and stale ve
 
 - [x] Preserve eager image-reference failures and projected drawing-hyperlink failures, including empty targets, absent media, suppression, and unused sources.
 - [x] Add independent inline/anchored drawing evidence and prompt regressions with source-scoped relationship checks.
-- [ ] Keep AlternateContent fallback selection in XML parsing and cover nested fallback, absent fallback, and excluded choices.
-- [ ] Correct current harness/package wording and related coverage references.
+- [x] Keep AlternateContent fallback selection in XML parsing and cover nested fallback, absent fallback, and excluded choices.
+- [x] Correct current harness/package wording and related coverage references.
 - [ ] Pass focused, routine, built-runtime, measurement, and packed-consumer verification.
 - [ ] Review the complete follow-up and combined implementation ranges, resolve findings, and confirm cleanup.
 
 | Area | Outcome |
 | --- | --- |
-| Drawing relationships | Forty-seven independently authored cases match historical conversion; twenty-five reproduced failures before fixes; content and compiled evidence/prompt checks passed |
-| Fallback ownership / wording | Pending |
+| Drawing relationships | Fifty independently authored cases match historical conversion; twenty-five reproduced failures before fixes; content and compiled evidence/prompt checks passed |
+| Fallback ownership / wording | Four historical-equivalent fallback cases passed; duplicate semantic handler removed; shared POSIX preflight and product integrity coverage clarified |
 | Verification | Pending |
 | Full-range review | Pending |
 | Artifact cleanup | Pending |

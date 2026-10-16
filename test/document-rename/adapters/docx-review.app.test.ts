@@ -3,6 +3,7 @@ import { expect, test } from "bun:test";
 import { buildDocumentPrompt } from "../../../src/adapters/codex/document-rename/prompt";
 import { createDocxProductFixture } from "../fixtures/docx-product/build";
 import { createDocxDrawingCases } from "../fixtures/docx-drawing-cases";
+import { createDocxFallbackCases } from "../fixtures/docx-fallback-cases";
 import {
   createDocxReviewCases,
   expectedReviewEvidence,
@@ -12,6 +13,7 @@ import {
 for (const [label, createCases] of [
   ["review", createDocxReviewCases],
   ["drawing", createDocxDrawingCases],
+  ["fallback", createDocxFallbackCases],
 ] as const) {
   test(`compiled DOCX product preserves complete ${label}-case evidence and prompts`, async () => {
     const product = await createDocxProductFixture();

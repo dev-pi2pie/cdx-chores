@@ -241,10 +241,6 @@ export function readContent(
         read.values = replaceCheckboxText(read.values);
       return read;
     }
-    if (node.name === "mc:AlternateContent") {
-      const fallback = first(node, "mc:Fallback");
-      return fallback ? nested(fallback) : empty();
-    }
     if (passthrough.has(node.name)) {
       const read = nested(node);
       return node.name === "w:hyperlink"

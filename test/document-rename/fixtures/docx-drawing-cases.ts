@@ -226,5 +226,25 @@ export function createDocxDrawingCases(): ReviewCase[] {
       diagnostic: target === undefined ? "docx_initial_reader_error" : undefined,
     });
   }
+  for (const [id, contents, relationships] of [
+    ["bare-blip-ignored", '<w:r><a:blip r:embed="missing"/></w:r>', ""],
+    [
+      "outside-picture-path-ignored",
+      '<w:r><w:drawing><wp:inline><a:graphic><a:graphicData><a:blip r:embed="missing"/></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>',
+      "",
+    ],
+    [
+      "external-image-omitted",
+      drawing("inline", true).replace('r:embed="image"', 'r:link="image"'),
+      relation("image", "https://example.invalid/image.png", "image", 'TargetMode="External"'),
+    ],
+  ]) {
+    cases.push({
+      id: `review-drawing-${id}`,
+      options: { body: heading(run("Annual") + contents + run("Report")), relationships },
+      rawText: "AnnualReport\n\n",
+      headings: [{ level: 1, text: "AnnualReport" }],
+    });
+  }
   return cases;
 }
