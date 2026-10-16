@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { basename, join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -25,6 +25,8 @@ assert(format === "esm" || format === "cjs");
 assert(scope === "initial" || scope === "complete");
 const workspace = process.env.DOCX_CANDIDATE_WORKSPACE;
 assert(workspace, "Use the owned temporary-workspace launcher");
+const retain = process.env.DOCX_CANDIDATE_RETAIN_SMOKE === "1";
+assert(!retain || scope === "initial", "Only smoke artifacts may be staged");
 const baseline: DocxCapture[] = [];
 for (const file of ["expected.json", "contract.json"]) {
   baseline.push(
@@ -70,6 +72,29 @@ for (const item of cases) {
   await mkdir(join(directory, item.id));
   const path = join(directory, item.id, name);
   await writeFile(path, bytes);
+  const artifactDirectory = retain
+    ? join(workspace, "smoke-artifacts", format, item.id)
+    : undefined;
+  let artifact: {
+    id: string;
+    format: string;
+    outcome: "pending" | "passed" | "failed";
+    read?: unknown;
+    evidence?: unknown;
+  } = { id: item.id, format, outcome: "pending" };
+  const saveArtifact = async () => {
+    if (!artifactDirectory) return;
+    const pending = join(workspace, `${format}-${item.id}.pending`);
+    await writeFile(pending, JSON.stringify(artifact, null, 2) + "\n");
+    await rename(pending, join(artifactDirectory, "result.json"));
+  };
+  if (artifactDirectory) {
+    await mkdir(artifactDirectory, { recursive: true });
+    const pending = join(workspace, `${format}-${item.id}.docx.pending`);
+    await writeFile(pending, bytes);
+    await rename(pending, join(artifactDirectory, "input.docx"));
+    await saveArtifact();
+  }
   try {
     // Additional probes are small synthetic inputs; their live captures stay in memory.
     // Reviewed frozen expectations are never regenerated during verification.
@@ -108,9 +133,27 @@ for (const item of cases) {
         path,
         directory,
       );
-    } else await compareDocxReader(module, item, expected, bytes, path, directory);
+    } else
+      await compareDocxReader(
+        module,
+        item,
+        expected,
+        bytes,
+        path,
+        directory,
+        retain
+          ? async (observed) => {
+              artifact = { ...artifact, ...observed };
+              await saveArtifact();
+            }
+          : undefined,
+      );
+    artifact.outcome = "passed";
+    await saveArtifact();
     await emitProgress({ event: "complete", id: item.id, completed: ++completed });
   } catch {
+    artifact.outcome = "failed";
+    await saveArtifact();
     process.stderr.write(`case ${item.id}: failed\n`);
     process.exitCode = 1;
     break;

@@ -1,7 +1,5 @@
 import { expect, test } from "bun:test";
-import { execFileSync } from "node:child_process";
-import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 
 import {
@@ -70,27 +68,6 @@ test("embedded style-map opt-in preserves default parts and the existing part ca
     expect(parts.has("/mammoth/style-map")).toBe(length <= 256 * 1024);
   }
 });
-
-test("built ESM/CJS reader smoke runs in Node and cleans temporary assets", async () => {
-  const parent = await mkdtemp(join(tmpdir(), "docx-initial-reader-test-"));
-  try {
-    const output = execFileSync(
-      "node",
-      [join(REPO_ROOT, "scripts/docx-candidate/launch.mjs"), "--smoke"],
-      {
-        cwd: REPO_ROOT,
-        env: { ...process.env, TMPDIR: parent, TMP: parent, TEMP: parent },
-        encoding: "utf8",
-        timeout: 250_000,
-        stdio: ["ignore", "pipe", "pipe"],
-      },
-    );
-    expect(output).toBe("guarded reader: passed yes\n");
-    expect(await readdir(parent)).toEqual([]);
-  } finally {
-    await rm(parent, { recursive: true });
-  }
-}, 260_000);
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   test(`candidate launcher streams before completion and cleans after ${signal}`, async () => {

@@ -27,11 +27,14 @@ export async function compareDocxReader(
   bytes: Buffer,
   path: string,
   directory: string,
+  observe?: (value: { read: unknown; evidence: unknown }) => Promise<void>,
 ): Promise<void> {
   const read = module.readCandidateDocx
     ? await module.readCandidateDocx(path)
     : await module.readDocxDocument(bytes);
   const result = captured(await module.extractCandidateDocxEvidence(path));
+  // Retention observes the same reads used by assertions, without extra extraction.
+  await observe?.({ read: captured(read), evidence: result });
   const expected = structuredClone(baseline.result);
   let expectedPrompt = baseline.prompt;
   if (!("reason" in expected)) {

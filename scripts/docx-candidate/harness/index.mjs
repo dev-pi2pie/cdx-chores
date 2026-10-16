@@ -88,6 +88,9 @@ export function createHarness({
     get cleanupUnconfirmed() {
       return cleanupUnconfirmed;
     },
+    get processesSettled() {
+      return !running && !cleanupUnconfirmed;
+    },
     async start() {
       await emit(`${colors.bold(title)}\nScope: ${scope}\n`);
       timer = every(Math.min(heartbeatMs, 1_000), () => {
@@ -158,6 +161,11 @@ export function createHarness({
     },
     async result(text) {
       await result.write(text);
+    },
+    async retainedLocation(path) {
+      if (!/^examples\/playground\/docx-candidate\/smoke\/[A-Za-z0-9-]+$/.test(path))
+        throw new HarnessError("output");
+      await emit(`Retained smoke artifacts: ${path}\n`);
     },
     async finish() {
       timer?.();

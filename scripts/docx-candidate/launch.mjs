@@ -2,50 +2,61 @@ import { symlink } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { runCandidateDriver } from "./driver.mjs";
-import { HarnessError } from "./harness/index.mjs";
+import { HarnessError } from "./harness/errors.mjs";
+import { candidateCliOptions } from "./cli.mjs";
+import { prepareSmokeRetention } from "./retention.mjs";
+import { smokeCaseIds } from "./smoke-case-ids.mjs";
 
 const repo = fileURLToPath(new URL("../../", import.meta.url));
-const smoke = process.argv.length === 3 && process.argv[2] === "--smoke";
-await runCandidateDriver(
-  {
-    title: "DOCX candidate verification",
-    scope: `${smoke ? "smoke" : "full"} comparisons; ESM and CJS`,
-    prefix: "cdx-docx-candidate-",
-    failure: () => "guarded reader: passed no\n",
-  },
-  async (harness, workspace) => {
-    if (process.argv.length !== 2 && !smoke) throw new Error("Invalid arguments");
-    await symlink(join(repo, "node_modules"), join(workspace, "node_modules"), "junction");
-    const env = {
-      SystemRoot: process.env.SystemRoot ?? process.env.SYSTEMROOT,
-      DOCX_CANDIDATE_WORKSPACE: workspace,
-      TMPDIR: workspace,
-      TMP: workspace,
-      TEMP: workspace,
-      NO_COLOR: "1",
-    };
-    await harness.command(
-      process.execPath,
-      [join(repo, "scripts/docx-candidate/build-run.mjs"), "comparison", workspace],
-      { stage: "build", label: "Build candidate", cwd: repo, env, timeout: 60_000 },
-    );
-    for (const format of ["esm", "cjs"]) {
-      const output = await harness.command(
+const cli = await candidateCliOptions("comparison");
+let retention;
+if (cli) {
+  const { runCandidateDriver } = await import("./driver.mjs");
+  await runCandidateDriver(
+    {
+      title: "DOCX candidate verification",
+      scope: `${cli.smoke ? "smoke" : "full"} comparisons; ESM and CJS`,
+      prefix: "cdx-docx-candidate-",
+      failure: () => "guarded reader: passed no\n",
+      retain: cli.keepArtifacts
+        ? (workspace, outcome) => retention?.publish(workspace, outcome)
+        : undefined,
+    },
+    async (harness, workspace) => {
+      if (cli.keepArtifacts)
+        retention = await prepareSmokeRetention(repo, { expectedCaseIds: smokeCaseIds });
+      await symlink(join(repo, "node_modules"), join(workspace, "node_modules"), "junction");
+      const env = {
+        SystemRoot: process.env.SystemRoot ?? process.env.SYSTEMROOT,
+        DOCX_CANDIDATE_WORKSPACE: workspace,
+        DOCX_CANDIDATE_RETAIN_SMOKE: cli.keepArtifacts ? "1" : "0",
+        TMPDIR: workspace,
+        TMP: workspace,
+        TEMP: workspace,
+        NO_COLOR: "1",
+      };
+      await harness.command(
         process.execPath,
-        [join(workspace, "compare.mjs"), format, smoke ? "initial" : "complete"],
-        {
-          stage: "comparison",
-          label: `${format.toUpperCase()} comparisons`,
-          cwd: repo,
-          env,
-          timeout: 120_000,
-          progress: true,
-        },
+        [join(repo, "scripts/docx-candidate/build-run.mjs"), "comparison", workspace],
+        { stage: "build", label: "Build candidate", cwd: repo, env, timeout: 60_000 },
       );
-      if (output !== `${format}: passed yes\n`)
-        throw new HarnessError("comparison", `${format.toUpperCase()} comparisons`);
-    }
-    return "guarded reader: passed yes\n";
-  },
-);
+      for (const format of ["esm", "cjs"]) {
+        const output = await harness.command(
+          process.execPath,
+          [join(workspace, "compare.mjs"), format, cli.smoke ? "initial" : "complete"],
+          {
+            stage: "comparison",
+            label: `${format.toUpperCase()} comparisons`,
+            cwd: repo,
+            env,
+            timeout: 120_000,
+            progress: true,
+          },
+        );
+        if (output !== `${format}: passed yes\n`)
+          throw new HarnessError("comparison", `${format.toUpperCase()} comparisons`);
+      }
+      return "guarded reader: passed yes\n";
+    },
+  );
+}

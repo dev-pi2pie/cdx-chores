@@ -10,12 +10,23 @@ export async function runCandidateDriver(options, run) {
   let workspace;
   let result;
   let failure;
+  let retained;
   try {
     await harness.start();
     workspace = await mkdtemp(join(tmpdir(), options.prefix));
     result = await run(harness, workspace);
   } catch (error) {
     failure = error;
+  }
+  if (workspace && options.retain && harness.processesSettled) {
+    const cause = failure ?? harness.signal.reason;
+    try {
+      retained = await options.retain(workspace, {
+        outcome: cause?.category === "cancellation" ? "cancelled" : cause ? "failed" : "passed",
+      });
+    } catch {
+      failure = new HarnessError("runner", "Smoke artifact retention");
+    }
   }
   try {
     if (workspace) await harness.cleanup(workspace);
@@ -24,6 +35,7 @@ export async function runCandidateDriver(options, run) {
     failure = error;
   }
   try {
+    if (retained) await harness.retainedLocation(retained);
     if (failure) {
       process.exitCode = 1;
       await harness.failure(
