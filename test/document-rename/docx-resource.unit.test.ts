@@ -2,6 +2,10 @@ import { describe, expect, test } from "bun:test";
 
 import { buildStoredZip, documentXml, paragraph } from "../../scripts/docx-baseline/corpus/builder";
 import {
+  createResourceCases,
+  RESOURCE_BOUNDARIES,
+} from "../../scripts/docx-baseline/resource-cases";
+import {
   DEFAULT_DOCX_LIMITS,
   DocxLimitError,
   checkDocxLimit,
@@ -11,10 +15,26 @@ import {
 import { openGuardedDocxPackage } from "../../src/docx/package";
 import { readDocxDocument } from "../../src/docx/reader";
 import { XmlBudget } from "../../src/docx/xml-budget";
+import {
+  BOUNDARY_SENTINEL,
+  createSelectedBoundaryProbes,
+  ORIGINAL_RESOURCE_RECONCILIATION,
+} from "./fixtures/docx-boundary-probes";
 
 describe("private DOCX limit policy", () => {
-  test("accepts below and equal observations and rejects only above", () => {
-    for (const key of Object.keys(DEFAULT_DOCX_LIMITS) as (keyof DocxLimits)[]) {
+  test("byte and structural cap checks accept equality and reject only above", () => {
+    for (const key of [
+      "compressedInputBytes",
+      "entryCount",
+      "maxPartDecompressedBytes",
+      "totalDecompressedBytes",
+      "xmlElementCount",
+      "maxXmlDepth",
+      "maxStyleTraversalSteps",
+      "peakRssBytes",
+      "requestMetadataBytes",
+      "resultBytes",
+    ] as const) {
       const limits = resolveDocxLimits({ [key]: 8 });
       expect(() => checkDocxLimit(7, key, limits)).not.toThrow();
       expect(() => checkDocxLimit(8, key, limits)).not.toThrow();
@@ -65,6 +85,53 @@ const main = documentXml(paragraph("Boundary report"));
 const minimalDocx = () => buildStoredZip([["word/document.xml", main]]);
 
 describe("selected DOCX resource enforcement", () => {
+  test("reconciles all frozen whole-package boundaries with default selected-part enforcement", async () => {
+    const cases = createResourceCases();
+    expect(cases.length).toBe(21);
+    expect(RESOURCE_BOUNDARIES.length).toBe(cases.length);
+    for (const [index, item] of cases.entries()) {
+      const boundary = RESOURCE_BOUNDARIES[index]!;
+      expect(item.id).toBe(boundary.caseId);
+      expect(boundary.proposedCap).toBe(DEFAULT_DOCX_LIMITS[boundary.metric]);
+      if (!("bytes" in item.input)) throw new Error("Expected synthetic resource bytes");
+      const result = await readDocxDocument(item.input.bytes);
+      const policy = ORIGINAL_RESOURCE_RECONCILIATION[boundary.metric];
+      if (boundary.position === "above" && policy.selected)
+        expect(result, item.id).toEqual({ ok: false, diagnostic: policy.aboveDiagnostic });
+      else {
+        expect(result.ok, `${item.id}: ${JSON.stringify(result)}`).toBe(true);
+        if (result.ok) expect(result.facts.rawText).toContain("Resource boundary sentinel");
+      }
+    }
+  });
+
+  test("enforces actual selected aggregate bytes, XML elements, and style/numbering work at default caps", async () => {
+    let checked = 0;
+    for (const probe of createSelectedBoundaryProbes()) {
+      const result = await readDocxDocument(probe.bytes);
+      if (probe.observed > DEFAULT_DOCX_LIMITS[probe.metric])
+        expect(result, probe.id).toEqual({ ok: false, diagnostic: `docx_limit:${probe.metric}` });
+      else {
+        expect(result.ok, `${probe.id}: ${JSON.stringify(result)}`).toBe(true);
+        if (result.ok) {
+          expect(result.facts.rawText, probe.id).toContain(BOUNDARY_SENTINEL);
+          if (
+            probe.id.startsWith("selected-style-work") ||
+            probe.id.startsWith("selected-numbering-work")
+          )
+            expect(result.facts.headings, probe.id).toEqual([
+              {
+                level: probe.id.startsWith("selected-style-work") ? 1 : 2,
+                text: BOUNDARY_SENTINEL,
+              },
+            ]);
+        }
+      }
+      checked += 1;
+    }
+    expect(checked).toBe(12);
+  });
+
   for (const key of [
     "compressedInputBytes",
     "entryCount",

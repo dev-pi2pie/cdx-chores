@@ -1,6 +1,7 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 
-import { resolveDocxLimits } from "../../src/docx/limits";
+import { DEFAULT_DOCX_LIMITS, resolveDocxLimits } from "../../src/docx/limits";
+import { createDocxSupervisorForTesting } from "../../src/docx/runtime/index";
 import {
   minimalDocxEnvironment,
   remainingDeadline,
@@ -124,16 +125,24 @@ describe("private DOCX byte transport", () => {
   });
 
   test("counts metadata UTF-8 bytes below, equal to, and above its own cap", () => {
-    const limits = resolveDocxLimits({ requestMetadataBytes: 512 });
+    const limits = resolveDocxLimits();
+    const cap = DEFAULT_DOCX_LIMITS.requestMetadataBytes;
     const json = JSON.stringify(limits);
-    expect(Buffer.byteLength(json)).toBeLessThan(511);
-    for (const size of [511, 512, 513]) {
+    expect(Buffer.byteLength(json)).toBeLessThan(cap - 1);
+    for (const size of [cap - 1, cap, cap + 1]) {
       const metadata = Buffer.from(json + " ".repeat(size - Buffer.byteLength(json)));
       const decoder = new RequestFrameDecoder();
       const bytes = requestFrame(metadata, Buffer.from("abc"));
-      if (size > 512) expect(() => decoder.push(bytes)).toThrow("docx_limit:requestMetadataBytes");
+      // Split immediately before metadata completion; its own limit is known after decoding.
+      const boundary = 16 + metadata.length;
+      decoder.push(bytes.subarray(0, boundary - 1));
+      expect(decoder.complete).toBe(false);
+      if (size > cap)
+        expect(() => decoder.push(bytes.subarray(boundary - 1))).toThrow(
+          "docx_limit:requestMetadataBytes",
+        );
       else {
-        decoder.push(bytes);
+        decoder.push(bytes.subarray(boundary - 1));
         expect(decoder.finish().bytes.toString()).toBe("abc");
       }
     }
@@ -152,6 +161,36 @@ describe("private DOCX byte transport", () => {
         for (const byte of bytes) decoder.push(Buffer.from([byte]));
         expect(decoder.finish()).toEqual(success);
         expect(encodeResultFrame(success, limits)).toEqual(bytes);
+      }
+    }
+  });
+
+  test("enforces the default result cap on encoded bytes before allocating an oversized payload", () => {
+    if (!success.ok) throw new Error("Expected fixture facts");
+    const limits = resolveDocxLimits();
+    const cap = DEFAULT_DOCX_LIMITS.resultBytes;
+    const empty = { ...success, facts: { ...success.facts, rawText: "" } };
+    const overhead = Buffer.byteLength(JSON.stringify(empty));
+    for (const size of [cap - 1, cap, cap + 1]) {
+      const textBytes = size - overhead;
+      const rawText = "Ω".repeat(Math.floor(textBytes / 2)) + (textBytes % 2 ? "a" : "");
+      const value = { ...empty, facts: { ...empty.facts, rawText } };
+      const payload = Buffer.from(JSON.stringify(value));
+      expect(payload.byteLength).toBe(size);
+      expect(rawText.length).toBeLessThan(textBytes);
+      const bytes = resultFrame(payload);
+      const decoder = new ResultFrameDecoder(limits);
+      decoder.push(bytes.subarray(0, 11));
+      if (size > cap) {
+        // Receiving only the final header byte must reject the declared excess.
+        expect(() => decoder.push(bytes.subarray(11, 12))).toThrow("docx_limit:resultBytes");
+        expect(() => encodeResultFrame(value, limits)).toThrow("docx_limit:resultBytes");
+      } else {
+        decoder.push(bytes.subarray(11, 12));
+        for (let offset = 12; offset < bytes.length; offset += 65_536)
+          decoder.push(bytes.subarray(offset, offset + 65_536));
+        expect(decoder.finish()).toEqual(value);
+        expect(encodeResultFrame(value, limits)).toEqual(bytes);
       }
     }
   });
@@ -221,6 +260,63 @@ describe("private DOCX runtime policy", () => {
     expect(remainingDeadline(100, 99)).toBe(1);
     expect(remainingDeadline(100, 100)).toBe(0);
     expect(remainingDeadline(100, 101)).toBe(0);
+  });
+
+  test("the parent input consumer expires at the exact deadline and confirms handle cleanup", async () => {
+    const elapsedMilliseconds = DEFAULT_DOCX_LIMITS.elapsedMilliseconds;
+    for (const observed of [
+      elapsedMilliseconds - 1,
+      elapsedMilliseconds,
+      elapsedMilliseconds + 1,
+    ]) {
+      let now = 0;
+      let opens = 0;
+      let stats = 0;
+      let reads = 0;
+      let closes = 0;
+      const clock = spyOn(performance, "now").mockImplementation(() => now);
+      try {
+        const owner = createDocxSupervisorForTesting({
+          childPath: "/synthetic-unused-child",
+          openInput: async () => {
+            opens += 1;
+            now = observed;
+            return {
+              async stat() {
+                stats += 1;
+                throw new Error("synthetic input failure before child startup");
+              },
+              async read() {
+                reads += 1;
+                throw new Error("Unexpected input read");
+              },
+              async close() {
+                closes += 1;
+              },
+            };
+          },
+        });
+        expect(await owner.read("/synthetic-input", { limits: { elapsedMilliseconds } })).toEqual({
+          ok: false,
+          diagnostic:
+            observed < elapsedMilliseconds ? "docx_input_error" : "docx_limit:elapsedMilliseconds",
+        });
+        expect({ opens, stats, reads, closes }).toEqual({
+          opens: 1,
+          stats: observed < elapsedMilliseconds ? 1 : 0,
+          reads: 0,
+          closes: 1,
+        });
+        // Confirmed close releases admission; this second request never opens input.
+        expect(await owner.read("/synthetic-input", { signal: AbortSignal.abort() })).toEqual({
+          ok: false,
+          diagnostic: "docx_cancelled",
+        });
+        expect(opens).toBe(1);
+      } finally {
+        clock.mockRestore();
+      }
+    }
   });
 
   test("child environment excludes loader flags, credentials, proxies and PATH", () => {

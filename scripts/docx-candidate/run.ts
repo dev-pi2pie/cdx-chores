@@ -6,10 +6,18 @@ import { basename, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { createAdditionalDocxContentProbes } from "../../test/document-rename/fixtures/docx-content-probes";
-import { assertCaseExpectations, captureDocx, type DocxCapture } from "../docx-baseline/capture";
-import { createCompleteReaderCases, createInitialReaderCases } from "./cases";
+import { ORIGINAL_RESOURCE_RECONCILIATION } from "../../test/document-rename/fixtures/docx-boundary-probes";
+import {
+  assertCaseExpectations,
+  captureDocx,
+  type compactResourceCapture,
+  type DocxCapture,
+} from "../docx-baseline/capture";
+import { RESOURCE_BOUNDARIES } from "../docx-baseline/resource-cases";
+import { createInitialReaderCases, createValidationReaderCases } from "./cases";
 import { compareDocxReader } from "./compare";
 import type { CandidateModule } from "./compare";
+import { expandResourceCapture } from "./resource-comparison";
 
 const [format, scope] = process.argv.slice(2);
 assert(format === "esm" || format === "cjs");
@@ -30,7 +38,20 @@ const module: CandidateModule =
     : createRequire(import.meta.url)(join(workspace, "reader.cjs"));
 const directory = join(workspace, format);
 await mkdir(directory);
-const frozenCases = scope === "initial" ? createInitialReaderCases() : createCompleteReaderCases();
+const frozenCases =
+  scope === "initial" ? createInitialReaderCases() : createValidationReaderCases();
+if (scope === "complete") {
+  const resources = JSON.parse(
+    await readFile("test/document-rename/fixtures/docx-baseline/resources.json", "utf8"),
+  ) as ReturnType<typeof compactResourceCapture>[];
+  assert.equal(resources.length, 21);
+  for (const capture of resources) {
+    const item = frozenCases.find((value) => value.id === capture.id);
+    const sentinel = item?.expected.rawIncludes?.[0];
+    assert(sentinel, `${capture.id}: missing independent resource sentinel`);
+    baseline.push(expandResourceCapture(capture, sentinel));
+  }
+}
 const probes = scope === "initial" ? [] : createAdditionalDocxContentProbes();
 assert.equal(
   probes.length,
@@ -54,7 +75,36 @@ for (const item of cases) {
     assert(expected, `${item.id}: missing frozen baseline`);
     assert.equal(createHash("sha256").update(bytes).digest("hex"), expected.inputSha256, item.id);
     assertCaseExpectations(item, expected);
-    await compareDocxReader(module, item, expected, bytes, path, directory);
+    const boundary = RESOURCE_BOUNDARIES.find((value) => value.caseId === item.id);
+    const diagnostic =
+      boundary?.position === "above"
+        ? ORIGINAL_RESOURCE_RECONCILIATION[boundary.metric].aboveDiagnostic
+        : undefined;
+    if (boundary && diagnostic) {
+      assert(module.readCandidateDocx && module.createCandidateEvidenceExtractor);
+      assert(!("reason" in expected.result), `${item.id}: baseline extraction succeeded`);
+      assert.deepEqual(await module.readCandidateDocx(path), { ok: false, diagnostic });
+      assert.deepEqual(await module.extractCandidateDocxEvidence(path), {
+        reason: "docx_extract_error",
+      });
+      // Raised-cap comparison is a semantic probe, not evidence of default support.
+      const read = (input: string) =>
+        module.readCandidateDocx!(input, {
+          limits: { [boundary.metric]: boundary.measuredTarget },
+        });
+      await compareDocxReader(
+        {
+          ...module,
+          readCandidateDocx: read,
+          extractCandidateDocxEvidence: module.createCandidateEvidenceExtractor(read),
+        },
+        item,
+        expected,
+        bytes,
+        path,
+        directory,
+      );
+    } else await compareDocxReader(module, item, expected, bytes, path, directory);
   } catch {
     process.stderr.write(`case ${item.id}: failed\n`);
     process.exitCode = 1;

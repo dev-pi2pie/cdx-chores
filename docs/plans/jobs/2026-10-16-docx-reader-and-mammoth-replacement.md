@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–5 are complete.
+Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–5 are complete; Phase 6 is in progress.
 
 ## Phase 1 Outcomes
 
@@ -110,6 +110,18 @@ Source baseline: `bd0c9679037e810602d6e6ac203d5aeff14bc7b7`.
 
 Reviewed source/verification range: `bd0c9679..3aef0456`; closing documentation reviewed separately. Review added complete symbol-mapping parity coverage. The managed 22-case smoke and separate full-corpus checks passed; temporary outputs were removed.
 
+## Phase 6: Complete Candidate Validation
+
+Source baseline: `fd35e9984539cd30b3011898ffa258e891bb2a10`.
+
+| Check | Result |
+| --- | --- |
+| Complete comparisons and boundary reconciliation | In progress |
+| Isolated resource measurements and cleanup | Pending |
+| Packed candidate, npm/Bun consumers, ESM/CJS, minimum Node | Pending |
+| Applicable checks and full-range review | Pending |
+| Maintainer budget/support acceptance | Pending; Phase 7 waits |
+
 ## Later Phases
 
-Phases 6–10 are unstarted. Numerical budget/support acceptance, complete candidate validation, maintenance acceptance, and shipping checks remain pending. Mammoth remains the production extractor; the candidate's symbol mapper is a separate pinned dependency.
+Phases 7–10 are unstarted. Numerical budget/support acceptance, complete candidate validation, maintenance acceptance, and shipping checks remain pending. Mammoth remains the production extractor; the candidate's symbol mapper is a separate pinned dependency.

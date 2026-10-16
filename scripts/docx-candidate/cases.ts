@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 import { createBaselineCases } from "../docx-baseline/corpus/index";
 import { createContractCases } from "../docx-baseline/corpus/contract/index";
+import { createResourceCases } from "../docx-baseline/resource-cases";
 
 const additionalIds = new Set([
   "heading-custom-id-standard-name",
@@ -35,6 +36,14 @@ export function createInitialReaderCases() {
 export function createCompleteReaderCases() {
   const cases = [...createBaselineCases(), ...createContractCases()];
   assert.equal(cases.length, 103, "Complete reader case selection changed");
+  assert.equal(new Set(cases.map((item) => item.id)).size, cases.length);
+  return cases;
+}
+
+/** Complete candidate validation includes the frozen structural corpus as well. */
+export function createValidationReaderCases() {
+  const cases = [...createCompleteReaderCases(), ...createResourceCases()];
+  assert.equal(cases.length, 124, "Validation reader case selection changed");
   assert.equal(new Set(cases.map((item) => item.id)).size, cases.length);
   return cases;
 }

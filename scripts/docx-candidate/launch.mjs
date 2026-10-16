@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { build } from "tsdown";
 
 import { withTemporaryWorkspace } from "../docx-baseline/workspace.mjs";
+import { buildCandidateAssets, candidateBuildOptions } from "./build.mjs";
 
 const repo = fileURLToPath(new URL("../../", import.meta.url));
 try {
@@ -13,30 +14,9 @@ try {
     throw new Error("Expected verification with optional --smoke");
   await withTemporaryWorkspace(async (workspace) => {
     await symlink(join(repo, "node_modules"), join(workspace, "node_modules"), "junction");
-    const common = {
-      config: false,
-      cwd: repo,
-      outDir: workspace,
-      platform: "node",
-      target: "node22",
-      fixedExtension: true,
-      dts: false,
-      clean: false,
-      logLevel: "silent",
-      deps: { onlyBundle: [] },
-    };
+    await buildCandidateAssets(workspace);
     await build({
-      ...common,
-      entry: {
-        reader: "scripts/docx-candidate/adapter.ts",
-        "docx-child": "src/docx/runtime/docx-child.ts",
-        "docx-worker": "src/docx/runtime/docx-worker.ts",
-        "docx-parser": "src/docx/reader.ts",
-      },
-      format: ["esm", "cjs"],
-    });
-    await build({
-      ...common,
+      ...candidateBuildOptions(workspace),
       entry: { compare: "scripts/docx-candidate/run.ts" },
       format: ["esm"],
     });

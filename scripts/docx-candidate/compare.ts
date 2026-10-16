@@ -13,7 +13,7 @@ export type CandidateModule = Pick<
   typeof candidate,
   "readDocxDocument" | "extractCandidateDocxEvidence"
 > &
-  Partial<Pick<typeof candidate, "readCandidateDocx">>;
+  Partial<Pick<typeof candidate, "readCandidateDocx" | "createCandidateEvidenceExtractor">>;
 
 /** Match baseline capture serialization, including omitted optional fields. */
 function captured<T>(value: T): T {
