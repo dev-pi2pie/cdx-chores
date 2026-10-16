@@ -2,7 +2,7 @@
 title: "DOCX reader review follow-up"
 created-date: 2026-10-16
 modified-date: 2026-10-16
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -158,12 +158,17 @@ Restore the historical literal-ampersand behavior identified by review of `bc6e3
 
 - [x] Recover bare ampersands in text and quoted attributes while preserving references, literal sections, attribute whitespace, and physical-part accounting.
 - [x] Add independent evidence/prompt regressions and ampersand-heavy cap checks; reproduce failures before the fix.
-- [ ] Pass focused, routine, built-runtime, quality, and renewed resource checks; update coverage references.
-- [ ] Review the complete follow-up and combined DOCX ranges, resolve findings, and clean owned artifacts.
+- [x] Pass focused, routine, built-runtime, quality, and renewed resource checks; update coverage references.
+- [x] Review the complete follow-up and combined DOCX ranges, resolve findings, and clean owned artifacts.
 
 | Area | Outcome |
 | --- | --- |
 | Recovery / references | Literal ampersands recovered in values; numeric/predefined references decode once; undeclared semicolon-terminated named references and malformed markup retain failures |
 | Regressions | Thirty-five historical-equivalent DOCX cases, four parser controls, and one selected-part cap test added; ten pre-fix failures reproduced |
-| Allocation correction | Escaped source is used only for validation; parsing original values avoids synthetic entity expansion; ampersand-heavy at/above-cap runtime checks passed in both formats and runtime lanes |
-| Initial verification | 310 focused and 1,916 unit cases passed; lint, format, and types passed; application and runtime checks pending |
+| Allocation correction | Only validation uses escaped source; parsing original values avoids synthetic expansion; dense 1 MiB XML part accepted, cap + 1 byte rejected, and admission released in all four runtime/format lanes |
+| Routine verification | 310 focused, 1,916 unit, and 2,331 application cases passed; application 234.21 seconds under unchanged 240-second deadline; lint, format, types, and shipping build passed |
+| Built runtime comparisons | 134 historical and 195 follow-up cases per format on primary/minimum Node passed; complete evidence/prompts checked; frozen captures unchanged |
+| Renewed measurements | Eighteen workloads per runtime passed with idle/loaded callers; deadline, RSS, and lifecycle checks passed |
+| Earlier packed-consumer evidence | Retained from the drawing follow-up; distribution boundaries unchanged |
+| Full-range review | `0e6f6748..37e4b615` and combined `bc6e3e98..37e4b615` reviewed; allocation and record wording corrected; no remaining material findings; closing docs reviewed separately |
+| Artifact cleanup | Owned manual and managed-test workspaces settled and removed; temporary inputs, builds, runtime cache, and logs removed; no smoke artifacts retained |
