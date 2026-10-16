@@ -543,7 +543,7 @@ The [structural cases](../../test/document-rename/fixtures/docx-baseline/resourc
 
 ### Demonstrated candidate envelope
 
-The numerical proposal is unchanged and awaits acceptance within Phase 7 after Phase 6.1 harness verification, Phase 6.2 package-verification refinement, and Phase 6.3 manual-script simplification, ownership, and verification. Every supported input must fit all applicable limits; separate at-cap probes do not establish that every simultaneous combination of maximum dimensions is supported.
+The numerical proposal is unchanged and awaits acceptance within Phase 7 after completed Phase 6.1 harness verification, Phase 6.2 package-verification refinement, and Phase 6.3 manual-script simplification, ownership, and verification. The [acceptance proposal](#phase-7-assessment-and-acceptance-proposal) reconciles that evidence; no reader has been selected. Every supported input must fit all applicable limits; separate at-cap probes do not establish that every simultaneous combination of maximum dimensions is supported.
 
 | Scope | Proposed limit or behavior |
 | --- | --- |
@@ -590,7 +590,7 @@ The verifier accepts additional ordinary package files and contained package-man
 
 Manual feature scripts provide explicit comparison, measurement, packaging, and smoke commands. Durable product inputs, frozen expectations, and independent assertions belong under `test/` and exercise product code directly; manual commands may reuse them. Routine suites should not test the manual launchers, evaluation adapters, package inspectors, or smoke-retention machinery. Shared managed-test infrastructure has a separate role. The current simplification removes embedded harness self-tests and unnecessary orchestration while preserving useful progress/help, bounded process handling, cleanup, and approved optional smoke retention.
 
-The [Phase 6.2 record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-62-package-compatibility-verification) reports the application selection at that revision reaching its shared 240-second deadline and a passing scoped video-workflow control. That selection's natural completion time and runtime contributors remain unmeasured; manual-tooling coverage has not been established as the cause. [Phase 6.3](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-simplify-manual-validation-and-separate-application-regressions) is complete: durable DOCX support is test-owned, manual-only wrappers are retired, and embedded package self-probes are removed. The revised application suite passes in 213 seconds under the unchanged 240-second policy. Explicit full comparisons, measurements on both runtime lanes, fresh consumers, and manual lifecycle checks also pass; the [record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-manual-script-simplification-and-test-ownership) captures coverage, cleanup, and review. Phase 7 acceptance remains unstarted. Prior phase outcomes remain historical; a smaller suite is not evidence of faster extraction. Content behavior and extraction budgets are unchanged.
+The [Phase 6.2 record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-62-package-compatibility-verification) reports the application selection at that revision reaching its shared 240-second deadline and a passing scoped video-workflow control. That selection's natural completion time and runtime contributors remain unmeasured; manual-tooling coverage has not been established as the cause. [Phase 6.3](../plans/plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-simplify-manual-validation-and-separate-application-regressions) is complete: durable DOCX support is test-owned, manual-only wrappers are retired, and embedded package self-probes are removed. The revised application suite passes in 213 seconds under the unchanged 240-second policy. Explicit full comparisons, measurements on both runtime lanes, fresh consumers, and manual lifecycle checks also pass; the [record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-manual-script-simplification-and-test-ownership) captures coverage, cleanup, and review. Phase 7 assessment is prepared; maintainer acceptance remains pending. Prior phase outcomes remain historical; a smaller suite is not evidence of faster extraction. Content behavior and extraction budgets are unchanged.
 
 ### Maintenance assessment
 
@@ -601,6 +601,56 @@ Assess the benefit of owning the narrow extraction contract against the ongoing 
 - Retained dependencies, licenses/provenance, update obligations, product-regression corpus and simplified manual-command upkeep, and remaining migration work, including retiring live Mammoth capture/measurement paths while preserving independent comparison coverage.
 
 The maintainer must explicitly accept responsibility for dependency/security updates, editor regressions and corpus upkeep, unsupported-content/diagnostic decisions, and future resource-budget changes before reader selection. A subsystem location alone does not establish that acceptance.
+
+### Phase 7 assessment and acceptance proposal
+
+Recommend proceeding to Phase 8 only after explicit maintainer acceptance of the proposal below. Candidate revision `244b3e61` preserves the reader/runtime, shared evidence policy, dependency declarations, and lockfile reviewed in Phase 6. All five frozen captures/manifests also match that revision's evidence. The subsequent reviewed work renews comparisons, measurements, and routine-suite results, then simplifies package checks without changing extraction. These are candidate results; integration and shipping remain separate gates.
+
+| Evidence | Reviewed result |
+| --- | --- |
+| Complete comparisons | 134 identified cases per format on primary/minimum Node; 130 default comparisons preserve full evidence/prompts except identity, four default-cap failures retain separate raised-cap semantic comparisons |
+| Resources | 18 workloads per runtime lane; processing/API and sampled-RSS proposals met with confirmed settlement; controlled boundary and fault probes passed |
+| Routine product coverage | 1,688 unit / 2,326 application cases passed; application 213 seconds under unchanged 240-second policy |
+| Current package verifier | Eight fresh npm/Bun × primary/minimum Node × ESM/CJS consumers passed at `244b3e61`; direct dependencies/assets and actual behavior checked without recursive inventory or Mammoth enforcement |
+| Traceability | [Phase 6 record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-6-complete-candidate-validation) and [Phase 6.3 record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-manual-script-simplification-and-test-ownership); frozen inputs remain test-owned |
+
+The implementation is focused but carries substantial ownership: 1,674 physical lines in 16 reader/content/guard modules and 981 lines in eight runtime modules, reusing 514 lines in five OOXML helpers. Counts include comments and blank lines. The complexity follows demonstrated style/heading projection, distinct raw/heading streams, symbol compatibility, snapshot notes, ZIP/XML bounds, and process ownership; it does not establish general DOCX conversion support. Preserve these boundaries instead of expanding into a renderer or another ZIP/XML stack.
+
+Direct dependency review retains `dingbat-to-unicode` 1.0.2 (BSD-2-Clause; the verified standalone mapper), `fast-xml-parser` 5.11.2 (MIT), and `yauzl` 3.4.0 (MIT). Installed manifests/notices agree with the recorded provenance; no versions change. The known transitive packaged-notice gap and complete actual-product dependency/notice review remain Phase 9 obligations. The quick verification scripts acquire no license checker, transitive inventory, or Mammoth policy.
+
+| Acceptance area | Proposed contract | State |
+| --- | --- | --- |
+| Input / selected parts | 8 MiB input; 256 physical ZIP entries; 1 MiB per selected part / 4 MiB selected total | Pending |
+| XML / lookup work | 100,000 cumulative elements; depth 64; 128 steps per style-rule or numbering lookup | Pending |
+| Deadline / memory | 5 seconds from admitted input reading through result validation, expiry at equality; 256 MiB extraction-process RSS including worker, caller excluded; 10 ms and transition samples | Pending |
+| Transport / admission | 4 KiB request metadata; 8 MiB encoded result; one active request per owner, no queue; independent operations have separate budgets | Pending |
+| Cleanup limits | 250 ms TERM grace, 1-second cleanup target, 6-second complete API target; unconfirmed settlement fails and retains ownership/admission. Sampling is not a hard memory ceiling; OS failure can defeat timing/cleanup guarantees | Pending |
+| Content | Preserve identified symbol mappings/omissions/failures, heading-affecting style rules, and snapshot note/comment behavior; no OCR, external-target loading, or general HTML conversion promise | Pending |
+| Intentional differences | Accurate `docx-reader` / `docx-reader+ooxml` identity; default over-cap rejection maps outward to existing `docx_extract_error`. Preserve the 10 MiB CLI prefilter: input above 8 MiB through 10 MiB reaches the reader and fails extraction; above 10 MiB keeps the existing skip reason | Pending |
+| Platform scope | Accept demonstrated macOS/Node scope for integration; Linux and Windows remain unverified, with no replacement support claim before separate validation. Manual process-group tooling does not establish product portability | Pending |
+| Maintenance | Repository maintainer owns dependency/security and provenance review, editor/corpus regressions, manual-command upkeep, diagnostics/unsupported-content decisions, and renewed verification when limits or relevant code/dependencies change | Pending |
+| Selection | Proceed to integration only after acceptance; final product verification, complete Mammoth removal, and shipping acceptance remain pending | Pending |
+
+Phase 8 should first separate the live Mammoth oracle from the production adapter, retaining frozen expectations and baseline-only support until Phase 9. Reuse one supervisor throughout each document-title operation's sequential extraction loop; independent operations may run concurrently. A failed owner's retained slot must not be bypassed by making a new owner for the next file. Model-request `timeoutMs` remains separate from the per-document extraction deadline.
+
+```text
+Document-title operation (one supervisor owner)
+          |
+          v
+Existing sequential extraction loop
+          |
+          +--> other formats: existing extractors
+          |
+          `--> DOCX: bounded child + worker + parser
+                         |
+                  facts / fixed failure
+                         |
+                 existing evidence assembly
+                         |
+                  prompt / batches / retries
+```
+
+Production builds must include fixed child/worker/parser siblings in both formats. Source application tests need a test-owned compiled Node product driver because the runtime resolves fixed built assets and launches `process.execPath`; no inline production fallback or manual evaluation launcher belongs in routine coverage. Retain reused OOXML helper locations initially, account for metadata-helper consumers, and preserve the existing public `runCli` boundary without exposing a reader API. These are proposed integration constraints, not implemented Phase 8 outcomes.
 
 ## Decision and Shipping Gates
 
