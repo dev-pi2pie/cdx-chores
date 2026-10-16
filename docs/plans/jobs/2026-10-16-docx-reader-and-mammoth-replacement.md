@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–6 and 6.1–6.2 are complete; Phase 6.3 is unstarted. Phase 7 owns subsequent budget/support acceptance and selection after Phase 6.3.
+Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–6 and 6.1–6.2 are complete; Phase 6.3 is in progress. Phase 7 owns subsequent budget/support acceptance and selection after Phase 6.3.
 
 ## Phase 1 Outcomes
 
@@ -21,7 +21,7 @@ The [case manifest](../../../test/document-rename/fixtures/docx-baseline/manifes
 | Resource measurements completed and [provisional budgets](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#resource-budgets) proposed | Yes |
 | Candidate implementation started | No |
 
-Reusable evidence: [harness](../../../scripts/docx-baseline/launch.mjs), [corpus](../../../scripts/docx-baseline/corpus/index.ts), [semantic expectations](../../../test/document-rename/fixtures/docx-baseline/expected.json), [resource expectations](../../../test/document-rename/fixtures/docx-baseline/resources.json), and [provisional limits](../../../scripts/docx-baseline/resources.ts). Execution files and raw reports are temporary; no playground entry is needed for this phase.
+Reusable evidence: [harness](../../../scripts/docx-baseline/launch.mjs), [corpus](../../../test/document-rename/fixtures/docx-baseline/corpus/index.ts), [semantic expectations](../../../test/document-rename/fixtures/docx-baseline/expected.json), [resource expectations](../../../test/document-rename/fixtures/docx-baseline/resources.json), and [provisional limits](../../../scripts/docx-baseline/resources.ts). Execution files and raw reports are temporary; no playground entry is needed for this phase.
 
 ## Phase 1 Verification and Review
 
@@ -61,7 +61,7 @@ Source baseline: `35bfe7466bf797bff6d49f0d143ce6a3f83ede03`. The private inline 
 
 | Check | Result |
 | --- | --- |
-| [Identified 22-case comparisons](../../../scripts/docx-candidate/cases.ts), complete evidence/prompts, independent expectations | Passed; only agreed extractor identity differs |
+| [Identified 22-case comparisons](../../../test/document-rename/fixtures/docx-candidate/cases.ts), complete evidence/prompts, independent expectations | Passed; only agreed extractor identity differs |
 | Built ESM/CJS checks under Node, including minimum supported runtime | Passed |
 | [Footprint and remaining work](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#initial-reader-assessment) assessed | Yes |
 | Lint, formatting, types | Passed |
@@ -224,12 +224,15 @@ Retained runs contain `summary.json` and `esm/<case-id>/` / `cjs/<case-id>/` dir
 
 ## Phase 6.3: Manual Script Simplification and Test Ownership
 
-| Item | State |
+| Check | Result |
 | --- | --- |
-| [DOCX script simplification and manual-tooling test ownership](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-simplify-manual-validation-and-separate-application-regressions) | Planned; preserve product assertions and account for routine coverage changes |
-| Explicit manual checks / remaining full application suite | Not run; further timeout diagnosis only if needed |
-| Cleanup and phase review | Not started / not run |
+| Ownership | 134 application / 46 unit manual-tooling cases retired; product assertions retained; inputs and comparison support test-owned |
+| Simplification | Embedded package self-probes and unused harness configuration removed; manual commands preserved |
+| Preserved inputs | 124 DOCX input digests, five frozen captures, and ten synthetic data fixture blobs unchanged |
+| Managed suites | Unit 1,688 / application 2,326 passed; application 213 seconds under unchanged 240-second policy; no failures/errors/skips |
+| Manual / quality | 134 ESM/CJS comparisons, 12 help/error checks, lint/format/types/build passed; measurements, consumers, and lifecycle checks pending |
+| Cleanup / review | Completed checks cleaned; remaining verification and full-range review pending |
 
 ## Later Phases
 
-Phases 6.3 and 7–10 are unstarted. Phase 7 follows verified script simplification, test ownership, explicit manual checks, and the remaining full application suite, then reviews budget/support and maintenance acceptance before selection. Phase 8 integrates the reader with direct product regressions; Phase 9 preserves expectations before Mammoth removal and actual-product checks; Phase 10 reconciles surviving manual commands, ownership, and documentation. Mammoth remains the production extractor; the candidate's symbol mapper is a separate pinned dependency.
+Phase 6.3 is in progress; Phases 7–10 are unstarted. Phase 7 follows verified script simplification, test ownership, explicit manual checks, and the remaining full application suite, then reviews budget/support and maintenance acceptance before selection. Phase 8 integrates the reader with direct product regressions; Phase 9 preserves expectations before Mammoth removal and actual-product checks; Phase 10 reconciles surviving manual commands, ownership, and documentation. Mammoth remains the production extractor; the candidate's symbol mapper is a separate pinned dependency.

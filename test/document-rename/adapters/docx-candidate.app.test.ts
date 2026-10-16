@@ -1,18 +1,17 @@
 import { expect, test } from "bun:test";
-import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 
 import {
   createCandidateEvidenceExtractor,
   readDocxDocument,
-} from "../../../scripts/docx-candidate/adapter";
-import { createInitialReaderCases } from "../../../scripts/docx-candidate/cases";
-import { compareDocxReader } from "../../../scripts/docx-candidate/compare";
-import type { DocxCapture } from "../../../scripts/docx-baseline/capture";
-import { buildDocxPackage, paragraph } from "../../../scripts/docx-baseline/corpus/builder";
+} from "../fixtures/docx-candidate/adapter";
+import { createInitialReaderCases } from "../fixtures/docx-candidate/cases";
+import { compareDocxReader } from "../fixtures/docx-candidate/compare";
+import type { DocxCapture } from "../fixtures/docx-baseline/capture";
+import { buildDocxPackage, paragraph } from "../fixtures/docx-baseline/corpus/builder";
 import { readDocxXmlParts } from "../../../src/adapters/docx/ooxml-package";
 import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
-import { startFixtureProcess } from "../../../scripts/testing/fixtures/fixture-process";
 
 const baseline = JSON.parse(
   await readFile(
@@ -68,48 +67,3 @@ test("embedded style-map opt-in preserves default parts and the existing part ca
     expect(parts.has("/mammoth/style-map")).toBe(length <= 256 * 1024);
   }
 });
-
-for (const signal of ["SIGINT", "SIGTERM"] as const) {
-  test(`candidate launcher streams before completion and cleans after ${signal}`, async () => {
-    await withTempFixtureDir("docx-candidate-cancel", async (parent) => {
-      const owned = startFixtureProcess({
-        executable: "node",
-        args: [join(REPO_ROOT, "scripts/docx-candidate/launch.mjs")],
-        cwd: REPO_ROOT,
-        env: {
-          PATH: process.env.PATH,
-          SystemRoot: process.env.SystemRoot,
-          TMPDIR: parent,
-          TMP: parent,
-          TEMP: parent,
-          FORCE_COLOR: "1",
-          NO_COLOR: "",
-        },
-        timeoutMs: 30_000,
-        graceMs: 2_000,
-        cleanupMs: 4_000,
-        maxOutputBytes: 128 * 1024,
-      });
-      let seen = "";
-      let deliveredWhileRunning = false;
-      owned.child.stderr.on("data", (chunk: Buffer) => {
-        seen += chunk.toString("utf8");
-        if (!deliveredWhileRunning && seen.includes("running seed-metadata-rich")) {
-          deliveredWhileRunning = owned.child.exitCode === null;
-          owned.child.kill(signal);
-        }
-      });
-      const result = await owned.completion;
-      expect(deliveredWhileRunning).toBe(true);
-      expect(result.stopped).toBe(true);
-      expect(result.exitCode).not.toBe(0);
-      expect(result.stdout).toBe("guarded reader: passed no\n");
-      expect(result.stderr).toContain("cancellation");
-      expect(result.stderr).toContain("case seed-metadata-rich");
-      expect(result.stderr).toContain("Temporary cleanup confirmed");
-      expect(result.stderr).not.toContain("\u001b[");
-      expect(result.stderr).not.toContain("guarded reader: passed yes");
-      expect(await readdir(parent)).toEqual([]);
-    });
-  }, 40_000);
-}

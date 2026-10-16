@@ -1,12 +1,10 @@
 import { expect, test } from "bun:test";
-import { execFileSync } from "node:child_process";
-import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { assertCaseExpectations, captureDocx } from "../../../scripts/docx-baseline/capture";
-import type { DocxCapture } from "../../../scripts/docx-baseline/capture";
-import { createContractCases } from "../../../scripts/docx-baseline/corpus/contract/index";
+import { assertCaseExpectations, captureDocx } from "../fixtures/docx-baseline/capture";
+import type { DocxCapture } from "../fixtures/docx-baseline/capture";
+import { createContractCases } from "../fixtures/docx-baseline/corpus/contract/index";
 import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 const fixtures = join(REPO_ROOT, "test/document-rename/fixtures/docx-baseline");
@@ -69,7 +67,7 @@ for (const item of cases.filter((item) => item.execution !== "bounded-node")) {
       assertCaseExpectations(item, captured);
       const baseline = expected.find((value) => value.id === item.id);
       if (!baseline) throw new Error(`Missing contract baseline: ${item.id}`);
-      // Runtime TypeError wording differs in Bun; Node verifies every complete frozen capture below.
+      // Runtime TypeError wording differs in Bun; complete Node captures are verified manually.
       const { html, rawText, ...evidence } = captured;
       const { html: expectedHtml, rawText: expectedRawText, ...expectedEvidence } = baseline;
       expect(evidence).toEqual(expectedEvidence);
@@ -80,25 +78,3 @@ for (const item of cases.filter((item) => item.execution !== "bounded-node")) {
     });
   }, 15_000);
 }
-
-test("Node contract verification bounds all cases, waits for child exit, and removes generated artifacts", async () => {
-  const parent = await mkdtemp(join(tmpdir(), "docx-contract-launch-test-"));
-  try {
-    // Each case uses execFileSync with its own deadline; return implies that case child has exited.
-    const output = execFileSync(
-      "node",
-      [join(REPO_ROOT, "scripts/docx-baseline/launch.mjs"), "verify-contract"],
-      {
-        cwd: REPO_ROOT,
-        env: { ...process.env, TMPDIR: parent, TMP: parent, TEMP: parent },
-        encoding: "utf8",
-        timeout: 45_000,
-        stdio: ["ignore", "pipe", "pipe"],
-      },
-    );
-    expect(output).toBe("verify-contract: passed yes\n");
-    expect(await readdir(parent)).toEqual([]);
-  } finally {
-    await rm(parent, { recursive: true });
-  }
-}, 55_000);

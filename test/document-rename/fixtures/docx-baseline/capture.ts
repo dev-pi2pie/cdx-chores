@@ -4,9 +4,9 @@ import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
 import * as mammoth from "mammoth";
 
-import { extractDocxEvidence } from "../../src/adapters/codex/document-rename/extractors/docx";
-import { buildDocumentPrompt } from "../../src/adapters/codex/document-rename/prompt";
-import { readDocxCoreMetadata } from "../../src/adapters/docx/ooxml-metadata";
+import { extractDocxEvidence } from "../../../../src/adapters/codex/document-rename/extractors/docx";
+import { buildDocumentPrompt } from "../../../../src/adapters/codex/document-rename/prompt";
+import { readDocxCoreMetadata } from "../../../../src/adapters/docx/ooxml-metadata";
 import type { DocxBaselineCase } from "./corpus/index";
 
 type Conversion = { value: string; messages: unknown[] } | { error: string };

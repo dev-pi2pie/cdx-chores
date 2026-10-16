@@ -1,22 +1,21 @@
+import { copyFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
-import { REPO_ROOT } from "../../helpers/cli-test-utils";
+const fixtures = [
+  "basic.csv",
+  "basic.tsv",
+  "collapsed-merged.xlsx",
+  "generic.csv",
+  "header-band.xlsx",
+  "messy.xlsx",
+  "multi.sqlite",
+  "multi.xlsx",
+  "no-head.csv",
+];
 
 export function seedDataExtractFixtures(outputDir: string): void {
-  const proc = Bun.spawnSync({
-    cmd: ["node", "scripts/generate-data-extract-fixtures.mjs", "seed", "--output-dir", outputDir],
-    cwd: REPO_ROOT,
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-
-  if (proc.exitCode === 0) {
-    return;
+  mkdirSync(outputDir, { recursive: true });
+  for (const name of fixtures) {
+    copyFileSync(join(import.meta.dir, "extract", name), join(outputDir, name));
   }
-
-  const stdout = Buffer.from(proc.stdout).toString("utf8");
-  const stderr = Buffer.from(proc.stderr).toString("utf8");
-  throw new Error(
-    `Failed to seed data-extract fixtures in ${join(outputDir)} (exit ${proc.exitCode}).\nstdout:\n${stdout}\nstderr:\n${stderr}`,
-  );
 }

@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { HarnessError } from "./harness/errors.mjs";
 import { candidateCliOptions } from "./cli.mjs";
 import { prepareSmokeRetention } from "./retention.mjs";
-import { smokeCaseIds } from "./smoke-case-ids.mjs";
+import { smokeCaseIds } from "../../test/document-rename/fixtures/docx-candidate/smoke-case-ids.mjs";
 
 const repo = fileURLToPath(new URL("../../", import.meta.url));
 const cli = await candidateCliOptions("comparison");

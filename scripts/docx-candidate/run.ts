@@ -12,12 +12,15 @@ import {
   captureDocx,
   type compactResourceCapture,
   type DocxCapture,
-} from "../docx-baseline/capture";
-import { RESOURCE_BOUNDARIES } from "../docx-baseline/resource-cases";
-import { createInitialReaderCases, createValidationReaderCases } from "./cases";
-import { compareDocxReader } from "./compare";
-import type { CandidateModule } from "./compare";
-import { expandResourceCapture } from "./resource-comparison";
+} from "../../test/document-rename/fixtures/docx-baseline/capture";
+import { RESOURCE_BOUNDARIES } from "../../test/document-rename/fixtures/docx-baseline/resource-cases";
+import {
+  createInitialReaderCases,
+  createValidationReaderCases,
+} from "../../test/document-rename/fixtures/docx-candidate/cases";
+import { compareDocxReader } from "../../test/document-rename/fixtures/docx-candidate/compare";
+import type { CandidateModule } from "../../test/document-rename/fixtures/docx-candidate/compare";
+import { expandResourceCapture } from "../../test/document-rename/fixtures/docx-candidate/resource-comparison";
 import { emitProgress } from "./harness/protocol.mjs";
 
 const [format, scope] = process.argv.slice(2);

@@ -1,10 +1,4 @@
-import {
-  buildDocxPackage,
-  coreXml,
-  paragraph,
-  run,
-  WORD_NS,
-} from "../../../scripts/docx-baseline/corpus/builder";
+import { buildDocxPackage, coreXml, paragraph, run, WORD_NS } from "./docx-baseline/corpus/builder";
 
 /** Generated only inside the owned package-check workspace. */
 export function packageCheckInput(): Buffer {

@@ -1,10 +1,7 @@
 import { HarnessError } from "./errors.mjs";
 
 /** Bound queued bytes and delivery time, including a destination that never drains. */
-export function createOutputWriter(
-  destination,
-  { timeoutMs = 5_000, maxPendingBytes = 64 * 1024, onFailure = () => {} } = {},
-) {
+export function createOutputWriter(destination, onFailure = () => {}) {
   let failed;
   let pendingBytes = 0;
   let active;
@@ -33,7 +30,7 @@ export function createOutputWriter(
     if (active || failed || !queue.length) return;
     const item = queue.shift();
     active = item;
-    item.timer = setTimeout(fail, timeoutMs);
+    item.timer = setTimeout(fail, 5_000);
     try {
       destination.write(item.bytes, (writeError) => {
         if (writeError) return fail();
@@ -55,7 +52,7 @@ export function createOutputWriter(
     write(value) {
       if (failed) return Promise.reject(failed);
       const bytes = Buffer.from(value);
-      if (bytes.length + pendingBytes > maxPendingBytes) {
+      if (bytes.length + pendingBytes > 64 * 1024) {
         fail();
         return Promise.reject(failed);
       }

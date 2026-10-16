@@ -3,8 +3,8 @@ import { copyFile, rm, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { build } from "tsdown";
 
-import { buildStoredZip, documentXml, paragraph } from "../../scripts/docx-baseline/corpus/builder";
-import { createBaselineCases } from "../../scripts/docx-baseline/corpus/index";
+import { buildStoredZip, documentXml, paragraph } from "./fixtures/docx-baseline/corpus/builder";
+import { createBaselineCases } from "./fixtures/docx-baseline/corpus/index";
 import { startFixtureProcess } from "../../scripts/testing/fixtures/fixture-process";
 import { REPO_ROOT, withTempFixtureDir } from "../helpers/cli-test-utils";
 

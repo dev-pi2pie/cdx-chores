@@ -11,11 +11,11 @@ import {
   captureDocx,
   compactResourceCapture,
   exerciseExternalFileRead,
-} from "./capture";
-import type { DocxCapture } from "./capture";
-import { createBaselineCases } from "./corpus/index";
-import { createContractCases } from "./corpus/contract/index";
-import { createResourceCases } from "./resource-cases";
+} from "../../test/document-rename/fixtures/docx-baseline/capture";
+import type { DocxCapture } from "../../test/document-rename/fixtures/docx-baseline/capture";
+import { createBaselineCases } from "../../test/document-rename/fixtures/docx-baseline/corpus/index";
+import { createContractCases } from "../../test/document-rename/fixtures/docx-baseline/corpus/contract/index";
+import { createResourceCases } from "../../test/document-rename/fixtures/docx-baseline/resource-cases";
 import { inspectDocxResources } from "./resources";
 
 const repo = process.cwd();

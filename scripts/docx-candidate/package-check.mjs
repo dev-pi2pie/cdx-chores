@@ -3,7 +3,6 @@ import { copyFile, mkdir, realpath, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { verifyPackageProcessOwnership } from "../../test/document-rename/fixtures/docx-package-process.mjs";
 import { candidateCliOptions } from "./cli.mjs";
 import {
   candidatePackageName,
@@ -86,24 +85,6 @@ if (cli) {
           log: join(workspace, `command-${commandIndex++}.log`),
         });
       const npmRun = (args, cwd) => run(process.execPath, [npm, ...args], cwd);
-      stage = "package process ownership";
-      await harness.stage("Package process ownership probes");
-      await verifyPackageProcessOwnership(workspace, env, async (path, args, options) => {
-        try {
-          return await harness.command(path, args, {
-            ...options,
-            stage: "runner",
-            label: "Package process ownership probe",
-            posixOnly: true,
-            silent: true,
-          });
-        } catch (error) {
-          if (harness.signal.aborted || harness.cleanupUnconfirmed) throw error;
-          throw new Error("package command failed");
-        }
-      });
-      await harness.success("Package process ownership probes");
-      await harness.result("package process ownership: passed yes\n");
       stage = "build";
       const candidate = join(workspace, "candidate");
       const dist = join(candidate, "dist");

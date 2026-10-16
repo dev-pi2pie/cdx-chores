@@ -9,7 +9,7 @@ import {
   type ZipEntry,
 } from "./corpus/builder.ts";
 import type { DocxBaselineCase } from "./corpus/index.ts";
-import { countXmlForInspection, PROPOSED_DOCX_BUDGETS } from "./resources.ts";
+import { countXmlDimensions, PROPOSED_DOCX_BUDGETS } from "./dimensions.ts";
 
 export type ResourceBoundaryMetric =
   | "compressedInputBytes"
@@ -120,7 +120,7 @@ function createBoundaryBuffer(boundary: ResourceBoundary): Buffer {
     case "xmlElementCount": {
       const baseElements = base.reduce((sum, [name, value]) => {
         if (!/\.(?:xml|rels)$/.test(name)) return sum;
-        return sum + countXmlForInspection(value.toString()).elementCount;
+        return sum + countXmlDimensions(value.toString()).elementCount;
       }, 0);
       return buildStoredZip([
         ...base,

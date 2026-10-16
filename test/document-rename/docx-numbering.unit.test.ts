@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { WORD_NS } from "../../scripts/docx-baseline/corpus/builder";
+import { WORD_NS } from "./fixtures/docx-baseline/corpus/builder";
 import { resolveDocxLimits } from "../../src/docx/limits";
 import { createNumberingResolver } from "../../src/docx/numbering";
 import { parseXml, type Element } from "../../src/docx/xml";

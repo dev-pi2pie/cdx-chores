@@ -1,10 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { buildStoredZip, documentXml, paragraph } from "../../scripts/docx-baseline/corpus/builder";
-import {
-  createResourceCases,
-  RESOURCE_BOUNDARIES,
-} from "../../scripts/docx-baseline/resource-cases";
+import { buildStoredZip, documentXml, paragraph } from "./fixtures/docx-baseline/corpus/builder";
+import { createResourceCases, RESOURCE_BOUNDARIES } from "./fixtures/docx-baseline/resource-cases";
 import {
   DEFAULT_DOCX_LIMITS,
   DocxLimitError,

@@ -20,6 +20,7 @@ Each historical path appears once for each accepted move, split, merge, or remov
 - `split` names every current path that owns part of the former contract.
 - `merged` names the current path that absorbed the contract.
 - `removed` names the retained current test that protects the useful contract.
+- `retired` identifies verification of manual feature tooling that has left routine suites; its cell links the explicit manual verification boundary.
 
 A change set records the acceptance date, evidence range, and implementation record once for the related path group. Later path changes update current-owner cells and append a new change set without rewriting completed job evidence.
 
@@ -55,6 +56,7 @@ A change set records the acceptance date, evidence range, and implementation rec
 | `cli-foundations` | 2026-08-23 | CLI Foundations And Mixed-Root Cleanup | `10f7eeef..d5985314` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-621-cli-foundations-and-mixed-root-decomposition) |
 | `support-and-root-cleanup` | 2026-08-24 | Shared Support And Root Cleanup | `b83d14f5..275f88f9`<br>`275f88f9..ba4701aa`<br>`ba4701aa..5411dc03`<br>`ba4701aa..b8f78174`<br>`5411dc03..b8f78174` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-7-global-support-ownership-and-root-deferrals) |
 | `final-reconciliation` | 2026-08-24 | Final Reconciliation | `1009d3c8..6e288cb1` | [job record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-8-final-test-tree-and-documentation-reconciliation) |
+| `manual-tooling-ownership` | 2026-10-16 | Manual wrappers retired; durable product fixtures retained | See record | [Phase 6.3](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-manual-script-simplification-and-test-ownership) |
 
 ## Historical-To-Current Lookup
 
@@ -89,8 +91,8 @@ Change set: `data-query`.
 | `test/cli-interactive-data-query-formal-guide.test.ts` | moved | `test/data-query/direct/formal-guide.unit.test.ts` |
 | `test/cli-interactive-data-query-facade.test.ts` | moved | `test/data-query/direct/interactive-facade.app.test.ts` |
 | `test/cli-options-parsers.test.ts` | moved | `test/data-query/direct/relation-option-parser.unit.test.ts` |
-| `test/data-query-duckdb-fixture-generator.test.ts` | moved | `test/data-query/evidence/duckdb-fixtures.app.test.ts` |
-| `test/data-query-fixture-generator.test.ts` | moved | `test/data-query/evidence/tabular-fixtures.app.test.ts` |
+| `test/data-query-duckdb-fixture-generator.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/data-query-fixture-generator.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
 | `test/data-query-header-mapping.test.ts` | moved | `test/data-query/header-mapping.unit.test.ts` |
 | `test/cli-interactive-routing-data-query-codex-single.test.ts` | moved | `test/data-query/interactive/codex-single-source.app.test.ts` |
 | `test/cli-interactive-routing-data-query-codex-workspace.test.ts` | moved | `test/data-query/interactive/codex-workspace.app.test.ts` |
@@ -156,8 +158,8 @@ Change set: `markdown-pdf-general`.
 | `test/cli-actions-md-to-pdf-page-chrome.test.ts` | split | `test/markdown-pdf/direct/page-chrome-area-styling.unit.test.ts`<br>`test/markdown-pdf/direct/page-chrome-sequence-visibility.unit.test.ts` |
 | `test/cli-actions-md-to-pdf-recipe-fonts.test.ts` | split | `test/markdown-pdf/actions/recipe-font-check.unit.test.ts`<br>`test/markdown-pdf/actions/recipe-font-generation.unit.test.ts` |
 | `test/cli-markdown-pdf-renderer-capabilities.test.ts` | split | `test/markdown-pdf/actions/rendering/renderer-capability-gate.app.test.ts`<br>`test/markdown-pdf/direct/renderer-capabilities-matrix.unit.test.ts` |
-| `test/markdown-pdf-page-number-project-renderer-contract.test.ts` | moved | `test/markdown-pdf/evidence/page-number-renderer/project-renderer-contract.unit.test.ts`<br>`test/markdown-pdf/evidence/page-number-renderer/project-renderer-contract.app.test.ts` |
-| `test/markdown-pdf-page-number-renderer-evidence/orchestration.test.ts` | moved | `test/markdown-pdf/evidence/page-number-renderer/orchestration.unit.test.ts`<br>`test/markdown-pdf/evidence/page-number-renderer/orchestration.app.test.ts` |
+| `test/markdown-pdf-page-number-project-renderer-contract.test.ts` | moved | `test/markdown-pdf/evidence/page-number-renderer/project-renderer-contract.app.test.ts`; manual-tooling portion retired |
+| `test/markdown-pdf-page-number-renderer-evidence/orchestration.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
 | `test/cli-actions-md-to-pdf.helpers.ts` | moved | `test/markdown-pdf/actions/rendering/render-support.ts` |
 | `test/cli-actions-md-to-pdf-commands/fixtures.ts` | moved | `test/markdown-pdf/commands/fixtures.ts` |
 | `test/markdown-pdf-page-number-renderer-evidence/support.ts` | moved | `test/markdown-pdf/evidence/page-number-support.ts` |
@@ -254,10 +256,10 @@ Change set: `data-sources`.
 | Historical path or fragment | Transition | Current owner or owners |
 | --- | --- | --- |
 | `test/data-duckdb-extensions.test.ts` | moved | `test/data-sources/adapters/duckdb-extensions.unit.test.ts` |
-| `test/data-extract-fixture-generator.test.ts` | moved | `test/data-sources/evidence/tabular-fixtures.app.test.ts` |
+| `test/data-extract-fixture-generator.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
 | `test/data-query-xlsx-sources.test.ts` | moved | `test/data-sources/adapters/xlsx-sources.unit.test.ts`<br>`test/data-sources/adapters/xlsx-sources.app.test.ts` |
 | `test/data-source-shape.test.ts` | moved | `test/data-sources/direct/source-shape.unit.test.ts` |
-| `test/stacked-merged-band-fixture-generator.test.ts` | moved | `test/data-sources/evidence/stacked-merged-band-fixture.app.test.ts` |
+| `test/stacked-merged-band-fixture-generator.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
 | `test/helpers/data-extract-fixture-test-utils.ts` | moved | `test/data-sources/fixtures/tabular.ts` |
 | `test/helpers/data-query-duckdb-fixture-test-utils.ts` | moved | `test/data-sources/fixtures/duckdb.ts` |
 | `test/helpers/stacked-merged-band-fixture-test-utils.ts` | moved | `test/data-sources/fixtures/stacked-merged-band.ts` |
@@ -340,7 +342,7 @@ Change set: `data-stack`.
 | `test/data-stack-input-router.test.ts` | moved | `test/data-stack/direct/input-router.app.test.ts` |
 | `test/data-stack-plan/identity-serialization.test.ts` | moved | `test/data-stack/direct/plan/identity-serialization.unit.test.ts` |
 | `test/data-stack-plan/parse-io.test.ts` | moved | `test/data-stack/direct/plan/parse-io.unit.test.ts` |
-| `test/data-stack-fixture-generator.test.ts` | moved | `test/data-stack/evidence/fixture-generator.unit.test.ts`<br>`test/data-stack/evidence/fixture-generator.app.test.ts` |
+| `test/data-stack-fixture-generator.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
 | `test/helpers/data-stack-test-utils.ts` | moved | `test/data-stack/direct/support.ts` |
 | `test/cli-interactive-data-stack/helpers.ts` | moved | `test/data-stack/interactive/support.ts` |
 | `test/helpers/interactive-harness/mocks/action-stack.ts` | moved | `test/data-stack/interactive/mock-action.ts` |
@@ -447,19 +449,9 @@ Change set: `document-rename`.
 | --- | --- | --- |
 | `test/adapters-codex-document-rename-titles.test.ts` | moved | `test/document-rename/adapters/title-evidence.app.test.ts` |
 
-The DOCX baseline application, symbol/style/note contract application, temporary-lifecycle, and resource unit tests under this owner are new contracts with no historical-path migration. Their reviewed expectations stay under `test/document-rename/fixtures/docx-baseline/`; see the [ownership catalog](test-suite-case-matrices.md#document-rename-baseline) and [execution record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md).
+The DOCX baseline and noncyclic contract tests retain product evidence/prompt assertions. Reusable corpus, capture support, dimensions, and frozen expectations now live under `test/document-rename/fixtures/docx-baseline/`. Candidate cases/comparisons live under `fixtures/docx-candidate/` and exercise product code directly. Content, numbering, resource, and runtime regressions retain their existing owners; runtime fixture sources remain under `fixtures/docx-runtime/`.
 
-The private candidate's `test/document-rename/docx-resource.unit.test.ts`, `docx-runtime.unit.test.ts`, and `docx-runtime.app.test.ts` are new enforcement and lifecycle contracts under the same owner, without a historical-path migration. Runtime fixture sources stay under `test/document-rename/fixtures/docx-runtime/`; `fixtures/docx-boundary-probes.ts` adds default-cap and original-boundary reconciliation sources.
-
-The DOCX candidate application test is a new private evaluation contract under the same owner. It reuses unchanged frozen expectations and checks complete content through private supervised builds, with additional synthetic probe definitions in `test/document-rename/fixtures/docx-content-probes.ts`. The new `docx-content.unit.test.ts` and `docx-numbering.unit.test.ts` own content interactions and bounded list resolution. These have no historical-path migration and do not establish final workload or package acceptance.
-
-The new `test/document-rename/adapters/docx-harness.unit.test.ts` and `docx-harness.app.test.ts` own the private validation harness's presentation/protocol and subprocess/output lifecycle contracts. Durable synthetic scripts stay in `test/document-rename/fixtures/docx-harness-*`; the existing candidate application test adds real-launcher progress and cancellation checks. These are new contracts without historical-path migration; execution artifacts retain their existing temporary lifecycle.
-
-The new `test/document-rename/adapters/docx-cli.unit.test.ts`, `docx-retention.unit.test.ts`, and `docx-cli.app.test.ts` own help/argument handling and opt-in smoke exports without historical-path migration. Controlled retention inputs stay in `fixtures/docx-retention-driver.mjs`; generated verification exports are cleaned within their owned fixtures. Manual retained smoke outputs use the ignored playground entry; shared managed-suite retention is unchanged.
-
-The new `test/document-rename/adapters/docx-package.app.test.ts` owns package compatibility and isolation regressions with synthetic OS-temporary package trees and confirmed cleanup. It has no historical-path migration; actual npm/Bun consumer execution remains a separate manual package check.
-
-The new manual measurement/package drivers in `scripts/docx-candidate/` use `test/document-rename/fixtures/docx-measure-cases.ts` and `docx-package-*` input/assertion sources. They have no historical-path migration. Generated execution artifacts remain in owned OS temporary storage; shared managed-suite fixture handling is unchanged. See the [ownership catalog](test-suite-case-matrices.md#document-rename-baseline) for their distinct evidence scope.
+Manual launcher, inspector, harness, help, and retention checks have left routine suites. Comparison, measurement, package consumers, and bounded baseline cycle checks remain explicit manual commands; see the [ownership catalog](test-suite-case-matrices.md#document-rename-baseline) and [Phase 6.3 record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-manual-script-simplification-and-test-ownership).
 
 ### Markdown DOCX
 
@@ -765,8 +757,8 @@ Change set: `test-suite-features`.
 | `test/data-query/direct/interactive-execution-validation.test.ts` | moved | `test/data-query/direct/interactive-execution-validation.app.test.ts` |
 | `test/data-query/direct/interactive-facade.test.ts` | moved | `test/data-query/direct/interactive-facade.app.test.ts` |
 | `test/data-query/direct/relation-option-parser.test.ts` | moved | `test/data-query/direct/relation-option-parser.unit.test.ts` |
-| `test/data-query/evidence/duckdb-fixtures.test.ts` | moved | `test/data-query/evidence/duckdb-fixtures.app.test.ts` |
-| `test/data-query/evidence/tabular-fixtures.test.ts` | moved | `test/data-query/evidence/tabular-fixtures.app.test.ts` |
+| `test/data-query/evidence/duckdb-fixtures.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/data-query/evidence/tabular-fixtures.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
 | `test/data-query/header-mapping.test.ts` | moved | `test/data-query/header-mapping.unit.test.ts` |
 | `test/data-query/interactive/codex-single-source.test.ts` | moved | `test/data-query/interactive/codex-single-source.app.test.ts` |
 | `test/data-query/interactive/codex-workspace.test.ts` | moved | `test/data-query/interactive/codex-workspace.app.test.ts` |
@@ -781,8 +773,8 @@ Change set: `test-suite-features`.
 | `test/data-sources/adapters/duckdb-extensions.test.ts` | moved | `test/data-sources/adapters/duckdb-extensions.unit.test.ts` |
 | `test/data-sources/adapters/xlsx-sources.test.ts` | split | `test/data-sources/adapters/xlsx-sources.unit.test.ts`<br>`test/data-sources/adapters/xlsx-sources.app.test.ts` |
 | `test/data-sources/direct/source-shape.test.ts` | moved | `test/data-sources/direct/source-shape.unit.test.ts` |
-| `test/data-sources/evidence/stacked-merged-band-fixture.test.ts` | moved | `test/data-sources/evidence/stacked-merged-band-fixture.app.test.ts` |
-| `test/data-sources/evidence/tabular-fixtures.test.ts` | moved | `test/data-sources/evidence/tabular-fixtures.app.test.ts` |
+| `test/data-sources/evidence/stacked-merged-band-fixture.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/data-sources/evidence/tabular-fixtures.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
 | `test/data-stack/actions/codex-assist.test.ts` | moved | `test/data-stack/actions/codex-assist.app.test.ts` |
 | `test/data-stack/actions/dry-run-plan.test.ts` | moved | `test/data-stack/actions/dry-run-plan.app.test.ts` |
 | `test/data-stack/actions/execution-policy.test.ts` | split | `test/data-stack/actions/execution-policy.unit.test.ts`<br>`test/data-stack/actions/execution-policy.app.test.ts` |
@@ -803,7 +795,7 @@ Change set: `test-suite-features`.
 | `test/data-stack/direct/plan/identity-serialization.test.ts` | moved | `test/data-stack/direct/plan/identity-serialization.unit.test.ts` |
 | `test/data-stack/direct/plan/parse-io.test.ts` | moved | `test/data-stack/direct/plan/parse-io.unit.test.ts` |
 | `test/data-stack/direct/reporting.test.ts` | moved | `test/data-stack/direct/reporting.unit.test.ts` |
-| `test/data-stack/evidence/fixture-generator.test.ts` | split | `test/data-stack/evidence/fixture-generator.unit.test.ts`<br>`test/data-stack/evidence/fixture-generator.app.test.ts` |
+| `test/data-stack/evidence/fixture-generator.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
 | `test/data-stack/interactive/codex-review.test.ts` | moved | `test/data-stack/interactive/codex-review.app.test.ts` |
 | `test/data-stack/interactive/discovery.test.ts` | moved | `test/data-stack/interactive/discovery.app.test.ts` |
 | `test/data-stack/interactive/dry-run-write.test.ts` | moved | `test/data-stack/interactive/dry-run-write.app.test.ts` |
@@ -848,11 +840,11 @@ Change set: `test-suite-features`.
 | `test/markdown-frontmatter/actions/frontmatter-to-json.test.ts` | moved | `test/markdown-frontmatter/actions/frontmatter-to-json.app.test.ts` |
 | `test/markdown-frontmatter/commands/frontmatter-to-json.test.ts` | moved | `test/markdown-frontmatter/commands/frontmatter-to-json.app.test.ts` |
 | `test/markdown-frontmatter/interactive/routing.test.ts` | moved | `test/markdown-frontmatter/interactive/routing.app.test.ts` |
-| `test/markdown-pdf-code-fixture-generator.test.ts` | moved | `test/markdown-pdf/evidence/code-fixture-generator.app.test.ts` |
-| `test/markdown-pdf-font-discovery-evidence-spike.test.ts` | moved | `test/markdown-pdf/evidence/font-discovery-evidence-spike.unit.test.ts` |
-| `test/markdown-pdf-page-number-renderer-evidence/inspection.test.ts` | split | `test/markdown-pdf/evidence/page-number-renderer/inspection.unit.test.ts`<br>`test/markdown-pdf/evidence/page-number-renderer/inspection.app.test.ts` |
-| `test/markdown-pdf-page-number-renderer-evidence/laboratory.test.ts` | split | `test/markdown-pdf/evidence/page-number-renderer/laboratory.unit.test.ts`<br>`test/markdown-pdf/evidence/page-number-renderer/laboratory.app.test.ts` |
-| `test/markdown-pdf-profile-font-preservation-smoke.test.ts` | moved | `test/markdown-pdf/evidence/profile-font-preservation-smoke.app.test.ts` |
+| `test/markdown-pdf-code-fixture-generator.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/markdown-pdf-font-discovery-evidence-spike.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/markdown-pdf-page-number-renderer-evidence/inspection.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/markdown-pdf-page-number-renderer-evidence/laboratory.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/markdown-pdf-profile-font-preservation-smoke.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
 | `test/markdown-pdf/actions/bundle-discovery.test.ts` | moved | `test/markdown-pdf/actions/bundle-discovery.app.test.ts` |
 | `test/markdown-pdf/actions/bundle-integration.test.ts` | moved | `test/markdown-pdf/actions/bundle-integration.app.test.ts` |
 | `test/markdown-pdf/actions/bundle-resolution.test.ts` | moved | `test/markdown-pdf/actions/bundle-resolution.app.test.ts` |
@@ -897,8 +889,8 @@ Change set: `test-suite-features`.
 | `test/markdown-pdf/direct/page-chrome-area-styling.test.ts` | moved | `test/markdown-pdf/direct/page-chrome-area-styling.unit.test.ts` |
 | `test/markdown-pdf/direct/page-chrome-sequence-visibility.test.ts` | moved | `test/markdown-pdf/direct/page-chrome-sequence-visibility.unit.test.ts` |
 | `test/markdown-pdf/direct/renderer-capabilities-matrix.test.ts` | moved | `test/markdown-pdf/direct/renderer-capabilities-matrix.unit.test.ts` |
-| `test/markdown-pdf/evidence/page-number-orchestration.test.ts` | split | `test/markdown-pdf/evidence/page-number-renderer/orchestration.unit.test.ts`<br>`test/markdown-pdf/evidence/page-number-renderer/orchestration.app.test.ts` |
-| `test/markdown-pdf/evidence/page-number-project-renderer-contract.test.ts` | split | `test/markdown-pdf/evidence/page-number-renderer/project-renderer-contract.unit.test.ts`<br>`test/markdown-pdf/evidence/page-number-renderer/project-renderer-contract.app.test.ts` |
+| `test/markdown-pdf/evidence/page-number-orchestration.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/markdown-pdf/evidence/page-number-project-renderer-contract.test.ts` | moved | `test/markdown-pdf/evidence/page-number-renderer/project-renderer-contract.app.test.ts`; manual-tooling portion retired |
 | `test/markdown-pdf/interactive/codex-authoring-output-recovery-lifecycle.test.ts` | moved | `test/markdown-pdf/interactive/codex-authoring/output-recovery-lifecycle.app.test.ts` |
 | `test/markdown-pdf/interactive/codex-authoring-project-handoff.test.ts` | moved | `test/markdown-pdf/interactive/codex-authoring/project-handoff.app.test.ts` |
 | `test/markdown-pdf/interactive/deterministic-authoring.test.ts` | moved | `test/markdown-pdf/interactive/deterministic-authoring.app.test.ts` |
@@ -968,3 +960,37 @@ Change set: `test-suite-features`.
 | `test/video/commands/ux.test.ts` | moved | `test/video/commands/ux.app.test.ts` |
 | `test/video/interactive/gif.test.ts` | moved | `test/video/interactive/gif.app.test.ts` |
 | `test/video/interactive/routing.test.ts` | moved | `test/video/interactive/routing.app.test.ts` |
+
+
+## Manual Tooling Ownership
+
+These former routine owners verify manual scripts and are retired from routine suites. Product assertions from mixed files stay under their existing feature owner. Data product setup now copies test-owned synthetic inputs; shared managed-test infrastructure is unchanged.
+
+| Former routine owner | Transition | Current verification |
+| --- | --- | --- |
+| `test/data-query/evidence/duckdb-fixtures.app.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/data-query/evidence/tabular-fixtures.app.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/data-sources/evidence/stacked-merged-band-fixture.app.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/data-sources/evidence/tabular-fixtures.app.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/data-stack/evidence/fixture-generator.app.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/data-stack/evidence/fixture-generator.unit.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/document-rename/adapters/docx-baseline-lifecycle.app.test.ts` | retired | [manual DOCX commands](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#manual-validation) |
+| `test/document-rename/adapters/docx-baseline-resources.unit.test.ts` | retired | [manual DOCX commands](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#manual-validation) |
+| `test/document-rename/adapters/docx-cli.app.test.ts` | retired | [manual DOCX commands](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#manual-validation) |
+| `test/document-rename/adapters/docx-cli.unit.test.ts` | retired | [manual DOCX commands](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#manual-validation) |
+| `test/document-rename/adapters/docx-harness.app.test.ts` | retired | [manual DOCX commands](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#manual-validation) |
+| `test/document-rename/adapters/docx-harness.unit.test.ts` | retired | [manual DOCX commands](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#manual-validation) |
+| `test/document-rename/adapters/docx-package.app.test.ts` | retired | [manual DOCX commands](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#manual-validation) |
+| `test/document-rename/adapters/docx-retention.unit.test.ts` | retired | [manual DOCX commands](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#manual-validation) |
+| `test/markdown-pdf/evidence/code-fixture-generator.app.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/markdown-pdf/evidence/font-discovery-evidence-spike.unit.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/markdown-pdf/evidence/page-number-renderer/inspection.app.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/markdown-pdf/evidence/page-number-renderer/inspection.unit.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/markdown-pdf/evidence/page-number-renderer/laboratory.app.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/markdown-pdf/evidence/page-number-renderer/laboratory.unit.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/markdown-pdf/evidence/page-number-renderer/orchestration.app.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/markdown-pdf/evidence/page-number-renderer/orchestration.unit.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/markdown-pdf/evidence/page-number-renderer/project-renderer-contract.unit.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/markdown-pdf/evidence/profile-font-preservation-smoke.app.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/video/smoke-budget.unit.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |
+| `test/video/smoke-workspace.app.test.ts` | retired | [explicit manual verification](test-suite-case-matrices.md#manual-feature-tooling) |

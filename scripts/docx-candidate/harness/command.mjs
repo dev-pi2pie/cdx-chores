@@ -12,14 +12,9 @@ function cleanupFailure(stage, id) {
   return error;
 }
 
-/** Pure policy seam: a successful taskkill is not descendant-settlement proof. */
-export function requireTreeSettlementCapability(platform, pid, stage, id) {
-  if (platform === "win32" && pid) throw cleanupFailure(stage, id);
-}
-
-function groupState(pid, stage, id, probe = (group) => process.kill(group, 0)) {
+function groupState(pid, stage, id) {
   try {
-    probe(-pid);
+    process.kill(-pid, 0);
     return "present";
   } catch (error) {
     if (error.code === "ESRCH") return "absent";
@@ -29,20 +24,10 @@ function groupState(pid, stage, id, probe = (group) => process.kill(group, 0)) {
 }
 
 /** Unknown observations may settle; only ESRCH confirms the group is absent. */
-export async function waitForProcessGroupSettlement(
-  pid,
-  stage,
-  id,
-  {
-    deadline = performance.now() + 1_500,
-    probe = (group) => process.kill(group, 0),
-    now = () => performance.now(),
-    wait = (milliseconds) => delay(milliseconds),
-  } = {},
-) {
-  while (now() < deadline) {
-    if (groupState(pid, stage, id, probe) === "absent") return;
-    await wait(Math.min(25, Math.max(0, deadline - now())));
+async function waitForProcessGroupSettlement(pid, stage, id, deadline) {
+  while (performance.now() < deadline) {
+    if (groupState(pid, stage, id) === "absent") return;
+    await delay(Math.min(25, Math.max(0, deadline - performance.now())));
   }
   throw cleanupFailure(stage, id);
 }
@@ -105,7 +90,7 @@ export async function runOwnedCommand(path, args, options) {
   });
   const beginSettlement = () => {
     if (settlementEnd !== undefined) return;
-    settlementEnd = performance.now() + (options.cleanupMs ?? 1_500);
+    settlementEnd = performance.now() + 1_500;
     settlementTimer = setTimeout(
       () => resolveDeadline(false),
       Math.max(0, settlementEnd - performance.now()),
@@ -129,7 +114,7 @@ export async function runOwnedCommand(path, args, options) {
       });
     } else {
       kill("SIGTERM");
-      killTimer = setTimeout(() => kill("SIGKILL"), options.killGraceMs ?? 250);
+      killTimer = setTimeout(() => kill("SIGKILL"), 250);
     }
   };
   const abort = () =>
@@ -171,7 +156,7 @@ export async function runOwnedCommand(path, args, options) {
     try {
       for await (const chunk of stream) {
         bytes += chunk.length;
-        if (bytes > (options.maxOutputBytes ?? 4 * 1024 * 1024)) {
+        if (bytes > 4 * 1024 * 1024) {
           stop(new HarnessError("output", label, decoder.current));
           continue;
         }
@@ -194,15 +179,13 @@ export async function runOwnedCommand(path, args, options) {
       // that ignored-stdio descendants have settled. Keep artifacts owned.
       await windowsTermination;
     }
-    requireTreeSettlementCapability(process.platform, pid, label, decoder.current);
+    if (process.platform === "win32" && pid) throw cleanupFailure(label, decoder.current);
     // A descendant may keep inherited pipes open after the entrypoint exits.
     if (pid) {
       const state = groupState(pid, label, decoder.current);
       if (state === "present") kill("SIGKILL");
       if (state !== "absent")
-        await waitForProcessGroupSettlement(pid, label, decoder.current, {
-          deadline: settlementEnd,
-        });
+        await waitForProcessGroupSettlement(pid, label, decoder.current, settlementEnd);
     }
     await windowsTermination;
     if ((await Promise.race([Promise.all([done, streams]).then(() => true), deadline])) === false)

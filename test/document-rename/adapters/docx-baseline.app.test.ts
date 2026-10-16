@@ -2,9 +2,9 @@ import { expect, test } from "bun:test";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 
-import { assertCaseExpectations, captureDocx } from "../../../scripts/docx-baseline/capture";
-import type { DocxCapture } from "../../../scripts/docx-baseline/capture";
-import { createBaselineCases } from "../../../scripts/docx-baseline/corpus/index";
+import { assertCaseExpectations, captureDocx } from "../fixtures/docx-baseline/capture";
+import type { DocxCapture } from "../fixtures/docx-baseline/capture";
+import { createBaselineCases } from "../fixtures/docx-baseline/corpus/index";
 import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 const expected = JSON.parse(

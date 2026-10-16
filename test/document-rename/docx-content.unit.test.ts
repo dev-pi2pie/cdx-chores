@@ -14,7 +14,7 @@ import {
   WORD_NS,
   xmlEscape,
   type DocxPackageOptions,
-} from "../../scripts/docx-baseline/corpus/builder";
+} from "./fixtures/docx-baseline/corpus/builder";
 import { assembleDocxEvidence } from "../../src/adapters/codex/document-rename/extractors/docx-evidence";
 import { resolveDocxLimits, type DocxLimits } from "../../src/docx/limits";
 import { readDocxDocument } from "../../src/docx/reader";

@@ -7,8 +7,8 @@ import {
   style,
   stylesXml,
   WORD_NS,
-} from "../../../scripts/docx-baseline/corpus/builder";
-import type { DocxBaselineCase } from "../../../scripts/docx-baseline/corpus/types";
+} from "./docx-baseline/corpus/builder";
+import type { DocxBaselineCase } from "./docx-baseline/corpus/types";
 
 const commentReference = '<w:r><w:commentReference w:id="1"/></w:r>';
 const mappedComments = ["mammoth/style-map", "comment-reference => h2:fresh"] as [string, string];

@@ -7,8 +7,8 @@ import {
   run,
   stylesXml,
   WORD_NS,
-} from "../../../scripts/docx-baseline/corpus/builder";
-import type { ResourceBoundaryMetric } from "../../../scripts/docx-baseline/resource-cases";
+} from "./docx-baseline/corpus/builder";
+import type { ResourceBoundaryMetric } from "./docx-baseline/resource-cases";
 import { DEFAULT_DOCX_LIMITS } from "../../../src/docx/limits";
 
 /** The frozen inspector measures all entries; the reader charges only selected content. */

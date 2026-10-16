@@ -1,19 +1,21 @@
 import assert from "node:assert/strict";
 
-import { buildDocumentPrompt } from "../../src/adapters/codex/document-rename/prompt";
+import { buildDocumentPrompt } from "../../../../src/adapters/codex/document-rename/prompt";
 import {
   stripHtmlTags,
   toSingleLine,
-} from "../../src/adapters/codex/document-rename/extractors/shared";
+} from "../../../../src/adapters/codex/document-rename/extractors/shared";
+import type { DocxSupervisor } from "../../../../src/docx/runtime/index";
 import type { DocxCapture } from "../docx-baseline/capture";
 import type { DocxBaselineCase } from "../docx-baseline/corpus/index";
 import type * as candidate from "./adapter";
 
-export type CandidateModule = Pick<
-  typeof candidate,
-  "readDocxDocument" | "extractCandidateDocxEvidence"
-> &
-  Partial<Pick<typeof candidate, "readCandidateDocx" | "createCandidateEvidenceExtractor">>;
+export type CandidateModule = {
+  readDocxDocument: typeof candidate.readDocxDocument;
+  extractCandidateDocxEvidence: ReturnType<typeof candidate.createCandidateEvidenceExtractor>;
+  readCandidateDocx?: DocxSupervisor["read"];
+  createCandidateEvidenceExtractor?: typeof candidate.createCandidateEvidenceExtractor;
+};
 
 /** Match baseline capture serialization, including omitted optional fields. */
 function captured<T>(value: T): T {

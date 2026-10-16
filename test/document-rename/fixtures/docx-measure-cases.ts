@@ -7,8 +7,8 @@ import {
   REL_NS,
   run,
   WORD_NS,
-} from "../../../scripts/docx-baseline/corpus/builder";
-import { createResourceCases } from "../../../scripts/docx-baseline/resource-cases";
+} from "./docx-baseline/corpus/builder";
+import { createResourceCases } from "./docx-baseline/resource-cases";
 import { createSelectedBoundaryProbes } from "./docx-boundary-probes";
 
 export interface DocxMeasureCase {

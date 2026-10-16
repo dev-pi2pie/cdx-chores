@@ -4,7 +4,7 @@ import { createOutputWriter } from "./output.mjs";
 const PREFIX = "DOCX_PROGRESS ";
 const MAX_LINE = 512;
 
-export function validProgress(value) {
+function validProgress(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const keys = Object.keys(value).sort().join(",");
   if (value.event === "scope")
@@ -26,22 +26,12 @@ export function validProgress(value) {
   );
 }
 
-/**
- * Child producers await writes only at case/workload boundaries.
- * @param {import("node:stream").Writable} [destination]
- */
-export function createProgressEmitter(destination = process.stderr, options = {}) {
-  const output = createOutputWriter(destination, options);
-  return async (event) => {
-    if (!validProgress(event)) throw new HarnessError("output");
-    await output.write(`${PREFIX}${JSON.stringify(event)}\n`);
-  };
-}
-
-let defaultEmitter;
+let output;
+/** Child producers await writes only at case/workload boundaries. */
 export async function emitProgress(event) {
-  defaultEmitter ??= createProgressEmitter();
-  await defaultEmitter(event);
+  if (!validProgress(event)) throw new HarnessError("output");
+  output ??= createOutputWriter(process.stderr);
+  await output.write(`${PREFIX}${JSON.stringify(event)}\n`);
 }
 
 /** Ignore unrelated logs; never forward their bytes into public progress. */

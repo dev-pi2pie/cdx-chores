@@ -7,57 +7,33 @@ import { createOutputWriter } from "./output.mjs";
 
 export { HarnessError } from "./errors.mjs";
 
-const defaultStderr = /** @type {import("node:stream").Writable & { isTTY?: boolean }} */ (
-  process.stderr
-);
-const defaultStdout = /** @type {import("node:stream").Writable & { isTTY?: boolean }} */ (
-  process.stdout
-);
-
 /** Private driver presentation and ownership; no document bytes enter progress. */
-export function createHarness({
-  title,
-  scope,
-  stderr = defaultStderr,
-  stdout = defaultStdout,
-  env = process.env,
-  heartbeatMs = stderr.isTTY ? 10_000 : 30_000,
-  outputTimeoutMs = 5_000,
-  now = () => performance.now(),
-  every = (milliseconds, callback) => {
-    const handle = setInterval(callback, milliseconds);
-    handle.unref();
-    return () => clearInterval(handle);
-  },
-  installSignals = true,
-}) {
+export function createHarness({ title, scope }) {
   safeLabel(title);
   safeLabel(scope);
   const controller = new AbortController();
   const failOutput = (error) => controller.abort(error);
-  const progress = createOutputWriter(stderr, {
-    timeoutMs: outputTimeoutMs,
-    onFailure: failOutput,
-  });
-  const result = createOutputWriter(stdout, { timeoutMs: outputTimeoutMs, onFailure: failOutput });
-  const colors = createColors(Boolean(stderr.isTTY) && !Object.hasOwn(env, "NO_COLOR"));
+  const progress = createOutputWriter(process.stderr, failOutput);
+  const result = createOutputWriter(process.stdout, failOutput);
+  const heartbeatMs = process.stderr.isTTY ? 10_000 : 30_000;
+  const colors = createColors(
+    Boolean(process.stderr.isTTY) && !Object.hasOwn(process.env, "NO_COLOR"),
+  );
   let active = "";
   let activeId;
   let total;
   let completed = 0;
-  let started = now();
+  let started = performance.now();
   let activity = started;
   let timer;
   let running = false;
   let cleanupUnconfirmed = false;
   const cancel = () => controller.abort(new HarnessError("cancellation", active || "validation"));
-  if (installSignals) {
-    process.on("SIGINT", cancel);
-    process.on("SIGTERM", cancel);
-  }
+  process.on("SIGINT", cancel);
+  process.on("SIGTERM", cancel);
   const emit = async (text) => {
     await progress.write(text);
-    activity = now();
+    activity = performance.now();
   };
   const stage = async (label) => {
     if (controller.signal.aborted) throw controller.signal.reason;
@@ -65,7 +41,7 @@ export function createHarness({
     activeId = undefined;
     total = undefined;
     completed = 0;
-    started = now();
+    started = performance.now();
     await emit(colors.cyan(`▶ ${label}\n`));
   };
   const event = async (value) => {
@@ -93,16 +69,19 @@ export function createHarness({
     },
     async start() {
       await emit(`${colors.bold(title)}\nScope: ${scope}\n`);
-      timer = every(Math.min(heartbeatMs, 1_000), () => {
-        if (!active || now() - activity < heartbeatMs || progress.failed) return;
+      timer = setInterval(() => {
+        if (!active || performance.now() - activity < heartbeatMs || progress.failed) return;
         const detail =
           total === undefined
             ? ""
             : ` · ${completed}/${total} checked${activeId ? ` · ${activeId}` : ""}`;
         emit(
-          colors.dim(`… ${active}${detail} · ${Math.floor((now() - started) / 1000)}s waiting\n`),
+          colors.dim(
+            `… ${active}${detail} · ${Math.floor((performance.now() - started) / 1000)}s waiting\n`,
+          ),
         ).catch(failOutput);
-      });
+      }, 1_000);
+      timer.unref();
     },
     stage,
     async success(label) {
@@ -113,7 +92,7 @@ export function createHarness({
       if (cleanupUnconfirmed) throw new HarnessError("cleanup", options.label, activeId);
       if (running) throw new HarnessError("runner", options.label);
       if (controller.signal.aborted) throw controller.signal.reason;
-      if (!options.silent) await stage(options.label);
+      await stage(options.label);
       running = true;
       try {
         const output = await runOwnedCommand(path, args, {
@@ -121,7 +100,7 @@ export function createHarness({
           signal: controller.signal,
           onProgress: event,
         });
-        if (!options.silent) await emit(colors.green(`✓ ${options.label} completed\n`));
+        await emit(colors.green(`✓ ${options.label} completed\n`));
         active = "";
         return output;
       } catch (error) {
@@ -168,16 +147,14 @@ export function createHarness({
       await emit(`Retained smoke artifacts: ${path}\n`);
     },
     async finish() {
-      timer?.();
+      clearInterval(timer);
       active = "";
       try {
         await progress.write("");
         await result.write("");
       } finally {
-        if (installSignals) {
-          process.removeListener("SIGINT", cancel);
-          process.removeListener("SIGTERM", cancel);
-        }
+        process.removeListener("SIGINT", cancel);
+        process.removeListener("SIGTERM", cancel);
         progress.dispose();
         result.dispose();
       }
