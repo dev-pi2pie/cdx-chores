@@ -61,6 +61,11 @@ function evidence(value: DocxDocumentFacts) {
 }
 
 describe("DOCX review follow-up content cases", () => {
+  test("empty and prolog-only XML remain invalid", () => {
+    for (const xml of ["", '<?xml version="1.0"?>', "<?only data?>"])
+      expect(() => parseXml(xml)).toThrow("docx_xml_invalid");
+  });
+
   for (const xml of [
     "<root/><extra/>",
     "<root/><root/>",

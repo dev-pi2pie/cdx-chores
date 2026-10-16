@@ -106,7 +106,7 @@ Address the multiple-root content XML finding from review of `bc6e3e98..0a7b57c5
 
 | Area | Outcome |
 | --- | --- |
-| XML root policy / regressions | Eight historical-equivalent cases and six parser/metadata/accounting tests added; focused checks passed |
-| Verification | 213 focused and 1,819 unit cases passed; lint, format, and types passed; application and built-runtime checks pending |
+| XML root policy / regressions | Eight historical-equivalent cases and seven parser/metadata/accounting tests added; empty/prolog-only rejection covered after review |
+| Verification | 214 focused, 1,820 unit, and 2,331 application cases passed; application 227.03 seconds under unchanged 240-second deadline; lint, format, types, and shipping build passed; built-runtime checks pending |
 | Earlier measurement / package evidence | Retained from the drawing follow-up; repeat only if affected boundaries change |
 | Full-range review / cleanup | Pending |
