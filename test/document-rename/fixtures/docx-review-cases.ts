@@ -1,6 +1,8 @@
 import type { DocumentTitleEvidence } from "../../../src/adapters/codex/document-rename/types";
 import {
   buildDocxPackage,
+  coreXml,
+  documentXml,
   paragraph,
   REL_NS,
   run,
@@ -52,7 +54,68 @@ export function createDocxReviewCases(): ReviewCase[] {
   const merged = table(
     row(cell(visible, '<w:vMerge w:val="restart"/>')) + row(cell(hidden, "<w:vMerge/>")),
   );
+  const rootReport = paragraph("Root Validation Report", "Heading1");
+  const rootDocument = documentXml(rootReport);
   return [
+    ...(
+      [
+        { id: "main-extra", options: { documentXml: `${rootDocument}<extra/>` } },
+        {
+          id: "main-repeated",
+          options: { documentXml: rootDocument + rootDocument.replace(/^<\?xml[^>]*\?>/, "") },
+        },
+        {
+          id: "main-prefix",
+          options: { documentXml: rootDocument.replace("?><w:document", "?><extra/><w:document") },
+        },
+        { id: "styles", options: { body: rootReport, styles: `${stylesXml("")}<extra/>` } },
+        {
+          id: "relationships",
+          options: {
+            body: rootReport,
+            replaceParts: [
+              [
+                "word/_rels/document.xml.rels",
+                '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/><extra/>',
+              ],
+            ],
+          },
+        },
+        {
+          id: "unused-notes",
+          options: {
+            body: rootReport,
+            extraParts: [
+              [
+                "word/footnotes.xml",
+                `<w:footnotes xmlns:w="${WORD_NS}"><w:footnote w:id="1">${paragraph("Unused note")}</w:footnote></w:footnotes><extra/>`,
+              ],
+            ],
+          },
+        },
+        {
+          id: "metadata-cannot-rescue",
+          options: {
+            documentXml: `${rootDocument}<extra/>`,
+            core: coreXml("Usable metadata title"),
+          },
+        },
+      ] satisfies Array<{ id: string; options: DocxPackageOptions }>
+    ).map(({ id, options }): ReviewCase => ({
+      id: `review-xml-roots-${id}`,
+      options,
+      diagnostic: "docx_xml_invalid",
+    })),
+    {
+      id: "review-xml-roots-valid-prolog",
+      options: {
+        documentXml:
+          rootDocument.replace("?><w:document", "?>\n<!-- <extra/> --><?before data?><w:document") +
+          "\n<?after data?><!-- <extra/> -->\n",
+      },
+      rawText: "Root Validation Report\n\n",
+      headings: [{ level: 1, text: "Root Validation Report" }],
+    },
     ...[
       { id: "numeric-text", xml: "Report &#49; &#x3A9; &#x1F600;", text: "Report 1 Ω 😀" },
       { id: "escaped-numeric", xml: "Literal &amp;#169;", text: "Literal &#169;" },

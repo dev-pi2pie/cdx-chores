@@ -2,7 +2,7 @@
 title: "DOCX reader review follow-up"
 created-date: 2026-10-16
 modified-date: 2026-10-16
-status: completed
+status: in-progress
 agent: codex
 ---
 
@@ -94,3 +94,19 @@ Address drawing relationship failures, duplicate fallback handling, and stale ve
 | Measurements / packed consumers | Eighteen workloads per runtime and eight fresh npm/Bun × runtime × format consumer paths passed; deadline, RSS, and lifecycle checks passed |
 | Full-range review | `dfb748ed..3912a814` reviewed with DOCX integration checks across `bc6e3e98..3912a814`; redundant fixture builds replaced by one build with bounded batches; no remaining material findings; closing docs reviewed separately |
 | Artifact cleanup | Owned manual and managed-test workspaces removed after settlement; temporary builds, runtime cache, and logs removed; frozen captures and dependency versions unchanged; no smoke artifacts retained |
+
+## XML Document Root Follow-Up
+
+Address the multiple-root content XML finding from review of `bc6e3e98..0a7b57c5`. Source baseline: `0a7b57c5`. Earlier results remain historical; accepted content departures, optional metadata policy, and resource limits remain unchanged.
+
+- [x] Reject a second document element while preserving valid declarations, comments, processing instructions, and nested elements.
+- [x] Add independent selected-part and complete evidence/prompt regressions; preserve metadata behavior and physical-part accounting.
+- [ ] Pass focused, routine, built-runtime, and quality checks; update coverage references.
+- [ ] Review the complete follow-up and combined DOCX ranges, resolve findings, and clean owned artifacts.
+
+| Area | Outcome |
+| --- | --- |
+| XML root policy / regressions | Eight historical-equivalent cases and six parser/metadata/accounting tests added; focused checks passed |
+| Verification | 213 focused and 1,819 unit cases passed; lint, format, and types passed; application and built-runtime checks pending |
+| Earlier measurement / package evidence | Retained from the drawing follow-up; repeat only if affected boundaries change |
+| Full-range review / cleanup | Pending |

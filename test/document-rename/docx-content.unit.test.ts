@@ -20,6 +20,7 @@ import { resolveDocxLimits, type DocxLimits } from "../../src/docx/limits";
 import { readDocxDocument } from "../../src/docx/reader";
 import { readSymbol } from "../../src/docx/symbols";
 import { styleProjection } from "../../src/docx/styles";
+import { XmlBudget } from "../../src/docx/xml-budget";
 import type { DocxDocumentFacts } from "../../src/docx/types";
 import { elementText, parseXml } from "../../src/docx/xml";
 import { createAdditionalDocxContentProbes } from "./fixtures/docx-content-probes";
@@ -60,6 +61,42 @@ function evidence(value: DocxDocumentFacts) {
 }
 
 describe("DOCX review follow-up content cases", () => {
+  for (const xml of [
+    "<root/><extra/>",
+    "<root/><root/>",
+    "<root/><?between data?><!-- <ignored/> --><extra/>",
+  ]) {
+    test(`rejects multiple document elements: ${xml}`, () => {
+      expect(() => parseXml(xml)).toThrow("docx_xml_invalid");
+    });
+  }
+
+  test("one document root permits nested elements, comments, and processing instructions", () => {
+    const root = parseXml(
+      '<?xml version="1.0"?>\n<!-- <ignored/> --><?before data?><root><root>Report</root></root><?after data?>',
+    )!;
+    expect(root.name).toBe("root");
+    expect(elementText(root)).toBe("Report");
+  });
+
+  test("root validation preserves physical-part charging", () => {
+    const budget = new XmlBudget(resolveDocxLimits({ xmlElementCount: 3 }));
+    const part = {};
+    const xml = "<root/><extra/>";
+    for (let attempt = 0; attempt < 2; attempt++)
+      expect(() => parseXml(xml, budget, part)).toThrow("docx_xml_invalid");
+    expect(parseXml("<last/>", budget, {})?.name).toBe("last");
+    expect(() => parseXml("<over/>", budget, {})).toThrow("docx_limit:xmlElementCount");
+  });
+
+  test("content root validation retains the separate optional metadata policy", async () => {
+    const value = await facts({
+      body: paragraph("Main report", "Heading1"),
+      core: `${coreXml("Metadata title")}<extra/>`,
+    });
+    expect(value.metadataResult).toEqual({ metadata: { title: "Metadata title" }, warnings: [] });
+  });
+
   test("XML references decode once while comments, instructions, and CDATA stay literal", () => {
     const root = parseXml(
       '<root value="&quot;&#169;&amp;#169;"><!-- &copy; --><?literal &copy;?><![CDATA[&copy; &#169;]]>&#65;</root>',

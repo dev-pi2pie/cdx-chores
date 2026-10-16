@@ -93,11 +93,14 @@ export function parseXml(
   )) {
     if (match[1] && !xmlEntities.has(match[1])) throw new Error("docx_xml_invalid");
   }
+  let root: Element | undefined;
   for (const value of parser.parse(xml) as Record<string, unknown>[]) {
     const parsed = element(value, new Map());
-    if (parsed) return parsed;
+    if (!parsed) continue;
+    if (root) throw new Error("docx_xml_invalid");
+    root = parsed;
   }
-  return undefined;
+  return root;
 }
 
 export function children(parent: Element | undefined): Element[] {
