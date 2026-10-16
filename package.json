@@ -58,6 +58,7 @@
     "@openai/codex-sdk": "^0.163.0",
     "@shikijs/transformers": "^4.5.0",
     "commander": "^15.0.0",
+    "dingbat-to-unicode": "1.0.2",
     "fast-xml-parser": "5.11.2",
     "mammoth": "^1.13.0",
     "papaparse": "^5.7.0",

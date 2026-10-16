@@ -361,7 +361,9 @@ or record a gap    Verify evidence and reason;
 Invalid font/code data --> establish explicit diagnostic/outcome expectations
 ```
 
-Prefer the standalone `dingbat-to-unicode` mapper already used by Mammoth over a small owned table, with adoption deferred to Phase 5.[^dingbat-mapper] Its pinned `js-1.0.1` source has 1,061 mapping rows across Symbol, Webdings, Wingdings, Wingdings 2, and Wingdings 3, and no runtime dependencies.[^dingbat-pinned] The manifest declares BSD-2-Clause, but the pinned source/package lacks a license notice; a notice on mutable upstream main is insufficient exact-version proof. Resolve provenance and notice obligations before adoption, or reopen the mapping choice. Do not copy the data to bypass that question. Phases 2–3 add no mapping dependency; complete Mammoth removal remains mandatory.
+Use the standalone `dingbat-to-unicode` mapper already used by Mammoth rather than an owned mapping table.[^dingbat-mapper] The baseline's `js-1.0.1` has 1,061 mapping rows across Symbol, Webdings, Wingdings, Wingdings 2, and Wingdings 3, but its package lacks the BSD notice declared by the manifest.[^dingbat-pinned] The candidate therefore pins 1.0.2: its published archive includes the BSD-2-Clause notice matching exact source commit `9eb2d1d8b8463b7bd3cd125597eabcfa9df42128`, all 1,061 mappings match the baseline, and it has no runtime dependencies.[^dingbat-candidate]
+
+Archive integrity, tag/source identity, packaged notice, and complete mapping equivalence were verified before adoption. Keep the mapper external and retain its packaged notice; actual candidate distribution inspection remains Phase 6 work. No mapping data is copied into project source. Mammoth remains the production extractor, and its removal remains mandatory on the shipping path.
 
 | Symbol input | Required baseline outcome |
 | --- | --- |
@@ -609,3 +611,5 @@ The retained baseline corpus has 70 semantic cases and 21 structural boundary ca
 [^mammoth-style-reader]: [Mammoth 1.13.0 style-map parser](https://github.com/mwilliamson/mammoth.js/blob/1.13.0/lib/style-reader.js).
 
 [^dingbat-pinned]: [Dingbat-to-Unicode pinned mapping manifest](https://github.com/mwilliamson/dingbat-to-unicode/blob/js-1.0.1/js/package.json), [API](https://github.com/mwilliamson/dingbat-to-unicode/blob/js-1.0.1/js/src/index.ts), and [data generation](https://github.com/mwilliamson/dingbat-to-unicode/blob/js-1.0.1/generate.py).
+
+[^dingbat-candidate]: [Candidate mapper manifest](https://github.com/mwilliamson/dingbat-to-unicode/blob/9eb2d1d8b8463b7bd3cd125597eabcfa9df42128/js/package.json), [BSD notice](https://github.com/mwilliamson/dingbat-to-unicode/blob/9eb2d1d8b8463b7bd3cd125597eabcfa9df42128/js/LICENSE), and [mapping API](https://github.com/mwilliamson/dingbat-to-unicode/blob/9eb2d1d8b8463b7bd3cd125597eabcfa9df42128/js/src/index.ts).

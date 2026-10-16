@@ -10,7 +10,7 @@ agent: codex
 
 Evaluate and, if justified, integrate a focused project-owned DOCX reader that preserves semantic rename evidence and fallback behavior while enabling complete Mammoth removal.
 
-This plan includes contract research, candidate evaluation, and conditional production migration. Phases 1–7 establish the research decision; Phases 8–9 proceed only after selection supports replacement. Phase 10 validates documentation before closeout. The [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md) tracks outcomes across all ten phases. Phases 1–4 are complete; Phase 5 follows the reviewed resource boundary. Numerical budgets and final support acceptance remain Phase 6 work. No replacement has been selected.
+This plan includes contract research, candidate evaluation, and conditional production migration. Phases 1–7 establish the research decision; Phases 8–9 proceed only after selection supports replacement. Phase 10 validates documentation before closeout. The [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md) tracks outcomes across all ten phases. Phases 1–4 are complete; Phase 5 is in progress. Numerical budgets and final support acceptance remain Phase 6 work. No replacement has been selected.
 
 ## Scope
 

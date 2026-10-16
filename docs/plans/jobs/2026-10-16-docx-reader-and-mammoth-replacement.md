@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–4 are complete.
+Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–4 are complete. Phase 5 is in progress.
 
 ## Phase 1 Outcomes
 
@@ -92,6 +92,17 @@ Review fixes cover stalled input ownership through deadline/cancellation and val
 
 Reviewed source/verification range: `13b66b3b..721a942b`; closing documentation reviewed separately. Temporary outputs were removed. The resource boundary supports continuing content evaluation; numerical budgets and fresh-consumer acceptance remain pending.
 
+## Phase 5: Content Compatibility
+
+Source baseline: `bd0c9679037e810602d6e6ac203d5aeff14bc7b7`.
+
+| Check | Result |
+| --- | --- |
+| Mapper provenance, packaged notice, and all 1,061 baseline mappings | Passed; candidate pins `dingbat-to-unicode` 1.0.2 |
+| Original baseline and contract captures after dependency change | Passed; unchanged |
+| Full content implementation and additional regressions | In progress |
+| Final built comparisons, applicable checks, and full phase review | Pending |
+
 ## Later Phases
 
-Phases 5–10 are unstarted. Numerical budget/support acceptance, complete candidate compatibility, maintenance acceptance, and shipping checks remain pending. Mammoth remains the production extractor; dependencies are unchanged.
+Phases 6–10 are unstarted. Numerical budget/support acceptance, complete candidate validation, maintenance acceptance, and shipping checks remain pending. Mammoth remains the production extractor; the candidate's symbol mapper is a separate pinned dependency.
