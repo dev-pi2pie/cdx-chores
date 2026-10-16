@@ -1,4 +1,4 @@
-/** Evaluation limits remain provisional until the complete-candidate acceptance phase. */
+/** Internal resource envelope accepted in Phase 7. */
 export const DEFAULT_DOCX_LIMITS = {
   compressedInputBytes: 8 * 1024 * 1024,
   entryCount: 256,

@@ -1,43 +1,24 @@
-import { readFile } from "node:fs/promises";
+import { createDocxSupervisor, type DocxSupervisor } from "../../../../docx/runtime";
 
-import * as mammoth from "mammoth";
-
-import { readDocxCoreMetadata } from "../../../docx/ooxml-metadata";
-import type { DocumentTitleEvidence, DocxHeadingSignal } from "../types";
+import type { DocumentTitleEvidence } from "../types";
 import { assembleDocxEvidence } from "./docx-evidence";
-import { stripHtmlTags, toSingleLine } from "./shared";
 
-export async function extractDocxEvidence(
-  path: string,
-): Promise<DocumentTitleEvidence | { reason: string }> {
-  try {
-    const buffer = await readFile(path);
-    const [metadataResult, htmlResult, rawTextResult] = await Promise.all([
-      readDocxCoreMetadata(path),
-      mammoth.convertToHtml({ buffer }),
-      mammoth.extractRawText({ buffer }),
-    ]);
-
-    const html = htmlResult.value ?? "";
-    const rawText = rawTextResult.value ?? "";
-    const headingSignals: DocxHeadingSignal[] = [];
-    for (const match of html.matchAll(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/gi)) {
-      const headingText = toSingleLine(stripHtmlTags(match[2] ?? ""));
-      const headingLevel = Number(match[1] ?? 0);
-      if (!headingText || !Number.isFinite(headingLevel) || headingLevel < 1 || headingLevel > 6) {
-        continue;
-      }
-      headingSignals.push({ level: headingLevel, text: headingText });
+/** One factory owner is reused for the complete document-title operation. */
+export function createDocxEvidenceExtractor(
+  read: DocxSupervisor["read"] = createDocxSupervisor().read,
+) {
+  return async (path: string): Promise<DocumentTitleEvidence | { reason: string }> => {
+    try {
+      const result = await read(path);
+      if (!result.ok) return { reason: "docx_extract_error" };
+      return assembleDocxEvidence(path, { ...result.facts, extractor: "docx-reader" });
+    } catch {
+      return { reason: "docx_extract_error" };
     }
+  };
+}
 
-    return assembleDocxEvidence(path, {
-      metadataResult,
-      rawText,
-      headings: headingSignals,
-      hasContent: html.trim().length > 0 || rawText.trim().length > 0,
-      extractor: "mammoth",
-    });
-  } catch {
-    return { reason: "docx_extract_error" };
-  }
+/** A standalone extraction is its own operation; batch callers reuse the factory. */
+export async function extractDocxEvidence(path: string) {
+  return createDocxEvidenceExtractor()(path);
 }
