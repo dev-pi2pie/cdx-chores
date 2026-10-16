@@ -1,13 +1,19 @@
 # DOCUMENTATION_POLICY.md
 
-Repository-wide policy for guides, references, plans, research docs, job
-records, and related documentation lifecycle decisions.
+Repository-wide policy for guides, references, plans, research docs, job records, and related documentation lifecycle decisions.
 
 ---
 
 ## Documentation Conventions
 
 All meaningful agent work SHOULD be documented.
+
+### Paragraph Formatting
+
+- Keep each prose paragraph on one source line. Do not insert hard line breaks to satisfy a line-length limit or place each sentence on a separate source line.
+- Separate distinct paragraphs with a blank line.
+- Apply the same rule to prose paragraphs within bullet lists, numbered lists, and footnotes, while preserving indentation and list structure.
+- Preserve structural or semantically required line breaks in headings, tables, code blocks, front matter, and other content where line breaks carry meaning. Configure formatters to preserve this rule rather than automatically wrap prose.
 
 ### Date Policy
 
