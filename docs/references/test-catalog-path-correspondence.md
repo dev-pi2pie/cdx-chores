@@ -451,7 +451,7 @@ The DOCX baseline application, symbol/style/note contract application, temporary
 
 The private candidate's `test/document-rename/docx-resource.unit.test.ts`, `docx-runtime.unit.test.ts`, and `docx-runtime.app.test.ts` are new enforcement and lifecycle contracts under the same owner, without a historical-path migration. Runtime fixture sources stay under `test/document-rename/fixtures/docx-runtime/`.
 
-The initial DOCX candidate application test is a new private evaluation contract under the same owner. It reuses the frozen baseline rather than replacing its expectations and makes no migration or complete-support claim.
+The DOCX candidate application test is a new private evaluation contract under the same owner. It reuses unchanged frozen expectations and checks complete content through private supervised builds, with additional synthetic probe definitions in `test/document-rename/fixtures/docx-content-probes.ts`. The new `docx-content.unit.test.ts` and `docx-numbering.unit.test.ts` own content interactions and bounded list resolution. These have no historical-path migration and do not establish final workload or package acceptance.
 
 ### Markdown DOCX
 

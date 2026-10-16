@@ -9,7 +9,7 @@ import {
   readDocxDocument,
 } from "../../../scripts/docx-candidate/adapter";
 import { createInitialReaderCases } from "../../../scripts/docx-candidate/cases";
-import { compareInitialReader } from "../../../scripts/docx-candidate/compare";
+import { compareDocxReader } from "../../../scripts/docx-candidate/compare";
 import type { DocxCapture } from "../../../scripts/docx-baseline/capture";
 import { buildDocxPackage, paragraph } from "../../../scripts/docx-baseline/corpus/builder";
 import { readDocxXmlParts } from "../../../src/adapters/docx/ooxml-package";
@@ -42,7 +42,7 @@ for (const item of createInitialReaderCases()) {
       await mkdir(join(root, item.id));
       const path = join(root, item.id, name);
       await writeFile(path, bytes);
-      await compareInitialReader(candidate, item, expected, bytes, path, root);
+      await compareDocxReader(candidate, item, expected, bytes, path, root);
     });
   });
 }
@@ -70,16 +70,20 @@ test("embedded style-map opt-in preserves default parts and the existing part ca
   }
 });
 
-test("built ESM/CJS reader comparisons run in Node and clean temporary assets", async () => {
+test("built ESM/CJS reader smoke runs in Node and cleans temporary assets", async () => {
   const parent = await mkdtemp(join(tmpdir(), "docx-initial-reader-test-"));
   try {
-    const output = execFileSync("node", [join(REPO_ROOT, "scripts/docx-candidate/launch.mjs")], {
-      cwd: REPO_ROOT,
-      env: { ...process.env, TMPDIR: parent, TMP: parent, TEMP: parent },
-      encoding: "utf8",
-      timeout: 250_000,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
+    const output = execFileSync(
+      "node",
+      [join(REPO_ROOT, "scripts/docx-candidate/launch.mjs"), "--smoke"],
+      {
+        cwd: REPO_ROOT,
+        env: { ...process.env, TMPDIR: parent, TMP: parent, TEMP: parent },
+        encoding: "utf8",
+        timeout: 250_000,
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
     expect(output).toBe("guarded reader: passed yes\n");
     expect(await readdir(parent)).toEqual([]);
   } finally {

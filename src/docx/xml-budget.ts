@@ -3,11 +3,11 @@ import { checkDocxLimit, type DocxLimits } from "./limits";
 /** Checks structure and allocation bounds before either XML parser sees a part. */
 export class XmlBudget {
   private elements = 0;
-  private readonly inspected = new Set<string>();
+  private readonly inspected = new Set<string | object>();
 
   constructor(private readonly limits: DocxLimits) {}
 
-  inspect(part: string, xml: string): void {
+  inspect(part: string | object, xml: string): void {
     if (this.inspected.has(part)) return;
     const stack: string[] = [];
     let cursor = 0;

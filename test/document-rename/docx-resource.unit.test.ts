@@ -153,6 +153,30 @@ describe("selected DOCX resource enforcement", () => {
     }
   });
 
+  test("caches selected bytes by physical entry across metadata and content selection", async () => {
+    for (const duplicate of [false, true]) {
+      const archive = await openGuardedDocxPackage(
+        buildStoredZip([
+          ["part.xml", "first"],
+          ...(duplicate ? [["part.xml", Buffer.alloc(256 * 1024 + 1)] as [string, Buffer]] : []),
+        ]),
+        resolveDocxLimits({ totalDecompressedBytes: 5 }),
+      );
+      try {
+        expect(await archive.readMetadataText("/part.xml")).toBe("first");
+        expect(await archive.readMetadataText("part.xml")).toBe("first");
+        if (duplicate) {
+          await expect(archive.readText("/part.xml")).rejects.toThrow(
+            "docx_limit:totalDecompressedBytes",
+          );
+          expect(archive.closed).toBe(true);
+        } else expect(await archive.readText("/part.xml")).toBe("first");
+      } finally {
+        await archive.close();
+      }
+    }
+  });
+
   test("does not inflate or inspect unselected content", async () => {
     const bytes = buildStoredZip([
       ["word/document.xml", main],

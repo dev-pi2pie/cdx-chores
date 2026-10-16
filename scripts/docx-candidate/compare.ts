@@ -20,7 +20,7 @@ function captured<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
-export async function compareInitialReader(
+export async function compareDocxReader(
   module: CandidateModule,
   item: DocxBaselineCase,
   baseline: DocxCapture,

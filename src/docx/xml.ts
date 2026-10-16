@@ -10,12 +10,20 @@ export interface Element {
 
 const aliases = new Map([
   ["http://schemas.openxmlformats.org/wordprocessingml/2006/main", "w"],
+  ["http://purl.oclc.org/ooxml/wordprocessingml/main", "w"],
   ["http://schemas.openxmlformats.org/officeDocument/2006/relationships", "r"],
+  ["http://purl.oclc.org/ooxml/officeDocument/relationships", "r"],
   ["http://schemas.openxmlformats.org/package/2006/relationships", "rels"],
+  ["http://schemas.openxmlformats.org/package/2006/content-types", "types"],
   ["http://schemas.openxmlformats.org/drawingml/2006/main", "a"],
+  ["http://purl.oclc.org/ooxml/drawingml/main", "a"],
   ["http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing", "wp"],
+  ["http://purl.oclc.org/ooxml/drawingml/wordprocessingDrawing", "wp"],
   ["http://schemas.openxmlformats.org/drawingml/2006/picture", "pic"],
+  ["http://purl.oclc.org/ooxml/drawingml/picture", "pic"],
   ["urn:schemas-microsoft-com:vml", "v"],
+  ["http://schemas.openxmlformats.org/markup-compatibility/2006", "mc"],
+  ["http://schemas.microsoft.com/office/word/2010/wordml", "wordml"],
 ]);
 const parser = new XMLParser({
   preserveOrder: true,
@@ -56,7 +64,12 @@ function element(
     if (typeof child["#text"] === "string") children.push(child["#text"]);
     else {
       const parsed = element(child, namespaces);
-      if (parsed) children.push(parsed);
+      if (parsed?.name === "mc:AlternateContent") {
+        const fallback = parsed.children.find(
+          (value): value is Element => typeof value !== "string" && value.name === "mc:Fallback",
+        );
+        for (const value of fallback?.children ?? []) children.push(value);
+      } else if (parsed) children.push(parsed);
     }
   }
   return { name: resolveName(name, namespaces), attributes, children };
@@ -66,7 +79,7 @@ function element(
 export function parseXml(
   xml: string,
   budget = new XmlBudget(resolveDocxLimits()),
-  part = "inline",
+  part: string | object = "inline",
 ): Element | undefined {
   budget.inspect(part, xml);
   if (XMLValidator.validate(xml) !== true) throw new Error("docx_xml_invalid");

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 
 import { createBaselineCases } from "../docx-baseline/corpus/index";
+import { createContractCases } from "../docx-baseline/corpus/contract/index";
 
 const additionalIds = new Set([
   "heading-custom-id-standard-name",
@@ -27,5 +28,13 @@ export function createInitialReaderCases() {
   );
   assert.equal(cases.length, 22, "Initial reader case selection changed");
   assert.equal(cases.filter((item) => "fixture" in item.input).length, 7);
+  return cases;
+}
+
+/** Full identified content corpus; resource envelope acceptance remains separate. */
+export function createCompleteReaderCases() {
+  const cases = [...createBaselineCases(), ...createContractCases()];
+  assert.equal(cases.length, 103, "Complete reader case selection changed");
+  assert.equal(new Set(cases.map((item) => item.id)).size, cases.length);
   return cases;
 }

@@ -100,8 +100,13 @@ Source baseline: `bd0c9679037e810602d6e6ac203d5aeff14bc7b7`.
 | --- | --- |
 | Mapper provenance, packaged notice, and all 1,061 baseline mappings | Passed; candidate pins `dingbat-to-unicode` 1.0.2 |
 | Original baseline and contract captures after dependency change | Passed; unchanged |
-| Full content implementation and additional regressions | In progress |
-| Final built comparisons, applicable checks, and full phase review | Pending |
+| Content discovery, heading projection, symbols, notes/comments, metadata boundaries | Implemented; private candidate |
+| Frozen 103 cases and ten additional probes, complete evidence/exact prompts, supervised ESM/CJS | Passed; only agreed extractor identity differs |
+| Independent content, numbering, and resource checks | Passed; 66 checks |
+| Lint, formatting, types, production build, managed unit suite | Passed |
+| Minimum Node supervised ESM/CJS comparisons | Passed |
+| Managed application suite | Pending |
+| Full phase review and documentation validation | Pending |
 
 ## Later Phases
 
