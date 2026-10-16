@@ -10,7 +10,7 @@ agent: codex
 
 Evaluate and, if justified, integrate a focused project-owned DOCX reader that preserves semantic rename evidence and fallback behavior while enabling complete Mammoth removal.
 
-This plan includes contract research, candidate evaluation, and conditional production migration. Phases 1–7 establish the research decision; Phases 8–9 proceed only after selection supports replacement. Phase 10 validates documentation before closeout. The [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md) tracks outcomes across all ten phases. Phases 1–4 are complete; Phase 5 is in progress. Numerical budgets and final support acceptance remain Phase 6 work. No replacement has been selected.
+This plan includes contract research, candidate evaluation, and conditional production migration. Phases 1–7 establish the research decision; Phases 8–9 proceed only after selection supports replacement. Phase 10 validates documentation before closeout. The [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md) tracks outcomes across all ten phases. Phases 1–5 are complete. Numerical budgets and final support acceptance remain Phase 6 work. No replacement has been selected.
 
 ## Scope
 
@@ -111,9 +111,9 @@ Phase 1 is complete, with reusable corpus/expectations, consumer inventory, and 
 
 **Deliverable and exit criteria:** a small executable reader slice with complete comparisons for identified inputs and a complexity decision. This checkpoint does not establish full compatibility, resource acceptance, or candidate selection. A defer outcome follows the Phase 7 decision and Phase 10 documentation route.
 
-The research's [initial reader scope](../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#initial-reader-scope) identifies the 22 comparison cases; broader contract cases remain Phase 5–6 obligations.
+The research's [initial reader scope](../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#initial-reader-scope) identifies the 22 comparison cases. Phase 5 covers broader content cases; Phase 6 validates the complete candidate envelope.
 
-Phase 3 is complete with a continue outcome. The identified comparisons, built-format Node checks, applicable managed checks, and phase review passed; the [record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-3-initial-reader) retains the results. Phase 4 now implements the separate resource boundary.
+Phase 3 is complete with a continue outcome. The identified comparisons, built-format Node checks, applicable managed checks, and phase review passed; the [record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-3-initial-reader) retains the results. Phases 4–5 track the separate resource boundary and complete content comparisons.
 
 ### Phase 4: Implement resource isolation
 
@@ -130,13 +130,15 @@ Phase 4 is complete. The [record](jobs/2026-10-16-docx-reader-and-mammoth-replac
 
 ### Phase 5: Complete content compatibility
 
-- [ ] Complete main-document/style discovery, ordered text/headings, and secondary-content handling for every minimum corpus variation, tracing both baseline outputs through evidence assembly.
-- [ ] Implement the agreed font/code mapping ownership and unsupported-symbol policy. Cover prefixed encodings, malformed attributes, and symbols in headings, lead text, and otherwise usable documents; classify each gap or intentional difference.
-- [ ] Implement the agreed style-map grammar and bounded note handling, including unsupported rules, cycles, repeated references, and distinct heading/raw inclusion.
-- [ ] Preserve metadata warnings and metadata-only/empty/non-text failure boundaries. Record internal-to-existing diagnostic mappings and the proposed extractor identity.
-- [ ] Compare complete normalized evidence and exact prompt payloads over the full corpus, including new contract cases. Retain independent synthetic assertions and classify every difference; do not rewrite frozen expectations during ordinary verification.
+- [x] Complete main-document/style discovery, ordered text/headings, and secondary-content handling for every minimum corpus variation, tracing both baseline outputs through evidence assembly.
+- [x] Implement the agreed font/code mapping ownership and unsupported-symbol policy. Cover prefixed encodings, malformed attributes, and symbols in headings, lead text, and otherwise usable documents; classify each gap or intentional difference.
+- [x] Implement the agreed style-map grammar and bounded note handling, including unsupported rules, cycles, repeated references, and distinct heading/raw inclusion.
+- [x] Preserve metadata warnings and metadata-only/empty/non-text failure boundaries. Record internal-to-existing diagnostic mappings and the proposed extractor identity.
+- [x] Compare complete normalized evidence and exact prompt payloads over the full corpus, including new contract cases. Retain independent synthetic assertions and classify every difference; do not rewrite frozen expectations during ordinary verification.
 
 **Deliverable and exit criteria:** every required content variation has identified cases and complete comparison results. Unresolved consequential regressions prevent selection; restrictions do not become accepted merely because the reader emits text.
+
+Phase 5 is complete. The [record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-5-content-compatibility) retains full supervised content comparisons, independent regressions, applicable checks, cleanup, and phase review. Only the agreed extractor identity differs; numerical budgets, final support, and distribution acceptance remain Phase 6 work.
 
 ### Phase 6: Validate the complete candidate
 

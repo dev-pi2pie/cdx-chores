@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–4 are complete. Phase 5 is in progress.
+Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–5 are complete.
 
 ## Phase 1 Outcomes
 
@@ -106,7 +106,9 @@ Source baseline: `bd0c9679037e810602d6e6ac203d5aeff14bc7b7`.
 | Lint, formatting, types, production build, managed unit suite | Passed |
 | Minimum Node supervised ESM/CJS comparisons | Passed |
 | Managed application suite | Passed |
-| Full phase review and documentation validation | Final regression review pending |
+| Full phase review and documentation validation | Passed; finding fixed |
+
+Reviewed source/verification range: `bd0c9679..3aef0456`; closing documentation reviewed separately. Review added complete symbol-mapping parity coverage. The managed 22-case smoke and separate full-corpus checks passed; temporary outputs were removed.
 
 ## Later Phases
 
