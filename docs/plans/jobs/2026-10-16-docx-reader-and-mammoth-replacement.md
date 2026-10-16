@@ -2,13 +2,13 @@
 title: "DOCX reader and Mammoth replacement execution"
 created-date: 2026-10-16
 modified-date: 2026-10-16
-status: in-progress
+status: completed
 agent: codex
 ---
 
 ## Scope
 
-Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–9 and 6.1–6.3 are complete. Phase 10 is unstarted.
+Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. All ten main phases and Phases 6.1–6.3 are complete; the recorded support limits and unresolved limitations remain explicit.
 
 ## Phase 1 Outcomes
 
@@ -297,6 +297,16 @@ Limitations: the earlier minimum-Node style-boundary anomaly remains unexplained
 
 The [Phase 9 checklist](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-9-remove-mammoth-and-verify-shipping-acceptance) is complete. Final-product checks support the scoped Mammoth/Argparse/`sprintf-js` remediation claim; they do not establish that every dependency is vulnerability-free.
 
-## Later Phases
+## Phase 10: Documentation Validation and Closeout
 
-Phase 10's final documentation consistency pass remains unstarted; the plan and unified record remain open.
+Source baseline: `a8a610d7`. This phase changes documentation only.
+
+| Check | Result |
+| --- | --- |
+| Current guidance | Reader behavior, deadline/cleanup scope, fallback, dependencies, test ownership, and smoke retention agree with source; historical checkpoints clearly labeled |
+| Commands / links | All nine help/error paths passed; relative links/anchors, backlinks, UTC metadata, paragraph formatting, and public-safe wording checked |
+| Evidence | Phase 9 routine/runtime/distribution results retained without rerunning unchanged product code; all seven frozen expectation/manifest files unchanged |
+| Review | Complete Phase 10 scope from `a8a610d7` reviewed; stale gate-status and cleanup-guarantee wording corrected |
+| Artifacts / status | Checks created no verification artifacts; all 86 tasks across 13 phase sections checked; research, plan, and record completed in their current locations |
+
+The [Phase 9 limitations](#phase-9-mammoth-removal-and-shipping-verification) remain part of the completed outcome. Completion does not resolve the upstream notice gap or minimum-Node anomaly, extend platform coverage, or archive these documents.

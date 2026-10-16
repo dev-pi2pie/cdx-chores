@@ -2,7 +2,7 @@
 title: "DOCX Extraction and Mammoth Replacement"
 created-date: 2026-10-16
 modified-date: 2026-10-16
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -16,9 +16,17 @@ Investigate metadata, ordered text, and headings for the existing DOCX rename wo
 
 Here, a project-owned reader means TypeScript/JavaScript running in Node.js with the existing ZIP/XML dependencies. It does not mean a compiled native addon, another language runtime, or a bundled external converter. Maintaining a Mammoth fork is outside this investigation.
 
-Dependency overrides, patches, and upstream Mammoth upgrades belong to separate dependency maintenance. Upstream source references remain the basis for understanding current behavior.
+Dependency overrides, patches, and upstream Mammoth upgrades belong to separate dependency maintenance. Upstream source references explain baseline behavior and retained dependency provenance.
 
 Full DOCX-to-HTML conversion, layout rendering, images/OCR, legacy `.doc` support, new CLI commands, and replacing Markdown-to-DOCX generation are outside this research. The existing `md to-docx` action in `src/cli/actions/markdown/to-docx.ts` uses Pandoc.
+
+## Outcome
+
+The focused reader was accepted in [Phase 7](#phase-7-assessment-and-acceptance-proposal), integrated in Phase 8, and verified with complete Mammoth removal in [Phase 9](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-9-mammoth-removal-and-shipping-verification). The [rename guide](../guides/rename-scope-and-codex-capability-guide.md) describes current behavior; baseline analysis and phase checkpoints below preserve the findings at their reviewed revisions.
+
+Accepted resource/content limits and maintenance ownership remain in force. RSS is sampled, OS failures can defeat cleanup targets, and Linux/Windows remain unverified. The upstream packaged-notice gap and unexplained minimum-Node validation anomaly remain recorded limitations; passing verification does not resolve them. Current comparisons use frozen expectations rather than a live Mammoth oracle.
+
+The research decision, implementation evidence, and documentation checks are complete; see the [Phase 10 closeout](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-10-documentation-validation-and-closeout).
 
 ## Baseline Code and Reader-Facing Contract
 
@@ -98,7 +106,7 @@ The prompt builder in `src/adapters/codex/document-rename/prompt.ts` forwards th
 
 ### Mammoth's parsing path uses JavaScript in Node.js
 
-The installed `mammoth@1.13.0` library path uses JavaScript for package reading, XML parsing, and document interpretation:
+At the reviewed baseline, the installed `mammoth@1.13.0` library path used JavaScript for package reading, XML parsing, and document interpretation:
 
 | Component                  | Observed implementation                                                                                                                                                             |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -120,7 +128,7 @@ Metadata discovery in `src/adapters/docx/ooxml-part-discovery.ts` already ignore
 
 ### The dependency issue is separate from DOCX conversion fidelity
 
-The reviewed installation uses `mammoth@1.13.0 > argparse@1.0.10 > sprintf-js@1.0.3`. The moderate precision-specifier advisory lists versions through `1.1.3` as affected and no patched version as of this review.[^advisory] The October maintenance record documents the library/CLI boundary and limits of its static assessment; its validation of the existing dependency set is not replacement compatibility evidence.[^maintenance]
+The reviewed baseline installation used `mammoth@1.13.0 > argparse@1.0.10 > sprintf-js@1.0.3`. The moderate precision-specifier advisory listed versions through `1.1.3` as affected and no patched version as of that review.[^advisory] The October maintenance record documents the library/CLI boundary and limits of its static assessment; its validation of the earlier dependency set is not replacement compatibility evidence.[^maintenance]
 
 An earlier installed-tree inventory and blocked-import diagnostic lack reproducible checks and identified inputs; neither is decision evidence. Any future use requires a linked harness, identified inputs, and asserted outcomes. Import-blocking checks must install interception before loading Mammoth and independently assert positive controls and per-fixture conversion attempts. Neither a lockfile nor successful conversions establish installed-file contents, replacement fidelity, or universal advisory non-reachability.
 
@@ -199,7 +207,7 @@ Reuse or relocate the existing OOXML helpers rather than introduce a second ZIP/
 
 A candidate reader should expose separate ordered heading signals with levels and a body/raw-text stream, alongside optional core metadata and internal diagnostics. Those outputs may contain different content because the current HTML and raw-text paths differ. Paragraph/table/list structure may stay internal; a shared paragraph representation must not force HTML-only content into the body stream.
 
-The exact types and failure representation remain open. In particular, the reader may need an internal signal for non-text content to preserve the current no-evidence reason distinction without generating HTML. The failure-boundary cases below must establish whether that is necessary. A buffer-based entry point could share one read between content and metadata; the current metadata helper reads the path separately.
+The initial hypothesis left types, failure representation, and non-text content signaling open. The accepted [internal boundary](#phase-7-assessment-and-acceptance-proposal) resolves those questions with document facts, content presence, and fixed failure diagnostics; the production adapter retains the no-evidence policy without generating HTML.
 
 ## Compatibility Policy
 
@@ -298,13 +306,13 @@ Bounded read --> launch child --> transfer --> extract --> validate bounded fact
                    |                    |
            Return one outcome    Return infrastructure failure
                                  Retain ownership/admission
-                                 until eventual settlement
+                                 until confirmed settlement
 
 Timeout / cancellation / crash / invalid response
      `--> stop input / terminate child --> bounded cleanup / escalation
 ```
 
-On timeout, cancellation, protocol failure, stream error, or excessive RSS, freeze failure and request termination immediately; escalate from TERM to KILL after the grace period where supported. Await `close`, including stdio closure. A valid result followed by failed cleanup is an infrastructure failure. A pending input open/read/close follows the same ownership policy: race the operation against the processing deadline, await bounded cleanup, and retain admission until eventual settlement if cleanup cannot be confirmed. Portable Node cannot guarantee both a fixed API return deadline and confirmed cleanup under arbitrary OS I/O or termination failure. Unconfirmed cleanup must remain a distinct validation failure with retained resource ownership/admission capacity, rather than a passing timeout result. Final acceptance must state this limitation and separately assess processing, cleanup, and total latency.
+On timeout, cancellation, protocol failure, stream error, or excessive RSS, freeze failure and request termination immediately; escalate from TERM to KILL after the grace period where supported. Await `close`, including stdio closure. A valid result followed by failed cleanup is an infrastructure failure. A pending input open/read/close follows the same ownership policy: race the operation against the processing deadline, await bounded cleanup, and retain admission until settlement is confirmed if bounded cleanup fails. Portable Node cannot guarantee both a fixed API return deadline and confirmed cleanup under arbitrary OS I/O or termination failure. Unconfirmed cleanup must remain a distinct validation failure with retained resource ownership/admission capacity, rather than a passing timeout result. Final acceptance must state this limitation and separately assess processing, cleanup, and total latency.
 
 | Additional provisional proposal | Starting value | Reason to validate |
 | --- | --- | --- |
@@ -475,7 +483,7 @@ The original resource inspector measures whole-package dimensions, including uns
 
 The [private process boundary](../../src/docx/runtime/index.ts) implements the agreed child/worker topology, capped file reading, strict byte frames, sanitized environment, independent deadline/RSS supervision, and confirmed closure. Its eight modules add about 1,000 lines of lifecycle, protocol, and offline instrumentation. A fresh extraction process adds startup and transport cost; complete candidate measurements and acceptance are assessed below.
 
-[Runtime tests](../../test/document-rename/docx-runtime.app.test.ts) cover caller-memory independence, blocked parsing, controlled and actual RSS observations, malformed transport, crashes, cancellation, parent loss, escalation, and offline controls before parser imports. Unconfirmed cleanup remains an infrastructure failure and retains admission until eventual closure. Default transport-cap tests count encoded UTF-8 bytes; controlled parent-input observations establish expiry at the exact deadline. Controlled RSS observations cover worker termination and encoded-result publication as well as periodic sampling. Sampled RSS can miss brief peaks; successful checks do not establish a kernel memory ceiling.
+[Runtime tests](../../test/document-rename/docx-runtime.app.test.ts) cover caller-memory independence, blocked parsing, controlled and actual RSS observations, malformed transport, crashes, cancellation, parent loss, escalation, and offline controls before parser imports. Unconfirmed cleanup remains an infrastructure failure and retains admission until settlement is confirmed. Default transport-cap tests count encoded UTF-8 bytes; controlled parent-input observations establish expiry at the exact deadline. Controlled RSS observations cover worker termination and encoded-result publication as well as periodic sampling. Sampled RSS can miss brief peaks; successful checks do not establish a kernel memory ceiling.
 
 ### Content implementation assessment
 
@@ -570,7 +578,7 @@ Phase 6's private package declared only the three reader dependencies and establ
 
 Historical inspection recorded eight transitive packages. The current quick verifier checks package assets, direct dependencies, and runtime behavior; it does not establish license or third-party notice completeness. Phase 9 inspected the actual npm/Bun product installations: the three reader dependencies retain their BSD-2-Clause/MIT license files. `fast-xml-parser` remains pinned to 5.11.2; its transitive `@nodable/entities` 3.1.0 still omits the full MIT notice from its published package, although the upstream notice is present at the package's recorded source revision.[^entities-notice] This upstream packaging limitation remains explicit; candidate distribution results alone do not establish final-product acceptance.
 
-The historical `scripts/spikes/docx-pdf-title-evidence-spike.ts` imported Mammoth at the baseline. Phase 9 retires that DOCX path and keeps the referenced PDF comparison behavior and historical findings. Production code, scripts, tests, declarations, the lockfile, and installed trees must satisfy the removal goal; explanatory historical references may remain.
+The historical `scripts/spikes/docx-pdf-title-evidence-spike.ts` imported Mammoth at the baseline. Phase 9 retired that DOCX path and kept the referenced PDF comparison behavior and historical findings. Production code, scripts, tests, declarations, the lockfile, and installed trees must satisfy the removal goal; explanatory historical references may remain.
 
 ### Validation harness follow-up
 
@@ -604,19 +612,19 @@ Phase 7 records the maintainer’s explicit acceptance of responsibility for dep
 
 ### Phase 7 assessment and acceptance proposal
 
-The maintainer explicitly accepted the full proposal recorded at `141363f4`, including numerical/support limits, intentional differences, platform scope, and maintenance ownership. Decision: proceed to Phase 8 integration. Assessed candidate `244b3e61` preserves the reader/runtime, shared evidence policy, dependency declarations, and lockfile reviewed in Phase 6. All five frozen captures/manifests also match that revision's evidence. The subsequent reviewed work renews comparisons, measurements, and routine-suite results, then simplifies package checks without changing extraction. These are candidate results; integration and shipping remain separate gates.
+The maintainer explicitly accepted the full proposal recorded at `141363f4`, including numerical/support limits, intentional differences, platform scope, and maintenance ownership. This section records the Phase 7 decision before integration: proceed to Phase 8. Assessed candidate `244b3e61` preserves the reader/runtime, shared evidence policy, dependency declarations, and lockfile reviewed in Phase 6. All five frozen captures/manifests also match that revision's evidence. The subsequent reviewed work renews comparisons, measurements, and routine-suite results, then simplifies package checks without changing extraction. These candidate results preceded the separate Phase 8 integration and Phase 9 shipping checks.
 
 | Evidence | Reviewed result |
 | --- | --- |
 | Complete comparisons | 134 identified cases per format on primary/minimum Node; 130 default comparisons preserve full evidence/prompts except identity, four default-cap failures retain separate raised-cap semantic comparisons |
 | Resources | 18 workloads per runtime lane; processing/API and sampled-RSS proposals met with confirmed settlement; controlled boundary and fault probes passed |
 | Routine product coverage | 1,688 unit / 2,326 application cases passed; application 213 seconds under unchanged 240-second policy |
-| Current package verifier | Eight fresh npm/Bun × primary/minimum Node × ESM/CJS consumers passed at `244b3e61`; direct dependencies/assets and actual behavior checked without recursive inventory or Mammoth enforcement |
+| Phase 7 package verifier | Eight fresh npm/Bun × primary/minimum Node × ESM/CJS consumers passed at `244b3e61`; direct dependencies/assets and actual behavior checked without recursive inventory or Mammoth enforcement |
 | Traceability | [Phase 6 record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-6-complete-candidate-validation) and [Phase 6.3 record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-manual-script-simplification-and-test-ownership); frozen inputs remain test-owned |
 
-The implementation is focused but carries substantial ownership: 1,674 physical lines in 16 reader/content/guard modules and 981 lines in eight runtime modules, reusing 514 lines in five OOXML helpers. Counts include comments and blank lines. The complexity follows demonstrated style/heading projection, distinct raw/heading streams, symbol compatibility, snapshot notes, ZIP/XML bounds, and process ownership; it does not establish general DOCX conversion support. Preserve these boundaries instead of expanding into a renderer or another ZIP/XML stack.
+At the Phase 7 assessment, the implementation comprised 1,674 physical lines in 16 reader/content/guard modules and 981 lines in eight runtime modules, reusing 514 lines in five OOXML helpers. Counts include comments and blank lines. This focused scope still carries substantial ownership: style/heading projection, distinct raw/heading streams, symbol compatibility, snapshot notes, ZIP/XML bounds, and process ownership. It does not establish general DOCX conversion support. Preserve these boundaries instead of expanding into a renderer or another ZIP/XML stack.
 
-Direct dependency review retains `dingbat-to-unicode` 1.0.2 (BSD-2-Clause; the verified standalone mapper), `fast-xml-parser` 5.11.2 (MIT), and `yauzl` 3.4.0 (MIT). Installed manifests/notices agree with the recorded provenance; no versions change. The known transitive packaged-notice gap and complete actual-product dependency/notice review remain Phase 9 obligations. The quick verification scripts acquire no license checker, transitive inventory, or Mammoth policy.
+The Phase 7 dependency review retained `dingbat-to-unicode` 1.0.2 (BSD-2-Clause; the verified standalone mapper), `fast-xml-parser` 5.11.2 (MIT), and `yauzl` 3.4.0 (MIT). Installed direct manifests/notices agreed with the recorded provenance; no versions changed. Actual-product dependency/notice inspection followed in Phase 9 and retained the known transitive packaged-notice gap. The quick verification scripts have no license checker, transitive inventory, or Mammoth policy.
 
 | Acceptance area | Accepted contract | State |
 | --- | --- | --- |
@@ -629,7 +637,7 @@ Direct dependency review retains `dingbat-to-unicode` 1.0.2 (BSD-2-Clause; the v
 | Intentional differences | Accurate `docx-reader` / `docx-reader+ooxml` identity; default over-cap rejection maps outward to existing `docx_extract_error`. Preserve the 10 MiB CLI prefilter: input above 8 MiB through 10 MiB reaches the reader and fails extraction; above 10 MiB keeps the existing skip reason | Accepted |
 | Platform scope | Accept demonstrated macOS/Node scope for integration; Linux and Windows remain unverified, with no replacement support claim before separate validation. Manual process-group tooling does not establish product portability | Accepted |
 | Maintenance | Repository maintainer owns dependency/security and provenance review, editor/corpus regressions, manual-command upkeep, diagnostics/unsupported-content decisions, and renewed verification when limits or relevant code/dependencies change | Accepted |
-| Selection | Proceed to Phase 8 integration; final product verification, complete Mammoth removal, and shipping acceptance remain pending | Accepted |
+| Selection | At Phase 7: proceed to integration; final-product verification, complete Mammoth removal, and shipping checks were subsequent Phase 8–9 obligations | Accepted |
 
 Phase 8 isolated the live Mammoth oracle before switching the production adapter, retaining frozen expectations and baseline-only support until Phase 9. Each document-title operation reuses one supervisor through its sequential extraction loop; independent operations may run concurrently. A failed owner's retained slot must not be bypassed by making a new owner for the next file. Model-request `timeoutMs` remains separate from the per-document extraction deadline.
 
@@ -677,6 +685,8 @@ Otherwise, recommend deferral and identify unmet criteria. Record the supporting
 ### Shipping acceptance
 
 The implementation plan must repeat applicable evidence/prompt, fallback, resource, and distribution checks on the final integrated product, including its fixed child/worker/parser assets. Capture and review remaining live-baseline expectations before removing Mammoth; retain historical benchmark findings separately from ongoing product checks. Pass affected managed product tests and explicit Node.js checks of the CLI and built ESM/CJS entry points. Apply the Phase 6.2 runtime-focused contract through the simplified manual commands to actual product installations, preserve Phase 6.3's test-ownership boundary, and confirm consumer migration/retirement and complete Mammoth removal. Record routine and manual results separately, maintenance acceptance, and remaining limitations before claiming shipping acceptance or dependency remediation.
+
+Phase 9 satisfied these final-product checks within the accepted scope. Its [record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-9-mammoth-removal-and-shipping-verification) separates routine/manual outcomes, actual repository and npm/Bun dependency inspection, maintenance acceptance, and unresolved limitations. This supports the scoped Mammoth/Argparse/`sprintf-js` removal claim, not universal DOCX compatibility, notice completeness, or vulnerability freedom.
 
 The retained baseline corpus has 70 semantic cases and 21 structural boundary cases, supplemented by 33 contract cases linked above and from the [unified execution record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md). Complete candidate comparisons retain these expectations and distinguish default-limit failures from raised-cap semantic checks. Candidate equivalence, concrete support/diagnostic mappings, accepted resource budgets, maintenance acceptance, and both gates require evidence for that contract. Technical validation does not establish maintainer acceptance, selection, or shipping acceptance.
 

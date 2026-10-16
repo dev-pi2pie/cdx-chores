@@ -2,7 +2,7 @@
 title: "DOCX reader and Mammoth replacement"
 created-date: 2026-10-16
 modified-date: 2026-10-16
-status: active
+status: completed
 agent: codex
 ---
 
@@ -10,7 +10,7 @@ agent: codex
 
 Evaluate and, if justified, integrate a focused project-owned DOCX reader that preserves semantic rename evidence and fallback behavior while enabling complete Mammoth removal.
 
-This plan includes contract research, candidate evaluation, and conditional production migration. Phases 1–7, including Phases 6.1–6.3, establish the research decision; Phases 8–9 proceed only after selection supports replacement. Phase 10 validates documentation before closeout. The [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md) tracks outcomes across the ten main phases and three follow-ups. Phases 1–9 and 6.1–6.3 are complete. The maintainer accepted the [full Phase 7 proposal](../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#phase-7-assessment-and-acceptance-proposal), selecting the reader for integration. Final-product shipping checks passed with recorded limitations; Phase 10 is unstarted.
+This plan covers contract research, candidate evaluation, and production migration. All ten main phases and Phases 6.1–6.3 are complete. The maintainer accepted the [full Phase 7 proposal](../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#phase-7-assessment-and-acceptance-proposal), and the reader is integrated with Mammoth removed. Final-product shipping checks and documentation validation passed within the recorded limits; the [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md) retains phase evidence and known limitations.
 
 ## Scope
 
@@ -50,11 +50,11 @@ The research's [resource-isolation and content-support contract](../researches/r
 
 ## Candidate Build and Packaging Checks
 
-Phases 6 and 6.2 use a private evaluation harness that imports the actual candidate reader and builds separate ESM and CJS entry points with the repository's bundling tooling. Phase 9 instead stages the actual production build configuration, manifest, public exports, CLI, and runtime assets. Builds, generated inputs, package tarballs, consumer installations, caches, logs, and raw reports belong in owned OS temporary directories. Clean them after confirmed process settlement on success or failure; unconfirmed cleanup fails and retains ownership. Keep source entry points and fixture assertions reproducible; record concise outcomes rather than local setup or run metadata.
+Phases 6 and 6.2 used a private evaluation harness that imported the actual candidate reader and built separate ESM and CJS entry points with the repository's bundling tooling. Phase 9 instead staged the actual production build configuration, manifest, public exports, CLI, and runtime assets. Builds, generated inputs, package tarballs, consumer installations, caches, logs, and raw reports belong in owned OS temporary directories. Clean them after confirmed process settlement on success or failure; unconfirmed cleanup fails and retains ownership. Keep source entry points and fixture assertions reproducible; record concise outcomes rather than local setup or run metadata.
 
-The earlier evaluation-only package used `private: true`, scratch exports for both formats, and the reader's runtime dependencies declared at repository-resolved versions. Dependencies stayed external to exercise installation, and the live Mammoth runner stayed outside that package. Phase 9 retires live Mammoth consumers and packs the integrated product with its actual dependency declarations. Neither workflow adds a public reader API or publishes a package.
+The earlier evaluation-only package used `private: true`, scratch exports for both formats, and the reader's runtime dependencies declared at repository-resolved versions. Dependencies stayed external to exercise installation, and the live Mammoth runner stayed outside that package. Phase 9 retired live Mammoth consumers and packed the integrated product with its actual dependency declarations. Neither workflow adds a public reader API or publishes a package.
 
-The required installation matrix for Phases 6, 6.2, and 9 is npm and Bun. Include every required child/worker/parser asset in the stage-specific package, with no dependency on source-tree paths. Install the same tarball in separate fresh temporary consumer directories, without links or module-resolution fallbacks to the repository's `node_modules`. After each installation, invoke both built formats with Node.js, including the minimum supported version, and assert representative extraction results. Check installed direct dependencies, then clean up temporary installations and caches after confirmed settlement. Record whether each required check passed, failed, or was not run. Candidate-package checks establish isolated feasibility; Phase 9 must repeat the checks on the actual integrated product and inspect its dependency trees for complete Mammoth removal. The evaluation package is not shipping evidence.
+The required installation matrix for Phases 6, 6.2, and 9 is npm and Bun. Include every required child/worker/parser asset in the stage-specific package, with no dependency on source-tree paths. Install the same tarball in separate fresh temporary consumer directories, without links or module-resolution fallbacks to the repository's `node_modules`. After each installation, invoke both built formats with Node.js, including the minimum supported version, and assert representative extraction results. Check installed direct dependencies, then clean up temporary installations and caches after confirmed settlement. Record whether each required check passed, failed, or was not run. Candidate-package checks established isolated feasibility; Phase 9 repeated them on the actual integrated product and separately inspected its dependency trees for complete Mammoth removal. The evaluation package is not shipping evidence.
 
 The quick verifier retains the explicit `runtimeDependencies` list of `dingbat-to-unicode`, `fast-xml-parser`, and `yauzl`. Earlier evaluation packages used repository-resolved versions; Phase 9 respects the production manifest's exact pins and declared ranges. Package managers resolve transitive dependencies independently of the repository lockfile. Following the Phase 6.3 simplification, the verifier neither traverses nor reports transitive inventories and does not enforce Mammoth absence. Required runtime assets, installed direct declarations and containment, extraction behavior, and cleanup remain acceptance checks.
 
@@ -250,14 +250,16 @@ If deferred, preserve the findings and identify unmet criteria; do not start Pha
 
 ### Phase 10: Validate documentation and close out
 
-- [ ] Check that current guides describe verified extraction behavior, supported scope, provenance where relevant, fallback behavior, and limitations; do not publish unverified candidate behavior as shipped guidance. Reconcile surviving simplified manual commands with the Mammoth-free path, including prerequisites, cleanup, and optional smoke retention. Keep routine product-test ownership distinct from explicit manual evaluation and remove stale references to retired wrappers or tooling.
-- [ ] Check that the research records the supported recommendation, accepted differences, ownership, and links to evidence. A selected direction alone does not justify `completed`.
-- [ ] Reconcile plan checkboxes and the unified execution job record's phase sections, including Phases 6.1–6.3, results, and status with actual work, including pending checks or deferral reasons. Preserve the distinction between historical harness/package results, current manual verification and product regressions, budget/support acceptance, candidate selection, and shipping acceptance.
-- [ ] Check current extractor/dependency descriptions and clearly contextualize retained historical Mammoth references. Do not rewrite historical findings as if they described the replacement.
-- [ ] Validate repository-relative links, required research/plan backlinks, UTC dates, front matter, paragraph formatting, and document placement against the documentation policy. Apply release-note policy if release notes are affected.
-- [ ] Record documentation validation results and set final statuses from the demonstrated outcome. Keep research and plans in their current locations unless a separate archive review justifies moving them.
+- [x] Check that current guides describe verified extraction behavior, supported scope, provenance where relevant, fallback behavior, and limitations; do not publish unverified candidate behavior as shipped guidance. Reconcile surviving simplified manual commands with the Mammoth-free path, including prerequisites, cleanup, and optional smoke retention. Keep routine product-test ownership distinct from explicit manual evaluation and remove stale references to retired wrappers or tooling.
+- [x] Check that the research records the supported recommendation, accepted differences, ownership, and links to evidence. A selected direction alone does not justify `completed`.
+- [x] Reconcile plan checkboxes and the unified execution job record's phase sections, including Phases 6.1–6.3, results, and status with actual work, including pending checks or deferral reasons. Preserve the distinction between historical harness/package results, current manual verification and product regressions, budget/support acceptance, candidate selection, and shipping acceptance.
+- [x] Check current extractor/dependency descriptions and clearly contextualize retained historical Mammoth references. Do not rewrite historical findings as if they described the replacement.
+- [x] Validate repository-relative links, required research/plan backlinks, UTC dates, front matter, paragraph formatting, and document placement against the documentation policy. Apply release-note policy if release notes are affected.
+- [x] Record documentation validation results and set final statuses from the demonstrated outcome. Keep research and plans in their current locations unless a separate archive review justifies moving them.
 
 **Deliverable and exit criteria:** documentation consistently describes the verified result and its limits. On the shipping path, all ten main phases and Phases 6.1–6.3 must be complete before the plan is marked `completed`. On the deferral path, documentation reflects deferral without presenting unexecuted candidate/integration/removal phases as complete.
+
+Phase 10 passed; the [closeout record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-10-documentation-validation-and-closeout) records documentation verification, review, and artifact handling. The research, plan, and unified record are completed and remain in their current locations.
 
 ## Phase Review and Recording
 
