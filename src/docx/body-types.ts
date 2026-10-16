@@ -14,8 +14,8 @@ export interface DocxBodyInput {
   embeddedImages: ReadonlySet<string>;
   /** Populated only for images reached by the HTML evidence projection. */
   imageCollector?: Set<string>;
-  /** Inert targets allow equivalent adjacent link paths to share projection nodes. */
-  hyperlinkTargets?: ReadonlyMap<string, string>;
+  /** Source-qualified targets retain empty values and last-declaration precedence. */
+  relationshipTargets: ReadonlyMap<string, string>;
   limits: DocxLimits;
 }
 

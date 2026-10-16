@@ -2,7 +2,7 @@
 title: "DOCX reader review follow-up"
 created-date: 2026-10-16
 modified-date: 2026-10-16
-status: completed
+status: in-progress
 agent: codex
 ---
 
@@ -73,3 +73,22 @@ Address the remaining XML accounting, hyperlink compatibility, and manual harnes
 | Measurements / packed consumers | Eighteen workloads per runtime and eight fresh npm/Bun × runtime × format consumer paths passed; deadline, RSS, and lifecycle checks passed |
 | Full-range review | `97cdb606..190b54c6` reviewed with integration checks across `bc6e3e98..190b54c6`; empty-anchor field and XML-reference findings fixed; no remaining material findings; closing docs checked separately |
 | Artifact cleanup | Owned manual and managed-test workspaces removed after settlement; frozen captures unchanged; no smoke artifacts retained |
+
+## Drawing Relationship Follow-Up
+
+Address drawing relationship failures, duplicate fallback handling, and stale verifier wording from review of `bc6e3e98..dfb748ed`. Source baseline: `dfb748ed`. Earlier results remain historical; accepted content departures and resource limits remain unchanged.
+
+- [x] Preserve eager image-reference failures and projected drawing-hyperlink failures, including empty targets, absent media, suppression, and unused sources.
+- [x] Add independent inline/anchored drawing evidence and prompt regressions with source-scoped relationship checks.
+- [ ] Keep AlternateContent fallback selection in XML parsing and cover nested fallback, absent fallback, and excluded choices.
+- [ ] Correct current harness/package wording and related coverage references.
+- [ ] Pass focused, routine, built-runtime, measurement, and packed-consumer verification.
+- [ ] Review the complete follow-up and combined implementation ranges, resolve findings, and confirm cleanup.
+
+| Area | Outcome |
+| --- | --- |
+| Drawing relationships | Forty-seven independently authored cases match historical conversion; twenty-five reproduced failures before fixes; content and compiled evidence/prompt checks passed |
+| Fallback ownership / wording | Pending |
+| Verification | Pending |
+| Full-range review | Pending |
+| Artifact cleanup | Pending |

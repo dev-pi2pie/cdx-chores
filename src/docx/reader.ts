@@ -25,18 +25,17 @@ export async function readDocxDocument(
     const body =
       loaded.document?.name === "w:document" ? first(loaded.document, "w:body") : undefined;
     if (!body) return { ok: false, diagnostic: "docx_main_document_unavailable" };
-    const imageTargets = new Map<string, string>();
-    const hyperlinkTargets = new Map<string, string>();
+    const relationshipTargets = new Map<string, string>();
     for (const [part, source] of [
       [loaded.paths.main, "document"],
       [loaded.paths.footnotes, "footnotes"],
       [loaded.paths.endnotes, "endnotes"],
       [loaded.paths.comments, "comments"],
     ] as const) {
-      for (const [id, path] of await loader.imageTargets(part, source)) imageTargets.set(id, path);
-      for (const [id, target] of await loader.hyperlinkTargets(part, source))
-        hyperlinkTargets.set(id, target);
+      for (const [id, target] of await loader.relationshipTargets(part, source))
+        relationshipTargets.set(id, target);
     }
+    const imageTargets = loader.imageTargets(relationshipTargets);
     const styleMapBytes = await archive.readContentBytes("/mammoth/style-map");
     const styleMap =
       styleMapBytes === undefined ? undefined : new TextDecoder("utf-8").decode(styleMapBytes);
@@ -51,7 +50,7 @@ export async function readDocxDocument(
       endnotes: loaded.endnotes,
       embeddedImages: new Set(imageTargets.keys()),
       imageCollector,
-      hyperlinkTargets,
+      relationshipTargets,
       limits,
     };
     let facts = documentBodyFacts(input);

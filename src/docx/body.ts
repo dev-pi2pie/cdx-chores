@@ -32,7 +32,7 @@ export function documentBodyFacts(input: DocxBodyInput): DocxBodyFacts {
     return (node: Element): string | undefined => {
       const id = node.attributes.get("r:id");
       if (!id) return undefined;
-      const target = input.hyperlinkTargets?.get(`${source}:${id}`);
+      const target = input.relationshipTargets.get(`${source}:${id}`);
       const anchor = node.attributes.get("w:anchor");
       if (!anchor) return target;
       // Fragment replacement is eager, even for unused notes or hidden content.
@@ -40,13 +40,27 @@ export function documentBodyFacts(input: DocxBodyInput): DocxBodyFacts {
       return `${target.replace(/#.*$/, "")}#${anchor}`;
     };
   }
-  const body = readContent(input.body, diagnostics, numberingFor, hyperlinks("document"));
+  function images(source: Source) {
+    return (id: string): void => {
+      // Missing targets fail eagerly; empty targets proceed to image omission.
+      if (!input.relationshipTargets.has(`${source}:${id}`))
+        throw new Error("docx_initial_reader_error");
+    };
+  }
+  const body = readContent(
+    input.body,
+    diagnostics,
+    numberingFor,
+    hyperlinks("document"),
+    images("document"),
+  );
   const footnotes = readNotes(
     input.footnotes,
     "footnote",
     diagnostics,
     numberingFor,
     hyperlinks("footnotes"),
+    images("footnotes"),
   );
   const endnotes = readNotes(
     input.endnotes,
@@ -54,8 +68,15 @@ export function documentBodyFacts(input: DocxBodyInput): DocxBodyFacts {
     diagnostics,
     numberingFor,
     hyperlinks("endnotes"),
+    images("endnotes"),
   );
-  const comments = readComments(input.comments, diagnostics, numberingFor, hyperlinks("comments"));
+  const comments = readComments(
+    input.comments,
+    diagnostics,
+    numberingFor,
+    hyperlinks("comments"),
+    images("comments"),
+  );
   const pathFor = styleProjection(
     input.styles,
     input.styleMap,
@@ -149,6 +170,9 @@ export function documentBodyFacts(input: DocxBodyInput): DocxBodyFacts {
     if (value.kind === "tr" || value.kind === "td")
       return element(value.kind, [{ force: true }, ...render(value.children, source)]);
     if (value.kind === "link") {
+      // Drawing links are checked after the collection pass validates their media.
+      if (value.node.name === "a:hlinkClick" && input.imageCollector)
+        return render(value.children, source);
       const tag = projectionTag("a");
       const id = value.node.attributes.get("r:id");
       const anchor = value.node.attributes.get("w:anchor");

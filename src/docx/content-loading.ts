@@ -86,29 +86,18 @@ export class ContentLoader {
     };
   }
 
-  async imageTargets(
-    main: string,
-    source: "document" | "footnotes" | "endnotes" | "comments",
-  ): Promise<Map<string, string>> {
+  imageTargets(relationships: ReadonlyMap<string, string>): Map<string, string> {
     const targets = new Map<string, string>();
-    for (const relationship of await this.relationships(relationshipPath(main))) {
-      const id = relationship.attributes.get("Id");
-      const target = relationship.attributes.get("Target");
-      if (
-        !id ||
-        !target ||
-        relationship.attributes.get("TargetMode")?.toLowerCase() === "external" ||
-        relationship.attributes.get("Type") !== `${RELATIONSHIP_PREFIX}image`
-      )
-        continue;
-      // Resolve relative image targets under /word/ for Mammoth compatibility.
+    for (const [id, target] of relationships) {
+      // Embedded references resolve by ID, regardless of relationship type/mode.
+      // Only existing ZIP parts qualify; targets never authorize external reads.
       const path = target.startsWith("/") ? target : `/word/${target}`;
-      if (this.exists(path)) targets.set(`${source}:${id}`, path);
+      if (this.exists(path)) targets.set(id, path);
     }
     return targets;
   }
 
-  async hyperlinkTargets(
+  async relationshipTargets(
     part: string,
     source: "document" | "footnotes" | "endnotes" | "comments",
   ): Promise<Map<string, string>> {

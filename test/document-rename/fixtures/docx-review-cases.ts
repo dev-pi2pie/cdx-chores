@@ -10,7 +10,7 @@ import {
 } from "./docx-baseline/corpus/builder";
 import type { DocxBaselineCase } from "./docx-baseline/corpus/types";
 
-interface ReviewCase {
+export interface ReviewCase {
   id: string;
   options: DocxPackageOptions;
   rawText?: string;

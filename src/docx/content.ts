@@ -91,6 +91,7 @@ export function readContent(
   diagnostics: Set<string>,
   numberingFor?: (node: Element) => unknown,
   hyperlinkFor?: (node: Element) => string | undefined,
+  validateImage?: (id: string) => void,
 ): Content[] {
   let deletedParagraph: Element[] = [];
   const fields: Field[] = [];
@@ -115,6 +116,10 @@ export function readContent(
   }
   function nested(node: Element): ReadResult {
     return sequence(children(node));
+  }
+  function image(id: string): Content {
+    validateImage?.(id);
+    return { kind: "image", id };
   }
   function element(node: Element): ReadResult {
     const value = (item: Content): ReadResult => ({ values: [item], extra: [] });
@@ -168,21 +173,24 @@ export function readContent(
       return node.attributes.get("w:name") === "_GoBack" ? empty() : value({ kind: "bookmark" });
     if (node.name === "v:imagedata") {
       const id = node.attributes.get("r:id");
-      return id ? value({ kind: "image", id }) : empty();
-    }
-    if (node.name === "a:blip") {
-      const id = node.attributes.get("r:embed");
-      return id ? value({ kind: "image", id }) : empty();
+      return id ? value(image(id)) : empty();
     }
     if (node.name === "wp:inline" || node.name === "wp:anchor") {
       const images: Content[] = [];
-      function scan(value: Element): void {
-        if (value.name === "a:blip") {
-          const id = value.attributes.get("r:embed");
-          if (id) images.push({ kind: "image", id });
-        } else for (const child of children(value)) scan(child);
+      let blips = [node];
+      for (const name of ["a:graphic", "a:graphicData", "pic:pic", "pic:blipFill", "a:blip"])
+        blips = blips.flatMap((parent) => children(parent).filter((child) => child.name === name));
+      const click = first(first(node, "wp:docPr"), "a:hlinkClick");
+      for (const blip of blips) {
+        const id = blip.attributes.get("r:embed");
+        if (!id) continue;
+        const embedded = image(id);
+        images.push(
+          click?.attributes.get("r:id")
+            ? { kind: "link", node: click, href: hyperlinkFor?.(click), children: [embedded] }
+            : embedded,
+        );
       }
-      scan(node);
       return { values: images, extra: [] };
     }
     if (node.name === "w:p") {
@@ -259,6 +267,7 @@ export function readNotes(
   diagnostics: Set<string>,
   numberingFor?: (node: Element) => unknown,
   hyperlinkFor?: (node: Element) => string | undefined,
+  validateImage?: (id: string) => void,
 ) {
   const notes = new Map<string, Content[]>();
   for (const note of children(root)) {
@@ -267,7 +276,7 @@ export function readNotes(
     if (special === "separator" || special === "continuationSeparator") continue;
     notes.set(
       note.attributes.get("w:id") ?? "undefined",
-      readContent(note, diagnostics, numberingFor, hyperlinkFor),
+      readContent(note, diagnostics, numberingFor, hyperlinkFor, validateImage),
     );
   }
   return notes;
@@ -278,12 +287,13 @@ export function readComments(
   diagnostics: Set<string>,
   numberingFor?: (node: Element) => unknown,
   hyperlinkFor?: (node: Element) => string | undefined,
+  validateImage?: (id: string) => void,
 ) {
   const comments = new Map<string, { body: Content[]; initials: string }>();
   for (const comment of children(root)) {
     if (comment.name !== "w:comment") continue;
     comments.set(comment.attributes.get("w:id") ?? "undefined", {
-      body: readContent(comment, diagnostics, numberingFor, hyperlinkFor),
+      body: readContent(comment, diagnostics, numberingFor, hyperlinkFor, validateImage),
       initials: comment.attributes.get("w:initials")?.trim() ?? "",
     });
   }
