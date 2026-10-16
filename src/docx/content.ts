@@ -49,6 +49,8 @@ function filterMergedCells(rows: Content[]): void {
     rows.some((row) => "children" in row && row.children.some((cell) => cell.kind !== "td"))
   )
     return;
+  // Compatibility: any earlier cell at a starting column can absorb a continuation,
+  // including an ordinary cell without a merge marker.
   const columns = new Set<number>();
   for (const row of rows) {
     if (!("children" in row)) continue;

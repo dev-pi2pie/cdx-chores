@@ -84,7 +84,7 @@ export function createDocxReviewCases(): ReviewCase[] {
       headings: [{ level: 1, text: visible }],
     },
     {
-      id: "review-vertical-merge-grid-span",
+      id: "review-vertical-merge-ordinary-column",
       options: {
         body: table(
           row(cell("Spanning report", '<w:gridSpan w:val="2"/>') + cell(visible)) +
@@ -96,6 +96,20 @@ export function createDocxReviewCases(): ReviewCase[] {
       },
       rawText: `Spanning report\n\n${visible}\n\nOther report\n\n`,
       headings: ["Spanning report", visible, "Other report"].map((text) => ({ level: 1, text })),
+    },
+    {
+      id: "review-vertical-merge-discarded-span-column",
+      options: {
+        body: table(
+          row(cell("Spanning report", '<w:gridSpan w:val="2"/><w:vMerge w:val="restart"/>')) +
+            row(
+              cell(hidden, '<w:gridSpan w:val="2"/><w:vMerge w:val="continue"/>') +
+                cell("Retained report", '<w:vMerge w:val="continue"/>'),
+            ),
+        ),
+      },
+      rawText: "Spanning report\n\nRetained report\n\n",
+      headings: ["Spanning report", "Retained report"].map((text) => ({ level: 1, text })),
     },
     {
       id: "review-vertical-merge-orphan-and-restart",
@@ -142,7 +156,7 @@ export function createDocxReviewCases(): ReviewCase[] {
         body: heading(
           run("Before") +
             checkbox(
-              `<w:hyperlink w:anchor="report">${run("")}${run("☒")}${run("Project")}</w:hyperlink>${run(" Report")}`,
+              `<w:hyperlink w:anchor="report">${run("")}${run("☒ placeholder")}${run("Project")}</w:hyperlink>${run(" Report")}`,
             ) +
             run("After"),
         ),
