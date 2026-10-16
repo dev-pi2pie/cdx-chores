@@ -17,11 +17,53 @@ const renamed = document.replaceAll("w:", "x:").replace("xmlns:w=", "xmlns:x=");
 const heading = (contents: string) =>
   `<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr>${contents}</w:p>`;
 
-/** Namespace and CDATA outcomes authored independently of the replacement reader. */
+/** XML outcomes authored independently of the replacement reader. */
 export function createDocxXmlCases(): ReviewCase[] {
   const content = { rawText: report + "\n\n", headings: [{ level: 1, text: report }] };
   const plain = { rawText: report + "\n\n", headings: [], titleCandidates: [report] };
   return [
+    ...[
+      { id: "tab", separator: "\t", heading: true },
+      { id: "lf", separator: "\n", heading: true },
+      { id: "cr", separator: "\r", heading: true },
+      { id: "crlf", separator: "\r\n", heading: true },
+      { id: "decimal-tab", separator: "&#9;", heading: false },
+      { id: "decimal-lf", separator: "&#10;", heading: false },
+      { id: "decimal-cr", separator: "&#13;", heading: false },
+      { id: "hex-tab", separator: "&#x9;", heading: false },
+      { id: "hex-lf", separator: "&#xA;", heading: false },
+      { id: "hex-cr", separator: "&#xD;", heading: false },
+      { id: "escaped-reference", separator: "&amp;#10;", heading: false },
+      { id: "repeated", separator: "\t\n", heading: false },
+    ].flatMap(({ id, separator, heading }): ReviewCase[] =>
+      ['"', "'"].map((quote) => ({
+        id: `review-xml-attribute-${id}-${quote === '"' ? "double" : "single"}`,
+        options: {
+          body: paragraph("Introductory notes") + paragraph("Quarterly Review", "Custom"),
+          styles: stylesXml(
+            `<w:style w:type="paragraph" w:styleId="Custom"><w:name w:val=${quote}Heading${separator}1${quote}/></w:style>`,
+          ),
+        },
+        rawText: "Introductory notes\n\nQuarterly Review\n\n",
+        headings: heading ? [{ level: 1, text: "Quarterly Review" }] : [],
+        titleCandidates: heading
+          ? ["Quarterly Review", "Introductory notes"]
+          : ["Introductory notes"],
+      })),
+    ),
+    {
+      id: "review-xml-attribute-style-id",
+      options: {
+        documentXml: documentXml(paragraph(report, "Custom Style")).replace(
+          'w:val="Custom Style"',
+          'w:val="Custom\tStyle"',
+        ),
+        styles: stylesXml(
+          '<w:style w:type="paragraph" w:styleId="Custom Style"><w:name w:val="Heading 1"/></w:style>',
+        ),
+      },
+      ...content,
+    },
     ...[false, true].map((metadata): ReviewCase => ({
       id: `review-xml-namespace-unbound-main${metadata ? "-metadata" : ""}`,
       options: {

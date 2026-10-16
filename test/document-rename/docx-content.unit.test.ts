@@ -62,6 +62,45 @@ function evidence(value: DocxDocumentFacts) {
 }
 
 describe("DOCX review follow-up content cases", () => {
+  test("literal attribute whitespace normalizes before references decode", () => {
+    for (const quote of ['"', "'"]) {
+      const root = parseXml(
+        `<root value=${quote} a\t\n\r\r\nb &#9;&#10;&#13;&#x9;&#xA;&#xD; &amp;#10; &quot;&apos; > ${quote}/>`,
+      )!;
+      expect(root.attributes.get("value")).toBe(" a    b \t\n\r\t\n\r &#10; \"' > ");
+    }
+  });
+
+  test("attribute normalization leaves text and literal sections untouched", () => {
+    const root = parseXml(
+      `<!-- <fake value="comment\tline"/> --><?before value="instruction\tline"?><root value="attribute\tline">text\tline\r\n<![CDATA[<fake value="literal\tline"/>]]><child value='child\tline'/></root>`,
+    )!;
+    expect(root.attributes.get("value")).toBe("attribute line");
+    expect(first(root, "child")?.attributes.get("value")).toBe("child line");
+    expect(elementText(root)).toBe('text\tline\n<fake value="literal\tline"/>');
+  });
+
+  test("namespace declaration values use the same literal whitespace rules", () => {
+    const root = parseXml(
+      '<a:root xmlns:a="urn:literal\tspace" xmlns:b="urn:reference&#9;space"><b:child/></a:root>',
+    )!;
+    expect(root.name).toBe("{urn:literal space}:root");
+    expect(children(root)[0]?.name).toBe("{urn:reference\tspace}:child");
+  });
+
+  test("attribute normalization preserves original physical-part charging", () => {
+    const budget = new XmlBudget(resolveDocxLimits({ xmlElementCount: 1 }));
+    const part = {};
+    for (let attempt = 0; attempt < 2; attempt++)
+      expect(
+        parseXml('<root value="literal\tspace"/>', budget, part)?.attributes.get("value"),
+      ).toBe("literal space");
+    expect(() => parseXml("<over/>", budget, {})).toThrow("docx_limit:xmlElementCount");
+    expect(() => parseXml('<root value="literal\tspace"/>', budget, {})).toThrow(
+      "docx_limit:xmlElementCount",
+    );
+  });
+
   test("unbound prefixes cannot become semantic element or attribute names", () => {
     expect(parseXml("<w:p/>")?.name).not.toBe("w:p");
     const root = parseXml(`<x:p xmlns:x="${WORD_NS}" w:val="unbound" val="plain"/>`)!;

@@ -38,6 +38,17 @@ const parser = new XMLParser({
 });
 const xmlEntities = new Set(["amp", "apos", "gt", "lt", "quot"]);
 
+/** Normalize source attributes before decoding references; literal sections stay opaque. */
+function normalizeAttributeWhitespace(xml: string): string {
+  return xml.replace(
+    /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>|<(?:[^"'<>]|"[^"]*"|'[^']*')*>/g,
+    (markup) =>
+      markup.startsWith("<!") || markup.startsWith("<?")
+        ? markup
+        : markup.replace(/"[^"]*"|'[^']*'/g, (value) => value.replace(/\r\n|[\t\n\r]/g, " ")),
+  );
+}
+
 function resolveName(name: string, namespaces: Map<string, string>, attribute = false): string {
   const separator = name.indexOf(":");
   const prefix = separator < 0 ? "" : name.slice(0, separator);
@@ -103,7 +114,10 @@ export function parseXml(
     if (match[1] && !xmlEntities.has(match[1])) throw new Error("docx_xml_invalid");
   }
   let root: Element | undefined;
-  for (const value of parser.parse(xml) as Record<string, unknown>[]) {
+  for (const value of parser.parse(normalizeAttributeWhitespace(xml)) as Record<
+    string,
+    unknown
+  >[]) {
     const cdata = cdataText(value);
     if (cdata !== undefined) {
       // Historical parsing permits leading CDATA and empty trailing sections.

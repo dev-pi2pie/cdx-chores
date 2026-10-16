@@ -2,7 +2,7 @@
 title: "DOCX reader review follow-up"
 created-date: 2026-10-16
 modified-date: 2026-10-16
-status: completed
+status: in-progress
 agent: codex
 ---
 
@@ -131,3 +131,18 @@ Address the namespace and trailing-CDATA findings from review of `bc6e3e98..f72d
 | Earlier packed-consumer evidence | Retained from the drawing follow-up; repeat only if distribution boundaries change |
 | Full-range review | `f72dba64..e961a8d8` and combined `bc6e3e98..e961a8d8` reviewed; stale summary and CDATA wording clarified; no remaining material findings; closing docs reviewed separately |
 | Artifact cleanup | Owned manual and managed-test workspaces settled and removed; temporary inputs, builds, runtime cache, and logs removed; no smoke artifacts retained |
+
+## XML Attribute Whitespace Follow-Up
+
+Address the attribute-whitespace finding from review of `bc6e3e98..bc9e9d9c`. Source baseline: `bc9e9d9c`. Earlier results remain historical; accepted content departures, resource limits, and frozen captures remain unchanged.
+
+- [x] Normalize literal attribute whitespace before reference decoding while preserving text, literal sections, namespace resolution, and physical-part accounting.
+- [x] Add independent parser and complete evidence/prompt regressions; reproduce failures before the fix.
+- [ ] Pass focused, routine, built-runtime, quality, and renewed workload checks; update coverage references.
+- [ ] Review the complete follow-up and combined DOCX ranges, resolve findings, and clean owned artifacts.
+
+| Area | Outcome |
+| --- | --- |
+| Attribute normalization | Literal tab/LF/CR become spaces; CRLF becomes one space; numeric references retain decoded controls and repeated spaces remain distinct |
+| Regressions | Twenty-five historical-equivalent DOCX cases and four parser controls added; thirteen pre-fix test failures reproduced; focused checks passed |
+| Initial verification | 270 focused and 1,876 unit cases passed; lint, format, and types passed; application and runtime checks pending |
