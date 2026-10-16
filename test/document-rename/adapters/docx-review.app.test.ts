@@ -10,14 +10,14 @@ import {
   reviewCaseInput,
 } from "../fixtures/docx-review-cases";
 
-for (const [label, createCases] of [
-  ["review", createDocxReviewCases],
-  ["drawing", createDocxDrawingCases],
-  ["fallback", createDocxFallbackCases],
-] as const) {
-  test(`compiled DOCX product preserves complete ${label}-case evidence and prompts`, async () => {
-    const product = await createDocxProductFixture();
-    try {
+test("compiled DOCX product preserves complete review-case evidence and prompts", async () => {
+  const product = await createDocxProductFixture();
+  try {
+    for (const createCases of [
+      createDocxReviewCases,
+      createDocxDrawingCases,
+      createDocxFallbackCases,
+    ]) {
       const cases = createCases();
       const observations = await product.observeCases(cases.map(reviewCaseInput));
       for (const item of cases) {
@@ -41,8 +41,8 @@ for (const [label, createCases] of [
           expect(observation.read.facts.headings, item.id).toEqual(item.headings!);
         }
       }
-    } finally {
-      await product.cleanup();
     }
-  }, 30_000);
-}
+  } finally {
+    await product.cleanup();
+  }
+}, 30_000);

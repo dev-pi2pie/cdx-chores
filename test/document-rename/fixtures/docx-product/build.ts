@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { build } from "tsdown";
 
@@ -70,8 +70,7 @@ export async function createDocxProductFixture() {
     async observeCases(cases: DocxBaselineCase[]) {
       assert(cases.length > 0 && cases.length <= 70, "Expected a bounded DOCX regression slice");
       assert.equal(new Set(cases.map((item) => item.id)).size, cases.length);
-      const directory = join(root, "cases");
-      await mkdir(directory);
+      const directory = await mkdtemp(join(root, "cases-"));
       const inputs = new Map<string, Buffer>();
       const requests: Array<{ id: string; path: string; directory: string }> = [];
       for (const item of cases) {
@@ -86,7 +85,7 @@ export async function createDocxProductFixture() {
         inputs.set(item.id, bytes);
         requests.push({ id: item.id, path, directory });
       }
-      const requestPath = join(root, "observations.json");
+      const requestPath = join(directory, "observations.json");
       await writeFile(requestPath, JSON.stringify(requests));
       const observations = (await this.run("observe-many", requestPath)) as Array<{
         id: string;
