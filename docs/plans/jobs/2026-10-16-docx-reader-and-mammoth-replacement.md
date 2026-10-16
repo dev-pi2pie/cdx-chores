@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–7 and 6.1–6.3 are complete. The maintainer accepted the full Phase 7 proposal and selected the reader for integration. Phase 8 integration is complete; Phases 9–10 are unstarted.
+Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–8 and 6.1–6.3 are complete. Phase 9 removal and shipping verification is in progress; Phase 10 is unstarted.
 
 ## Phase 1 Outcomes
 
@@ -278,6 +278,15 @@ Validation limitation: minimum-Node ESM case `resource-maxStyleTraversalSteps-be
 
 The [checklist](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-8-integrate-the-selected-reader) is complete. Production uses the supervised reader; Mammoth remains for live baseline and historical tooling until Phase 9.
 
+## Phase 9: Mammoth Removal and Shipping Verification
+
+Source baseline: `94dc46c7`. Implementation and verification are in progress.
+
+| Check | Result |
+| --- | --- |
+| Pre-removal expectations | Ten additional content captures and ten supported measurement expectations frozen from the retained Mammoth adapter; independent input hashes, content assertions, and product comparisons passed |
+| Migration / removal / shipping | Pending |
+
 ## Later Phases
 
-Phase 8 is complete. Stop before Phase 9, which retires live Mammoth support and verifies complete removal and actual-product shipping acceptance. Phase 10 reconciles surviving manual commands, ownership, and documentation.
+Phase 9 is in progress. Phase 10's final documentation consistency pass remains unstarted.
