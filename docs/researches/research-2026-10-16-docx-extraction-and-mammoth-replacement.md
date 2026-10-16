@@ -542,7 +542,7 @@ The pre-retirement evaluation defined representative supported workloads and mea
 
 Test every cap below, at, and above its boundary with expected limitation/failure outcomes. Use the reproducible harness to measure representative and adversarial cases; record check outcomes without local environment details. The candidate must stay within accepted budgets or terminate with the defined outcome. Later budget/support-policy changes require a rationale and renewed checks of affected cases.
 
-Phase 1 measured the baseline and defined the [provisional limits](../../scripts/docx-baseline/resources.ts) below. They were exploratory at that revision; the unchanged candidate envelope is now accepted in Phase 7, with production enforcement integrated in Phase 8. Per-run measurements remain temporary.
+Phase 1 [resource measurements](../../test/document-rename/fixtures/docx-baseline/resources.json) informed the provisional limits below. They were exploratory at that revision; the unchanged candidate envelope was accepted in Phase 7, with production enforcement integrated in Phase 8. The unused inspection implementation was retired in the [reader review follow-up](../plans/jobs/2026-10-16-docx-reader-review-follow-up.md); frozen measurements remain historical evidence. Per-run measurements remain temporary.
 
 | Dimension | Proposal | Headroom rationale |
 | --- | --- | --- |

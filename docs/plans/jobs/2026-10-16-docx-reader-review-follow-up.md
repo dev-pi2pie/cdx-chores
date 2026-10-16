@@ -18,7 +18,7 @@ The maintainer accepted preserving CDATA as text, including mixed plain text/CDA
 - [x] Normalize checkbox content controls through the existing semantic checkbox node.
 - [x] Add independent content/evidence/prompt regressions, including the accepted CDATA departure.
 - [x] Make package-version verification read-only and enforce measured processing completion through parent validation.
-- [ ] Reuse the production extractor factory in the candidate fixture; remove the unused metadata-helper option and retired resource inspector, and reconcile affected links.
+- [x] Reuse the production extractor factory in the candidate fixture; remove the unused metadata-helper option and retired resource inspector, and reconcile affected links.
 - [ ] Pass focused, routine, built-runtime, comparison, measurement, and packed-consumer verification.
 - [ ] Review the complete follow-up range, resolve findings, update current references, and confirm temporary cleanup.
 
@@ -28,7 +28,7 @@ The maintainer accepted preserving CDATA as text, including mixed plain text/CDA
 | --- | --- |
 | Content compatibility / CDATA | Twenty named cases: eighteen baseline-compatible and two accepted CDATA departures; nine regressions failed before fixes; content unit and compiled-product evidence/prompt checks passed |
 | Verifier corrections | Read-only version preflight and negative checks passed; parent processing observation follows validation; strict processing deadline and separate complete-API window checked; runtime unit/process regressions passed |
-| Simplification / documentation | Pending |
+| Simplification / documentation | Production extractor factory reused; obsolete helper option/self-test and unused inspector removed; historical evidence links and routine/manual contract counts clarified; focused adapter checks passed |
 | Routine / manual verification | Pending |
 | Full-range review | Pending |
 | Artifact cleanup | Pending |

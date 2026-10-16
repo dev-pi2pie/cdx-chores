@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { test } from "bun:test";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 
@@ -9,8 +9,6 @@ import {
 import { createInitialReaderCases } from "../fixtures/docx-candidate/cases";
 import { compareDocxReader } from "../fixtures/docx-candidate/compare";
 import type { DocxCapture } from "../fixtures/docx-baseline/capture";
-import { buildDocxPackage, paragraph } from "../fixtures/docx-baseline/corpus/builder";
-import { readDocxXmlParts } from "../../../src/adapters/docx/ooxml-package";
 import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 const baseline = JSON.parse(
@@ -44,26 +42,3 @@ for (const item of createInitialReaderCases()) {
     });
   });
 }
-
-test("embedded style-map opt-in preserves default parts and the existing part cap", async () => {
-  const map = "p.Heading1 => h2:fresh";
-  const bytes = buildDocxPackage({
-    body: paragraph("Package Helper Report"),
-    extraParts: [["mammoth/style-map", map]],
-  });
-  const ordinary = await readDocxXmlParts(bytes);
-  const selected = await readDocxXmlParts(bytes, { includeEmbeddedStyleMap: true });
-  if ("reason" in ordinary || "reason" in selected) throw new Error("Expected valid package");
-  expect(ordinary.has("/mammoth/style-map")).toBe(false);
-  expect(selected.get("/mammoth/style-map")).toBe(map);
-  selected.delete("/mammoth/style-map");
-  expect(selected).toEqual(ordinary);
-  for (const length of [256 * 1024, 256 * 1024 + 1]) {
-    const parts = await readDocxXmlParts(
-      buildDocxPackage({ extraParts: [["mammoth/style-map", "x".repeat(length)]] }),
-      { includeEmbeddedStyleMap: true },
-    );
-    if ("reason" in parts) throw new Error("Expected valid package");
-    expect(parts.has("/mammoth/style-map")).toBe(length <= 256 * 1024);
-  }
-});

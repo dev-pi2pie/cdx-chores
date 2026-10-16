@@ -12,6 +12,8 @@ Evaluate and, if justified, integrate a focused project-owned DOCX reader that p
 
 This plan covers contract research, candidate evaluation, and production migration. All ten main phases and Phases 6.1–6.3 are complete. The maintainer accepted the [full Phase 7 proposal](../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#phase-7-assessment-and-acceptance-proposal), and the reader is integrated with Mammoth removed. Final-product shipping checks and documentation validation passed within the recorded limits; the [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md) retains phase evidence and known limitations.
 
+The separate [reader review follow-up](jobs/2026-10-16-docx-reader-review-follow-up.md) tracks compatibility, verifier, and simplification findings discovered after closeout, including an accepted CDATA text-handling departure.
+
 ## Scope
 
 In scope:

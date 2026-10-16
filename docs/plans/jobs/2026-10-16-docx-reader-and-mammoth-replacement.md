@@ -21,7 +21,7 @@ The [case manifest](../../../test/document-rename/fixtures/docx-baseline/manifes
 | Resource measurements completed and [provisional budgets](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#resource-budgets) proposed | Yes |
 | Candidate implementation started | No |
 
-Reusable evidence: [corpus](../../../test/document-rename/fixtures/docx-baseline/corpus/index.ts), [semantic expectations](../../../test/document-rename/fixtures/docx-baseline/expected.json), [resource expectations](../../../test/document-rename/fixtures/docx-baseline/resources.json), and [resource inspection](../../../scripts/docx-baseline/resources.ts). The live baseline harness was retired in Phase 9; historical captures remain. Execution files and raw reports are temporary; no playground entry is needed for this phase.
+Reusable evidence: [corpus](../../../test/document-rename/fixtures/docx-baseline/corpus/index.ts), [semantic expectations](../../../test/document-rename/fixtures/docx-baseline/expected.json), and [resource measurements](../../../test/document-rename/fixtures/docx-baseline/resources.json). The live baseline harness was retired in Phase 9; the unused resource inspector was retired in the [reader review follow-up](2026-10-16-docx-reader-review-follow-up.md). Historical captures remain. Execution files and raw reports are temporary; no playground entry is needed for this phase.
 
 ## Phase 1 Verification and Review
 
