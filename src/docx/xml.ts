@@ -1,4 +1,6 @@
 import { XMLParser, XMLValidator } from "fast-xml-parser";
+import { resolveDocxLimits } from "./limits";
+import { XmlBudget } from "./xml-budget";
 
 export interface Element {
   name: string;
@@ -60,8 +62,13 @@ function element(
   return { name: resolveName(name, namespaces), attributes, children };
 }
 
-/** Initial reader only: trusted inputs; resource isolation is a later phase. */
-export function parseXml(xml: string): Element | undefined {
+/** Structural bounds and declaration policy run before parser allocation. */
+export function parseXml(
+  xml: string,
+  budget = new XmlBudget(resolveDocxLimits()),
+  part = "inline",
+): Element | undefined {
+  budget.inspect(part, xml);
   if (XMLValidator.validate(xml) !== true) throw new Error("docx_xml_invalid");
   for (const value of parser.parse(xml) as Record<string, unknown>[]) {
     const parsed = element(value, new Map());

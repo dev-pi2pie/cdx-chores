@@ -44,6 +44,8 @@ Use [Test Suite Audit Inventory](test-suite-audit-inventory.md) for the fixed pr
 
 `docx-candidate.app.test.ts` owns the initial reader's 22-case facts, complete evidence/prompt comparisons, and embedded-style-map helper opt-in/cap assertions. `scripts/docx-candidate/launch.mjs` builds private ESM/CJS entries and verifies them under Node in owned temporary storage. These are trusted-input slice checks; they do not establish resource enforcement, full content support, or fresh-consumer package acceptance.
 
+`test/document-rename/docx-resource.unit.test.ts` owns the private candidate's numeric policy, selected ZIP/XML/style work, byte and structure boundaries, and archive/stream cleanup. These enforcement assertions are separate from the baseline inspector's whole-package measurements and final budget acceptance.
+
 ### Video Frames
 
 `test/video/interactive/frames-*.unit.test.ts` owns selector grammar, coarse movement, adaptive display fit, naming tokens, and completion. `frames-controller.app.test.ts` owns input sessions, resolver cancellation, restoration, and isolated checks against the installed prompt library. Its real-library fixture stays beside that consumer under `test/video/interactive/fixtures/`.

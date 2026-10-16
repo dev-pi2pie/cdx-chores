@@ -2,60 +2,75 @@ import { posix } from "node:path";
 
 import { readDocxCoreMetadataFromParts } from "../adapters/docx/ooxml-metadata";
 import { normalizePackagePartPath } from "../adapters/docx/ooxml-part-path";
-import { readDocxXmlParts } from "../adapters/docx/ooxml-package";
+import { resolveDocxMetadataPartPaths } from "../adapters/docx/ooxml-part-discovery";
 import { documentBodyFacts } from "./body";
+import { DocxLimitError, resolveDocxLimits, type DocxLimits } from "./limits";
+import { openGuardedDocxPackage, type GuardedDocxPackage } from "./package";
 import { headingResolver } from "./styles";
 import type { DocxReadResult } from "./types";
-import { children, first, parseXml } from "./xml";
+import { children, first, parseXml, type Element } from "./xml";
+import { XmlBudget } from "./xml-budget";
 
 export type { DocxReadResult } from "./types";
 
-function relationships(parts: Map<string, string>, path: string) {
-  const xml = parts.get(path);
-  return children(xml === undefined ? undefined : parseXml(xml));
-}
+const METADATA_PART_BYTES = 256 * 1024;
 
-function relatedPath(
-  parts: Map<string, string>,
-  relationshipsPath: string,
-  kind: string,
-  base = "/",
-) {
-  for (const relationship of relationships(parts, relationshipsPath)) {
-    if (
-      relationship.name !== "rels:Relationship" ||
-      relationship.attributes.get("TargetMode")?.toLowerCase() === "external"
-    )
-      continue;
-    if (
-      relationship.attributes.get("Type") !==
-      `http://schemas.openxmlformats.org/officeDocument/2006/relationships/${kind}`
-    )
-      continue;
-    const target = relationship.attributes.get("Target");
-    if (!target) continue;
-    const path = normalizePackagePartPath(target.startsWith("/") ? target : `${base}/${target}`);
-    if (parts.has(path)) return path;
-  }
-  return kind === "officeDocument" ? "/word/document.xml" : `/word/${kind}.xml`;
-}
-
-/** Private unguarded initial reader for the identified trusted evaluation slice. */
-export async function readDocxDocument(buffer: Buffer): Promise<DocxReadResult> {
+/** Inline parser entry; the runtime owner supplies process/deadline containment. */
+export async function readDocxDocument(
+  buffer: Buffer,
+  overrides?: DocxLimits,
+): Promise<DocxReadResult> {
+  let archive: GuardedDocxPackage | undefined;
   try {
-    const parts = await readDocxXmlParts(buffer, { includeEmbeddedStyleMap: true });
-    if ("reason" in parts) return { ok: false, diagnostic: parts.reason };
-    const mainPath = relatedPath(parts, "/_rels/.rels", "officeDocument");
-    const mainXml = parts.get(mainPath);
-    const document = mainXml === undefined ? undefined : parseXml(mainXml);
+    const limits = resolveDocxLimits(overrides);
+    archive = await openGuardedDocxPackage(buffer, limits);
+    const opened = archive;
+    const budget = new XmlBudget(limits);
+    const parsed = new Map<string, Element | undefined>();
+    async function xml(path: string): Promise<Element | undefined> {
+      if (parsed.has(path)) return parsed.get(path);
+      const text = await opened.readText(path);
+      const value = text === undefined ? undefined : parseXml(text, budget, path);
+      parsed.set(path, value);
+      return value;
+    }
+    async function relatedPath(relationshipsPath: string, kind: string, base = "/") {
+      for (const relationship of children(await xml(relationshipsPath))) {
+        if (
+          relationship.name !== "rels:Relationship" ||
+          relationship.attributes.get("TargetMode")?.toLowerCase() === "external"
+        )
+          continue;
+        if (
+          relationship.attributes.get("Type") !==
+          `http://schemas.openxmlformats.org/officeDocument/2006/relationships/${kind}`
+        )
+          continue;
+        const target = relationship.attributes.get("Target");
+        if (!target) continue;
+        const path = normalizePackagePartPath(
+          target.startsWith("/") ? target : `${base}/${target}`,
+        );
+        if (opened.entries.has(path)) return path;
+      }
+      return kind === "officeDocument" ? "/word/document.xml" : `/word/${kind}.xml`;
+    }
+    const mainPath = await relatedPath("/_rels/.rels", "officeDocument");
+    const document = await xml(mainPath);
     const body = document?.name === "w:document" ? first(document, "w:body") : undefined;
     if (!body) return { ok: false, diagnostic: "docx_main_document_unavailable" };
     const directory = posix.dirname(mainPath);
     const relationshipsPath = `${directory}/_rels/${posix.basename(mainPath)}.rels`;
-    const stylePath = relatedPath(parts, relationshipsPath, "styles", directory);
-    const headings = headingResolver(parts.get(stylePath), parts.get("/mammoth/style-map"));
+    const stylePath = await relatedPath(relationshipsPath, "styles", directory);
+    const headings = headingResolver(
+      await opened.readText(stylePath),
+      await opened.readText("/mammoth/style-map"),
+      limits,
+      budget,
+      stylePath,
+    );
     const embeddedImages = new Set<string>();
-    for (const relationship of relationships(parts, relationshipsPath)) {
+    for (const relationship of children(await xml(relationshipsPath))) {
       if (
         relationship.attributes.get("Type")?.endsWith("/image") &&
         relationship.attributes.get("TargetMode")?.toLowerCase() !== "external"
@@ -64,11 +79,38 @@ export async function readDocxDocument(buffer: Buffer): Promise<DocxReadResult> 
         if (id) embeddedImages.add(id);
       }
     }
+    // Preserve metadata eligibility independently of the larger content cap.
+    const metadataParts = new Map<string, string>();
+    for (const [path, entry] of opened.entries) {
+      if (
+        !entry.fileName.endsWith("/") &&
+        /\.(xml|rels)$/.test(entry.fileName) &&
+        entry.uncompressedSize <= METADATA_PART_BYTES
+      )
+        metadataParts.set(path, "");
+    }
+    async function metadataPart(path: string): Promise<void> {
+      if (!metadataParts.has(path)) return;
+      const text = await opened.readText(path);
+      if (text === undefined) return;
+      try {
+        budget.inspect(path, text);
+        metadataParts.set(path, text);
+      } catch (error) {
+        if (!(error instanceof Error) || error.message !== "docx_xml_invalid") throw error;
+        // Optional malformed metadata remains unavailable, preserving warnings.
+      }
+    }
+    await metadataPart("/_rels/.rels");
+    await metadataPart("/[Content_Types].xml");
+    const metadataPaths = resolveDocxMetadataPartPaths(metadataParts);
+    if (metadataPaths.corePropertiesPath) await metadataPart(metadataPaths.corePropertiesPath);
+    if (metadataPaths.appPropertiesPath) await metadataPart(metadataPaths.appPropertiesPath);
     return {
       ok: true,
       facts: {
         ...documentBodyFacts(body, headings, embeddedImages),
-        metadataResult: readDocxCoreMetadataFromParts(parts),
+        metadataResult: readDocxCoreMetadataFromParts(metadataParts),
       },
     };
   } catch (error) {
@@ -76,9 +118,17 @@ export async function readDocxDocument(buffer: Buffer): Promise<DocxReadResult> 
     return {
       ok: false,
       diagnostic:
-        code === "docx_xml_invalid" || code === "docx_style_map_unsupported"
-          ? code
-          : "docx_initial_reader_error",
+        error instanceof DocxLimitError
+          ? error.message
+          : [
+                "docx_xml_invalid",
+                "docx_xml_declaration_unsupported",
+                "docx_style_map_unsupported",
+              ].includes(code)
+            ? code
+            : "docx_initial_reader_error",
     };
+  } finally {
+    await archive?.close();
   }
 }

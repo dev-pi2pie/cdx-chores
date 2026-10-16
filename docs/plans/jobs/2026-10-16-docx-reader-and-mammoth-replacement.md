@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–3 are complete. Execution stopped before Phase 4.
+Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–3 are complete. Phase 4 is in progress.
 
 ## Phase 1 Outcomes
 
@@ -73,6 +73,18 @@ Source baseline: `35bfe7466bf797bff6d49f0d143ce6a3f83ede03`. The private inline 
 
 Reviewed source/verification range: `35bfe746..19403f8a`; closing documentation reviewed separately. The 336-line reader remains a trusted-input slice. Resource enforcement, broader content support, and installation acceptance are untested candidate obligations.
 
+## Phase 4: Resource Isolation
+
+Source baseline: `13b66b3b9ea7961bae5c897c3d0a56962541611f`.
+
+| Check | Result |
+| --- | --- |
+| [Selected-part guards and cleanup](../../../test/document-rename/docx-resource.unit.test.ts), initial reader facts, unchanged baseline captures | Passed |
+| Process/worker boundary and transport | In progress |
+| Boundary failures, offline controls, and cleanup checks | Pending |
+| Built-format comparisons and applicable managed checks | Pending |
+| Full phase review and documentation validation | Pending |
+
 ## Later Phases
 
-Phases 4–10 are unstarted. Numerical budget/support acceptance, complete candidate compatibility, maintenance acceptance, and shipping checks remain pending. Mammoth remains the production extractor; dependencies are unchanged.
+Phases 5–10 are unstarted. Numerical budget/support acceptance, complete candidate compatibility, maintenance acceptance, and shipping checks remain pending. Mammoth remains the production extractor; dependencies are unchanged.

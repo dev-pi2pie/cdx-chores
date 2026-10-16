@@ -459,6 +459,12 @@ The existing package helper still skips parts above 256 KiB; this is an initial-
 
 The complexity checkpoint supports **continue**: the demonstrated slice remains focused and shares package/metadata/rename policy rather than introducing parallel implementations. Phase 3 verification and review passed; this initial feasibility result does not select the replacement. Style-path projection and process lifecycle remain the largest unproved responsibilities. Execution stopped after Phase 3; later expansion must retain the complete corpus and reconsider deferral if those responsibilities exceed the focused reader's benefit.
 
+### Resource guard implementation
+
+The private candidate now indexes every physical ZIP entry and inflates only selected parts. Actual selected bytes count toward per-part and aggregate decompression caps; cached reads count once. Selected XML parts share an element budget and have a depth cap checked before parser allocation. Declarations that could introduce entity expansion fail explicitly. Style work bounds the actual matching steps for each selected lookup; unused inheritance chains are not traversed. Metadata retains its separate 256 KiB eligibility rule.
+
+The original resource inspector measures whole-package dimensions, including unselected binary/XML parts and declared inheritance graphs. Those measurements remain frozen; they are not enforcement assertions for the selected-part reader. [Independent guard tests](../../test/document-rename/docx-resource.unit.test.ts) exercise the implemented dimensions and archive/stream cleanup. The initial 22 reader-facts comparisons and unchanged baseline captures still pass. Process supervision and complete boundary verification remain in progress.
+
 ## Validation Matrix and Method
 
 ### Minimum comparison corpus
