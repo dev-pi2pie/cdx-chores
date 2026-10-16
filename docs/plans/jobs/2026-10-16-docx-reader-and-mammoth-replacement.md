@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–2 are complete. Current scope proceeds to Phase 3; stop before Phase 4.
+Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–3 are complete. Execution stopped before Phase 4.
 
 ## Phase 1 Outcomes
 
@@ -51,7 +51,7 @@ Phase 2 source baseline: `e21bc413ec52a2b882b4a01f25f527e962331dbf`.
 | Lint, formatting, types, build, managed unit/application checks, Node baseline/contract verification | Passed |
 | Phase 2 full-range review | Passed; findings fixed |
 | Phase 2 design agreement | Yes; implementation scope and validation method accepted |
-| New candidate implementation started | No |
+| Candidate implementation during Phase 2 | No |
 
 Reviewed full Phase 2 range: `e21bc413..35bfe746`. Review fixes distinguish successful empty conversion from converter failure, prove overlapping style-rule precedence, and assert note ordering/ranking before deduplication.
 
@@ -67,9 +67,12 @@ Source baseline: `35bfe7466bf797bff6d49f0d143ce6a3f83ede03`. The private inline 
 | Lint, formatting, types | Passed |
 | Production build and managed unit checks | Passed |
 | Managed application checks | Passed |
-| Full Phase 3 range review | Pending |
-| Complexity checkpoint | Continue, subject to phase verification/review |
+| Full Phase 3 source/verification range review | Passed; no remaining material findings |
+| Documentation wording, links, statuses, and temporary cleanup | Passed |
+| Complexity checkpoint | Continue |
+
+Reviewed source/verification range: `35bfe746..19403f8a`; closing documentation reviewed separately. The 336-line reader remains a trusted-input slice. Resource enforcement, broader content support, and installation acceptance are untested candidate obligations.
 
 ## Later Phases
 
-Phase 3 is in progress; Phases 4–10 are unstarted. Numerical budget/support acceptance, complete candidate compatibility, maintenance acceptance, and shipping checks remain pending. Mammoth remains the production extractor; dependencies are unchanged.
+Phases 4–10 are unstarted. Numerical budget/support acceptance, complete candidate compatibility, maintenance acceptance, and shipping checks remain pending. Mammoth remains the production extractor; dependencies are unchanged.

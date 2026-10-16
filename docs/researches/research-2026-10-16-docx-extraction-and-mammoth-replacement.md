@@ -457,7 +457,7 @@ The existing package helper still skips parts above 256 KiB; this is an initial-
 | Phase 5: content | Substantial: heading-affecting style projection, mapper provenance/adoption, note snapshots/duplicates/failures, remaining text/discovery/secondary-content cases, and diagnostic mappings. |
 | Phase 6: complete validation | Measurements and all-case comparison, required runtime assets in both formats, fresh npm/Bun consumers, installed trees, and maintainer budget/support acceptance. |
 
-The complexity checkpoint supports **continue**: the demonstrated slice remains focused and shares package/metadata/rename policy rather than introducing parallel implementations. This is an initial feasibility result, conditional on phase verification/review; it does not select the replacement. Style-path projection and process lifecycle remain the largest unproved responsibilities. Stop after Phase 3; later expansion must retain the complete corpus and reconsider deferral if those responsibilities exceed the focused reader's benefit.
+The complexity checkpoint supports **continue**: the demonstrated slice remains focused and shares package/metadata/rename policy rather than introducing parallel implementations. Phase 3 verification and review passed; this initial feasibility result does not select the replacement. Style-path projection and process lifecycle remain the largest unproved responsibilities. Execution stopped after Phase 3; later expansion must retain the complete corpus and reconsider deferral if those responsibilities exceed the focused reader's benefit.
 
 ## Validation Matrix and Method
 
