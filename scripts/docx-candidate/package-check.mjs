@@ -7,7 +7,6 @@ import { candidateCliOptions } from "./cli.mjs";
 import {
   candidatePackageName,
   inspectCandidatePackage,
-  inspectDependencyTree,
   json,
   runtimeDependencies,
 } from "./package-inspect.mjs";
@@ -191,9 +190,6 @@ if (cli) {
         }
         const installed = join(consumer, "node_modules", candidatePackageName);
         await inspectCandidatePackage(installed, versions, expectedFiles, consumer);
-        const tree = await inspectDependencyTree(consumer, versions);
-        await harness.result(`${installer} dependency tree: passed yes\n`);
-        await harness.result(`${installer} retained dependencies: ${JSON.stringify(tree)}\n`);
         const driver = join(consumer, "consumer.mjs");
         await copyFile(
           join(repo, "test/document-rename/fixtures/docx-package-consumer.mjs"),

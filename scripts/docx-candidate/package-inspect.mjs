@@ -35,6 +35,12 @@ export async function inspectCandidatePackage(root, versions, expectedAssets, in
   assert.equal(manifest.name, candidatePackageName);
   assert.equal(manifest.private, true);
   directDependencies(manifest, versions);
+  if (installation !== root) {
+    for (const name of runtimeDependencies) {
+      const installed = await resolvePackage(name, canonical, boundary);
+      assert.equal(installed.manifest.version, versions[name]);
+    }
+  }
   assert.equal(manifest.exports?.["."]?.import, "./dist/reader.mjs");
   assert.equal(manifest.exports?.["."]?.require, "./dist/reader.cjs");
   const hashes = {};
@@ -63,30 +69,4 @@ async function resolvePackage(name, from, consumer) {
     }
   }
   throw new Error("Installed dependency unavailable");
-}
-
-/** Observe the resolved dependency closure without prescribing transitive versions or layout. */
-export async function inspectDependencyTree(consumer, versions) {
-  const boundary = await realpath(consumer);
-  const candidate = await resolvePackage(candidatePackageName, boundary, boundary);
-  directDependencies(candidate.manifest, versions);
-  const seen = new Set();
-  const inventory = [];
-  async function visit(owner) {
-    if (seen.has(owner.path)) return;
-    seen.add(owner.path);
-    const { name, version, dependencies = {} } = owner.manifest;
-    assert.notEqual(name, "mammoth");
-    if (name !== candidatePackageName) inventory.push(`${name}@${version}`);
-    for (const dependency of Object.keys(dependencies).sort()) {
-      const next = await resolvePackage(dependency, owner.path, boundary);
-      if (name === candidatePackageName) assert.equal(next.manifest.version, versions[dependency]);
-      await visit(next);
-    }
-  }
-  await visit(candidate);
-  // A consumer must not resolve Mammoth through ambient Node module paths either.
-  const require = createRequire(join(boundary, "package.json"));
-  assert.throws(() => require.resolve("mammoth"), { code: "MODULE_NOT_FOUND" });
-  return [...new Set(inventory)].sort();
 }

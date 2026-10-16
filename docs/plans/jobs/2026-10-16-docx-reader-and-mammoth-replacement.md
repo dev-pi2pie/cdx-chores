@@ -204,7 +204,7 @@ node ./scripts/docx-candidate/measure-launch.mjs
 node ./scripts/docx-candidate/package-check.mjs
 ```
 
-A passing comparison ends with `guarded reader: passed yes`; measurements report `candidate measurements: passed yes` and summary JSON. Package validation writes tarball, per-manager observed inventories, consumer, and cleanup results to stdout, ending with `temporary cleanup: passed yes`. Inventory equality is not required. Check the exit status: zero means the script checks and output delivery passed; license and notice completeness are outside this quick verification scope. Waiting messages show elapsed time without claiming additional completed work.
+A passing comparison ends with `guarded reader: passed yes`; measurements report `candidate measurements: passed yes` and summary JSON. Package validation writes tarball, consumer, and cleanup results to stdout, ending with `temporary cleanup: passed yes`. It checks the three direct installed dependencies without traversing or reporting transitive inventories or enforcing Mammoth absence. Check the exit status: zero means the script checks and output delivery passed; complete product Mammoth removal, licenses, and notices remain separate acceptance work. Waiting messages show elapsed time without claiming additional completed work.
 
 To check cancellation, repeat a comparison run and press Ctrl+C while it is processing. Expect a cancellation diagnostic and nonzero exit after owned processes settle and temporary cleanup completes. SIGTERM uses the same cleanup path. Generated inputs, builds, packages, installations, caches, and raw reports use owned OS temporary storage and are removed after confirmed settlement; unconfirmed cleanup fails and retains ownership. Only explicit smoke retention exports selected artifacts to the ignored playground entry; frozen expectations are never rewritten.
 
@@ -237,6 +237,15 @@ Retained runs contain `summary.json` and `esm/<case-id>/` / `cjs/<case-id>/` dir
 | Lifecycle / quality | Help/errors, styled/plain output, smoke retention, SIGINT/SIGTERM, build failure, lint/format/types/build passed |
 | Cleanup | Owned temporary workspace and smoke export removed; no verification artifacts retained |
 | Review | Implementation `6edce2e0..1a15ba1b` passed full-range review; idle-report dependency restored and both deterministic PDF product branches guarded; closing documentation reviewed separately |
+
+### Package verifier follow-up
+
+| Check | Result |
+| --- | --- |
+| Scope | Recursive inventory/reporting and candidate Mammoth checks removed; three direct installed dependencies, required assets/exports, and containment retained |
+| Verification | 8/8 fresh consumers, direct-dependency failure probes, help/errors, lint/format/types passed; product and measurement paths unchanged |
+| Cleanup | Temporary probes, installations, caches, and logs removed; no exports retained |
+| Review | Full Phase 6.3 range from `6edce2e0`, including this follow-up, reviewed; historical Phase 6.2 wording reconciled |
 
 ## Later Phases
 
