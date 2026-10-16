@@ -10,7 +10,7 @@ agent: codex
 
 Evaluate whether a focused, project-owned TypeScript/Node DOCX reader can replace Mammoth while preserving the document evidence and integration mechanics used by semantic rename, with acceptable complexity and maintenance cost.
 
-The current Mammoth integration is the compatibility baseline; the outcome is a recommendation to proceed with or defer the rewrite. Removing Mammoth's transitive `argparse > sprintf-js` dependency is a motivation. Success requires complete Mammoth removal from runtime and development dependencies, the lockfile, and installed repository and consumer dependency trees. Production code, tests, and historical tooling must no longer require it.
+The original Mammoth integration is the compatibility baseline; Phase 7 accepted the replacement for integration. Removing Mammoth's transitive `argparse > sprintf-js` dependency is a motivation. Success requires complete Mammoth removal from runtime and development dependencies, the lockfile, and installed repository and consumer dependency trees. Production code, tests, and historical tooling must no longer require it.
 
 Investigate metadata, ordered text, and headings for the existing DOCX rename workflow, including when unsupported or malformed input permits best-effort extraction or requires a warning or failure.
 
@@ -20,11 +20,11 @@ Dependency overrides, patches, and upstream Mammoth upgrades belong to separate 
 
 Full DOCX-to-HTML conversion, layout rendering, images/OCR, legacy `.doc` support, new CLI commands, and replacing Markdown-to-DOCX generation are outside this research. The existing `md to-docx` action in `src/cli/actions/markdown/to-docx.ts` uses Pandoc.
 
-## Current Code and Reader-Facing Contract
+## Baseline Code and Reader-Facing Contract
 
 DOCX files participate in semantic rename under `--codex-docs`; extraction is documented as best-effort and fallback-safe.[^rename-guide] Paths and diagrams describe the reviewed snapshot, commit `8c75fdb831fab3b8348ae46e4f3b023281db2b25`, rather than a required future file layout.
 
-### Current flow
+### Baseline flow
 
 The DOCX adapter gathers three inputs before applying consumer policy:
 
@@ -52,7 +52,7 @@ Existing DOCX rename adapter
                 Existing prompt / Codex flow                  Existing deterministic fallback
 ```
 
-### Current source map
+### Baseline source map
 
 ```text
 src/
@@ -78,7 +78,7 @@ src/
 
 The dispatcher in `src/adapters/codex/document-rename/batch.ts` routes `.docx` inputs to the asynchronous `extractDocxEvidence(path)` adapter, which returns `DocumentTitleEvidence | { reason: string }`. Its effective contract includes:
 
-| Area             | Current behavior                                                                                                                                                                                                                        |
+| Area             | Baseline behavior                                                                                                                                                                                                                        |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Document body    | Calls `convertToHtml({ buffer })` and `extractRawText({ buffer })`; HTML is intermediate evidence, not a rendered product artifact.                                                                                                     |
 | Headings         | Extracts HTML `h1` through `h6`, preserves level for ranking, and emits up to eight unique heading strings. `tocCandidates` currently repeats those strings; it is not an independently parsed DOCX table of contents.                  |
@@ -102,7 +102,7 @@ The installed `mammoth@1.13.0` library path uses JavaScript for package reading,
 
 | Component                  | Observed implementation                                                                                                                                                             |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Library integration        | The DOCX rename adapter shown in the current source map calls `convertToHtml({ buffer })` and `extractRawText({ buffer })` directly; it does not launch Mammoth's CLI.              |
+| Library integration        | The DOCX rename adapter shown in the baseline source map calls `convertToHtml({ buffer })` and `extractRawText({ buffer })` directly; it does not launch Mammoth's CLI.              |
 | CLI entry point            | `bin/mammoth` is a JavaScript script with a Node shebang. It imports the JavaScript `argparse` package; no Python interpreter is involved.[^mammoth-cli]                            |
 | ZIP decompression          | Mammoth uses JSZip; the installed JSZip implementation uses Pako's JavaScript DEFLATE support.[^mammoth-zip][^jszip-flate]                                                          |
 | XML parsing                | Mammoth uses the JavaScript `@xmldom/xmldom` package.[^mammoth-xml]                                                                                                                 |
@@ -112,7 +112,7 @@ The reviewed parsing path does not require Word, LibreOffice, Pandoc, an externa
 
 ### Existing DOCX infrastructure is reusable, with limits
 
-`src/adapters/docx/` already contains ZIP reading through `yauzl`, XML decoding, package-path normalization, metadata-part discovery, and property parsing through `fast-xml-parser`. The current source map identifies these helper responsibilities.
+`src/adapters/docx/` already contains ZIP reading through `yauzl`, XML decoding, package-path normalization, metadata-part discovery, and property parsing through `fast-xml-parser`. The baseline source map identifies these helper responsibilities.
 
 The package reader collects XML/relationship parts and skips parts whose declared uncompressed size exceeds 256 KiB. This metadata-oriented cap does not establish document-body or aggregate resource budgets. Generalizing it requires selected-part reading and explicit oversized-input outcomes; the resource checks below define the broader evaluation.
 
@@ -128,9 +128,9 @@ An earlier installed-tree inventory and blocked-import diagnostic lack reproduci
 
 The execution baseline is recorded in the [unified record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md); intervening changes from the research snapshot affected documentation only.
 
-| Surface | Migration responsibility |
+| Phase 1 surface | Migration responsibility |
 | --- | --- |
-| Production | `src/adapters/codex/document-rename/extractors/docx.ts` imports Mammoth for HTML/raw-text conversion. Preserve dispatch, ranking, prompts, and fallback. |
+| Production at Phase 1 | `src/adapters/codex/document-rename/extractors/docx.ts` imports Mammoth for HTML/raw-text conversion. Preserve dispatch, ranking, prompts, and fallback. |
 | Tests | Current title-evidence and file-rename application tests assert provenance, routing, and failure behavior. OOXML metadata tests remain reusable. |
 | Historical tooling | `scripts/spikes/docx-pdf-title-evidence-spike.ts` imports Mammoth. Preserve useful PDF comparisons and linked historical findings before changing or retiring its DOCX path. |
 | Baseline tooling | `test/document-rename/fixtures/docx-baseline/capture.ts` imports Mammoth for comparisons and the external-file positive control. Retain expectations when later migrating or retiring this dependency. |
@@ -363,7 +363,7 @@ Invalid font/code data --> establish explicit diagnostic/outcome expectations
 
 Use the standalone `dingbat-to-unicode` mapper already used by Mammoth rather than an owned mapping table.[^dingbat-mapper] The baseline's `js-1.0.1` has 1,061 mapping rows across Symbol, Webdings, Wingdings, Wingdings 2, and Wingdings 3, but its package lacks the BSD notice declared by the manifest.[^dingbat-pinned] The candidate therefore pins 1.0.2: its published archive includes the BSD-2-Clause notice matching exact source commit `9eb2d1d8b8463b7bd3cd125597eabcfa9df42128`, all 1,061 mappings match the baseline, and it has no runtime dependencies.[^dingbat-candidate]
 
-Archive integrity, tag/source identity, packaged notice, and complete mapping equivalence were verified before adoption. Keep the mapper external and retain its packaged notice; the private candidate's packed distribution also preserves that notice. No mapping data is copied into project source. Mammoth remains the production extractor, and its removal remains mandatory on the shipping path.
+Archive integrity, tag/source identity, packaged notice, and complete mapping equivalence were verified before adoption. Keep the mapper external and retain its packaged notice; the private candidate's packed distribution also preserves that notice. No mapping data is copied into project source. At this adoption checkpoint, Mammoth remained the production extractor; complete removal remains mandatory on the shipping path.
 
 The content unit suite protects all 1,061 baseline mappings with per-font counts and a stable digest over the complete five-font byte domain, including unmapped inputs. The expectation was derived independently from the baseline mapper; the regression test has no Mammoth dependency or copied mapping table.
 
@@ -457,7 +457,7 @@ The [private reader](../../src/docx/reader.ts) and [comparison harness](../../sc
 | Evaluation harness/tests | 321 lines for case selection, test-only adapter, complete comparisons, temporary builds, and application assertions. |
 | Difficult semantics demonstrated | Deferred text-box ordering, direct style mapping without inherited-heading promotion, and HTML-content presence separate from usable text. |
 
-The existing package helper still skips parts above 256 KiB; this is an initial-slice limitation, not the proposed content budget. Image presence is inferred from internal relationship references without validating media bytes. Restricted style maps and unsupported symbol/note/field paths do not establish broader compatibility. Raw parser exceptions are not returned as diagnostics; initial failure codes stay internal. Mammoth remains the production extractor, and all frozen production baseline captures still match after helper extraction.
+The existing package helper still skips parts above 256 KiB; this is an initial-slice limitation, not the proposed content budget. Image presence is inferred from internal relationship references without validating media bytes. Restricted style maps and unsupported symbol/note/field paths do not establish broader compatibility. Raw parser exceptions are not returned as diagnostics; initial failure codes stay internal. At this initial-reader checkpoint, Mammoth remained the production extractor, and all frozen baseline captures still matched after helper extraction.
 
 | Remaining work | Estimated scope |
 | --- | --- |
@@ -517,18 +517,18 @@ Image-only cases check structural outcomes and binary-part handling; they do not
 
 ### Comparison method
 
-1. Run the current Mammoth integration and candidate over the same identified corpus. Retain reproducible harness source, identified cases, reviewed expectations, and concise check outcomes. Trace HTML, raw text, metadata, and final evidence separately; synthetic cases also need independent expected results. Keep execution files and raw reports temporary, following the plan's output-handling rules.
+1. Run the retained Mammoth baseline adapter and candidate over the same identified corpus. Retain reproducible harness source, identified cases, reviewed expectations, and concise check outcomes. Trace HTML, raw text, metadata, and final evidence separately; synthetic cases also need independent expected results. Keep execution files and raw reports temporary, following the plan's output-handling rules.
 2. Compare complete normalized evidence: candidate ordering, headings/TOC candidates, author and metadata fields, lead text, warnings, and failure reasons. Verify that the proposed reader outputs preserve these results or identify the additional internal signals needed.
 3. Compare resulting prompt payloads, including filename identity, warnings, and metadata. Allow only specifically recorded intentional differences such as the extractor label; do not exclude whole fields. Use stubbed batch/thread checks for routing, execution-option forwarding, retries/batching, and reason propagation.
 4. Classify each difference as equivalent under the stated normalization, intentional and justified, or an unresolved regression. Unresolved consequential differences prevent candidate selection; missing cases remain pending evidence. Nonempty output, byte-identical HTML, and matching live model-generated titles are not substitutes for these comparisons.
 
 ### Resource budgets
 
-Define a supported workload from identified representative documents and measure the current Mammoth baseline. Inspect compressed input size, per-part and total decompressed bytes, entry/node counts, XML depth, style traversal steps, peak memory, and elapsed processing time. Retain proposed limits and their headroom rationale rather than raw execution reports. Phase 7 requires maintainer acceptance of these budgets and the support envelope before candidate selection; the metadata cap alone is insufficient.
+Define a supported workload from identified representative documents and measure the retained Mammoth baseline. Inspect compressed input size, per-part and total decompressed bytes, entry/node counts, XML depth, style traversal steps, peak memory, and elapsed processing time. Retain proposed limits and their headroom rationale rather than raw execution reports. Phase 7 requires maintainer acceptance of these budgets and the support envelope before candidate selection; the metadata cap alone is insufficient.
 
 Test every cap below, at, and above its boundary with expected limitation/failure outcomes. Use the reproducible harness to measure representative and adversarial cases; record check outcomes without local environment details. The candidate must stay within accepted budgets or terminate with the defined outcome. Later budget/support-policy changes require a rationale and renewed checks of affected cases.
 
-Phase 1 measured the baseline and defined the [provisional limits](../../scripts/docx-baseline/resources.ts) below. They were exploratory at that revision; the unchanged candidate envelope is now accepted in Phase 7, with production enforcement still requiring Phase 8 integration. Per-run measurements remain temporary.
+Phase 1 measured the baseline and defined the [provisional limits](../../scripts/docx-baseline/resources.ts) below. They were exploratory at that revision; the unchanged candidate envelope is now accepted in Phase 7, with production enforcement integrated in Phase 8. Per-run measurements remain temporary.
 
 | Dimension | Proposal | Headroom rationale |
 | --- | --- | --- |
@@ -631,7 +631,7 @@ Direct dependency review retains `dingbat-to-unicode` 1.0.2 (BSD-2-Clause; the v
 | Maintenance | Repository maintainer owns dependency/security and provenance review, editor/corpus regressions, manual-command upkeep, diagnostics/unsupported-content decisions, and renewed verification when limits or relevant code/dependencies change | Accepted |
 | Selection | Proceed to Phase 8 integration; final product verification, complete Mammoth removal, and shipping acceptance remain pending | Accepted |
 
-Phase 8 should first separate the live Mammoth oracle from the production adapter, retaining frozen expectations and baseline-only support until Phase 9. Reuse one supervisor throughout each document-title operation's sequential extraction loop; independent operations may run concurrently. A failed owner's retained slot must not be bypassed by making a new owner for the next file. Model-request `timeoutMs` remains separate from the per-document extraction deadline.
+Phase 8 isolated the live Mammoth oracle before switching the production adapter, retaining frozen expectations and baseline-only support until Phase 9. Each document-title operation reuses one supervisor through its sequential extraction loop; independent operations may run concurrently. A failed owner's retained slot must not be bypassed by making a new owner for the next file. Model-request `timeoutMs` remains separate from the per-document extraction deadline.
 
 Keep `DocxSupervisor.read(path)` and `DocxReadResult` as internal boundaries: success carries `DocxDocumentFacts` (ordered headings, raw text, content presence, metadata result, and internal diagnostics); failure carries a fixed diagnostic. The production adapter owns mapping these facts through `assembleDocxEvidence` or returning existing `docx_extract_error`; it must not import the evaluation adapter or test fixtures.
 
@@ -652,7 +652,13 @@ Existing sequential extraction loop
                   prompt / batches / retries
 ```
 
-Production builds must include fixed child/worker/parser siblings in both formats. Source application tests need a test-owned compiled Node product driver because the runtime resolves fixed built assets and launches `process.execPath`; no inline production fallback or manual evaluation launcher belongs in routine coverage. Retain reused OOXML helper locations initially, account for metadata-helper consumers, and preserve the existing public `runCli` boundary without exposing a reader API. These are accepted integration constraints; Phase 8 implementation remains separate.
+Production builds must include fixed child/worker/parser siblings in both formats. Source application tests need a test-owned compiled Node product driver because the runtime resolves fixed built assets and launches `process.execPath`; no inline production fallback or manual evaluation launcher belongs in routine coverage. Retain reused OOXML helper locations initially, account for metadata-helper consumers, and preserve the existing public `runCli` boundary without exposing a reader API.
+
+### Phase 8 integration
+
+The production DOCX adapter now consumes supervised reader facts through the existing evidence assembler. Each document-title operation reuses one supervisor through its sequential extraction loop; independent operations have separate owners. Both production formats include fixed child/worker/parser siblings. The public API remains `runCli`; reader types and diagnostics stay internal.
+
+The original adapter is preserved under the test-owned baseline fixtures, with capture and measurement consumers redirected before integration. Frozen expectations are unchanged. Existing OOXML helpers remain in place because metadata consumers still use them. Mammoth remains installed for the live baseline and historical tooling until Phase 9; integration does not establish complete removal or shipping acceptance. Verification and review outcomes belong in the [Phase 8 record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-8-production-integration).
 
 ## Decision and Shipping Gates
 

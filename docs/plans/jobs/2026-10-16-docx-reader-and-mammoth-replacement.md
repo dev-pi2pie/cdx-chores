@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–7 and 6.1–6.3 are complete. The maintainer accepted the full Phase 7 proposal and selected the reader for integration. Phases 8–10 are unstarted.
+Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–7 and 6.1–6.3 are complete. The maintainer accepted the full Phase 7 proposal and selected the reader for integration. Phase 8 integration is complete; Phases 9–10 are unstarted.
 
 ## Phase 1 Outcomes
 
@@ -257,9 +257,27 @@ Source baseline and assessed candidate: `244b3e61`. The maintainer accepted the 
 | Feasibility / maintenance | Proceed; focused reader/runtime responsibilities and upkeep accepted; three direct dependency declarations/notices rechecked |
 | Integration boundaries | Oracle isolation, operation-scoped admission, 8/10 MiB behavior, fixed assets, and test-owned Node execution accepted |
 | Verification / cleanup | Passed: 195 links/status and immutable-evidence checks; prior routine/manual results reused, no pipelines repeated or artifacts created |
-| Review | Full Phase 7 range from `244b3e61`, including acceptance, reviewed; no remaining material findings |
+| Review | Full Phase 7 range `244b3e61..63eb0076`, including acceptance, reviewed; no remaining material findings |
 | Acceptance / selection | Full proposal accepted; Phase 7 complete, Phase 8 unstarted; shipping acceptance remains Phase 9 |
+
+## Phase 8: Production Integration
+
+Source baseline: `63eb0076`. The live Mammoth adapter was isolated at `1b9fc56b`; production integration and direct regressions are at `86f0267f`. Dependencies and the five frozen captures/manifests are unchanged.
+
+| Check | Result |
+| --- | --- |
+| Product integration | One supervisor per title operation; existing evidence policy and fallback; fixed ESM/CJS assets; reader API stays internal |
+| Direct regressions | Sequential recovery, independent concurrency, batch/thread options, retries/schema/reasons, and exact 8/10 MiB boundaries passed; existing busy/unconfirmed coverage retained |
+| Complete comparison | 134 cases per format on primary/minimum Node passed; four default-cap failures retain raised-cap semantic probes; only accepted identity/resource differences |
+| Packed product | Eight fresh npm/Bun × primary/minimum Node × ESM/CJS public consumers and eight installed-bin valid/invalid checks passed; prompts, untouched dry-run inputs, assets, and failure reasons verified |
+| Routine checks | 1,690 unit / 2,331 application cases passed; application 222 seconds under unchanged 240-second policy; final seven focused cases, build, lint, format, and types passed |
+| Review | Full phase code/test range `63eb0076..86f0267f` reviewed; exact schema assertion strengthened; CJS test-driver build fixed; documentation closeout reviewed separately |
+| Artifacts | Owned temporary inputs, builds, packages, consumers, caches, and logs removed after confirmed settlement; durable fixtures remain under `test/` |
+
+Validation limitation: minimum-Node ESM case `resource-maxStyleTraversalSteps-below` initially returned `docx_extract_error`; five isolated repetitions and a complete fresh rerun passed. Its cause is unconfirmed, and the passing rerun does not establish deterministic absence of the anomaly. No limits were relaxed.
+
+The [checklist](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md#phase-8-integrate-the-selected-reader) is complete. Production uses the supervised reader; Mammoth remains for live baseline and historical tooling until Phase 9.
 
 ## Later Phases
 
-Phase 7 is complete. Phase 8 integrates the selected reader with direct product regressions; Phase 9 retires live Mammoth support and verifies removal and actual-product shipping acceptance; Phase 10 reconciles surviving manual commands, ownership, and documentation. Mammoth remains the production extractor until Phase 8; the candidate's symbol mapper is a separate pinned dependency.
+Phase 8 is complete. Stop before Phase 9, which retires live Mammoth support and verifies complete removal and actual-product shipping acceptance. Phase 10 reconciles surviving manual commands, ownership, and documentation.

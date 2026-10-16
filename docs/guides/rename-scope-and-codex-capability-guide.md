@@ -1,7 +1,7 @@
 ---
 title: "Rename Scope and Codex Capability Guide"
 created-date: 2026-02-26
-modified-date: 2026-09-05
+modified-date: 2026-10-16
 status: completed
 agent: codex
 ---
@@ -35,6 +35,12 @@ Rename support and Codex semantic support are separate layers:
 | DOCX (`.docx`)                                                                            | Yes                         | `--codex-docs`         | Best-effort; fallback-safe                                                   |
 | Video/Audio (`.mp4`, `.mov`, `.mp3`, `.wav`, etc.)                                        | Yes                         | No                     | Current Codex docs list audio/video as unsupported[^gpt5-codex][^codex-mini] |
 | Hidden/system files (`.DS_Store`, `Thumbs.db`, `._*`, dotfiles)                           | Skipped by default in batch | N/A                    | Safety default                                                               |
+
+DOCX extraction uses the internal bounded reader. It supplies metadata, headings, and text to the existing title-ranking policy; evidence records `docx-reader` or `docx-reader+ooxml`. Supported scope is text evidence, including the accepted symbol, style, and note behavior; it does not include layout rendering, OCR, or external content loading.
+
+The reader accepts up to 8 MiB input, 256 ZIP entries, 1 MiB per selected part / 4 MiB selected parts in total, 100,000 XML elements, depth 64, and 128 style/numbering lookup steps. Its per-document deadline is 5 seconds, with sampled child-process RSS limited to 256 MiB; the memory sample includes the parser worker and excludes the CLI process, and is not a hard OS memory ceiling. Confirmed cleanup normally completes within the additional 1-second cleanup target; failed settlement returns extraction failure. The Codex model timeout is separate.
+
+The CLI retains its 10 MiB DOCX prefilter: inputs above 8 MiB through 10 MiB reach the reader and return `docx_extract_error`; inputs above 10 MiB retain `docx_skipped_too_large`. Extraction failures, including limit and runtime failures, keep the existing deterministic rename fallback. Current process validation covers macOS; Linux and Windows replacement-runtime coverage remains unverified. See the accepted [support contract](../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#phase-7-assessment-and-acceptance-proposal) for the detailed limits and platform scope.
 
 DOCX legacy note:
 
