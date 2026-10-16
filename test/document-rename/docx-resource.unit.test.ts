@@ -336,6 +336,30 @@ describe("selected DOCX resource enforcement", () => {
     }
   });
 
+  test("built-in XML references remain bounded by selected-part and result limits", async () => {
+    const count = 100_001;
+    const bytes = buildStoredZip([
+      [
+        "word/document.xml",
+        documentXml(`<w:p><w:r><w:t>${"&#65;".repeat(count)}</w:t></w:r></w:p>`),
+      ],
+    ]);
+    const result = await readDocxDocument(bytes);
+    expect(result.ok, JSON.stringify(result)).toBe(true);
+    if (!result.ok) throw new Error(result.diagnostic);
+    expect(result.facts.rawText).toBe("A".repeat(count) + "\n\n");
+    expect(
+      await readDocxDocument(bytes, resolveDocxLimits({ maxPartDecompressedBytes: 100 })),
+    ).toEqual({
+      ok: false,
+      diagnostic: "docx_limit:maxPartDecompressedBytes",
+    });
+    expect(await readDocxDocument(bytes, resolveDocxLimits({ resultBytes: 100 }))).toEqual({
+      ok: false,
+      diagnostic: "docx_limit:resultBytes",
+    });
+  });
+
   test("rejects declarations before entity expansion and closes failed selected reads", async () => {
     const result = await readDocxDocument(
       buildStoredZip([

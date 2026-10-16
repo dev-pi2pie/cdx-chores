@@ -53,6 +53,38 @@ export function createDocxReviewCases(): ReviewCase[] {
     row(cell(visible, '<w:vMerge w:val="restart"/>')) + row(cell(hidden, "<w:vMerge/>")),
   );
   return [
+    ...[
+      { id: "numeric-text", xml: "Report &#49; &#x3A9; &#x1F600;", text: "Report 1 Ω 😀" },
+      { id: "escaped-numeric", xml: "Literal &amp;#169;", text: "Literal &#169;" },
+      {
+        id: "xml-escapes",
+        xml: "&lt;Report&gt; &amp; &quot;Draft&quot;",
+        text: '<Report> & "Draft"',
+      },
+      {
+        id: "cdata-entities",
+        xml: "<![CDATA[CDATA &#169; &copy;]]>",
+        text: "CDATA &#169; &copy;",
+      },
+    ].map(({ id, xml, text }): ReviewCase => ({
+      id: `review-xml-${id}`,
+      options: { body: heading(`<w:r><w:t>${xml}</w:t></w:r>`) },
+      rawText: `${text}\n\n`,
+      headings: [{ level: 1, text }],
+    })),
+    {
+      id: "review-xml-numeric-style-attribute",
+      options: {
+        body: paragraph("Numeric Style Report", "Heading1").replace("Heading1", "&#72;eading1"),
+      },
+      rawText: "Numeric Style Report\n\n",
+      headings: [{ level: 1, text: "Numeric Style Report" }],
+    },
+    {
+      id: "review-xml-undeclared-named-entity",
+      options: { body: heading("<w:r><w:t>Unknown &copy;</w:t></w:r>") },
+      diagnostic: "docx_xml_invalid",
+    },
     {
       id: "review-shared-malformed-metadata-budget",
       options: {

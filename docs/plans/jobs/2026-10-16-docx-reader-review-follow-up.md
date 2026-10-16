@@ -1,6 +1,7 @@
 ---
 title: "DOCX reader review follow-up"
 created-date: 2026-10-16
+modified-date: 2026-10-16
 status: in-progress
 agent: codex
 ---
@@ -52,10 +53,11 @@ The original follow-up is complete. Earlier platform and validation limitations 
 
 ## Additional Review Follow-Up
 
-Address the remaining XML accounting, hyperlink compatibility, and manual harness findings from review of `bc6e3e98..97cdb606`. Source baseline: `97cdb606`. Earlier results above remain historical; the accepted CDATA departure and resource limits are unchanged.
+Address the remaining XML accounting, hyperlink compatibility, and manual harness findings from review of `bc6e3e98..97cdb606`, plus XML character-reference handling found during the follow-up review. Source baseline: `97cdb606`. Earlier results above remain historical; the accepted CDATA departure and resource limits are unchanged.
 
 - [x] Charge each physical XML part once, including failed inspections; preserve safety failures and distinct-entry accounting.
 - [x] Preserve empty-ID and unresolved-target hyperlink behavior, with independent evidence and prompt regressions.
+- [x] Decode numeric XML references once, preserve literal escapes/CDATA, and reject undeclared named entities without an additional built-in expansion cap.
 - [x] Require POSIX process groups before manual execution creates artifacts; remove ineffective Windows handling and redundant options.
 - [ ] Pass focused, routine, built-runtime, measurement, and packed-consumer checks.
 - [ ] Review the complete follow-up range and combined implementation, resolve findings, and confirm cleanup.
@@ -63,6 +65,7 @@ Address the remaining XML accounting, hyperlink compatibility, and manual harnes
 | Area | Outcome |
 | --- | --- |
 | XML accounting | Failed scans retain their original charge and failure; focused resource/content and compiled evidence/prompt regressions passed |
+| XML references | Five baseline-compatible cases and one additional accepted CDATA-preservation case passed; single-pass decoding and selected-part/result bounds checked |
 | Hyperlinks | Twenty-four named cases match historical behavior, including empty/duplicate targets, fragment merging, suppression, unused notes/comments, and explicit empty-anchor fields; focused unit and compiled evidence/prompt checks passed |
 | Manual harness | Shared prerequisite rejects unsupported execution before workspaces/children; lifecycle, help, and simulated platform probes passed; ineffective Windows branch and redundant flags removed |
 | Verification | Pending |

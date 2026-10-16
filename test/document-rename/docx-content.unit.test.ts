@@ -21,7 +21,7 @@ import { readDocxDocument } from "../../src/docx/reader";
 import { readSymbol } from "../../src/docx/symbols";
 import { styleProjection } from "../../src/docx/styles";
 import type { DocxDocumentFacts } from "../../src/docx/types";
-import { parseXml } from "../../src/docx/xml";
+import { elementText, parseXml } from "../../src/docx/xml";
 import { createAdditionalDocxContentProbes } from "./fixtures/docx-content-probes";
 import { createDocxReviewCases } from "./fixtures/docx-review-cases";
 
@@ -60,6 +60,14 @@ function evidence(value: DocxDocumentFacts) {
 }
 
 describe("DOCX review follow-up content cases", () => {
+  test("XML references decode once while comments, instructions, and CDATA stay literal", () => {
+    const root = parseXml(
+      '<root value="&quot;&#169;&amp;#169;"><!-- &copy; --><?literal &copy;?><![CDATA[&copy; &#169;]]>&#65;</root>',
+    )!;
+    expect(root.attributes.get("value")).toBe('"©&#169;');
+    expect(elementText(root)).toBe("&copy; &#169;A");
+  });
+
   for (const item of createDocxReviewCases()) {
     test(item.id, async () => {
       const result = await readDocxDocument(buildDocxPackage(item.options));

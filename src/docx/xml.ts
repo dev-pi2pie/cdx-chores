@@ -31,7 +31,11 @@ const parser = new XMLParser({
   trimValues: false,
   parseTagValue: false,
   parseAttributeValue: false,
+  htmlEntities: true,
+  // Declarations are rejected before parsing; part/result limits bound built-in references.
+  processEntities: { maxExpandedLength: Infinity },
 });
+const xmlEntities = new Set(["amp", "apos", "gt", "lt", "quot"]);
 
 function resolveName(name: string, namespaces: Map<string, string>, attribute = false): string {
   const separator = name.indexOf(":");
@@ -83,6 +87,12 @@ export function parseXml(
 ): Element | undefined {
   budget.inspect(part, xml);
   if (XMLValidator.validate(xml) !== true) throw new Error("docx_xml_invalid");
+  // Enable numeric decoding without accepting HTML-only names or inspecting literal sections.
+  for (const match of xml.matchAll(
+    /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>|&([^#;\s<&]+);/g,
+  )) {
+    if (match[1] && !xmlEntities.has(match[1])) throw new Error("docx_xml_invalid");
+  }
   for (const value of parser.parse(xml) as Record<string, unknown>[]) {
     const parsed = element(value, new Map());
     if (parsed) return parsed;
