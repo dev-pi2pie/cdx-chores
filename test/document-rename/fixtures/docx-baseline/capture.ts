@@ -4,10 +4,10 @@ import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
 import * as mammoth from "mammoth";
 
-import { extractDocxEvidence } from "../../../../src/adapters/codex/document-rename/extractors/docx";
 import { buildDocumentPrompt } from "../../../../src/adapters/codex/document-rename/prompt";
 import { readDocxCoreMetadata } from "../../../../src/adapters/docx/ooxml-metadata";
 import type { DocxBaselineCase } from "./corpus/index";
+import { extractBaselineDocxEvidence } from "./extractor";
 
 type Conversion = { value: string; messages: unknown[] } | { error: string };
 
@@ -17,7 +17,7 @@ export interface DocxCapture {
   html: Conversion;
   rawText: Conversion;
   metadata: Awaited<ReturnType<typeof readDocxCoreMetadata>>;
-  result: Awaited<ReturnType<typeof extractDocxEvidence>>;
+  result: Awaited<ReturnType<typeof extractBaselineDocxEvidence>>;
   prompt: string | null;
 }
 
@@ -40,7 +40,7 @@ function conversion(
   return { error: error.replaceAll(path, basename(path)) };
 }
 
-/** Diagnostic conversions are separate from actual adapter execution and timed measurements. */
+/** Diagnostic conversions are separate from the baseline adapter and timed measurements. */
 export async function captureDocx(
   path: string,
   directory: string,
@@ -52,7 +52,7 @@ export async function captureDocx(
     mammoth.extractRawText({ buffer }),
   ]);
   const metadata = await readDocxCoreMetadata(path);
-  const result = await extractDocxEvidence(path);
+  const result = await extractBaselineDocxEvidence(path);
   return JSON.parse(
     JSON.stringify({
       id,

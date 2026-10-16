@@ -5,7 +5,6 @@ import { basename, join } from "node:path";
 import { performance } from "node:perf_hooks";
 import { fileURLToPath } from "node:url";
 
-import { extractDocxEvidence } from "../../src/adapters/codex/document-rename/extractors/docx";
 import {
   assertCaseExpectations,
   captureDocx,
@@ -15,6 +14,7 @@ import {
 import type { DocxCapture } from "../../test/document-rename/fixtures/docx-baseline/capture";
 import { createBaselineCases } from "../../test/document-rename/fixtures/docx-baseline/corpus/index";
 import { createContractCases } from "../../test/document-rename/fixtures/docx-baseline/corpus/contract/index";
+import { extractBaselineDocxEvidence } from "../../test/document-rename/fixtures/docx-baseline/extractor";
 import { createResourceCases } from "../../test/document-rename/fixtures/docx-baseline/resource-cases";
 import { inspectDocxResources } from "./resources";
 
@@ -119,7 +119,7 @@ async function main() {
     const samples = [];
     for (let index = 0; index < 4; index++) {
       const started = performance.now();
-      const result = await extractDocxEvidence(input);
+      const result = await extractBaselineDocxEvidence(input);
       samples.push({
         elapsedMs: performance.now() - started,
         outcome: "reason" in result ? result.reason : "evidence",

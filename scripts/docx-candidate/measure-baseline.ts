@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 
-import { extractDocxEvidence } from "../../src/adapters/codex/document-rename/extractors/docx";
+import { extractBaselineDocxEvidence } from "../../test/document-rename/fixtures/docx-baseline/extractor";
 
 const path = process.argv[2];
 assert(path);
 const started = performance.now();
-const result = await extractDocxEvidence(path);
+const result = await extractBaselineDocxEvidence(path);
 process.stdout.write(
   JSON.stringify({
     extractionMilliseconds: performance.now() - started,
