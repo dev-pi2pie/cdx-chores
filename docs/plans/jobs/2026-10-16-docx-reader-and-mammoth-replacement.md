@@ -320,3 +320,7 @@ Source baseline: `6a9ab121`.
 | Scope | Seventeen comments across thirteen reader/runtime, script, and fixture files now explain purpose, boundaries, and compatibility rules without plan-phase context |
 | Verification | Comment-only source diff and identical transpiled JavaScript confirmed; lint, formatting, and diff checks passed; frozen data, dependencies, and build configuration unchanged |
 | Review / artifacts | Complete follow-up from `6a9ab121` reviewed; no verification artifacts generated; runtime suites were not repeated for comment changes; completed document statuses retained |
+
+## Related Follow-up
+
+The full implementation review at `9c6f92ef` identified additional compatibility, verifier, and simplification work. The separate [DOCX reader review follow-up](2026-10-16-docx-reader-review-follow-up.md) owns those corrections and their verification; the completed phase results above remain historical evidence.

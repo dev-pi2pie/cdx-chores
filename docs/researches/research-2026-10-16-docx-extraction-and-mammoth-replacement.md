@@ -218,6 +218,12 @@ These rules govern evaluation and any later implementation:
 3. Preserve outward warnings and failure conditions. Keep detailed new parser diagnostics internal initially; usable evidence must not automatically gain prompt warnings, and existing failures must not silently become partial successes. Record internal-to-existing diagnostic mappings and the exact replacement extractor identity.
 4. Require a documented compatibility decision for intentional differences, including resource-limit outcomes and the necessary provenance change. Record the affected cases, rationale, and expected results before accepting a departure.
 
+### Post-implementation compatibility follow-up
+
+The [reader review follow-up](../plans/jobs/2026-10-16-docx-reader-review-follow-up.md) tracks newly identified Strong character-style, vertical-merge continuation, and checkbox-control evidence gaps. Their correction and new verification are separate from the historical comparison results below.
+
+The maintainer accepted preserving CDATA as ordinary text in heading and raw-text evidence. Plain CDATA may supply evidence Mammoth omitted; mixed plain text/CDATA may succeed where Mammoth failed. This narrowly scoped departure preserves XML text rather than reproducing the former parser's omission/failure behavior. Dedicated follow-up expectations record the difference; historical captures remain unchanged.
+
 ## Resource Isolation and Content-Support Contract
 
 This section separates runtime accounting from document compatibility. The maintainer accepted the Phase 2 design, initial-reader scope, and validation method: one fresh extraction process per admitted request and baseline-led content handling. The diagrams describe that contract; the private candidate's implemented boundary is assessed below. Phase 6 supplies technical evidence; final numeric budget/support acceptance belongs to Phase 7 after Phases 6.1–6.3.
