@@ -8,6 +8,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { resolveDocxLimits } from "../../../../src/docx/limits";
 import { createDocxSupervisorForTesting } from "../../../../src/docx/runtime/index";
 import type { DocxReadResult } from "../../../../src/docx/types";
+import { checkInputStall, checkRejectedInputClose } from "./input-stalls";
 
 const mode = process.argv[2]!;
 const workspace = process.argv[3]!;
@@ -51,7 +52,15 @@ async function waitStopped() {
   throw new Error("Child shutdown did not settle");
 }
 
-if (mode === "guarded") {
+if (mode === "input-close-rejected") {
+  await checkRejectedInputClose(workspace);
+} else if (
+  mode.startsWith("input-deadline-") ||
+  mode.startsWith("input-cancel-") ||
+  mode.startsWith("input-grace-")
+) {
+  await checkInputStall(mode, workspace);
+} else if (mode === "guarded") {
   const result = await supervisor().read(input);
   assert(result.ok, JSON.stringify(result));
   assert.equal(result.facts.rawText, "Independent runtime report\n\n");
@@ -113,6 +122,22 @@ if (mode === "guarded") {
   await waitStopped();
   failure(await owner.read(input, { signal: AbortSignal.abort() }), "docx_cancelled");
   await noFurtherWrites("child-heartbeat");
+} else if (mode === "protocol-valid-success-stubborn") {
+  const owner = supervisor("protocol-valid-success-stubborn-child");
+  try {
+    failure(
+      await owner.read(input, {
+        limits: { elapsedMilliseconds: 800, cleanupMilliseconds: 50, termGraceMilliseconds: 500 },
+      }),
+      "docx_cleanup_unconfirmed",
+    );
+    failure(await owner.read(input), "docx_supervisor_busy");
+    await waitStopped();
+    failure(await owner.read(input, { signal: AbortSignal.abort() }), "docx_cancelled");
+    await noFurtherWrites("child-heartbeat");
+  } finally {
+    await waitStopped();
+  }
 } else if (mode === "offline-probe") {
   failure(await supervisor().read(input), "docx_offline_guard_failed");
   await stopped();

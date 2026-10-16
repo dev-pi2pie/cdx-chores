@@ -26,6 +26,19 @@ interface SupervisorAssets {
   childPath: string;
   cwd: string;
   execPath: string;
+  openInput: (path: string, flags: number) => Promise<DocxInputHandle>;
+}
+
+/** Minimal owned-file interface used by fixed source regression fixtures. */
+export interface DocxInputHandle {
+  stat(): Promise<{ isFile(): boolean }>;
+  read(
+    buffer: Buffer,
+    offset: number,
+    length: number,
+    position: null,
+  ): Promise<{ bytesRead: number }>;
+  close(): Promise<void>;
 }
 
 function failure(diagnostic: string): DocxReadResult {
@@ -36,11 +49,15 @@ async function readBoundedInput(
   path: string,
   limits: DocxLimits,
   assertRunning: () => void,
+  openInput: SupervisorAssets["openInput"],
+  opened: (file: DocxInputHandle) => void,
+  closed: () => void,
 ): Promise<Buffer> {
   assertRunning();
   // Nonblocking open rejects special-file surprises without waiting for a FIFO writer.
   const flags = constants.O_RDONLY | (process.platform === "win32" ? 0 : constants.O_NONBLOCK);
-  const file = await open(path, flags);
+  const file = await openInput(path, flags);
+  opened(file);
   try {
     assertRunning();
     if (!(await file.stat()).isFile()) throw new Error("docx_input_error");
@@ -61,11 +78,14 @@ async function readBoundedInput(
     }
   } finally {
     await file.close();
+    closed();
   }
 }
 
 function createSupervisor(assets: SupervisorAssets): DocxSupervisor {
   let active = false;
+  // Keep an acquired handle owned even if close itself rejects or never settles.
+  let retainedInputHandle: DocxInputHandle | undefined;
   return {
     async read(path, options = {}) {
       if (active) return failure("docx_supervisor_busy");
@@ -79,6 +99,7 @@ function createSupervisor(assets: SupervisorAssets): DocxSupervisor {
       }
       const deadlineAt = performance.now() + limits.elapsedMilliseconds;
       let child: ExtractionChild | undefined;
+      let inputSettled = true;
       let candidate: DocxReadResult | undefined;
       let closed = false;
       let unconfirmed = false;
@@ -91,6 +112,13 @@ function createSupervisor(assets: SupervisorAssets): DocxSupervisor {
       const settled = new Promise<void>((resolve) => {
         resolveSettled = resolve;
       });
+      let resolveStopped!: () => void;
+      const stopped = new Promise<void>((resolve) => {
+        resolveStopped = resolve;
+      });
+      function ownershipSettled(): boolean {
+        return inputSettled && !retainedInputHandle && (!child || closed);
+      }
       function release(): void {
         if (released) return;
         released = true;
@@ -127,26 +155,33 @@ function createSupervisor(assets: SupervisorAssets): DocxSupervisor {
           }
         }, limits.termGraceMilliseconds);
       }
+      function finishCleanup(): void {
+        if (!cleanupStarted || !ownershipSettled()) return;
+        dispose();
+        release();
+        resolveSettled();
+      }
       function startCleanup(terminateChild: boolean): void {
-        if (!child) return;
         if (!cleanupStarted) {
           cleanupStarted = true;
           clearTimeout(processingTimer);
           cleanupTimer = setTimeout(() => {
-            if (closed) return;
+            if (ownershipSettled()) return finishCleanup();
             unconfirmed = true;
             candidate = failure("docx_cleanup_unconfirmed");
             terminate();
-            // Keep close ownership and the admission slot until eventual exit.
+            // Keep input/process ownership and the slot until eventual settlement.
             resolveSettled();
           }, limits.cleanupMilliseconds);
         }
         if (terminateChild) terminate();
+        finishCleanup();
       }
       function fail(diagnostic: string): void {
         if (candidate) return;
         candidate = failure(diagnostic);
-        if (child) startCleanup(true);
+        resolveStopped();
+        startCleanup(true);
       }
       function onAbort(): void {
         fail("docx_cancelled");
@@ -163,7 +198,37 @@ function createSupervisor(assets: SupervisorAssets): DocxSupervisor {
       if (options.signal?.aborted) onAbort();
 
       try {
-        const bytes = await readBoundedInput(path, limits, assertRunning);
+        assertRunning();
+        inputSettled = false;
+        // Own both fulfillment and rejection after a deadline returns to its caller.
+        const input = readBoundedInput(
+          path,
+          limits,
+          assertRunning,
+          assets.openInput,
+          (file) => {
+            retainedInputHandle = file;
+          },
+          () => {
+            retainedInputHandle = undefined;
+          },
+        )
+          .then(
+            (bytes) => ({ bytes }),
+            (error: unknown) => ({ error }),
+          )
+          .then((outcome) => {
+            inputSettled = true;
+            finishCleanup();
+            return outcome;
+          });
+        const inputOutcome = await Promise.race([input, stopped.then(() => undefined)]);
+        if (!inputOutcome) {
+          await settled;
+          return candidate ?? failure("docx_cleanup_unconfirmed");
+        }
+        if ("error" in inputOutcome) throw inputOutcome.error;
+        const bytes = inputOutcome.bytes;
         assertRunning();
         const metadata = requestMetadata(limits);
         checkDocxLimit(metadata.byteLength, "requestMetadataBytes", limits);
@@ -219,9 +284,7 @@ function createSupervisor(assets: SupervisorAssets): DocxSupervisor {
             if (!candidate) candidate = failure("docx_child_exit");
             if (candidate.ok && (code !== 0 || signal !== null || !stdoutEnded))
               candidate = failure("docx_child_exit");
-            dispose();
-            release();
-            resolveSettled();
+            startCleanup(false);
           });
 
           async function write(chunk: Buffer): Promise<void> {
@@ -262,12 +325,13 @@ function createSupervisor(assets: SupervisorAssets): DocxSupervisor {
         }
       } catch (error) {
         if (!candidate) fail(limitDiagnostic(error, "docx_input_error"));
+        await settled;
       } finally {
-        if (!child) {
+        if (ownershipSettled()) {
           dispose();
           release();
         } else if (unconfirmed) {
-          // Close listener and escalation remain owned; no subsequent request is admitted.
+          // Late input/close handlers remain owned; no subsequent request is admitted.
           clearTimeout(processingTimer);
           options.signal?.removeEventListener("abort", onAbort);
         }
@@ -287,6 +351,7 @@ export function createDocxSupervisor(): DocxSupervisor {
     childPath: fileURLToPath(runtimeAsset("docx-child", moduleUrl)),
     cwd: runtimeWorkingDirectory(moduleUrl),
     execPath: process.execPath,
+    openInput: open,
   });
 }
 
@@ -302,5 +367,6 @@ export function createDocxSupervisorForTesting(
     childPath: assets.childPath,
     cwd: assets.cwd ?? runtimeWorkingDirectory(moduleUrl),
     execPath: assets.execPath ?? process.execPath,
+    openInput: assets.openInput ?? open,
   });
 }

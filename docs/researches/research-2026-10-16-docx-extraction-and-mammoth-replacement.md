@@ -290,17 +290,21 @@ Bounded read --> launch child --> transfer --> extract --> validate bounded fact
                           |
                     Success or failure
                           |
-              Stop parser / close communication
+              Stop input / parser / communication
                           |
-                    Confirm child exit
-                          |
-                Return one defined outcome
+                 Cleanup confirmed?
+                    /           \
+                  Yes           No, grace expired
+                   |                    |
+           Return one outcome    Return infrastructure failure
+                                 Retain ownership/admission
+                                 until eventual settlement
 
 Timeout / cancellation / crash / invalid response
-     `--> terminate child --> bounded escalation --> confirm exit --> failure
+     `--> stop input / terminate child --> bounded cleanup / escalation
 ```
 
-On timeout, cancellation, protocol failure, stream error, or excessive RSS, freeze failure and request termination immediately; escalate from TERM to KILL after the grace period where supported. Await `close`, including stdio closure. A valid result followed by failed cleanup is an infrastructure failure. Portable Node cannot guarantee both a fixed API return deadline and confirmed exit under arbitrary OS termination failure. An unconfirmed close must remain a distinct validation failure with retained process ownership/admission capacity, rather than a passing timeout result. Final acceptance must state this limitation and separately assess processing, cleanup, and total latency.
+On timeout, cancellation, protocol failure, stream error, or excessive RSS, freeze failure and request termination immediately; escalate from TERM to KILL after the grace period where supported. Await `close`, including stdio closure. A valid result followed by failed cleanup is an infrastructure failure. A pending input open/read/close follows the same ownership policy: race the operation against the processing deadline, await bounded cleanup, and retain admission until eventual settlement if cleanup cannot be confirmed. Portable Node cannot guarantee both a fixed API return deadline and confirmed cleanup under arbitrary OS I/O or termination failure. Unconfirmed cleanup must remain a distinct validation failure with retained resource ownership/admission capacity, rather than a passing timeout result. Final acceptance must state this limitation and separately assess processing, cleanup, and total latency.
 
 | Additional provisional proposal | Starting value | Reason to validate |
 | --- | --- | --- |
@@ -465,7 +469,7 @@ The private candidate now indexes every physical ZIP entry and inflates only sel
 
 The original resource inspector measures whole-package dimensions, including unselected binary/XML parts and declared inheritance graphs. Those measurements remain frozen; they are not enforcement assertions for the selected-part reader. [Independent guard tests](../../test/document-rename/docx-resource.unit.test.ts) exercise the implemented dimensions and archive/stream cleanup. The initial 22 reader-facts comparisons and unchanged baseline captures still pass.
 
-The [private process boundary](../../src/docx/runtime/index.ts) implements the agreed child/worker topology, capped file reading, strict byte frames, sanitized environment, independent deadline/RSS supervision, and confirmed closure. Its eight modules add about 900 lines of lifecycle, protocol, and offline instrumentation. A fresh extraction process adds startup and transport cost; the prototype probe remained inside the provisional complete-API window. This supports continuing the content evaluation, while representative/adversarial cost and final budget acceptance remain Phase 6 work.
+The [private process boundary](../../src/docx/runtime/index.ts) implements the agreed child/worker topology, capped file reading, strict byte frames, sanitized environment, independent deadline/RSS supervision, and confirmed closure. Its eight modules add about 1,000 lines of lifecycle, protocol, and offline instrumentation. A fresh extraction process adds startup and transport cost; the prototype probe remained inside the provisional complete-API window. This supports continuing the content evaluation, while representative/adversarial cost and final budget acceptance remain Phase 6 work.
 
 [Runtime tests](../../test/document-rename/docx-runtime.app.test.ts) cover caller-memory independence, blocked parsing, controlled and actual RSS observations, malformed transport, crashes, cancellation, parent loss, escalation, and offline controls before parser imports. Unconfirmed cleanup remains an infrastructure failure and retains admission until eventual closure. The initial 22 complete comparisons pass through supervised ESM/CJS builds under Node, including the minimum supported runtime. Sampled RSS can miss brief peaks; these private builds do not establish fresh-consumer distribution acceptance or broader content support.
 

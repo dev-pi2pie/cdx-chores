@@ -20,6 +20,7 @@ const protocolModes = [
   "early-exit",
   "crash",
   "success-crash",
+  "valid-success-stubborn",
   "stubborn",
 ];
 
@@ -80,6 +81,10 @@ test("Node DOCX process boundary settles failures and leaves no live work", asyn
       "busy",
       "pre-cancel",
       "input-limit",
+      "input-close-rejected",
+      ...["deadline", "cancel", "grace"].flatMap((cause) =>
+        ["open", "stat", "read", "close"].map((operation) => `input-${cause}-${operation}`),
+      ),
       "startup",
       "worker-crash",
       "unconfirmed-cleanup",

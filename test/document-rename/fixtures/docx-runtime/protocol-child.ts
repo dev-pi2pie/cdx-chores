@@ -27,12 +27,15 @@ const frame = (body: Buffer, declared = body.length) => {
 process.stdin.resume();
 process.stdin.on("error", () => process.exit(1));
 process.stdin.on("end", () => {
-  if (mode !== "stubborn") process.exit(0);
+  if (mode !== "stubborn" && mode !== "valid-success-stubborn") process.exit(0);
 });
-if (mode === "stubborn") {
+if (mode === "stubborn" || mode === "valid-success-stubborn") {
   process.on("SIGTERM", () => {});
   let tick = 0;
   setInterval(() => writeFileSync(root("./child-heartbeat"), String(++tick)), 10);
+  if (mode === "valid-success-stubborn") {
+    process.stdout.end(frame(Buffer.from(JSON.stringify(valid))));
+  }
 } else {
   const body = Buffer.from(JSON.stringify(valid));
   const ordinary = frame(body);

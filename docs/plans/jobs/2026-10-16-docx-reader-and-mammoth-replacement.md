@@ -81,12 +81,14 @@ Source baseline: `13b66b3b9ea7961bae5c897c3d0a56962541611f`.
 | --- | --- |
 | [Selected-part guards and cleanup](../../../test/document-rename/docx-resource.unit.test.ts), initial reader facts, unchanged baseline captures | Passed |
 | Process/worker boundary and transport | Passed; private candidate only |
-| Boundary failures, offline controls, and cleanup checks | Passed; 27 unit checks and 36 Node scenarios |
+| Boundary failures, offline controls, and cleanup checks | Passed; 27 unit checks and 50 Node scenarios |
 | Guarded 22-case ESM/CJS comparisons, including minimum Node | Passed |
 | Prototype overhead and provisional API window | Measured; passed |
 | Lint, formatting, types, build, and managed unit checks | Passed |
 | Managed application checks | In progress |
 | Full phase review and documentation validation | Pending |
+
+Review fixes cover stalled input ownership through deadline/cancellation and valid results followed by failed cleanup. Unconfirmed cleanup retains admission until owned resources settle.
 
 ## Later Phases
 
