@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–3 are complete. Phase 4 is in progress.
+Execution record for the [plan](../plan-2026-10-16-docx-reader-and-mammoth-replacement.md) and [research](../../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md). Phase 1 source baseline: `bc6e3e985fbb410797cefbece20a00e38a9bf526`. Phases 1–4 are complete.
 
 ## Phase 1 Outcomes
 
@@ -85,10 +85,12 @@ Source baseline: `13b66b3b9ea7961bae5c897c3d0a56962541611f`.
 | Guarded 22-case ESM/CJS comparisons, including minimum Node | Passed |
 | Prototype overhead and provisional API window | Measured; passed |
 | Lint, formatting, types, build, and managed unit checks | Passed |
-| Managed application checks | In progress |
-| Full phase review and documentation validation | Pending |
+| Managed application checks | Passed |
+| Full phase review and documentation validation | Passed; findings fixed |
 
 Review fixes cover stalled input ownership through deadline/cancellation and valid results followed by failed cleanup. Unconfirmed cleanup retains admission until owned resources settle.
+
+Reviewed source/verification range: `13b66b3b..721a942b`; closing documentation reviewed separately. Temporary outputs were removed. The resource boundary supports continuing content evaluation; numerical budgets and fresh-consumer acceptance remain pending.
 
 ## Later Phases
 

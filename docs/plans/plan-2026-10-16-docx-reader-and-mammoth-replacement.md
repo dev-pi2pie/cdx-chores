@@ -10,7 +10,7 @@ agent: codex
 
 Evaluate and, if justified, integrate a focused project-owned DOCX reader that preserves semantic rename evidence and fallback behavior while enabling complete Mammoth removal.
 
-This plan includes contract research, candidate evaluation, and conditional production migration. Phases 1–7 establish the research decision; Phases 8–9 proceed only after selection supports replacement. Phase 10 validates documentation before closeout. The [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md) tracks outcomes across all ten phases. Phases 1–3 are complete, with design agreement and an initial-reader continue outcome recorded. Phase 4 is in progress; Phase 5 follows its reviewed completion. Numerical budgets and final support acceptance remain Phase 6 work. No replacement has been selected.
+This plan includes contract research, candidate evaluation, and conditional production migration. Phases 1–7 establish the research decision; Phases 8–9 proceed only after selection supports replacement. Phase 10 validates documentation before closeout. The [unified execution record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md) tracks outcomes across all ten phases. Phases 1–4 are complete; Phase 5 follows the reviewed resource boundary. Numerical budgets and final support acceptance remain Phase 6 work. No replacement has been selected.
 
 ## Scope
 
@@ -117,14 +117,16 @@ Phase 3 is complete with a continue outcome. The identified comparisons, built-f
 
 ### Phase 4: Implement resource isolation
 
-- [ ] Implement the process/worker topology and bounded request/result transport agreed in Phase 2, including environment/loader handling and packaged entry resolution.
-- [ ] Implement selected-part reading and input, entry, decompressed-byte, XML-node/depth, and style-work limits with explicit outcomes and deterministic archive/stream cleanup.
-- [ ] Enforce the agreed processing deadline and sampled memory policy independently of blocked parsing. Bound shutdown/escalation and await process/worker settlement before returning.
-- [ ] Verify caller-memory independence, controlled below/at/above observations, blocked parsing, startup/crash/early-exit cases, cancellation, parent disconnection, and malformed/oversized messages. Confirm no activity after completion and enforce active-request limits.
-- [ ] Install scoped offline checks and independent positive controls inside the actual parser process/worker. Verify no external URL/file loading or executable-content evaluation.
-- [ ] Measure prototype overhead and reassess the cost of the execution boundary. Return unresolved accounting, cleanup, or portability issues to the contract before expanding evaluation.
+- [x] Implement the process/worker topology and bounded request/result transport agreed in Phase 2, including environment/loader handling and packaged entry resolution.
+- [x] Implement selected-part reading and input, entry, decompressed-byte, XML-node/depth, and style-work limits with explicit outcomes and deterministic archive/stream cleanup.
+- [x] Enforce the agreed processing deadline and sampled memory policy independently of blocked parsing. Bound shutdown/escalation and confirm resource settlement for ordinary results; report unconfirmed cleanup as infrastructure failure while retaining ownership/admission until settlement.
+- [x] Verify caller-memory independence, controlled below/at/above observations, blocked parsing, startup/crash/early-exit cases, cancellation, parent disconnection, and malformed/oversized messages. Confirm no activity after settled completion, retained ownership during unconfirmed cleanup, and active-request limits.
+- [x] Install scoped offline checks and independent positive controls inside the actual parser process/worker. Verify no external URL/file loading or executable-content evaluation.
+- [x] Measure prototype overhead and reassess the cost of the execution boundary. Return unresolved accounting, cleanup, or portability issues to the contract before expanding evaluation.
 
 **Deliverable and exit criteria:** an independently tested execution/resource boundary with honest sampling limitations and cleanup behavior. Threshold-policy tests are distinct from real-process feasibility; final budget acceptance remains in Phase 6.
+
+Phase 4 is complete. The [record](jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-4-resource-isolation) retains guard, runtime, built-format, managed-check, and review outcomes. Stalled input and child cleanup retain ownership when settlement cannot be confirmed; the research describes this infrastructure exception explicitly.
 
 ### Phase 5: Complete content compatibility
 

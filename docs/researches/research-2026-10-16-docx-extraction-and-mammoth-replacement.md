@@ -212,7 +212,7 @@ These rules govern evaluation and any later implementation:
 
 ## Resource Isolation and Content-Support Contract
 
-This section separates runtime accounting from document compatibility. The maintainer accepted the Phase 2 design, initial-reader scope, and validation method: one fresh extraction process per admitted request and baseline-led content handling. The diagrams describe the agreed target rather than implemented behavior. Agreement authorizes the initial reader slice, while resource enforcement belongs to Phase 4 and final numeric budgets/support acceptance belong to Phase 6.
+This section separates runtime accounting from document compatibility. The maintainer accepted the Phase 2 design, initial-reader scope, and validation method: one fresh extraction process per admitted request and baseline-led content handling. The diagrams describe that contract; the private candidate's implemented boundary is assessed below. Final numeric budgets/support acceptance belong to Phase 6.
 
 ### Memory accounting alternatives
 
@@ -252,7 +252,7 @@ Caller process                       Extraction process [DESIGN]
                                      <------- RSS budget ---------->
 
 Deadline scope: input read + startup + communication + extraction + validation
-Return boundary: result/failure and confirmed process cleanup
+Ordinary return: result/failure and confirmed resource cleanup
 ```
 
 The RSS scope includes the extraction process's Node runtime, supervisor, parser worker, and decompression allocations. Caller memory is outside that scope, but input/result transport can still allocate in the caller. Request size, response size, and active-request concurrency therefore need separate bounds. A per-request RSS threshold is not an application-wide memory budget.
@@ -461,7 +461,7 @@ The existing package helper still skips parts above 256 KiB; this is an initial-
 | Phase 5: content | Substantial: heading-affecting style projection, mapper provenance/adoption, note snapshots/duplicates/failures, remaining text/discovery/secondary-content cases, and diagnostic mappings. |
 | Phase 6: complete validation | Measurements and all-case comparison, required runtime assets in both formats, fresh npm/Bun consumers, installed trees, and maintainer budget/support acceptance. |
 
-The complexity checkpoint supports **continue**: the demonstrated slice remains focused and shares package/metadata/rename policy rather than introducing parallel implementations. Phase 3 verification and review passed; this initial feasibility result does not select the replacement. Style-path projection and process lifecycle remain the largest unproved responsibilities. Execution stopped after Phase 3; later expansion must retain the complete corpus and reconsider deferral if those responsibilities exceed the focused reader's benefit.
+The Phase 3 complexity checkpoint supported **continue**: the demonstrated slice shares package/metadata/rename policy rather than introducing parallel implementations. That initial feasibility result does not select the replacement. The resource boundary is assessed below; style-path projection and complete content comparisons remain substantial obligations. Expansion must retain the complete corpus and reconsider deferral if those responsibilities exceed the focused reader's benefit.
 
 ### Resource guard implementation
 
