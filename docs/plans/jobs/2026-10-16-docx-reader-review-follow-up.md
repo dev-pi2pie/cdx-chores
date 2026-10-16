@@ -2,7 +2,7 @@
 title: "DOCX reader review follow-up"
 created-date: 2026-10-16
 modified-date: 2026-10-16
-status: completed
+status: in-progress
 agent: codex
 ---
 
@@ -163,7 +163,7 @@ Restore the historical literal-ampersand behavior identified by review of `bc6e3
 
 | Area | Outcome |
 | --- | --- |
-| Recovery / references | Literal ampersands recovered in values; numeric/predefined references decode once; undeclared semicolon-terminated named references and malformed markup retain failures |
+| Recovery / references | Literal ampersands recovered in values; numeric/predefined references decode once; checked undeclared named forms and malformed markup retain failures; further literal classification is covered below |
 | Regressions | Thirty-five historical-equivalent DOCX cases, four parser controls, and one selected-part cap test added; ten pre-fix failures reproduced |
 | Allocation correction | Only validation uses escaped source; parsing original values avoids synthetic expansion; dense 1 MiB XML part accepted, cap + 1 byte rejected, and admission released in all four runtime/format lanes |
 | Routine verification | 310 focused, 1,916 unit, and 2,331 application cases passed; application 234.21 seconds under unchanged 240-second deadline; lint, format, types, and shipping build passed |
@@ -172,3 +172,19 @@ Restore the historical literal-ampersand behavior identified by review of `bc6e3
 | Earlier packed-consumer evidence | Retained from the drawing follow-up; distribution boundaries unchanged |
 | Full-range review | `0e6f6748..37e4b615` and combined `bc6e3e98..37e4b615` reviewed; allocation and record wording corrected; no remaining material findings; closing docs reviewed separately |
 | Artifact cleanup | Owned manual and managed-test workspaces settled and removed; temporary inputs, builds, runtime cache, and logs removed; no smoke artifacts retained |
+
+## Ampersand Classification Follow-Up
+
+Restore punctuation-bearing literals identified by review of `bc6e3e98..87bffa51`. Source baseline: `87bffa51`. Named forms recognized by the historical parser retain their success/failure behavior; additional literal forms do not introduce a compatibility departure. Earlier results remain historical; numeric-reference policy, accepted limits, and frozen captures remain unchanged.
+
+- [x] Use one value classifier for validation escaping and named-reference checks, retaining original parsing and physical-part accounting.
+- [x] Add independent text, quoted-attribute, relationship, and reference-boundary regressions; reproduce failures before the fix.
+- [ ] Pass focused, routine, built-runtime, quality, and renewed resource checks; update coverage references.
+- [ ] Review the complete follow-up and combined DOCX ranges, resolve findings, and clean owned artifacts.
+
+| Area | Outcome |
+| --- | --- |
+| Classification / regressions | Sixty DOCX cases and three parser controls added; forty-six pre-fix failures reproduced; punctuation-bearing literals and mixed references recover while recognized undeclared named forms fail |
+| Baseline comparison | Sixty cases match the original Node adapter's complete evidence/prompts after extractor-identity normalization |
+| Allocation / cap boundary | Literal spans escape in chunks; dense 1 MiB XML part accepted, cap + 1 byte rejected, and admission released in all four runtime/format lanes |
+| Initial verification | 373 focused and 1,979 unit cases, lint, format, types, and shipping build passed; 255 follow-up cases passed per format on primary/minimum Node; application, frozen comparisons, and workload checks pending |

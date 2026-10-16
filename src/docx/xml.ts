@@ -38,9 +38,23 @@ const parser = new XMLParser({
 });
 const xmlEntities = new Set(["amp", "apos", "gt", "lt", "quot"]);
 
-/** Escape bare ampersands only for validation; keep entity candidates and opaque sections. */
+/** Validate named references and escape historical literals only in XML values. */
 function escapeBareAmpersandsForValidation(xml: string): string {
-  const escape = (value: string) => value.replace(/&(?!#|[^#;\s<&]+;)/g, "&amp;");
+  const escape = (value: string) => {
+    const fragments: string[] = [];
+    let cursor = 0;
+    for (const reference of value.matchAll(/&(#|\w+;)/g)) {
+      const name = reference[1]!;
+      // Numeric candidates retain validator policy; named forms match the baseline recognizer.
+      if (name !== "#" && !xmlEntities.has(name.slice(0, -1))) throw new Error("docx_xml_invalid");
+      if (reference.index > cursor)
+        fragments.push(value.slice(cursor, reference.index).replaceAll("&", "&amp;"));
+      fragments.push(reference[0]);
+      cursor = reference.index + reference[0].length;
+    }
+    fragments.push(value.slice(cursor).replaceAll("&", "&amp;"));
+    return fragments.join("");
+  };
   return xml.replace(
     /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>|<(?:[^"'<>]|"[^"]*"|'[^']*')*>|[^<]+/g,
     (value) => {
@@ -120,12 +134,6 @@ export function parseXml(
   budget.inspect(part, xml);
   if (XMLValidator.validate(escapeBareAmpersandsForValidation(xml)) !== true)
     throw new Error("docx_xml_invalid");
-  // Enable numeric decoding without accepting HTML-only names or inspecting literal sections.
-  for (const match of xml.matchAll(
-    /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>|&([^#;\s<&]+);/g,
-  )) {
-    if (match[1] && !xmlEntities.has(match[1])) throw new Error("docx_xml_invalid");
-  }
   let root: Element | undefined;
   // The parser already preserves bare ampersands; avoid expanding synthetic references again.
   for (const value of parser.parse(normalizeAttributeWhitespace(xml)) as Record<

@@ -1,4 +1,4 @@
-import { documentXml, paragraph, run, stylesXml } from "./docx-baseline/corpus/builder";
+import { documentXml, paragraph, REL_NS, run, stylesXml } from "./docx-baseline/corpus/builder";
 import type { ReviewCase } from "./docx-review-cases";
 
 /** Literal ampersands and reference controls with independently authored outcomes. */
@@ -63,6 +63,74 @@ export function createDocxAmpersandCases(): ReviewCase[] {
       diagnostic: "docx_xml_invalid",
     })),
   ];
+}
+
+/** Reference-shaped literals follow the historical text and attribute recognizer. */
+export function createDocxAmpersandClassificationCases(): ReviewCase[] {
+  const values: Array<{ id: string; xml: string; value?: string }> = [
+    ...(
+      [
+        ["hyphen", "Research &Development-report;"],
+        ["dot", "Research &Development.report;"],
+        ["colon", "Research &Development:report;"],
+        ["slash", "Research &Development/report;"],
+        ["equals", "Research &Development=report;"],
+        ["question", "Research &Development?report;"],
+        ["exclamation", "Research &name!;"],
+        ["unicode", "Research &é;"],
+        ["predefined-lookalike", "Research &amp.;"],
+        ["query", "https://example.invalid/?a=1&b=2;"],
+      ] as const
+    ).map(([id, value]) => ({ id, xml: value, value })),
+    ...["am", "ampx", "_name", "123"].map((name) => ({
+      id: `undeclared-${name}`,
+      xml: `Research &${name};`,
+    })),
+    {
+      id: "mixed",
+      xml: "Research &amp; &amp-foo; &copy &b=2; &#38; &amp;#38;",
+      value: "Research & &amp-foo; &copy &b=2; & &#38;",
+    },
+  ];
+  return values.flatMap(({ id, xml, value }) =>
+    ["text", "single", "double", "relationship"].map((context): ReviewCase => {
+      const title = context === "relationship" ? "Linked Research Report" : "Attribute Report";
+      let options: ReviewCase["options"];
+      if (context === "text")
+        options = {
+          body: `<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>${xml}</w:t></w:r></w:p>`,
+        };
+      else if (context === "relationship")
+        options = {
+          body: `<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:hyperlink r:id="link">${run(title)}</w:hyperlink></w:p>`,
+          relationships: `<Relationship Id="link" Type="${REL_NS}/hyperlink" Target="${xml}"/>`,
+        };
+      else {
+        const quote = context === "single" ? "'" : '"';
+        options = {
+          documentXml: documentXml(
+            `<w:p><w:pPr><w:pStyle w:val=${quote}${xml}${quote}/></w:pPr>${run(title)}</w:p>`,
+          ),
+          styles: stylesXml(
+            `<w:style w:type="paragraph" w:styleId=${quote}${xml}${quote}><w:name w:val="Heading 1"/></w:style>`,
+          ),
+        };
+      }
+      if (value === undefined)
+        return {
+          id: `review-ampersand-classification-${id}-${context}`,
+          options,
+          diagnostic: "docx_xml_invalid",
+        };
+      const text = context === "text" ? value : title;
+      return {
+        id: `review-ampersand-classification-${id}-${context}`,
+        options,
+        rawText: `${text}\n\n`,
+        headings: [{ level: 1, text }],
+      };
+    }),
+  );
 }
 
 /** Physical selected-part size is unchanged by temporary source escaping. */

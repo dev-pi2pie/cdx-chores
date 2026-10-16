@@ -26,7 +26,10 @@ import { children, elementText, first, parseXml } from "../../src/docx/xml";
 import { createAdditionalDocxContentProbes } from "./fixtures/docx-content-probes";
 import { createDocxReviewCases } from "./fixtures/docx-review-cases";
 import { createDocxXmlCases } from "./fixtures/docx-xml-cases";
-import { createDocxAmpersandCases } from "./fixtures/docx-ampersand-cases";
+import {
+  createDocxAmpersandCases,
+  createDocxAmpersandClassificationCases,
+} from "./fixtures/docx-ampersand-cases";
 
 function symbol(font: string | undefined, char: string | undefined): string {
   return `<w:r><w:sym${font === undefined ? "" : ` w:font="${xmlEscape(font)}"`}${char === undefined ? "" : ` w:char="${xmlEscape(char)}"`}/></w:r>`;
@@ -63,6 +66,35 @@ function evidence(value: DocxDocumentFacts) {
 }
 
 describe("DOCX review follow-up content cases", () => {
+  test("ampersand classification preserves mixed literals and exact references", () => {
+    const source = "A &amp-foo; &b=2; &é; &amp; &#38; &amp;#38;";
+    for (const quote of ['"', "'"]) {
+      const root = parseXml(`<root value=${quote}${source}${quote}>${source}</root>`)!;
+      expect(root.attributes.get("value")).toBe("A &amp-foo; &b=2; &é; & & &#38;");
+      expect(elementText(root)).toBe("A &amp-foo; &b=2; &é; & & &#38;");
+    }
+  });
+
+  test("ampersand classification stays within each quoted value and text span", () => {
+    for (const quote of ['"', "'"]) {
+      const root = parseXml(`<root value=${quote}&tail${quote}>; &b=2;</root>`)!;
+      expect(root.attributes.get("value")).toBe("&tail");
+      expect(elementText(root)).toBe("; &b=2;");
+    }
+  });
+
+  test("literal lookalikes preserve named and numeric reference failure boundaries", () => {
+    for (const reference of ["&am;", "&ampx;", "&_name;", "&123;"]) {
+      for (const quote of ['"', "'"])
+        expect(() => parseXml(`<root value=${quote}&amp-foo; ${reference}${quote}/>`)).toThrow(
+          "docx_xml_invalid",
+        );
+      expect(() => parseXml(`<root>&amp-foo; ${reference}</root>`)).toThrow("docx_xml_invalid");
+    }
+    for (const reference of ["&#xZZ;", "&#"])
+      expect(() => parseXml(`<root>&amp-foo; ${reference}</root>`)).toThrow("docx_xml_invalid");
+  });
+
   test("bare ampersands in XML values remain literal alongside references", () => {
     for (const quote of ['"', "'"]) {
       const root = parseXml(
@@ -247,6 +279,7 @@ describe("DOCX review follow-up content cases", () => {
     ...createDocxReviewCases(),
     ...createDocxXmlCases(),
     ...createDocxAmpersandCases(),
+    ...createDocxAmpersandClassificationCases(),
   ]) {
     test(item.id, async () => {
       const result = await readDocxDocument(buildDocxPackage(item.options));
