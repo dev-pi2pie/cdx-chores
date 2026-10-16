@@ -116,7 +116,9 @@ export class ContentLoader {
     for (const relationship of await this.relationships(relationshipPath(part))) {
       const id = relationship.attributes.get("Id");
       const target = relationship.attributes.get("Target");
-      if (id && target) targets.set(`${source}:${id}`, target);
+      const key = `${source}:${id}`;
+      if (target === undefined) targets.delete(key);
+      else targets.set(key, target);
     }
     return targets;
   }

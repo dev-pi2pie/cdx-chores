@@ -93,6 +93,9 @@ export function projectedEvidence(nodes: Projection[], limits: DocxLimits) {
     for (const node of values) {
       if ("text" in node) write(escapeText(node.text));
       else if ("tag" in node) {
+        // Unresolved targets fail only when a nonempty link survives projection.
+        if (Object.hasOwn(node.tag.attributes, "href") && node.tag.attributes.href === undefined)
+          throw new Error("docx_initial_reader_error");
         const name = node.tag.names[0]!;
         write(`<${name}>`);
         if (node.children.length || !voidTags.has(name)) {

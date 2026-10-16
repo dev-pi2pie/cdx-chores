@@ -55,7 +55,7 @@ The original follow-up is complete. Earlier platform and validation limitations 
 Address the remaining XML accounting, hyperlink compatibility, and manual harness findings from review of `bc6e3e98..97cdb606`. Source baseline: `97cdb606`. Earlier results above remain historical; the accepted CDATA departure and resource limits are unchanged.
 
 - [x] Charge each physical XML part once, including failed inspections; preserve safety failures and distinct-entry accounting.
-- [ ] Preserve empty-ID and unresolved-target hyperlink behavior, with independent evidence and prompt regressions.
+- [x] Preserve empty-ID and unresolved-target hyperlink behavior, with independent evidence and prompt regressions.
 - [ ] Require POSIX process groups before manual execution creates artifacts; remove ineffective Windows handling and redundant options.
 - [ ] Pass focused, routine, built-runtime, measurement, and packed-consumer checks.
 - [ ] Review the complete follow-up range and combined implementation, resolve findings, and confirm cleanup.
@@ -63,7 +63,7 @@ Address the remaining XML accounting, hyperlink compatibility, and manual harnes
 | Area | Outcome |
 | --- | --- |
 | XML accounting | Failed scans retain their original charge and failure; focused resource/content and compiled evidence/prompt regressions passed |
-| Hyperlinks | Pending |
+| Hyperlinks | Twenty-three named cases match historical behavior, including empty/duplicate targets, fragment merging, suppression, and unused notes/comments; focused unit and compiled evidence/prompt checks passed |
 | Manual harness | Pending |
 | Verification | Pending |
 | Review / cleanup | Pending |

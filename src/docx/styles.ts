@@ -5,7 +5,7 @@ import { children, first, type Element } from "./xml";
 
 export interface ProjectionTag {
   names: string[];
-  attributes: Record<string, string>;
+  attributes: Record<string, string | undefined>;
   fresh: boolean;
   separator: string;
 }

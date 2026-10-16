@@ -90,6 +90,7 @@ export function readContent(
   parent: Element,
   diagnostics: Set<string>,
   numberingFor?: (node: Element) => unknown,
+  hyperlinkFor?: (node: Element) => string | undefined,
 ): Content[] {
   let deletedParagraph: Element[] = [];
   const fields: Field[] = [];
@@ -239,7 +240,10 @@ export function readContent(
     if (passthrough.has(node.name)) {
       const read = nested(node);
       return node.name === "w:hyperlink"
-        ? { values: [{ kind: "link", node, children: read.values }], extra: read.extra }
+        ? {
+            values: [{ kind: "link", node, href: hyperlinkFor?.(node), children: read.values }],
+            extra: read.extra,
+          }
         : read;
     }
     return empty();
@@ -254,6 +258,7 @@ export function readNotes(
   type: "footnote" | "endnote",
   diagnostics: Set<string>,
   numberingFor?: (node: Element) => unknown,
+  hyperlinkFor?: (node: Element) => string | undefined,
 ) {
   const notes = new Map<string, Content[]>();
   for (const note of children(root)) {
@@ -262,7 +267,7 @@ export function readNotes(
     if (special === "separator" || special === "continuationSeparator") continue;
     notes.set(
       note.attributes.get("w:id") ?? "undefined",
-      readContent(note, diagnostics, numberingFor),
+      readContent(note, diagnostics, numberingFor, hyperlinkFor),
     );
   }
   return notes;
@@ -272,12 +277,13 @@ export function readComments(
   root: Element | undefined,
   diagnostics: Set<string>,
   numberingFor?: (node: Element) => unknown,
+  hyperlinkFor?: (node: Element) => string | undefined,
 ) {
   const comments = new Map<string, { body: Content[]; initials: string }>();
   for (const comment of children(root)) {
     if (comment.name !== "w:comment") continue;
     comments.set(comment.attributes.get("w:id") ?? "undefined", {
-      body: readContent(comment, diagnostics, numberingFor),
+      body: readContent(comment, diagnostics, numberingFor, hyperlinkFor),
       initials: comment.attributes.get("w:initials")?.trim() ?? "",
     });
   }

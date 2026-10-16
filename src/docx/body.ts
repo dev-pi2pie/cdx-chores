@@ -28,10 +28,34 @@ export function documentBodyFacts(input: DocxBodyInput): DocxBodyFacts {
     if (!numbering.has(node)) numbering.set(node, resolveNumbering(node));
     return numbering.get(node);
   }
-  const body = readContent(input.body, diagnostics, numberingFor);
-  const footnotes = readNotes(input.footnotes, "footnote", diagnostics, numberingFor);
-  const endnotes = readNotes(input.endnotes, "endnote", diagnostics, numberingFor);
-  const comments = readComments(input.comments, diagnostics, numberingFor);
+  function hyperlinks(source: Source) {
+    return (node: Element): string | undefined => {
+      const id = node.attributes.get("r:id");
+      if (!id) return undefined;
+      const target = input.hyperlinkTargets?.get(`${source}:${id}`);
+      const anchor = node.attributes.get("w:anchor");
+      if (!anchor) return target;
+      // Fragment replacement is eager, even for unused notes or hidden content.
+      if (target === undefined) throw new Error("docx_initial_reader_error");
+      return `${target.replace(/#.*$/, "")}#${anchor}`;
+    };
+  }
+  const body = readContent(input.body, diagnostics, numberingFor, hyperlinks("document"));
+  const footnotes = readNotes(
+    input.footnotes,
+    "footnote",
+    diagnostics,
+    numberingFor,
+    hyperlinks("footnotes"),
+  );
+  const endnotes = readNotes(
+    input.endnotes,
+    "endnote",
+    diagnostics,
+    numberingFor,
+    hyperlinks("endnotes"),
+  );
+  const comments = readComments(input.comments, diagnostics, numberingFor, hyperlinks("comments"));
   const pathFor = styleProjection(
     input.styles,
     input.styleMap,
@@ -128,14 +152,8 @@ export function documentBodyFacts(input: DocxBodyInput): DocxBodyFacts {
       const tag = projectionTag("a");
       const id = value.node.attributes.get("r:id");
       const anchor = value.node.attributes.get("w:anchor");
-      if (id === undefined && anchor === undefined && value.href === undefined)
-        return render(value.children, source);
-      const target =
-        value.href ??
-        (id === undefined ? undefined : input.hyperlinkTargets?.get(`${source}:${id}`));
-      tag.attributes.href = anchor
-        ? `${target?.replace(/#.*$/, "") ?? ""}#${anchor}`
-        : (target ?? "");
+      if (!id && !anchor && value.href === undefined) return render(value.children, source);
+      tag.attributes.href = value.href ?? (!id && anchor ? `#${anchor}` : undefined);
       tag.attributes.target = value.node.attributes.get("w:tgtFrame") ?? "";
       return [budget.element(tag, render(value.children, source))];
     }

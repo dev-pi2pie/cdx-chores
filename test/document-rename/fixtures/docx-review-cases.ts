@@ -2,8 +2,10 @@ import type { DocumentTitleEvidence } from "../../../src/adapters/codex/document
 import {
   buildDocxPackage,
   paragraph,
+  REL_NS,
   run,
   stylesXml,
+  WORD_NS,
   type DocxPackageOptions,
 } from "./docx-baseline/corpus/builder";
 import type { DocxBaselineCase } from "./docx-baseline/corpus/types";
@@ -17,6 +19,17 @@ interface ReviewCase {
   leadText?: string;
   diagnostic?: string;
   reason?: string;
+}
+
+interface HyperlinkCase {
+  id: string;
+  attributes: string;
+  text?: string;
+  contents?: string;
+  rawText?: string;
+  relationships?: string;
+  styleMap?: string;
+  diagnostic?: string;
 }
 
 const strongStyles = stylesXml(
@@ -55,6 +68,118 @@ export function createDocxReviewCases(): ReviewCase[] {
       rawText: "Metadata Accounting Report\n\n",
       headings: [{ level: 1, text: "Metadata Accounting Report" }],
     },
+    ...[
+      { id: "no-id", attributes: "", text: "AnnualFinancialReport" },
+      { id: "empty-id", attributes: 'r:id=""', text: "AnnualFinancialReport" },
+      { id: "empty-anchor", attributes: 'w:anchor=""', text: "AnnualFinancialReport" },
+      { id: "anchor", attributes: 'w:anchor="part"', text: "Annual Financial Report" },
+      {
+        id: "empty-id-anchor",
+        attributes: 'r:id="" w:anchor="part"',
+        text: "Annual Financial Report",
+      },
+      ...[
+        { id: "valid", target: 'Target="https://example.invalid/report#old"' },
+        { id: "empty-target", target: 'Target=""' },
+        { id: "missing-target", target: "", diagnostic: "docx_initial_reader_error" },
+      ].map(({ id, target, diagnostic }) => ({
+        id,
+        attributes: 'r:id="link"',
+        relationships: `<Relationship Id="link" Type="${REL_NS}/hyperlink" ${target}/>`,
+        text: "Annual Financial Report",
+        diagnostic,
+      })),
+      { id: "unresolved", attributes: 'r:id="missing"', diagnostic: "docx_initial_reader_error" },
+      {
+        id: "unresolved-empty",
+        attributes: 'r:id="missing"',
+        contents: run(""),
+        rawText: "AnnualReport\n\n",
+        text: "AnnualReport",
+      },
+      {
+        id: "unresolved-suppressed",
+        attributes: 'r:id="missing"',
+        styleMap: "p.Heading1 => !",
+        text: "",
+      },
+      {
+        id: "unresolved-hidden-run",
+        attributes: 'r:id="missing"',
+        contents: '<w:r><w:rPr><w:rStyle w:val="Hidden"/></w:rPr><w:t>Financial</w:t></w:r>',
+        styleMap: "r.Hidden => !",
+        text: "AnnualReport",
+      },
+      {
+        id: "unresolved-anchor-suppressed",
+        attributes: 'r:id="missing" w:anchor="part"',
+        styleMap: "p.Heading1 => !",
+        diagnostic: "docx_initial_reader_error",
+      },
+      {
+        id: "unresolved-anchor-empty",
+        attributes: 'r:id="missing" w:anchor="part"',
+        contents: run(""),
+        diagnostic: "docx_initial_reader_error",
+      },
+      ...[false, true].map((empty) => ({
+        id: `duplicate-${empty ? "empty" : "missing"}-target`,
+        attributes: 'r:id="link"',
+        relationships: `<Relationship Id="link" Type="${REL_NS}/hyperlink" Target="https://example.invalid/report"/><Relationship Id="link" Type="${REL_NS}/hyperlink"${empty ? ' Target=""' : ""}/>`,
+        text: "Annual Financial Report",
+        diagnostic: empty ? undefined : "docx_initial_reader_error",
+      })),
+    ].map((item: HyperlinkCase): ReviewCase => {
+      const rawText = item.rawText ?? "AnnualFinancialReport\n\n";
+      const text = item.text ?? "";
+      return {
+        id: `review-hyperlink-${item.id}`,
+        options: {
+          body: heading(
+            run("Annual") +
+              `<w:hyperlink ${item.attributes}>${item.contents ?? run("Financial")}</w:hyperlink>` +
+              run("Report"),
+          ),
+          relationships: item.relationships,
+          extraParts:
+            item.styleMap === undefined ? undefined : [["mammoth/style-map", item.styleMap]],
+        },
+        rawText,
+        headings: text ? [{ level: 1, text }] : [],
+        titleCandidates: [...new Set([text, rawText.trim()].filter(Boolean))],
+        diagnostic: item.diagnostic,
+      };
+    }),
+    {
+      id: "review-hyperlink-fragment-merge",
+      options: {
+        body: heading(
+          run("Annual") +
+            `<w:hyperlink r:id="link" w:anchor="part">${run("Financial")}</w:hyperlink><w:hyperlink r:id="direct">${run("Report")}</w:hyperlink>`,
+        ),
+        relationships: `<Relationship Id="link" Type="${REL_NS}/hyperlink" Target="https://example.invalid/report#old"/><Relationship Id="direct" Type="${REL_NS}/hyperlink" Target="https://example.invalid/report#part"/>`,
+      },
+      rawText: "AnnualFinancialReport\n\n",
+      headings: [{ level: 1, text: "Annual FinancialReport" }],
+      titleCandidates: ["Annual FinancialReport", "AnnualFinancialReport"],
+    },
+    ...["footnote", "endnote", "comment"].flatMap((kind) =>
+      [false, true].map((anchor): ReviewCase => ({
+        id: `review-hyperlink-unresolved${anchor ? "-anchor" : ""}-unused-${kind}`,
+        options: {
+          body: paragraph("Main report", "Heading1"),
+          extraParts: [
+            [
+              `word/${kind}s.xml`,
+              `<w:${kind}s xmlns:w="${WORD_NS}" xmlns:r="${REL_NS}"><w:${kind} w:id="1"><w:p><w:hyperlink r:id="missing"${anchor ? ' w:anchor="part"' : ""}>${run("Unused")}</w:hyperlink></w:p></w:${kind}></w:${kind}s>`,
+            ],
+          ],
+        },
+        rawText: "Main report\n\n",
+        headings: [{ level: 1, text: "Main report" }],
+        diagnostic: anchor ? "docx_initial_reader_error" : undefined,
+      })),
+    ),
     {
       id: "review-strong-heading-boundaries",
       options: { body: heading(run("Annual") + strongRun + run("Report")), styles: strongStyles },
@@ -242,8 +367,8 @@ export function expectedReviewEvidence(
     extension: ".docx",
     detectedType: "docx",
     titleCandidates: item.titleCandidates ?? headings,
-    headings,
-    tocCandidates: headings,
+    headings: headings.length ? headings : undefined,
+    tocCandidates: headings.length ? headings : undefined,
     leadText: item.leadText ?? item.rawText!.trim().replace(/\n+/g, " "),
     metadata: { extractor: "docx-reader" },
     warnings: ["docx_metadata_unavailable"],
