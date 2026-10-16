@@ -26,10 +26,22 @@ describe("Markdown PDF deterministic Project renderer contract", () => {
         throw new Error("deterministic Project fixture must not invoke Codex");
       };
 
-      for (const scenario of PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS) {
-        const launch = contract.projectLaunches[scenario.id];
+      const requiredProjects = [
+        { id: "project-deterministic-no-base-bundle", mode: "cover-image-only" },
+        { id: "project-deterministic-base-profile-equivalence", mode: "base-profile-only" },
+      ] as const;
+      for (const required of requiredProjects) {
+        const scenario = PAGE_NUMBER_PROJECT_RENDERER_SCENARIOS.find(
+          (candidate) => candidate.id === required.id,
+        );
+        expect(scenario).toBeDefined();
+        if (!scenario) throw new Error(`missing required product scenario: ${required.id}`);
+        expect(scenario.authoring.mode).toBe(required.mode);
+        const launch = contract.projectLaunches[required.id];
         expect(launch).toBeDefined();
-        if (!launch) continue;
+        if (!launch) throw new Error(`missing required product launch: ${required.id}`);
+        expect(Boolean(launch.coverImagePath)).toBe(required.mode === "cover-image-only");
+        expect(Boolean(launch.baseProfilePath)).toBe(required.mode === "base-profile-only");
         const { runtime, stdout } = createActionTestRuntime({
           cwd: launch.authoringDirectory,
           now: () => new Date("2026-08-13T08:00:00.000Z"),
