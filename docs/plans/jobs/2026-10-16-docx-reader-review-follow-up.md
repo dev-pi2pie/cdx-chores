@@ -2,7 +2,7 @@
 title: "DOCX reader review follow-up"
 created-date: 2026-10-16
 modified-date: 2026-10-17
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -199,10 +199,14 @@ Restore punctuation-bearing literals identified by review of `bc6e3e98..87bffa51
 Address the field-classification finding from review of `bc6e3e98..f3aecfeb`. Source baseline: `f3aecfeb`. Preserve classification at separators and the historical end-time parsing of unseparated fields; accepted limits and frozen captures remain unchanged.
 
 - [x] Retain classified outer fields across nested instructions; add synthetic DOCX regressions and separator/end controls.
-- [ ] Pass focused, routine, built-runtime, and quality checks; update coverage references.
-- [ ] Review the complete follow-up and combined DOCX ranges, resolve findings, and clean owned artifacts.
+- [x] Pass focused, routine, built-runtime, and quality checks; update coverage references.
+- [x] Review the complete follow-up and combined DOCX ranges, resolve findings, and clean owned artifacts.
 
 | Area | Outcome |
 | --- | --- |
-| Field state / regressions | Nine synthetic DOCX cases cover nested fields and separator/end controls; three pre-fix failures reproduced; original Node adapter evidence/prompts and checkbox counts match |
-| Initial verification | 382 focused cases, lint, format, types, and shipping build passed; routine and built-runtime checks pending |
+| Field state / regressions | [Nine synthetic DOCX cases](../../../test/document-rename/fixtures/docx-field-cases.ts) cover nested fields and separator/end controls; three pre-fix failures reproduced; original Node adapter evidence/prompts and checkbox counts match |
+| Routine verification | 382 focused, 1,988 unit, and 2,331 application cases passed; application 237.13 seconds under unchanged 240-second deadline; lint, format, types, and shipping build passed |
+| Built runtime comparisons | 134 frozen and 264 follow-up cases per format on primary/minimum Node passed; complete evidence/prompts checked; frozen captures unchanged |
+| Earlier resource / package evidence | Measurements retained from the ampersand-classification follow-up and packed consumers from the drawing follow-up; resource and distribution boundaries unchanged |
+| Full-range review | `f3aecfeb..f8149261` reviewed with integration checks across `bc6e3e98..f8149261`; no remaining material findings; closing docs checked separately |
+| Artifact cleanup | Owned processes settled and temporary inputs, builds, runtime cache, and logs removed; managed-test entries restored; no smoke artifacts retained |
