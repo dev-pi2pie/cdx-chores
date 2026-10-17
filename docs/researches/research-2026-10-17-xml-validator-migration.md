@@ -9,9 +9,9 @@ agent: codex
 
 Review replacing the deprecated `XMLValidator` in `fast-xml-parser@5.11.2` with `SyntaxValidator` from `fast-xml-validator@1.4.2`.
 
-**Retain the current exact-pinned parser and validator for now.** The replacement adds an unused business-rule validation stack and changes input acceptance. Removing the deprecation alone does not justify that cost. This review found no announced removal deadline or current failure requiring immediate migration.
+**Draft the migration to the public `SyntaxValidator` API while retaining `XMLParser`.** The implementation plan accounts for the additional dependency tree and changes in input acceptance documented below. This review found no announced removal deadline or current failure requiring immediate migration.
 
-Migration is deferred; keep the existing implementation and dependencies. This research remains draft because the proposed migration has not been implemented or validated in the application.
+The earlier decision to defer migration is followed by an implementation-planning step. Runtime code and dependencies remain unchanged. This research stays in `draft` until the migration has implementation and application-validation evidence in a linked job record.
 
 ## Deprecation Timeline
 
@@ -79,6 +79,10 @@ A migration must also add the validator to the reader dependency list in `script
 Reviewed on 2026-10-17 using an isolated dependency-resolution experiment and 27 synthetic XML cases on Node 26.5.0 and Bun 1.4.3. ESM/CommonJS results agreed within each validator; observed compatibility differences are recorded above. Repository dependencies were unchanged.
 
 These findings cover dependency footprint and standalone validator behavior. Application integration and distribution compatibility have not been verified.
+
+## Related Plans
+
+- [XML validator migration](../plans/plan-2026-10-17-xml-validator-migration.md): draft implementation and validation steps.
 
 ## Related Research
 
