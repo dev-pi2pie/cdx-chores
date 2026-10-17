@@ -29,6 +29,8 @@ import { createDocxReviewCases } from "./fixtures/docx-review-cases";
 import { createDocxXmlCases } from "./fixtures/docx-xml-cases";
 import { createDocxFieldCases } from "./fixtures/docx-field-cases";
 import { createDocxHyperlinkFragmentCases } from "./fixtures/docx-hyperlink-cases";
+import { createDocxRelationshipCases } from "./fixtures/docx-relationship-cases";
+import { relationshipPath } from "../../src/docx/content-loading";
 import {
   createDocxAmpersandCases,
   createDocxAmpersandClassificationCases,
@@ -69,6 +71,18 @@ function evidence(value: DocxDocumentFacts) {
 }
 
 describe("DOCX review follow-up content cases", () => {
+  test("relationship paths retain literal directories and filenames", () => {
+    for (const [part, expected] of [
+      ["/report.xml", "/_rels/report.xml.rels"],
+      ["/word/document.xml", "/word/_rels/document.xml.rels"],
+      ["/content/./report.xml", "/content/./_rels/report.xml.rels"],
+      ["/content/old/../report.xml", "/content/old/../_rels/report.xml.rels"],
+      ["/content%20parts/report%20title.xml", "/content%20parts/_rels/report%20title.xml.rels"],
+    ]) {
+      expect(relationshipPath(part!), part).toBe(expected!);
+    }
+  });
+
   for (const item of createDocxFieldCases()) {
     test(`${item.id} preserves field classification and displayed evidence`, async () => {
       const root = parseXml(documentXml(item.options.body!))!;
@@ -307,6 +321,7 @@ describe("DOCX review follow-up content cases", () => {
     ...createDocxAmpersandCases(),
     ...createDocxAmpersandClassificationCases(),
     ...createDocxHyperlinkFragmentCases(),
+    ...createDocxRelationshipCases(),
   ]) {
     test(item.id, async () => {
       const result = await readDocxDocument(buildDocxPackage(item.options));

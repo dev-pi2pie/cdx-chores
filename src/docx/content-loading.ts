@@ -7,7 +7,9 @@ import type { XmlBudget } from "./xml-budget";
 const RELATIONSHIP_PREFIX = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/";
 
 export function relationshipPath(part: string): string {
-  return `${posix.dirname(part)}/_rels/${posix.basename(part)}.rels`;
+  const directory = posix.dirname(part);
+  // Preserve literal directories; only the root already supplies the separator.
+  return `${directory === "/" ? "" : directory}/_rels/${posix.basename(part)}.rels`;
 }
 
 /** Office content stays UTF-8; metadata retains its separate encoding contract. */
