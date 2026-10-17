@@ -451,7 +451,7 @@ Change set: `document-rename`.
 
 The DOCX baseline and noncyclic contract tests now compare compiled product observations with historical evidence/prompts; the live Mammoth snapshot was retired in Phase 9. Reusable corpus, pure assertions/types, dimensions, and frozen expectations remain under `test/document-rename/fixtures/docx-baseline/`. Candidate cases/comparisons live under `fixtures/docx-candidate/` and exercise product code directly. Semantic/contract cases, `adapters/docx-product.app.test.ts`, and the existing DOCX title-evidence cases use the compiled product driver under `fixtures/docx-product/`; `docx-evidence.unit.test.ts` owns adapter failure containment. Content, numbering, resource, and runtime regressions retain their existing owners; runtime fixture sources remain under `fixtures/docx-runtime/`.
 
-Manual launcher, inspector, harness, help, and retention checks have left routine suites. Comparison, measurement, package consumers, and frozen cycle comparisons remain explicit manual commands; see the [ownership catalog](test-suite-case-matrices.md#document-rename-baseline) and [Phase 6.3 record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-manual-script-simplification-and-test-ownership).
+Manual launcher, inspector, harness, help, and retention checks have left routine suites. Comparison, measurement, package consumers, and frozen cycle comparisons remain explicit manual commands; see the [ownership catalog](test-suite-case-matrices.md#document-rename) and [Phase 6.3 record](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-manual-script-simplification-and-test-ownership).
 
 ### Markdown DOCX
 

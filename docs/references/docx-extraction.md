@@ -55,6 +55,6 @@ The repository maintainer owns dependency/security and provenance review, editor
 ## Implementation and Evidence
 
 - [Default limits](../../src/docx/limits.ts), [supervised runtime](../../src/docx/runtime/index.ts), and [CLI size prefilter](../../src/cli/actions/rename/codex/candidates.ts).
-- [Evidence assembly](../../src/adapters/codex/document-rename/extractors/docx-evidence.ts) and [regression coverage catalog](test-suite-case-matrices.md#document-rename-baseline).
+- [Evidence assembly](../../src/adapters/codex/document-rename/extractors/docx-evidence.ts) and [regression coverage catalog](test-suite-case-matrices.md#document-rename).
 - [Implementation and shipping verification](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md) and [compatibility follow-up verification](../plans/jobs/2026-10-16-docx-reader-review-follow-up.md).
 - Historical rationale: [DOCX replacement research](../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md).
