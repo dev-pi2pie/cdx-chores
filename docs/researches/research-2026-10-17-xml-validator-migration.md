@@ -79,11 +79,11 @@ A migration must also add the validator to the reader dependency list in `script
 
 Reviewed on 2026-10-17 using an isolated dependency-resolution experiment and 27 synthetic XML cases on Node 26.5.0 and Bun 1.4.3. ESM/CommonJS results agreed within each validator; observed compatibility differences are recorded above. Repository dependencies were unchanged.
 
-These initial findings cover dependency footprint and standalone validator behavior. Phase 1 has since passed focused DOCX, metadata, report-reader, and build checks, recorded in the [unified job record](../plans/jobs/2026-10-17-xml-validator-migration.md#phase-1-dependency-and-caller-migration). Full Phase 2 suites and Phase 3 distribution/resource verification remain pending.
+These initial findings cover dependency footprint and standalone validator behavior. Phase 1 migration/build checks and Phase 2 behavior tests have since passed, including the full managed unit and application selections. The [unified job record](../plans/jobs/2026-10-17-xml-validator-migration.md) records results and the application-suite timeout adjustment used for verification. Phase 3 distribution/resource verification and dependency-finding disposition remain pending; this research remains draft.
 
 ## Related Plans
 
-- [XML validator migration](../plans/plan-2026-10-17-xml-validator-migration.md): draft implementation and validation steps.
+- [XML validator migration](../plans/plan-2026-10-17-xml-validator-migration.md): active implementation and validation steps.
 
 ## Related Research
 

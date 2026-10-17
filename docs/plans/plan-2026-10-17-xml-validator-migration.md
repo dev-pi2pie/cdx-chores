@@ -72,6 +72,8 @@ Phase 1 is complete. Focused verification and commit-range review are recorded i
 
 **Exit:** existing behavior checks pass and every observed migration difference has an intentional expected result. Record commands and outcomes in the job record; standalone validator probes do not substitute for integration coverage.
 
+Phase 2 is complete. Managed-suite results, the application verification timeout adjustment, and commit-range review are recorded in the [unified job record](jobs/2026-10-17-xml-validator-migration.md#phase-2-behavior-verification).
+
 ## Phase 3: Distribution and Closeout
 
 - [ ] Build the product and verify ESM/CJS loading, TypeScript declarations, and child/worker/parser assets on the primary Node runtime and minimum Node 22.23.0.
