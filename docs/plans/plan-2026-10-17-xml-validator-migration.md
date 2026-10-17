@@ -10,7 +10,7 @@ agent: codex
 
 Replace the seven deprecated `XMLValidator.validate` calls with syntax validation through `fast-xml-validator@1.4.2`, retaining `fast-xml-parser@5.11.2` for parsing. Preserve DOCX extraction diagnostics, optional metadata fallback, and test-report errors while recording the replacement's stricter input rules.
 
-Phases 1 and 2 are complete. The unified job record tracks the remaining verification and documentation closeout. The research remains `draft`.
+Phases 1–3 are complete. Full-plan review and documentation closeout are underway in Phase 4. The research remains `draft`.
 
 Scope includes the new production dependency, an internal validation helper, the five caller files identified in the research, the DOCX package verifier, and focused regression coverage. Parser replacement, other deprecated parser options, business-rule validation, public APIs, unrelated dependency updates, and a package-version bump are outside this change.
 
@@ -22,9 +22,9 @@ Use the [unified job record](jobs/2026-10-17-xml-validator-migration.md) for all
 
 Commit meaningful validated progress and review each phase's complete baseline-to-tip range. Reuse passing evidence; rerun affected checks only when subsequent changes, failures, or a concrete evidence gap justify it. Phase 4 also includes the full-plan review and separate documentation closeout review.
 
-## Proposed Usage
+## Implemented Usage
 
-Add `src/utils/xml-validation.ts` with one internal `isValidXml(xml: string): boolean` helper. Import it directly from runtime callers and development scripts; do not add it to the public utility barrel. The helper owns syntax-validator configuration and translates validation exceptions into `false`; callers retain their existing error and fallback policies.
+The internal `isValidXml(xml: string): boolean` helper lives in `src/utils/xml-validation.ts`. Runtime callers and development scripts import it directly; it is not exported from the public utility barrel. The helper owns syntax-validator configuration and translates validation exceptions into `false`; callers retain their existing error and fallback policies.
 
 ```ts
 import { SyntaxValidator } from "fast-xml-validator";

@@ -1,6 +1,7 @@
 ---
 title: "DOCX Extraction Limits and Behavior"
 created-date: 2026-10-17
+modified-date: 2026-10-17
 status: completed
 agent: codex
 ---
@@ -12,6 +13,8 @@ The internal DOCX reader supplies metadata, ordered text, and headings to the ex
 Extraction supports text evidence rather than general DOCX conversion: style and numbering rules affect heading/text projection; font symbols use the supported mappings, with unmapped symbols omitted and missing symbol fonts causing extraction failure. Layout rendering, OCR, external content loading, and general DOCX-to-HTML conversion are outside scope.
 
 Referenced footnote and endnote bodies contribute projected headings in main-document reference order; repeated references can repeat heading facts, while nested note references are not recursively expanded. Comment bodies contribute projected headings when a style rule enables comment references. Note and comment bodies are excluded from raw text used for lead text and raw-text title candidates. Missing referenced notes, or missing comments selected by a style rule, fail extraction.
+
+XML syntax validation rejects literal illegal control characters, malformed qualified names (such as `<a:b:c/>`), and XML 1.0 prefixed namespace undeclarations (`xmlns:w=""`). Required-part syntax failures yield `docx_xml_invalid` internally and `docx_extract_error` at the rename boundary; invalid optional metadata can be omitted while body extraction continues.
 
 ## Default Limits
 
@@ -50,11 +53,12 @@ Each document-title operation reuses one supervisor through its sequential extra
 
 Process behavior has been verified on macOS with Node.js. Linux and Windows remain unverified; passing manual process-group checks does not establish product portability.
 
-The repository maintainer owns dependency/security and provenance review, editor/corpus regressions, manual verification commands, and unsupported-content/diagnostic decisions. Changes to limits or relevant code/dependencies require renewed verification.
+The repository maintainer owns dependency/security and provenance review, editor/corpus regressions, manual verification commands, and unsupported-content/diagnostic decisions. Reuse applicable verification evidence; repeat checks only for affected changes, failures, or concrete evidence gaps.
 
 ## Implementation and Evidence
 
 - [Default limits](../../src/docx/limits.ts), [supervised runtime](../../src/docx/runtime/index.ts), and [CLI size prefilter](../../src/cli/actions/rename/codex/candidates.ts).
 - [Evidence assembly](../../src/adapters/codex/document-rename/extractors/docx-evidence.ts) and [regression coverage catalog](test-suite-case-matrices.md#document-rename).
 - [Implementation and shipping verification](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md) and [compatibility follow-up verification](../plans/jobs/2026-10-16-docx-reader-review-follow-up.md).
+- [XML validator migration and compatibility evidence](../plans/jobs/2026-10-17-xml-validator-migration.md).
 - Historical rationale: [DOCX replacement research](../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md).

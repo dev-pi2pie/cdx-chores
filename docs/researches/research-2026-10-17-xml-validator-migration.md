@@ -10,9 +10,9 @@ agent: codex
 
 Review replacing the deprecated `XMLValidator` in `fast-xml-parser@5.11.2` with `SyntaxValidator` from `fast-xml-validator@1.4.2`.
 
-**Draft the migration to the public `SyntaxValidator` API while retaining `XMLParser`.** The implementation plan accounts for the additional dependency tree and changes in input acceptance documented below. This review found no announced removal deadline or current failure requiring immediate migration.
+**The migration uses the public `SyntaxValidator` API while retaining `XMLParser`.** The implementation accounts for the additional dependency tree and changes in input acceptance documented below. The initial review found no announced removal deadline or failure requiring immediate migration.
 
-Implementation is underway under the linked plan. This research stays in `draft` while the [unified job record](../plans/jobs/2026-10-17-xml-validator-migration.md) gathers implementation, application, and distribution evidence.
+Implementation and verification evidence is recorded in the [unified job record](../plans/jobs/2026-10-17-xml-validator-migration.md). This research stays in `draft` while the linked plan proceeds through documentation closeout.
 
 ## Deprecation Timeline
 
@@ -40,7 +40,7 @@ The extra stack comes through the required `detailed-xml-validator` dependency: 
 
 Importing only `SyntaxValidator` does not avoid this footprint. The public ESM entry statically imports the business validator, the CommonJS bundle contains both validators, and the package exposes no supported syntax-only subpath. Our build externalizes runtime dependencies.[^validator-entry]
 
-All added manifests declare MIT licensing, but the three packages marked absent also lack the full MIT permission text in their inspected files. Adoption would extend the existing entity-package notice limitation.[^compact-registry][^base-registry][^entities-registry]
+All added manifests declare MIT licensing, but the three packages marked absent also lack the full MIT permission text in their inspected files.[^compact-registry][^base-registry][^entities-registry]
 
 ## Compatibility Findings
 
@@ -72,15 +72,15 @@ Seven validation calls appear across five files:
 | `scripts/testing/reports/report-files.ts` | 1 | Preserve `Malformed test report XML.` and file-identity checks. |
 | `scripts/testing/reports/report-validation.ts` | 1 | Preserve declaration rejection, report errors, and structural/count checks. |
 
-An untranslated validator exception from extraction would become `docx_initial_reader_error` in `src/docx/reader.ts`, losing the existing diagnostic. The metadata adapters already catch validation failures.
+The shared helper translates validator exceptions into `false`, preserving extraction's `docx_xml_invalid` diagnostic and metadata fallback behavior.
 
-A migration must also add the validator to the reader dependency list in `scripts/docx-candidate/package-inspect.mjs` and verify installed consumer resolution. Keep `XMLParser` and its existing options.
+The reader dependency list in `scripts/docx-candidate/package-inspect.mjs` includes the validator; installed consumer resolution is covered by the reused package results. `XMLParser` and its existing options are retained.
 
 ## Review Evidence
 
-Reviewed on 2026-10-17 using an isolated dependency-resolution experiment and 27 synthetic XML cases on Node 26.5.0 and Bun 1.4.3. ESM/CommonJS results agreed within each validator; observed compatibility differences are recorded above. Repository dependencies were unchanged.
+The initial review on 2026-10-17 used an isolated dependency-resolution experiment and 27 synthetic XML cases on Node 26.5.0 and Bun 1.4.3. ESM/CommonJS results agreed within each validator; observed compatibility differences are recorded above. That experiment left repository dependencies unchanged.
 
-These initial findings cover dependency footprint and standalone validator behavior. Phase 1 migration/build checks and Phase 2 behavior tests have since passed, including the full managed unit and application selections. The [unified job record](../plans/jobs/2026-10-17-xml-validator-migration.md) records results and the application-suite timeout adjustment used for verification. Phase 3 migration verification and Phase 4 documentation closeout remain pending; this research remains draft.
+Phases 1–3 have since established the implemented behavior, including managed unit/application results and reused package/comparison evidence. The [unified job record](../plans/jobs/2026-10-17-xml-validator-migration.md) records results and the application-suite timeout adjustment. Phase 4 full-plan review and documentation closeout are underway; this research remains draft.
 
 ## Related Plans
 

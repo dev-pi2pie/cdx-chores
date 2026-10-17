@@ -12,7 +12,7 @@ Unified execution record for all four phases of the [implementation plan](../pla
 
 ## Status
 
-Phases 1–3 are complete, including commit-range reviews. Phase 4 has not started. The plan is active, this record is in progress, and the research remains draft. Normal dependency installation has no separate notice-remediation gate; dedicated measurements and new verification harnesses are outside scope.
+Phases 1–3 are complete, including commit-range reviews. Phase 4 full-plan review and documentation closeout are underway. The plan is active, this record is in progress, and the research remains draft. Normal dependency installation has no separate notice-remediation gate; dedicated measurements and new verification harnesses are outside scope.
 
 ## Phase 1: Dependency and Caller Migration
 
@@ -55,8 +55,10 @@ Baseline: `8c733d6d3f295be47c21d17957e672f0ccd2081a`.
 
 ## Phase 4: Documentation and Closeout
 
+Baseline: `388f44fec311af6f4d506f733f84d97942d49429`.
+
 | Check | Result | Evidence/limitation |
 | --- | --- | --- |
 | Full-plan implementation review | Pending | Review from `366059861bb8796c8f136cf2c0337feb4de4e998` through the final implementation tip. |
-| Documentation and phase-range reviews | Pending | Behavior note, evidence links, checklists, front matter, and statuses remain to be finalized. |
+| Documentation and phase-range reviews | Pending | Added the DOCX behavior note and aligned research/reference wording; final review and link/status validation next. |
 | Completion | Pending | Requires Phase 3 and closeout reviews; research remains draft. |
