@@ -227,3 +227,21 @@ Address fragment replacement across line terminators from review of `bc6e3e98..5
 | Earlier resource / package evidence | Measurements retained from the ampersand-classification follow-up and packed consumers from the drawing follow-up; resource and distribution boundaries unchanged |
 | Full-range review | `58c620ab..e5207bbf` reviewed with integration checks across `bc6e3e98..e5207bbf`; no remaining material findings; closing docs checked separately |
 | Artifact cleanup | Owned processes settled; temporary inputs, builds, runtime cache, and logs removed; managed-test entries restored; no smoke artifacts retained |
+
+## Root-Level Relationship Follow-Up
+
+Address the root-level relationship-path finding. Source baseline: `7f2f472a`. A main part such as `/report.xml` incorrectly looks for `//_rels/report.xml.rels`, losing custom style discovery and failing unresolved hyperlinks. Earlier results remain historical; accepted limits and frozen captures remain unchanged.
+
+- [x] Reproduce root-level style and hyperlink failures; cover root-level note/comment sources and nested, missing, and literal-path controls.
+- [x] Correct relationship-path separator construction while preserving literal path semantics.
+- [x] Pass focused, routine, built-runtime, and quality checks; update coverage references.
+- [x] Review the complete follow-up and combined DOCX ranges, resolve findings, and confirm artifact cleanup.
+
+| Area | Outcome |
+| --- | --- |
+| Separator construction / regressions | [Fifteen synthetic DOCX cases](../../../test/document-rename/fixtures/docx-relationship-cases.ts) cover root-level main/note/comment relationships and ordinary, nested, literal-percent, missing, and unresolved-style controls; a direct path test preserves literal directory spellings. Seven focused pre-fix failures and the compiled lost-heading failure reproduced; all fifteen original Node adapter evidence/prompts match |
+| Routine verification | 421 focused, 2,027 managed unit, and 2,331 application cases passed; application 236.73 seconds under unchanged 240-second deadline; compiled follow-up evidence/prompts, lint, format, types, and shipping build passed |
+| Built runtime comparisons | 134 frozen and 302 follow-up cases per format on Node 26.5.0 and 22.23.0 passed; complete evidence/prompts checked; frozen captures unchanged |
+| Earlier resource / package evidence | Measurements retained from the ampersand-classification follow-up and packed consumers from the drawing follow-up; resource and distribution boundaries unchanged |
+| Full-range review | `7f2f472a..84e50018` reviewed with integration checks across `bc6e3e98..84e50018`; no remaining material findings; closing docs checked separately |
+| Artifact cleanup | Owned processes settled; temporary inputs, builds, runtime cache, and logs removed; managed unit/application cleanup confirmed; no smoke artifacts retained |
