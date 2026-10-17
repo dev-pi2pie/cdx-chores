@@ -1,7 +1,7 @@
 ---
 title: "XML Validator Migration"
 created-date: 2026-10-17
-status: draft
+status: active
 agent: codex
 ---
 
@@ -9,7 +9,7 @@ agent: codex
 
 Replace the seven deprecated `XMLValidator.validate` calls with syntax validation through `fast-xml-validator@1.4.2`, retaining `fast-xml-parser@5.11.2` for parsing. Preserve DOCX extraction diagnostics, optional metadata fallback, and test-report errors while recording the replacement's stricter input rules.
 
-This is an implementation proposal. The plan and execution record remain `draft` until implementation begins. The research remains `draft` until implementation and application verification provide supporting evidence.
+Implementation is underway. The unified job record tracks phase outcomes and verification. The research remains `draft` while implementation and application/distribution evidence is incomplete.
 
 Scope includes the new production dependency, an internal validation helper, the five caller files identified in the research, the DOCX package verifier, and focused regression coverage. Parser replacement, other deprecated parser options, business-rule validation, public APIs, unrelated dependency updates, and a package-version bump are outside this change.
 
@@ -45,7 +45,7 @@ In the two OOXML adapter files, a `false` result keeps metadata unavailable and 
 
 ## Compatibility Contract
 
-Preserve current valid-document outputs and application error boundaries. The proposed input changes are rejection of literal illegal control characters, malformed qualified names such as `<a:b:c/>`, and invalid DOCTYPE placement or repetition where the replacement detects them. These are deliberate migration differences, not claims of complete XML conformance; represent them with explicit expected results.
+Preserve current valid-document outputs and application error boundaries. The input changes are rejection of literal illegal control characters, malformed qualified names such as `<a:b:c/>`, invalid DOCTYPE placement or repetition, and prefixed namespace undeclaration (`xmlns:w=""`) in XML 1.0 where the replacement detects them. The undeclaration rule was identified during Phase 1 verification; XML 1.1 undeclaration and prefixes without declarations remain supported. These are deliberate migration differences, not claims of complete XML conformance; represent them with explicit expected results.
 
 Retain historical ampersand recovery, named/numeric reference boundaries, leading and empty trailing CDATA behavior, nonempty trailing CDATA rejection, and unbound-prefix handling. A validator exception must not leak into `docx_initial_reader_error`. Malformed optional metadata must remain recoverable rather than turning an otherwise readable document into a failure.
 
@@ -53,10 +53,10 @@ The research's seven added package versions and three published-notice gaps are 
 
 ## Phase 1: Dependency and Caller Migration
 
-- [ ] Record the execution baseline in the unified job record, mark that record `in-progress`, and mark this plan `active`. Keep the research in `draft` pending application-verification evidence.
-- [ ] Add exact-pinned `fast-xml-validator@1.4.2` to production dependencies and update `bun.lock`. Preserve the parser pin and unrelated dependency versions; explain any necessary resolution differences from the research snapshot.
-- [ ] Add the internal helper and replace all seven validation calls across `src/docx/xml.ts`, `src/adapters/docx/ooxml-metadata-parser.ts`, `src/adapters/docx/ooxml-part-discovery.ts`, `scripts/testing/reports/report-files.ts`, and `scripts/testing/reports/report-validation.ts`.
-- [ ] Add `fast-xml-validator` to `scripts/docx-candidate/package-inspect.mjs`'s explicit reader dependency list. Keep runtime dependencies external in existing ESM/CJS builds.
+- [x] Record the execution baseline in the unified job record, mark that record `in-progress`, and mark this plan `active`. Keep the research in `draft` pending application-verification evidence.
+- [x] Add exact-pinned `fast-xml-validator@1.4.2` to production dependencies and update `bun.lock`. Preserve the parser pin and unrelated dependency versions; explain any necessary resolution differences from the research snapshot.
+- [x] Add the internal helper and replace all seven validation calls across `src/docx/xml.ts`, `src/adapters/docx/ooxml-metadata-parser.ts`, `src/adapters/docx/ooxml-part-discovery.ts`, `scripts/testing/reports/report-files.ts`, and `scripts/testing/reports/report-validation.ts`.
+- [x] Add `fast-xml-validator` to `scripts/docx-candidate/package-inspect.mjs`'s explicit reader dependency list. Keep runtime dependencies external in existing ESM/CJS builds.
 
 **Exit:** all identified callers use the shared policy, caller error handling remains intact, and the manifest/verifier declare the new runtime dependency. No `XMLValidator` import or validation-overload workaround remains in source or scripts.
 

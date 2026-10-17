@@ -94,7 +94,8 @@ export function createDocxXmlCases(): ReviewCase[] {
           `<w:p xmlns:w="${uri}">`,
         ),
       },
-      ...content,
+      // XML 1.0 disallows undeclaring a prefix; the standalone validator enforces it.
+      ...(uri ? content : { diagnostic: "docx_xml_invalid" }),
     })),
     {
       id: "review-xml-namespace-unbound-attribute",

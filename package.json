@@ -60,6 +60,7 @@
     "commander": "^15.0.0",
     "dingbat-to-unicode": "1.0.2",
     "fast-xml-parser": "5.11.2",
+    "fast-xml-validator": "1.4.2",
     "papaparse": "^5.7.0",
     "parse5": "^8.0.1",
     "pdfjs-dist": "^6.4.299",

@@ -11,7 +11,7 @@ Review replacing the deprecated `XMLValidator` in `fast-xml-parser@5.11.2` with 
 
 **Draft the migration to the public `SyntaxValidator` API while retaining `XMLParser`.** The implementation plan accounts for the additional dependency tree and changes in input acceptance documented below. This review found no announced removal deadline or current failure requiring immediate migration.
 
-Runtime code and dependencies remain unchanged. This research stays in `draft` until implementation and application verification provide supporting evidence in the [unified job record](../plans/jobs/2026-10-17-xml-validator-migration.md).
+Implementation is underway under the linked plan. This research stays in `draft` while the [unified job record](../plans/jobs/2026-10-17-xml-validator-migration.md) gathers implementation, application, and distribution evidence.
 
 ## Deprecation Timeline
 
@@ -50,6 +50,7 @@ The replacement returns `true` on success and **throws on invalid XML**, whereas
 | Behavior | Review result | Migration requirement |
 | --- | --- | --- |
 | Literal control characters; names such as `<a:b:c/>` | Old validator accepts; replacement rejects. | Treat stricter rejection as an explicit behavior change. |
+| Prefixed namespace undeclaration (`xmlns:w=""`) in XML 1.0 | Phase 1 verification found an existing accepted fixture is rejected. | Record `docx_xml_invalid` for XML 1.0; retain XML 1.1 undeclaration and unbound-prefix handling. |
 | Declaration with `encoding` before `version` | Replacement rejects by default. | Use `xmlDeclaraion: { argPosition: false }` to preserve tolerance; the spelling is upstream's API. |
 | Multiple roots | Both accept by default, despite the replacement types documenting otherwise. | Configure the intended policy explicitly and retain extraction's root checks. |
 | Duplicate DOCTYPE declarations | Old validator accepts; replacement rejects. | Retain application declaration rejection before validation. |

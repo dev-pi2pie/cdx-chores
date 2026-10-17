@@ -1,4 +1,5 @@
-import { XMLParser, XMLValidator } from "fast-xml-parser";
+import { XMLParser } from "fast-xml-parser";
+import { isValidXml } from "../utils/xml-validation";
 import { resolveDocxLimits } from "./limits";
 import { XmlBudget } from "./xml-budget";
 
@@ -132,8 +133,7 @@ export function parseXml(
   part: string | object = "inline",
 ): Element | undefined {
   budget.inspect(part, xml);
-  if (XMLValidator.validate(escapeBareAmpersandsForValidation(xml)) !== true)
-    throw new Error("docx_xml_invalid");
+  if (!isValidXml(escapeBareAmpersandsForValidation(xml))) throw new Error("docx_xml_invalid");
   let root: Element | undefined;
   // The parser already preserves bare ampersands; avoid expanding synthetic references again.
   for (const value of parser.parse(normalizeAttributeWhitespace(xml)) as Record<
