@@ -11,7 +11,7 @@ Unified execution record for all three phases of the [implementation plan](../pl
 
 ## Status
 
-Phase 1 implementation and focused verification have passed; commit-range review is pending. Phase 2 has not started. The plan is active, this record is in progress, and the research remains draft. Phase 3 distribution/resource verification and dependency-finding disposition remain pending.
+Phase 1 is complete, including commit-range review. Phase 2 has not started. The plan is active, this record is in progress, and the research remains draft. Phase 3 distribution/resource verification and dependency-finding disposition remain pending.
 
 ## Phase 1: Dependency and Caller Migration
 
@@ -24,4 +24,4 @@ Baseline: `366059861bb8796c8f136cf2c0337feb4de4e998`.
 | Focused tests | `bun test` across helper, DOCX content/resource/runtime, OOXML metadata, report validation, and suite-selection files: 415 passed, 0 failed. Namespace-policy smoke: 3 passed. |
 | Static/build checks | `bun run tsc --noEmit`, `bun run lint`, `bun run format:check`, `bun run build`, and whitespace checks passed. Build retains the existing TypeScript 7 experimental-API warning. |
 | Compatibility difference | XML 1.0 prefixed namespace undeclaration now yields `docx_xml_invalid`; the existing fixture expectation and research/plan document this stricter rule. XML 1.1 undeclaration and undeclared prefixes remain accepted by the helper. |
-| Review | Pending checkpoint review. |
+| Review | `366059861bb8796c8f136cf2c0337feb4de4e998..8277a7eebd0f07b7ebfe1626596b483bddd71b38`: no material findings. Documentation closeout checked separately. |

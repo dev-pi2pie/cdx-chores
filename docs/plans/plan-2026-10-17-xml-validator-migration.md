@@ -60,6 +60,8 @@ The research's seven added package versions and three published-notice gaps are 
 
 **Exit:** all identified callers use the shared policy, caller error handling remains intact, and the manifest/verifier declare the new runtime dependency. No `XMLValidator` import or validation-overload workaround remains in source or scripts.
 
+Phase 1 is complete. Focused verification and commit-range review are recorded in the [unified job record](jobs/2026-10-17-xml-validator-migration.md#phase-1-dependency-and-caller-migration).
+
 ## Phase 2: Behavior Verification
 
 - [ ] Add helper regressions for valid/malformed XML, repeated calls after failures, declaration-order tolerance, multiple-root policy, and the stricter control-character/name checks.
