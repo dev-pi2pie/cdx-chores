@@ -11,7 +11,7 @@ Review replacing the deprecated `XMLValidator` in `fast-xml-parser@5.11.2` with 
 
 **Draft the migration to the public `SyntaxValidator` API while retaining `XMLParser`.** The implementation plan accounts for the additional dependency tree and changes in input acceptance documented below. This review found no announced removal deadline or current failure requiring immediate migration.
 
-The earlier decision to defer migration is followed by an implementation-planning step. Runtime code and dependencies remain unchanged. This research stays in `draft` until the migration has implementation and application-validation evidence in a linked job record.
+Runtime code and dependencies remain unchanged. This research stays in `draft` until implementation and application verification provide supporting evidence in the [unified job record](../plans/jobs/2026-10-17-xml-validator-migration.md).
 
 ## Deprecation Timeline
 
