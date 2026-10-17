@@ -86,6 +86,8 @@ Phase 2 is complete. Managed-suite results, the application verification timeout
 
 **Exit:** the migration matches its intended scope, verification evidence covers the affected behavior, and any necessary checks and phase-range review pass. No new harness, consumer-type fixture, or full installation-matrix rerun is required by default.
 
+Phase 3 is complete. Reused evidence and commit-range review are recorded in the [unified job record](jobs/2026-10-17-xml-validator-migration.md#phase-3-migration-verification).
+
 ## Phase 4: Documentation and Closeout
 
 - [ ] Add a concise migration behavior note to the current DOCX reference where needed. Align research evidence links and plan/job wording; keep research `draft` and execution details in the job record.

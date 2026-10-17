@@ -12,7 +12,7 @@ Unified execution record for all four phases of the [implementation plan](../pla
 
 ## Status
 
-Phases 1 and 2 are complete, including commit-range reviews. Phase 3 verification is recorded and awaits range review; Phase 4 has not started. The plan is active, this record is in progress, and the research remains draft. Normal dependency installation has no separate notice-remediation gate; dedicated measurements and new verification harnesses are outside scope.
+Phases 1–3 are complete, including commit-range reviews. Phase 4 has not started. The plan is active, this record is in progress, and the research remains draft. Normal dependency installation has no separate notice-remediation gate; dedicated measurements and new verification harnesses are outside scope.
 
 ## Phase 1: Dependency and Caller Migration
 
@@ -51,7 +51,7 @@ Baseline: `8c733d6d3f295be47c21d17957e672f0ccd2081a`.
 | Migration scope | Confirmed | Exact validator pin, seven callers, internal helper, and verifier declaration match the plan; existing lock records and public API are unchanged. |
 | Reused evidence | Passed | Phase 1–2 tests/build/static results, eight prior npm/Bun × primary/minimum Node × ESM/CJS runtime paths, and 134 frozen-output cases per format. Product sources, manifest/lock, and build inputs match the retained code. |
 | Follow-up checks | Not needed | No implementation change or uncovered migration behavior identified; no suites, matrices, or measurements rerun. Discarded consumer-type additions are not relied on. |
-| Phase-range review | Pending | Evidence checkpoint review next. |
+| Phase-range review | Passed | `8c733d6d3f295be47c21d17957e672f0ccd2081a..1de28cb5ac03fb0cc225e3b4b77e6d5a446eb683`: no findings. |
 
 ## Phase 4: Documentation and Closeout
 
