@@ -37,7 +37,8 @@ export function documentBodyFacts(input: DocxBodyInput): DocxBodyFacts {
       if (!anchor) return target;
       // Fragment replacement is eager, even for unused notes or hidden content.
       if (target === undefined) throw new Error("docx_initial_reader_error");
-      return `${target.replace(/#.*$/, "")}#${anchor}`;
+      const hash = target.indexOf("#");
+      return `${hash < 0 ? target : target.slice(0, hash)}#${anchor}`;
     };
   }
   function images(source: Source) {

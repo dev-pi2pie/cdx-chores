@@ -28,6 +28,7 @@ import { createAdditionalDocxContentProbes } from "./fixtures/docx-content-probe
 import { createDocxReviewCases } from "./fixtures/docx-review-cases";
 import { createDocxXmlCases } from "./fixtures/docx-xml-cases";
 import { createDocxFieldCases } from "./fixtures/docx-field-cases";
+import { createDocxHyperlinkFragmentCases } from "./fixtures/docx-hyperlink-cases";
 import {
   createDocxAmpersandCases,
   createDocxAmpersandClassificationCases,
@@ -305,6 +306,7 @@ describe("DOCX review follow-up content cases", () => {
     ...createDocxXmlCases(),
     ...createDocxAmpersandCases(),
     ...createDocxAmpersandClassificationCases(),
+    ...createDocxHyperlinkFragmentCases(),
   ]) {
     test(item.id, async () => {
       const result = await readDocxDocument(buildDocxPackage(item.options));

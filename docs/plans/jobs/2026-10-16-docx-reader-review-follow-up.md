@@ -2,7 +2,7 @@
 title: "DOCX reader review follow-up"
 created-date: 2026-10-16
 modified-date: 2026-10-17
-status: completed
+status: in-progress
 agent: codex
 ---
 
@@ -210,3 +210,17 @@ Address the field-classification finding from review of `bc6e3e98..f3aecfeb`. So
 | Earlier resource / package evidence | Measurements retained from the ampersand-classification follow-up and packed consumers from the drawing follow-up; resource and distribution boundaries unchanged |
 | Full-range review | `f3aecfeb..f8149261` reviewed with integration checks across `bc6e3e98..f8149261`; no remaining material findings; closing docs checked separately |
 | Artifact cleanup | Owned processes settled and temporary inputs, builds, runtime cache, and logs removed; managed-test entries restored; no smoke artifacts retained |
+
+## Hyperlink Fragment Follow-Up
+
+Address fragment replacement across line terminators from review of `bc6e3e98..58c620ab`. Source baseline: `58c620ab`. Preserve target strings, existing failure boundaries, accepted limits, and frozen captures.
+
+- [x] Replace the old fragment from the first `#`; add independent synthetic DOCX regressions and controls.
+- [ ] Pass focused, routine, built-runtime, and quality checks; update coverage references.
+- [ ] Review the complete follow-up and combined DOCX ranges, resolve findings, and clean owned artifacts.
+
+| Area | Outcome |
+| --- | --- |
+| Fragment replacement / regressions | Twenty-three synthetic DOCX cases cover all four content sources and target-preservation controls; sixteen pre-fix failures reproduced; original Node adapter evidence/prompts and raw text match |
+| Focused / quality checks | 405 focused cases, lint, format, types, and shipping build passed |
+| Verification / review / cleanup | Pending |
