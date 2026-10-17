@@ -10,7 +10,7 @@ agent: codex
 
 Replace the seven deprecated `XMLValidator.validate` calls with syntax validation through `fast-xml-validator@1.4.2`, retaining `fast-xml-parser@5.11.2` for parsing. Preserve DOCX extraction diagnostics, optional metadata fallback, and test-report errors while recording the replacement's stricter input rules.
 
-All four phases are complete. The unified job record contains migration evidence and phase/full-plan review outcomes. The research remains `draft`.
+All four phases are complete. The unified job record contains migration evidence and phase/full-plan review outcomes. The research, plan, and job record are `completed`.
 
 Scope includes the new production dependency, an internal validation helper, the five caller files identified in the research, the DOCX package verifier, and focused regression coverage. Parser replacement, other deprecated parser options, business-rule validation, public APIs, unrelated dependency updates, and a package-version bump are outside this change.
 
@@ -90,10 +90,10 @@ Phase 3 is complete. Reused evidence and commit-range review are recorded in the
 
 ## Phase 4: Documentation and Closeout
 
-- [x] Add a concise migration behavior note to the current DOCX reference where needed. Align research evidence links and plan/job wording; keep research `draft` and execution details in the job record.
+- [x] Add a concise migration behavior note to the current DOCX reference where needed. Align research evidence links and research/plan/job status wording; keep execution details in the job record.
 - [x] Review the full implementation range from `366059861bb8796c8f136cf2c0337feb4de4e998` through the final implementation tip. Address findings, verify affected fixes, and review the expanded range before recording exact hashes and disposition.
 - [x] Review the documentation closeout separately and validate links, front matter, evidence, checklists, and status consistency.
-- [x] Mark the plan and job record `completed` after Phase 3 and closeout reviews are complete. Keep research `draft` and retain the documents at their current locations.
+- [x] Mark the research, plan, and job record `completed` after Phase 3 and closeout reviews are complete. Retain the documents at their current locations.
 
 **Exit:** required migration checks and reviews have recorded outcomes, findings are addressed, and documentation accurately reflects completion.
 

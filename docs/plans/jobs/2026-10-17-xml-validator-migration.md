@@ -12,7 +12,7 @@ Unified execution record for all four phases of the [implementation plan](../pla
 
 ## Status
 
-All four phases, phase-range reviews, the full-plan review, and documentation closeout are complete. The plan and this record are completed; research remains draft. Existing technical evidence was reused without rerunning suites or matrices. Normal dependency installation has no separate notice-remediation gate; dedicated measurements and new verification harnesses remain outside scope.
+All four phases, phase-range reviews, the full-plan review, and documentation closeout are complete. The research, plan, and this record are completed. Existing technical evidence was reused without rerunning suites or matrices. Normal dependency installation has no separate notice-remediation gate; dedicated measurements and new verification harnesses remain outside scope.
 
 ## Phase 1: Dependency and Caller Migration
 
@@ -62,4 +62,4 @@ Baseline: `388f44fec311af6f4d506f733f84d97942d49429`.
 | Full-plan implementation review | Passed | `366059861bb8796c8f136cf2c0337feb4de4e998..d5c492b02349a321be101d5f8af0063375674557`: no findings; existing evidence reused, no technical reruns. |
 | Phase-range review | Passed | `388f44fec311af6f4d506f733f84d97942d49429..d5c492b02349a321be101d5f8af0063375674557`: no findings. |
 | Documentation validation | Passed | DOCX behavior note, evidence links/anchors, front matter, checklists, and status transitions reviewed separately; no material gaps. |
-| Completion | Completed | All four phases and required reviews complete; research remains draft and documents remain at their current locations. |
+| Completion | Completed | All four phases and required reviews complete; research, plan, and job record are completed and remain at their current locations. |

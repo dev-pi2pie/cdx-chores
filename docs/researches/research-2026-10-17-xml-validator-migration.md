@@ -2,7 +2,7 @@
 title: "XML Validator Migration: Dependency Footprint and Compatibility"
 created-date: 2026-10-17
 modified-date: 2026-10-17
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -12,7 +12,7 @@ Review replacing the deprecated `XMLValidator` in `fast-xml-parser@5.11.2` with 
 
 **The migration uses the public `SyntaxValidator` API while retaining `XMLParser`.** The implementation accounts for the additional dependency tree and changes in input acceptance documented below. The initial review found no announced removal deadline or failure requiring immediate migration.
 
-Implementation and verification are complete under the linked plan. This research remains `draft`, with evidence in the [unified job record](../plans/jobs/2026-10-17-xml-validator-migration.md).
+The research is complete, supported by implementation and verification under the linked plan and evidence in the [unified job record](../plans/jobs/2026-10-17-xml-validator-migration.md).
 
 ## Deprecation Timeline
 
@@ -80,7 +80,7 @@ The reader dependency list in `scripts/docx-candidate/package-inspect.mjs` inclu
 
 The initial review on 2026-10-17 used an isolated dependency-resolution experiment and 27 synthetic XML cases on Node 26.5.0 and Bun 1.4.3. ESM/CommonJS results agreed within each validator; observed compatibility differences are recorded above. That experiment left repository dependencies unchanged.
 
-All four phases are complete, including migration verification, full-plan review, and documentation closeout. The [unified job record](../plans/jobs/2026-10-17-xml-validator-migration.md) records managed unit/application results, reused package/comparison evidence, review ranges, and the application-suite timeout adjustment. This research remains draft.
+All four phases are complete, including migration verification, full-plan review, and documentation closeout. The [unified job record](../plans/jobs/2026-10-17-xml-validator-migration.md) records managed unit/application results, reused package/comparison evidence, review ranges, and the application-suite timeout adjustment.
 
 ## Related Plans
 
