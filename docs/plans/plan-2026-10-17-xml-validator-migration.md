@@ -64,11 +64,11 @@ Phase 1 is complete. Focused verification and commit-range review are recorded i
 
 ## Phase 2: Behavior Verification
 
-- [ ] Add helper regressions for valid/malformed XML, repeated calls after failures, declaration-order tolerance, multiple-root policy, and the stricter control-character/name checks.
-- [ ] Extend existing DOCX content tests with expected migration differences and error translation. Reuse ampersand, reference, CDATA, namespace, resource-budget, and runtime fixtures to verify retained behavior.
-- [ ] Verify malformed optional core/application metadata and malformed discovery parts still permit their existing fallbacks, including through the integrated DOCX reader.
-- [ ] Extend report-reader tests to preserve the exact malformed-XML error and existing declaration, root, count, and identity rules for both reporting functions.
-- [ ] Run the managed unit and application suites (`bun run test:unit`, `bun run test:integration:app`), type checking, lint, and formatting checks. Resolve any additional input differences explicitly in tests and the execution record rather than silently changing frozen expectations.
+- [x] Add helper regressions for valid/malformed XML, repeated calls after failures, declaration-order tolerance, multiple-root policy, and the stricter control-character/name checks.
+- [x] Extend existing DOCX content tests with expected migration differences and error translation. Reuse ampersand, reference, CDATA, namespace, resource-budget, and runtime fixtures to verify retained behavior.
+- [x] Verify malformed optional core/application metadata and malformed discovery parts still permit their existing fallbacks, including through the integrated DOCX reader.
+- [x] Extend report-reader tests to preserve the exact malformed-XML error and existing declaration, root, count, and identity rules for both reporting functions.
+- [x] Run the managed unit and application suites (`bun run test:unit`, `bun run test:integration:app`), type checking, lint, and formatting checks. Resolve any additional input differences explicitly in tests and the execution record rather than silently changing frozen expectations.
 
 **Exit:** existing behavior checks pass and every observed migration difference has an intentional expected result. Record commands and outcomes in the job record; standalone validator probes do not substitute for integration coverage.
 

@@ -71,6 +71,43 @@ function evidence(value: DocxDocumentFacts) {
 }
 
 describe("DOCX review follow-up content cases", () => {
+  for (const [name, body] of [
+    ["text controls", "<w:p><w:r><w:t>Invalid\u0001text</w:t></w:r></w:p>"],
+    ["attribute controls", '<w:p value="\u0001"/>'],
+    ["malformed qualified names", "<a:b:c/>"],
+    ["XML 1.0 prefix undeclaration", '<w:p xmlns:w=""/>'],
+  ] as const) {
+    test(`new validator maps ${name} to the existing extraction diagnostic`, async () => {
+      const xml = documentXml(body);
+      expect(() => parseXml(xml)).toThrow("docx_xml_invalid");
+      expect(await readDocxDocument(buildDocxPackage({ documentXml: xml }))).toEqual({
+        ok: false,
+        diagnostic: "docx_xml_invalid",
+      });
+    });
+  }
+
+  test("XML 1.1 prefix undeclaration keeps subtree isolation and later namespace bindings", async () => {
+    const xml = documentXml(
+      paragraph("Hidden heading", "Heading1") + paragraph("Visible heading", "Heading1"),
+    )
+      .replace('version="1.0"', 'version="1.1"')
+      .replace("<w:p>", '<w:p xmlns:w="">');
+    const value = await facts({ documentXml: xml });
+    expect(value.rawText).toBe("Visible heading\n\n");
+    expect(value.headings).toEqual([{ level: 1, text: "Visible heading" }]);
+  });
+
+  test("reordered XML declarations retain reader output", async () => {
+    const xml = documentXml(paragraph("Declaration report", "Heading2")).replace(
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<?xml encoding="UTF-8" version="1.0"?>',
+    );
+    const value = await facts({ documentXml: xml });
+    expect(value.rawText).toBe("Declaration report\n\n");
+    expect(value.headings).toEqual([{ level: 2, text: "Declaration report" }]);
+  });
+
   test("relationship paths retain literal directories and filenames", () => {
     for (const [part, expected] of [
       ["/report.xml", "/_rels/report.xml.rels"],
@@ -606,6 +643,51 @@ describe("DOCX heading projection", () => {
 });
 
 describe("DOCX metadata selection boundaries", () => {
+  test("required discovery XML failures are not rescued by valid optional metadata", async () => {
+    for (const [path, xml] of [
+      ["_rels/.rels", '<Relationships value="\u0001"/>'],
+      ["[Content_Types].xml", '<Types value="\u0001"/>'],
+    ] as const) {
+      expect(
+        await readDocxDocument(
+          buildDocxPackage({
+            body: paragraph("Readable body"),
+            core: coreXml("Valid metadata title"),
+            replaceParts: [[path, xml]],
+          }),
+        ),
+      ).toEqual({ ok: false, diagnostic: "docx_xml_invalid" });
+    }
+  });
+
+  test("new syntax failures in optional core metadata preserve readable body facts", async () => {
+    for (const core of [
+      coreXml("Invalid\u0001title"),
+      coreXml("Invalid namespace").replace("<dc:title>", '<dc:title xmlns:w="">'),
+      coreXml("Invalid name").replaceAll("dc:title", "dc:extra:title"),
+    ]) {
+      const value = await facts({ body: paragraph("Body report", "Heading1"), core });
+      expect(value.rawText).toBe("Body report\n\n");
+      expect(value.headings).toEqual([{ level: 1, text: "Body report" }]);
+      expect(value.metadataResult).toEqual({ warnings: ["docx_metadata_unavailable"] });
+    }
+  });
+
+  test("invalid optional application metadata preserves core title and body facts", async () => {
+    const value = await facts({
+      body: paragraph("Body report"),
+      core: coreXml("Core title"),
+      extraParts: [
+        [
+          "docProps/app.xml",
+          "<Properties><Application>Invalid\u0001application</Application></Properties>",
+        ],
+      ],
+    });
+    expect(value.rawText).toBe("Body report\n\n");
+    expect(value.metadataResult).toEqual({ metadata: { title: "Core title" }, warnings: [] });
+  });
+
   test("an oversized duplicate preserves the preceding eligible metadata entry", async () => {
     const value = await facts({
       body: paragraph("Body report"),

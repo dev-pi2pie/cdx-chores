@@ -13,6 +13,11 @@ async function prepareRepository(owner: string, source: string): Promise<string>
   await mkdir(join(repo, "home"));
   await mkdir(join(repo, "examples/playground/.tmp-tests"), { recursive: true });
   await cp(join(REPO_ROOT, "scripts/testing"), join(repo, "scripts/testing"), { recursive: true });
+  await mkdir(join(repo, "src/utils"), { recursive: true });
+  await cp(
+    join(REPO_ROOT, "src/utils/xml-validation.ts"),
+    join(repo, "src/utils/xml-validation.ts"),
+  );
   await writeFile(
     join(repo, "bunfig.toml"),
     `[test]\nroot = "./test"\npathIgnorePatterns = ${JSON.stringify(UNIT_IGNORE_PATTERNS)}\n`,
