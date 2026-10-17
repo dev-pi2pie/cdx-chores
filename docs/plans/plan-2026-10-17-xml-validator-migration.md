@@ -1,6 +1,7 @@
 ---
 title: "XML Validator Migration"
 created-date: 2026-10-17
+modified-date: 2026-10-17
 status: active
 agent: codex
 ---
@@ -9,13 +10,17 @@ agent: codex
 
 Replace the seven deprecated `XMLValidator.validate` calls with syntax validation through `fast-xml-validator@1.4.2`, retaining `fast-xml-parser@5.11.2` for parsing. Preserve DOCX extraction diagnostics, optional metadata fallback, and test-report errors while recording the replacement's stricter input rules.
 
-Implementation is underway. The unified job record tracks phase outcomes and verification. The research remains `draft` while implementation and application/distribution evidence is incomplete.
+Phases 1 and 2 are complete. The unified job record tracks the remaining verification and documentation closeout. The research remains `draft`.
 
 Scope includes the new production dependency, an internal validation helper, the five caller files identified in the research, the DOCX package verifier, and focused regression coverage. Parser replacement, other deprecated parser options, business-rule validation, public APIs, unrelated dependency updates, and a package-version bump are outside this change.
 
+Normal npm/Bun dependency installation is outside the copied/vendored third-party workflow for this migration. Dedicated time/memory measurements, supplemental notices, upstream source/archive comparisons, and new verification harnesses are outside scope.
+
 ## Execution Record
 
-Use the [unified job record](jobs/2026-10-17-xml-validator-migration.md) for all three phases. Record the execution baseline, phase outcomes, verification results, and remaining limitations there. Keep intended steps and acceptance criteria in this plan.
+Use the [unified job record](jobs/2026-10-17-xml-validator-migration.md) for all four phases. Record baselines, outcomes, evidence, and review ranges in compact tables. Keep intended steps and acceptance criteria in this plan.
+
+Commit meaningful validated progress and review each phase's complete baseline-to-tip range. Reuse passing evidence; rerun affected checks only when subsequent changes, failures, or a concrete evidence gap justify it. Phase 4 also includes the full-plan review and separate documentation closeout review.
 
 ## Proposed Usage
 
@@ -49,7 +54,7 @@ Preserve current valid-document outputs and application error boundaries. The in
 
 Retain historical ampersand recovery, named/numeric reference boundaries, leading and empty trailing CDATA behavior, nonempty trailing CDATA rejection, and unbound-prefix handling. A validator exception must not leak into `docx_initial_reader_error`. Malformed optional metadata must remain recoverable rather than turning an otherwise readable document into a failure.
 
-The research's seven added package versions and three published-notice gaps are the reviewed dependency cost. Recheck the actual lockfile and installed consumer tree during execution; retain known limitations in the job record. Package-install success alone does not resolve missing notices or establish licensing completeness.
+The research records seven added package versions and upstream notice observations. Confirm the intended manifest/lockfile changes as part of normal dependency review; notice observations remain research context rather than a separate remediation or acceptance gate for this migration.
 
 ## Phase 1: Dependency and Caller Migration
 
@@ -74,15 +79,21 @@ Phase 1 is complete. Focused verification and commit-range review are recorded i
 
 Phase 2 is complete. Managed-suite results, the application verification timeout adjustment, and commit-range review are recorded in the [unified job record](jobs/2026-10-17-xml-validator-migration.md#phase-2-behavior-verification).
 
-## Phase 3: Distribution and Closeout
+## Phase 3: Migration Verification
 
-- [ ] Build the product and verify ESM/CJS loading, TypeScript declarations, and child/worker/parser assets on the primary Node runtime and minimum Node 22.23.0.
-- [ ] Run the existing full frozen-output comparison (`node scripts/docx-candidate/launch.mjs`) and resource measurement harness (`node scripts/docx-candidate/measure-launch.mjs`). Confirm that added module loading preserves the existing deadline and memory budgets.
-- [ ] Run `node scripts/docx-candidate/package-check.mjs` for fresh npm/Bun installations and the existing built-format/runtime consumer matrix. Verify the new dependency resolves within each fresh installation without source-tree fallbacks.
-- [ ] Check actual dependency resolution, published notices, and package-manager audit results. Resolve notice gaps and audit findings or record explicit maintainer acceptance with rationale in the job record before adoption closeout. Record any failed or unrun checks accurately.
-- [ ] Update the job record and research with implementation evidence and actual compatibility results. Add a concise behavior note to current DOCX documentation if required by the implemented changes; keep execution details in the job record.
+- [ ] Confirm the manifest, lockfile, shared helper, and seven callers match the intended migration without unrelated dependency or public-API changes.
+- [ ] Reconcile completed Phase 1–2 tests/build checks and applicable prior package/comparison results with the retained code. Record reusable evidence and any concrete gaps; run only affected checks needed for fixes or uncovered migration behavior.
 
-**Exit:** required application, resource, build, and installed-product checks pass, and notice/audit findings are resolved or explicitly accepted as above. Mark the plan and job record complete only after their work is finished; close the research only when the linked implementation evidence supports its conclusions. Unrun required checks or unaccepted dependency findings leave the plan incomplete.
+**Exit:** the migration matches its intended scope, verification evidence covers the affected behavior, and any necessary checks and phase-range review pass. No new harness, consumer-type fixture, or full installation-matrix rerun is required by default.
+
+## Phase 4: Documentation and Closeout
+
+- [ ] Add a concise migration behavior note to the current DOCX reference where needed. Align research evidence links and plan/job wording; keep research `draft` and execution details in the job record.
+- [ ] Review the full implementation range from `366059861bb8796c8f136cf2c0337feb4de4e998` through the final implementation tip. Address findings, verify affected fixes, and review the expanded range before recording exact hashes and disposition.
+- [ ] Review the documentation closeout separately and validate links, front matter, evidence, checklists, and status consistency.
+- [ ] Mark the plan and job record `completed` after Phase 3 and closeout reviews are complete. Keep research `draft` and retain the documents at their current locations.
+
+**Exit:** required migration checks and reviews have recorded outcomes, findings are addressed, and documentation accurately reflects completion.
 
 ## Related Research
 

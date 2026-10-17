@@ -1,17 +1,18 @@
 ---
 title: "XML Validator Migration Execution"
 created-date: 2026-10-17
+modified-date: 2026-10-17
 status: in-progress
 agent: codex
 ---
 
 ## Scope
 
-Unified execution record for all three phases of the [implementation plan](../plan-2026-10-17-xml-validator-migration.md), based on the [migration research](../../researches/research-2026-10-17-xml-validator-migration.md). Record phase outcomes, verification results, and remaining limitations here as work proceeds.
+Unified execution record for all four phases of the [implementation plan](../plan-2026-10-17-xml-validator-migration.md), based on the [migration research](../../researches/research-2026-10-17-xml-validator-migration.md). Record phase outcomes, verification results, and remaining limitations here as work proceeds.
 
 ## Status
 
-Phases 1 and 2 are complete, including commit-range reviews. The plan is active, this record is in progress, and the research remains draft. Phase 3 distribution/resource verification and dependency-finding disposition remain pending.
+Phases 1 and 2 are complete, including commit-range reviews. Phases 3 and 4 are planned and have not started. The plan is active, this record is in progress, and the research remains draft. Normal dependency installation has no separate notice-remediation gate; dedicated measurements and new verification harnesses are outside scope.
 
 ## Phase 1: Dependency and Caller Migration
 
@@ -40,3 +41,19 @@ Baseline: `3a31f922f2c76fed4775942eab8b658d3c6f1820`.
 | Static checks | `bun run tsc --noEmit`, `bun run lint`, `bun run format:check`, and whitespace checks passed. |
 | Review follow-up | Strengthened relationship fallback coverage to use non-default paths and distinct metadata, so default-path fallback cannot satisfy the assertion. All 3 affected tests and static checks passed. |
 | Review | `3a31f922f2c76fed4775942eab8b658d3c6f1820..5213893c791b9bc1860128b6eb42d0138a5b391b`: no remaining findings after the coverage follow-up. Documentation closeout checked separately. |
+
+## Phase 3: Migration Verification
+
+| Check | Result | Evidence/limitation |
+| --- | --- | --- |
+| Migration scope and reusable evidence | Not started | Reconcile retained code with Phase 1–2 evidence and applicable prior package/comparison results. |
+| Necessary follow-up checks | Pending | Run only for fixes or concrete evidence gaps; no default matrix rerun or new harness. |
+| Phase-range review | Pending | Record execution baseline, tip, and disposition when this phase runs. |
+
+## Phase 4: Documentation and Closeout
+
+| Check | Result | Evidence/limitation |
+| --- | --- | --- |
+| Full-plan implementation review | Pending | Review from `366059861bb8796c8f136cf2c0337feb4de4e998` through the final implementation tip. |
+| Documentation and phase-range reviews | Pending | Behavior note, evidence links, checklists, front matter, and statuses remain to be finalized. |
+| Completion | Pending | Requires Phase 3 and closeout reviews; research remains draft. |
