@@ -61,11 +61,11 @@ await mkdir(directory);
 const frozenCases =
   scope === "initial" ? createInitialReaderCases() : createValidationReaderCases();
 if (scope === "complete") {
-  const resources = JSON.parse(
-    await readFile("test/document-rename/fixtures/docx-baseline/resources.json", "utf8"),
+  const resourceCaptures = JSON.parse(
+    await readFile("test/document-rename/fixtures/docx-baseline/resource-captures.json", "utf8"),
   ) as ReturnType<typeof compactResourceCapture>[];
-  assert.equal(resources.length, 21);
-  for (const capture of resources) {
+  assert.equal(resourceCaptures.length, 21);
+  for (const capture of resourceCaptures) {
     const item = frozenCases.find((value) => value.id === capture.id);
     const sentinel = item?.expected.rawIncludes?.[0];
     assert(sentinel, `${capture.id}: missing independent resource sentinel`);
