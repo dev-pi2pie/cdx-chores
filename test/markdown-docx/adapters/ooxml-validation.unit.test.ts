@@ -37,20 +37,22 @@ describe("OOXML validation fallback", () => {
 
   test("newly invalid content types fall back to valid relationship targets", () => {
     const input = parts();
+    input.set("/selected/core.xml", coreXml("Selected title"));
+    input.set("/selected/app.xml", application("Selected writer"));
     input.set(
       "/_rels/.rels",
-      '<Relationships><Relationship Target="docProps/core.xml"/><Relationship Target="docProps/app.xml"/></Relationships>',
+      '<Relationships><Relationship Target="selected/core.xml"/><Relationship Target="selected/app.xml"/></Relationships>',
     );
     input.set(
       "/[Content_Types].xml",
       `<Types xmlns:w=""><Override PartName="/custom/core.xml" ContentType="${CORE_TYPE}"/><Override PartName="/custom/app.xml" ContentType="${APP_TYPE}"/></Types>`,
     );
     expect(resolveDocxMetadataPartPaths(input)).toEqual({
-      corePropertiesPath: "/docProps/core.xml",
-      appPropertiesPath: "/docProps/app.xml",
+      corePropertiesPath: "/selected/core.xml",
+      appPropertiesPath: "/selected/app.xml",
     });
     expect(readDocxCoreMetadataFromParts(input)).toEqual({
-      metadata: { title: "Fallback title", application: "Fallback writer" },
+      metadata: { title: "Selected title", application: "Selected writer" },
       warnings: [],
     });
   });

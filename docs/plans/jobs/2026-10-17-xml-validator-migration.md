@@ -38,4 +38,4 @@ Baseline: `3a31f922f2c76fed4775942eab8b658d3c6f1820`.
 | Fixture adjustment | The first application run passed 2328 cases and failed three runner-entry tests because their copied repository omitted the new helper. Added that file to fixture setup; all three tests then passed, including in the full rerun. |
 | Application timing | `bun run test:integration:app` reached its 240-second suite limit with 2330 passing cases and one interrupted video workflow; that workflow passed separately. The full managed rerun used a 300-second execution budget through `RunnerOptions.dependencies.execute` and passed in 233.7 seconds. Default suite policy is unchanged. |
 | Static checks | `bun run tsc --noEmit`, `bun run lint`, `bun run format:check`, and whitespace checks passed. |
-| Review | Pending checkpoint review. |
+| Review follow-up | Strengthened relationship fallback coverage to use non-default paths and distinct metadata, so default-path fallback cannot satisfy the assertion. All 3 affected tests and static checks passed; expanded commit-range review pending. |
