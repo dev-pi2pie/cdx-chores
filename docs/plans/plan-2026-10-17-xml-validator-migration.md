@@ -81,8 +81,8 @@ Phase 2 is complete. Managed-suite results, the application verification timeout
 
 ## Phase 3: Migration Verification
 
-- [ ] Confirm the manifest, lockfile, shared helper, and seven callers match the intended migration without unrelated dependency or public-API changes.
-- [ ] Reconcile completed Phase 1–2 tests/build checks and applicable prior package/comparison results with the retained code. Record reusable evidence and any concrete gaps; run only affected checks needed for fixes or uncovered migration behavior.
+- [x] Confirm the manifest, lockfile, shared helper, and seven callers match the intended migration without unrelated dependency or public-API changes.
+- [x] Reconcile completed Phase 1–2 tests/build checks and applicable prior package/comparison results with the retained code. Record reusable evidence and any concrete gaps; run only affected checks needed for fixes or uncovered migration behavior.
 
 **Exit:** the migration matches its intended scope, verification evidence covers the affected behavior, and any necessary checks and phase-range review pass. No new harness, consumer-type fixture, or full installation-matrix rerun is required by default.
 
