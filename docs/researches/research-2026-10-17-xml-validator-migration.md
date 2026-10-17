@@ -12,7 +12,7 @@ Review replacing the deprecated `XMLValidator` in `fast-xml-parser@5.11.2` with 
 
 **The migration uses the public `SyntaxValidator` API while retaining `XMLParser`.** The implementation accounts for the additional dependency tree and changes in input acceptance documented below. The initial review found no announced removal deadline or failure requiring immediate migration.
 
-Implementation and verification evidence is recorded in the [unified job record](../plans/jobs/2026-10-17-xml-validator-migration.md). This research stays in `draft` while the linked plan proceeds through documentation closeout.
+Implementation and verification are complete under the linked plan. This research remains `draft`, with evidence in the [unified job record](../plans/jobs/2026-10-17-xml-validator-migration.md).
 
 ## Deprecation Timeline
 
@@ -80,11 +80,11 @@ The reader dependency list in `scripts/docx-candidate/package-inspect.mjs` inclu
 
 The initial review on 2026-10-17 used an isolated dependency-resolution experiment and 27 synthetic XML cases on Node 26.5.0 and Bun 1.4.3. ESM/CommonJS results agreed within each validator; observed compatibility differences are recorded above. That experiment left repository dependencies unchanged.
 
-Phases 1–3 have since established the implemented behavior, including managed unit/application results and reused package/comparison evidence. The [unified job record](../plans/jobs/2026-10-17-xml-validator-migration.md) records results and the application-suite timeout adjustment. Phase 4 full-plan review and documentation closeout are underway; this research remains draft.
+All four phases are complete, including migration verification, full-plan review, and documentation closeout. The [unified job record](../plans/jobs/2026-10-17-xml-validator-migration.md) records managed unit/application results, reused package/comparison evidence, review ranges, and the application-suite timeout adjustment. This research remains draft.
 
 ## Related Plans
 
-- [XML validator migration](../plans/plan-2026-10-17-xml-validator-migration.md): active implementation and validation steps.
+- [XML validator migration](../plans/plan-2026-10-17-xml-validator-migration.md): completed implementation and verification plan.
 
 ## Related Research
 
