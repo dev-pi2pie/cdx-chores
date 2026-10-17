@@ -2,10 +2,11 @@ import { performance } from "node:perf_hooks";
 import { readFile } from "node:fs/promises";
 import { basename, extname } from "node:path";
 
-import mammoth from "mammoth";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 
-type SpikeFileType = "docx" | "pdf";
+// The February DOCX experiment is retained in its archived findings. This entry
+// now preserves only the PDF comparison used by later font-selection research.
+type SpikeFileType = "pdf";
 
 interface SpikeEvidence {
   sourcePath: string;
@@ -22,7 +23,7 @@ interface SpikeEvidence {
 
 interface SpikeResult {
   filePath: string;
-  backend: "mammoth" | "pdfjs-dist";
+  backend: "pdfjs-dist";
   elapsedMs: number;
   evidence?: SpikeEvidence;
   error?: string;
@@ -30,110 +31,6 @@ interface SpikeResult {
 
 function toSingleLine(value: string): string {
   return value.replace(/\s+/g, " ").trim();
-}
-
-function firstParagraphFromText(text: string, maxChars = 800): string | undefined {
-  const lines = text.split(/\r?\n/);
-  const parts: string[] = [];
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) {
-      if (parts.length > 0) {
-        break;
-      }
-      continue;
-    }
-    parts.push(trimmed);
-    if (toSingleLine(parts.join(" ")).length >= maxChars) {
-      break;
-    }
-  }
-  if (parts.length === 0) {
-    return undefined;
-  }
-  return toSingleLine(parts.join(" ")).slice(0, maxChars);
-}
-
-function stripTags(html: string): string {
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">");
-}
-
-function extractHeadingsFromHtml(html: string): string[] {
-  const headings: string[] = [];
-  for (const match of html.matchAll(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/gi)) {
-    const text = toSingleLine(stripTags(match[2] ?? ""));
-    if (text) {
-      headings.push(text);
-    }
-  }
-  return [...new Set(headings)];
-}
-
-async function extractDocxEvidence(path: string): Promise<SpikeResult> {
-  const started = performance.now();
-  try {
-    const [htmlResult, textResult] = await Promise.all([
-      mammoth.convertToHtml({ path }),
-      mammoth.extractRawText({ path }),
-    ]);
-    const elapsedMs = Math.round(performance.now() - started);
-
-    const headings = extractHeadingsFromHtml(htmlResult.value);
-    const rawText = textResult.value ?? "";
-    const leadText = firstParagraphFromText(rawText);
-    const firstLine = rawText
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .find(Boolean);
-    const title = headings[0] ?? firstLine;
-
-    const warnings: string[] = [];
-    if (!title) {
-      warnings.push("no_title_signal");
-    }
-    if (!leadText) {
-      warnings.push("no_lead_text");
-    }
-    if (htmlResult.messages.length > 0 || textResult.messages.length > 0) {
-      warnings.push("mammoth_messages");
-    }
-    // Mammoth focuses on document conversion/extraction, not DOCX core metadata access.
-    warnings.push("docx_metadata_not_extracted_in_this_spike");
-
-    return {
-      filePath: path,
-      backend: "mammoth",
-      elapsedMs,
-      evidence: {
-        sourcePath: path,
-        fileType: "docx",
-        extractor: "mammoth@convertToHtml+extractRawText",
-        title,
-        headings: headings.length > 0 ? headings.slice(0, 12) : undefined,
-        tocCandidates: headings.length > 0 ? headings.slice(0, 12) : undefined,
-        leadText,
-        metadata: {
-          htmlMessageCount: htmlResult.messages.length,
-          textMessageCount: textResult.messages.length,
-        },
-        warnings,
-      },
-    };
-  } catch (error) {
-    return {
-      filePath: path,
-      backend: "mammoth",
-      elapsedMs: Math.round(performance.now() - started),
-      error: error instanceof Error ? error.message : String(error),
-    };
-  }
 }
 
 async function extractPdfEvidence(path: string): Promise<SpikeResult> {
@@ -252,25 +149,18 @@ async function extractPdfEvidence(path: string): Promise<SpikeResult> {
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
-  const targets =
-    args.length > 0
-      ? args
-      : ["examples/playground/docs/tt.docx", "examples/playground/docs/xxx.pdf"];
+  const targets = args.length > 0 ? args : ["examples/playground/docs/xxx.pdf"];
 
   const results: SpikeResult[] = [];
   for (const target of targets) {
     const ext = extname(target).toLowerCase();
-    if (ext === ".docx") {
-      results.push(await extractDocxEvidence(target));
-      continue;
-    }
     if (ext === ".pdf") {
       results.push(await extractPdfEvidence(target));
       continue;
     }
     results.push({
       filePath: target,
-      backend: "mammoth",
+      backend: "pdfjs-dist",
       elapsedMs: 0,
       error: `Unsupported spike target extension: ${ext || "(none)"} (${basename(target)})`,
     });

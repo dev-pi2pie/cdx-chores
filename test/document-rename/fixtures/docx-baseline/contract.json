@@ -1,0 +1,954 @@
+[
+  {
+    "id": "contract-symbol-font-matrix",
+    "inputSha256": "8502072051fc6faf73b12cb0a8243de910014c6c62cc330f43636c0184f78656",
+    "html": {
+      "value": "<p>Font Matrix Report ∀🕷🕿🖊⭠</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Font Matrix Report ∀🕷🕿🖊⭠\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-symbol-font-matrix.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Font Matrix Report ∀🕷🕿🖊⭠"],
+      "leadText": "Font Matrix Report ∀🕷🕿🖊⭠",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-symbol-font-matrix/contract-symbol-font-matrix.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Font Matrix Report ∀🕷🕿🖊⭠\"\n    ],\n    \"leadText\": \"Font Matrix Report ∀🕷🕿🖊⭠\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-symbol-font-matrix.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-symbol-case-and-prefix",
+    "inputSha256": "8a22d9bc6e5ca524b112e0e3266f10ff900f33c04710e83d48b031887b854c72",
+    "html": {
+      "value": "<p>Prefix Report 🕿🕿</p>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "A w:sym element with an unsupported character was ignored: char f028 in font Wingdings"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Prefix Report 🕿🕿\n\n",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "A w:sym element with an unsupported character was ignored: char f028 in font Wingdings"
+        }
+      ]
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-symbol-case-and-prefix.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Prefix Report 🕿🕿"],
+      "leadText": "Prefix Report 🕿🕿",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-symbol-case-and-prefix/contract-symbol-case-and-prefix.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Prefix Report 🕿🕿\"\n    ],\n    \"leadText\": \"Prefix Report 🕿🕿\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-symbol-case-and-prefix.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-symbol-unknown-body",
+    "inputSha256": "6ea096cd477a286f617f0b3ac9271a79432912ba0f5dcd20f5f01d7a52d8d3be",
+    "html": {
+      "value": "<p>Before Unknown After Unknown</p>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "A w:sym element with an unsupported character was ignored: char 28 in font Unmapped Font"
+        },
+        {
+          "type": "warning",
+          "message": "A w:sym element with an unsupported character was ignored: char 0000 in font Wingdings"
+        },
+        {
+          "type": "warning",
+          "message": "A w:sym element with an unsupported character was ignored: char 28 in font Wingdings 1"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Before Unknown After Unknown\n\n",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "A w:sym element with an unsupported character was ignored: char 28 in font Unmapped Font"
+        },
+        {
+          "type": "warning",
+          "message": "A w:sym element with an unsupported character was ignored: char 0000 in font Wingdings"
+        },
+        {
+          "type": "warning",
+          "message": "A w:sym element with an unsupported character was ignored: char 28 in font Wingdings 1"
+        }
+      ]
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-symbol-unknown-body.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Before Unknown After Unknown"],
+      "leadText": "Before Unknown After Unknown",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-symbol-unknown-body/contract-symbol-unknown-body.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Before Unknown After Unknown\"\n    ],\n    \"leadText\": \"Before Unknown After Unknown\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-symbol-unknown-body.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-symbol-unknown-only",
+    "inputSha256": "bb4c02e5f99ce27e77175188408f75fc17c0c582fdf06954689c2512d3c75e6e",
+    "html": {
+      "value": "",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "A w:sym element with an unsupported character was ignored: char 28 in font Unmapped Font"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "\n\n",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "A w:sym element with an unsupported character was ignored: char 28 in font Unmapped Font"
+        }
+      ]
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "contract-symbol-unknown-metadata",
+    "inputSha256": "a3d1a6ad695675d6cd05a8f2333da9fc7171afbacea4348f48df4e6253c94493",
+    "html": {
+      "value": "",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "A w:sym element with an unsupported character was ignored: char 28 in font Unmapped Font"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "\n\n",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "A w:sym element with an unsupported character was ignored: char 28 in font Unmapped Font"
+        }
+      ]
+    },
+    "metadata": {
+      "metadata": {
+        "title": "Metadata Symbol Report"
+      },
+      "warnings": []
+    },
+    "result": {
+      "filename": "contract-symbol-unknown-metadata.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Metadata Symbol Report"],
+      "metadata": {
+        "title": "Metadata Symbol Report",
+        "extractor": "mammoth+ooxml"
+      },
+      "warnings": ["docx_no_lead_text"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-symbol-unknown-metadata/contract-symbol-unknown-metadata.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Metadata Symbol Report\"\n    ],\n    \"metadata\": {\n      \"title\": \"Metadata Symbol Report\",\n      \"extractor\": \"mammoth+ooxml\"\n    },\n    \"warnings\": [\n      \"docx_no_lead_text\"\n    ],\n    \"basename\": \"contract-symbol-unknown-metadata.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-symbol-missing-char",
+    "inputSha256": "2fdc789a176c9c687ce6c2cde694b64353b7032c3365c889344ee68adf2de6a6",
+    "html": {
+      "value": "<p>Missing Character Report </p>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "A w:sym element with an unsupported character was ignored: char undefined in font Wingdings"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Missing Character Report \n\n",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "A w:sym element with an unsupported character was ignored: char undefined in font Wingdings"
+        }
+      ]
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-symbol-missing-char.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Missing Character Report"],
+      "leadText": "Missing Character Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-symbol-missing-char/contract-symbol-missing-char.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Missing Character Report\"\n    ],\n    \"leadText\": \"Missing Character Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-symbol-missing-char.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-symbol-malformed-char",
+    "inputSha256": "5fcb1ca3284b2080c80b056227c719d6db5dd2803233d74124e2fd7c4fae1caf",
+    "html": {
+      "value": "<p>Malformed Character Report 🕿</p>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "A w:sym element with an unsupported character was ignored: char zz in font Wingdings"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Malformed Character Report 🕿\n\n",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "A w:sym element with an unsupported character was ignored: char zz in font Wingdings"
+        }
+      ]
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-symbol-malformed-char.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Malformed Character Report 🕿"],
+      "leadText": "Malformed Character Report 🕿",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-symbol-malformed-char/contract-symbol-malformed-char.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Malformed Character Report 🕿\"\n    ],\n    \"leadText\": \"Malformed Character Report 🕿\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-symbol-malformed-char.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-symbol-missing-font",
+    "inputSha256": "084e33397baeb589c9ffc33ab071a5f022717a925b47e06f700dbc720eb52f7c",
+    "html": {
+      "error": "Cannot read properties of undefined (reading 'toUpperCase')"
+    },
+    "rawText": {
+      "error": "Cannot read properties of undefined (reading 'toUpperCase')"
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "contract-symbol-heading",
+    "inputSha256": "b497e9e7df07b58a524c633b9d44bf05c7998bd700c3fda5cc2f296c11a40e9b",
+    "html": {
+      "value": "<h1>Symbol Heading Report ∀</h1>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Symbol Heading Report ∀\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-symbol-heading.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Symbol Heading Report ∀"],
+      "headings": ["Symbol Heading Report ∀"],
+      "tocCandidates": ["Symbol Heading Report ∀"],
+      "leadText": "Symbol Heading Report ∀",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-symbol-heading/contract-symbol-heading.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Symbol Heading Report ∀\"\n    ],\n    \"headings\": [\n      \"Symbol Heading Report ∀\"\n    ],\n    \"tocCandidates\": [\n      \"Symbol Heading Report ∀\"\n    ],\n    \"leadText\": \"Symbol Heading Report ∀\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-symbol-heading.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-symbol-mapped-only",
+    "inputSha256": "a480b734e029da1999f503cdf410c8d3d26ee738578d8e174c21e8a2bcdb429e",
+    "html": {
+      "value": "<p>∀</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "∀\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-symbol-mapped-only.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["∀"],
+      "leadText": "∀",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-symbol-mapped-only/contract-symbol-mapped-only.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"∀\"\n    ],\n    \"leadText\": \"∀\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-symbol-mapped-only.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-symbol-missing-font-metadata",
+    "inputSha256": "47d3e61204b1d68c0f143855fd632ddf95bb2a920a474a0df72e378dcb965a7b",
+    "html": {
+      "error": "Cannot read properties of undefined (reading 'toUpperCase')"
+    },
+    "rawText": {
+      "error": "Cannot read properties of undefined (reading 'toUpperCase')"
+    },
+    "metadata": {
+      "metadata": {
+        "title": "Metadata With Invalid Symbol"
+      },
+      "warnings": []
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "contract-map-paragraph-prefix",
+    "inputSha256": "06f16c7ec378eaf60e178cd81336f0688573549810135ef0fd641840ccfb5c69",
+    "html": {
+      "value": "<h3>First Mapping Report</h3><h3>Second Mapping Report</h3>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "First Mapping Report\n\nSecond Mapping Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-map-paragraph-prefix.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["First Mapping Report"],
+      "headings": ["First Mapping Report", "Second Mapping Report"],
+      "tocCandidates": ["First Mapping Report", "Second Mapping Report"],
+      "leadText": "First Mapping Report Second Mapping Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-map-paragraph-prefix/contract-map-paragraph-prefix.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"First Mapping Report\"\n    ],\n    \"headings\": [\n      \"First Mapping Report\",\n      \"Second Mapping Report\"\n    ],\n    \"tocCandidates\": [\n      \"First Mapping Report\",\n      \"Second Mapping Report\"\n    ],\n    \"leadText\": \"First Mapping Report Second Mapping Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-map-paragraph-prefix.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-map-invalid-ignored",
+    "inputSha256": "420a91f5d7f66a521485aec3d2faebc13ab6abec143c623f394fe32be6907b39",
+    "html": {
+      "value": "<h1>First Mapping Report</h1><h1>Second Mapping Report</h1>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Did not understand this style mapping, so ignored it: this is not a valid mapping\nError was at character number 1: Expected element type but got identifier \"this\""
+        }
+      ]
+    },
+    "rawText": {
+      "value": "First Mapping Report\n\nSecond Mapping Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-map-invalid-ignored.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["First Mapping Report", "Second Mapping Report"],
+      "headings": ["First Mapping Report", "Second Mapping Report"],
+      "tocCandidates": ["First Mapping Report", "Second Mapping Report"],
+      "leadText": "First Mapping Report Second Mapping Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-map-invalid-ignored/contract-map-invalid-ignored.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"First Mapping Report\",\n      \"Second Mapping Report\"\n    ],\n    \"headings\": [\n      \"First Mapping Report\",\n      \"Second Mapping Report\"\n    ],\n    \"tocCandidates\": [\n      \"First Mapping Report\",\n      \"Second Mapping Report\"\n    ],\n    \"leadText\": \"First Mapping Report Second Mapping Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-map-invalid-ignored.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-map-run-heading",
+    "inputSha256": "c09aa36ef24241282dd064abda84d7c3a580369fc7ea7e38768a3eea684a4963",
+    "html": {
+      "value": "<p><h1>Run Mapping Report</h1></p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Run Mapping Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-map-run-heading.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Run Mapping Report"],
+      "headings": ["Run Mapping Report"],
+      "tocCandidates": ["Run Mapping Report"],
+      "leadText": "Run Mapping Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-map-run-heading/contract-map-run-heading.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Run Mapping Report\"\n    ],\n    \"headings\": [\n      \"Run Mapping Report\"\n    ],\n    \"tocCandidates\": [\n      \"Run Mapping Report\"\n    ],\n    \"leadText\": \"Run Mapping Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-map-run-heading.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-map-nested-heading",
+    "inputSha256": "6ddc0a32674dca26170093dff486bdb48e3524dbe427cbac9189ad25512808c1",
+    "html": {
+      "value": "<div><h2>First Mapping Report</h2><h2>Second Mapping Report</h2></div>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "First Mapping Report\n\nSecond Mapping Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-map-nested-heading.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["First Mapping Report", "Second Mapping Report"],
+      "headings": ["First Mapping Report", "Second Mapping Report"],
+      "tocCandidates": ["First Mapping Report", "Second Mapping Report"],
+      "leadText": "First Mapping Report Second Mapping Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-map-nested-heading/contract-map-nested-heading.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"First Mapping Report\",\n      \"Second Mapping Report\"\n    ],\n    \"headings\": [\n      \"First Mapping Report\",\n      \"Second Mapping Report\"\n    ],\n    \"tocCandidates\": [\n      \"First Mapping Report\",\n      \"Second Mapping Report\"\n    ],\n    \"leadText\": \"First Mapping Report Second Mapping Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-map-nested-heading.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-map-ignore",
+    "inputSha256": "f5e12c7a6d5da5c9d192d79aa4200122c5df5a62ad62c25cf5adf094ed611ffa",
+    "html": {
+      "value": "",
+      "messages": []
+    },
+    "rawText": {
+      "value": "First Mapping Report\n\nSecond Mapping Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-map-ignore.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["First Mapping Report"],
+      "leadText": "First Mapping Report Second Mapping Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-map-ignore/contract-map-ignore.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"First Mapping Report\"\n    ],\n    \"leadText\": \"First Mapping Report Second Mapping Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-map-ignore.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-map-merge",
+    "inputSha256": "670ccf4e247be3f57bda1c5148710c4edb60e860de3c39a070a4bd687409b315",
+    "html": {
+      "value": "<h1>First Mapping ReportSecond Mapping Report</h1>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "First Mapping Report\n\nSecond Mapping Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-map-merge.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["First Mapping ReportSecond Mapping Report", "First Mapping Report"],
+      "headings": ["First Mapping ReportSecond Mapping Report"],
+      "tocCandidates": ["First Mapping ReportSecond Mapping Report"],
+      "leadText": "First Mapping Report Second Mapping Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-map-merge/contract-map-merge.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"First Mapping ReportSecond Mapping Report\",\n      \"First Mapping Report\"\n    ],\n    \"headings\": [\n      \"First Mapping ReportSecond Mapping Report\"\n    ],\n    \"tocCandidates\": [\n      \"First Mapping ReportSecond Mapping Report\"\n    ],\n    \"leadText\": \"First Mapping Report Second Mapping Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-map-merge.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-map-separator",
+    "inputSha256": "763146ffc834125267cdbdeb2250a505f34ce3428411e27f78168a704984c3b4",
+    "html": {
+      "value": "<h1>First Mapping Report / Second Mapping Report</h1>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "First Mapping Report\n\nSecond Mapping Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-map-separator.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["First Mapping Report / Second Mapping Report", "First Mapping Report"],
+      "headings": ["First Mapping Report / Second Mapping Report"],
+      "tocCandidates": ["First Mapping Report / Second Mapping Report"],
+      "leadText": "First Mapping Report Second Mapping Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-map-separator/contract-map-separator.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"First Mapping Report / Second Mapping Report\",\n      \"First Mapping Report\"\n    ],\n    \"headings\": [\n      \"First Mapping Report / Second Mapping Report\"\n    ],\n    \"tocCandidates\": [\n      \"First Mapping Report / Second Mapping Report\"\n    ],\n    \"leadText\": \"First Mapping Report Second Mapping Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-map-separator.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-map-table-heading",
+    "inputSha256": "536646fafffe0f751a8c27bc6e4af08507f4c5c974617c4a95084e5dc3970d0d",
+    "html": {
+      "value": "<h2><tr><td><p>Table Mapping Report</p></td></tr></h2>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Table Mapping Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-map-table-heading.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Table Mapping Report"],
+      "headings": ["Table Mapping Report"],
+      "tocCandidates": ["Table Mapping Report"],
+      "leadText": "Table Mapping Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-map-table-heading/contract-map-table-heading.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Table Mapping Report\"\n    ],\n    \"headings\": [\n      \"Table Mapping Report\"\n    ],\n    \"tocCandidates\": [\n      \"Table Mapping Report\"\n    ],\n    \"leadText\": \"Table Mapping Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-map-table-heading.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-map-first-matching-rule",
+    "inputSha256": "c32284094f003532c1167eed85ce2fd7a163aa265dccb44e42c205ee5a5aba5e",
+    "html": {
+      "value": "<h3>First Mapping Report</h3><h3>Second Mapping Report</h3>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "First Mapping Report\n\nSecond Mapping Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-map-first-matching-rule.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["First Mapping Report"],
+      "headings": ["First Mapping Report", "Second Mapping Report"],
+      "tocCandidates": ["First Mapping Report", "Second Mapping Report"],
+      "leadText": "First Mapping Report Second Mapping Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-map-first-matching-rule/contract-map-first-matching-rule.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"First Mapping Report\"\n    ],\n    \"headings\": [\n      \"First Mapping Report\",\n      \"Second Mapping Report\"\n    ],\n    \"tocCandidates\": [\n      \"First Mapping Report\",\n      \"Second Mapping Report\"\n    ],\n    \"leadText\": \"First Mapping Report Second Mapping Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-map-first-matching-rule.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-note-repeated",
+    "inputSha256": "13b87d8e41719975af0464c6582a17c1033e38c1c9361ba5454454bb27c87322",
+    "html": {
+      "value": "<p>Repeated Note Report<sup><a href=\"#footnote-1\" id=\"footnote-ref-1\">[1]</a></sup><sup><a href=\"#footnote-1\" id=\"footnote-ref-1\">[2]</a></sup></p><ol><li id=\"footnote-1\"><h1>Repeated Note Heading</h1><p> <a href=\"#footnote-ref-1\">↑</a></p></li><li id=\"footnote-1\"><h1>Repeated Note Heading</h1><p> <a href=\"#footnote-ref-1\">↑</a></p></li></ol>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Repeated Note Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-note-repeated.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Repeated Note Heading", "Repeated Note Report"],
+      "headings": ["Repeated Note Heading"],
+      "tocCandidates": ["Repeated Note Heading"],
+      "leadText": "Repeated Note Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-note-repeated/contract-note-repeated.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Repeated Note Heading\",\n      \"Repeated Note Report\"\n    ],\n    \"headings\": [\n      \"Repeated Note Heading\"\n    ],\n    \"tocCandidates\": [\n      \"Repeated Note Heading\"\n    ],\n    \"leadText\": \"Repeated Note Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-note-repeated.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-note-nested",
+    "inputSha256": "a262f4d9a25b6ee28751a1b8f4de45c91f232993386147efe8119e06cf5bb582",
+    "html": {
+      "value": "<p>Note Body Report<sup><a href=\"#footnote-1\" id=\"footnote-ref-1\">[1]</a></sup></p><ol><li id=\"footnote-1\"><p>First Note Report<sup><a href=\"#footnote-2\" id=\"footnote-ref-2\">[2]</a></sup> <a href=\"#footnote-ref-1\">↑</a></p></li></ol>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Note Body Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-note-nested.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Note Body Report"],
+      "leadText": "Note Body Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-note-nested/contract-note-nested.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Note Body Report\"\n    ],\n    \"leadText\": \"Note Body Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-note-nested.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-note-self-cycle",
+    "inputSha256": "72e1bb7616fc7d4f99f447f171bfffda9401fc3b0e05a5c1d147851136a66c24",
+    "html": {
+      "value": "<p>Note Body Report<sup><a href=\"#footnote-1\" id=\"footnote-ref-1\">[1]</a></sup></p><ol><li id=\"footnote-1\"><p>Self Cycle Note<sup><a href=\"#footnote-1\" id=\"footnote-ref-1\">[2]</a></sup> <a href=\"#footnote-ref-1\">↑</a></p></li></ol>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Note Body Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-note-self-cycle.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Note Body Report"],
+      "leadText": "Note Body Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-note-self-cycle/contract-note-self-cycle.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Note Body Report\"\n    ],\n    \"leadText\": \"Note Body Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-note-self-cycle.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-note-mutual-cycle",
+    "inputSha256": "a2d7899ded3454dd8b942e931764b28351bed3e6a44b0b28de6d64c0141f764a",
+    "html": {
+      "value": "<p>Note Body Report<sup><a href=\"#footnote-1\" id=\"footnote-ref-1\">[1]</a></sup></p><ol><li id=\"footnote-1\"><p>First Cycle Note<sup><a href=\"#footnote-2\" id=\"footnote-ref-2\">[2]</a></sup> <a href=\"#footnote-ref-1\">↑</a></p></li></ol>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Note Body Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-note-mutual-cycle.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Note Body Report"],
+      "leadText": "Note Body Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-note-mutual-cycle/contract-note-mutual-cycle.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Note Body Report\"\n    ],\n    \"leadText\": \"Note Body Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-note-mutual-cycle.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-note-missing",
+    "inputSha256": "8a799bdacc68998d081481ab61135756b9bcd11b810b1d5f7a6a86d65dad40bd",
+    "html": {
+      "error": "Cannot read properties of null (reading 'type')"
+    },
+    "rawText": {
+      "value": "Note Body Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "contract-note-missing-metadata",
+    "inputSha256": "101e5635c1d215534e3204520542290de1a4e86aa6fa72f4d0283b92dbd8ccc1",
+    "html": {
+      "error": "Cannot read properties of null (reading 'type')"
+    },
+    "rawText": {
+      "value": "Note Body Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "metadata": {
+        "title": "Metadata With Missing Note"
+      },
+      "warnings": []
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "contract-note-heading-only",
+    "inputSha256": "7bb3d65a43ab6819c27af7d330f59d670483716d1787a5b0797f3b2142b32695",
+    "html": {
+      "value": "<p><sup><a href=\"#footnote-1\" id=\"footnote-ref-1\">[1]</a></sup></p><ol><li id=\"footnote-1\"><h1>Note Only Heading Report</h1><p> <a href=\"#footnote-ref-1\">↑</a></p></li></ol>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-note-heading-only.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Note Only Heading Report"],
+      "headings": ["Note Only Heading Report"],
+      "tocCandidates": ["Note Only Heading Report"],
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable", "docx_no_lead_text"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-note-heading-only/contract-note-heading-only.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Note Only Heading Report\"\n    ],\n    \"headings\": [\n      \"Note Only Heading Report\"\n    ],\n    \"tocCandidates\": [\n      \"Note Only Heading Report\"\n    ],\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\",\n      \"docx_no_lead_text\"\n    ],\n    \"basename\": \"contract-note-heading-only.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-note-plain-only",
+    "inputSha256": "7790481a4b00b9644b9bc7cd1e66bd391028bb92ec7b489d71160537c33385af",
+    "html": {
+      "value": "<p><sup><a href=\"#footnote-1\" id=\"footnote-ref-1\">[1]</a></sup></p><ol><li id=\"footnote-1\"><p>Note Only Plain Text <a href=\"#footnote-ref-1\">↑</a></p></li></ol>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "reason": "docx_no_title_signal"
+    },
+    "prompt": null
+  },
+  {
+    "id": "contract-note-nested-missing",
+    "inputSha256": "d071e918aef6a78ec0c2181f9d386cbece18490985f202b21cfb4b55e65cdea5",
+    "html": {
+      "value": "<p>Note Body Report<sup><a href=\"#footnote-1\" id=\"footnote-ref-1\">[1]</a></sup></p><ol><li id=\"footnote-1\"><p>Nested Missing Target<sup><a href=\"#footnote-999\" id=\"footnote-ref-999\">[2]</a></sup> <a href=\"#footnote-ref-1\">↑</a></p></li></ol>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Note Body Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-note-nested-missing.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Note Body Report"],
+      "leadText": "Note Body Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-note-nested-missing/contract-note-nested-missing.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Note Body Report\"\n    ],\n    \"leadText\": \"Note Body Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-note-nested-missing.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-note-heading-reference",
+    "inputSha256": "7a9f737872adc5336e583d3e0a2876c43deac7b0f1cdc2290b9a9bbdab393f2e",
+    "html": {
+      "value": "<h1>Main Report <sup><a href=\"#footnote-1\" id=\"footnote-ref-1\">[1]</a></sup></h1><ol><li id=\"footnote-1\"><p>Heading Note Detail <a href=\"#footnote-ref-1\">↑</a></p></li></ol>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Main Report \n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-note-heading-reference.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Main Report [1]", "Main Report"],
+      "headings": ["Main Report [1]"],
+      "tocCandidates": ["Main Report [1]"],
+      "leadText": "Main Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-note-heading-reference/contract-note-heading-reference.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Main Report [1]\",\n      \"Main Report\"\n    ],\n    \"headings\": [\n      \"Main Report [1]\"\n    ],\n    \"tocCandidates\": [\n      \"Main Report [1]\"\n    ],\n    \"leadText\": \"Main Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-note-heading-reference.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-note-unused-invalid-symbol",
+    "inputSha256": "302e462e0ceb4bdf62c3ef20ac20b31cbd18f4b66ab4df2ad6d351445b6a8040",
+    "html": {
+      "error": "Cannot read properties of undefined (reading 'toUpperCase')"
+    },
+    "rawText": {
+      "error": "Cannot read properties of undefined (reading 'toUpperCase')"
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "contract-note-ignored-missing",
+    "inputSha256": "8d46beaca6ff2d176af329aad0b318be657837a14becc635e5710b6401d7cf06",
+    "html": {
+      "value": "<p>Visible Note Report</p>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID Ignore was referenced but not defined in the document"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Ignored Missing Note\n\nVisible Note Report\n\n",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID Ignore was referenced but not defined in the document"
+        }
+      ]
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-note-ignored-missing.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Ignored Missing Note"],
+      "leadText": "Ignored Missing Note Visible Note Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-note-ignored-missing/contract-note-ignored-missing.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Ignored Missing Note\"\n    ],\n    \"leadText\": \"Ignored Missing Note Visible Note Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-note-ignored-missing.docx\"\n  }\n]"
+  },
+  {
+    "id": "contract-note-heading-order-and-rank",
+    "inputSha256": "562f31b0d42d66d32402b97fb1ebacfa3245c747f96613eaea81f6c09a0177e8",
+    "html": {
+      "value": "<h2>Main Document Heading</h2><p>Main Body Detail<sup><a href=\"#footnote-1\" id=\"footnote-ref-1\">[1]</a></sup><sup><a href=\"#footnote-1\" id=\"footnote-ref-1\">[2]</a></sup><sup><a href=\"#footnote-1\" id=\"footnote-ref-1\">[3]</a></sup><sup><a href=\"#footnote-2\" id=\"footnote-ref-2\">[4]</a></sup></p><ol><li id=\"footnote-1\"><h2>Repeated Note Heading</h2><p> <a href=\"#footnote-ref-1\">↑</a></p></li><li id=\"footnote-1\"><h2>Repeated Note Heading</h2><p> <a href=\"#footnote-ref-1\">↑</a></p></li><li id=\"footnote-1\"><h2>Repeated Note Heading</h2><p> <a href=\"#footnote-ref-1\">↑</a></p></li><li id=\"footnote-2\"><h2>Late Note Heading</h2><p> <a href=\"#footnote-ref-2\">↑</a></p></li></ol>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Main Document Heading\n\nMain Body Detail\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "contract-note-heading-order-and-rank.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Main Document Heading", "Repeated Note Heading"],
+      "headings": ["Main Document Heading", "Repeated Note Heading", "Late Note Heading"],
+      "tocCandidates": ["Main Document Heading", "Repeated Note Heading", "Late Note Heading"],
+      "leadText": "Main Document Heading Main Body Detail",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"contract-note-heading-order-and-rank/contract-note-heading-order-and-rank.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Main Document Heading\",\n      \"Repeated Note Heading\"\n    ],\n    \"headings\": [\n      \"Main Document Heading\",\n      \"Repeated Note Heading\",\n      \"Late Note Heading\"\n    ],\n    \"tocCandidates\": [\n      \"Main Document Heading\",\n      \"Repeated Note Heading\",\n      \"Late Note Heading\"\n    ],\n    \"leadText\": \"Main Document Heading Main Body Detail\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"contract-note-heading-order-and-rank.docx\"\n  }\n]"
+  }
+]

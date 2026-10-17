@@ -1,0 +1,326 @@
+[
+  {
+    "id": "projection-ordered-list-heading",
+    "inputSha256": "c20400c785ea63456e5c66754faa4766331f1dc469efa80e43a30f86004a621c",
+    "html": {
+      "value": "<h2>ordered list report</h2>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "ordered list report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "projection-ordered-list-heading.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["ordered list report"],
+      "headings": ["ordered list report"],
+      "tocCandidates": ["ordered list report"],
+      "leadText": "ordered list report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"projection-ordered-list-heading/projection-ordered-list-heading.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"ordered list report\"\n    ],\n    \"headings\": [\n      \"ordered list report\"\n    ],\n    \"tocCandidates\": [\n      \"ordered list report\"\n    ],\n    \"leadText\": \"ordered list report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"projection-ordered-list-heading.docx\"\n  }\n]"
+  },
+  {
+    "id": "projection-unordered-list-heading",
+    "inputSha256": "7944c8e2c929ca412d53881f0d3a55f5505ea2340f0bc0b7da63559cadb1d3dd",
+    "html": {
+      "value": "<h3>unordered list report</h3>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "unordered list report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "projection-unordered-list-heading.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["unordered list report"],
+      "headings": ["unordered list report"],
+      "tocCandidates": ["unordered list report"],
+      "leadText": "unordered list report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"projection-unordered-list-heading/projection-unordered-list-heading.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"unordered list report\"\n    ],\n    \"headings\": [\n      \"unordered list report\"\n    ],\n    \"tocCandidates\": [\n      \"unordered list report\"\n    ],\n    \"leadText\": \"unordered list report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"projection-unordered-list-heading.docx\"\n  }\n]"
+  },
+  {
+    "id": "projection-style-linked-list-heading",
+    "inputSha256": "9f4cef422ca725fae7e0f74b76a39013a983d5e7afd5075b2e6fa3733240ecbc",
+    "html": {
+      "value": "<h2>Style linked list report</h2>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Style linked list report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "projection-style-linked-list-heading.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Style linked list report"],
+      "headings": ["Style linked list report"],
+      "tocCandidates": ["Style linked list report"],
+      "leadText": "Style linked list report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"projection-style-linked-list-heading/projection-style-linked-list-heading.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Style linked list report\"\n    ],\n    \"headings\": [\n      \"Style linked list report\"\n    ],\n    \"tocCandidates\": [\n      \"Style linked list report\"\n    ],\n    \"leadText\": \"Style linked list report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"projection-style-linked-list-heading.docx\"\n  }\n]"
+  },
+  {
+    "id": "projection-comment-heading-order",
+    "inputSha256": "5b4469687547ed31732169d30154917b330d06ad69c976fb309c55616680624b",
+    "html": {
+      "value": "<h1>Main report</h1><p>Before<h2><a href=\"#comment-1\" id=\"comment-ref-1\">[AB1]</a></h2><h2><a href=\"#comment-1\" id=\"comment-ref-1\">[AB2]</a></h2>After<sup><a href=\"#footnote-2\" id=\"footnote-ref-2\">[1]</a></sup></p><ol><li id=\"footnote-2\"><h2>Footnote heading</h2><p> <a href=\"#footnote-ref-2\">↑</a></p></li></ol><dl><dt id=\"comment-1\">Comment [AB1]</dt><dd><h3>Comment heading</h3><p> <a href=\"#comment-ref-1\">↑</a></p></dd><dt id=\"comment-1\">Comment [AB2]</dt><dd><h3>Comment heading</h3><p> <a href=\"#comment-ref-1\">↑</a></p></dd></dl>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID Heading2 was referenced but not defined in the document"
+        },
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID Heading3 was referenced but not defined in the document"
+        },
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID Heading1 was referenced but not defined in the document"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Main report\n\nBeforeAfter\n\n",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID Heading2 was referenced but not defined in the document"
+        },
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID Heading3 was referenced but not defined in the document"
+        },
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID Heading1 was referenced but not defined in the document"
+        }
+      ]
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "projection-comment-heading-order.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Main report", "[AB1]", "[AB2]", "Footnote heading"],
+      "headings": ["Main report", "[AB1]", "[AB2]", "Footnote heading", "Comment heading"],
+      "tocCandidates": ["Main report", "[AB1]", "[AB2]", "Footnote heading", "Comment heading"],
+      "leadText": "Main report BeforeAfter",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"projection-comment-heading-order/projection-comment-heading-order.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Main report\",\n      \"[AB1]\",\n      \"[AB2]\",\n      \"Footnote heading\"\n    ],\n    \"headings\": [\n      \"Main report\",\n      \"[AB1]\",\n      \"[AB2]\",\n      \"Footnote heading\",\n      \"Comment heading\"\n    ],\n    \"tocCandidates\": [\n      \"Main report\",\n      \"[AB1]\",\n      \"[AB2]\",\n      \"Footnote heading\",\n      \"Comment heading\"\n    ],\n    \"leadText\": \"Main report BeforeAfter\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"projection-comment-heading-order.docx\"\n  }\n]"
+  },
+  {
+    "id": "projection-missing-comment-ignored",
+    "inputSha256": "917a98b4cb4e432d5d7397b2d506632b5b2c48566b01efd0c4255f75ab97a63d",
+    "html": {
+      "value": "<p>BeforeAfter</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "BeforeAfter\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "metadata": {
+        "title": "Metadata title"
+      },
+      "warnings": []
+    },
+    "result": {
+      "filename": "projection-missing-comment-ignored.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Metadata title", "BeforeAfter"],
+      "leadText": "BeforeAfter",
+      "metadata": {
+        "title": "Metadata title",
+        "extractor": "mammoth+ooxml"
+      }
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"projection-missing-comment-ignored/projection-missing-comment-ignored.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Metadata title\",\n      \"BeforeAfter\"\n    ],\n    \"leadText\": \"BeforeAfter\",\n    \"metadata\": {\n      \"title\": \"Metadata title\",\n      \"extractor\": \"mammoth+ooxml\"\n    },\n    \"basename\": \"projection-missing-comment-ignored.docx\"\n  }\n]"
+  },
+  {
+    "id": "projection-missing-comment-mapped",
+    "inputSha256": "5971d863f9f444faac1745d7f5070be84d056113a39099333990215bcf03aa4f",
+    "html": {
+      "error": "Cannot read properties of undefined (reading 'authorInitials')"
+    },
+    "rawText": {
+      "value": "BeforeAfter\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "metadata": {
+        "title": "Metadata title"
+      },
+      "warnings": []
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "projection-unused-comment-invalid-symbol",
+    "inputSha256": "22aaedd6ba6f358137603257d7bab30604c82cf0b0c39c108071aaf63f7f3c26",
+    "html": {
+      "error": "Cannot read properties of undefined (reading 'toUpperCase')"
+    },
+    "rawText": {
+      "error": "Cannot read properties of undefined (reading 'toUpperCase')"
+    },
+    "metadata": {
+      "metadata": {
+        "title": "Metadata title"
+      },
+      "warnings": []
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "discovery-literal-percent-main-and-style",
+    "inputSha256": "afb60bf1a849a80cee869bcc988ab5df506b45c17487118cd9bb9b2166c99348",
+    "html": {
+      "value": "<h2>Literal percent report</h2>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Literal percent report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "discovery-literal-percent-main-and-style.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Literal percent report"],
+      "headings": ["Literal percent report"],
+      "tocCandidates": ["Literal percent report"],
+      "leadText": "Literal percent report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"discovery-literal-percent-main-and-style/discovery-literal-percent-main-and-style.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Literal percent report\"\n    ],\n    \"headings\": [\n      \"Literal percent report\"\n    ],\n    \"tocCandidates\": [\n      \"Literal percent report\"\n    ],\n    \"leadText\": \"Literal percent report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"discovery-literal-percent-main-and-style.docx\"\n  }\n]"
+  },
+  {
+    "id": "discovery-percent-style-map-ignored",
+    "inputSha256": "999cae28c774fb7106a41f0b826fe0360dbed76e9528bd40635d94a7511f8587",
+    "html": {
+      "value": "<h1>Encoded map default heading</h1>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID Heading1 was referenced but not defined in the document"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Encoded map default heading\n\n",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID Heading1 was referenced but not defined in the document"
+        }
+      ]
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "discovery-percent-style-map-ignored.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Encoded map default heading"],
+      "headings": ["Encoded map default heading"],
+      "tocCandidates": ["Encoded map default heading"],
+      "leadText": "Encoded map default heading",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"discovery-percent-style-map-ignored/discovery-percent-style-map-ignored.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Encoded map default heading\"\n    ],\n    \"headings\": [\n      \"Encoded map default heading\"\n    ],\n    \"tocCandidates\": [\n      \"Encoded map default heading\"\n    ],\n    \"leadText\": \"Encoded map default heading\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"discovery-percent-style-map-ignored.docx\"\n  }\n]"
+  },
+  {
+    "id": "projection-utf16-style-map-invalid",
+    "inputSha256": "4098bde585c09eb5357bc82950e2ce2e20e07844ab083cf503cd3bcc1e4af418",
+    "html": {
+      "value": "<h1>UTF16 map default heading</h1>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID Heading1 was referenced but not defined in the document"
+        },
+        {
+          "type": "warning",
+          "message": "Did not understand this style mapping, so ignored it: ��p\u0000.\u0000H\u0000e\u0000a\u0000d\u0000i\u0000n\u0000g\u00001\u0000 \u0000=\u0000>\u0000 \u0000!\u0000\nError was at character number 1: Expected element type but got unrecognisedCharacter \"�\""
+        }
+      ]
+    },
+    "rawText": {
+      "value": "UTF16 map default heading\n\n",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID Heading1 was referenced but not defined in the document"
+        }
+      ]
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "projection-utf16-style-map-invalid.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["UTF16 map default heading"],
+      "headings": ["UTF16 map default heading"],
+      "tocCandidates": ["UTF16 map default heading"],
+      "leadText": "UTF16 map default heading",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"projection-utf16-style-map-invalid/projection-utf16-style-map-invalid.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"UTF16 map default heading\"\n    ],\n    \"headings\": [\n      \"UTF16 map default heading\"\n    ],\n    \"tocCandidates\": [\n      \"UTF16 map default heading\"\n    ],\n    \"leadText\": \"UTF16 map default heading\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"projection-utf16-style-map-invalid.docx\"\n  }\n]"
+  }
+]

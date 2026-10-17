@@ -1,0 +1,1996 @@
+[
+  {
+    "id": "seed-metadata-rich",
+    "inputSha256": "cca18234a92ae4ac216347ba4f7050cc58d22cb0844e0c10c7d1c4bc35a8589d",
+    "html": {
+      "value": "<h1>Goal</h1><p>Quarterly Operating Plan 2026</p><p>This fixture exists to validate OOXML core metadata extraction and rename title ranking.</p><p>It intentionally combines a weak generic heading with a stronger metadata title.</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Goal\n\nQuarterly Operating Plan 2026\n\nThis fixture exists to validate OOXML core metadata extraction and rename title ranking.\n\nIt intentionally combines a weak generic heading with a stronger metadata title.\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "metadata": {
+        "title": "Quarterly Operating Plan 2026",
+        "creator": "Fixture Generator",
+        "subject": "DOCX metadata extraction fixture",
+        "description": "Deterministic DOCX fixture with weak heading text and stronger metadata title.",
+        "lastModifiedBy": "Fixture Generator",
+        "created": "2026-03-17T00:00:00Z",
+        "modified": "2026-03-17T00:00:00Z",
+        "application": "Microsoft Office Word"
+      },
+      "warnings": []
+    },
+    "result": {
+      "filename": "metadata-rich.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Quarterly Operating Plan 2026"],
+      "authorCandidates": ["Fixture Generator"],
+      "headings": ["Goal"],
+      "tocCandidates": ["Goal"],
+      "leadText": "Goal Quarterly Operating Plan 2026 This fixture exists to validate OOXML core metadata extraction and rename title ranking. It intentionally combines a weak generic heading with a stronger metadata title.",
+      "metadata": {
+        "title": "Quarterly Operating Plan 2026",
+        "creator": "Fixture Generator",
+        "subject": "DOCX metadata extraction fixture",
+        "description": "Deterministic DOCX fixture with weak heading text and stronger metadata title.",
+        "lastModifiedBy": "Fixture Generator",
+        "created": "2026-03-17T00:00:00Z",
+        "modified": "2026-03-17T00:00:00Z",
+        "application": "Microsoft Office Word",
+        "extractor": "mammoth+ooxml"
+      }
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"seed-metadata-rich/metadata-rich.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Quarterly Operating Plan 2026\"\n    ],\n    \"authorCandidates\": [\n      \"Fixture Generator\"\n    ],\n    \"headings\": [\n      \"Goal\"\n    ],\n    \"tocCandidates\": [\n      \"Goal\"\n    ],\n    \"leadText\": \"Goal Quarterly Operating Plan 2026 This fixture exists to validate OOXML core metadata extraction and rename title ranking. It intentionally combines a weak generic heading with a stronger metadata title.\",\n    \"metadata\": {\n      \"title\": \"Quarterly Operating Plan 2026\",\n      \"creator\": \"Fixture Generator\",\n      \"subject\": \"DOCX metadata extraction fixture\",\n      \"description\": \"Deterministic DOCX fixture with weak heading text and stronger metadata title.\",\n      \"lastModifiedBy\": \"Fixture Generator\",\n      \"created\": \"2026-03-17T00:00:00Z\",\n      \"modified\": \"2026-03-17T00:00:00Z\",\n      \"application\": \"Microsoft Office Word\",\n      \"extractor\": \"mammoth+ooxml\"\n    },\n    \"basename\": \"metadata-rich.docx\"\n  }\n]"
+  },
+  {
+    "id": "seed-heading-rich",
+    "inputSha256": "4909c850ffce0f2f3452d192cf59e69d27686939e4c40447a98299d91e0f0c98",
+    "html": {
+      "value": "<p>CLI Action Tool Integration Guide</p><a id=\"goal\"></a><h2>Goal</h2><p>Provide a practical guide for adding or extending chores commands in cdx-chores using the current command/action structure, with clear boundaries for external tools and Codex SDK adapters.</p><a id=\"current-integration-pattern-recommended\"></a><h2>Current Integration Pattern (Recommended)</h2><p>Use this flow for new features:</p><ol><li>CLI command parsing in src/command.ts</li><li>User input collection in src/cli/interactive.ts (if interactive path is supported)</li><li>Shared action orchestration in src/cli/actions/*.ts</li><li>Tool/system execution via existing helpers/adapters (for example src/cli/deps.ts, src/cli/process.ts, src/cli/fs-utils.ts)</li><li>Reusable pure helpers in src/utils/** only when they are truly generic</li></ol><a id=\"file-placement-guidelines\"></a><h2>File Placement Guidelines</h2><a id=\"command-wiring\"></a><h3>Command wiring</h3><ul><li>Use src/command.ts for:<ul><li>command tree definitions</li><li>flag parsing</li><li>aliases</li><li>dispatch into action functions</li></ul></li></ul><a id=\"interactive-prompts\"></a><h3>Interactive prompts</h3><ul><li>Use src/cli/interactive.ts for:<ul><li>prompt UX only</li><li>collecting inputs and confirming options</li><li>dispatching to the same action functions used by CLI flag mode</li></ul></li></ul><p>Do not duplicate business logic in interactive mode.</p><a id=\"actions-orchestration-layer\"></a><h3>Actions (orchestration layer)</h3><ul><li>Use src/cli/actions/*.ts for:<ul><li>validating action-level inputs</li><li>coordinating file/process/dependency helpers</li><li>shaping user-facing output</li><li>sequencing multiple steps in a chore workflow</li></ul></li></ul><p>Avoid direct SDK/tool-client complexity inside action modules when an adapter boundary is appropriate.</p><a id=\"external-tool-wrappers\"></a><h3>External tool wrappers</h3><ul><li>Use src/cli/deps.ts for:<ul><li>dependency inspection and install hints</li></ul></li><li>Use src/cli/process.ts for:<ul><li>process execution helpers</li></ul></li><li>Add focused adapters when logic grows:<ul><li>example future path: src/adapters/codex/**</li><li>example future path: src/adapters/tools/** (if wrappers outgrow src/cli/*)</li></ul></li></ul><a id=\"Xaaadea65f2ec0bcf1a5af2deffca5dfb76eee06\"></a><h2>Codex SDK Integration Guidance (Current + Planned)</h2><p>@openai/codex-sdk is now used in runtime code for rename-time semantic image title suggestions via src/adapters/codex/image-rename-titles.ts.</p><p>When adding or expanding Codex-backed features:</p><ul><li>Keep SDK calls out of src/command.ts</li><li>Prefer keeping SDK calls out of src/cli/actions/*.ts unless the action remains very thin</li><li>Add an adapter boundary for:<ul><li>prompt construction</li><li>response parsing</li><li>retry/timeout handling</li><li>fallback behavior</li><li>capability/eligibility checks (when modality/file-type scope matters)</li></ul></li></ul><p>Recommended shape for image rename assistance:</p><ul><li>action module (src/cli/actions/rename.ts) asks a Codex adapter for semantic title suggestions</li><li>Codex adapter returns normalized structured suggestions (not raw SDK responses)</li><li>action applies deterministic slug/length/collision handling before file operations</li></ul><a id=\"Xf64e71a4be17d9b904e697d965c3fe44af075e9\"></a><h2>Rename-Specific Integration Guidance (Important)</h2><p>Rename flows now combine multiple concerns that should remain explicitly separated:</p><ul><li>file selection scope (profiles, extensions, regex)</li><li>rename formatting (prefix/pattern/timestamp/stem)</li><li>safety behavior (dry-run/apply replay, traversal limits, hidden/system-file defaults)</li><li>optional semantic analyzers (for example Codex-assisted title suggestions)</li></ul><p>Recommended boundary for rename work:</p><ul><li>src/cli/actions/rename.ts<ul><li>orchestration, user-facing summaries, dry-run/apply flow, deterministic fallback</li></ul></li><li>src/adapters/codex/**<ul><li>Codex-specific analyzer implementations (prompting/parsing/retries/timeouts)</li></ul></li><li>future analyzer capability registry (rename-specific)<ul><li>maps file types to analyzer eligibility and skip reasons</li><li>keeps “rename works” separate from “semantic analyzer can analyze”</li></ul></li></ul><p>Design rule for rename:</p><ul><li>deterministic rename planning must remain usable for all scoped files, even when analyzers are unsupported, skipped, or failing</li></ul><p>Current scope note:</p><ul><li>Codex semantic rename in this project is currently limited to supported static image files</li><li>audio/video semantic analysis is deferred for Codex-assisted rename based on current Codex model support docs</li><li>docs-like semantic analysis is a future analyzer path and should not be implied by --codex-images today</li></ul><p>See also:</p><ul><li>docs/guides/rename-scope-and-codex-capability-guide.md</li><li>docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md</li><li>docs/researches/research-2026-02-26-rename-codex-analyzer-scope-and-file-type-support.md</li></ul><a id=\"designing-a-new-chore-command-checklist\"></a><h2>Designing a New Chore Command (Checklist)</h2><ul><li>Define the CLI surface in src/command.ts</li><li>Decide whether interactive mode support is needed in src/cli/interactive.ts</li><li>Add/update action module in src/cli/actions/</li><li>Reuse existing helpers (fs-utils, deps, process) before creating new ones</li><li>Add tests:<ul><li>success path</li><li>failure path(s)</li><li>path display behavior if output paths are printed</li></ul></li><li>Update docs:<ul><li>job record for implementation</li><li>plan/research docs if the feature changes architecture or scope</li></ul></li></ul><a id=\"what-belongs-in-srcutils-vs-not\"></a><h2>What Belongs in src/utils/** vs Not</h2><p>Use src/utils/** for generic, reusable utilities with minimal CLI coupling.</p><p>Examples in this repo:</p><ul><li>CSV helpers</li><li>path/filename helpers</li><li>datetime formatting</li><li>slug utilities</li></ul><p>Do not move cohesive subsystems into src/utils/** just because they are reusable.</p><p>Example:</p><ul><li>src/markdown/** should remain a standalone subsystem (parser/types/TOML parsing internals), not src/utils/markdown/**, unless a broader source-tree taxonomy refactor is planned.</li></ul><a id=\"testing-notes\"></a><h2>Testing Notes</h2><ul><li>Prefer isolated temporary fixtures under examples/playground/ (for example, examples/playground/.tmp-tests)</li><li>Keep black-box CLI tests and action-module unit tests both:<ul><li>CLI tests validate wiring/flags/end-to-end behavior</li><li>action tests validate orchestration and failure handling faster</li></ul></li></ul><a id=\"related-plans\"></a><h2>Related Plans</h2><ul><li>docs/plans/plan-2026-02-25-cli-actions-modularization.md</li><li>docs/plans/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md</li><li>docs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md</li></ul><a id=\"related-research\"></a><h2>Related Research</h2><ul><li>docs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md</li><li>docs/researches/research-2026-02-26-rename-codex-analyzer-scope-and-file-type-support.md</li></ul>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Unrecognised paragraph style: 'Title' (Style ID: Title)"
+        },
+        {
+          "type": "warning",
+          "message": "Unrecognised paragraph style: 'First Paragraph' (Style ID: FirstParagraph)"
+        },
+        {
+          "type": "warning",
+          "message": "Unrecognised run style: 'Verbatim Char' (Style ID: VerbatimChar)"
+        },
+        {
+          "type": "warning",
+          "message": "Unrecognised paragraph style: 'Body Text' (Style ID: BodyText)"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "CLI Action Tool Integration Guide\n\nGoal\n\nProvide a practical guide for adding or extending chores commands in cdx-chores using the current command/action structure, with clear boundaries for external tools and Codex SDK adapters.\n\nCurrent Integration Pattern (Recommended)\n\nUse this flow for new features:\n\nCLI command parsing in src/command.ts\n\nUser input collection in src/cli/interactive.ts (if interactive path is supported)\n\nShared action orchestration in src/cli/actions/*.ts\n\nTool/system execution via existing helpers/adapters (for example src/cli/deps.ts, src/cli/process.ts, src/cli/fs-utils.ts)\n\nReusable pure helpers in src/utils/** only when they are truly generic\n\nFile Placement Guidelines\n\nCommand wiring\n\nUse src/command.ts for:\n\ncommand tree definitions\n\nflag parsing\n\naliases\n\ndispatch into action functions\n\nInteractive prompts\n\nUse src/cli/interactive.ts for:\n\nprompt UX only\n\ncollecting inputs and confirming options\n\ndispatching to the same action functions used by CLI flag mode\n\nDo not duplicate business logic in interactive mode.\n\nActions (orchestration layer)\n\nUse src/cli/actions/*.ts for:\n\nvalidating action-level inputs\n\ncoordinating file/process/dependency helpers\n\nshaping user-facing output\n\nsequencing multiple steps in a chore workflow\n\nAvoid direct SDK/tool-client complexity inside action modules when an adapter boundary is appropriate.\n\nExternal tool wrappers\n\nUse src/cli/deps.ts for:\n\ndependency inspection and install hints\n\nUse src/cli/process.ts for:\n\nprocess execution helpers\n\nAdd focused adapters when logic grows:\n\nexample future path: src/adapters/codex/**\n\nexample future path: src/adapters/tools/** (if wrappers outgrow src/cli/*)\n\nCodex SDK Integration Guidance (Current + Planned)\n\n@openai/codex-sdk is now used in runtime code for rename-time semantic image title suggestions via src/adapters/codex/image-rename-titles.ts.\n\nWhen adding or expanding Codex-backed features:\n\nKeep SDK calls out of src/command.ts\n\nPrefer keeping SDK calls out of src/cli/actions/*.ts unless the action remains very thin\n\nAdd an adapter boundary for:\n\nprompt construction\n\nresponse parsing\n\nretry/timeout handling\n\nfallback behavior\n\ncapability/eligibility checks (when modality/file-type scope matters)\n\nRecommended shape for image rename assistance:\n\naction module (src/cli/actions/rename.ts) asks a Codex adapter for semantic title suggestions\n\nCodex adapter returns normalized structured suggestions (not raw SDK responses)\n\naction applies deterministic slug/length/collision handling before file operations\n\nRename-Specific Integration Guidance (Important)\n\nRename flows now combine multiple concerns that should remain explicitly separated:\n\nfile selection scope (profiles, extensions, regex)\n\nrename formatting (prefix/pattern/timestamp/stem)\n\nsafety behavior (dry-run/apply replay, traversal limits, hidden/system-file defaults)\n\noptional semantic analyzers (for example Codex-assisted title suggestions)\n\nRecommended boundary for rename work:\n\nsrc/cli/actions/rename.ts\n\norchestration, user-facing summaries, dry-run/apply flow, deterministic fallback\n\nsrc/adapters/codex/**\n\nCodex-specific analyzer implementations (prompting/parsing/retries/timeouts)\n\nfuture analyzer capability registry (rename-specific)\n\nmaps file types to analyzer eligibility and skip reasons\n\nkeeps “rename works” separate from “semantic analyzer can analyze”\n\nDesign rule for rename:\n\ndeterministic rename planning must remain usable for all scoped files, even when analyzers are unsupported, skipped, or failing\n\nCurrent scope note:\n\nCodex semantic rename in this project is currently limited to supported static image files\n\naudio/video semantic analysis is deferred for Codex-assisted rename based on current Codex model support docs\n\ndocs-like semantic analysis is a future analyzer path and should not be implied by --codex-images today\n\nSee also:\n\ndocs/guides/rename-scope-and-codex-capability-guide.md\n\ndocs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md\n\ndocs/researches/research-2026-02-26-rename-codex-analyzer-scope-and-file-type-support.md\n\nDesigning a New Chore Command (Checklist)\n\nDefine the CLI surface in src/command.ts\n\nDecide whether interactive mode support is needed in src/cli/interactive.ts\n\nAdd/update action module in src/cli/actions/\n\nReuse existing helpers (fs-utils, deps, process) before creating new ones\n\nAdd tests:\n\nsuccess path\n\nfailure path(s)\n\npath display behavior if output paths are printed\n\nUpdate docs:\n\njob record for implementation\n\nplan/research docs if the feature changes architecture or scope\n\nWhat Belongs in src/utils/** vs Not\n\nUse src/utils/** for generic, reusable utilities with minimal CLI coupling.\n\nExamples in this repo:\n\nCSV helpers\n\npath/filename helpers\n\ndatetime formatting\n\nslug utilities\n\nDo not move cohesive subsystems into src/utils/** just because they are reusable.\n\nExample:\n\nsrc/markdown/** should remain a standalone subsystem (parser/types/TOML parsing internals), not src/utils/markdown/**, unless a broader source-tree taxonomy refactor is planned.\n\nTesting Notes\n\nPrefer isolated temporary fixtures under examples/playground/ (for example, examples/playground/.tmp-tests)\n\nKeep black-box CLI tests and action-module unit tests both:\n\nCLI tests validate wiring/flags/end-to-end behavior\n\naction tests validate orchestration and failure handling faster\n\nRelated Plans\n\ndocs/plans/plan-2026-02-25-cli-actions-modularization.md\n\ndocs/plans/plan-2026-02-25-codex-assisted-image-rename-and-action-tool-integration.md\n\ndocs/plans/plan-2026-02-26-rename-scope-safety-and-flag-redesign.md\n\nRelated Research\n\ndocs/researches/research-2026-02-25-cdx-chores-cli-scope-and-architecture.md\n\ndocs/researches/research-2026-02-26-rename-codex-analyzer-scope-and-file-type-support.md\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "metadata": {
+        "title": "CLI Action Tool Integration Guide",
+        "created": "2026-02-26T12:09:17Z",
+        "modified": "2026-02-26T12:09:17Z",
+        "application": "Microsoft Word 12.0.0"
+      },
+      "warnings": []
+    },
+    "result": {
+      "filename": "heading-rich.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": [
+        "CLI Action Tool Integration Guide",
+        "Current Integration Pattern (Recommended)",
+        "File Placement Guidelines"
+      ],
+      "headings": [
+        "Goal",
+        "Current Integration Pattern (Recommended)",
+        "File Placement Guidelines",
+        "Command wiring",
+        "Interactive prompts",
+        "Actions (orchestration layer)",
+        "External tool wrappers",
+        "Codex SDK Integration Guidance (Current + Planned)"
+      ],
+      "tocCandidates": [
+        "Goal",
+        "Current Integration Pattern (Recommended)",
+        "File Placement Guidelines",
+        "Command wiring",
+        "Interactive prompts",
+        "Actions (orchestration layer)",
+        "External tool wrappers",
+        "Codex SDK Integration Guidance (Current + Planned)"
+      ],
+      "leadText": "CLI Action Tool Integration Guide Goal Provide a practical guide for adding or extending chores commands in cdx-chores using the current command/action structure, with clear boundaries for external tools and Codex SDK adapters. Current Integration Pattern (Recommended) Use this flow for new features: CLI command parsing in src/command.ts User input collection in src/cli/interactive.ts (if interactive path is supported) Shared action orchestration in src/cli/actions/*.ts Tool/system execution via existing helpers/adapters (for example src/cli/deps.ts, src/cli/process.ts, src/cli/fs-utils.ts) Reusable pure helpers in src/utils/** only when they are truly generic File Placement Guidelines Command wiring Use src/command.ts for: command tree definitions flag parsing aliases dispatch into action",
+      "metadata": {
+        "title": "CLI Action Tool Integration Guide",
+        "created": "2026-02-26T12:09:17Z",
+        "modified": "2026-02-26T12:09:17Z",
+        "application": "Microsoft Word 12.0.0",
+        "extractor": "mammoth+ooxml"
+      }
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"seed-heading-rich/heading-rich.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"CLI Action Tool Integration Guide\",\n      \"Current Integration Pattern (Recommended)\",\n      \"File Placement Guidelines\"\n    ],\n    \"headings\": [\n      \"Goal\",\n      \"Current Integration Pattern (Recommended)\",\n      \"File Placement Guidelines\",\n      \"Command wiring\",\n      \"Interactive prompts\",\n      \"Actions (orchestration layer)\",\n      \"External tool wrappers\",\n      \"Codex SDK Integration Guidance (Current + Planned)\"\n    ],\n    \"tocCandidates\": [\n      \"Goal\",\n      \"Current Integration Pattern (Recommended)\",\n      \"File Placement Guidelines\",\n      \"Command wiring\",\n      \"Interactive prompts\",\n      \"Actions (orchestration layer)\",\n      \"External tool wrappers\",\n      \"Codex SDK Integration Guidance (Current + Planned)\"\n    ],\n    \"leadText\": \"CLI Action Tool Integration Guide Goal Provide a practical guide for adding or extending chores commands in cdx-chores using the current command/action structure, with clear boundaries for external tools and Codex SDK adapters. Current Integration Pattern (Recommended) Use this flow for new features: CLI command parsing in src/command.ts User input collection in src/cli/interactive.ts (if interactive path is supported) Shared action orchestration in src/cli/actions/*.ts Tool/system execution via existing helpers/adapters (for example src/cli/deps.ts, src/cli/process.ts, src/cli/fs-utils.ts) Reusable pure helpers in src/utils/** only when they are truly generic File Placement Guidelines Command wiring Use src/command.ts for: command tree definitions flag parsing aliases dispatch into action\",\n    \"metadata\": {\n      \"title\": \"CLI Action Tool Integration Guide\",\n      \"created\": \"2026-02-26T12:09:17Z\",\n      \"modified\": \"2026-02-26T12:09:17Z\",\n      \"application\": \"Microsoft Word 12.0.0\",\n      \"extractor\": \"mammoth+ooxml\"\n    },\n    \"basename\": \"heading-rich.docx\"\n  }\n]"
+  },
+  {
+    "id": "seed-weak-heading",
+    "inputSha256": "b1f503a8f0cfbe222f6cab63d6217b8257e8f3d49ca6444b4c2ab1273d3b3700",
+    "html": {
+      "value": "<h1>Goal</h1><p>Customer Launch Checklist</p><p>Checklist for customer rollout, launch approvals, and communication handoff.</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Goal\n\nCustomer Launch Checklist\n\nChecklist for customer rollout, launch approvals, and communication handoff.\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "weak-heading.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Customer Launch Checklist", "Goal"],
+      "headings": ["Goal"],
+      "tocCandidates": ["Goal"],
+      "leadText": "Goal Customer Launch Checklist Checklist for customer rollout, launch approvals, and communication handoff.",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"seed-weak-heading/weak-heading.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Customer Launch Checklist\",\n      \"Goal\"\n    ],\n    \"headings\": [\n      \"Goal\"\n    ],\n    \"tocCandidates\": [\n      \"Goal\"\n    ],\n    \"leadText\": \"Goal Customer Launch Checklist Checklist for customer rollout, launch approvals, and communication handoff.\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"weak-heading.docx\"\n  }\n]"
+  },
+  {
+    "id": "seed-no-heading",
+    "inputSha256": "a22c897b846999aab0431d10812f3392cb8e5c4e32a3e97722e219584475c7ae",
+    "html": {
+      "value": "<p>Q2 Hiring Plan</p><p>Team staffing targets for engineering, design, and support over the next quarter.</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Q2 Hiring Plan\n\nTeam staffing targets for engineering, design, and support over the next quarter.\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "no-heading.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Q2 Hiring Plan"],
+      "leadText": "Q2 Hiring Plan Team staffing targets for engineering, design, and support over the next quarter.",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"seed-no-heading/no-heading.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Q2 Hiring Plan\"\n    ],\n    \"leadText\": \"Q2 Hiring Plan Team staffing targets for engineering, design, and support over the next quarter.\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"no-heading.docx\"\n  }\n]"
+  },
+  {
+    "id": "seed-table-heavy",
+    "inputSha256": "b38817732555ba1167f40776d1929e43ff311b0a2eff975629fb089c0d072bf6",
+    "html": {
+      "value": "<h1>Roadmap Milestones</h1><p>Key delivery milestones grouped by stream and target month.</p><table><tr><td><p>Workstream</p></td><td><p>Milestone</p></td><td><p>Target</p></td></tr><tr><td><p>Platform</p></td><td><p>API stabilization</p></td><td><p>April</p></td></tr><tr><td><p>Growth</p></td><td><p>Lifecycle messaging</p></td><td><p>May</p></td></tr><tr><td><p>Ops</p></td><td><p>Runbook refresh</p></td><td><p>June</p></td></tr></table>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Roadmap Milestones\n\nKey delivery milestones grouped by stream and target month.\n\nWorkstream\n\nMilestone\n\nTarget\n\nPlatform\n\nAPI stabilization\n\nApril\n\nGrowth\n\nLifecycle messaging\n\nMay\n\nOps\n\nRunbook refresh\n\nJune\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "table-heavy.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Roadmap Milestones"],
+      "headings": ["Roadmap Milestones"],
+      "tocCandidates": ["Roadmap Milestones"],
+      "leadText": "Roadmap Milestones Key delivery milestones grouped by stream and target month. Workstream Milestone Target Platform API stabilization April Growth Lifecycle messaging May Ops Runbook refresh June",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"seed-table-heavy/table-heavy.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Roadmap Milestones\"\n    ],\n    \"headings\": [\n      \"Roadmap Milestones\"\n    ],\n    \"tocCandidates\": [\n      \"Roadmap Milestones\"\n    ],\n    \"leadText\": \"Roadmap Milestones Key delivery milestones grouped by stream and target month. Workstream Milestone Target Platform API stabilization April Growth Lifecycle messaging May Ops Runbook refresh June\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"table-heavy.docx\"\n  }\n]"
+  },
+  {
+    "id": "seed-hyperlink-heavy",
+    "inputSha256": "b946a8a42a1ac4200b9ecc0a9c2c7165cfedbf27d59699446ee26c52807b05dd",
+    "html": {
+      "value": "<h1>Partner Reference Guide</h1><p>Collected links for pricing, onboarding, contracts, and support handoff.</p><p><a href=\"https://example.com/pricing\">Pricing Portal</a></p><p><a href=\"https://example.com/onboarding\">Onboarding Checklist</a></p><p><a href=\"https://example.com/support\">Support Escalation Guide</a></p>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Run style with ID Hyperlink was referenced but not defined in the document"
+        },
+        {
+          "type": "warning",
+          "message": "Unrecognised run style: 'null' (Style ID: Hyperlink)"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Partner Reference Guide\n\nCollected links for pricing, onboarding, contracts, and support handoff.\n\nPricing Portal\n\nOnboarding Checklist\n\nSupport Escalation Guide\n\n",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Run style with ID Hyperlink was referenced but not defined in the document"
+        }
+      ]
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "hyperlink-heavy.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Partner Reference Guide"],
+      "headings": ["Partner Reference Guide"],
+      "tocCandidates": ["Partner Reference Guide"],
+      "leadText": "Partner Reference Guide Collected links for pricing, onboarding, contracts, and support handoff. Pricing Portal Onboarding Checklist Support Escalation Guide",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"seed-hyperlink-heavy/hyperlink-heavy.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Partner Reference Guide\"\n    ],\n    \"headings\": [\n      \"Partner Reference Guide\"\n    ],\n    \"tocCandidates\": [\n      \"Partner Reference Guide\"\n    ],\n    \"leadText\": \"Partner Reference Guide Collected links for pricing, onboarding, contracts, and support handoff. Pricing Portal Onboarding Checklist Support Escalation Guide\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"hyperlink-heavy.docx\"\n  }\n]"
+  },
+  {
+    "id": "seed-textutil-alt-editor",
+    "inputSha256": "1f045a0f545a75643368563c2e626d1b0bb3dafeb6a2ceeafe06d14163a90fe5",
+    "html": {
+      "value": "<p>Partner Enablement Guide</p><p>This sample validates an alternate-editor exported DOCX fixture for Phase 5.</p><p>Pricing overview</p><p>Support handoff</p><p>Launch timeline</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Partner Enablement Guide\n\nThis sample validates an alternate-editor exported DOCX fixture for Phase 5.\n\nPricing overview\n\nSupport handoff\n\nLaunch timeline\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "textutil-alt-editor.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Partner Enablement Guide"],
+      "leadText": "Partner Enablement Guide This sample validates an alternate-editor exported DOCX fixture for Phase 5. Pricing overview Support handoff Launch timeline",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"seed-textutil-alt-editor/textutil-alt-editor.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Partner Enablement Guide\"\n    ],\n    \"leadText\": \"Partner Enablement Guide This sample validates an alternate-editor exported DOCX fixture for Phase 5. Pricing overview Support handoff Launch timeline\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"textutil-alt-editor.docx\"\n  }\n]"
+  },
+  {
+    "id": "metadata-missing",
+    "inputSha256": "ca68f106d484ae6220853080275f834ca877fe1cfcdc57857e3099e2b49974af",
+    "html": {
+      "value": "<p>Content Discovery Report</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Content Discovery Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "metadata-missing.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Content Discovery Report"],
+      "leadText": "Content Discovery Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"metadata-missing/metadata-missing.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Content Discovery Report\"\n    ],\n    \"leadText\": \"Content Discovery Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"metadata-missing.docx\"\n  }\n]"
+  },
+  {
+    "id": "metadata-malformed",
+    "inputSha256": "4c6ae0622d4a6fee1b8c532b90b8deb761de8b6951bf33ff4924e8b8401475a6",
+    "html": {
+      "value": "<p>Content Discovery Report</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Content Discovery Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "metadata-malformed.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Content Discovery Report"],
+      "leadText": "Content Discovery Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"metadata-malformed/metadata-malformed.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Content Discovery Report\"\n    ],\n    \"leadText\": \"Content Discovery Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"metadata-malformed.docx\"\n  }\n]"
+  },
+  {
+    "id": "metadata-custom-path",
+    "inputSha256": "93d429eb91249eab95a378801e689aa5175b7a2d449700a69b2762aee677bdb5",
+    "html": {
+      "value": "<p>Content Discovery Report</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Content Discovery Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "metadata": {
+        "title": "Custom Core Report"
+      },
+      "warnings": []
+    },
+    "result": {
+      "filename": "metadata-custom-path.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Custom Core Report", "Content Discovery Report"],
+      "leadText": "Content Discovery Report",
+      "metadata": {
+        "title": "Custom Core Report",
+        "extractor": "mammoth+ooxml"
+      }
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"metadata-custom-path/metadata-custom-path.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Custom Core Report\",\n      \"Content Discovery Report\"\n    ],\n    \"leadText\": \"Content Discovery Report\",\n    \"metadata\": {\n      \"title\": \"Custom Core Report\",\n      \"extractor\": \"mammoth+ooxml\"\n    },\n    \"basename\": \"metadata-custom-path.docx\"\n  }\n]"
+  },
+  {
+    "id": "metadata-utf16",
+    "inputSha256": "b7193484ec23de3556082517d2b1de1a99bd2b5db94051234d6556bd5de0fe02",
+    "html": {
+      "value": "<p>Content Discovery Report</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Content Discovery Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "metadata": {
+        "title": "UTF16 核心標題"
+      },
+      "warnings": []
+    },
+    "result": {
+      "filename": "metadata-utf16.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["UTF16 核心標題", "Content Discovery Report"],
+      "leadText": "Content Discovery Report",
+      "metadata": {
+        "title": "UTF16 核心標題",
+        "extractor": "mammoth+ooxml"
+      }
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"metadata-utf16/metadata-utf16.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"UTF16 核心標題\",\n      \"Content Discovery Report\"\n    ],\n    \"leadText\": \"Content Discovery Report\",\n    \"metadata\": {\n      \"title\": \"UTF16 核心標題\",\n      \"extractor\": \"mammoth+ooxml\"\n    },\n    \"basename\": \"metadata-utf16.docx\"\n  }\n]"
+  },
+  {
+    "id": "metadata-dot-segments",
+    "inputSha256": "d604da6877ff98e8e427a3ffd620e06c2b675160ff8abca4cf879d6e87a9db94",
+    "html": {
+      "value": "<p>Content Discovery Report</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Content Discovery Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "metadata": {
+        "title": "Dot Segment Report"
+      },
+      "warnings": []
+    },
+    "result": {
+      "filename": "metadata-dot-segments.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Dot Segment Report", "Content Discovery Report"],
+      "leadText": "Content Discovery Report",
+      "metadata": {
+        "title": "Dot Segment Report",
+        "extractor": "mammoth+ooxml"
+      }
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"metadata-dot-segments/metadata-dot-segments.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Dot Segment Report\",\n      \"Content Discovery Report\"\n    ],\n    \"leadText\": \"Content Discovery Report\",\n    \"metadata\": {\n      \"title\": \"Dot Segment Report\",\n      \"extractor\": \"mammoth+ooxml\"\n    },\n    \"basename\": \"metadata-dot-segments.docx\"\n  }\n]"
+  },
+  {
+    "id": "metadata-percent-path",
+    "inputSha256": "e8cf8ba1061a66a664c3cb3edac98560303285a7ea32258dcdfd643faa823a94",
+    "html": {
+      "value": "<p>Content Discovery Report</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Content Discovery Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "metadata": {
+        "title": "Escaped Core Report"
+      },
+      "warnings": []
+    },
+    "result": {
+      "filename": "metadata-percent-path.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Escaped Core Report", "Content Discovery Report"],
+      "leadText": "Content Discovery Report",
+      "metadata": {
+        "title": "Escaped Core Report",
+        "extractor": "mammoth+ooxml"
+      }
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"metadata-percent-path/metadata-percent-path.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Escaped Core Report\",\n      \"Content Discovery Report\"\n    ],\n    \"leadText\": \"Content Discovery Report\",\n    \"metadata\": {\n      \"title\": \"Escaped Core Report\",\n      \"extractor\": \"mammoth+ooxml\"\n    },\n    \"basename\": \"metadata-percent-path.docx\"\n  }\n]"
+  },
+  {
+    "id": "content-custom-parts",
+    "inputSha256": "c2d10e92ab702818b0599cfe391c258a0a5d5f5994dd523a48dc7f9dc7941adb",
+    "html": {
+      "value": "<h2>Custom Part Heading</h2>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Custom Part Heading\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "content-custom-parts.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Custom Part Heading"],
+      "headings": ["Custom Part Heading"],
+      "tocCandidates": ["Custom Part Heading"],
+      "leadText": "Custom Part Heading",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"content-custom-parts/content-custom-parts.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Custom Part Heading\"\n    ],\n    \"headings\": [\n      \"Custom Part Heading\"\n    ],\n    \"tocCandidates\": [\n      \"Custom Part Heading\"\n    ],\n    \"leadText\": \"Custom Part Heading\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"content-custom-parts.docx\"\n  }\n]"
+  },
+  {
+    "id": "content-dot-segment-main-target",
+    "inputSha256": "362f41c2acdf17e556a0e0e49b1b9a8ade3924d5f27eb2f01164782b7ffe46c3",
+    "html": {
+      "error": "Could not find main document part. Are you sure this is a valid .docx file?"
+    },
+    "rawText": {
+      "error": "Could not find main document part. Are you sure this is a valid .docx file?"
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "content-dot-segment-style-target",
+    "inputSha256": "7cf4882c1bd738c382dd7f3fc77ffad4ebc6bc8cc224867b0674e1a292a57842",
+    "html": {
+      "value": "<p>Unresolved Style Report</p>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID CustomTop was referenced but not defined in the document"
+        },
+        {
+          "type": "warning",
+          "message": "Unrecognised paragraph style: 'null' (Style ID: CustomTop)"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Unresolved Style Report\n\n",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID CustomTop was referenced but not defined in the document"
+        }
+      ]
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "content-dot-segment-style-target.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Unresolved Style Report"],
+      "leadText": "Unresolved Style Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"content-dot-segment-style-target/content-dot-segment-style-target.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Unresolved Style Report\"\n    ],\n    \"leadText\": \"Unresolved Style Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"content-dot-segment-style-target.docx\"\n  }\n]"
+  },
+  {
+    "id": "content-percent-style-target",
+    "inputSha256": "773467129f216ccddedc0b1b5fcf344d391e364866ea94c3355ff907fd9a9477",
+    "html": {
+      "value": "<p>Escaped Style Report</p>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID CustomTop was referenced but not defined in the document"
+        },
+        {
+          "type": "warning",
+          "message": "Unrecognised paragraph style: 'null' (Style ID: CustomTop)"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Escaped Style Report\n\n",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID CustomTop was referenced but not defined in the document"
+        }
+      ]
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "content-percent-style-target.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Escaped Style Report"],
+      "leadText": "Escaped Style Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"content-percent-style-target/content-percent-style-target.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Escaped Style Report\"\n    ],\n    \"leadText\": \"Escaped Style Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"content-percent-style-target.docx\"\n  }\n]"
+  },
+  {
+    "id": "content-percent-main-target",
+    "inputSha256": "5e80e02d797e5a8b876cb2c37aae124a4dbe4de7a85abc4b5a96711fc3063b30",
+    "html": {
+      "error": "Could not find main document part. Are you sure this is a valid .docx file?"
+    },
+    "rawText": {
+      "error": "Could not find main document part. Are you sure this is a valid .docx file?"
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "content-alternate-prefix",
+    "inputSha256": "06f9b1498ffb83404b81a267458c30e0a0eab3c5991ed7f1d288e8879ff15147",
+    "html": {
+      "value": "<p>Content Discovery Report</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Content Discovery Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "content-alternate-prefix.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Content Discovery Report"],
+      "leadText": "Content Discovery Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"content-alternate-prefix/content-alternate-prefix.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Content Discovery Report\"\n    ],\n    \"leadText\": \"Content Discovery Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"content-alternate-prefix.docx\"\n  }\n]"
+  },
+  {
+    "id": "content-strict-namespace",
+    "inputSha256": "07aba1bd6d85d04bf1db71d60191764088a9a8b31527c2861068aa7bd0a425a3",
+    "html": {
+      "value": "<p>Content Discovery Report</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Content Discovery Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "content-strict-namespace.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Content Discovery Report"],
+      "leadText": "Content Discovery Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"content-strict-namespace/content-strict-namespace.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Content Discovery Report\"\n    ],\n    \"leadText\": \"Content Discovery Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"content-strict-namespace.docx\"\n  }\n]"
+  },
+  {
+    "id": "content-utf16",
+    "inputSha256": "cf10bc2135629766c59ab55602b0df227b13f626244a153c798811e9d49478cb",
+    "html": {
+      "error": "error: [xmldom error]\telement parse error: Error: invalid tagName:\n@#[line:undefined,col:undefined]"
+    },
+    "rawText": {
+      "error": "error: [xmldom error]\telement parse error: Error: invalid tagName:\n@#[line:undefined,col:undefined]"
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "text-split-unicode-spaces",
+    "inputSha256": "4734a1a3e3d09492326f6198bb25088c91f545473e4d64816d4cf8cc464e06c1",
+    "html": {
+      "value": "<p>Split Run Report</p><p>  臺灣 café é 😀 Report  </p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Split Run Report\n\n  臺灣 café é 😀 Report  \n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "text-split-unicode-spaces.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Split Run Report"],
+      "leadText": "Split Run Report 臺灣 café é 😀 Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"text-split-unicode-spaces/text-split-unicode-spaces.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Split Run Report\"\n    ],\n    \"leadText\": \"Split Run Report 臺灣 café é 😀 Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"text-split-unicode-spaces.docx\"\n  }\n]"
+  },
+  {
+    "id": "text-symbol-tabs-breaks",
+    "inputSha256": "9230ef0157e10d9b6add100b94b5bab6cbf6df38596a8906ba93d09f20ac2a4e",
+    "html": {
+      "value": "<p>Symbol ✓\tTab<br />LinePage</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Symbol ✓\tTabLinePage\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "text-symbol-tabs-breaks.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Symbol ✓ TabLinePage"],
+      "leadText": "Symbol ✓ TabLinePage",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"text-symbol-tabs-breaks/text-symbol-tabs-breaks.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Symbol ✓ TabLinePage\"\n    ],\n    \"leadText\": \"Symbol ✓ TabLinePage\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"text-symbol-tabs-breaks.docx\"\n  }\n]"
+  },
+  {
+    "id": "text-blank-paragraphs",
+    "inputSha256": "8d6c9061478db7602e59c4157a62f89e89d4317981f2125b23deda537b528daf",
+    "html": {
+      "value": "<p>Before Blank</p><p>After Blank</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Before Blank\n\n\n\nAfter Blank\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "text-blank-paragraphs.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Before Blank"],
+      "leadText": "Before Blank After Blank",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"text-blank-paragraphs/text-blank-paragraphs.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Before Blank\"\n    ],\n    \"leadText\": \"Before Blank After Blank\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"text-blank-paragraphs.docx\"\n  }\n]"
+  },
+  {
+    "id": "text-list-order",
+    "inputSha256": "2632318fb6d291328b27baebff16431b117c5a480c189ecc6856f9baf8067c8d",
+    "html": {
+      "value": "<p>Before List</p><ul><li>First Item</li><li>Second Item</li></ul><p>After List</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Before List\n\nFirst Item\n\nSecond Item\n\nAfter List\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "text-list-order.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Before List"],
+      "leadText": "Before List First Item Second Item After List",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"text-list-order/text-list-order.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Before List\"\n    ],\n    \"leadText\": \"Before List First Item Second Item After List\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"text-list-order.docx\"\n  }\n]"
+  },
+  {
+    "id": "text-table-content-control-order",
+    "inputSha256": "91facc9d7488987d32fd5f021841b670f4e5ae43aa39241248208f2864406905",
+    "html": {
+      "value": "<p>Before Table</p><table><tr><td><p>Cell One</p></td><td><p>Controlled Cell</p></td></tr></table><p>After Table</p><p>Controlled Body</p><p>After Control</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Before Table\n\nCell One\n\nControlled Cell\n\nAfter Table\n\nControlled Body\n\nAfter Control\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "text-table-content-control-order.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Before Table"],
+      "leadText": "Before Table Cell One Controlled Cell After Table Controlled Body After Control",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"text-table-content-control-order/text-table-content-control-order.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Before Table\"\n    ],\n    \"leadText\": \"Before Table Cell One Controlled Cell After Table Controlled Body After Control\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"text-table-content-control-order.docx\"\n  }\n]"
+  },
+  {
+    "id": "heading-standard-id",
+    "inputSha256": "ec04fae94586939a25a0a7ee1e2efc9fd18a9ad876c4809ab75f3ef24633221e",
+    "html": {
+      "value": "<h1>Standard Heading Report</h1>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Standard Heading Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "heading-standard-id.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Standard Heading Report"],
+      "headings": ["Standard Heading Report"],
+      "tocCandidates": ["Standard Heading Report"],
+      "leadText": "Standard Heading Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"heading-standard-id/heading-standard-id.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Standard Heading Report\"\n    ],\n    \"headings\": [\n      \"Standard Heading Report\"\n    ],\n    \"tocCandidates\": [\n      \"Standard Heading Report\"\n    ],\n    \"leadText\": \"Standard Heading Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"heading-standard-id.docx\"\n  }\n]"
+  },
+  {
+    "id": "heading-custom-id-standard-name",
+    "inputSha256": "be09885ab58a27e52aed18ec183d0ab4c0e4c859db33065ac99ebd9f77debb4b",
+    "html": {
+      "value": "<h2>Named Heading Report</h2>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Named Heading Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "heading-custom-id-standard-name.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Named Heading Report"],
+      "headings": ["Named Heading Report"],
+      "tocCandidates": ["Named Heading Report"],
+      "leadText": "Named Heading Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"heading-custom-id-standard-name/heading-custom-id-standard-name.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Named Heading Report\"\n    ],\n    \"headings\": [\n      \"Named Heading Report\"\n    ],\n    \"tocCandidates\": [\n      \"Named Heading Report\"\n    ],\n    \"leadText\": \"Named Heading Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"heading-custom-id-standard-name.docx\"\n  }\n]"
+  },
+  {
+    "id": "heading-apple-default-map",
+    "inputSha256": "86e4c4fae944f745a905e0706ce6089764bd318111a520ae4d124331346e1f1f",
+    "html": {
+      "value": "<h1>Apple Heading Report</h1>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Apple Heading Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "heading-apple-default-map.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Apple Heading Report"],
+      "headings": ["Apple Heading Report"],
+      "tocCandidates": ["Apple Heading Report"],
+      "leadText": "Apple Heading Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"heading-apple-default-map/heading-apple-default-map.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Apple Heading Report\"\n    ],\n    \"headings\": [\n      \"Apple Heading Report\"\n    ],\n    \"tocCandidates\": [\n      \"Apple Heading Report\"\n    ],\n    \"leadText\": \"Apple Heading Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"heading-apple-default-map.docx\"\n  }\n]"
+  },
+  {
+    "id": "heading-localized-unmapped",
+    "inputSha256": "7ae40568dce0c40102aed0b33e6c0958005e7375cc4581364ab9daa7b2482d6e",
+    "html": {
+      "value": "<p>Localized Heading Report</p>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Unrecognised paragraph style: 'Titre 1' (Style ID: Titre1)"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Localized Heading Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "heading-localized-unmapped.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Localized Heading Report"],
+      "leadText": "Localized Heading Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"heading-localized-unmapped/heading-localized-unmapped.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Localized Heading Report\"\n    ],\n    \"leadText\": \"Localized Heading Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"heading-localized-unmapped.docx\"\n  }\n]"
+  },
+  {
+    "id": "heading-inherited",
+    "inputSha256": "964bf2af265073cb46ff4b28799f1f934728d3aa07b5ec61f980e41294e1e5ea",
+    "html": {
+      "value": "<p>Inherited Heading Report</p>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Unrecognised paragraph style: 'Derived Report' (Style ID: Derived)"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Inherited Heading Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "heading-inherited.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Inherited Heading Report"],
+      "leadText": "Inherited Heading Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"heading-inherited/heading-inherited.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Inherited Heading Report\"\n    ],\n    \"leadText\": \"Inherited Heading Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"heading-inherited.docx\"\n  }\n]"
+  },
+  {
+    "id": "heading-cycle",
+    "inputSha256": "9ed0154bea53f90d5f367882aa11047be3c84debcd1dc4399338d2347017aa92",
+    "html": {
+      "value": "<p>Cyclic Style Report</p>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Unrecognised paragraph style: 'Cycle A' (Style ID: CycleA)"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Cyclic Style Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "heading-cycle.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Cyclic Style Report"],
+      "leadText": "Cyclic Style Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"heading-cycle/heading-cycle.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Cyclic Style Report\"\n    ],\n    \"leadText\": \"Cyclic Style Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"heading-cycle.docx\"\n  }\n]"
+  },
+  {
+    "id": "heading-outline-style",
+    "inputSha256": "2f2ddfe209a769e861e0286dd9d0f473a1a591ed8e95c07ea716815011a6b42b",
+    "html": {
+      "value": "<p>Outline Style Report</p>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Unrecognised paragraph style: 'Outline Top' (Style ID: OutlineTop)"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Outline Style Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "heading-outline-style.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Outline Style Report"],
+      "leadText": "Outline Style Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"heading-outline-style/heading-outline-style.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Outline Style Report\"\n    ],\n    \"leadText\": \"Outline Style Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"heading-outline-style.docx\"\n  }\n]"
+  },
+  {
+    "id": "heading-outline-paragraph",
+    "inputSha256": "f86f394dea3566b728b4abb4022360db42c8e087a75da5600aeada5e7013c41e",
+    "html": {
+      "value": "<p>Outline Paragraph Report</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Outline Paragraph Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "heading-outline-paragraph.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Outline Paragraph Report"],
+      "leadText": "Outline Paragraph Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"heading-outline-paragraph/heading-outline-paragraph.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Outline Paragraph Report\"\n    ],\n    \"leadText\": \"Outline Paragraph Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"heading-outline-paragraph.docx\"\n  }\n]"
+  },
+  {
+    "id": "heading-missing-definition",
+    "inputSha256": "4dc9424033412bebfc0c912bd69ca644fed384e5c31377796046a9040487436d",
+    "html": {
+      "value": "<h1>Undefined Heading Report</h1>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID Heading1 was referenced but not defined in the document"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Undefined Heading Report\n\n",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID Heading1 was referenced but not defined in the document"
+        }
+      ]
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "heading-missing-definition.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Undefined Heading Report"],
+      "headings": ["Undefined Heading Report"],
+      "tocCandidates": ["Undefined Heading Report"],
+      "leadText": "Undefined Heading Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"heading-missing-definition/heading-missing-definition.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Undefined Heading Report\"\n    ],\n    \"headings\": [\n      \"Undefined Heading Report\"\n    ],\n    \"tocCandidates\": [\n      \"Undefined Heading Report\"\n    ],\n    \"leadText\": \"Undefined Heading Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"heading-missing-definition.docx\"\n  }\n]"
+  },
+  {
+    "id": "heading-default-style",
+    "inputSha256": "34d1211ba6506648a1066a5afbdcc2fb32b4e32cf05f4b1e92735af4839ff42f",
+    "html": {
+      "value": "<p>Default Style Report</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Default Style Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "heading-default-style.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Default Style Report"],
+      "leadText": "Default Style Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"heading-default-style/heading-default-style.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Default Style Report\"\n    ],\n    \"leadText\": \"Default Style Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"heading-default-style.docx\"\n  }\n]"
+  },
+  {
+    "id": "heading-embedded-map",
+    "inputSha256": "fe81e1488b56e5dbf6bf5c01453d4784f2530f4c4eef72fe1fa419785d8f5c09",
+    "html": {
+      "value": "<h3>Mapped Localized Report</h3><h2>Mapped Standard Report</h2>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Mapped Localized Report\n\nMapped Standard Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "heading-embedded-map.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Mapped Standard Report", "Mapped Localized Report"],
+      "headings": ["Mapped Localized Report", "Mapped Standard Report"],
+      "tocCandidates": ["Mapped Localized Report", "Mapped Standard Report"],
+      "leadText": "Mapped Localized Report Mapped Standard Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"heading-embedded-map/heading-embedded-map.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Mapped Standard Report\",\n      \"Mapped Localized Report\"\n    ],\n    \"headings\": [\n      \"Mapped Localized Report\",\n      \"Mapped Standard Report\"\n    ],\n    \"tocCandidates\": [\n      \"Mapped Localized Report\",\n      \"Mapped Standard Report\"\n    ],\n    \"leadText\": \"Mapped Localized Report Mapped Standard Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"heading-embedded-map.docx\"\n  }\n]"
+  },
+  {
+    "id": "link-visible-text",
+    "inputSha256": "9205399a85fb63f425209f10bb17ebb52ebd44a0af4a3deeceedbd690b3377ae",
+    "html": {
+      "value": "<p><a href=\"https://example.invalid/reference\">Visible Partner Report</a></p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Visible Partner Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "link-visible-text.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Visible Partner Report"],
+      "leadText": "Visible Partner Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"link-visible-text/link-visible-text.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Visible Partner Report\"\n    ],\n    \"leadText\": \"Visible Partner Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"link-visible-text.docx\"\n  }\n]"
+  },
+  {
+    "id": "field-hyperlink-quoted",
+    "inputSha256": "d31cf446935f48e5482e75fe2f7183a24bd662093055e20854b2538cb030a235",
+    "html": {
+      "value": "<p><a href=\"https://example.invalid/quoted\">Quoted Field Report</a></p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Quoted Field Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "field-hyperlink-quoted.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Quoted Field Report"],
+      "leadText": "Quoted Field Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"field-hyperlink-quoted/field-hyperlink-quoted.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Quoted Field Report\"\n    ],\n    \"leadText\": \"Quoted Field Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"field-hyperlink-quoted.docx\"\n  }\n]"
+  },
+  {
+    "id": "field-hyperlink-unquoted",
+    "inputSha256": "2780c40589d9bb015564e12303d50aba7e7cd7ec1b164fc3952eaff6e0399007",
+    "html": {
+      "value": "<p><a href=\"https://example.invalid/unquoted\">Unquoted Field Report</a></p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Unquoted Field Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "field-hyperlink-unquoted.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Unquoted Field Report"],
+      "leadText": "Unquoted Field Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"field-hyperlink-unquoted/field-hyperlink-unquoted.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Unquoted Field Report\"\n    ],\n    \"leadText\": \"Unquoted Field Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"field-hyperlink-unquoted.docx\"\n  }\n]"
+  },
+  {
+    "id": "field-hyperlink-anchor",
+    "inputSha256": "6978ba577cc82d573bf7eb0daa4e0bc77c8abd3271be7cf4da3e920a6428848a",
+    "html": {
+      "value": "<p><a href=\"#report-section\">Anchor Field Report</a></p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Anchor Field Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "field-hyperlink-anchor.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Anchor Field Report"],
+      "leadText": "Anchor Field Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"field-hyperlink-anchor/field-hyperlink-anchor.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Anchor Field Report\"\n    ],\n    \"leadText\": \"Anchor Field Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"field-hyperlink-anchor.docx\"\n  }\n]"
+  },
+  {
+    "id": "field-simple-and-page-result",
+    "inputSha256": "18b8c24902f56fdb01c8bb18a56ec7f87300de67b7bf72054cd2949775ba30ac",
+    "html": {
+      "value": "<p>Page Display Result</p><p>Body After Fields</p>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "An unrecognised element was ignored: w:fldSimple"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "\n\nPage Display Result\n\nBody After Fields\n\n",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "An unrecognised element was ignored: w:fldSimple"
+        }
+      ]
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "field-simple-and-page-result.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Page Display Result"],
+      "leadText": "Page Display Result Body After Fields",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"field-simple-and-page-result/field-simple-and-page-result.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Page Display Result\"\n    ],\n    \"leadText\": \"Page Display Result Body After Fields\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"field-simple-and-page-result.docx\"\n  }\n]"
+  },
+  {
+    "id": "secondary-revisions-hidden",
+    "inputSha256": "fd1d8375a59b498bfcfca13e5d067689e36c73e40be5745863ef53ab4b077492",
+    "html": {
+      "value": "<p>Revision Report Inserted Text Hidden Text</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Revision Report Inserted Text Hidden Text\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "secondary-revisions-hidden.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Revision Report Inserted Text Hidden Text"],
+      "leadText": "Revision Report Inserted Text Hidden Text",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"secondary-revisions-hidden/secondary-revisions-hidden.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Revision Report Inserted Text Hidden Text\"\n    ],\n    \"leadText\": \"Revision Report Inserted Text Hidden Text\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"secondary-revisions-hidden.docx\"\n  }\n]"
+  },
+  {
+    "id": "secondary-textbox-order",
+    "inputSha256": "6cc357f751a1a7cf807f0aea3609e4fe75442aa29ee040323e1be87f645b564e",
+    "html": {
+      "value": "<p>Before Textbox After Textbox</p><h1>Textbox Heading Report</h1><p>Textbox Body</p><p>Following Paragraph</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Before Textbox After Textbox\n\nTextbox Heading Report\n\nTextbox Body\n\nFollowing Paragraph\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "secondary-textbox-order.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Textbox Heading Report", "Before Textbox After Textbox"],
+      "headings": ["Textbox Heading Report"],
+      "tocCandidates": ["Textbox Heading Report"],
+      "leadText": "Before Textbox After Textbox Textbox Heading Report Textbox Body Following Paragraph",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"secondary-textbox-order/secondary-textbox-order.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Textbox Heading Report\",\n      \"Before Textbox After Textbox\"\n    ],\n    \"headings\": [\n      \"Textbox Heading Report\"\n    ],\n    \"tocCandidates\": [\n      \"Textbox Heading Report\"\n    ],\n    \"leadText\": \"Before Textbox After Textbox Textbox Heading Report Textbox Body Following Paragraph\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"secondary-textbox-order.docx\"\n  }\n]"
+  },
+  {
+    "id": "secondary-header-footer",
+    "inputSha256": "3205427a63e03642912986b57dcf478362a00c1bbccc96d0a373c801a23de469",
+    "html": {
+      "value": "<p>Main Body Report</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Main Body Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "secondary-header-footer.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Main Body Report"],
+      "leadText": "Main Body Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"secondary-header-footer/secondary-header-footer.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Main Body Report\"\n    ],\n    \"leadText\": \"Main Body Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"secondary-header-footer.docx\"\n  }\n]"
+  },
+  {
+    "id": "secondary-footnote",
+    "inputSha256": "f8de7c9f3c9b713bfaa7129246f197c490af95efda2c4a13f29d409835b3c500",
+    "html": {
+      "value": "<p>Before Note<sup><a href=\"#footnote-1\" id=\"footnote-ref-1\">[1]</a></sup> After Note</p><p>Following Body</p><ol><li id=\"footnote-1\"><h1>footnote Heading Report</h1><p>footnote Detail <a href=\"#footnote-ref-1\">↑</a></p></li></ol>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Before Note After Note\n\nFollowing Body\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "secondary-footnote.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["footnote Heading Report", "Before Note After Note"],
+      "headings": ["footnote Heading Report"],
+      "tocCandidates": ["footnote Heading Report"],
+      "leadText": "Before Note After Note Following Body",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"secondary-footnote/secondary-footnote.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"footnote Heading Report\",\n      \"Before Note After Note\"\n    ],\n    \"headings\": [\n      \"footnote Heading Report\"\n    ],\n    \"tocCandidates\": [\n      \"footnote Heading Report\"\n    ],\n    \"leadText\": \"Before Note After Note Following Body\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"secondary-footnote.docx\"\n  }\n]"
+  },
+  {
+    "id": "secondary-endnote",
+    "inputSha256": "fab703f6fef4b915c586161ad79faa3d1f50b3a7333da9667b0616348591be13",
+    "html": {
+      "value": "<p>Before Note<sup><a href=\"#endnote-1\" id=\"endnote-ref-1\">[1]</a></sup> After Note</p><p>Following Body</p><ol><li id=\"endnote-1\"><h1>endnote Heading Report</h1><p>endnote Detail <a href=\"#endnote-ref-1\">↑</a></p></li></ol>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Before Note After Note\n\nFollowing Body\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "secondary-endnote.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["endnote Heading Report", "Before Note After Note"],
+      "headings": ["endnote Heading Report"],
+      "tocCandidates": ["endnote Heading Report"],
+      "leadText": "Before Note After Note Following Body",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"secondary-endnote/secondary-endnote.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"endnote Heading Report\",\n      \"Before Note After Note\"\n    ],\n    \"headings\": [\n      \"endnote Heading Report\"\n    ],\n    \"tocCandidates\": [\n      \"endnote Heading Report\"\n    ],\n    \"leadText\": \"Before Note After Note Following Body\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"secondary-endnote.docx\"\n  }\n]"
+  },
+  {
+    "id": "secondary-comment",
+    "inputSha256": "9e0bb3cd389708dab4e6ca50ed46beb3a229112504873f3634b4cc49da7bebca",
+    "html": {
+      "value": "<p>Before Comment After Comment</p>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID Heading1 was referenced but not defined in the document"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Before Comment After Comment\n\n",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID Heading1 was referenced but not defined in the document"
+        }
+      ]
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "secondary-comment.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Before Comment After Comment"],
+      "leadText": "Before Comment After Comment",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"secondary-comment/secondary-comment.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Before Comment After Comment\"\n    ],\n    \"leadText\": \"Before Comment After Comment\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"secondary-comment.docx\"\n  }\n]"
+  },
+  {
+    "id": "empty-valid",
+    "inputSha256": "1ae512284b6bdbb31ca27fe41c800c378110ee66c14273ffb550a955064ca5a1",
+    "html": {
+      "value": "",
+      "messages": []
+    },
+    "rawText": {
+      "value": "",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "empty-image-only",
+    "inputSha256": "a6ea1dfcaf39fb4e58256e4bff37bd0d7445ad948e5a621f9b158797e6408a23",
+    "html": {
+      "value": "<p><img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=\" /></p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "reason": "docx_no_title_signal"
+    },
+    "prompt": null
+  },
+  {
+    "id": "empty-table-only",
+    "inputSha256": "392d5160cb16d64107d09e86d0fef1bb725406b7e367efc97f546efee927daeb",
+    "html": {
+      "value": "<table><tr><td></td></tr></table>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "reason": "docx_no_title_signal"
+    },
+    "prompt": null
+  },
+  {
+    "id": "empty-line-break-only",
+    "inputSha256": "40c8c7d5bc197d480f2a0ef9c04af1d5721fa2c4d1db166a572214d47af19e42",
+    "html": {
+      "value": "<p><br /></p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "reason": "docx_no_title_signal"
+    },
+    "prompt": null
+  },
+  {
+    "id": "metadata-title-only",
+    "inputSha256": "027186c66fd9a072da74fde2a0a0cac770fdc0577b7b3feffe20a0d4bcd35413",
+    "html": {
+      "value": "",
+      "messages": []
+    },
+    "rawText": {
+      "value": "",
+      "messages": []
+    },
+    "metadata": {
+      "metadata": {
+        "title": "Metadata Only Report"
+      },
+      "warnings": []
+    },
+    "result": {
+      "filename": "metadata-title-only.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Metadata Only Report"],
+      "metadata": {
+        "title": "Metadata Only Report",
+        "extractor": "mammoth+ooxml"
+      },
+      "warnings": ["docx_no_lead_text"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"metadata-title-only/metadata-title-only.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Metadata Only Report\"\n    ],\n    \"metadata\": {\n      \"title\": \"Metadata Only Report\",\n      \"extractor\": \"mammoth+ooxml\"\n    },\n    \"warnings\": [\n      \"docx_no_lead_text\"\n    ],\n    \"basename\": \"metadata-title-only.docx\"\n  }\n]"
+  },
+  {
+    "id": "metadata-author-only",
+    "inputSha256": "fcd00278ee68e94f43ce32af2aef64abe6176fa99ce0383ed8c52fa54068d00e",
+    "html": {
+      "value": "",
+      "messages": []
+    },
+    "rawText": {
+      "value": "",
+      "messages": []
+    },
+    "metadata": {
+      "metadata": {
+        "creator": "Synthetic Author"
+      },
+      "warnings": ["docx_metadata_missing_title"]
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "metadata-conversion-failure",
+    "inputSha256": "7810cceec247f6e355b67e7a75460612803a50347c9d51b5cf7d140cdb71fe22",
+    "html": {
+      "error": "Could not find the body element: are you sure this is a docx file?"
+    },
+    "rawText": {
+      "error": "Could not find the body element: are you sure this is a docx file?"
+    },
+    "metadata": {
+      "metadata": {
+        "title": "Unavailable After Failure Report"
+      },
+      "warnings": []
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "partial-unsupported-content",
+    "inputSha256": "9fd039174086aa5136f0fb73044559e991e27e96a24b0a4fed691d9a46ba6520",
+    "html": {
+      "value": "<p>Supported Body Report</p><p>After Unsupported</p>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "An unrecognised element was ignored: w:unknownElement"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Supported Body Report\n\nAfter Unsupported\n\n",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "An unrecognised element was ignored: w:unknownElement"
+        }
+      ]
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "partial-unsupported-content.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Supported Body Report"],
+      "leadText": "Supported Body Report After Unsupported",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"partial-unsupported-content/partial-unsupported-content.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Supported Body Report\"\n    ],\n    \"leadText\": \"Supported Body Report After Unsupported\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"partial-unsupported-content.docx\"\n  }\n]"
+  },
+  {
+    "id": "malformed-invalid-zip",
+    "inputSha256": "014d6fc7ee7b860059fb6a79750fbcff873a8aee907c7c15ff053a32d13da3ac",
+    "html": {
+      "error": "Can't find end of central directory : is this a zip file ? If it is, see https://stuk.github.io/jszip/documentation/howto/read_zip.html"
+    },
+    "rawText": {
+      "error": "Can't find end of central directory : is this a zip file ? If it is, see https://stuk.github.io/jszip/documentation/howto/read_zip.html"
+    },
+    "metadata": {
+      "reason": "docx_extract_error"
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "malformed-main-xml",
+    "inputSha256": "28ae8944e6ee10dcfa761396201110f257d39ea1bad22183aaa2beeb4d1ba29c",
+    "html": {
+      "error": "warning: [xmldom warning]\tunclosed xml attribute\n@#[line:undefined,col:undefined]"
+    },
+    "rawText": {
+      "error": "warning: [xmldom warning]\tunclosed xml attribute\n@#[line:undefined,col:undefined]"
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "malformed-missing-main",
+    "inputSha256": "8b9e97ce3640512e96bd3c34116c8c9d3eed5267f5d4aaa8f110779a05f53714",
+    "html": {
+      "error": "Could not find main document part. Are you sure this is a valid .docx file?"
+    },
+    "rawText": {
+      "error": "Could not find main document part. Are you sure this is a valid .docx file?"
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "malformed-invalid-styles",
+    "inputSha256": "eb360cdffc5397c2fdc9937dbe702c50a8ddc98f443409da615b2d60eb47a7ac",
+    "html": {
+      "error": "error: [xmldom error]\telement parse error: Error: Hierarchy request error: Only one element can be added and only after doctype\n@#[line:undefined,col:undefined]"
+    },
+    "rawText": {
+      "error": "error: [xmldom error]\telement parse error: Error: Hierarchy request error: Only one element can be added and only after doctype\n@#[line:undefined,col:undefined]"
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "malformed-missing-styles",
+    "inputSha256": "cb777ec94582eebb1348576b3e68d3e32ea02fb0f51cc45bddfd3a28981ff29c",
+    "html": {
+      "value": "<h1>Missing Styles Report</h1>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID Heading1 was referenced but not defined in the document"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Missing Styles Report\n\n",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Paragraph style with ID Heading1 was referenced but not defined in the document"
+        }
+      ]
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "malformed-missing-styles.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Missing Styles Report"],
+      "headings": ["Missing Styles Report"],
+      "tocCandidates": ["Missing Styles Report"],
+      "leadText": "Missing Styles Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"malformed-missing-styles/malformed-missing-styles.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Missing Styles Report\"\n    ],\n    \"headings\": [\n      \"Missing Styles Report\"\n    ],\n    \"tocCandidates\": [\n      \"Missing Styles Report\"\n    ],\n    \"leadText\": \"Missing Styles Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"malformed-missing-styles.docx\"\n  }\n]"
+  },
+  {
+    "id": "malformed-invalid-package-relationships",
+    "inputSha256": "8910c5f299df8d903f5f44cdebf582e569e860f52b23197841f55a5bbe1573dd",
+    "html": {
+      "error": "error: [xmldom error]\telement parse error: Error: Hierarchy request error: Only one element can be added and only after doctype\n@#[line:undefined,col:undefined]"
+    },
+    "rawText": {
+      "error": "error: [xmldom error]\telement parse error: Error: Hierarchy request error: Only one element can be added and only after doctype\n@#[line:undefined,col:undefined]"
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "malformed-invalid-content-types",
+    "inputSha256": "fdd6c0b9a77afe35b6c45303841c7053ee8c1284797ccf426d2ff585183349f8",
+    "html": {
+      "error": "error: [xmldom error]\telement parse error: Error: Hierarchy request error: Only one element can be added and only after doctype\n@#[line:undefined,col:undefined]"
+    },
+    "rawText": {
+      "error": "error: [xmldom error]\telement parse error: Error: Hierarchy request error: Only one element can be added and only after doctype\n@#[line:undefined,col:undefined]"
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "malformed-invalid-document-relationships",
+    "inputSha256": "b2d1d663562aba60fac1800648211d1e539541ff18d7621c03bd745de6d73a8a",
+    "html": {
+      "error": "error: [xmldom error]\telement parse error: Error: Hierarchy request error: Only one element can be added and only after doctype\n@#[line:undefined,col:undefined]"
+    },
+    "rawText": {
+      "error": "error: [xmldom error]\telement parse error: Error: Hierarchy request error: Only one element can be added and only after doctype\n@#[line:undefined,col:undefined]"
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "reason": "docx_extract_error"
+    },
+    "prompt": null
+  },
+  {
+    "id": "malformed-missing-content-types",
+    "inputSha256": "56a1c1bece3ea56c42356caa5ed1ab9a603f574b6f0b572576467e50f35d7fa4",
+    "html": {
+      "value": "<p>Missing Content Types Report</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Missing Content Types Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "malformed-missing-content-types.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Missing Content Types Report"],
+      "leadText": "Missing Content Types Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"malformed-missing-content-types/malformed-missing-content-types.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Missing Content Types Report\"\n    ],\n    \"leadText\": \"Missing Content Types Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"malformed-missing-content-types.docx\"\n  }\n]"
+  },
+  {
+    "id": "malformed-missing-package-relationships",
+    "inputSha256": "875e3a77ae8638b84c0335656fa23a23b7df1f8ab3aff8f00a4b26180253bf39",
+    "html": {
+      "value": "<p>Missing Package Relationships Report</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Missing Package Relationships Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "malformed-missing-package-relationships.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Missing Package Relationships Report"],
+      "leadText": "Missing Package Relationships Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"malformed-missing-package-relationships/malformed-missing-package-relationships.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Missing Package Relationships Report\"\n    ],\n    \"leadText\": \"Missing Package Relationships Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"malformed-missing-package-relationships.docx\"\n  }\n]"
+  },
+  {
+    "id": "malformed-duplicate-normalized-parts",
+    "inputSha256": "d2b1ae88646c56478dbbb1d007c7e931e8d7ec50a87b6f51b0c1d55a77d37089",
+    "html": {
+      "value": "<p>Second Duplicate Report</p>",
+      "messages": []
+    },
+    "rawText": {
+      "value": "Second Duplicate Report\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "metadata": {
+        "title": "Metadata With Duplicate Part"
+      },
+      "warnings": []
+    },
+    "result": {
+      "filename": "malformed-duplicate-normalized-parts.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Metadata With Duplicate Part", "Second Duplicate Report"],
+      "leadText": "Second Duplicate Report",
+      "metadata": {
+        "title": "Metadata With Duplicate Part",
+        "extractor": "mammoth+ooxml"
+      }
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"malformed-duplicate-normalized-parts/malformed-duplicate-normalized-parts.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Metadata With Duplicate Part\",\n      \"Second Duplicate Report\"\n    ],\n    \"leadText\": \"Second Duplicate Report\",\n    \"metadata\": {\n      \"title\": \"Metadata With Duplicate Part\",\n      \"extractor\": \"mammoth+ooxml\"\n    },\n    \"basename\": \"malformed-duplicate-normalized-parts.docx\"\n  }\n]"
+  },
+  {
+    "id": "offline-external-url",
+    "inputSha256": "382cd5744d7a5573d613d13aeca2ac788c491565151ceb0467aed16c8abeb02d",
+    "html": {
+      "value": "<p>Offline Resource Report</p><p><a href=\"https://example.invalid/never-load.png\">External Link Label</a></p>",
+      "messages": [
+        {
+          "type": "error",
+          "message": "could not read external image 'https://example.invalid/never-load.png', external file access is disabled",
+          "error": {}
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Offline Resource Report\n\n\n\nExternal Link Label\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "offline-external-url.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Offline Resource Report"],
+      "leadText": "Offline Resource Report External Link Label",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"offline-external-url/offline-external-url.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Offline Resource Report\"\n    ],\n    \"leadText\": \"Offline Resource Report External Link Label\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"offline-external-url.docx\"\n  }\n]"
+  },
+  {
+    "id": "offline-external-file",
+    "inputSha256": "e30524518854dd32f39688cdad11e18ff4b9daf7fed2ae612c9dad524d6c00a2",
+    "html": {
+      "value": "<p>Offline Resource Report</p><p><a href=\"file:///docx-baseline-synthetic-never-load.png\">External Link Label</a></p>",
+      "messages": [
+        {
+          "type": "error",
+          "message": "could not read external image 'file:///docx-baseline-synthetic-never-load.png', external file access is disabled",
+          "error": {}
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Offline Resource Report\n\n\n\nExternal Link Label\n\n",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "offline-external-file.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Offline Resource Report"],
+      "leadText": "Offline Resource Report External Link Label",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"offline-external-file/offline-external-file.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Offline Resource Report\"\n    ],\n    \"leadText\": \"Offline Resource Report External Link Label\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"offline-external-file.docx\"\n  }\n]"
+  },
+  {
+    "id": "offline-executable-embedded-parts",
+    "inputSha256": "8b6ecd7476c4dd09008b1aa3faea35843f15d19b7fcd0f4f65069e35b29b2c22",
+    "html": {
+      "value": "<p>Embedded Object Report</p>",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "An unrecognised element was ignored: {urn:schemas-microsoft-com:office:office}OLEObject"
+        }
+      ]
+    },
+    "rawText": {
+      "value": "Embedded Object Report\n\n\n\n",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "An unrecognised element was ignored: {urn:schemas-microsoft-com:office:office}OLEObject"
+        }
+      ]
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "offline-executable-embedded-parts.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Embedded Object Report"],
+      "leadText": "Embedded Object Report",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"offline-executable-embedded-parts/offline-executable-embedded-parts.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Embedded Object Report\"\n    ],\n    \"leadText\": \"Embedded Object Report\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"offline-executable-embedded-parts.docx\"\n  }\n]"
+  }
+]

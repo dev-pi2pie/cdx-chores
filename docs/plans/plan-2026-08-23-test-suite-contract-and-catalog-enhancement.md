@@ -233,7 +233,7 @@ Admission gate:
 
 ### Phase 3: Migrate The Data Query Pilot
 
-Accepted path contract: [Phase 3 Data Query Path Contract](../references/test-suite-case-matrices.md#phase-3-data-query-path-contract)
+Accepted path contract: [Data Query Path Lookup](../references/test-catalog-path-correspondence.md#data-query)
 
 Tasks:
 
@@ -264,7 +264,7 @@ Observable contracts:
 
 ### Phase 4: Migrate The Doctor Ownership Pilot
 
-Accepted path contract: [Phase 4 Doctor Path Contract](../references/test-suite-case-matrices.md#phase-4-doctor-path-contract)
+Accepted path contract: [Doctor Path Lookup](../references/test-catalog-path-correspondence.md#doctor)
 
 Tasks:
 

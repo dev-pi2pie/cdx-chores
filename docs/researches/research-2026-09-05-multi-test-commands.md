@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Responsibilities and Verification Lifecycle"
 created-date: 2026-09-05
-modified-date: 2026-09-06
+modified-date: 2026-10-17
 status: completed
 agent: codex
 ---
@@ -250,13 +250,13 @@ SQLite, native DuckDB, or personal state. A small owned fixture for one file
 utility is acceptable. Coordinated filesystem workflows and real timing/process
 lifecycles belong to application integration.
 
-| Reviewed boundary                                                                                              | Assignment                                             |
-| -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| [Date utilities][date-tests], [rename templates][rename-direct], [report building][report-tests]               | Unit: supplied values                                  |
-| [Isolated action with fake discovery][action-tests]                                                            | Unit: supplied collaborator and captured output        |
-| [Filesystem-aware planning][rename-templates] and [collision planning][rename-collisions]                      | App: actual files, entries, timestamps, and collisions |
-| [Composed command parsing][doctor-routing], [CLI replay][replay], [native fixture generation][duckdb-fixtures] | App, including command wiring with fake actions        |
-| [Real Pandoc conversion][pandoc-language]; [live Codex protocol][live-probe]                                   | Their respective live-tool leaves                      |
+| Reviewed boundary                                                                                           | Assignment                                             |
+| ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| [Date utilities][date-tests], [rename templates][rename-direct], [report building][report-tests]            | Unit: supplied values                                  |
+| [Isolated action with fake discovery][action-tests]                                                         | Unit: supplied collaborator and captured output        |
+| [Filesystem-aware planning][rename-templates] and [collision planning][rename-collisions]                   | App: actual files, entries, timestamps, and collisions |
+| [Composed command parsing][doctor-routing], [CLI replay][replay], [native spreadsheet access][xlsx-sources] | App, including command wiring with fake actions        |
+| [Real Pandoc conversion][pandoc-language]; [live Codex protocol][live-probe]                                | Their respective live-tool leaves                      |
 
 Each case has exactly one leaf owner. Shared inputs/support may serve several
 suites; split mixed files without duplicating assertions or losing distinct
@@ -578,7 +578,7 @@ evidence; final documentation review passed.
 [rename-templates]: ../../test/rename/planner/template-rendering.app.test.ts
 [doctor-routing]: ../../test/doctor/commands/routing.app.test.ts
 [replay]: ../../test/codex-info/cli-replay.app.test.ts
-[duckdb-fixtures]: ../../test/data-query/evidence/duckdb-fixtures.app.test.ts
+[xlsx-sources]: ../../test/data-sources/adapters/xlsx-sources.app.test.ts
 [pandoc-language]: ../../test/markdown-pdf/actions/rendering/pandoc-language.pandoc.test.ts
 [live-probe]: ../../test/codex-info/live-protocol.codex.test.ts
 [correspondence]: ../references/test-catalog-path-correspondence.md

@@ -1,7 +1,7 @@
 ---
 title: "Contributor Testing Guide"
 created-date: 2026-09-06
-modified-date: 2026-10-01
+modified-date: 2026-10-16
 status: completed
 agent: codex
 ---
@@ -90,6 +90,8 @@ Direct Bun commands do not provide the managed runner's prerequisite checks, iso
 
 Keep tests under their feature or platform owner in `test/`, using one suffix: `.unit.test.ts`, `.app.test.ts`, `.codex.test.ts`, or `.pandoc.test.ts`. Choose the suite by the dependencies the test exercises. Pure transformations around Codex or Pandoc can belong in unit coverage; installed-tool invocations belong in the corresponding integration suite.
 
+Routine suites cover product behavior and shared test infrastructure. Verify manual feature scripts explicitly, including smoke/evidence tools, evaluation launchers, and fixture generators. Keep durable product inputs and assertions under their test owner and exercise product code directly; manual commands may reuse those definitions. Product tests should not launch manual generators or depend on evaluation adapters. Preserve product assertions from mixed tests when retiring script-only checks.
+
 Discovery rejects unknown suffixes, tests outside `test/`, duplicate ownership, and unsupported symlink entries. Paths inside `fixtures/` are inputs, not suite members. Keep feature-specific support beside its consumers; reserve `test/helpers/` for independently reused, feature-neutral infrastructure. Update the [ownership catalog](../references/test-suite-case-matrices.md) and [path correspondence](../references/test-catalog-path-correspondence.md) when a change affects their mappings.
 
 Use `withTempFixtureDir` from [`cli-test-utils.ts`](../../test/helpers/cli-test-utils.ts), or a feature wrapper, to manage fixture creation, designated exports, and cleanup. Register individual result or diagnostic files with `registerFixtureOutput`. Use `startFixtureProcess` for owned asynchronous or detached subprocesses so the runner can verify their completion. Reuse the native prerequisite helper for installed-native checks.
@@ -114,5 +116,7 @@ The formatting command covers the configured source, test, script, and configura
 Source tests execute TypeScript with Bun, including the source CLI helper. Verify the built package under Node.js separately: after a build, exercise a representative CLI operation through `bun run cli` and check exported behavior through both `dist/esm/index.mjs` and `dist/cjs/index.cjs`. Choose operations that exercise the behavior affected by the change.
 
 Keep manual smoke-test artifacts under ignored paths in `examples/playground/`. Retain them when needed for local review, then clean only the files created for that check. Manual checks have their own retention policy, separate from the managed runner's default cleanup. Record source tests and built-package checks separately in the relevant implementation record.
+
+DOCX validation uses owned OS temporary storage for generated inputs, builds, packages, consumers, caches, and reports, with cleanup after confirmed process settlement. Only explicit `--smoke --keep-artifacts` exports inspectable smoke files to the approved ignored playground entry. See [manual commands and retention](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#manual-validation); routine product regressions remain test-owned.
 
 Video frames regular unit/application tests use controlled fixtures and injected tool behavior. Real-video, installed FFmpeg/FFprobe export checks and bounded synthetic workload measurements are explicit manual smoke checks, outside those suites and CI. Run them under the relevant implementation plan's budgets. Keep private inputs, outputs, captures and identifying details out of public records; record only the processing operation and passed/failed/not-tested outcome. Public synthetic evidence can describe reproducible cases and measured results.

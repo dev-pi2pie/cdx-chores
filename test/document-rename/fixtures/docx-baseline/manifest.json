@@ -1,0 +1,997 @@
+[
+  {
+    "id": "seed-metadata-rich",
+    "category": "existing-evidence",
+    "variations": ["metadata-rich"],
+    "input": "test/fixtures/docs/metadata-rich.docx",
+    "expected": {
+      "titleFirst": "Quarterly Operating Plan 2026",
+      "warningsInclude": []
+    }
+  },
+  {
+    "id": "seed-heading-rich",
+    "category": "existing-evidence",
+    "variations": ["heading-rich"],
+    "input": "test/fixtures/docs/heading-rich.docx",
+    "expected": {
+      "titleFirst": "CLI Action Tool Integration Guide",
+      "warningsInclude": []
+    }
+  },
+  {
+    "id": "seed-weak-heading",
+    "category": "existing-evidence",
+    "variations": ["weak-heading"],
+    "input": "test/fixtures/docs/weak-heading.docx",
+    "expected": {
+      "titleFirst": "Customer Launch Checklist",
+      "warningsInclude": ["docx_metadata_unavailable"]
+    }
+  },
+  {
+    "id": "seed-no-heading",
+    "category": "existing-evidence",
+    "variations": ["no-heading"],
+    "input": "test/fixtures/docs/no-heading.docx",
+    "expected": {
+      "titleFirst": "Q2 Hiring Plan",
+      "warningsInclude": ["docx_metadata_unavailable"]
+    }
+  },
+  {
+    "id": "seed-table-heavy",
+    "category": "existing-evidence",
+    "variations": ["table-heavy"],
+    "input": "test/fixtures/docs/table-heavy.docx",
+    "expected": {
+      "titleFirst": "Roadmap Milestones",
+      "warningsInclude": []
+    }
+  },
+  {
+    "id": "seed-hyperlink-heavy",
+    "category": "existing-evidence",
+    "variations": ["hyperlink-heavy"],
+    "input": "test/fixtures/docs/hyperlink-heavy.docx",
+    "expected": {
+      "titleFirst": "Partner Reference Guide",
+      "warningsInclude": []
+    }
+  },
+  {
+    "id": "seed-textutil-alt-editor",
+    "category": "existing-evidence",
+    "variations": ["textutil-alt-editor"],
+    "input": "test/fixtures/docs/textutil-alt-editor.docx",
+    "expected": {
+      "titleFirst": "Partner Enablement Guide",
+      "warningsInclude": ["docx_metadata_unavailable"]
+    }
+  },
+  {
+    "id": "metadata-missing",
+    "category": "metadata-and-discovery",
+    "variations": ["missing-metadata"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Content Discovery Report"],
+      "warningsInclude": ["docx_metadata_unavailable"]
+    }
+  },
+  {
+    "id": "metadata-malformed",
+    "category": "metadata-and-discovery",
+    "variations": ["malformed-metadata"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Content Discovery Report"],
+      "warningsInclude": ["docx_metadata_unavailable"]
+    }
+  },
+  {
+    "id": "metadata-custom-path",
+    "category": "metadata-and-discovery",
+    "variations": ["non-default-metadata-path"],
+    "input": "generated",
+    "expected": {
+      "metadataTitle": "Custom Core Report",
+      "titleFirst": "Custom Core Report"
+    }
+  },
+  {
+    "id": "metadata-utf16",
+    "category": "metadata-and-discovery",
+    "variations": ["utf16-metadata"],
+    "input": "generated",
+    "expected": {
+      "metadataTitle": "UTF16 核心標題",
+      "titleFirst": "UTF16 核心標題"
+    }
+  },
+  {
+    "id": "metadata-dot-segments",
+    "category": "metadata-and-discovery",
+    "variations": ["dot-segment-metadata-target"],
+    "input": "generated",
+    "expected": {
+      "metadataTitle": "Dot Segment Report",
+      "titleFirst": "Dot Segment Report"
+    }
+  },
+  {
+    "id": "metadata-percent-path",
+    "category": "metadata-and-discovery",
+    "variations": ["percent-escaped-metadata-path"],
+    "input": "generated",
+    "expected": {
+      "metadataTitle": "Escaped Core Report",
+      "titleFirst": "Escaped Core Report"
+    }
+  },
+  {
+    "id": "content-custom-parts",
+    "category": "metadata-and-discovery",
+    "variations": ["non-default-main-document", "non-default-styles-part"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Custom Part Heading\n\n",
+      "htmlEquals": "<h2>Custom Part Heading</h2>",
+      "headings": ["Custom Part Heading"]
+    }
+  },
+  {
+    "id": "content-dot-segment-main-target",
+    "category": "metadata-and-discovery",
+    "variations": ["dot-segment-content-target"],
+    "input": "generated",
+    "expected": {
+      "reason": "docx_extract_error"
+    }
+  },
+  {
+    "id": "content-dot-segment-style-target",
+    "category": "metadata-and-discovery",
+    "variations": ["dot-segment-style-target"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Unresolved Style Report\n\n",
+      "htmlEquals": "<p>Unresolved Style Report</p>",
+      "headings": []
+    }
+  },
+  {
+    "id": "content-percent-style-target",
+    "category": "metadata-and-discovery",
+    "variations": ["percent-escaped-style-path"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Escaped Style Report\n\n",
+      "htmlEquals": "<p>Escaped Style Report</p>",
+      "headings": []
+    }
+  },
+  {
+    "id": "content-percent-main-target",
+    "category": "metadata-and-discovery",
+    "variations": ["percent-escaped-main-document-path"],
+    "input": "generated",
+    "expected": {
+      "reason": "docx_extract_error"
+    }
+  },
+  {
+    "id": "content-alternate-prefix",
+    "category": "metadata-and-discovery",
+    "variations": ["alternate-namespace-prefix"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Content Discovery Report\n\n",
+      "htmlEquals": "<p>Content Discovery Report</p>"
+    }
+  },
+  {
+    "id": "content-strict-namespace",
+    "category": "metadata-and-discovery",
+    "variations": ["strict-wordprocessingml-namespace"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Content Discovery Report\n\n",
+      "htmlEquals": "<p>Content Discovery Report</p>"
+    }
+  },
+  {
+    "id": "content-utf16",
+    "category": "metadata-and-discovery",
+    "variations": ["utf16-main-document"],
+    "input": "generated",
+    "expected": {
+      "reason": "docx_extract_error"
+    }
+  },
+  {
+    "id": "text-split-unicode-spaces",
+    "category": "text-and-order",
+    "variations": ["split-runs", "unicode-text", "preserved-spaces"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Split Run Report\n\n  臺灣 café é 😀 Report  \n\n",
+      "htmlIncludes": ["Split Run Report", "  臺灣 café é 😀 Report  "],
+      "titleFirst": "Split Run Report"
+    }
+  },
+  {
+    "id": "text-symbol-tabs-breaks",
+    "category": "text-and-order",
+    "variations": ["symbol-characters", "tabs", "line-break", "page-break"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Symbol ✓\tTabLinePage\n\n",
+      "htmlIncludes": ["✓\tTab<br />LinePage"]
+    }
+  },
+  {
+    "id": "text-blank-paragraphs",
+    "category": "text-and-order",
+    "variations": ["blank-lines"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Before Blank\n\n\n\nAfter Blank\n\n",
+      "htmlEquals": "<p>Before Blank</p><p>After Blank</p>"
+    }
+  },
+  {
+    "id": "text-list-order",
+    "category": "text-and-order",
+    "variations": ["list-items", "list-body-order"],
+    "input": "generated",
+    "expected": {
+      "rawOrdered": ["Before List", "First Item", "Second Item", "After List"],
+      "htmlIncludes": ["<ul><li>First Item</li><li>Second Item</li></ul>"]
+    }
+  },
+  {
+    "id": "text-table-content-control-order",
+    "category": "text-and-order",
+    "variations": [
+      "paragraph-before-table",
+      "paragraph-inside-table",
+      "paragraph-after-table",
+      "content-control-order"
+    ],
+    "input": "generated",
+    "expected": {
+      "rawOrdered": [
+        "Before Table",
+        "Cell One",
+        "Controlled Cell",
+        "After Table",
+        "Controlled Body",
+        "After Control"
+      ],
+      "htmlIncludes": [
+        "<table><tr><td><p>Cell One</p></td><td><p>Controlled Cell</p></td></tr></table>"
+      ],
+      "rawExcludes": ["w:sdt"]
+    }
+  },
+  {
+    "id": "heading-standard-id",
+    "category": "heading-styles",
+    "variations": ["standard-heading-style", "default-style-map-by-id"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Standard Heading Report\n\n",
+      "htmlEquals": "<h1>Standard Heading Report</h1>",
+      "headings": ["Standard Heading Report"]
+    }
+  },
+  {
+    "id": "heading-custom-id-standard-name",
+    "category": "heading-styles",
+    "variations": ["custom-style-id", "default-style-map-by-name"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Named Heading Report\n\n",
+      "htmlEquals": "<h2>Named Heading Report</h2>",
+      "headings": ["Named Heading Report"]
+    }
+  },
+  {
+    "id": "heading-apple-default-map",
+    "category": "heading-styles",
+    "variations": ["apple-heading-default-mapping"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Apple Heading Report\n\n",
+      "htmlEquals": "<h1>Apple Heading Report</h1>",
+      "headings": ["Apple Heading Report"]
+    }
+  },
+  {
+    "id": "heading-localized-unmapped",
+    "category": "heading-styles",
+    "variations": ["localized-heading-name"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Localized Heading Report\n\n",
+      "htmlEquals": "<p>Localized Heading Report</p>",
+      "headings": []
+    }
+  },
+  {
+    "id": "heading-inherited",
+    "category": "heading-styles",
+    "variations": ["inherited-heading-style"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Inherited Heading Report\n\n",
+      "htmlEquals": "<p>Inherited Heading Report</p>",
+      "headings": []
+    }
+  },
+  {
+    "id": "heading-cycle",
+    "category": "heading-styles",
+    "variations": ["cyclic-style-inheritance"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Cyclic Style Report\n\n",
+      "htmlEquals": "<p>Cyclic Style Report</p>",
+      "headings": []
+    }
+  },
+  {
+    "id": "heading-outline-style",
+    "category": "heading-styles",
+    "variations": ["style-outline-level"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Outline Style Report\n\n",
+      "htmlEquals": "<p>Outline Style Report</p>",
+      "headings": []
+    }
+  },
+  {
+    "id": "heading-outline-paragraph",
+    "category": "heading-styles",
+    "variations": ["paragraph-outline-level"],
+    "input": "generated",
+    "expected": {
+      "htmlEquals": "<p>Outline Paragraph Report</p>",
+      "rawEquals": "Outline Paragraph Report\n\n",
+      "headings": []
+    }
+  },
+  {
+    "id": "heading-missing-definition",
+    "category": "heading-styles",
+    "variations": ["missing-style-definition"],
+    "input": "generated",
+    "expected": {
+      "htmlEquals": "<h1>Undefined Heading Report</h1>",
+      "headings": ["Undefined Heading Report"]
+    }
+  },
+  {
+    "id": "heading-default-style",
+    "category": "heading-styles",
+    "variations": ["default-paragraph-style"],
+    "input": "generated",
+    "expected": {
+      "htmlEquals": "<p>Default Style Report</p>",
+      "headings": []
+    }
+  },
+  {
+    "id": "heading-embedded-map",
+    "category": "heading-styles",
+    "variations": [
+      "embedded-style-map",
+      "embedded-localized-style-map",
+      "embedded-map-overrides-default"
+    ],
+    "input": "generated",
+    "expected": {
+      "htmlEquals": "<h3>Mapped Localized Report</h3><h2>Mapped Standard Report</h2>",
+      "rawOrdered": ["Mapped Localized Report", "Mapped Standard Report"],
+      "headings": ["Mapped Localized Report", "Mapped Standard Report"],
+      "titleFirst": "Mapped Standard Report"
+    }
+  },
+  {
+    "id": "link-visible-text",
+    "category": "links-and-fields",
+    "variations": ["visible-hyperlink-text"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Visible Partner Report\n\n",
+      "rawExcludes": ["example.invalid"],
+      "htmlEquals": "<p><a href=\"https://example.invalid/reference\">Visible Partner Report</a></p>",
+      "titleFirst": "Visible Partner Report"
+    }
+  },
+  {
+    "id": "field-hyperlink-quoted",
+    "category": "links-and-fields",
+    "variations": ["quoted-hyperlink-field", "field-result-versus-instruction"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Quoted Field Report\n\n",
+      "rawExcludes": ["HYPERLINK", "example.invalid", "report-section"],
+      "htmlEquals": "<p><a href=\"https://example.invalid/quoted\">Quoted Field Report</a></p>"
+    }
+  },
+  {
+    "id": "field-hyperlink-unquoted",
+    "category": "links-and-fields",
+    "variations": ["unquoted-hyperlink-field-historical-syntax", "field-result-versus-instruction"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Unquoted Field Report\n\n",
+      "rawExcludes": ["HYPERLINK", "example.invalid", "report-section"],
+      "htmlEquals": "<p><a href=\"https://example.invalid/unquoted\">Unquoted Field Report</a></p>"
+    }
+  },
+  {
+    "id": "field-hyperlink-anchor",
+    "category": "links-and-fields",
+    "variations": ["hyperlink-local-anchor-field", "field-result-versus-instruction"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Anchor Field Report\n\n",
+      "rawExcludes": ["HYPERLINK", "example.invalid", "report-section"],
+      "htmlEquals": "<p><a href=\"#report-section\">Anchor Field Report</a></p>"
+    }
+  },
+  {
+    "id": "field-simple-and-page-result",
+    "category": "links-and-fields",
+    "variations": ["simple-field-result-excluded", "non-hyperlink-complex-field-result"],
+    "input": "generated",
+    "expected": {
+      "rawOrdered": ["Page Display Result", "Body After Fields"],
+      "rawExcludes": ["AUTHOR", "PAGE", "Displayed Author"],
+      "htmlIncludes": ["Page Display Result"],
+      "htmlExcludes": ["Displayed Author"]
+    }
+  },
+  {
+    "id": "secondary-revisions-hidden",
+    "category": "revisions-and-secondary-content",
+    "variations": ["inserted-runs", "deleted-runs", "hidden-runs"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Revision Report Inserted Text Hidden Text\n\n",
+      "htmlIncludes": ["Inserted Text", "Hidden Text"],
+      "rawExcludes": ["Deleted Text"],
+      "htmlExcludes": ["Deleted Text"]
+    }
+  },
+  {
+    "id": "secondary-textbox-order",
+    "category": "revisions-and-secondary-content",
+    "variations": ["vml-textbox", "textbox-headings", "textbox-body-order"],
+    "input": "generated",
+    "expected": {
+      "rawOrdered": [
+        "Before Textbox",
+        "After Textbox",
+        "Textbox Heading Report",
+        "Textbox Body",
+        "Following Paragraph"
+      ],
+      "htmlIncludes": ["<h1>Textbox Heading Report</h1>"],
+      "headings": ["Textbox Heading Report"],
+      "titleFirst": "Textbox Heading Report"
+    }
+  },
+  {
+    "id": "secondary-header-footer",
+    "category": "revisions-and-secondary-content",
+    "variations": ["referenced-header", "referenced-footer"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Main Body Report\n\n",
+      "htmlEquals": "<p>Main Body Report</p>",
+      "rawExcludes": ["Header Excluded Text", "Footer Excluded Text"],
+      "htmlExcludes": ["Header Excluded Text", "Footer Excluded Text"]
+    }
+  },
+  {
+    "id": "secondary-footnote",
+    "category": "revisions-and-secondary-content",
+    "variations": ["referenced-footnote", "footnote-html-raw-difference", "footnote-heading"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Before Note After Note\n\nFollowing Body\n\n",
+      "rawExcludes": ["footnote Heading Report", "footnote Detail"],
+      "htmlIncludes": ["<h1>footnote Heading Report</h1>", "footnote Detail"],
+      "headings": ["footnote Heading Report"],
+      "titleFirst": "footnote Heading Report"
+    }
+  },
+  {
+    "id": "secondary-endnote",
+    "category": "revisions-and-secondary-content",
+    "variations": ["referenced-endnote", "endnote-html-raw-difference", "endnote-heading"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Before Note After Note\n\nFollowing Body\n\n",
+      "rawExcludes": ["endnote Heading Report", "endnote Detail"],
+      "htmlIncludes": ["<h1>endnote Heading Report</h1>", "endnote Detail"],
+      "headings": ["endnote Heading Report"],
+      "titleFirst": "endnote Heading Report"
+    }
+  },
+  {
+    "id": "secondary-comment",
+    "category": "revisions-and-secondary-content",
+    "variations": ["referenced-comment", "comment-body-excluded-by-default"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Before Comment After Comment\n\n",
+      "htmlEquals": "<p>Before Comment After Comment</p>",
+      "rawExcludes": ["Comment Excluded Heading"],
+      "htmlExcludes": ["Comment Excluded Heading"],
+      "headings": []
+    }
+  },
+  {
+    "id": "empty-valid",
+    "category": "empty-and-non-text",
+    "variations": ["valid-empty-document"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "",
+      "htmlEquals": "",
+      "reason": "docx_extract_error"
+    }
+  },
+  {
+    "id": "empty-image-only",
+    "category": "empty-and-non-text",
+    "variations": ["image-only", "binary-image-part"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "\n\n",
+      "htmlIncludes": ["<img src=\"data:image/png;base64,"],
+      "reason": "docx_no_title_signal"
+    }
+  },
+  {
+    "id": "empty-table-only",
+    "category": "empty-and-non-text",
+    "variations": ["empty-table"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "\n\n",
+      "htmlEquals": "<table><tr><td></td></tr></table>",
+      "reason": "docx_no_title_signal"
+    }
+  },
+  {
+    "id": "empty-line-break-only",
+    "category": "empty-and-non-text",
+    "variations": ["line-break-only"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "\n\n",
+      "htmlEquals": "<p><br /></p>",
+      "reason": "docx_no_title_signal"
+    }
+  },
+  {
+    "id": "metadata-title-only",
+    "category": "metadata-only-evidence",
+    "variations": ["usable-title-empty-body", "successful-empty-conversion"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "",
+      "htmlEquals": "",
+      "titleFirst": "Metadata Only Report",
+      "metadataTitle": "Metadata Only Report",
+      "warningsInclude": ["docx_no_lead_text"]
+    }
+  },
+  {
+    "id": "metadata-author-only",
+    "category": "metadata-only-evidence",
+    "variations": ["author-only-empty-body"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "",
+      "htmlEquals": "",
+      "reason": "docx_extract_error"
+    }
+  },
+  {
+    "id": "metadata-conversion-failure",
+    "category": "metadata-only-evidence",
+    "variations": ["available-title-conversion-failure"],
+    "input": "generated",
+    "expected": {
+      "metadataTitle": "Unavailable After Failure Report",
+      "reason": "docx_extract_error"
+    }
+  },
+  {
+    "id": "partial-unsupported-content",
+    "category": "partial-and-malformed",
+    "variations": ["usable-text-with-unsupported-content", "unsupported-content-excluded"],
+    "input": "generated",
+    "expected": {
+      "rawOrdered": ["Supported Body Report", "After Unsupported"],
+      "rawExcludes": ["Unsupported Excluded Text"],
+      "htmlExcludes": ["Unsupported Excluded Text"],
+      "titleFirst": "Supported Body Report"
+    }
+  },
+  {
+    "id": "malformed-invalid-zip",
+    "category": "partial-and-malformed",
+    "variations": ["invalid-zip"],
+    "input": "generated",
+    "expected": {
+      "reason": "docx_extract_error"
+    }
+  },
+  {
+    "id": "malformed-main-xml",
+    "category": "partial-and-malformed",
+    "variations": ["invalid-main-xml"],
+    "input": "generated",
+    "expected": {
+      "reason": "docx_extract_error"
+    }
+  },
+  {
+    "id": "malformed-missing-main",
+    "category": "partial-and-malformed",
+    "variations": ["missing-main-part"],
+    "input": "generated",
+    "expected": {
+      "reason": "docx_extract_error"
+    }
+  },
+  {
+    "id": "malformed-invalid-styles",
+    "category": "partial-and-malformed",
+    "variations": ["invalid-styles-part"],
+    "input": "generated",
+    "expected": {
+      "reason": "docx_extract_error"
+    }
+  },
+  {
+    "id": "malformed-missing-styles",
+    "category": "partial-and-malformed",
+    "variations": ["missing-styles-part"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Missing Styles Report\n\n",
+      "htmlEquals": "<h1>Missing Styles Report</h1>",
+      "headings": ["Missing Styles Report"]
+    }
+  },
+  {
+    "id": "malformed-invalid-package-relationships",
+    "category": "partial-and-malformed",
+    "variations": ["invalid-package-relationships"],
+    "input": "generated",
+    "expected": {
+      "reason": "docx_extract_error"
+    }
+  },
+  {
+    "id": "malformed-invalid-content-types",
+    "category": "partial-and-malformed",
+    "variations": ["invalid-content-types-part"],
+    "input": "generated",
+    "expected": {
+      "reason": "docx_extract_error"
+    }
+  },
+  {
+    "id": "malformed-invalid-document-relationships",
+    "category": "partial-and-malformed",
+    "variations": ["invalid-main-relationships-part"],
+    "input": "generated",
+    "expected": {
+      "reason": "docx_extract_error"
+    }
+  },
+  {
+    "id": "malformed-missing-content-types",
+    "category": "partial-and-malformed",
+    "variations": ["missing-content-types-part", "permissive-content-types-fallback"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Missing Content Types Report\n\n",
+      "titleFirst": "Missing Content Types Report",
+      "warningsInclude": ["docx_metadata_unavailable"]
+    }
+  },
+  {
+    "id": "malformed-missing-package-relationships",
+    "category": "partial-and-malformed",
+    "variations": ["missing-package-relationships-part", "default-main-document-fallback"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Missing Package Relationships Report\n\n",
+      "titleFirst": "Missing Package Relationships Report"
+    }
+  },
+  {
+    "id": "malformed-duplicate-normalized-parts",
+    "category": "partial-and-malformed",
+    "variations": ["duplicate-normalized-part-name"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Second Duplicate Report"],
+      "rawExcludes": ["First Duplicate Report"],
+      "metadataTitle": "Metadata With Duplicate Part",
+      "titleFirst": "Metadata With Duplicate Part"
+    }
+  },
+  {
+    "id": "offline-external-url",
+    "category": "resource-and-io",
+    "variations": [
+      "external-url-relationship",
+      "external-url-image-disabled",
+      "external-url-hyperlink-preserved"
+    ],
+    "input": "generated",
+    "expected": {
+      "rawOrdered": ["Offline Resource Report", "External Link Label"],
+      "rawExcludes": ["https://example.invalid/never-load.png"],
+      "htmlIncludes": [
+        "<a href=\"https://example.invalid/never-load.png\">External Link Label</a>"
+      ],
+      "htmlExcludes": ["<img"],
+      "titleFirst": "Offline Resource Report"
+    }
+  },
+  {
+    "id": "offline-external-file",
+    "category": "resource-and-io",
+    "variations": [
+      "external-file-relationship",
+      "external-file-image-disabled",
+      "external-file-hyperlink-preserved"
+    ],
+    "input": "generated",
+    "expected": {
+      "rawOrdered": ["Offline Resource Report", "External Link Label"],
+      "rawExcludes": ["file:///docx-baseline-synthetic-never-load.png"],
+      "htmlIncludes": [
+        "<a href=\"file:///docx-baseline-synthetic-never-load.png\">External Link Label</a>"
+      ],
+      "htmlExcludes": ["<img"],
+      "titleFirst": "Offline Resource Report"
+    }
+  },
+  {
+    "id": "offline-executable-embedded-parts",
+    "category": "resource-and-io",
+    "variations": ["embedded-object-content", "macro-content", "executable-content-not-evaluated"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Embedded Object Report"],
+      "rawExcludes": ["DOCX_BASELINE_EXECUTED", "DOCX_BASELINE_MACRO_SENTINEL"],
+      "htmlExcludes": ["DOCX_BASELINE_EXECUTED", "DOCX_BASELINE_MACRO_SENTINEL"],
+      "titleFirst": "Embedded Object Report"
+    }
+  },
+  {
+    "id": "resource-compressedInputBytes-below",
+    "category": "resource",
+    "variations": ["resource-compressedInputBytes-below"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-compressedInputBytes-at",
+    "category": "resource",
+    "variations": ["resource-compressedInputBytes-at"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-compressedInputBytes-above",
+    "category": "resource",
+    "variations": ["resource-compressedInputBytes-above"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-entryCount-below",
+    "category": "resource",
+    "variations": ["resource-entryCount-below"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-entryCount-at",
+    "category": "resource",
+    "variations": ["resource-entryCount-at"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-entryCount-above",
+    "category": "resource",
+    "variations": ["resource-entryCount-above"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-maxPartDecompressedBytes-below",
+    "category": "resource",
+    "variations": ["resource-maxPartDecompressedBytes-below", "body-above-metadata-cap"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-maxPartDecompressedBytes-at",
+    "category": "resource",
+    "variations": ["resource-maxPartDecompressedBytes-at", "body-above-metadata-cap"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-maxPartDecompressedBytes-above",
+    "category": "resource",
+    "variations": ["resource-maxPartDecompressedBytes-above", "body-above-metadata-cap"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-totalDecompressedBytes-below",
+    "category": "resource",
+    "variations": ["resource-totalDecompressedBytes-below"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-totalDecompressedBytes-at",
+    "category": "resource",
+    "variations": ["resource-totalDecompressedBytes-at"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-totalDecompressedBytes-above",
+    "category": "resource",
+    "variations": ["resource-totalDecompressedBytes-above"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-xmlElementCount-below",
+    "category": "resource",
+    "variations": ["resource-xmlElementCount-below"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-xmlElementCount-at",
+    "category": "resource",
+    "variations": ["resource-xmlElementCount-at"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-xmlElementCount-above",
+    "category": "resource",
+    "variations": ["resource-xmlElementCount-above"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-maxXmlDepth-below",
+    "category": "resource",
+    "variations": ["resource-maxXmlDepth-below"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-maxXmlDepth-at",
+    "category": "resource",
+    "variations": ["resource-maxXmlDepth-at"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-maxXmlDepth-above",
+    "category": "resource",
+    "variations": ["resource-maxXmlDepth-above"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-maxStyleTraversalSteps-below",
+    "category": "resource",
+    "variations": ["resource-maxStyleTraversalSteps-below"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-maxStyleTraversalSteps-at",
+    "category": "resource",
+    "variations": ["resource-maxStyleTraversalSteps-at"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  },
+  {
+    "id": "resource-maxStyleTraversalSteps-above",
+    "category": "resource",
+    "variations": ["resource-maxStyleTraversalSteps-above"],
+    "input": "generated",
+    "expected": {
+      "rawIncludes": ["Resource boundary sentinel"],
+      "htmlIncludes": ["Resource boundary sentinel"]
+    }
+  }
+]

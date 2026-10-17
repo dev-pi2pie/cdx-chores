@@ -1,7 +1,7 @@
 ---
 title: "Rename Scope and Codex Capability Guide"
 created-date: 2026-02-26
-modified-date: 2026-09-05
+modified-date: 2026-10-17
 status: completed
 agent: codex
 ---
@@ -35,6 +35,12 @@ Rename support and Codex semantic support are separate layers:
 | DOCX (`.docx`)                                                                            | Yes                         | `--codex-docs`         | Best-effort; fallback-safe                                                   |
 | Video/Audio (`.mp4`, `.mov`, `.mp3`, `.wav`, etc.)                                        | Yes                         | No                     | Current Codex docs list audio/video as unsupported[^gpt5-codex][^codex-mini] |
 | Hidden/system files (`.DS_Store`, `Thumbs.db`, `._*`, dotfiles)                           | Skipped by default in batch | N/A                    | Safety default                                                               |
+
+DOCX analysis extracts metadata, headings, and text for title suggestions. It does not render document layout, perform OCR, or load external content.
+
+Extraction accepts files up to 8 MiB and has a 5-second deadline, separate from the Codex request timeout. Extraction failures use deterministic rename fallback. Files above 8 MiB through 10 MiB fail extraction; larger files are skipped.
+
+Process behavior has been verified on macOS; Linux and Windows remain unverified. See [DOCX extraction limits and behavior](../references/docx-extraction.md) for details.
 
 DOCX legacy note:
 
