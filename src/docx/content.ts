@@ -22,9 +22,9 @@ interface ReadResult {
 }
 interface Field {
   node: Element;
+  kind: "begin" | "unknown" | "hyperlink" | "checkbox";
   href?: string;
   anchor?: string;
-  checkbox?: boolean;
 }
 const passthrough = new Set([
   "w:hyperlink",
@@ -101,9 +101,16 @@ export function readContent(
     const link = /^\s*HYPERLINK\s+(\\l\s+)?(?:"(.*)"|([^\\]\S*))/.exec(text);
     if (link) {
       const target = link[2] ?? link[3]!;
-      return link[1] ? { ...field, anchor: target } : { ...field, href: target };
+      return {
+        node: field.node,
+        kind: "hyperlink",
+        ...(link[1] ? { anchor: target } : { href: target }),
+      };
     }
-    return { ...field, checkbox: /\s*FORMCHECKBOX\s*/.test(text) };
+    return {
+      node: field.node,
+      kind: /\s*FORMCHECKBOX\s*/.test(text) ? "checkbox" : "unknown",
+    };
   }
   function sequence(values: Element[]): ReadResult {
     const result: ReadResult = { values: [], extra: [] };
@@ -139,15 +146,16 @@ export function readContent(
     if (node.name === "w:fldChar") {
       const type = node.attributes.get("w:fldCharType");
       if (type === "begin") {
-        fields.push({ node });
+        fields.push({ node, kind: "begin" });
         instruction = [];
       } else if (type === "separate") {
         const field = fields.pop();
         if (field) fields.push(parseField(field));
       } else if (type === "end") {
-        const field = fields.pop();
-        if (field && (field.checkbox || parseField(field).checkbox))
-          return value({ kind: "checkbox" });
+        let field = fields.pop();
+        // Only fields without a separator still need their instruction classified.
+        if (field?.kind === "begin") field = parseField(field);
+        if (field?.kind === "checkbox") return value({ kind: "checkbox" });
       }
       return empty();
     }
@@ -218,9 +226,7 @@ export function readContent(
       ];
       if (kind === "table") filterMergedCells(read.values);
       if (kind === "r") {
-        const link = fields.findLast(
-          (field) => field.href !== undefined || field.anchor !== undefined,
-        );
+        const link = fields.findLast((field) => field.kind === "hyperlink");
         if (link) {
           const attributes = new Map<string, string>();
           if (link.anchor !== undefined) attributes.set("w:anchor", link.anchor);

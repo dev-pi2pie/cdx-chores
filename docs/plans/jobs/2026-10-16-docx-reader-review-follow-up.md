@@ -1,8 +1,8 @@
 ---
 title: "DOCX reader review follow-up"
 created-date: 2026-10-16
-modified-date: 2026-10-16
-status: completed
+modified-date: 2026-10-17
+status: in-progress
 agent: codex
 ---
 
@@ -193,3 +193,16 @@ Restore punctuation-bearing literals identified by review of `bc6e3e98..87bffa51
 | Earlier packed-consumer evidence | Retained from the drawing follow-up; distribution boundaries unchanged |
 | Full-range review | `87bffa51..04b6736b` and combined `bc6e3e98..04b6736b` reviewed; no remaining material findings; closing docs reviewed separately |
 | Artifact cleanup | Owned manual and managed-test workspaces settled and removed; temporary inputs, builds, runtime cache, and logs removed; no smoke artifacts retained |
+
+## Nested Field Follow-Up
+
+Address the field-classification finding from review of `bc6e3e98..f3aecfeb`. Source baseline: `f3aecfeb`. Preserve classification at separators and the historical end-time parsing of unseparated fields; accepted limits and frozen captures remain unchanged.
+
+- [x] Retain classified outer fields across nested instructions; add synthetic DOCX regressions and separator/end controls.
+- [ ] Pass focused, routine, built-runtime, and quality checks; update coverage references.
+- [ ] Review the complete follow-up and combined DOCX ranges, resolve findings, and clean owned artifacts.
+
+| Area | Outcome |
+| --- | --- |
+| Field state / regressions | Nine synthetic DOCX cases cover nested fields and separator/end controls; three pre-fix failures reproduced; original Node adapter evidence/prompts and checkbox counts match |
+| Initial verification | 382 focused cases, lint, format, types, and shipping build passed; routine and built-runtime checks pending |

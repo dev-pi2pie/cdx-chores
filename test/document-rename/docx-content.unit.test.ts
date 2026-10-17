@@ -18,6 +18,7 @@ import {
 import { assembleDocxEvidence } from "../../src/adapters/codex/document-rename/extractors/docx-evidence";
 import { resolveDocxLimits, type DocxLimits } from "../../src/docx/limits";
 import { readDocxDocument } from "../../src/docx/reader";
+import { readContent, type Content } from "../../src/docx/content";
 import { readSymbol } from "../../src/docx/symbols";
 import { styleProjection } from "../../src/docx/styles";
 import { XmlBudget } from "../../src/docx/xml-budget";
@@ -26,6 +27,7 @@ import { children, elementText, first, parseXml } from "../../src/docx/xml";
 import { createAdditionalDocxContentProbes } from "./fixtures/docx-content-probes";
 import { createDocxReviewCases } from "./fixtures/docx-review-cases";
 import { createDocxXmlCases } from "./fixtures/docx-xml-cases";
+import { createDocxFieldCases } from "./fixtures/docx-field-cases";
 import {
   createDocxAmpersandCases,
   createDocxAmpersandClassificationCases,
@@ -66,6 +68,29 @@ function evidence(value: DocxDocumentFacts) {
 }
 
 describe("DOCX review follow-up content cases", () => {
+  for (const item of createDocxFieldCases()) {
+    test(`${item.id} preserves field classification and displayed evidence`, async () => {
+      const root = parseXml(documentXml(item.options.body!))!;
+      const content = readContent(first(root, "w:body")!, new Set());
+      function countCheckboxes(values: Content[]): number {
+        return values.reduce(
+          (count, value) =>
+            count +
+            (value.kind === "checkbox"
+              ? 1
+              : "children" in value
+                ? countCheckboxes(value.children)
+                : 0),
+          0,
+        );
+      }
+      expect(countCheckboxes(content)).toBe(item.checkboxes);
+      const value = await facts(item.options);
+      expect(value.rawText).toBe(item.rawText!);
+      expect(value.headings).toEqual(item.headings!);
+    });
+  }
+
   test("ampersand classification preserves mixed literals and exact references", () => {
     const source = "A &amp-foo; &b=2; &é; &amp; &#38; &amp;#38;";
     for (const quote of ['"', "'"]) {
