@@ -1,7 +1,7 @@
 ---
 title: "Rename Scope and Codex Capability Guide"
 created-date: 2026-02-26
-modified-date: 2026-10-16
+modified-date: 2026-10-17
 status: completed
 agent: codex
 ---
@@ -36,11 +36,11 @@ Rename support and Codex semantic support are separate layers:
 | Video/Audio (`.mp4`, `.mov`, `.mp3`, `.wav`, etc.)                                        | Yes                         | No                     | Current Codex docs list audio/video as unsupported[^gpt5-codex][^codex-mini] |
 | Hidden/system files (`.DS_Store`, `Thumbs.db`, `._*`, dotfiles)                           | Skipped by default in batch | N/A                    | Safety default                                                               |
 
-DOCX extraction uses the internal bounded reader. It supplies metadata, headings, and text to the existing title-ranking policy; evidence records `docx-reader` or `docx-reader+ooxml`. Supported scope is text evidence, including the accepted symbol, style, and note behavior; it does not include layout rendering, OCR, or external content loading.
+DOCX analysis extracts metadata, headings, and text for title suggestions. It does not render document layout, perform OCR, or load external content.
 
-The reader accepts up to 8 MiB input, 256 ZIP entries, 1 MiB per selected part / 4 MiB selected parts in total, 100,000 XML elements, depth 64, and 128 style/numbering lookup steps. Its 5-second per-document deadline covers admitted input reading through result validation. Sampled child-process RSS is limited to 256 MiB; the sample includes the parser worker and excludes the CLI process, and is not a hard OS memory ceiling. Cleanup has an additional 1-second target; unconfirmed settlement returns extraction failure and retains the owner's admission slot until confirmed settlement. OS failures can defeat timing/cleanup targets. The Codex model timeout is separate.
+Extraction accepts files up to 8 MiB and has a 5-second deadline, separate from the Codex request timeout. Extraction failures use deterministic rename fallback. Files above 8 MiB through 10 MiB fail extraction; larger files are skipped.
 
-The CLI retains its 10 MiB DOCX prefilter: inputs above 8 MiB through 10 MiB reach the reader and return `docx_extract_error`; inputs above 10 MiB retain `docx_skipped_too_large`. Extraction failures, including limit and runtime failures, keep the existing deterministic rename fallback. Current process validation covers macOS; Linux and Windows replacement-runtime coverage remains unverified. See the accepted [support contract](../researches/research-2026-10-16-docx-extraction-and-mammoth-replacement.md#phase-7-assessment-and-acceptance-proposal) for the detailed limits and platform scope.
+Process behavior has been verified on macOS; Linux and Windows remain unverified. See [DOCX extraction limits and behavior](../references/docx-extraction.md) for details.
 
 DOCX legacy note:
 

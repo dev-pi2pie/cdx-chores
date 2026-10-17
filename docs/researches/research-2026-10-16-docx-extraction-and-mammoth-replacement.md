@@ -1,7 +1,7 @@
 ---
 title: "DOCX Extraction and Mammoth Replacement"
 created-date: 2026-10-16
-modified-date: 2026-10-16
+modified-date: 2026-10-17
 status: completed
 agent: codex
 ---
@@ -22,7 +22,7 @@ Full DOCX-to-HTML conversion, layout rendering, images/OCR, legacy `.doc` suppor
 
 ## Outcome
 
-The focused reader was accepted in [Phase 7](#phase-7-assessment-and-acceptance-proposal), integrated in Phase 8, and verified with complete Mammoth removal in [Phase 9](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-9-mammoth-removal-and-shipping-verification). The [rename guide](../guides/rename-scope-and-codex-capability-guide.md) describes current behavior; baseline analysis and phase checkpoints below preserve the findings at their reviewed revisions.
+The focused reader was accepted in [Phase 7](#phase-7-assessment-and-acceptance-proposal), integrated in Phase 8, and verified with complete Mammoth removal in [Phase 9](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-9-mammoth-removal-and-shipping-verification). The [rename guide](../guides/rename-scope-and-codex-capability-guide.md) summarizes current behavior, and [DOCX extraction limits and behavior](../references/docx-extraction.md) is the current reference. Baseline analysis and phase checkpoints below preserve the findings at their reviewed revisions.
 
 Accepted resource/content limits and maintenance ownership remain in force. RSS is sampled, OS failures can defeat cleanup targets, and Linux/Windows remain unverified. The upstream packaged-notice gap and unexplained minimum-Node validation anomaly remain recorded limitations; passing verification does not resolve them. Current comparisons use frozen expectations rather than a live Mammoth oracle.
 
@@ -617,6 +617,8 @@ Assess the benefit of owning the narrow extraction contract against the ongoing 
 Phase 7 records the maintainer’s explicit acceptance of responsibility for dependency/security updates, editor regressions and corpus upkeep, unsupported-content/diagnostic decisions, and future resource-budget changes. This acceptance satisfies the ownership requirement for reader selection; a subsystem location alone would not establish it.
 
 ### Phase 7 assessment and acceptance proposal
+
+This section preserves the historical acceptance decision. Use [DOCX extraction limits and behavior](../references/docx-extraction.md) for the current reference.
 
 The maintainer explicitly accepted the full proposal recorded at `141363f4`, including numerical/support limits, intentional differences, platform scope, and maintenance ownership. This section records the Phase 7 decision before integration: proceed to Phase 8. Assessed candidate `244b3e61` preserves the reader/runtime, shared evidence policy, dependency declarations, and lockfile reviewed in Phase 6. All five frozen captures/manifests also match that revision's evidence. The subsequent reviewed work renews comparisons, measurements, and routine-suite results, then simplifies package checks without changing extraction. These candidate results preceded the separate Phase 8 integration and Phase 9 shipping checks.
 
