@@ -76,6 +76,8 @@ Frame command/action and progress coverage stays under `test/video/frames/`; CLI
 
 `test/cli-foundations/process/` owns streaming records, bounded I/O, progress, and child/input/output lifecycle. Application tests exercise real Node pipes and process settlement; unit tests cover pure policies and injected failures. Generated media checks belong to manual feature verification.
 
+The streaming cancellation fixture retains production-default grace coverage with cooperative and resistant children. Its separate input-cancellation case uses a shorter fixture-only grace and proves cancellation during an outstanding write, input abortion, and producer settlement. A local real-spawn observer distinguishes signal attempts, child-handler acknowledgements, and actual close; successful disposal and observation-pipe drainage precede the application receipt. Ownership unit tests retain unconfirmed-closure and unsettled-consumer/input failures.
+
 ### Manual Feature Tooling
 
 Routine suites cover product behavior and shared test infrastructure. Manual smoke/evidence scripts, evaluation launchers, and fixture generators are verified explicitly. Product inputs and assertions stay with their test owner; routine tests do not launch manual generators or verification commands.

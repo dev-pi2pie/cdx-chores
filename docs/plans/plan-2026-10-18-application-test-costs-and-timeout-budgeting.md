@@ -9,7 +9,7 @@ agent: codex
 
 Implement the agreed application-test cost reductions while preserving named assertion owners, real-process coverage, and verified cleanup. Adopt a 300-second application execution allowance independently, then reassess it using the normal managed command after the accepted optimizations.
 
-Phases 1 and 2 are complete. Phase 2 preserved coverage, demonstrated measured savings, passed managed validation, and passed implementation commit-range review. Phases 3–8 have not started, and execution stopped before Phase 3. Later case selections remain proposed scope; their timing and behavioral equivalence remain unverified.
+Phases 1 and 2 are complete. Phase 3's coverage, measured savings, and managed validation have passed; commit-range review remains pending before closeout. Phases 4–8 have not started, and current execution stops before Phase 4. Later case selections remain proposed scope; their timing and behavioral equivalence remain unverified.
 
 The [unified job record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md) owns execution history for all eight phases. Update that same record with implementation changes, validation results, measurements, failures, deferrals, and phase-gate decisions; do not create separate per-phase job records. The research retains rationale and historical evidence, and the plan tracks tasks and acceptance. The record was opened for authorized implementation, not for drafting or reviewing these documents.
 
@@ -96,13 +96,13 @@ Record the revision, exact selection, run order, and all outcomes in the unified
 - [x] Actual process output/exit checks remain, and launch count for this matrix falls from 25 to four.
 - [x] Total file cost falls without altering production registration or command behavior.
 
-**Execution evidence:** The [Phase 2 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-2-cli-registration-matrix) records preserved scenario arrays, four retained process cases, three before/after measurements, related-file/static checks, passing managed lifecycle validation, and implementation commit-range review. The measured median complete-file cost fell from 4.007 to 0.833 seconds. Phase 2 is accepted and complete; Phase 3 has not started.
+**Execution evidence:** The [Phase 2 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-2-cli-registration-matrix) records preserved scenario arrays, four retained process cases, three before/after measurements, related-file/static checks, passing managed lifecycle validation, and implementation commit-range review. The measured median complete-file cost fell from 4.007 to 0.833 seconds. Phase 2 is accepted and complete.
 
 **Gate:** Apply the shared Accept/Defer/Stop rules. If the harness cannot prove equivalent parsing and pre-action rejection, restore the original subprocess matrix and verify that restoration before recording deferral.
 
 ## Phase 3: Shorten Only the Repeated Input-Cancellation Grace
 
-**Owners:** `test/cli-foundations/process/fixtures/driver.ts`, `fixtures/subject.cjs`, and `streaming.app.test.ts`; retain `ownership.unit.test.ts` under the same directory.
+**Owners:** `test/cli-foundations/process/fixtures/driver.ts`, `fixtures/subject.cjs`, the local `fixtures/cancellation-observer.ts`, and `streaming.app.test.ts`; retain `ownership.unit.test.ts` under the same directory.
 
 | Current scenario | Retained responsibility | Concrete observations |
 | ---------------- | ----------------------- | --------------------- |
@@ -112,19 +112,21 @@ Record the revision, exact selection, run order, and all outcomes in the unified
 
 **Tasks:**
 
-- [ ] Measure the complete streaming family before changing the input-cancellation fixture.
-- [ ] Keep `cancel` on the two-second production default and preserve its existing default elapsed-time checks.
-- [ ] Configure approximately 250 ms grace only for `input-cancel`; retain `forceMs`, outer process limits, and cleanup allowances.
-- [ ] Parse readiness as a complete line. Track input write entry/settlement so cancellation occurs while a write is outstanding after readiness, not on an arbitrary stdout chunk.
-- [ ] Wrap the existing real-spawn injection to observe signal attempts and child close. Record SIGTERM handling in the resistant subject as needed through a separate fixture observation channel; signal attempts alone are not closure evidence.
-- [ ] Replace only the input-cancellation 1,900 ms floor with ordering/timing assertions referenced to cancellation and the configured grace, using scheduling tolerance. Require no premature escalation and preserve outer deadlines.
-- [ ] Verify both cancellation scenarios, the entire streaming file, and ownership unit coverage, then measure and run the managed suite.
+- [x] Measure the complete streaming family before changing the input-cancellation fixture.
+- [x] Keep `cancel` on the two-second production default and preserve its existing default elapsed-time checks.
+- [x] Configure approximately 250 ms grace only for `input-cancel`; retain `forceMs`, outer process limits, and cleanup allowances.
+- [x] Parse readiness as a complete line. Track input write entry/settlement so cancellation occurs while a write is outstanding after readiness, not on an arbitrary stdout chunk.
+- [x] Wrap the existing real-spawn injection to observe signal attempts and child close. Record SIGTERM handling in the resistant subject as needed through a separate fixture observation channel; signal attempts alone are not closure evidence.
+- [x] Replace only the input-cancellation 1,900 ms floor with ordering/timing assertions referenced to cancellation and the configured grace, using scheduling tolerance. Require no premature escalation and preserve outer deadlines.
+- [x] Verify both cancellation scenarios, the entire streaming file, and ownership unit coverage, then measure and run the managed suite.
 
 **Acceptance checks:**
 
-- [ ] Readiness and pending input are demonstrated, cancellation settles the producer, and no child or stream remains unconfirmed.
-- [ ] Real default-policy coverage remains in `cancel`; the shorter value passes repeated focused checks without weakening shutdown assertions.
-- [ ] The full streaming family shows a saving. If 250 ms is unstable, evaluate a larger fixture-only value or defer; do not shorten production policy or erase escalation coverage.
+- [x] Readiness and pending input are demonstrated, cancellation settles the producer, and no child or stream remains unconfirmed.
+- [x] Real default-policy coverage remains in `cancel`; the shorter value passes repeated focused checks without weakening shutdown assertions.
+- [x] The full streaming family shows a saving. If 250 ms is unstable, evaluate a larger fixture-only value or defer; do not shorten production policy or erase escalation coverage.
+
+**Execution evidence:** The [Phase 3 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-3-cancellation-grace) records the retained default, fixture-only 250 ms grace, lifecycle observations, unchanged limits, ownership unit checks, and passing managed validation. Three before/after complete-file measurements reduced the median from 4.890 to 3.153 seconds. Commit-range review remains pending; Phase 4 has not started.
 
 **Gate:** Apply the shared Accept/Defer/Stop rules. A failed shorter-grace experiment requires restoration and verification of the original fixture behavior before independent work continues; unconfirmed closure takes the Stop path.
 

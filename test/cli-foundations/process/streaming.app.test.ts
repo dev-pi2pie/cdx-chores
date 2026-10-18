@@ -41,7 +41,44 @@ describe("Node streaming process ownership", () => {
           const result = await owned.completion;
           expect(result.stopped, JSON.stringify(result.issues)).toBe(true);
           expect(result.ok, result.stderr).toBe(true);
-          expect(JSON.parse(result.stdout)).toBeObject();
+          const observed = JSON.parse(result.stdout);
+          expect(observed).toBeObject();
+          if (mode === "cancel") {
+            expect(observed).toMatchObject({
+              cancelled: 2,
+              graceMs: 2000,
+              closureConfirmed: true,
+              disposed: true,
+              cooperative: {
+                signals: ["SIGTERM"],
+                termHandled: true,
+                closeCode: 0,
+                closeSignal: null,
+              },
+              resistant: {
+                signals: ["SIGTERM", "SIGKILL"],
+                termHandled: true,
+                closeCode: null,
+                closeSignal: "SIGKILL",
+              },
+            });
+          } else if (mode === "input-cancel") {
+            expect(observed).toMatchObject({
+              inputCancelled: true,
+              pendingWriteAtCancel: true,
+              inputAborted: true,
+              producerSettled: true,
+              graceMs: 250,
+              closureConfirmed: true,
+              disposed: true,
+              child: {
+                signals: ["SIGTERM", "SIGKILL"],
+                termHandled: true,
+                closeCode: null,
+                closeSignal: "SIGKILL",
+              },
+            });
+          }
         }),
       20000,
     );

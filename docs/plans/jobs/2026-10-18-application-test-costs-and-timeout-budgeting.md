@@ -7,7 +7,7 @@ agent: codex
 
 ## Scope and Related Documents
 
-This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1 and 2 are complete; execution stopped before Phase 3.
+This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1 and 2 are complete; current execution covers Phase 3 and stops before Phase 4.
 
 ## Phase Status
 
@@ -15,7 +15,7 @@ This is the unified execution record for all eight phases of the [implementation
 | --- | --- |
 | 1 — Execution allowance and baseline | Complete; implementation, baseline validation, and implementation range review passed |
 | 2 — CLI registration matrix | Complete; coverage, measured savings, managed validation, and implementation range review passed |
-| 3 — Cancellation grace | Not started |
+| 3 — Cancellation grace | Coverage, measurements, and managed validation passed; commit-range review pending |
 | 4 — DOCX review corpus | Not started |
 | 5 — Video menu Escape handling | Not started |
 | 6 — Managed runner blocked output | Not started |
@@ -120,3 +120,64 @@ The plan's Phase 2 tasks and acceptance checks now refer to verified coverage, m
 Phase 2 is accepted. Implementation and validation evidence landed in `b6b138ab88e3e272153af553774edc7a754384bd` (`perf(cli): reduce command registration test process overhead`). Code and documentation reviews covered the full implementation range `0299df92a7bdfc9ba9acb76d7b204020c0bbd7a9..b6b138ab88e3e272153af553774edc7a754384bd` and found no actionable issues. A pre-commit documentation finding was resolved by distinguishing the earlier exploratory timing from the Phase 2 three-run baseline.
 
 Coverage, measured-cost, and managed-lifecycle gates passed. Only documentation closeout followed validation; no test or production code changed afterward. The plan, research, and unified record remain open for later phases. Execution stopped before Phase 3; no cancellation-grace or other later-phase implementation was performed.
+
+## Phase 3: Cancellation Grace
+
+### Starting Point and Coverage
+
+Phase 3 began from clean revision `85b477ac61d6abce9f7bfd0dd23af20e99f6148d` on 2026-10-18. Only the streaming fixtures, their application assertions, and related documentation change. The local `fixtures/cancellation-observer.ts` helper serves the two cancellation scenarios; production code, shared helpers, ownership unit tests, and suite policy are unchanged.
+
+`input-cancel` now passes a fixture-only 250 ms grace. `cancel` omits a grace override, preserving the production two-second default and its existing 1,900–6,500 ms elapsed check. The five-second force budget, 15-second owned-driver timeout, 500 ms outer grace, four-second outer cleanup, 20-second test deadline, and output limits remain unchanged.
+
+| Coverage | Verified observation |
+| --- | --- |
+| Readiness | Complete `ready` lines; both distinct children in `cancel`; split readiness emission in `input-cancel` |
+| Outstanding input | A real write remains pending across an event-loop turn; exactly one write is outstanding and the producer has not settled when cancellation starts |
+| Input settlement | Input abort follows cancellation; the producer settles afterward, every started write settles, and no pending write remains |
+| Graceful termination | Real spawn wrapper records successful SIGTERM attempts; a separate fixture pipe confirms child-handler execution after ordinary stdout consumption stops |
+| Escalation | Resistant children handle SIGTERM before SIGKILL; elapsed time from SIGTERM to escalation must be at least configured grace minus 25 ms scheduling tolerance |
+| Closure and disposal | Cooperative child closes with code 0 and no signal; resistant children close with SIGKILL; closure remains confirmed, observation pipes drain, and the application receipt is emitted only after disposal succeeds |
+| Failure ownership | Existing unit cases retain unconfirmed closure, unsettled consumers/input, blocked reuse, and immediate-force platform-transition coverage |
+
+The application file still has eleven cases. Its Bun assertion count increases from 44 to 46 through structured cancellation receipts; additional Node assertions inside the driver/observer check ordering and settlement and are not counted by Bun's assertion total.
+
+### Measurements and Validation
+
+Three complete-file runs were collected before editing and three after, sequentially with comparable runtime and output conditions and no competing verification work. An external monotonic clock measured the entire invocation, including build/setup, both cancellation cases, observation overhead, and cleanup.
+
+```sh
+bun test ./test/cli-foundations/process/streaming.app.test.ts --path-ignore-patterns '**/fixtures/**'
+```
+
+| Whole-file invocation | Run 1 | Run 2 | Run 3 | Median | Observed range |
+| --- | --- | --- | --- | --- | --- |
+| Original streaming family | 5.086s | 4.890s | 4.870s | 4.890s | 4.870–5.086s |
+| Complete replacement | 3.163s | 3.150s | 3.153s | 3.153s | 3.150–3.163s |
+
+The median fell by 1.737 seconds (35.5%), with non-overlapping observed ranges. The unchanged default-grace case still took about 2.06–2.07 seconds; `input-cancel` took about 0.31–0.32 seconds. All six measurements passed, and no new fixture directory remained after replacement runs. These are local observations, not cross-machine timing guarantees; 250 ms requires reassessment if later evidence shows instability.
+
+| Check | Outcome |
+| --- | --- |
+| Three baseline and three replacement measurements | All passed: eleven cases each; Bun assertions 44 before, 46 after |
+| `bun test ./test/cli-foundations/process/ownership.unit.test.ts` | Passed: seven tests, 21 assertions |
+| `bun run lint` | Passed |
+| `bun run format:check` | Passed |
+| `bunx tsc --noEmit` | Passed |
+| `git diff --check` | Passed before managed validation |
+| `bun run test:integration:app` | Passed, exit 0: 2,335 cases across 299 files, 14,517 assertions, zero failures/errors/skips |
+
+The compiled Node fixture exercises the changed test code through the existing application harness. No packaged-code change requires a separate package build or smoke check.
+
+An initial ad hoc limit comparison also matched the new receipt fields and failed. Restricting that comparison to the owned-process configuration confirmed unchanged outer limits; all eleven modes and the original default timing check were also preserved. This was a checker-scope error, not a failed shorter-grace experiment or a runtime failure.
+
+The normal managed command used the unchanged 300-second policy without overrides. Test-process execution took 236.169 seconds; whole-command duration was 237.664 seconds. Preflight and test processes exited successfully with confirmed settlement and no escalation. Report and fixture-output validation passed; default cleanup retained no results, left no new run directory or unresolved owned path, and preserved pre-existing directories. No Phase 3 runtime verification attempt failed.
+
+Test and file counts match Phase 2; the two new cancellation-receipt assertions account for the increase from 14,515 to 14,517 Bun assertions. The single managed duration does not isolate this optimization's effect on total suite time. The three before/after whole-file samples establish the local saving, and the final three-run suite reassessment remains Phase 7 work.
+
+### Documentation
+
+The plan's Phase 3 tasks and acceptance checks now reference verified lifecycle observations, measurements, and managed results. Research distinguishes the earlier exploratory timing from the measured local saving. The ownership catalog explains default-grace coverage and the shorter input-cancellation fixture. The new observer remains local fixture support; no test files moved, so the path-correspondence catalog is unchanged. Public commands and usage are unchanged, so the testing guide requires no Phase 3 edit. Markdown links, footnotes, phase structure, and whitespace were checked; Phases 4–8 remain unchecked.
+
+### Review and Gate
+
+A maintainability review found no material concerns with the fixture observer and synchronization. Coverage, measured-cost, and managed-lifecycle gates pass. The complete Phase 3 range starts at `85b477ac61d6abce9f7bfd0dd23af20e99f6148d`; its commit-range review remains pending before phase closeout. Phase 4 has not started.

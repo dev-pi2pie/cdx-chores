@@ -1,11 +1,18 @@
 import assert from "node:assert/strict";
-import { ProcessOperation } from "../../../../src/cli/process/streaming";
+import { PROCESS_LIMITS, ProcessOperation } from "../../../../src/cli/process/streaming";
 import { LineRecords } from "../../../../src/cli/process/records";
-import { setTimeout as delay } from "node:timers/promises";
+import { setImmediate as nextTurn, setTimeout as delay } from "node:timers/promises";
+import { cancellationObserver } from "./cancellation-observer";
 const mode = process.argv[2]!,
   subject = process.argv[3]!;
 async function main() {
-  const operation = new ProcessOperation();
+  const observer =
+    mode === "cancel" || mode === "input-cancel" ? cancellationObserver() : undefined;
+  const inputGraceMs = 250;
+  const operation = new ProcessOperation({
+    ...(observer ? { launch: observer.launch } : {}),
+    ...(mode === "input-cancel" ? { graceMs: inputGraceMs } : {}),
+  });
   try {
     if (mode === "records") {
       let count = 0;
@@ -48,25 +55,76 @@ async function main() {
       return { inputFailure: true, closureConfirmed: true };
     }
     if (mode === "input-cancel") {
-      const started = performance.now();
-      await assert.rejects(
-        () =>
-          operation.run("node", [subject, mode], {
-            input: async (write, signal) => {
-              for (;;) {
-                signal.throwIfAborted();
-                await write(Buffer.alloc(65536));
+      let resolveReady!: () => void;
+      const readiness = new Promise<void>((resolve) => {
+        resolveReady = resolve;
+      });
+      const reader = new LineRecords((line) => {
+        assert.equal(line, "ready");
+        resolveReady();
+      });
+      let pendingWrite: Promise<void> | undefined;
+      let writesStarted = 0,
+        writesSettled = 0;
+      let inputAbortedAt: number | undefined, producerSettledAt: number | undefined;
+      const task = operation.run("node", [subject, mode], {
+        input: async (write, signal) => {
+          signal.addEventListener(
+            "abort",
+            () => {
+              inputAbortedAt = performance.now();
+            },
+            { once: true },
+          );
+          try {
+            for (;;) {
+              signal.throwIfAborted();
+              writesStarted++;
+              pendingWrite = write(Buffer.alloc(65536));
+              try {
+                await pendingWrite;
+              } finally {
+                writesSettled++;
+                pendingWrite = undefined;
               }
-            },
-            consume: () => {
-              operation.cancel();
-            },
-          }),
-        /cancelled/,
-      );
-      assert.ok(performance.now() - started >= 1900);
+            }
+          } finally {
+            producerSettledAt = performance.now();
+          }
+        },
+        consume: (chunk) => reader.chunk(chunk),
+      });
+      const prematureEnd = task.then(() => {
+        throw new Error("Input ended before cancellation.");
+      });
+      await Promise.race([readiness, prematureEnd]);
+      // Observe a real write spanning an event-loop turn, not merely producer entry.
+      for (;;) {
+        const writing = pendingWrite;
+        await Promise.race([nextTurn(), prematureEnd]);
+        if (writing && writing === pendingWrite) break;
+      }
+      assert.equal(writesStarted - writesSettled, 1);
+      assert.equal(producerSettledAt, undefined);
+      const started = performance.now();
+      operation.cancel();
+      await assert.rejects(task, { code: "PROCESS_CANCELLED", exitCode: 130 });
+      reader.finish();
+      assert.ok(inputAbortedAt !== undefined && inputAbortedAt >= started);
+      assert.ok(producerSettledAt !== undefined && producerSettledAt >= inputAbortedAt);
+      assert.equal(pendingWrite, undefined);
+      assert.equal(writesStarted, writesSettled);
       assert.equal(operation.closureUnconfirmed, false);
-      return { inputCancelled: true, closureConfirmed: true };
+      const child = await observer!.confirm(mode, started, inputGraceMs);
+      return {
+        inputCancelled: true,
+        pendingWriteAtCancel: true,
+        inputAborted: true,
+        producerSettled: true,
+        graceMs: inputGraceMs,
+        child,
+        closureConfirmed: true,
+      };
     }
     if (mode === "prefix") {
       let count = 0;
@@ -113,7 +171,8 @@ async function main() {
       return { missing: true };
     }
     if (mode === "cancel") {
-      let ready = 0;
+      const ready = new Set<string>();
+      const readers: LineRecords[] = [];
       let resolveReady!: () => void;
       const readiness = new Promise<void>((resolve) => {
         resolveReady = resolve;
@@ -121,31 +180,51 @@ async function main() {
       const calls = ["cooperative", "resistant"].map((name) => {
         const reader = new LineRecords((line) => {
           assert.equal(line, "ready");
-          if (++ready === 2) resolveReady();
+          assert.equal(ready.has(name), false);
+          ready.add(name);
+          if (ready.size === 2) resolveReady();
         });
+        readers.push(reader);
         const task = operation.run("node", [subject, name], {
           consume: (chunk) => reader.chunk(chunk),
         });
         void task.catch(() => {});
         return task;
       });
-      await readiness;
+      await Promise.race([readiness, Promise.all(calls)]);
+      assert.equal(ready.size, 2);
       const started = performance.now();
       operation.cancel();
       const outcomes = await Promise.allSettled(calls);
       const elapsed = performance.now() - started;
       assert.ok(outcomes.every((value) => value.status === "rejected"));
+      for (const outcome of outcomes) {
+        assert.ok(outcome.status === "rejected");
+        assert.equal(outcome.reason.code, "PROCESS_CANCELLED");
+        assert.equal(outcome.reason.exitCode, 130);
+      }
+      for (const reader of readers) reader.finish();
       assert.ok(elapsed >= 1900 && elapsed < 6500);
       assert.equal(operation.closureUnconfirmed, false);
-      return { cancelled: 2, elapsed, closureConfirmed: true };
+      const cooperative = await observer!.confirm("cooperative", started, PROCESS_LIMITS.graceMs);
+      const resistant = await observer!.confirm("resistant", started, PROCESS_LIMITS.graceMs);
+      return {
+        cancelled: 2,
+        elapsed,
+        graceMs: PROCESS_LIMITS.graceMs,
+        cooperative,
+        resistant,
+        closureConfirmed: true,
+      };
     }
     throw new Error("Unknown fixture case");
   } finally {
     await operation.dispose();
+    await observer?.settle();
   }
 }
 main().then(
-  (value) => console.log(JSON.stringify(value)),
+  (value) => console.log(JSON.stringify({ ...value, disposed: true })),
   (error) => {
     console.error(error);
     process.exitCode = 1;
