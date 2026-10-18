@@ -7,14 +7,14 @@ agent: codex
 
 ## Scope and Related Documents
 
-This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phase 1 is complete; current execution covers Phase 2 and stops before Phase 3.
+This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1 and 2 are complete; execution stopped before Phase 3.
 
 ## Phase Status
 
 | Phase | State |
 | --- | --- |
 | 1 — Execution allowance and baseline | Complete; implementation, baseline validation, and implementation range review passed |
-| 2 — CLI registration matrix | Coverage, measurements, and managed validation passed; commit-range review pending |
+| 2 — CLI registration matrix | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 3 — Cancellation grace | Not started |
 | 4 — DOCX review corpus | Not started |
 | 5 — Video menu Escape handling | Not started |
@@ -117,4 +117,6 @@ The plan's Phase 2 tasks and acceptance checks now refer to verified coverage, m
 
 ### Review and Gate
 
-The coverage, measured-cost, and managed-lifecycle gates pass. The complete Phase 2 range starts at `0299df92a7bdfc9ba9acb76d7b204020c0bbd7a9`; its commit-range review remains pending before phase closeout. Phase 3 has not started.
+Phase 2 is accepted. Implementation and validation evidence landed in `b6b138ab88e3e272153af553774edc7a754384bd` (`perf(cli): reduce command registration test process overhead`). Code and documentation reviews covered the full implementation range `0299df92a7bdfc9ba9acb76d7b204020c0bbd7a9..b6b138ab88e3e272153af553774edc7a754384bd` and found no actionable issues. A pre-commit documentation finding was resolved by distinguishing the earlier exploratory timing from the Phase 2 three-run baseline.
+
+Coverage, measured-cost, and managed-lifecycle gates passed. Only documentation closeout followed validation; no test or production code changed afterward. The plan, research, and unified record remain open for later phases. Execution stopped before Phase 3; no cancellation-grace or other later-phase implementation was performed.

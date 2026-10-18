@@ -9,7 +9,7 @@ agent: codex
 
 Implement the agreed application-test cost reductions while preserving named assertion owners, real-process coverage, and verified cleanup. Adopt a 300-second application execution allowance independently, then reassess it using the normal managed command after the accepted optimizations.
 
-Phase 1 is complete. Phase 2's coverage checks, measured savings, and managed validation have passed; its commit-range review remains pending before closeout. Phases 3–8 have not started, and current execution stops before Phase 3. Later case selections remain proposed scope; their timing and behavioral equivalence remain unverified.
+Phases 1 and 2 are complete. Phase 2 preserved coverage, demonstrated measured savings, passed managed validation, and passed implementation commit-range review. Phases 3–8 have not started, and execution stopped before Phase 3. Later case selections remain proposed scope; their timing and behavioral equivalence remain unverified.
 
 The [unified job record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md) owns execution history for all eight phases. Update that same record with implementation changes, validation results, measurements, failures, deferrals, and phase-gate decisions; do not create separate per-phase job records. The research retains rationale and historical evidence, and the plan tracks tasks and acceptance. The record was opened for authorized implementation, not for drafting or reviewing these documents.
 
@@ -96,7 +96,7 @@ Record the revision, exact selection, run order, and all outcomes in the unified
 - [x] Actual process output/exit checks remain, and launch count for this matrix falls from 25 to four.
 - [x] Total file cost falls without altering production registration or command behavior.
 
-**Execution evidence:** The [Phase 2 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-2-cli-registration-matrix) records preserved scenario arrays, four retained process cases, three before/after measurements, related-file/static checks, and passing managed lifecycle validation. The measured median complete-file cost fell from 4.007 to 0.833 seconds. Commit-range review remains pending; Phase 3 has not started.
+**Execution evidence:** The [Phase 2 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-2-cli-registration-matrix) records preserved scenario arrays, four retained process cases, three before/after measurements, related-file/static checks, passing managed lifecycle validation, and implementation commit-range review. The measured median complete-file cost fell from 4.007 to 0.833 seconds. Phase 2 is accepted and complete; Phase 3 has not started.
 
 **Gate:** Apply the shared Accept/Defer/Stop rules. If the harness cannot prove equivalent parsing and pre-action rejection, restore the original subprocess matrix and verify that restoration before recording deferral.
 

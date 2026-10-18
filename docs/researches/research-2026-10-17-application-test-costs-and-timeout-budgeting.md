@@ -8,7 +8,7 @@ agent: codex
 
 ## Goal and Review Boundary
 
-Identify avoidable application-test costs and a reasonable suite timeout while preserving meaningful coverage, fixture ownership, and bounded process shutdown. This research records historical measurements, agreed optimization directions for CLI registration, cancellation grace, the DOCX review corpus, video menu Escape handling, and managed runner blocked output, and the initial timeout allowance with reassessment criteria. The linked implementation plan specifies phases, concrete coverage mappings, and acceptance checks. Phase 1 has implemented and validated the 300-second policy through the normal managed command and passed implementation commit-range review. Phase 2 coverage, focused timing, and managed validation have passed; commit-range review remains pending. Phases 3–8 have not started.
+Identify avoidable application-test costs and a reasonable suite timeout while preserving meaningful coverage, fixture ownership, and bounded process shutdown. This research records historical measurements, agreed optimization directions for CLI registration, cancellation grace, the DOCX review corpus, video menu Escape handling, and managed runner blocked output, and the initial timeout allowance with reassessment criteria. The linked implementation plan specifies phases, concrete coverage mappings, and acceptance checks. Phase 1 has implemented and validated the 300-second policy through the normal managed command and passed implementation commit-range review. Phase 2 is complete after coverage, focused timing, managed validation, and implementation commit-range review passed. Phases 3–8 have not started.
 
 Scope covers the managed application suite, selected expensive test families, and their relationship to direct tests. The existing suite command model and behavior-based ownership remain the starting point. Runtime alone does not establish that a test is unnecessary or duplicated.[^testing-guide][^overlap-research]
 
@@ -78,7 +78,7 @@ Retain four representative subprocess checks alongside the complete in-process m
 | A root-level rejected flag | Real failure exit and stderr routing |
 | A rejected flag on an excluded leaf command | Entrypoint rejection before filesystem or action work |
 
-Coverage tradeoff: in-process parsing cannot establish actual startup or process exit behavior, so the retained subprocess checks own those responsibilities. Fresh programs prevent parser state from leaking between scenarios. Phase 2 of the implementation plan names the four invocations and maps the existing assertions to their retained owners. This direction reduces matrix subprocess launches from 25 to four without dropping any registration scenario. Phase 2 focused measurements reduced the median complete-file invocation from 4.007 to 0.833 seconds, including all replacement coverage. The 3.174-second saving is local evidence supported by passing managed validation; commit-range review remains pending before phase closeout. Measurements and commands are in the [unified job record](../plans/jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-2-cli-registration-matrix).
+Coverage tradeoff: in-process parsing cannot establish actual startup or process exit behavior, so the retained subprocess checks own those responsibilities. Fresh programs prevent parser state from leaking between scenarios. Phase 2 of the implementation plan names the four invocations and maps the existing assertions to their retained owners. This direction reduces matrix subprocess launches from 25 to four without dropping any registration scenario. Phase 2 focused measurements reduced the median complete-file invocation from 4.007 to 0.833 seconds, including all replacement coverage. The 3.174-second saving is local evidence supported by passing managed validation and implementation commit-range review; Phase 2 is accepted. Measurements and commands are in the [unified job record](../plans/jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-2-cli-registration-matrix).
 
 ### Streaming Cancellation Grace
 
@@ -223,11 +223,11 @@ The plan names the four CLI subprocess invocations, cancellation observations, i
 
 The plan requires a passing normal-command baseline at 300 seconds before optimization implementation; even a classified aggregate timeout stops that progression until the baseline passes or the execution approach is separately revised. Phase 1 has satisfied the baseline gate. Shared Accept/Defer/Stop gates require managed validation before optimization acceptance and verified restoration before deferral. Unresolved process or file ownership stops dependent work and prevents unsafe cleanup. Phase 2 has passed its coverage, savings, and managed-validation gates; the remaining optimization gates are unexecuted.
 
-The final documentation phase reconciles actual outcomes with the testing guide and existing ownership/path catalogs, checks reciprocal links, and preserves evidence-based status. The plan remains active and this research remains in-progress after Phase 1 completion. Phase 2 is underway and current execution stops before Phase 3; later optimization and final validation remain pending.[^testing-guide][^test-catalog][^test-paths]
+The final documentation phase reconciles actual outcomes with the testing guide and existing ownership/path catalogs, checks reciprocal links, and preserves evidence-based status. The plan remains active and this research remains in-progress after Phases 1 and 2 completed. Execution stopped before Phase 3; later optimization and final validation remain pending.[^testing-guide][^test-catalog][^test-paths]
 
 ## Related Plans
 
-- [Application test cost reduction and timeout budget implementation plan](../plans/plan-2026-10-18-application-test-costs-and-timeout-budgeting.md): phases, concrete coverage mappings, acceptance checks, and final documentation validation; Phase 1 complete, Phase 2 underway, Phases 3–8 unstarted.
+- [Application test cost reduction and timeout budget implementation plan](../plans/plan-2026-10-18-application-test-costs-and-timeout-budgeting.md): phases, concrete coverage mappings, acceptance checks, and final documentation validation; Phases 1 and 2 complete, Phases 3–8 unstarted.
 
 ## Related Research
 
