@@ -7,7 +7,7 @@ agent: codex
 
 ## Scope and Related Documents
 
-This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1–4 are complete; execution stopped before Phase 5.
+This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1–4 are complete; current execution covers Phase 5 and stops before Phase 6.
 
 ## Phase Status
 
@@ -17,7 +17,7 @@ This is the unified execution record for all eight phases of the [implementation
 | 2 — CLI registration matrix | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 3 — Cancellation grace | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 4 — DOCX review corpus | Complete; coverage, measured savings, managed validation, and implementation range review passed |
-| 5 — Video menu Escape handling | Not started |
+| 5 — Video menu Escape handling | Raw-byte foundation validated; decoded parity and optimization pending |
 | 6 — Managed runner blocked output | Not started |
 | 7 — Final validation and reassessment | Not started |
 | 8 — Documentation validation | Not started |
@@ -251,3 +251,35 @@ The ownership catalog now distinguishes complete direct compiled observations fr
 Phase 4 is accepted. Corpus redistribution and validation evidence landed in `10b0bd684479e7a084c9a46fa52a20a4488e7653` (`perf(testing): reduce DOCX review corpus runtime`), following the fixture-foundation checkpoint. Code, maintainability, and documentation reviews covered the full implementation range `e0ac7761e36af7d7a4b0ca450a7dd986fddd0c32..10b0bd684479e7a084c9a46fa52a20a4488e7653` and found no actionable issues.
 
 Coverage, measured-cost, and managed-lifecycle gates passed. Only documentation closeout followed validation; no test or production code changed afterward. The plan, research, and unified record remain open for later phases. Execution stopped before Phase 5; no video-menu or other later-phase implementation was performed.
+
+## Phase 5: Video Menu Escape Handling
+
+### Starting Point and Coverage Audit
+
+Phase 5 began from clean revision `644797f4f70d2ff3291d6ba0a638c4a527fbb4ff` on 2026-10-18. The existing thirteen navigation scenarios execute 36 bare-Escape steps from fifteen source sites: sixteen selection-menu, fourteen simple-input, one advanced text-inline, and five advanced path-inline operations. Production prompts, decoder defaults, and the 120 ms application Escape delay remain unchanged.
+
+The audit clarified the fragmented-arrow contract: simple input has caret movement, while advanced inline editors use arrows for completion or path navigation. The focused matrix checks those actual behaviors. It also identified that the old temporary-directory wrapper could remove scratch after an unconfirmed process result; the local menu launcher now awaits completion and removes only after confirmed settlement, preserving both primary and cleanup errors.
+
+The enclosing menu-test allowance is 20 seconds, with an 18-second reserve required after build/write and before launch: twelve seconds execution, four seconds total termination/verification including the existing 500 ms grace, and two seconds for result handling. The driver execution, termination, output bounds, and ten-second internal guard remain unchanged. This adds enclosing-test headroom without shortening runtime behavior.
+
+### Baseline Measurements
+
+Three sequential complete-file measurements ran before edits with comparable runtime and redirected-output conditions. An external monotonic clock included per-scenario compilation, all navigation, assertions, and cleanup.
+
+```sh
+bun test ./test/video/interactive/frames-menus.app.test.ts --path-ignore-patterns '**/fixtures/**'
+```
+
+| Whole-file invocation | Run 1 | Run 2 | Run 3 | Median | Observed range |
+| --- | --- | --- | --- | --- | --- |
+| Original navigation family | 24.511s | 24.529s | 24.528s | 24.528s | 24.511–24.529s |
+
+All three baseline runs passed: thirteen tests, 52 Bun assertions, zero failures, and no new fixture paths. The raw-byte foundation still retains all original navigation Escape bytes; it is not optimization acceptance.
+
+### Raw-Byte Foundation
+
+The six named raw-byte scenarios exercise selection/reuse, naming drafts in both editor modes, literal path drafts in both modes, and fragmented arrows. Complete and fragmented arrows produce exact menu selections, simple-input caret edits, and advanced text/path completions; prompts remain unsettled until intentional completion or Back. Every input owner exercises bare Escape, immediate and post-effect cleanup checks, and a subsequent prompt on the same streams. Decoder-owned data/listener hooks are not treated as application leaks.
+
+The combined navigation and byte selection passed: nineteen tests across two files, 76 Bun assertions, zero failures, and 31.081 seconds for the whole command. The added byte checks account for 24 assertions; child-side Node assertions verify detailed transitions, values, and cleanup. This one foundation observation includes the unchanged raw navigation cost and is not evidence of a saving. Lint, formatting, TypeScript checking, and whitespace checks passed; the original navigation driver and production code are unchanged at this checkpoint.
+
+The first checkpoint is limited to raw-byte coverage, local stream/launcher support, and enclosing-test ownership. Decoded Escape, four representative parity comparisons, replacement measurements, retained-family verification, managed validation, and full phase commit-range review remain pending.

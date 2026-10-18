@@ -9,7 +9,7 @@ agent: codex
 
 Implement the agreed application-test cost reductions while preserving named assertion owners, real-process coverage, and verified cleanup. Adopt a 300-second application execution allowance independently, then reassess it using the normal managed command after the accepted optimizations.
 
-Phases 1–4 are complete. Phase 4 preserved the complete compiled DOCX corpus and supervised parity, demonstrated measured savings, passed managed validation, and passed implementation commit-range review. Phases 5–8 have not started, and execution stopped before Phase 5. Later case selections remain proposed scope; their timing and behavioral equivalence remain unverified.
+Phases 1–4 are complete. Phase 4 preserved the complete compiled DOCX corpus and supervised parity, demonstrated measured savings, passed managed validation, and passed implementation commit-range review. Phase 5 is underway; Phases 6–8 have not started, and current execution stops before Phase 6. Later case selections remain proposed scope; their timing and behavioral equivalence remain unverified.
 
 The [unified job record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md) owns execution history for all eight phases. Update that same record with implementation changes, validation results, measurements, failures, deferrals, and phase-gate decisions; do not create separate per-phase job records. The research retains rationale and historical evidence, and the plan tracks tasks and acceptance. The record was opened for authorized implementation, not for drafting or reviewing these documents.
 
@@ -218,7 +218,7 @@ Driver completion must be awaited on success, timeout, parsing error, and assert
 
 ## Phase 5: Separate Menu Navigation from Repeated Escape Decoding
 
-**Owners:** existing `test/video/interactive/frames-menus.app.test.ts` and `fixtures/frames-menu-navigation.ts`; planned `frames-menu-bytes.app.test.ts` and `fixtures/frames-menu-byte-input.ts` in the same directories for focused real-Node byte checks. Preserve controller, operation, and key-parser tests.
+**Owners:** existing `test/video/interactive/frames-menus.app.test.ts` and `fixtures/frames-menu-navigation.ts`; new `frames-menu-bytes.app.test.ts` and `fixtures/frames-menu-byte-input.ts` in the same directories for focused real-Node byte checks. Local `frames-menu-input.ts`, `frames-menu-arrows.ts`, and `frames-menu-fixture.ts` support synchronization, byte cases, and owned launches. Preserve controller, operation, and key-parser tests.
 
 ### Coverage Mapping
 
@@ -229,22 +229,24 @@ Driver completion must be awaited on success, timeout, parsing error, and assert
 | `custom-destinations-inline`, `custom-destinations-simple`, `retained-filename-inline`, `retained-filename-simple` | Decoded Escape only; preserve literal drafts, destination type, extension validation, and returned paths |
 | Every existing navigation scenario | Keep real typing, arrows, Backspace, Enter, real prompt implementation, 120 ms application Escape delay, raw-mode restoration, and listener checks |
 
-The new byte test file will use the following named cases with actual Node decoder defaults. These are planned test names, not existing tests:
+The byte test file retains the following named cases with actual Node decoder defaults:
 
-| Planned case | Concrete flow and assertions |
+| Raw-byte case | Concrete flow and assertions |
 | ------------ | ---------------------------- |
 | `raw-select-back-and-reuse` | `chooseFrameOption`: bare Escape returns Back; settle/clean, then select by bytes on the same streams |
 | `raw-simple-draft-return` | `promptFrameNaming` with `simple: true`: type a template, Escape to Image naming, reopen and verify the exact draft, then finish normally |
 | `raw-inline-draft-return` | Same flow with `simple: false`, exercising the advanced text editor |
 | `raw-inline-path-return` | `promptFrameImageSettings` with `simple: false`: type a literal custom file path, Escape to destination selection, reopen, retain the draft, and finish |
 | `raw-simple-path-return` | Same path transition with `simple: true`, retaining the simple-input ownership path |
-| `raw-fragmented-arrows` | Separate `ESC`, `[`, and direction writes across event-loop turns after readiness; verify menu movement and inline caret behavior without Back, then bare Escape and stream reuse |
+| `raw-fragmented-arrows` | Separate `ESC`, `[`, and direction writes across event-loop turns after readiness; verify menu movement, simple-input caret effects, and advanced inline completion without Back, then bare Escape and stream reuse |
+
+Use 20-second enclosing tests with an 18-second pre-launch reserve for the existing twelve-second execution and four-second total termination budget plus result handling. Keep the 500 ms grace, output bounds, and internal guard unchanged. Retain fixture scratch whenever process completion is unconfirmed.
 
 **Tasks:**
 
-- [ ] Measure the existing menu family before adding the focused byte cases or changing Escape steps.
+- [x] Measure the existing menu family before adding the focused byte cases or changing Escape steps.
 - [ ] Add an explicit decoded-Escape operation on the existing stream. Wait for the current prompt's new output and initialization before emitting a normal Escape `keypress`, then wait for the expected next prompt. Do not intercept arbitrary writes or invoke abort/state transitions directly.
-- [ ] Implement the named raw-byte cases first. Verify complete and fragmented arrow sequences for menu/simple/inline input owners, with bounded deadlines and no exact 500/620 ms completion assertion. Do not deliberately delay fragments across the decoder timeout.
+- [x] Implement the named raw-byte cases first. Verify complete and fragmented arrow sequences for menu/simple/inline input owners, with bounded deadlines and no exact 500/620 ms completion assertion. Do not deliberately delay fragments across the decoder timeout.
 - [ ] Compare raw and decoded Escape using the same representative naming and path flows in both editor modes before converting broader navigation. The comparison can reuse these fixture flows; count any permanent parity cases in replacement cost.
 - [ ] After settlement, flush queued effects and check raw mode and application keypress/resize listeners again. Verify one Escape causes one transition and the next prompt is not affected by stale abort work. Respect Node decoder-owned listeners.
 - [ ] Keep `fixtures/real-prompt-cancellation.ts` immediate/setup/pre-aborted cases, `frames-controller.app.test.ts`, `frames-operation.app.test.ts`, and `test/cli-foundations/tui/keys.{unit,app}.test.ts` unchanged unless a specific fixture adjustment is necessary and separately reviewed.
