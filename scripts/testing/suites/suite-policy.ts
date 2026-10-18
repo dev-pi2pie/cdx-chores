@@ -13,8 +13,9 @@ const limits = (timeoutMs: number): Readonly<ProcessLimits> =>
 const common = ["Bun", "compatible ps observation and POSIX process-group access"];
 
 /**
- * Wall-clock limits include native work. App's 300 seconds provides headroom over
- * the observed full selection (~242 seconds), pending post-optimization review.
+ * Wall-clock limits include native work. App's 300 seconds retains headroom after
+ * post-optimization validation; local observations are not CI timing guarantees.
+ * Evidence: docs/plans/jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md
  * Every leaf runs once, without retry.
  * The common grace and cleanup budgets bound descendants and stream shutdown.
  */

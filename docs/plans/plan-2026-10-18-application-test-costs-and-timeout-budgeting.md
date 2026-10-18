@@ -9,7 +9,7 @@ agent: codex
 
 Implement the agreed application-test cost reductions while preserving named assertion owners, real-process coverage, and verified cleanup. Adopt a 300-second application execution allowance independently, then reassess it using the normal managed command after the accepted optimizations.
 
-Phases 1–7 are complete. Phase 7 passed scope reconciliation, static/build/unit checks, three fresh normal application runs on one unchanged implementation, and full phase commit-range review. The measured reassessment retains the 300-second allowance. Phase 8 has not started, and execution stopped before it.
+Phases 1–7 are complete. The five optimizations retain their mapped coverage, and Phase 7 passed static/build/unit checks, three fresh normal application runs, and full range review. The measured reassessment retains the 300-second allowance. Phase 8 is reconciling documentation and traceability before final closure; the documents remain at their current paths.
 
 The [unified job record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md) owns execution history for all eight phases. Update that same record with implementation changes, validation results, measurements, failures, deferrals, and phase-gate decisions; do not create separate per-phase job records. The research retains rationale and historical evidence, and the plan tracks tasks and acceptance. The record was opened for authorized implementation, not for drafting or reviewing these documents.
 
@@ -44,7 +44,7 @@ Unclear timing benefits permit additional focused measurements or deferral. They
 
 For each changed family, collect three focused baseline runs before its edits and three focused post-change runs under comparable runtime versions, environment, and output conditions. Keep the complete affected selection, including retained integration cases, in the comparison. Report individual durations, median, observed range, failures, and counts. Investigate overlap with ordinary variation rather than claiming precision from three samples. Do not add file testcase durations to suite wall time.
 
-Use exact file selections for focused checks. For application files, follow the testing guide's override pattern: `bun test ./test/<exact-file>.app.test.ts --path-ignore-patterns '**/fixtures/**'`. Direct checks do not replace managed prerequisite, report, process, and cleanup validation. Before accepting each optimization phase, run `bun run test:integration:app`; Phase 7's first invocation may supply the last optimization phase's managed check when no changes intervene, with acceptance pending that result. Run affected unit files when changed and the full managed unit suite in Phase 7. Run `bun run lint` and `bun run format:check` for changed TypeScript; preserve the project's established compiler/build checks where affected.
+Use exact file selections for focused checks. For application files, follow the testing guide's override pattern: `bun test ./test/<exact-file>.app.test.ts --path-ignore-patterns '**/fixtures/**'`. Direct checks do not replace managed prerequisite, report, process, and cleanup validation. Each optimization passed its own normal `bun run test:integration:app` check before acceptance. Phase 7 separately ran the full managed unit suite and three fresh application invocations. Changed TypeScript received lint, formatting, and compiler checks; Phase 7 also passed the final build.
 
 Record the revision, exact selection, run order, and all outcomes in the unified job record. Keep environment descriptions minimal: note comparable measurement conditions and include specific environment details only when they explain a result or limitation. Retained reports remain owned artifacts, not permanent documentation dependencies. The final three full application runs use the checked-in policy without diagnostic overrides; measure process elapsed time and whole-command duration separately.
 
@@ -64,7 +64,7 @@ Record the revision, exact selection, run order, and all outcomes in the unified
 
 **Execution evidence:** The [Phase 1 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-1-execution-allowance-and-baseline) records the passing normal-command baseline, the earlier environment failure, preserved policy values, focused/static checks, and implementation commit-range review. The baseline gate is satisfied and Phase 1 is complete.
 
-**Gate:** A passing normal-command baseline is required before Phases 2–6. For behavioral, prerequisite, report, or ownership failures, stop dependent work and resolve the cause. A confirmed aggregate timeout at 300 seconds also stops optimization implementation under this plan: preserve the failed outcome, classify the workload, and revise the execution approach separately if a passing baseline cannot be established. Read-only diagnosis may continue, but neither a diagnostic override nor the historical passing run satisfies this gate. Do not increase the allowance automatically, mark the timed-out baseline passed, or begin cost reductions to conceal a baseline failure. Phase 1 has passed this gate using the normal managed command; the 300-second direction remains independently justified, with post-optimization reassessment still pending.
+**Gate:** A passing normal-command baseline is required before Phases 2–6. For behavioral, prerequisite, report, or ownership failures, stop dependent work and resolve the cause. A confirmed aggregate timeout at 300 seconds also stops optimization implementation under this plan: preserve the failed outcome, classify the workload, and revise the execution approach separately if a passing baseline cannot be established. Read-only diagnosis may continue, but neither a diagnostic override nor the historical passing run satisfies this gate. Do not increase the allowance automatically, mark the timed-out baseline passed, or begin cost reductions to conceal a baseline failure. Phase 1 has passed this gate using the normal managed command; the 300-second direction remains independently justified and was retained by the completed Phase 7 reassessment.
 
 ## Phase 2: Move the CLI Registration Matrix In-Process
 
@@ -126,7 +126,7 @@ Record the revision, exact selection, run order, and all outcomes in the unified
 - [x] Real default-policy coverage remains in `cancel`; the shorter value passes repeated focused checks without weakening shutdown assertions.
 - [x] The full streaming family shows a saving. If 250 ms is unstable, evaluate a larger fixture-only value or defer; do not shorten production policy or erase escalation coverage.
 
-**Execution evidence:** The [Phase 3 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-3-cancellation-grace) records the retained default, fixture-only 250 ms grace, lifecycle observations, unchanged limits, ownership unit checks, passing managed validation, and implementation commit-range review. Three before/after complete-file measurements reduced the median from 4.890 to 3.153 seconds. Phase 3 is accepted and complete; Phase 4 has not started.
+**Execution evidence:** The [Phase 3 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-3-cancellation-grace) records the retained default, fixture-only 250 ms grace, lifecycle observations, unchanged limits, ownership unit checks, passing managed validation, and implementation commit-range review. Three before/after complete-file measurements reduced the median from 4.890 to 3.153 seconds. Phase 3 is accepted and complete.
 
 **Gate:** Apply the shared Accept/Defer/Stop rules. A failed shorter-grace experiment requires restoration and verification of the original fixture behavior before independent work continues; unconfirmed closure takes the Stop path.
 
@@ -176,6 +176,7 @@ Other permutations retain compiled Node parsing and complete evidence/prompt ass
 | -------------- | ----------------------- |
 | `adapters/docx-baseline.app.test.ts` and `adapters/docx-baseline-contract.app.test.ts` | Frozen independent full evidence/prompt expectations, metadata, and compatibility contracts |
 | `adapters/docx-product.app.test.ts` | `sequential`, `batch`, `thread`, `concurrent`, and `input-limits` modes, including failure recovery |
+| `adapters/title-evidence.app.test.ts` | Shared-fixture metadata, title selection, and prompt filenames |
 | `docx-runtime.app.test.ts` and `docx-runtime.unit.test.ts` | Asset loading, protocol conversion/failures, offline controls, limits, cancellation, and cleanup |
 | `docx-evidence.unit.test.ts`, `docx-content.unit.test.ts`, and `docx-drawing.unit.test.ts` | Reader rejection mapping, no-title classification, detailed semantic and field checks |
 
@@ -183,7 +184,7 @@ Other permutations retain compiled Node parsing and complete evidence/prompt ass
 
 Use one shared compiled review fixture, built in a `beforeAll` hook, followed by nine sequential direct-batch tests (one per group) and one sequential supervised-matrix test for the 39 selected cases. Each batch test owns exactly one driver invocation. Store direct observations by ID for parity comparison; a missing direct observation must fail the comparison explicitly. Do not put all ten driver invocations inside one 30-second test or run dependent comparisons concurrently.
 
-| Owner | Planned limit and responsibility |
+| Owner | Accepted limit and responsibility |
 | ----- | -------------------------------- |
 | Shared build/setup hook | 45 seconds; compile once without starting observation drivers |
 | Each direct or supervised driver | 30 seconds execution, then the existing 3-second total termination/verification budget, including its 250 ms grace; 70-case and 512 KiB output bounds remain |
@@ -212,17 +213,17 @@ Driver completion must be awaited on success, timeout, parsing error, and assert
 - [x] The enclosing test outlives its owned execution and termination budget, the timeout regression settles before teardown removes files, and unconfirmed ownership prevents cleanup. Successful runs alone do not satisfy this lifecycle check.
 - [x] Total replacement cost, including build/setup hooks and the timeout regression, is lower. All process/output limits remain finite. Retain the full supervised corpus if the mapping, equivalence, or timeout hierarchy cannot be demonstrated.
 
-**Execution evidence:** The [Phase 4 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-4-docx-review-corpus) records the fixture foundation, complete 302-case direct coverage, 39-case supervised parity, timeout cleanup, and retained-suite verification. Whole-file median time fell from 23.318 to 5.314 seconds across three before/after runs. Managed validation and implementation commit-range review also passed. Phase 4 is accepted and complete; Phase 5 has not started.
+**Execution evidence:** The [Phase 4 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-4-docx-review-corpus) records the fixture foundation, complete 302-case direct coverage, 39-case supervised parity, timeout cleanup, and retained-suite verification. Whole-file median time fell from 23.318 to 5.314 seconds across three before/after runs. Managed validation and implementation commit-range review also passed. Phase 4 is accepted and complete.
 
 **Gate:** Apply the shared Accept/Defer/Stop rules. Verify restoration of the full supervised review path before recording deferral. A child or fixture with unconfirmed ownership takes the Stop path and is retained for diagnosis.
 
 ## Phase 5: Separate Menu Navigation from Repeated Escape Decoding
 
-**Owners:** existing `test/video/interactive/frames-menus.app.test.ts` and `fixtures/frames-menu-navigation.ts`; new `frames-menu-bytes.app.test.ts` and `fixtures/frames-menu-byte-input.ts` in the same directories for focused real-Node byte checks. Local `frames-menu-input.ts`, `frames-menu-arrows.ts`, and `frames-menu-fixture.ts` support synchronization, byte cases, and owned launches. Preserve controller, operation, and key-parser tests.
+**Owners:** `test/video/interactive/frames-menus.app.test.ts` and `fixtures/frames-menu-navigation.ts`; `frames-menu-bytes.app.test.ts` and `fixtures/frames-menu-byte-input.ts` in the same directories for focused real-Node byte checks. Local `frames-menu-input.ts`, `frames-menu-arrows.ts`, and `frames-menu-fixture.ts` support synchronization, byte cases, and owned launches. Preserve controller, operation, and key-parser tests.
 
 ### Coverage Mapping
 
-| Existing owner/scenario | Planned execution and preserved assertions |
+| Existing owner/scenario | Accepted execution and preserved assertions |
 | ----------------------- | ------------------------------------------- |
 | `boundaries`, `resize`, information scenarios | Existing real-byte behavior and display/selection assertions remain |
 | `cadence`, `direct`, `naming`, `settings` | Decoded Escape only at explicit backtracking steps; preserve cadence drafts, no premature resolution, exact naming/settings results, and both editor modes |
@@ -258,7 +259,7 @@ Use 20-second enclosing tests with an 18-second pre-launch reserve for the exist
 - [x] Both input methods produce equivalent representative results and release ownership; queued effects do not reattach application listeners after cleanup.
 - [x] Savings survive the cost of retained/added byte tests. If initialization or ownership differs, retain raw Escape for that flow and investigate or defer it.
 
-**Execution evidence:** The [Phase 5 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-5-video-menu-escape-handling) records the raw-byte foundation, four representative parity comparisons, and preserved navigation assertions. Three before/after complete-family runs reduced the median from 24.528 to 13.869 seconds, including the new byte/parity tests and cleanup. Retained-family validation, managed validation, and implementation commit-range review also passed. Phase 5 is accepted and complete; Phase 6 has not started.
+**Execution evidence:** The [Phase 5 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-5-video-menu-escape-handling) records the raw-byte foundation, four representative parity comparisons, and preserved navigation assertions. Three before/after complete-family runs reduced the median from 24.528 to 13.869 seconds, including the new byte/parity tests and cleanup. Retained-family validation, managed validation, and implementation commit-range review also passed. Phase 5 is accepted and complete.
 
 **Gate:** Apply the shared Accept/Defer/Stop rules. For a partially deferred flow, restore and verify its original raw-byte path and measure the complete retained family before accepting any remaining conversions.
 
@@ -268,10 +269,10 @@ Use 20-second enclosing tests with an 18-second pre-launch reserve for the exist
 
 ### Coverage Mapping
 
-| Current coverage | Retained owner | Required assertions |
+| Original coverage | Retained owner | Required assertions |
 | ---------------- | -------------- | ------------------- |
 | Real blocked stderr, retained mode | Existing real-entry case | 4 MiB producer, paused reading until child exit, production four-second limits, exit 1 with `exit-failed`, verified stopped process, failed summary, retained path, scratch removed |
-| Real blocked stderr, default mode | Fast `stderr/default` case after validation | Entire owned run removed before helper cleanup, no retained or remaining path, no-results message, failure reporting does not recreate the run |
+| Real blocked stderr, default mode | Fast `stderr/default` case | Entire owned run removed before helper cleanup, no retained or remaining path, no-results message, failure reporting does not recreate the run |
 | Existing controlled stdout stall with stderr fallback | Fast `stdout/default` and `stdout/retained` cases | Bounded stall failure and healthy stderr fallback, no later suites, mode-specific cleanup |
 | Retained cleanup under execution-time stderr stall | Fast `stderr/retained` case | Failed invocation and leaf, stopped process records, delivery diagnostics persisted, correct retained path, scratch absent, no remaining-owned-path warning |
 | SIGINT real entry, late-summary output failure, fallback failure, finalization ownership/recovery | Existing entry/output/finalization suites | Preserve distinct timing and ownership semantics; late-summary leaf may remain passed |
@@ -292,7 +293,7 @@ Use 20-second enclosing tests with an 18-second pre-launch reserve for the exist
 - [x] No production timer, output volume for the real case, or outer supervisor limit was shortened to manufacture savings.
 - [x] Removed real-entry assertions have retained owners and replacement cost is lower. Keep both original real-entry cases if this cannot be demonstrated.
 
-**Execution evidence:** The [Phase 6 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-6-managed-runner-blocked-output) records the validated four-case controlled-stall foundation and subsequent removal of only the default-mode real-entry stall. Three before/after complete-family measurements reduced the median from 9.167 to 5.207 seconds, including replacement coverage and cleanup. Managed validation and implementation commit-range review also passed. Phase 6 is accepted and complete; Phase 7 has not started.
+**Execution evidence:** The [Phase 6 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-6-managed-runner-blocked-output) records the validated four-case controlled-stall foundation and subsequent removal of only the default-mode real-entry stall. Three before/after complete-family measurements reduced the median from 9.167 to 5.207 seconds, including replacement coverage and cleanup. Managed validation and implementation commit-range review also passed. Phase 6 is accepted and complete.
 
 **Gate:** Apply the shared Accept/Defer/Stop rules. If replacement coverage is insufficient, restore and verify both original real-entry retention cases and the existing controlled stdout stall before recording deferral.
 
@@ -312,9 +313,9 @@ Use 20-second enclosing tests with an 18-second pre-launch reserve for the exist
 - [x] No unresolved ownership, report, skip, or cleanup failure remains. Three runs are an initial local validation, not a percentile or CI guarantee.
 - [x] Measured results support accepted changes; deferred work and environment limits remain explicit. Do not sum estimated family savings as proof of the final suite saving.
 
-**Execution evidence:** The [Phase 7 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-7-final-validation-and-timeout-reassessment) reconciles the five accepted optimizations and confirms suite counts. Static checks, build, the full managed unit suite, and all three fresh application runs passed on the unchanged implementation. Process times were 201.848, 193.826, and 201.618 seconds; the median was 201.618 seconds, with 98.152 seconds of headroom on the slowest run. The allowance remains 300 seconds. Full phase commit-range review also passed. Phase 7 is accepted and complete; Phase 8 has not started.
+**Execution evidence:** The [Phase 7 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-7-final-validation-and-timeout-reassessment) reconciles the five accepted optimizations and confirms suite counts. Static checks, build, the full managed unit suite, and all three fresh application runs passed on the unchanged implementation. Process times were 201.848, 193.826, and 201.618 seconds; the median was 201.618 seconds, with 98.152 seconds of headroom on the slowest run. The allowance remains 300 seconds. Full phase commit-range review also passed. Phase 7 is accepted and complete.
 
-**Gate:** Proceed to Phase 8 documentation validation only after execution evidence and full Phase 7 commit-range review are complete. Current execution stops before Phase 8. An unexplained timeout or lifecycle failure prevents implementation completion; it does not authorize a larger budget automatically.
+**Gate:** Phase 7 execution evidence and full commit-range review passed, satisfying the prerequisite for Phase 8 documentation validation. An unexplained timeout or lifecycle failure would prevent implementation completion; it would not authorize a larger budget automatically.
 
 ## Phase 8: Validate Documentation and Traceability
 
@@ -322,20 +323,24 @@ This is the final phase. Documentation must describe the accepted implementation
 
 **Tasks:**
 
-- [ ] Update `docs/references/test-suite-case-matrices.md` for changed assertion/execution ownership, including complete direct compiled DOCX coverage versus the selected supervised matrix and the two output-fallback directions.
-- [ ] Update `docs/references/test-catalog-path-correspondence.md` only if existing paths move or its mappings change; adding local fixtures alone does not imply a historical path migration.
-- [ ] Update `docs/guides/testing.md` only where current accepted guidance changes, including the application allowance if documented there. Keep rationale in the research, task and acceptance progress in the plan, and per-phase execution evidence in the unified job record, not duplicated in current-reference tables.
-- [ ] Reconcile the research with observed savings and limitations, preserve its historical baseline, and replace any now-stale statements about the checked-in allowance only after implementation is verified.
-- [ ] Check reciprocal `Related Plans`/`Related Research` links, headings and anchors, repository-relative paths, footnotes, front matter, and policy-required modification dates. Preserve one source line per prose paragraph.
-- [ ] Review every phase checkbox against evidence. Keep deferred work clearly identified; do not mark unperformed tasks done. Preserve evidence-based lifecycle states: the plan became active and research in-progress with authorized Phase 1 execution; neither is complete while later verification remains pending. Never treat drafting or an accepted direction as execution proof.
-- [ ] Verify that the unified job record covers all eight phases, including final validation and documentation outcomes, and links to this plan and its related research.
-- [ ] Review the final documentation diff for unsupported runtime/CI claims, private machine details, broken links, and contradictions with the testing guide or source policy.
+- [x] Update `docs/references/test-suite-case-matrices.md` for changed assertion/execution ownership, including complete direct compiled DOCX coverage versus the selected supervised matrix and the two output-fallback directions.
+- [x] Update `docs/references/test-catalog-path-correspondence.md` only if existing paths move or its mappings change; adding local fixtures alone does not imply a historical path migration.
+- [x] Update `docs/guides/testing.md` only where current accepted guidance changes, including the application allowance if documented there. Keep rationale in the research, task and acceptance progress in the plan, and per-phase execution evidence in the unified job record, not duplicated in current-reference tables.
+- [x] Reconcile the research with observed savings and limitations, preserve its historical baseline, and replace stale allowance statements and the suite-policy rationale without changing executable policy values.
+- [x] Check reciprocal `Related Plans`/`Related Research` links, headings and anchors, repository-relative paths, footnotes, front matter, and policy-required modification dates. Preserve one source line per prose paragraph.
+- [x] Review every phase checkbox against evidence. Keep deferred work clearly identified; do not mark unperformed tasks done. Preserve evidence-based lifecycle states: the plan became active and research in-progress with authorized Phase 1 execution; neither is complete while later verification remains pending. Never treat drafting or an accepted direction as execution proof.
+- [x] Verify that the unified job record covers all eight phases, including final validation and documentation outcomes, and links to this plan and its related research.
+- [x] Review the final documentation diff for unsupported runtime/CI claims, private machine details, broken links, and contradictions with the testing guide or source policy.
 
 **Acceptance checks:**
 
-- [ ] Every reader-facing claim has matching source behavior or recorded evidence; unresolved or deferred items are visible.
-- [ ] Catalog, guide, research, and plan boundaries agree, links resolve, and no historical evidence is silently rewritten.
+- [x] Every reader-facing claim has matching source behavior or recorded evidence; unresolved or deferred items are visible.
+- [x] Catalog, guide, research, and plan boundaries agree, links resolve, and no historical evidence is silently rewritten.
 - [ ] The final documentation pass is complete without introducing unverified implementation or completion claims.
+
+**Execution evidence:** The [Phase 8 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-8-documentation-validation-and-closeout) records verified coverage/timeout claims, preserved historical evidence, link and metadata checks, and the comment-only policy update. The guide and path catalog were reviewed and need no changes. Documentation and evidence reviews passed; final acceptance remains open until full phase commit-range review.
+
+**Gate:** Close the plan, research, and unified record only after documentation checks and the full Phase 8 commit-range review pass. Keep all three at their current paths; this closeout does not archive them.
 
 ## References
 

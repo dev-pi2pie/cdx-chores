@@ -7,7 +7,7 @@ agent: codex
 
 ## Scope and Related Documents
 
-This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1–7 are complete; execution stopped before Phase 8.
+This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Phases 1–7 are complete; Phase 8 is validating documentation before final closure. The record and related documents remain at their current paths without archiving.
 
 ## Phase Status
 
@@ -20,7 +20,7 @@ This is the unified execution record for all eight phases of the [implementation
 | 5 — Video menu Escape handling | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 6 — Managed runner blocked output | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 7 — Final validation and reassessment | Complete; static/build/unit checks, three application runs, reassessment, and full range review passed; retain 300 seconds |
-| 8 — Documentation validation | Not started |
+| 8 — Documentation validation | Reconciliation, documentation/evidence reviews, and structural checks passed; full commit-range review pending |
 
 ## Phase 1: Execution Allowance and Baseline
 
@@ -475,3 +475,37 @@ The plan tracks the completed execution gates, and the research records the meas
 Phase 7 is accepted. Final validation and reassessment evidence landed in `f375f0a5dbe68fd70b929a683767ce19816867a8` (`docs(testing): record final timeout reassessment`), following the readiness checkpoint. Evidence/coverage and documentation reviews covered the full range `b7f00307cc01afb71a556f7babf466e54a015a6c..f375f0a5dbe68fd70b929a683767ce19816867a8` and found no actionable issues.
 
 Validation, timeout-reassessment, and range-review gates passed. Only documentation closeout followed the measured set; the implementation is unchanged throughout Phase 7. The plan, research, and unified record remain open for final documentation reconciliation. Execution stopped before Phase 8.
+
+## Phase 8: Documentation Validation and Closeout
+
+### Starting Point and Reconciliation
+
+Phase 8 began from clean revision `1327fd7e658df3ffccdbb2df7702593e74c57876`. Scope is documentation and the suite-policy rationale comment; executable policy values, runtime behavior, tests, and fixtures remain unchanged. The existing unified record continues through final closeout. No document is moved or archived.
+
+The research now leads with the accepted result and distinguishes historical behavior from the implemented coverage: 302 direct compiled DOCX observations plus 39 supervised parity cases, explicit decoded Escape navigation with separate raw-byte owners, and the four-case controlled-output matrix alongside retained real-entry shutdown. It records the accepted 250 ms input-cancellation grace and separates DOCX driver execution, enclosing-test, and teardown limits. Historical measurements, the diagnostic command, and failed observations are preserved. Incidental baseline environment inventory was removed; the narrowly scoped Node decoder-version inspection remains because it explains the original cost estimate.
+
+The plan's current phase summaries no longer claim that completed successor phases are unstarted or reassessment is pending. Its accepted timeout/coverage table headings and retained title-evidence suite entry match the implementation. Earlier job sections remain unchanged as execution history, including resolved failures and their then-current phase boundaries.
+
+| Document or source | Disposition |
+| --- | --- |
+| Research | Reconciled accepted behavior, timeout layers, measured outcomes, and byte-input references; preserved historical evidence and local-only limitations |
+| Plan | Reconciled current summaries, acceptance evidence, retained owners, and final closure gate |
+| Unified job record | Appended Phase 8 evidence; preserved all prior phase histories and failure records |
+| Ownership catalog | Existing coverage descriptions verified against all five accepted implementations; added links to this research, plan, and execution record |
+| Path-correspondence catalog | Reviewed unchanged; the implementation adds/modifies test files without renames, removals, or historical path migration |
+| Testing guide | Reviewed unchanged; public commands, prerequisites, process/fixture ownership, retention, and four-second output policy remain accurate, with no stale numeric application allowance |
+| Suite-policy rationale | Replaced pending-review wording with the completed reassessment and a durable evidence reference; all executable content remains identical |
+
+### Verification
+
+| Check | Outcome |
+| --- | --- |
+| Coverage and timeout claim audit | Current test owners agree with the accepted mappings and distinct execution/termination/enclosing-test budgets |
+| Historical evidence comparison | Baseline tables, diagnostic command, failure observations, and slow-file measurements unchanged; prior job sections preserved |
+| Local links, anchors, and footnotes | Passed across research, plan, record, both catalogs, and testing guide |
+| Policy comment boundary | Suite-policy file is byte-identical outside its single documentation comment |
+| `bun run lint`, `bun run format:check`, and `git diff --check` | Passed |
+
+No runtime suite was repeated for these documentation/comment-only changes. Phase 7's static/build/unit checks and three managed application runs remain the behavioral evidence; no executable or test change invalidates that set. The 300-second allowance and its reassessment criteria are unchanged. Dates follow the UTC calendar, creation dates are preserved, and prose paragraphs remain on single source lines. Public records retain only environment details needed to explain evidence.
+
+Documentation and evidence reviews confirmed the current claims and preserved history. Review also aligned the Phase 8 checklist with completed checks; final acceptance remains open until full range review. The plan, research, and unified record remain open pending the full Phase 8 commit-range review. Closure will update their statuses together, retain the current paths, and record the reviewed range.
