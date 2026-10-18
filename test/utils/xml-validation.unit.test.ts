@@ -13,6 +13,32 @@ describe("XML syntax validation policy", () => {
     expect(isValidXml("<first/><second/>")).toBe(true);
   });
 
+  for (const target of ["xml-stylesheet", "xml-model", "xmlReport"]) {
+    for (const bom of ["", "\uFEFF"]) {
+      test(`accepts leading ${target} instructions ${bom ? "with" : "without"} a BOM`, () => {
+        const instruction = `<?${target} href="style.xsl"?>`;
+        expect(isValidXml(`${bom}${instruction}<root/>`)).toBe(true);
+        expect(isValidXml(`${bom}<?xml version="1.0"?>${instruction}<root/>`)).toBe(true);
+      });
+    }
+  }
+
+  for (const [name, xml] of [
+    ["instruction without a root", '<?xml-stylesheet href="style.xsl"?>'],
+    ["unclosed instruction", '<?xml-stylesheet href="style.xsl"<root/>'],
+    ["invalid instruction target", "<?xml$report data?><root/>"],
+    ["unclosed document", "<?xml-model data?><root>"],
+    ["text controls after instruction", "<?xml-model data?><root>\u0001</root>"],
+    ["bare ampersands after instruction", "<?xml-model data?><root>A&B</root>"],
+    ["XML 1.0 prefix undeclaration after instruction", '<?xml-model data?><root xmlns:w=""/>'],
+    ["misplaced declaration", '<?xml-model data?><?xml version="1.0"?><root/>'],
+    ["malformed genuine declaration", '<?xml version="invalid"?><root/>'],
+  ] as const) {
+    test(`rejects ${name} despite processing-instruction tolerance`, () => {
+      expect(isValidXml(xml)).toBe(false);
+    });
+  }
+
   for (const [name, xml] of [
     ["empty input", ""],
     ["unclosed elements", "<root>"],

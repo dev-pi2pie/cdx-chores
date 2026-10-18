@@ -27,6 +27,7 @@ const groupFactories = [
 // Selected by runtime boundary; the plan records each ID's retained responsibility.
 const supervisedIds = [
   "review-xml-roots-valid-prolog",
+  "review-xml-roots-stylesheet-bom",
   "review-xml-roots-metadata-cannot-rescue",
   "review-xml-numeric-text",
   "review-xml-xml-escapes",

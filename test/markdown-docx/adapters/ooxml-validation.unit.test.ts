@@ -18,6 +18,26 @@ function parts(): Map<string, string> {
 }
 
 describe("OOXML validation fallback", () => {
+  test("leading processing instructions retain optional core and application metadata", () => {
+    const input = parts();
+    input.set(
+      "/docProps/core.xml",
+      '\uFEFF<?xml-model href="schema.rng"?>' + coreXml("Instruction title"),
+    );
+    input.set(
+      "/docProps/app.xml",
+      '<?xml-stylesheet href="style.xsl"?>' + application("Instruction writer"),
+    );
+    expect(readDocxCoreMetadataFromParts(input)).toEqual({
+      metadata: { title: "Instruction title", application: "Instruction writer" },
+      warnings: [],
+    });
+    input.set("/docProps/core.xml", "<?xml-model data?>" + coreXml("Invalid\u0001title"));
+    expect(readDocxCoreMetadataFromParts(input)).toEqual({
+      warnings: ["docx_metadata_unavailable"],
+    });
+  });
+
   test("newly invalid relationships cannot select alternate metadata parts", () => {
     const input = parts();
     input.set(
