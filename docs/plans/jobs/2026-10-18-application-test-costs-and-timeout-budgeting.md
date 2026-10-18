@@ -7,7 +7,7 @@ agent: codex
 
 ## Scope and Related Documents
 
-This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1 and 2 are complete; current execution covers Phase 3 and stops before Phase 4.
+This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1–3 are complete; execution stopped before Phase 4.
 
 ## Phase Status
 
@@ -15,7 +15,7 @@ This is the unified execution record for all eight phases of the [implementation
 | --- | --- |
 | 1 — Execution allowance and baseline | Complete; implementation, baseline validation, and implementation range review passed |
 | 2 — CLI registration matrix | Complete; coverage, measured savings, managed validation, and implementation range review passed |
-| 3 — Cancellation grace | Coverage, measurements, and managed validation passed; commit-range review pending |
+| 3 — Cancellation grace | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 4 — DOCX review corpus | Not started |
 | 5 — Video menu Escape handling | Not started |
 | 6 — Managed runner blocked output | Not started |
@@ -180,4 +180,6 @@ The plan's Phase 3 tasks and acceptance checks now reference verified lifecycle 
 
 ### Review and Gate
 
-A maintainability review found no material concerns with the fixture observer and synchronization. Coverage, measured-cost, and managed-lifecycle gates pass. The complete Phase 3 range starts at `85b477ac61d6abce9f7bfd0dd23af20e99f6148d`; its commit-range review remains pending before phase closeout. Phase 4 has not started.
+Phase 3 is accepted. Implementation and validation evidence landed in `1e89255e11a6c9fff8498c443493dd7ebc0106ba` (`perf(testing): shorten streaming input cancellation fixture`). Code, maintainability, and documentation reviews covered the full implementation range `85b477ac61d6abce9f7bfd0dd23af20e99f6148d..1e89255e11a6c9fff8498c443493dd7ebc0106ba` and found no actionable issues.
+
+Coverage, measured-cost, and managed-lifecycle gates passed with the 250 ms fixture grace. Only documentation closeout followed validation; no test or production code changed afterward. The plan, research, and unified record remain open for later phases. Execution stopped before Phase 4; no DOCX corpus or other later-phase implementation was performed.

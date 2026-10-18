@@ -9,7 +9,7 @@ agent: codex
 
 Implement the agreed application-test cost reductions while preserving named assertion owners, real-process coverage, and verified cleanup. Adopt a 300-second application execution allowance independently, then reassess it using the normal managed command after the accepted optimizations.
 
-Phases 1 and 2 are complete. Phase 3's coverage, measured savings, and managed validation have passed; commit-range review remains pending before closeout. Phases 4–8 have not started, and current execution stops before Phase 4. Later case selections remain proposed scope; their timing and behavioral equivalence remain unverified.
+Phases 1–3 are complete. Phase 3 preserved default-grace coverage, demonstrated measured savings, passed managed validation, and passed implementation commit-range review. Phases 4–8 have not started, and execution stopped before Phase 4. Later case selections remain proposed scope; their timing and behavioral equivalence remain unverified.
 
 The [unified job record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md) owns execution history for all eight phases. Update that same record with implementation changes, validation results, measurements, failures, deferrals, and phase-gate decisions; do not create separate per-phase job records. The research retains rationale and historical evidence, and the plan tracks tasks and acceptance. The record was opened for authorized implementation, not for drafting or reviewing these documents.
 
@@ -126,7 +126,7 @@ Record the revision, exact selection, run order, and all outcomes in the unified
 - [x] Real default-policy coverage remains in `cancel`; the shorter value passes repeated focused checks without weakening shutdown assertions.
 - [x] The full streaming family shows a saving. If 250 ms is unstable, evaluate a larger fixture-only value or defer; do not shorten production policy or erase escalation coverage.
 
-**Execution evidence:** The [Phase 3 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-3-cancellation-grace) records the retained default, fixture-only 250 ms grace, lifecycle observations, unchanged limits, ownership unit checks, and passing managed validation. Three before/after complete-file measurements reduced the median from 4.890 to 3.153 seconds. Commit-range review remains pending; Phase 4 has not started.
+**Execution evidence:** The [Phase 3 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-3-cancellation-grace) records the retained default, fixture-only 250 ms grace, lifecycle observations, unchanged limits, ownership unit checks, passing managed validation, and implementation commit-range review. Three before/after complete-file measurements reduced the median from 4.890 to 3.153 seconds. Phase 3 is accepted and complete; Phase 4 has not started.
 
 **Gate:** Apply the shared Accept/Defer/Stop rules. A failed shorter-grace experiment requires restoration and verification of the original fixture behavior before independent work continues; unconfirmed closure takes the Stop path.
 
