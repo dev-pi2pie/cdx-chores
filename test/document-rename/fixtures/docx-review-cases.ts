@@ -116,6 +116,17 @@ export function createDocxReviewCases(): ReviewCase[] {
       rawText: "Root Validation Report\n\n",
       headings: [{ level: 1, text: "Root Validation Report" }],
     },
+    ...["", "\uFEFF"].map((bom): ReviewCase => ({
+      id: `review-xml-roots-stylesheet-${bom ? "bom" : "plain"}`,
+      options: {
+        documentXml: rootDocument.replace(
+          '<?xml version="1.0" encoding="UTF-8"?>',
+          `${bom}<?xml-stylesheet href="style.xsl"?>`,
+        ),
+      },
+      rawText: "Root Validation Report\n\n",
+      headings: [{ level: 1, text: "Root Validation Report" }],
+    })),
     ...[
       { id: "numeric-text", xml: "Report &#49; &#x3A9; &#x1F600;", text: "Report 1 Ω 😀" },
       { id: "escaped-numeric", xml: "Literal &amp;#169;", text: "Literal &#169;" },

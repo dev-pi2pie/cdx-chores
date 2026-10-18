@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { access, readFile } from "node:fs/promises";
+import { access, readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { Writable } from "node:stream";
 
+import type { InvocationSummary } from "../../scripts/testing/terminal/summary.ts";
 import { completed, withRunner, writeReport } from "./runner-support.ts";
 
 const outputLimits = { maxPendingBytes: 64 * 1024, stallMs: 500, drainMs: 500 };
@@ -28,7 +29,7 @@ function failWrites(code: "EPIPE" | "EIO", marker = "Test invocation:"): Writabl
   });
 }
 
-async function storedSummary(root: string): Promise<{ state: string; errors: string[] }> {
+async function storedSummary(root: string): Promise<InvocationSummary> {
   return JSON.parse(await readFile(join(root, "results/summary.json"), "utf8"));
 }
 
@@ -112,39 +113,118 @@ describe("managed runner output delivery", () => {
     });
   });
 
-  test("a stalled terminal callback has a bounded failure and prevents later scheduling", async () => {
-    await withRunner(async ({ roots, events, invoke }) => {
-      let acknowledge: (() => void) | undefined;
-      const fallback: string[] = [];
-      const stalled = new Writable({
-        write(chunk, _encoding, callback) {
-          if (chunk.toString().includes("pending progress")) acknowledge = callback;
-          else setImmediate(callback);
-        },
-      });
-      try {
-        const result = await invoke(["all"], {
-          streams: { stdout: stalled, stderr: capture(fallback) },
-          outputLimits: { ...outputLimits, stallMs: 50, drainMs: 100 },
-          dependencies: {
-            execute: async (options) => {
-              options.output!.write("stdout", "pending progress\n");
-              await writeReport(options);
-              return completed();
-            },
+  test.each([
+    ["stdout", "default"],
+    ["stdout", "retained"],
+    ["stderr", "default"],
+    ["stderr", "retained"],
+  ] as const)(
+    "a stalled %s callback fails execution and finalizes %s results",
+    async (channel, mode) => {
+      await withRunner(async ({ roots, events, invoke }) => {
+        const marker = `pending progress ${channel}/${mode}\n`;
+        const withheld: Array<() => void> = [];
+        const delivered: string[] = [];
+        const fallback: string[] = [];
+        const stalled = new Writable({
+          write(chunk, _encoding, callback) {
+            const text = chunk.toString();
+            delivered.push(text);
+            if (text === marker) withheld.push(callback);
+            else setImmediate(callback);
           },
         });
-        expect(result.exitCode).toBe(1);
-        expect(result.summary.errors.join(" ")).toMatch(/stalled|timed out/);
-        expect(fallback.join("")).toContain("terminal output delivery was incomplete");
-        expect(result.summary.errors.join(" ")).not.toContain("fallback drain timed out");
-        expect(events).not.toContain("preflight:app");
-        await expect(access(roots[0]!.root)).rejects.toThrow();
-      } finally {
-        acknowledge?.();
-      }
-    });
-  });
+        const healthy = capture(fallback);
+        const keep = mode === "retained";
+        try {
+          const result = await invoke(["all", ...(keep ? ["--keep-results"] : [])], {
+            streams:
+              channel === "stdout"
+                ? { stdout: stalled, stderr: healthy }
+                : { stdout: healthy, stderr: stalled },
+            outputLimits: { ...outputLimits, stallMs: 50, drainMs: 100 },
+            dependencies: {
+              execute: async (options) => {
+                events.push("execute:unit");
+                // Establish successful initial status delivery before withholding execution output.
+                expect(await options.output!.flush()).toBe(true);
+                options.output!.write(channel, marker);
+                await writeReport(options);
+                return completed();
+              },
+            },
+          });
+          expect(delivered.filter((text) => text === marker)).toEqual([marker]);
+          expect(withheld).toHaveLength(1);
+          expect(stalled.writableLength).toBe(Buffer.byteLength(marker));
+          expect(result.exitCode).toBe(1);
+          expect(result.outputFailed).toBe(true);
+          expect(result.summary.state).toBe("failed");
+          expect(result.summary.keepResults).toBe(keep);
+          expect(result.summary.leaves.map((leaf) => leaf.suite)).toEqual([
+            "unit",
+            "app",
+            "codex",
+            "pandoc",
+          ]);
+          expect(result.summary.leaves.map((leaf) => leaf.state)).toEqual([
+            "failed",
+            "not-run",
+            "not-run",
+            "not-run",
+          ]);
+          expect(events).toEqual(["preflight:unit", "execute:unit"]);
+          const leaf = result.summary.leaves[0]!;
+          expect(leaf.processes.map((entry) => entry.stage)).toEqual(["preflight", "test"]);
+          expect(leaf.processes.every((entry) => entry.result.stopped)).toBe(true);
+          expect(leaf.counts).toMatchObject({ tests: 1, failures: 0, errors: 0, skipped: 0 });
+          expect(leaf.errors.join(" ")).toContain("Test output delivery failed");
+          expect(result.summary.leaves.slice(1).map((entry) => entry.processes)).toEqual([
+            [],
+            [],
+            [],
+          ]);
+          const errors = result.summary.errors.join(" ");
+          expect(errors).toContain(`Output ${channel}: destination stalled;`);
+          expect(errors).toContain("delivery incomplete.");
+          expect(errors).not.toMatch(
+            /timed out|EPIPE|EIO|pending byte limit|no fallback destination/,
+          );
+          const terminal = fallback.join("");
+          expect(terminal).toContain("terminal output delivery was incomplete");
+          expect(terminal).toContain("Test invocation: failed");
+          expect(result.summary.remainingOwnedPath).toBeUndefined();
+          expect(terminal).not.toContain("Remaining owned location:");
+          expect(roots).toHaveLength(1);
+          const root = roots[0]!.root;
+          // Observe product cleanup before withRunner removes any retained fixture roots.
+          if (keep) {
+            const retained = join(root, "results");
+            expect(result.summary.retainedResultsPath).toBe(retained);
+            expect(terminal).toContain(`Retained results: ${retained}`);
+            expect(await readdir(root)).toEqual(["results"]);
+            const stored = await storedSummary(root);
+            expect(stored.state).toBe("failed");
+            expect(stored.keepResults).toBe(true);
+            expect(stored.errors).toEqual(result.summary.errors);
+            expect(stored.leaves).toEqual(result.summary.leaves);
+            expect(stored.retainedResultsPath).toBe(retained);
+            expect(stored.remainingOwnedPath).toBeUndefined();
+            await expect(access(join(root, "scratch"))).rejects.toMatchObject({ code: "ENOENT" });
+          } else {
+            expect(result.summary.retainedResultsPath).toBeUndefined();
+            expect(terminal).toContain("No results were retained.");
+            // invoke has finished fallback reporting, which must not recreate the removed run.
+            await expect(access(root)).rejects.toMatchObject({ code: "ENOENT" });
+          }
+        } finally {
+          for (const acknowledge of withheld) acknowledge();
+          await new Promise<void>((resolve) => setImmediate(resolve));
+        }
+      });
+    },
+    5000,
+  );
 
   test("late final-summary delivery failure updates an already retained passing summary", async () => {
     await withRunner(async ({ roots, invoke }) => {

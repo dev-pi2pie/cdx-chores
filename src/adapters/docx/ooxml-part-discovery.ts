@@ -1,4 +1,5 @@
-import { XMLParser, XMLValidator } from "fast-xml-parser";
+import { XMLParser } from "fast-xml-parser";
+import { isValidXml } from "../../utils/xml-validation";
 import { normalizePackagePartPath } from "./ooxml-part-path";
 
 const DOCX_PACKAGE_RELS_PATH = "/_rels/.rels";
@@ -35,7 +36,7 @@ function asArray<T>(value: T | T[] | undefined): T[] {
 
 function parseRelationshipTargets(xml: string): RelationshipTargets | undefined {
   try {
-    if (XMLValidator.validate(xml) !== true) {
+    if (!isValidXml(xml)) {
       return undefined;
     }
     const parsed = xmlParser.parse(xml) as {
@@ -64,7 +65,7 @@ function parseRelationshipTargets(xml: string): RelationshipTargets | undefined 
 
 function parseContentTypeTargetPaths(xml: string): ContentTypeTargetPaths | undefined {
   try {
-    if (XMLValidator.validate(xml) !== true) {
+    if (!isValidXml(xml)) {
       return undefined;
     }
     const parsed = xmlParser.parse(xml) as {

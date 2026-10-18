@@ -21,8 +21,9 @@ async function main() {
     process.stderr.write("input decoder failed\n");
     process.exitCode = 3;
   } else if (mode === "input-cancel") {
-    process.on("SIGTERM", () => {});
-    process.stdout.write("ready\n");
+    process.on("SIGTERM", () => writeSync(3, "SIGTERM\n"));
+    process.stdout.write("rea");
+    setImmediate(() => process.stdout.write("dy\n"));
     setInterval(() => {}, 1000);
   } else if (mode === "stderr") {
     process.stderr.write("e".repeat(70000) + "TAIL!");
@@ -33,6 +34,7 @@ async function main() {
   } else if (mode === "args") process.stdout.write(JSON.stringify(process.argv.slice(3)));
   else if (mode === "cooperative" || mode === "resistant") {
     process.on("SIGTERM", () => {
+      writeSync(3, "SIGTERM\n");
       if (mode === "cooperative") process.exit(0);
     });
     process.stdout.write("ready\n");

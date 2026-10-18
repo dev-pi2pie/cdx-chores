@@ -1,0 +1,81 @@
+import { describe, expect, test } from "bun:test";
+
+import { isValidXml } from "../../src/utils/xml-validation";
+
+describe("XML syntax validation policy", () => {
+  test("accepts ordinary XML and translates malformed syntax into false", () => {
+    expect(isValidXml('<root value="A&amp;B"><child/></root>')).toBe(true);
+    expect(isValidXml("<root><child></root>")).toBe(false);
+  });
+
+  test("preserves declaration-order tolerance and delegates root policy to callers", () => {
+    expect(isValidXml('<?xml encoding="UTF-8" version="1.0"?><root/>')).toBe(true);
+    expect(isValidXml("<first/><second/>")).toBe(true);
+  });
+
+  for (const target of ["xml-stylesheet", "xml-model", "xmlReport"]) {
+    for (const bom of ["", "\uFEFF"]) {
+      test(`accepts leading ${target} instructions ${bom ? "with" : "without"} a BOM`, () => {
+        const instruction = `<?${target} href="style.xsl"?>`;
+        expect(isValidXml(`${bom}${instruction}<root/>`)).toBe(true);
+        expect(isValidXml(`${bom}<?xml version="1.0"?>${instruction}<root/>`)).toBe(true);
+      });
+    }
+  }
+
+  for (const [name, xml] of [
+    ["instruction without a root", '<?xml-stylesheet href="style.xsl"?>'],
+    ["unclosed instruction", '<?xml-stylesheet href="style.xsl"<root/>'],
+    ["invalid instruction target", "<?xml$report data?><root/>"],
+    ["unclosed document", "<?xml-model data?><root>"],
+    ["text controls after instruction", "<?xml-model data?><root>\u0001</root>"],
+    ["bare ampersands after instruction", "<?xml-model data?><root>A&B</root>"],
+    ["XML 1.0 prefix undeclaration after instruction", '<?xml-model data?><root xmlns:w=""/>'],
+    ["misplaced declaration", '<?xml-model data?><?xml version="1.0"?><root/>'],
+    ["malformed genuine declaration", '<?xml version="invalid"?><root/>'],
+  ] as const) {
+    test(`rejects ${name} despite processing-instruction tolerance`, () => {
+      expect(isValidXml(xml)).toBe(false);
+    });
+  }
+
+  for (const [name, xml] of [
+    ["empty input", ""],
+    ["unclosed elements", "<root>"],
+    ["duplicate attributes", '<root value="one" value="two"/>'],
+    ["text control characters", "<root>\u0001</root>"],
+    ["attribute control characters", '<root value="\u0001"/>'],
+    ["malformed element names", "<a:b:c/>"],
+    ["malformed attribute names", '<root a:b:c="value"/>'],
+    ["XML 1.0 prefix undeclaration", '<root xmlns:w=""/>'],
+    ["repeated DOCTYPE declarations", "<!DOCTYPE root><!DOCTYPE root><root/>"],
+    ["misplaced DOCTYPE declarations", "<root><!DOCTYPE root></root>"],
+    ["bare text ampersands", "<root>A&B</root>"],
+    ["malformed numeric references", "<root>&#xZZ;</root>"],
+  ] as const) {
+    test(`rejects ${name} without leaking validator exceptions`, () => {
+      expect(isValidXml(xml)).toBe(false);
+    });
+  }
+
+  test("validation failures do not affect later calls", () => {
+    for (const xml of ["<broken>", "<root>\u0001</root>", "<a:b:c/>"]) {
+      expect(isValidXml(xml)).toBe(false);
+      expect(isValidXml('<root value="next"><child/></root>')).toBe(true);
+    }
+  });
+
+  test("retains XML 1.1 prefix undeclaration and undeclared-prefix handling", () => {
+    expect(isValidXml('<?xml version="1.1"?><root xmlns:w=""><w:child/></root>')).toBe(true);
+    expect(isValidXml("<root><w:child/></root>")).toBe(true);
+    expect(isValidXml('<root xmlns=""/>')).toBe(true);
+  });
+
+  test("leaves optional sequence checks and literal sections unchanged", () => {
+    expect(isValidXml('<root value="<"><!-- a--b -->]]></root>')).toBe(true);
+    expect(isValidXml("<root><![CDATA[A&B &unknown; <literal/>]]><?after data?></root>")).toBe(
+      true,
+    );
+    expect(isValidXml("<![CDATA[before]]><root/><![CDATA[after]]>")).toBe(true);
+  });
+});

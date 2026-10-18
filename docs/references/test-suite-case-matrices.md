@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Contract Ownership Catalog"
 created-date: 2026-08-23
-modified-date: 2026-10-17
+modified-date: 2026-10-18
 status: completed
 agent: codex
 ---
@@ -40,6 +40,10 @@ Use the [Testing Guide](../guides/testing.md) for suite selection, prerequisites
 
 ## Coverage Boundaries
 
+### CLI Registration
+
+`test/cli-foundations/options/codex-execution-scope.app.test.ts` owns Codex execution-option registration scope. Its complete scenario matrix parses arguments through fresh Commander programs and real command registration, with captured output and a guard against action entry. Representative subprocess checks retain source-CLI startup, output routing, exit behavior, and rejection before input processing or file creation. They use Bun's source entrypoint and do not establish packaged Node compatibility. Execution-option parsing and Codex information routing retain their separate test owners.
+
 ### Document Rename
 
 `test/document-rename/` owns document evidence extraction, title ranking, and DOCX reader/runtime coverage.
@@ -52,7 +56,7 @@ Use the [Testing Guide](../guides/testing.md) for suite selection, prerequisites
 
 Representative adapter suites are [docx-baseline.app.test.ts](../../test/document-rename/adapters/docx-baseline.app.test.ts) for frozen compatibility, [docx-product.app.test.ts](../../test/document-rename/adapters/docx-product.app.test.ts) for product integration, and [docx-review.app.test.ts](../../test/document-rename/adapters/docx-review.app.test.ts) for regressions.
 
-DOCX adapter regressions use a compiled Node product fixture with fixed runtime assets. Independent frozen expectations and fixture definitions stay under `test/document-rename/fixtures/`; inline reader comparisons cover parsing separately. Built-format comparisons, resource measurements, and installed-package checks remain explicit manual verification.
+DOCX adapter regressions use a compiled Node product fixture with fixed runtime assets. The complete review corpus runs in bounded direct compiled-reader batches, while the named [supervised matrix](../../test/document-rename/fixtures/docx-review-matrix.ts) retains production-supervisor coverage and complete observation parity. Both paths preserve reader, evidence, and prompt assertions; a controlled timeout regression verifies owned settlement before fixture removal. Independent frozen expectations and fixture definitions stay under `test/document-rename/fixtures/`; content and drawing unit tests retain additional semantic assertions. Built-format comparisons, resource measurements, and installed-package checks remain explicit manual verification.
 
 ### Video Frames
 
@@ -64,6 +68,8 @@ DOCX adapter regressions use a compiled Node product fixture with fixed runtime 
 
 [export.app.test.ts](../../test/video/frames/export.app.test.ts) exercises decoder/encoder orchestration with controlled tools; [publication.app.test.ts](../../test/video/frames/publication.app.test.ts) owns filesystem staging, publication, and cleanup. Routine frame tests use controlled tool responses and synthetic fixtures. Real media, installed encoder output, pixel/color fidelity, and workload measurements require explicit manual checks.
 
+[frames-menus.app.test.ts](../../test/video/interactive/frames-menus.app.test.ts) preserves navigation, draft retention, validation, and results through real prompts, using explicit decoded Escape only at repeated backtracking steps. [frames-menu-bytes.app.test.ts](../../test/video/interactive/frames-menu-bytes.app.test.ts) owns real Node bare-Escape and complete/fragmented-arrow decoding, plus raw/decoded parity for naming and path flows in both editor modes. Both retain ordinary byte input and verify input release after queued effects; controller, operation, and key-parser suites retain their cancellation and settlement responsibilities. The local launcher awaits owned completion and retains scratch when settlement is unconfirmed.
+
 ### Video Frames Command and Doctor
 
 Frame command/action and progress coverage stays under `test/video/frames/`; CLI registration and option forwarding stay under `test/video/commands/`. `test/doctor/actions/video-frames.unit.test.ts` owns dependency capability reporting. Their controlled fixtures do not establish actual encoder output.
@@ -71,6 +77,16 @@ Frame command/action and progress coverage stays under `test/video/frames/`; CLI
 ### Streaming Process Foundation
 
 `test/cli-foundations/process/` owns streaming records, bounded I/O, progress, and child/input/output lifecycle. Application tests exercise real Node pipes and process settlement; unit tests cover pure policies and injected failures. Generated media checks belong to manual feature verification.
+
+The streaming cancellation fixture retains production-default grace coverage with cooperative and resistant children. Its separate input-cancellation case uses a shorter fixture-only grace and proves cancellation during an outstanding write, input abortion, and producer settlement. A local real-spawn observer distinguishes signal attempts, child-handler acknowledgements, and actual close; successful disposal and observation-pipe drainage precede the application receipt. Ownership unit tests retain unconfirmed-closure and unsettled-consumer/input failures.
+
+### Managed Runner Output
+
+`test/test-runner/runner-entry-output.app.test.ts` owns real entrypoint shutdown with blocked stderr in retained-results mode, using production output deadlines, plus real SIGINT cancellation. The blocked-output case keeps reading paused until child exit, requires an ordinary failed exit with confirmed settlement, verifies persisted failure evidence and scratch removal, and retains its fixture when settlement cannot be confirmed.
+
+`test/test-runner/runner-output.app.test.ts` owns the controlled stdout/stderr by default/retained stall matrix. It verifies execution-marker delivery, the intended destination-stall diagnostic, both fallback directions, halted scheduling, and mode-specific cleanup before helper teardown. Its injected completed process results establish finalization given confirmed settlement; actual process termination remains the real-entry case's responsibility. Late-summary and fallback-failure cases retain their distinct semantics, including a passed leaf when output fails only after execution.
+
+`output-delivery.app.test.ts` retains low-level delivery, backpressure, deadline, and disposal coverage; `finalization-delivery.app.test.ts` and `finalization.app.test.ts` retain summary recovery and filesystem ownership coverage under the same test-runner directory.
 
 ### Manual Feature Tooling
 
@@ -111,5 +127,6 @@ Use the [Testing Guide](../guides/testing.md) for current command usage and life
 - [Audit baseline](test-suite-audit-inventory.md), [catalog admission decisions](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#phase-2-case-matrices-and-catalog-admission), and [removal ledger](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md#final-beforeafter-and-removal-record).
 - [Catalog design research](../researches/research-2026-08-23-test-suite-contract-overlap-and-catalog.md) and [implementation record](../plans/jobs/2026-08-23-test-suite-contract-and-catalog-enhancement.md).
 - [Suite lifecycle research](../researches/research-2026-09-05-multi-test-commands.md) and [feature/suite refactor record](../plans/jobs/2026-09-05-test-suite-refactor.md).
+- [Application test cost research](../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md), [implementation plan](../plans/plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), and [unified execution record](../plans/jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md) explain the retained assertion owners and timeout reassessment.
 - [DOCX implementation](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md), [test/tooling separation](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#phase-63-manual-script-simplification-and-test-ownership), and [compatibility follow-ups](../plans/jobs/2026-10-16-docx-reader-review-follow-up.md).
 - [Video implementation](../plans/jobs/2026-10-01-video-frames-implementation.md), [enhancement verification](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#integrated-verification), [native image verification](../plans/jobs/2026-10-02-video-frames-enhancement-follow-up.md#native-image-interpretation-and-conversion), and [PNG framing correction](../plans/jobs/2026-10-02-png-idat-chunk-limit-fix.md).

@@ -1,5 +1,6 @@
-import { XMLParser, XMLValidator } from "fast-xml-parser";
+import { XMLParser } from "fast-xml-parser";
 
+import { isValidXml } from "../../../src/utils/xml-validation.ts";
 import { assertReportedTestFiles } from "./report-files.ts";
 
 export type JUnitSummary = {
@@ -103,7 +104,7 @@ export function validateJUnitReport(xml: string, selected: readonly string[]): J
   if (/<!\s*(?:DOCTYPE|ENTITY)\b/i.test(xml)) {
     throw new Error("Test report declarations are forbidden.");
   }
-  if (XMLValidator.validate(xml) !== true) throw new Error("Malformed test report XML.");
+  if (!isValidXml(xml)) throw new Error("Malformed test report XML.");
   const parsed = new XMLParser({
     ignoreAttributes: false,
     attributeNamePrefix: "@_",

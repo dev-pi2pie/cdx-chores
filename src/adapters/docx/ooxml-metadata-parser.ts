@@ -1,4 +1,5 @@
-import { XMLParser, XMLValidator } from "fast-xml-parser";
+import { XMLParser } from "fast-xml-parser";
+import { isValidXml } from "../../utils/xml-validation";
 
 export interface DocxCoreMetadata {
   title?: string;
@@ -43,7 +44,7 @@ function getElementText(value: unknown): string | undefined {
 
 export function parseDocxCoreProperties(xml: string): DocxCoreMetadata | undefined {
   try {
-    if (XMLValidator.validate(xml) !== true) {
+    if (!isValidXml(xml)) {
       return undefined;
     }
     const parsed = xmlParser.parse(xml) as { coreProperties?: Record<string, unknown> };
@@ -76,7 +77,7 @@ export function parseDocxExtendedPropertiesApplication(
   }
 
   try {
-    if (XMLValidator.validate(xml) !== true) {
+    if (!isValidXml(xml)) {
       return undefined;
     }
     const parsed = xmlParser.parse(xml) as { Properties?: Record<string, unknown> };

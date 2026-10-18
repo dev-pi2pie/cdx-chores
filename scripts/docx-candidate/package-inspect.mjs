@@ -5,7 +5,12 @@ import { createRequire } from "node:module";
 import { isAbsolute, join, relative, sep } from "node:path";
 
 export const productPackageName = "cdx-chores";
-export const runtimeDependencies = ["dingbat-to-unicode", "fast-xml-parser", "yauzl"];
+export const runtimeDependencies = [
+  "dingbat-to-unicode",
+  "fast-xml-parser",
+  "fast-xml-validator",
+  "yauzl",
+];
 
 export async function json(path) {
   return JSON.parse(await readFile(path, "utf8"));

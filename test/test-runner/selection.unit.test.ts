@@ -107,6 +107,25 @@ describe("suite selection contracts", () => {
 });
 
 describe("report file correspondence", () => {
+  test("syntax failures preserve the exact malformed-report diagnostic", () => {
+    for (const xml of [
+      "<testsuites>",
+      '<testsuites><testsuite file="test/a.unit.test.ts"><testcase name="bad\u0001"/></testsuite></testsuites>',
+      '<testsuites xmlns:w=""><testsuite file="test/a.unit.test.ts"><testcase name="one"/></testsuite></testsuites>',
+      "<a:b:c/>",
+    ]) {
+      expect(() => reportedTestFiles(xml)).toThrow(/^Malformed test report XML\.$/);
+    }
+  });
+
+  test("reordered declarations and escaped identities retain file evidence", () => {
+    expect(
+      reportedTestFiles(
+        '<?xml encoding="UTF-8" version="1.0"?><testsuites><testsuite file="test/a.unit.test.ts"><testcase name="A &amp; B"/></testsuite></testsuites>',
+      ),
+    ).toEqual(["test/a.unit.test.ts"]);
+  });
+
   test("reconciles nested suites and inherited testcase identities", () => {
     const files = reportedTestFiles(
       '<testsuites><testsuite file="test/a.unit.test.ts"><testsuite><testcase name="one"/><testcase name="two" file="./test/a.unit.test.ts"/></testsuite></testsuite></testsuites>',

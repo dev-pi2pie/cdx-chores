@@ -37,72 +37,139 @@ export async function buildDocxProduct(root: string, formats: Array<"esm" | "cjs
 export async function createDocxProductFixture() {
   const root = await createTempFixtureDir("docx-product");
   let stopped = true;
+  let closing = false;
+  let cleanup: Promise<void> | undefined;
+  const pending = new Set<Promise<unknown>>();
   try {
     await buildDocxProduct(root);
   } catch (error) {
     await rm(root, { recursive: true, force: true });
     throw error;
   }
+  function track<T>(work: () => Promise<T>): Promise<T> {
+    assert(!closing, "DOCX product fixture is closing");
+    const completion = work();
+    pending.add(completion);
+    void completion.then(
+      () => pending.delete(completion),
+      () => pending.delete(completion),
+    );
+    return completion;
+  }
+
+  async function runDriver(mode: string, args: string[]) {
+    assert(!closing, "DOCX product fixture is closing");
+    const batch = mode === "observe-many" || mode === "observe-direct";
+    const owned = startFixtureProcess({
+      executable: "node",
+      args: [join(root, "driver.mjs"), mode, ...args],
+      cwd: root,
+      env: { PATH: process.env.PATH, NO_COLOR: "1" },
+      timeoutMs: mode === "timeout-probe" ? 500 : batch ? 30_000 : 15_000,
+      graceMs: 250,
+      cleanupMs: 3_000,
+      // The frozen semantic capture array is under 140 KiB; bound the batch payload.
+      maxOutputBytes: batch ? 512 * 1024 : 65_536,
+    });
+    try {
+      const result = await owned.completion;
+      stopped &&= result.stopped;
+      return result;
+    } catch (error) {
+      stopped = false;
+      throw error;
+    }
+  }
+
+  async function runJson(mode: string, args: string[]) {
+    const result = await runDriver(mode, args);
+    if (!result.stopped || !result.ok)
+      throw new Error(
+        `DOCX product fixture failed: ${JSON.stringify(result.issues)} ${result.stderr}`,
+      );
+    return JSON.parse(result.stdout) as unknown;
+  }
+
   return {
     root,
-    async run(mode: string, ...args: string[]) {
-      const result = await startFixtureProcess({
-        executable: "node",
-        args: [join(root, "driver.mjs"), mode, ...args],
-        cwd: root,
-        env: { PATH: process.env.PATH, NO_COLOR: "1" },
-        timeoutMs: mode === "observe-many" ? 30_000 : 15_000,
-        graceMs: 250,
-        cleanupMs: 3_000,
-        // The frozen semantic capture array is under 140 KiB; bound the batch payload.
-        maxOutputBytes: mode === "observe-many" ? 512 * 1024 : 65_536,
-      }).completion;
-      stopped &&= result.stopped;
-      if (!result.stopped || !result.ok)
-        throw new Error(
-          `DOCX product fixture failed: ${JSON.stringify(result.issues)} ${result.stderr}`,
-        );
-      return JSON.parse(result.stdout) as unknown;
+    run(mode: string, ...args: string[]) {
+      return track(() => runJson(mode, args));
+    },
+    probeTimeout() {
+      return track(() => runDriver("timeout-probe", []));
     },
     async extract(path: string) {
       return (await this.run("extract", path)) as ExtractedDocumentTitleEvidence;
     },
-    async observeCases(cases: DocxBaselineCase[]) {
-      assert(cases.length > 0 && cases.length <= 70, "Expected a bounded DOCX regression slice");
-      assert.equal(new Set(cases.map((item) => item.id)).size, cases.length);
-      const directory = await mkdtemp(join(root, "cases-"));
-      const inputs = new Map<string, Buffer>();
-      const requests: Array<{ id: string; path: string; directory: string }> = [];
-      for (const item of cases) {
-        const bytes =
-          "fixture" in item.input
-            ? await readFile(join(REPO_ROOT, item.input.fixture))
-            : item.input.bytes;
-        const name = "fixture" in item.input ? basename(item.input.fixture) : `${item.id}.docx`;
-        await mkdir(join(directory, item.id));
-        const path = join(directory, item.id, name);
-        await writeFile(path, bytes);
-        inputs.set(item.id, bytes);
-        requests.push({ id: item.id, path, directory });
-      }
-      const requestPath = join(directory, "observations.json");
-      await writeFile(requestPath, JSON.stringify(requests));
-      const observations = (await this.run("observe-many", requestPath)) as Array<{
-        id: string;
-        observation: DocxProductObservation;
-      }>;
-      assert.deepEqual(
-        observations.map((value) => value.id),
-        cases.map((item) => item.id),
-        "Expected one ordered product observation for each DOCX input",
-      );
-      return new Map(
-        observations.map(({ id, observation }) => [id, { bytes: inputs.get(id)!, observation }]),
-      );
+    observeCases(
+      cases: DocxBaselineCase[],
+      options: { mode?: "direct" | "supervised"; deadline?: number } = {},
+    ) {
+      return track(async () => {
+        assert(cases.length > 0 && cases.length <= 70, "Expected a bounded DOCX regression slice");
+        assert.equal(new Set(cases.map((item) => item.id)).size, cases.length);
+        const directory = await mkdtemp(join(root, "cases-"));
+        const inputs = new Map<string, Buffer>();
+        const requests: Array<{ id: string; path: string; directory: string }> = [];
+        for (const item of cases) {
+          const bytes =
+            "fixture" in item.input
+              ? await readFile(join(REPO_ROOT, item.input.fixture))
+              : item.input.bytes;
+          const name = "fixture" in item.input ? basename(item.input.fixture) : `${item.id}.docx`;
+          await mkdir(join(directory, item.id));
+          const path = join(directory, item.id, name);
+          await writeFile(path, bytes);
+          inputs.set(item.id, bytes);
+          requests.push({ id: item.id, path, directory });
+        }
+        const requestPath = join(directory, "observations.json");
+        await writeFile(requestPath, JSON.stringify(requests));
+        if (options.deadline !== undefined)
+          assert(
+            options.deadline - performance.now() >= 38_000,
+            "DOCX batch has insufficient time for execution, termination, and result handling",
+          );
+        const mode = options.mode === "direct" ? "observe-direct" : "observe-many";
+        const observations = (await runJson(mode, [requestPath])) as Array<{
+          id: string;
+          observation: DocxProductObservation;
+        }>;
+        assert.deepEqual(
+          observations.map((value) => value.id),
+          cases.map((item) => item.id),
+          "Expected one ordered product observation for each DOCX input",
+        );
+        return new Map(
+          observations.map(({ id, observation }) => [id, { bytes: inputs.get(id)!, observation }]),
+        );
+      });
     },
-    async cleanup() {
-      if (!stopped) throw new Error("DOCX product fixture process cleanup remains unconfirmed.");
-      await rm(root, { recursive: true, force: true });
+    cleanup() {
+      closing = true;
+      cleanup ??= (async () => {
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        try {
+          // Leave room inside the 15-second teardown hook; a rejected deadline never removes files.
+          await Promise.race([
+            Promise.allSettled(pending),
+            new Promise<never>((_, reject) => {
+              timer = setTimeout(
+                () =>
+                  reject(
+                    new Error("DOCX fixture settlement deadline exceeded; directory retained."),
+                  ),
+                12_000,
+              );
+            }),
+          ]);
+        } finally {
+          clearTimeout(timer);
+        }
+        if (!stopped) throw new Error("DOCX product fixture process cleanup remains unconfirmed.");
+        await rm(root, { recursive: true, force: true });
+      })();
+      return cleanup;
     },
   };
 }
