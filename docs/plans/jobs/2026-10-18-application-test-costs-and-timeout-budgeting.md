@@ -19,7 +19,7 @@ This is the unified execution record for all eight phases of the [implementation
 | 4 — DOCX review corpus | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 5 — Video menu Escape handling | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 6 — Managed runner blocked output | Complete; coverage, measured savings, managed validation, and implementation range review passed |
-| 7 — Final validation and reassessment | In progress; accepted scope reconciled and static/build/unit checks passed; three application measurements pending |
+| 7 — Final validation and reassessment | Static/build/unit checks and three application runs passed; retain 300 seconds; commit-range review pending |
 | 8 — Documentation validation | Not started |
 
 ## Phase 1: Execution Allowance and Baseline
@@ -444,4 +444,32 @@ Checks ran sequentially on the starting implementation before the application me
 
 Build emitted an experimental TypeScript API advisory but completed successfully. Unit preflight and execution completed with confirmed settlement and no escalation. Report and fixture-output validation passed; default cleanup retained no results, left no new fixture paths, and preserved all pre-existing paths. No Phase 7 validation attempt has failed.
 
-The three fresh application measurements and timeout decision remain pending. They will use normal `bun run test:integration:app` invocations on one unchanged implementation after build/setup, with comparable redirected output, no competing substantial verification, and no execution hooks, altered selection, or diagnostic timeout override. Every attempt will be recorded; a corrective implementation change requires a fresh three-run set. The Phase 6 managed run remains separate evidence. Phase 7 is not yet accepted.
+The readiness checkpoint landed in `6f63afcd00126aca6f73126408f42af933a2db15` (`docs(testing): record final validation readiness`). It changed only the plan, research, and unified record; the validated implementation remained identical to the Phase 7 starting revision. Application measurements and the timeout decision were pending at that checkpoint. The Phase 6 managed run remains separate evidence.
+
+### Three Fresh Application Measurements
+
+Three separate `bun run test:integration:app` invocations ran sequentially at frozen revision `6f63afcd00126aca6f73126408f42af933a2db15`: the first after the recorded build/setup and unit checks, followed by two repeat runs. The revision and tracked working tree remained unchanged before and after every invocation. Output was ordinarily redirected, with no competing substantial verification, execution hooks, altered selection, diagnostic timeout override, or retries inside a suite. Every planned invocation passed; no corrective change or replacement measurement set was needed.
+
+| Invocation | Test-process elapsed | Whole-command duration | Result |
+| --- | --- | --- | --- |
+| 1 — after build/setup | 201.848s | 203.288s | Passed |
+| 2 — repeat | 193.826s | 194.671s | Passed |
+| 3 — repeat | 201.618s | 202.862s | Passed |
+| Median | 201.618s | 202.862s | |
+| Observed range | 193.826–201.848s | 194.671–203.288s | |
+
+Each invocation exited 0 with 2,357 tests across 300 files, 14,896 assertions, and zero failures/errors/skips, confirming the complete ledger above. Preflight and test processes completed with exit 0, confirmed settlement, and no escalation. Managed report and fixture-output validation passed. Default cleanup retained no results, reported no unresolved owned location, left no new fixture paths, and preserved all pre-existing paths. Independent capture checks confirmed every receipt and the unchanged checkout. No Phase 7 validation attempt failed.
+
+Process elapsed time comes from the runner's process diagnostics; whole-command duration was measured separately with an external monotonic clock. Neither JUnit test duration nor summed testcase durations substitute for these observations. Against Phase 1's single 241.621-second process baseline, the final process median is 40.003 seconds lower (16.6%). The whole-command median is 40.368 seconds lower (16.6%) than the separate 243.230-second baseline. This is an observed local comparison of one baseline sample with three final samples, not a percentile, CI guarantee, cross-machine claim, or sum of estimated family savings.
+
+### Timeout Decision
+
+Retain the checked-in 300-second application execution allowance. All three successful process observations are below the 240-second review threshold; the slowest is 201.848 seconds, leaving 98.152 seconds of observed headroom. None is at or below the roughly 180-second threshold for considering a separate lower-budget proposal. The recovered headroom supports the existing finite allowance; no policy value, preflight allowance, per-test limit, grace/cleanup budget, or one-attempt behavior changed.
+
+Future repeated runs above 240 seconds, any timeout, materially slower execution conditions, or application-suite CI evidence should trigger reassessment under the research criteria. A timeout still requires cause classification, not an automatic increase. Three local successful runs support this checkpoint but do not establish a tail-latency guarantee.
+
+### Documentation and Gate
+
+The plan tracks the completed execution gates, and the research records the measured reassessment and retained allowance. Evidence review confirmed the captures and calculations and identified ambiguous handoff wording; the plan now explicitly requires both execution evidence and full Phase 7 range review before Phase 8. The existing unified record continues to own all execution evidence with minimal environment detail. Comprehensive guide/catalog/link reconciliation and the policy comment's historical pending-review wording remain Phase 8 documentation work; no reference catalog or production file was edited in Phase 7.
+
+Validation and timeout-reassessment gates pass. The full Phase 7 range starts at `b7f00307cc01afb71a556f7babf466e54a015a6c`; commit-range review remains pending before closeout. The plan, research, and unified record remain open. Phase 8 has not started.

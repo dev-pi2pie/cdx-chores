@@ -9,7 +9,7 @@ agent: codex
 
 Implement the agreed application-test cost reductions while preserving named assertion owners, real-process coverage, and verified cleanup. Adopt a 300-second application execution allowance independently, then reassess it using the normal managed command after the accepted optimizations.
 
-Phases 1–6 are complete. Phase 6 preserved real blocked-pipe entrypoint shutdown, verified both output-fallback directions and retention policies, demonstrated measured savings, passed managed validation, and passed implementation commit-range review. Phase 7 is underway; its scope reconciliation and static/build/unit checks passed, while the three application measurements and timeout decision remain pending. Phase 8 has not started, and current execution stops before it.
+Phases 1–6 are complete. Phase 7 passed scope reconciliation, static/build/unit checks, and three fresh normal application runs on one unchanged implementation. The measured reassessment retains the 300-second allowance; phase commit-range review remains pending. Phase 8 has not started, and current execution stops before it.
 
 The [unified job record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md) owns execution history for all eight phases. Update that same record with implementation changes, validation results, measurements, failures, deferrals, and phase-gate decisions; do not create separate per-phase job records. The research retains rationale and historical evidence, and the plan tracks tasks and acceptance. The record was opened for authorized implementation, not for drafting or reviewing these documents.
 
@@ -302,19 +302,19 @@ Use 20-second enclosing tests with an 18-second pre-launch reserve for the exist
 
 - [x] Record each optimization as accepted or deferred with its assertion mapping and measured whole-family outcome. Require recorded restoration checks for every deferred change; no phase may enter final validation with a pending Stop condition.
 - [x] Run `bun run lint`, `bun run format:check`, `bun run build`, and `bun run test:unit` for the final accepted checkout. Resolve failures before claiming validation.
-- [ ] Run three separate normal `bun run test:integration:app` invocations after normal build/setup, without execution overrides or retries inside a suite. Record all attempts, not just passing ones.
-- [ ] Compare process and whole-command durations, inventory/count changes, report validity, process settlement, fixture outputs, and cleanup against Phase 1. Reconcile every count change to added or redistributed assertions.
-- [ ] Retain 300 seconds by default. Investigate repeated successful runs above 240 seconds or any timeout; sustained results around or below 180 seconds only justify a separate proposal to lower the allowance.
+- [x] Run three separate normal `bun run test:integration:app` invocations after normal build/setup, without execution overrides or retries inside a suite. Record all attempts, not just passing ones.
+- [x] Compare process and whole-command durations, inventory/count changes, report validity, process settlement, fixture outputs, and cleanup against Phase 1. Reconcile every count change to added or redistributed assertions.
+- [x] Retain 300 seconds by default. Investigate repeated successful runs above 240 seconds or any timeout; sustained results around or below 180 seconds only justify a separate proposal to lower the allowance.
 
 **Acceptance checks:**
 
-- [ ] The final unchanged implementation passes all three planned managed runs and required static/unit/build checks. After any corrective code change, establish a fresh three-run set while retaining prior failures in the evidence.
-- [ ] No unresolved ownership, report, skip, or cleanup failure remains. Three runs are an initial local validation, not a percentile or CI guarantee.
-- [ ] Measured results support accepted changes; deferred work and environment limits remain explicit. Do not sum estimated family savings as proof of the final suite saving.
+- [x] The final unchanged implementation passes all three planned managed runs and required static/unit/build checks. After any corrective code change, establish a fresh three-run set while retaining prior failures in the evidence.
+- [x] No unresolved ownership, report, skip, or cleanup failure remains. Three runs are an initial local validation, not a percentile or CI guarantee.
+- [x] Measured results support accepted changes; deferred work and environment limits remain explicit. Do not sum estimated family savings as proof of the final suite saving.
 
-**Execution evidence:** The [Phase 7 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-7-final-validation-and-timeout-reassessment) reconciles the five accepted optimizations and expected suite counts. Static checks, build, and the full managed unit suite passed without tracked implementation changes. Three fresh application runs, timeout reassessment, and phase commit-range review remain pending.
+**Execution evidence:** The [Phase 7 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-7-final-validation-and-timeout-reassessment) reconciles the five accepted optimizations and confirms suite counts. Static checks, build, the full managed unit suite, and all three fresh application runs passed on the unchanged implementation. Process times were 201.848, 193.826, and 201.618 seconds; the median was 201.618 seconds, with 98.152 seconds of headroom on the slowest run. The allowance remains 300 seconds. Full phase commit-range review remains pending.
 
-**Gate:** Proceed to documentation validation after execution evidence is complete. An unexplained timeout or lifecycle failure prevents implementation completion; it does not authorize a larger budget automatically.
+**Gate:** Proceed to Phase 8 documentation validation only after execution evidence and full Phase 7 commit-range review are complete. Current execution stops before Phase 8. An unexplained timeout or lifecycle failure prevents implementation completion; it does not authorize a larger budget automatically.
 
 ## Phase 8: Validate Documentation and Traceability
 
