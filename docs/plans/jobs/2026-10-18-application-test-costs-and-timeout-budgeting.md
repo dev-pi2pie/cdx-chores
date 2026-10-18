@@ -7,7 +7,7 @@ agent: codex
 
 ## Scope and Related Documents
 
-This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1–6 are complete; execution stopped before Phase 7.
+This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1–6 are complete; current execution covers Phase 7 and stops before Phase 8.
 
 ## Phase Status
 
@@ -19,7 +19,7 @@ This is the unified execution record for all eight phases of the [implementation
 | 4 — DOCX review corpus | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 5 — Video menu Escape handling | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 6 — Managed runner blocked output | Complete; coverage, measured savings, managed validation, and implementation range review passed |
-| 7 — Final validation and reassessment | Not started |
+| 7 — Final validation and reassessment | In progress; accepted scope reconciled and static/build/unit checks passed; three application measurements pending |
 | 8 — Documentation validation | Not started |
 
 ## Phase 1: Execution Allowance and Baseline
@@ -401,3 +401,47 @@ The ownership catalog now distinguishes actual blocked-pipe entrypoint shutdown 
 Phase 6 is accepted. Real-entry consolidation and validation evidence landed in `92f6fdca1125f2e019e5e29f46bffd99a105ca5e` (`perf(testing): reduce blocked-output runner test time`), following the controlled-stall foundation. Code, lifecycle, and documentation reviews covered the full implementation range `b0ddaafd14b518641566872d66fc02ce6786ec4f..92f6fdca1125f2e019e5e29f46bffd99a105ca5e` and found no actionable issues.
 
 Coverage, measured-cost, and managed-lifecycle gates passed. Only documentation closeout followed validation; no test or production code changed afterward. The plan, research, and unified record remain open for final validation and documentation reconciliation. Execution stopped before Phase 7; the final three-run reassessment has not started.
+
+## Phase 7: Final Validation and Timeout Reassessment
+
+### Starting Point and Accepted Scope
+
+Phase 7 began from clean revision `b7f00307cc01afb71a556f7babf466e54a015a6c`. All five optimizations are accepted with preserved assertion ownership and measured complete-family savings; no deferred optimization, required restoration, or unresolved Stop condition remains. Prior failed attempts remain in their phase histories. Phase 8 has not started.
+
+| Accepted optimization | Preserved coverage and prior evidence | Complete-family median before → after |
+| --- | --- | --- |
+| [CLI registration](#phase-2-cli-registration-matrix) | All 25 registration rows and four real subprocess boundaries | 4.007s → 0.833s |
+| [Cancellation grace](#phase-3-cancellation-grace) | Production-default cancellation plus shorter fixture-only pending-input cancellation | 4.890s → 3.153s |
+| [DOCX review corpus](#phase-4-docx-review-corpus) | Complete direct corpus, supervised observations/parity, and timeout settlement | 23.318s → 5.314s |
+| [Video menu Escape](#phase-5-video-menu-escape-handling) | Original navigation, six raw-byte cases, four parity cases, and cleanup | 24.528s → 13.869s |
+| [Managed runner output](#phase-6-managed-runner-blocked-output) | Real blocked-pipe shutdown and four controlled channel/retention stalls | 9.167s → 5.207s |
+
+These existing family measurements establish individual acceptance; they are not added together as evidence of the final suite saving. Current discovery reports 191 unit, 300 application, one Codex, and three Pandoc files, excluding fixture inputs. The only file-count increase since Phase 1 is the menu byte/parity application file. The expected application counts reconcile as follows; the fresh managed runs must confirm them.
+
+| Checkpoint | Test delta | File delta | Assertion delta | Application tests / files / assertions |
+| --- | --- | --- | --- | --- |
+| Phase 1 baseline | — | — | — | 2,331 / 299 / 14,447 |
+| Phase 2 registration | +4 | 0 | +68 | 2,335 / 299 / 14,515 |
+| Phase 3 cancellation | 0 | 0 | +2 | 2,335 / 299 / 14,517 |
+| Phase 4 DOCX corpus | +10 | 0 | +227 | 2,345 / 299 / 14,744 |
+| Phase 5 menu Escape | +10 | +1 | +40 | 2,355 / 300 / 14,784 |
+| Phase 6 blocked output | +2 | 0 | +112 | 2,357 / 300 / 14,896 |
+| Total change | +26 | +1 | +449 | 2,357 / 300 / 14,896 |
+
+Static owner reconciliation matches the recorded deltas, including all 302 DOCX corpus cases and the 1,591-assertion direct/supervised/parity/timeout matrix. No unit, Codex, or Pandoc test changed during the optimization phases. No production source or runner script changed after the Phase 1 allowance edit.
+
+### Static, Build, and Unit Validation
+
+Checks ran sequentially on the starting implementation before the application measurement set.
+
+| Command | Outcome |
+| --- | --- |
+| `bun run lint` | Passed |
+| `bun run format:check` | Passed |
+| `bunx tsc --noEmit` | Passed |
+| `bun run build` | Passed; generated embedded version and tracked working tree unchanged |
+| `bun run test:unit` | Passed, exit 0: 2,061 tests across 191 files, 127,802 assertions, zero failures/errors/skips |
+
+Build emitted an experimental TypeScript API advisory but completed successfully. Unit preflight and execution completed with confirmed settlement and no escalation. Report and fixture-output validation passed; default cleanup retained no results, left no new fixture paths, and preserved all pre-existing paths. No Phase 7 validation attempt has failed.
+
+The three fresh application measurements and timeout decision remain pending. They will use normal `bun run test:integration:app` invocations on one unchanged implementation after build/setup, with comparable redirected output, no competing substantial verification, and no execution hooks, altered selection, or diagnostic timeout override. Every attempt will be recorded; a corrective implementation change requires a fresh three-run set. The Phase 6 managed run remains separate evidence. Phase 7 is not yet accepted.
