@@ -9,7 +9,7 @@ agent: codex
 
 Implement the agreed application-test cost reductions while preserving named assertion owners, real-process coverage, and verified cleanup. Adopt a 300-second application execution allowance independently, then reassess it using the normal managed command after the accepted optimizations.
 
-Phases 1–4 are complete. Phase 4 preserved the complete compiled DOCX corpus and supervised parity, demonstrated measured savings, passed managed validation, and passed implementation commit-range review. Phase 5 is underway; Phases 6–8 have not started, and current execution stops before Phase 6. Later case selections remain proposed scope; their timing and behavioral equivalence remain unverified.
+Phases 1–5 are complete. Phase 5 preserved navigation and real-byte input coverage, verified raw/decoded Escape parity, demonstrated measured savings, passed managed validation, and passed implementation commit-range review. Phases 6–8 have not started, and execution stopped before Phase 6. Later case selections remain proposed scope; their timing and behavioral equivalence remain unverified.
 
 The [unified job record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md) owns execution history for all eight phases. Update that same record with implementation changes, validation results, measurements, failures, deferrals, and phase-gate decisions; do not create separate per-phase job records. The research retains rationale and historical evidence, and the plan tracks tasks and acceptance. The record was opened for authorized implementation, not for drafting or reviewing these documents.
 
@@ -258,7 +258,7 @@ Use 20-second enclosing tests with an 18-second pre-launch reserve for the exist
 - [x] Both input methods produce equivalent representative results and release ownership; queued effects do not reattach application listeners after cleanup.
 - [x] Savings survive the cost of retained/added byte tests. If initialization or ownership differs, retain raw Escape for that flow and investigate or defer it.
 
-**Execution evidence:** The [Phase 5 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-5-video-menu-escape-handling) records the raw-byte foundation, four representative parity comparisons, and preserved navigation assertions. Three before/after complete-family runs reduced the median from 24.528 to 13.869 seconds, including the new byte/parity tests and cleanup. Retained-family and managed validation also passed; full phase commit-range review remains pending.
+**Execution evidence:** The [Phase 5 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-5-video-menu-escape-handling) records the raw-byte foundation, four representative parity comparisons, and preserved navigation assertions. Three before/after complete-family runs reduced the median from 24.528 to 13.869 seconds, including the new byte/parity tests and cleanup. Retained-family validation, managed validation, and implementation commit-range review also passed. Phase 5 is accepted and complete; Phase 6 has not started.
 
 **Gate:** Apply the shared Accept/Defer/Stop rules. For a partially deferred flow, restore and verify its original raw-byte path and measure the complete retained family before accepting any remaining conversions.
 

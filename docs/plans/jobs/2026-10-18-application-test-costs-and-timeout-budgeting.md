@@ -7,7 +7,7 @@ agent: codex
 
 ## Scope and Related Documents
 
-This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1–4 are complete; current execution covers Phase 5 and stops before Phase 6.
+This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1–5 are complete; execution stopped before Phase 6.
 
 ## Phase Status
 
@@ -17,7 +17,7 @@ This is the unified execution record for all eight phases of the [implementation
 | 2 — CLI registration matrix | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 3 — Cancellation grace | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 4 — DOCX review corpus | Complete; coverage, measured savings, managed validation, and implementation range review passed |
-| 5 — Video menu Escape handling | Coverage, measurements, and managed validation passed; commit-range review pending |
+| 5 — Video menu Escape handling | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 6 — Managed runner blocked output | Not started |
 | 7 — Final validation and reassessment | Not started |
 | 8 — Documentation validation | Not started |
@@ -327,4 +327,6 @@ Compared with Phase 4, the managed inventory adds one file, ten tests, and forty
 
 The ownership catalog distinguishes navigation after Escape decoding from raw-byte decoding and parity checks. Research records the complete replacement-family saving and its limits. The plan records the corrected arrow semantics, enclosing-test headroom, and scratch-retention requirement. No existing test path moved, so the path-correspondence catalog is unchanged; adding a focused sibling test does not create a historical migration. Public commands and guidance are unchanged, so the testing guide needs no Phase 5 edit.
 
-Coverage, measured-cost, and managed-lifecycle gates pass. Pre-commit code, maintainability, and documentation reviews found no actionable issues. The complete Phase 5 range begins at `644797f4f70d2ff3291d6ba0a638c4a527fbb4ff`; its commit-range review remains pending before closeout. Phase 6 has not started.
+Phase 5 is accepted. Navigation optimization and validation evidence landed in `a7f4f4fb5fd8719fa81a9ba8e9eed89862f0ff6b` (`perf(testing): reduce frame menu navigation cost`), following the raw-byte foundation. Code, maintainability, and documentation reviews covered the full implementation range `644797f4f70d2ff3291d6ba0a638c4a527fbb4ff..a7f4f4fb5fd8719fa81a9ba8e9eed89862f0ff6b` and found no actionable issues.
+
+Coverage, measured-cost, and managed-lifecycle gates passed. Only documentation closeout followed validation; no test or production code changed afterward. The plan, research, and unified record remain open for later phases. Execution stopped before Phase 6; no managed-runner blocked-output or other later-phase implementation was performed.
