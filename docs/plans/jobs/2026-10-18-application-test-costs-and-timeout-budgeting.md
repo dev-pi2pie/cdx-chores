@@ -1,13 +1,13 @@
 ---
 title: "Application Test Costs and Timeout Budget Implementation"
 created-date: 2026-10-18
-status: in-progress
+status: completed
 agent: codex
 ---
 
 ## Scope and Related Documents
 
-This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Phases 1–7 are complete; Phase 8 is validating documentation before final closure. The record and related documents remain at their current paths without archiving.
+This is the completed unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). All five optimizations are accepted, final validation and documentation reviews passed, and the application execution allowance remains 300 seconds. The record and related documents are completed at their current paths without archiving.
 
 ## Phase Status
 
@@ -20,7 +20,7 @@ This is the unified execution record for all eight phases of the [implementation
 | 5 — Video menu Escape handling | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 6 — Managed runner blocked output | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 7 — Final validation and reassessment | Complete; static/build/unit checks, three application runs, reassessment, and full range review passed; retain 300 seconds |
-| 8 — Documentation validation | Reconciliation, documentation/evidence reviews, and structural checks passed; full commit-range review pending |
+| 8 — Documentation validation | Complete; reconciliation, structural checks, and full documentation/evidence range reviews passed; no archiving |
 
 ## Phase 1: Execution Allowance and Baseline
 
@@ -508,4 +508,6 @@ The plan's current phase summaries no longer claim that completed successor phas
 
 No runtime suite was repeated for these documentation/comment-only changes. Phase 7's static/build/unit checks and three managed application runs remain the behavioral evidence; no executable or test change invalidates that set. The 300-second allowance and its reassessment criteria are unchanged. Dates follow the UTC calendar, creation dates are preserved, and prose paragraphs remain on single source lines. Public records retain only environment details needed to explain evidence.
 
-Documentation and evidence reviews confirmed the current claims and preserved history. Review also aligned the Phase 8 checklist with completed checks; final acceptance remains open until full range review. The plan, research, and unified record remain open pending the full Phase 8 commit-range review. Closure will update their statuses together, retain the current paths, and record the reviewed range.
+Documentation and evidence reviews confirmed the current claims and preserved history. Review also aligned the Phase 8 checklist with completed checks while keeping final acceptance open until range review. Reconciliation landed in `4e800fed1154db97f413272a376c3c57b2b7bb8b` (`docs(testing): reconcile final plan and research`). Documentation and evidence/coverage reviews then covered the full range `1327fd7e658df3ffccdbb2df7702593e74c57876..4e800fed1154db97f413272a376c3c57b2b7bb8b` and found no actionable issues.
+
+Phase 8 is accepted and complete. All 75 plan tasks and acceptance checks have supporting evidence, and all eight phases are closed. The final lifecycle closeout changes only completion statements, statuses, and the remaining acceptance checkbox. The plan, research, and unified record are completed at their existing paths; no archiving or implementation changes followed validation.

@@ -1,7 +1,7 @@
 ---
 title: "Application Test Cost Reduction and Timeout Budget Implementation Plan"
 created-date: 2026-10-18
-status: active
+status: completed
 agent: codex
 ---
 
@@ -9,7 +9,7 @@ agent: codex
 
 Implement the agreed application-test cost reductions while preserving named assertion owners, real-process coverage, and verified cleanup. Adopt a 300-second application execution allowance independently, then reassess it using the normal managed command after the accepted optimizations.
 
-Phases 1–7 are complete. The five optimizations retain their mapped coverage, and Phase 7 passed static/build/unit checks, three fresh normal application runs, and full range review. The measured reassessment retains the 300-second allowance. Phase 8 is reconciling documentation and traceability before final closure; the documents remain at their current paths.
+All eight phases are complete. The five optimizations retain their mapped coverage; final static/build/unit checks, three fresh normal application runs, documentation validation, and phase range reviews passed. The measured reassessment retains the 300-second allowance. The plan, research, and unified record are completed and remain at their current paths without archiving.
 
 The [unified job record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md) owns execution history for all eight phases. Update that same record with implementation changes, validation results, measurements, failures, deferrals, and phase-gate decisions; do not create separate per-phase job records. The research retains rationale and historical evidence, and the plan tracks tasks and acceptance. The record was opened for authorized implementation, not for drafting or reviewing these documents.
 
@@ -336,11 +336,11 @@ This is the final phase. Documentation must describe the accepted implementation
 
 - [x] Every reader-facing claim has matching source behavior or recorded evidence; unresolved or deferred items are visible.
 - [x] Catalog, guide, research, and plan boundaries agree, links resolve, and no historical evidence is silently rewritten.
-- [ ] The final documentation pass is complete without introducing unverified implementation or completion claims.
+- [x] The final documentation pass is complete without introducing unverified implementation or completion claims.
 
-**Execution evidence:** The [Phase 8 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-8-documentation-validation-and-closeout) records verified coverage/timeout claims, preserved historical evidence, link and metadata checks, and the comment-only policy update. The guide and path catalog were reviewed and need no changes. Documentation and evidence reviews passed; final acceptance remains open until full phase commit-range review.
+**Execution evidence:** The [Phase 8 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-8-documentation-validation-and-closeout) records verified coverage/timeout claims, preserved historical evidence, link and metadata checks, and the comment-only policy update. The guide and path catalog were reviewed and need no changes. Documentation, evidence/coverage, and full phase commit-range reviews passed. Phase 8 is accepted and complete.
 
-**Gate:** Close the plan, research, and unified record only after documentation checks and the full Phase 8 commit-range review pass. Keep all three at their current paths; this closeout does not archive them.
+**Gate:** Documentation checks and the full Phase 8 commit-range review passed. The plan, research, and unified record are closed as completed at their current paths; no archiving was performed.
 
 ## References
 

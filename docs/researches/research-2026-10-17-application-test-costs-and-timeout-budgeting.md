@@ -2,7 +2,7 @@
 title: "Application Test Costs and Timeout Budgeting"
 created-date: 2026-10-17
 modified-date: 2026-10-18
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -10,7 +10,7 @@ agent: codex
 
 The five application-test cost reductions are accepted with preserved assertion ownership, bounded process handling, verified cleanup, and measured complete-family savings. Three final normal application runs support retaining the 300-second test-process allowance: the median was 201.618 seconds and the slowest run left 98.152 seconds of headroom. These are local observations, not CI or cross-machine timing guarantees.
 
-This research preserves the historical baseline, accepted decisions, and coverage tradeoffs. The [implementation plan](../plans/plan-2026-10-18-application-test-costs-and-timeout-budgeting.md) owns the phase checklist; the [unified job record](../plans/jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md) owns commands, measurements, failures, and reviews. Phases 1–7 are complete; Phase 8 documentation validation is underway.
+This completed research preserves the historical baseline, accepted decisions, and coverage tradeoffs. The [completed implementation plan](../plans/plan-2026-10-18-application-test-costs-and-timeout-budgeting.md) owns the phase checklist; the [completed unified job record](../plans/jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md) owns commands, measurements, failures, and reviews. All eight phases are complete, including documentation validation and range review.
 
 Scope covers the managed application suite, selected expensive test families, and their relationship to direct tests. The existing suite command model and behavior-based ownership remain the starting point. Runtime alone does not establish that a test is unnecessary or duplicated.[^testing-guide][^overlap-research]
 
@@ -227,11 +227,11 @@ The [unified job record](../plans/jobs/2026-10-18-application-test-costs-and-tim
 
 The plan and unified record map each accepted optimization to retained assertion owners and complete-family measurements. Phase 1 established the normal-command baseline; Phases 2–6 passed coverage, savings, managed validation, and implementation reviews. Phase 7 reconciled all count changes, passed static/build/unit checks and three fresh application runs, retained 300 seconds, and passed full range review. No optimization was deferred, and no unresolved Stop condition remains.
 
-Phase 8 is validating the current guide/catalog boundaries, reciprocal links, evidence, and lifecycle states. The plan remains active and this research remains in-progress until that documentation review is complete. Both stay at their current paths; archiving is outside this work.[^testing-guide][^test-catalog][^test-paths]
+Phase 8 verified the current guide/catalog boundaries, reciprocal links, evidence, and lifecycle states, and passed full range review. The plan, research, and unified record are completed and remain useful current references at their existing paths. No documents were archived.[^testing-guide][^test-catalog][^test-paths]
 
 ## Related Plans
 
-- [Application test cost reduction and timeout budget implementation plan](../plans/plan-2026-10-18-application-test-costs-and-timeout-budgeting.md): phases, concrete coverage mappings, acceptance checks, and final documentation validation; Phases 1–7 complete, Phase 8 documentation validation underway.
+- [Application test cost reduction and timeout budget implementation plan](../plans/plan-2026-10-18-application-test-costs-and-timeout-budgeting.md): completed phases, concrete coverage mappings, acceptance checks, and final documentation validation; all eight phases complete.
 
 ## Related Research
 
