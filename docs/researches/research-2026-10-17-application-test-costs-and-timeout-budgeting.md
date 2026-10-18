@@ -8,7 +8,7 @@ agent: codex
 
 ## Goal and Review Boundary
 
-Identify avoidable application-test costs and a reasonable suite timeout while preserving meaningful coverage, fixture ownership, and bounded process shutdown. This research records historical measurements, agreed optimization directions for CLI registration, cancellation grace, the DOCX review corpus, video menu Escape handling, and managed runner blocked output, and the initial timeout allowance with reassessment criteria. The linked implementation plan specifies phases, concrete coverage mappings, and acceptance checks. Phase 1 has implemented and validated the 300-second policy through the normal managed command and passed implementation commit-range review. Phase 2 is complete after coverage, focused timing, managed validation, and implementation commit-range review passed. Phase 3 is complete after coverage, focused timing, managed validation, and implementation commit-range review passed. Phases 4–8 have not started.
+Identify avoidable application-test costs and a reasonable suite timeout while preserving meaningful coverage, fixture ownership, and bounded process shutdown. This research records historical measurements, agreed optimization directions for CLI registration, cancellation grace, the DOCX review corpus, video menu Escape handling, and managed runner blocked output, and the initial timeout allowance with reassessment criteria. The linked implementation plan specifies phases, concrete coverage mappings, and acceptance checks. Phase 1 has implemented and validated the 300-second policy through the normal managed command and passed implementation commit-range review. Phase 2 is complete after coverage, focused timing, managed validation, and implementation commit-range review passed. Phase 3 is complete after coverage, focused timing, managed validation, and implementation commit-range review passed. Phase 4 is underway; Phases 5–8 have not started.
 
 Scope covers the managed application suite, selected expensive test families, and their relationship to direct tests. The existing suite command model and behavior-based ownership remain the starting point. Runtime alone does not establish that a test is unnecessary or duplicated.[^testing-guide][^overlap-research]
 
@@ -223,11 +223,11 @@ The plan names the four CLI subprocess invocations, cancellation observations, i
 
 The plan requires a passing normal-command baseline at 300 seconds before optimization implementation; even a classified aggregate timeout stops that progression until the baseline passes or the execution approach is separately revised. Phase 1 has satisfied the baseline gate. Shared Accept/Defer/Stop gates require managed validation before optimization acceptance and verified restoration before deferral. Unresolved process or file ownership stops dependent work and prevents unsafe cleanup. Phases 2 and 3 have passed their coverage, savings, and managed-validation gates; the remaining optimization gates are unexecuted.
 
-The final documentation phase reconciles actual outcomes with the testing guide and existing ownership/path catalogs, checks reciprocal links, and preserves evidence-based status. The plan remains active and this research remains in-progress after Phases 1–3 completed. Execution stopped before Phase 4; later optimization and final validation remain pending.[^testing-guide][^test-catalog][^test-paths]
+The final documentation phase reconciles actual outcomes with the testing guide and existing ownership/path catalogs, checks reciprocal links, and preserves evidence-based status. The plan remains active and this research remains in-progress after Phases 1–3 completed. Phase 4 is underway and current execution stops before Phase 5; later optimization and final validation remain pending.[^testing-guide][^test-catalog][^test-paths]
 
 ## Related Plans
 
-- [Application test cost reduction and timeout budget implementation plan](../plans/plan-2026-10-18-application-test-costs-and-timeout-budgeting.md): phases, concrete coverage mappings, acceptance checks, and final documentation validation; Phases 1–3 complete, Phases 4–8 unstarted.
+- [Application test cost reduction and timeout budget implementation plan](../plans/plan-2026-10-18-application-test-costs-and-timeout-budgeting.md): phases, concrete coverage mappings, acceptance checks, and final documentation validation; Phases 1–3 complete, Phase 4 underway, Phases 5–8 unstarted.
 
 ## Related Research
 

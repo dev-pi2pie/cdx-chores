@@ -7,7 +7,7 @@ agent: codex
 
 ## Scope and Related Documents
 
-This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1–3 are complete; execution stopped before Phase 4.
+This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1–3 are complete; current execution covers Phase 4 and stops before Phase 5.
 
 ## Phase Status
 
@@ -16,7 +16,7 @@ This is the unified execution record for all eight phases of the [implementation
 | 1 — Execution allowance and baseline | Complete; implementation, baseline validation, and implementation range review passed |
 | 2 — CLI registration matrix | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 3 — Cancellation grace | Complete; coverage, measured savings, managed validation, and implementation range review passed |
-| 4 — DOCX review corpus | Not started |
+| 4 — DOCX review corpus | Fixture foundation validated; corpus redistribution and acceptance pending |
 | 5 — Video menu Escape handling | Not started |
 | 6 — Managed runner blocked output | Not started |
 | 7 — Final validation and reassessment | Not started |
@@ -183,3 +183,29 @@ The plan's Phase 3 tasks and acceptance checks now reference verified lifecycle 
 Phase 3 is accepted. Implementation and validation evidence landed in `1e89255e11a6c9fff8498c443493dd7ebc0106ba` (`perf(testing): shorten streaming input cancellation fixture`). Code, maintainability, and documentation reviews covered the full implementation range `85b477ac61d6abce9f7bfd0dd23af20e99f6148d..1e89255e11a6c9fff8498c443493dd7ebc0106ba` and found no actionable issues.
 
 Coverage, measured-cost, and managed-lifecycle gates passed with the 250 ms fixture grace. Only documentation closeout followed validation; no test or production code changed afterward. The plan, research, and unified record remain open for later phases. Execution stopped before Phase 4; no DOCX corpus or other later-phase implementation was performed.
+
+## Phase 4: DOCX Review Corpus
+
+### Starting Point and Fixture Foundation
+
+Phase 4 began from clean revision `e0ac7761e36af7d7a4b0ca450a7dd986fddd0c32` on 2026-10-18. The inventory audit confirmed 302 cases across nine groups and all 39 proposed supervised IDs, covering all four reader diagnostic classes in this corpus. No additional containment-specific case was identified. Production parsing, runtime supervision, frozen captures, and the 300-second suite allowance remain unchanged.
+
+The first checkpoint adds real compiled direct parsing while retaining the full supervised review corpus. Both observation modes use the existing batch execution/output bounds. Fixture tracking includes input preparation, owned driver completion, and result parsing; closing blocks subsequent launches. Teardown waits for tracked work within a 12-second settlement deadline inside its 15-second hook and retains the directory after unconfirmed settlement or a deadline failure.
+
+A permanent controlled fixture exceeds a 500 ms execution allowance under the unchanged 250 ms grace and three-second termination budget. Its regression starts cleanup while the driver is active, requires the explicit timeout result and confirmed group settlement, observes the directory before removal, and checks removal afterward. This expected timeout is a passing lifecycle test, not a failed optimization attempt.
+
+### Baseline and Checkpoint Validation
+
+Three baseline whole-file measurements ran sequentially before edits with comparable runtime and redirected-output conditions. An external monotonic clock included build/setup, all nine supervised batches, assertions, and cleanup.
+
+```sh
+bun test ./test/document-rename/adapters/docx-review.app.test.ts --path-ignore-patterns '**/fixtures/**'
+```
+
+| Whole-file invocation | Run 1 | Run 2 | Run 3 | Median | Observed range |
+| --- | --- | --- | --- | --- | --- |
+| Original supervised review family | 23.318s | 22.988s | 23.387s | 23.318s | 22.988–23.387s |
+
+All three baseline runs passed: one test and 1,364 Bun assertions each. The fixture-foundation check passed all five shared-fixture consumers (`docx-review`, `docx-baseline`, `docx-baseline-contract`, `docx-product`, and `title-evidence`): 121 tests, 1,636 assertions, zero failures. Lint, formatting, TypeScript checking, and whitespace checks passed. A read-only fixture review found no material lifecycle or maintainability issues.
+
+The foundation is not Phase 4 acceptance. Complete direct coverage, supervised parity, replacement measurements, retained runtime/unit checks, normal managed validation, and the full phase commit-range review remain pending. Phase 5 has not started.

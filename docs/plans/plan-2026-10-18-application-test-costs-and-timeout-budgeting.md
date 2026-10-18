@@ -9,7 +9,7 @@ agent: codex
 
 Implement the agreed application-test cost reductions while preserving named assertion owners, real-process coverage, and verified cleanup. Adopt a 300-second application execution allowance independently, then reassess it using the normal managed command after the accepted optimizations.
 
-Phases 1–3 are complete. Phase 3 preserved default-grace coverage, demonstrated measured savings, passed managed validation, and passed implementation commit-range review. Phases 4–8 have not started, and execution stopped before Phase 4. Later case selections remain proposed scope; their timing and behavioral equivalence remain unverified.
+Phases 1–3 are complete. Phase 3 preserved default-grace coverage, demonstrated measured savings, passed managed validation, and passed implementation commit-range review. Phase 4 is underway; Phases 5–8 have not started, and current execution stops before Phase 5. Later case selections remain proposed scope; their timing and behavioral equivalence remain unverified.
 
 The [unified job record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md) owns execution history for all eight phases. Update that same record with implementation changes, validation results, measurements, failures, deferrals, and phase-gate decisions; do not create separate per-phase job records. The research retains rationale and historical evidence, and the plan tracks tasks and acceptance. The record was opened for authorized implementation, not for drafting or reviewing these documents.
 
@@ -196,7 +196,7 @@ Driver completion must be awaited on success, timeout, parsing error, and assert
 
 **Tasks:**
 
-- [ ] Measure the current compiled review family and verify the complete inventory and supervised IDs above.
+- [x] Measure the current compiled review family and verify the complete inventory and supervised IDs above.
 - [ ] Add a direct observation mode in the existing compiled driver: real DOCX bytes → compiled `readDocxDocument` → actual-result reader injection in `createDocxEvidenceExtractor` → real prompt builder. Never inject expected facts.
 - [ ] Preserve supervised behavior as the default for existing fixture callers. Give direct batches the same 70-case maximum, 30-second process allowance, and 512 KiB output bound as existing observation batches; do not accidentally use the ordinary single-operation 15-second/65,536-byte branch.
 - [ ] Implement the shared setup, ten sequential batch tests, launch reserve, and teardown ownership described above. Measure whole-file elapsed time including hooks so moving work into setup does not manufacture a reported saving.

@@ -7,6 +7,7 @@ import {
   extractDocumentTitleEvidenceForPath,
   buildDocumentPrompt,
   readCandidateDocx,
+  readDocxDocument,
   __testOnlySuggestDocumentRenameTitlesWithBatch as suggestWithBatch,
   __testOnlySuggestDocumentRenameTitlesWithThread as suggestWithThread,
 } from "./entry";
@@ -34,10 +35,10 @@ async function inputs(root: string) {
   return { first, second, broken };
 }
 
-function createProductObserver() {
+function createProductObserver(direct = false) {
   let read: DocxReadResult | undefined;
   const extract = createDocxEvidenceExtractor(async (input) => {
-    read = await readCandidateDocx(input);
+    read = direct ? await readDocxDocument(await readFile(input)) : await readCandidateDocx(input);
     return read;
   });
   return async (document: string, directory: string) => {
@@ -58,7 +59,10 @@ function createProductObserver() {
 async function main() {
   if (mode === "extract") {
     process.stdout.write(JSON.stringify(await extractDocumentTitleEvidenceForPath(path)));
-  } else if (mode === "observe-many") {
+  } else if (mode === "timeout-probe") {
+    process.stdout.write("ready\n");
+    setInterval(() => {}, 1000);
+  } else if (mode === "observe-many" || mode === "observe-direct") {
     const requests = JSON.parse(await readFile(path, "utf8")) as Array<{
       id: string;
       path: string;
@@ -68,7 +72,7 @@ async function main() {
       requests.length > 0 && requests.length <= 70,
       "Expected a bounded DOCX regression slice",
     );
-    const observe = createProductObserver();
+    const observe = createProductObserver(mode === "observe-direct");
     const observations = [];
     for (const request of requests)
       observations.push({
