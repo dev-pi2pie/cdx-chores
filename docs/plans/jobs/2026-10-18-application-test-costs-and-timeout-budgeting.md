@@ -18,7 +18,7 @@ This is the unified execution record for all eight phases of the [implementation
 | 3 — Cancellation grace | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 4 — DOCX review corpus | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 5 — Video menu Escape handling | Complete; coverage, measured savings, managed validation, and implementation range review passed |
-| 6 — Managed runner blocked output | In progress; replacement matrix validated, both real-entry stall cases still present |
+| 6 — Managed runner blocked output | Coverage, focused measurements, and managed validation passed; commit-range review pending |
 | 7 — Final validation and reassessment | Not started |
 | 8 — Documentation validation | Not started |
 
@@ -357,4 +357,45 @@ Every case asserts exit 1, `outputFailed`, failed invocation and affected leaf, 
 
 The initial matrix-only run passed eleven tests and 169 assertions. After strengthening suite-order and absence assertions, the complete foundation selection passed 53 tests across four files and 364 assertions in 9.367 seconds, with no new fixture paths. Both original real-entry stalls remain present at this checkpoint, so this is added coverage rather than a saving claim. Lint, formatting, TypeScript, and diff checks passed; code and lifecycle reviews found no actionable issues. No Phase 6 validation attempt has failed.
 
-Replacement timing, managed validation, and full phase commit-range review remain pending. Phase 6 is not yet accepted.
+The foundation landed in `ead9ea1171db54e57dd71405771701d044ff0edc` (`test(runner): cover stalled output channels and retention modes`) after code, lifecycle, and documentation reviews passed.
+
+### Retained Entry and Coverage Mapping
+
+After foundation validation, only the default-mode real-entry stall was removed. The retained-mode case still launches the real `scripts/testing/run.ts`, produces 4 MiB on stderr, keeps parent-side reading paused until child exit, and uses the production four-second output limits. Its outer limits remain twelve seconds execution, one second grace, four seconds total termination, and 8 MiB capture. The twenty-second enclosing test now requires eighteen seconds remaining before launch, reserving time for process execution, termination, assertions, and cleanup.
+
+The real case requires confirmed settlement, exit code 1, and `exit-failed`, so outer timeout or supervisor termination cannot pass. Its persisted summary must contain the unit leaf and exact preflight/test stages before checking stopped flags. A local fixture guard permits removal only after confirmed settlement; uncertain launch or completion retains the owner and reports the failure. No shared fixture helper changed. The SIGINT entry case is unchanged.
+
+| Coverage | Verified owner |
+| --- | --- |
+| Actual entrypoint shutdown with a blocked output pipe | Retained real-entry stderr case, including failed summary, stdout fallback, results path, and scratch removal |
+| Default stderr-stall cleanup formerly checked by the removed real case | Controlled stderr/default case; run removal and no-results reporting checked after fallback and before helper cleanup |
+| Both fallback directions and both retention policies | Four controlled channel/retention cases with exact stall diagnostics and scheduling/process evidence |
+| Late-summary leaf semantics, fallback failure, recovery, cancellation | Unchanged runner-output cases, output-delivery/finalization-delivery suites, and real SIGINT entry case |
+
+### Replacement Measurements and Validation
+
+Three sequential replacement runs used the same four-file command, output conditions, external timing, and fixture-inventory checks as the baseline. They include the retained real entry, all four controlled stalls, unchanged neighboring cases, and cleanup.
+
+| Complete replacement | Run 1 | Run 2 | Run 3 | Median | Observed range |
+| --- | --- | --- | --- | --- | --- |
+| Real entry, runner output, output delivery, and finalization delivery | 5.206s | 5.214s | 5.207s | 5.207s | 5.206–5.214s |
+
+All three runs passed: 52 tests across four files, 360 assertions, zero failures, and unchanged fixture inventories. The median fell by 3.960 seconds (43.2%), with non-overlapping observed ranges. Relative to baseline, the controlled matrix adds three tests and 116 assertions; removing the default real case removes one test and seven assertions, while the retained case gains three assertions. The resulting net change is two tests and 112 assertions, with no new or moved test files. This local family saving does not establish a CI percentile or replace Phase 7 reassessment.
+
+| Check | Outcome |
+| --- | --- |
+| Complete four-file foundation before real-case removal | Passed: 53 tests, 364 assertions |
+| Three complete replacement measurements | Passed: 52 tests, 360 assertions each; no fixture leftovers |
+| `bun run lint`, `bun run format:check`, `bunx tsc --noEmit` | Passed |
+| `git diff --check` and unchanged-production/retained-owner audit | Passed |
+| `bun run test:integration:app` | Passed, exit 0: 2,357 tests across 300 files, 14,896 assertions, zero failures/errors/skips |
+
+The normal managed command used the unchanged 300-second allowance without hooks, diagnostic overrides, or altered selection. Test-process execution took 200.700 seconds; whole-command duration was 202.130 seconds. Preflight and test processes exited successfully with confirmed settlement and no escalation. Report and fixture-output validation passed; default cleanup retained no results, left no new fixture paths, and preserved all pre-existing paths. The managed count change from Phase 5 is exactly the two tests and 112 assertions explained above. This single managed observation does not replace Phase 7's final three-run reassessment.
+
+No Phase 6 runtime or static validation attempt failed. Code and lifecycle reviews found no actionable issues. Documentation review identified a stale sentence claiming coverage and savings were unverified; it was corrected to distinguish the historical estimate from completed measurements, and follow-up review passed.
+
+### Documentation and Gate
+
+The ownership catalog now distinguishes actual blocked-pipe entrypoint shutdown from the controlled channel/retention matrix and existing output/finalization coverage. Research records the measured saving and its limits. The plan tracks verified tasks and the retained fixture's settlement guard and launch headroom. No test paths moved, and public commands and limits are unchanged, so the path-correspondence catalog and testing guide require no Phase 6 changes. Production source/scripts, the real SIGINT test body, and all neighboring runner-output cases are unchanged. This test-only phase does not require a separate packaged-code build or smoke test.
+
+Coverage, measured-cost, and managed-lifecycle gates pass. The complete Phase 6 range begins at `b0ddaafd14b518641566872d66fc02ce6786ec4f`; its commit-range review remains pending before closeout. Phase 7 has not started.

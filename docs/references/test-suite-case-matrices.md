@@ -80,6 +80,14 @@ Frame command/action and progress coverage stays under `test/video/frames/`; CLI
 
 The streaming cancellation fixture retains production-default grace coverage with cooperative and resistant children. Its separate input-cancellation case uses a shorter fixture-only grace and proves cancellation during an outstanding write, input abortion, and producer settlement. A local real-spawn observer distinguishes signal attempts, child-handler acknowledgements, and actual close; successful disposal and observation-pipe drainage precede the application receipt. Ownership unit tests retain unconfirmed-closure and unsettled-consumer/input failures.
 
+### Managed Runner Output
+
+`test/test-runner/runner-entry-output.app.test.ts` owns real entrypoint shutdown with blocked stderr in retained-results mode, using production output deadlines, plus real SIGINT cancellation. The blocked-output case keeps reading paused until child exit, requires an ordinary failed exit with confirmed settlement, verifies persisted failure evidence and scratch removal, and retains its fixture when settlement cannot be confirmed.
+
+`test/test-runner/runner-output.app.test.ts` owns the controlled stdout/stderr by default/retained stall matrix. It verifies execution-marker delivery, the intended destination-stall diagnostic, both fallback directions, halted scheduling, and mode-specific cleanup before helper teardown. Its injected completed process results establish finalization given confirmed settlement; actual process termination remains the real-entry case's responsibility. Late-summary and fallback-failure cases retain their distinct semantics, including a passed leaf when output fails only after execution.
+
+`output-delivery.app.test.ts` retains low-level delivery, backpressure, deadline, and disposal coverage; `finalization-delivery.app.test.ts` and `finalization.app.test.ts` retain summary recovery and filesystem ownership coverage under the same test-runner directory.
+
 ### Manual Feature Tooling
 
 Routine suites cover product behavior and shared test infrastructure. Manual smoke/evidence scripts, evaluation launchers, and fixture generators are verified explicitly. Product inputs and assertions stay with their test owner; routine tests do not launch manual generators or verification commands.

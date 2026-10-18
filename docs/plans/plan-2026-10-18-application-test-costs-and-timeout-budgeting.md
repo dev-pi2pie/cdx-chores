@@ -264,7 +264,7 @@ Use 20-second enclosing tests with an 18-second pre-launch reserve for the exist
 
 ## Phase 6: Consolidate Real Runner Stalls and Preserve Retention Coverage
 
-**Owners:** `test/test-runner/runner-entry-output.app.test.ts` and `runner-output.app.test.ts`; reuse `runner-support.ts`. Preserve production `run.ts` and output-delivery policy.
+**Owners:** `test/test-runner/runner-entry-output.app.test.ts` and `runner-output.app.test.ts`; reuse `runner-support.ts`. Preserve production `run.ts` and output-delivery policy. The retained real-entry fixture must retain its owner when settlement is unconfirmed; its existing twenty-second enclosing test reserves eighteen seconds before launch for twelve-second execution, four-second total termination, and result handling.
 
 ### Coverage Mapping
 
@@ -283,16 +283,16 @@ Use 20-second enclosing tests with an 18-second pre-launch reserve for the exist
 - [x] Start with the existing fixture `stallMs: 50` and `drainMs: 100`; use a small marker and a generous outer test deadline. Require that the execution marker reaches the stalled destination, its callback remains withheld until teardown, and diagnostics identify `destination stalled` for the intended channel. Reject a final-drain timeout, unrelated EPIPE, pending-byte overflow, or fallback timeout as a substitute for the intended stall.
 - [x] In all four cases, require exit code 1, `outputFailed`, failed invocation/affected leaf, delivery diagnostics, fallback text, and no later suite scheduling. Require nonempty expected process records before checking their stopped flags.
 - [x] Assert default removal and retained persisted-summary contents before `withRunner` teardown. Release withheld callbacks in `finally`; do not let test cleanup supply the product's missing cleanup proof.
-- [ ] Validate this matrix before removing only the default-mode real-entry stall. Keep retained real-entry stdout reporting and persistence checks, and require `exit-failed` rather than a supervisor timeout/kill.
-- [ ] Run the two changed files with `output-delivery.app.test.ts` and `finalization-delivery.app.test.ts`, compare the combined family cost, and verify the managed suite.
+- [x] Validate this matrix before removing only the default-mode real-entry stall. Keep retained real-entry stdout reporting and persistence checks, and require `exit-failed` rather than a supervisor timeout/kill.
+- [x] Run the two changed files with `output-delivery.app.test.ts` and `finalization-delivery.app.test.ts`, compare the combined family cost, and verify the managed suite.
 
 **Acceptance checks:**
 
-- [ ] Both fallback directions and both retention policies have explicit controlled-stall coverage; real blocked-pipe termination remains verified.
-- [ ] No production timer, output volume for the real case, or outer supervisor limit was shortened to manufacture savings.
-- [ ] Removed real-entry assertions have retained owners and replacement cost is lower. Keep both original real-entry cases if this cannot be demonstrated.
+- [x] Both fallback directions and both retention policies have explicit controlled-stall coverage; real blocked-pipe termination remains verified.
+- [x] No production timer, output volume for the real case, or outer supervisor limit was shortened to manufacture savings.
+- [x] Removed real-entry assertions have retained owners and replacement cost is lower. Keep both original real-entry cases if this cannot be demonstrated.
 
-**Execution evidence:** The [Phase 6 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-6-managed-runner-blocked-output) records three baseline measurements and the validated four-case controlled-stall foundation. Both real-entry stalls remain present; replacement timing, managed validation, and phase commit-range review are pending.
+**Execution evidence:** The [Phase 6 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-6-managed-runner-blocked-output) records the validated four-case controlled-stall foundation and subsequent removal of only the default-mode real-entry stall. Three before/after complete-family measurements reduced the median from 9.167 to 5.207 seconds, including replacement coverage and cleanup. Managed validation also passed; full phase commit-range review remains pending.
 
 **Gate:** Apply the shared Accept/Defer/Stop rules. If replacement coverage is insufficient, restore and verify both original real-entry retention cases and the existing controlled stdout stall before recording deferral.
 

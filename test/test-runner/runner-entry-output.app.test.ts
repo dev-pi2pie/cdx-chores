@@ -3,9 +3,11 @@ import { access, cp, mkdir, readFile, readdir, writeFile } from "node:fs/promise
 import { join } from "node:path";
 
 import { startFixtureProcess } from "../../scripts/testing/fixtures/fixture-process.ts";
+import { removeFixtureDir } from "../../scripts/testing/fixtures/fixture-exports.ts";
 import type { OwnedProcess } from "../../scripts/testing/execution/process.ts";
+import type { InvocationSummary } from "../../scripts/testing/terminal/summary.ts";
 import { UNIT_IGNORE_PATTERNS } from "../../scripts/testing/suites/selection.ts";
-import { REPO_ROOT, withTempFixtureDir } from "../helpers/cli-test-utils";
+import { createTempFixtureDir, REPO_ROOT, withTempFixtureDir } from "../helpers/cli-test-utils";
 
 async function prepareRepository(owner: string, source: string): Promise<string> {
   const repo = join(owner, "repo");
@@ -40,61 +42,75 @@ function launch(repo: string, keep: boolean): OwnedProcess {
 }
 
 describe("managed runner entry output shutdown", () => {
-  test.each(["default", "retained"])(
-    "blocked stderr exits without outer timeout in %s mode",
-    async (mode) => {
-      await withTempFixtureDir("runner-entry-output", async (owner) => {
-        // 256 KiB fits this host's pipe buffering; exceed it without reaching the
-        // runner's 8 MiB process-capture limit.
-        const repo = await prepareRepository(
-          owner,
-          'import {test,expect} from "bun:test";test("noisy",()=>{process.stderr.write("x".repeat(4*1024*1024));expect(1).toBe(1);});',
+  test("blocked stderr exits without outer timeout and retains results", async () => {
+    const deadline = performance.now() + 20_000;
+    const owner = await createTempFixtureDir("runner-entry-output");
+    let removable = true;
+    const errors: unknown[] = [];
+    try {
+      // Exceed ordinary pipe buffering without reaching the 8 MiB capture limit.
+      const repo = await prepareRepository(
+        owner,
+        'import {test,expect} from "bun:test";test("noisy",()=>{process.stderr.write("x".repeat(4*1024*1024));expect(1).toBe(1);});',
+      );
+      const runParent = join(repo, "examples/playground/.tmp-tests");
+      const before = await readdir(runParent);
+      // Reserve 12s execution + 4s total termination + 2s for assertions/cleanup.
+      expect(deadline - performance.now()).toBeGreaterThanOrEqual(18_000);
+      removable = false;
+      const owned = launch(repo, true);
+      owned.child.stderr.pause();
+      const resume = () => owned.child.stderr.resume();
+      owned.child.once("exit", resume);
+      try {
+        const result = await owned.completion;
+        removable = result.stopped;
+        expect(result.stopped, JSON.stringify(result.issues)).toBe(true);
+        expect(result.reason).toBe("exit-failed");
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain("terminal output delivery was incomplete");
+        expect(result.stdout).toContain("Test invocation: failed");
+        const after = await readdir(runParent);
+        const added = after.filter((name) => !before.includes(name));
+        expect(added).toHaveLength(1);
+        const root = join(runParent, added[0]!);
+        const summary: InvocationSummary = JSON.parse(
+          await readFile(join(root, "results/summary.json"), "utf8"),
         );
-        const runParent = join(repo, "examples/playground/.tmp-tests");
-        const before = await readdir(runParent);
-        const owned = launch(repo, mode === "retained");
-        owned.child.stderr.pause();
-        const resume = () => owned.child.stderr.resume();
-        owned.child.once("exit", resume);
-        try {
-          const result = await owned.completion;
-          expect(result.stopped, JSON.stringify(result.issues)).toBe(true);
-          expect(result.reason).toBe("exit-failed");
-          expect(result.exitCode).toBe(1);
-          expect(result.stdout).toContain("terminal output delivery was incomplete");
-          expect(result.stdout).toContain("Test invocation: failed");
-          const after = await readdir(runParent);
-          if (mode === "default") {
-            expect(after).toEqual(before);
-            expect(result.stdout).toContain("No results were retained.");
-          } else {
-            const added = after.filter((name) => !before.includes(name));
-            expect(added).toHaveLength(1);
-            const root = join(runParent, added[0]!);
-            const summary = JSON.parse(await readFile(join(root, "results/summary.json"), "utf8"));
-            expect(summary.state).toBe("failed");
-            expect(summary.leaves[0].state).toBe("failed");
-            expect(
-              summary.leaves[0].processes.every(
-                (entry: { result: { stopped: boolean } }) => entry.result.stopped,
-              ),
-            ).toBe(true);
-            expect(summary.errors.join(" ")).toContain("delivery incomplete");
-            expect(summary.retainedResultsPath).toBe(join(root, "results"));
-            expect(result.stdout).toContain(summary.retainedResultsPath);
-            expect(summary.remainingOwnedPath).toBeUndefined();
-            await expect(access(join(root, "scratch"))).rejects.toThrow();
-          }
-        } finally {
-          owned.child.stderr.resume();
-          owned.child.removeListener("exit", resume);
-          owned.shutdown();
-          await owned.completion;
-        }
-      });
-    },
-    20_000,
-  );
+        expect(summary.state).toBe("failed");
+        expect(summary.leaves.map((leaf) => leaf.suite)).toEqual(["unit"]);
+        const leaf = summary.leaves[0]!;
+        expect(leaf.state).toBe("failed");
+        expect(leaf.processes.map((entry) => entry.stage)).toEqual(["preflight", "test"]);
+        expect(leaf.processes.every((entry) => entry.result.stopped)).toBe(true);
+        expect(summary.errors.join(" ")).toContain("delivery incomplete");
+        expect(summary.retainedResultsPath).toBe(join(root, "results"));
+        expect(result.stdout).toContain(summary.retainedResultsPath!);
+        expect(summary.remainingOwnedPath).toBeUndefined();
+        await expect(access(join(root, "scratch"))).rejects.toMatchObject({ code: "ENOENT" });
+      } finally {
+        owned.child.stderr.resume();
+        owned.child.removeListener("exit", resume);
+        owned.shutdown();
+        removable = (await owned.completion).stopped;
+      }
+    } catch (error) {
+      errors.push(error);
+    }
+    // A failed launch/completion cannot authorize removing potentially live work.
+    if (removable) {
+      try {
+        await removeFixtureDir(owner);
+      } catch (error) {
+        errors.push(error);
+      }
+    } else {
+      errors.push(new Error("Runner entry shutdown is unconfirmed; fixture retained at " + owner));
+    }
+    if (errors.length > 1)
+      throw new AggregateError(errors, "Runner entry fixture and cleanup failed");
+    if (errors.length) throw errors[0];
+  }, 20_000);
 
   test("SIGINT cancels a running synthetic test and completes owned cleanup", async () => {
     await withTempFixtureDir("runner-entry-cancel", async (owner) => {
