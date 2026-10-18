@@ -9,7 +9,7 @@ agent: codex
 
 Implement the agreed application-test cost reductions while preserving named assertion owners, real-process coverage, and verified cleanup. Adopt a 300-second application execution allowance independently, then reassess it using the normal managed command after the accepted optimizations.
 
-Phase 1 is complete: implementation, baseline validation, and the implementation commit-range review have passed. Phases 2–8 have not started, and execution has stopped before Phase 2. Case selections below remain proposed optimization scope, verified against current fixture definitions; optimization timing and behavioral equivalence remain unverified.
+Phase 1 is complete. Phase 2's coverage checks, measured savings, and managed validation have passed; its commit-range review remains pending before closeout. Phases 3–8 have not started, and current execution stops before Phase 3. Later case selections remain proposed scope; their timing and behavioral equivalence remain unverified.
 
 The [unified job record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md) owns execution history for all eight phases. Update that same record with implementation changes, validation results, measurements, failures, deferrals, and phase-gate decisions; do not create separate per-phase job records. The research retains rationale and historical evidence, and the plan tracks tasks and acceptance. The record was opened for authorized implementation, not for drafting or reviewing these documents.
 
@@ -46,7 +46,7 @@ For each changed family, collect three focused baseline runs before its edits an
 
 Use exact file selections for focused checks. For application files, follow the testing guide's override pattern: `bun test ./test/<exact-file>.app.test.ts --path-ignore-patterns '**/fixtures/**'`. Direct checks do not replace managed prerequisite, report, process, and cleanup validation. Before accepting each optimization phase, run `bun run test:integration:app`; Phase 7's first invocation may supply the last optimization phase's managed check when no changes intervene, with acceptance pending that result. Run affected unit files when changed and the full managed unit suite in Phase 7. Run `bun run lint` and `bun run format:check` for changed TypeScript; preserve the project's established compiler/build checks where affected.
 
-Record public-safe revision/runtime/environment details, exact selection, run order, and all outcomes in the unified job record once implementation begins. Retained reports remain owned artifacts, not permanent documentation dependencies. The final three full application runs use the checked-in policy without diagnostic overrides; measure process elapsed time and whole-command duration separately.
+Record the revision, exact selection, run order, and all outcomes in the unified job record. Keep environment descriptions minimal: note comparable measurement conditions and include specific environment details only when they explain a result or limitation. Retained reports remain owned artifacts, not permanent documentation dependencies. The final three full application runs use the checked-in policy without diagnostic overrides; measure process elapsed time and whole-command duration separately.
 
 ## Phase 1: Adopt the Execution Allowance and Establish the Baseline
 
@@ -62,7 +62,7 @@ Record public-safe revision/runtime/environment details, exact selection, run or
 - [x] The normal managed command passes with no execution hook override and no missing/skipped coverage.
 - [x] The policy diff contains only the intended allowance and rationale change. A passing diagnostic invocation is not substituted for the normal-command baseline.
 
-**Execution evidence:** The [Phase 1 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-1-execution-allowance-and-baseline) records the passing normal-command baseline, the earlier environment failure, preserved policy values, focused/static checks, and implementation commit-range review. The baseline gate is satisfied and Phase 1 is complete; Phase 2 has not started.
+**Execution evidence:** The [Phase 1 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-1-execution-allowance-and-baseline) records the passing normal-command baseline, the earlier environment failure, preserved policy values, focused/static checks, and implementation commit-range review. The baseline gate is satisfied and Phase 1 is complete.
 
 **Gate:** A passing normal-command baseline is required before Phases 2–6. For behavioral, prerequisite, report, or ownership failures, stop dependent work and resolve the cause. A confirmed aggregate timeout at 300 seconds also stops optimization implementation under this plan: preserve the failed outcome, classify the workload, and revise the execution approach separately if a passing baseline cannot be established. Read-only diagnosis may continue, but neither a diagnostic override nor the historical passing run satisfies this gate. Do not increase the allowance automatically, mark the timed-out baseline passed, or begin cost reductions to conceal a baseline failure. Phase 1 has passed this gate using the normal managed command; the 300-second direction remains independently justified, with post-optimization reassessment still pending.
 
@@ -84,17 +84,19 @@ Record public-safe revision/runtime/environment details, exact selection, run or
 
 **Tasks:**
 
-- [ ] Measure the current 25-process file, then preserve its nine/eleven/five scenario arrays in the in-process matrix.
-- [ ] Create a fresh program and captured runtime per case, call the real `registerCliCommands`, and recognize only the expected Commander help/error outcome.
-- [ ] Install a test-only pre-action guard that records and throws before an accepted invocation could perform action work. Require zero entries for help and rejection cases; do not add production injection APIs.
-- [ ] Retain exactly the four subprocess invocations above alongside all 25 in-process scenarios. These use Bun's source entrypoint and do not claim packaged Node compatibility.
-- [ ] Verify the changed file together with `codex-execution.app.test.ts` and `test/codex-info/commands.app.test.ts`, then run the managed suite and compare the complete changed-file cost.
+- [x] Measure the current 25-process file, then preserve its nine/eleven/five scenario arrays in the in-process matrix.
+- [x] Create a fresh program and captured runtime per case, call the real `registerCliCommands`, and recognize only the expected Commander help/error outcome.
+- [x] Install a test-only pre-action guard that records and throws before an accepted invocation could perform action work. Require zero entries for help and rejection cases; do not add production injection APIs.
+- [x] Retain exactly the four subprocess invocations above alongside all 25 in-process scenarios. These use Bun's source entrypoint and do not claim packaged Node compatibility.
+- [x] Verify the changed file together with `codex-execution.app.test.ts` and `test/codex-info/commands.app.test.ts`, then run the managed suite and compare the complete changed-file cost.
 
 **Acceptance checks:**
 
-- [ ] All original flag-presence, flag-absence, and rejection assertions have owners; no parser state leaks between cases.
-- [ ] Actual process output/exit checks remain, and launch count for this matrix falls from 25 to four.
-- [ ] Total file cost falls without altering production registration or command behavior.
+- [x] All original flag-presence, flag-absence, and rejection assertions have owners; no parser state leaks between cases.
+- [x] Actual process output/exit checks remain, and launch count for this matrix falls from 25 to four.
+- [x] Total file cost falls without altering production registration or command behavior.
+
+**Execution evidence:** The [Phase 2 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-2-cli-registration-matrix) records preserved scenario arrays, four retained process cases, three before/after measurements, related-file/static checks, and passing managed lifecycle validation. The measured median complete-file cost fell from 4.007 to 0.833 seconds. Commit-range review remains pending; Phase 3 has not started.
 
 **Gate:** Apply the shared Accept/Defer/Stop rules. If the harness cannot prove equivalent parsing and pre-action rejection, restore the original subprocess matrix and verify that restoration before recording deferral.
 

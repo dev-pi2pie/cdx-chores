@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Contract Ownership Catalog"
 created-date: 2026-08-23
-modified-date: 2026-10-17
+modified-date: 2026-10-18
 status: completed
 agent: codex
 ---
@@ -39,6 +39,10 @@ Use the [Testing Guide](../guides/testing.md) for suite selection, prerequisites
 | Global helpers             | `test/helpers/`                                                                                                                                 | independently reused, feature-neutral test infrastructure only                                             |
 
 ## Coverage Boundaries
+
+### CLI Registration
+
+`test/cli-foundations/options/codex-execution-scope.app.test.ts` owns Codex execution-option registration scope. Its complete scenario matrix parses arguments through fresh Commander programs and real command registration, with captured output and a guard against action entry. Representative subprocess checks retain source-CLI startup, output routing, exit behavior, and rejection before input processing or file creation. They use Bun's source entrypoint and do not establish packaged Node compatibility. Execution-option parsing and Codex information routing retain their separate test owners.
 
 ### Document Rename
 
