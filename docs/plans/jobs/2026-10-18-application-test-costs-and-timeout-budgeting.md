@@ -7,7 +7,7 @@ agent: codex
 
 ## Scope and Related Documents
 
-This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1–6 are complete; current execution covers Phase 7 and stops before Phase 8.
+This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1–7 are complete; execution stopped before Phase 8.
 
 ## Phase Status
 
@@ -19,7 +19,7 @@ This is the unified execution record for all eight phases of the [implementation
 | 4 — DOCX review corpus | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 5 — Video menu Escape handling | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 6 — Managed runner blocked output | Complete; coverage, measured savings, managed validation, and implementation range review passed |
-| 7 — Final validation and reassessment | Static/build/unit checks and three application runs passed; retain 300 seconds; commit-range review pending |
+| 7 — Final validation and reassessment | Complete; static/build/unit checks, three application runs, reassessment, and full range review passed; retain 300 seconds |
 | 8 — Documentation validation | Not started |
 
 ## Phase 1: Execution Allowance and Baseline
@@ -472,4 +472,6 @@ Future repeated runs above 240 seconds, any timeout, materially slower execution
 
 The plan tracks the completed execution gates, and the research records the measured reassessment and retained allowance. Evidence review confirmed the captures and calculations and identified ambiguous handoff wording; the plan now explicitly requires both execution evidence and full Phase 7 range review before Phase 8. The existing unified record continues to own all execution evidence with minimal environment detail. Comprehensive guide/catalog/link reconciliation and the policy comment's historical pending-review wording remain Phase 8 documentation work; no reference catalog or production file was edited in Phase 7.
 
-Validation and timeout-reassessment gates pass. The full Phase 7 range starts at `b7f00307cc01afb71a556f7babf466e54a015a6c`; commit-range review remains pending before closeout. The plan, research, and unified record remain open. Phase 8 has not started.
+Phase 7 is accepted. Final validation and reassessment evidence landed in `f375f0a5dbe68fd70b929a683767ce19816867a8` (`docs(testing): record final timeout reassessment`), following the readiness checkpoint. Evidence/coverage and documentation reviews covered the full range `b7f00307cc01afb71a556f7babf466e54a015a6c..f375f0a5dbe68fd70b929a683767ce19816867a8` and found no actionable issues.
+
+Validation, timeout-reassessment, and range-review gates passed. Only documentation closeout followed the measured set; the implementation is unchanged throughout Phase 7. The plan, research, and unified record remain open for final documentation reconciliation. Execution stopped before Phase 8.

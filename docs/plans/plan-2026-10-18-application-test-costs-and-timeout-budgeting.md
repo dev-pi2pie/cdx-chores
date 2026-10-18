@@ -9,7 +9,7 @@ agent: codex
 
 Implement the agreed application-test cost reductions while preserving named assertion owners, real-process coverage, and verified cleanup. Adopt a 300-second application execution allowance independently, then reassess it using the normal managed command after the accepted optimizations.
 
-Phases 1–6 are complete. Phase 7 passed scope reconciliation, static/build/unit checks, and three fresh normal application runs on one unchanged implementation. The measured reassessment retains the 300-second allowance; phase commit-range review remains pending. Phase 8 has not started, and current execution stops before it.
+Phases 1–7 are complete. Phase 7 passed scope reconciliation, static/build/unit checks, three fresh normal application runs on one unchanged implementation, and full phase commit-range review. The measured reassessment retains the 300-second allowance. Phase 8 has not started, and execution stopped before it.
 
 The [unified job record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md) owns execution history for all eight phases. Update that same record with implementation changes, validation results, measurements, failures, deferrals, and phase-gate decisions; do not create separate per-phase job records. The research retains rationale and historical evidence, and the plan tracks tasks and acceptance. The record was opened for authorized implementation, not for drafting or reviewing these documents.
 
@@ -312,7 +312,7 @@ Use 20-second enclosing tests with an 18-second pre-launch reserve for the exist
 - [x] No unresolved ownership, report, skip, or cleanup failure remains. Three runs are an initial local validation, not a percentile or CI guarantee.
 - [x] Measured results support accepted changes; deferred work and environment limits remain explicit. Do not sum estimated family savings as proof of the final suite saving.
 
-**Execution evidence:** The [Phase 7 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-7-final-validation-and-timeout-reassessment) reconciles the five accepted optimizations and confirms suite counts. Static checks, build, the full managed unit suite, and all three fresh application runs passed on the unchanged implementation. Process times were 201.848, 193.826, and 201.618 seconds; the median was 201.618 seconds, with 98.152 seconds of headroom on the slowest run. The allowance remains 300 seconds. Full phase commit-range review remains pending.
+**Execution evidence:** The [Phase 7 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-7-final-validation-and-timeout-reassessment) reconciles the five accepted optimizations and confirms suite counts. Static checks, build, the full managed unit suite, and all three fresh application runs passed on the unchanged implementation. Process times were 201.848, 193.826, and 201.618 seconds; the median was 201.618 seconds, with 98.152 seconds of headroom on the slowest run. The allowance remains 300 seconds. Full phase commit-range review also passed. Phase 7 is accepted and complete; Phase 8 has not started.
 
 **Gate:** Proceed to Phase 8 documentation validation only after execution evidence and full Phase 7 commit-range review are complete. Current execution stops before Phase 8. An unexplained timeout or lifecycle failure prevents implementation completion; it does not authorize a larger budget automatically.
 
