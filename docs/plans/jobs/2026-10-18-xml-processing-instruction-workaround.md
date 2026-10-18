@@ -1,7 +1,8 @@
 ---
 title: "XML Processing Instruction Compatibility Workaround"
 created-date: 2026-10-18
-status: in-progress
+modified-date: 2026-10-18
+status: completed
 agent: codex
 ---
 
@@ -27,4 +28,6 @@ Coverage includes `xml-stylesheet`, `xml-model`, and another `xml`-prefixed targ
 
 ## Review
 
-Full baseline-to-tip code and coverage review is pending. Record exact reviewed hashes and outcomes before closeout.
+Reviewed the complete implementation range `b9cd24f2ca16e18ac6236f207b8fbf7766327d88..24c0b389481cfbeda70f6872b460c8ce8a240f49`: no actionable correctness or regression-coverage findings. The original review finding is resolved; the code and tests match the verified implementation.
+
+Documentation closeout checked links, formatting, front matter/status, verification counts, and whitespace. The closeout commit changes only this record; no runtime checks were repeated for that documentation-only change.
