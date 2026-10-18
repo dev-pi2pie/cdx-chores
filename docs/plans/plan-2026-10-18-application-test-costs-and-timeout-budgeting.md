@@ -245,18 +245,20 @@ Use 20-second enclosing tests with an 18-second pre-launch reserve for the exist
 **Tasks:**
 
 - [x] Measure the existing menu family before adding the focused byte cases or changing Escape steps.
-- [ ] Add an explicit decoded-Escape operation on the existing stream. Wait for the current prompt's new output and initialization before emitting a normal Escape `keypress`, then wait for the expected next prompt. Do not intercept arbitrary writes or invoke abort/state transitions directly.
+- [x] Add an explicit decoded-Escape operation on the existing stream. Wait for the current prompt's new output and initialization before emitting a normal Escape `keypress`, then wait for the expected next prompt. Do not intercept arbitrary writes or invoke abort/state transitions directly.
 - [x] Implement the named raw-byte cases first. Verify complete and fragmented arrow sequences for menu/simple/inline input owners, with bounded deadlines and no exact 500/620 ms completion assertion. Do not deliberately delay fragments across the decoder timeout.
-- [ ] Compare raw and decoded Escape using the same representative naming and path flows in both editor modes before converting broader navigation. The comparison can reuse these fixture flows; count any permanent parity cases in replacement cost.
-- [ ] After settlement, flush queued effects and check raw mode and application keypress/resize listeners again. Verify one Escape causes one transition and the next prompt is not affected by stale abort work. Respect Node decoder-owned listeners.
-- [ ] Keep `fixtures/real-prompt-cancellation.ts` immediate/setup/pre-aborted cases, `frames-controller.app.test.ts`, `frames-operation.app.test.ts`, and `test/cli-foundations/tui/keys.{unit,app}.test.ts` unchanged unless a specific fixture adjustment is necessary and separately reviewed.
-- [ ] Run the combined navigation and new byte selection plus the retained ownership/parser families; measure total replacement cost and verify the managed suite.
+- [x] Compare raw and decoded Escape using the same representative naming and path flows in both editor modes before converting broader navigation. The comparison can reuse these fixture flows; count any permanent parity cases in replacement cost.
+- [x] After settlement, flush queued effects and check raw mode and application keypress/resize listeners again. Verify one Escape causes one transition and the next prompt is not affected by stale abort work. Respect Node decoder-owned listeners.
+- [x] Keep `fixtures/real-prompt-cancellation.ts` immediate/setup/pre-aborted cases, `frames-controller.app.test.ts`, `frames-operation.app.test.ts`, and `test/cli-foundations/tui/keys.{unit,app}.test.ts` unchanged unless a specific fixture adjustment is necessary and separately reviewed.
+- [x] Run the combined navigation and new byte selection plus the retained ownership/parser families; measure total replacement cost and verify the managed suite.
 
 **Acceptance checks:**
 
-- [ ] All original navigation assertions remain, raw-byte cases cover each named input owner, and fragmented arrows cannot satisfy the test by exiting the prompt.
-- [ ] Both input methods produce equivalent representative results and release ownership; queued effects do not reattach application listeners after cleanup.
-- [ ] Savings survive the cost of retained/added byte tests. If initialization or ownership differs, retain raw Escape for that flow and investigate or defer it.
+- [x] All original navigation assertions remain, raw-byte cases cover each named input owner, and fragmented arrows cannot satisfy the test by exiting the prompt.
+- [x] Both input methods produce equivalent representative results and release ownership; queued effects do not reattach application listeners after cleanup.
+- [x] Savings survive the cost of retained/added byte tests. If initialization or ownership differs, retain raw Escape for that flow and investigate or defer it.
+
+**Execution evidence:** The [Phase 5 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-5-video-menu-escape-handling) records the raw-byte foundation, four representative parity comparisons, and preserved navigation assertions. Three before/after complete-family runs reduced the median from 24.528 to 13.869 seconds, including the new byte/parity tests and cleanup. Retained-family and managed validation also passed; full phase commit-range review remains pending.
 
 **Gate:** Apply the shared Accept/Defer/Stop rules. For a partially deferred flow, restore and verify its original raw-byte path and measure the complete retained family before accepting any remaining conversions.
 

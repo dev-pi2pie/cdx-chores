@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
-import { PassThrough } from "node:stream";
-import { stripVTControlCharacters } from "node:util";
+import { frameMenuStreams as streams, flush, keys } from "./frames-menu-input";
 import { chooseFrameOption } from "../../../../src/cli/interactive/video-frames/simple-prompts";
 import {
   promptFrameCadence,
@@ -11,63 +10,7 @@ import { promptFramePicker } from "../../../../src/cli/interactive/video-frames/
 import { exact } from "../../../../src/cli/video-frames/exact";
 import { resolvePathPromptRuntimeConfig } from "../../../../src/cli/prompts/path-config";
 
-class Input extends PassThrough {
-  isTTY = true;
-  isRaw = false;
-  setRawMode(raw: boolean): this {
-    this.isRaw = raw;
-    return this;
-  }
-}
-class Output extends PassThrough {
-  isTTY = true;
-  rows = 18;
-  columns = 60;
-  text = "";
-  constructor() {
-    super();
-    this.end = (() => this) as typeof this.end;
-    this.on("data", (value) => {
-      this.text += stripVTControlCharacters(String(value));
-    });
-  }
-}
-const flush = async () => {
-  await new Promise<void>((resolve) => setImmediate(resolve));
-  await new Promise<void>((resolve) => setImmediate(resolve));
-};
-function streams() {
-  const actualInput = new Input(),
-    actualOutput = new Output();
-  const io = {
-    input: actualInput as unknown as NodeJS.ReadStream,
-    output: actualOutput as unknown as NodeJS.WriteStream,
-  };
-  const wait = async (text: string, start = 0) => {
-    const deadline = Date.now() + 1_000;
-    while (!actualOutput.text.slice(start).includes(text)) {
-      if (Date.now() > deadline)
-        throw new Error("Prompt did not reach " + text + ": " + actualOutput.text.slice(start));
-      await new Promise((resolve) => setTimeout(resolve, 5));
-    }
-    await flush();
-  };
-  const step = async (keys: string, text: string) => {
-    const start = actualOutput.text.length;
-    actualInput.write(keys);
-    await wait(text, start);
-  };
-  const clean = () => {
-    assert.equal(actualInput.isRaw, false);
-    assert.equal(actualInput.listenerCount("keypress"), 0);
-    assert.equal(actualOutput.listenerCount("resize"), 0);
-  };
-  return { io, actualInput, actualOutput, wait, step, clean };
-}
-const up = "\x1b[A",
-  down = "\x1b[B",
-  escape = "\x1b",
-  enter = "\r";
+const { up, down, enter } = keys;
 const encoders = {
   png: "supported",
   jpg: "supported",
@@ -99,7 +42,7 @@ async function boundaries(): Promise<void> {
     }
     s.actualInput.write(enter);
     assert.equal(await prompt, expected);
-    s.clean();
+    await s.clean();
   }
   const s = streams();
   const prompt = chooseFrameOption(
@@ -117,7 +60,7 @@ async function boundaries(): Promise<void> {
   await s.step(up + enter, "This option is disabled");
   s.actualInput.write(down + enter);
   assert.equal(await prompt, "jpg");
-  s.clean();
+  await s.clean();
 }
 
 async function cadence(): Promise<void> {
@@ -131,24 +74,24 @@ async function cadence(): Promise<void> {
   await s.step(down.repeat(6) + enter, "Interval (positive");
   s.actualInput.write("\x7f\x7f7s");
   await flush();
-  await s.step(escape, "Sampling interval");
+  await s.decodedEscape("Sampling interval");
   // Custom Escape returns only to presets, retaining both custom selection and draft.
   await s.step(enter, "Interval (positive");
-  await s.step(escape, "Sampling interval");
+  await s.decodedEscape("Sampling interval");
   await s.step(down + enter, "Sequence cadence");
   await s.step(enter, "Sampling interval");
   await s.step(enter, "Interval (positive");
   s.actualInput.write("\x7f".repeat(2) + "9s" + enter);
   assert.deepEqual(await prompt, { interval: "9s" });
-  s.clean();
+  await s.clean();
   const next = promptFrameCadence(s.io, undefined, { fps: "23.976" });
-  await s.wait("Sequence cadence", s.actualOutput.text.lastIndexOf("Sequence cadence"));
+  await s.wait("Sequence cadence");
   await flush();
   await s.step(enter, "Images per second");
   await s.step(enter, "FPS (positive");
   s.actualInput.write(enter);
   assert.deepEqual(await next, { fps: "23.976" });
-  s.clean();
+  await s.clean();
 }
 
 async function countInformation(): Promise<void> {
@@ -203,7 +146,7 @@ async function countInformation(): Promise<void> {
     assert(page.includes("Counts confirmed during export"));
     s.actualInput.write(enter);
     assert.deepEqual(await prompt, { interval: "10s" });
-    s.clean();
+    await s.clean();
   }
   const verified = streams();
   const verifiedPrompt = promptFrameCadence(verified.io, exact(5_100n), { interval: "1s" }, false);
@@ -217,7 +160,7 @@ async function countInformation(): Promise<void> {
   assert(!verifiedPage.includes("metadata estimate"));
   verified.actualInput.write(enter);
   assert.deepEqual(await verifiedPrompt, { interval: "1s" });
-  verified.clean();
+  await verified.clean();
   const s = streams();
   const prompt = promptFrameCadence(s.io, exact(5_100n), { interval: "7s" });
   await s.wait("Sequence cadence");
@@ -229,7 +172,7 @@ async function countInformation(): Promise<void> {
   await s.step("\x7f\x7f1s", "~6 images");
   s.actualInput.write(enter);
   assert.deepEqual(await prompt, { interval: "1s" });
-  s.clean();
+  await s.clean();
 }
 
 async function resizedDescriptions(): Promise<void> {
@@ -266,7 +209,7 @@ async function resizedDescriptions(): Promise<void> {
   assert(wide.includes("image.png"));
   s.actualInput.write(enter);
   assert.equal(await prompt, "current");
-  s.clean();
+  await s.clean();
 }
 
 async function directDrafts(): Promise<void> {
@@ -291,14 +234,14 @@ async function directDrafts(): Promise<void> {
     const draft = kind === "frame" ? "12" : "00:00:01.234";
     s.actualInput.write(draft);
     await flush();
-    await s.step(escape, "Frame number");
+    await s.decodedEscape("Frame number");
     assert.equal(resolutions, 0, "Backing out of an editor never resolves a frame");
     await s.step(enter, label);
     assert(s.actualOutput.text.slice(s.actualOutput.text.lastIndexOf(label)).includes(draft));
     s.actualInput.write(enter);
     assert.equal((await prompt)?.resolved.frameNumber, 12);
     assert.equal(resolutions, 1);
-    s.clean();
+    await s.clean();
   }
 }
 
@@ -309,7 +252,7 @@ async function naming(simple: boolean): Promise<void> {
   await s.step(down + enter, "Filename template");
   s.actualInput.write("clip-{serial}");
   await flush();
-  await s.step(escape, "Image naming");
+  await s.decodedEscape("Image naming");
   await s.step(enter, "Filename template");
   // Advanced and simple editors must restore their exact escaped drafts.
   assert(
@@ -321,11 +264,11 @@ async function naming(simple: boolean): Promise<void> {
   await s.step("7" + enter, "Minimum serial width");
   s.actualInput.write("3");
   await flush();
-  await s.step(escape, "Serial start");
+  await s.decodedEscape("Serial start");
   await s.step("\x7f9" + enter, "Minimum serial width");
   s.actualInput.write(enter);
   assert.deepEqual(await prompt, { template: "clip-{serial}", serialStart: 9, serialWidth: 3 });
-  s.clean();
+  await s.clean();
 }
 
 async function settings(simple: boolean): Promise<void> {
@@ -344,18 +287,18 @@ async function settings(simple: boolean): Promise<void> {
   await s.wait("Image format");
   await s.step(down + enter, "Image quality");
   await s.step(down + enter, "Output scale");
-  await s.step(escape, "Image quality");
+  await s.decodedEscape("Image quality");
   await s.step(enter, "Output scale");
   await s.step(down.repeat(5) + enter, "Scale from 0.1 to 1");
   s.actualInput.write("0.37");
   await flush();
-  await s.step(escape, "Output scale");
+  await s.decodedEscape("Output scale");
   await s.step(enter, "Scale from 0.1 to 1");
   await s.step(enter, "Where to save the image");
   await s.step(down + enter, "Image file path (.jpg)");
   s.actualInput.write("synthetic-image.jp");
   await flush();
-  await s.step(escape, "Where to save the image");
+  await s.decodedEscape("Where to save the image");
   await s.step(enter, "Image file path (.jpg)");
   assert(
     s.actualOutput.text
@@ -363,7 +306,7 @@ async function settings(simple: boolean): Promise<void> {
       .includes("synthetic-image.jp"),
   );
   await s.step("g" + enter, "Existing output images");
-  await s.step(escape, "Image file path (.jpg)");
+  await s.decodedEscape("Image file path (.jpg)");
   await s.step(enter, "Existing output images");
   s.actualInput.write(enter);
   assert.deepEqual(await prompt, {
@@ -373,7 +316,7 @@ async function settings(simple: boolean): Promise<void> {
     destination: { kind: "file", path: "synthetic-image.jpg" },
     overwrite: false,
   });
-  s.clean();
+  await s.clean();
 }
 
 const pathContext = (s: ReturnType<typeof streams>) => ({
@@ -437,7 +380,7 @@ async function destinationInformation(): Promise<void> {
     await s.step(enter, "Existing output images");
     s.actualInput.write(enter);
     assert.equal((await prompt)?.destination.kind, "default");
-    s.clean();
+    await s.clean();
   }
 }
 
@@ -488,7 +431,7 @@ async function namingInformation(): Promise<void> {
       serialStart: 11,
       serialWidth: 4,
     });
-    s.clean();
+    await s.clean();
   }
 }
 
@@ -514,7 +457,7 @@ async function customDestinations(simple: boolean): Promise<void> {
     assert(s.actualOutput.text.includes("Relative paths start from where you ran the command"));
     s.actualInput.write(literal);
     await flush();
-    await s.step(escape, destinationLabel);
+    await s.decodedEscape(destinationLabel);
     await s.step(enter, pathLabel);
     assert(s.actualOutput.text.slice(s.actualOutput.text.lastIndexOf(pathLabel)).includes(literal));
     await s.step(enter, mode === "single" ? "Existing output images" : "Image naming");
@@ -539,7 +482,7 @@ async function customDestinations(simple: boolean): Promise<void> {
     });
     assert.equal(result?.overwrite, true);
     assert.equal(result?.naming === undefined, mode === "single");
-    s.clean();
+    await s.clean();
     const retained = promptFrameImageSettings(
       { ...s.io, simple },
       pathContext(s),
@@ -547,17 +490,17 @@ async function customDestinations(simple: boolean): Promise<void> {
       encoders,
       result!,
     );
-    await s.wait("Image format", s.actualOutput.text.lastIndexOf("Existing output images"));
+    await s.wait("Image format");
     await s.step(enter, "Output scale");
     await s.step(enter, destinationLabel);
     page = s.actualOutput.text.slice(s.actualOutput.text.lastIndexOf("? " + destinationLabel));
     assert(page.includes(mode === "single" ? "Keep selected image file" : "Keep selected folder"));
     assert(page.includes(literal));
-    await s.step(escape, "Output scale");
+    await s.decodedEscape("Output scale");
     await s.step(down.repeat(6) + enter, "Image format");
     s.actualInput.write(down.repeat(3) + enter);
     assert.equal(await retained, null);
-    s.clean();
+    await s.clean();
   }
 }
 
@@ -593,10 +536,10 @@ async function retainedFilename(simple: boolean): Promise<void> {
   );
   await s.step(enter, "extension must match");
   assert.equal(complete, false);
-  await s.step(escape, "Where to save the image");
-  await s.step(escape, "Output scale");
-  await s.step(escape, "Image quality");
-  await s.step(escape, "Image format");
+  await s.decodedEscape("Where to save the image");
+  await s.decodedEscape("Output scale");
+  await s.decodedEscape("Image quality");
+  await s.decodedEscape("Image format");
   await s.step(up.repeat(2) + enter, "Output scale");
   await s.step(enter, "Where to save the image");
   await s.step(enter, "Image file path (.png)");
@@ -604,7 +547,7 @@ async function retainedFilename(simple: boolean): Promise<void> {
   s.actualInput.write(enter);
   assert.deepEqual((await prompt)?.destination, { kind: "file", path: literal });
   assert(!s.actualOutput.text.includes("Image naming"), "Explicit files bypass template naming");
-  s.clean();
+  await s.clean();
 
   const jpeg = streams();
   const jpegPrompt = promptFrameImageSettings(
@@ -622,7 +565,7 @@ async function retainedFilename(simple: boolean): Promise<void> {
   jpeg.actualInput.write(enter);
   assert.deepEqual((await jpegPrompt)?.destination, { kind: "file", path: "Literal Image.JPEG" });
   assert(!jpeg.actualOutput.text.includes("Image file path"));
-  jpeg.clean();
+  await jpeg.clean();
 }
 
 const scenario = process.argv[2];

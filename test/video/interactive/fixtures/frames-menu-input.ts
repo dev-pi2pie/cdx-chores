@@ -69,6 +69,22 @@ export function frameMenuStreams() {
     actualInput.write(input);
     await wait(text, start);
   };
+  const decodedEscape = async (text: string) => {
+    assert(ready, "Wait for fresh prompt output before decoded Escape");
+    await flush();
+    active();
+    const start = actualOutput.text.length;
+    ready = false;
+    // Match Node's bare-Escape keypress; only byte decoding is bypassed.
+    actualInput.emit("keypress", undefined, {
+      sequence: keys.escape,
+      name: "escape",
+      ctrl: false,
+      meta: true,
+      shift: false,
+    });
+    await wait(text, start);
+  };
   const clean = async () => {
     const check = () => {
       assert.equal(actualInput.isRaw, false);
@@ -91,5 +107,5 @@ export function frameMenuStreams() {
     }
     await flush();
   };
-  return { io, actualInput, actualOutput, wait, step, clean, fragment };
+  return { io, actualInput, actualOutput, wait, step, decodedEscape, clean, fragment };
 }

@@ -17,7 +17,7 @@ This is the unified execution record for all eight phases of the [implementation
 | 2 — CLI registration matrix | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 3 — Cancellation grace | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 4 — DOCX review corpus | Complete; coverage, measured savings, managed validation, and implementation range review passed |
-| 5 — Video menu Escape handling | Raw-byte foundation validated; decoded parity and optimization pending |
+| 5 — Video menu Escape handling | Coverage, measurements, and managed validation passed; commit-range review pending |
 | 6 — Managed runner blocked output | Not started |
 | 7 — Final validation and reassessment | Not started |
 | 8 — Documentation validation | Not started |
@@ -282,4 +282,49 @@ The six named raw-byte scenarios exercise selection/reuse, naming drafts in both
 
 The combined navigation and byte selection passed: nineteen tests across two files, 76 Bun assertions, zero failures, and 31.081 seconds for the whole command. The added byte checks account for 24 assertions; child-side Node assertions verify detailed transitions, values, and cleanup. This one foundation observation includes the unchanged raw navigation cost and is not evidence of a saving. Lint, formatting, TypeScript checking, and whitespace checks passed; the original navigation driver and production code are unchanged at this checkpoint.
 
-The first checkpoint is limited to raw-byte coverage, local stream/launcher support, and enclosing-test ownership. Decoded Escape, four representative parity comparisons, replacement measurements, retained-family verification, managed validation, and full phase commit-range review remain pending.
+The foundation landed in `865e247dae51f0a9575e7559fd4bf96657105154` (`test(video): add raw-byte frame menu coverage`). Code review of `644797f4f70d2ff3291d6ba0a638c4a527fbb4ff..865e247dae51f0a9575e7559fd4bf96657105154` found no actionable issues. This checkpoint retained all original raw navigation and did not establish Phase 5 acceptance.
+
+### Decoded Escape and Coverage Preservation
+
+The explicit decoded-Escape helper requires fresh prompt output, queued initialization effects, and an active input owner. It emits Node's normal bare-Escape keypress shape on the same stream and waits for newly appended output from the expected next prompt. It does not intercept writes, invoke abort controllers, or change production parsing/delays.
+
+Before navigation conversion, the six raw cases and four decoded counterparts passed together: ten tests, forty Bun assertions, zero failures. Naming and literal-path flows run the same code in both editor modes with only the Escape method varied; decoded receipts compare complete results against the corresponding raw receipts. Each flow checks exact draft/result behavior, one-step backtracking, cleanup after queued effects, and ordinary input on the reused streams.
+
+The thirteen navigation scenarios now use decoded Escape at the fifteen approved source sites. Every original scenario body and assertion was preserved apart from those calls, awaited cleanup checks, and two reused-prompt waits changed to require fresh output. Typing, arrows, Backspace, Enter, boundaries, resize, and information scenarios retain real bytes. Production code, controller/operation tests, the immediate/setup/pre-aborted cancellation fixture, and key-parser tests are unchanged.
+
+The initial parity typecheck rejected an overly narrow receipt type in the test assertion. The receipt remains untyped until its complete shape is asserted, and the cache access uses the observed field afterward; the corrected typecheck passed before parity execution. No Phase 5 runtime verification attempt has failed.
+
+### Replacement Measurements and Validation
+
+Three sequential replacement measurements used the same external whole-command timing and comparable runtime/output conditions as the baseline, with no competing verification. The replacement selection includes both files, per-scenario compilation, all navigation, six raw-byte cases, four permanent parity cases, and cleanup.
+
+```sh
+bun test ./test/video/interactive/frames-menus.app.test.ts ./test/video/interactive/frames-menu-bytes.app.test.ts --path-ignore-patterns '**/fixtures/**'
+```
+
+| Complete replacement | Run 1 | Run 2 | Run 3 | Median | Observed range |
+| --- | --- | --- | --- | --- | --- |
+| Navigation plus bytes and parity | 13.865s | 13.869s | 13.956s | 13.869s | 13.865–13.956s |
+
+All three runs passed: 23 tests across two files, 92 Bun assertions, zero failures, and no new fixture paths. The median fell by 10.659 seconds (43.5%), with non-overlapping observed ranges. This is a measured local family saving, not a CI guarantee or a substitute for Phase 7's final suite reassessment.
+
+| Check | Outcome |
+| --- | --- |
+| Six raw cases plus four parity cases before navigation conversion | Passed: ten tests, forty assertions |
+| Three complete replacement measurements | Passed: 23 tests and 92 assertions each |
+| Navigation/bytes plus retained controller, operation, and key-parser selection | Passed: fifty tests across six files, 199 assertions, zero failures |
+| `bun run lint`, `bun run format:check`, `bunx tsc --noEmit` | Passed after the receipt-type correction |
+| `git diff --check` and unchanged-production/retained-owner audit | Passed |
+| `bun run test:integration:app` | Passed, exit 0: 2,355 tests across 300 files, 14,784 assertions, zero failures/errors/skips |
+
+The retained selection used both menu files, `frames-controller.app.test.ts`, `frames-operation.app.test.ts`, and `test/cli-foundations/tui/keys.{unit,app}.test.ts`. It includes immediate, setup-time, and pre-aborted cancellation, late acknowledgement, fatal closure, and pending Escape-timer disposal. The changed fixtures compile and run under Node; no packaged-code change requires a separate package smoke check.
+
+The normal managed command used the unchanged 300-second allowance without hooks or diagnostic overrides. Test-process execution took 202.968 seconds; whole-command duration was 204.332 seconds. Preflight and test processes exited successfully with confirmed settlement and no escalation. Report and fixture-output validation passed; default cleanup left no new paths and preserved all pre-existing paths.
+
+Compared with Phase 4, the managed inventory adds one file, ten tests, and forty Bun assertions, exactly matching the new byte/parity suite. The original thirteen navigation tests retain their 52 assertions. The repeated complete-family samples establish the local saving; this single managed observation does not replace Phase 7's final three-run reassessment.
+
+### Documentation and Gate
+
+The ownership catalog distinguishes navigation after Escape decoding from raw-byte decoding and parity checks. Research records the complete replacement-family saving and its limits. The plan records the corrected arrow semantics, enclosing-test headroom, and scratch-retention requirement. No existing test path moved, so the path-correspondence catalog is unchanged; adding a focused sibling test does not create a historical migration. Public commands and guidance are unchanged, so the testing guide needs no Phase 5 edit.
+
+Coverage, measured-cost, and managed-lifecycle gates pass. Pre-commit code, maintainability, and documentation reviews found no actionable issues. The complete Phase 5 range begins at `644797f4f70d2ff3291d6ba0a638c4a527fbb4ff`; its commit-range review remains pending before closeout. Phase 6 has not started.

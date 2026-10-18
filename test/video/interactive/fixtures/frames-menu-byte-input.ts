@@ -11,7 +11,7 @@ import { verifyRawArrows } from "./frames-menu-arrows";
 
 const scenario = process.argv[2]!;
 const method = process.argv[3]!;
-assert.equal(method, "raw");
+assert(method === "raw" || method === "decoded");
 const encoders = {
   png: "supported",
   jpg: "supported",
@@ -20,6 +20,11 @@ const encoders = {
   webpBgra: "supported",
   webpLossless: "supported",
 } as const;
+
+async function escape(s: ReturnType<typeof frameMenuStreams>, next: string) {
+  if (method === "decoded") await s.decodedEscape(next);
+  else await s.step(keys.escape, next);
+}
 
 async function reuse(s: ReturnType<typeof frameMenuStreams>) {
   const prompt = enterFrameValue(s.io, {
@@ -73,7 +78,7 @@ async function naming(simple: boolean) {
   const draft = "clip-{frame}";
   s.actualInput.write(draft);
   await flush();
-  await s.step(keys.escape, "Image naming");
+  await escape(s, "Image naming");
   assert.equal(settled, false, "One Escape must return to the naming choice");
   await s.step(keys.enter, "Filename template");
   assert(
@@ -110,7 +115,7 @@ async function path(simple: boolean) {
   const draft = "example/Literal Image.PnG";
   s.actualInput.write(draft);
   await flush();
-  await s.step(keys.escape, "Where to save the image");
+  await escape(s, "Where to save the image");
   assert.equal(settled, false, "One Escape must return to destination selection");
   await s.step(keys.enter, "Image file path (.png)");
   assert(

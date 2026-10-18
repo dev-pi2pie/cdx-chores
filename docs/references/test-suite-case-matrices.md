@@ -68,6 +68,8 @@ DOCX adapter regressions use a compiled Node product fixture with fixed runtime 
 
 [export.app.test.ts](../../test/video/frames/export.app.test.ts) exercises decoder/encoder orchestration with controlled tools; [publication.app.test.ts](../../test/video/frames/publication.app.test.ts) owns filesystem staging, publication, and cleanup. Routine frame tests use controlled tool responses and synthetic fixtures. Real media, installed encoder output, pixel/color fidelity, and workload measurements require explicit manual checks.
 
+[frames-menus.app.test.ts](../../test/video/interactive/frames-menus.app.test.ts) preserves navigation, draft retention, validation, and results through real prompts, using explicit decoded Escape only at repeated backtracking steps. [frames-menu-bytes.app.test.ts](../../test/video/interactive/frames-menu-bytes.app.test.ts) owns real Node bare-Escape and complete/fragmented-arrow decoding, plus raw/decoded parity for naming and path flows in both editor modes. Both retain ordinary byte input and verify input release after queued effects; controller, operation, and key-parser suites retain their cancellation and settlement responsibilities. The local launcher awaits owned completion and retains scratch when settlement is unconfirmed.
+
 ### Video Frames Command and Doctor
 
 Frame command/action and progress coverage stays under `test/video/frames/`; CLI registration and option forwarding stay under `test/video/commands/`. `test/doctor/actions/video-frames.unit.test.ts` owns dependency capability reporting. Their controlled fixtures do not establish actual encoder output.
