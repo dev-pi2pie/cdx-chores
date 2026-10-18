@@ -16,7 +16,7 @@ This is the unified execution record for all eight phases of the [implementation
 | 1 — Execution allowance and baseline | Complete; implementation, baseline validation, and implementation range review passed |
 | 2 — CLI registration matrix | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 3 — Cancellation grace | Complete; coverage, measured savings, managed validation, and implementation range review passed |
-| 4 — DOCX review corpus | Fixture foundation validated; corpus redistribution and acceptance pending |
+| 4 — DOCX review corpus | Coverage, measurements, and managed validation passed; commit-range review pending |
 | 5 — Video menu Escape handling | Not started |
 | 6 — Managed runner blocked output | Not started |
 | 7 — Final validation and reassessment | Not started |
@@ -208,4 +208,44 @@ bun test ./test/document-rename/adapters/docx-review.app.test.ts --path-ignore-p
 
 All three baseline runs passed: one test and 1,364 Bun assertions each. The fixture-foundation check passed all five shared-fixture consumers (`docx-review`, `docx-baseline`, `docx-baseline-contract`, `docx-product`, and `title-evidence`): 121 tests, 1,636 assertions, zero failures. Lint, formatting, TypeScript checking, and whitespace checks passed. A read-only fixture review found no material lifecycle or maintainability issues.
 
-The foundation is not Phase 4 acceptance. Complete direct coverage, supervised parity, replacement measurements, retained runtime/unit checks, normal managed validation, and the full phase commit-range review remain pending. Phase 5 has not started.
+The foundation landed in `94f825205be68d066d7160987f60735d248c7491` (`test(docx): add bounded direct observation fixture path`). Code review of `e0ac7761e36af7d7a4b0ca450a7dd986fddd0c32..94f825205be68d066d7160987f60735d248c7491` found no actionable issues. This checkpoint retained the full supervised corpus and did not establish Phase 4 acceptance.
+
+### Corpus Redistribution and Coverage
+
+The shared matrix now constructs all nine groups, checks global ID uniqueness, resolves every selected supervised ID exactly once, and checks representation of every group and reader diagnostic class. Nine sequential direct tests retain all 302 actual compiled-reader observations. One subsequent supervised test reuses the exact selected input objects and bytes for 39 cases, applies the same complete semantic assertions, and compares the complete observations after JSON transport. Missing direct observations or incomplete/reordered results fail explicitly.
+
+Both modes retain the original exact reader diagnostics or raw text/headings, complete evidence objects, complete prompt comparisons, and failure-reason/null-prompt checks. Independent frozen captures and their baseline/contract assertions are unchanged. Detailed content/drawing checks and dedicated runtime isolation, protocol, limits, cancellation, and recovery coverage retain their existing owners.
+
+Each observation test owns one driver invocation with the planned 45-second enclosing limit and 38-second launch reserve after input preparation. Setup compiles once under 45 seconds; no observations run in setup. The permanent timeout regression follows the ten observation tests and confirms settlement before cleanup. Other shared-fixture callers remain supervised by default.
+
+### Replacement Measurements and Validation
+
+The same whole-file command and measurement method produced these replacement samples, including compilation, all direct and supervised batches, the timeout regression, assertions, and teardown. No competing verification ran during either three-run set.
+
+| Whole-file invocation | Run 1 | Run 2 | Run 3 | Median | Observed range |
+| --- | --- | --- | --- | --- | --- |
+| Complete replacement | 5.545s | 5.303s | 5.314s | 5.314s | 5.303–5.545s |
+
+All three runs passed: eleven tests, 1,591 Bun assertions, zero failures, and no new fixture directory after each invocation. The median fell by 18.004 seconds (77.2%), with non-overlapping observed ranges. These local whole-file measurements do not establish a CI or whole-suite timing guarantee.
+
+The final review file retains the original 1,364 Bun semantic assertions for all direct inputs. The additional 227 assertions comprise 181 repeated semantic assertions for supervised inputs, 39 complete-observation parity checks, one ordered-corpus completeness check, and six timeout/cleanup assertions. The original single review test becomes ten observation tests plus one timeout regression; the foundation-only one-case parity smoke is replaced by the complete matrix.
+
+| Check | Outcome |
+| --- | --- |
+| Three replacement measurements | Passed: eleven tests and 1,591 assertions each |
+| Affected DOCX and ownership selection | Passed: 555 tests across twelve files, 3,610 assertions, zero failures |
+| `bun run lint`, `bun run format:check`, `bunx tsc --noEmit` | Passed |
+| `git diff --check` and unchanged production/frozen-capture audit | Passed |
+| `bun run test:integration:app` | Passed, exit 0: 2,345 tests across 299 files, 14,744 assertions, zero failures/errors/skips |
+
+The twelve-file selection comprised all five shared-fixture consumers listed above, `docx-runtime.app.test.ts`, the `docx-runtime`, `docx-evidence`, `docx-content`, and `docx-drawing` unit files, plus `test/test-runner/process.app.test.ts` and `test/test-runner/runner-lifecycle.app.test.ts`. It includes existing unconfirmed-ownership and retain-scratch coverage. The application tests compile and execute the changed fixture under Node; no packaged-code change requires a separate package smoke test. No Phase 4 runtime verification attempt has failed. An ad hoc documentation-link check initially misread a footnote label as a path; the corrected checker passed all local links, anchors, and footnote references.
+
+The normal managed command used the unchanged 300-second allowance without hooks or diagnostic overrides. Test-process execution took 214.021 seconds; whole-command duration was 215.475 seconds. Preflight and test processes exited successfully with confirmed settlement and no escalation. Report and fixture-output validation passed; default cleanup left no new run or fixture path and preserved pre-existing paths.
+
+Compared with Phase 3, the managed test count increases by ten and the assertion count by 227, exactly matching the review-file redistribution and added checks; the file count remains 299. The repeated whole-file samples establish this family's saving. This single managed observation does not replace Phase 7's final three-run reassessment.
+
+### Documentation and Gate
+
+The ownership catalog now distinguishes complete direct compiled observations from the named supervised parity matrix. Research records the measured local saving; the plan marks only evidenced tasks and checks. No existing test path moved, so the path-correspondence catalog is unchanged. Public commands and guidance are unchanged, so the testing guide needs no Phase 4 edit.
+
+Coverage, focused-cost, and managed-lifecycle gates pass. Pre-commit code, maintainability, and documentation reviews found no actionable issues. The complete Phase 4 range begins at `e0ac7761e36af7d7a4b0ca450a7dd986fddd0c32`; its commit-range review remains pending before closeout. Phase 5 has not started.

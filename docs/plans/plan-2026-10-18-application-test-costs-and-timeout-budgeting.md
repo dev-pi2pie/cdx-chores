@@ -132,7 +132,7 @@ Record the revision, exact selection, run order, and all outcomes in the unified
 
 ## Phase 4: Run the Complete DOCX Corpus Directly in Compiled Node
 
-**Owners:** `test/document-rename/adapters/docx-review.app.test.ts`, `test/document-rename/fixtures/docx-product/{build,driver,entry}.ts`, and a planned `test/document-rename/fixtures/docx-review-matrix.ts` for shared review inventory and explicit supervised IDs. Do not import executable test files to share cases.
+**Owners:** `test/document-rename/adapters/docx-review.app.test.ts`, `test/document-rename/fixtures/docx-product/{build,driver,entry}.ts`, and `test/document-rename/fixtures/docx-review-matrix.ts` for shared review inventory and explicit supervised IDs. Do not import executable test files to share cases.
 
 ### Complete-Corpus Mapping
 
@@ -197,20 +197,22 @@ Driver completion must be awaited on success, timeout, parsing error, and assert
 **Tasks:**
 
 - [x] Measure the current compiled review family and verify the complete inventory and supervised IDs above.
-- [ ] Add a direct observation mode in the existing compiled driver: real DOCX bytes → compiled `readDocxDocument` → actual-result reader injection in `createDocxEvidenceExtractor` → real prompt builder. Never inject expected facts.
-- [ ] Preserve supervised behavior as the default for existing fixture callers. Give direct batches the same 70-case maximum, 30-second process allowance, and 512 KiB output bound as existing observation batches; do not accidentally use the ordinary single-operation 15-second/65,536-byte branch.
-- [ ] Implement the shared setup, ten sequential batch tests, launch reserve, and teardown ownership described above. Measure whole-file elapsed time including hooks so moving work into setup does not manufacture a reported saving.
-- [ ] Verify the timeout/failure path with a controlled fixture driver that exceeds a short test-only execution allowance. Use proportionally larger termination, enclosing-test, and teardown budgets; require observed timeout, confirmed child/group settlement before directory removal, and no outer-test timeout as a substitute. Include this permanent regression in replacement-family cost. Retain existing unconfirmed-ownership tests and their retain-scratch behavior.
-- [ ] Use shared observation assertions for both modes, assert the selected supervised observations equal the direct observations after the same JSON transport, and preserve ordered identity/completeness checks.
-- [ ] Keep source-versus-compiled prompt agreement and independent frozen prompt captures separate. Do not regenerate expected text from current output.
-- [ ] Verify the review file with all unchanged suites listed above, compare combined direct-plus-supervised cost against the old review family, and run the managed suite before accepting the reduction.
+- [x] Add a direct observation mode in the existing compiled driver: real DOCX bytes → compiled `readDocxDocument` → actual-result reader injection in `createDocxEvidenceExtractor` → real prompt builder. Never inject expected facts.
+- [x] Preserve supervised behavior as the default for existing fixture callers. Give direct batches the same 70-case maximum, 30-second process allowance, and 512 KiB output bound as existing observation batches; do not accidentally use the ordinary single-operation 15-second/65,536-byte branch.
+- [x] Implement the shared setup, ten sequential batch tests, launch reserve, and teardown ownership described above. Measure whole-file elapsed time including hooks so moving work into setup does not manufacture a reported saving.
+- [x] Verify the timeout/failure path with a controlled fixture driver that exceeds a short test-only execution allowance. Use proportionally larger termination, enclosing-test, and teardown budgets; require observed timeout, confirmed child/group settlement before directory removal, and no outer-test timeout as a substitute. Include this permanent regression in replacement-family cost. Retain existing unconfirmed-ownership tests and their retain-scratch behavior.
+- [x] Use shared observation assertions for both modes, assert the selected supervised observations equal the direct observations after the same JSON transport, and preserve ordered identity/completeness checks.
+- [x] Keep source-versus-compiled prompt agreement and independent frozen prompt captures separate. Do not regenerate expected text from current output.
+- [x] Verify the review file with all unchanged suites listed above, compare combined direct-plus-supervised cost against the old review family, and run the managed suite before accepting the reduction.
 
 **Acceptance checks:**
 
-- [ ] All current 302 inputs retain complete semantic observations; all listed supervised IDs exist exactly once and the selected observations agree across paths.
-- [ ] Frozen captures are unchanged; lifecycle, metadata, and runtime responsibilities remain covered by the named owners.
-- [ ] The enclosing test outlives its owned execution and termination budget, the timeout regression settles before teardown removes files, and unconfirmed ownership prevents cleanup. Successful runs alone do not satisfy this lifecycle check.
-- [ ] Total replacement cost, including build/setup hooks and the timeout regression, is lower. All process/output limits remain finite. Retain the full supervised corpus if the mapping, equivalence, or timeout hierarchy cannot be demonstrated.
+- [x] All current 302 inputs retain complete semantic observations; all listed supervised IDs exist exactly once and the selected observations agree across paths.
+- [x] Frozen captures are unchanged; lifecycle, metadata, and runtime responsibilities remain covered by the named owners.
+- [x] The enclosing test outlives its owned execution and termination budget, the timeout regression settles before teardown removes files, and unconfirmed ownership prevents cleanup. Successful runs alone do not satisfy this lifecycle check.
+- [x] Total replacement cost, including build/setup hooks and the timeout regression, is lower. All process/output limits remain finite. Retain the full supervised corpus if the mapping, equivalence, or timeout hierarchy cannot be demonstrated.
+
+**Execution evidence:** The [Phase 4 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-4-docx-review-corpus) records the fixture foundation, complete 302-case direct coverage, 39-case supervised parity, timeout cleanup, and retained-suite verification. Whole-file median time fell from 23.318 to 5.314 seconds across three before/after runs. Managed validation also passed; the full phase commit-range review remains pending.
 
 **Gate:** Apply the shared Accept/Defer/Stop rules. Verify restoration of the full supervised review path before recording deferral. A child or fixture with unconfirmed ownership takes the Stop path and is retained for diagnosis.
 

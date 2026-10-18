@@ -56,7 +56,7 @@ Use the [Testing Guide](../guides/testing.md) for suite selection, prerequisites
 
 Representative adapter suites are [docx-baseline.app.test.ts](../../test/document-rename/adapters/docx-baseline.app.test.ts) for frozen compatibility, [docx-product.app.test.ts](../../test/document-rename/adapters/docx-product.app.test.ts) for product integration, and [docx-review.app.test.ts](../../test/document-rename/adapters/docx-review.app.test.ts) for regressions.
 
-DOCX adapter regressions use a compiled Node product fixture with fixed runtime assets. Independent frozen expectations and fixture definitions stay under `test/document-rename/fixtures/`; inline reader comparisons cover parsing separately. Built-format comparisons, resource measurements, and installed-package checks remain explicit manual verification.
+DOCX adapter regressions use a compiled Node product fixture with fixed runtime assets. The complete review corpus runs in bounded direct compiled-reader batches, while the named [supervised matrix](../../test/document-rename/fixtures/docx-review-matrix.ts) retains production-supervisor coverage and complete observation parity. Both paths preserve reader, evidence, and prompt assertions; a controlled timeout regression verifies owned settlement before fixture removal. Independent frozen expectations and fixture definitions stay under `test/document-rename/fixtures/`; content and drawing unit tests retain additional semantic assertions. Built-format comparisons, resource measurements, and installed-package checks remain explicit manual verification.
 
 ### Video Frames
 
