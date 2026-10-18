@@ -9,7 +9,7 @@ agent: codex
 
 Implement the agreed application-test cost reductions while preserving named assertion owners, real-process coverage, and verified cleanup. Adopt a 300-second application execution allowance independently, then reassess it using the normal managed command after the accepted optimizations.
 
-Phases 1–5 are complete. Phase 5 preserved navigation and real-byte input coverage, verified raw/decoded Escape parity, demonstrated measured savings, passed managed validation, and passed implementation commit-range review. Phase 6 is underway; Phases 7–8 have not started, and current execution stops before Phase 7. Phase 6 acceptance and final validation remain pending.
+Phases 1–6 are complete. Phase 6 preserved real blocked-pipe entrypoint shutdown, verified both output-fallback directions and retention policies, demonstrated measured savings, passed managed validation, and passed implementation commit-range review. Phases 7–8 have not started, and execution stopped before Phase 7. Final validation and timeout reassessment remain pending.
 
 The [unified job record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md) owns execution history for all eight phases. Update that same record with implementation changes, validation results, measurements, failures, deferrals, and phase-gate decisions; do not create separate per-phase job records. The research retains rationale and historical evidence, and the plan tracks tasks and acceptance. The record was opened for authorized implementation, not for drafting or reviewing these documents.
 
@@ -292,7 +292,7 @@ Use 20-second enclosing tests with an 18-second pre-launch reserve for the exist
 - [x] No production timer, output volume for the real case, or outer supervisor limit was shortened to manufacture savings.
 - [x] Removed real-entry assertions have retained owners and replacement cost is lower. Keep both original real-entry cases if this cannot be demonstrated.
 
-**Execution evidence:** The [Phase 6 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-6-managed-runner-blocked-output) records the validated four-case controlled-stall foundation and subsequent removal of only the default-mode real-entry stall. Three before/after complete-family measurements reduced the median from 9.167 to 5.207 seconds, including replacement coverage and cleanup. Managed validation also passed; full phase commit-range review remains pending.
+**Execution evidence:** The [Phase 6 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-6-managed-runner-blocked-output) records the validated four-case controlled-stall foundation and subsequent removal of only the default-mode real-entry stall. Three before/after complete-family measurements reduced the median from 9.167 to 5.207 seconds, including replacement coverage and cleanup. Managed validation and implementation commit-range review also passed. Phase 6 is accepted and complete; Phase 7 has not started.
 
 **Gate:** Apply the shared Accept/Defer/Stop rules. If replacement coverage is insufficient, restore and verify both original real-entry retention cases and the existing controlled stdout stall before recording deferral.
 

@@ -7,7 +7,7 @@ agent: codex
 
 ## Scope and Related Documents
 
-This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1–5 are complete; current execution covers Phase 6 and stops before Phase 7.
+This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1–6 are complete; execution stopped before Phase 7.
 
 ## Phase Status
 
@@ -18,7 +18,7 @@ This is the unified execution record for all eight phases of the [implementation
 | 3 — Cancellation grace | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 4 — DOCX review corpus | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 5 — Video menu Escape handling | Complete; coverage, measured savings, managed validation, and implementation range review passed |
-| 6 — Managed runner blocked output | Coverage, focused measurements, and managed validation passed; commit-range review pending |
+| 6 — Managed runner blocked output | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 7 — Final validation and reassessment | Not started |
 | 8 — Documentation validation | Not started |
 
@@ -398,4 +398,6 @@ No Phase 6 runtime or static validation attempt failed. Code and lifecycle revie
 
 The ownership catalog now distinguishes actual blocked-pipe entrypoint shutdown from the controlled channel/retention matrix and existing output/finalization coverage. Research records the measured saving and its limits. The plan tracks verified tasks and the retained fixture's settlement guard and launch headroom. No test paths moved, and public commands and limits are unchanged, so the path-correspondence catalog and testing guide require no Phase 6 changes. Production source/scripts, the real SIGINT test body, and all neighboring runner-output cases are unchanged. This test-only phase does not require a separate packaged-code build or smoke test.
 
-Coverage, measured-cost, and managed-lifecycle gates pass. The complete Phase 6 range begins at `b0ddaafd14b518641566872d66fc02ce6786ec4f`; its commit-range review remains pending before closeout. Phase 7 has not started.
+Phase 6 is accepted. Real-entry consolidation and validation evidence landed in `92f6fdca1125f2e019e5e29f46bffd99a105ca5e` (`perf(testing): reduce blocked-output runner test time`), following the controlled-stall foundation. Code, lifecycle, and documentation reviews covered the full implementation range `b0ddaafd14b518641566872d66fc02ce6786ec4f..92f6fdca1125f2e019e5e29f46bffd99a105ca5e` and found no actionable issues.
+
+Coverage, measured-cost, and managed-lifecycle gates passed. Only documentation closeout followed validation; no test or production code changed afterward. The plan, research, and unified record remain open for final validation and documentation reconciliation. Execution stopped before Phase 7; the final three-run reassessment has not started.
