@@ -13,8 +13,9 @@ const limits = (timeoutMs: number): Readonly<ProcessLimits> =>
 const common = ["Bun", "compatible ps observation and POSIX process-group access"];
 
 /**
- * Wall-clock limits include native work. App's 240 seconds provides headroom over
- * the Phase 2 full selection (~120 seconds). Every leaf runs once, without retry.
+ * Wall-clock limits include native work. App's 300 seconds provides headroom over
+ * the observed full selection (~242 seconds), pending post-optimization review.
+ * Every leaf runs once, without retry.
  * The common grace and cleanup budgets bound descendants and stream shutdown.
  */
 export const SUITE_POLICIES: Readonly<Record<Suite, SuitePolicy>> = Object.freeze({
@@ -45,7 +46,7 @@ export const SUITE_POLICIES: Readonly<Record<Suite, SuitePolicy>> = Object.freez
       "pdfjs",
     ]),
     preflight: limits(20_000),
-    execution: limits(240_000),
+    execution: limits(300_000),
   }),
   codex: Object.freeze({
     prerequisites: Object.freeze([...common, "Node.js", "Installed repository Codex CLI"]),

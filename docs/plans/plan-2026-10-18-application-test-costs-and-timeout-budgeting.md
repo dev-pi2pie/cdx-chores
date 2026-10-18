@@ -1,7 +1,7 @@
 ---
 title: "Application Test Cost Reduction and Timeout Budget Implementation Plan"
 created-date: 2026-10-18
-status: draft
+status: active
 agent: codex
 ---
 
@@ -9,11 +9,11 @@ agent: codex
 
 Implement the agreed application-test cost reductions while preserving named assertion owners, real-process coverage, and verified cleanup. Adopt a 300-second application execution allowance independently, then reassess it using the normal managed command after the accepted optimizations.
 
-This is a draft plan, not an execution record. No phase has started and no acceptance check has passed. Drafting this plan does not authorize implementation, a job record, or commits. The related research remains a draft. Case selections below are concrete proposed implementation scope, verified against current fixture definitions; timing and behavioral equivalence remain unverified.
+Phase 1 is complete: implementation, baseline validation, and the implementation commit-range review have passed. Phases 2–8 have not started, and execution has stopped before Phase 2. Case selections below remain proposed optimization scope, verified against current fixture definitions; optimization timing and behavioral equivalence remain unverified.
 
-Once implementation is authorized and begins, create or reuse one unified job record under `docs/plans/jobs/` for all eight phases. Update that same record with implementation changes, validation results, measurements, failures, deferrals, and phase-gate decisions; do not create separate per-phase job records. The research retains rationale and historical evidence, the plan tracks tasks and acceptance, and the unified job record owns execution history. Drafting, reviewing, and revising these documents do not create that record.
+The [unified job record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md) owns execution history for all eight phases. Update that same record with implementation changes, validation results, measurements, failures, deferrals, and phase-gate decisions; do not create separate per-phase job records. The research retains rationale and historical evidence, and the plan tracks tasks and acceptance. The record was opened for authorized implementation, not for drafting or reviewing these documents.
 
-The historical runtime baseline is recorded in the research. The planning checkout is `e1b9ab15`; refresh the baseline and inventories before implementation if that checkout changes. Bun remains the development/test runner; compiled DOCX and video fixtures continue to execute under Node.js.
+The historical runtime baseline is recorded in the research. The planning checkout was `e1b9ab15`; Phase 1 started from `f0ecf2885a20ee3bf7e79f5d1137613806298ea5`, with only research/plan changes between those revisions. Phase 1 refreshed the inventory and normal-command baseline in the unified job record; refresh them again if later execution changes the relevant inputs. Bun remains the development/test runner; compiled DOCX and video fixtures continue to execute under Node.js.
 
 ## Related Research
 
@@ -52,17 +52,19 @@ Record public-safe revision/runtime/environment details, exact selection, run or
 
 **Tasks:**
 
-- [ ] Change only the application `execution.timeoutMs` from `240_000` to `300_000` and replace the stale roughly 120-second workload rationale.
-- [ ] Preserve other suites, application preflight, grace/cleanup allowances, output delivery limits, per-test limits, and one attempt per suite.
-- [ ] Run the existing suite-policy coverage in `test/test-runner/prerequisites.unit.test.ts` and relevant static checks.
-- [ ] Run the normal `bun run test:integration:app` before any cost reduction; record full counts, process time, whole-command duration, report validation, process settlement, fixture output checks, and cleanup.
+- [x] Change only the application `execution.timeoutMs` from `240_000` to `300_000` and replace the stale roughly 120-second workload rationale.
+- [x] Preserve other suites, application preflight, grace/cleanup allowances, output delivery limits, per-test limits, and one attempt per suite.
+- [x] Run the existing suite-policy coverage in `test/test-runner/prerequisites.unit.test.ts` and relevant static checks.
+- [x] Run the normal `bun run test:integration:app` before any cost reduction; record full counts, process time, whole-command duration, report validation, process settlement, fixture output checks, and cleanup.
 
 **Acceptance checks:**
 
-- [ ] The normal managed command passes with no execution hook override and no missing/skipped coverage.
-- [ ] The policy diff contains only the intended allowance and rationale change. A passing diagnostic invocation is not substituted for the normal-command baseline.
+- [x] The normal managed command passes with no execution hook override and no missing/skipped coverage.
+- [x] The policy diff contains only the intended allowance and rationale change. A passing diagnostic invocation is not substituted for the normal-command baseline.
 
-**Gate:** A passing normal-command baseline is required before Phases 2–6. For behavioral, prerequisite, report, or ownership failures, stop dependent work and resolve the cause. A confirmed aggregate timeout at 300 seconds also stops optimization implementation under this plan: preserve the failed outcome, classify the workload, and revise the execution approach separately if a passing baseline cannot be established. Read-only diagnosis may continue, but neither a diagnostic override nor the historical passing run satisfies this gate. Do not increase the allowance automatically, mark the timed-out baseline passed, or begin cost reductions to conceal a baseline failure. The 300-second direction remains independently justified; its implementation validation remains pending until this gate passes.
+**Execution evidence:** The [Phase 1 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-1-execution-allowance-and-baseline) records the passing normal-command baseline, the earlier environment failure, preserved policy values, focused/static checks, and implementation commit-range review. The baseline gate is satisfied and Phase 1 is complete; Phase 2 has not started.
+
+**Gate:** A passing normal-command baseline is required before Phases 2–6. For behavioral, prerequisite, report, or ownership failures, stop dependent work and resolve the cause. A confirmed aggregate timeout at 300 seconds also stops optimization implementation under this plan: preserve the failed outcome, classify the workload, and revise the execution approach separately if a passing baseline cannot be established. Read-only diagnosis may continue, but neither a diagnostic override nor the historical passing run satisfies this gate. Do not increase the allowance automatically, mark the timed-out baseline passed, or begin cost reductions to conceal a baseline failure. Phase 1 has passed this gate using the normal managed command; the 300-second direction remains independently justified, with post-optimization reassessment still pending.
 
 ## Phase 2: Move the CLI Registration Matrix In-Process
 
@@ -311,7 +313,7 @@ This is the final phase. Documentation must describe the accepted implementation
 - [ ] Update `docs/guides/testing.md` only where current accepted guidance changes, including the application allowance if documented there. Keep rationale in the research, task and acceptance progress in the plan, and per-phase execution evidence in the unified job record, not duplicated in current-reference tables.
 - [ ] Reconcile the research with observed savings and limitations, preserve its historical baseline, and replace any now-stale statements about the checked-in allowance only after implementation is verified.
 - [ ] Check reciprocal `Related Plans`/`Related Research` links, headings and anchors, repository-relative paths, footnotes, front matter, and policy-required modification dates. Preserve one source line per prose paragraph.
-- [ ] Review every phase checkbox against evidence. Keep deferred work clearly identified; do not mark unperformed tasks done. Keep both documents as drafts until a separately authorized status transition, and never treat drafting or an accepted direction as execution proof.
+- [ ] Review every phase checkbox against evidence. Keep deferred work clearly identified; do not mark unperformed tasks done. Preserve evidence-based lifecycle states: the plan became active and research in-progress with authorized Phase 1 execution; neither is complete while later verification remains pending. Never treat drafting or an accepted direction as execution proof.
 - [ ] Verify that the unified job record covers all eight phases, including final validation and documentation outcomes, and links to this plan and its related research.
 - [ ] Review the final documentation diff for unsupported runtime/CI claims, private machine details, broken links, and contradictions with the testing guide or source policy.
 
