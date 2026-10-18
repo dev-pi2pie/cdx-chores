@@ -7,7 +7,7 @@ agent: codex
 
 ## Scope and Related Documents
 
-This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1–3 are complete; current execution covers Phase 4 and stops before Phase 5.
+This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1–4 are complete; execution stopped before Phase 5.
 
 ## Phase Status
 
@@ -16,7 +16,7 @@ This is the unified execution record for all eight phases of the [implementation
 | 1 — Execution allowance and baseline | Complete; implementation, baseline validation, and implementation range review passed |
 | 2 — CLI registration matrix | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 3 — Cancellation grace | Complete; coverage, measured savings, managed validation, and implementation range review passed |
-| 4 — DOCX review corpus | Coverage, measurements, and managed validation passed; commit-range review pending |
+| 4 — DOCX review corpus | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 5 — Video menu Escape handling | Not started |
 | 6 — Managed runner blocked output | Not started |
 | 7 — Final validation and reassessment | Not started |
@@ -248,4 +248,6 @@ Compared with Phase 3, the managed test count increases by ten and the assertion
 
 The ownership catalog now distinguishes complete direct compiled observations from the named supervised parity matrix. Research records the measured local saving; the plan marks only evidenced tasks and checks. No existing test path moved, so the path-correspondence catalog is unchanged. Public commands and guidance are unchanged, so the testing guide needs no Phase 4 edit.
 
-Coverage, focused-cost, and managed-lifecycle gates pass. Pre-commit code, maintainability, and documentation reviews found no actionable issues. The complete Phase 4 range begins at `e0ac7761e36af7d7a4b0ca450a7dd986fddd0c32`; its commit-range review remains pending before closeout. Phase 5 has not started.
+Phase 4 is accepted. Corpus redistribution and validation evidence landed in `10b0bd684479e7a084c9a46fa52a20a4488e7653` (`perf(testing): reduce DOCX review corpus runtime`), following the fixture-foundation checkpoint. Code, maintainability, and documentation reviews covered the full implementation range `e0ac7761e36af7d7a4b0ca450a7dd986fddd0c32..10b0bd684479e7a084c9a46fa52a20a4488e7653` and found no actionable issues.
+
+Coverage, measured-cost, and managed-lifecycle gates passed. Only documentation closeout followed validation; no test or production code changed afterward. The plan, research, and unified record remain open for later phases. Execution stopped before Phase 5; no video-menu or other later-phase implementation was performed.

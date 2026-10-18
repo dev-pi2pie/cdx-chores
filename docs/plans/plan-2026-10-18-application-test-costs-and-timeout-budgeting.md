@@ -9,7 +9,7 @@ agent: codex
 
 Implement the agreed application-test cost reductions while preserving named assertion owners, real-process coverage, and verified cleanup. Adopt a 300-second application execution allowance independently, then reassess it using the normal managed command after the accepted optimizations.
 
-Phases 1–3 are complete. Phase 3 preserved default-grace coverage, demonstrated measured savings, passed managed validation, and passed implementation commit-range review. Phase 4 is underway; Phases 5–8 have not started, and current execution stops before Phase 5. Later case selections remain proposed scope; their timing and behavioral equivalence remain unverified.
+Phases 1–4 are complete. Phase 4 preserved the complete compiled DOCX corpus and supervised parity, demonstrated measured savings, passed managed validation, and passed implementation commit-range review. Phases 5–8 have not started, and execution stopped before Phase 5. Later case selections remain proposed scope; their timing and behavioral equivalence remain unverified.
 
 The [unified job record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md) owns execution history for all eight phases. Update that same record with implementation changes, validation results, measurements, failures, deferrals, and phase-gate decisions; do not create separate per-phase job records. The research retains rationale and historical evidence, and the plan tracks tasks and acceptance. The record was opened for authorized implementation, not for drafting or reviewing these documents.
 
@@ -212,7 +212,7 @@ Driver completion must be awaited on success, timeout, parsing error, and assert
 - [x] The enclosing test outlives its owned execution and termination budget, the timeout regression settles before teardown removes files, and unconfirmed ownership prevents cleanup. Successful runs alone do not satisfy this lifecycle check.
 - [x] Total replacement cost, including build/setup hooks and the timeout regression, is lower. All process/output limits remain finite. Retain the full supervised corpus if the mapping, equivalence, or timeout hierarchy cannot be demonstrated.
 
-**Execution evidence:** The [Phase 4 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-4-docx-review-corpus) records the fixture foundation, complete 302-case direct coverage, 39-case supervised parity, timeout cleanup, and retained-suite verification. Whole-file median time fell from 23.318 to 5.314 seconds across three before/after runs. Managed validation also passed; the full phase commit-range review remains pending.
+**Execution evidence:** The [Phase 4 record](jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#phase-4-docx-review-corpus) records the fixture foundation, complete 302-case direct coverage, 39-case supervised parity, timeout cleanup, and retained-suite verification. Whole-file median time fell from 23.318 to 5.314 seconds across three before/after runs. Managed validation and implementation commit-range review also passed. Phase 4 is accepted and complete; Phase 5 has not started.
 
 **Gate:** Apply the shared Accept/Defer/Stop rules. Verify restoration of the full supervised review path before recording deferral. A child or fixture with unconfirmed ownership takes the Stop path and is retained for diagnosis.
 
