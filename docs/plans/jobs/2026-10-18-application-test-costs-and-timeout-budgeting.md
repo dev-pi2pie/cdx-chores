@@ -7,7 +7,7 @@ agent: codex
 
 ## Scope and Related Documents
 
-This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1–5 are complete; execution stopped before Phase 6.
+This is the unified execution record for all eight phases of the [implementation plan](../plan-2026-10-18-application-test-costs-and-timeout-budgeting.md), informed by the [research](../../researches/research-2026-10-17-application-test-costs-and-timeout-budgeting.md). Reuse this record for later authorized phases. Phases 1–5 are complete; current execution covers Phase 6 and stops before Phase 7.
 
 ## Phase Status
 
@@ -18,7 +18,7 @@ This is the unified execution record for all eight phases of the [implementation
 | 3 — Cancellation grace | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 4 — DOCX review corpus | Complete; coverage, measured savings, managed validation, and implementation range review passed |
 | 5 — Video menu Escape handling | Complete; coverage, measured savings, managed validation, and implementation range review passed |
-| 6 — Managed runner blocked output | Not started |
+| 6 — Managed runner blocked output | In progress; replacement matrix validated, both real-entry stall cases still present |
 | 7 — Final validation and reassessment | Not started |
 | 8 — Documentation validation | Not started |
 
@@ -330,3 +330,31 @@ The ownership catalog distinguishes navigation after Escape decoding from raw-by
 Phase 5 is accepted. Navigation optimization and validation evidence landed in `a7f4f4fb5fd8719fa81a9ba8e9eed89862f0ff6b` (`perf(testing): reduce frame menu navigation cost`), following the raw-byte foundation. Code, maintainability, and documentation reviews covered the full implementation range `644797f4f70d2ff3291d6ba0a638c4a527fbb4ff..a7f4f4fb5fd8719fa81a9ba8e9eed89862f0ff6b` and found no actionable issues.
 
 Coverage, measured-cost, and managed-lifecycle gates passed. Only documentation closeout followed validation; no test or production code changed afterward. The plan, research, and unified record remain open for later phases. Execution stopped before Phase 6; no managed-runner blocked-output or other later-phase implementation was performed.
+
+## Phase 6: Managed Runner Blocked Output
+
+### Starting Point and Baseline
+
+Phase 6 began from clean revision `b0ddaafd14b518641566872d66fc02ce6786ec4f`. Execution is limited to the blocked-output test family and its evidence; Phase 7 has not started. Production entrypoint behavior, output limits, process supervision, and the 300-second application allowance remain unchanged.
+
+Three sequential baseline measurements used the complete four-file selection below, ordinary redirected output, and external whole-command timing. No competing verification ran during measurements. Replacement measurements will use the same selection and comparable conditions, including all added cases and fixture cleanup.
+
+```sh
+bun test ./test/test-runner/runner-entry-output.app.test.ts ./test/test-runner/runner-output.app.test.ts ./test/test-runner/output-delivery.app.test.ts ./test/test-runner/finalization-delivery.app.test.ts --path-ignore-patterns '**/fixtures/**'
+```
+
+| Baseline selection | Run 1 | Run 2 | Run 3 | Median | Observed range |
+| --- | --- | --- | --- | --- | --- |
+| Real entry, runner output, output delivery, and finalization delivery | 9.234s | 9.167s | 9.158s | 9.167s | 9.158–9.234s |
+
+All three runs passed: fifty tests across four files, 248 assertions, zero failures, and unchanged fixture inventories.
+
+### Controlled-Stall Foundation
+
+The single controlled stdout/default stall became four cases covering stdout/stderr and default/retained modes. Each case flushes initial status successfully, delivers one unique execution marker, withholds its callback until teardown, and requires the intended channel's `destination stalled` diagnostic. Final-drain timeout, EPIPE/EIO, pending-byte overflow, missing fallback destination, and fallback timeout cannot substitute for that proof. Fixture allowances remain 50 ms stall and 100 ms drain, under a five-second enclosing test.
+
+Every case asserts exit 1, `outputFailed`, failed invocation and affected leaf, exact preflight/test records with confirmed settlement, valid test counts, no later scheduling or process records, and healthy opposite-channel fallback. Default mode proves the whole run is absent after final reporting with no retained/remaining path. Retained mode reads the persisted failed summary, compares its delivery and leaf/process evidence, verifies the reported results path, and proves scratch removal. These checks precede `withRunner` cleanup; withheld callbacks are released in `finally`. Injected completed process results prove retention given settlement, while real entrypoint coverage owns actual process shutdown.
+
+The initial matrix-only run passed eleven tests and 169 assertions. After strengthening suite-order and absence assertions, the complete foundation selection passed 53 tests across four files and 364 assertions in 9.367 seconds, with no new fixture paths. Both original real-entry stalls remain present at this checkpoint, so this is added coverage rather than a saving claim. Lint, formatting, TypeScript, and diff checks passed; code and lifecycle reviews found no actionable issues. No Phase 6 validation attempt has failed.
+
+Replacement timing, managed validation, and full phase commit-range review remain pending. Phase 6 is not yet accepted.
