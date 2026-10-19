@@ -1,0 +1,626 @@
+[
+  {
+    "id": "resource-compressedInputBytes-below",
+    "inputSha256": "9d32aedc5261d701007e6fec717f8ab168719498f6ae6db51d19e7b5441a90aa",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": []
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-compressedInputBytes-below.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-compressedInputBytes-below/resource-compressedInputBytes-below.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-compressedInputBytes-below.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-compressedInputBytes-at",
+    "inputSha256": "34d8582abc8064120e9145ef2bced59704592182568a26801b78e8e56ca506cc",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": []
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-compressedInputBytes-at.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-compressedInputBytes-at/resource-compressedInputBytes-at.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-compressedInputBytes-at.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-compressedInputBytes-above",
+    "inputSha256": "b5276c5dc12cb773fae7c8f531158229e8a120fde4679ff72bcb2cc78acd60ac",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": []
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-compressedInputBytes-above.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-compressedInputBytes-above/resource-compressedInputBytes-above.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-compressedInputBytes-above.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-entryCount-below",
+    "inputSha256": "22acc86ec63d544968c829518c338f59a984ee2d9be2ed2f826be88f1b0597ae",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": []
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-entryCount-below.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-entryCount-below/resource-entryCount-below.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-entryCount-below.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-entryCount-at",
+    "inputSha256": "2911f236401197390577000530e52076276bc5c60f71cea45b8c493e2fc447a1",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": []
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-entryCount-at.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-entryCount-at/resource-entryCount-at.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-entryCount-at.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-entryCount-above",
+    "inputSha256": "80357f35352c9512fc5634b5a23f0d738a6d29084fc4fe185daf7679749cbe7d",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": []
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-entryCount-above.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-entryCount-above/resource-entryCount-above.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-entryCount-above.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-maxPartDecompressedBytes-below",
+    "inputSha256": "4ab3fcc59a0a56b9c28f3ce2191ed536d99649dfded4802c0d792191172212a3",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": []
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-maxPartDecompressedBytes-below.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-maxPartDecompressedBytes-below/resource-maxPartDecompressedBytes-below.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-maxPartDecompressedBytes-below.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-maxPartDecompressedBytes-at",
+    "inputSha256": "a33be3fe01dd804f98521e3f6deb307233a5fcf501f6e80bae6b3c4c640a7a6b",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": []
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-maxPartDecompressedBytes-at.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-maxPartDecompressedBytes-at/resource-maxPartDecompressedBytes-at.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-maxPartDecompressedBytes-at.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-maxPartDecompressedBytes-above",
+    "inputSha256": "88115c422692e7d3fb2235ad6c60bc9303c7c9f8322d2c00f0e12a1845af3c4f",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": []
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-maxPartDecompressedBytes-above.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-maxPartDecompressedBytes-above/resource-maxPartDecompressedBytes-above.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-maxPartDecompressedBytes-above.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-totalDecompressedBytes-below",
+    "inputSha256": "3a8a9ce40def2dc034c244846716ea3600faeb579c93c731cc14dbf0a0807618",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": []
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-totalDecompressedBytes-below.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-totalDecompressedBytes-below/resource-totalDecompressedBytes-below.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-totalDecompressedBytes-below.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-totalDecompressedBytes-at",
+    "inputSha256": "171ca4682d053ed75e6a9cfb6478bbc37f3b568e54368b5dc960fe4c80c3cad0",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": []
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-totalDecompressedBytes-at.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-totalDecompressedBytes-at/resource-totalDecompressedBytes-at.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-totalDecompressedBytes-at.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-totalDecompressedBytes-above",
+    "inputSha256": "a2958cb7ad8b9ace3aae0ab54aad22d997746653e81d584e2ee8cb1cfda27f2c",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": []
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-totalDecompressedBytes-above.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-totalDecompressedBytes-above/resource-totalDecompressedBytes-above.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-totalDecompressedBytes-above.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-xmlElementCount-below",
+    "inputSha256": "87ab654bb57148a48b0624c8a1e50505d5d1025708cf58c62a3aeac7bfba73b5",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": []
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-xmlElementCount-below.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-xmlElementCount-below/resource-xmlElementCount-below.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-xmlElementCount-below.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-xmlElementCount-at",
+    "inputSha256": "c1df3e530d04555f2bc1b9ce529b5b5ab05686aab7094d839cd5a42129f7bc93",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": []
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-xmlElementCount-at.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-xmlElementCount-at/resource-xmlElementCount-at.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-xmlElementCount-at.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-xmlElementCount-above",
+    "inputSha256": "8087d2c3a3371eb86b9f899f3064a5f96325357ee09149a0153de22c78586922",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": []
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-xmlElementCount-above.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-xmlElementCount-above/resource-xmlElementCount-above.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-xmlElementCount-above.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-maxXmlDepth-below",
+    "inputSha256": "fe7b38a1bcae5075ac7f8baf12463811997299556f0e0a779310ac4a4c95805e",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": []
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-maxXmlDepth-below.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-maxXmlDepth-below/resource-maxXmlDepth-below.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-maxXmlDepth-below.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-maxXmlDepth-at",
+    "inputSha256": "f218133ec09a7de467f008ce624e1b99d29d0760620690e38c684734e61ca060",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": []
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-maxXmlDepth-at.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-maxXmlDepth-at/resource-maxXmlDepth-at.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-maxXmlDepth-at.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-maxXmlDepth-above",
+    "inputSha256": "347b18f89fac6aef43743ad3f73f4f456a979c6653fa39644da4c41843c6b513",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": []
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-maxXmlDepth-above.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-maxXmlDepth-above/resource-maxXmlDepth-above.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-maxXmlDepth-above.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-maxStyleTraversalSteps-below",
+    "inputSha256": "e5b295ef456de5c23c2fb0fc967af4f6df4ee3f5d41cccf4a28be32ecd6f5355",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Unrecognised paragraph style: 'Chain 0' (Style ID: Chain0)"
+        }
+      ]
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-maxStyleTraversalSteps-below.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-maxStyleTraversalSteps-below/resource-maxStyleTraversalSteps-below.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-maxStyleTraversalSteps-below.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-maxStyleTraversalSteps-at",
+    "inputSha256": "1f4eff502541b907a633c01a9be6965a45fc0f1f3818245c19e94ba3a9265dc5",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Unrecognised paragraph style: 'Chain 0' (Style ID: Chain0)"
+        }
+      ]
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-maxStyleTraversalSteps-at.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-maxStyleTraversalSteps-at/resource-maxStyleTraversalSteps-at.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-maxStyleTraversalSteps-at.docx\"\n  }\n]"
+  },
+  {
+    "id": "resource-maxStyleTraversalSteps-above",
+    "inputSha256": "e810b5fc704bb18d8d91a1876ce4137f43a166b8a6173686e0e155df951102a1",
+    "html": {
+      "bytes": 33,
+      "sha256": "e54ccf1795e54f4e0b34cf4f7e7a6730897c5685d7bcae93f7df52cb941fd528",
+      "messages": [
+        {
+          "type": "warning",
+          "message": "Unrecognised paragraph style: 'Chain 0' (Style ID: Chain0)"
+        }
+      ]
+    },
+    "rawText": {
+      "bytes": 28,
+      "sha256": "0dc8c794fde53078b6fc2c813d5c3217c65cf8a84c562d2b6e9828c3562c1992",
+      "messages": []
+    },
+    "metadata": {
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "result": {
+      "filename": "resource-maxStyleTraversalSteps-above.docx",
+      "extension": ".docx",
+      "detectedType": "docx",
+      "titleCandidates": ["Resource boundary sentinel"],
+      "leadText": "Resource boundary sentinel",
+      "metadata": {
+        "extractor": "mammoth"
+      },
+      "warnings": ["docx_metadata_unavailable"]
+    },
+    "prompt": "Generate concise semantic filename titles for these document files from extracted text evidence.\nReturn JSON only following the provided schema.\nRules:\n- One suggestion per listed filename when there is enough signal.\n- Use each item's exact `filename` value in the response so duplicate basenames stay disambiguated.\n- `title` should be 2-6 words.\n- No file extensions.\n- No punctuation except spaces and hyphens.\n- Prefer document topic/title over generic words like note/file/document.\n- If evidence is weak, use a cautious generic title based on available text only.\n\nDocument evidence JSON:\n[\n  {\n    \"filename\": \"resource-maxStyleTraversalSteps-above/resource-maxStyleTraversalSteps-above.docx\",\n    \"extension\": \".docx\",\n    \"detectedType\": \"docx\",\n    \"titleCandidates\": [\n      \"Resource boundary sentinel\"\n    ],\n    \"leadText\": \"Resource boundary sentinel\",\n    \"metadata\": {\n      \"extractor\": \"mammoth\"\n    },\n    \"warnings\": [\n      \"docx_metadata_unavailable\"\n    ],\n    \"basename\": \"resource-maxStyleTraversalSteps-above.docx\"\n  }\n]"
+  }
+]

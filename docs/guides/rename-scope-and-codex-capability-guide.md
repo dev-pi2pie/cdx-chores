@@ -1,7 +1,7 @@
 ---
 title: "Rename Scope and Codex Capability Guide"
 created-date: 2026-02-26
-modified-date: 2026-09-05
+modified-date: 2026-10-19
 status: completed
 agent: codex
 ---
@@ -36,11 +36,21 @@ Rename support and Codex semantic support are separate layers:
 | Video/Audio (`.mp4`, `.mov`, `.mp3`, `.wav`, etc.)                                        | Yes                         | No                     | Current Codex docs list audio/video as unsupported[^gpt5-codex][^codex-mini] |
 | Hidden/system files (`.DS_Store`, `Thumbs.db`, `._*`, dotfiles)                           | Skipped by default in batch | N/A                    | Safety default                                                               |
 
-DOCX legacy note:
+DOCX analysis uses the package's internal reader to extract metadata, headings, and text for title suggestions. It does not render document layout, perform OCR, or load external content.
 
-- Older `v0.0.7` usage guidance required `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL=1` to opt into DOCX semantic titles.
-- Current releases no longer require that env var; DOCX semantic titles now participate by default under `--codex-docs`.
-- That older env-gated usage remains deprecated history only.
+Extraction attempts are limited to files up to 8 MiB and a 5-second processing deadline, separate from the Codex request timeout. Files within the input-size limit can still fail resource or content checks; extraction failures use deterministic rename fallback. Files above 8 MiB through 10 MiB fail extraction; larger files are skipped.
+
+Process behavior has been verified on macOS; Linux and Windows remain unverified. See [DOCX extraction limits and behavior](../references/docx-extraction.md) for details.
+
+DOCX title suggestions are included when Codex document analysis is enabled. No experimental environment variable is required.
+
+### DOCX Support History
+
+| Version | DOCX rename behavior |
+| --- | --- |
+| `v0.0.6–v0.0.7` | Required `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL=1` to enable DOCX title suggestions. |
+| Since `v0.0.8` | DOCX participates when Codex document analysis is enabled. The experimental variable was removed and has no effect. |
+| `v0.2.1` (upcoming) | Replaces Mammoth with the internal DOCX reader. Extraction runs separately from the CLI under the [documented resource limits](../references/docx-extraction.md#default-limits). |
 
 ## Pattern/Template Coverage
 

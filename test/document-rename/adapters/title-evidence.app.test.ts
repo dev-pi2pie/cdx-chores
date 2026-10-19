@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -7,6 +7,15 @@ import {
   __testOnlyExtractDocumentTitleEvidenceForPath,
 } from "../../../src/adapters/codex/document-rename-titles";
 import { createTempFixtureDir, REPO_ROOT, toRepoRelativePath } from "../../helpers/cli-test-utils";
+import { createDocxProductFixture } from "../fixtures/docx-product/build";
+
+let product: Awaited<ReturnType<typeof createDocxProductFixture>>;
+beforeAll(async () => {
+  product = await createDocxProductFixture();
+});
+afterAll(async () => {
+  await product?.cleanup();
+});
 
 describe("codex document rename title extractor", () => {
   test("extracts pdf evidence from a metadata-rich fixture", async () => {
@@ -60,7 +69,7 @@ describe("codex document rename title extractor", () => {
   test("extracts docx evidence from a metadata-rich fixture", async () => {
     const fixturePath = join(REPO_ROOT, "test", "fixtures", "docs", "metadata-rich.docx");
 
-    const result = await __testOnlyExtractDocumentTitleEvidenceForPath(fixturePath);
+    const result = await product.extract(fixturePath);
 
     expect(result.reason).toBeUndefined();
     if (!result.evidence) {
@@ -74,7 +83,7 @@ describe("codex document rename title extractor", () => {
     expect(result.evidence.titleCandidates).not.toContain("Goal");
     expect(result.evidence.authorCandidates).toEqual(["Fixture Generator"]);
     expect(result.evidence.metadata?.title).toBe("Quarterly Operating Plan 2026");
-    expect(result.evidence.metadata?.extractor).toBe("mammoth+ooxml");
+    expect(result.evidence.metadata?.extractor).toBe("docx-reader+ooxml");
     expect(result.evidence.warnings).toBeUndefined();
 
     const signalCount =
@@ -87,7 +96,7 @@ describe("codex document rename title extractor", () => {
   test("prefers meaningful lead text over a weak generic heading in docx fixtures", async () => {
     const fixturePath = join(REPO_ROOT, "test", "fixtures", "docs", "weak-heading.docx");
 
-    const result = await __testOnlyExtractDocumentTitleEvidenceForPath(fixturePath);
+    const result = await product.extract(fixturePath);
 
     expect(result.reason).toBeUndefined();
     if (!result.evidence) {
@@ -102,7 +111,7 @@ describe("codex document rename title extractor", () => {
   test("uses the first non-heading line when a docx fixture has no headings", async () => {
     const fixturePath = join(REPO_ROOT, "test", "fixtures", "docs", "no-heading.docx");
 
-    const result = await __testOnlyExtractDocumentTitleEvidenceForPath(fixturePath);
+    const result = await product.extract(fixturePath);
 
     expect(result.reason).toBeUndefined();
     if (!result.evidence) {
@@ -124,9 +133,8 @@ describe("codex document rename title extractor", () => {
     );
     const tableFixturePath = join(REPO_ROOT, "test", "fixtures", "docs", "table-heavy.docx");
 
-    const hyperlinkResult =
-      await __testOnlyExtractDocumentTitleEvidenceForPath(hyperlinkFixturePath);
-    const tableResult = await __testOnlyExtractDocumentTitleEvidenceForPath(tableFixturePath);
+    const hyperlinkResult = await product.extract(hyperlinkFixturePath);
+    const tableResult = await product.extract(tableFixturePath);
 
     expect(hyperlinkResult.reason).toBeUndefined();
     expect(tableResult.reason).toBeUndefined();
@@ -143,7 +151,7 @@ describe("codex document rename title extractor", () => {
   test("extracts a strong body-derived title from the alternate-editor textutil fixture", async () => {
     const fixturePath = join(REPO_ROOT, "test", "fixtures", "docs", "textutil-alt-editor.docx");
 
-    const result = await __testOnlyExtractDocumentTitleEvidenceForPath(fixturePath);
+    const result = await product.extract(fixturePath);
 
     expect(result.reason).toBeUndefined();
     if (!result.evidence) {
@@ -151,7 +159,7 @@ describe("codex document rename title extractor", () => {
     }
 
     expect(result.evidence.titleCandidates[0]).toBe("Partner Enablement Guide");
-    expect(result.evidence.metadata?.extractor).toBe("mammoth");
+    expect(result.evidence.metadata?.extractor).toBe("docx-reader");
     expect(result.evidence.warnings).toEqual(["docx_metadata_unavailable"]);
   });
 

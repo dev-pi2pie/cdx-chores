@@ -13,6 +13,38 @@ function report(cases = CASE, suiteAttributes = ""): string {
 }
 
 describe("JUnit validation", () => {
+  test("syntax failures preserve the exact malformed-report diagnostic", () => {
+    for (const xml of [
+      "<testsuites>",
+      report('<testcase name="bad\u0001"/>'),
+      report('<testcase name="one" xmlns:w=""/>'),
+      report("<a:b:c/>"),
+    ]) {
+      expect(() => validateJUnitReport(xml, [FILE])).toThrow(/^Malformed test report XML\.$/);
+    }
+  });
+
+  test("reordered declarations preserve independently derived counts and file identities", () => {
+    expect(
+      validateJUnitReport('<?xml encoding="UTF-8" version="1.0"?>' + report(), [FILE]),
+    ).toEqual({
+      tests: 1,
+      assertions: 2,
+      failures: 0,
+      errors: 0,
+      skipped: 0,
+      durationSeconds: 0.001,
+      files: [FILE],
+    });
+  });
+
+  test("declaration rejection runs before syntax validation", () => {
+    const xml = "<!DOCTYPE testsuites><!DOCTYPE testsuites><testsuites>";
+    expect(() => validateJUnitReport(xml, [FILE])).toThrow(
+      /^Test report declarations are forbidden\.$/,
+    );
+  });
+
   test("accepts Bun's nested suite shape and uses wall duration without adding ancestor totals", () => {
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
       <testsuites name="bun test" tests="2" assertions="4" failures="0" skipped="0" time="0.009">

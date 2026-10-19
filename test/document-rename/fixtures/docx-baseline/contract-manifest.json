@@ -1,0 +1,434 @@
+[
+  {
+    "id": "contract-symbol-font-matrix",
+    "category": "contract-symbols",
+    "variations": [
+      "symbol",
+      "webdings",
+      "wingdings",
+      "wingdings-2",
+      "wingdings-3",
+      "astral-unicode"
+    ],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Font Matrix Report ∀🕷🕿🖊⭠\n\n",
+      "htmlEquals": "<p>Font Matrix Report ∀🕷🕿🖊⭠</p>",
+      "titleFirst": "Font Matrix Report ∀🕷🕿🖊⭠"
+    }
+  },
+  {
+    "id": "contract-symbol-case-and-prefix",
+    "category": "contract-symbols",
+    "variations": ["case-insensitive-font", "uppercase-f0-prefix", "lowercase-f0-prefix-unmapped"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Prefix Report 🕿🕿\n\n",
+      "htmlEquals": "<p>Prefix Report 🕿🕿</p>",
+      "htmlMessagesInclude": [
+        "A w:sym element with an unsupported character was ignored: char f028 in font Wingdings"
+      ],
+      "rawMessagesInclude": [
+        "A w:sym element with an unsupported character was ignored: char f028 in font Wingdings"
+      ]
+    }
+  },
+  {
+    "id": "contract-symbol-unknown-body",
+    "category": "contract-symbols",
+    "variations": ["unknown-font", "unknown-code", "wingdings-1-is-not-an-alias", "body-preserved"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Before Unknown After Unknown\n\n",
+      "htmlEquals": "<p>Before Unknown After Unknown</p>",
+      "htmlMessagesInclude": [
+        "char 28 in font Unmapped Font",
+        "char 0000 in font Wingdings",
+        "char 28 in font Wingdings 1"
+      ],
+      "warningsInclude": ["docx_metadata_unavailable"]
+    }
+  },
+  {
+    "id": "contract-symbol-unknown-only",
+    "category": "contract-symbols",
+    "variations": ["unsupported-only", "empty-after-omission"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "\n\n",
+      "htmlEquals": "",
+      "htmlMessagesInclude": ["A w:sym element with an unsupported character was ignored"],
+      "reason": "docx_extract_error"
+    }
+  },
+  {
+    "id": "contract-symbol-unknown-metadata",
+    "category": "contract-symbols",
+    "variations": ["unsupported-only", "metadata-only-evidence"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "\n\n",
+      "htmlEquals": "",
+      "metadataTitle": "Metadata Symbol Report",
+      "titleFirst": "Metadata Symbol Report",
+      "warningsInclude": ["docx_no_lead_text"]
+    }
+  },
+  {
+    "id": "contract-symbol-missing-char",
+    "category": "contract-symbols",
+    "variations": ["missing-character-attribute", "warning-and-omission"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Missing Character Report \n\n",
+      "htmlEquals": "<p>Missing Character Report </p>",
+      "htmlMessagesInclude": ["char undefined in font Wingdings"]
+    }
+  },
+  {
+    "id": "contract-symbol-malformed-char",
+    "category": "contract-symbols",
+    "variations": ["invalid-hex-omitted", "partial-hex-parsed"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Malformed Character Report 🕿\n\n",
+      "htmlEquals": "<p>Malformed Character Report 🕿</p>",
+      "htmlMessagesInclude": ["char zz in font Wingdings"]
+    }
+  },
+  {
+    "id": "contract-symbol-missing-font",
+    "category": "contract-symbols",
+    "variations": ["missing-font-attribute", "converter-error"],
+    "input": "generated",
+    "expected": {
+      "htmlErrorIncludes": "toUpperCase",
+      "rawErrorIncludes": "toUpperCase",
+      "reason": "docx_extract_error"
+    }
+  },
+  {
+    "id": "contract-symbol-heading",
+    "category": "contract-symbols",
+    "variations": ["mapped-heading-symbol", "heading-rank-and-prompt"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Symbol Heading Report ∀\n\n",
+      "htmlEquals": "<h1>Symbol Heading Report ∀</h1>",
+      "headings": ["Symbol Heading Report ∀"],
+      "titleFirst": "Symbol Heading Report ∀"
+    }
+  },
+  {
+    "id": "contract-symbol-mapped-only",
+    "category": "contract-symbols",
+    "variations": ["symbol-only-signal", "mapped-unicode-evidence"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "∀\n\n",
+      "htmlEquals": "<p>∀</p>",
+      "titleFirst": "∀"
+    }
+  },
+  {
+    "id": "contract-symbol-missing-font-metadata",
+    "category": "contract-symbols",
+    "variations": ["missing-font-attribute", "metadata-does-not-rescue-conversion-error"],
+    "input": "generated",
+    "expected": {
+      "metadataTitle": "Metadata With Invalid Symbol",
+      "htmlErrorIncludes": "toUpperCase",
+      "rawErrorIncludes": "toUpperCase",
+      "reason": "docx_extract_error"
+    }
+  },
+  {
+    "id": "contract-map-paragraph-prefix",
+    "category": "contract-style-maps",
+    "variations": [
+      "style-name-prefix-selector",
+      "case-insensitive-style-name-selector",
+      "fresh-headings"
+    ],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "First Mapping Report\n\nSecond Mapping Report\n\n",
+      "htmlEquals": "<h3>First Mapping Report</h3><h3>Second Mapping Report</h3>",
+      "headings": ["First Mapping Report", "Second Mapping Report"]
+    }
+  },
+  {
+    "id": "contract-map-invalid-ignored",
+    "category": "contract-style-maps",
+    "variations": ["invalid-rule-warning", "default-heading-map-remains"],
+    "input": "generated",
+    "expected": {
+      "htmlEquals": "<h1>First Mapping Report</h1><h1>Second Mapping Report</h1>",
+      "headings": ["First Mapping Report", "Second Mapping Report"],
+      "htmlMessagesInclude": ["Did not understand this style mapping"]
+    }
+  },
+  {
+    "id": "contract-map-run-heading",
+    "category": "contract-style-maps",
+    "variations": ["run-selector", "run-rule-creates-evidence-heading"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Run Mapping Report\n\n",
+      "htmlEquals": "<p><h1>Run Mapping Report</h1></p>",
+      "headings": ["Run Mapping Report"],
+      "titleFirst": "Run Mapping Report"
+    }
+  },
+  {
+    "id": "contract-map-nested-heading",
+    "category": "contract-style-maps",
+    "variations": ["nested-html-path", "nested-rule-creates-evidence-heading"],
+    "input": "generated",
+    "expected": {
+      "htmlEquals": "<div><h2>First Mapping Report</h2><h2>Second Mapping Report</h2></div>",
+      "headings": ["First Mapping Report", "Second Mapping Report"]
+    }
+  },
+  {
+    "id": "contract-map-ignore",
+    "category": "contract-style-maps",
+    "variations": ["ignore-rule", "html-omitted-raw-preserved"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "First Mapping Report\n\nSecond Mapping Report\n\n",
+      "htmlEquals": "",
+      "headings": [],
+      "titleFirst": "First Mapping Report"
+    }
+  },
+  {
+    "id": "contract-map-merge",
+    "category": "contract-style-maps",
+    "variations": ["non-fresh-heading-merge", "no-inserted-space"],
+    "input": "generated",
+    "expected": {
+      "htmlEquals": "<h1>First Mapping ReportSecond Mapping Report</h1>",
+      "headings": ["First Mapping ReportSecond Mapping Report"],
+      "titleFirst": "First Mapping ReportSecond Mapping Report"
+    }
+  },
+  {
+    "id": "contract-map-separator",
+    "category": "contract-style-maps",
+    "variations": ["heading-merge-separator", "separator-affects-title-evidence"],
+    "input": "generated",
+    "expected": {
+      "htmlEquals": "<h1>First Mapping Report / Second Mapping Report</h1>",
+      "headings": ["First Mapping Report / Second Mapping Report"],
+      "titleFirst": "First Mapping Report / Second Mapping Report"
+    }
+  },
+  {
+    "id": "contract-map-table-heading",
+    "category": "contract-style-maps",
+    "variations": ["table-selector", "table-rule-creates-evidence-heading"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Table Mapping Report\n\n",
+      "htmlEquals": "<h2><tr><td><p>Table Mapping Report</p></td></tr></h2>",
+      "headings": ["Table Mapping Report"]
+    }
+  },
+  {
+    "id": "contract-map-first-matching-rule",
+    "category": "contract-style-maps",
+    "variations": [
+      "overlapping-style-selectors",
+      "first-matching-rule-wins",
+      "embedded-rule-precedence"
+    ],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "First Mapping Report\n\nSecond Mapping Report\n\n",
+      "htmlEquals": "<h3>First Mapping Report</h3><h3>Second Mapping Report</h3>",
+      "headings": ["First Mapping Report", "Second Mapping Report"],
+      "titleCandidates": ["First Mapping Report"]
+    }
+  },
+  {
+    "id": "contract-note-repeated",
+    "category": "contract-notes",
+    "variations": [
+      "repeated-body-reference",
+      "duplicate-html-note",
+      "deduplicated-evidence-heading"
+    ],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Repeated Note Report\n\n",
+      "htmlIncludes": [
+        "<sup><a href=\"#footnote-1\" id=\"footnote-ref-1\">[1]</a></sup>",
+        "<sup><a href=\"#footnote-1\" id=\"footnote-ref-1\">[2]</a></sup>",
+        "<h1>Repeated Note Heading</h1>"
+      ],
+      "headings": ["Repeated Note Heading"],
+      "htmlOccurrences": {
+        "<h1>Repeated Note Heading</h1>": 2
+      },
+      "titleFirst": "Repeated Note Heading"
+    }
+  },
+  {
+    "id": "contract-note-nested",
+    "category": "contract-notes",
+    "variations": ["nested-reference-not-expanded", "only-document-reference-snapshot-rendered"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Note Body Report\n\n",
+      "htmlIncludes": ["First Note Report", "href=\"#footnote-2\""],
+      "htmlExcludes": ["Nested Note Excluded"],
+      "headings": []
+    }
+  },
+  {
+    "id": "contract-note-self-cycle",
+    "category": "contract-notes",
+    "variations": ["self-referencing-note", "bounded-reference-snapshot", "no-recursive-expansion"],
+    "execution": "bounded-node",
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Note Body Report\n\n",
+      "htmlIncludes": ["Self Cycle Note", "id=\"footnote-1\""],
+      "headings": [],
+      "htmlOccurrences": {
+        "Self Cycle Note": 1
+      }
+    }
+  },
+  {
+    "id": "contract-note-mutual-cycle",
+    "category": "contract-notes",
+    "variations": ["mutually-referencing-notes", "unreferenced-nested-note-excluded"],
+    "execution": "bounded-node",
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Note Body Report\n\n",
+      "htmlIncludes": ["First Cycle Note", "href=\"#footnote-2\""],
+      "htmlExcludes": ["Second Cycle Excluded"],
+      "headings": []
+    }
+  },
+  {
+    "id": "contract-note-missing",
+    "category": "contract-notes",
+    "variations": ["missing-document-note-target", "html-error-fails-adapter"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Note Body Report\n\n",
+      "htmlErrorIncludes": "type",
+      "reason": "docx_extract_error"
+    }
+  },
+  {
+    "id": "contract-note-missing-metadata",
+    "category": "contract-notes",
+    "variations": ["missing-document-note-target", "metadata-does-not-rescue-conversion-error"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Note Body Report\n\n",
+      "htmlErrorIncludes": "type",
+      "metadataTitle": "Metadata With Missing Note",
+      "reason": "docx_extract_error"
+    }
+  },
+  {
+    "id": "contract-note-heading-only",
+    "category": "contract-notes",
+    "variations": ["note-only-document", "heading-evidence-without-raw-lead"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "\n\n",
+      "htmlIncludes": ["<h1>Note Only Heading Report</h1>"],
+      "headings": ["Note Only Heading Report"],
+      "titleFirst": "Note Only Heading Report",
+      "warningsInclude": ["docx_metadata_unavailable", "docx_no_lead_text"]
+    }
+  },
+  {
+    "id": "contract-note-plain-only",
+    "category": "contract-notes",
+    "variations": ["note-only-document", "non-heading-html-without-title-signal"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "\n\n",
+      "htmlIncludes": ["Note Only Plain Text"],
+      "reason": "docx_no_title_signal"
+    }
+  },
+  {
+    "id": "contract-note-nested-missing",
+    "category": "contract-notes",
+    "variations": ["missing-nested-target", "unresolved-link-does-not-fail-conversion"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Note Body Report\n\n",
+      "htmlIncludes": ["Nested Missing Target", "href=\"#footnote-999\""],
+      "titleFirst": "Note Body Report",
+      "headings": []
+    }
+  },
+  {
+    "id": "contract-note-heading-reference",
+    "category": "contract-notes",
+    "variations": ["note-reference-inside-heading", "reference-label-affects-heading-evidence"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Main Report \n\n",
+      "htmlIncludes": ["<h1>Main Report <sup>", "Heading Note Detail"],
+      "headings": ["Main Report [1]"],
+      "titleFirst": "Main Report [1]"
+    }
+  },
+  {
+    "id": "contract-note-unused-invalid-symbol",
+    "category": "contract-notes",
+    "variations": ["unused-note-body-read-eagerly", "missing-font-fails-before-note-rendering"],
+    "input": "generated",
+    "expected": {
+      "htmlErrorIncludes": "toUpperCase",
+      "rawErrorIncludes": "toUpperCase",
+      "reason": "docx_extract_error"
+    }
+  },
+  {
+    "id": "contract-note-ignored-missing",
+    "category": "contract-notes",
+    "variations": ["style-map-hides-missing-reference", "html-selection-affects-note-validation"],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Ignored Missing Note\n\nVisible Note Report\n\n",
+      "htmlEquals": "<p>Visible Note Report</p>",
+      "titleFirst": "Ignored Missing Note"
+    }
+  },
+  {
+    "id": "contract-note-heading-order-and-rank",
+    "category": "contract-notes",
+    "variations": [
+      "main-headings-before-note-headings",
+      "repeated-note-heading-signals",
+      "first-four-ranking-before-heading-deduplication",
+      "late-h2-heading-excluded-from-titles"
+    ],
+    "input": "generated",
+    "expected": {
+      "rawEquals": "Main Document Heading\n\nMain Body Detail\n\n",
+      "htmlIncludes": [
+        "<h2>Main Document Heading</h2>",
+        "<h2>Repeated Note Heading</h2>",
+        "<h2>Late Note Heading</h2>"
+      ],
+      "htmlOccurrences": {
+        "<h2>Repeated Note Heading</h2>": 3
+      },
+      "headings": ["Main Document Heading", "Repeated Note Heading", "Late Note Heading"],
+      "titleCandidates": ["Main Document Heading", "Repeated Note Heading"]
+    }
+  }
+]

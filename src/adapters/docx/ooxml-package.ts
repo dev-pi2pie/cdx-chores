@@ -16,12 +16,12 @@ function shouldReadXmlLikePart(entry: Entry): boolean {
   return entry.fileName.endsWith(".xml") || entry.fileName.endsWith(".rels");
 }
 
-function readZipFileFromBuffer(buffer: Buffer): Promise<ZipFile> {
+export function readZipFileFromBuffer(buffer: Buffer, autoClose = true): Promise<ZipFile> {
   return new Promise((resolve, reject) => {
     yauzl.fromBuffer(
       buffer,
       {
-        autoClose: true,
+        autoClose,
         decodeStrings: true,
         lazyEntries: true,
         validateEntrySizes: true,
@@ -99,7 +99,7 @@ function decodeUtf16Be(buffer: Buffer): string {
   return swapped.toString("utf16le");
 }
 
-function decodeXmlBuffer(buffer: Buffer): string {
+export function decodeXmlBuffer(buffer: Buffer): string {
   const encoding = detectXmlEncoding(buffer);
   if (encoding === "utf-16be") {
     return decodeUtf16Be(buffer);

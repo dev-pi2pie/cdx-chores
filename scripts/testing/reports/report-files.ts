@@ -1,10 +1,11 @@
-import { XMLParser, XMLValidator } from "fast-xml-parser";
+import { XMLParser } from "fast-xml-parser";
 
+import { isValidXml } from "../../../src/utils/xml-validation.ts";
 import { classifyTestFiles } from "../suites/selection.ts";
 
 /** File-identity evidence only; exit status, counts, freshness, and outcomes are separate checks. */
 export function reportedTestFiles(xml: string): string[] {
-  if (XMLValidator.validate(xml) !== true) throw new Error("Malformed test report XML.");
+  if (!isValidXml(xml)) throw new Error("Malformed test report XML.");
   const parsed = new XMLParser({
     ignoreAttributes: false,
     attributeNamePrefix: "@_",

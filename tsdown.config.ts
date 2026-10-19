@@ -1,4 +1,5 @@
 import { defineConfig } from "tsdown";
+import { docxRuntimeBuild } from "./scripts/build/docx-runtime.ts";
 
 export default defineConfig([
   {
@@ -48,4 +49,5 @@ export default defineConfig([
       onlyBundle: ["picocolors"],
     },
   },
+  docxRuntimeBuild,
 ]);

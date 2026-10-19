@@ -32,7 +32,7 @@ import {
   type ExtractedDocumentTitleEvidence,
   type SuggestDocumentTitlesOptions,
 } from "./types";
-import { extractDocxEvidence } from "./extractors/docx";
+import { createDocxEvidenceExtractor } from "./extractors/docx";
 import { extractHtmlEvidence } from "./extractors/html";
 import { extractMarkdownEvidence } from "./extractors/markdown";
 import { extractPdfEvidence } from "./extractors/pdf";
@@ -45,7 +45,10 @@ import { extractPlainTextEvidence } from "./extractors/text";
 import { extractXmlEvidence } from "./extractors/xml";
 import { buildDocumentPrompt, createPromptEvidenceItems } from "./prompt";
 
-async function extractEvidenceForPath(path: string): Promise<ExtractedDocumentTitleEvidence> {
+async function extractEvidenceForPath(
+  path: string,
+  extractDocxEvidence = createDocxEvidenceExtractor(),
+): Promise<ExtractedDocumentTitleEvidence> {
   const ext = extname(path).toLowerCase();
 
   if (DOC_PDF_EXTENSIONS.has(ext)) {
@@ -174,9 +177,10 @@ async function suggestDocumentRenameTitles(
 
   const reasons: CodexDocumentRenameReason[] = [];
   const extractedItems: Array<{ path: string; evidence: DocumentTitleEvidence }> = [];
+  const extractDocxEvidence = createDocxEvidenceExtractor();
 
   for (const path of options.documentPaths) {
-    const extracted = await extractEvidenceForPath(path);
+    const extracted = await extractEvidenceForPath(path, extractDocxEvidence);
     if (extracted.reason) {
       reasons.push({ path, reason: extracted.reason });
       continue;

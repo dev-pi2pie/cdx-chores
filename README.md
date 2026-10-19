@@ -83,7 +83,7 @@ Use `cdx-chores doctor` before relying on a command in a script, a CI job, or a 
 | `data extract` reviewed suggestions, `data query codex`                 | Codex-assisted source shaping, semantic header review, and natural-language SQL drafting | Codex support must be configured and an auth/session signal must be available                                                 | Run `cdx-chores doctor`                                                                                            |
 | `md pdf-profile codex`, `md pdf-template codex`, `md pdf-project codex` | Codex-assisted Markdown PDF profile, template, and coordinated project drafting          | Codex support must be configured for Codex-assisted decisions; deterministic fallback paths remain available where documented | Run `cdx-chores doctor`                                                                                            |
 
-The Codex SDK baseline for `v0.2.0` is `@openai/codex-sdk` `0.160.0`.
+The Codex SDK baseline for `v0.2.1` is `@openai/codex-sdk` `0.163.0`.
 
 Adopted helper commands and explicit `interactive` sessions accept
 `--codex-model`, `--codex-provider`, and `--codex-reasoning-effort`. Model and
@@ -319,6 +319,8 @@ Codex-assisted batch rename preview:
 cdx-chores rename batch ./images --prefix gallery --codex --dry-run
 ```
 
+DOCX title suggestions use the package's internal reader to extract metadata, headings, and text. Extraction attempts are limited to 8 MiB inputs and a 5-second processing deadline, separate from the Codex request timeout. Files above 8 MiB through 10 MiB fail extraction; larger files are skipped. Extraction failures retain deterministic rename fallback. See [Rename scope and Codex capabilities](docs/guides/rename-scope-and-codex-capability-guide.md) and [DOCX extraction limits](docs/references/docx-extraction.md) for content and platform limits.
+
 Give every Codex request attempt a two-minute deadline, with a shorter image
 analyzer override:
 
@@ -450,41 +452,43 @@ Cross-feature:
 
 - [Codex execution configuration and discovery](docs/guides/codex-execution-configuration.md)
 - [Environment variables](docs/guides/environment-variables.md)
-- `docs/guides/cli-output-and-color.md`
-- `docs/guides/codex-timeouts-retries-and-recovery.md`
-- `docs/guides/patterns-placeholders-and-templates.md`
+- [CLI output and color](docs/guides/cli-output-and-color.md)
+- [Codex timeouts, retries, and recovery](docs/guides/codex-timeouts-retries-and-recovery.md)
+- [Patterns, placeholders, and templates](docs/guides/patterns-placeholders-and-templates.md)
 
 Rename:
 
-- `docs/guides/rename-common-usage.md`
-- `docs/guides/rename-timestamp-format-matrix.md`
-- `docs/guides/rename-scope-and-codex-capability-guide.md`
+- [Rename common usage](docs/guides/rename-common-usage.md)
+- [Rename timestamp format matrix](docs/guides/rename-timestamp-format-matrix.md)
+- [Rename scope and Codex capabilities](docs/guides/rename-scope-and-codex-capability-guide.md)
+- [DOCX extraction limits and behavior](docs/references/docx-extraction.md)
 
 Data:
 
-- `docs/guides/data-preview-usage.md`
-- `docs/guides/data-extract-usage.md`
-- `docs/guides/data-stack-usage.md`
-- `docs/guides/data-source-shape-usage.md`
-- `docs/guides/data-schema-and-mapping-usage.md`
-- `docs/guides/data-query-usage.md`
-- `docs/guides/data-query-interactive-usage.md`
-- `docs/guides/data-duckdb-usage.md`
-- `docs/guides/data-query-codex-usage.md`
+- [Data preview usage](docs/guides/data-preview-usage.md)
+- [Data extract usage](docs/guides/data-extract-usage.md)
+- [Data stack usage](docs/guides/data-stack-usage.md)
+- [Data source shape usage](docs/guides/data-source-shape-usage.md)
+- [Data schema and mapping usage](docs/guides/data-schema-and-mapping-usage.md)
+- [Data query usage](docs/guides/data-query-usage.md)
+- [Interactive data query usage](docs/guides/data-query-interactive-usage.md)
+- [Data DuckDB usage](docs/guides/data-duckdb-usage.md)
+- [Data query Codex usage](docs/guides/data-query-codex-usage.md)
 
 Video:
 
-- `docs/guides/video-gif-usage-and-quality-modes.md`
-- `docs/guides/video-resize-usage-and-ux.md`
+- [Video frames usage](docs/guides/video-frames-usage.md)
+- [Video GIF usage and quality modes](docs/guides/video-gif-usage-and-quality-modes.md)
+- [Video resize usage and UX](docs/guides/video-resize-usage-and-ux.md)
 
 Markdown:
 
-- `docs/guides/markdown-pdf-usage.md`
-- `docs/guides/markdown-pdf-interactive-usage.md`
-- `docs/guides/markdown-pdf-codex-profile-helper.md`
-- `docs/guides/markdown-pdf-codex-template-helper.md`
-- `docs/guides/markdown-pdf-codex-project-helper.md`
-- `docs/guides/md-frontmatter-to-json-output-contract.md`
+- [Markdown PDF usage](docs/guides/markdown-pdf-usage.md)
+- [Interactive Markdown PDF usage](docs/guides/markdown-pdf-interactive-usage.md)
+- [Markdown PDF Codex profile helper](docs/guides/markdown-pdf-codex-profile-helper.md)
+- [Markdown PDF Codex template helper](docs/guides/markdown-pdf-codex-template-helper.md)
+- [Markdown PDF Codex project helper](docs/guides/markdown-pdf-codex-project-helper.md)
+- [Markdown frontmatter to JSON output contract](docs/guides/md-frontmatter-to-json-output-contract.md)
 
 ## Local Development
 
