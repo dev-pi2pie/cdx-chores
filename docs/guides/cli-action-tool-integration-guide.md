@@ -1,7 +1,7 @@
 ---
 title: "CLI Action Tool Integration Guide"
 created-date: 2026-02-25
-modified-date: 2026-10-17
+modified-date: 2026-10-19
 status: completed
 agent: codex
 ---
@@ -62,7 +62,7 @@ Avoid direct SDK/tool-client complexity inside action modules when an adapter bo
 
 ## Codex SDK Integration
 
-The Codex SDK baseline for `v0.2.1-canary.3` is `@openai/codex-sdk` `0.163.0`.
+The Codex SDK baseline for `v0.2.1` is `@openai/codex-sdk` `0.163.0`.
 
 `src/adapters/codex/shared.ts` loads the Codex SDK on demand. Feature-specific adapters provide Codex assistance for rename, Markdown PDF, and data workflows.
 
@@ -123,6 +123,8 @@ Current scope note:
 - Codex semantic rename in this project currently supports eligible static images through `--codex-images` and eligible document/PDF/DOCX/text-like inputs through `--codex-docs`
 - audio/video semantic analysis is deferred for Codex-assisted rename based on current Codex model support docs
 - document semantic analysis remains separate from image semantic analysis and should not be implied by `--codex-images` today
+
+DOCX title extraction uses the internal reader and supervised runtime under `src/docx/`. Reuse one supervisor for each document-title operation, including its sequential batch loop. Keep the fixed child, worker, and parser assets in both Node ESM and CJS builds through `scripts/build/docx-runtime.ts`. The adapter maps reader failures to existing rename fallback reasons; reader types and diagnostics remain internal. See [DOCX extraction limits and behavior](../references/docx-extraction.md) for resource budgets, content support, and verified platform scope.
 
 See also:
 

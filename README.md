@@ -83,7 +83,7 @@ Use `cdx-chores doctor` before relying on a command in a script, a CI job, or a 
 | `data extract` reviewed suggestions, `data query codex`                 | Codex-assisted source shaping, semantic header review, and natural-language SQL drafting | Codex support must be configured and an auth/session signal must be available                                                 | Run `cdx-chores doctor`                                                                                            |
 | `md pdf-profile codex`, `md pdf-template codex`, `md pdf-project codex` | Codex-assisted Markdown PDF profile, template, and coordinated project drafting          | Codex support must be configured for Codex-assisted decisions; deterministic fallback paths remain available where documented | Run `cdx-chores doctor`                                                                                            |
 
-The Codex SDK baseline for `v0.2.1-canary.3` is `@openai/codex-sdk` `0.163.0`.
+The Codex SDK baseline for `v0.2.1` is `@openai/codex-sdk` `0.163.0`.
 
 Adopted helper commands and explicit `interactive` sessions accept
 `--codex-model`, `--codex-provider`, and `--codex-reasoning-effort`. Model and
@@ -319,6 +319,8 @@ Codex-assisted batch rename preview:
 cdx-chores rename batch ./images --prefix gallery --codex --dry-run
 ```
 
+DOCX title suggestions use the package's internal reader to extract metadata, headings, and text. Extraction attempts are limited to 8 MiB inputs and a 5-second processing deadline, separate from the Codex request timeout. Files above 8 MiB through 10 MiB fail extraction; larger files are skipped. Extraction failures retain deterministic rename fallback. See [Rename scope and Codex capabilities](docs/guides/rename-scope-and-codex-capability-guide.md) and [DOCX extraction limits](docs/references/docx-extraction.md) for content and platform limits.
+
 Give every Codex request attempt a two-minute deadline, with a shorter image
 analyzer override:
 
@@ -458,7 +460,8 @@ Rename:
 
 - `docs/guides/rename-common-usage.md`
 - `docs/guides/rename-timestamp-format-matrix.md`
-- `docs/guides/rename-scope-and-codex-capability-guide.md`
+- [Rename scope and Codex capabilities](docs/guides/rename-scope-and-codex-capability-guide.md)
+- [DOCX extraction limits and behavior](docs/references/docx-extraction.md)
 
 Data:
 
