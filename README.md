@@ -452,42 +452,43 @@ Cross-feature:
 
 - [Codex execution configuration and discovery](docs/guides/codex-execution-configuration.md)
 - [Environment variables](docs/guides/environment-variables.md)
-- `docs/guides/cli-output-and-color.md`
-- `docs/guides/codex-timeouts-retries-and-recovery.md`
-- `docs/guides/patterns-placeholders-and-templates.md`
+- [CLI output and color](docs/guides/cli-output-and-color.md)
+- [Codex timeouts, retries, and recovery](docs/guides/codex-timeouts-retries-and-recovery.md)
+- [Patterns, placeholders, and templates](docs/guides/patterns-placeholders-and-templates.md)
 
 Rename:
 
-- `docs/guides/rename-common-usage.md`
-- `docs/guides/rename-timestamp-format-matrix.md`
+- [Rename common usage](docs/guides/rename-common-usage.md)
+- [Rename timestamp format matrix](docs/guides/rename-timestamp-format-matrix.md)
 - [Rename scope and Codex capabilities](docs/guides/rename-scope-and-codex-capability-guide.md)
 - [DOCX extraction limits and behavior](docs/references/docx-extraction.md)
 
 Data:
 
-- `docs/guides/data-preview-usage.md`
-- `docs/guides/data-extract-usage.md`
-- `docs/guides/data-stack-usage.md`
-- `docs/guides/data-source-shape-usage.md`
-- `docs/guides/data-schema-and-mapping-usage.md`
-- `docs/guides/data-query-usage.md`
-- `docs/guides/data-query-interactive-usage.md`
-- `docs/guides/data-duckdb-usage.md`
-- `docs/guides/data-query-codex-usage.md`
+- [Data preview usage](docs/guides/data-preview-usage.md)
+- [Data extract usage](docs/guides/data-extract-usage.md)
+- [Data stack usage](docs/guides/data-stack-usage.md)
+- [Data source shape usage](docs/guides/data-source-shape-usage.md)
+- [Data schema and mapping usage](docs/guides/data-schema-and-mapping-usage.md)
+- [Data query usage](docs/guides/data-query-usage.md)
+- [Interactive data query usage](docs/guides/data-query-interactive-usage.md)
+- [Data DuckDB usage](docs/guides/data-duckdb-usage.md)
+- [Data query Codex usage](docs/guides/data-query-codex-usage.md)
 
 Video:
 
-- `docs/guides/video-gif-usage-and-quality-modes.md`
-- `docs/guides/video-resize-usage-and-ux.md`
+- [Video frames usage](docs/guides/video-frames-usage.md)
+- [Video GIF usage and quality modes](docs/guides/video-gif-usage-and-quality-modes.md)
+- [Video resize usage and UX](docs/guides/video-resize-usage-and-ux.md)
 
 Markdown:
 
-- `docs/guides/markdown-pdf-usage.md`
-- `docs/guides/markdown-pdf-interactive-usage.md`
-- `docs/guides/markdown-pdf-codex-profile-helper.md`
-- `docs/guides/markdown-pdf-codex-template-helper.md`
-- `docs/guides/markdown-pdf-codex-project-helper.md`
-- `docs/guides/md-frontmatter-to-json-output-contract.md`
+- [Markdown PDF usage](docs/guides/markdown-pdf-usage.md)
+- [Interactive Markdown PDF usage](docs/guides/markdown-pdf-interactive-usage.md)
+- [Markdown PDF Codex profile helper](docs/guides/markdown-pdf-codex-profile-helper.md)
+- [Markdown PDF Codex template helper](docs/guides/markdown-pdf-codex-template-helper.md)
+- [Markdown PDF Codex project helper](docs/guides/markdown-pdf-codex-project-helper.md)
+- [Markdown frontmatter to JSON output contract](docs/guides/md-frontmatter-to-json-output-contract.md)
 
 ## Local Development
 
