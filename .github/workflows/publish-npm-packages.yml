@@ -25,7 +25,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout
-              uses: actions/checkout@v6
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   # Keep checkout light; branch validation will deepen/unshallow if needed.
                   fetch-depth: 1
@@ -120,14 +120,14 @@ jobs:
                   echo "PRERELEASE_LABEL=$PRERELEASE_LABEL" >> "$GITHUB_OUTPUT"
 
             - name: Setup Bun
-              uses: oven-sh/setup-bun@v2
+              uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
               with:
-                  bun-version: latest
+                  bun-version: 1.4.4
 
             - name: Setup Node
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
               with:
-                  node-version: 24.18.0
+                  node-version: 24.22.1
                   registry-url: https://registry.npmjs.org
 
             - name: Verify package metadata
@@ -155,6 +155,7 @@ jobs:
 
             - name: Publish
               env:
+                  # Keep an explicit empty value for the generated .npmrc; publishing uses OIDC.
                   NODE_AUTH_TOKEN: ""
               run: |
                   if [[ "${{ steps.prerelease.outputs.IS_PRERELEASE }}" == "true" ]]; then

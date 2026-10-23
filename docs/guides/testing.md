@@ -1,7 +1,7 @@
 ---
 title: "Contributor Testing Guide"
 created-date: 2026-09-06
-modified-date: 2026-10-16
+modified-date: 2026-10-23
 status: completed
 agent: codex
 ---
@@ -43,6 +43,12 @@ Additional prerequisites depend on the selected suite:
 | Pandoc | Pandoc available on `PATH` |
 
 Node preflight requires Node.js 22.23.0 or later. Keep package dependencies aligned with the lockfile. The runner checks installed tools and existing native caches; it does not install tools or download missing DuckDB extensions. Install or repair a reported prerequisite before retrying. The suite requirements are defined in [`suite-policy.ts`](../../scripts/testing/suites/suite-policy.ts).
+
+## CI publishing runtimes
+
+The npm and GitHub Packages workflows build with Node.js 24.22.1 and Bun 1.4.4. These exact workflow versions are separate from the package compatibility minimum and do not require a `packageManager` field. Both workflows use frozen lockfile installation.
+
+Actions are pinned to full commit SHAs with release-version comments. The release-notes workflow uses the pinned git-cliff action's default executable version without a separate override. The npm publish step keeps `NODE_AUTH_TOKEN: ""` for its generated registry configuration and authenticates through OIDC; GitHub Packages uses `GITHUB_TOKEN`. The current publishing workflows build packages but do not run the managed test suites. Run the applicable checks before publishing. See the [CI action and runtime refresh record](../plans/jobs/2026-10-23-ci-action-pins-and-runtime-refresh.md) for the reviewed pins, verification, and remaining hardening work.
 
 ## Environment and isolation
 
