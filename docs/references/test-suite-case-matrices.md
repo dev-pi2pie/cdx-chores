@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Contract Ownership Catalog"
 created-date: 2026-08-23
-modified-date: 2026-10-18
+modified-date: 2026-10-23
 status: completed
 agent: codex
 ---
@@ -95,7 +95,7 @@ Routine suites cover product behavior and shared test infrastructure. Manual smo
 - DOCX: `scripts/docx-candidate/launch.mjs`, `measure-launch.mjs`, and `package-check.mjs` cover built ESM/CommonJS comparisons, resource measurements, and installed-package behavior. Inputs/assertions stay under `test/document-rename/`; execution files use owned temporary storage. See [manual commands and retention](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#manual-validation).
 - Markdown PDF: product materialization and saved-style/image-cover regressions stay under `test/markdown-pdf/evidence/page-number-renderer/`; renderer-evidence and smoke commands remain manual.
 - Data: product tests consume durable synthetic inputs under `test/data-sources/fixtures/extract/` through test-owned helpers.
-- Video: real terminal, installed FFmpeg/FFprobe, and generated/private-media checks remain outside routine suites and CI. The [built-CLI smoke command](../../scripts/spikes/video-frames-phase11.ts) provides explicit product checks.
+- Video: real terminal, installed FFmpeg/FFprobe, and generated/private-media checks remain outside routine suites and CI. The [built-CLI smoke command](../../scripts/spikes/video-frames-built-cli-smoke.ts) provides explicit product checks.
 
 ### Global Helpers
 

@@ -29,7 +29,7 @@ jobs:
             release_range: ${{ steps.range.outputs.range }}
         steps:
             - name: Checkout
-              uses: actions/checkout@v6
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   # Keep checkout light; branch validation will deepen/unshallow if needed.
                   # For workflow_dispatch, checkout the selected branch so current scripts/workflow code are available.
@@ -154,7 +154,7 @@ jobs:
             - name: Generate release notes (pre-release, GitHub default via git-cliff)
               id: prerelease_notes
               if: steps.prerelease.outputs.IS_PRERELEASE == 'true'
-              uses: orhun/git-cliff-action@v4
+              uses: orhun/git-cliff-action@a9a95522b26fe6403f7bb24031f21fb573d0f5ff # v4.9.1
               with:
                   config: github
                   args: --strip header ${{ steps.range.outputs.range }}
@@ -215,7 +215,7 @@ jobs:
             contents: write
         steps:
             - name: Checkout
-              uses: actions/checkout@v6
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   fetch-depth: 1
                   ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || (inputs.tag && format('refs/tags/{0}', inputs.tag) || github.ref) }}

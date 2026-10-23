@@ -1,6 +1,7 @@
 ---
 title: "Video Frames Enhancement Follow-Up"
 created-date: 2026-10-02
+modified-date: 2026-10-23
 status: completed
 agent: codex
 ---
@@ -159,7 +160,7 @@ Documentation review found no material issues. Local link/anchor, footnote, life
 
 ### Integrated Verification
 
-The opt-in [built-CLI proof](../../../scripts/spikes/video-frames-phase11.ts) passed four cases and 43 exports in 27.96 seconds of active work, retaining 251,819 bytes. All five tested selections passed across PNG/JPG/WebP, with independent post-scale lossless pixels and recipe-scoped JPEG tolerances. Saved profiles, dimensions, counts, literal/nested paths, collisions, replacement, unrelated-file retention, source aliases and wrong path kinds passed. Unsupported wider primaries failed before output creation. Node.js 22.23.0 loaded ESM/CommonJS and exported 1 × 1 images in all three formats. Sources remained unchanged and no capacity messages appeared.
+The opt-in [built-CLI proof](../../../scripts/spikes/video-frames-built-cli-smoke.ts) passed four cases and 43 exports in 27.96 seconds of active work, retaining 251,819 bytes. All five tested selections passed across PNG/JPG/WebP, with independent post-scale lossless pixels and recipe-scoped JPEG tolerances. Saved profiles, dimensions, counts, literal/nested paths, collisions, replacement, unrelated-file retention, source aliases and wrong path kinds passed. Unsupported wider primaries failed before output creation. Node.js 22.23.0 loaded ESM/CommonJS and exported 1 × 1 images in all three formats. Sources remained unchanged and no capacity messages appeared.
 
 The full unit suite passed 1,619 cases / 37,485 assertions. TypeScript, lint, formatting and the Node-target build passed, with the existing non-blocking TypeScript 7 build warning. The full application invocation reached its 240-second deadline near the final guided-flow case. It is a failed invocation. That case passed separately. All 304 application files then passed in four disjoint managed batches: 2,272 cases / 14,223 assertions, with verified shutdown and cleanup. The batches covered the discovered manifest exactly and used unchanged managed isolation and deadlines. This verifies every application file without claiming that the single full-suite invocation passed.
 
@@ -192,6 +193,10 @@ Reviewed the complete follow-up range **`6e3d765c7c53418acdd5a37cd1a6a93aad06ee6
 Phase 11 is accepted on 2026-10-02. All seven tasks passed, and the plan and follow-up record are completed. Original acceptance is preserved.
 
 Research closure was assessed separately. The frame research's selection, sampling, terminal, dependency and output questions have original evidence for unchanged boundaries plus new destination/capacity and integrated results. The color research's source/display interpretation, saved-profile and pixel questions have independent native/standard references, actual saved images, rejection checks and bounded local comparison. Both researches are completed for their declared scope. Historical color evidence retains its original meaning. Unverified platform/workload limits and the unplanned custom ICC possibility remain explicit. Documents stay at their current locations.
+
+## Follow-Up — 2026-10-23
+
+Renamed `scripts/spikes/video-frames-phase11.ts` to `scripts/spikes/video-frames-built-cli-smoke.ts` to describe its ongoing purpose. Updated the related documentation links.
 
 ## Related Research
 
