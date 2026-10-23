@@ -415,11 +415,11 @@ async function main() {
     const bytes = await scratchBytes(lab.path);
     assert.ok(
       bytes < MAX_RETAINED,
-      "Retained Phase 11 artifacts must stay below the declared 3 MiB allowance",
+      "Retained built-CLI smoke artifacts must stay below the declared 3 MiB allowance",
     );
     console.log(
       JSON.stringify({
-        syntheticPhase11: "passed",
+        builtCliSmoke: "passed",
         exportedImages: 43,
         retainedBytes: bytes,
         platform: process.platform,
