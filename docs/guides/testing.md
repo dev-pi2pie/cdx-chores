@@ -142,10 +142,10 @@ The manual probes in [`scripts/duckdb-compatibility/`](../../scripts/duckdb-comp
 | Probe | Runtime | Coverage |
 | --- | --- | --- |
 | [`run.mjs`](../../scripts/duckdb-compatibility/run.mjs) | Node.js | SQL/API differences, bounded reader cleanup, storage creation and read-only interoperability |
-| [`product.mjs`](../../scripts/duckdb-compatibility/product.mjs) | Bun | Shared source preparation, query/introspection, Parquet preview, and expected reader-reuse failures |
+| [`product.mjs`](../../scripts/duckdb-compatibility/product.mjs) | Bun | Shared source preparation, query/introspection and Parquet preview, with historical reader-reuse failures or adapted cleanup checks |
 | [`built.mjs`](../../scripts/duckdb-compatibility/built.mjs) | Node.js | Built CLI query/extract, shaped Excel, precision, and database immutability |
 | [`extensions.mjs`](../../scripts/duckdb-compatibility/extensions.mjs) | Node.js or Bun | Explicit signed installation, offline loading, and corrupt/incompatible extension rejection |
 
 The first three probes accept `--package-root` and an empty `--work-dir`. Their headers list additional required inputs. The extension probe accepts `--scratch-dir` and creates a unique cache. It downloads extensions explicitly. Review npm artifacts before executing any probe, and preserve DuckDB signature and engine/platform checks.
 
-Reports assert expected differences as well as compatible behavior. Expected failures count as successful comparisons and remain migration requirements. Record results, coverage limits, and required adaptations in the [shared migration record](../plans/jobs/2026-11-06-v0.2.2-canary.2-dependency-refresh.md#phase-2-duckdb-2-evaluation).
+Phase 2 reports assert expected differences as well as compatible behavior. The expected reader-reuse failures identified cleanup requirements implemented in Phase 3. For an adapted candidate copy, run `product.mjs` with `--generation candidate --expect-reader-cleanup` to require reader reuse to pass. Keep comparative results separate from current migration verification in the [shared migration record](../plans/jobs/2026-11-06-v0.2.2-canary.2-dependency-refresh.md).
