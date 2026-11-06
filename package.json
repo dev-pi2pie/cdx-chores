@@ -52,7 +52,7 @@
     "format:check": "oxfmt --check src test scripts package.json tsconfig.json .oxlintrc.json .oxfmtrc.json"
   },
   "dependencies": {
-    "@duckdb/node-api": "^1.5.6-r.2",
+    "@duckdb/node-api": "^2.0.0-r.1",
     "@inquirer/prompts": "8.7.5",
     "@inquirer/search": "4.3.6",
     "@openai/codex-sdk": "^0.167.0",
