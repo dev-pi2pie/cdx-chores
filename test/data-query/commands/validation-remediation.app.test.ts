@@ -1,23 +1,15 @@
+import { existsSync } from "node:fs";
+
 import {
   chmod,
-  readFile,
-  writeFile,
   join,
   describe,
   expect,
   test,
-  seedDataExtractFixtures,
-  seedAmbiguousDuckDbSourceFixture,
-  seedDuckDbQuotedCommaSourceFixture,
-  seedDuckDbWorkspaceFixture,
-  seedSingleTableDuckDbFixture,
-  seedStackedMergedBandFixture,
   REPO_ROOT,
   runCli,
-  toRepoRelativePath,
   withTempFixtureDir,
   fixturePath,
-  createHeaderSuggestionStub,
 } from "./support";
 
 describe("CLI data query command validation and remediation", () => {
@@ -134,12 +126,11 @@ describe("CLI data query command validation and remediation", () => {
     expect(result.stderr).toContain("--relation bundle cannot contain empty bindings");
   });
 
-  test("reports install-unavailable guidance when SQLite cannot cache extensions", async () => {
+  test("reports missing SQLite extensions without writes and permission failures on explicit install", async () => {
     await withTempFixtureDir("query-home-sqlite", async (tempHome) => {
       await chmod(tempHome, 0o500);
-
-      const result = runCli(
-        [
+      try {
+        const args = [
           "data",
           "query",
           fixturePath("multi.sqlite"),
@@ -147,14 +138,29 @@ describe("CLI data query command validation and remediation", () => {
           "users",
           "--sql",
           "select * from file",
-        ],
-        REPO_ROOT,
-        { HOME: tempHome },
-      );
+        ];
+        const env = { HOME: tempHome, FORCE_COLOR: undefined };
+        const cache = join(tempHome, ".duckdb");
+        const result = runCli(args, REPO_ROOT, env);
 
-      expect(result.exitCode).toBe(2);
-      expect(result.stderr).toContain("requires the DuckDB sqlite extension");
-      expect(result.stderr).toContain("cannot install or cache it");
+        expect(result.exitCode).toBe(2);
+        expect(result.stdout).toBe("");
+        expect(result.stderr).toContain("requires the DuckDB sqlite extension");
+        expect(result.stderr).toContain("Install it explicitly");
+        expect(existsSync(cache)).toBe(false);
+
+        const retry = runCli([...args, "--install-missing-extension"], REPO_ROOT, env);
+
+        expect(retry.exitCode).toBe(2);
+        expect(retry.stdout).toBe("");
+        expect(retry.stderr).toContain("Installing DuckDB extension: sqlite");
+        expect(retry.stderr).toContain("Failed to install DuckDB sqlite extension");
+        expect(retry.stderr).toContain("Failed to create directory");
+        expect(retry.stderr).toContain("Permission denied");
+        expect(existsSync(cache)).toBe(false);
+      } finally {
+        await chmod(tempHome, 0o700);
+      }
     });
   });
 

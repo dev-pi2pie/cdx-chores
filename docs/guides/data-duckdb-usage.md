@@ -53,6 +53,8 @@ cdx-chores data duckdb extension install --all-supported
 
 This backend view is separate from top-level `cdx-chores doctor`, which reports workflow-level capability impact.
 
+Reported installability is inferred from extension load errors. Actual cache-write and network failures are reported during explicit installation.
+
 Inspection and ordinary query, extract and Parquet preview connections disable automatic extension installation and loading. Managed SQLite and Excel extensions are loaded explicitly from the matching cache. Missing extensions produce installation guidance without downloading or populating that cache. Use the explicit install commands or the query opt-in flag to authorize installation.
 
 User-facing cache paths are sanitized to use `$HOME/.duckdb/...` instead of revealing machine-specific absolute home paths.
