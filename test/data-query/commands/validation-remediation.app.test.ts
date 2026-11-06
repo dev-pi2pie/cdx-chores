@@ -159,6 +159,7 @@ describe("CLI data query command validation and remediation", () => {
         expect(retry.stderr).toContain("Permission denied");
         expect(existsSync(cache)).toBe(false);
       } finally {
+        // Restore write permission before fixture cleanup.
         await chmod(tempHome, 0o700);
       }
     });
