@@ -18,7 +18,7 @@ afterAll(async () => {
 });
 
 describe("codex document rename title extractor", () => {
-  test("extracts pdf evidence from a metadata-rich fixture", async () => {
+  test("extracts pdf metadata and first-page text from a metadata-rich fixture", async () => {
     const fixturePath = join(REPO_ROOT, "test", "fixtures", "docs", "metadata-rich.pdf");
 
     const result = await __testOnlyExtractDocumentTitleEvidenceForPath(fixturePath);
@@ -31,14 +31,10 @@ describe("codex document rename title extractor", () => {
     expect(result.evidence.detectedType).toBe("pdf");
     expect(result.evidence.extension).toBe(".pdf");
     expect(result.evidence.filename).toBe("metadata-rich.pdf");
-    expect(typeof result.evidence.metadata?.pageCount).toBe("number");
-    expect((result.evidence.metadata?.pageCount as number) > 0).toBe(true);
-
-    const signalCount =
-      result.evidence.titleCandidates.length +
-      (result.evidence.headings?.length ?? 0) +
-      (result.evidence.leadText ? 1 : 0);
-    expect(signalCount > 0).toBe(true);
+    expect(result.evidence.metadata?.pageCount).toBe(4);
+    expect(result.evidence.metadata?.pdfTitle).toBe("Fixture PDF Title");
+    expect(result.evidence.titleCandidates[0]).toBe("Fixture PDF Title");
+    expect(result.evidence.leadText).toContain("Codex analyzers only run for eligible file types.");
   });
 
   test("returns pdf_no_text for weak/no-text pdf proxy fixture", async () => {

@@ -1,7 +1,7 @@
 ---
 title: "Data DuckDB Usage"
 created-date: 2026-03-12
-modified-date: 2026-08-16
+modified-date: 2026-11-06
 status: completed
 agent: codex
 ---
@@ -12,7 +12,7 @@ agent: codex
 
 Current stable scope:
 
-- read-only DuckDB extension inspection through `doctor`
+- DuckDB extension inspection through `doctor`
 - explicit install commands for managed extensions
 - managed extensions:
   - `sqlite`
@@ -52,6 +52,10 @@ cdx-chores data duckdb extension install --all-supported
 - per-extension cache path information reported by DuckDB when available
 
 This backend view is separate from top-level `cdx-chores doctor`, which reports workflow-level capability impact.
+
+Reported installability is inferred from extension load errors. Actual cache-write and network failures are reported during explicit installation.
+
+Inspection and ordinary query, extract and Parquet preview connections disable automatic extension installation and loading. Managed SQLite and Excel extensions are loaded explicitly from the matching cache. Missing extensions produce installation guidance without downloading or populating that cache. Use the explicit install commands or the query opt-in flag to authorize installation.
 
 User-facing cache paths are sanitized to use `$HOME/.duckdb/...` instead of revealing machine-specific absolute home paths.
 
@@ -99,3 +103,34 @@ That means one extension can be installed for the current runtime while another 
 - `cdx-chores data duckdb extension install <name>` is the primary repair path
 
 Manual cache cleanup should be treated as an advanced fallback, not the primary workflow.
+
+### Practical impact on data commands
+
+- `data query` runs submitted SQL using the installed DuckDB engine. After an upgrade, saved queries may return different results or raise errors; review the [migration guidance](#duckdb-2-migration) before replaying them.
+- `data extract` retains its shaping controls and CSV/TSV/JSON outputs. Excel and SQLite inputs require explicitly installed extensions matching the current engine.
+- `data query codex` inspects sources and drafts SQL without executing it. Drafted SQL follows the engine's semantics when executed later.
+- `data parquet preview` retains its existing preview controls and output.
+- Lightweight `data preview`, CSV/TSV/JSON conversions, and `data stack` use independent processing paths. Queries subsequently run against their output use the installed DuckDB engine.
+
+Under DuckDB 2, a filter such as `status ~ 'active'` can also match `inactive`. Use `regexp_full_match(status, 'active')` when whole-string matching is intended.
+
+### DuckDB 2 migration
+
+The `0.2.2-canary.2` baseline uses `@duckdb/node-api@2.0.0-r.1` with DuckDB `2.0.0`. Install matching extensions for the new runtime using the explicit commands above. An older runtime's cache does not satisfy that requirement.
+
+Submitted SQL, including saved queries and Codex drafts, runs with DuckDB 2 semantics. Review these changes before replaying older SQL:
+
+| Earlier behavior | DuckDB 2 behavior | Migration |
+| --- | --- | --- |
+| `~` matches the whole string | Matches a substring | Use `regexp_full_match` for whole-string matching. |
+| `x -> x + 1` lambda | Disabled by default | Use `lambda x: x + 1`. |
+| `2 * 3!` → `(2 * 3)!` = `720` | `2 * 3!` → `2 * (3!)` = `12` | Use parentheses to make the calculation order explicit. |
+| `X'AB'` / `B'101'` are text | Produce `BLOB` / `BIT` | Use ordinary strings when text is intended. |
+| Untyped CTAS `NULL` infers `INTEGER` | Infers a NULL-only type | Cast `NULL` to the intended column type. |
+| Integer division/modulo by zero returns NULL | Raises an error | Use `TRY(...)` when NULL is intended. |
+| Binder errors leave an explicit transaction usable | Abort the transaction | Roll back before continuing. |
+| `preserve_identifier_case` is Boolean | Uses string values | Use `preserve_case` / `lowercase`. Boolean aliases still work. |
+
+Queries are not automatically rewritten. See the [official migration guide](https://duckdb.org/docs/2.0/operations_manual/migration) for additional changes and the [data query guide](data-query-usage.md) for command usage.
+
+DuckDB input files are attached read-only. DuckDB 2 reads supported older-format files without converting the source. New databases created with its default storage are unreadable by DuckDB 1.x. For files that must be read by 1.5.6, explicitly create them with `STORAGE_VERSION 'v1.5.6'`. This selects a file format independently of dependency pinning. The installed engine checks whether it supports the supplied target. See [storage compatibility](https://duckdb.org/docs/2.0/internals/storage).

@@ -35,16 +35,20 @@ export async function executeDataQueryForTable(
 ): Promise<DataQueryTableResult> {
   try {
     const reader = await connection.streamAndReadUntil(sql, rowLimit + 1);
-    assertResultSet(reader);
-    const columns = reader.deduplicatedColumnNames();
-    const allRows = reader.getRowObjectsJson() as Array<Record<string, unknown>>;
-    const truncated = allRows.length > rowLimit || !reader.done;
-    const visibleRows = allRows.slice(0, rowLimit);
-    return {
-      columns,
-      rows: normalizeResultRows(columns, visibleRows),
-      truncated,
-    };
+    try {
+      assertResultSet(reader);
+      const columns = reader.deduplicatedColumnNames();
+      const allRows = reader.getRowObjectsJson() as Array<Record<string, unknown>>;
+      const truncated = allRows.length > rowLimit || !reader.done;
+      const visibleRows = allRows.slice(0, rowLimit);
+      return {
+        columns,
+        rows: normalizeResultRows(columns, visibleRows),
+        truncated,
+      };
+    } finally {
+      reader.closeSync();
+    }
   } catch (error) {
     if (error instanceof CliError) {
       throw error;

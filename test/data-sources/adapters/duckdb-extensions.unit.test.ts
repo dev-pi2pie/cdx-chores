@@ -138,6 +138,33 @@ function createFakeExtensionState(
 }
 
 describe("DuckDB extension lifecycle helpers", () => {
+  test("requires explicit opt-in before installing a missing extension", async () => {
+    const connection = new FakeDuckDbConnection({
+      extensions: {
+        excel: createFakeExtensionState("/tmp/fake-duckdb/excel.duckdb_extension", {
+          installed: false,
+          loaded: false,
+        }),
+        sqlite_scanner: createFakeExtensionState(
+          "/tmp/fake-duckdb/sqlite_scanner.duckdb_extension",
+          {
+            installed: false,
+            loaded: false,
+          },
+        ),
+      },
+    });
+
+    await expect(
+      ensureDuckDbManagedExtensionLoaded(connection as unknown as DuckDBConnection, "sqlite"),
+    ).rejects.toMatchObject({
+      code: "DUCKDB_EXTENSION_UNAVAILABLE",
+      exitCode: 2,
+      message: expect.stringContaining("Install it explicitly"),
+    });
+    expect(connection.installCalls).toEqual([]);
+  });
+
   test("installs and loads an installable missing extension", async () => {
     const connection = new FakeDuckDbConnection({
       extensions: {

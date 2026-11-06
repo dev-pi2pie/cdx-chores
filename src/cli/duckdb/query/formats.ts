@@ -2,7 +2,7 @@ import type { DuckDBConnection } from "@duckdb/node-api";
 import { extname } from "node:path";
 
 import { CliError } from "../../errors";
-import { type DuckDbManagedExtensionName } from "../extensions";
+import { configureDuckDbExtensionLoading, type DuckDbManagedExtensionName } from "../extensions";
 import { DATA_QUERY_INPUT_FORMAT_VALUES, type DataQueryInputFormat } from "./types";
 
 const INPUT_FORMAT_EXTENSION_MAP: Record<string, DataQueryInputFormat> = {
@@ -50,10 +50,14 @@ export function detectDataQueryInputFormat(
 }
 
 export async function createDuckDbConnection(): Promise<DuckDBConnection> {
+  let connection: DuckDBConnection | undefined;
   try {
     const duckdb = await import("@duckdb/node-api");
-    return await duckdb.DuckDBConnection.create();
+    connection = await duckdb.DuckDBConnection.create();
+    await configureDuckDbExtensionLoading(connection);
+    return connection;
   } catch (error) {
+    connection?.closeSync();
     throw new CliError(`DuckDB is unavailable for data query: ${toErrorMessage(error)}`, {
       code: "DUCKDB_UNAVAILABLE",
       exitCode: 2,
