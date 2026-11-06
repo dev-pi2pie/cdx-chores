@@ -136,4 +136,77 @@ describe("DuckDB bounded reader reuse", () => {
       }
     });
   });
+
+  test.each(["single-source", "workspace"] as const)(
+    "captures VARIANT schema and values before closing %s previews",
+    async (mode) => {
+      await requireNativePrerequisites("duckdb");
+      await withTempFixtureDir("query-variant-reader", async (fixtureDir) => {
+        const inputPath = await seedDuckDbWorkspaceFixture(fixtureDir);
+        const writer = await createDuckDbConnection();
+        try {
+          await writer.run(`attach ${escapeSqlStringLiteral(inputPath)} as fixture`);
+          await writer.run(
+            "create table fixture.main.variants as select range as id, 3::VARIANT as value, [3::VARIANT] as nested from range(10000)",
+          );
+          await writer.run("checkpoint");
+          await writer.run("detach fixture");
+        } finally {
+          writer.closeSync();
+        }
+
+        const connection = await createDuckDbConnection();
+        try {
+          const result =
+            mode === "single-source"
+              ? await collectDataQuerySourceIntrospection(
+                  connection,
+                  inputPath,
+                  "duckdb",
+                  { source: "variants" },
+                  2,
+                )
+              : await collectDataQueryWorkspaceIntrospection(
+                  connection,
+                  inputPath,
+                  "duckdb",
+                  [
+                    { alias: "variants", source: "variants" },
+                    { alias: "time", source: "time_entries" },
+                  ],
+                  2,
+                );
+          const preview = result.kind === "workspace" ? result.relations[0]! : result;
+          expect(preview.columns).toEqual([
+            { name: "id", type: "BIGINT" },
+            { name: "value", type: "VARIANT" },
+            { name: "nested", type: "VARIANT[]" },
+          ]);
+          expect(preview.sampleRows).toEqual([
+            { id: "0", value: "3", nested: "[3]" },
+            { id: "1", value: "3", nested: "[3]" },
+          ]);
+          expect(preview.truncated).toBe(true);
+          if (result.kind === "workspace") {
+            expect(result.relations[1]?.alias).toBe("time");
+            expect(result.relations[1]?.sampleRows).toEqual([
+              { entry_id: "1", team: "Core", hours: "8" },
+              { entry_id: "2", team: "Infra", hours: "5" },
+            ]);
+          }
+          const relation = mode === "single-source" ? "file" : "variants";
+          expect(
+            (
+              await executeDataQueryForAllRows(
+                connection,
+                `select count(*) as count from ${relation}`,
+              )
+            ).rows,
+          ).toEqual([{ count: "10000" }]);
+        } finally {
+          connection.closeSync();
+        }
+      });
+    },
+  );
 });

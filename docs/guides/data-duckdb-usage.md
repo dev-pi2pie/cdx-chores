@@ -53,7 +53,7 @@ cdx-chores data duckdb extension install --all-supported
 
 This backend view is separate from top-level `cdx-chores doctor`, which reports workflow-level capability impact.
 
-Inspection and ordinary query, extract and Parquet preview connections disable automatic extension installation and loading. Managed SQLite and Excel extensions are loaded explicitly from the matching cache. Missing extensions produce installation guidance without downloading or populating that cache. Use the install commands below or the query opt-in flag to authorize installation.
+Inspection and ordinary query, extract and Parquet preview connections disable automatic extension installation and loading. Managed SQLite and Excel extensions are loaded explicitly from the matching cache. Missing extensions produce installation guidance without downloading or populating that cache. Use the explicit install commands or the query opt-in flag to authorize installation.
 
 User-facing cache paths are sanitized to use `$HOME/.duckdb/...` instead of revealing machine-specific absolute home paths.
 
@@ -101,3 +101,24 @@ That means one extension can be installed for the current runtime while another 
 - `cdx-chores data duckdb extension install <name>` is the primary repair path
 
 Manual cache cleanup should be treated as an advanced fallback, not the primary workflow.
+
+### DuckDB 2 migration
+
+The `0.2.2-canary.2` baseline uses `@duckdb/node-api@2.0.0-r.1` with DuckDB `2.0.0`. Install matching extensions for the new runtime using the explicit commands above. An older runtime's cache does not satisfy that requirement.
+
+Submitted SQL, including saved queries and Codex drafts, runs with DuckDB 2 semantics. Review these changes before replaying older SQL:
+
+| Earlier behavior | DuckDB 2 behavior | Migration |
+| --- | --- | --- |
+| `~` matches the whole string | Matches a substring | Use `regexp_full_match` for whole-string matching. |
+| `x -> x + 1` lambda | Disabled by default | Use `lambda x: x + 1`. |
+| `2 * 3!` returns `720` | Returns `12` | Use `(2 * 3)!` for `720`. |
+| `X'AB'` / `B'101'` are text | Produce `BLOB` / `BIT` | Use ordinary strings when text is intended. |
+| Untyped CTAS `NULL` infers `INTEGER` | Infers a NULL-only type | Cast `NULL` to the intended column type. |
+| Integer division/modulo by zero returns NULL | Raises an error | Use `TRY(...)` when NULL is intended. |
+| Binder errors leave an explicit transaction usable | Abort the transaction | Roll back before continuing. |
+| `preserve_identifier_case` is Boolean | Uses string values | Use `preserve_case` / `lowercase`. Boolean aliases still work. |
+
+Queries are not automatically rewritten. See the [official migration guide](https://duckdb.org/docs/2.0/operations_manual/migration) for additional changes and the [data query guide](data-query-usage.md) for command usage.
+
+DuckDB input files are attached read-only. DuckDB 2 reads older-format files without converting the source. New databases created with its default storage are unreadable by DuckDB 1.x. For files that must be read by 1.5.6, explicitly create them with `STORAGE_VERSION 'v1.5.6'`. This selects a file format, independently of the installed Node API version. See [storage compatibility](https://duckdb.org/docs/2.0/internals/storage).

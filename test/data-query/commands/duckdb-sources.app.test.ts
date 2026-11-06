@@ -1,5 +1,10 @@
 import { requireNativePrerequisites } from "../../helpers/native-prerequisites";
 import {
+  collectDataQuerySourceIntrospection,
+  createDuckDbConnection,
+  executeDataQueryForAllRows,
+} from "../../../src/cli/duckdb/query";
+import {
   chmod,
   readFile,
   writeFile,
@@ -22,6 +27,64 @@ import {
 } from "./support";
 
 describe("CLI data query command DuckDB sources", () => {
+  test("reads an older-format DuckDB file without changing its bytes", async () => {
+    await requireNativePrerequisites("duckdb");
+
+    await withTempFixtureDir("query-duckdb-older-format", async (fixtureDir) => {
+      const inputPath = await seedSingleTableDuckDbFixture(fixtureDir, {
+        storageVersion: "v1.5.6",
+      });
+      const originalBytes = await readFile(inputPath);
+      const connection = await createDuckDbConnection();
+      try {
+        const introspection = await collectDataQuerySourceIntrospection(
+          connection,
+          inputPath,
+          "duckdb",
+          { source: "users" },
+          2,
+        );
+        expect(introspection.columns).toEqual([
+          { name: "id", type: "INTEGER" },
+          { name: "name", type: "VARCHAR" },
+        ]);
+        expect(introspection.sampleRows).toEqual([
+          { id: "1", name: "Ada" },
+          { id: "2", name: "Bob" },
+        ]);
+        expect(introspection.truncated).toBe(false);
+        expect(
+          await executeDataQueryForAllRows(connection, "select id, name from file order by id"),
+        ).toEqual({
+          columns: ["id", "name"],
+          rows: [
+            { id: 1, name: "Ada" },
+            { id: 2, name: "Bob" },
+          ],
+        });
+        await expect(
+          connection.run("insert into \"__cdx_input_db\".main.users values (3, 'Cyd')"),
+        ).rejects.toThrow(/read.only/i);
+      } finally {
+        connection.closeSync();
+      }
+
+      const result = runCli([
+        "data",
+        "query",
+        toRepoRelativePath(inputPath),
+        "--sql",
+        "select id, name from file order by id",
+      ]);
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("Format: duckdb");
+      expect(result.stdout).toContain("1   | Ada");
+      expect(result.stdout).toContain("2   | Bob");
+      expect(await readFile(inputPath)).toEqual(originalBytes);
+    });
+  });
+
   test("queries DuckDB-file input end to end", async () => {
     await requireNativePrerequisites("duckdb");
 

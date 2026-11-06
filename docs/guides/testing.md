@@ -127,9 +127,15 @@ DOCX validation uses owned OS temporary storage for generated inputs, builds, pa
 
 Video frames regular unit/application tests use controlled fixtures and injected tool behavior. Real-video, installed FFmpeg/FFprobe export checks and bounded synthetic workload measurements are explicit manual smoke checks, outside those suites and CI. Run them under the relevant implementation plan's budgets. Keep private inputs, outputs, captures and identifying details out of public records; record only the processing operation and passed/failed/not-tested outcome. Public synthetic evidence can describe reproducible cases and measured results.
 
+### DuckDB fixtures and regressions
+
+Routine DuckDB fixtures use the installed Node API engine's default storage. The playground generator retains its `seed`, `clean` and `reset` commands. Product tests use their existing seeders and `withTempFixtureDir`, which removes temporary files after database resources close. One older-format smoke case uses a DuckDB 2 writer with `STORAGE_VERSION 'v1.5.6'` to check read-only attachment, schema/rows and unchanged bytes. Routine tests require no old engine or preserved database binary.
+
+Reader regressions under `test/data-query/adapters/` exercise bounded result reuse, introspection failure cleanup and `VARIANT` metadata capture before closure. The [Phase 2 comparison](../plans/jobs/2026-11-06-v0.2.2-canary.2-dependency-refresh.md#comparison-evidence) retains actual older-producer evidence separately from newer-writer/older-format coverage.
+
 ### DuckDB compatibility evaluation
 
-The manual probes in [`scripts/duckdb-compatibility/`](../../scripts/duckdb-compatibility/) compare `@duckdb/node-api@1.5.6-r.2` with `2.0.0-r.1`. Supply separate reviewed package roots, copied fixtures/databases, and isolated extension caches. Product probes require copied source and built output with the selected dependency. Keep the repository manifest and original inputs unchanged.
+The manual probes in [`scripts/duckdb-compatibility/`](../../scripts/duckdb-compatibility/) compare `@duckdb/node-api@1.5.6-r.2` with `2.0.0-r.1`. Their original product comparisons include the expected failures documented in Phase 2. Use the routine regressions above to verify the migrated repository. For comparative evaluation, supply separate reviewed package roots, copied fixtures/databases, and isolated extension caches. Product probes require copied source and built output with the selected dependency. Keep the repository manifest and original inputs unchanged.
 
 | Probe | Runtime | Coverage |
 | --- | --- | --- |

@@ -42,7 +42,10 @@ export async function seedDuckDbWorkspaceFixture(outputDir: string): Promise<str
   return outputPath;
 }
 
-export async function seedSingleTableDuckDbFixture(outputDir: string): Promise<string> {
+export async function seedSingleTableDuckDbFixture(
+  outputDir: string,
+  options: { storageVersion?: "v1.5.6" } = {},
+): Promise<string> {
   const { DuckDBConnection } = await import("@duckdb/node-api");
 
   const outputPath = join(outputDir, "single.duckdb");
@@ -50,7 +53,8 @@ export async function seedSingleTableDuckDbFixture(outputDir: string): Promise<s
 
   const connection = await DuckDBConnection.create();
   try {
-    await connection.run(`attach '${outputPath.replaceAll("'", "''")}' as fixture`);
+    const storageOption = options.storageVersion ? " (storage_version 'v1.5.6')" : "";
+    await connection.run(`attach '${outputPath.replaceAll("'", "''")}' as fixture${storageOption}`);
     await connection.run("create table fixture.main.users(id integer, name varchar)");
     await connection.run("insert into fixture.main.users values (1, 'Ada'), (2, 'Bob')");
     await connection.run("checkpoint");
