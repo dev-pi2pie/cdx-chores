@@ -44,6 +44,15 @@ Additional prerequisites depend on the selected suite:
 
 Node preflight requires Node.js 22.23.0 or later. Keep package dependencies aligned with the lockfile. The runner checks installed tools and existing native caches; it does not install tools or download missing DuckDB extensions. Install or repair a reported prerequisite before retrying. The suite requirements are defined in [`suite-policy.ts`](../../scripts/testing/suites/suite-policy.ts).
 
+Application tests require Excel and SQLite extensions matching the installed DuckDB runtime. After a DuckDB upgrade, extensions cached for an older runtime do not satisfy preflight. From the repository root, build the current checkout and explicitly install its matching extensions before running the application suite or `test:all`:
+
+```bash
+bun run build
+bun run cli data duckdb extension install --all-supported
+```
+
+See [DuckDB extension setup](data-duckdb-usage.md) for inspection and troubleshooting.
+
 ## CI publishing runtimes
 
 The npm and GitHub Packages workflows build with Node.js 24.22.1 and Bun 1.4.4. These exact workflow versions are separate from the package compatibility minimum and do not require a `packageManager` field. Both workflows use frozen lockfile installation.
