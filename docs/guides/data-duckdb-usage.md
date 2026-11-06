@@ -104,6 +104,16 @@ That means one extension can be installed for the current runtime while another 
 
 Manual cache cleanup should be treated as an advanced fallback, not the primary workflow.
 
+### Practical impact on data commands
+
+- `data query` runs submitted SQL using the installed DuckDB engine. After an upgrade, saved queries may return different results or raise errors; review the [migration guidance](#duckdb-2-migration) before replaying them.
+- `data extract` retains its shaping controls and CSV/TSV/JSON outputs. Excel and SQLite inputs require explicitly installed extensions matching the current engine.
+- `data query codex` inspects sources and drafts SQL without executing it. Drafted SQL follows the engine's semantics when executed later.
+- `data parquet preview` retains its existing preview controls and output.
+- Lightweight `data preview`, CSV/TSV/JSON conversions, and `data stack` use independent processing paths. Queries subsequently run against their output use the installed DuckDB engine.
+
+Under DuckDB 2, a filter such as `status ~ 'active'` can also match `inactive`. Use `regexp_full_match(status, 'active')` when whole-string matching is intended.
+
 ### DuckDB 2 migration
 
 The `0.2.2-canary.2` baseline uses `@duckdb/node-api@2.0.0-r.1` with DuckDB `2.0.0`. Install matching extensions for the new runtime using the explicit commands above. An older runtime's cache does not satisfy that requirement.
@@ -114,7 +124,7 @@ Submitted SQL, including saved queries and Codex drafts, runs with DuckDB 2 sema
 | --- | --- | --- |
 | `~` matches the whole string | Matches a substring | Use `regexp_full_match` for whole-string matching. |
 | `x -> x + 1` lambda | Disabled by default | Use `lambda x: x + 1`. |
-| `2 * 3!` returns `720` | Returns `12` | Use `(2 * 3)!` for `720`. |
+| `2 * 3!` → `(2 * 3)!` = `720` | `2 * 3!` → `2 * (3!)` = `12` | Use parentheses to make the calculation order explicit. |
 | `X'AB'` / `B'101'` are text | Produce `BLOB` / `BIT` | Use ordinary strings when text is intended. |
 | Untyped CTAS `NULL` infers `INTEGER` | Infers a NULL-only type | Cast `NULL` to the intended column type. |
 | Integer division/modulo by zero returns NULL | Raises an error | Use `TRY(...)` when NULL is intended. |
