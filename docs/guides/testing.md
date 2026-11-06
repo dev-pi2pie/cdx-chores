@@ -1,7 +1,7 @@
 ---
 title: "Contributor Testing Guide"
 created-date: 2026-09-06
-modified-date: 2026-10-23
+modified-date: 2026-11-06
 status: completed
 agent: codex
 ---
@@ -126,3 +126,18 @@ Keep manual smoke-test artifacts under ignored paths in `examples/playground/`. 
 DOCX validation uses owned OS temporary storage for generated inputs, builds, packages, consumers, caches, and reports, with cleanup after confirmed process settlement. Only explicit `--smoke --keep-artifacts` exports inspectable smoke files to the approved ignored playground entry. See [manual commands and retention](../plans/jobs/2026-10-16-docx-reader-and-mammoth-replacement.md#manual-validation); routine product regressions remain test-owned.
 
 Video frames regular unit/application tests use controlled fixtures and injected tool behavior. Real-video, installed FFmpeg/FFprobe export checks and bounded synthetic workload measurements are explicit manual smoke checks, outside those suites and CI. Run them under the relevant implementation plan's budgets. Keep private inputs, outputs, captures and identifying details out of public records; record only the processing operation and passed/failed/not-tested outcome. Public synthetic evidence can describe reproducible cases and measured results.
+
+### DuckDB compatibility evaluation
+
+The manual probes in [`scripts/duckdb-compatibility/`](../../scripts/duckdb-compatibility/) compare `@duckdb/node-api@1.5.6-r.2` with `2.0.0-r.1`. Supply separate reviewed package roots, copied fixtures/databases, and isolated extension caches. Product probes require copied source and built output with the selected dependency. Keep the repository manifest and original inputs unchanged.
+
+| Probe | Runtime | Coverage |
+| --- | --- | --- |
+| [`run.mjs`](../../scripts/duckdb-compatibility/run.mjs) | Node.js | SQL/API differences, bounded reader cleanup, storage creation and read-only interoperability |
+| [`product.mjs`](../../scripts/duckdb-compatibility/product.mjs) | Bun | Shared source preparation, query/introspection, Parquet preview, and expected reader-reuse failures |
+| [`built.mjs`](../../scripts/duckdb-compatibility/built.mjs) | Node.js | Built CLI query/extract, shaped Excel, precision, and database immutability |
+| [`extensions.mjs`](../../scripts/duckdb-compatibility/extensions.mjs) | Node.js or Bun | Explicit signed installation, offline loading, and corrupt/incompatible extension rejection |
+
+The first three probes accept `--package-root` and an empty `--work-dir`. Their headers list additional required inputs. The extension probe accepts `--scratch-dir` and creates a unique cache. It downloads extensions explicitly. Review npm artifacts before executing any probe, and preserve DuckDB signature and engine/platform checks.
+
+Reports assert expected differences as well as compatible behavior. Expected failures count as successful comparisons and remain migration requirements. Record results, coverage limits, and required adaptations in the [shared migration record](../plans/jobs/2026-11-06-v0.2.2-canary.2-dependency-refresh.md#phase-2-duckdb-2-evaluation).

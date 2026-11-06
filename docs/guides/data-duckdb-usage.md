@@ -1,7 +1,7 @@
 ---
 title: "Data DuckDB Usage"
 created-date: 2026-03-12
-modified-date: 2026-08-16
+modified-date: 2026-11-06
 status: completed
 agent: codex
 ---
@@ -12,7 +12,7 @@ agent: codex
 
 Current stable scope:
 
-- read-only DuckDB extension inspection through `doctor`
+- DuckDB extension inspection through `doctor`
 - explicit install commands for managed extensions
 - managed extensions:
   - `sqlite`
@@ -52,6 +52,8 @@ cdx-chores data duckdb extension install --all-supported
 - per-extension cache path information reported by DuckDB when available
 
 This backend view is separate from top-level `cdx-chores doctor`, which reports workflow-level capability impact.
+
+Known limitation: when SQLite is missing, inspection can implicitly download and cache its extension. The [migration requirements](../plans/jobs/2026-11-06-v0.2.2-canary.2-dependency-refresh.md#phase-3-requirements) include removing this side effect while preserving explicit installation.
 
 User-facing cache paths are sanitized to use `$HOME/.duckdb/...` instead of revealing machine-specific absolute home paths.
 
