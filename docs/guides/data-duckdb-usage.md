@@ -53,7 +53,7 @@ cdx-chores data duckdb extension install --all-supported
 
 This backend view is separate from top-level `cdx-chores doctor`, which reports workflow-level capability impact.
 
-Known limitation: when SQLite is missing, inspection can implicitly download and cache its extension. The [migration requirements](../plans/jobs/2026-11-06-v0.2.2-canary.2-dependency-refresh.md#phase-3-requirements) include removing this side effect while preserving explicit installation.
+Inspection and ordinary query, extract and Parquet preview connections disable automatic extension installation and loading. Managed SQLite and Excel extensions are loaded explicitly from the matching cache. Missing extensions produce installation guidance without downloading or populating that cache. Use the install commands below or the query opt-in flag to authorize installation.
 
 User-facing cache paths are sanitized to use `$HOME/.duckdb/...` instead of revealing machine-specific absolute home paths.
 
