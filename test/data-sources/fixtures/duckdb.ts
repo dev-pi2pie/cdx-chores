@@ -44,7 +44,7 @@ export async function seedDuckDbWorkspaceFixture(outputDir: string): Promise<str
 
 export async function seedSingleTableDuckDbFixture(
   outputDir: string,
-  options: { storageVersion?: "v1.5.6" } = {},
+  options: { storageVersion?: string } = {},
 ): Promise<string> {
   const { DuckDBConnection } = await import("@duckdb/node-api");
 
@@ -53,7 +53,10 @@ export async function seedSingleTableDuckDbFixture(
 
   const connection = await DuckDBConnection.create();
   try {
-    const storageOption = options.storageVersion ? " (storage_version 'v1.5.6')" : "";
+    const storageOption =
+      options.storageVersion === undefined
+        ? ""
+        : ` (storage_version '${options.storageVersion.replaceAll("'", "''")}')`;
     await connection.run(`attach '${outputPath.replaceAll("'", "''")}' as fixture${storageOption}`);
     await connection.run("create table fixture.main.users(id integer, name varchar)");
     await connection.run("insert into fixture.main.users values (1, 'Ada'), (2, 'Bob')");

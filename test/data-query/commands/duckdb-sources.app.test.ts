@@ -53,6 +53,10 @@ describe("CLI data query command DuckDB sources", () => {
           { id: "2", name: "Bob" },
         ]);
         expect(introspection.truncated).toBe(false);
+        const storage = await connection.runAndReadAll(
+          "select tags['storage_version'] from duckdb_databases() where database_name = '__cdx_input_db'",
+        );
+        expect(storage.getRowsJson()).toEqual([["v1.5.0+"]]);
         expect(
           await executeDataQueryForAllRows(connection, "select id, name from file order by id"),
         ).toEqual({

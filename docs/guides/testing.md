@@ -131,6 +131,8 @@ Video frames regular unit/application tests use controlled fixtures and injected
 
 Routine DuckDB fixtures use the installed Node API engine's default storage. The playground generator retains its `seed`, `clean` and `reset` commands. Product tests use their existing seeders and `withTempFixtureDir`, which removes temporary files after database resources close. One older-format smoke case uses a DuckDB 2 writer with `STORAGE_VERSION 'v1.5.6'` to check read-only attachment, schema/rows and unchanged bytes. Routine tests require no old engine or preserved database binary.
 
+The [single-table fixture seeder](../../test/data-sources/fixtures/duckdb.ts) accepts an optional `storageVersion` string. Omit it to keep the engine default. Explicit values are encoded as SQL literals in `ATTACH`, and invalid or unsupported values retain DuckDB's error. Storage targets select file compatibility independently of dependency versions. Fixture regressions cover defaults, an alternate format, native errors and recovery before temporary-directory cleanup.
+
 Reader regressions under `test/data-query/adapters/` exercise bounded result reuse, introspection failure cleanup and `VARIANT` metadata capture before closure. The [Phase 2 comparison](../plans/jobs/2026-11-06-v0.2.2-canary.2-dependency-refresh.md#comparison-evidence) retains actual older-producer evidence separately from newer-writer/older-format coverage.
 
 ### DuckDB compatibility evaluation
