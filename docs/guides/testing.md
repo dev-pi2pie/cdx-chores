@@ -44,6 +44,8 @@ Additional prerequisites depend on the selected suite:
 
 Node preflight requires Node.js 22.23.5 or later. Keep package dependencies aligned with the lockfile. The runner checks installed tools and existing native caches; it does not install tools or download missing DuckDB extensions. Install or repair a reported prerequisite before retrying. The suite requirements are defined in [`suite-policy.ts`](../../scripts/testing/suites/suite-policy.ts).
 
+The package minimum and preflight are lower-bound checks. Inquirer's engine range excludes Node.js 23, Node.js 24 before 24.15.0, and Node.js 25; strict installers can reject those versions. Use an up-to-date Node.js 22, 24, or 26 release. This refresh verifies built-package behavior on 22.23.5, 24.22.3, and 26.13.1; it does not establish compatibility with every version above the minimum.
+
 Application tests require Excel and SQLite extensions matching the installed DuckDB runtime. After a DuckDB upgrade, extensions cached for an older runtime do not satisfy preflight. From the repository root, build the current checkout and explicitly install its matching extensions before running the application suite or `test:all`:
 
 ```bash
