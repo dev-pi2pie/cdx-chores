@@ -1,4 +1,5 @@
 import { requireProcessCapabilities } from "./process-capabilities.ts";
+import { isSupportedNodeVersion } from "./prerequisites.ts";
 import { execFile } from "node:child_process";
 import { constants } from "node:fs";
 import { access, lstat, mkdir, open } from "node:fs/promises";
@@ -94,8 +95,7 @@ try {
     );
     // Match the repository's supported Node runtime floor before any source CLI
     // or native package is exercised by tests.
-    const [major, minor] = versions.node.split(".").map(Number);
-    if (major! < 22 || (major === 22 && minor! < 23)) throw new Error("Unsupported Node runtime.");
+    if (!isSupportedNodeVersion(versions.node)) throw new Error("Unsupported Node runtime.");
   }
   if (suite === "codex") {
     prerequisite = "Installed repository Codex CLI";

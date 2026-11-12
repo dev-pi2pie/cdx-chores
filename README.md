@@ -46,7 +46,9 @@ For doctor checks in Interactive mode, choose `doctor`, then select `Summary`,
 
 Runtime requirement:
 
-- Node.js `>= 22.23.0`
+- Node.js `>= 22.23.5`
+
+Use an up-to-date Node.js 22, 24, or 26 release. Inquirer excludes Node.js 23, Node.js 24 before 24.15.0, and Node.js 25; strict engine checking can reject those versions even though they satisfy the package minimum.
 
 ## Command Overview
 
@@ -83,7 +85,7 @@ Use `cdx-chores doctor` before relying on a command in a script, a CI job, or a 
 | `data extract` reviewed suggestions, `data query codex`                 | Codex-assisted source shaping, semantic header review, and natural-language SQL drafting | Codex support must be configured and an auth/session signal must be available                                                 | Run `cdx-chores doctor`                                                                                            |
 | `md pdf-profile codex`, `md pdf-template codex`, `md pdf-project codex` | Codex-assisted Markdown PDF profile, template, and coordinated project drafting          | Codex support must be configured for Codex-assisted decisions; deterministic fallback paths remain available where documented | Run `cdx-chores doctor`                                                                                            |
 
-The Codex SDK baseline for `v0.2.2-canary.2` is `@openai/codex-sdk` `0.167.0`.
+The Codex SDK baseline for `v0.2.2-canary.3` is `@openai/codex-sdk` `0.167.2`.
 
 Adopted helper commands and explicit `interactive` sessions accept
 `--codex-model`, `--codex-provider`, and `--codex-reasoning-effort`. Model and

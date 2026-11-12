@@ -360,7 +360,7 @@ async function publication(e: Experiment, node: string) {
 
 async function minimumRuntime(e: Experiment, node: string) {
   const version = (await e.tool(node, ["--version"])).stdout.toString("utf8").trim();
-  assert.equal(version, "v22.23.0");
+  assert.equal(version, "v22.23.5");
   for (const [mode, path] of [
     ["module", resolve("dist/esm/index.mjs")],
     ["commonjs", resolve("dist/cjs/index.cjs")],

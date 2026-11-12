@@ -1,7 +1,7 @@
 ---
 title: "Contributor Testing Guide"
 created-date: 2026-09-06
-modified-date: 2026-11-06
+modified-date: 2026-11-12
 status: completed
 agent: codex
 ---
@@ -42,7 +42,9 @@ Additional prerequisites depend on the selected suite:
 | Codex | Node.js and the repository-installed Codex CLI at `node_modules/.bin/codex` |
 | Pandoc | Pandoc available on `PATH` |
 
-Node preflight requires Node.js 22.23.0 or later. Keep package dependencies aligned with the lockfile. The runner checks installed tools and existing native caches; it does not install tools or download missing DuckDB extensions. Install or repair a reported prerequisite before retrying. The suite requirements are defined in [`suite-policy.ts`](../../scripts/testing/suites/suite-policy.ts).
+Node preflight requires Node.js 22.23.5 or later. Keep package dependencies aligned with the lockfile. The runner checks installed tools and existing native caches; it does not install tools or download missing DuckDB extensions. Install or repair a reported prerequisite before retrying. The suite requirements are defined in [`suite-policy.ts`](../../scripts/testing/suites/suite-policy.ts).
+
+The package minimum and preflight are lower-bound checks. Inquirer's engine range excludes Node.js 23, Node.js 24 before 24.15.0, and Node.js 25; strict installers can reject those versions. Use an up-to-date Node.js 22, 24, or 26 release. This refresh verifies built-package behavior on 22.23.5, 24.22.3, and 26.13.1; it does not establish compatibility with every version above the minimum.
 
 Application tests require Excel and SQLite extensions matching the installed DuckDB runtime. After a DuckDB upgrade, extensions cached for an older runtime do not satisfy preflight. From the repository root, build the current checkout and explicitly install its matching extensions before running the application suite or `test:all`:
 
@@ -55,7 +57,7 @@ See [DuckDB extension setup](data-duckdb-usage.md) for inspection and troublesho
 
 ## CI publishing runtimes
 
-The npm and GitHub Packages workflows build with Node.js 24.22.1 and Bun 1.4.4. These exact workflow versions are separate from the package compatibility minimum and do not require a `packageManager` field. Both workflows use frozen lockfile installation.
+The npm and GitHub Packages workflows build with Node.js 24.22.3 and Bun 1.4.4. These exact workflow versions are separate from the package compatibility minimum and do not require a `packageManager` field. Both workflows use frozen lockfile installation.
 
 Actions are pinned to full commit SHAs with release-version comments. The release-notes workflow uses the pinned git-cliff action's default executable version without a separate override. The npm publish step keeps `NODE_AUTH_TOKEN: ""` for its generated registry configuration and authenticates through OIDC; GitHub Packages uses `GITHUB_TOKEN`. The current publishing workflows build packages but do not run the managed test suites. Run the applicable checks before publishing. See the [CI action and runtime refresh record](../plans/jobs/2026-10-23-ci-action-pins-and-runtime-refresh.md) for the reviewed pins, verification, and remaining hardening work.
 
