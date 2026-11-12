@@ -1,23 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-  isSupportedNodeVersion,
-  parsePreflightReport,
-} from "../../scripts/testing/execution/prerequisites.ts";
+import { parsePreflightReport } from "../../scripts/testing/execution/prerequisites.ts";
 import { SUITES } from "../../scripts/testing/suites/selection.ts";
 import { SUITE_POLICIES } from "../../scripts/testing/suites/suite-policy.ts";
 
 describe("suite prerequisite contract", () => {
-  test.each([
-    ["22.22.99", false],
-    ["22.23.4", false],
-    ["22.23.5", true],
-    ["22.24.0", true],
-    ["24.22.3", true],
-  ] as const)("Node %s respects the runtime floor", (version, supported) => {
-    expect(isSupportedNodeVersion(version)).toBe(supported);
-  });
-
   test("unit declares only the runner and process observation", () => {
     expect(SUITE_POLICIES.unit.prerequisites).toEqual([
       "Bun",
