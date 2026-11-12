@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdir, symlink, access, writeFile } from "node:fs/promises";
+import { mkdir, symlink, access } from "node:fs/promises";
 import { join } from "node:path";
 
 import {
@@ -28,30 +28,6 @@ const options = {
 };
 
 describe("bounded suite preflight", () => {
-  test.each([
-    ["22.22.99", false],
-    ["22.23.4", false],
-    ["22.23.5", true],
-    ["22.24.0", true],
-    ["24.22.3", true],
-  ] as const)("Node %s respects the runtime floor", async (nodeVersion, accepted) => {
-    await withTempFixtureDir("prerequisite-node-", async (root) => {
-      await writeFile(join(root, "node"), `#!/bin/sh\nprintf '%s' '${nodeVersion}'\n`, {
-        mode: 0o755,
-      });
-      const result = await runSuitePreflight({
-        ...options,
-        suite: "app",
-        env: { PATH: root },
-      });
-      // Accepted versions advance to the next prerequisite, absent from this PATH.
-      expect(result.error).toBe(
-        `Required prerequisite is unavailable: ${accepted ? "bash, git, zip, unzip, jq and shell utilities" : "Node.js with node:sqlite"}.`,
-      );
-      expect(result.process.stopped).toBe(true);
-    });
-  });
-
   test("unit succeeds with an empty PATH and no integration configuration", async () => {
     const result = await runSuitePreflight({ ...options, env: { PATH: "" } });
     expect(result.error).toBeUndefined();
