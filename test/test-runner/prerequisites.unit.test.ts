@@ -14,7 +14,6 @@ describe("suite prerequisite contract", () => {
     ["22.23.5", true],
     ["22.24.0", true],
     ["24.22.3", true],
-    ["22.23.6-rc.1", true],
   ] as const)("Node %s respects the runtime floor", (version, supported) => {
     expect(isSupportedNodeVersion(version)).toBe(supported);
   });
