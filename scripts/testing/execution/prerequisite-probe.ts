@@ -94,8 +94,9 @@ try {
     );
     // Match the repository's supported Node runtime floor before any source CLI
     // or native package is exercised by tests.
-    const [major, minor] = versions.node.split(".").map(Number);
-    if (major! < 22 || (major === 22 && minor! < 23)) throw new Error("Unsupported Node runtime.");
+    const [major, minor, patch] = versions.node.split(".").map(Number);
+    if (major! < 22 || (major === 22 && (minor! < 23 || (minor === 23 && patch! < 5))))
+      throw new Error("Unsupported Node runtime.");
   }
   if (suite === "codex") {
     prerequisite = "Installed repository Codex CLI";

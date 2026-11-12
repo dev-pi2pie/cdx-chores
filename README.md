@@ -46,7 +46,7 @@ For doctor checks in Interactive mode, choose `doctor`, then select `Summary`,
 
 Runtime requirement:
 
-- Node.js `>= 22.23.0`
+- Node.js `>= 22.23.5`
 
 ## Command Overview
 

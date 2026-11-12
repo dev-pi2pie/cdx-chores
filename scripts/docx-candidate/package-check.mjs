@@ -144,13 +144,13 @@ if (cli) {
       await mkdir(runtime);
       await writeFile(join(runtime, "package.json"), '{"private":true}');
       await npmRun(
-        ["install", "--no-audit", "--no-fund", "--package-lock=false", "node@22.23.0"],
+        ["install", "--no-audit", "--no-fund", "--package-lock=false", "node@22.23.5"],
         runtime,
       );
       const minimumNode = await realpath(join(runtime, "node_modules/node/bin/node"));
       await run(
         minimumNode,
-        ["--eval", 'require("node:assert/strict").equal(process.versions.node, "22.23.0")'],
+        ["--eval", 'require("node:assert/strict").equal(process.versions.node, "22.23.5")'],
         runtime,
       );
       let completed = 0;
