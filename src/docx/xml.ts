@@ -140,12 +140,6 @@ export function parseXml(
     string,
     unknown
   >[]) {
-    const cdata = cdataText(value);
-    if (cdata !== undefined) {
-      // Historical parsing permits leading CDATA and empty trailing sections.
-      if (root && cdata.length) throw new Error("docx_xml_invalid");
-      continue;
-    }
     const parsed = element(value, new Map());
     if (!parsed) continue;
     if (root) throw new Error("docx_xml_invalid");
