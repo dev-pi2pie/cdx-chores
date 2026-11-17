@@ -3,8 +3,10 @@ import { SyntaxValidator } from "fast-xml-validator";
 /** Keep syntax policy shared while callers own diagnostics and recovery. */
 export function isValidXml(xml: string): boolean {
   try {
-    // Upstream 1.4.2 mistakes every initial "<?xml" prefix for a declaration.
-    // A validation-only space after the optional BOM preserves non-declaration PIs.
+    // fast-xml-validator 1.4.4 treats leading xml-prefixed processing instructions
+    // such as <?xml-stylesheet?> as XML declarations.
+    // A space after the optional BOM lets validation accept these processing instructions.
+    // Parsing still uses the original XML.
     const validationXml = xml.replace(/^(\uFEFF?)<\?xml(?=[^\x20\t\r\n?])/, "$1 <?xml");
     return (
       SyntaxValidator.validate(validationXml, {

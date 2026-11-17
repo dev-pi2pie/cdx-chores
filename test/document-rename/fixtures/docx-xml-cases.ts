@@ -152,12 +152,12 @@ export function createDocxXmlCases(): ReviewCase[] {
     {
       id: "review-xml-cdata-trailing-empty",
       options: { documentXml: document + "<![CDATA[]]>" },
-      ...content,
+      diagnostic: "docx_xml_invalid",
     },
     {
       id: "review-xml-cdata-leading",
       options: { documentXml: document.replace("?><w:document", "?><![CDATA[extra]]><w:document") },
-      ...content,
+      diagnostic: "docx_xml_invalid",
     },
     {
       id: "review-xml-cdata-comment-control",

@@ -279,9 +279,10 @@ describe("DOCX review follow-up content cases", () => {
       );
   });
 
-  test("leading and empty trailing CDATA preserve their historical root behavior", () => {
-    const root = parseXml("<![CDATA[leading]]><root/><!-- after --><![CDATA[]]><?after data?>");
-    expect(root?.name).toBe("root");
+  test("rejects leading and empty trailing CDATA outside the root", () => {
+    expect(() =>
+      parseXml("<![CDATA[leading]]><root/><!-- after --><![CDATA[]]><?after data?>"),
+    ).toThrow("docx_xml_invalid");
   });
 
   test("CDATA stays literal and ordered alongside ordinary and empty text", () => {

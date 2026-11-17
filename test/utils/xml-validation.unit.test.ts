@@ -71,11 +71,11 @@ describe("XML syntax validation policy", () => {
     expect(isValidXml('<root xmlns=""/>')).toBe(true);
   });
 
-  test("leaves optional sequence checks and literal sections unchanged", () => {
+  test("preserves optional sequence checks while rejecting top-level CDATA", () => {
     expect(isValidXml('<root value="<"><!-- a--b -->]]></root>')).toBe(true);
     expect(isValidXml("<root><![CDATA[A&B &unknown; <literal/>]]><?after data?></root>")).toBe(
       true,
     );
-    expect(isValidXml("<![CDATA[before]]><root/><![CDATA[after]]>")).toBe(true);
+    expect(isValidXml("<![CDATA[before]]><root/><![CDATA[after]]>")).toBe(false);
   });
 });
