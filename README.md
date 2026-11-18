@@ -88,11 +88,7 @@ Use `cdx-chores doctor` before relying on a command in a script, a CI job, or a 
 
 The Codex SDK baseline for `v0.2.2-canary.5` is `@openai/codex-sdk` `0.170.0`.
 
-Adopted helper commands and explicit `interactive` sessions accept
-`--codex-model`, `--codex-provider`, `--codex-reasoning-effort`, and `--codex-speed`. Model and
-provider inherit Codex configuration when omitted; helper reasoning defaults
-to `low`. See [Codex execution configuration](docs/guides/codex-execution-configuration.md)
-for command scope and failure behavior.
+Adopted helper commands and explicit `interactive` sessions accept `--codex-model`, `--codex-provider`, `--codex-reasoning-effort`, and `--codex-speed`. Model and provider inherit Codex configuration when omitted, and helper reasoning defaults to `low`. See [Codex execution configuration](docs/guides/codex-execution-configuration.md) for command scope and failure behavior.
 
 Inspect the configuration and reported catalog without drafting a helper result:
 

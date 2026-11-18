@@ -1,7 +1,7 @@
 ---
 title: "Codex CLI Benchmark Implementation"
 created-date: 2026-11-18
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -116,4 +116,7 @@ Completed the reopened work. JSON mode displays a resize-aware status on TTY std
 
 ## Phase 7. Documentation and Validation
 
-Pending. Record the guide review and final verification here as the [documentation and validation checklist](../plan-2026-11-18-codex-cli-benchmark.md#phase-7-documentation-and-validation) is completed.
+- Added the [benchmark guide](../../guides/codex-benchmark.md), updated the [shared Codex execution guide](../../guides/codex-execution-configuration.md), and linked the benchmark from the README. Built Node CLI checks covered benchmark and helper help, `doctor --details` and `doctor --json`, and all nine `codex-info` views in an isolated Codex 0.170.0 configuration. The loopback provider verified the default, matrix, paired, and prompt-file examples, case order across rounds, invocation-wide effort, JSON redirection, token totals, and both absolute-path aliases.
+- With the built CLI's stderr on a real macOS pseudo-terminal, resized from 110 to 24 and back to 110 columns during a single measured turn's pause between fixture text chunks. In detailed, compact, and JSON modes, the probe confirmed wrapped-row cleanup, restored status detail, and a final clear. Each report matched its saved measured turn's first token of 200 ms, duration of 800 ms, and rate of 100 output tok/s. The [progress test](../../../test/codex-benchmark/progress.unit.test.ts) also checks detail restoration in human and transient modes.
+- `bun test --path-ignore-patterns='**/fixtures/**' test/codex-benchmark test/codex-info test/doctor` passed 414 cases. `bun run test:unit` passed 2,123 and `bun run test:integration:codex` passed 27. `tsc --noEmit`, `bun run lint`, `bun run format:check`, `bun run build`, local Markdown link checks, and `git diff --check` passed.
+- Guide and test review covered `214823fe..3a558372`. The guide review clarified that helper selectors are single-use while the benchmark supports repeated model and speed flags. The re-review found no material issues. [Completed checklist](../plan-2026-11-18-codex-cli-benchmark.md#phase-7-documentation-and-validation)

@@ -1,13 +1,13 @@
 ---
 title: "Codex CLI Benchmark Implementation"
 created-date: 2026-11-18
-status: active
+status: completed
 agent: codex
 ---
 
-## Goal and Scope
+## Outcome
 
-Implement `cdx-chores codex-bench` for fresh, persisted Codex trials. Compare recorded first-token timing, full turn duration, and output tokens per second for a fixed prompt. Add command-local `--codex-speed` to the existing Codex execution selectors, including the explicit `interactive` startup command. Establish the shared session lifecycle for retention and verify representative one-shot and multi-turn helpers before extending it to the remaining helpers. Leave the interactive benchmark picker for future work.
+`cdx-chores codex-bench` compares recorded first-token timing, full turn duration, and output tokens per second across fresh, persisted trials for a fixed prompt. This plan added command-local speed and session retention to adopted Codex helpers, including the explicit `interactive` startup command, and verified representative one-shot and multi-turn paths. The [benchmark guide](../guides/codex-benchmark.md) documents the completed CLI scope. An interactive benchmark picker remains future work.
 
 ## Implementation Record
 
@@ -124,16 +124,16 @@ Verification and the reviewed code range are in the [unified job record](jobs/20
 
 ## Phase 7. Documentation and Validation
 
-- [ ] Create a benchmark usage guide with examples for matrix and explicit model–speed comparisons, prompt files, run counts, metrics, compact and detailed terminal views, JSON progress and redirection, token usage, and diagnostic commands. Explain how reports display inherited speed and reasoning effort. Document home-relative report paths and the absolute-path aliases. Add an output reference if the report schema needs a stable lookup page.
-- [ ] Explain selector order next to the `--case` examples. Repeatable `--case MODEL=SPEED` entries run in input order in the warm-up round and in each measured round. A single `--codex-reasoning-effort` value applies to the whole invocation regardless of flag order.
-- [ ] Explain warm-ups next to `--runs` in the benchmark guide. Each matrix combination or `--case` occurrence gets one warm-up before its measured trials. Warm-ups run in their own fresh sessions with the same prompt and settings. Exclude them from measured metrics and completion counts, and explain that `--show-token-usage` includes their reported tokens in the invocation total and the terminal warm-up subtotal.
-- [ ] Update the shared Codex execution guide with adopted commands and selector inheritance. Document command-local retention, `keep` by default, explicit archive and permanent deletion, and app-server version requirements.
-- [ ] Check both guides against the built CLI help, `doctor`, and `codex-info` output. Validate example commands against a fixture provider.
-- [ ] Run the focused fixture and CLI suites, TypeScript, lint, formatting, build, and a built Node CLI smoke check.
-- [ ] During live progress, resize the terminal narrower and then wider between text chunks. Verify the status clears wrapped rows, restores detail when space returns, and produces the same report metrics from the saved records.
-- [ ] Complete the unified job record with the final validation commands and results. Review the final CLI documentation against the shipped behavior.
+- [x] Create a [benchmark usage guide](../guides/codex-benchmark.md) covering matrix and paired comparisons, prompt files, runs, metrics, inherited settings, terminal and JSON output, token usage, diagnostics, and path display.
+- [x] Explain selector order next to the `--case` examples. Repeatable `--case MODEL=SPEED` entries run in input order in the warm-up round and in each measured round. A single `--codex-reasoning-effort` value applies to the whole invocation regardless of flag order.
+- [x] Explain warm-ups next to `--runs` in the benchmark guide. Each matrix combination or `--case` occurrence gets one warm-up before its measured trials. Warm-ups run in their own fresh sessions with the same prompt and settings. Exclude them from measured metrics and completion counts, and explain that `--show-token-usage` includes their reported tokens in the invocation total and the terminal warm-up subtotal.
+- [x] Update the [shared Codex execution guide](../guides/codex-execution-configuration.md) with adopted commands, selector inheritance, command-local retention, `keep` by default, explicit archive and permanent deletion, and app-server version requirements.
+- [x] Check both guides against the built CLI help, `doctor`, and `codex-info` output. Validate example commands against a fixture provider.
+- [x] Run the focused fixture and CLI suites, TypeScript, lint, formatting, build, and a built Node CLI smoke check.
+- [x] During live progress, resize the terminal narrower and then wider between text chunks. Verify the status clears wrapped rows, restores detail when space returns, and produces the same report metrics from the saved records.
+- [x] Complete the unified job record with the final validation commands and results. Review the final CLI documentation against the shipped behavior.
 
-Record the final validation and documentation review in the [unified job record](jobs/2026-11-18-codex-cli-benchmark.md#phase-7-documentation-and-validation).
+Final validation and review are recorded in the [unified job record](jobs/2026-11-18-codex-cli-benchmark.md#phase-7-documentation-and-validation).
 
 ## Related Research
 

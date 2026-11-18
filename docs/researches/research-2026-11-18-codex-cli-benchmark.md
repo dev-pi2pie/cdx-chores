@@ -2,7 +2,7 @@
 title: "Codex CLI Benchmark and Speed Selection"
 created-date: 2026-11-18
 modified-date: 2026-11-18
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -205,6 +205,8 @@ The loopback checks confirmed the outbound tier mapping on both the SDK and app-
 The rollout fixtures established that a completion event can arrive before its saved record is readable. Bounded retries recovered delayed writes and paths. At expiry, the live outcome and attributable usage remained available for the report. [Offline rollout recovery evidence](../plans/jobs/2026-11-18-codex-cli-benchmark.md#phase-1-offline-rollout-recovery)
 
 App-server turn notifications let the benchmark display live progress and handle cancellation. The progress display uses stderr, while measurement reads saved records and the final report uses stdout. Fixtures checked terminal redraws, cleanup, and parseable JSON. [^transport] [JSON progress and diagnostics evidence](../plans/jobs/2026-11-18-codex-cli-benchmark.md#json-progress-and-diagnostics)
+
+The final CLI verification exercised the documented examples against a loopback provider and checked terminal shrink and widening while a fixture turn was streaming. The [benchmark guide](../guides/codex-benchmark.md) documents the shipped behavior. [Final verification](../plans/jobs/2026-11-18-codex-cli-benchmark.md#phase-7-documentation-and-validation)
 
 ## Related Plans
 
