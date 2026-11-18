@@ -157,14 +157,14 @@ The detailed terminal view formats each cell from that metric's usable sample co
 
 Group benchmark results by model and requested speed. The **Requested speed** column shows Standard, Fast, Ultrafast, or Inherited. A single note below the table identifies that served speed is unknown in this app-server integration. JSON records `servedSpeed: null` for each trial. Configured thread speed, when shown, is configuration context. A completed trial demonstrates request acceptance by the configured provider. A future integration can populate served speed when it has documented telemetry tied to the trial. [^app-server] [^api-fast]
 
-The planned terminal display adds inherited settings so readers can interpret comparisons without inspecting individual trials. For example, `Inherited (configured Fast)` identifies the reported thread tier for an inherited speed, and `Inherited (Low)` identifies a reported inherited reasoning effort. A row uses `Inherited` when the value is unavailable, marks partial coverage when only some completed measured trials report a matching value, and shows `Mixed` when reported values vary. [Inherited settings display plan](../plans/plan-2026-11-18-codex-cli-benchmark.md#phase-61-inherited-speed-and-reasoning-effort)
+Both terminal views show inherited settings using metadata from completed measured trials in each row. `Inherited (configured Fast)` identifies the reported thread tier, and `Inherited (Low)` identifies the reported reasoning effort. `Inherited` alone means no value was reported. A label such as `Inherited (Low, partial)` means some trials report Low and the others report no value. `Inherited (Mixed)` means the reported values differ. [Inherited settings verification](../plans/jobs/2026-11-18-codex-cli-benchmark.md#phase-61-inherited-speed-and-reasoning-effort)
 
 The report identifies the prompt source and each explicit or inherited Codex selection. Turn output tok/s is the default terminal throughput column. The illustrative rows below use the default of three measured trials. Show the metric's sample count when it differs from the number of completed trials.
 
-| Model | Requested speed | Completed | Codex first token (s) | Turn output tok/s | Turn time (s) |
-| --- | --- | ---: | ---: | ---: | ---: |
-| `gpt-6.2-astra` | Standard | 3/3 | 0.71 / 0.82 / 1.13 | 57 / 63 / 69 | 3.74 / 4.10 / 4.65 |
-| `gpt-6.2-astra` | Fast | 3/3 | 0.68 / 0.80 / 1.08 | 78–96 (2 samples) | 2.91 / 3.20 / 3.65 |
+| Model | Requested speed | Reasoning effort | Completed | Codex first token (s) | Turn output tok/s | Turn time (s) |
+| --- | --- | --- | ---: | ---: | ---: | ---: |
+| `gpt-6.2-astra` | Standard | Inherited (Low) | 3/3 | 0.71 / 0.82 / 1.13 | 57 / 63 / 69 | 3.74 / 4.10 / 4.65 |
+| `gpt-6.2-astra` | Fast | Inherited (Low) | 3/3 | 0.68 / 0.80 / 1.08 | 78–96 (2 samples) | 2.91 / 3.20 / 3.65 |
 
 *Served speed is unknown. Codex can record the first token during reasoning, before text appears. Turn output tok/s includes reasoning tokens and uses the full turn duration.*
 

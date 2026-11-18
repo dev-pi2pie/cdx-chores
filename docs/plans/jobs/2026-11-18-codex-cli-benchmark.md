@@ -109,7 +109,10 @@ Completed the reopened work. JSON mode displays a resize-aware status on TTY std
 
 ### Phase 6.1. Inherited Speed and Reasoning Effort
 
-Pending implementation. Record terminal and JSON verification and the reviewed code range here as the [inherited-settings checklist](../plan-2026-11-18-codex-cli-benchmark.md#phase-61-inherited-speed-and-reasoning-effort) is completed.
+- `bun test --path-ignore-patterns='**/fixtures/**' test/codex-benchmark` passed 118 cases. Fixtures covered known, missing, partial, and mixed inherited settings in both terminal views, excluded warm-up and failed-trial metadata from the summary, and verified matrix omission, paired inheritance, explicit overrides, and per-trial JSON values. [Inherited-settings checklist](../plan-2026-11-18-codex-cli-benchmark.md#phase-61-inherited-speed-and-reasoning-effort)
+- `bun run test:unit` passed 2,123 cases and `bun run test:integration:codex` passed 27. TypeScript, lint, formatting, build, and `git diff --check` passed.
+- The bundled Codex 0.170.0 reported `priority` for configured Fast and `default` for configured Standard, and reported `low` with Low set in the isolated Codex home. The built Node CLI showed Fast and Low in detailed and compact reports against the loopback provider. The JSON run preserved inherited request values as `null` and reported the configured tier and reasoning effort per trial, with `servedSpeed: null`.
+- Code and test review covered `14adfc97..eef48ebe`. The added failed-trial fixture resolved the review finding. No actionable findings remained.
 
 ## Phase 7. Documentation and Validation
 

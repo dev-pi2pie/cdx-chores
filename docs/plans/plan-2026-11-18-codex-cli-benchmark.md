@@ -116,11 +116,11 @@ Follow-up evidence and the reviewed code range are recorded in the [unified job 
 
 ### Phase 6.1. Inherited Speed and Reasoning Effort
 
-- [ ] In detailed and compact terminal results, show the configured tier for inherited speed and the resolved effort for inherited reasoning when Codex reports them. Label speed as configured, for example `Inherited (configured Fast)`, and show reasoning effort as `Inherited (Low)` when Codex resolves it to Low. Base each row's labels on completed measured trials. Use `Inherited` alone when all values are missing, qualify a single reported value when coverage is partial, and show `Mixed` when reported values disagree.
-- [ ] Preserve the JSON request fields for matrix and paired runs, including `null` for inherited selections. Verify available values in `trials[].configuredTier` and `trials[].resolvedReasoningEffort`, with `null` when Codex supplies no inherited value. Keep `servedSpeed` unknown without provider telemetry. Preserve explicit selector behavior and result grouping.
-- [ ] Verify known, missing, partial, and mixed inherited values in the terminal with fixtures. Check omitted matrix speed, explicit `--case MODEL=inherit`, inherited reasoning effort, and explicit overrides in terminal and JSON output.
+- [x] In detailed and compact terminal results, show the configured tier for inherited speed and the resolved effort for inherited reasoning when Codex reports them. Label speed as configured, for example `Inherited (configured Fast)`, and show reasoning effort as `Inherited (Low)` when Codex resolves it to Low. Base each row's labels on completed measured trials. Use `Inherited` alone when all values are missing, qualify a single reported value when coverage is partial, and show `Inherited (Mixed)` when reported values disagree.
+- [x] Preserve the JSON request fields for matrix and paired runs, including `null` for inherited selections. Verify available values in `trials[].configuredTier` and `trials[].resolvedReasoningEffort`, with `null` when Codex supplies no inherited value. Keep `servedSpeed` unknown without provider telemetry. Preserve explicit selector behavior and result grouping.
+- [x] Verify known, missing, partial, and mixed inherited values in the terminal with fixtures. Check omitted matrix speed, explicit `--case MODEL=inherit`, inherited reasoning effort, and explicit overrides in terminal and JSON output.
 
-Record verification in the [unified job record](jobs/2026-11-18-codex-cli-benchmark.md#phase-61-inherited-speed-and-reasoning-effort).
+Verification and the reviewed code range are in the [unified job record](jobs/2026-11-18-codex-cli-benchmark.md#phase-61-inherited-speed-and-reasoning-effort).
 
 ## Phase 7. Documentation and Validation
 
