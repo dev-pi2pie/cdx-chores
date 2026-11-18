@@ -155,7 +155,6 @@ async function run() {
         });
         break;
       case "thread/start": {
-        if (scenario.withholdThreadStartReply) break;
         if (params.ephemeral !== false) throw new Error("Use a persisted thread.");
         const settings = scenario.threadSettings?.[threads.size];
         const newId = `thread-${threads.size + 1}`;
@@ -168,6 +167,10 @@ async function run() {
           reads: 0,
         };
         threads.set(newId, started);
+        if (scenario.withholdThreadStartReply) {
+          trace({ method: "fixture/thread-created", params: { threadId: newId } });
+          break;
+        }
         reply({
           ...settings,
           thread: {

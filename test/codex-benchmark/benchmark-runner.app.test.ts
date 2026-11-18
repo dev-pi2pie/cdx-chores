@@ -468,21 +468,29 @@ test.skipIf(process.platform === "win32")(
   "CLI cancels a pending thread start on SIGINT before inference",
   async () => {
     await withRunnerFixture({ withholdThreadStartReply: true }, async ({ options, trace }) => {
-      const cli = startCliBenchmark(options, ["--json"]);
+      const cli = startCliBenchmark(options, ["--json", "--session-retention", "archive"]);
       try {
-        await waitForMethod(trace, "thread/start");
+        await waitForMethod(trace, "fixture/thread-created");
         cli.child.kill("SIGINT");
         const result = await cli.completion;
         expect(result.reason).toBe("exit-failed");
         expect(result.exitCode).toBe(130);
         expect(JSON.parse(result.stdout)).toMatchObject({
           run: { interrupted: true, transportError: null, shutdownError: null },
-          trials: [{ status: "cancelled", inferenceAttempted: false, threadId: null }],
+          trials: [
+            {
+              status: "cancelled",
+              inferenceAttempted: false,
+              threadId: null,
+              sessionRetention: null,
+            },
+          ],
         });
         expect((await trace()).map(({ method }) => method)).toEqual([
           "initialize",
           "initialized",
           "thread/start",
+          "fixture/thread-created",
         ]);
       } finally {
         cli.shutdown();
