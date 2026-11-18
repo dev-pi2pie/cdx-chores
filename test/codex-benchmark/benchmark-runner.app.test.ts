@@ -295,6 +295,37 @@ test.skipIf(process.platform === "win32")(
   },
 );
 
+test("CLI fails a timed-out trial, recovers partial usage, and continues after confirmed interruption", async () => {
+  await withRunnerFixture({ waitForInterruptThread: 2 }, async ({ options, trace }) => {
+    const preload = join(options.cwd, "turn-deadline.cjs");
+    await writeFile(
+      preload,
+      [
+        "const timeout = AbortSignal.timeout.bind(AbortSignal);",
+        "AbortSignal.timeout = (ms) => timeout(ms === 120000 ? 250 : ms);",
+      ].join("\n"),
+    );
+    const result = await startCliBenchmark(
+      { ...options, runs: 2 },
+      ["--json", "--show-token-usage", "--session-retention", "archive"],
+      preload,
+    ).completion;
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("timed out");
+    const report = JSON.parse(result.stdout);
+    expect(report.run).toMatchObject({ interrupted: false, completedMeasuredTrials: 1 });
+    expect(report.trials[1]).toMatchObject({
+      status: "failed",
+      error: expect.stringContaining("timed out"),
+      tokenUsage: { partial: true, counts: { totalTokens: 230 } },
+      sessionRetention: { status: "archived" },
+    });
+    expect(report.trials[2]).toMatchObject({ status: "completed", turnDurationMs: 800 });
+    const interrupts = traceMethod(await trace(), "turn/interrupt");
+    expect(interrupts.map((event) => event.params?.threadId)).toEqual(["thread-2"]);
+  });
+});
+
 test("CLI reports a failed turn, continues, and retains only confirmed trial threads", async () => {
   await withRunnerFixture({ failThread: 1 }, async ({ options, trace }) => {
     const preload = await withStderrTtyPreload(options.cwd);

@@ -92,10 +92,16 @@ class BenchmarkRunner {
     const stopped = this.server.signal;
     const waiting = AbortSignal.any([stopped, deadline, ...(signal ? [signal] : [])]);
     try {
-      return await observer.waitForCompletion(turnId, waiting);
+      return { ...(await observer.waitForCompletion(turnId, waiting)), timedOut: false };
     } catch (error) {
       if (stopped.aborted) throw error;
-      return this.interrupt(observer, threadId, turnId);
+      const timedOut = deadline.aborted && waiting.reason === deadline.reason;
+      try {
+        return { ...(await this.interrupt(observer, threadId, turnId)), timedOut };
+      } catch (interruptError) {
+        if (timedOut) throw new Error(`Codex turn timed out. ${messageFrom(interruptError)}`);
+        throw interruptError;
+      }
     }
   }
 
@@ -205,11 +211,18 @@ class BenchmarkRunner {
         signal,
       );
       observer.watchFirstText(trial.turnId);
-      const { turn, receivedAt } = await this.completion(observer, thread.id, trial.turnId);
+      const { turn, receivedAt, timedOut } = await this.completion(
+        observer,
+        thread.id,
+        trial.turnId,
+      );
       completionConfirmed = true;
-      trial.error = turn.error?.message ?? null;
-      trial.status =
-        turn.status === "interrupted"
+      trial.error = timedOut
+        ? "Codex turn timed out after 120 seconds."
+        : (turn.error?.message ?? null);
+      trial.status = timedOut
+        ? "failed"
+        : turn.status === "interrupted"
           ? "cancelled"
           : turn.status === "completed"
             ? "completed"

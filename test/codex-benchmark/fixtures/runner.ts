@@ -16,6 +16,7 @@ interface Scenario {
   rerouted?: boolean;
   interrupt?: "confirmed" | "unconfirmed";
   withholdStartReply?: boolean;
+  waitForInterruptThread?: number;
   failThread?: number;
   rejectFast?: boolean;
   retentionError?: boolean;

@@ -159,7 +159,7 @@ async function run() {
         openTurn(thread);
         if (!scenario.withholdStartReply)
           reply({ turn: { id: thread.turnId, status: "inProgress" } });
-        if (scenario.interrupt) break;
+        if (scenario.interrupt || thread.id === `thread-${scenario.waitForInterruptThread}`) break;
         if (scenario.rejectFast && params.serviceTierForTurn === "priority") {
           completeTurn(thread, "failed", {
             message: "Service tier priority is not supported for this account.",
