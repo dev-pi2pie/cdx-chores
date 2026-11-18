@@ -347,6 +347,44 @@ test.each([1, 2])(
   },
 );
 
+test("CLI reports stdout EOF during a turn while the app-server is still alive", async () => {
+  await withRunnerFixture({ endStdoutDuringThread: 3 }, async ({ options, trace }) => {
+    const result = await startCliBenchmark({ ...options, runs: 3 }, [
+      "--json",
+      "--show-token-usage",
+      "--session-retention",
+      "archive",
+    ]).completion;
+    expect(result.reason).toBe("exit-failed");
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Transport failed");
+    const report = JSON.parse(result.stdout);
+    expect(report.run).toMatchObject({
+      interrupted: false,
+      transportError: expect.stringContaining("stdout ended"),
+      shutdownError: null,
+      completedMeasuredTrials: 1,
+    });
+    expect(report.trials).toMatchObject([
+      { status: "completed", warmup: true },
+      { status: "completed", warmup: false, turnDurationMs: 800 },
+      {
+        status: "failed",
+        tokenUsage: { partial: true, counts: { totalTokens: 230 } },
+        sessionRetention: { status: "skipped" },
+      },
+    ]);
+    const events = await trace();
+    expect(traceMethod(events, "stdout-ended")).toHaveLength(1);
+    expect(traceMethod(events, "turn/start")).toHaveLength(3);
+    expect(traceMethod(events, "turn/interrupt")).toHaveLength(0);
+    expect(traceMethod(events, "thread/archive").map(({ params }) => params?.threadId)).toEqual([
+      "thread-1",
+      "thread-2",
+    ]);
+  });
+}, 15_000);
+
 test.skipIf(process.platform === "win32")(
   "CLI returns an interrupted report on SIGINT during initialization",
   async () => {

@@ -6,6 +6,7 @@ import { isRecord } from "./discovery/transport";
 
 const maxLineBytes = 8 * 1024 * 1024;
 const requestTimeoutMs = 15_000;
+const stdoutExitGraceMs = 100;
 const groupShutdownTimeoutMs = 1_000;
 
 type NotificationListener = (method: string, params: unknown) => void;
@@ -15,6 +16,10 @@ interface PendingRequest {
   deadline: ReturnType<typeof setTimeout>;
   resolve(value: unknown): void;
   reject(error: Error): void;
+}
+
+function appServerExitError(code: number | null, signal: NodeJS.Signals | null): Error {
+  return new Error(`Codex app-server stopped with ${signal ?? `exit code ${code}`}.`);
 }
 
 export class CodexAppServerError extends Error {
@@ -35,6 +40,7 @@ export class CodexAppServer {
   private readonly listeners = new Set<NotificationListener>();
   private nextId = 0;
   private exited = false;
+  private stdoutEndDeadline?: ReturnType<typeof setTimeout>;
   private readonly separateGroup: boolean;
 
   constructor(
@@ -63,9 +69,21 @@ export class CodexAppServer {
     this.closed = new Promise((resolve) => {
       this.child.once("close", (code, signal) => {
         this.exited = true;
-        this.fail(new Error(`Codex app-server stopped with ${signal ?? `exit code ${code}`}.`));
+        this.fail(appServerExitError(code, signal));
         resolve();
       });
+    });
+    this.child.stdout.once("end", () => {
+      if (this.signal.aborted) return;
+      // EOF can arrive before the child's exit status. Give a concurrent exit time to settle.
+      this.stdoutEndDeadline = setTimeout(() => {
+        const { exitCode, signalCode } = this.child;
+        this.fail(
+          exitCode !== null || signalCode !== null
+            ? appServerExitError(exitCode, signalCode)
+            : new Error("Codex app-server stdout ended unexpectedly."),
+        );
+      }, stdoutExitGraceMs);
     });
     const decoder = new StringDecoder("utf8");
     let buffer = "";
@@ -94,6 +112,7 @@ export class CodexAppServer {
   }
 
   private fail(error: Error): void {
+    clearTimeout(this.stdoutEndDeadline);
     this.stopped.abort(error);
     for (const pending of this.pending.values()) {
       clearTimeout(pending.deadline);

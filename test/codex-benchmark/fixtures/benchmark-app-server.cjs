@@ -177,6 +177,10 @@ async function run() {
         openTurn(thread);
         if (!scenario.withholdStartReply)
           reply({ turn: { id: thread.turnId, status: "inProgress" } });
+        if (thread.id === `thread-${scenario.endStdoutDuringThread}`) {
+          process.stdout.end(() => trace({ method: "stdout-ended" }));
+          break;
+        }
         if (
           scenario.waitForInterruptThread !== undefined
             ? thread.id === `thread-${scenario.waitForInterruptThread}`

@@ -11,6 +11,7 @@ interface Scenario {
   initializeError?: boolean;
   stallInitialization?: boolean;
   exitDuringReadbackThread?: number;
+  endStdoutDuringThread?: number;
   phase?: string | null;
   delayed?: boolean;
   fallback?: boolean;
