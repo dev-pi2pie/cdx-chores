@@ -434,6 +434,8 @@ describe("rename Codex timeout help", () => {
       "--codex-model <model>",
       "--codex-provider <provider-id>",
       "--codex-reasoning-effort <effort>",
+      "--codex-speed <speed>",
+      "--session-retention <mode>",
       "--codex-timeout <duration>",
       "--codex-images",
       "--codex-images-timeout <duration>",
