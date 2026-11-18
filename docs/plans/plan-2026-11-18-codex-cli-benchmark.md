@@ -59,20 +59,28 @@ Capture outbound inference requests at a fixture provider through the SDK and ap
 - [ ] Run a mixed-support fixture. Report the unavailable model and speed combination as unavailable and verify that the supported combinations still complete at their requested speeds.
 - [ ] Replay a completed turn with a single commentary message. Assert that it counts as completed, contributes available token usage, and contributes zero usable samples to every performance summary.
 
-## Phase 4. Implement Results and Progress Output
+## Phase 4. Benchmark Results
 
-- [ ] Show one terminal row per model and requested speed, with completed and per-metric usable sample counts. Calculate Turn output tok/s from complete saved output usage, including reasoning, divided by a positive full saved turn duration. Use measured samples only in summaries. Show `—`, a single value, minimum–maximum, or minimum/median/maximum for usable sample counts of zero, one, two, or at least three respectively.
-- [ ] Emit one unstyled result object in `--json` with stable per-trial and summary fields, unavailable values as `null`, and `servedSpeed: null` per trial. Include the prompt source and resolved selection context when available. `--show-prompt` includes its text and escapes terminal control characters in human output. `--show-token-usage` adds per-trial counts and invocation totals, including warm-ups and safely attributable partial usage. Mark totals partial when any request has missing or incomplete usage.
-- [ ] Send the startup workload, live status, diagnostics, and opt-in running usage to stderr. On a TTY, update one live line and fit it to terminal width, including after a resize during a streaming pause. Use shared color handling and honor `--no-color`. On redirected stderr, print one startup line plus diagnostics and opt-in totals. Clear the active line on completion, failure, and cancellation.
-- [ ] Replay the fixtures through the CLI to verify terminal and JSON output for zero through three usable samples, including partial trials. Assert that both formats identify invocation totals as partial when any usage is missing or incomplete.
-- [ ] Verify clean JSON stdout, redirected stderr, TTY resize and cleanup, and color controls.
+- [ ] Aggregate each model and requested speed separately. Count completed trials and usable samples per metric. Calculate Turn output tok/s from complete saved output usage, including reasoning, divided by a positive full saved turn duration. Use measured samples only in summaries.
+- [ ] Emit one unstyled result object on stdout in `--json` mode with stable per-trial and summary fields, unavailable values as `null`, and `servedSpeed: null` per trial. Include the prompt source and resolved selection context when available. Include the prompt text with `--show-prompt`. With `--show-token-usage`, include per-trial counts and invocation totals, including warm-ups and safely attributable partial usage. Mark totals partial when any request has missing or incomplete usage.
+- [ ] Replay the fixtures to verify sample counts and JSON summaries for zero through three usable samples, including partial trials and incomplete invocation totals.
 - [ ] Exit with status `1` when a requested archive or delete fails after successful inference. Test both modes and assert that stdout still contains the complete JSON report, the trial stays `completed`, and the separate retention failure includes the affected thread ID.
 
-## Phase 5. Documentation and Validation
+## Phase 5. CLI Usage and Diagnostics
 
-- [ ] Update CLI help and usage guides with selector placement, inheritance, run counts, metric definitions, and examples for terminal and JSON output.
-- [ ] Document the command-local retention option and its adopted helpers, `keep` by default, explicit archive, permanent deletion, and the app-server version requirements. Check that help and examples match the built CLI.
-- [ ] Run the focused fixture and CLI suites, TypeScript, lint, formatting, build, and a built Node CLI smoke check. Validate example commands against a fixture provider.
+- [ ] Add `codex-bench --help` and update help for adopted commands. Verify flag placement, defaults, repeatable selectors, inheritance, session-retention choices, and terminal and JSON usage examples.
+- [ ] Render one terminal row per model and requested speed with completed and per-metric usable sample counts. Show `—`, a single value, minimum–maximum, or minimum/median/maximum for zero, one, two, or at least three usable samples. Show partial totals when token usage is requested. Escape terminal control characters in displayed prompt text.
+- [ ] Send the startup workload, live status, diagnostics, and opt-in running usage to stderr. On a TTY, update one live line and fit it to terminal width, including after a resize during a streaming pause. Clear the active line on completion, failure, and cancellation. On redirected stderr, print one startup line plus diagnostics and opt-in totals.
+- [ ] Apply shared terminal styling and honor `--no-color`, `NO_COLOR`, and redirected streams. Verify terminal rendering for zero through three samples, partial usage, TTY resize and cleanup, redirected stderr, and clean JSON stdout even while progress or diagnostics are emitted.
+- [ ] Add a local benchmark prerequisite check to `doctor`. Report prerequisites met when the resolved Codex executable reports version 0.170.0 or later and app-server initialization succeeds. Report an older or unknown version as unverified, and a missing executable or failed initialization as a local failure with actionable guidance. Test each outcome with fixtures. Limit the result to local prerequisites such as version and startup. Run zero benchmark trials and preserve the existing workflow-specific checks.
+- [ ] Show advertised service tiers in the `codex-info models` summary, `--details`, and `--json`. Include the advertised default when available in `--details` and `--json`. Preserve unknown capability when metadata is absent. Test all three views and label the tiers as catalog data. Provider acceptance remains a live-trial result, and served speed remains unknown.
+
+## Phase 6. Documentation and Validation
+
+- [ ] Create a benchmark usage guide with examples for model and speed comparisons, prompt files, run counts, metrics, terminal and JSON results, and diagnostic commands. Add an output reference if the report schema needs a stable lookup page.
+- [ ] Update the shared Codex execution guide with adopted commands and selector inheritance. Document command-local retention, `keep` by default, explicit archive and permanent deletion, and app-server version requirements.
+- [ ] Check both guides against the built CLI help, `doctor`, and `codex-info` output. Validate example commands against a fixture provider.
+- [ ] Run the focused fixture and CLI suites, TypeScript, lint, formatting, build, and a built Node CLI smoke check.
 - [ ] Record validation commands and results in the implementation job record and review the final CLI documentation against the shipped behavior.
 
 ## Related Research
