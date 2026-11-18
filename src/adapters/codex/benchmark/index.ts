@@ -282,18 +282,25 @@ export async function runCodexBenchmark(options: BenchmarkOptions): Promise<Benc
     codexHome: null,
     trials: [],
     interrupted: false,
+    startupError: null,
     transportError: null,
     shutdownError: null,
   };
   if (signal?.aborted) return { ...report, interrupted: true };
   const env = { ...(options.env ?? process.env) };
-  const server = new CodexAppServer(resolveDiscoveryExecutable(env), cwd, env, {
-    isolateSignals: true,
-  });
+  let server: CodexAppServer | undefined;
   try {
-    const initialized = await server.initialize(undefined, signal);
-    report.codexVersion = initialized.userAgent?.match(/^[^/]+\/([^\s]+)/)?.[1] ?? null;
-    report.codexHome = rolloutPath(initialized.codexHome);
+    try {
+      server = new CodexAppServer(resolveDiscoveryExecutable(env), cwd, env, {
+        isolateSignals: true,
+      });
+      const initialized = await server.initialize(undefined, signal);
+      report.codexVersion = initialized.userAgent?.match(/^[^/]+\/([^\s]+)/)?.[1] ?? null;
+      report.codexHome = rolloutPath(initialized.codexHome);
+    } catch (error) {
+      if (!(signal?.aborted && error === signal.reason)) report.startupError = messageFrom(error);
+      return report;
+    }
     const runner = new BenchmarkRunner(server, options);
     for (const selection of benchmarkWorkload(options)) {
       if (signal?.aborted || server.signal.aborted || !runner.canStartTrial) break;
@@ -307,12 +314,9 @@ export async function runCodexBenchmark(options: BenchmarkOptions): Promise<Benc
       report.transportError = messageFrom(server.stopReason);
     }
     return report;
-  } catch (error) {
-    if (signal?.aborted && error === signal.reason) return report;
-    throw error;
   } finally {
     try {
-      await server.close();
+      await server?.close();
     } catch (error) {
       report.shutdownError = messageFrom(error);
     }

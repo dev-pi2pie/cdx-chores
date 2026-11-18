@@ -85,6 +85,10 @@ If app-server interrupts a turn on its own, the trial is reported as `cancelled`
 
 If Ctrl-C interrupts a pending `thread/start` request, app-server may already have created the session. The cancelled trial shows `threadId: null` and `sessionRetention: null` because the CLI can only archive or delete a session whose ID it has received.
 
+If Ctrl-C arrives after `turn/start` is sent, the CLI allows one second for a pending turn ID to arrive so it can interrupt that turn. If the ID remains unknown, the CLI stops scheduling trials, skips requested cleanup, and returns status 130 with the partial report.
+
+If app-server startup or initialization fails, the CLI returns status 1 and prints the reason on stderr. JSON includes the reason in `run.startupError`, the requested workload, and an empty `trials` array.
+
 ## Related Guides
 
 - [Codex execution configuration](codex-execution-configuration.md)

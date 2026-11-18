@@ -408,6 +408,90 @@ test("CLI reports stdout EOF observed during final rollout readback", async () =
   });
 });
 
+test("CLI returns a zero-trial JSON report when initialization is rejected", async () => {
+  await withRunnerFixture({ initializeError: true }, async ({ options, trace }) => {
+    const result = await startCliBenchmark(options, ["--json"]).completion;
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("fixture refused initialization");
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      run: {
+        interrupted: false,
+        startupError: expect.stringContaining("fixture refused initialization"),
+        completedMeasuredTrials: 0,
+      },
+      trials: [],
+      summaries: [{ plannedMeasuredTrials: 1, measuredTrials: 0 }],
+    });
+    expect((await trace()).map(({ method }) => method)).toEqual(["initialize"]);
+  });
+});
+
+test.skipIf(process.platform === "win32")(
+  "CLI cancels promptly when turn/start never supplies an ID",
+  async () => {
+    await withRunnerFixture({ holdTurnStart: true }, async ({ options, trace }) => {
+      const cli = startCliBenchmark(options, ["--json", "--session-retention", "archive"]);
+      try {
+        await waitForMethod(trace, "turn/start");
+        cli.child.kill("SIGINT");
+        const result = await cli.completion;
+        expect(result.reason).toBe("exit-failed");
+        expect(result.exitCode).toBe(130);
+        expect(JSON.parse(result.stdout)).toMatchObject({
+          run: { interrupted: true },
+          trials: [
+            {
+              status: "cancelled",
+              inferenceAttempted: true,
+              threadId: "thread-1",
+              turnId: null,
+              sessionRetention: { status: "skipped" },
+            },
+          ],
+        });
+        expect((await trace()).map(({ method }) => method)).toEqual([
+          "initialize",
+          "initialized",
+          "thread/start",
+          "turn/start",
+        ]);
+      } finally {
+        cli.shutdown();
+        await cli.completion;
+      }
+    });
+  },
+  15_000,
+);
+
+test("interrupts the matching turn when its ID arrives just after cancellation", async () => {
+  await withRunnerFixture(
+    { holdTurnStart: true, withholdStartReply: true, interrupt: "confirmed" },
+    async ({ options, home, trace }) => {
+      const cancellation = new AbortController();
+      const run = runCodexBenchmark({
+        ...options,
+        signal: cancellation.signal,
+        sessionRetention: "archive",
+      });
+      try {
+        await waitForMethod(trace, "turn/start");
+      } finally {
+        cancellation.abort();
+        await writeFile(join(home, "release-turn-start"), "");
+      }
+      const result = await run;
+      expect(result.interrupted).toBe(true);
+      expect(result.trials).toMatchObject([
+        { status: "cancelled", turnId: "turn-thread-1", sessionRetention: { status: "archived" } },
+      ]);
+      expect(traceMethod(await trace(), "turn/interrupt").map(({ params }) => params)).toEqual([
+        { threadId: "thread-1", turnId: "turn-thread-1" },
+      ]);
+    },
+  );
+});
+
 test.skipIf(process.platform === "win32")(
   "CLI returns an interrupted report on SIGINT during initialization",
   async () => {

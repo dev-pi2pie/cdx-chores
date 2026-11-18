@@ -184,6 +184,9 @@ async function run() {
         break;
       }
       case "turn/start":
+        if (scenario.holdTurnStart) {
+          while (!existsSync(join(home, "release-turn-start"))) await delay(10);
+        }
         openTurn(thread);
         if (!scenario.withholdStartReply)
           reply({ turn: { id: thread.turnId, status: "inProgress" } });

@@ -160,6 +160,11 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
     } else {
       renderBenchmarkReport(runtime, report, { compact: options.compact });
     }
+    if (result.startupError) {
+      runtime.stderr.write(
+        `${colors.red("Startup failed")}: ${safeTerminalText(result.startupError)}\n`,
+      );
+    }
     if (result.transportError) {
       runtime.stderr.write(
         `${colors.red("Transport failed")}: ${safeTerminalText(result.transportError)}\n`,

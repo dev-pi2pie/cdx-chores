@@ -18,6 +18,7 @@ interface TurnEvidence {
 }
 
 const nonToolItems = new Set(["userMessage", "agentMessage", "reasoning"]);
+const cancelledStartGraceMs = 1_000;
 
 export class TrialObserver {
   private readonly turns = new Map<string, TurnEvidence>();
@@ -93,9 +94,16 @@ export class TrialObserver {
     const rpcTurn = response.then(({ turn }) => turn.id);
     if (!signal) return rpcTurn;
     let considerInterruption = () => {};
-    const interruptedTurn = new Promise<string>((resolve) => {
+    let graceTimer: ReturnType<typeof setTimeout> | undefined;
+    const interruptedTurn = new Promise<string>((resolve, reject) => {
       considerInterruption = () => {
-        if (signal.aborted && this.startedTurnId) resolve(this.startedTurnId);
+        if (!signal.aborted) return;
+        if (this.startedTurnId) resolve(this.startedTurnId);
+        else
+          graceTimer ??= setTimeout(
+            () => reject(new Error("Turn ID was unavailable after cancellation.")),
+            cancelledStartGraceMs,
+          );
       };
       signal.addEventListener("abort", considerInterruption, { once: true });
       this.events.on("started", considerInterruption);
@@ -104,6 +112,7 @@ export class TrialObserver {
     try {
       return await Promise.race([rpcTurn, interruptedTurn]);
     } finally {
+      clearTimeout(graceTimer);
       signal.removeEventListener("abort", considerInterruption);
       this.events.off("started", considerInterruption);
     }

@@ -22,6 +22,7 @@ interface Scenario {
   rerouted?: boolean;
   interrupt?: "confirmed" | "unconfirmed";
   withholdStartReply?: boolean;
+  holdTurnStart?: boolean;
   waitForInterruptThread?: number;
   failThread?: number;
   serverInterrupt?: { thread: number; message: string | null };

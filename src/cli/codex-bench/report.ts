@@ -148,6 +148,7 @@ export function buildBenchmarkReport(run: BenchmarkRun, options: ReportOptions) 
       codexVersion: run.codexVersion,
       codexHome: run.codexHome,
       interrupted: run.interrupted,
+      startupError: run.startupError,
       transportError: run.transportError,
       shutdownError: run.shutdownError,
       requested: {

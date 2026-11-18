@@ -53,6 +53,7 @@ function report(
       codexHome: null,
       interrupted: false,
       transportError: null,
+      startupError: null,
       shutdownError: null,
     },
     {
