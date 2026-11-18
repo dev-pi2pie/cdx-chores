@@ -13,7 +13,7 @@ The first live check on Codex 0.170.0 completed a Luna Standard/Fast pair and a 
 
 ## Implementation Record
 
-Update the [unified job record](jobs/2026-11-18-codex-cli-benchmark.md) as work proceeds through all six phases. For each phase, record what changed, decisions that affect the implementation, and verification commands and results.
+Update the [unified job record](jobs/2026-11-18-codex-cli-benchmark.md) as work proceeds through all seven phases. For each phase, record what changed, decisions that affect the implementation, and verification commands and results.
 
 ## Phase 1. Verify Rollout Recovery Offline
 
@@ -90,13 +90,24 @@ Phase 4 evidence and the reviewed code range are recorded in the [unified job re
 
 Phase 5 evidence and the reviewed code range are recorded in the [unified job record](jobs/2026-11-18-codex-cli-benchmark.md#phase-5-cli-usage-and-diagnostics).
 
-## Phase 6. Documentation and Validation
+## Phase 6. Benchmark Usage Presentation
 
-- [ ] Create a benchmark usage guide with examples for model and speed comparisons, prompt files, run counts, metrics, terminal and JSON results, and diagnostic commands. Add an output reference if the report schema needs a stable lookup page.
+- [ ] With `--show-token-usage`, label each settled request on stderr as `Warm-up` or `Trial N/M`. Identify the model and requested speed for comparisons. After rollout readback, show the request's reported total and the cumulative invocation total, with partial or unavailable usage labeled.
+- [ ] With `--show-token-usage`, render a compact usage table in the human report. Show the trial label, model, requested speed, input, output, and total. Include separate warm-up and measured subtotals and an invocation total. Use the existing JSON usage fields for detailed counts such as cached input and reasoning output.
+- [ ] Include attributable usage from failed or interrupted attempts in the appropriate subtotal and invocation total. Exclude catalog skips that never attempted inference. Mark each affected subtotal partial and use the existing missing-count convention. Compute speed statistics from eligible measured samples.
+- [ ] Verify single- and multi-combination runs, opt-in behavior, partial and missing usage, failed or interrupted trials, and subtotal reconciliation. Check redirected stderr and verify that opt-in progress leaves JSON stdout as one parseable report.
+
+Record Phase 6 verification and the reviewed code range in the [unified job record](jobs/2026-11-18-codex-cli-benchmark.md#phase-6-benchmark-usage-presentation).
+
+## Phase 7. Documentation and Validation
+
+- [ ] Create a benchmark usage guide with examples for model and speed comparisons, prompt files, run counts, metrics, terminal and JSON results, token usage progress and totals, and diagnostic commands. Add an output reference if the report schema needs a stable lookup page.
 - [ ] Update the shared Codex execution guide with adopted commands and selector inheritance. Document command-local retention, `keep` by default, explicit archive and permanent deletion, and app-server version requirements.
 - [ ] Check both guides against the built CLI help, `doctor`, and `codex-info` output. Validate example commands against a fixture provider.
 - [ ] Run the focused fixture and CLI suites, TypeScript, lint, formatting, build, and a built Node CLI smoke check.
 - [ ] Complete the unified job record with the final validation commands and results. Review the final CLI documentation against the shipped behavior.
+
+Record the final validation and documentation review in the [unified job record](jobs/2026-11-18-codex-cli-benchmark.md#phase-7-documentation-and-validation).
 
 ## Related Research
 

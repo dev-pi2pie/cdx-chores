@@ -5,7 +5,7 @@ status: in-progress
 agent: codex
 ---
 
-This record tracks all six phases of the [benchmark implementation plan](../plan-2026-11-18-codex-cli-benchmark.md). The [research](../../researches/research-2026-11-18-codex-cli-benchmark.md) records the design and live-check evidence.
+This record tracks all seven phases of the [benchmark implementation plan](../plan-2026-11-18-codex-cli-benchmark.md). The [research](../../researches/research-2026-11-18-codex-cli-benchmark.md) records the design and live-check evidence.
 
 ## Phase 1. Offline Rollout Recovery
 
@@ -74,3 +74,11 @@ The shared command-local options include `--codex-speed` and `--session-retentio
 - `bun test --path-ignore-patterns='**/fixtures/**' test/codex-benchmark test/codex-info test/doctor` passed 377 cases on the final code. A 28-case follow-up run also covered the shared video progress renderer and display-width helpers. `bun run test:unit` passed 2,107 cases. The managed app and Codex runs started before the review fixes and passed 2,433 and 26 cases, respectively.
 - TypeScript, lint, formatting, build, and `git diff --check` passed. The built Node CLI smoke check exercised benchmark help, terminal and JSON output, archive retention, `doctor`, and catalog tiers with an isolated loopback provider.
 - Code and test review covered `258af074..8644dd54`. The re-review covered the fixes for wide-character reflow and help, with added failed-trial and SIGINT cleanup assertions. No material findings remained.
+
+## Phase 6. Benchmark Usage Presentation
+
+Planned. A live run showed how cumulative token lines make it hard to tell what each request used. The opt-in usage output will distinguish warm-up requests from measured attempts in progress and show separate subtotals in the final table. Record fixture results and the reviewed range here as the [Phase 6 checklist](../plan-2026-11-18-codex-cli-benchmark.md#phase-6-benchmark-usage-presentation) is completed.
+
+## Phase 7. Documentation and Validation
+
+Planned. Write the guide once the usage presentation is ready so the examples match the built CLI. Record guide review and final verification here as the [Phase 7 checklist](../plan-2026-11-18-codex-cli-benchmark.md#phase-7-documentation-and-validation) is completed.
