@@ -99,9 +99,19 @@ Phase 5 evidence and the reviewed code range are recorded in the [unified job re
 
 Phase 6 evidence and the reviewed code range are recorded in the [unified job record](jobs/2026-11-18-codex-cli-benchmark.md#phase-6-benchmark-usage-presentation).
 
+### Phase 6 Follow-Up
+
+- [x] Add opt-in `--compact` for human output. Show one row per model and requested speed with completed counts and the median of each available metric. With `--show-token-usage`, show one line with warm-up, measured, and invocation totals, including partial and unavailable labels. On stderr, limit routine compact progress to the startup workload line and resize-aware TTY status.
+- [x] Make `--json` quiet on stderr when there are no diagnostics. Emit one JSON report on stdout and include usage fields there when `--show-token-usage` is set. Send errors and other diagnostics to stderr.
+- [x] At the benchmark report boundary, shorten home-directory prefixes in terminal and JSON path fields to `~/…` on macOS and Unix-like systems or `%USERPROFILE%\…` on Windows. Match the actual home directory and its descendants. Keep the supplied relative prompt path by default and use the existing `--absolute` and `--abs` aliases to return literal absolute paths, resolving a relative prompt path against the invocation directory. Apply this to the reported Codex home and prompt-file path.
+- [x] Update `codex-bench --help` with compact output, quiet JSON, token usage, and absolute paths. Run the compact and JSON examples with the built CLI against a fixture provider.
+- [x] Verify compact medians and partial or missing usage. With `--compact --show-token-usage`, check for startup only on redirected stderr and startup plus live status on a TTY during a clean run. Check for single-object JSON with usage and empty stderr on a clean run, and for diagnostics on failure. Cover Unix and Windows paths, a custom Codex home outside the user home, a sibling path with a similar prefix, and both absolute aliases.
+
+Follow-up evidence and the reviewed code range are recorded in the [unified job record](jobs/2026-11-18-codex-cli-benchmark.md#phase-6-follow-up).
+
 ## Phase 7. Documentation and Validation
 
-- [ ] Create a benchmark usage guide with examples for model and speed comparisons, prompt files, run counts, metrics, terminal and JSON results, token usage progress and totals, and diagnostic commands. Add an output reference if the report schema needs a stable lookup page.
+- [ ] Create a benchmark usage guide with examples for model and speed comparisons, prompt files, run counts, metrics, compact and detailed terminal views, quiet JSON, token usage, and diagnostic commands. Document home-relative report paths and the absolute-path aliases. Add an output reference if the report schema needs a stable lookup page.
 - [ ] Update the shared Codex execution guide with adopted commands and selector inheritance. Document command-local retention, `keep` by default, explicit archive and permanent deletion, and app-server version requirements.
 - [ ] Check both guides against the built CLI help, `doctor`, and `codex-info` output. Validate example commands against a fixture provider.
 - [ ] Run the focused fixture and CLI suites, TypeScript, lint, formatting, build, and a built Node CLI smoke check.

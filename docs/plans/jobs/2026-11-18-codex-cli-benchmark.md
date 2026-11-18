@@ -84,6 +84,14 @@ With `--show-token-usage`, stderr identifies each settled warm-up or measured re
 - TypeScript, lint, formatting, build, and `git diff --check` passed. A built Node CLI smoke check verified per-request stderr and reconciled the table and JSON totals against a loopback provider.
 - Code and test review covered `9355bc92..10d4dbd3`. The review fix marks usage partial even when input and output are available but the reported total is missing. The fixtures verify the partial label in stderr, terminal subtotals, and JSON, and confirm that an eligible saved output count can still provide a speed sample.
 
+### Phase 6 Follow-Up
+
+`--compact` shows one median per metric with completed and usable sample counts, and summarizes requested token usage in one line with partial or unavailable values labeled. Routine stderr output consists of the startup line and resize-aware live status on a TTY. `--json` writes one object with optional token usage and reserves stderr for diagnostics. Benchmark help documents the output modes and provides examples.
+
+- The benchmark abbreviates the home prefix in report paths as `~` on Unix-like systems and `%USERPROFILE%` on Windows. Relative prompt paths display as supplied by default. The `--absolute` and `--abs` aliases show literal paths and resolve relative prompts from the invocation directory. Fixtures covered similar-prefix siblings and custom Codex homes outside the user home. Windows path handling was exercised with Windows-format unit fixtures.
+- `bun test --path-ignore-patterns='**/fixtures/**' test/codex-benchmark test/data-conversion/commands/output-paths.app.test.ts` passed 103 cases. `bun run test:unit` passed 2,122 cases and `bun run test:integration:codex` passed 26. TypeScript, lint, formatting, build, and `git diff --check` passed.
+- The built Node CLI smoke test checked help and ran the compact and JSON examples against a loopback provider. It verified one-line usage totals, quiet JSON, home abbreviation, and the absolute path override. Code and test review covered `e4d542d5..9f235d56` with no outstanding findings. [Follow-up checklist](../plan-2026-11-18-codex-cli-benchmark.md#phase-6-follow-up)
+
 ## Phase 7. Documentation and Validation
 
-Planned. Write the guide once the usage presentation is ready so the examples match the built CLI. Record guide review and final verification here as the [Phase 7 checklist](../plan-2026-11-18-codex-cli-benchmark.md#phase-7-documentation-and-validation) is completed.
+Planned. Write the guide after the Phase 6 follow-up so examples match the built CLI. Record guide review and final verification here as the [Phase 7 checklist](../plan-2026-11-18-codex-cli-benchmark.md#phase-7-documentation-and-validation) is completed.
