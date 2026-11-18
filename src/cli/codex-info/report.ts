@@ -13,6 +13,8 @@ export interface CodexModelInfo {
   inputModalities: string[] | null;
   supportedReasoningEfforts: { effort: string; description: string | null }[] | null;
   catalogReasoningDefault: string | null;
+  serviceTiers: { id: string; name: string; description: string | null }[] | null;
+  defaultServiceTier: string | null;
   isConfigured: boolean;
   isRecommended: boolean;
 }
@@ -80,6 +82,8 @@ function modelInfo(value: unknown, configuredModel: string | null): CodexModelIn
   if (typeof raw.isDefault !== "boolean") invalidMetadata();
   const efforts = raw.supportedReasoningEfforts;
   if (efforts !== undefined && efforts !== null && !Array.isArray(efforts)) invalidMetadata();
+  const tiers = raw.serviceTiers;
+  if (tiers !== undefined && tiers !== null && !Array.isArray(tiers)) invalidMetadata();
   return {
     id,
     model,
@@ -97,6 +101,17 @@ function modelInfo(value: unknown, configuredModel: string | null): CodexModelIn
           })
         : null,
     catalogReasoningDefault: nullableIdentifier(raw.defaultReasoningEffort),
+    serviceTiers: Array.isArray(tiers)
+      ? tiers.map((value) => {
+          const tier = record(value);
+          return {
+            id: identifier(tier.id),
+            name: identifier(tier.name),
+            description: nullableText(tier.description),
+          };
+        })
+      : null,
+    defaultServiceTier: nullableIdentifier(raw.defaultServiceTier),
     isConfigured: configuredModel !== null && configuredModel === model,
     isRecommended: raw.isDefault,
   };

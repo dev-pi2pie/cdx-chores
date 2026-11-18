@@ -17,6 +17,7 @@ async function replay(
       args: string[],
       failure?: string,
       providerConfig?: ProviderConfigOverride,
+      includeTiers?: boolean,
     ) => SpawnSyncReturns<string>,
   ) => void,
 ) {
@@ -43,13 +44,18 @@ createInterface({input:process.stdin}).on("line", line => {
  } else if (method === "model/list") {
    const start=Number(params.cursor ?? 0);
    const page=evidence.modelList.pages[start/2];
-   send({data:evidence.modelList.models.slice(start,start+page.count),nextCursor:page.nextCursor});
+   const data = evidence.modelList.models.slice(start,start+page.count);
+   if (process.env.INCLUDE_TIERS === "1" && start === 0) {
+     data[0] = {...data[0], defaultServiceTier:"priority", serviceTiers:[{id:"priority",name:"Fast",description:"Advertised Fast tier",privateField:"private-tier-field"},{id:"ultrafast",name:"Ultrafast",description:"Advertised Ultrafast tier"}]};
+     data[1] = {...data[1], serviceTiers:[]};
+   }
+   send({data,nextCursor:page.nextCursor});
  } else { process.exit(2); }
 });
 `,
     );
     await chmod(server, 0o755);
-    run((args, failure, providerConfig) =>
+    run((args, failure, providerConfig, includeTiers) =>
       spawnSync(process.execPath, [join(REPO_ROOT, "src/bin.ts"), ...args], {
         cwd: directory,
         env: {
@@ -59,6 +65,7 @@ createInterface({input:process.stdin}).on("line", line => {
           EVIDENCE_FILE: evidencePath,
           FAIL_METHOD: failure ?? "",
           PROVIDER_CONFIG_OVERRIDE: JSON.stringify(providerConfig ?? {}),
+          INCLUDE_TIERS: includeTiers ? "1" : "0",
         },
         encoding: "utf8",
         timeout: 10_000,
@@ -101,6 +108,7 @@ describe("Codex information CLI with recorded protocol projections", () => {
               }),
             ),
           );
+          expect(report.models[0]).toMatchObject({ serviceTiers: null, defaultServiceTier: null });
         }
       }
       const summary = invoke(["codex-info"]);
@@ -120,6 +128,41 @@ describe("Codex information CLI with recorded protocol projections", () => {
       expect(providers.stdout).toContain("probe_proxy [configured]");
       expect(providers.stdout).not.toContain("Configured model:");
       expect(providers.stdout).not.toContain("reasoning");
+    });
+  });
+  test("models output exposes advertised tiers and keeps unavailable catalog metadata unknown", async () => {
+    await replay((invoke) => {
+      const summary = invoke(["codex-info", "models"], undefined, undefined, true);
+      expect(summary.status).toBe(0);
+      expect(summary.stdout).toContain(
+        "Catalog service tiers: Fast (priority), Ultrafast (ultrafast)",
+      );
+      expect(summary.stdout).toContain("Catalog service tiers: none advertised");
+      expect(summary.stdout).toContain("Catalog service tiers: unknown");
+      expect(summary.stdout).toContain("provider support is not verified");
+      expect(summary.stdout).not.toContain("Catalog default service tier:");
+
+      const details = invoke(["codex-info", "models", "--details"], undefined, undefined, true);
+      expect(details.status).toBe(0);
+      expect(details.stdout).toContain(
+        "Catalog service tiers: Fast (priority), Ultrafast (ultrafast)",
+      );
+      expect(details.stdout).toContain("Catalog default service tier: priority");
+      expect(details.stdout).toContain("priority: Advertised Fast tier");
+      expect(details.stdout).toContain("Catalog default service tier: unknown");
+
+      const json = invoke(["codex-info", "models", "--json"], undefined, undefined, true);
+      expect(json.status).toBe(0);
+      expect(json.stderr).toBe("");
+      expect(json.stdout).not.toContain("private-tier-field");
+      const { models } = JSON.parse(json.stdout);
+      expect(models[0].serviceTiers).toEqual([
+        { id: "priority", name: "Fast", description: "Advertised Fast tier" },
+        { id: "ultrafast", name: "Ultrafast", description: "Advertised Ultrafast tier" },
+      ]);
+      expect(models[0].defaultServiceTier).toBe("priority");
+      expect(models[1]).toMatchObject({ serviceTiers: [], defaultServiceTier: null });
+      expect(models[2]).toMatchObject({ serviceTiers: null, defaultServiceTier: null });
     });
   });
   test("multiple provider definitions retain builtin selection without inventing catalog scope", async () => {

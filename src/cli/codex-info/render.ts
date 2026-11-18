@@ -1,18 +1,16 @@
 import { printLine } from "../actions/shared";
 import { getCliColors } from "../colors";
+import { safeTerminalText as safe } from "../terminal-text";
 import type { CliRuntime } from "../types";
 import type { CodexInfoReport, CodexModelInfo } from "./report";
 
-/** Escape controls, including bidi overrides, before interpolating remote strings. */
-function safe(value: string): string {
-  return value.replace(
-    /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu,
-    (character) => `\\u${character.codePointAt(0)!.toString(16).padStart(4, "0")}`,
-  );
-}
-
 function value(value: string | null, missing = "unknown"): string {
   return value === null ? missing : safe(value);
+}
+
+function describeServiceTiers(tiers: CodexModelInfo["serviceTiers"]): string {
+  if (tiers === null) return "unknown";
+  return tiers.map(({ id, name }) => `${safe(name)} (${safe(id)})`).join(", ") || "none advertised";
 }
 
 function markers(model: CodexModelInfo): string {
@@ -93,6 +91,7 @@ export function renderCodexInfoReport(
         line(
           `  Reasoning efforts: ${model.supportedReasoningEfforts?.map((effort) => safe(effort.effort)).join(", ") ?? "unknown"}`,
         );
+        line(`  Catalog service tiers: ${describeServiceTiers(model.serviceTiers)}`);
         if (options.details) {
           if (model.model !== model.id) line(`  Model: ${safe(model.model)}`);
           if (model.displayName) line(`  Display name: ${safe(model.displayName)}`);
@@ -103,6 +102,10 @@ export function renderCodexInfoReport(
             if (effort.description) {
               line(`    ${safe(effort.effort)}: ${safe(effort.description)}`);
             }
+          }
+          line(`  Catalog default service tier: ${value(model.defaultServiceTier)}`);
+          for (const tier of model.serviceTiers ?? []) {
+            if (tier.description) line(`    ${safe(tier.id)}: ${safe(tier.description)}`);
           }
         }
       }
