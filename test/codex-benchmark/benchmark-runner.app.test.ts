@@ -320,7 +320,7 @@ test.skipIf(process.platform === "win32")(
   "shutdown stops a resistant worker after the app-server group leader exits",
   async () => {
     await withRunnerFixture({ resistantWorker: true }, async ({ home, options }) => {
-      await runCodexBenchmark(options);
+      const report = await runCodexBenchmark(options);
       const worker = JSON.parse(await readFile(join(home, "worker.pid"), "utf8")) as {
         pid: number;
         groupId: number;
@@ -332,8 +332,7 @@ test.skipIf(process.platform === "win32")(
             entry.pid === worker.pid && entry.groupId === worker.groupId && isLiveProcess(entry),
         );
       try {
-        const deadline = performance.now() + 1_000;
-        while (exists() && performance.now() < deadline) await delay(20);
+        expect(report.shutdownError).toBeNull();
         expect(exists()).toBe(false);
       } finally {
         if (exists()) process.kill(worker.pid, "SIGKILL");

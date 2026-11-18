@@ -94,8 +94,9 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
     runtime.stdout.write(
       `Codex benchmark completed ${completed}/${measured} measured trials (${warmups} warm-ups).\n`,
     );
+    if (result.shutdownError) runtime.stderr.write(`${result.shutdownError}\n`);
     if (result.interrupted) process.exitCode = 130;
-    else if (failed || completed === 0) process.exitCode = 1;
+    else if (failed || completed === 0 || result.shutdownError) process.exitCode = 1;
   } finally {
     process.off("SIGINT", cancel);
     process.off("SIGTERM", cancel);

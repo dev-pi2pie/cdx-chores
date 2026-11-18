@@ -39,6 +39,7 @@ export interface BenchmarkRun {
   codexHome: string | null;
   trials: BenchmarkTrial[];
   interrupted: boolean;
+  shutdownError: string | null;
 }
 
 export interface BenchmarkOptions {

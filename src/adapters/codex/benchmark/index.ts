@@ -258,6 +258,7 @@ export async function runCodexBenchmark(options: BenchmarkOptions): Promise<Benc
     codexHome: null,
     trials: [],
     interrupted: false,
+    shutdownError: null,
   };
   if (signal?.aborted) return { ...report, interrupted: true };
   const env = { ...(options.env ?? process.env) };
@@ -279,6 +280,10 @@ export async function runCodexBenchmark(options: BenchmarkOptions): Promise<Benc
     report.interrupted = signal?.aborted ?? false;
     return report;
   } finally {
-    await server.close();
+    try {
+      await server.close();
+    } catch (error) {
+      report.shutdownError = messageFrom(error);
+    }
   }
 }

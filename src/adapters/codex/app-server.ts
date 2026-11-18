@@ -1,10 +1,12 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { StringDecoder } from "node:string_decoder";
+import { setTimeout as delay } from "node:timers/promises";
 
 import { isRecord } from "./discovery/transport";
 
 const maxLineBytes = 8 * 1024 * 1024;
 const requestTimeoutMs = 15_000;
+const groupShutdownTimeoutMs = 1_000;
 
 type NotificationListener = (method: string, params: unknown) => void;
 
@@ -199,6 +201,24 @@ export class CodexAppServer {
     }
   }
 
+  private async waitForGroupExit(groupId: number): Promise<void> {
+    const deadline = performance.now() + groupShutdownTimeoutMs;
+    while (true) {
+      try {
+        process.kill(-groupId, 0);
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code;
+        if (code === "ESRCH") return;
+        if (code !== "EPERM") throw error;
+      }
+      if (performance.now() >= deadline)
+        throw new Error(
+          "Codex app-server process group did not stop before its shutdown deadline.",
+        );
+      await delay(20);
+    }
+  }
+
   async close(): Promise<void> {
     this.fail(new Error("Codex app-server was closed."));
     this.child.stdin.destroy();
@@ -209,7 +229,10 @@ export class CodexAppServer {
     try {
       await this.closed;
       // The group can still contain workers after its leader has exited.
-      if (this.separateGroup) this.kill("SIGKILL");
+      if (this.separateGroup && this.child.pid) {
+        this.kill("SIGKILL");
+        await this.waitForGroupExit(this.child.pid);
+      }
     } finally {
       clearTimeout(forceKill);
     }
