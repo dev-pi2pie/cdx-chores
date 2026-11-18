@@ -110,6 +110,26 @@ test.each([
     exitCode: 0,
   },
   {
+    message: "This account is not eligible for the priority service tier.",
+    status: "unavailable",
+    exitCode: 0,
+  },
+  {
+    message: "Service tier 'priority' is not eligible for this account.",
+    status: "unavailable",
+    exitCode: 0,
+  },
+  {
+    message: "Invalid value for 'service_tier': priority.",
+    status: "unavailable",
+    exitCode: 0,
+  },
+  {
+    message: "Image input is not eligible for this model at the priority service tier.",
+    status: "failed",
+    exitCode: 1,
+  },
+  {
     message: "This model does not support image input at the priority service tier.",
     status: "failed",
     exitCode: 1,

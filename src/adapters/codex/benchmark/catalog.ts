@@ -73,11 +73,11 @@ const tierPhrase =
   /(?:(?:(?:priority|standard|fast|ultrafast) )?service[ _-]?tier(?: ['"]?(?:priority|default|fast|ultrafast)['"]?)?|priority tier|fast mode|ultrafast)/
     .source;
 const rejectedTier = new RegExp(
-  `\\b(?:does not support (?:the )?|(?:unsupported|invalid|unknown|unrecognized) )${tierPhrase}\\b`,
+  `\\b(?:(?:does not support|not eligible for) (?:the )?|(?:unsupported|invalid|unknown|unrecognized) (?:value for )?)['"]?${tierPhrase}\\b`,
   "i",
 );
 const tierIsRejected = new RegExp(
-  `\\b${tierPhrase} (?:requires\\b|(?:is )?(?:unavailable|unsupported|invalid|unknown|unrecognized|not (?:supported|available|allowed))\\b)`,
+  `\\b${tierPhrase} (?:requires\\b|(?:is )?(?:unavailable|unsupported|invalid|unknown|unrecognized|not (?:supported|available|allowed|eligible))\\b)`,
   "i",
 );
 
