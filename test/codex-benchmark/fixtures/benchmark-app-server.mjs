@@ -200,6 +200,9 @@ async function run() {
           });
         } else if (thread.id === `thread-${scenario.failThread}`) {
           completeTurn(thread, "failed", { message: "fixture inference failed" });
+        } else if (thread.id === `thread-${scenario.serverInterrupt?.thread}`) {
+          const { message } = scenario.serverInterrupt;
+          completeTurn(thread, "interrupted", message === null ? null : { message });
         } else {
           completeTurn(thread, "completed");
           if (thread.id === `thread-${scenario.endStdoutAfterThread}`) {

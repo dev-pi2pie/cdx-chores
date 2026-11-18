@@ -152,7 +152,8 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
           `Session retention ${status} (${safeTerminalText(thread)}): ${safeTerminalText(retention.error)}\n`,
         );
       }
-      failed ||= trial.status === "failed" || retention?.status === "failed";
+      failed ||=
+        trial.status === "failed" || trial.status === "cancelled" || retention?.status === "failed";
     }
     if (options.json) {
       runtime.stdout.write(`${serializeCliJson(report)}\n`);

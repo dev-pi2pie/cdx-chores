@@ -232,6 +232,9 @@ class BenchmarkRunner {
           : turn.status === "completed"
             ? "completed"
             : "failed";
+      if (trial.status === "cancelled" && !signal?.aborted && !trial.error?.trim()) {
+        trial.error = "Codex app-server interrupted the turn.";
+      }
       if (
         trial.status === "failed" &&
         requestedSpeed &&

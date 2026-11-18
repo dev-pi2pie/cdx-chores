@@ -543,6 +543,44 @@ test.each(["confirmed", "unconfirmed"] as const)(
   15_000,
 );
 
+test.each([null, "fixture interrupted the turn"])(
+  "CLI fails a server-interrupted trial after a completed measurement (reason: %s)",
+  async (message) => {
+    await withRunnerFixture(
+      { serverInterrupt: { thread: 3, message } },
+      async ({ options, trace }) => {
+        const result = await startCliBenchmark({ ...options, runs: 2 }, [
+          "--json",
+          "--show-token-usage",
+        ]).completion;
+        const reason = message ?? "Codex app-server interrupted the turn.";
+        expect(result.exitCode).toBe(1);
+        expect(result.stderr.trim()).toBe(`cancelled (inherited model/inherited speed): ${reason}`);
+        expect(JSON.parse(result.stdout)).toMatchObject({
+          run: {
+            interrupted: false,
+            completedMeasuredTrials: 1,
+            transportError: null,
+            shutdownError: null,
+          },
+          trials: [
+            { status: "completed", warmup: true },
+            { status: "completed", warmup: false, turnDurationMs: 800 },
+            {
+              status: "cancelled",
+              warmup: false,
+              eligible: false,
+              error: reason,
+              tokenUsage: { partial: true, counts: { totalTokens: 230 } },
+            },
+          ],
+        });
+        expect(traceMethod(await trace(), "turn/interrupt")).toHaveLength(0);
+      },
+    );
+  },
+);
+
 test("CLI reports a failed turn, continues, and retains only confirmed trial threads", async () => {
   await withRunnerFixture({ failThread: 1 }, async ({ options, trace }) => {
     const preload = await withStderrTtyPreload(options.cwd);

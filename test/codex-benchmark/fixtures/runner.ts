@@ -24,6 +24,7 @@ interface Scenario {
   withholdStartReply?: boolean;
   waitForInterruptThread?: number;
   failThread?: number;
+  serverInterrupt?: { thread: number; message: string | null };
   rejectFast?: boolean;
   rejectStart?: "thread/start" | "turn/start";
   retentionError?: boolean;
