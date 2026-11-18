@@ -19,14 +19,15 @@ function formatReportedTotal(count: number | null | undefined, partial: boolean)
 export function createBenchmarkProgress(
   runtime: CliRuntime,
   workload: BenchmarkWorkloadOptions,
-  options: { showTokenUsage?: boolean; now?: () => number } = {},
+  options: { transient?: boolean; showTokenUsage?: boolean; now?: () => number } = {},
 ) {
   const stream = runtime.stderr as NodeJS.WriteStream;
   const tty = Boolean(stream.isTTY);
   const frame = tty ? createReflowingTerminalBlock(stream) : undefined;
   const colors = getCliColors(runtime, stream);
   const now = options.now ?? (() => performance.now());
-  const usage = options.showTokenUsage ? createTokenUsageAccumulator() : undefined;
+  const usage =
+    !options.transient && options.showTokenUsage ? createTokenUsageAccumulator() : undefined;
   const combinations = (workload.models.length || 1) * (workload.speeds.length || 1);
   const measuredTrials = combinations * workload.runs;
   const trialCount = measuredTrials + combinations;
@@ -35,10 +36,12 @@ export function createBenchmarkProgress(
   let previousLine: string | undefined;
   let stopped = false;
 
-  const plural = combinations === 1 ? "" : "s";
-  stream.write(
-    `${combinations} combination${plural} · ${measuredTrials} measured trial${measuredTrials === 1 ? "" : "s"} + ${combinations} warm-up${plural}\n`,
-  );
+  if (!options.transient) {
+    const plural = combinations === 1 ? "" : "s";
+    stream.write(
+      `${combinations} combination${plural} · ${measuredTrials} measured trial${measuredTrials === 1 ? "" : "s"} + ${combinations} warm-up${plural}\n`,
+    );
+  }
 
   function draw(force = false): void {
     if (!frame || !active) return;

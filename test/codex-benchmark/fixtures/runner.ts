@@ -103,11 +103,25 @@ export function startCliBenchmark(options: BenchmarkOptions, args: string[], pre
   });
 }
 
-export async function withStderrTtyPreload(cwd: string): Promise<string> {
+export async function withStderrTtyPreload(cwd: string, writeTrace?: string): Promise<string> {
   const path = join(cwd, "stderr-tty.cjs");
+  const traceScript = writeTrace
+    ? `
+const { appendFileSync } = require("node:fs");
+for (const name of ["stdout", "stderr"]) {
+  const stream = process[name];
+  const write = stream.write;
+  stream.write = function (chunk, ...args) {
+    appendFileSync(${JSON.stringify(writeTrace)}, JSON.stringify({ name, text: String(chunk) }) + "\\n");
+    return write.call(this, chunk, ...args);
+  };
+}
+`
+    : "";
   await writeFile(
     path,
-    "Object.defineProperties(process.stderr, { isTTY: { value: true }, columns: { value: 110 } });",
+    "Object.defineProperties(process.stderr, { isTTY: { value: true }, columns: { value: 110 } });" +
+      traceScript,
   );
   return path;
 }

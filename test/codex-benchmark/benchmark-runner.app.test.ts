@@ -323,47 +323,67 @@ test("CLI reports a failed turn, continues, and retains only confirmed trial thr
   });
 });
 
-test.skipIf(process.platform === "win32")(
-  "foreground SIGINT interrupts exactly one active turn before archiving",
-  async () => {
-    await withRunnerFixture(
-      { interrupt: "confirmed", withholdStartReply: true },
-      async ({ options, trace }) => {
-        const preload = await withStderrTtyPreload(options.cwd);
-        const cli = startCliBenchmark(
-          options,
-          ["--session-retention", "archive", "--no-color", "--show-token-usage"],
-          preload,
-        );
-        try {
-          await waitForTurnStart(trace);
-          expect(traceMethod(await trace(), "turn/start")).toHaveLength(1);
-          if (!cli.child.pid) throw new Error("Expected an owned CLI process.");
-          process.kill(-cli.child.pid, "SIGINT");
-          const result = await cli.completion;
-          expect(result.stopped).toBe(true);
-          expect(result.issues).toEqual([]);
-          expect(result.exitCode).toBe(130);
-          expect(result.stderr).toContain("Waiting for text");
-          expect(result.stderr).toContain(
-            "\r\x1b[2K\rWarm-up · model-a · Inherited · reported 230 tokens (partial)",
+for (const json of [false, true]) {
+  test.skipIf(process.platform === "win32")(
+    `foreground SIGINT interrupts exactly one active turn before archiving (${json ? "JSON" : "terminal"})`,
+    async () => {
+      await withRunnerFixture(
+        { interrupt: "confirmed", withholdStartReply: true },
+        async ({ options, trace }) => {
+          const preload = await withStderrTtyPreload(options.cwd);
+          const cli = startCliBenchmark(
+            options,
+            [
+              "--session-retention",
+              "archive",
+              "--no-color",
+              "--show-token-usage",
+              ...(json ? ["--json"] : []),
+            ],
+            preload,
           );
-          expect(result.stdout).toMatch(/Warm-up subtotal \(partial\) +150 +80 +230/u);
-          expect(result.stdout).toMatch(/Measured subtotal +— +— +—/u);
-          expect(result.stdout).toMatch(/Invocation total \(partial\) +150 +80 +230/u);
-          const events = await trace();
-          expect(traceMethod(events, "turn/start")).toHaveLength(1);
-          expect(events.slice(-3).map(({ method }) => method)).toEqual([
-            "turn/interrupt",
-            "turn/completed",
-            "thread/archive",
-          ]);
-          expect(events.at(-1)?.params?.threadId).toBe("thread-1");
-        } finally {
-          cli.shutdown();
-          await cli.completion;
-        }
-      },
-    );
-  },
-);
+          try {
+            await waitForTurnStart(trace);
+            expect(traceMethod(await trace(), "turn/start")).toHaveLength(1);
+            if (!cli.child.pid) throw new Error("Expected an owned CLI process.");
+            process.kill(-cli.child.pid, "SIGINT");
+            const result = await cli.completion;
+            expect(result.stopped).toBe(true);
+            expect(result.issues).toEqual([]);
+            expect(result.exitCode).toBe(130);
+            expect(result.stderr).toContain("Waiting for text");
+            if (json) {
+              expect(result.stderr.endsWith("\r\x1b[2K\r")).toBe(true);
+              const report = JSON.parse(result.stdout);
+              expect(report.run.interrupted).toBe(true);
+              expect(report.trials).toHaveLength(1);
+              expect(report.trials[0]).toMatchObject({ status: "cancelled" });
+              expect(report.tokenUsage).toMatchObject({
+                partial: true,
+                totals: { totalTokens: 230 },
+              });
+            } else {
+              expect(result.stderr).toContain(
+                "\r\x1b[2K\rWarm-up · model-a · Inherited · reported 230 tokens (partial)",
+              );
+              expect(result.stdout).toMatch(/Warm-up subtotal \(partial\) +150 +80 +230/u);
+              expect(result.stdout).toMatch(/Measured subtotal +— +— +—/u);
+              expect(result.stdout).toMatch(/Invocation total \(partial\) +150 +80 +230/u);
+            }
+            const events = await trace();
+            expect(traceMethod(events, "turn/start")).toHaveLength(1);
+            expect(events.slice(-3).map(({ method }) => method)).toEqual([
+              "turn/interrupt",
+              "turn/completed",
+              "thread/archive",
+            ]);
+            expect(events.at(-1)?.params?.threadId).toBe("thread-1");
+          } finally {
+            cli.shutdown();
+            await cli.completion;
+          }
+        },
+      );
+    },
+  );
+}

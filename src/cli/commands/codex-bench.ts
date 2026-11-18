@@ -73,11 +73,13 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
     runs: options.runs ?? 3,
   };
   const sessionRetention = resolveCodexSessionRetention(options.sessionRetention);
-  const progress = options.json
-    ? undefined
-    : createBenchmarkProgress(runtime, workload, {
-        showTokenUsage: options.showTokenUsage && !options.compact,
-      });
+  const progress =
+    options.json && !(runtime.stderr as NodeJS.WriteStream).isTTY
+      ? undefined
+      : createBenchmarkProgress(runtime, workload, {
+          transient: options.json,
+          showTokenUsage: options.showTokenUsage && !options.compact,
+        });
   process.on("SIGINT", cancel);
   process.on("SIGTERM", cancel);
   try {
@@ -149,8 +151,8 @@ export function registerCodexBenchCommand(program: Command, runtime: CliRuntime)
     )
     .option("--prompt-file <path>", "Use a UTF-8 prompt file for every trial")
     .option("--compact", "Show median metrics and summarize requested token totals")
-    .option("--json", "Write one JSON report to stdout and reserve stderr for diagnostics")
-    .option("--show-prompt", "Include the prompt text in the report")
+    .option("--json", "Write one JSON report to stdout")
+    .option("--show-prompt", "Include the prompt text in the report as prompt.text in JSON")
     .option(
       "--show-token-usage",
       "Include reported token usage and warm-up totals in the selected output",
@@ -160,12 +162,14 @@ export function registerCodexBenchCommand(program: Command, runtime: CliRuntime)
       "\nUse one --runs value for every model and speed combination. Each combination also gets one warm-up.\n" +
         "Omitted model, provider, reasoning effort, and speed inherit from Codex.\n" +
         "Omit --prompt-file to use the built-in sample prompt.\n" +
+        "JSON mode shows a temporary status on terminal stderr. Redirected stderr carries diagnostics only.\n" +
+        "Relative prompt-file paths appear as supplied. --absolute and --abs resolve them from the working directory.\n" +
         "Home paths are shortened in reports. Use --absolute or --abs to show literal absolute paths.\n" +
         "Use --no-color or set NO_COLOR to disable colors.\n\n" +
         "Examples\n" +
         "  cdx-chores codex-bench --codex-model MODEL --codex-speed standard --codex-speed fast\n" +
         "  cdx-chores codex-bench --compact --show-token-usage\n" +
-        "  cdx-chores codex-bench --prompt-file task.txt --runs 3 --json --show-token-usage > report.json\n",
+        "  cdx-chores codex-bench --prompt-file ./task.txt --json --show-prompt --show-token-usage > report.json\n",
     )
     .action(async (options: BenchmarkCommandOptions) => actionCodexBenchmark(runtime, options));
 }

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { startCliBenchmark, withRunnerFixture, withStderrTtyPreload } from "./fixtures/runner";
@@ -122,19 +122,40 @@ test("compact keeps partial totals in the report and emits only startup on redir
   });
 });
 
-test("JSON with token usage stays quiet on a TTY even when compact is also supplied", async () => {
+test("clears transient JSON progress before writing the report with prompt and usage", async () => {
   await withRunnerFixture({ streamText: "matching" }, async ({ options }) => {
-    const preload = await withStderrTtyPreload(options.cwd);
+    const writesPath = join(options.cwd, "cli-writes.jsonl");
+    const preload = await withStderrTtyPreload(options.cwd, writesPath);
+    await writeFile(join(options.cwd, "task.txt"), "Fixture prompt\n");
     const run = await startCliBenchmark(
       options,
-      ["--json", "--compact", "--show-token-usage"],
+      ["--json", "--compact", "--show-token-usage", "--prompt-file", "./task.txt", "--show-prompt"],
       preload,
     ).completion;
     expect(run.ok).toBe(true);
     const report = JSON.parse(run.stdout);
     expect(report.run.completedMeasuredTrials).toBe(1);
     expect(report.tokenUsage).toMatchObject({ totals: { totalTokens: 460 } });
-    expect(run.stderr).toBe("");
+    expect(report.prompt).toEqual({ source: "file", path: "./task.txt", text: "Fixture prompt\n" });
+    expect(run.stderr).toContain("Waiting for text");
+    expect(run.stderr).toContain("Streaming");
+    expect(run.stderr).not.toContain("private fixture chunk");
+    expect(run.stderr).not.toContain(startup.trim());
+    expect(run.stderr).not.toContain("reported 230 tokens");
+
+    const writes = (await readFile(writesPath, "utf8"))
+      .trimEnd()
+      .split("\n")
+      .map((line) => JSON.parse(line) as { name: string; text: string });
+    const reportWrite = writes.findIndex(({ name }) => name === "stdout");
+    expect(reportWrite).toBeGreaterThan(0);
+    expect(
+      writes
+        .slice(0, reportWrite)
+        .map(({ text }) => text)
+        .join(""),
+    ).toBe(run.stderr);
+    expect(run.stderr.endsWith("\r\x1b[2K\r")).toBe(true);
   });
 });
 

@@ -19,11 +19,14 @@ test("benchmark help explains shared runs, inheritance, retention and both outpu
     "codex-bench --codex-model MODEL --codex-speed standard --codex-speed fast",
   );
   expect(help).toContain("--compact Show median metrics and summarize requested token totals");
-  expect(help).toContain("reserve stderr for diagnostics");
+  expect(help).toContain("JSON mode shows a temporary status on terminal stderr");
+  expect(help).toContain("Redirected stderr carries diagnostics only");
+  expect(help).toContain("Include the prompt text in the report as prompt.text in JSON");
+  expect(help).toContain("Relative prompt-file paths appear as supplied");
   expect(help).toContain("Use --absolute or --abs to show literal absolute paths");
   expect(help).toContain("codex-bench --compact --show-token-usage");
   expect(help).toContain(
-    "codex-bench --prompt-file task.txt --runs 3 --json --show-token-usage > report.json",
+    "codex-bench --prompt-file ./task.txt --json --show-prompt --show-token-usage > report.json",
   );
 });
 
