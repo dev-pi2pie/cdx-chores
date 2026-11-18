@@ -107,6 +107,10 @@ Completed the reopened work. JSON mode displays a resize-aware status on TTY std
 - The built Node CLI ran the paired help example in compact and JSON modes against a loopback provider. Each invocation sent four requests for two ordered pairs, with two warm-ups and two measured trials. JSON recorded the supplied pairs in `run.requested.cases`.
 - Code and test review covered `c46fbe13..52c7755c` with no actionable findings.
 
+### Phase 6.1. Inherited Speed and Reasoning Effort
+
+Pending implementation. Record terminal and JSON verification and the reviewed code range here as the [inherited-settings checklist](../plan-2026-11-18-codex-cli-benchmark.md#phase-61-inherited-speed-and-reasoning-effort) is completed.
+
 ## Phase 7. Documentation and Validation
 
 Pending. Record the guide review and final verification here as the [documentation and validation checklist](../plan-2026-11-18-codex-cli-benchmark.md#phase-7-documentation-and-validation) is completed.

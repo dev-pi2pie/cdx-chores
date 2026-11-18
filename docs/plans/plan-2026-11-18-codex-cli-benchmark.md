@@ -114,9 +114,17 @@ Phase 6 evidence and the reviewed code range are recorded in the [unified job re
 
 Follow-up evidence and the reviewed code range are recorded in the [unified job record](jobs/2026-11-18-codex-cli-benchmark.md#phase-6-follow-up).
 
+### Phase 6.1. Inherited Speed and Reasoning Effort
+
+- [ ] In detailed and compact terminal results, show the configured tier for inherited speed and the resolved effort for inherited reasoning when Codex reports them. Label speed as configured, for example `Inherited (configured Fast)`, and show reasoning effort as `Inherited (Low)` when Codex resolves it to Low. Base each row's labels on completed measured trials. Use `Inherited` alone when all values are missing, qualify a single reported value when coverage is partial, and show `Mixed` when reported values disagree.
+- [ ] Preserve the JSON request fields for matrix and paired runs, including `null` for inherited selections. Verify available values in `trials[].configuredTier` and `trials[].resolvedReasoningEffort`, with `null` when Codex supplies no inherited value. Keep `servedSpeed` unknown without provider telemetry. Preserve explicit selector behavior and result grouping.
+- [ ] Verify known, missing, partial, and mixed inherited values in the terminal with fixtures. Check omitted matrix speed, explicit `--case MODEL=inherit`, inherited reasoning effort, and explicit overrides in terminal and JSON output.
+
+Record verification in the [unified job record](jobs/2026-11-18-codex-cli-benchmark.md#phase-61-inherited-speed-and-reasoning-effort).
+
 ## Phase 7. Documentation and Validation
 
-- [ ] Create a benchmark usage guide with examples for matrix and explicit model–speed comparisons, prompt files, run counts, metrics, compact and detailed terminal views, JSON progress and redirection, token usage, and diagnostic commands. Document home-relative report paths and the absolute-path aliases. Add an output reference if the report schema needs a stable lookup page.
+- [ ] Create a benchmark usage guide with examples for matrix and explicit model–speed comparisons, prompt files, run counts, metrics, compact and detailed terminal views, JSON progress and redirection, token usage, and diagnostic commands. Explain how reports display inherited speed and reasoning effort. Document home-relative report paths and the absolute-path aliases. Add an output reference if the report schema needs a stable lookup page.
 - [ ] Explain warm-ups next to `--runs` in the benchmark guide. Each matrix combination or `--case` occurrence gets one warm-up before its measured trials. Warm-ups run in their own fresh sessions with the same prompt and settings. Exclude them from measured metrics and completion counts, and explain that `--show-token-usage` includes their reported tokens in the invocation total and the terminal warm-up subtotal.
 - [ ] Update the shared Codex execution guide with adopted commands and selector inheritance. Document command-local retention, `keep` by default, explicit archive and permanent deletion, and app-server version requirements.
 - [ ] Check both guides against the built CLI help, `doctor`, and `codex-info` output. Validate example commands against a fixture provider.
