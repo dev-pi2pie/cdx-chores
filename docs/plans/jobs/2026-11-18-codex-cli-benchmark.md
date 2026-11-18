@@ -1,6 +1,7 @@
 ---
 title: "Codex CLI Benchmark Implementation"
 created-date: 2026-11-18
+modified-date: 2026-11-18
 status: completed
 agent: codex
 ---
@@ -120,3 +121,12 @@ Completed the reopened work. JSON mode displays a resize-aware status on TTY std
 - With the built CLI's stderr on a real macOS pseudo-terminal, resized from 110 to 24 and back to 110 columns during a single measured turn's pause between fixture text chunks. In detailed, compact, and JSON modes, the probe confirmed wrapped-row cleanup, restored status detail, and a final clear. Each report matched its saved measured turn's first token of 200 ms, duration of 800 ms, and rate of 100 output tok/s. The [progress test](../../../test/codex-benchmark/progress.unit.test.ts) also checks detail restoration in human and transient modes.
 - `bun test --path-ignore-patterns='**/fixtures/**' test/codex-benchmark test/codex-info test/doctor` passed 414 cases. `bun run test:unit` passed 2,123 and `bun run test:integration:codex` passed 27. `tsc --noEmit`, `bun run lint`, `bun run format:check`, `bun run build`, local Markdown link checks, and `git diff --check` passed.
 - Guide and test review covered `214823fe..3a558372`. The guide review clarified that helper selectors are single-use while the benchmark supports repeated model and speed flags. The re-review found no material issues. [Completed checklist](../plan-2026-11-18-codex-cli-benchmark.md#phase-7-documentation-and-validation)
+
+## Follow-up on benchmark failure reporting
+
+- `9a899c7c` records an expired turn deadline as a failed trial. The CLI exits 1 and preserves partial usage. A confirmed interruption allows retention and the next trial. An unconfirmed interruption skips retention and stops scheduling.
+- `b8b96ac6` returns an interrupted report and exit 130 when Ctrl-C arrives during initialization. If the transport fails during a trial, the runner preserves completed results, sets `run.transportError`, and exits 1. `7c393e1f` records `sentTier` when issuing `turn/start`. The tests check rejected thread starts and rejected turn requests against the protocol trace. [CLI regression tests](../../../test/codex-benchmark/benchmark-runner.app.test.ts)
+- The first code and test review covered `08fdaa01..7c393e1f`. It found that loss during the final trial’s readback could still exit 0. `600e56f1` fixed that case. `3685c9b7` limited the shortened fixture deadline to the stalled turn and added coverage for an unconfirmed interrupt. The full re-review of `08fdaa01..3685c9b7` found no outstanding issues.
+- The built Node CLI passed seven isolated app-server scenarios covering confirmed and unconfirmed turn interruption, transport loss in intermediate and final readback, SIGINT during initialization, and rejection of each start request. The checks verified exit codes, JSON results, and diagnostics. [Benchmark guide](../../guides/codex-benchmark.md#manage-benchmark-sessions)
+- On the reviewed tip, `bun test --path-ignore-patterns='**/fixtures/**' ./test/codex-benchmark` passed 125 cases, `bun run test:unit` passed 2,123, and `bun run test:integration:codex` passed 27. TypeScript (`tsc --noEmit`), lint, formatting, build, the new documentation links, and `git diff --check` passed.
+- The first full application run had one failure in the unchanged process-runner termination-budget test. It passed three consecutive isolated reruns. The serial `bun run test:integration:app` rerun at `3685c9b7` passed all 2,460 cases.

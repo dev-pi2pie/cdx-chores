@@ -1,6 +1,7 @@
 ---
 title: "Codex Benchmark"
 created-date: 2026-11-18
+modified-date: 2026-11-18
 status: completed
 agent: codex
 ---
@@ -78,7 +79,7 @@ Both report formats preserve a relative prompt path as supplied and abbreviate p
 
 The benchmark keeps its sessions by default, including warm-ups. Use `--session-retention archive` to move them out of active history while preserving the rollout. `--session-retention delete` permanently removes the sessions after confirmed turn completion and rollout readback or its deadline. Retention applies to sessions created by the invocation. A cleanup failure preserves the report and returns exit status 1. See the [shared retention guidance](codex-execution-configuration.md#retain-codex-sessions) for compatibility.
 
-An unavailable speed produces a diagnostic while supported combinations continue. A failed trial, a failed shutdown, or zero completed measured trials returns exit status 1. An interrupted run returns 130.
+An unavailable speed produces a diagnostic while supported combinations continue. A failed trial, transport loss, a failed shutdown, or zero completed measured trials returns exit status 1. When a turn exceeds its 120-second deadline, the benchmark marks it failed and preserves available usage. It can start the next trial once Codex confirms the interruption. If the app-server connection is lost during the workload, JSON retains completed results and records the reason in `run.transportError`. Ctrl-C returns status 130, including during app-server initialization.
 
 ## Related Guides
 
