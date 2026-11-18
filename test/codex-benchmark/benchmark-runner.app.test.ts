@@ -296,7 +296,7 @@ test.skipIf(process.platform === "win32")(
 );
 
 test("CLI reports a failed turn, continues, and retains only confirmed trial threads", async () => {
-  await withRunnerFixture({ failFirst: true }, async ({ options, trace }) => {
+  await withRunnerFixture({ failThread: 1 }, async ({ options, trace }) => {
     const preload = await withStderrTtyPreload(options.cwd);
     const result = await startCliBenchmark(
       options,

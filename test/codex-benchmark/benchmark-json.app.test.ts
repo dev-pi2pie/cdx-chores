@@ -266,7 +266,7 @@ test("formats benchmark home and prompt paths, with both aliases giving absolute
 
 test("adds attributable usage from an incomplete warm-up and marks missing trial usage", async () => {
   await withRunnerFixture(
-    { failFirst: true, usageSnapshots: [{ input_tokens: 45 }, null] },
+    { failThread: 1, usageSnapshots: [{ input_tokens: 45 }, null] },
     async ({ options }) => {
       const { report, stderr, exitCode } = await jsonBenchmark({ ...options, runs: 2 }, [
         "--show-token-usage",

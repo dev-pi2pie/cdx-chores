@@ -16,7 +16,7 @@ interface Scenario {
   rerouted?: boolean;
   interrupt?: "confirmed" | "unconfirmed";
   withholdStartReply?: boolean;
-  failFirst?: boolean;
+  failThread?: number;
   rejectFast?: boolean;
   retentionError?: boolean;
   usageSnapshots?: Array<Record<string, number> | null>;

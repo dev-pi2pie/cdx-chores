@@ -164,7 +164,7 @@ async function run() {
           completeTurn(thread, "failed", {
             message: "Service tier priority is not supported for this account.",
           });
-        } else if (scenario.failFirst && thread.id === "thread-1") {
+        } else if (thread.id === `thread-${scenario.failThread}`) {
           completeTurn(thread, "failed", { message: "fixture inference failed" });
         } else {
           completeTurn(thread, "completed");

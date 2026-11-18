@@ -85,6 +85,23 @@ test.each([false, true])(
   },
 );
 
+test("excludes a failed measured trial from inherited settings", async () => {
+  const fastLow = { serviceTier: "priority", reasoningEffort: "low" };
+  const ultraHigh = { serviceTier: "ultrafast", reasoningEffort: "high" };
+  await withRunnerFixture(
+    { failThread: 3, threadSettings: [fastLow, fastLow, ultraHigh] },
+    async ({ options }) => {
+      const run = await startCliBenchmark({ ...options, runs: 2 }, ["--compact", "--no-color"])
+        .completion;
+      expect(run.exitCode).toBe(1);
+      expect(run.stderr).toContain("fixture inference failed");
+      expect(run.stdout).toMatch(
+        /^Inherited +Inherited \(configured Fast\) +Inherited \(Low\) +1\/2 /mu,
+      );
+    },
+  );
+});
+
 test("shows explicit speed and effort when the configured settings differ", async () => {
   const configured = { serviceTier: "priority", reasoningEffort: "low" };
   await withRunnerFixture({ threadSettings: [configured, configured] }, async ({ options }) => {
@@ -302,7 +319,7 @@ test.each(["TTY", "redirected", "--no-color", "NO_COLOR"] as const)(
 );
 
 test("prints red trial and retention failures after clearing the JSON progress line", async () => {
-  await withRunnerFixture({ failFirst: true, retentionError: true }, async ({ options }) => {
+  await withRunnerFixture({ failThread: 1, retentionError: true }, async ({ options }) => {
     const preload = await withStderrTtyPreload(options.cwd);
     const run = await startCliBenchmark(
       options,
