@@ -1,7 +1,7 @@
 ---
 title: "Codex CLI Benchmark and Speed Selection"
 created-date: 2026-11-18
-modified-date: 2026-11-18
+modified-date: 2026-11-19
 status: completed
 agent: codex
 ---
@@ -103,6 +103,31 @@ cdx-chores codex-bench --case gpt-6-luna=fast --case gpt-6.2-sol=ultrafast --run
 Local rollouts are written under the running Codex home, normally `~/.codex/sessions/`. A custom `CODEX_HOME` changes that location. Use the resolved `codexHome` from the app-server initialization response as context. Read the exact `thread.path` returned by the app-server that ran the trial. If the path is unavailable in the start response, refresh it with `thread/read` for that thread ID. [^app-server] [^rollout-location]
 
 Record both thread and turn IDs. On `turn/completed`, read complete JSONL lines immediately while app-server is running, including for failed and interrupted turns. Match the saved `task_started` and the terminal record by turn ID. A `task_complete` closes an ordinary turn and may contain an error. A `turn_aborted` closes an interrupted turn. Retry an unavailable path or missing matching terminal record within a bounded deadline. At expiry, keep the live outcome and mark metrics that lack saved evidence unavailable. [^app-server] [^history] [^rollout-write]
+
+### Cancellation While Waiting for a Turn ID
+
+The CLI sends `turn/start` once when a trial reaches inference. Ctrl-C can arrive after the local app-server starts the turn but before the CLI learns its ID from the reply or a `turn/started` notification. The CLI already knows the thread ID, but `turn/interrupt` requires both IDs. Exiting immediately would give up the chance to interrupt a turn whose ID is on its way. Waiting for the ordinary RPC deadline previously delayed exit by 15 seconds when the server withheld the ID.
+
+The CLI waits up to one second from Ctrl-C for a usable turn ID. If the start request fails first, the wait ends immediately. Once the CLI has the ID, it checks for a matching `turn/completed` notification it may already have received. That notification confirms the outcome even if the start reply arrived later. The one-second limit is a responsiveness choice. The fixtures verify both a late ID and an expired wait. The distribution of ID arrival times in real runs remains unmeasured. [Cancellation verification](../plans/jobs/2026-11-18-codex-cli-benchmark.md#pending-turn-ids-initialization-failures-and-tier-rejections)
+
+```mermaid
+flowchart TD
+    cancel["Ctrl-C while turn/start is pending"] --> known{"Turn ID known?"}
+    known -->|Yes| observed{"Matching completion already received?"}
+    known -->|No| wait["Listen for the ID for up to one second"]
+    wait -->|ID arrives| observed
+    wait -->|Grace period expires| skip["Skip requested archive or delete"]
+    wait -->|Start rejected or connection lost| skip
+    observed -->|Yes| retain["Read available rollout data and apply retention"]
+    observed -->|No| connected{"App-server connection open?"}
+    connected -->|No| skip
+    connected -->|Yes| interrupt["Request interruption of this turn"]
+    interrupt --> confirmed{"Matching completion received?"}
+    confirmed -->|Yes| retain
+    confirmed -->|No| skip
+    retain --> report["Return the benchmark report and exit 130"]
+    skip --> report
+```
 
 ### Session Retention
 
