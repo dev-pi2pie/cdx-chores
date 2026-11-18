@@ -267,8 +267,14 @@ async function runTrial(
     firstTokenMs,
     durationMs,
     outputTokens,
+    usagePartial:
+      outputTokens !== null && (turn.status !== "completed" || terminal?.type !== "task_complete"),
     turnOutputTokensPerSecond:
-      turn.status === "completed" && durationMs && durationMs > 0 && outputTokens !== null
+      turn.status === "completed" &&
+      terminal?.type === "task_complete" &&
+      durationMs &&
+      durationMs > 0 &&
+      outputTokens !== null
         ? (1_000 * outputTokens) / durationMs
         : null,
     liveDurationMs: turn.durationMs,
