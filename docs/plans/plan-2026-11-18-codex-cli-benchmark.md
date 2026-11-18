@@ -30,13 +30,14 @@ Exercise the [live-check spike](../../scripts/spikes/codex-benchmark-live-check.
 
 ## Phase 2. Verify Speed Request Wiring Offline
 
-Capture outbound inference requests at a fixture provider through the SDK and app-server. In the development probes, configure speed through the SDK constructor's existing `config` option and send `serviceTierForTurn` directly to app-server. Use a fixture configuration with Fast selected so the checks can distinguish explicit Standard from omission. Reuse the fixture in Phase 3 to verify the integrated helper and benchmark entry points.
+Capture outbound inference requests at a fixture provider through the SDK and app-server. In the development probes, configure speed through the SDK constructor's existing `config` option and send `serviceTierForTurn` directly to app-server. Use Fast and Standard baselines to check overrides in both directions. Reuse the fixture in Phase 3 to verify the integrated helper and benchmark entry points.
 
-| Selection | Evidence required on both paths |
-| --- | --- |
-| Omitted | The request inherits configured Fast. |
-| `standard` | The request uses Standard with Fast configured. For app-server, exercise `serviceTierForTurn: "default"`. |
-| `fast` and `ultrafast` | Each explicit selector produces the expected provider request tier for the fixture catalog. Record the exact observed values. |
+| Configured speed | Selection | Evidence required on both paths |
+| --- | --- | --- |
+| Fast | Omitted | The request inherits Fast. |
+| Fast | `standard` | The request uses Standard. For app-server, exercise `serviceTierForTurn: "default"`. |
+| Standard | `fast` | The request uses the fixture catalog's Fast tier. |
+| Standard | `ultrafast` | The request uses the fixture catalog's Ultrafast tier. |
 
 - [ ] Capture outbound requests through the SDK using the fixture configuration and every selection in the table.
 - [ ] Capture outbound requests through app-server using the same cases and confirm the per-turn Standard override.
@@ -55,6 +56,8 @@ Capture outbound inference requests at a fixture provider through the SDK and ap
 - [ ] Capture requested selectors, live outcome, saved metrics, and sample eligibility per trial. Require a completed turn with one assistant text message and final-answer phase when supplied. Exclude tool activity and a reported model reroute from speed summaries. Preserve available usage and report rejected speeds as unavailable.
 - [ ] Test option placement, inheritance, invalid inputs before inference, and explicit speed propagation through existing helper retries using the Phase 2 fixture.
 - [ ] Test prompt reuse, fresh-thread isolation, failed and cancelled trials, and retention ordering through the CLI. Verify four warm-ups and twelve measured trials for the default two-model/two-speed comparison.
+- [ ] Run a mixed-support fixture. Report the unavailable model and speed combination as unavailable and verify that the supported combinations still complete at their requested speeds.
+- [ ] Replay a completed turn with a single commentary message. Assert that it counts as completed, contributes available token usage, and contributes zero usable samples to every performance summary.
 
 ## Phase 4. Implement Results and Progress Output
 
@@ -63,6 +66,7 @@ Capture outbound inference requests at a fixture provider through the SDK and ap
 - [ ] Send the startup workload, live status, diagnostics, and opt-in running usage to stderr. On a TTY, update one live line and fit it to terminal width, including after a resize during a streaming pause. Use shared color handling and honor `--no-color`. On redirected stderr, print one startup line plus diagnostics and opt-in totals. Clear the active line on completion, failure, and cancellation.
 - [ ] Replay the fixtures through the CLI to verify terminal and JSON output for zero through three usable samples, including partial trials. Assert that both formats identify invocation totals as partial when any usage is missing or incomplete.
 - [ ] Verify clean JSON stdout, redirected stderr, TTY resize and cleanup, and color controls.
+- [ ] Exit with status `1` when a requested archive or delete fails after successful inference. Test both modes and assert that stdout still contains the complete JSON report, the trial stays `completed`, and the separate retention failure includes the affected thread ID.
 
 ## Phase 5. Documentation and Validation
 

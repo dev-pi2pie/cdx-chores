@@ -51,7 +51,8 @@ Use `standard` as the public spelling for the explicit Standard selection. The a
 
 ### Benchmark Workload and Selection
 
-- `codex-bench` accepts repeated `--codex-model` and `--codex-speed` values. Run every selected model at every selected speed, independent of flag order. One speed applies to all selected models.
+- `codex-bench` accepts repeated `--codex-model` and `--codex-speed` values. Build the model × speed workload independent of flag order. One speed applies to all selected models.
+- Handle unavailable speeds per model and speed combination. Report the affected combination as unavailable and continue the supported combinations at their requested speeds.
 - Omitted model, provider, reasoning effort, and speed inherit from Codex for the benchmark. An omitted model supplies one inherited model selection. An omitted speed supplies one inherited speed selection per model. Pass provider and effort explicitly to control those settings across combinations. Mark inherited selections in the report and include resolved values when Codex exposes them. Existing Codex helpers currently default their omitted reasoning effort to `low`. [^execution]
 - The built-in text prompt is the default. `--prompt-file <path>` reads a UTF-8 file once and uses its contents for every request. Validate missing, unreadable, invalid UTF-8, or empty files before inference. A task that needs input data can include a representative excerpt and output instructions in the prompt file.
 - `--runs <count>` accepts one positive integer per invocation and defaults to `3`. The same count sets the number of measured trials for every model and speed combination, regardless of flag order. Reject invalid values and repeated `--runs` flags before inference.
@@ -98,6 +99,8 @@ Share the command-local `--session-retention archive|keep|delete` option across 
 
 Apply retention only to threads the invocation created, including warm-ups, after Codex confirms the turn ended and rollout readback succeeds or reaches its deadline. Keep collected metrics and partial usage in the report. Skip cleanup for a trial without confirmed completion and report its thread ID when known. A retention failure preserves the trial result and reports the affected thread and error separately.
 
+If a requested archive or delete fails after successful inference, `codex-bench` exits with status `1` and still emits the complete report, including valid JSON when requested. Keep the trial marked `completed` and report the retention failure and thread ID separately.
+
 For SDK helpers, capture each newly owned thread ID when the SDK assigns it. A one-shot helper releases its thread after the SDK execution has settled and the result or error has been captured. A multi-turn helper releases its thread after its last dependent turn, including retries, repairs, or regeneration. An interactive workflow releases a reusable thread when it finishes with it. Apply the selected policy once per released thread and skip cleanup when the thread's completion or ownership is uncertain. Preserve helper results and report cleanup failures or skips separately with the known thread ID. Validate one representative helper of each kind before extending the option to the remaining helpers. [^sdk-thread]
 
 The TypeScript SDK 0.170.0 exposes thread IDs and turn execution. Archive and delete use the app-server protocol, so the versions below refer to the Codex CLI binary. [^sdk-thread]
@@ -116,6 +119,8 @@ A separate live check ran one `gpt-6-luna` Standard trial at `medium` effort for
 ### Metrics and Reporting
 
 A comparable sample comes from a completed turn with a single assistant text message. Require the final-answer phase when the protocol supplies a phase. Exclude turns with tool activity, multiple assistant text messages, or a reported model reroute from the requested model's summaries. Report those trials and any available usage.
+
+A completed turn with only a commentary message counts as completed and contributes any available token usage. It contributes zero usable samples for each performance metric.
 
 | Metric | Definition |
 | --- | --- |
@@ -182,13 +187,15 @@ Share speed validation across the command surfaces. Preserve omitted benchmark s
 
 ### Request Wiring Checks
 
-Capture outgoing requests against a fixture provider for both the SDK helper and app-server paths. With Fast configured, check that explicit Standard overrides Fast and that omission inherits Fast on each path. Verify the request mapping for each supported explicit speed. The live check tests provider acceptance. [^sdk] [^app-server]
+Capture outgoing requests against a fixture provider for both the SDK helper and app-server paths. With Fast configured, check that explicit Standard overrides Fast and that omission inherits Fast on each path. With Standard configured, verify that explicit Fast sends the Fast tier on both paths. Verify the request mapping for each supported explicit speed. The live check tests provider acceptance. [^sdk] [^app-server]
 
 ### Saved Records and Output Checks
 
 Use a custom Codex home fixture to verify lookup by the returned thread path, including an initially absent path recovered through `thread/read`. Delay the saved terminal line until after the live event to test the immediate read, retry, and deadline expiry. Include fixtures for an interrupted turn with a matching `turn_aborted`, an interrupted turn with only attributable partial usage, and a snapshot without an attributable start. Check duplicate cumulative snapshots, missing timing and usage, and token rate calculation in terminal and JSON output. Verify run-count validation and scheduling across model and speed combinations. Replay live notifications to check progress and cancellation, including clean JSON stdout. Verify fresh-thread tool isolation with the intended Codex configuration.
 
 Resize a terminal from wide to narrow and back between text chunks. Check that the line fits with wide-character model IDs, clears previously wrapped rows, and restores detail when space returns. Verify that resizing leaves report metrics derived from the same saved records. With redirected stderr, check for exactly one startup workload line, any diagnostics, and token totals when requested.
+
+Use a mixed-support fixture where one requested model and speed combination is unavailable and the others complete at the requested speeds. Replay a completed commentary-only turn and verify its completed count, available usage, and zero performance samples. For each of archive and delete, fail the requested cleanup after successful inference and assert exit status `1`, a complete JSON report, and a separate retention failure with the affected thread ID.
 
 ## Related Plans
 
