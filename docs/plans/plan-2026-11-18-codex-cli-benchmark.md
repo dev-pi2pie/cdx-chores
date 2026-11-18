@@ -72,10 +72,12 @@ Phase 3 evidence and the reviewed code range are recorded in the [unified job re
 
 ## Phase 4. Benchmark Results
 
-- [ ] Aggregate each model and requested speed separately. Count completed trials and usable samples per metric. Calculate Turn output tok/s from complete saved output usage, including reasoning, divided by a positive full saved turn duration. Use measured samples only in summaries.
-- [ ] Emit one unstyled result object on stdout in `--json` mode with stable per-trial and summary fields, unavailable values as `null`, and `servedSpeed: null` per trial. Include the prompt source and resolved selection context when available. Include the prompt text with `--show-prompt`. With `--show-token-usage`, include per-trial counts and invocation totals, including warm-ups and safely attributable partial usage. Mark totals partial when any request has missing or incomplete usage.
-- [ ] Replay the fixtures to verify sample counts and JSON summaries for zero through three usable samples, including partial trials and incomplete invocation totals.
-- [ ] Exit with status `1` when a requested archive or delete fails after successful inference. Test both modes and assert that stdout still contains the complete JSON report, the trial stays `completed`, and the separate retention failure includes the affected thread ID.
+- [x] Aggregate each model and requested speed separately. Count completed trials and usable samples per metric. Calculate Turn output tok/s from complete saved output usage, including reasoning, divided by a positive full saved turn duration. Use measured samples only in summaries.
+- [x] Emit one unstyled result object on stdout in `--json` mode with stable per-trial and summary fields, unavailable values as `null`, and `servedSpeed: null` per trial. Include the prompt source and resolved selection context when available. Include the prompt text with `--show-prompt`. With `--show-token-usage`, include per-trial counts and invocation totals, including warm-ups and safely attributable partial usage. Mark totals partial when any request has missing or incomplete usage.
+- [x] Replay the fixtures to verify sample counts and JSON summaries for zero through three usable samples, including partial trials and incomplete invocation totals.
+- [x] Exit with status `1` when a requested archive or delete fails after successful inference. Test both modes and assert that stdout still contains the complete JSON report, the trial stays `completed`, and the separate retention failure includes the affected thread ID.
+
+Phase 4 evidence and the reviewed code range are recorded in the [unified job record](jobs/2026-11-18-codex-cli-benchmark.md#phase-4-benchmark-results).
 
 ## Phase 5. CLI Usage and Diagnostics
 
