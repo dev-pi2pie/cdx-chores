@@ -298,6 +298,32 @@ test.skipIf(process.platform === "win32")(
   },
 );
 
+test.each(["thread/start", "turn/start"] as const)(
+  "CLI records a sent tier only on turn requests when %s is rejected",
+  async (method) => {
+    await withRunnerFixture({ rejectStart: method }, async ({ options, trace }) => {
+      const result = await startCliBenchmark(options, ["--json", "--codex-speed", "fast"])
+        .completion;
+      expect(result.exitCode).toBe(1);
+      const { trials } = JSON.parse(result.stdout);
+      const turnRequests = traceMethod(await trace(), "turn/start");
+      const attempted = method === "turn/start";
+      expect(turnRequests.map(({ params }) => params?.serviceTierForTurn)).toEqual(
+        attempted ? ["priority", "priority"] : [],
+      );
+      expect(trials).toHaveLength(2);
+      for (const trial of trials) {
+        expect(trial).toMatchObject({
+          status: "failed",
+          inferenceAttempted: attempted,
+          sentTier: attempted ? "priority" : null,
+          error: expect.stringContaining(`fixture rejected ${method}`),
+        });
+      }
+    });
+  },
+);
+
 test("CLI reports transport loss between measured trials and keeps the completed results", async () => {
   await withRunnerFixture({ exitDuringReadbackThread: 2 }, async ({ options, trace }) => {
     const result = await startCliBenchmark({ ...options, runs: 2 }, ["--json"]).completion;

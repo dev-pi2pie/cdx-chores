@@ -108,6 +108,10 @@ async function run() {
     const reject = (message) => send({ id, error: { code: -32603, message } });
     const thread = threads.get(params?.threadId);
     if (params?.threadId && !thread) throw new Error(`Unknown thread in ${method}`);
+    if (method === scenario.rejectStart) {
+      reject(`fixture rejected ${method}`);
+      continue;
+    }
     switch (method) {
       case "initialize":
         if (scenario.stallInitialization) {

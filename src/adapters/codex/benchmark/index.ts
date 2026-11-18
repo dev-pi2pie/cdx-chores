@@ -168,9 +168,10 @@ class BenchmarkRunner {
     let completionConfirmed = false;
     let turnMayBeActive = false;
     try {
+      let tier: string | undefined;
       if (requestedSpeed !== null) {
-        trial.sentTier = (await this.catalog.tierFor(model, requestedSpeed)) ?? null;
-        if (trial.sentTier === null) {
+        tier = await this.catalog.tierFor(model, requestedSpeed);
+        if (tier === undefined) {
           trial.status = "unavailable";
           trial.error = `${model ?? "The inherited model"} does not advertise ${requestedSpeed}.`;
           return;
@@ -199,13 +200,15 @@ class BenchmarkRunner {
       trial.configuredTier = startedThread.serviceTier ?? null;
       signal?.throwIfAborted();
       observer = new TrialObserver(this.server, thread.id, this.options.onFirstText);
+      this.server.signal.throwIfAborted();
       turnMayBeActive = true;
       trial.inferenceAttempted = true;
+      trial.sentTier = tier ?? null;
       trial.turnId = await observer.waitForStart(
         this.server.request<{ turn: Turn }>("turn/start", {
           threadId: thread.id,
           effort: reasoningEffort ?? undefined,
-          serviceTierForTurn: trial.sentTier ?? undefined,
+          serviceTierForTurn: tier,
           input: [{ type: "text", text: prompt, text_elements: [] }],
         }),
         signal,

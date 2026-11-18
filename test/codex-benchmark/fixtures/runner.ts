@@ -21,6 +21,7 @@ interface Scenario {
   waitForInterruptThread?: number;
   failThread?: number;
   rejectFast?: boolean;
+  rejectStart?: "thread/start" | "turn/start";
   retentionError?: boolean;
   usageSnapshots?: Array<Record<string, number> | null>;
   resistantWorker?: boolean;
