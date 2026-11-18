@@ -188,6 +188,17 @@ async function run() {
           while (!existsSync(join(home, "release-turn-start"))) await delay(10);
         }
         openTurn(thread);
+        if (scenario.mismatchedCompletion) {
+          notification("turn/completed", {
+            threadId: scenario.mismatchedCompletion === "thread" ? "other-thread" : thread.id,
+            turn: {
+              id: scenario.mismatchedCompletion === "turn" ? "other-turn" : thread.turnId,
+              status: "completed",
+            },
+          });
+          reject("fixture rejected turn/start after unrelated completion");
+          break;
+        }
         if (!scenario.withholdStartReply)
           reply({ turn: { id: thread.turnId, status: "inProgress" } });
         if (thread.id === `thread-${scenario.endStdoutDuringThread}`) {

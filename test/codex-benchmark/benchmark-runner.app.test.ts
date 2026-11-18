@@ -440,6 +440,55 @@ test("CLI reports stdout EOF observed during final rollout readback", async () =
   });
 });
 
+test("CLI retains matching completions when turn/start replies are withheld", async () => {
+  await withRunnerFixture({ withholdStartReply: true }, async ({ options, trace }) => {
+    const result = await startCliBenchmark(options, ["--json", "--session-retention", "archive"])
+      .completion;
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    const report = JSON.parse(result.stdout);
+    expect(report.run).toMatchObject({ interrupted: false, completedMeasuredTrials: 1 });
+    expect(report.trials).toMatchObject(
+      [true, false].map((warmup, index) => ({
+        warmup,
+        status: "completed",
+        threadId: `thread-${index + 1}`,
+        turnId: `turn-thread-${index + 1}`,
+        turnDurationMs: 800,
+        eligible: !warmup,
+        sessionRetention: { status: "archived" },
+      })),
+    );
+    expect(
+      traceMethod(await trace(), "thread/archive").map(({ params }) => params?.threadId),
+    ).toEqual(["thread-1", "thread-2"]);
+  });
+}, 15_000);
+
+test.each(["thread", "turn"] as const)(
+  "ignores completion with an unrelated %s ID while awaiting a start reply",
+  async (mismatchedCompletion) => {
+    await withRunnerFixture({ mismatchedCompletion }, async ({ options, trace }) => {
+      const report = await runCodexBenchmark({
+        ...options,
+        sessionRetention: "archive",
+        rollout: { deadlineMs: 100 },
+      });
+      expect(report.trials).toMatchObject([
+        {
+          status: "failed",
+          turnId: "turn-thread-1",
+          error: expect.stringContaining("fixture rejected"),
+          sessionRetention: { status: "skipped" },
+        },
+      ]);
+      const events = await trace();
+      expect(traceMethod(events, "turn/start")).toHaveLength(1);
+      expect(traceMethod(events, "thread/archive")).toHaveLength(0);
+    });
+  },
+);
+
 test("CLI returns a zero-trial JSON report when initialization is rejected", async () => {
   await withRunnerFixture({ initializeError: true }, async ({ options, trace }) => {
     const result = await startCliBenchmark(options, ["--json"]).completion;

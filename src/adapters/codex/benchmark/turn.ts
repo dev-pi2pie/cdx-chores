@@ -39,7 +39,7 @@ export class TrialObserver {
         if (!isRecord(turn) || typeof turn.id !== "string") return;
         if (method === "turn/started") {
           this.startedTurnId = turn.id;
-          this.events.emit("started", turn.id);
+          this.events.emit("turnEvidence");
         } else if (
           turn.status === "completed" ||
           turn.status === "failed" ||
@@ -50,6 +50,7 @@ export class TrialObserver {
             for (const item of turn.items) this.recordItem(evidence, item);
           evidence.completion = { turn: turn as unknown as Turn, receivedAt: performance.now() };
           this.events.emit(`turn:${turn.id}`);
+          this.events.emit("turnEvidence");
         }
       } else if (typeof params.turnId === "string") {
         if (method === "item/started" || method === "item/completed") {
@@ -92,29 +93,30 @@ export class TrialObserver {
 
   async waitForStart(response: Promise<{ turn: Turn }>, signal?: AbortSignal): Promise<string> {
     const rpcTurn = response.then(({ turn }) => turn.id);
-    if (!signal) return rpcTurn;
-    let considerInterruption = () => {};
+    let checkEvidence = () => {};
     let graceTimer: ReturnType<typeof setTimeout> | undefined;
-    const interruptedTurn = new Promise<string>((resolve, reject) => {
-      considerInterruption = () => {
-        if (!signal.aborted) return;
-        if (this.startedTurnId) resolve(this.startedTurnId);
-        else
+    const observedTurn = new Promise<string>((resolve, reject) => {
+      checkEvidence = () => {
+        const id = this.startedTurnId;
+        // Cancellation needs a target immediately. Normal progress requires a
+        // matching terminal notification to stand in for the missing RPC reply.
+        if (id && (signal?.aborted || this.turns.get(id)?.completion)) resolve(id);
+        else if (signal?.aborted)
           graceTimer ??= setTimeout(
             () => reject(new Error("Turn ID was unavailable after cancellation.")),
             cancelledStartGraceMs,
           );
       };
-      signal.addEventListener("abort", considerInterruption, { once: true });
-      this.events.on("started", considerInterruption);
-      considerInterruption();
+      signal?.addEventListener("abort", checkEvidence, { once: true });
+      this.events.on("turnEvidence", checkEvidence);
+      checkEvidence();
     });
     try {
-      return await Promise.race([rpcTurn, interruptedTurn]);
+      return await Promise.race([rpcTurn, observedTurn]);
     } finally {
       clearTimeout(graceTimer);
-      signal.removeEventListener("abort", considerInterruption);
-      this.events.off("started", considerInterruption);
+      signal?.removeEventListener("abort", checkEvidence);
+      this.events.off("turnEvidence", checkEvidence);
     }
   }
 
