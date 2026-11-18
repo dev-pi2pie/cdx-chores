@@ -202,13 +202,16 @@ test.each(["archive", "delete"] as const)(
   },
 );
 
-async function waitForTurnStart(trace: () => Promise<BenchmarkProtocolEvent[]>): Promise<void> {
+async function waitForMethod(
+  trace: () => Promise<BenchmarkProtocolEvent[]>,
+  method: string,
+): Promise<void> {
   const deadline = Date.now() + 4_000;
   while (Date.now() < deadline) {
-    if (traceMethod(await trace(), "turn/start").length) return;
+    if (traceMethod(await trace(), method).length) return;
     await delay(20);
   }
-  throw new Error("The fixture did not start a turn.");
+  throw new Error(`The fixture did not receive ${method}.`);
 }
 
 test("preserves partial usage and skips cleanup when interruption is unconfirmed", async () => {
@@ -220,7 +223,7 @@ test("preserves partial usage and skips cleanup when interruption is unconfirmed
       sessionRetention: "delete",
       rollout: { deadlineMs: 300 },
     });
-    const started = await waitForTurnStart(trace).then(
+    const started = await waitForMethod(trace, "turn/start").then(
       () => true,
       () => false,
     );
@@ -291,6 +294,54 @@ test.skipIf(process.platform === "win32")(
       expect(result.stderr).toContain("\r\x1b[2K\r\x1b[31mShutdown failed\x1b[39m:");
       expect(result.stderr).toContain("process group did not stop before its shutdown deadline");
       expect(traceMethod(await trace(), "turn/completed")).toHaveLength(2);
+    });
+  },
+);
+
+test("CLI reports transport loss between measured trials and keeps the completed results", async () => {
+  await withRunnerFixture({ exitDuringReadbackThread: 2 }, async ({ options, trace }) => {
+    const result = await startCliBenchmark({ ...options, runs: 2 }, ["--json"]).completion;
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Transport failed");
+    const report = JSON.parse(result.stdout);
+    expect(report.run).toMatchObject({
+      interrupted: false,
+      transportError: expect.stringContaining("17"),
+      shutdownError: null,
+      completedMeasuredTrials: 1,
+    });
+    expect(report.trials.map((trial: { status: string }) => trial.status)).toEqual([
+      "completed",
+      "completed",
+    ]);
+    expect(traceMethod(await trace(), "turn/start")).toHaveLength(2);
+  });
+});
+
+test.skipIf(process.platform === "win32")(
+  "CLI returns an interrupted report on SIGINT during initialization",
+  async () => {
+    await withRunnerFixture({ stallInitialization: true }, async ({ home, options, trace }) => {
+      const cli = startCliBenchmark(options, ["--json"]);
+      try {
+        await waitForMethod(trace, "initialize");
+        cli.child.kill("SIGINT");
+        const result = await cli.completion;
+        expect(result.exitCode).toBe(130);
+        expect(result.stderr).toBe("");
+        expect(JSON.parse(result.stdout)).toMatchObject({
+          run: { interrupted: true, transportError: null, shutdownError: null },
+          trials: [],
+        });
+        expect((await trace()).map(({ method }) => method)).toEqual(["initialize"]);
+        const pid = Number(await readFile(join(home, "initializing.pid"), "utf8"));
+        expect(requireProcessObservation().some((p) => p.pid === pid && isLiveProcess(p))).toBe(
+          false,
+        );
+      } finally {
+        cli.shutdown();
+        await cli.completion;
+      }
     });
   },
 );
@@ -375,7 +426,7 @@ for (const json of [false, true]) {
             preload,
           );
           try {
-            await waitForTurnStart(trace);
+            await waitForMethod(trace, "turn/start");
             expect(traceMethod(await trace(), "turn/start")).toHaveLength(1);
             if (!cli.child.pid) throw new Error("Expected an owned CLI process.");
             process.kill(-cli.child.pid, "SIGINT");
@@ -427,7 +478,7 @@ test.skipIf(process.platform === "win32")(
       const preload = await withStderrTtyPreload(options.cwd);
       const cli = startCliBenchmark(options, ["--json", "--session-retention", "archive"], preload);
       try {
-        await waitForTurnStart(trace);
+        await waitForMethod(trace, "turn/start");
         if (!cli.child.pid) throw new Error("Expected an owned CLI process.");
         process.kill(-cli.child.pid, "SIGINT");
         const result = await cli.completion;

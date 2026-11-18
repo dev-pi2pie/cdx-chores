@@ -47,7 +47,14 @@ function report(
   options?: Partial<Parameters<typeof buildBenchmarkReport>[1]>,
 ) {
   return buildBenchmarkReport(
-    { trials, codexVersion: "0.170.0", codexHome: null, interrupted: false, shutdownError: null },
+    {
+      trials,
+      codexVersion: "0.170.0",
+      codexHome: null,
+      interrupted: false,
+      transportError: null,
+      shutdownError: null,
+    },
     {
       workload: { models: [], speeds: [], runs: 3 },
       prompt: { source: "built-in", path: null, text: "Fixture prompt" },

@@ -61,9 +61,9 @@ export class CodexAppServer {
       this.exited = true;
     });
     this.closed = new Promise((resolve) => {
-      this.child.once("close", () => {
+      this.child.once("close", (code, signal) => {
         this.exited = true;
-        this.fail(new Error("Codex app-server stopped."));
+        this.fail(new Error(`Codex app-server stopped with ${signal ?? `exit code ${code}`}.`));
         resolve();
       });
     });
@@ -181,14 +181,24 @@ export class CodexAppServer {
     });
   }
 
-  async initialize(timeoutMs?: number): Promise<{ userAgent?: string; codexHome?: string }> {
-    const result = await this.request<{ userAgent?: string; codexHome?: string }>(
-      "initialize",
-      { clientInfo: { name: "cdx_chores", title: "cdx-chores", version: "1" } },
-      timeoutMs,
-    );
-    this.notify("initialized");
-    return result;
+  async initialize(
+    timeoutMs?: number,
+    signal?: AbortSignal,
+  ): Promise<{ userAgent?: string; codexHome?: string }> {
+    signal?.throwIfAborted();
+    const cancel = () => this.fail(signal!.reason);
+    signal?.addEventListener("abort", cancel, { once: true });
+    try {
+      const result = await this.request<{ userAgent?: string; codexHome?: string }>(
+        "initialize",
+        { clientInfo: { name: "cdx_chores", title: "cdx-chores", version: "1" } },
+        timeoutMs,
+      );
+      this.notify("initialized");
+      return result;
+    } finally {
+      signal?.removeEventListener("abort", cancel);
+    }
   }
 
   private kill(signal: NodeJS.Signals): void {

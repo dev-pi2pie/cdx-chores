@@ -274,6 +274,7 @@ export async function runCodexBenchmark(options: BenchmarkOptions): Promise<Benc
     codexHome: null,
     trials: [],
     interrupted: false,
+    transportError: null,
     shutdownError: null,
   };
   if (signal?.aborted) return { ...report, interrupted: true };
@@ -282,25 +283,33 @@ export async function runCodexBenchmark(options: BenchmarkOptions): Promise<Benc
     isolateSignals: true,
   });
   try {
-    const initialized = await server.initialize();
+    const initialized = await server.initialize(undefined, signal);
     report.codexVersion = initialized.userAgent?.match(/^[^/]+\/([^\s]+)/)?.[1] ?? null;
     report.codexHome = rolloutPath(initialized.codexHome);
     const runner = new BenchmarkRunner(server, options);
     for (const selection of benchmarkWorkload(options)) {
-      if (signal?.aborted || !runner.canStartTrial || server.signal.aborted) break;
+      if (signal?.aborted) break;
+      if (server.signal.aborted) {
+        report.transportError = messageFrom(server.signal.reason);
+        break;
+      }
+      if (!runner.canStartTrial) break;
       onTrialStart?.(selection);
       const trial = trialRecord(selection);
       await runner.runTrial(trial);
       report.trials.push(trial);
       onTrial?.(trial);
     }
-    report.interrupted = signal?.aborted ?? false;
     return report;
+  } catch (error) {
+    if (signal?.aborted && error === signal.reason) return report;
+    throw error;
   } finally {
     try {
       await server.close();
     } catch (error) {
       report.shutdownError = messageFrom(error);
     }
+    report.interrupted = signal?.aborted ?? false;
   }
 }

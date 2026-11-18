@@ -101,6 +101,8 @@ async function run() {
   }
   for await (const line of createInterface({ input: process.stdin })) {
     const { id, method, params } = JSON.parse(line);
+    if (method === "initialize" && scenario.stallInitialization)
+      writeFileSync(join(home, "initializing.pid"), String(process.pid));
     trace({ method, params });
     const reply = (result) => send({ id, result });
     const reject = (message) => send({ id, error: { code: -32603, message } });
@@ -108,6 +110,12 @@ async function run() {
     if (params?.threadId && !thread) throw new Error(`Unknown thread in ${method}`);
     switch (method) {
       case "initialize":
+        if (scenario.stallInitialization) {
+          await delay(2_500);
+          trace({ method: "initialize-fallback" });
+          reject("fixture initialization fallback");
+          break;
+        }
         if (scenario.initializeError) {
           reject("fixture refused initialization");
         } else {
@@ -151,7 +159,13 @@ async function run() {
         threads.set(newId, started);
         reply({
           ...settings,
-          thread: { ...started, path: scenario.fallback ? null : started.path },
+          thread: {
+            ...started,
+            path:
+              scenario.fallback || newId === `thread-${scenario.exitDuringReadbackThread}`
+                ? null
+                : started.path,
+          },
         });
         break;
       }
@@ -176,6 +190,7 @@ async function run() {
         if (scenario.interrupt !== "unconfirmed") completeTurn(thread, "interrupted");
         break;
       case "thread/read":
+        if (thread.id === `thread-${scenario.exitDuringReadbackThread}`) process.exit(17);
         thread.reads++;
         reply({ thread: { ...thread, path: thread.reads === 1 ? null : thread.path } });
         break;

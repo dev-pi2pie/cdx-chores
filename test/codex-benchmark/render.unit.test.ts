@@ -6,7 +6,14 @@ import { createCapturedRuntime } from "../helpers/cli-test-utils";
 
 function report() {
   return buildBenchmarkReport(
-    { codexVersion: null, codexHome: null, interrupted: false, shutdownError: null, trials: [] },
+    {
+      codexVersion: null,
+      codexHome: null,
+      interrupted: false,
+      transportError: null,
+      shutdownError: null,
+      trials: [],
+    },
     {
       workload: { models: [], speeds: [], runs: 3 },
       sessionRetention: "keep",

@@ -9,6 +9,8 @@ import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
 interface Scenario {
   appServerVersion?: string | null;
   initializeError?: boolean;
+  stallInitialization?: boolean;
+  exitDuringReadbackThread?: number;
   phase?: string | null;
   delayed?: boolean;
   fallback?: boolean;
