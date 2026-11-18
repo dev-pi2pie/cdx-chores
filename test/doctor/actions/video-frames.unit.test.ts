@@ -66,6 +66,7 @@ function runDoctor(
       json: view === "json",
       dependencyRunner: runner,
       inspectors: {
+        inspectCodexBenchmark: fixture.inspectors.inspectCodexBenchmark,
         inspectCodexEnvironment: fixture.inspectors.inspectCodexEnvironment,
         inspectDataQueryExtensions: fixture.inspectors.inspectDataQueryExtensions,
       },

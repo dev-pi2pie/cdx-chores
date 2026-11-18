@@ -108,7 +108,15 @@ async function run() {
     if (params?.threadId && !thread) throw new Error(`Unknown thread in ${method}`);
     switch (method) {
       case "initialize":
-        reply({ codexHome: home, userAgent: "cdx_chores/0.170.0" });
+        if (scenario.initializeError) {
+          reject("fixture refused initialization");
+        } else {
+          const version = scenario.appServerVersion;
+          reply({
+            codexHome: home,
+            userAgent: version === null ? null : `cdx_chores/${version ?? "0.170.0"}`,
+          });
+        }
         break;
       case "initialized":
         break;

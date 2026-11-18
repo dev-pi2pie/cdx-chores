@@ -181,10 +181,12 @@ export class CodexAppServer {
     });
   }
 
-  async initialize(): Promise<{ userAgent?: string; codexHome?: string }> {
-    const result = await this.request<{ userAgent?: string; codexHome?: string }>("initialize", {
-      clientInfo: { name: "cdx_chores", title: "cdx-chores", version: "1" },
-    });
+  async initialize(timeoutMs?: number): Promise<{ userAgent?: string; codexHome?: string }> {
+    const result = await this.request<{ userAgent?: string; codexHome?: string }>(
+      "initialize",
+      { clientInfo: { name: "cdx_chores", title: "cdx-chores", version: "1" } },
+      timeoutMs,
+    );
     this.notify("initialized");
     return result;
   }
