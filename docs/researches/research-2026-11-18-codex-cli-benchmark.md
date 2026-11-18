@@ -1,0 +1,179 @@
+---
+title: "Codex CLI Benchmark and Speed Selection"
+created-date: 2026-11-18
+modified-date: 2026-11-18
+status: draft
+agent: codex
+---
+
+## Goal
+
+Compare Codex's recorded first-token timing, output token rate, and full turn time for a fixed workload. The proposed `cdx-chores codex-bench` command runs fresh, prompt-only turns through the configured provider and reads the saved records for those trials. The report shows one terminal row per model and speed combination.
+
+The first milestone is a CLI comparison of requests for Standard and Fast on the same model with a fixed prompt and reasoning effort. The speed selector is also a shared execution option for commands that already accept Codex execution overrides, including the explicit `interactive` startup command. An in-menu benchmark picker is a later design.
+
+## Key Findings
+
+- `codex-info models` already reads Codex's picker-visible catalog. The Codex 0.170.0 generated `Model` type includes `serviceTiers` and `defaultServiceTier`, which the current report does not surface. Catalog entries can inform selection. Trial outcomes reflect request compatibility under the current provider and account. [^catalog]
+- The shared Codex thread factory sets `model_provider` in the SDK's `config` option when a provider override is selected. Helpers inherit the service tier today. The SDK forwards `config` entries as CLI configuration overrides, so the factory could use that option to pass an explicit `service_tier`. Codex documents `fast` as mapping to the request value `priority`. [^execution] [^sdk] [^config]
+- TypeScript protocol bindings generated with Codex 0.170.0 using `codex app-server generate-ts --out <scratch-dir>` confirm `TurnStartParams.serviceTierForTurn`, `Thread.path`, and the identifiers on text delta and turn completion notifications. The path is nullable. A persisted thread with a local rollout path is the candidate for retrieving the trial's saved records. Path availability and persistence timing still need runtime evidence. [^app-server]
+- The Codex 0.170.0 rollout policy persists turn boundaries and token usage snapshots. Saved `task_complete` records can include `duration_ms` and `time_to_first_token_ms`. The latter is Codex's internal turn-start-to-first-token timing, which can be triggered by reasoning events before visible text. Ordinary turns can emit the terminal notification before flushing their saved completion record. [^history] [^rollout-write]
+- Codex 0.170.0 returns the configured thread `serviceTier` from `thread/start`. Its completion notifications expose turn status, and the experimental `rawResponse/completed` event exposes counters and generic usage metadata. The inspected protocol has no documented per-trial served-tier field. The direct OpenAI Responses API reports the effective tier in its response object. [^app-server] [^api-fast]
+
+## Settled Decisions
+
+### Shared Speed Selection
+
+`--codex-speed <standard|fast|ultrafast>` follows the command-local placement of `--codex-model` and `--codex-reasoning-effort`. Existing Codex entry points that adopt the shared selectors accept one speed per invocation. Omission delegates to the Codex configuration loaded for the request. An explicit value applies to the invocation, including its retries. For `interactive --codex-speed fast`, the selection belongs to the session and follows its helper requests, repairs, and regeneration. [^execution]
+
+Use `standard` as the public spelling for the explicit Standard selection. The app-server turn override uses `default` for Standard. Fast and Ultrafast depend on model, provider, and account or workspace support. Reasoning effort is an independent setting. Verify the mapping for each explicit speed on both the SDK helper path and the app-server benchmark path. [^app-server] [^speed]
+
+### Benchmark Workload and Selection
+
+- `codex-bench` accepts repeated `--codex-model` and `--codex-speed` values. Run every selected model at every selected speed, independent of flag order. One speed applies to all selected models.
+- Omitted model, provider, reasoning effort, and speed inherit from Codex for the benchmark. An omitted model supplies one inherited model selection. An omitted speed supplies one inherited speed selection per model. Pass provider and effort explicitly to control those settings across combinations. Mark inherited selections in the report and include resolved values when Codex exposes them. Existing Codex helpers currently default their omitted reasoning effort to `low`. [^execution]
+- The built-in text prompt is the default. `--prompt-file <path>` reads a UTF-8 file once and uses its contents for every request. Validate missing, unreadable, invalid UTF-8, or empty files before inference. A task that needs input data can include a representative excerpt and output instructions in the prompt file.
+- `--runs <count>` accepts one positive integer per invocation and defaults to `3`. The same count sets the number of measured trials for every model and speed combination, regardless of flag order. Reject invalid values and repeated `--runs` flags before inference.
+- Warm up each combination once, then alternate combinations sequentially. Each request uses a fresh Codex thread with `ephemeral: false` and the same prompt. At the default, each combination sends four requests when all proceed, including one warm-up. Record cache usage because fresh threads can still reuse a cached prompt prefix. [^app-server] [^latency]
+
+Candidate built-in prompt:
+
+> Explain how an LRU cache works to a junior developer. Cover a cache hit, a cache miss, and an eviction. Walk through a short example with a capacity of three. Write about 250 words and answer directly without using tools.
+
+These examples show proposed CLI syntax. Use a model and tiers available to the configured provider and account.
+
+```sh
+cdx-chores codex-bench
+
+cdx-chores codex-bench \
+  --codex-model gpt-6.2-astra \
+  --codex-reasoning-effort low \
+  --codex-speed standard --codex-speed fast
+
+cdx-chores codex-bench \
+  --codex-model model-a --codex-model model-b \
+  --prompt-file ./benchmarks/extract-invoice-fields.md --runs 5 \
+  --show-prompt --show-token-usage --json
+```
+
+This two-model, two-speed comparison schedules twelve measured trials and four warm-ups across four combinations. A combination with two completed trials shows `2/3` in the Completed column.
+
+```sh
+cdx-chores codex-bench \
+  --codex-model model-a --codex-model model-b \
+  --codex-speed standard --codex-speed fast \
+  --runs 3
+```
+
+### Saved Trial Records
+
+Local rollouts are written under the running Codex home, normally `~/.codex/sessions/`. A custom `CODEX_HOME` changes that location. Use the resolved `codexHome` from the app-server initialization response as context. Read the exact `thread.path` returned by the app-server that ran the trial. If the path is unavailable in the start response, refresh it with `thread/read` for that thread ID. [^app-server] [^rollout-location]
+
+Record both thread and turn IDs. On a successful live `turn/completed`, read complete JSONL lines from the rollout immediately while app-server is still running. Match the saved `task_started` and `task_complete` records to that turn. Retry an unavailable path or missing completion line within a bounded read deadline. Use the turn's saved completion and usage records for metrics. After the matching completion line is readable, an absent optional timing field is unavailable. If the deadline expires, retain the live turn outcome and mark the affected saved-record metrics unavailable. [^app-server] [^history] [^rollout-write]
+
+### Metrics and Reporting
+
+A comparable sample comes from a completed turn with a single assistant text message. Require the final-answer phase when the protocol supplies a phase. Exclude turns with tool activity, multiple assistant text messages, or a reported model reroute from the requested model's summaries. Report those trials and any available usage.
+
+| Metric | Definition |
+| --- | --- |
+| Codex first token | Recorded `time_to_first_token_ms`. Display seconds in the terminal and preserve milliseconds in JSON. |
+| Turn output tok/s | Reported output tokens attributable to the turn, including reasoning output, divided by its recorded duration in seconds. |
+| Turn time | Recorded `duration_ms` from the turn completion record. Display seconds in the terminal and preserve milliseconds in JSON. |
+| Token usage | Saved input and output token counts, with cached input and reasoning output as breakdowns. Include cache-write counts when available. [^usage] |
+
+Read saved `token_count` events within the verified turn boundaries. A fresh single-turn thread starts from a zero usage baseline. Use its latest verified cumulative `total_token_usage` snapshot once for the turn. The `last_token_usage` snapshot can describe one model response within that turn. Mark usage incomplete when the final snapshot is missing or the turn is interrupted, and include reported usage from each request once in invocation totals. [^history]
+
+Count usable measured samples for each metric separately from the completed-trial count. Turn output tok/s requires complete reported output usage and a positive recorded turn duration. An absent timing field, missing saved record, or unattributable usage leaves the affected metric unavailable. Show `—` for a terminal summary metric with zero usable samples. Report speed rejections as unavailable and other failures with their own status.
+
+Choose the terminal cell format from that metric's usable sample count, including when a run completes with only some metrics available.
+
+| Usable samples | Terminal view | Example Codex first token |
+| ---: | --- | --- |
+| 0 | Unavailable | `—` |
+| 1 | Single value | `0.82 s` |
+| 2 | Minimum–maximum | `0.71–1.13 s` |
+| 3 or more | Minimum / median (p50) / maximum | `0.71 / 0.82 / 1.13 s` |
+
+Group benchmark results by model and requested speed. The **Requested speed** column shows Standard, Fast, Ultrafast, or Inherited. A single note below the table identifies that served speed is unknown in this app-server integration. JSON records `servedSpeed: null` for each trial. Configured thread speed, when shown, is configuration context. A completed trial demonstrates request acceptance by the configured provider. A future integration can populate served speed when it has documented telemetry tied to the trial. [^app-server] [^api-fast]
+
+The report identifies the prompt source and each explicit or inherited Codex selection. Turn output tok/s is the default terminal throughput column. The illustrative rows below use the default of three measured trials. Show the metric's sample count when it differs from the number of completed trials.
+
+| Model | Requested speed | Completed | Codex first token (s) | Turn output tok/s | Turn time (s) |
+| --- | --- | ---: | ---: | ---: | ---: |
+| `gpt-6.2-astra` | Standard | 3/3 | 0.71 / 0.82 / 1.13 | 57 / 63 / 69 | 3.74 / 4.10 / 4.65 |
+| `gpt-6.2-astra` | Fast | 3/3 | 0.68 / 0.80 / 1.08 | 78–96 (2 samples) | 2.91 / 3.20 / 3.65 |
+
+*Served speed is unknown for these requests.*
+
+Use the shared color rules, including global `--no-color`, and send progress and diagnostics to stderr. `--json` writes one unstyled result object to stdout with run context, per-trial results, and summaries for `codexFirstTokenMs`, `turnOutputTokensPerSecond`, and `turnDurationMs`. Use `null` for unavailable values and include each metric's sample count in the summaries. Keep the JSON shape consistent across sample counts. `--show-prompt` includes the full prompt below the terminal table or as `prompt.text` in JSON. Escape terminal control characters in the human rendering and preserve the prompt content in JSON. [^output]
+
+`--show-token-usage` adds running totals on stderr as saved usage is read and includes detailed per-trial counts and invocation totals in the final terminal or JSON report. Include reported warm-up usage in invocation totals. Show missing counts as unavailable and mark totals as partial when only some requests report usage. The rate uses reported output counts independently of this display flag.
+
+### Progress While Running
+
+Print the planned workload on stderr at startup. Show one live status line for the active request when stderr is a terminal. The full line includes its position in the plan, model, requested or inherited speed, warm-up or measured trial number, phase, and elapsed time. The first nonempty live text chunk changes the phase from Waiting for text to Streaming. These two lines illustrate successive states of the same active request.
+
+```text
+4 combinations · 12 measured trials + 4 warm-ups
+
+[10/16] gpt-6.2-astra · Fast requested · Trial 2/3 · Waiting for text · 0.8 s elapsed
+[10/16] gpt-6.2-astra · Fast requested · Trial 2/3 · Streaming · 2.4 s elapsed
+```
+
+Fit the live line to the current width of stderr's terminal. Prioritize request position, phase, and elapsed time. Add the model, requested or inherited speed, and trial number as space allows. Use shared display-width helpers before applying color, and reserve the final terminal column to avoid wrapping. These are examples of the same streaming state at narrower widths. [^progress-layout]
+
+```text
+[10/16] gpt-6.2-astra · Streaming · 2.4 s
+[10/16] Streaming · 2.4 s
+```
+
+Redraw on terminal resize even during a pause in streaming. Clear any rows created when the previous line reflows after a shrink. Remove the resize listener when live progress ends. [^progress-layout]
+
+Use a local monotonic clock for the progress elapsed time and throttle redraws. Follow the shared color rules and emit plain milestone lines when stderr is redirected. Clear the live status before final output or diagnostics on completion, failure, or cancellation. Stdout carries the final report, with the same stderr progress behavior in JSON mode. [^output]
+
+## Implementation Direction
+
+Share speed validation across the command surfaces. Preserve omitted benchmark selectors through validation so Codex can resolve them, including omitted reasoning effort. Extend the existing SDK configuration path for ordinary helpers after verifying its tier mapping. Reuse executable resolution and compatible JSON-RPC framing from discovery. The benchmark uses app-server to run each turn and update live progress, which requires turn notifications and cancellation handling. The current discovery transport discards notifications. [^sdk] [^transport]
+
+Use a custom Codex home fixture to verify lookup by the returned thread path, including an initially absent path recovered through `thread/read`. Delay the saved completion line until after the live event to test the immediate read, retry, and deadline expiry. Use rollout fixtures to check turn attribution, duplicate cumulative snapshots, missing timing and usage, interrupted turns, and token rate calculation in terminal and JSON output. Verify run-count validation and scheduling across model and speed combinations. Replay live notifications to check progress and cancellation, including clean JSON stdout. Verify fresh-thread tool isolation with the intended Codex configuration.
+
+Resize a terminal from wide to narrow and back between text chunks. Check that the line fits with wide-character model IDs, clears previously wrapped rows, and restores detail when space returns. Verify that resizing leaves report metrics derived from the same saved records and that redirected stderr contains plain milestone lines.
+
+Verify the explicit tier overrides in outgoing requests and confirm that an omitted speed leaves tier resolution to Codex. Use a small live comparison to confirm that the configured provider accepts explicit Standard and Fast requests. For a fresh trial, record whether the matching completion line is readable on the first attempt and how long it takes to appear if delayed. Check whether the saved first-token timing, duration, and output count are populated, and compare duration and output count with the live records when available. Exercise Ultrafast where available. The protocol inspection above did not run inference.
+
+## Related Plans
+
+- [Codex execution configuration](../plans/plan-2026-09-05-codex-execution-configuration.md) records the existing command scope and session settings.
+
+## References
+
+[^catalog]: [Current catalog guide](../guides/codex-execution-configuration.md#inspect-configuration-and-catalog-metadata), [report mapping](../../src/cli/codex-info/report.ts), and [Codex model catalog protocol](https://learn.chatgpt.com/docs/app-server#list-models-modellist).
+
+[^execution]: [Current Codex execution configuration](../guides/codex-execution-configuration.md).
+
+[^sdk]: [Shared Codex thread factory](../../src/adapters/codex/shared.ts) and [SDK version lock](../../bun.lock).
+
+[^config]: [Codex configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference).
+
+[^app-server]: [Codex app-server turn start](https://learn.chatgpt.com/docs/app-server#start-a-turn), [thread read](https://learn.chatgpt.com/docs/app-server#read-a-thread), and [streamed item deltas](https://learn.chatgpt.com/docs/app-server#item-deltas).
+
+[^api-fast]: [OpenAI API Fast mode configuration and tier reporting](https://developers.openai.com/api/docs/guides/fast-mode#configuring-fast-mode).
+
+[^speed]: [Codex Fast and Ultrafast modes](https://learn.chatgpt.com/docs/agent-configuration/speed).
+
+[^latency]: [OpenAI latency optimization guide](https://developers.openai.com/api/docs/guides/latency-optimization).
+
+[^usage]: [OpenAI reasoning token usage](https://developers.openai.com/api/docs/guides/reasoning#understanding-reasoning-tokens).
+
+[^history]: [Codex 0.170.0 rollout persistence policy](https://github.com/openai/codex/blob/rust-v0.170.0/codex-rs/rollout/src/policy.rs), [turn and token usage protocol definitions](https://github.com/openai/codex/blob/rust-v0.170.0/codex-rs/protocol/src/protocol.rs), and [first-token timing implementation](https://github.com/openai/codex/blob/rust-v0.170.0/codex-rs/core/src/turn_timing.rs).
+
+[^rollout-location]: [Codex home environment settings](../guides/environment-variables.md) and [Codex 0.170.0 local rollout writer](https://github.com/openai/codex/blob/rust-v0.170.0/codex-rs/rollout/src/recorder.rs).
+
+[^rollout-write]: [Codex 0.170.0 turn finalization and rollout flush](https://github.com/openai/codex/blob/rust-v0.170.0/codex-rs/core/src/tasks/mod.rs).
+
+[^output]: [CLI output and color](../guides/cli-output-and-color.md).
+
+[^progress-layout]: [Video frames progress renderer](../../src/cli/actions/video-frames-progress.ts) and [terminal display-width helpers](../../src/cli/text-display-width.ts).
+
+[^transport]: [Codex executable resolution](../../src/adapters/codex/discovery/executable.ts) and [Codex discovery transport](../../src/adapters/codex/discovery/transport.ts).
