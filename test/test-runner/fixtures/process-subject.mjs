@@ -1,5 +1,6 @@
-const { spawn } = require("node:child_process");
-const { writeFileSync } = require("node:fs");
+import { spawn } from "node:child_process";
+import { writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const mode = process.argv[2];
 const marker = process.argv[3];
@@ -40,7 +41,7 @@ if (mode === "exit") {
   stay();
 } else if (mode === "launcher" || mode === "survivor" || mode === "delayed-child") {
   const childMode = mode === "survivor" ? "resist" : "server";
-  const child = spawn(process.execPath, [__filename, childMode], {
+  const child = spawn(process.execPath, [fileURLToPath(import.meta.url), childMode], {
     stdio: ["ignore", "pipe", "inherit"],
   });
   child.stdout.once("data", () => {

@@ -12,6 +12,8 @@ describe("Interactive Markdown execution configuration", () => {
       model: "Model-A",
       provider: "Provider-A",
       reasoningEffort: "high",
+      speed: "fast",
+      sessionRetention: "archive",
     } as const;
     const result = runInteractiveHarness({
       pageInformationInitialChoice: "skip",

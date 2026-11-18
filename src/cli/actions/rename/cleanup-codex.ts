@@ -1,4 +1,4 @@
-import { startCodexReadOnlyThread } from "../../../adapters/codex/shared";
+import { withCodexReadOnlyThread } from "../../../adapters/codex/shared";
 import {
   resolveCodexExecution,
   type CodexExecutionOptions,
@@ -280,13 +280,15 @@ async function runRenameCleanupCodexPrompt(options: {
   workingDirectory: string;
   timeoutMs?: number;
 }): Promise<string> {
-  const thread = await startCodexReadOnlyThread(options.workingDirectory, {
-    codexExecution: options.codexExecution,
-  });
-  const turn = await thread.run([{ type: "text", text: options.prompt }], {
-    outputSchema: CLEANUP_SUGGESTION_OUTPUT_SCHEMA,
-    signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
-  });
+  const turn = await withCodexReadOnlyThread(
+    options.workingDirectory,
+    { codexExecution: options.codexExecution },
+    (thread) =>
+      thread.run([{ type: "text", text: options.prompt }], {
+        outputSchema: CLEANUP_SUGGESTION_OUTPUT_SCHEMA,
+        signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
+      }),
+  );
   return turn.finalResponse;
 }
 

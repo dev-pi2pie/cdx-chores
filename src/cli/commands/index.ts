@@ -11,6 +11,7 @@ import {
 import type { CliRuntime } from "../types";
 import { registerDataCommands } from "./data";
 import { registerCodexInfoCommands } from "./codex-info";
+import { registerCodexBenchCommand } from "./codex-bench";
 import type { actionCodexInfo } from "../actions/codex-info";
 import { registerFontCommands } from "./font";
 import { registerMarkdownCommands } from "./markdown";
@@ -55,6 +56,7 @@ export function registerCliCommands(
 
   registerDataCommands(program, runtime);
   registerCodexInfoCommands(program, runtime, impls.actionCodexInfoImpl);
+  registerCodexBenchCommand(program, runtime);
   registerFontCommands(program, runtime);
   registerMarkdownCommands(program, runtime);
   registerRenameCommands(program, runtime);

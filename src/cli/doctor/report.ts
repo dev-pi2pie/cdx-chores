@@ -9,6 +9,7 @@ import {
 } from "../markdown-pdf/requirements";
 import type { DoctorInspection } from "./inspect";
 import type { ImageEncoders } from "../video-frames/encoders";
+import type { CodexBenchmarkPrerequisites } from "./codex-benchmark";
 
 export const DOCTOR_CAPABILITY_IDS = [
   "md.to-docx",
@@ -55,6 +56,7 @@ export interface DoctorQueryFormats {
 
 export interface DoctorReport {
   capabilities: DoctorCapabilities;
+  codexBenchmark: CodexBenchmarkPrerequisites;
   font: {
     discovery: {
       fontconfig: {
@@ -186,6 +188,7 @@ export function buildDoctorReport(
   return {
     platform: runtimeFacts.platform,
     nodeVersion: runtimeFacts.nodeVersion,
+    codexBenchmark: inspection.codexBenchmark,
     tools: {
       pandoc: inspection.pandoc,
       ffmpeg: inspection.ffmpeg,

@@ -1,5 +1,6 @@
 import { getCliColors } from "../colors";
 import { getDisplayWidth, truncateToDisplayWidth } from "../text-display-width";
+import { createReflowingTerminalBlock } from "../tui/reflowing-block";
 import type { FrameExportProgress } from "../video-frames/export";
 import { printLine } from "./shared";
 
@@ -49,31 +50,12 @@ export function createFrameProgressPresenter(
     paused = false;
   let lastUpdate = -Infinity,
     tick = 0;
-  let previous: string[] = [];
-  let previousColumns = 80;
-  const columns = () =>
-    Number.isSafeInteger(terminal.columns) && terminal.columns > 0 ? terminal.columns : 80;
+  const frame = createReflowingTerminalBlock(terminal);
   const elapsed = () => {
     const seconds = Math.floor(Math.max(0, now() - began) / 1000);
     return `${Math.floor(seconds / 60)
       .toString()
       .padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`;
-  };
-  const clear = () => {
-    if (!tty || !previous.length) return;
-    // A terminal can reflow the previous lines when its width changes.
-    const width = Math.min(previousColumns, columns());
-    const rows = previous.reduce(
-      (sum, line) => sum + Math.max(1, Math.ceil(getDisplayWidth(line) / width)),
-      0,
-    );
-    stream.write(`\r${rows > 1 ? `\x1b[${rows - 1}A` : ""}`);
-    for (let row = 0; row < rows; row++) {
-      stream.write("\x1b[2K");
-      if (row < rows - 1) stream.write("\x1b[1B\r");
-    }
-    stream.write(`\r${rows > 1 ? `\x1b[${rows - 1}A` : ""}`);
-    previous = [];
   };
   const content = () => {
     const label = stopping
@@ -101,8 +83,7 @@ export function createFrameProgressPresenter(
       printLine(stream, [label, ...counts, `Elapsed ${elapsed()}`].join(" | "));
       return;
     }
-    clear();
-    const width = Math.max(1, columns() - 1);
+    const width = Math.max(1, frame.columns() - 1);
     const activity = stopping ? "" : `${["-", "\\", "|", "/"][tick++ % 4]} `;
     let first = truncateToDisplayWidth(activity + label, width);
     const primary =
@@ -122,9 +103,10 @@ export function createFrameProgressPresenter(
     if (narrow && options.controls && width >= 10)
       first = `${truncateToDisplayWidth(activity + label, width - 8)} | ${elapsed()}`;
     const footer = truncateToDisplayWidth(narrow ? shortFooter : fullFooter, width);
-    stream.write(`${colors.cyan(first)}\n${countLine}\n${colors.dim(footer)}`);
-    previous = [first, countLine, footer];
-    previousColumns = columns();
+    frame.render(
+      [first, countLine, footer],
+      `${colors.cyan(first)}\n${countLine}\n${colors.dim(footer)}`,
+    );
   };
   const resize = () => render(true);
   if (tty) terminal.on("resize", resize);
@@ -153,7 +135,7 @@ export function createFrameProgressPresenter(
     },
     pause() {
       if (stopped) return;
-      clear();
+      frame.clear();
       paused = true;
     },
     stopping() {
@@ -167,7 +149,7 @@ export function createFrameProgressPresenter(
       stopped = true;
       clearInterval(timer);
       if (tty) terminal.off("resize", resize);
-      clear();
+      frame.clear();
     },
   };
 }

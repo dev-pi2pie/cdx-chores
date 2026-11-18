@@ -10,10 +10,12 @@ import {
   unknownImageEncoders,
   type ImageEncoders,
 } from "../video-frames/encoders";
+import { inspectCodexBenchmark, type CodexBenchmarkPrerequisites } from "./codex-benchmark";
 
 export type DoctorQueryInspection = Awaited<ReturnType<typeof inspectDataQueryExtensions>>;
 
 export interface DoctorInspectors {
+  inspectCodexBenchmark: typeof inspectCodexBenchmark;
   inspectCodexEnvironment: () => Promise<CodexEnvironmentInspection>;
   inspectCommand: typeof inspectCommand;
   inspectAdvertisedImageEncoders: typeof inspectAdvertisedImageEncoders;
@@ -23,6 +25,7 @@ export interface DoctorInspectors {
 export type DoctorInspectorOverrides = Partial<DoctorInspectors>;
 
 export interface DoctorInspection {
+  codexBenchmark: CodexBenchmarkPrerequisites;
   codexEnvironment: CodexEnvironmentInspection;
   ffmpeg: CommandStatus;
   ffprobe: CommandStatus;
@@ -35,6 +38,7 @@ export interface DoctorInspection {
 }
 
 const DEFAULT_DOCTOR_INSPECTORS: DoctorInspectors = {
+  inspectCodexBenchmark,
   inspectCodexEnvironment,
   inspectCommand,
   inspectAdvertisedImageEncoders,
@@ -58,6 +62,7 @@ export async function inspectDoctor(
     fontconfigCoverage,
     queryExtensions,
     codexEnvironment,
+    codexBenchmark,
   ] = await Promise.all([
     inspectors.inspectCommand("pandoc", runtime.platform, options.dependencyRunner),
     inspectors.inspectCommand("ffmpeg", runtime.platform, options.dependencyRunner),
@@ -67,9 +72,11 @@ export async function inspectDoctor(
     inspectors.inspectCommand("fc-query", runtime.platform, options.dependencyRunner),
     inspectors.inspectDataQueryExtensions(),
     inspectors.inspectCodexEnvironment(),
+    inspectors.inspectCodexBenchmark(runtime.cwd),
   ]);
 
   return {
+    codexBenchmark,
     codexEnvironment,
     ffmpeg,
     ffprobe,

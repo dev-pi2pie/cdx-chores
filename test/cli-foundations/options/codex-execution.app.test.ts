@@ -40,6 +40,10 @@ describe("Codex execution command options", () => {
           " Provider-A ",
           "--codex-reasoning-effort",
           "high",
+          "--codex-speed",
+          "fast",
+          "--session-retention",
+          "archive",
         ],
         { from: "user" },
       )
@@ -48,6 +52,8 @@ describe("Codex execution command options", () => {
       model: "Model-A",
       provider: "Provider-A",
       reasoningEffort: "high",
+      speed: "fast",
+      sessionRetention: "archive",
     });
   });
 
@@ -63,6 +69,8 @@ describe("Codex execution command options", () => {
     ["--codex-model", "model", "another"],
     ["--codex-provider", "provider", "another"],
     ["--codex-reasoning-effort", "low", "high"],
+    ["--codex-speed", "standard", "ultrafast"],
+    ["--session-retention", "keep", "delete"],
   ] as const) {
     test.each([first, other])(`rejects duplicate ${flag} with second value %s`, (second) => {
       expect(() => command().parse([flag, first, flag, second], { from: "user" })).toThrow(
@@ -94,6 +102,13 @@ describe("Codex execution command options", () => {
       expect(called).toBe(false);
     },
   );
+
+  test.each([
+    ["--codex-speed", "normal"],
+    ["--session-retention", "remove"],
+  ])("rejects an unknown choice for %s", (flag, value) => {
+    expect(() => command().parse([flag!, value!], { from: "user" })).toThrow("must be one of");
+  });
 
   test("validates programmatic command options through the shared policy", () => {
     expect(() => resolveCodexExecutionCommandOptions({ codexModel: " " })).toThrow(

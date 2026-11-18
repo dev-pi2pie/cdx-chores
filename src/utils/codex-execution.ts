@@ -1,16 +1,24 @@
 import type { ModelReasoningEffort } from "@openai/codex-sdk";
 
+import {
+  resolveCodexSessionRetention,
+  type CodexSessionRetention,
+} from "./codex-session-retention";
+
+const CODEX_SPEEDS = ["standard", "fast", "ultrafast"] as const;
+export type CodexSpeed = (typeof CODEX_SPEEDS)[number];
+
 export interface CodexExecutionOptions {
   model?: string;
   provider?: string;
   reasoningEffort?: ModelReasoningEffort;
+  speed?: CodexSpeed;
+  sessionRetention?: CodexSessionRetention;
 }
 
-export interface ResolvedCodexExecution {
-  readonly model?: string;
-  readonly provider?: string;
-  readonly reasoningEffort: ModelReasoningEffort;
-}
+export type ResolvedCodexExecution = Readonly<
+  CodexExecutionOptions & { reasoningEffort: ModelReasoningEffort }
+>;
 
 const REASONING_EFFORTS = [
   "minimal",
@@ -33,7 +41,15 @@ function resolveIdentifier(value: unknown, name: string): string | undefined {
   return value.trim();
 }
 
-export function resolveCodexExecution(options?: CodexExecutionOptions): ResolvedCodexExecution {
+export function resolveCodexSpeed(value: unknown): CodexSpeed {
+  const speed = CODEX_SPEEDS.find((option) => option === value);
+  if (speed === undefined) {
+    throw new TypeError(`Codex speed must be one of: ${CODEX_SPEEDS.join(", ")}.`);
+  }
+  return speed;
+}
+
+export function resolveCodexSelectors(options?: CodexExecutionOptions): CodexExecutionOptions {
   if (
     options !== undefined &&
     (options === null ||
@@ -46,14 +62,26 @@ export function resolveCodexExecution(options?: CodexExecutionOptions): Resolved
 
   const model = resolveIdentifier(options?.model, "model");
   const provider = resolveIdentifier(options?.provider, "provider");
-  const reasoningEffort = options?.reasoningEffort === undefined ? "low" : options.reasoningEffort;
-  if (!REASONING_EFFORTS.some((effort) => effort === reasoningEffort)) {
+  const reasoningEffort = options?.reasoningEffort;
+  if (
+    reasoningEffort !== undefined &&
+    !REASONING_EFFORTS.some((effort) => effort === reasoningEffort)
+  ) {
     throw new TypeError(`Codex reasoning effort must be one of: ${REASONING_EFFORTS.join(", ")}.`);
   }
 
-  return Object.freeze({
+  return {
     ...(model === undefined ? {} : { model }),
     ...(provider === undefined ? {} : { provider }),
-    reasoningEffort,
-  });
+    ...(reasoningEffort === undefined ? {} : { reasoningEffort }),
+    ...(options?.speed === undefined ? {} : { speed: resolveCodexSpeed(options.speed) }),
+    ...(options?.sessionRetention === undefined
+      ? {}
+      : { sessionRetention: resolveCodexSessionRetention(options.sessionRetention) }),
+  };
+}
+
+export function resolveCodexExecution(options?: CodexExecutionOptions): ResolvedCodexExecution {
+  const selectors = resolveCodexSelectors(options);
+  return Object.freeze({ ...selectors, reasoningEffort: selectors.reasoningEffort ?? "low" });
 }

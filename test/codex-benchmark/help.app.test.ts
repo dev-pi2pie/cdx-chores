@@ -1,0 +1,47 @@
+import { expect, test } from "bun:test";
+
+import { runCli } from "../helpers/cli-test-utils";
+
+test("benchmark help explains shared runs, inheritance, retention and both output modes", () => {
+  const result = runCli(["codex-bench", "--help"]);
+  expect(result.exitCode).toBe(0);
+  const help = result.stdout.replace(/\s+/g, " ");
+  expect(help).toContain("Codex model override (repeatable)");
+  expect(help).toContain("standard, fast, or ultrafast (repeatable, default: inherit)");
+  expect(help).toContain("keep (default), archive, or permanently delete");
+  expect(help).toContain("Use one --runs value for every matrix combination or --case occurrence.");
+  expect(help).toContain(
+    "--case <MODEL=SPEED> Compare an explicit model and speed pair (repeatable)",
+  );
+  expect(help).toContain(
+    "--case splits on the last '=' and accepts standard, fast, ultrafast, or inherit",
+  );
+  expect(help).toContain("These selectors cannot be mixed.");
+  expect(help).toContain("codex-bench --case MODEL=fast --case OTHER_MODEL=ultrafast --runs 1");
+  expect(help).toContain("Omit --prompt-file to use the built-in sample prompt.");
+  expect(help).toContain("Use --no-color or set NO_COLOR to disable colors.");
+  expect(help).toContain(
+    "Omitted model, provider, reasoning effort, and speed inherit from Codex.",
+  );
+  expect(help).toContain(
+    "codex-bench --codex-model MODEL --codex-speed standard --codex-speed fast",
+  );
+  expect(help).toContain("--compact Show median metrics and summarize requested token totals");
+  expect(help).toContain("JSON mode shows a temporary status on terminal stderr");
+  expect(help).toContain("Redirected stderr carries diagnostics only");
+  expect(help).toContain("Include the prompt text in the report as prompt.text in JSON");
+  expect(help).toContain("Relative prompt-file paths appear as supplied");
+  expect(help).toContain("Use --absolute or --abs to show literal absolute paths");
+  expect(help).toContain("codex-bench --compact --show-token-usage");
+  expect(help).toContain(
+    "codex-bench --prompt-file ./task.txt --json --show-prompt --show-token-usage > report.json",
+  );
+});
+
+test("Interactive help explains its command-local Codex options", () => {
+  const result = runCli(["interactive", "--help"]);
+  expect(result.exitCode).toBe(0);
+  expect(result.stdout).toContain("Pass Codex options after this command.");
+  expect(result.stdout).toContain("Session retention applies to threads this command creates");
+  expect(runCli(["--help"]).stdout).not.toContain("--session-retention");
+});

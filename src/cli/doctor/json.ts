@@ -1,6 +1,6 @@
 import type { DoctorReport } from "./report";
 
-type DoctorLegacyJsonFields = Pick<
+type DoctorJsonFields = Pick<
   DoctorReport,
   | "platform"
   | "nodeVersion"
@@ -11,9 +11,10 @@ type DoctorLegacyJsonFields = Pick<
   | "font"
   | "capabilities"
   | "videoFrames"
+  | "codexBenchmark"
 >;
 
-export type DoctorJsonPayload = DoctorLegacyJsonFields & {
+export type DoctorJsonPayload = DoctorJsonFields & {
   generatedAt: string;
 };
 
@@ -29,6 +30,7 @@ export function createDoctorJsonPayload(
     markdownPdf: report.markdownPdf,
     query: report.query,
     queryCodex: report.queryCodex,
+    codexBenchmark: report.codexBenchmark,
     font: report.font,
     capabilities: report.capabilities,
     videoFrames: report.videoFrames,

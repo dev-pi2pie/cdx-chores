@@ -12,7 +12,7 @@ import {
   chunkItems,
   executeBatchesWithRetries,
   parseFilenameTitleSuggestions,
-  startCodexReadOnlyThread,
+  withCodexReadOnlyThread,
   summarizeCodexBatchFailures,
 } from "./shared";
 
@@ -55,25 +55,26 @@ function buildPrompt(imagePaths: string[]): string {
 
 async function suggestSingleBatch(
   options: ResolvedImageTitlesOptions,
-  startThread: StartCodexRenameThread = startCodexReadOnlyThread,
+  startThread?: StartCodexRenameThread,
 ): Promise<CodexImageRenameResult> {
   if (options.imagePaths.length === 0) {
     return { suggestions: [] };
   }
-
-  const thread = await startThread(options.workingDirectory, {
-    codexExecution: options.codexExecution,
-  });
 
   const input = [
     { type: "text", text: buildPrompt(options.imagePaths) } as const,
     ...options.imagePaths.map((path) => ({ type: "local_image", path }) as const),
   ];
 
-  const turn = await thread.run(input, {
-    outputSchema: CODEX_FILENAME_TITLE_OUTPUT_SCHEMA,
-    signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
-  });
+  const run = (thread: Pick<Thread, "run">) =>
+    thread.run(input, {
+      outputSchema: CODEX_FILENAME_TITLE_OUTPUT_SCHEMA,
+      signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
+    });
+  const threadOptions = { codexExecution: options.codexExecution };
+  const turn = startThread
+    ? await run(await startThread(options.workingDirectory, threadOptions))
+    : await withCodexReadOnlyThread(options.workingDirectory, threadOptions, run);
   const suggestionsByFilename = parseFilenameTitleSuggestions(turn.finalResponse);
 
   const suggestions: CodexImageRenameSuggestion[] = [];

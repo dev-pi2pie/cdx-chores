@@ -2,7 +2,13 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { once } from "node:events";
 import { StringDecoder } from "node:string_decoder";
 
-type RpcResponse = { id?: number; result?: unknown; error?: unknown };
+type RpcMessage = {
+  id?: number;
+  result?: unknown;
+  error?: unknown;
+  method?: string;
+  params?: unknown;
+};
 
 /** An isolated evidence probe, intentionally independent from the production adapter. */
 export class LiveProtocolClient {
@@ -20,6 +26,7 @@ export class LiveProtocolClient {
     cwd: string,
     env: NodeJS.ProcessEnv,
     owned?: { child: ChildProcessWithoutNullStreams; close: () => Promise<void> },
+    onNotification?: (method: string, params: unknown) => void,
   ) {
     // The default inherits the caller's process group for the Phase 1 outer-owner probe.
     this.child = owned?.child ?? spawn(executable, ["app-server"], { cwd, env, stdio: "pipe" });
@@ -33,8 +40,11 @@ export class LiveProtocolClient {
         const line = this.buffer.slice(0, newline);
         this.buffer = this.buffer.slice(newline + 1);
         try {
-          const response = JSON.parse(line) as RpcResponse;
-          if (response.id === undefined) continue;
+          const response = JSON.parse(line) as RpcMessage;
+          if (response.id === undefined) {
+            if (response.method) onNotification?.(response.method, response.params);
+            continue;
+          }
           const waiter = this.pending.get(response.id);
           if (!waiter) continue;
           this.pending.delete(response.id);

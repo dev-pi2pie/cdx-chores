@@ -86,6 +86,13 @@ export interface DoctorFixtureCalls {
   query: number;
 }
 
+export const DOCTOR_FIXTURE_CODEX_BENCHMARK = {
+  status: "met",
+  version: "0.170.0",
+  minimumVersion: "0.170.0",
+  detail: "Local app-server initialization succeeded.",
+} as const;
+
 export function createDoctorFixture(
   options: {
     codex?: CodexEnvironmentInspection;
@@ -114,6 +121,7 @@ export function createDoctorFixture(
     encoders,
     query,
     inspectors: {
+      inspectCodexBenchmark: async () => DOCTOR_FIXTURE_CODEX_BENCHMARK,
       inspectCommand: async (command) => {
         calls.commands.push(command);
         return commands[command];
@@ -197,6 +205,7 @@ export function createExpectedDoctorJsonPayload(
       runtimeVersion: fixture.query.runtimeVersion,
     },
     queryCodex,
+    codexBenchmark: DOCTOR_FIXTURE_CODEX_BENCHMARK,
     font: {
       discovery: {
         fontconfig: {
@@ -243,6 +252,7 @@ export function createDoctorReportFromFixture(
   return buildDoctorReport(
     { platform, nodeVersion: process.version },
     {
+      codexBenchmark: DOCTOR_FIXTURE_CODEX_BENCHMARK,
       codexEnvironment: fixture.codex,
       ffmpeg: fixture.commands.ffmpeg,
       ffprobe: fixture.commands.ffprobe,
@@ -269,6 +279,8 @@ export function createExpectedAllReadyDoctorHumanOutput(
     `- ffmpeg: available (${payload.tools.ffmpeg.version})`,
     `- ffprobe: available (${payload.tools.ffprobe.version})`,
     `- weasyprint: available (${payload.tools.weasyprint.version})`,
+    "",
+    "Codex benchmark local prerequisites: met (Codex 0.170.0)",
     "",
     "Capabilities:",
     ...Object.entries(payload.capabilities).map(

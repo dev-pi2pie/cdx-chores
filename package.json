@@ -1,6 +1,6 @@
 {
   "name": "cdx-chores",
-  "version": "0.2.2-canary.4",
+  "version": "0.2.2-canary.5",
   "keywords": [
     "automation",
     "cli",
@@ -55,7 +55,7 @@
     "@duckdb/node-api": "^2.0.0-r.1",
     "@inquirer/prompts": "8.8.0",
     "@inquirer/search": "4.4.0",
-    "@openai/codex-sdk": "^0.169.0",
+    "@openai/codex-sdk": "^0.170.0",
     "@shikijs/transformers": "^4.6.0",
     "commander": "^15.1.0",
     "dingbat-to-unicode": "1.0.2",
