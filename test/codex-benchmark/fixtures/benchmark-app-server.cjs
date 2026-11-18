@@ -112,6 +112,12 @@ async function run() {
       reject(`fixture rejected ${method}`);
       continue;
     }
+    const stalledTierLookup =
+      method !== undefined && method === scenario.stallTierLookup && !params?.cursor;
+    if (stalledTierLookup) {
+      await delay(2_500);
+      trace({ method: "tier-lookup-fallback" });
+    }
     switch (method) {
       case "initialize":
         if (scenario.stallInitialization) {
@@ -145,7 +151,7 @@ async function run() {
               ...(model === "model-a" ? [{ id: "ultrafast", name: "Ultrafast" }] : []),
             ],
           })),
-          nextCursor: null,
+          nextCursor: stalledTierLookup ? "next-page" : null,
         });
         break;
       case "thread/start": {

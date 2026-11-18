@@ -413,6 +413,34 @@ test.skipIf(process.platform === "win32")(
   },
 );
 
+test.skipIf(process.platform === "win32").each(["model/list", "config/read"] as const)(
+  "CLI stops tier discovery on SIGINT during %s",
+  async (method) => {
+    await withRunnerFixture({ stallTierLookup: method }, async ({ options, trace }) => {
+      const cli = startCliBenchmark(options, ["--json", "--codex-speed", "fast"]);
+      try {
+        await waitForMethod(trace, method);
+        cli.child.kill("SIGINT");
+        const result = await cli.completion;
+        expect(result.exitCode).toBe(130);
+        expect(JSON.parse(result.stdout)).toMatchObject({
+          run: { interrupted: true, transportError: null, shutdownError: null },
+          trials: [{ status: "cancelled", inferenceAttempted: false, threadId: null }],
+        });
+        const lookups = method === "config/read" ? ["model/list", "config/read"] : ["model/list"];
+        expect((await trace()).map((event) => event.method)).toEqual([
+          "initialize",
+          "initialized",
+          ...lookups,
+        ]);
+      } finally {
+        cli.shutdown();
+        await cli.completion;
+      }
+    });
+  },
+);
+
 test.each(["confirmed", "unconfirmed"] as const)(
   "CLI fails a timed-out trial with %s interruption and recovers partial usage",
   async (interrupt) => {

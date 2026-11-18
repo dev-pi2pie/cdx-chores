@@ -8,7 +8,11 @@ interface CatalogModel {
   serviceTiers?: Array<{ id: string; name: string }>;
 }
 
-async function listModels(server: CodexAppServer, provider: string | undefined) {
+async function listModels(
+  server: CodexAppServer,
+  provider: string | undefined,
+  signal?: AbortSignal,
+) {
   const models: CatalogModel[] = [];
   const seenCursors = new Set<string>();
   let cursor: string | undefined;
@@ -16,6 +20,7 @@ async function listModels(server: CodexAppServer, provider: string | undefined) 
     const page = await server.request<{ data: CatalogModel[]; nextCursor: string | null }>(
       "model/list",
       { modelProvider: provider, cursor, includeHidden: true, limit: 100 },
+      { signal },
     );
     models.push(...page.data);
     if (page.nextCursor === null) return models;
@@ -36,18 +41,20 @@ export class BenchmarkCatalog {
     private server: CodexAppServer,
     private cwd: string,
     private provider?: string,
+    private signal?: AbortSignal,
   ) {}
 
   async tierFor(model: string | null, speed: CodexSpeed): Promise<string | undefined> {
     if (speed === "standard") return "default";
-    this.models ??= listModels(this.server, this.provider);
+    this.models ??= listModels(this.server, this.provider, this.signal);
     const models = await this.models;
     if (!model) {
       this.configuredModel ??= this.server
-        .request<{ config: { model?: string | null } }>("config/read", {
-          cwd: this.cwd,
-          includeLayers: false,
-        })
+        .request<{ config: { model?: string | null } }>(
+          "config/read",
+          { cwd: this.cwd, includeLayers: false },
+          { signal: this.signal },
+        )
         .then(({ config }) => config.model ?? null);
       model =
         (await this.configuredModel) ?? models.find((entry) => entry.isDefault)?.model ?? null;

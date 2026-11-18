@@ -13,9 +13,13 @@ type NotificationListener = (method: string, params: unknown) => void;
 
 interface PendingRequest {
   method: string;
-  deadline: ReturnType<typeof setTimeout>;
   resolve(value: unknown): void;
-  reject(error: Error): void;
+  reject(error: unknown): void;
+}
+
+interface RequestOptions {
+  timeoutMs?: number;
+  signal?: AbortSignal;
 }
 
 function appServerExitError(code: number | null, signal: NodeJS.Signals | null): Error {
@@ -114,11 +118,7 @@ export class CodexAppServer {
   private fail(error: Error): void {
     clearTimeout(this.stdoutEndDeadline);
     this.stopped.abort(error);
-    for (const pending of this.pending.values()) {
-      clearTimeout(pending.deadline);
-      pending.reject(error);
-    }
-    this.pending.clear();
+    for (const pending of this.pending.values()) pending.reject(error);
   }
 
   private send(message: object): void {
@@ -146,9 +146,7 @@ export class CodexAppServer {
         throw new Error("Codex app-server returned an invalid response.");
       }
       const pending = this.pending.get(message.id);
-      if (!pending) return; // A response may arrive after its request deadline.
-      this.pending.delete(message.id);
-      clearTimeout(pending.deadline);
+      if (!pending) return; // A response may arrive after its request times out or is cancelled.
       if ("error" in message) {
         const error = isRecord(message.error) ? message.error : {};
         pending.reject(
@@ -180,22 +178,38 @@ export class CodexAppServer {
   async request<T = unknown>(
     method: string,
     params: object,
-    timeoutMs = requestTimeoutMs,
+    { timeoutMs = requestTimeoutMs, signal }: RequestOptions = {},
   ): Promise<T> {
+    signal?.throwIfAborted();
     this.signal.throwIfAborted();
     const id = ++this.nextId;
     return new Promise<T>((resolve, reject) => {
-      const deadline = setTimeout(() => {
+      const cleanup = () => {
         this.pending.delete(id);
-        reject(new Error(`${method}: Codex app-server request timed out.`));
+        clearTimeout(deadline);
+        signal?.removeEventListener("abort", onAbort);
+      };
+      const onAbort = () => pending.reject(signal?.reason);
+      const deadline = setTimeout(() => {
+        pending.reject(new Error(`${method}: Codex app-server request timed out.`));
       }, timeoutMs);
-      this.pending.set(id, { method, deadline, resolve: (value) => resolve(value as T), reject });
+      const pending: PendingRequest = {
+        method,
+        resolve(value) {
+          cleanup();
+          resolve(value as T);
+        },
+        reject(error) {
+          cleanup();
+          reject(error);
+        },
+      };
+      this.pending.set(id, pending);
+      signal?.addEventListener("abort", onAbort, { once: true });
       try {
         this.send({ id, method, params });
       } catch (error) {
-        this.pending.delete(id);
-        clearTimeout(deadline);
-        reject(error);
+        pending.reject(error);
       }
     });
   }
@@ -211,7 +225,7 @@ export class CodexAppServer {
       const result = await this.request<{ userAgent?: string; codexHome?: string }>(
         "initialize",
         { clientInfo: { name: "cdx_chores", title: "cdx-chores", version: "1" } },
-        timeoutMs,
+        { timeoutMs },
       );
       this.notify("initialized");
       return result;

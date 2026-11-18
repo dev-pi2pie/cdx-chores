@@ -82,7 +82,7 @@ class BenchmarkRunner {
     private readonly server: CodexAppServer,
     private readonly options: BenchmarkOptions,
   ) {
-    this.catalog = new BenchmarkCatalog(server, options.cwd, options.provider);
+    this.catalog = new BenchmarkCatalog(server, options.cwd, options.provider, options.signal);
     this.retention = resolveCodexSessionRetention(options.sessionRetention);
   }
 
@@ -111,7 +111,7 @@ class BenchmarkRunner {
       AbortSignal.timeout(interruptTimeoutMs),
     ]);
     const interruption = this.server
-      .request("turn/interrupt", { threadId, turnId }, interruptTimeoutMs)
+      .request("turn/interrupt", { threadId, turnId }, { timeoutMs: interruptTimeoutMs })
       .then(
         () => null,
         (error: unknown) => messageFrom(error),
@@ -140,7 +140,7 @@ class BenchmarkRunner {
         const { thread: refreshed } = await this.server.request<{ thread: Thread }>(
           "thread/read",
           { threadId: thread.id },
-          timeoutMs,
+          { timeoutMs },
         );
         if (refreshed.id !== thread.id)
           throw new Error("Rollout lookup returned the wrong thread.");
@@ -168,16 +168,14 @@ class BenchmarkRunner {
     let completionConfirmed = false;
     let turnMayBeActive = false;
     try {
-      let tier: string | undefined;
-      if (requestedSpeed !== null) {
-        tier = await this.catalog.tierFor(model, requestedSpeed);
-        if (tier === undefined) {
-          trial.status = "unavailable";
-          trial.error = `${model ?? "The inherited model"} does not advertise ${requestedSpeed}.`;
-          return;
-        }
-      }
+      const tier =
+        requestedSpeed === null ? undefined : await this.catalog.tierFor(model, requestedSpeed);
       signal?.throwIfAborted();
+      if (requestedSpeed !== null && tier === undefined) {
+        trial.status = "unavailable";
+        trial.error = `${model ?? "The inherited model"} does not advertise ${requestedSpeed}.`;
+        return;
+      }
       const startedThread = await this.server.request<ThreadStartResponse>("thread/start", {
         cwd,
         model: model ?? undefined,

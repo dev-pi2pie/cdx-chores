@@ -10,6 +10,7 @@ interface Scenario {
   appServerVersion?: string | null;
   initializeError?: boolean;
   stallInitialization?: boolean;
+  stallTierLookup?: "model/list" | "config/read";
   exitDuringReadbackThread?: number;
   endStdoutDuringThread?: number;
   phase?: string | null;
