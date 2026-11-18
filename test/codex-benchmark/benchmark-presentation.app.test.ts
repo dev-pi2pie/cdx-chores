@@ -87,22 +87,56 @@ test("reconciles partial measured usage and warm-up subtotals across models and 
 });
 
 test.each(["matching", "unrelated"] as const)(
-  "keeps JSON stdout clean during $streamText text events on a TTY",
+  "keeps compact TTY progress concise during %s text events",
   async (streamText) => {
     await withRunnerFixture({ streamText }, async ({ options }) => {
       const preload = await withStderrTtyPreload(options.cwd);
-      const run = await startCliBenchmark(options, ["--json", "--no-color"], preload).completion;
+      const run = await startCliBenchmark(
+        options,
+        ["--compact", "--no-color", "--show-token-usage"],
+        preload,
+      ).completion;
       expect(run.ok).toBe(true);
-      expect(JSON.parse(run.stdout).run.completedMeasuredTrials).toBe(1);
+      expect(run.stdout).toContain("Tokens · 230 warm-up · 230 measured · 460 total");
       expect(run.stdout).not.toContain("\u001b");
       expect(run.stderr.startsWith(startup)).toBe(true);
       expect(run.stderr).toContain("Waiting for text");
       expect(run.stderr.includes("Streaming")).toBe(streamText === "matching");
       expect(run.stderr).not.toContain("private fixture chunk");
+      expect(run.stderr).not.toContain("reported 230 tokens");
       expect(run.stderr.endsWith("\r\u001b[2K\r")).toBe(true);
     });
   },
 );
+
+test("compact keeps partial totals in the report and emits only startup on redirected stderr", async () => {
+  await withRunnerFixture({ usageSnapshots: [null] }, async ({ options }) => {
+    const run = await startCliBenchmark(options, ["--compact", "--show-token-usage"]).completion;
+    expect(run.ok).toBe(true);
+    expect(run.stdout).toMatch(/Inherited +Inherited +1\/1 +0\.20 +100\.0 +0\.80/u);
+    expect(run.stdout).toContain(
+      "Tokens · — warm-up (partial) · 230 measured · 230 total (partial)",
+    );
+    expect(run.stdout).not.toContain("Reported token usage");
+    expect(run.stderr).toBe(startup);
+  });
+});
+
+test("JSON with token usage stays quiet on a TTY even when compact is also supplied", async () => {
+  await withRunnerFixture({ streamText: "matching" }, async ({ options }) => {
+    const preload = await withStderrTtyPreload(options.cwd);
+    const run = await startCliBenchmark(
+      options,
+      ["--json", "--compact", "--show-token-usage"],
+      preload,
+    ).completion;
+    expect(run.ok).toBe(true);
+    const report = JSON.parse(run.stdout);
+    expect(report.run.completedMeasuredTrials).toBe(1);
+    expect(report.tokenUsage).toMatchObject({ totals: { totalTokens: 460 } });
+    expect(run.stderr).toBe("");
+  });
+});
 
 test("uses terminal color only when stdout is a TTY and colors are enabled", async () => {
   await withRunnerFixture({}, async ({ options }) => {

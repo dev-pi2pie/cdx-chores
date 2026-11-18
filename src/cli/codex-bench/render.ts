@@ -29,15 +29,22 @@ export function formatBenchmarkTokenCount(count: number | null | undefined): str
   return count == null ? unavailable : tokenCountFormat.format(count);
 }
 
-function metricCell(metric: Metric, completed: number, divisor: number, decimals: number): string {
+function metricCell(
+  metric: Metric,
+  completed: number,
+  divisor: number,
+  decimals: number,
+  compact: boolean,
+): string {
   if (metric.min === null || metric.max === null || metric.median === null) {
     return completed === 0 ? unavailable : `${unavailable} (0 samples)`;
   }
   const format = (value: number) => (value / divisor).toFixed(decimals);
   const min = format(metric.min);
   const max = format(metric.max);
-  const value =
-    metric.sampleCount === 1
+  const value = compact
+    ? format(metric.median)
+    : metric.sampleCount === 1
       ? min
       : metric.sampleCount === 2
         ? `${min}–${max}`
@@ -83,7 +90,7 @@ function usageLabel(label: string, partial: boolean): string {
   return partial ? `${label} (partial)` : label;
 }
 
-function renderUsageTable(runtime: CliRuntime, report: Report): void {
+function renderTokenUsage(runtime: CliRuntime, report: Report, compact: boolean): void {
   if (!report.tokenUsage) return;
   const warmups = createTokenUsageAccumulator();
   const measured = createTokenUsageAccumulator();
@@ -92,6 +99,7 @@ function renderUsageTable(runtime: CliRuntime, report: Report): void {
     if (!trial.inferenceAttempted || !trial.tokenUsage) continue;
     const subtotal = trial.warmup ? warmups : measured;
     subtotal.add(trial.tokenUsage);
+    if (compact) continue;
     rows.push([
       usageLabel(
         benchmarkTrialLabel(trial, report.run.runsPerCombination),
@@ -102,9 +110,29 @@ function renderUsageTable(runtime: CliRuntime, report: Report): void {
       ...usageCells(trial.tokenUsage.counts),
     ]);
   }
+  const warmupUsage = warmups.snapshot();
+  const measuredUsage = measured.snapshot();
+  if (compact) {
+    const fields = [
+      ["warm-up", warmupUsage],
+      ["measured", measuredUsage],
+      ["total", report.tokenUsage],
+    ] as const;
+    runtime.stdout.write(
+      `Tokens · ${fields
+        .map(([label, usage]) =>
+          usageLabel(
+            `${formatBenchmarkTokenCount(usage.totals.totalTokens)} ${label}`,
+            usage.partial,
+          ),
+        )
+        .join(" · ")}\n`,
+    );
+    return;
+  }
   for (const [label, usage] of [
-    ["Warm-up subtotal", warmups.snapshot()],
-    ["Measured subtotal", measured.snapshot()],
+    ["Warm-up subtotal", warmupUsage],
+    ["Measured subtotal", measuredUsage],
     ["Invocation total", report.tokenUsage],
   ] as const) {
     rows.push([usageLabel(label, usage.partial), "", "", ...usageCells(usage.totals)]);
@@ -119,42 +147,51 @@ function renderUsageTable(runtime: CliRuntime, report: Report): void {
   );
 }
 
-export function renderBenchmarkReport(runtime: CliRuntime, report: Report): void {
+export function renderBenchmarkReport(
+  runtime: CliRuntime,
+  report: Report,
+  { compact = false }: { compact?: boolean } = {},
+): void {
   const { stdout } = runtime;
   const colors = getCliColors(runtime, stdout);
   const { completedMeasuredTrials, measuredTrials, warmupTrials } = report.run;
   const header = [
     "Model",
-    "Requested speed",
-    "Completed",
-    "Codex first token (s)",
-    "Turn output tok/s",
-    "Turn time (s)",
+    compact ? "Requested" : "Requested speed",
+    compact ? "Done" : "Completed",
+    compact ? "First token (s)" : "Codex first token (s)",
+    compact ? "Output tok/s" : "Turn output tok/s",
+    compact ? "Turn (s)" : "Turn time (s)",
   ];
   const rows = report.summaries.map((group) => [
     group.model === null ? "Inherited" : safeTerminalText(group.model),
     benchmarkSpeedLabel(group.requestedSpeed),
     `${group.completedMeasuredTrials}/${group.plannedMeasuredTrials}`,
-    metricCell(group.codexFirstTokenMs, group.completedMeasuredTrials, 1_000, 2),
-    metricCell(group.turnOutputTokensPerSecond, group.completedMeasuredTrials, 1, 1),
-    metricCell(group.turnDurationMs, group.completedMeasuredTrials, 1_000, 2),
+    metricCell(group.codexFirstTokenMs, group.completedMeasuredTrials, 1_000, 2, compact),
+    metricCell(group.turnOutputTokensPerSecond, group.completedMeasuredTrials, 1, 1, compact),
+    metricCell(group.turnDurationMs, group.completedMeasuredTrials, 1_000, 2, compact),
   ]);
+  if (!compact) {
+    stdout.write(
+      `Codex benchmark completed ${completedMeasuredTrials}/${measuredTrials} measured trials (${warmupTrials} warm-ups).\n\n`,
+    );
+  }
+  renderTable(runtime, header, rows, compact ? 3 : header.length);
   stdout.write(
-    `Codex benchmark completed ${completedMeasuredTrials}/${measuredTrials} measured trials (${warmupTrials} warm-ups).\n\n`,
-  );
-  renderTable(runtime, header, rows);
-  stdout.write(
-    "\nServed speed is unknown. Codex first token can precede visible text.\n" +
-      "Turn output tok/s includes reasoning tokens and uses the full turn duration.\n",
+    compact
+      ? "\nMedians · served speed unknown\n"
+      : "\nServed speed is unknown. Codex first token can precede visible text.\n" +
+          "Turn output tok/s includes reasoning tokens and uses the full turn duration.\n",
   );
 
   const { prompt } = report;
   const source =
     prompt.source === "file" ? safeTerminalText(prompt.path ?? unavailable) : "built-in sample";
-  stdout.write(`Prompt source · ${source}\n`);
+  if (!compact || prompt.source === "file" || prompt.text !== undefined)
+    stdout.write(`Prompt source · ${source}\n`);
   if (prompt.text !== undefined) {
     const text = prompt.text.replaceAll("\r\n", "\n").split("\n").map(safeTerminalText).join("\n");
     stdout.write(`\n${colors.bold("Prompt")}\n${text}${text.endsWith("\n") ? "" : "\n"}`);
   }
-  renderUsageTable(runtime, report);
+  renderTokenUsage(runtime, report, compact);
 }

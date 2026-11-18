@@ -23,9 +23,7 @@ test.each([0, 1, 2, 3])(
         const runs = Math.max(count, 1);
         const { report, stderr, exitCode } = await jsonBenchmark({ ...options, runs });
         expect(exitCode).toBe(0);
-        expect(stderr).toBe(
-          `1 combination · ${runs} measured trial${runs === 1 ? "" : "s"} + 1 warm-up\n`,
-        );
+        expect(stderr).toBe("");
         expect(report.prompt).toEqual({ source: "built-in", path: null });
         expect(report.tokenUsage).toBeUndefined();
         expect(report.run.requested).toEqual({
@@ -95,8 +93,7 @@ test("adds attributable usage from an incomplete warm-up and marks missing trial
         "--show-token-usage",
       ]);
       expect(exitCode).toBe(1);
-      expect(stderr).toContain("fixture inference failed");
-      expect(stderr).toContain("Trial 1/2 · model-a · Inherited · reported — (partial)");
+      expect(stderr).toBe("failed (inherited model/inherited speed): fixture inference failed\n");
       expect(report.prompt).not.toHaveProperty("text");
       expect(report.tokenUsage).toEqual({
         partial: true,
@@ -141,7 +138,7 @@ test("marks an omitted reported total partial while using the measured output co
     async ({ options }) => {
       const { report, stderr, exitCode } = await jsonBenchmark(options, ["--show-token-usage"]);
       expect(exitCode).toBe(0);
-      expect(stderr).toContain("reported — (partial) · cumulative 15 tokens (partial)");
+      expect(stderr).toBe("");
       expect(report.trials[1]?.tokenUsage).toMatchObject({
         partial: true,
         counts: { inputTokens: 20, outputTokens: 8, totalTokens: null },
@@ -170,14 +167,10 @@ test("catalog-rejected speed still has a row and leaves usage totals complete fo
       "--show-token-usage",
     ]);
     expect(exitCode).toBe(0);
-    expect(stderr).toContain("does not advertise ultrafast");
-    expect(stderr).toContain(
-      "Warm-up · model-b · Standard · reported 230 tokens · cumulative 230 tokens",
-    );
-    expect(stderr).toContain(
-      "Trial 1/1 · model-b · Standard · reported 230 tokens · cumulative 460 tokens",
-    );
-    expect(stderr).not.toContain("· Ultrafast · reported");
+    expect(stderr.trim().split("\n")).toEqual([
+      "unavailable (model-b/ultrafast): model-b does not advertise ultrafast.",
+      "unavailable (model-b/ultrafast): model-b does not advertise ultrafast.",
+    ]);
     expect(traceMethod(await trace(), "turn/start")).toHaveLength(2);
     expect(report.tokenUsage).toMatchObject({
       partial: false,

@@ -29,6 +29,7 @@ interface BenchmarkCommandOptions extends Omit<
   promptFile?: string;
   runs?: number;
   json?: boolean;
+  compact?: boolean;
   showPrompt?: boolean;
   showTokenUsage?: boolean;
 }
@@ -71,9 +72,11 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
     runs: options.runs ?? 3,
   };
   const sessionRetention = resolveCodexSessionRetention(options.sessionRetention);
-  const progress = createBenchmarkProgress(runtime, workload, {
-    showTokenUsage: options.showTokenUsage,
-  });
+  const progress = options.json
+    ? undefined
+    : createBenchmarkProgress(runtime, workload, {
+        showTokenUsage: options.showTokenUsage && !options.compact,
+      });
   process.on("SIGINT", cancel);
   process.on("SIGTERM", cancel);
   try {
@@ -83,11 +86,11 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
       signal: cancellation.signal,
       prompt: prompt.text,
       sessionRetention,
-      onTrialStart: progress.start,
-      onFirstText: progress.firstText,
-      onTrial: progress.finish,
+      onTrialStart: progress?.start,
+      onFirstText: progress?.firstText,
+      onTrial: progress?.finish,
     });
-    progress.stop();
+    progress?.stop();
     const report = buildBenchmarkReport(result, {
       workload,
       prompt,
@@ -116,14 +119,14 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
     if (options.json) {
       runtime.stdout.write(`${serializeCliJson(report)}\n`);
     } else {
-      renderBenchmarkReport(runtime, report);
+      renderBenchmarkReport(runtime, report, { compact: options.compact });
     }
     if (result.shutdownError) runtime.stderr.write(`${safeTerminalText(result.shutdownError)}\n`);
     if (result.interrupted) process.exitCode = 130;
     else if (failed || completedMeasuredTrials === 0 || result.shutdownError) process.exitCode = 1;
   } finally {
     try {
-      progress.stop();
+      progress?.stop();
     } finally {
       process.off("SIGINT", cancel);
       process.off("SIGTERM", cancel);
@@ -142,9 +145,13 @@ export function registerCodexBenchCommand(program: Command, runtime: CliRuntime)
       parseRuns,
     )
     .option("--prompt-file <path>", "Use a UTF-8 prompt file for every trial")
-    .option("--json", "Write one JSON benchmark report")
+    .option("--compact", "Show median metrics and summarize requested token totals")
+    .option("--json", "Write one JSON report to stdout and reserve stderr for diagnostics")
     .option("--show-prompt", "Include the prompt text in the report")
-    .option("--show-token-usage", "Include reported token counts, warm-ups, and partial totals")
+    .option(
+      "--show-token-usage",
+      "Include reported token usage and warm-up totals in the selected output",
+    )
     .addHelpText(
       "after",
       "\nUse one --runs value for every model and speed combination. Each combination also gets one warm-up.\n" +
@@ -153,7 +160,8 @@ export function registerCodexBenchCommand(program: Command, runtime: CliRuntime)
         "Use --no-color or set NO_COLOR to disable colors.\n\n" +
         "Examples\n" +
         "  cdx-chores codex-bench --codex-model MODEL --codex-speed standard --codex-speed fast\n" +
-        "  cdx-chores codex-bench --prompt-file task.txt --runs 3 --json --show-token-usage\n",
+        "  cdx-chores codex-bench --compact --show-token-usage\n" +
+        "  cdx-chores codex-bench --prompt-file task.txt --runs 3 --json --show-token-usage > report.json\n",
     )
     .action(async (options: BenchmarkCommandOptions) => actionCodexBenchmark(runtime, options));
 }

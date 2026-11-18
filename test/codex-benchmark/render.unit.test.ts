@@ -34,6 +34,21 @@ test.each([
   expect(stderr.text).toBe("");
 });
 
+test("compact renders medians and labels metrics with fewer usable samples", () => {
+  const result = report();
+  const group = result.summaries[0]!;
+  group.completedMeasuredTrials = 3;
+  group.codexFirstTokenMs = { sampleCount: 3, min: 2_220, median: 2_310, max: 3_680 };
+  group.turnOutputTokensPerSecond = { sampleCount: 2, min: 40, median: 45, max: 50 };
+  const { runtime, stdout } = createCapturedRuntime();
+  renderBenchmarkReport(runtime, result, { compact: true });
+  expect(stdout.text).toMatch(
+    /Inherited +Inherited +3\/3 +2\.31 +45\.0 \(2 samples\) +— \(0 samples\)/u,
+  );
+  expect(stdout.text).toContain("Medians · served speed unknown");
+  expect(stdout.text).not.toContain("Tokens ·");
+});
+
 test("escapes selected model and opted-in prompt text, and labels partial token totals", () => {
   const result = report();
   result.summaries[0]!.model = "模型\u009b";

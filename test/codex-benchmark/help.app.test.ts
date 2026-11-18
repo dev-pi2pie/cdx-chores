@@ -18,7 +18,12 @@ test("benchmark help explains shared runs, inheritance, retention and both outpu
   expect(help).toContain(
     "codex-bench --codex-model MODEL --codex-speed standard --codex-speed fast",
   );
-  expect(help).toContain("codex-bench --prompt-file task.txt --runs 3 --json --show-token-usage");
+  expect(help).toContain("--compact Show median metrics and summarize requested token totals");
+  expect(help).toContain("reserve stderr for diagnostics");
+  expect(help).toContain("codex-bench --compact --show-token-usage");
+  expect(help).toContain(
+    "codex-bench --prompt-file task.txt --runs 3 --json --show-token-usage > report.json",
+  );
 });
 
 test("Interactive help explains its command-local Codex options", () => {
