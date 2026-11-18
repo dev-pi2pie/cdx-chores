@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 
-const { spawn } = require("node:child_process");
-const {
+import { spawn } from "node:child_process";
+import {
   appendFileSync,
   existsSync,
   readFileSync,
   renameSync,
   unlinkSync,
   writeFileSync,
-} = require("node:fs");
-const { join } = require("node:path");
-const { createInterface } = require("node:readline");
-const { setTimeout: delay } = require("node:timers/promises");
+} from "node:fs";
+import { join } from "node:path";
+import { createInterface } from "node:readline";
+import { setTimeout as delay } from "node:timers/promises";
 
 const home = process.env.CODEX_HOME;
 const scenario = JSON.parse(readFileSync(join(home, "scenario.json"), "utf8"));

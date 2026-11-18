@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-const fs = require("node:fs");
-const { once } = require("node:events");
-const { setTimeout: delay } = require("node:timers/promises");
+import { once } from "node:events";
+import { appendFileSync, readFileSync } from "node:fs";
+import { setTimeout as delay } from "node:timers/promises";
+
 const args = process.argv.slice(2),
   source = args.at(-1),
-  config = JSON.parse(fs.readFileSync(source, "utf8"));
+  config = JSON.parse(readFileSync(source, "utf8"));
 if (args[args.indexOf("-max_pixels") + 1] !== "16777216") throw new Error("Missing decoder guard");
 async function main() {
   if (!args.includes("-show_frames")) {
@@ -34,7 +35,7 @@ async function main() {
     }
   }
   if (config.partial) process.stdout.write("frame|stream_index=2|pts=");
-  if (config.mutate) fs.appendFileSync(source, " ");
+  if (config.mutate) appendFileSync(source, " ");
 }
 main().catch((error) => {
   console.error(error);

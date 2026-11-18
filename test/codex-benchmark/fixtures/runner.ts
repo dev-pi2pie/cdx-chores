@@ -51,11 +51,11 @@ export async function withRunnerFixture<T>(
 ): Promise<T> {
   return withTempFixtureDir("codex-benchmark-runner", async (root) => {
     const home = join(root, "codex-home");
-    const executable = join(root, "codex-fixture.cjs");
+    const executable = join(root, "codex-fixture.mjs");
     const tracePath = join(home, "events.jsonl");
     await mkdir(home);
     await copyFile(
-      join(REPO_ROOT, "test/codex-benchmark/fixtures/benchmark-app-server.cjs"),
+      join(REPO_ROOT, "test/codex-benchmark/fixtures/benchmark-app-server.mjs"),
       executable,
     );
     await chmod(executable, 0o755);

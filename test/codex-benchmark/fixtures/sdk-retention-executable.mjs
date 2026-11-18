@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-const { appendFileSync } = require("node:fs");
-const readline = require("node:readline");
+import { appendFileSync } from "node:fs";
+import { createInterface } from "node:readline";
 
 const threadId = "owned-fixture-thread";
 function record(event) {
@@ -11,7 +11,7 @@ function record(event) {
 }
 
 if (process.argv[2] === "app-server") {
-  readline.createInterface({ input: process.stdin }).on("line", (line) => {
+  createInterface({ input: process.stdin }).on("line", (line) => {
     const request = JSON.parse(line);
     if (request.method === "initialized") return;
     if (request.method === "initialize") {

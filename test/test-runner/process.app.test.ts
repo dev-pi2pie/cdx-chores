@@ -13,7 +13,7 @@ import { observeProcessGroup } from "../../scripts/testing/execution/process-tab
 import { runAfterPreflight } from "../../scripts/testing/execution/preflight.ts";
 import { REPO_ROOT, withTempFixtureDir } from "../helpers/cli-test-utils";
 
-const subject = join(import.meta.dir, "fixtures/process-subject.cjs");
+const subject = join(import.meta.dir, "fixtures/process-subject.mjs");
 const limits = { timeoutMs: 2500, graceMs: 250, cleanupMs: 1500 };
 const options = (
   mode: string,

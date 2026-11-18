@@ -1,5 +1,6 @@
-const { once } = require("node:events");
-const { writeSync } = require("node:fs");
+import { once } from "node:events";
+import { writeSync } from "node:fs";
+
 const mode = process.argv[2];
 async function main() {
   if (mode === "records" || mode === "prefix") {

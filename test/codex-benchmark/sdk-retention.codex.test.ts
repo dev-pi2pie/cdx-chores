@@ -73,10 +73,10 @@ test.each([
   async ({ scenario, result, cancelled }) => {
     await withProbe(async (driverPath) => {
       await withLiveCodexFixture(async ({ start, root, env, cwd }) => {
-        const executable = join(root, "selected-codex.cjs");
+        const executable = join(root, "selected-codex.mjs");
         await Bun.write(
           executable,
-          Bun.file(join(import.meta.dir, "fixtures", "sdk-retention-executable.cjs")),
+          Bun.file(join(import.meta.dir, "fixtures", "sdk-retention-executable.mjs")),
         );
         await chmod(executable, 0o755);
         const events = join(root, "retention-events.jsonl");
