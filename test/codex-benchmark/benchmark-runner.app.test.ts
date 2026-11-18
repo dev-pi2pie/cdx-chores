@@ -276,18 +276,19 @@ test.skipIf(process.platform === "win32")(
   "CLI preserves completed trials and reports an unconfirmed app-server shutdown",
   async () => {
     await withRunnerFixture({}, async ({ options, trace }) => {
-      const preload = join(options.cwd, "unconfirmed-group-exit.cjs");
+      const preload = await withStderrTtyPreload(options.cwd);
       // Force the group-exit probe to see a live group while real shutdown signals still run.
-      await writeFile(
+      await appendFile(
         preload,
-        "const kill = process.kill; process.kill = (pid, signal) => " +
+        "\nconst kill = process.kill; process.kill = (pid, signal) => " +
           "(pid < 0 && signal === 0 ? true : kill(pid, signal));",
       );
-      const result = await startCliBenchmark(options, [], preload).completion;
+      const result = await startCliBenchmark(options, ["--json"], preload).completion;
       expect(result.stopped).toBe(true);
       expect(result.issues).toEqual([]);
       expect(result.exitCode).toBe(1);
-      expect(result.stdout).toContain("1/1 measured trials (1 warm-ups)");
+      expect(JSON.parse(result.stdout).run.completedMeasuredTrials).toBe(1);
+      expect(result.stderr).toContain("\r\x1b[2K\r\x1b[31mShutdown failed\x1b[39m:");
       expect(result.stderr).toContain("process group did not stop before its shutdown deadline");
       expect(traceMethod(await trace(), "turn/completed")).toHaveLength(2);
     });
@@ -387,3 +388,32 @@ for (const json of [false, true]) {
     },
   );
 }
+
+test.skipIf(process.platform === "win32")(
+  "clears JSON progress and keeps the skipped-retention warning on unconfirmed cancellation",
+  async () => {
+    await withRunnerFixture({ interrupt: "unconfirmed" }, async ({ options, trace }) => {
+      const preload = await withStderrTtyPreload(options.cwd);
+      const cli = startCliBenchmark(options, ["--json", "--session-retention", "archive"], preload);
+      try {
+        await waitForTurnStart(trace);
+        if (!cli.child.pid) throw new Error("Expected an owned CLI process.");
+        process.kill(-cli.child.pid, "SIGINT");
+        const result = await cli.completion;
+        expect(result.exitCode).toBe(130);
+        const cleared = result.stderr.lastIndexOf("\r\x1b[2K\r");
+        const warning = "Session retention \x1b[33mskipped\x1b[39m (thread-1):";
+        expect(cleared).toBeGreaterThan(-1);
+        expect(result.stderr.indexOf(warning)).toBeGreaterThan(cleared);
+        expect(JSON.parse(result.stdout).trials[0]).toMatchObject({
+          status: "cancelled",
+          sessionRetention: { status: "skipped" },
+        });
+        expect(traceMethod(await trace(), "thread/archive")).toHaveLength(0);
+      } finally {
+        cli.shutdown();
+        await cli.completion;
+      }
+    });
+  },
+);

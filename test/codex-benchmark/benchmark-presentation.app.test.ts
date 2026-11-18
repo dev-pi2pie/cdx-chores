@@ -159,6 +159,71 @@ test("clears transient JSON progress before writing the report with prompt and u
   });
 });
 
+test.each(["TTY", "redirected", "--no-color", "NO_COLOR"] as const)(
+  "mixed-speed JSON reports warnings with the stderr color policy for %s",
+  async (mode) => {
+    await withRunnerFixture({}, async ({ options }) => {
+      const preload = mode === "redirected" ? undefined : await withStderrTtyPreload(options.cwd);
+      const run = await startCliBenchmark(
+        mode === "NO_COLOR" ? { ...options, env: { ...options.env, NO_COLOR: "" } } : options,
+        [
+          "--json",
+          "--codex-model",
+          "model-b",
+          "--codex-speed",
+          "ultrafast",
+          "--codex-speed",
+          "standard",
+          ...(mode === "--no-color" ? ["--no-color"] : []),
+        ],
+        preload,
+      ).completion;
+      expect(run.ok).toBe(true);
+      const warning = " (model-b/ultrafast): model-b does not advertise ultrafast.";
+      const label = mode === "TTY" ? "\x1b[33munavailable\x1b[39m" : "unavailable";
+      if (preload) {
+        expect(run.stderr).toContain(`\r\x1b[2K\r${label}${warning}\n`);
+      } else {
+        expect(run.stderr).toBe(`${label}${warning}\n${label}${warning}\n`);
+      }
+      if (mode !== "TTY") expect(run.stderr.replaceAll("\x1b[2K", "")).not.toContain("\x1b");
+
+      expect(run.stdout).not.toContain("\x1b");
+      const report = JSON.parse(run.stdout);
+      expect(report.run.completedMeasuredTrials).toBe(1);
+      expect(report.trials[0]).toMatchObject({
+        status: "unavailable",
+        error: "model-b does not advertise ultrafast.",
+      });
+      expect(report.trials.at(-1)).toMatchObject({
+        status: "completed",
+        requestedSpeed: "standard",
+      });
+    });
+  },
+);
+
+test("prints red trial and retention failures after clearing the JSON progress line", async () => {
+  await withRunnerFixture({ failFirst: true, retentionError: true }, async ({ options }) => {
+    const preload = await withStderrTtyPreload(options.cwd);
+    const run = await startCliBenchmark(
+      options,
+      ["--json", "--session-retention", "archive"],
+      preload,
+    ).completion;
+    expect(run.exitCode).toBe(1);
+    expect(run.stderr).toContain(
+      "\r\x1b[2K\r\x1b[31mfailed\x1b[39m (inherited model/inherited speed): fixture inference failed\n",
+    );
+    expect(run.stderr).toContain("Session retention \x1b[31mfailed\x1b[39m (thread-2):");
+    const report = JSON.parse(run.stdout);
+    expect(report.trials.at(-1)).toMatchObject({
+      status: "completed",
+      sessionRetention: { status: "failed" },
+    });
+  });
+});
+
 test("uses terminal color only when stdout is a TTY and colors are enabled", async () => {
   await withRunnerFixture({}, async ({ options }) => {
     const preload = join(options.cwd, "stdout-tty.cjs");

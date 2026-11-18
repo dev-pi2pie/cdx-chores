@@ -9,6 +9,7 @@ import { formatBenchmarkReportPath } from "../codex-bench/paths";
 import { buildBenchmarkReport, type BenchmarkPrompt } from "../codex-bench/report";
 import { renderBenchmarkReport } from "../codex-bench/render";
 import { createBenchmarkProgress } from "../codex-bench/progress";
+import { getCliColors } from "../colors";
 import { CliError } from "../errors";
 import { serializeCliJson } from "../json";
 import { safeTerminalText } from "../terminal-text";
@@ -104,19 +105,30 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
     report.run.codexHome = formatBenchmarkReportPath(runtime, report.run.codexHome);
     report.prompt.path = formatBenchmarkReportPath(runtime, report.prompt.path);
     const { completedMeasuredTrials } = report.run;
+    const colors = getCliColors(runtime, runtime.stderr);
     let failed = false;
     for (const trial of result.trials) {
       if (trial.error) {
         const label = `${trial.model ?? "inherited model"}/${trial.requestedSpeed ?? "inherited speed"}`;
+        const status =
+          trial.status === "unavailable"
+            ? colors.yellow(trial.status)
+            : trial.status === "failed"
+              ? colors.red(trial.status)
+              : trial.status;
         runtime.stderr.write(
-          `${trial.status} (${safeTerminalText(label)}): ${safeTerminalText(trial.error)}\n`,
+          `${status} (${safeTerminalText(label)}): ${safeTerminalText(trial.error)}\n`,
         );
       }
       const retention = trial.sessionRetention;
       if (retention?.status === "failed" || retention?.status === "skipped") {
         const thread = trial.threadId ?? "unknown thread";
+        const status =
+          retention.status === "failed"
+            ? colors.red(retention.status)
+            : colors.yellow(retention.status);
         runtime.stderr.write(
-          `Session retention ${retention.status} (${safeTerminalText(thread)}): ${safeTerminalText(retention.error)}\n`,
+          `Session retention ${status} (${safeTerminalText(thread)}): ${safeTerminalText(retention.error)}\n`,
         );
       }
       failed ||= trial.status === "failed" || retention?.status === "failed";
@@ -126,7 +138,11 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
     } else {
       renderBenchmarkReport(runtime, report, { compact: options.compact });
     }
-    if (result.shutdownError) runtime.stderr.write(`${safeTerminalText(result.shutdownError)}\n`);
+    if (result.shutdownError) {
+      runtime.stderr.write(
+        `${colors.red("Shutdown failed")}: ${safeTerminalText(result.shutdownError)}\n`,
+      );
+    }
     if (result.interrupted) process.exitCode = 130;
     else if (failed || completedMeasuredTrials === 0 || result.shutdownError) process.exitCode = 1;
   } finally {
