@@ -460,8 +460,11 @@ test.skipIf(process.platform === "win32")(
       const cli = startCliBenchmark(options, ["--json", "--session-retention", "archive"]);
       try {
         await waitForMethod(trace, "turn/start");
+        const signalledAt = performance.now();
         cli.child.kill("SIGINT");
         const result = await cli.completion;
+        // Allow scheduling and shutdown time beyond the one-second turn-ID grace.
+        expect(performance.now() - signalledAt).toBeLessThan(3_000);
         expect(result.reason).toBe("exit-failed");
         expect(result.exitCode).toBe(130);
         expect(JSON.parse(result.stdout)).toMatchObject({
