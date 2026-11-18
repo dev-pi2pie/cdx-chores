@@ -96,6 +96,7 @@ test("adds attributable usage from an incomplete warm-up and marks missing trial
       ]);
       expect(exitCode).toBe(1);
       expect(stderr).toContain("fixture inference failed");
+      expect(stderr).toContain("Trial 1/2 · model-a · Inherited · reported — (partial)");
       expect(report.prompt).not.toHaveProperty("text");
       expect(report.tokenUsage).toEqual({
         partial: true,
@@ -142,6 +143,13 @@ test("catalog-rejected speed still has a row and leaves usage totals complete fo
     ]);
     expect(exitCode).toBe(0);
     expect(stderr).toContain("does not advertise ultrafast");
+    expect(stderr).toContain(
+      "Warm-up · model-b · Standard · reported 230 tokens · cumulative 230 tokens",
+    );
+    expect(stderr).toContain(
+      "Trial 1/1 · model-b · Standard · reported 230 tokens · cumulative 460 tokens",
+    );
+    expect(stderr).not.toContain("· Ultrafast · reported");
     expect(traceMethod(await trace(), "turn/start")).toHaveLength(2);
     expect(report.tokenUsage).toMatchObject({
       partial: false,

@@ -11,9 +11,21 @@ type Metric = Report["summaries"][number]["codexFirstTokenMs"];
 
 const speedLabels = { standard: "Standard", fast: "Fast", ultrafast: "Ultrafast" } as const;
 const unavailable = "—";
+const tokenCountFormat = new Intl.NumberFormat("en-US");
 
 export function benchmarkSpeedLabel(speed: CodexSpeed | null): string {
   return speed === null ? "Inherited" : speedLabels[speed];
+}
+
+export function benchmarkTrialLabel(
+  trial: { warmup: boolean; round: number },
+  runs: number,
+): string {
+  return trial.warmup ? "Warm-up" : `Trial ${trial.round}/${runs}`;
+}
+
+export function formatBenchmarkTokenCount(count: number | null | undefined): string {
+  return count == null ? unavailable : tokenCountFormat.format(count);
 }
 
 function metricCell(metric: Metric, completed: number, divisor: number, decimals: number): string {

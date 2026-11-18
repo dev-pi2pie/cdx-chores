@@ -19,9 +19,11 @@ test("redirects startup and running partial usage to stderr, with prompt and tot
     expect(run.stdout).toContain("Requested speed");
     expect(run.stdout).toContain("Prompt\nFixture prompt\n\\u001b[31m");
     expect(run.stdout).toContain("Token totals (partial) · input 195 · output 80");
-    expect(run.stderr.startsWith(startup)).toBe(true);
-    expect(run.stderr.match(/Running token totals/g)).toHaveLength(2);
-    expect(run.stderr).toContain("Running token totals (partial) · input 195 · output 80");
+    expect(run.stderr).toBe(
+      startup +
+        "Warm-up · model-a · Inherited · reported — (partial) · cumulative — (partial)\n" +
+        "Trial 1/1 · model-a · Inherited · reported 230 tokens · cumulative 230 tokens (partial)\n",
+    );
     expect(run.stderr).not.toContain("Waiting for text");
     expect(run.stderr).not.toContain("\u001b");
     expect(run.stdout).not.toContain("\u001b");

@@ -8,8 +8,13 @@ import { safeTerminalText } from "../terminal-text";
 import { getDisplayWidth, truncateToDisplayWidth } from "../text-display-width";
 import { createReflowingTerminalBlock } from "../tui/reflowing-block";
 import type { CliRuntime } from "../types";
-import { benchmarkSpeedLabel, formatBenchmarkUsage } from "./render";
-import { createTokenUsageAccumulator } from "./report";
+import { benchmarkSpeedLabel, benchmarkTrialLabel, formatBenchmarkTokenCount } from "./render";
+import { benchmarkTrialTokenUsage, createTokenUsageAccumulator } from "./usage";
+
+function formatReportedTotal(count: number | null | undefined, partial: boolean): string {
+  const value = formatBenchmarkTokenCount(count);
+  return `${value}${count == null ? "" : " tokens"}${partial ? " (partial)" : ""}`;
+}
 
 export function createBenchmarkProgress(
   runtime: CliRuntime,
@@ -45,7 +50,7 @@ export function createBenchmarkProgress(
       selection.requestedSpeed === null
         ? "Inherited speed"
         : `${benchmarkSpeedLabel(selection.requestedSpeed)} requested`;
-    const trial = selection.warmup ? "Warm-up" : `Trial ${selection.round}/${workload.runs}`;
+    const trial = benchmarkTrialLabel(selection, workload.runs);
     const phase = streaming ? "Streaming" : "Waiting for text";
     const seconds = `${(Math.max(0, now() - since) / 1_000).toFixed(1)} s`;
     const essential = `${prefix} ${phase} · ${seconds}`;
@@ -90,9 +95,17 @@ export function createBenchmarkProgress(
     finish(trial: BenchmarkTrial) {
       clear();
       if (stopped || !usage || !trial.inferenceAttempted) return;
-      usage.add(trial);
+      const trialUsage = benchmarkTrialTokenUsage(trial);
+      usage.add(trialUsage);
       const { totals, partial } = usage.snapshot();
-      stream.write(`${formatBenchmarkUsage("Running token totals", totals, partial)}\n`);
+      const label = benchmarkTrialLabel(trial, workload.runs);
+      const model = safeTerminalText(trial.model ?? trial.resolvedModel ?? "Inherited model");
+      const speed = benchmarkSpeedLabel(trial.requestedSpeed);
+      const reported = formatReportedTotal(trialUsage.counts?.totalTokens, trialUsage.partial);
+      const cumulative = formatReportedTotal(totals.totalTokens, partial);
+      stream.write(
+        `${label} · ${model} · ${speed} · reported ${reported} · cumulative ${cumulative}\n`,
+      );
     },
     stop() {
       if (stopped) return;

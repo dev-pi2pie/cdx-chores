@@ -5,8 +5,8 @@ import {
   type BenchmarkTrial,
   type BenchmarkWorkloadOptions,
 } from "../../adapters/codex/benchmark/types";
-import type { SavedTokenUsage } from "../../adapters/codex/benchmark/rollout";
 import type { CodexSessionRetention } from "../../utils/codex-session-retention";
+import { benchmarkTrialTokenUsage, createTokenUsageAccumulator } from "./usage";
 
 export interface BenchmarkPrompt {
   source: "built-in" | "file";
@@ -71,36 +71,6 @@ function trialGroup(selection: BenchmarkSelection) {
   };
 }
 
-function usageIsPartial(trial: BenchmarkTrial): boolean {
-  return (
-    trial.inferenceAttempted &&
-    (trial.usagePartial || trial.usage?.inputTokens == null || trial.usage.outputTokens === null)
-  );
-}
-
-export function createTokenUsageAccumulator() {
-  const totals: SavedTokenUsage = {
-    inputTokens: null,
-    outputTokens: null,
-    cachedInputTokens: null,
-    cacheWriteInputTokens: null,
-    reasoningOutputTokens: null,
-    totalTokens: null,
-  };
-  const fields = Object.keys(totals) as (keyof SavedTokenUsage)[];
-  let partial = false;
-  return {
-    add(trial: BenchmarkTrial) {
-      partial ||= usageIsPartial(trial);
-      for (const field of fields) {
-        const count = trial.usage?.[field];
-        if (count != null) totals[field] = (totals[field] ?? 0) + count;
-      }
-    },
-    snapshot: () => ({ totals: { ...totals }, partial }),
-  };
-}
-
 export function buildBenchmarkReport(run: BenchmarkRun, options: ReportOptions) {
   const { workload, prompt, sessionRetention, showPrompt, showTokenUsage } = options;
   const groups = new Map<string, ReturnType<typeof trialGroup>>();
@@ -116,7 +86,8 @@ export function buildBenchmarkReport(run: BenchmarkRun, options: ReportOptions) 
   let warmupTrials = 0;
   const tokenUsage = showTokenUsage ? createTokenUsageAccumulator() : undefined;
   const trials = run.trials.map((trial) => {
-    tokenUsage?.add(trial);
+    const trialUsage = tokenUsage && benchmarkTrialTokenUsage(trial);
+    if (trial.inferenceAttempted && trialUsage) tokenUsage?.add(trialUsage);
     const metrics = trialMetrics(trial);
     if (trial.warmup) {
       warmupTrials++;
@@ -156,9 +127,7 @@ export function buildBenchmarkReport(run: BenchmarkRun, options: ReportOptions) 
       eligible: trial.eligible,
       sessionRetention: trial.sessionRetention,
       ...metrics,
-      ...(showTokenUsage
-        ? { tokenUsage: { counts: trial.usage, partial: usageIsPartial(trial) } }
-        : {}),
+      ...(trialUsage ? { tokenUsage: trialUsage } : {}),
     };
   });
 
