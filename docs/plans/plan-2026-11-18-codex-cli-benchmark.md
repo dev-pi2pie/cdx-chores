@@ -92,12 +92,12 @@ Phase 5 evidence and the reviewed code range are recorded in the [unified job re
 
 ## Phase 6. Benchmark Usage Presentation
 
-- [ ] With `--show-token-usage`, label each settled request on stderr as `Warm-up` or `Trial N/M`. Identify the model and requested speed for comparisons. After rollout readback, show the request's reported total and the cumulative invocation total, with partial or unavailable usage labeled.
-- [ ] With `--show-token-usage`, render a compact usage table in the human report. Show the trial label, model, requested speed, input, output, and total. Include separate warm-up and measured subtotals and an invocation total. Use the existing JSON usage fields for detailed counts such as cached input and reasoning output.
-- [ ] Include attributable usage from failed or interrupted attempts in the appropriate subtotal and invocation total. Exclude catalog skips that never attempted inference. Mark each affected subtotal partial and use the existing missing-count convention. Compute speed statistics from eligible measured samples.
-- [ ] Verify single- and multi-combination runs, opt-in behavior, partial and missing usage, failed or interrupted trials, and subtotal reconciliation. Check redirected stderr and verify that opt-in progress leaves JSON stdout as one parseable report.
+- [x] With `--show-token-usage`, label each settled request on stderr as `Warm-up` or `Trial N/M`. Identify the model and requested speed for comparisons. After rollout readback, show the request's reported total and the cumulative invocation total, with partial or unavailable usage labeled.
+- [x] With `--show-token-usage`, render a compact usage table in the human report. Show the trial label, model, requested speed, input, output, and total. Include separate warm-up and measured subtotals and an invocation total. Use the existing JSON usage fields for detailed counts such as cached input and reasoning output.
+- [x] Include attributable usage from failed or interrupted attempts in the appropriate subtotal and invocation total. Exclude catalog skips that never attempted inference. Mark each affected subtotal partial and use the existing missing-count convention. Compute speed statistics from eligible measured samples.
+- [x] Verify single- and multi-combination runs, opt-in behavior, partial and missing usage, failed or interrupted trials, and subtotal reconciliation. Check redirected stderr and verify that opt-in progress leaves JSON stdout as one parseable report.
 
-Record Phase 6 verification and the reviewed code range in the [unified job record](jobs/2026-11-18-codex-cli-benchmark.md#phase-6-benchmark-usage-presentation).
+Phase 6 evidence and the reviewed code range are recorded in the [unified job record](jobs/2026-11-18-codex-cli-benchmark.md#phase-6-benchmark-usage-presentation).
 
 ## Phase 7. Documentation and Validation
 

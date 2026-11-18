@@ -77,7 +77,12 @@ The shared command-local options include `--codex-speed` and `--session-retentio
 
 ## Phase 6. Benchmark Usage Presentation
 
-Planned. A live run showed how cumulative token lines make it hard to tell what each request used. The opt-in usage output will distinguish warm-up requests from measured attempts in progress and show separate subtotals in the final table. Record fixture results and the reviewed range here as the [Phase 6 checklist](../plan-2026-11-18-codex-cli-benchmark.md#phase-6-benchmark-usage-presentation) is completed.
+With `--show-token-usage`, stderr identifies each settled warm-up or measured request and shows its reported total alongside the cumulative invocation total. The human report shows input, output, and total by request, with independent warm-up and measured subtotals and an invocation total. JSON retains the detailed usage fields.
+
+- Each column sums reported values, including attributable usage from failed and interrupted attempts. Missing counts display as `—` in the terminal and `null` in JSON. An attempted request with incomplete usage or a missing input, output, or total count marks its affected subtotal and the invocation total partial. Catalog skips contribute no usage. Speed statistics still use eligible measured samples.
+- `bun test --path-ignore-patterns='**/fixtures/**' test/codex-benchmark` passed 83 cases. Fixtures verified opt-in behavior, single and multiple combinations, partial and missing counts, failed and interrupted attempts, skipped catalog entries, and subtotal reconciliation. `bun run test:unit` passed 2,107 cases and `bun run test:integration:codex` passed 26.
+- TypeScript, lint, formatting, build, and `git diff --check` passed. A built Node CLI smoke check verified per-request stderr and reconciled the table and JSON totals against a loopback provider.
+- Code and test review covered `9355bc92..10d4dbd3`. The review fix marks usage partial even when input and output are available but the reported total is missing. The fixtures verify the partial label in stderr, terminal subtotals, and JSON, and confirm that an eligible saved output count can still provide a speed sample.
 
 ## Phase 7. Documentation and Validation
 
