@@ -117,6 +117,7 @@ Follow-up evidence and the reviewed code range are recorded in the [unified job 
 ## Phase 7. Documentation and Validation
 
 - [ ] Create a benchmark usage guide with examples for matrix and explicit model–speed comparisons, prompt files, run counts, metrics, compact and detailed terminal views, JSON progress and redirection, token usage, and diagnostic commands. Document home-relative report paths and the absolute-path aliases. Add an output reference if the report schema needs a stable lookup page.
+- [ ] Explain warm-ups next to `--runs` in the benchmark guide. Each matrix combination or `--case` occurrence gets one warm-up before its measured trials. Warm-ups run in their own fresh sessions with the same prompt and settings. Exclude them from measured metrics and completion counts, and explain that `--show-token-usage` includes their reported tokens in the invocation total and the terminal warm-up subtotal.
 - [ ] Update the shared Codex execution guide with adopted commands and selector inheritance. Document command-local retention, `keep` by default, explicit archive and permanent deletion, and app-server version requirements.
 - [ ] Check both guides against the built CLI help, `doctor`, and `codex-info` output. Validate example commands against a fixture provider.
 - [ ] Run the focused fixture and CLI suites, TypeScript, lint, formatting, build, and a built Node CLI smoke check.
