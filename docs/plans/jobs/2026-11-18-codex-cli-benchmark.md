@@ -9,7 +9,7 @@ This record tracks all six phases of the [benchmark implementation plan](../plan
 
 ## Phase 1. Offline Rollout Recovery
 
-Completed offline rollout recovery verification. The spike and the fixtures use the [same rollout reader](../../../scripts/spikes/codex-benchmark-rollout.ts). The [application fixtures](../../../test/codex-benchmark/rollout-recovery.app.test.ts) use real JSONL in an isolated Codex home and wait for the fake app-server process group to stop before removing it.
+Completed offline rollout recovery verification. The spike, benchmark, and fixtures use the [same rollout reader](../../../src/adapters/codex/benchmark/rollout.ts). The [application fixtures](../../../test/codex-benchmark/rollout-recovery.app.test.ts) use real JSONL in an isolated Codex home and wait for the fake app-server process group to stop before removing it.
 
 - The reader starts its 2 s recovery window when the matching turn completes and retries every 50 ms. The deadline fixtures use a 300 ms budget. The delayed-write fixture finishes the record only after the first read. The fallback fixture asserts two lookups for the original thread ID and a read of the returned path.
 - Deadline and interruption fixtures preserve only attributable cumulative usage, flag incomplete usage, and leave unavailable saved metrics empty. Retention fixtures cover omitted and explicit keep, archive and delete after readback, archive after expiry, cleanup failures, and skipped cleanup without confirmed completion. An unrelated synthetic rollout stays untouched.
@@ -32,3 +32,24 @@ The [loopback provider](../../../test/codex-benchmark/fixtures/speed-provider.ts
 - The Standard omission control confirms that ignoring explicit Fast would fail the assertion. The synthetic catalog supplies both tiers so the fixture does not depend on the bundled fallback catalog or account access.
 - `bun run test:integration:codex` passed 12 cases, including the ten mapping probes, under Bun 1.4.4 and Node 26.13.1. TypeScript, lint, formatting, and `git diff --check` passed.
 - Code and test review covered `9c2369d7..d5a65cd0`. The re-review confirmed the SDK probe uses Node, matching the supported runtime. No material findings remained.
+
+## Phase 3. CLI and Trial Runner
+
+`codex-bench` builds a model × speed workload, warms up each combination, and rotates speed order in measured rounds. Each request has a fresh persisted thread and uses the validated prompt. The runner records saved timing, usage, eligibility, and a separate retention outcome. The CLI reports completed trial counts and diagnostics. Aggregation and the JSON report are Phase 4 work.
+
+The shared command-local options include `--codex-speed` and `--session-retention`. Helpers retain the `low` reasoning default, and benchmark omissions delegate all selectors to Codex. Retention defaults to `keep`. Explicit archive or delete uses the same executable and Codex home as the request and affects only the owned thread. Codex CLI 0.170.0 is the verified baseline. Benchmark cleanup follows confirmed turn completion and rollout readback or its deadline. SDK cleanup runs at thread release after confirmed completion. If the SDK returns an error without completion evidence, the lifecycle reports a skip and preserves the original outcome.
+
+| Helper entry points | Thread release verified |
+| --- | --- |
+| File and batch rename, including image and document analyzers and Interactive cleanup suggestions | Each request owns a thread and releases it after that attempt settles. |
+| Markdown PDF profile, template, and project, including Interactive authoring | Each request, repair, or regeneration owns a thread. The template repair fixture verified two Fast requests and two archived threads. |
+| Data query and stack, plus Interactive DuckDB header and source-shape suggestions | Each request owns one thread. The one-shot query test deleted its thread and preserved a separate active session. Interactive SQL regeneration verified two Fast requests and two archived threads. |
+| Shared SDK scope | Two real SDK turns reused one thread. The fixture verified the same ID on both turns and one archive at final release. |
+
+- The loopback provider observed all five benchmark CLI speed selections. A two-model Standard/Fast invocation reused the same UTF-8 prompt and saved 4 warm-ups and 12 measured trials in 16 distinct archived rollouts.
+- A separate SDK loopback check verified archive with a relative `CODEX_HOME` and a distinct helper working directory.
+- The synthetic app-server fixtures covered delayed and missing rollout records, path fallback, unsupported speed isolation, commentary-only completion with usage, interruption with and without completion confirmation, and retention errors that preserve the trial outcome.
+- `bun run test:unit` passed 2,090 cases. `bun run test:integration:app` passed 2,410 cases. `bun run test:integration:codex` passed 26 cases with Codex 0.170.0 and Node 26.13.1.
+- TypeScript, lint, formatting, build, and `git diff --check` passed. The built Node CLI sent Standard under a Fast baseline and archived its warm-up and measured rollouts in an isolated home.
+- A focused `bun test` run passed 57 cases across the [trial runner](../../../test/codex-benchmark/benchmark-runner.app.test.ts), [rollout recovery](../../../test/codex-benchmark/rollout-recovery.app.test.ts), and [rename flag order](../../../test/rename/commands/codex-timeout.app.test.ts) fixtures.
+- Code and test review covered `e1eda20f..e77b37e2`. Re-review verified process-group shutdown before runner return and confirmed that an unresolved shutdown preserves completed trials, reports a diagnostic, and exits nonzero. Documentation review confirmed the lifecycle evidence, checklist, and Phase 4 boundary.
