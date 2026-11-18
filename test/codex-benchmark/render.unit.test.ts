@@ -53,5 +53,5 @@ test("escapes selected model and opted-in prompt text, and labels partial token 
   renderBenchmarkReport(runtime, result);
   expect(stdout.text).toContain("模型\\u009b");
   expect(stdout.text).toContain("first\n\\u001b[31mnext\\u200f");
-  expect(stdout.text).toContain("Token totals (partial) · input 12 · output —");
+  expect(stdout.text).toMatch(/Invocation total \(partial\) +12 +— +—/u);
 });

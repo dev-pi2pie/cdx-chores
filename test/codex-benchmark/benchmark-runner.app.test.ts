@@ -299,16 +299,22 @@ test("CLI reports a failed turn, continues, and retains only confirmed trial thr
     const preload = await withStderrTtyPreload(options.cwd);
     const result = await startCliBenchmark(
       options,
-      ["--session-retention", "delete", "--no-color"],
+      ["--session-retention", "delete", "--no-color", "--show-token-usage"],
       preload,
     ).completion;
     expect(result.stopped).toBe(true);
     expect(result.issues).toEqual([]);
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain(
-      "\r\x1b[2K\rfailed (inherited model/inherited speed): fixture inference failed",
+      "\r\x1b[2K\rWarm-up · model-a · Inherited · reported 230 tokens (partial)",
+    );
+    expect(result.stderr).toContain(
+      "failed (inherited model/inherited speed): fixture inference failed",
     );
     expect(result.stdout).toContain("1/1 measured trials (1 warm-ups)");
+    expect(result.stdout).toMatch(/Warm-up subtotal \(partial\) +150 +80 +230/u);
+    expect(result.stdout).toMatch(/Measured subtotal +150 +80 +230/u);
+    expect(result.stdout).toMatch(/Invocation total \(partial\) +300 +160 +460/u);
     const events = await trace();
     expect(traceMethod(events, "thread/delete").map((event) => event.params?.threadId)).toEqual([
       "thread-1",
@@ -326,7 +332,7 @@ test.skipIf(process.platform === "win32")(
         const preload = await withStderrTtyPreload(options.cwd);
         const cli = startCliBenchmark(
           options,
-          ["--session-retention", "archive", "--no-color"],
+          ["--session-retention", "archive", "--no-color", "--show-token-usage"],
           preload,
         );
         try {
@@ -339,7 +345,12 @@ test.skipIf(process.platform === "win32")(
           expect(result.issues).toEqual([]);
           expect(result.exitCode).toBe(130);
           expect(result.stderr).toContain("Waiting for text");
-          expect(result.stderr.endsWith("\r\x1b[2K\r")).toBe(true);
+          expect(result.stderr).toContain(
+            "\r\x1b[2K\rWarm-up · model-a · Inherited · reported 230 tokens (partial)",
+          );
+          expect(result.stdout).toMatch(/Warm-up subtotal \(partial\) +150 +80 +230/u);
+          expect(result.stdout).toMatch(/Measured subtotal +— +— +—/u);
+          expect(result.stdout).toMatch(/Invocation total \(partial\) +150 +80 +230/u);
           const events = await trace();
           expect(traceMethod(events, "turn/start")).toHaveLength(1);
           expect(events.slice(-3).map(({ method }) => method)).toEqual([
