@@ -67,6 +67,21 @@ export function getDisplayWidth(value: string): number {
   return width;
 }
 
+export function countDisplayRows(value: string, columns: number): number {
+  const limit = Math.max(1, columns);
+  let rows = 1;
+  let used = 0;
+  for (const { segment } of graphemeSegmenter.segment(value)) {
+    const width = Math.min(limit, getGraphemeWidth(segment));
+    if (used + width > limit) {
+      rows++;
+      used = 0;
+    }
+    used += width;
+  }
+  return rows;
+}
+
 export function padToDisplayWidth(value: string, width: number): string {
   const padding = Math.max(0, width - getDisplayWidth(value));
   return `${value}${" ".repeat(padding)}`;

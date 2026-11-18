@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { startCliBenchmark, withRunnerFixture } from "./fixtures/runner";
+import { startCliBenchmark, withRunnerFixture, withStderrTtyPreload } from "./fixtures/runner";
 
 const startup = "1 combination · 1 measured trial + 1 warm-up\n";
 
@@ -32,11 +32,7 @@ test.each(["matching", "unrelated"] as const)(
   "keeps JSON stdout clean during $streamText text events on a TTY",
   async (streamText) => {
     await withRunnerFixture({ streamText }, async ({ options }) => {
-      const preload = join(options.cwd, "stderr-tty.cjs");
-      await writeFile(
-        preload,
-        "Object.defineProperties(process.stderr, { isTTY: { value: true }, columns: { value: 110 } });",
-      );
+      const preload = await withStderrTtyPreload(options.cwd);
       const run = await startCliBenchmark(options, ["--json", "--no-color"], preload).completion;
       expect(run.ok).toBe(true);
       expect(JSON.parse(run.stdout).run.completedMeasuredTrials).toBe(1);

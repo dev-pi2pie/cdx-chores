@@ -3,6 +3,7 @@ import { Writable } from "node:stream";
 
 import { createBenchmarkProgress } from "../../src/cli/codex-bench/progress";
 import { getDisplayWidth } from "../../src/cli/text-display-width";
+import { createReflowingTerminalBlock } from "../../src/cli/tui/reflowing-block";
 import { createCapturedRuntime } from "../helpers/cli-test-utils";
 
 test("resize during a streaming pause redraws and clears the old wrapped rows", () => {
@@ -54,4 +55,14 @@ test("resize during a streaming pause redraws and clears the old wrapped rows", 
   const finalLength = chunks.length;
   stderr.emit("resize");
   expect(chunks).toHaveLength(finalLength);
+});
+
+test("clears each row when wide characters move to the next row after a shrink", () => {
+  const { stdout } = createCapturedRuntime();
+  const terminal = Object.assign(stdout, { columns: 12 }) as unknown as NodeJS.WriteStream;
+  const frame = createReflowingTerminalBlock(terminal);
+  frame.render(["aa模型"], "aa模型");
+  terminal.columns = 3;
+  frame.clear();
+  expect(stdout.text).toBe("aa模型\r\x1b[2A\x1b[2K\x1b[1B\r\x1b[2K\x1b[1B\r\x1b[2K\r\x1b[2A");
 });

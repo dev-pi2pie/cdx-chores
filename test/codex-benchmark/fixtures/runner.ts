@@ -102,3 +102,12 @@ export function startCliBenchmark(options: BenchmarkOptions, args: string[], pre
     cleanupMs: 1_500,
   });
 }
+
+export async function withStderrTtyPreload(cwd: string): Promise<string> {
+  const path = join(cwd, "stderr-tty.cjs");
+  await writeFile(
+    path,
+    "Object.defineProperties(process.stderr, { isTTY: { value: true }, columns: { value: 110 } });",
+  );
+  return path;
+}

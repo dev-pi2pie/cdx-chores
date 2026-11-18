@@ -12,6 +12,7 @@ import {
   startCliBenchmark,
   traceMethod,
   withRunnerFixture,
+  withStderrTtyPreload,
   type BenchmarkProtocolEvent,
 } from "./fixtures/runner";
 
@@ -295,11 +296,18 @@ test.skipIf(process.platform === "win32")(
 
 test("CLI reports a failed turn, continues, and retains only confirmed trial threads", async () => {
   await withRunnerFixture({ failFirst: true }, async ({ options, trace }) => {
-    const result = await startCliBenchmark(options, ["--session-retention", "delete"]).completion;
+    const preload = await withStderrTtyPreload(options.cwd);
+    const result = await startCliBenchmark(
+      options,
+      ["--session-retention", "delete", "--no-color"],
+      preload,
+    ).completion;
     expect(result.stopped).toBe(true);
     expect(result.issues).toEqual([]);
     expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain("fixture inference failed");
+    expect(result.stderr).toContain(
+      "\r\x1b[2K\rfailed (inherited model/inherited speed): fixture inference failed",
+    );
     expect(result.stdout).toContain("1/1 measured trials (1 warm-ups)");
     const events = await trace();
     expect(traceMethod(events, "thread/delete").map((event) => event.params?.threadId)).toEqual([
@@ -315,7 +323,12 @@ test.skipIf(process.platform === "win32")(
     await withRunnerFixture(
       { interrupt: "confirmed", withholdStartReply: true },
       async ({ options, trace }) => {
-        const cli = startCliBenchmark(options, ["--session-retention", "archive"]);
+        const preload = await withStderrTtyPreload(options.cwd);
+        const cli = startCliBenchmark(
+          options,
+          ["--session-retention", "archive", "--no-color"],
+          preload,
+        );
         try {
           await waitForTurnStart(trace);
           expect(traceMethod(await trace(), "turn/start")).toHaveLength(1);
@@ -325,6 +338,8 @@ test.skipIf(process.platform === "win32")(
           expect(result.stopped).toBe(true);
           expect(result.issues).toEqual([]);
           expect(result.exitCode).toBe(130);
+          expect(result.stderr).toContain("Waiting for text");
+          expect(result.stderr.endsWith("\r\x1b[2K\r")).toBe(true);
           const events = await trace();
           expect(traceMethod(events, "turn/start")).toHaveLength(1);
           expect(events.slice(-3).map(({ method }) => method)).toEqual([

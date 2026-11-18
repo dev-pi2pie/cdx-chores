@@ -148,7 +148,9 @@ export function registerCodexBenchCommand(program: Command, runtime: CliRuntime)
     .addHelpText(
       "after",
       "\nUse one --runs value for every model and speed combination. Each combination also gets one warm-up.\n" +
-        "Omitted model, provider, reasoning effort, and speed inherit from Codex.\n\n" +
+        "Omitted model, provider, reasoning effort, and speed inherit from Codex.\n" +
+        "Omit --prompt-file to use the built-in sample prompt.\n" +
+        "Use --no-color or set NO_COLOR to disable colors.\n\n" +
         "Examples\n" +
         "  cdx-chores codex-bench --codex-model MODEL --codex-speed standard --codex-speed fast\n" +
         "  cdx-chores codex-bench --prompt-file task.txt --runs 3 --json --show-token-usage\n",

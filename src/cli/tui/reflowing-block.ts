@@ -1,4 +1,4 @@
-import { getDisplayWidth } from "../text-display-width";
+import { countDisplayRows } from "../text-display-width";
 
 /** Own the terminal rows occupied by a redrawable block, including after a shrink. */
 export function createReflowingTerminalBlock(terminal: NodeJS.WriteStream) {
@@ -10,10 +10,7 @@ export function createReflowingTerminalBlock(terminal: NodeJS.WriteStream) {
   function clear(): void {
     if (previous.length === 0) return;
     const width = Math.min(previousColumns, columns());
-    const rows = previous.reduce(
-      (sum, line) => sum + Math.max(1, Math.ceil(getDisplayWidth(line) / width)),
-      0,
-    );
+    const rows = previous.reduce((sum, line) => sum + countDisplayRows(line, width), 0);
     const up = rows > 1 ? `\x1b[${rows - 1}A` : "";
     terminal.write(`\r${up}`);
     for (let row = 0; row < rows; row++) {
