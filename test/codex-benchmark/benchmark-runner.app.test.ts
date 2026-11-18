@@ -341,10 +341,17 @@ test.skipIf(process.platform === "win32")(
   },
 );
 
-function startCliBenchmark(options: BenchmarkOptions, args: string[]) {
+function startCliBenchmark(options: BenchmarkOptions, args: string[], preload?: string) {
   return startFixtureProcess({
     executable: process.execPath,
-    args: [join(REPO_ROOT, "src/bin.ts"), "codex-bench", "--runs", "1", ...args],
+    args: [
+      ...(preload ? ["--preload", preload] : []),
+      join(REPO_ROOT, "src/bin.ts"),
+      "codex-bench",
+      "--runs",
+      "1",
+      ...args,
+    ],
     cwd: options.cwd,
     env: options.env ?? process.env,
     timeoutMs: 10_000,
@@ -352,6 +359,28 @@ function startCliBenchmark(options: BenchmarkOptions, args: string[]) {
     cleanupMs: 1_500,
   });
 }
+
+test.skipIf(process.platform === "win32")(
+  "CLI preserves completed trials and reports an unconfirmed app-server shutdown",
+  async () => {
+    await withRunnerFixture({}, async ({ options, trace }) => {
+      const preload = join(options.cwd, "unconfirmed-group-exit.cjs");
+      // Force the group-exit probe to see a live group while real shutdown signals still run.
+      await writeFile(
+        preload,
+        "const kill = process.kill; process.kill = (pid, signal) => " +
+          "(pid < 0 && signal === 0 ? true : kill(pid, signal));",
+      );
+      const result = await startCliBenchmark(options, [], preload).completion;
+      expect(result.stopped).toBe(true);
+      expect(result.issues).toEqual([]);
+      expect(result.exitCode).toBe(1);
+      expect(result.stdout).toContain("1/1 measured trials (1 warm-ups)");
+      expect(result.stderr).toContain("process group did not stop before its shutdown deadline");
+      expect(traceMethod(await trace(), "turn/completed")).toHaveLength(2);
+    });
+  },
+);
 
 test("CLI reports a failed turn, continues, and retains only confirmed trial threads", async () => {
   await withRunnerFixture({ failFirst: true }, async ({ options, trace }) => {
