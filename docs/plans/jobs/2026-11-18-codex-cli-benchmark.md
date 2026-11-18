@@ -5,7 +5,7 @@ status: in-progress
 agent: codex
 ---
 
-This record tracks all seven phases of the [benchmark implementation plan](../plan-2026-11-18-codex-cli-benchmark.md). The [research](../../researches/research-2026-11-18-codex-cli-benchmark.md) records the design and live-check evidence.
+This record tracks implementation outcomes, test results, and reviewed ranges for the [benchmark implementation plan](../plan-2026-11-18-codex-cli-benchmark.md). The [research](../../researches/research-2026-11-18-codex-cli-benchmark.md) records the design and exploratory findings.
 
 ## Phase 1. Offline Rollout Recovery
 
@@ -35,7 +35,7 @@ The [loopback provider](../../../test/codex-benchmark/fixtures/speed-provider.ts
 
 ## Phase 3. CLI and Trial Runner
 
-`codex-bench` builds a model × speed workload, warms up each combination, and rotates speed order in measured rounds. Each request has a fresh persisted thread and uses the validated prompt. The runner records saved timing, usage, eligibility, and a separate retention outcome. The CLI reports completed trial counts and diagnostics. Aggregation and the JSON report are Phase 4 work.
+The CLI and runner introduced the model × speed workload with warm-ups, speed rotation in measured rounds, and one fresh persisted thread per request. The runner captured timing, usage, eligibility, and retention outcomes. The CLI reported completed trial counts and diagnostics.
 
 The shared command-local options include `--codex-speed` and `--session-retention`. Helpers retain the `low` reasoning default, and benchmark omissions delegate all selectors to Codex. Retention defaults to `keep`. Explicit archive or delete uses the same executable and Codex home as the request and affects only the owned thread. Codex CLI 0.170.0 is the verified baseline. Benchmark cleanup follows confirmed turn completion and rollout readback or its deadline. SDK cleanup runs at thread release after confirmed completion. If the SDK returns an error without completion evidence, the lifecycle reports a skip and preserves the original outcome.
 
@@ -56,7 +56,7 @@ The shared command-local options include `--codex-speed` and `--session-retentio
 
 ## Phase 4. Benchmark Results
 
-`codex-bench --json` emits one object with `run`, `prompt`, `trials`, and `summaries`. Inherited selections, unavailable metrics, and served speed use `null`. Requested settings and reported resolved settings remain visible. `--show-prompt` adds `prompt.text`, and `--show-token-usage` adds usage to each trial and totals to the report. Phase 5 consumes the same report for terminal presentation.
+`codex-bench --json` emits one object with `run`, `prompt`, `trials`, and `summaries`. Inherited selections, unavailable metrics, and served speed use `null`. Requested settings and reported resolved settings remain visible. `--show-prompt` adds `prompt.text`, and `--show-token-usage` adds usage to each trial and totals to the report.
 
 - Each requested model and speed combination gets completed and planned measured counts. The summary shape is `sampleCount`, `min`, `median`, and `max` per metric, with the two middle values averaged for even sample counts. Eligible measured trials contribute each available metric independently. Turn output tok/s uses saved output tokens, including reasoning, and a positive full turn duration.
 - Token totals include warm-ups and attributable partial usage. The reader retains input-only snapshots. Missing input or output counts and unconfirmed usage boundaries mark attempted requests partial. Catalog skips contribute an unavailable result row and leave usage completeness unchanged. Unreported counts use `null`.
@@ -100,6 +100,10 @@ Completed the reopened work. JSON mode displays a resize-aware status on TTY std
 - `bun run test:unit` passed 2,123 cases and `bun run test:integration:codex` passed 26. TypeScript, lint, formatting, build, and `git diff --check` passed. The built Node CLI help example used shell redirection against a loopback provider and verified a single JSON report with prompt text, usage, and the supplied relative path. A second run verified `--abs`.
 - Code and test review covered `262083ec..c2aabec3` with no outstanding findings.
 
+#### Explicit model–speed pairs
+
+Pending. The [explicit-pair checklist](../plan-2026-11-18-codex-cli-benchmark.md#phase-6-follow-up) defines the selector and acceptance checks. Record fixture results, the built CLI smoke check, and the exact reviewed range here when verified.
+
 ## Phase 7. Documentation and Validation
 
-Planned. Write the guide after the Phase 6 follow-up so examples match the built CLI. Record guide review and final verification here as the [Phase 7 checklist](../plan-2026-11-18-codex-cli-benchmark.md#phase-7-documentation-and-validation) is completed.
+Pending. Record the guide review and final verification here as the [documentation and validation checklist](../plan-2026-11-18-codex-cli-benchmark.md#phase-7-documentation-and-validation) is completed.
