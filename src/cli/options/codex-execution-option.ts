@@ -50,6 +50,13 @@ function executionOption(
 }
 
 export function applyCodexExecutionOptions(command: Command, benchmark = false): Command {
+  if (!benchmark) {
+    command.addHelpText(
+      "after",
+      "\nPass Codex options after this command. Model, provider, and speed inherit from Codex when omitted.\n" +
+        "Session retention applies to threads this command creates after their final use.\n",
+    );
+  }
   return command
     .addOption(
       executionOption(

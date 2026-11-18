@@ -6,8 +6,10 @@ import { InvalidArgumentError, type Command } from "commander";
 import type { CodexSpeed } from "../../utils/codex-execution";
 import { resolveCodexSessionRetention } from "../../utils/codex-session-retention";
 import { buildBenchmarkReport, type BenchmarkPrompt } from "../codex-bench/report";
+import { renderBenchmarkReport } from "../codex-bench/render";
 import { CliError } from "../errors";
 import { serializeCliJson } from "../json";
+import { safeTerminalText } from "../terminal-text";
 import {
   applyCodexExecutionOptions,
   type CodexExecutionCommandOptions,
@@ -82,21 +84,23 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
       workload,
       prompt,
       sessionRetention,
-      showPrompt: options.json && options.showPrompt,
-      showTokenUsage: options.json && options.showTokenUsage,
+      showPrompt: options.showPrompt,
+      showTokenUsage: options.showTokenUsage,
     });
-    const { completedMeasuredTrials, measuredTrials, warmupTrials } = report.run;
+    const { completedMeasuredTrials } = report.run;
     let failed = false;
     for (const trial of result.trials) {
       if (trial.error) {
         const label = `${trial.model ?? "inherited model"}/${trial.requestedSpeed ?? "inherited speed"}`;
-        runtime.stderr.write(`${trial.status} (${label}): ${trial.error}\n`);
+        runtime.stderr.write(
+          `${trial.status} (${safeTerminalText(label)}): ${safeTerminalText(trial.error)}\n`,
+        );
       }
       const retention = trial.sessionRetention;
       if (retention?.status === "failed" || retention?.status === "skipped") {
         const thread = trial.threadId ?? "unknown thread";
         runtime.stderr.write(
-          `Session retention ${retention.status} (${thread}): ${retention.error}\n`,
+          `Session retention ${retention.status} (${safeTerminalText(thread)}): ${safeTerminalText(retention.error)}\n`,
         );
       }
       failed ||= trial.status === "failed" || retention?.status === "failed";
@@ -104,11 +108,9 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
     if (options.json) {
       runtime.stdout.write(`${serializeCliJson(report)}\n`);
     } else {
-      runtime.stdout.write(
-        `Codex benchmark completed ${completedMeasuredTrials}/${measuredTrials} measured trials (${warmupTrials} warm-ups).\n`,
-      );
+      renderBenchmarkReport(runtime, report);
     }
-    if (result.shutdownError) runtime.stderr.write(`${result.shutdownError}\n`);
+    if (result.shutdownError) runtime.stderr.write(`${safeTerminalText(result.shutdownError)}\n`);
     if (result.interrupted) process.exitCode = 130;
     else if (failed || completedMeasuredTrials === 0 || result.shutdownError) process.exitCode = 1;
   } finally {
@@ -129,7 +131,15 @@ export function registerCodexBenchCommand(program: Command, runtime: CliRuntime)
     )
     .option("--prompt-file <path>", "Use a UTF-8 prompt file for every trial")
     .option("--json", "Write one JSON benchmark report")
-    .option("--show-prompt", "Include the prompt text in the JSON report")
-    .option("--show-token-usage", "Include reported token counts in the JSON report")
+    .option("--show-prompt", "Include the prompt text in the report")
+    .option("--show-token-usage", "Include reported token counts, warm-ups, and partial totals")
+    .addHelpText(
+      "after",
+      "\nUse one --runs value for every model and speed combination. Each combination also gets one warm-up.\n" +
+        "Omitted model, provider, reasoning effort, and speed inherit from Codex.\n\n" +
+        "Examples\n" +
+        "  cdx-chores codex-bench --codex-model MODEL --codex-speed standard --codex-speed fast\n" +
+        "  cdx-chores codex-bench --prompt-file task.txt --runs 3 --json --show-token-usage\n",
+    )
     .action(async (options: BenchmarkCommandOptions) => actionCodexBenchmark(runtime, options));
 }
