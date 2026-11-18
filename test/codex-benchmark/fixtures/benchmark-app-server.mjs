@@ -202,7 +202,7 @@ async function run() {
           break;
         if (scenario.rejectFast && params.serviceTierForTurn === "priority") {
           completeTurn(thread, "failed", {
-            message: "Service tier priority is not supported for this account.",
+            message: scenario.rejectFast,
           });
         } else if (thread.id === `thread-${scenario.failThread}`) {
           completeTurn(thread, "failed", { message: "fixture inference failed" });

@@ -26,7 +26,7 @@ interface Scenario {
   waitForInterruptThread?: number;
   failThread?: number;
   serverInterrupt?: { thread: number; message: string | null };
-  rejectFast?: boolean;
+  rejectFast?: string;
   rejectStart?: "thread/start" | "turn/start";
   retentionError?: boolean;
   usageSnapshots?: Array<Record<string, number> | null>;

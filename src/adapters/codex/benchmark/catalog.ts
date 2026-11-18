@@ -68,6 +68,13 @@ export class BenchmarkCatalog {
 }
 
 export function isTierRejection(message: string): boolean {
+  if (
+    /\bdoes not support (?:the )?(?:(?:priority|standard|fast|ultrafast) )?service[ _-]?tier\b/i.test(
+      message,
+    )
+  ) {
+    return true;
+  }
   return (
     /\b(?:service[ _-]?tier|ultrafast|fast mode|priority tier)\b/i.test(message) &&
     /\b(?:unsupported|supported|unavailable|available|allowed|requires|invalid|unknown|unrecognized|eligible)\b/i.test(

@@ -98,14 +98,41 @@ test("skips a missing tier per model and continues supported combinations", asyn
   });
 });
 
-test("preserves partial usage when a provider rejects an advertised speed", async () => {
-  await withRunnerFixture({ rejectFast: true }, async ({ options }) => {
-    const { trials } = await runCodexBenchmark({ ...options, speeds: ["fast", "standard"] });
+test.each([
+  {
+    message: "Service tier priority is not supported for this account.",
+    status: "unavailable",
+    exitCode: 0,
+  },
+  {
+    message: "This account does not support the priority service tier.",
+    status: "unavailable",
+    exitCode: 0,
+  },
+  {
+    message: "This model does not support image input at the priority service tier.",
+    status: "failed",
+    exitCode: 1,
+  },
+])("CLI classifies the provider reply: $message", async ({ message, status, exitCode }) => {
+  await withRunnerFixture({ rejectFast: message }, async ({ options }) => {
+    const result = await startCliBenchmark(options, [
+      "--json",
+      "--show-token-usage",
+      "--codex-speed",
+      "fast",
+      "--codex-speed",
+      "standard",
+    ]).completion;
+    expect(result.exitCode).toBe(exitCode);
+    expect(result.stderr).toContain(`${status} (inherited model/fast): ${message}`);
+    const { run, trials } = JSON.parse(result.stdout);
+    expect(run.completedMeasuredTrials).toBe(1);
     expect(trials[2]).toMatchObject({
-      status: "unavailable",
-      outputTokens: 80,
-      usagePartial: true,
+      status,
+      error: message,
       eligible: false,
+      tokenUsage: { partial: true, counts: { outputTokens: 80 } },
     });
     expect(trials[3]).toMatchObject({ status: "completed", sentTier: "default", eligible: true });
   });
