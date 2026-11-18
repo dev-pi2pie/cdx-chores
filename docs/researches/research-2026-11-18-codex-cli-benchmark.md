@@ -187,7 +187,7 @@ Share speed validation across the command surfaces. Preserve omitted benchmark s
 
 ### Request Wiring Checks
 
-Capture outgoing requests against a fixture provider for both the SDK helper and app-server paths. With Fast configured, check that explicit Standard overrides Fast and that omission inherits Fast on each path. With Standard configured, verify that explicit Fast sends the Fast tier on both paths. Verify the request mapping for each supported explicit speed. The live check tests provider acceptance. [^sdk] [^app-server]
+The Phase 2 loopback fixture captured outgoing requests from the TypeScript SDK and app-server on Codex 0.170.0. Both paths sent `priority` for inherited or explicit Fast, omitted `service_tier` for inherited or explicit Standard, and sent `ultrafast` when explicitly selected with a fixture catalog that advertised it. The fixture verifies request wiring. The live check tests provider acceptance. [Phase 2 evidence](../plans/jobs/2026-11-18-codex-cli-benchmark.md#phase-2-offline-speed-request-wiring) · [Live acceptance evidence](#first-live-check)
 
 ### Saved Records and Output Checks
 

@@ -42,12 +42,15 @@ Capture outbound inference requests at a fixture provider through the SDK and ap
 | --- | --- | --- |
 | Fast | Omitted | The request inherits Fast. |
 | Fast | `standard` | The request uses Standard. For app-server, exercise `serviceTierForTurn: "default"`. |
+| Standard | Omitted | The request inherits Standard as the control for the explicit Fast and Ultrafast cases. |
 | Standard | `fast` | The request uses the fixture catalog's Fast tier. |
 | Standard | `ultrafast` | The request uses the fixture catalog's Ultrafast tier. |
 
-- [ ] Capture outbound requests through the SDK using the fixture configuration and every selection in the table.
-- [ ] Capture outbound requests through app-server using the same cases and confirm the per-turn Standard override.
-- [ ] Record the observed mappings in the unified job record, link the live acceptance evidence, and resolve mismatches before exposing the selector.
+- [x] Capture outbound requests through the SDK using the fixture configuration and every selection in the table.
+- [x] Capture outbound requests through app-server using the same cases and confirm the per-turn Standard override.
+- [x] Record the observed mappings in the unified job record, link the live acceptance evidence, and resolve mismatches before exposing the selector.
+
+Phase 2 mappings and the reviewed code range are recorded in the [unified job record](jobs/2026-11-18-codex-cli-benchmark.md#phase-2-offline-speed-request-wiring).
 
 ## Phase 3. Wire the CLI and Trial Runner
 
