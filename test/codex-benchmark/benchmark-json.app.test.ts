@@ -67,6 +67,51 @@ test.each([0, 1, 2, 3])(
   },
 );
 
+test.each(["matrix", "paired"] as const)(
+  "keeps %s inheritance in the request and reports trial settings separately",
+  async (mode) => {
+    await withRunnerFixture(
+      { threadSettings: [{ serviceTier: "priority", reasoningEffort: "low" }, {}] },
+      async ({ options }) => {
+        const paired = mode === "paired";
+        const { report, stderr, exitCode } = await jsonBenchmark(
+          options,
+          paired ? ["--case", "model-a=inherit"] : [],
+        );
+        expect(exitCode).toBe(0);
+        expect(stderr).toBe("");
+        expect(report.run.requested).toEqual({
+          ...(paired
+            ? { cases: [{ model: "model-a", requestedSpeed: null }] }
+            : { models: [null], speeds: [null] }),
+          provider: null,
+          reasoningEffort: null,
+        });
+        expect(report.trials).toMatchObject([
+          {
+            warmup: true,
+            requestedSpeed: null,
+            reasoningEffort: null,
+            configuredTier: "priority",
+            resolvedReasoningEffort: "low",
+            sentTier: null,
+            servedSpeed: null,
+          },
+          {
+            warmup: false,
+            requestedSpeed: null,
+            reasoningEffort: null,
+            configuredTier: null,
+            resolvedReasoningEffort: null,
+            sentTier: null,
+            servedSpeed: null,
+          },
+        ]);
+      },
+    );
+  },
+);
+
 test("reports ordered explicit cases and combines repeated pairs while retaining unavailable rows", async () => {
   await withRunnerFixture({}, async ({ options, trace }) => {
     const { report, stderr, exitCode } = await jsonBenchmark({ ...options, runs: 2 }, [
@@ -105,6 +150,13 @@ test("reports ordered explicit cases and combines repeated pairs while retaining
       cases,
       provider: "requested-provider",
       reasoningEffort: "high",
+    });
+    expect(report.trials.find((trial) => trial.requestedSpeed === "standard")).toMatchObject({
+      requestedSpeed: "standard",
+      reasoningEffort: "high",
+      resolvedReasoningEffort: "high",
+      sentTier: "default",
+      servedSpeed: null,
     });
     expect(
       report.trials.map(({ model, requestedSpeed, round, warmup, status }) => ({

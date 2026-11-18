@@ -138,17 +138,21 @@ async function run() {
         break;
       case "thread/start": {
         if (params.ephemeral !== false) throw new Error("Use a persisted thread.");
+        const settings = scenario.threadSettings?.[threads.size];
         const newId = `thread-${threads.size + 1}`;
         const started = {
           id: newId,
           path: join(home, `${newId}.jsonl`),
           model: params.model ?? "model-a",
           modelProvider: params.modelProvider ?? "fixture-provider",
-          reasoningEffort: "medium",
+          reasoningEffort: settings === undefined ? "medium" : undefined,
           reads: 0,
         };
         threads.set(newId, started);
-        reply({ thread: { ...started, path: scenario.fallback ? null : started.path } });
+        reply({
+          ...settings,
+          thread: { ...started, path: scenario.fallback ? null : started.path },
+        });
         break;
       }
       case "turn/start":

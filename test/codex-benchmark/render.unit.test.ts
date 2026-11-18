@@ -43,7 +43,7 @@ test("compact renders medians and labels metrics with fewer usable samples", () 
   const { runtime, stdout } = createCapturedRuntime();
   renderBenchmarkReport(runtime, result, { compact: true });
   expect(stdout.text).toMatch(
-    /Inherited +Inherited +3\/3 +2\.31 +45\.0 \(2 samples\) +— \(0 samples\)/u,
+    /Inherited +Inherited +Inherited +3\/3 +2\.31 +45\.0 \(2 samples\) +— \(0 samples\)/u,
   );
   expect(stdout.text).toContain("Medians · served speed unknown");
   expect(stdout.text).not.toContain("Tokens ·");

@@ -24,11 +24,81 @@ test("compact output counts case occurrences in progress and merges repeated pai
       result.stdout
         .split("\n")
         .filter((line) => line.startsWith("model-"))
-        .map((line) => line.trim().split(/ {2,}/).slice(0, 3)),
+        .map((line) => line.trim().split(/ {2,}/).slice(0, 4)),
     ).toEqual([
-      ["model-a", "Fast", "2/2"],
-      ["model-b", "Standard", "1/1"],
+      ["model-a", "Fast", "Inherited (Medium)", "2/2"],
+      ["model-b", "Standard", "Inherited (Medium)", "1/1"],
     ]);
+  });
+});
+
+test.each([false, true])(
+  "reports inherited settings per measured row (compact=%s)",
+  async (compact) => {
+    const fastLow = { serviceTier: "priority", reasoningEffort: "low" };
+    const ultraHigh = { serviceTier: "ultrafast", reasoningEffort: "high" };
+    await withRunnerFixture(
+      {
+        threadSettings: [
+          // All warm-ups differ from the known measured values.
+          ultraHigh,
+          ultraHigh,
+          ultraHigh,
+          ultraHigh,
+          fastLow,
+          {},
+          fastLow,
+          fastLow,
+          fastLow,
+          {},
+          {},
+          ultraHigh,
+        ],
+      },
+      async ({ options }) => {
+        const run = await startCliBenchmark({ ...options, runs: 2 }, [
+          "--case",
+          "known=inherit",
+          "--case",
+          "missing=inherit",
+          "--case",
+          "partial=inherit",
+          "--case",
+          "mixed=inherit",
+          ...(compact ? ["--compact"] : []),
+          "--no-color",
+        ]).completion;
+        expect(run.ok).toBe(true);
+        expect(run.stdout).toContain(compact ? "Effort" : "Reasoning effort");
+        expect(run.stdout).toMatch(/served speed unknown|Served speed is unknown/u);
+        const rows = run.stdout
+          .split("\n")
+          .filter((line) => /^(known|missing|partial|mixed) /u.test(line));
+        expect(rows.map((line) => line.split(/ {2,}/).slice(0, 4))).toEqual([
+          ["known", "Inherited (configured Fast)", "Inherited (Low)", "2/2"],
+          ["missing", "Inherited", "Inherited", "2/2"],
+          ["partial", "Inherited (configured Fast, partial)", "Inherited (Low, partial)", "2/2"],
+          ["mixed", "Inherited (Mixed)", "Inherited (Mixed)", "2/2"],
+        ]);
+      },
+    );
+  },
+);
+
+test("shows explicit speed and effort when the configured settings differ", async () => {
+  const configured = { serviceTier: "priority", reasoningEffort: "low" };
+  await withRunnerFixture({ threadSettings: [configured, configured] }, async ({ options }) => {
+    const run = await startCliBenchmark(options, [
+      "--codex-model",
+      "model-a",
+      "--codex-speed",
+      "standard",
+      "--codex-reasoning-effort",
+      "high",
+      "--no-color",
+    ]).completion;
+    expect(run.ok).toBe(true);
+    expect(run.stdout).toMatch(/^model-a +Standard +High +1\/1 /mu);
   });
 });
 
@@ -139,7 +209,9 @@ test("compact keeps partial totals in the report and emits only startup on redir
   await withRunnerFixture({ usageSnapshots: [null] }, async ({ options }) => {
     const run = await startCliBenchmark(options, ["--compact", "--show-token-usage"]).completion;
     expect(run.ok).toBe(true);
-    expect(run.stdout).toMatch(/Inherited +Inherited +1\/1 +0\.20 +100\.0 +0\.80/u);
+    expect(run.stdout).toMatch(
+      /Inherited +Inherited +Inherited \(Medium\) +1\/1 +0\.20 +100\.0 +0\.80/u,
+    );
     expect(run.stdout).toContain(
       "Tokens · — warm-up (partial) · 230 measured · 230 total (partial)",
     );

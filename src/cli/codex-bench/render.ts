@@ -4,13 +4,18 @@ import { getCliColors } from "../colors";
 import { safeTerminalText } from "../terminal-text";
 import { getDisplayWidth, padToDisplayWidth } from "../text-display-width";
 import type { CliRuntime } from "../types";
-import type { buildBenchmarkReport } from "./report";
+import { benchmarkGroupKey, type buildBenchmarkReport } from "./report";
 import { createTokenUsageAccumulator } from "./usage";
 
 type Report = ReturnType<typeof buildBenchmarkReport>;
 type Metric = Report["summaries"][number]["codexFirstTokenMs"];
 
 const speedLabels = { standard: "Standard", fast: "Fast", ultrafast: "Ultrafast" } as const;
+const configuredTierLabels = new Map([
+  ["default", speedLabels.standard],
+  ["priority", speedLabels.fast],
+  ["ultrafast", speedLabels.ultrafast],
+]);
 const unavailable = "—";
 const tokenCountFormat = new Intl.NumberFormat("en-US");
 
@@ -27,6 +32,34 @@ export function benchmarkTrialLabel(
 
 export function formatBenchmarkTokenCount(count: number | null | undefined): string {
   return count == null ? unavailable : tokenCountFormat.format(count);
+}
+
+function measuredSettings(trials: Report["trials"]) {
+  const settings = new Map<string, { tiers: Set<string | null>; efforts: Set<string | null> }>();
+  for (const trial of trials) {
+    if (trial.warmup || trial.status !== "completed") continue;
+    const key = benchmarkGroupKey(trial);
+    const group = settings.get(key) ?? { tiers: new Set(), efforts: new Set() };
+    group.tiers.add(trial.configuredTier);
+    group.efforts.add(trial.resolvedReasoningEffort);
+    settings.set(key, group);
+  }
+  return settings;
+}
+
+function inheritedLabel(
+  values: ReadonlySet<string | null> | undefined,
+  format: (value: string) => string,
+): string {
+  const known = [...(values ?? [])].filter((value) => value !== null);
+  if (known.length === 0) return "Inherited";
+  if (known.length > 1) return "Inherited (Mixed)";
+  const coverage = values?.has(null) ? ", partial" : "";
+  return `Inherited (${format(known[0]!)}${coverage})`;
+}
+
+function effortLabel(value: string): string {
+  return safeTerminalText(value.charAt(0).toUpperCase() + value.slice(1));
 }
 
 function metricCell(
@@ -154,29 +187,46 @@ export function renderBenchmarkReport(
 ): void {
   const { stdout } = runtime;
   const colors = getCliColors(runtime, stdout);
-  const { completedMeasuredTrials, measuredTrials, warmupTrials } = report.run;
+  const { completedMeasuredTrials, measuredTrials, requested, warmupTrials } = report.run;
+  const settings = measuredSettings(report.trials);
   const header = [
     "Model",
     compact ? "Requested" : "Requested speed",
+    compact ? "Effort" : "Reasoning effort",
     compact ? "Done" : "Completed",
     compact ? "First token (s)" : "Codex first token (s)",
     compact ? "Output tok/s" : "Turn output tok/s",
     compact ? "Turn (s)" : "Turn time (s)",
   ];
-  const rows = report.summaries.map((group) => [
-    group.model === null ? "Inherited" : safeTerminalText(group.model),
-    benchmarkSpeedLabel(group.requestedSpeed),
-    `${group.completedMeasuredTrials}/${group.plannedMeasuredTrials}`,
-    metricCell(group.codexFirstTokenMs, group.completedMeasuredTrials, 1_000, 2, compact),
-    metricCell(group.turnOutputTokensPerSecond, group.completedMeasuredTrials, 1, 1, compact),
-    metricCell(group.turnDurationMs, group.completedMeasuredTrials, 1_000, 2, compact),
-  ]);
+  const rows = report.summaries.map((group) => {
+    const inherited = settings.get(benchmarkGroupKey(group));
+    const speed =
+      group.requestedSpeed === null
+        ? inheritedLabel(
+            inherited?.tiers,
+            (tier) => `configured ${safeTerminalText(configuredTierLabels.get(tier) ?? tier)}`,
+          )
+        : benchmarkSpeedLabel(group.requestedSpeed);
+    const effort =
+      requested.reasoningEffort === null
+        ? inheritedLabel(inherited?.efforts, effortLabel)
+        : effortLabel(requested.reasoningEffort);
+    return [
+      group.model === null ? "Inherited" : safeTerminalText(group.model),
+      speed,
+      effort,
+      `${group.completedMeasuredTrials}/${group.plannedMeasuredTrials}`,
+      metricCell(group.codexFirstTokenMs, group.completedMeasuredTrials, 1_000, 2, compact),
+      metricCell(group.turnOutputTokensPerSecond, group.completedMeasuredTrials, 1, 1, compact),
+      metricCell(group.turnDurationMs, group.completedMeasuredTrials, 1_000, 2, compact),
+    ];
+  });
   if (!compact) {
     stdout.write(
       `Codex benchmark completed ${completedMeasuredTrials}/${measuredTrials} measured trials (${warmupTrials} warm-ups).\n\n`,
     );
   }
-  renderTable(runtime, header, rows, compact ? 3 : header.length);
+  renderTable(runtime, header, rows, compact ? 4 : header.length);
   stdout.write(
     compact
       ? "\nMedians · served speed unknown\n"

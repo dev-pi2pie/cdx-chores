@@ -54,7 +54,10 @@ function statistics(values: number[]) {
   return { sampleCount, min, median, max };
 }
 
-function groupKey({ model, requestedSpeed }: BenchmarkSelection): string {
+export function benchmarkGroupKey({
+  model,
+  requestedSpeed,
+}: Pick<BenchmarkSelection, "model" | "requestedSpeed">): string {
   return JSON.stringify([model, requestedSpeed]);
 }
 
@@ -75,7 +78,7 @@ export function buildBenchmarkReport(run: BenchmarkRun, options: ReportOptions) 
   const { workload, prompt, sessionRetention, showPrompt, showTokenUsage } = options;
   const groups = new Map<string, ReturnType<typeof trialGroup>>();
   for (const selection of benchmarkWorkload({ ...workload, runs: 0 })) {
-    const key = groupKey(selection);
+    const key = benchmarkGroupKey(selection);
     const group = groups.get(key) ?? trialGroup(selection);
     group.plannedMeasuredTrials += workload.runs;
     groups.set(key, group);
@@ -92,7 +95,7 @@ export function buildBenchmarkReport(run: BenchmarkRun, options: ReportOptions) 
     if (trial.warmup) {
       warmupTrials++;
     } else {
-      const group = groups.get(groupKey(trial))!;
+      const group = groups.get(benchmarkGroupKey(trial))!;
       measuredTrials++;
       group.measuredTrials++;
       if (trial.status === "completed") {

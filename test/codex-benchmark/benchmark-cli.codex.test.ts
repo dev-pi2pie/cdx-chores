@@ -33,6 +33,11 @@ test.each(speedCases)(
   "benchmark CLI sends the selected tier: $label",
   async ({ baseline, selection, wireTier }) => {
     const requests = await captureSpeedRequest(baseline, async (fixture) => {
+      const config = join(fixture.env.CODEX_HOME!, "config.toml");
+      await writeFile(
+        config,
+        'model_reasoning_effort = "low"\n' + (await readFile(config, "utf8")),
+      );
       const speed = selection === "default" ? "standard" : selection;
       const result = await runCli(fixture, [
         "codex-bench",
@@ -42,6 +47,11 @@ test.each(speedCases)(
       ]);
       if (!result.ok) throw new Error(`${lifecycleDiagnostic(result)}\n${result.stderr}`);
       expect(result.stdout).toContain("1/1 measured trials (1 warm-ups)");
+      if (selection === undefined) {
+        const configured = baseline === "fast" ? "Fast" : "Standard";
+        expect(result.stdout).toContain(`Inherited (configured ${configured})`);
+        expect(result.stdout).toContain("Inherited (Low)");
+      }
       expect(await rollouts(fixture.env.CODEX_HOME!, "sessions")).toHaveLength(2);
       expect(await rollouts(fixture.env.CODEX_HOME!, "archived_sessions")).toEqual([]);
     });
@@ -128,6 +138,7 @@ test("benchmark CLI sends only the explicit pairs and inherits the configured ti
     ]);
     if (!result.ok) throw new Error(`${lifecycleDiagnostic(result)}\n${result.stderr}`);
     expect(result.stdout).toContain("3/3 measured trials (3 warm-ups)");
+    expect(result.stdout).toContain("Inherited (configured Fast)");
     expect(result.stderr).toBe("3 combinations · 3 measured trials + 3 warm-ups\n");
   });
   const pairs = [

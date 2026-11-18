@@ -22,6 +22,7 @@ interface Scenario {
   usageSnapshots?: Array<Record<string, number> | null>;
   resistantWorker?: boolean;
   streamText?: "matching" | "unrelated";
+  threadSettings?: Array<{ serviceTier?: string | null; reasoningEffort?: string | null }>;
 }
 
 export interface BenchmarkProtocolEvent {
