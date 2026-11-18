@@ -7,6 +7,7 @@ import type { CodexSpeed } from "../../utils/codex-execution";
 import { resolveCodexSessionRetention } from "../../utils/codex-session-retention";
 import { buildBenchmarkReport, type BenchmarkPrompt } from "../codex-bench/report";
 import { renderBenchmarkReport } from "../codex-bench/render";
+import { createBenchmarkProgress } from "../codex-bench/progress";
 import { CliError } from "../errors";
 import { serializeCliJson } from "../json";
 import { safeTerminalText } from "../terminal-text";
@@ -62,24 +63,31 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
   const { runCodexBenchmark } = await import("../../adapters/codex/benchmark");
   const cancellation = new AbortController();
   const cancel = () => cancellation.abort();
+  const workload = {
+    models: options.codexModel ?? [],
+    speeds: options.codexSpeed ?? [],
+    provider: options.codexProvider,
+    reasoningEffort: options.codexReasoningEffort,
+    runs: options.runs ?? 3,
+  };
+  const sessionRetention = resolveCodexSessionRetention(options.sessionRetention);
+  const progress = createBenchmarkProgress(runtime, workload, {
+    showTokenUsage: options.showTokenUsage,
+  });
   process.on("SIGINT", cancel);
   process.on("SIGTERM", cancel);
   try {
-    const workload = {
-      models: options.codexModel ?? [],
-      speeds: options.codexSpeed ?? [],
-      provider: options.codexProvider,
-      reasoningEffort: options.codexReasoningEffort,
-      runs: options.runs ?? 3,
-    };
-    const sessionRetention = resolveCodexSessionRetention(options.sessionRetention);
     const result = await runCodexBenchmark({
       ...workload,
       cwd: runtime.cwd,
       signal: cancellation.signal,
       prompt: prompt.text,
       sessionRetention,
+      onTrialStart: progress.start,
+      onFirstText: progress.firstText,
+      onTrial: progress.finish,
     });
+    progress.stop();
     const report = buildBenchmarkReport(result, {
       workload,
       prompt,
@@ -114,8 +122,12 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
     if (result.interrupted) process.exitCode = 130;
     else if (failed || completedMeasuredTrials === 0 || result.shutdownError) process.exitCode = 1;
   } finally {
-    process.off("SIGINT", cancel);
-    process.off("SIGTERM", cancel);
+    try {
+      progress.stop();
+    } finally {
+      process.off("SIGINT", cancel);
+      process.off("SIGTERM", cancel);
+    }
   }
 }
 

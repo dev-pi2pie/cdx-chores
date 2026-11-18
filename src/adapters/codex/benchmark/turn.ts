@@ -13,6 +13,7 @@ export interface Turn {
 interface TurnEvidence {
   items: Map<string, Record<string, unknown>>;
   rerouted: boolean;
+  hasText: boolean;
   completion?: { turn: Turn; receivedAt: number };
 }
 
@@ -23,8 +24,13 @@ export class TrialObserver {
   private readonly events = new EventEmitter();
   readonly close: () => void;
   startedTurnId?: string;
+  private observedTextTurnId?: string;
 
-  constructor(server: CodexAppServer, threadId: string) {
+  constructor(
+    server: CodexAppServer,
+    threadId: string,
+    private readonly onFirstText?: () => void,
+  ) {
     this.close = server.onNotification((method, params) => {
       if (!isRecord(params) || params.threadId !== threadId) return;
       if (method === "turn/started" || method === "turn/completed") {
@@ -49,6 +55,16 @@ export class TrialObserver {
           this.recordItem(this.evidence(params.turnId), params.item);
         } else if (method === "model/rerouted") {
           this.evidence(params.turnId).rerouted = true;
+        } else if (
+          method === "item/agentMessage/delta" &&
+          this.onFirstText &&
+          typeof params.delta === "string" &&
+          params.delta.length > 0
+        ) {
+          const evidence = this.evidence(params.turnId);
+          if (evidence.hasText) return;
+          evidence.hasText = true;
+          if (params.turnId === this.observedTextTurnId) this.onFirstText();
         }
       }
     });
@@ -57,10 +73,15 @@ export class TrialObserver {
   private evidence(turnId: string): TurnEvidence {
     let evidence = this.turns.get(turnId);
     if (!evidence) {
-      evidence = { items: new Map(), rerouted: false };
+      evidence = { items: new Map(), rerouted: false, hasText: false };
       this.turns.set(turnId, evidence);
     }
     return evidence;
+  }
+
+  watchFirstText(turnId: string): void {
+    this.observedTextTurnId = turnId;
+    if (this.onFirstText && this.evidence(turnId).hasText) this.onFirstText();
   }
 
   private recordItem(evidence: TurnEvidence, item: unknown): void {

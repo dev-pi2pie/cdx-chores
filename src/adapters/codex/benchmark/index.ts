@@ -192,7 +192,7 @@ class BenchmarkRunner {
         reasoningEffort ?? startedThread.reasoningEffort ?? thread.reasoningEffort ?? null;
       trial.configuredTier = startedThread.serviceTier ?? null;
       signal?.throwIfAborted();
-      observer = new TrialObserver(this.server, thread.id);
+      observer = new TrialObserver(this.server, thread.id, this.options.onFirstText);
       turnMayBeActive = true;
       trial.inferenceAttempted = true;
       trial.turnId = await observer.waitForStart(
@@ -204,6 +204,7 @@ class BenchmarkRunner {
         }),
         signal,
       );
+      observer.watchFirstText(trial.turnId);
       const { turn, receivedAt } = await this.completion(observer, thread.id, trial.turnId);
       completionConfirmed = true;
       trial.error = turn.error?.message ?? null;
@@ -254,7 +255,7 @@ class BenchmarkRunner {
 }
 
 export async function runCodexBenchmark(options: BenchmarkOptions): Promise<BenchmarkRun> {
-  const { signal, cwd, onTrial } = options;
+  const { signal, cwd, onTrialStart, onTrial } = options;
   const report: BenchmarkRun = {
     codexVersion: null,
     codexHome: null,
@@ -274,6 +275,7 @@ export async function runCodexBenchmark(options: BenchmarkOptions): Promise<Benc
     const runner = new BenchmarkRunner(server, options);
     for (const selection of benchmarkWorkload(options)) {
       if (signal?.aborted || !runner.canStartTrial || server.signal.aborted) break;
+      onTrialStart?.(selection);
       const trial = trialRecord(selection);
       await runner.runTrial(trial);
       report.trials.push(trial);

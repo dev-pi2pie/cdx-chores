@@ -43,6 +43,19 @@ function openTurn(thread) {
     threadId: thread.id,
     turn: { id: thread.turnId, status: "inProgress" },
   });
+  if (scenario.streamText) {
+    const text = { threadId: thread.id, turnId: thread.turnId, itemId: "reply", delta: "" };
+    notification("item/agentMessage/delta", text);
+    notification("item/agentMessage/delta", {
+      ...text,
+      turnId: "unrelated-turn",
+      delta: "ignored",
+    });
+    if (scenario.streamText === "matching") {
+      notification("item/agentMessage/delta", { ...text, delta: "private fixture chunk" });
+      notification("item/agentMessage/delta", { ...text, delta: "next chunk" });
+    }
+  }
 }
 
 function completeTurn(thread, status, error = null) {

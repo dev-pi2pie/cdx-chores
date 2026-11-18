@@ -54,6 +54,8 @@ export interface BenchmarkOptions {
   runs: number;
   prompt: string;
   sessionRetention?: CodexSessionRetention;
+  onTrialStart?: (selection: BenchmarkSelection) => void;
+  onFirstText?: () => void;
   onTrial?: (trial: BenchmarkTrial) => void;
   rollout?: RolloutReadOptions;
 }

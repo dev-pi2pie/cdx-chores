@@ -19,6 +19,7 @@ interface Scenario {
   retentionError?: boolean;
   usageSnapshots?: Array<Record<string, number> | null>;
   resistantWorker?: boolean;
+  streamText?: "matching" | "unrelated";
 }
 
 export interface BenchmarkProtocolEvent {

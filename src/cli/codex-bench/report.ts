@@ -78,7 +78,7 @@ function usageIsPartial(trial: BenchmarkTrial): boolean {
   );
 }
 
-function totalTokenUsage(trials: BenchmarkTrial[]) {
+export function createTokenUsageAccumulator() {
   const totals: SavedTokenUsage = {
     inputTokens: null,
     outputTokens: null,
@@ -89,14 +89,16 @@ function totalTokenUsage(trials: BenchmarkTrial[]) {
   };
   const fields = Object.keys(totals) as (keyof SavedTokenUsage)[];
   let partial = false;
-  for (const trial of trials) {
-    partial ||= usageIsPartial(trial);
-    for (const field of fields) {
-      const count = trial.usage?.[field];
-      if (count != null) totals[field] = (totals[field] ?? 0) + count;
-    }
-  }
-  return { totals, partial };
+  return {
+    add(trial: BenchmarkTrial) {
+      partial ||= usageIsPartial(trial);
+      for (const field of fields) {
+        const count = trial.usage?.[field];
+        if (count != null) totals[field] = (totals[field] ?? 0) + count;
+      }
+    },
+    snapshot: () => ({ totals: { ...totals }, partial }),
+  };
 }
 
 export function buildBenchmarkReport(run: BenchmarkRun, options: ReportOptions) {
@@ -112,7 +114,9 @@ export function buildBenchmarkReport(run: BenchmarkRun, options: ReportOptions) 
   let completedMeasuredTrials = 0;
   let measuredTrials = 0;
   let warmupTrials = 0;
+  const tokenUsage = showTokenUsage ? createTokenUsageAccumulator() : undefined;
   const trials = run.trials.map((trial) => {
+    tokenUsage?.add(trial);
     const metrics = trialMetrics(trial);
     if (trial.warmup) {
       warmupTrials++;
@@ -192,6 +196,6 @@ export function buildBenchmarkReport(run: BenchmarkRun, options: ReportOptions) 
     },
     trials,
     summaries,
-    ...(showTokenUsage ? { tokenUsage: totalTokenUsage(run.trials) } : {}),
+    ...(tokenUsage ? { tokenUsage: tokenUsage.snapshot() } : {}),
   };
 }

@@ -23,7 +23,9 @@ test.each([0, 1, 2, 3])(
         const runs = Math.max(count, 1);
         const { report, stderr, exitCode } = await jsonBenchmark({ ...options, runs });
         expect(exitCode).toBe(0);
-        expect(stderr).toBe("");
+        expect(stderr).toBe(
+          `1 combination · ${runs} measured trial${runs === 1 ? "" : "s"} + 1 warm-up\n`,
+        );
         expect(report.prompt).toEqual({ source: "built-in", path: null });
         expect(report.tokenUsage).toBeUndefined();
         expect(report.run.requested).toEqual({
