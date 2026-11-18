@@ -29,7 +29,7 @@ On 2026-11-18, Codex CLI 0.170.0 completed all three requests through the config
 | `gpt-6-luna` | Fast | `priority` | 2,698 | 6,843 | 344 | 50.27 | Yes (1 ms) |
 | `gpt-6.2-sol` | Ultrafast | `ultrafast` | 4,044 | 5,804 | 361 | 62.20 | Yes (2 ms) |
 
-Every `thread/start` response supplied a rollout path. The first read found the matching `task_complete` while app-server was still running. The last column measures elapsed time from receipt of `turn/completed` through reading and parsing that record. Saved duration and output tokens matched the live values for every trial. Path recovery and delayed visibility still need fixture coverage.
+Every `thread/start` response supplied a rollout path. The first read found the matching `task_complete` while app-server was still running. The last column measures elapsed time from receipt of `turn/completed` through reading and parsing that record. Saved duration and output tokens matched the live values for every trial. The live check predated session retention.
 
 The completed turns establish request acceptance for these selections. Served speed remains unknown. Each row is a single observation, and the Ultrafast trial uses a different model.
 
@@ -91,6 +91,27 @@ cdx-chores codex-bench \
 Local rollouts are written under the running Codex home, normally `~/.codex/sessions/`. A custom `CODEX_HOME` changes that location. Use the resolved `codexHome` from the app-server initialization response as context. Read the exact `thread.path` returned by the app-server that ran the trial. If the path is unavailable in the start response, refresh it with `thread/read` for that thread ID. [^app-server] [^rollout-location]
 
 Record both thread and turn IDs. On `turn/completed`, read complete JSONL lines immediately while app-server is running, including for failed and interrupted turns. Match the saved `task_started` and the terminal record by turn ID. A `task_complete` closes an ordinary turn and may contain an error. A `turn_aborted` closes an interrupted turn. Retry an unavailable path or missing matching terminal record within a bounded deadline. At expiry, keep the live outcome and mark metrics that lack saved evidence unavailable. [^app-server] [^history] [^rollout-write]
+
+### Session Retention
+
+Share the command-local `--session-retention archive|keep|delete` option across Codex helpers as they adopt a common session lifecycle. The live-check script and `codex-bench` use the same contract. The default, `keep`, leaves sessions in active history without a cleanup call. Explicit `archive` moves the session out of active history and retains its recoverable rollout. Explicit `delete` permanently removes the session and any spawned descendant threads through Codex app-server. [^thread-retention]
+
+Apply retention only to threads the invocation created, including warm-ups, after Codex confirms the turn ended and rollout readback succeeds or reaches its deadline. Keep collected metrics and partial usage in the report. Skip cleanup for a trial without confirmed completion and report its thread ID when known. A retention failure preserves the trial result and reports the affected thread and error separately.
+
+For SDK helpers, capture each newly owned thread ID when the SDK assigns it. A one-shot helper releases its thread after the SDK execution has settled and the result or error has been captured. A multi-turn helper releases its thread after its last dependent turn, including retries, repairs, or regeneration. An interactive workflow releases a reusable thread when it finishes with it. Apply the selected policy once per released thread and skip cleanup when the thread's completion or ownership is uncertain. Preserve helper results and report cleanup failures or skips separately with the known thread ID. Validate one representative helper of each kind before extending the option to the remaining helpers. [^sdk-thread]
+
+The TypeScript SDK 0.170.0 exposes thread IDs and turn execution. Archive and delete use the app-server protocol, so the versions below refer to the Codex CLI binary. [^sdk-thread]
+
+| App-server RPC | Codex CLI support | Live verified |
+| --- | --- | --- |
+| `thread/archive` | Documented by 0.61.0 | 0.170.0 |
+| `thread/delete` | Introduced in 0.140.0 | 0.170.0 |
+
+Use 0.170.0 as the verified integration baseline for both operations. For an executable override, verify support on the selected binary and use the same resolved executable and Codex home as the helper that created the thread. Report an unavailable RPC as a retention failure and preserve the helper result. [^thread-retention-versions]
+
+A synthetic app-server and temporary JSONL files verified the live-check script's retention order. The fake server withheld the path until the second `thread/read`, then provided the completed rollout. The script retained the metrics after the fake server moved or removed the file. The check also covered `keep`, cleanup rejection, deadline expiry with partial usage, and a turn without confirmed completion. Verifying a completion line that becomes readable after an initial file read remains a separate fixture case.
+
+A separate live check ran one `gpt-6-luna` Standard trial at `medium` effort for each explicit retention mode. The archived rollout appeared in archived storage, the kept rollout stayed active, and the deleted rollout was absent from both locations. All three reported saved durations and output counts that matched the live values.
 
 ### Metrics and Reporting
 
@@ -171,6 +192,7 @@ Resize a terminal from wide to narrow and back between text chunks. Check that t
 
 ## Related Plans
 
+- [Codex CLI benchmark implementation](../plans/plan-2026-11-18-codex-cli-benchmark.md) starts with offline rollout recovery and speed wiring checks.
 - [Codex execution configuration](../plans/plan-2026-09-05-codex-execution-configuration.md) records the existing command scope and session settings.
 
 ## References
@@ -181,9 +203,15 @@ Resize a terminal from wide to narrow and back between text chunks. Check that t
 
 [^sdk]: [Shared Codex thread factory](../../src/adapters/codex/shared.ts) and [SDK version lock](../../bun.lock).
 
+[^sdk-thread]: [TypeScript SDK thread implementation at 0.170.0](https://github.com/openai/codex/blob/rust-v0.170.0/sdk/typescript/src/thread.ts).
+
 [^config]: [Codex configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference).
 
 [^app-server]: [Codex app-server turn start](https://learn.chatgpt.com/docs/app-server#start-a-turn), [thread read](https://learn.chatgpt.com/docs/app-server#read-a-thread), and [streamed item deltas](https://learn.chatgpt.com/docs/app-server#item-deltas).
+
+[^thread-retention]: [Codex app-server archive and unarchive](https://learn.chatgpt.com/docs/app-server#archive-and-unarchive-a-thread) and [thread deletion](https://learn.chatgpt.com/docs/app-server#delete-a-thread).
+
+[^thread-retention-versions]: [App-server archive documentation at 0.61.0](https://github.com/openai/codex/blob/rust-v0.61.0/codex-rs/app-server/README.md#example-archive-a-thread) and [Codex 0.140.0 release notes](https://github.com/openai/codex/releases/tag/rust-v0.140.0).
 
 [^api-fast]: [OpenAI API Fast mode configuration and tier reporting](https://developers.openai.com/api/docs/guides/fast-mode#configuring-fast-mode).
 

@@ -12,6 +12,7 @@ const prompt =
 const rolloutDeadlineMs = 2_000;
 const rolloutRetryMs = 50;
 type Speed = "standard" | "fast" | "ultrafast";
+type SessionRetention = "archive" | "keep" | "delete";
 
 interface Thread {
   id: string;
@@ -264,12 +265,24 @@ function compare(saved: number | null, live: number | null | undefined) {
   return saved === null || live == null ? null : saved === live;
 }
 
+async function applySessionRetention(server: AppServer, threadId: string, mode: SessionRetention) {
+  if (mode === "keep") return { status: "kept" };
+  try {
+    await server.request(mode === "archive" ? "thread/archive" : "thread/delete", { threadId });
+    return { status: mode === "archive" ? "archived" : "deleted" };
+  } catch (error) {
+    process.exitCode = 1;
+    return { status: "failed", error: String(error) };
+  }
+}
+
 async function runTrial(
   server: AppServer,
   model: string,
   effort: string,
   requestedSpeed: Speed,
   tier: string,
+  retention: SessionRetention,
 ) {
   const { thread } = await server.request<{ thread: Thread }>("thread/start", {
     model,
@@ -277,13 +290,28 @@ async function runTrial(
     approvalPolicy: "never",
     sandbox: "read-only",
   });
-  const started = await server.request<{ turn: Turn }>("turn/start", {
-    threadId: thread.id,
-    effort,
-    serviceTierForTurn: tier,
-    input: [{ type: "text", text: prompt, text_elements: [] }],
-  });
-  const { turn, live, receivedAt } = await server.waitForCompletion(thread.id, started.turn.id);
+  let completion: Awaited<ReturnType<AppServer["waitForCompletion"]>>;
+  try {
+    const started = await server.request<{ turn: Turn }>("turn/start", {
+      threadId: thread.id,
+      effort,
+      serviceTierForTurn: tier,
+      input: [{ type: "text", text: prompt, text_elements: [] }],
+    });
+    completion = await server.waitForCompletion(thread.id, started.turn.id);
+  } catch (error) {
+    process.exitCode = 1;
+    return {
+      requestedSpeed,
+      sentTier: tier,
+      provider: thread.modelProvider,
+      threadId: thread.id,
+      status: "error",
+      error: String(error),
+      sessionRetention: { status: retention === "keep" ? "kept" : "skipped" },
+    };
+  }
+  const { turn, live, receivedAt } = completion;
   const { terminal, outputTokens, ...rollout } = await readSavedTurn(
     server,
     thread,
@@ -304,6 +332,7 @@ async function runTrial(
   )
     process.exitCode = 1;
 
+  const sessionRetention = await applySessionRetention(server, thread.id, retention);
   return {
     requestedSpeed,
     sentTier: tier,
@@ -327,6 +356,7 @@ async function runTrial(
     liveOutputTokens: live.outputTokens ?? null,
     durationMatchesLive,
     outputMatchesLive,
+    sessionRetention,
   };
 }
 
@@ -336,13 +366,17 @@ async function main() {
       model: { type: "string" },
       effort: { type: "string" },
       speed: { type: "string", multiple: true },
+      "session-retention": { type: "string", multiple: true },
       help: { type: "boolean" },
     },
   });
   const usage =
-    "Usage: bun scripts/spikes/codex-benchmark-live-check.ts --model <id> --effort <effort> [--speed standard|fast|ultrafast]";
+    "Usage: bun scripts/spikes/codex-benchmark-live-check.ts --model <id> --effort <effort> [--speed standard|fast|ultrafast] [--session-retention archive|keep|delete]";
   if (values.help) {
     console.log(usage);
+    console.log(
+      "Session retention defaults to keep. Delete permanently removes the trial session.",
+    );
     return;
   }
   const { model, effort, speed: speeds } = values;
@@ -355,6 +389,14 @@ async function main() {
     throw new Error("Specify at most one --speed: standard, fast, or ultrafast.");
   }
   const requestedSpeeds: Speed[] = speed ? [speed] : ["standard", "fast"];
+  const retentionValues = values["session-retention"];
+  const sessionRetention = retentionValues?.[0] ?? "keep";
+  if (
+    (retentionValues && retentionValues.length > 1) ||
+    (sessionRetention !== "archive" && sessionRetention !== "keep" && sessionRetention !== "delete")
+  ) {
+    throw new Error("Specify at most one --session-retention: archive, keep, or delete.");
+  }
 
   const server = startAppServer();
   try {
@@ -375,7 +417,9 @@ async function main() {
     const results = [];
     for (const { requestedSpeed, sentTier } of trials) {
       try {
-        results.push(await runTrial(server, model, effort, requestedSpeed, sentTier));
+        results.push(
+          await runTrial(server, model, effort, requestedSpeed, sentTier, sessionRetention),
+        );
       } catch (error) {
         process.exitCode = 1;
         results.push({ requestedSpeed, sentTier, status: "error", error: String(error) });
@@ -383,7 +427,7 @@ async function main() {
     }
     console.log(
       JSON.stringify(
-        { codexVersion: init.userAgent.split(/[ /]/)[1], model, effort, results },
+        { codexVersion: init.userAgent.split(/[ /]/)[1], model, effort, sessionRetention, results },
         null,
         2,
       ),

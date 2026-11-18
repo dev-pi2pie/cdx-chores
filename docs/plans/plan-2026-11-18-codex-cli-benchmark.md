@@ -1,0 +1,80 @@
+---
+title: "Codex CLI Benchmark Implementation"
+created-date: 2026-11-18
+status: draft
+agent: codex
+---
+
+## Goal and Scope
+
+Implement `cdx-chores codex-bench` for fresh, persisted Codex trials. Compare recorded first-token timing, full turn duration, and output tokens per second for a fixed prompt. Add command-local `--codex-speed` to the existing Codex execution selectors, including the explicit `interactive` startup command. Establish the shared session lifecycle for retention and verify representative one-shot and multi-turn helpers before extending it to the remaining helpers. Leave the interactive benchmark picker for future work.
+
+The first live check on Codex 0.170.0 completed a Luna Standard/Fast pair and a Sol Ultrafast trial. All three rollouts were readable on the first attempt, and saved durations and output counts matched live records. Release work depends on the recovery and request-wiring checks below. The live check establishes acceptance for the tested requests. Served speed remains unknown. [Research and live results](../researches/research-2026-11-18-codex-cli-benchmark.md#first-live-check)
+
+## Phase 1. Verify Rollout Recovery Offline
+
+Exercise the [live-check spike](../../scripts/spikes/codex-benchmark-live-check.ts) with a fake app-server over stdio and real JSONL files in an isolated custom Codex home. Add a test seam for the executable and for observing the first file read. Keep a single rollout-reading path for these checks and reuse it in the command. Begin the bounded recovery window when the matching `turn/completed` arrives, with app-server still running.
+
+| Fixture | Expected evidence |
+| --- | --- |
+| Delayed write | Return the rollout path from `thread/start`. Emit completion with the saved terminal line incomplete. Finish that line after the first read. Verify the first read misses, a retry recovers the matching `task_complete`, and the saved timing and usage are returned. |
+| Path fallback | Return `path: null` from `thread/start` and the first `thread/read`. Return a path from the next lookup. Verify both lookups use the original thread ID and the first file read uses the exact returned path. Track lookup retries independently of first-read success. |
+| Deadline expiry | Withhold the terminal line or keep the path unavailable. Verify recovery stops within the configured budget, preserves the live outcome, and returns unavailable for saved timing and throughput. Preserve the latest safely attributable usage as partial when a snapshot exists. |
+| Interrupted turn and attribution | Match `task_started` and `turn_aborted` by turn ID. Cover cumulative snapshots counted once, interruption with partial usage and no terminal line, a later start ending attribution, and a snapshot without a matching start. |
+| Session retention | Use synthetic sessions to verify omitted and explicit `keep`, explicit `archive` and `delete`, cleanup only after confirmed completion and readback or deadline, preservation of captured metrics on cleanup failure, and cleanup scoped to the invocation's thread IDs. |
+
+- [ ] Add the offline fixture harness with a temporary Codex home and real JSONL.
+- [ ] Pass the delayed-write and path-fallback fixtures. Gate the write on the first read and assert ordering and recovered values without requiring exact timing.
+- [ ] Pass the deadline, interruption, and attribution fixtures. Record the retry deadline and interval chosen for the command.
+- [ ] Pass the retention fixture for all modes and cleanup outcomes in the table.
+
+## Phase 2. Verify Speed Request Wiring Offline
+
+Capture outbound inference requests at a fixture provider through the SDK and app-server. In the development probes, configure speed through the SDK constructor's existing `config` option and send `serviceTierForTurn` directly to app-server. Use a fixture configuration with Fast selected so the checks can distinguish explicit Standard from omission. Reuse the fixture in Phase 3 to verify the integrated helper and benchmark entry points.
+
+| Selection | Evidence required on both paths |
+| --- | --- |
+| Omitted | The request inherits configured Fast. |
+| `standard` | The request uses Standard with Fast configured. For app-server, exercise `serviceTierForTurn: "default"`. |
+| `fast` and `ultrafast` | Each explicit selector produces the expected provider request tier for the fixture catalog. Record the exact observed values. |
+
+- [ ] Capture outbound requests through the SDK using the fixture configuration and every selection in the table.
+- [ ] Capture outbound requests through app-server using the same cases and confirm the per-turn Standard override.
+- [ ] Record the observed mappings alongside the live acceptance evidence and resolve mismatches before exposing the selector.
+
+## Phase 3. Wire the CLI and Trial Runner
+
+- [ ] Share the command-local `--codex-speed standard|fast|ultrafast` validator. Existing helpers accept one explicit speed and keep it through retries, repairs, and regeneration, including interactive startup. Omitted speed inherits Codex configuration. Preserve existing helper reasoning defaults. For `codex-bench`, omitted model, provider, reasoning effort, and speed all inherit.
+- [ ] Register `codex-bench` with repeatable model and speed selectors. Build the model × speed workload independent of flag order. Accept a single positive `--runs` value, defaulting to 3 per combination. Load the built-in prompt or read and validate a UTF-8 `--prompt-file` once before inference.
+- [ ] Use one fresh persisted thread per request. Schedule one warm-up per combination and then sequential measured rounds that rotate the starting speed for each model. Reuse Codex executable resolution and compatible JSON-RPC framing. Handle turn notifications, cancel the active turn on interruption, and stop scheduling new trials. Read each trial's rollout using the Phase 1 behavior.
+- [ ] Use the shared, command-local `--session-retention archive|keep|delete` option on `codex-bench` and the live-check script. Default to `keep` and require an explicit selection for archive or permanent deletion. Apply the policy to the invocation's trial threads after confirmed completion and rollout readback or deadline, including for warm-ups. Keep metrics and show each cleanup failure or skipped cleanup with the thread ID when known.
+- [ ] Add a shared lifecycle for SDK helpers that records newly owned thread IDs and applies retention once when each thread is released. Send archive or delete through app-server using the same resolved executable and Codex home used to create the thread. Use Codex CLI 0.170.0 as the verified baseline. Archive is documented by 0.61.0 and delete requires 0.140.0 or later. Verify the requested RPC on the selected executable, including overrides, and report unsupported requests separately from the helper result. `keep` needs no retention RPC. [Version evidence](../researches/research-2026-11-18-codex-cli-benchmark.md#session-retention)
+- [ ] Validate one one-shot SDK helper. Capture its result or error and wait for SDK execution to settle before cleanup. Verify cleanup targets only its newly created thread and that a cleanup error preserves the original result or error.
+- [ ] Validate one multi-turn SDK helper. Exercise a retry, repair, or regeneration that reuses the thread. Verify retention runs once after the final use and never between turns. Verify the release boundary for a reusable interactive thread before adopting the option on that surface.
+- [ ] Inventory the remaining Codex helpers and adopt the option after verifying each owned-thread and release boundary. Keep cleanup failures and skips visible with the known thread ID, including when a cancellation leaves completion unconfirmed.
+- [ ] Capture requested selectors, live outcome, saved metrics, and sample eligibility per trial. Require a completed turn with one assistant text message and final-answer phase when supplied. Exclude tool activity and a reported model reroute from speed summaries. Preserve available usage and report rejected speeds as unavailable.
+- [ ] Test option placement, inheritance, invalid inputs before inference, and explicit speed propagation through existing helper retries using the Phase 2 fixture.
+- [ ] Test prompt reuse, fresh-thread isolation, failed and cancelled trials, and retention ordering through the CLI. Verify four warm-ups and twelve measured trials for the default two-model/two-speed comparison.
+
+## Phase 4. Implement Results and Progress Output
+
+- [ ] Show one terminal row per model and requested speed, with completed and per-metric usable sample counts. Calculate Turn output tok/s from complete saved output usage, including reasoning, divided by a positive full saved turn duration. Use measured samples only in summaries. Show `—`, a single value, minimum–maximum, or minimum/median/maximum for usable sample counts of zero, one, two, or at least three respectively.
+- [ ] Emit one unstyled result object in `--json` with stable per-trial and summary fields, unavailable values as `null`, and `servedSpeed: null` per trial. Include the prompt source and resolved selection context when available. `--show-prompt` includes its text and escapes terminal control characters in human output. `--show-token-usage` adds per-trial counts and invocation totals, including warm-ups and safely attributable partial usage. Mark totals partial when any request has missing or incomplete usage.
+- [ ] Send the startup workload, live status, diagnostics, and opt-in running usage to stderr. On a TTY, update one live line and fit it to terminal width, including after a resize during a streaming pause. Use shared color handling and honor `--no-color`. On redirected stderr, print one startup line plus diagnostics and opt-in totals. Clear the active line on completion, failure, and cancellation.
+- [ ] Replay the fixtures through the CLI to verify terminal and JSON output for zero through three usable samples, including partial trials. Assert that both formats identify invocation totals as partial when any usage is missing or incomplete.
+- [ ] Verify clean JSON stdout, redirected stderr, TTY resize and cleanup, and color controls.
+
+## Phase 5. Documentation and Validation
+
+- [ ] Update CLI help and usage guides with selector placement, inheritance, run counts, metric definitions, and examples for terminal and JSON output.
+- [ ] Document the command-local retention option and its adopted helpers, `keep` by default, explicit archive, permanent deletion, and the app-server version requirements. Check that help and examples match the built CLI.
+- [ ] Run the focused fixture and CLI suites, TypeScript, lint, formatting, build, and a built Node CLI smoke check. Validate example commands against a fixture provider.
+- [ ] Record validation commands and results in the implementation job record and review the final CLI documentation against the shipped behavior.
+
+## Related Research
+
+- [Codex CLI benchmark and speed selection](../researches/research-2026-11-18-codex-cli-benchmark.md)
+
+## Related Plans
+
+- [Codex execution configuration](plan-2026-09-05-codex-execution-configuration.md)
