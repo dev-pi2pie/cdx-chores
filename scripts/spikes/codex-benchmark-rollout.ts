@@ -46,7 +46,7 @@ function savedTurn(jsonl: string, turnId: string): SavedTurn {
 
 export interface RolloutReadOptions {
   deadlineMs?: number;
-  readRollout?: (path: string, signal: AbortSignal) => Promise<string>;
+  onRolloutRead?: (path: string) => Promise<void>;
 }
 
 export async function readSavedTurn({
@@ -55,7 +55,7 @@ export async function readSavedTurn({
   receivedAt,
   lookupPath,
   deadlineMs = rolloutDeadlineMs,
-  readRollout = (path, signal) => readFile(path, { encoding: "utf8", signal }),
+  onRolloutRead,
 }: RolloutReadOptions & {
   initialPath: string | null;
   turnId: string;
@@ -83,7 +83,11 @@ export async function readSavedTurn({
     const remaining = Math.ceil(deadline - performance.now());
     if (path && remaining > 0) {
       try {
-        const jsonl = await readRollout(path, AbortSignal.timeout(remaining));
+        const jsonl = await readFile(path, {
+          encoding: "utf8",
+          signal: AbortSignal.timeout(remaining),
+        });
+        if (onRolloutRead) await onRolloutRead(path);
         saved = savedTurn(jsonl, turnId);
         firstReadFoundTerminal ??= saved.terminal !== null;
         readError = null;

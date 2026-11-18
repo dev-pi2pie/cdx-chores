@@ -130,15 +130,13 @@ if (process.argv[2] === "app-server") {
     appServer: { executable: process.execPath, args: [fixture, "app-server"] },
     rollout: {
       deadlineMs: scenario.deadlineMs,
-      readRollout: async (path, signal) => {
-        const jsonl = await readFile(path, { encoding: "utf8", signal });
+      onRolloutRead: async (path) => {
         await trace(`rollout/read ${path}`);
         if (firstRead && scenario.finishAfterFirstRead !== undefined) {
           await appendFile(path, scenario.finishAfterFirstRead);
           await trace("rollout/write completed");
         }
         firstRead = false;
-        return jsonl;
       },
     },
   });

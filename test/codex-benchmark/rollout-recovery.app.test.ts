@@ -1,9 +1,10 @@
 import { expect, test } from "bun:test";
-import { spawnSync } from "node:child_process";
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { REPO_ROOT, withTempFixtureDir } from "../helpers/cli-test-utils";
+import { removeFixtureDir } from "../../scripts/testing/fixtures/fixture-exports.ts";
+import { startFixtureProcess } from "../../scripts/testing/fixtures/fixture-process.ts";
+import { createTempFixtureDir, REPO_ROOT } from "../helpers/cli-test-utils";
 import type { Scenario } from "./fixtures/live-check";
 
 const driver = join(REPO_ROOT, "test/codex-benchmark/fixtures/live-check.ts");
@@ -35,32 +36,45 @@ async function runScenario(
   }) => Promise<void> | void,
   args: string[] = [],
 ) {
-  await withTempFixtureDir("codex-benchmark-recovery", async (directory) => {
+  const directory = await createTempFixtureDir("codex-benchmark-recovery");
+  let stopped = true;
+  try {
     const home = join(directory, "codex-home");
     await mkdir(home);
     await writeFile(join(home, "scenario.json"), JSON.stringify(scenario));
     await writeFile(join(home, "unrelated.jsonl"), "unrelated thread\n");
-    const result = spawnSync(
-      process.execPath,
-      [driver, "--model", "fixture-model", "--effort", "low", "--speed", "standard", ...args],
-      {
-        cwd: directory,
-        env: { HOME: directory, CODEX_HOME: home, TMPDIR: directory },
-        encoding: "utf8",
-        timeout: 4_000,
-      },
-    );
-    if (result.error || result.stderr) throw new Error(result.stderr, { cause: result.error });
+    const processFixture = startFixtureProcess({
+      executable: process.execPath,
+      args: [driver, "--model", "fixture-model", "--effort", "low", "--speed", "standard", ...args],
+      cwd: directory,
+      env: { HOME: directory, CODEX_HOME: home, TMPDIR: directory },
+      timeoutMs: 3_000,
+      graceMs: 250,
+      cleanupMs: 1_000,
+    });
+    stopped = false;
+    const result = await processFixture.completion;
+    stopped = result.stopped;
+    if (
+      !stopped ||
+      result.issues.length ||
+      (result.reason !== "completed" && result.reason !== "exit-failed") ||
+      result.stderr
+    ) {
+      throw new Error(`Benchmark fixture failed: ${JSON.stringify(result)}`);
+    }
     expect(await readFile(join(home, "unrelated.jsonl"), "utf8")).toBe("unrelated thread\n");
     const report = JSON.parse(result.stdout);
     expect(report.results).toHaveLength(1);
     await verify({
-      exitCode: result.status,
+      exitCode: result.exitCode,
       report,
       trace: (await readFile(join(home, "trace.txt"), "utf8")).trimEnd().split("\n"),
       home,
     });
-  });
+  } finally {
+    if (stopped) await removeFixtureDir(directory);
+  }
 }
 
 test("recovers a terminal line completed after the first rollout read", async () => {
