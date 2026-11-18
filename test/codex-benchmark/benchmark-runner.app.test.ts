@@ -114,6 +114,11 @@ test.each([
     status: "failed",
     exitCode: 1,
   },
+  {
+    message: "Image input is not supported by this model at the priority service tier.",
+    status: "failed",
+    exitCode: 1,
+  },
 ])("CLI classifies the provider reply: $message", async ({ message, status, exitCode }) => {
   await withRunnerFixture({ rejectFast: message }, async ({ options }) => {
     const result = await startCliBenchmark(options, [

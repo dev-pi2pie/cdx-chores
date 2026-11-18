@@ -67,18 +67,20 @@ export class BenchmarkCatalog {
   }
 }
 
+// Require the rejection to describe the tier itself. Providers may also mention
+// the current service tier when explaining an unrelated input or model error.
+const tierPhrase =
+  /(?:(?:(?:priority|standard|fast|ultrafast) )?service[ _-]?tier(?: ['"]?(?:priority|default|fast|ultrafast)['"]?)?|priority tier|fast mode|ultrafast)/
+    .source;
+const rejectedTier = new RegExp(
+  `\\b(?:does not support (?:the )?|(?:unsupported|invalid|unknown|unrecognized) )${tierPhrase}\\b`,
+  "i",
+);
+const tierIsRejected = new RegExp(
+  `\\b${tierPhrase} (?:requires\\b|(?:is )?(?:unavailable|unsupported|invalid|unknown|unrecognized|not (?:supported|available|allowed))\\b)`,
+  "i",
+);
+
 export function isTierRejection(message: string): boolean {
-  if (
-    /\bdoes not support (?:the )?(?:(?:priority|standard|fast|ultrafast) )?service[ _-]?tier\b/i.test(
-      message,
-    )
-  ) {
-    return true;
-  }
-  return (
-    /\b(?:service[ _-]?tier|ultrafast|fast mode|priority tier)\b/i.test(message) &&
-    /\b(?:unsupported|supported|unavailable|available|allowed|requires|invalid|unknown|unrecognized|eligible)\b/i.test(
-      message,
-    )
-  );
+  return rejectedTier.test(message) || tierIsRejected.test(message);
 }
