@@ -188,14 +188,13 @@ export class CodexAppServer {
   }
 
   private kill(signal: NodeJS.Signals): void {
-    if (this.exited) return;
     if (this.separateGroup && this.child.pid) {
       try {
         process.kill(-this.child.pid, signal);
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
       }
-    } else {
+    } else if (!this.exited) {
       this.child.kill(signal);
     }
   }
@@ -209,6 +208,8 @@ export class CodexAppServer {
     const forceKill = setTimeout(() => this.kill("SIGKILL"), 1_000);
     try {
       await this.closed;
+      // The group can still contain workers after its leader has exited.
+      if (this.separateGroup) this.kill("SIGKILL");
     } finally {
       clearTimeout(forceKill);
     }

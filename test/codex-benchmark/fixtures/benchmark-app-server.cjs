@@ -1,8 +1,17 @@
 #!/usr/bin/env node
 
-const { appendFileSync, readFileSync, renameSync, unlinkSync, writeFileSync } = require("node:fs");
+const { spawn } = require("node:child_process");
+const {
+  appendFileSync,
+  existsSync,
+  readFileSync,
+  renameSync,
+  unlinkSync,
+  writeFileSync,
+} = require("node:fs");
 const { join } = require("node:path");
 const { createInterface } = require("node:readline");
+const { setTimeout: delay } = require("node:timers/promises");
 
 const home = process.env.CODEX_HOME;
 const scenario = JSON.parse(readFileSync(join(home, "scenario.json"), "utf8"));
@@ -60,6 +69,21 @@ function completeTurn(thread, status, error = null) {
 }
 
 async function run() {
+  if (scenario.resistantWorker) {
+    const readyPath = join(home, "worker.pid");
+    const worker = spawn(
+      process.execPath,
+      [
+        "-e",
+        'process.on("SIGTERM", () => {}); setTimeout(() => {}, 6000); require("node:fs").writeFileSync(process.argv[1], JSON.stringify({ pid: process.pid, groupId: process.ppid }));',
+        readyPath,
+      ],
+      { stdio: "ignore" },
+    );
+    worker.unref();
+    for (let attempt = 0; attempt < 100 && !existsSync(readyPath); attempt++) await delay(10);
+    if (!existsSync(readyPath)) throw new Error("The fixture worker did not start.");
+  }
   for await (const line of createInterface({ input: process.stdin })) {
     const { id, method, params } = JSON.parse(line);
     trace({ method, params });

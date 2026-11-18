@@ -4,6 +4,10 @@ import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
 import { startFixtureProcess } from "../../scripts/testing/fixtures/fixture-process.ts";
+import {
+  isLiveProcess,
+  requireProcessObservation,
+} from "../../scripts/testing/execution/process-table.ts";
 import { runCodexBenchmark, type BenchmarkOptions } from "../../src/adapters/codex/benchmark";
 import { REPO_ROOT, withTempFixtureDir } from "../helpers/cli-test-utils";
 
@@ -18,6 +22,7 @@ interface Scenario {
   failFirst?: boolean;
   rejectFast?: boolean;
   retentionError?: boolean;
+  resistantWorker?: boolean;
 }
 
 interface Event {
@@ -310,6 +315,32 @@ test("preserves partial usage and skips cleanup when interruption is unconfirmed
     expect(traceMethod(events, "thread/delete")).toHaveLength(0);
   });
 });
+
+test.skipIf(process.platform === "win32")(
+  "shutdown stops a resistant worker after the app-server group leader exits",
+  async () => {
+    await withRunnerFixture({ resistantWorker: true }, async ({ home, options }) => {
+      await runCodexBenchmark(options);
+      const worker = JSON.parse(await readFile(join(home, "worker.pid"), "utf8")) as {
+        pid: number;
+        groupId: number;
+      };
+      expect(worker.pid).toBeGreaterThan(1);
+      const exists = () =>
+        requireProcessObservation().some(
+          (entry) =>
+            entry.pid === worker.pid && entry.groupId === worker.groupId && isLiveProcess(entry),
+        );
+      try {
+        const deadline = performance.now() + 1_000;
+        while (exists() && performance.now() < deadline) await delay(20);
+        expect(exists()).toBe(false);
+      } finally {
+        if (exists()) process.kill(worker.pid, "SIGKILL");
+      }
+    });
+  },
+);
 
 function startCliBenchmark(options: BenchmarkOptions, args: string[]) {
   return startFixtureProcess({
