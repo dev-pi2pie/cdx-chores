@@ -3,7 +3,7 @@ import {
   type CodexExecutionOptions,
   type ResolvedCodexExecution,
 } from "../../utils/codex-execution";
-import { startCodexReadOnlyThread } from "../../adapters/codex/shared";
+import { withCodexReadOnlyThread } from "../../adapters/codex/shared";
 import { DEFAULT_CODEX_REQUEST_TIMEOUT_MS } from "../../utils/codex-timeout";
 import {
   createDataStackCodexReportArtifact,
@@ -219,13 +219,15 @@ async function runDataStackCodexPrompt(options: {
   timeoutMs?: number;
   workingDirectory: string;
 }): Promise<string> {
-  const thread = await startCodexReadOnlyThread(options.workingDirectory, {
-    codexExecution: options.codexExecution,
-  });
-  const turn = await thread.run([{ type: "text", text: options.prompt }], {
-    outputSchema: DATA_STACK_CODEX_OUTPUT_SCHEMA,
-    signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
-  });
+  const turn = await withCodexReadOnlyThread(
+    options.workingDirectory,
+    { codexExecution: options.codexExecution },
+    (thread) =>
+      thread.run([{ type: "text", text: options.prompt }], {
+        outputSchema: DATA_STACK_CODEX_OUTPUT_SCHEMA,
+        signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_CODEX_REQUEST_TIMEOUT_MS),
+      }),
+  );
   return turn.finalResponse;
 }
 

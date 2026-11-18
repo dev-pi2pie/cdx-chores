@@ -71,28 +71,29 @@ export const speedCases = [
   },
 ] as const;
 
-const stream = [
-  { type: "response.created", response: { id: "fixture-response" } },
-  {
-    type: "response.output_item.done",
-    item: {
-      type: "message",
-      id: "fixture-message",
-      role: "assistant",
-      phase: "final_answer",
-      content: [{ type: "output_text", text: fixtureAnswer }],
+const stream = (answer: string) =>
+  [
+    { type: "response.created", response: { id: "fixture-response" } },
+    {
+      type: "response.output_item.done",
+      item: {
+        type: "message",
+        id: "fixture-message",
+        role: "assistant",
+        phase: "final_answer",
+        content: [{ type: "output_text", text: answer }],
+      },
     },
-  },
-  {
-    type: "response.completed",
-    response: {
-      id: "fixture-response",
-      usage: { input_tokens: 1, output_tokens: 1, total_tokens: 2 },
+    {
+      type: "response.completed",
+      response: {
+        id: "fixture-response",
+        usage: { input_tokens: 1, output_tokens: 1, total_tokens: 2 },
+      },
     },
-  },
-]
-  .map((event) => `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`)
-  .join("");
+  ]
+    .map((event) => `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`)
+    .join("");
 
 type Fixture = Parameters<Parameters<typeof withLiveCodexFixture>[0]>[0];
 type ProbeFixture = Pick<Fixture, "start" | "close" | "cwd"> & {
@@ -103,6 +104,7 @@ type ProbeFixture = Pick<Fixture, "start" | "close" | "cwd"> & {
 export async function captureSpeedRequest(
   baseline: (typeof speedCases)[number]["baseline"],
   exercise: (fixture: ProbeFixture) => Promise<void>,
+  answers: string | readonly string[] = fixtureAnswer,
 ) {
   const requests: Record<string, unknown>[] = [];
   await withLiveCodexFixture(async ({ root, cwd, env, start, close }) => {
@@ -114,8 +116,11 @@ export async function captureSpeedRequest(
         if (request.method !== "POST" || new URL(request.url).pathname !== "/v1/responses") {
           return new Response("Unexpected loopback request", { status: 404 });
         }
-        requests.push((await request.json()) as Record<string, unknown>);
-        return new Response(stream, { headers: { "content-type": "text/event-stream" } });
+        const input = (await request.json()) as Record<string, unknown>;
+        const answer = typeof answers === "string" ? answers : answers[requests.length];
+        requests.push(input);
+        if (answer === undefined) return new Response("Fixture answers exhausted", { status: 500 });
+        return new Response(stream(answer), { headers: { "content-type": "text/event-stream" } });
       },
     });
     try {

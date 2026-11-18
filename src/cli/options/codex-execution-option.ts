@@ -3,19 +3,24 @@ import { Command, InvalidArgumentError, Option } from "commander";
 
 import {
   resolveCodexExecution,
+  resolveCodexSelectors,
   type CodexExecutionOptions,
+  type CodexSpeed,
   type ResolvedCodexExecution,
 } from "../../utils/codex-execution";
+import type { CodexSessionRetention } from "../../utils/codex-session-retention";
 
 export interface CodexExecutionCommandOptions {
   codexModel?: string;
   codexProvider?: string;
   codexReasoningEffort?: ModelReasoningEffort;
+  codexSpeed?: CodexSpeed;
+  sessionRetention?: CodexSessionRetention;
 }
 
-function resolveCommandPolicy(options: CodexExecutionOptions): ResolvedCodexExecution {
+function validateOption<T>(resolve: () => T): T {
   try {
-    return resolveCodexExecution(options);
+    return resolve();
   } catch (error) {
     if (error instanceof TypeError) {
       throw new InvalidArgumentError(error.message);
@@ -28,27 +33,59 @@ function executionOption(
   flags: string,
   description: string,
   field: keyof CodexExecutionOptions,
+  repeatable = false,
 ): Option {
   const option = new Option(flags, description);
+  const parse = (value: string) =>
+    validateOption(() => resolveCodexSelectors({ [field]: value })[field]!);
+  if (repeatable) {
+    return option.argParser<string[]>((value, previous) => [...(previous ?? []), parse(value)]);
+  }
   return option.argParser<string | undefined>((value, previous) => {
     if (previous !== undefined) {
       throw new InvalidArgumentError(`${option.long} may only be specified once.`);
     }
-    return resolveCommandPolicy({ [field]: value })[field];
+    return parse(value);
   });
 }
 
-export function applyCodexExecutionOptions(command: Command): Command {
+export function applyCodexExecutionOptions(command: Command, benchmark = false): Command {
   return command
-    .addOption(executionOption("--codex-model <model>", "Codex model override", "model"))
+    .addOption(
+      executionOption(
+        "--codex-model <model>",
+        benchmark ? "Codex model override (repeatable)" : "Codex model override",
+        "model",
+        benchmark,
+      ),
+    )
     .addOption(
       executionOption("--codex-provider <provider-id>", "Codex provider override", "provider"),
     )
     .addOption(
       executionOption(
         "--codex-reasoning-effort <effort>",
-        "Codex reasoning effort (default: low)",
+        benchmark
+          ? "Codex reasoning effort (default: inherit)"
+          : "Codex reasoning effort (default: low)",
         "reasoningEffort",
+      ),
+    )
+    .addOption(
+      executionOption(
+        "--codex-speed <speed>",
+        benchmark
+          ? "Codex speed: standard, fast, or ultrafast (repeatable, default: inherit)"
+          : "Codex speed: standard, fast, or ultrafast (default: inherit)",
+        "speed",
+        benchmark,
+      ),
+    )
+    .addOption(
+      executionOption(
+        "--session-retention <mode>",
+        "Codex sessions: keep (default), archive, or permanently delete",
+        "sessionRetention",
       ),
     );
 }
@@ -56,9 +93,13 @@ export function applyCodexExecutionOptions(command: Command): Command {
 export function resolveCodexExecutionCommandOptions(
   options: CodexExecutionCommandOptions,
 ): ResolvedCodexExecution {
-  return resolveCommandPolicy({
-    model: options.codexModel,
-    provider: options.codexProvider,
-    reasoningEffort: options.codexReasoningEffort,
-  });
+  return validateOption(() =>
+    resolveCodexExecution({
+      model: options.codexModel,
+      provider: options.codexProvider,
+      reasoningEffort: options.codexReasoningEffort,
+      speed: options.codexSpeed,
+      sessionRetention: options.sessionRetention,
+    }),
+  );
 }

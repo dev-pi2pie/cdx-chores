@@ -206,12 +206,21 @@ export function registerMarkdownCommands(
       ),
     )
     .action(async (input: string | undefined, options: MdPdfTemplateCodexCliOptions) => {
-      const { codexTimeout, codexModel, codexProvider, codexReasoningEffort, ...actionOptions } =
-        options;
+      const {
+        codexTimeout,
+        codexModel,
+        codexProvider,
+        codexReasoningEffort,
+        codexSpeed,
+        sessionRetention,
+        ...actionOptions
+      } = options;
       const codexExecution = resolveCodexExecutionCommandOptions({
         codexModel,
         codexProvider,
         codexReasoningEffort,
+        codexSpeed,
+        sessionRetention,
       });
       await actions.actionMdPdfTemplateCodex(runtime, {
         ...actionOptions,
@@ -261,12 +270,21 @@ export function registerMarkdownCommands(
       ),
     )
     .action(async (input: string | undefined, options: MdPdfProfileCodexCliOptions) => {
-      const { codexTimeout, codexModel, codexProvider, codexReasoningEffort, ...actionOptions } =
-        options;
+      const {
+        codexTimeout,
+        codexModel,
+        codexProvider,
+        codexReasoningEffort,
+        codexSpeed,
+        sessionRetention,
+        ...actionOptions
+      } = options;
       const codexExecution = resolveCodexExecutionCommandOptions({
         codexModel,
         codexProvider,
         codexReasoningEffort,
+        codexSpeed,
+        sessionRetention,
       });
       await actions.actionMdPdfProfileCodex(runtime, {
         ...actionOptions,
@@ -308,12 +326,21 @@ export function registerMarkdownCommands(
       ),
     )
     .action(async (input: string | undefined, options: MdPdfProjectCodexCliOptions) => {
-      const { codexTimeout, codexModel, codexProvider, codexReasoningEffort, ...actionOptions } =
-        options;
+      const {
+        codexTimeout,
+        codexModel,
+        codexProvider,
+        codexReasoningEffort,
+        codexSpeed,
+        sessionRetention,
+        ...actionOptions
+      } = options;
       const codexExecution = resolveCodexExecutionCommandOptions({
         codexModel,
         codexProvider,
         codexReasoningEffort,
+        codexSpeed,
+        sessionRetention,
       });
       await actions.actionMdPdfProjectCodex(runtime, {
         ...actionOptions,
