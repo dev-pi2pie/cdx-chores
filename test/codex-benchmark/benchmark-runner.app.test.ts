@@ -624,6 +624,58 @@ test.skipIf(process.platform === "win32")(
   },
 );
 
+test.each(["model/list", "config/read"] as const)(
+  "CLI recovers the measured Fast trial after a transient %s failure",
+  async (method) => {
+    await withRunnerFixture({ rejectFirstLookup: method }, async ({ options, trace }) => {
+      const result = await startCliBenchmark(options, [
+        "--json",
+        "--codex-speed",
+        "fast",
+        "--codex-speed",
+        "standard",
+      ]).completion;
+      expect(result.exitCode).toBe(1);
+      const { run, trials } = JSON.parse(result.stdout);
+      expect(trials).toMatchObject([
+        {
+          warmup: true,
+          requestedSpeed: "fast",
+          status: "failed",
+          error: expect.stringContaining(`temporary ${method} failure`),
+          inferenceAttempted: false,
+        },
+        { warmup: true, requestedSpeed: "standard", status: "completed" },
+        { warmup: false, requestedSpeed: "fast", status: "completed", sentTier: "priority" },
+        { warmup: false, requestedSpeed: "standard", status: "completed" },
+      ]);
+      expect(run.completedMeasuredTrials).toBe(2);
+      const events = await trace();
+      expect(traceMethod(events, "model/list")).toHaveLength(method === "model/list" ? 2 : 1);
+      expect(traceMethod(events, "config/read")).toHaveLength(method === "config/read" ? 2 : 1);
+      expect(
+        traceMethod(events, "turn/start").map(({ params }) => params?.serviceTierForTurn),
+      ).toEqual(["default", "priority", "default"]);
+    });
+  },
+);
+
+test.each(["model-a", null])(
+  "reuses successful tier discovery with configured model %s",
+  async (configuredModel) => {
+    await withRunnerFixture({ configuredModel }, async ({ options, trace }) => {
+      const report = await runCodexBenchmark({ ...options, speeds: ["fast", "standard"] });
+      expect(report.trials.map((trial) => trial.status)).toEqual(Array(4).fill("completed"));
+      const events = await trace();
+      expect(traceMethod(events, "model/list")).toHaveLength(1);
+      expect(traceMethod(events, "config/read")).toHaveLength(1);
+      expect(
+        traceMethod(events, "turn/start").map(({ params }) => params?.serviceTierForTurn),
+      ).toEqual(["priority", "default", "priority", "default"]);
+    });
+  },
+);
+
 test.skipIf(process.platform === "win32").each(["model/list", "config/read"] as const)(
   "CLI stops tier discovery on SIGINT during %s",
   async (method) => {

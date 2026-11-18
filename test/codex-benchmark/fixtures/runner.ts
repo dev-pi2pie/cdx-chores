@@ -12,6 +12,8 @@ interface Scenario {
   stallInitialization?: boolean;
   withholdThreadStartReply?: boolean;
   stallTierLookup?: "model/list" | "config/read";
+  rejectFirstLookup?: "model/list" | "config/read";
+  configuredModel?: string | null;
   exitDuringReadbackThread?: number;
   endStdoutDuringThread?: number;
   endStdoutAfterThread?: number;

@@ -34,8 +34,8 @@ async function listModels(
 }
 
 export class BenchmarkCatalog {
-  private models?: Promise<CatalogModel[]>;
-  private configuredModel?: Promise<string | null>;
+  private models?: CatalogModel[];
+  private configuredModel?: string | null;
 
   constructor(
     private server: CodexAppServer,
@@ -46,20 +46,19 @@ export class BenchmarkCatalog {
 
   async tierFor(model: string | null, speed: CodexSpeed): Promise<string | undefined> {
     if (speed === "standard") return "default";
-    this.models ??= listModels(this.server, this.provider, this.signal);
-    const models = await this.models;
+    this.models ??= await listModels(this.server, this.provider, this.signal);
     if (!model) {
-      this.configuredModel ??= this.server
-        .request<{ config: { model?: string | null } }>(
+      if (this.configuredModel === undefined) {
+        const { config } = await this.server.request<{ config: { model?: string | null } }>(
           "config/read",
           { cwd: this.cwd, includeLayers: false },
           { signal: this.signal },
-        )
-        .then(({ config }) => config.model ?? null);
-      model =
-        (await this.configuredModel) ?? models.find((entry) => entry.isDefault)?.model ?? null;
+        );
+        this.configuredModel = config.model ?? null;
+      }
+      model = this.configuredModel ?? this.models.find((entry) => entry.isDefault)?.model ?? null;
     }
-    const selected = models.find((entry) => entry.model === model || entry.id === model);
+    const selected = this.models.find((entry) => entry.model === model || entry.id === model);
     const knownTier = speed === "fast" ? "priority" : "ultrafast";
     return selected?.serviceTiers?.find(
       (tier) => tier.id === knownTier || tier.name?.toLowerCase() === speed,

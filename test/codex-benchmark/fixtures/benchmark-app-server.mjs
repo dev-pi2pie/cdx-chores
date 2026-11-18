@@ -99,6 +99,7 @@ async function run() {
     for (let attempt = 0; attempt < 100 && !existsSync(readyPath); attempt++) await delay(10);
     if (!existsSync(readyPath)) throw new Error("The fixture worker did not start.");
   }
+  let rejectFirstLookup = scenario.rejectFirstLookup;
   for await (const line of createInterface({ input: process.stdin })) {
     const { id, method, params } = JSON.parse(line);
     if (method === "initialize" && scenario.stallInitialization)
@@ -106,6 +107,11 @@ async function run() {
     trace({ method, params });
     const reply = (result) => send({ id, result });
     const reject = (message) => send({ id, error: { code: -32603, message } });
+    if (rejectFirstLookup && method === rejectFirstLookup) {
+      rejectFirstLookup = undefined;
+      reject(`temporary ${method} failure`);
+      continue;
+    }
     const thread = threads.get(params?.threadId);
     if (params?.threadId && !thread) throw new Error(`Unknown thread in ${method}`);
     if (method === scenario.rejectStart) {
@@ -139,7 +145,11 @@ async function run() {
       case "initialized":
         break;
       case "config/read":
-        reply({ config: { model: "model-a" } });
+        reply({
+          config: {
+            model: scenario.configuredModel === undefined ? "model-a" : scenario.configuredModel,
+          },
+        });
         break;
       case "model/list":
         reply({
