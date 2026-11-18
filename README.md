@@ -55,6 +55,7 @@ Use an up-to-date Node.js 22, 24, or 26 release. Inquirer excludes Node.js 23, N
 | Command group | Important subcommands                                                                                                                                         | Purpose                                                                                                         | Capability notes                                                                                                                                                                                                                                                                                                |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `doctor`      | `doctor`, `doctor --details`, `doctor --json`                                                                                                                 | Inspect current tool and feature readiness                                                                      | Run this first on a new machine or after environment changes                                                                                                                                                                                                                                                    |
+| `codex-bench` | `codex-bench` | Compare Codex model and speed selections on the same prompt | Run `doctor` to check local app-server readiness |
 | `data`        | `preview`, `extract`, `query`, `query codex`, `stack`, `stack replay`, `parquet preview`, `duckdb doctor`, `duckdb extension install`, `(conversion actions)` | Tabular conversion, preview, extraction, multi-source stacking, DuckDB-backed SQL query, and Codex SQL drafting | lightweight `csv` / `tsv` / `json` preview and conversion stay on the in-memory PapaParse-backed path; `extract` is best suited to shaping one clean table, `stack` assembles many matching local sources before later work, and `query` is the expressive lane for filtering, projection, and output selection |
 | `md`          | `to-docx`, `to-pdf`, `pdf-profile init`, `pdf-profile codex`, `pdf-template init`, `pdf-template codex`, `pdf-project codex`, `frontmatter-to-json`           | Markdown conversion, PDF profile/template/project generation, and metadata extraction                           | `to-docx` requires `pandoc`; `to-pdf` requires Pandoc 2.0+ and `weasyprint`                                                                                                                                                                                                                                     |
 | `rename`      | `file`, `batch`, `cleanup`, `apply`                                                                                                                           | Safe rename previews, cleanup flows, and replayable apply runs                                                  | Codex analyzer routes are optional, not required for standard rename usage                                                                                                                                                                                                                                      |
@@ -88,7 +89,7 @@ Use `cdx-chores doctor` before relying on a command in a script, a CI job, or a 
 The Codex SDK baseline for `v0.2.2-canary.5` is `@openai/codex-sdk` `0.170.0`.
 
 Adopted helper commands and explicit `interactive` sessions accept
-`--codex-model`, `--codex-provider`, and `--codex-reasoning-effort`. Model and
+`--codex-model`, `--codex-provider`, `--codex-reasoning-effort`, and `--codex-speed`. Model and
 provider inherit Codex configuration when omitted; helper reasoning defaults
 to `low`. See [Codex execution configuration](docs/guides/codex-execution-configuration.md)
 for command scope and failure behavior.
@@ -452,6 +453,7 @@ cdx-chores video resize -i ./clip.mp4 -o ./clip-720p.mp4 --width 1280 --height 7
 
 Cross-feature:
 
+- [Codex benchmark](docs/guides/codex-benchmark.md)
 - [Codex execution configuration and discovery](docs/guides/codex-execution-configuration.md)
 - [Environment variables](docs/guides/environment-variables.md)
 - [CLI output and color](docs/guides/cli-output-and-color.md)

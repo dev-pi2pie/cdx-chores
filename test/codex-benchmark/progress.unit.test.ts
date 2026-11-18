@@ -51,6 +51,12 @@ test.each([false, true])(
       const next = chunks.at(-1)!;
       expect(next).toBe("[1/4] Streaming · 2.5 s");
       expect(getDisplayWidth(next)).toBeLessThan(stderr.columns);
+
+      stderr.columns = 110;
+      stderr.emit("resize");
+      expect(chunks.at(-1)).toBe(
+        "[1/4] fixture-模型 · Fast requested · Warm-up · Streaming · 2.5 s elapsed",
+      );
       expect(stdout.text).toBe("");
     } finally {
       progress.stop();
