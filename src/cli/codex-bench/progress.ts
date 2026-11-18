@@ -1,7 +1,8 @@
-import type {
-  BenchmarkSelection,
-  BenchmarkTrial,
-  BenchmarkWorkloadOptions,
+import {
+  benchmarkWorkload,
+  type BenchmarkSelection,
+  type BenchmarkTrial,
+  type BenchmarkWorkloadOptions,
 } from "../../adapters/codex/benchmark/types";
 import { getCliColors } from "../colors";
 import { safeTerminalText } from "../terminal-text";
@@ -28,7 +29,8 @@ export function createBenchmarkProgress(
   const now = options.now ?? (() => performance.now());
   const usage =
     !options.transient && options.showTokenUsage ? createTokenUsageAccumulator() : undefined;
-  const combinations = (workload.models.length || 1) * (workload.speeds.length || 1);
+  let combinations = 0;
+  for (const _ of benchmarkWorkload({ ...workload, runs: 0 })) combinations++;
   const measuredTrials = combinations * workload.runs;
   const trialCount = measuredTrials + combinations;
   let position = 0;

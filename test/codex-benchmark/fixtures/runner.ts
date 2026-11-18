@@ -37,7 +37,7 @@ export async function withRunnerFixture<T>(
   scenario: Scenario,
   exercise: (fixture: {
     home: string;
-    options: BenchmarkOptions;
+    options: Extract<BenchmarkOptions, { models: readonly string[] }>;
     trace: () => Promise<BenchmarkProtocolEvent[]>;
   }) => Promise<T>,
 ): Promise<T> {

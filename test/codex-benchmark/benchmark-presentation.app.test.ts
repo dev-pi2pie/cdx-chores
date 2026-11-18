@@ -6,6 +6,32 @@ import { startCliBenchmark, withRunnerFixture, withStderrTtyPreload } from "./fi
 
 const startup = "1 combination · 1 measured trial + 1 warm-up\n";
 
+test("compact output counts case occurrences in progress and merges repeated pairs in the table", async () => {
+  await withRunnerFixture({}, async ({ options }) => {
+    const result = await startCliBenchmark(options, [
+      "--case",
+      "model-a=fast",
+      "--case",
+      "model-b=standard",
+      "--case",
+      "model-a=fast",
+      "--compact",
+      "--no-color",
+    ]).completion;
+    expect(result.ok).toBe(true);
+    expect(result.stderr).toBe("3 combinations · 3 measured trials + 3 warm-ups\n");
+    expect(
+      result.stdout
+        .split("\n")
+        .filter((line) => line.startsWith("model-"))
+        .map((line) => line.trim().split(/ {2,}/).slice(0, 3)),
+    ).toEqual([
+      ["model-a", "Fast", "2/2"],
+      ["model-b", "Standard", "1/1"],
+    ]);
+  });
+});
+
 function usageRows(stdout: string): string[][] {
   return stdout
     .split("Reported token usage\n")[1]!

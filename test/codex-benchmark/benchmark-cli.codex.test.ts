@@ -106,6 +106,41 @@ test("benchmark CLI rotates two models and two speeds with a fixed prompt and ar
   }
 }, 25_000);
 
+test("benchmark CLI sends only the explicit pairs and inherits the configured tier", async () => {
+  const secondModel = `${fixtureModel}=b`;
+  const requests = await captureSpeedRequest("fast", async (fixture) => {
+    const catalogPath = join(fixture.env.CODEX_HOME!, "model-catalog.json");
+    const catalog = JSON.parse(await readFile(catalogPath, "utf8")) as {
+      models: Array<{ slug: string }>;
+    };
+    catalog.models.push({ ...catalog.models[0], slug: secondModel });
+    await writeFile(catalogPath, JSON.stringify(catalog));
+    const result = await runCli(fixture, [
+      "codex-bench",
+      "--case",
+      `${fixtureModel}=standard`,
+      "--case",
+      `${secondModel}=ultrafast`,
+      "--case",
+      `${fixtureModel}=inherit`,
+      "--runs",
+      "1",
+    ]);
+    if (!result.ok) throw new Error(`${lifecycleDiagnostic(result)}\n${result.stderr}`);
+    expect(result.stdout).toContain("3/3 measured trials (3 warm-ups)");
+    expect(result.stderr).toBe("3 combinations · 3 measured trials + 3 warm-ups\n");
+  });
+  const pairs = [
+    [fixtureModel, undefined],
+    [secondModel, "ultrafast"],
+    [fixtureModel, "priority"],
+  ];
+  expect(requests.map((request) => [request.model, request.service_tier])).toEqual([
+    ...pairs,
+    ...pairs,
+  ]);
+}, 25_000);
+
 test("benchmark CLI rejects invalid runs, speed, retention and prompt files before inference", async () => {
   const requests = await captureSpeedRequest("default", async (fixture) => {
     await writeFile(join(fixture.cwd, "empty.txt"), " \n");
@@ -115,6 +150,18 @@ test("benchmark CLI rejects invalid runs, speed, retention and prompt files befo
       { args: ["--runs", "2.5"], message: "positive integer" },
       { args: ["--runs", "1", "--runs", "2"], message: "may only be specified once" },
       { args: ["--codex-speed", "normal"], message: "Codex speed must be one of" },
+      { args: ["--case", "model"], message: "Use MODEL=SPEED with a nonempty model" },
+      { args: ["--case", " =fast"], message: "Use MODEL=SPEED with a nonempty model" },
+      {
+        args: ["--case", "model="],
+        message: "SPEED must be standard, fast, ultrafast, or inherit",
+      },
+      {
+        args: ["--case", "model=normal"],
+        message: "SPEED must be standard, fast, ultrafast, or inherit",
+      },
+      { args: ["--case", "model=fast", "--codex-model", "model"], message: "cannot be used with" },
+      { args: ["--codex-speed", "fast", "--case", "model=fast"], message: "cannot be used with" },
       { args: ["--session-retention", "remove"], message: "Session retention must be one of" },
       { args: ["--prompt-file", "missing.txt"], message: "Unable to load --prompt-file" },
       { args: ["--prompt-file", "empty.txt"], message: "Prompt file is empty" },

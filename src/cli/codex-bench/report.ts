@@ -147,8 +147,12 @@ export function buildBenchmarkReport(run: BenchmarkRun, options: ReportOptions) 
       interrupted: run.interrupted,
       shutdownError: run.shutdownError,
       requested: {
-        models: workload.models.length ? workload.models : [null],
-        speeds: workload.speeds.length ? workload.speeds : [null],
+        ...(workload.cases
+          ? { cases: workload.cases }
+          : {
+              models: workload.models.length ? workload.models : [null],
+              speeds: workload.speeds.length ? workload.speeds : [null],
+            }),
         provider: workload.provider ?? null,
         reasoningEffort: workload.reasoningEffort ?? null,
       },

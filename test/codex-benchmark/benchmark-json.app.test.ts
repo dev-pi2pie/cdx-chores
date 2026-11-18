@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { writeFile } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 
-import type { BenchmarkOptions } from "../../src/adapters/codex/benchmark/types";
+import type { BenchmarkCase, BenchmarkOptions } from "../../src/adapters/codex/benchmark/types";
 import type { buildBenchmarkReport } from "../../src/cli/codex-bench/report";
 import { startCliBenchmark, traceMethod, withRunnerFixture } from "./fixtures/runner";
 
@@ -66,6 +66,100 @@ test.each([0, 1, 2, 3])(
     );
   },
 );
+
+test("reports ordered explicit cases and combines repeated pairs while retaining unavailable rows", async () => {
+  await withRunnerFixture({}, async ({ options, trace }) => {
+    const { report, stderr, exitCode } = await jsonBenchmark({ ...options, runs: 2 }, [
+      "--case",
+      "model-b=ultrafast",
+      "--case",
+      "model-a=fast",
+      "--case",
+      "model=a=inherit",
+      "--case",
+      "model-a=standard",
+      "--case=model-a=fast",
+      "--codex-provider",
+      "requested-provider",
+      "--codex-reasoning-effort",
+      "high",
+    ]);
+    expect(exitCode).toBe(0);
+    expect(stderr.trim().split("\n")).toEqual(
+      Array(3).fill("unavailable (model-b/ultrafast): model-b does not advertise ultrafast."),
+    );
+    const cases: BenchmarkCase[] = [
+      { model: "model-b", requestedSpeed: "ultrafast" },
+      { model: "model-a", requestedSpeed: "fast" },
+      { model: "model=a", requestedSpeed: null },
+      { model: "model-a", requestedSpeed: "standard" },
+      { model: "model-a", requestedSpeed: "fast" },
+    ];
+    expect(report.run).toMatchObject({
+      runsPerCombination: 2,
+      warmupTrials: 5,
+      measuredTrials: 10,
+      completedMeasuredTrials: 8,
+    });
+    expect(report.run.requested).toEqual({
+      cases,
+      provider: "requested-provider",
+      reasoningEffort: "high",
+    });
+    expect(
+      report.trials.map(({ model, requestedSpeed, round, warmup, status }) => ({
+        model,
+        requestedSpeed,
+        round,
+        warmup,
+        status,
+      })),
+    ).toEqual(
+      [0, 1, 2].flatMap((round) =>
+        cases.map((pair, index) => ({
+          ...pair,
+          round,
+          warmup: round === 0,
+          status: index === 0 ? "unavailable" : "completed",
+        })),
+      ),
+    );
+    expect(
+      report.summaries.map(
+        ({ model, requestedSpeed, plannedMeasuredTrials, completedMeasuredTrials }) => [
+          model,
+          requestedSpeed,
+          plannedMeasuredTrials,
+          completedMeasuredTrials,
+        ],
+      ),
+    ).toEqual([
+      ["model-b", "ultrafast", 2, 0],
+      ["model-a", "fast", 4, 4],
+      ["model=a", null, 2, 2],
+      ["model-a", "standard", 2, 2],
+    ]);
+    const events = await trace();
+    expect(
+      traceMethod(events, "thread/start").map((event) => [
+        event.params?.model,
+        event.params?.modelProvider,
+      ]),
+    ).toEqual(
+      [0, 1, 2].flatMap(() => cases.slice(1).map(({ model }) => [model, "requested-provider"])),
+    );
+    expect(
+      traceMethod(events, "turn/start").map((event) => [
+        event.params?.serviceTierForTurn,
+        event.params?.effort,
+      ]),
+    ).toEqual(
+      [0, 1, 2].flatMap(() =>
+        ["priority", undefined, "default", "priority"].map((tier) => [tier, "high"]),
+      ),
+    );
+  });
+});
 
 test("preserves the opted-in UTF-8 prompt as a JSON value and escapes terminal controls", async () => {
   await withRunnerFixture({}, async ({ options }) => {

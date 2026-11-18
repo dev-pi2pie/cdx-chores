@@ -9,7 +9,15 @@ test("benchmark help explains shared runs, inheritance, retention and both outpu
   expect(help).toContain("Codex model override (repeatable)");
   expect(help).toContain("standard, fast, or ultrafast (repeatable, default: inherit)");
   expect(help).toContain("keep (default), archive, or permanently delete");
-  expect(help).toContain("Use one --runs value for every model and speed combination.");
+  expect(help).toContain("Use one --runs value for every matrix combination or --case occurrence.");
+  expect(help).toContain(
+    "--case <MODEL=SPEED> Compare an explicit model and speed pair (repeatable)",
+  );
+  expect(help).toContain(
+    "--case splits on the last '=' and accepts standard, fast, ultrafast, or inherit",
+  );
+  expect(help).toContain("These selectors cannot be mixed.");
+  expect(help).toContain("codex-bench --case MODEL=fast --case OTHER_MODEL=ultrafast --runs 1");
   expect(help).toContain("Omit --prompt-file to use the built-in sample prompt.");
   expect(help).toContain("Use --no-color or set NO_COLOR to disable colors.");
   expect(help).toContain(
