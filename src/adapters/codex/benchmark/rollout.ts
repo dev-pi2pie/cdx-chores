@@ -23,7 +23,7 @@ interface RolloutUsage {
 
 export interface SavedTokenUsage {
   inputTokens: number | null;
-  outputTokens: number;
+  outputTokens: number | null;
   cachedInputTokens: number | null;
   cacheWriteInputTokens: number | null;
   reasoningOutputTokens: number | null;
@@ -40,16 +40,16 @@ function validCount(value: number | undefined): number | null {
 }
 
 function savedUsage(count: RolloutUsage | undefined): SavedTokenUsage | null {
-  const outputTokens = validCount(count?.output_tokens);
-  if (!count || outputTokens === null) return null;
-  return {
+  if (!count) return null;
+  const usage = {
     inputTokens: validCount(count.input_tokens),
-    outputTokens,
+    outputTokens: validCount(count.output_tokens),
     cachedInputTokens: validCount(count.cached_input_tokens),
     cacheWriteInputTokens: validCount(count.cache_write_input_tokens),
     reasoningOutputTokens: validCount(count.reasoning_output_tokens),
     totalTokens: validCount(count.total_tokens),
   };
+  return Object.values(usage).some((value) => value !== null) ? usage : null;
 }
 
 function savedTurn(jsonl: string, turnId: string): SavedTurn {

@@ -4,6 +4,8 @@ import { TextDecoder } from "node:util";
 import { InvalidArgumentError, type Command } from "commander";
 
 import type { CodexSpeed } from "../../utils/codex-execution";
+import { resolveCodexSessionRetention } from "../../utils/codex-session-retention";
+import { buildBenchmarkReport, type BenchmarkPrompt } from "../codex-bench/report";
 import { CliError } from "../errors";
 import {
   applyCodexExecutionOptions,
@@ -33,13 +35,13 @@ function parseRuns(value: string, previous: number | undefined): number {
   return count;
 }
 
-async function loadPrompt(cwd: string, path?: string): Promise<string> {
-  if (path === undefined) return SAMPLE_PROMPT;
+async function loadPrompt(cwd: string, path?: string): Promise<BenchmarkPrompt> {
+  if (path === undefined) return { source: "built-in", path: null, text: SAMPLE_PROMPT };
   try {
     const bytes = await readFile(resolve(cwd, path));
     const prompt = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
     if (!prompt.trim()) throw new Error("Prompt file is empty.");
-    return prompt;
+    return { source: "file", path, text: prompt };
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     throw new CliError(`Unable to load --prompt-file ${JSON.stringify(path)}. ${detail}`, {
@@ -57,27 +59,25 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
   process.on("SIGINT", cancel);
   process.on("SIGTERM", cancel);
   try {
-    const result = await runCodexBenchmark({
-      cwd: runtime.cwd,
-      signal: cancellation.signal,
+    const workload = {
       models: options.codexModel ?? [],
       speeds: options.codexSpeed ?? [],
       provider: options.codexProvider,
       reasoningEffort: options.codexReasoningEffort,
       runs: options.runs ?? 3,
-      prompt,
-      sessionRetention: options.sessionRetention,
+    };
+    const sessionRetention = resolveCodexSessionRetention(options.sessionRetention);
+    const result = await runCodexBenchmark({
+      ...workload,
+      cwd: runtime.cwd,
+      signal: cancellation.signal,
+      prompt: prompt.text,
+      sessionRetention,
     });
-    let completed = 0;
-    let measured = 0;
-    let warmups = 0;
+    const report = buildBenchmarkReport(result, { workload, prompt, sessionRetention });
+    const { completedMeasuredTrials, measuredTrials, warmupTrials } = report.run;
     let failed = false;
     for (const trial of result.trials) {
-      if (trial.warmup) warmups++;
-      else {
-        measured++;
-        if (trial.status === "completed") completed++;
-      }
       if (trial.error) {
         const label = `${trial.model ?? "inherited model"}/${trial.requestedSpeed ?? "inherited speed"}`;
         runtime.stderr.write(`${trial.status} (${label}): ${trial.error}\n`);
@@ -92,11 +92,11 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
       failed ||= trial.status === "failed" || retention?.status === "failed";
     }
     runtime.stdout.write(
-      `Codex benchmark completed ${completed}/${measured} measured trials (${warmups} warm-ups).\n`,
+      `Codex benchmark completed ${completedMeasuredTrials}/${measuredTrials} measured trials (${warmupTrials} warm-ups).\n`,
     );
     if (result.shutdownError) runtime.stderr.write(`${result.shutdownError}\n`);
     if (result.interrupted) process.exitCode = 130;
-    else if (failed || completed === 0 || result.shutdownError) process.exitCode = 1;
+    else if (failed || completedMeasuredTrials === 0 || result.shutdownError) process.exitCode = 1;
   } finally {
     process.off("SIGINT", cancel);
     process.off("SIGTERM", cancel);

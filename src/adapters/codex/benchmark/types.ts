@@ -19,6 +19,7 @@ export interface BenchmarkTrial extends BenchmarkSelection {
   error: string | null;
   threadId: string | null;
   turnId: string | null;
+  inferenceAttempted: boolean;
   resolvedModel: string | null;
   resolvedProvider: string | null;
   resolvedReasoningEffort: string | null;
@@ -57,7 +58,14 @@ export interface BenchmarkOptions {
   rollout?: RolloutReadOptions;
 }
 
-export function* benchmarkWorkload(options: BenchmarkOptions): Generator<BenchmarkSelection> {
+export type BenchmarkWorkloadOptions = Pick<
+  BenchmarkOptions,
+  "models" | "speeds" | "provider" | "reasoningEffort" | "runs"
+>;
+
+export function* benchmarkWorkload(
+  options: BenchmarkWorkloadOptions,
+): Generator<BenchmarkSelection> {
   const models = options.models.length ? options.models : [null];
   const speeds = options.speeds.length ? options.speeds : [null];
   for (let round = 0; round <= options.runs; round++) {

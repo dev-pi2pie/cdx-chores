@@ -43,6 +43,7 @@ function trialRecord(selection: BenchmarkSelection): BenchmarkTrial {
     error: null,
     threadId: null,
     turnId: null,
+    inferenceAttempted: false,
     resolvedModel: null,
     resolvedProvider: null,
     resolvedReasoningEffort: null,
@@ -193,6 +194,7 @@ class BenchmarkRunner {
       signal?.throwIfAborted();
       observer = new TrialObserver(this.server, thread.id);
       turnMayBeActive = true;
+      trial.inferenceAttempted = true;
       trial.turnId = await observer.waitForStart(
         this.server.request<{ turn: Turn }>("turn/start", {
           threadId: thread.id,

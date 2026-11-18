@@ -276,7 +276,7 @@ async function runTrial(
     outputTokens,
     usage,
     usagePartial:
-      outputTokens !== null && (turn.status !== "completed" || terminal?.type !== "task_complete"),
+      usage !== null && (turn.status !== "completed" || terminal?.type !== "task_complete"),
     turnOutputTokensPerSecond:
       turn.status === "completed" &&
       terminal?.type === "task_complete" &&
