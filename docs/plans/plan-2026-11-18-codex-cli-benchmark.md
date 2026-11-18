@@ -11,6 +11,10 @@ Implement `cdx-chores codex-bench` for fresh, persisted Codex trials. Compare re
 
 The first live check on Codex 0.170.0 completed a Luna Standard/Fast pair and a Sol Ultrafast trial. All three rollouts were readable on the first attempt, and saved durations and output counts matched live records. Release work depends on the recovery and request-wiring checks below. The live check establishes acceptance for the tested requests. Served speed remains unknown. [Research and live results](../researches/research-2026-11-18-codex-cli-benchmark.md#first-live-check)
 
+## Implementation Record
+
+When implementation starts, create one unified job record under `docs/plans/jobs/` and link it here. Update the same record as work proceeds through all six phases. For each phase, record what changed, decisions that affect the implementation, and verification commands and results.
+
 ## Phase 1. Verify Rollout Recovery Offline
 
 Exercise the [live-check spike](../../scripts/spikes/codex-benchmark-live-check.ts) with a fake app-server over stdio and real JSONL files in an isolated custom Codex home. Add a test seam for the executable and for observing the first file read. Keep a single rollout-reading path for these checks and reuse it in the command. Begin the bounded recovery window when the matching `turn/completed` arrives, with app-server still running.
@@ -41,7 +45,7 @@ Capture outbound inference requests at a fixture provider through the SDK and ap
 
 - [ ] Capture outbound requests through the SDK using the fixture configuration and every selection in the table.
 - [ ] Capture outbound requests through app-server using the same cases and confirm the per-turn Standard override.
-- [ ] Record the observed mappings alongside the live acceptance evidence and resolve mismatches before exposing the selector.
+- [ ] Record the observed mappings in the unified job record, link the live acceptance evidence, and resolve mismatches before exposing the selector.
 
 ## Phase 3. Wire the CLI and Trial Runner
 
@@ -81,7 +85,7 @@ Capture outbound inference requests at a fixture provider through the SDK and ap
 - [ ] Update the shared Codex execution guide with adopted commands and selector inheritance. Document command-local retention, `keep` by default, explicit archive and permanent deletion, and app-server version requirements.
 - [ ] Check both guides against the built CLI help, `doctor`, and `codex-info` output. Validate example commands against a fixture provider.
 - [ ] Run the focused fixture and CLI suites, TypeScript, lint, formatting, build, and a built Node CLI smoke check.
-- [ ] Record validation commands and results in the implementation job record and review the final CLI documentation against the shipped behavior.
+- [ ] Complete the unified job record with the final validation commands and results. Review the final CLI documentation against the shipped behavior.
 
 ## Related Research
 
