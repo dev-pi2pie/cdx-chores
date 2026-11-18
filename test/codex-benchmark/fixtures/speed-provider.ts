@@ -160,7 +160,7 @@ export async function captureSpeedRequest(
 export async function runSdkProbe({ codex, cwd, env, start }: ProbeFixture, selection?: string) {
   const driver = join(REPO_ROOT, "test/codex-benchmark/fixtures/sdk-speed-probe.ts");
   const result = await start({
-    executable: process.execPath,
+    executable: "node",
     args: [driver, codex, cwd, fixturePrompt, ...(selection === undefined ? [] : [selection])],
     env,
     timeoutMs: 8_000,
