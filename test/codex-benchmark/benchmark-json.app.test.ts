@@ -130,6 +130,34 @@ test("adds attributable usage from an incomplete warm-up and marks missing trial
   );
 });
 
+test("marks an omitted reported total partial while using the measured output count for speed", async () => {
+  await withRunnerFixture(
+    {
+      usageSnapshots: [
+        { input_tokens: 10, output_tokens: 5, total_tokens: 15 },
+        { input_tokens: 20, output_tokens: 8 },
+      ],
+    },
+    async ({ options }) => {
+      const { report, stderr, exitCode } = await jsonBenchmark(options, ["--show-token-usage"]);
+      expect(exitCode).toBe(0);
+      expect(stderr).toContain("reported — (partial) · cumulative 15 tokens (partial)");
+      expect(report.trials[1]?.tokenUsage).toMatchObject({
+        partial: true,
+        counts: { inputTokens: 20, outputTokens: 8, totalTokens: null },
+      });
+      expect(report.tokenUsage).toMatchObject({
+        partial: true,
+        totals: { inputTokens: 30, outputTokens: 13, totalTokens: 15 },
+      });
+      expect(report.summaries[0]?.turnOutputTokensPerSecond).toMatchObject({
+        sampleCount: 1,
+        median: 10,
+      });
+    },
+  );
+});
+
 test("catalog-rejected speed still has a row and leaves usage totals complete for actual trials", async () => {
   await withRunnerFixture({}, async ({ options, trace }) => {
     const { report, stderr, exitCode } = await jsonBenchmark(options, [

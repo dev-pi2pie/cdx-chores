@@ -12,7 +12,10 @@ export function benchmarkTrialTokenUsage(trial: BenchmarkTrial): BenchmarkTokenU
     counts,
     partial:
       trial.inferenceAttempted &&
-      (trial.usagePartial || counts?.inputTokens == null || counts.outputTokens === null),
+      (trial.usagePartial ||
+        counts?.inputTokens == null ||
+        counts.outputTokens === null ||
+        counts.totalTokens === null),
   };
 }
 

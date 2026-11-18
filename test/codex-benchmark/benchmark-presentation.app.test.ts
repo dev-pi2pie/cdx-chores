@@ -48,7 +48,9 @@ test("redirects startup and running partial usage to stderr, with prompt and tot
 test("reconciles partial measured usage and warm-up subtotals across models and speeds", async () => {
   const usage = { input_tokens: 1_000, output_tokens: 0, total_tokens: 1_000 };
   await withRunnerFixture(
-    { usageSnapshots: [usage, usage, usage, null, usage, usage] },
+    {
+      usageSnapshots: [usage, usage, usage, { input_tokens: 125, output_tokens: 0 }, null, usage],
+    },
     async ({ options }) => {
       const run = await startCliBenchmark(options, [
         "--codex-model",
@@ -67,15 +69,18 @@ test("reconciles partial measured usage and warm-up subtotals across models and 
         ["Warm-up", "model-a", "Standard", "1,000", "0", "1,000"],
         ["Warm-up", "model-a", "Ultrafast", "1,000", "0", "1,000"],
         ["Warm-up", "model-b", "Standard", "1,000", "0", "1,000"],
-        ["Trial 1/1 (partial)", "model-a", "Standard", "—", "—", "—"],
-        ["Trial 1/1", "model-a", "Ultrafast", "1,000", "0", "1,000"],
+        ["Trial 1/1 (partial)", "model-a", "Standard", "125", "0", "—"],
+        ["Trial 1/1 (partial)", "model-a", "Ultrafast", "—", "—", "—"],
         ["Trial 1/1", "model-b", "Standard", "1,000", "0", "1,000"],
         ["Warm-up subtotal", "3,000", "0", "3,000"],
-        ["Measured subtotal (partial)", "2,000", "0", "2,000"],
-        ["Invocation total (partial)", "5,000", "0", "5,000"],
+        ["Measured subtotal (partial)", "1,125", "0", "1,000"],
+        ["Invocation total (partial)", "4,125", "0", "4,000"],
       ]);
       expect(run.stderr).toContain(
-        "Trial 1/1 · model-b · Standard · reported 1,000 tokens · cumulative 5,000 tokens (partial)",
+        "Trial 1/1 · model-a · Standard · reported — (partial) · cumulative 3,000 tokens (partial)",
+      );
+      expect(run.stderr).toContain(
+        "Trial 1/1 · model-b · Standard · reported 1,000 tokens · cumulative 4,000 tokens (partial)",
       );
     },
   );
