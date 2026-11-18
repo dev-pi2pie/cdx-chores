@@ -1,0 +1,114 @@
+import { EventEmitter, once } from "node:events";
+
+import type { CodexAppServer } from "../app-server";
+import { isRecord } from "../discovery/transport";
+
+export interface Turn {
+  id: string;
+  status: "completed" | "interrupted" | "failed" | "inProgress";
+  error?: { message?: string } | null;
+  items?: unknown[];
+}
+
+interface TurnEvidence {
+  items: Map<string, Record<string, unknown>>;
+  rerouted: boolean;
+  completion?: { turn: Turn; receivedAt: number };
+}
+
+const nonToolItems = new Set(["userMessage", "agentMessage", "reasoning"]);
+
+export class TrialObserver {
+  private readonly turns = new Map<string, TurnEvidence>();
+  private readonly events = new EventEmitter();
+  readonly close: () => void;
+  startedTurnId?: string;
+
+  constructor(server: CodexAppServer, threadId: string) {
+    this.close = server.onNotification((method, params) => {
+      if (!isRecord(params) || params.threadId !== threadId) return;
+      if (method === "turn/started" || method === "turn/completed") {
+        const turn = params.turn;
+        if (!isRecord(turn) || typeof turn.id !== "string") return;
+        if (method === "turn/started") {
+          this.startedTurnId = turn.id;
+          this.events.emit("started", turn.id);
+        } else if (
+          turn.status === "completed" ||
+          turn.status === "failed" ||
+          turn.status === "interrupted"
+        ) {
+          const evidence = this.evidence(turn.id);
+          if (Array.isArray(turn.items))
+            for (const item of turn.items) this.recordItem(evidence, item);
+          evidence.completion = { turn: turn as unknown as Turn, receivedAt: performance.now() };
+          this.events.emit(`turn:${turn.id}`);
+        }
+      } else if (typeof params.turnId === "string") {
+        if (method === "item/started" || method === "item/completed") {
+          this.recordItem(this.evidence(params.turnId), params.item);
+        } else if (method === "model/rerouted") {
+          this.evidence(params.turnId).rerouted = true;
+        }
+      }
+    });
+  }
+
+  private evidence(turnId: string): TurnEvidence {
+    let evidence = this.turns.get(turnId);
+    if (!evidence) {
+      evidence = { items: new Map(), rerouted: false };
+      this.turns.set(turnId, evidence);
+    }
+    return evidence;
+  }
+
+  private recordItem(evidence: TurnEvidence, item: unknown): void {
+    if (!isRecord(item) || typeof item.id !== "string" || typeof item.type !== "string") return;
+    evidence.items.set(item.id, { ...evidence.items.get(item.id), ...item });
+  }
+
+  async waitForStart(response: Promise<{ turn: Turn }>, signal?: AbortSignal): Promise<string> {
+    const rpcTurn = response.then(({ turn }) => turn.id);
+    if (!signal) return rpcTurn;
+    let considerInterruption = () => {};
+    const interruptedTurn = new Promise<string>((resolve) => {
+      considerInterruption = () => {
+        if (signal.aborted && this.startedTurnId) resolve(this.startedTurnId);
+      };
+      signal.addEventListener("abort", considerInterruption, { once: true });
+      this.events.on("started", considerInterruption);
+      considerInterruption();
+    });
+    try {
+      return await Promise.race([rpcTurn, interruptedTurn]);
+    } finally {
+      signal.removeEventListener("abort", considerInterruption);
+      this.events.off("started", considerInterruption);
+    }
+  }
+
+  async waitForCompletion(turnId: string, signal: AbortSignal) {
+    const evidence = this.evidence(turnId);
+    if (!evidence.completion) await once(this.events, `turn:${turnId}`, { signal });
+    if (!evidence.completion) throw new Error("Matching turn completion was unavailable.");
+    return evidence.completion;
+  }
+
+  isEligible(turnId: string): boolean {
+    const evidence = this.evidence(turnId);
+    if (evidence.rerouted || evidence.completion?.turn.status !== "completed") return false;
+    const messages = [];
+    for (const item of evidence.items.values()) {
+      if (!nonToolItems.has(String(item.type))) return false;
+      if (item.type === "agentMessage") messages.push(item);
+    }
+    const message = messages[0];
+    return (
+      messages.length === 1 &&
+      typeof message?.text === "string" &&
+      message.text.trim().length > 0 &&
+      (message.phase == null || message.phase === "final_answer")
+    );
+  }
+}

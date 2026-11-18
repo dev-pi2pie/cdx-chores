@@ -1,0 +1,284 @@
+import { isAbsolute } from "node:path";
+
+import { resolveCodexSessionRetention } from "../../../utils/codex-session-retention";
+import { CodexAppServer, CodexAppServerError } from "../app-server";
+import { resolveDiscoveryExecutable } from "../discovery/executable";
+import { applyCodexSessionRetention } from "../session-retention";
+import { BenchmarkCatalog, isTierRejection } from "./catalog";
+import { readSavedTurn } from "./rollout";
+import { TrialObserver, type Turn } from "./turn";
+import {
+  benchmarkWorkload,
+  type BenchmarkOptions,
+  type BenchmarkRun,
+  type BenchmarkSelection,
+  type BenchmarkTrial,
+} from "./types";
+
+export type { BenchmarkOptions, BenchmarkRun, BenchmarkTrial } from "./types";
+
+const turnTimeoutMs = 120_000;
+const interruptTimeoutMs = 2_000;
+
+interface Thread {
+  id: string;
+  path: string | null;
+  model?: string | null;
+  modelProvider?: string;
+  reasoningEffort?: string | null;
+}
+
+interface ThreadStartResponse {
+  thread: Thread;
+  model?: string;
+  modelProvider?: string;
+  reasoningEffort?: string | null;
+  serviceTier?: string | null;
+}
+
+function trialRecord(selection: BenchmarkSelection): BenchmarkTrial {
+  return {
+    ...selection,
+    status: "failed",
+    error: null,
+    threadId: null,
+    turnId: null,
+    resolvedModel: null,
+    resolvedProvider: null,
+    resolvedReasoningEffort: null,
+    configuredTier: null,
+    sentTier: null,
+    servedSpeed: null,
+    firstTokenMs: null,
+    durationMs: null,
+    outputTokens: null,
+    usage: null,
+    usagePartial: false,
+    eligible: false,
+    sessionRetention: null,
+  };
+}
+
+function messageFrom(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function timing(value: number | null | undefined): number | null {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
+}
+
+function rolloutPath(path: string | null | undefined): string | null {
+  return typeof path === "string" && isAbsolute(path) && !path.includes("\0") ? path : null;
+}
+
+class BenchmarkRunner {
+  private readonly ownedThreadIds = new Set<string>();
+  private readonly catalog: BenchmarkCatalog;
+  private readonly retention;
+  canStartTrial = true;
+
+  constructor(
+    private readonly server: CodexAppServer,
+    private readonly options: BenchmarkOptions,
+  ) {
+    this.catalog = new BenchmarkCatalog(server, options.cwd, options.provider);
+    this.retention = resolveCodexSessionRetention(options.sessionRetention);
+  }
+
+  private async completion(observer: TrialObserver, threadId: string, turnId: string) {
+    const { signal } = this.options;
+    const deadline = AbortSignal.timeout(turnTimeoutMs);
+    const stopped = this.server.signal;
+    const waiting = AbortSignal.any([stopped, deadline, ...(signal ? [signal] : [])]);
+    try {
+      return await observer.waitForCompletion(turnId, waiting);
+    } catch (error) {
+      if (stopped.aborted) throw error;
+      return this.interrupt(observer, threadId, turnId);
+    }
+  }
+
+  private async interrupt(observer: TrialObserver, threadId: string, turnId: string) {
+    const stopWaiting = AbortSignal.any([
+      this.server.signal,
+      AbortSignal.timeout(interruptTimeoutMs),
+    ]);
+    const interruption = this.server
+      .request("turn/interrupt", { threadId, turnId }, interruptTimeoutMs)
+      .then(
+        () => null,
+        (error: unknown) => messageFrom(error),
+      );
+    try {
+      return await observer.waitForCompletion(turnId, stopWaiting);
+    } catch {
+      throw new Error(
+        (await interruption) ?? "Codex did not confirm turn completion after interruption.",
+      );
+    }
+  }
+
+  private async recover(
+    trial: BenchmarkTrial,
+    thread: Thread,
+    turnId: string,
+    completedAt?: number,
+  ) {
+    const saved = await readSavedTurn({
+      ...this.options.rollout,
+      initialPath: rolloutPath(thread.path),
+      turnId,
+      receivedAt: completedAt ?? performance.now(),
+      lookupPath: async (timeoutMs) => {
+        const { thread: refreshed } = await this.server.request<{ thread: Thread }>(
+          "thread/read",
+          { threadId: thread.id },
+          timeoutMs,
+        );
+        if (refreshed.id !== thread.id)
+          throw new Error("Rollout lookup returned the wrong thread.");
+        return rolloutPath(refreshed.path);
+      },
+    });
+    trial.usage = saved.usage;
+    trial.outputTokens = saved.outputTokens;
+    trial.usagePartial =
+      saved.usage !== null &&
+      (completedAt === undefined ||
+        trial.status !== "completed" ||
+        saved.terminal?.type !== "task_complete");
+    if (completedAt !== undefined) {
+      trial.firstTokenMs = timing(saved.terminal?.time_to_first_token_ms);
+      trial.durationMs = timing(saved.terminal?.duration_ms);
+    }
+  }
+
+  async runTrial(trial: BenchmarkTrial): Promise<void> {
+    const { prompt, cwd, signal } = this.options;
+    const { model, requestedSpeed, provider, reasoningEffort } = trial;
+    let thread: Thread | undefined;
+    let observer: TrialObserver | undefined;
+    let completionConfirmed = false;
+    let turnMayBeActive = false;
+    try {
+      if (requestedSpeed !== null) {
+        trial.sentTier = (await this.catalog.tierFor(model, requestedSpeed)) ?? null;
+        if (trial.sentTier === null) {
+          trial.status = "unavailable";
+          trial.error = `${model ?? "The inherited model"} does not advertise ${requestedSpeed}.`;
+          return;
+        }
+      }
+      signal?.throwIfAborted();
+      const startedThread = await this.server.request<ThreadStartResponse>("thread/start", {
+        cwd,
+        model: model ?? undefined,
+        modelProvider: provider ?? undefined,
+        ephemeral: false,
+        approvalPolicy: "never",
+        sandbox: "read-only",
+        config: { web_search: "disabled", "features.shell_tool": false },
+      });
+      trial.threadId = startedThread.thread.id;
+      if (!trial.threadId || this.ownedThreadIds.has(trial.threadId)) {
+        throw new Error("Codex app-server did not return a new benchmark thread ID.");
+      }
+      this.ownedThreadIds.add(trial.threadId);
+      thread = startedThread.thread;
+      trial.resolvedModel = startedThread.model ?? thread.model ?? null;
+      trial.resolvedProvider = startedThread.modelProvider ?? thread.modelProvider ?? null;
+      trial.resolvedReasoningEffort =
+        reasoningEffort ?? startedThread.reasoningEffort ?? thread.reasoningEffort ?? null;
+      trial.configuredTier = startedThread.serviceTier ?? null;
+      signal?.throwIfAborted();
+      observer = new TrialObserver(this.server, thread.id);
+      turnMayBeActive = true;
+      trial.turnId = await observer.waitForStart(
+        this.server.request<{ turn: Turn }>("turn/start", {
+          threadId: thread.id,
+          effort: reasoningEffort ?? undefined,
+          serviceTierForTurn: trial.sentTier ?? undefined,
+          input: [{ type: "text", text: prompt, text_elements: [] }],
+        }),
+        signal,
+      );
+      const { turn, receivedAt } = await this.completion(observer, thread.id, trial.turnId);
+      completionConfirmed = true;
+      trial.error = turn.error?.message ?? null;
+      trial.status =
+        turn.status === "interrupted"
+          ? "cancelled"
+          : turn.status === "completed"
+            ? "completed"
+            : "failed";
+      if (
+        trial.status === "failed" &&
+        requestedSpeed &&
+        trial.error &&
+        isTierRejection(trial.error)
+      ) {
+        trial.status = "unavailable";
+      }
+      trial.eligible =
+        trial.status === "completed" && !trial.warmup && observer.isEligible(turn.id);
+      await this.recover(trial, thread, turn.id, receivedAt);
+    } catch (error) {
+      trial.error = messageFrom(error);
+      trial.status = signal?.aborted
+        ? "cancelled"
+        : requestedSpeed && isTierRejection(trial.error)
+          ? "unavailable"
+          : "failed";
+      trial.turnId ??= observer?.startedTurnId ?? null;
+      if (thread && trial.turnId && !completionConfirmed) {
+        // Do not start another trial while this turn may still be running.
+        this.canStartTrial = false;
+        await this.recover(trial, thread, trial.turnId);
+      } else if (turnMayBeActive && !(error instanceof CodexAppServerError)) {
+        this.canStartTrial = false;
+      }
+    } finally {
+      observer?.close();
+      if (thread) {
+        trial.sessionRetention = await applyCodexSessionRetention({
+          mode: this.retention,
+          threadId: thread.id,
+          completed: completionConfirmed,
+          request: (method, params) => this.server.request(method, params),
+        });
+      }
+    }
+  }
+}
+
+export async function runCodexBenchmark(options: BenchmarkOptions): Promise<BenchmarkRun> {
+  const { signal, cwd, onTrial } = options;
+  const report: BenchmarkRun = {
+    codexVersion: null,
+    codexHome: null,
+    trials: [],
+    interrupted: false,
+  };
+  if (signal?.aborted) return { ...report, interrupted: true };
+  const env = { ...(options.env ?? process.env) };
+  const server = new CodexAppServer(resolveDiscoveryExecutable(env), cwd, env, {
+    isolateSignals: true,
+  });
+  try {
+    const initialized = await server.initialize();
+    report.codexVersion = initialized.userAgent?.match(/^[^/]+\/([^\s]+)/)?.[1] ?? null;
+    report.codexHome = rolloutPath(initialized.codexHome);
+    const runner = new BenchmarkRunner(server, options);
+    for (const selection of benchmarkWorkload(options)) {
+      if (signal?.aborted || !runner.canStartTrial || server.signal.aborted) break;
+      const trial = trialRecord(selection);
+      await runner.runTrial(trial);
+      report.trials.push(trial);
+      onTrial?.(trial);
+    }
+    report.interrupted = signal?.aborted ?? false;
+    return report;
+  } finally {
+    await server.close();
+  }
+}

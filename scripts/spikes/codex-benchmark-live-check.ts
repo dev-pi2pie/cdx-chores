@@ -4,7 +4,16 @@ import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
-import { readSavedTurn, type RolloutReadOptions } from "./codex-benchmark-rollout.ts";
+import {
+  readSavedTurn,
+  type RolloutReadOptions,
+} from "../../src/adapters/codex/benchmark/rollout.ts";
+import { applyCodexSessionRetention } from "../../src/adapters/codex/session-retention.ts";
+import { resolveCodexSpeed, type CodexSpeed } from "../../src/utils/codex-execution.ts";
+import {
+  resolveCodexSessionRetention,
+  type CodexSessionRetention,
+} from "../../src/utils/codex-session-retention.ts";
 
 const defaultAppServer = {
   executable: fileURLToPath(new URL("../../node_modules/.bin/codex", import.meta.url)),
@@ -12,8 +21,6 @@ const defaultAppServer = {
 };
 const prompt =
   "Explain how an LRU cache works to a junior developer. Cover a cache hit, a cache miss, and an eviction. Walk through a short example with a capacity of three. Write about 250 words and answer directly without using tools.";
-type Speed = "standard" | "fast" | "ultrafast";
-type SessionRetention = "archive" | "keep" | "delete";
 
 interface Thread {
   id: string;
@@ -163,7 +170,7 @@ async function findModel(server: AppServer, model: string) {
   throw new Error(`${model} was absent from the configured provider's model catalog.`);
 }
 
-function tierFor(model: CatalogModel, speed: Speed) {
+function tierFor(model: CatalogModel, speed: CodexSpeed) {
   if (speed === "standard") return "default";
   const tier = model.serviceTiers.find((entry) => entry.name.toLowerCase() === speed);
   if (!tier) throw new Error(`${model.model} does not advertise ${speed}.`);
@@ -174,24 +181,13 @@ function compare(saved: number | null, live: number | null | undefined) {
   return saved === null || live == null ? null : saved === live;
 }
 
-async function applySessionRetention(server: AppServer, threadId: string, mode: SessionRetention) {
-  if (mode === "keep") return { status: "kept" };
-  try {
-    await server.request(mode === "archive" ? "thread/archive" : "thread/delete", { threadId });
-    return { status: mode === "archive" ? "archived" : "deleted" };
-  } catch (error) {
-    process.exitCode = 1;
-    return { status: "failed", error: String(error) };
-  }
-}
-
 async function runTrial(
   server: AppServer,
   model: string,
   effort: string,
-  requestedSpeed: Speed,
+  requestedSpeed: CodexSpeed,
   tier: string,
-  retention: SessionRetention,
+  retention: CodexSessionRetention,
   rolloutReadOptions: RolloutReadOptions | undefined,
 ) {
   const { thread } = await server.request<{ thread: Thread }>("thread/start", {
@@ -218,11 +214,16 @@ async function runTrial(
       threadId: thread.id,
       status: "error",
       error: String(error),
-      sessionRetention: { status: retention === "keep" ? "kept" : "skipped" },
+      sessionRetention: await applyCodexSessionRetention({
+        mode: retention,
+        threadId: thread.id,
+        completed: false,
+        request: (method, params) => server.request(method, params),
+      }),
     };
   }
   const { turn, live, receivedAt } = completion;
-  const { terminal, outputTokens, ...rollout } = await readSavedTurn({
+  const { terminal, outputTokens, usage, ...rollout } = await readSavedTurn({
     ...rolloutReadOptions,
     initialPath: thread.path,
     turnId: turn.id,
@@ -251,7 +252,13 @@ async function runTrial(
   )
     process.exitCode = 1;
 
-  const sessionRetention = await applySessionRetention(server, thread.id, retention);
+  const sessionRetention = await applyCodexSessionRetention({
+    mode: retention,
+    threadId: thread.id,
+    completed: true,
+    request: (method, params) => server.request(method, params),
+  });
+  if (sessionRetention.status === "failed") process.exitCode = 1;
   return {
     requestedSpeed,
     sentTier: tier,
@@ -267,6 +274,7 @@ async function runTrial(
     firstTokenMs,
     durationMs,
     outputTokens,
+    usage,
     usagePartial:
       outputTokens !== null && (turn.status !== "completed" || terminal?.type !== "task_complete"),
     turnOutputTokensPerSecond:
@@ -317,21 +325,16 @@ export async function runLiveCheck(
   const { model, effort, speed: speeds } = values;
   if (!model?.trim() || !effort?.trim()) throw new Error(usage);
   const speed = speeds?.[0];
-  if (
-    (speeds && speeds.length > 1) ||
-    (speed !== undefined && speed !== "standard" && speed !== "fast" && speed !== "ultrafast")
-  ) {
+  if (speeds && speeds.length > 1) {
     throw new Error("Specify at most one --speed: standard, fast, or ultrafast.");
   }
-  const requestedSpeeds: Speed[] = speed ? [speed] : ["standard", "fast"];
+  const requestedSpeeds: CodexSpeed[] =
+    speed === undefined ? ["standard", "fast"] : [resolveCodexSpeed(speed)];
   const retentionValues = values["session-retention"];
-  const sessionRetention = retentionValues?.[0] ?? "keep";
-  if (
-    (retentionValues && retentionValues.length > 1) ||
-    (sessionRetention !== "archive" && sessionRetention !== "keep" && sessionRetention !== "delete")
-  ) {
+  if (retentionValues && retentionValues.length > 1) {
     throw new Error("Specify at most one --session-retention: archive, keep, or delete.");
   }
+  const sessionRetention = resolveCodexSessionRetention(retentionValues?.[0]);
 
   const server = startAppServer(appServer);
   try {

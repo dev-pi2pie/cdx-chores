@@ -1,0 +1,147 @@
+#!/usr/bin/env node
+
+const { appendFileSync, readFileSync, renameSync, unlinkSync, writeFileSync } = require("node:fs");
+const { join } = require("node:path");
+const { createInterface } = require("node:readline");
+
+const home = process.env.CODEX_HOME;
+const scenario = JSON.parse(readFileSync(join(home, "scenario.json"), "utf8"));
+const threads = new Map();
+const send = (message) => console.log(JSON.stringify(message));
+const trace = (event) => appendFileSync(join(home, "events.jsonl"), `${JSON.stringify(event)}\n`);
+const notification = (method, params) => send({ method, params });
+const event = (type, payload) =>
+  `${JSON.stringify({ type: "event_msg", payload: { type, ...payload } })}\n`;
+const tokenCount = {
+  input_tokens: 150,
+  output_tokens: 80,
+  cached_input_tokens: 25,
+  cache_write_input_tokens: 18,
+  reasoning_output_tokens: 20,
+  total_tokens: 230,
+};
+
+function openTurn(thread) {
+  thread.turnId = `turn-${thread.id}`;
+  writeFileSync(
+    thread.path,
+    event("task_started", { turn_id: thread.turnId }) +
+      event("token_count", { info: { total_token_usage: tokenCount } }),
+  );
+  notification("turn/started", {
+    threadId: thread.id,
+    turn: { id: thread.turnId, status: "inProgress" },
+  });
+}
+
+function completeTurn(thread, status, error = null) {
+  const turnId = thread.turnId;
+  const terminal =
+    status === "interrupted"
+      ? event("turn_aborted", { turn_id: turnId, reason: "interrupted" })
+      : event("task_complete", { turn_id: turnId, duration_ms: 800, time_to_first_token_ms: 200 });
+  appendFileSync(thread.path, scenario.delayed ? terminal.slice(0, -1) : terminal);
+  if (status === "completed") {
+    const identity = { threadId: thread.id, turnId };
+    if (scenario.rerouted)
+      notification("model/rerouted", { ...identity, fromModel: thread.model, toModel: "other" });
+    if (scenario.tool)
+      notification("item/started", {
+        ...identity,
+        item: { id: "shell", type: "commandExecution" },
+      });
+    notification("item/completed", {
+      ...identity,
+      item: { id: "reply", type: "agentMessage", text: "fixture answer", phase: scenario.phase },
+    });
+  }
+  trace({ method: "turn/completed", params: { threadId: thread.id, turnId, status } });
+  notification("turn/completed", { threadId: thread.id, turn: { id: turnId, status, error } });
+}
+
+async function run() {
+  for await (const line of createInterface({ input: process.stdin })) {
+    const { id, method, params } = JSON.parse(line);
+    trace({ method, params });
+    const reply = (result) => send({ id, result });
+    const reject = (message) => send({ id, error: { code: -32603, message } });
+    const thread = threads.get(params?.threadId);
+    if (params?.threadId && !thread) throw new Error(`Unknown thread in ${method}`);
+    switch (method) {
+      case "initialize":
+        reply({ codexHome: home, userAgent: "cdx_chores/0.170.0" });
+        break;
+      case "initialized":
+        break;
+      case "config/read":
+        reply({ config: { model: "model-a" } });
+        break;
+      case "model/list":
+        reply({
+          data: ["model-a", "model-b"].map((model) => ({
+            model,
+            isDefault: model === "model-a",
+            serviceTiers: [
+              { id: "priority", name: "Fast" },
+              ...(model === "model-a" ? [{ id: "ultrafast", name: "Ultrafast" }] : []),
+            ],
+          })),
+          nextCursor: null,
+        });
+        break;
+      case "thread/start": {
+        if (params.ephemeral !== false) throw new Error("Use a persisted thread.");
+        const newId = `thread-${threads.size + 1}`;
+        const started = {
+          id: newId,
+          path: join(home, `${newId}.jsonl`),
+          model: params.model ?? "model-a",
+          modelProvider: params.modelProvider ?? "fixture-provider",
+          reasoningEffort: "medium",
+          reads: 0,
+        };
+        threads.set(newId, started);
+        reply({ thread: { ...started, path: scenario.fallback ? null : started.path } });
+        break;
+      }
+      case "turn/start":
+        openTurn(thread);
+        if (!scenario.withholdStartReply)
+          reply({ turn: { id: thread.turnId, status: "inProgress" } });
+        if (scenario.interrupt) break;
+        if (scenario.rejectFast && params.serviceTierForTurn === "priority") {
+          completeTurn(thread, "failed", {
+            message: "Service tier priority is not supported for this account.",
+          });
+        } else if (scenario.failFirst && thread.id === "thread-1") {
+          completeTurn(thread, "failed", { message: "fixture inference failed" });
+        } else {
+          completeTurn(thread, "completed");
+        }
+        break;
+      case "turn/interrupt":
+        if (params.turnId !== thread.turnId) throw new Error("Interrupted the wrong turn.");
+        reply({});
+        if (scenario.interrupt !== "unconfirmed") completeTurn(thread, "interrupted");
+        break;
+      case "thread/read":
+        thread.reads++;
+        reply({ thread: { ...thread, path: thread.reads === 1 ? null : thread.path } });
+        break;
+      case "thread/archive":
+      case "thread/delete":
+        if (scenario.retentionError) {
+          reject("fixture cleanup failed");
+          break;
+        }
+        if (method === "thread/archive") renameSync(thread.path, `${thread.path}.archive`);
+        else unlinkSync(thread.path);
+        reply({});
+        break;
+      default:
+        reject(`Unexpected request ${method}`);
+    }
+  }
+}
+
+void run();

@@ -9,19 +9,54 @@ interface RolloutEvent {
   turn_id?: string;
   time_to_first_token_ms?: number | null;
   duration_ms?: number | null;
-  info?: { total_token_usage?: { output_tokens: number } } | null;
+  info?: { total_token_usage?: RolloutUsage } | null;
+}
+
+interface RolloutUsage {
+  input_tokens?: number;
+  output_tokens?: number;
+  cached_input_tokens?: number;
+  cache_write_input_tokens?: number;
+  reasoning_output_tokens?: number;
+  total_tokens?: number;
+}
+
+export interface SavedTokenUsage {
+  inputTokens: number | null;
+  outputTokens: number;
+  cachedInputTokens: number | null;
+  cacheWriteInputTokens: number | null;
+  reasoningOutputTokens: number | null;
+  totalTokens: number | null;
 }
 
 interface SavedTurn {
   terminal: RolloutEvent | null;
-  outputTokens: number | null;
+  usage: SavedTokenUsage | null;
+}
+
+function validCount(value: number | undefined): number | null {
+  return value !== undefined && Number.isSafeInteger(value) && value >= 0 ? value : null;
+}
+
+function savedUsage(count: RolloutUsage | undefined): SavedTokenUsage | null {
+  const outputTokens = validCount(count?.output_tokens);
+  if (!count || outputTokens === null) return null;
+  return {
+    inputTokens: validCount(count.input_tokens),
+    outputTokens,
+    cachedInputTokens: validCount(count.cached_input_tokens),
+    cacheWriteInputTokens: validCount(count.cache_write_input_tokens),
+    reasoningOutputTokens: validCount(count.reasoning_output_tokens),
+    totalTokens: validCount(count.total_tokens),
+  };
 }
 
 function savedTurn(jsonl: string, turnId: string): SavedTurn {
   const lines = jsonl.split("\n");
   lines.pop(); // The trailing segment may be a write in progress.
   let active = false;
-  let outputTokens: number | null = null;
+  let usage: SavedTokenUsage | null = null;
   for (const line of lines) {
     if (!line.trim()) continue;
     const record = JSON.parse(line) as { type: string; payload: RolloutEvent };
@@ -31,17 +66,16 @@ function savedTurn(jsonl: string, turnId: string): SavedTurn {
       if (active) break;
       active = event.turn_id === turnId;
     } else if (active && event.type === "token_count") {
-      const count = event.info?.total_token_usage?.output_tokens;
-      if (count !== undefined && Number.isSafeInteger(count) && count >= 0) outputTokens = count;
+      usage = savedUsage(event.info?.total_token_usage) ?? usage;
     } else if (
       active &&
       event.turn_id === turnId &&
       (event.type === "task_complete" || event.type === "turn_aborted")
     ) {
-      return { terminal: event, outputTokens };
+      return { terminal: event, usage };
     }
   }
-  return { terminal: null, outputTokens };
+  return { terminal: null, usage };
 }
 
 export interface RolloutReadOptions {
@@ -64,7 +98,7 @@ export async function readSavedTurn({
 }) {
   const deadline = receivedAt + deadlineMs;
   let path = initialPath;
-  let saved: SavedTurn = { terminal: null, outputTokens: null };
+  let saved: SavedTurn = { terminal: null, usage: null };
   let pathLookupAttempts = 0;
   let firstReadFoundTerminal: boolean | null = null;
   let terminalVisibleAfterMs: number | null = null;
@@ -105,6 +139,7 @@ export async function readSavedTurn({
   }
   return {
     ...saved,
+    outputTokens: saved.usage?.outputTokens ?? null,
     pathAtThreadStart: Boolean(initialPath),
     pathLookupAttempts,
     firstReadFoundTerminal,
