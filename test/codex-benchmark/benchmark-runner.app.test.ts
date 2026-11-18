@@ -1,89 +1,19 @@
 import { expect, test } from "bun:test";
-import { access, appendFile, chmod, copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, appendFile, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
-import { startFixtureProcess } from "../../scripts/testing/fixtures/fixture-process.ts";
 import {
   isLiveProcess,
   requireProcessObservation,
 } from "../../scripts/testing/execution/process-table.ts";
-import { runCodexBenchmark, type BenchmarkOptions } from "../../src/adapters/codex/benchmark";
-import { REPO_ROOT, withTempFixtureDir } from "../helpers/cli-test-utils";
-
-interface Scenario {
-  phase?: string | null;
-  delayed?: boolean;
-  fallback?: boolean;
-  tool?: boolean;
-  rerouted?: boolean;
-  interrupt?: "confirmed" | "unconfirmed";
-  withholdStartReply?: boolean;
-  failFirst?: boolean;
-  rejectFast?: boolean;
-  retentionError?: boolean;
-  resistantWorker?: boolean;
-}
-
-interface Event {
-  method: string;
-  params?: Record<string, unknown>;
-}
-
-function traceMethod(events: Event[], method: string) {
-  return events.filter((event) => event.method === method);
-}
-
-async function withRunnerFixture<T>(
-  scenario: Scenario,
-  exercise: (fixture: {
-    home: string;
-    options: BenchmarkOptions;
-    trace: () => Promise<Event[]>;
-  }) => Promise<T>,
-): Promise<T> {
-  return withTempFixtureDir("codex-benchmark-runner", async (root) => {
-    const home = join(root, "codex-home");
-    const executable = join(root, "codex-fixture.cjs");
-    const tracePath = join(home, "events.jsonl");
-    await mkdir(home);
-    await copyFile(
-      join(REPO_ROOT, "test/codex-benchmark/fixtures/benchmark-app-server.cjs"),
-      executable,
-    );
-    await chmod(executable, 0o755);
-    await writeFile(join(home, "scenario.json"), JSON.stringify(scenario));
-    await writeFile(join(home, "unrelated.jsonl"), "unrelated\n");
-    const result = await exercise({
-      home,
-      options: {
-        cwd: root,
-        env: {
-          PATH: process.env.PATH,
-          HOME: root,
-          CODEX_HOME: home,
-          CDX_CHORES_CODEX_PATH: executable,
-        },
-        models: [],
-        speeds: [],
-        runs: 1,
-        prompt: "fixture prompt",
-      },
-      trace: async () => {
-        const text = await readFile(tracePath, "utf8").catch((error: NodeJS.ErrnoException) => {
-          if (error.code === "ENOENT") return "";
-          throw error;
-        });
-        return text
-          .split("\n")
-          .slice(0, -1)
-          .map((line) => JSON.parse(line) as Event);
-      },
-    });
-    expect(await readFile(join(home, "unrelated.jsonl"), "utf8")).toBe("unrelated\n");
-    return result;
-  });
-}
+import { runCodexBenchmark } from "../../src/adapters/codex/benchmark";
+import {
+  startCliBenchmark,
+  traceMethod,
+  withRunnerFixture,
+  type BenchmarkProtocolEvent,
+} from "./fixtures/runner";
 
 test("rotates the starting speed by round on fresh persisted threads", async () => {
   await withRunnerFixture({ phase: "final_answer" }, async ({ home, options, trace }) => {
@@ -271,7 +201,7 @@ test.each(["archive", "delete"] as const)(
   },
 );
 
-async function waitForTurnStart(trace: () => Promise<Event[]>): Promise<void> {
+async function waitForTurnStart(trace: () => Promise<BenchmarkProtocolEvent[]>): Promise<void> {
   const deadline = Date.now() + 4_000;
   while (Date.now() < deadline) {
     if (traceMethod(await trace(), "turn/start").length) return;
@@ -340,25 +270,6 @@ test.skipIf(process.platform === "win32")(
     });
   },
 );
-
-function startCliBenchmark(options: BenchmarkOptions, args: string[], preload?: string) {
-  return startFixtureProcess({
-    executable: process.execPath,
-    args: [
-      ...(preload ? ["--preload", preload] : []),
-      join(REPO_ROOT, "src/bin.ts"),
-      "codex-bench",
-      "--runs",
-      "1",
-      ...args,
-    ],
-    cwd: options.cwd,
-    env: options.env ?? process.env,
-    timeoutMs: 10_000,
-    graceMs: 600,
-    cleanupMs: 1_500,
-  });
-}
 
 test.skipIf(process.platform === "win32")(
   "CLI preserves completed trials and reports an unconfirmed app-server shutdown",

@@ -32,10 +32,12 @@ const tokenCount = {
 
 function openTurn(thread) {
   thread.turnId = `turn-${thread.id}`;
+  const snapshot = scenario.usageSnapshots?.[threads.size - 1];
+  const usage = snapshot === undefined ? tokenCount : snapshot;
   writeFileSync(
     thread.path,
     event("task_started", { turn_id: thread.turnId }) +
-      event("token_count", { info: { total_token_usage: tokenCount } }),
+      (usage ? event("token_count", { info: { total_token_usage: usage } }) : ""),
   );
   notification("turn/started", {
     threadId: thread.id,

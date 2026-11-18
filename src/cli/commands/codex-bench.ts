@@ -7,6 +7,7 @@ import type { CodexSpeed } from "../../utils/codex-execution";
 import { resolveCodexSessionRetention } from "../../utils/codex-session-retention";
 import { buildBenchmarkReport, type BenchmarkPrompt } from "../codex-bench/report";
 import { CliError } from "../errors";
+import { serializeCliJson } from "../json";
 import {
   applyCodexExecutionOptions,
   type CodexExecutionCommandOptions,
@@ -24,6 +25,9 @@ interface BenchmarkCommandOptions extends Omit<
   codexSpeed?: CodexSpeed[];
   promptFile?: string;
   runs?: number;
+  json?: boolean;
+  showPrompt?: boolean;
+  showTokenUsage?: boolean;
 }
 
 function parseRuns(value: string, previous: number | undefined): number {
@@ -74,7 +78,13 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
       prompt: prompt.text,
       sessionRetention,
     });
-    const report = buildBenchmarkReport(result, { workload, prompt, sessionRetention });
+    const report = buildBenchmarkReport(result, {
+      workload,
+      prompt,
+      sessionRetention,
+      showPrompt: options.json && options.showPrompt,
+      showTokenUsage: options.json && options.showTokenUsage,
+    });
     const { completedMeasuredTrials, measuredTrials, warmupTrials } = report.run;
     let failed = false;
     for (const trial of result.trials) {
@@ -91,9 +101,13 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
       }
       failed ||= trial.status === "failed" || retention?.status === "failed";
     }
-    runtime.stdout.write(
-      `Codex benchmark completed ${completedMeasuredTrials}/${measuredTrials} measured trials (${warmupTrials} warm-ups).\n`,
-    );
+    if (options.json) {
+      runtime.stdout.write(`${serializeCliJson(report)}\n`);
+    } else {
+      runtime.stdout.write(
+        `Codex benchmark completed ${completedMeasuredTrials}/${measuredTrials} measured trials (${warmupTrials} warm-ups).\n`,
+      );
+    }
     if (result.shutdownError) runtime.stderr.write(`${result.shutdownError}\n`);
     if (result.interrupted) process.exitCode = 130;
     else if (failed || completedMeasuredTrials === 0 || result.shutdownError) process.exitCode = 1;
@@ -114,5 +128,8 @@ export function registerCodexBenchCommand(program: Command, runtime: CliRuntime)
       parseRuns,
     )
     .option("--prompt-file <path>", "Use a UTF-8 prompt file for every trial")
+    .option("--json", "Write one JSON benchmark report")
+    .option("--show-prompt", "Include the prompt text in the JSON report")
+    .option("--show-token-usage", "Include reported token counts in the JSON report")
     .action(async (options: BenchmarkCommandOptions) => actionCodexBenchmark(runtime, options));
 }
