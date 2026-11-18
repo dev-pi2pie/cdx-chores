@@ -1,16 +1,17 @@
 import { spawn } from "node:child_process";
 import { EventEmitter, once } from "node:events";
-import { readFile } from "node:fs/promises";
 import { createInterface } from "node:readline";
-import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
-const codex = fileURLToPath(new URL("../../node_modules/.bin/codex", import.meta.url));
+import { readSavedTurn, type RolloutReadOptions } from "./codex-benchmark-rollout.ts";
+
+const defaultAppServer = {
+  executable: fileURLToPath(new URL("../../node_modules/.bin/codex", import.meta.url)),
+  args: ["app-server", "--listen", "stdio://"],
+};
 const prompt =
   "Explain how an LRU cache works to a junior developer. Cover a cache hit, a cache miss, and an eviction. Walk through a short example with a capacity of three. Write about 250 words and answer directly without using tools.";
-const rolloutDeadlineMs = 2_000;
-const rolloutRetryMs = 50;
 type Speed = "standard" | "fast" | "ultrafast";
 type SessionRetention = "archive" | "keep" | "delete";
 
@@ -48,8 +49,8 @@ interface Message {
   };
 }
 
-function startAppServer() {
-  const child = spawn(codex, ["app-server", "--listen", "stdio://"], {
+function startAppServer({ executable, args }: typeof defaultAppServer) {
+  const child = spawn(executable, args, {
     stdio: ["pipe", "pipe", "inherit"],
   });
   const closed = new Promise<void>((resolve) => child.once("close", () => resolve()));
@@ -169,98 +170,6 @@ function tierFor(model: CatalogModel, speed: Speed) {
   return tier.id;
 }
 
-interface RolloutEvent {
-  type: string;
-  turn_id?: string;
-  time_to_first_token_ms?: number | null;
-  duration_ms?: number | null;
-  info?: { total_token_usage?: { output_tokens: number } } | null;
-}
-
-function savedTurn(jsonl: string, turnId: string) {
-  const lines = jsonl.split("\n");
-  lines.pop(); // The trailing segment may be a write in progress.
-  let active = false;
-  let outputTokens: number | null = null;
-  for (const line of lines) {
-    if (!line.trim()) continue;
-    const record = JSON.parse(line) as { type: string; payload: RolloutEvent };
-    if (record.type !== "event_msg") continue;
-    const event = record.payload;
-    if (event.type === "task_started") {
-      if (active) break;
-      active = event.turn_id === turnId;
-    } else if (active && event.type === "token_count") {
-      const count = event.info?.total_token_usage?.output_tokens;
-      if (count !== undefined && Number.isSafeInteger(count) && count >= 0) outputTokens = count;
-    } else if (
-      active &&
-      event.turn_id === turnId &&
-      (event.type === "task_complete" || event.type === "turn_aborted")
-    ) {
-      return { terminal: event, outputTokens };
-    }
-  }
-  return { terminal: null, outputTokens };
-}
-
-async function readSavedTurn(
-  server: AppServer,
-  thread: Thread,
-  turnId: string,
-  receivedAt: number,
-) {
-  const deadline = receivedAt + rolloutDeadlineMs;
-  let path = thread.path;
-  let saved: ReturnType<typeof savedTurn> = { terminal: null, outputTokens: null };
-  let firstReadFoundTerminal: boolean | null = null;
-  let terminalVisibleAfterMs: number | null = null;
-  let readError: string | null = null;
-
-  while (performance.now() < deadline) {
-    if (!path) {
-      try {
-        const { thread: refreshed } = await server.request<{ thread: Thread }>(
-          "thread/read",
-          { threadId: thread.id },
-          Math.max(1, Math.ceil(deadline - performance.now())),
-        );
-        path = refreshed.path;
-        readError = null;
-      } catch (error) {
-        readError = String(error);
-      }
-    }
-    const remaining = Math.ceil(deadline - performance.now());
-    if (path && remaining > 0) {
-      try {
-        const jsonl = await readFile(path, {
-          encoding: "utf8",
-          signal: AbortSignal.timeout(remaining),
-        });
-        saved = savedTurn(jsonl, turnId);
-        firstReadFoundTerminal ??= saved.terminal !== null;
-        readError = null;
-        if (saved.terminal) {
-          terminalVisibleAfterMs = Math.round(performance.now() - receivedAt);
-          break;
-        }
-      } catch (error) {
-        firstReadFoundTerminal ??= false;
-        readError = String(error);
-      }
-    }
-    await delay(Math.max(0, Math.min(rolloutRetryMs, deadline - performance.now())));
-  }
-  return {
-    ...saved,
-    pathAtThreadStart: Boolean(thread.path),
-    firstReadFoundTerminal,
-    terminalVisibleAfterMs,
-    readError,
-  };
-}
-
 function compare(saved: number | null, live: number | null | undefined) {
   return saved === null || live == null ? null : saved === live;
 }
@@ -283,6 +192,7 @@ async function runTrial(
   requestedSpeed: Speed,
   tier: string,
   retention: SessionRetention,
+  rolloutReadOptions: RolloutReadOptions | undefined,
 ) {
   const { thread } = await server.request<{ thread: Thread }>("thread/start", {
     model,
@@ -312,12 +222,21 @@ async function runTrial(
     };
   }
   const { turn, live, receivedAt } = completion;
-  const { terminal, outputTokens, ...rollout } = await readSavedTurn(
-    server,
-    thread,
-    turn.id,
+  const { terminal, outputTokens, ...rollout } = await readSavedTurn({
+    ...rolloutReadOptions,
+    initialPath: thread.path,
+    turnId: turn.id,
     receivedAt,
-  );
+    lookupPath: async (timeoutMs) => {
+      const { thread: refreshed } = await server.request<{ thread: Thread }>(
+        "thread/read",
+        { threadId: thread.id },
+        timeoutMs,
+      );
+      if (refreshed.id !== thread.id) throw new Error("Rollout lookup returned the wrong thread.");
+      return refreshed.path;
+    },
+  });
   const durationMs = terminal?.duration_ms ?? null;
   const firstTokenMs = terminal?.time_to_first_token_ms ?? null;
   const durationMatchesLive = compare(durationMs, turn.durationMs);
@@ -360,8 +279,18 @@ async function runTrial(
   };
 }
 
-async function main() {
+export async function runLiveCheck(
+  args: string[],
+  {
+    appServer = defaultAppServer,
+    rollout,
+  }: {
+    appServer?: typeof defaultAppServer;
+    rollout?: RolloutReadOptions;
+  } = {},
+) {
   const { values } = parseArgs({
+    args,
     options: {
       model: { type: "string" },
       effort: { type: "string" },
@@ -398,7 +327,7 @@ async function main() {
     throw new Error("Specify at most one --session-retention: archive, keep, or delete.");
   }
 
-  const server = startAppServer();
+  const server = startAppServer(appServer);
   try {
     const init = await server.request<{ userAgent: string }>("initialize", {
       clientInfo: { name: "cdx_chores", title: "cdx-chores", version: "1" },
@@ -418,7 +347,15 @@ async function main() {
     for (const { requestedSpeed, sentTier } of trials) {
       try {
         results.push(
-          await runTrial(server, model, effort, requestedSpeed, sentTier, sessionRetention),
+          await runTrial(
+            server,
+            model,
+            effort,
+            requestedSpeed,
+            sentTier,
+            sessionRetention,
+            rollout,
+          ),
         );
       } catch (error) {
         process.exitCode = 1;
@@ -437,7 +374,9 @@ async function main() {
   }
 }
 
-await main().catch((error: unknown) => {
-  console.error(String(error));
-  process.exitCode = 1;
-});
+if (import.meta.main) {
+  await runLiveCheck(process.argv.slice(2)).catch((error: unknown) => {
+    console.error(String(error));
+    process.exitCode = 1;
+  });
+}
