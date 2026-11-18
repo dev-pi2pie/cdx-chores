@@ -58,9 +58,9 @@ Use `standard` as the public spelling for the explicit Standard selection. The a
 - `--runs <count>` accepts one positive integer per invocation and defaults to `3`. Schedule that many measured trials and one warm-up for each matrix combination. Reject invalid values and repeated `--runs` flags before inference.
 - In each measured matrix round, run every combination sequentially and rotate the starting speed (Standard/Fast, then Fast/Standard). Each request uses a fresh thread with `ephemeral: false` and the same prompt. Retain per-trial cache counts to help interpret order and prompt-cache effects. [^app-server] [^latency]
 
-The planned repeatable `--case MODEL=SPEED` selector specifies individual pairs. Split each value at the last `=`. Require a nonempty model and a speed of `standard`, `fast`, `ultrafast`, or `inherit`. For example, `--case "model=a=inherit"` selects `model=a` and delegates speed to Codex. Reject any invocation that combines `--case` with `--codex-model` or `--codex-speed`. [Explicit-pair implementation checklist](../plans/plan-2026-11-18-codex-cli-benchmark.md#phase-6-follow-up)
+Use repeatable `--case MODEL=SPEED` to select individual pairs when each model needs its own speed. The selector splits at the last `=` and accepts `standard`, `fast`, `ultrafast`, or `inherit` for a nonempty model. For example, `--case "model=a=inherit"` selects `model=a` and delegates speed to Codex. The CLI rejects combining `--case` with `--codex-model` or `--codex-speed`. [Explicit-pair verification](../plans/jobs/2026-11-18-codex-cli-benchmark.md#explicit-modelspeed-pairs)
 
-Each `--case` occurrence schedules one warm-up and `--runs` measured trials. Repeating a pair schedules another set of trials and adds its counts to the same model–speed summary. The proposed order is to run entries as supplied in each round, including warm-up.
+Each `--case` occurrence schedules one warm-up and `--runs` measured trials. Each round follows input order, including warm-up. Repeating a pair schedules another set of trials and adds its counts to the same model–speed summary.
 
 The built-in prompt is shared across the workload.
 
@@ -91,7 +91,7 @@ cdx-chores codex-bench \
   --runs 3
 ```
 
-With the planned `--case` selector, either command below schedules two warm-ups and two measured trials for the supplied pairs.
+Either command below schedules two warm-ups and two measured trials for the supplied pairs.
 
 ```sh
 cdx-chores codex-bench --case gpt-6-luna=fast --case gpt-6.2-sol=ultrafast --runs 1 --compact
@@ -168,7 +168,7 @@ The report identifies the prompt source and each explicit or inherited Codex sel
 
 `--compact` shows one median per available metric, the completed count, and the usable sample count when it differs. With `--show-token-usage`, it adds one line with warm-up, measured, and invocation totals.
 
-`--json` takes precedence when both output flags are supplied. It writes one unstyled object to stdout with run context, per-trial results, and summaries for `codexFirstTokenMs`, `turnOutputTokensPerSecond`, and `turnDurationMs`. JSON uses `null` for unavailable values and includes each metric's sample count. `--show-prompt` includes the prompt below the terminal table or in `prompt.text` in JSON. The terminal view escapes control characters in the prompt and JSON preserves its content. [^output]
+`--json` takes precedence when both output flags are supplied. It writes one unstyled object to stdout with run context, per-trial results, and summaries for `codexFirstTokenMs`, `turnOutputTokensPerSecond`, and `turnDurationMs`. Paired runs report the ordered `model` and `requestedSpeed` values in `run.requested.cases`, with `null` for inherited speed. Matrix runs report `run.requested.models` and `run.requested.speeds`. JSON uses `null` for unavailable metric values and includes each metric's sample count. `--show-prompt` includes the prompt below the terminal table or in `prompt.text` in JSON. The terminal view escapes control characters in the prompt and JSON preserves its content. [^output]
 
 With `--show-token-usage`, detailed terminal output shows per-request and cumulative token totals on stderr, then a usage table with warm-up and measured subtotals and the invocation total on stdout. JSON puts detailed per-trial counts and invocation totals in the report. Invocation totals include reported warm-up usage and carry a partial label or flag when usage is incomplete. Turn output tok/s uses reported output counts independently of this flag.
 

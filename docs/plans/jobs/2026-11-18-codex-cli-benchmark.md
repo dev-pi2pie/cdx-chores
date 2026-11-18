@@ -102,7 +102,10 @@ Completed the reopened work. JSON mode displays a resize-aware status on TTY std
 
 #### Explicit model–speed pairs
 
-Pending. The [explicit-pair checklist](../plan-2026-11-18-codex-cli-benchmark.md#phase-6-follow-up) defines the selector and acceptance checks. Record fixture results, the built CLI smoke check, and the exact reviewed range here when verified.
+- `bun test --path-ignore-patterns='**/fixtures/**' test/codex-benchmark` passed 112 cases. Fixtures verified ordered pairs, model IDs containing `=`, inherited speed, invalid and conflicting selectors, mixed availability, progress counts, duplicate summary counts, compact and JSON output, and matrix compatibility. [Follow-up checklist](../plan-2026-11-18-codex-cli-benchmark.md#phase-6-follow-up)
+- `bun run test:unit` passed 2,123 cases and `bun run test:integration:codex` passed 27. `tsc --noEmit`, `bun run lint`, `bun run format:check`, `bun run build`, and `git diff --check` passed. Loopback requests confirmed the configured Fast tier was inherited and explicit Standard overrode it.
+- The built Node CLI ran the paired help example in compact and JSON modes against a loopback provider. Each invocation sent four requests for two ordered pairs, with two warm-ups and two measured trials. JSON recorded the supplied pairs in `run.requested.cases`.
+- Code and test review covered `c46fbe13..52c7755c` with no actionable findings.
 
 ## Phase 7. Documentation and Validation
 
