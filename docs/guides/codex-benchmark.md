@@ -83,7 +83,7 @@ An unavailable speed produces a diagnostic while supported combinations continue
 
 If app-server interrupts a turn on its own, the trial is reported as `cancelled`. The CLI prints a diagnostic and exits with status 1 even when other measurements succeeded. Ctrl-C returns status 130, including during app-server initialization, tier discovery, and thread startup.
 
-If Ctrl-C arrives before app-server returns a new thread ID, the server may already have created the session. The report shows `threadId: null` and `sessionRetention: null`. The CLI can only archive or delete a session whose ID it has received.
+If Ctrl-C interrupts a pending `thread/start` request, app-server may already have created the session. The cancelled trial shows `threadId: null` and `sessionRetention: null` because the CLI can only archive or delete a session whose ID it has received.
 
 ## Related Guides
 

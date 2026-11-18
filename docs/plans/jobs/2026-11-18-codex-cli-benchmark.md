@@ -1,7 +1,7 @@
 ---
 title: "Codex CLI Benchmark Implementation"
 created-date: 2026-11-18
-modified-date: 2026-11-18
+modified-date: 2026-11-19
 status: completed
 agent: codex
 ---
@@ -133,3 +133,11 @@ Completed the reopened work. JSON mode displays a resize-aware status on TTY std
 - The `dev` review against `canary` found that stdout EOF could stall an active trial and that Ctrl-C could leave tier discovery running. `58b231b2` detects stdout EOF as transport loss. `bc5ed4be` cancels pending `model/list` and `config/read` requests, stops pagination, and returns exit 130 without starting inference.
 - Review of `b06c1275..bc5ed4be` found that the EOF grace period could hide transport loss during final readback. `09b647df` stops the transport immediately at EOF and reports the child exit status when available. Test review found a fixture ordering race, which `86664bd5` fixed by waiting for the parent to observe EOF. Code and test re-review of `b06c1275..86664bd5` found no outstanding issues. [Regression tests](../../../test/codex-benchmark/benchmark-runner.app.test.ts)
 - Managed suites on the final production code at `09b647df` passed 2,123 unit, 2,464 application, and 27 Codex integration tests. The final reviewed tip passed 425 focused tests. The synchronized EOF fixture passed 12 repeated runs and reproduced exit 0 on `bc5ed4be`. Five isolated Node CLI checks covered both EOF cases, exit code 17, and SIGINT during both tier lookups. Type checking, lint, formatting, build, and `git diff --check` passed.
+
+### Thread startup and server-interrupted trials
+
+- At `dbdd45a7`, the built Node CLI waited 15 seconds after Ctrl-C when app-server withheld the `thread/start` reply. With `b4023cc9`, one Ctrl-C cancels the pending request, returns exit 130, and preserves the JSON report. The protocol trace confirms that inference never started.
+- At the same baseline, an app-server interruption after one completed measurement returned exit 0, and redirected stderr was empty when the server supplied no reason. With `413c0c1c`, both the supplied-reason and missing-reason cases exit 1 and print a diagnostic. JSON retains the completed measurement, the cancelled trial, and its partial usage. [Benchmark guide](../../guides/codex-benchmark.md#manage-benchmark-sessions)
+- Code and test review covered `dbdd45a7..413c0c1c`. The review raised the case where app-server creates a thread before the CLI receives its ID. `5dec2637` documents that limitation and tests that requesting archive sends no cleanup request for an unidentified thread. Re-review of the full `dbdd45a7..5dec2637` range found no outstanding issues. [CLI regression tests](../../../test/codex-benchmark/benchmark-runner.app.test.ts)
+- Three built Node CLI checks verified startup cancellation and both server-interruption diagnostics. The benchmark suite passed 132 tests. Type checking, lint, formatting, build, relative link checks, and `git diff --check` passed.
+- The first managed run had one failure in the unchanged wrapped path-completion test. It passed three isolated reruns. A full `bun run test:all` rerun at `5dec2637` passed all 4,622 cases (2,123 unit, 2,467 application, 27 Codex, and 5 Pandoc).
