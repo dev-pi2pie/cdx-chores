@@ -86,7 +86,9 @@ With `--show-token-usage`, stderr identifies each settled warm-up or measured re
 
 ### Phase 6 Follow-Up
 
-`--compact` shows one median per metric with completed and usable sample counts, and summarizes requested token usage in one line with partial or unavailable values labeled. Routine stderr output consists of the startup line and resize-aware live status on a TTY. `--json` writes one object with optional token usage and reserves stderr for diagnostics. Benchmark help documents the output modes and provides examples.
+**Reopened for JSON progress and diagnostic styling.** The follow-up restores a transient, resize-aware status on TTY stderr and clears it before the report or final diagnostics. Benchmark diagnostic labels follow the shared color rules. Help will explain JSON progress, prompt text, and relative prompt paths. Record verification for progress, diagnostics, and the JSON prompt fields here before Phase 7.
+
+The initial follow-up added `--compact` with median metrics, completed counts, and one-line usage. It made JSON quiet on stderr except for diagnostics and updated help for those behaviors. The following evidence covers that implementation.
 
 - The benchmark abbreviates the home prefix in report paths as `~` on Unix-like systems and `%USERPROFILE%` on Windows. Relative prompt paths display as supplied by default. The `--absolute` and `--abs` aliases show literal paths and resolve relative prompts from the invocation directory. Fixtures covered similar-prefix siblings and custom Codex homes outside the user home. Windows path handling was exercised with Windows-format unit fixtures.
 - `bun test --path-ignore-patterns='**/fixtures/**' test/codex-benchmark test/data-conversion/commands/output-paths.app.test.ts` passed 103 cases. `bun run test:unit` passed 2,122 cases and `bun run test:integration:codex` passed 26. TypeScript, lint, formatting, build, and `git diff --check` passed.
