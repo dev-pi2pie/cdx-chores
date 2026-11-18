@@ -86,13 +86,19 @@ With `--show-token-usage`, stderr identifies each settled warm-up or measured re
 
 ### Phase 6 Follow-Up
 
-**Reopened for JSON progress and diagnostic styling.** The follow-up restores a transient, resize-aware status on TTY stderr and clears it before the report or final diagnostics. Benchmark diagnostic labels follow the shared color rules. Help will explain JSON progress, prompt text, and relative prompt paths. Record verification for progress, diagnostics, and the JSON prompt fields here before Phase 7.
-
 The initial follow-up added `--compact` with median metrics, completed counts, and one-line usage. It made JSON quiet on stderr except for diagnostics and updated help for those behaviors. The following evidence covers that implementation.
 
 - The benchmark abbreviates the home prefix in report paths as `~` on Unix-like systems and `%USERPROFILE%` on Windows. Relative prompt paths display as supplied by default. The `--absolute` and `--abs` aliases show literal paths and resolve relative prompts from the invocation directory. Fixtures covered similar-prefix siblings and custom Codex homes outside the user home. Windows path handling was exercised with Windows-format unit fixtures.
 - `bun test --path-ignore-patterns='**/fixtures/**' test/codex-benchmark test/data-conversion/commands/output-paths.app.test.ts` passed 103 cases. `bun run test:unit` passed 2,122 cases and `bun run test:integration:codex` passed 26. TypeScript, lint, formatting, build, and `git diff --check` passed.
 - The built Node CLI smoke test checked help and ran the compact and JSON examples against a loopback provider. It verified one-line usage totals, quiet JSON, home abbreviation, and the absolute path override. Code and test review covered `e4d542d5..9f235d56` with no outstanding findings. [Follow-up checklist](../plan-2026-11-18-codex-cli-benchmark.md#phase-6-follow-up)
+
+#### JSON progress and diagnostics
+
+Completed the reopened work. JSON mode displays a resize-aware status on TTY stderr and clears it before the report or final diagnostics. Redirected stderr carries diagnostics. On a color-enabled TTY, `unavailable` and retention `skipped` labels are yellow, and failure labels are red. Help covers temporary progress, `prompt.text`, relative paths, and the absolute-path aliases.
+
+- `bun test --path-ignore-patterns='**/fixtures/**' test/codex-benchmark` passed 109 cases. Fixtures checked resize cleanup, output order, interruption, mixed speeds, retention and shutdown diagnostics, TTY and redirected output, and `--no-color` and `NO_COLOR`. The presentation suite passed all 12 cases on the final assertions.
+- `bun run test:unit` passed 2,123 cases and `bun run test:integration:codex` passed 26. TypeScript, lint, formatting, build, and `git diff --check` passed. The built Node CLI help example used shell redirection against a loopback provider and verified a single JSON report with prompt text, usage, and the supplied relative path. A second run verified `--abs`.
+- Code and test review covered `262083ec..c2aabec3` with no outstanding findings.
 
 ## Phase 7. Documentation and Validation
 
