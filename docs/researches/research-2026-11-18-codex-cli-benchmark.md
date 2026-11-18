@@ -10,7 +10,16 @@ agent: codex
 
 Compare Codex's recorded first-token timing, output token rate, and full turn time for a fixed workload. The proposed `cdx-chores codex-bench` command runs fresh, prompt-only turns through the configured provider and reads the saved records for those trials. The report shows one terminal row per model and speed combination.
 
-The first milestone is a CLI comparison of requests for Standard and Fast on the same model with a fixed prompt and reasoning effort. The speed selector is also a shared execution option for commands that already accept Codex execution overrides, including the explicit `interactive` startup command. An in-menu benchmark picker is a later design.
+The speed selector also applies to commands that already accept Codex execution overrides, including the explicit `interactive` startup command. An in-menu benchmark picker is a later design.
+
+## First Live Check
+
+Run one Standard/Fast pair through app-server with the same model, provider, prompt, and reasoning effort. Add Ultrafast on the same model when supported. Live verification is pending.
+
+| Check | Evidence to record |
+| --- | --- |
+| Provider acceptance | Record whether the configured provider accepts each requested speed. The served speed remains unknown. |
+| Saved metrics | Match each turn to its rollout. Record whether the completion line is readable on the first attempt and the observed wait if delayed. Check first-token timing, duration, and output usage. Compare the latter two with live records when available. |
 
 ## Key Findings
 
@@ -26,7 +35,7 @@ The first milestone is a CLI comparison of requests for Standard and Fast on the
 
 `--codex-speed <standard|fast|ultrafast>` follows the command-local placement of `--codex-model` and `--codex-reasoning-effort`. Existing Codex entry points that adopt the shared selectors accept one speed per invocation. Omission delegates to the Codex configuration loaded for the request. An explicit value applies to the invocation, including its retries. For `interactive --codex-speed fast`, the selection belongs to the session and follows its helper requests, repairs, and regeneration. [^execution]
 
-Use `standard` as the public spelling for the explicit Standard selection. The app-server turn override uses `default` for Standard. Fast and Ultrafast depend on model, provider, and account or workspace support. Reasoning effort is an independent setting. Verify the mapping for each explicit speed on both the SDK helper path and the app-server benchmark path. [^app-server] [^speed]
+Use `standard` as the public spelling for the explicit Standard selection. The app-server turn override uses `default` for Standard. Fast and Ultrafast depend on model, provider, and account or workspace support. Reasoning effort is an independent setting. [^app-server] [^speed]
 
 ### Benchmark Workload and Selection
 
@@ -34,7 +43,7 @@ Use `standard` as the public spelling for the explicit Standard selection. The a
 - Omitted model, provider, reasoning effort, and speed inherit from Codex for the benchmark. An omitted model supplies one inherited model selection. An omitted speed supplies one inherited speed selection per model. Pass provider and effort explicitly to control those settings across combinations. Mark inherited selections in the report and include resolved values when Codex exposes them. Existing Codex helpers currently default their omitted reasoning effort to `low`. [^execution]
 - The built-in text prompt is the default. `--prompt-file <path>` reads a UTF-8 file once and uses its contents for every request. Validate missing, unreadable, invalid UTF-8, or empty files before inference. A task that needs input data can include a representative excerpt and output instructions in the prompt file.
 - `--runs <count>` accepts one positive integer per invocation and defaults to `3`. The same count sets the number of measured trials for every model and speed combination, regardless of flag order. Reject invalid values and repeated `--runs` flags before inference.
-- Warm up each combination once, then alternate combinations sequentially. Each request uses a fresh Codex thread with `ephemeral: false` and the same prompt. At the default, each combination sends four requests when all proceed, including one warm-up. Record cache usage because fresh threads can still reuse a cached prompt prefix. [^app-server] [^latency]
+- Warm up each combination once. In each measured round, run every combination sequentially and rotate the starting speed for each model (Standard/Fast, then Fast/Standard). Each request uses a fresh thread with `ephemeral: false` and the same prompt. The default gives four requests per combination, including warm-up. Retain per-trial cache counts to help interpret order and prompt-cache effects. [^app-server] [^latency]
 
 Candidate built-in prompt:
 
@@ -69,7 +78,7 @@ cdx-chores codex-bench \
 
 Local rollouts are written under the running Codex home, normally `~/.codex/sessions/`. A custom `CODEX_HOME` changes that location. Use the resolved `codexHome` from the app-server initialization response as context. Read the exact `thread.path` returned by the app-server that ran the trial. If the path is unavailable in the start response, refresh it with `thread/read` for that thread ID. [^app-server] [^rollout-location]
 
-Record both thread and turn IDs. On a successful live `turn/completed`, read complete JSONL lines from the rollout immediately while app-server is still running. Match the saved `task_started` and `task_complete` records to that turn. Retry an unavailable path or missing completion line within a bounded read deadline. Use the turn's saved completion and usage records for metrics. After the matching completion line is readable, an absent optional timing field is unavailable. If the deadline expires, retain the live turn outcome and mark the affected saved-record metrics unavailable. [^app-server] [^history] [^rollout-write]
+Record both thread and turn IDs. On `turn/completed`, read complete JSONL lines immediately while app-server is running, including for failed and interrupted turns. Match the saved `task_started` and the terminal record by turn ID. A `task_complete` closes an ordinary turn and may contain an error. A `turn_aborted` closes an interrupted turn. Retry an unavailable path or missing matching terminal record within a bounded deadline. At expiry, keep the live outcome and mark metrics that lack saved evidence unavailable. [^app-server] [^history] [^rollout-write]
 
 ### Metrics and Reporting
 
@@ -82,7 +91,9 @@ A comparable sample comes from a completed turn with a single assistant text mes
 | Turn time | Recorded `duration_ms` from the turn completion record. Display seconds in the terminal and preserve milliseconds in JSON. |
 | Token usage | Saved input and output token counts, with cached input and reasoning output as breakdowns. Include cache-write counts when available. [^usage] |
 
-Read saved `token_count` events within the verified turn boundaries. A fresh single-turn thread starts from a zero usage baseline. Use its latest verified cumulative `total_token_usage` snapshot once for the turn. The `last_token_usage` snapshot can describe one model response within that turn. Mark usage incomplete when the final snapshot is missing or the turn is interrupted, and include reported usage from each request once in invocation totals. [^history]
+Each fresh thread starts with zero usage. Within the verified turn boundaries, count the latest valid cumulative `total_token_usage` snapshot once. `last_token_usage` can cover just one model response. If the matching terminal record is still missing at the deadline, use the latest complete snapshot from the trial's own rollout after its matching `task_started`, provided that turn was still unambiguously active at the snapshot. A later turn start ends that attribution window. Without an attributable snapshot, report usage as unavailable. [^history]
+
+Include attributable usage from failed, interrupted, or incompletely recorded turns in invocation totals and mark the totals partial. Exclude failed and interrupted turns from speed summaries.
 
 Count usable measured samples for each metric separately from the completed-trial count. Turn output tok/s requires complete reported output usage and a positive recorded turn duration. An absent timing field, missing saved record, or unattributable usage leaves the affected metric unavailable. Show `—` for a terminal summary metric with zero usable samples. Report speed rejections as unavailable and other failures with their own status.
 
@@ -104,11 +115,11 @@ The report identifies the prompt source and each explicit or inherited Codex sel
 | `gpt-6.2-astra` | Standard | 3/3 | 0.71 / 0.82 / 1.13 | 57 / 63 / 69 | 3.74 / 4.10 / 4.65 |
 | `gpt-6.2-astra` | Fast | 3/3 | 0.68 / 0.80 / 1.08 | 78–96 (2 samples) | 2.91 / 3.20 / 3.65 |
 
-*Served speed is unknown for these requests.*
+*Served speed is unknown. Codex can record the first token during reasoning, before text appears. Turn output tok/s includes reasoning tokens and uses the full turn duration.*
 
 Use the shared color rules, including global `--no-color`, and send progress and diagnostics to stderr. `--json` writes one unstyled result object to stdout with run context, per-trial results, and summaries for `codexFirstTokenMs`, `turnOutputTokensPerSecond`, and `turnDurationMs`. Use `null` for unavailable values and include each metric's sample count in the summaries. Keep the JSON shape consistent across sample counts. `--show-prompt` includes the full prompt below the terminal table or as `prompt.text` in JSON. Escape terminal control characters in the human rendering and preserve the prompt content in JSON. [^output]
 
-`--show-token-usage` adds running totals on stderr as saved usage is read and includes detailed per-trial counts and invocation totals in the final terminal or JSON report. Include reported warm-up usage in invocation totals. Show missing counts as unavailable and mark totals as partial when only some requests report usage. The rate uses reported output counts independently of this display flag.
+`--show-token-usage` adds running totals on stderr as saved usage is read and includes detailed per-trial counts and invocation totals in the final terminal or JSON report. Include reported warm-up usage in invocation totals. Show missing counts as unavailable and mark totals as partial if any request has missing or incomplete usage. The rate uses reported output counts independently of this display flag.
 
 ### Progress While Running
 
@@ -130,17 +141,21 @@ Fit the live line to the current width of stderr's terminal. Prioritize request 
 
 Redraw on terminal resize even during a pause in streaming. Clear any rows created when the previous line reflows after a shrink. Remove the resize listener when live progress ends. [^progress-layout]
 
-Use a local monotonic clock for the progress elapsed time and throttle redraws. Follow the shared color rules and emit plain milestone lines when stderr is redirected. Clear the live status before final output or diagnostics on completion, failure, or cancellation. Stdout carries the final report, with the same stderr progress behavior in JSON mode. [^output]
+Use a local monotonic clock for the progress elapsed time and throttle redraws. Follow the shared color rules. When stderr is redirected, print one plain startup workload line. Diagnostics and totals requested by `--show-token-usage` also go to stderr. Clear the live status before final output or diagnostics on completion, failure, or cancellation. Stdout carries the final report, with the same stderr progress behavior in JSON mode. [^output]
 
 ## Implementation Direction
 
 Share speed validation across the command surfaces. Preserve omitted benchmark selectors through validation so Codex can resolve them, including omitted reasoning effort. Extend the existing SDK configuration path for ordinary helpers after verifying its tier mapping. Reuse executable resolution and compatible JSON-RPC framing from discovery. The benchmark uses app-server to run each turn and update live progress, which requires turn notifications and cancellation handling. The current discovery transport discards notifications. [^sdk] [^transport]
 
-Use a custom Codex home fixture to verify lookup by the returned thread path, including an initially absent path recovered through `thread/read`. Delay the saved completion line until after the live event to test the immediate read, retry, and deadline expiry. Use rollout fixtures to check turn attribution, duplicate cumulative snapshots, missing timing and usage, interrupted turns, and token rate calculation in terminal and JSON output. Verify run-count validation and scheduling across model and speed combinations. Replay live notifications to check progress and cancellation, including clean JSON stdout. Verify fresh-thread tool isolation with the intended Codex configuration.
+### Request Wiring Checks
 
-Resize a terminal from wide to narrow and back between text chunks. Check that the line fits with wide-character model IDs, clears previously wrapped rows, and restores detail when space returns. Verify that resizing leaves report metrics derived from the same saved records and that redirected stderr contains plain milestone lines.
+Capture outgoing requests against a fixture provider for both the SDK helper and app-server paths. With Fast configured, check that explicit Standard overrides Fast and that omission inherits Fast on each path. Verify the request mapping for each supported explicit speed. The live check tests provider acceptance. [^sdk] [^app-server]
 
-Verify the explicit tier overrides in outgoing requests and confirm that an omitted speed leaves tier resolution to Codex. Use a small live comparison to confirm that the configured provider accepts explicit Standard and Fast requests. For a fresh trial, record whether the matching completion line is readable on the first attempt and how long it takes to appear if delayed. Check whether the saved first-token timing, duration, and output count are populated, and compare duration and output count with the live records when available. Exercise Ultrafast where available. The protocol inspection above did not run inference.
+### Saved Records and Output Checks
+
+Use a custom Codex home fixture to verify lookup by the returned thread path, including an initially absent path recovered through `thread/read`. Delay the saved terminal line until after the live event to test the immediate read, retry, and deadline expiry. Include fixtures for an interrupted turn with a matching `turn_aborted`, an interrupted turn with only attributable partial usage, and a snapshot without an attributable start. Check duplicate cumulative snapshots, missing timing and usage, and token rate calculation in terminal and JSON output. Verify run-count validation and scheduling across model and speed combinations. Replay live notifications to check progress and cancellation, including clean JSON stdout. Verify fresh-thread tool isolation with the intended Codex configuration.
+
+Resize a terminal from wide to narrow and back between text chunks. Check that the line fits with wide-character model IDs, clears previously wrapped rows, and restores detail when space returns. Verify that resizing leaves report metrics derived from the same saved records. With redirected stderr, check for exactly one startup workload line, any diagnostics, and token totals when requested.
 
 ## Related Plans
 
