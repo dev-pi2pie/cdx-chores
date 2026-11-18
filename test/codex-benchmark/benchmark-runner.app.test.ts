@@ -324,25 +324,28 @@ test.each(["thread/start", "turn/start"] as const)(
   },
 );
 
-test("CLI reports transport loss between measured trials and keeps the completed results", async () => {
-  await withRunnerFixture({ exitDuringReadbackThread: 2 }, async ({ options, trace }) => {
-    const result = await startCliBenchmark({ ...options, runs: 2 }, ["--json"]).completion;
-    expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain("Transport failed");
-    const report = JSON.parse(result.stdout);
-    expect(report.run).toMatchObject({
-      interrupted: false,
-      transportError: expect.stringContaining("17"),
-      shutdownError: null,
-      completedMeasuredTrials: 1,
+test.each([1, 2])(
+  "CLI reports transport loss during readback and keeps completed results with %i measured trials scheduled",
+  async (runs) => {
+    await withRunnerFixture({ exitDuringReadbackThread: 2 }, async ({ options, trace }) => {
+      const result = await startCliBenchmark({ ...options, runs }, ["--json"]).completion;
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("Transport failed");
+      const report = JSON.parse(result.stdout);
+      expect(report.run).toMatchObject({
+        interrupted: false,
+        transportError: expect.stringContaining("17"),
+        shutdownError: null,
+        completedMeasuredTrials: 1,
+      });
+      expect(report.trials.map((trial: { status: string }) => trial.status)).toEqual([
+        "completed",
+        "completed",
+      ]);
+      expect(traceMethod(await trace(), "turn/start")).toHaveLength(2);
     });
-    expect(report.trials.map((trial: { status: string }) => trial.status)).toEqual([
-      "completed",
-      "completed",
-    ]);
-    expect(traceMethod(await trace(), "turn/start")).toHaveLength(2);
-  });
-});
+  },
+);
 
 test.skipIf(process.platform === "win32")(
   "CLI returns an interrupted report on SIGINT during initialization",

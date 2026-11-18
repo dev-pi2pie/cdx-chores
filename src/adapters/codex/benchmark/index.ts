@@ -291,17 +291,15 @@ export async function runCodexBenchmark(options: BenchmarkOptions): Promise<Benc
     report.codexHome = rolloutPath(initialized.codexHome);
     const runner = new BenchmarkRunner(server, options);
     for (const selection of benchmarkWorkload(options)) {
-      if (signal?.aborted) break;
-      if (server.signal.aborted) {
-        report.transportError = messageFrom(server.signal.reason);
-        break;
-      }
-      if (!runner.canStartTrial) break;
+      if (signal?.aborted || server.signal.aborted || !runner.canStartTrial) break;
       onTrialStart?.(selection);
       const trial = trialRecord(selection);
       await runner.runTrial(trial);
       report.trials.push(trial);
       onTrial?.(trial);
+    }
+    if (!signal?.aborted && server.signal.aborted) {
+      report.transportError = messageFrom(server.signal.reason);
     }
     return report;
   } catch (error) {
