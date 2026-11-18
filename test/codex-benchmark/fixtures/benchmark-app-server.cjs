@@ -201,6 +201,9 @@ async function run() {
           completeTurn(thread, "failed", { message: "fixture inference failed" });
         } else {
           completeTurn(thread, "completed");
+          if (thread.id === `thread-${scenario.endStdoutAfterThread}`) {
+            process.stdout.end(() => trace({ method: "stdout-ended" }));
+          }
         }
         break;
       case "turn/interrupt":

@@ -297,7 +297,7 @@ export async function runCodexBenchmark(options: BenchmarkOptions): Promise<Benc
       onTrial?.(trial);
     }
     if (!signal?.aborted && server.signal.aborted) {
-      report.transportError = messageFrom(server.signal.reason);
+      report.transportError = messageFrom(server.stopReason);
     }
     return report;
   } catch (error) {

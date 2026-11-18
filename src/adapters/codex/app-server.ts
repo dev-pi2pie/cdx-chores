@@ -6,7 +6,6 @@ import { isRecord } from "./discovery/transport";
 
 const maxLineBytes = 8 * 1024 * 1024;
 const requestTimeoutMs = 15_000;
-const stdoutExitGraceMs = 100;
 const groupShutdownTimeoutMs = 1_000;
 
 type NotificationListener = (method: string, params: unknown) => void;
@@ -44,7 +43,7 @@ export class CodexAppServer {
   private readonly listeners = new Set<NotificationListener>();
   private nextId = 0;
   private exited = false;
-  private stdoutEndDeadline?: ReturnType<typeof setTimeout>;
+  private unexpectedStdoutEnd = false;
   private readonly separateGroup: boolean;
 
   constructor(
@@ -79,15 +78,8 @@ export class CodexAppServer {
     });
     this.child.stdout.once("end", () => {
       if (this.signal.aborted) return;
-      // EOF can arrive before the child's exit status. Give a concurrent exit time to settle.
-      this.stdoutEndDeadline = setTimeout(() => {
-        const { exitCode, signalCode } = this.child;
-        this.fail(
-          exitCode !== null || signalCode !== null
-            ? appServerExitError(exitCode, signalCode)
-            : new Error("Codex app-server stdout ended unexpectedly."),
-        );
-      }, stdoutExitGraceMs);
+      this.unexpectedStdoutEnd = true;
+      this.fail(new Error("Codex app-server stdout ended unexpectedly."));
     });
     const decoder = new StringDecoder("utf8");
     let buffer = "";
@@ -115,8 +107,16 @@ export class CodexAppServer {
     return this.stopped.signal;
   }
 
+  get stopReason(): unknown {
+    const { exitCode, signalCode } = this.child;
+    // The child's exit status can arrive after EOF while the caller recovers saved results.
+    if (this.unexpectedStdoutEnd && (exitCode !== null || signalCode !== null)) {
+      return appServerExitError(exitCode, signalCode);
+    }
+    return this.signal.reason;
+  }
+
   private fail(error: Error): void {
-    clearTimeout(this.stdoutEndDeadline);
     this.stopped.abort(error);
     for (const pending of this.pending.values()) pending.reject(error);
   }

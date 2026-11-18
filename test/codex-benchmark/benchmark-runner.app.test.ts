@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { access, appendFile, readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
-import { setTimeout as delay } from "node:timers/promises";
+import { basename, join } from "node:path";
+import { setImmediate as yieldToIo, setTimeout as delay } from "node:timers/promises";
 
 import {
   isLiveProcess,
@@ -384,6 +384,32 @@ test("CLI reports stdout EOF during a turn while the app-server is still alive",
     ]);
   });
 }, 15_000);
+
+test("runner reports stdout EOF observed during final rollout readback", async () => {
+  await withRunnerFixture({ endStdoutAfterThread: 2 }, async ({ options, trace }) => {
+    const report = await runCodexBenchmark({
+      ...options,
+      rollout: {
+        async onRolloutRead(path) {
+          if (basename(path) === "thread-2.jsonl") {
+            await waitForMethod(trace, "stdout-ended");
+            await yieldToIo();
+          }
+        },
+      },
+    });
+    expect(report).toMatchObject({
+      interrupted: false,
+      transportError: expect.stringContaining("stdout ended"),
+      shutdownError: null,
+      trials: [
+        { status: "completed", warmup: true },
+        { status: "completed", warmup: false, durationMs: 800 },
+      ],
+    });
+    expect((await trace()).at(-1)?.method).toBe("stdout-ended");
+  });
+});
 
 test.skipIf(process.platform === "win32")(
   "CLI returns an interrupted report on SIGINT during initialization",

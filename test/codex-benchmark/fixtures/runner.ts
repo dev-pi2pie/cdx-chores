@@ -13,6 +13,7 @@ interface Scenario {
   stallTierLookup?: "model/list" | "config/read";
   exitDuringReadbackThread?: number;
   endStdoutDuringThread?: number;
+  endStdoutAfterThread?: number;
   phase?: string | null;
   delayed?: boolean;
   fallback?: boolean;
