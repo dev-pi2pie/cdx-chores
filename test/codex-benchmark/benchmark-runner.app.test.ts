@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { access, appendFile, readFile, writeFile } from "node:fs/promises";
-import { basename, join } from "node:path";
-import { setImmediate as yieldToIo, setTimeout as delay } from "node:timers/promises";
+import { join } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 
 import {
   isLiveProcess,
@@ -385,28 +385,25 @@ test("CLI reports stdout EOF during a turn while the app-server is still alive",
   });
 }, 15_000);
 
-test("runner reports stdout EOF observed during final rollout readback", async () => {
-  await withRunnerFixture({ endStdoutAfterThread: 2 }, async ({ options, trace }) => {
-    const report = await runCodexBenchmark({
-      ...options,
-      rollout: {
-        async onRolloutRead(path) {
-          if (basename(path) === "thread-2.jsonl") {
-            await waitForMethod(trace, "stdout-ended");
-            await yieldToIo();
-          }
-        },
+test("CLI reports stdout EOF observed during final rollout readback", async () => {
+  await withRunnerFixture({ endStdoutAfterThread: 2 }, async ({ home, options, trace }) => {
+    const preload = join(import.meta.dir, "fixtures", "final-readback-eof-preload.cjs");
+    const result = await startCliBenchmark(options, ["--json"], preload).completion;
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Transport failed");
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      run: {
+        interrupted: false,
+        transportError: expect.stringContaining("stdout ended"),
+        shutdownError: null,
+        completedMeasuredTrials: 1,
       },
-    });
-    expect(report).toMatchObject({
-      interrupted: false,
-      transportError: expect.stringContaining("stdout ended"),
-      shutdownError: null,
       trials: [
         { status: "completed", warmup: true },
-        { status: "completed", warmup: false, durationMs: 800 },
+        { status: "completed", warmup: false, turnDurationMs: 800 },
       ],
     });
+    await access(join(home, "final-readback-after-eof"));
     expect((await trace()).at(-1)?.method).toBe("stdout-ended");
   });
 });
