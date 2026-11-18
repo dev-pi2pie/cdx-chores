@@ -20,6 +20,7 @@ test("benchmark help explains shared runs, inheritance, retention and both outpu
   );
   expect(help).toContain("--compact Show median metrics and summarize requested token totals");
   expect(help).toContain("reserve stderr for diagnostics");
+  expect(help).toContain("Use --absolute or --abs to show literal absolute paths");
   expect(help).toContain("codex-bench --compact --show-token-usage");
   expect(help).toContain(
     "codex-bench --prompt-file task.txt --runs 3 --json --show-token-usage > report.json",

@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, relative, sep } from "node:path";
 
 import type { BenchmarkOptions } from "../../src/adapters/codex/benchmark/types";
 import type { buildBenchmarkReport } from "../../src/cli/codex-bench/report";
@@ -82,6 +82,39 @@ test("preserves the opted-in UTF-8 prompt as a JSON value and escapes terminal c
       expect(stdout).not.toContain(control);
     }
     expect(report.tokenUsage).toBeUndefined();
+  });
+});
+
+test("formats benchmark home and prompt paths, with both aliases giving absolute paths", async () => {
+  await withRunnerFixture({}, async ({ home, options }) => {
+    const prompt = join(home, "task.txt");
+    const relativePrompt = relative(options.cwd, prompt);
+    const prefix = process.platform === "win32" ? "%USERPROFILE%" : "~";
+    const fixtureOptions = { ...options, env: { ...options.env, USERPROFILE: options.cwd } };
+    await writeFile(prompt, "Fixture prompt");
+
+    const json = await jsonBenchmark(fixtureOptions, ["--prompt-file", prompt]);
+    expect(json.ok).toBe(true);
+    expect(json.report.run.codexHome).toBe(`${prefix}${sep}${relative(options.cwd, home)}`);
+    expect(json.report.prompt.path).toBe(`${prefix}${sep}${relativePrompt}`);
+    const compact = await startCliBenchmark(fixtureOptions, ["--compact", "--prompt-file", prompt])
+      .completion;
+    expect(compact.ok).toBe(true);
+    expect(compact.stdout).toContain(`Prompt source · ${prefix}${sep}${relativePrompt}`);
+
+    for (const alias of ["--absolute", "--abs"]) {
+      const run = await jsonBenchmark(fixtureOptions, ["--prompt-file", relativePrompt, alias]);
+      expect(run.ok).toBe(true);
+      expect(run.report.run.codexHome).toBe(home);
+      expect(run.report.prompt.path).toBe(prompt);
+    }
+    const explicit = await startCliBenchmark(fixtureOptions, [
+      "--prompt-file",
+      relativePrompt,
+      "--abs",
+    ]).completion;
+    expect(explicit.ok).toBe(true);
+    expect(explicit.stdout).toContain(`Prompt source · ${prompt}`);
   });
 });
 

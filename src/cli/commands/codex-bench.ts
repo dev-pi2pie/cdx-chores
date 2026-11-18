@@ -5,6 +5,7 @@ import { InvalidArgumentError, type Command } from "commander";
 
 import type { CodexSpeed } from "../../utils/codex-execution";
 import { resolveCodexSessionRetention } from "../../utils/codex-session-retention";
+import { formatBenchmarkReportPath } from "../codex-bench/paths";
 import { buildBenchmarkReport, type BenchmarkPrompt } from "../codex-bench/report";
 import { renderBenchmarkReport } from "../codex-bench/render";
 import { createBenchmarkProgress } from "../codex-bench/progress";
@@ -98,6 +99,8 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
       showPrompt: options.showPrompt,
       showTokenUsage: options.showTokenUsage,
     });
+    report.run.codexHome = formatBenchmarkReportPath(runtime, report.run.codexHome);
+    report.prompt.path = formatBenchmarkReportPath(runtime, report.prompt.path);
     const { completedMeasuredTrials } = report.run;
     let failed = false;
     for (const trial of result.trials) {
@@ -157,6 +160,7 @@ export function registerCodexBenchCommand(program: Command, runtime: CliRuntime)
       "\nUse one --runs value for every model and speed combination. Each combination also gets one warm-up.\n" +
         "Omitted model, provider, reasoning effort, and speed inherit from Codex.\n" +
         "Omit --prompt-file to use the built-in sample prompt.\n" +
+        "Home paths are shortened in reports. Use --absolute or --abs to show literal absolute paths.\n" +
         "Use --no-color or set NO_COLOR to disable colors.\n\n" +
         "Examples\n" +
         "  cdx-chores codex-bench --codex-model MODEL --codex-speed standard --codex-speed fast\n" +
