@@ -14,18 +14,30 @@ The speed selector also applies to commands that already accept Codex execution 
 
 ## First Live Check
 
-Run one Standard/Fast pair through app-server with the same model, provider, prompt, and reasoning effort. Add Ultrafast on the same model when supported. Live verification is pending.
+Run the [live check script](../../scripts/spikes/codex-benchmark-live-check.ts) manually from the repository root. It uses the repo's Codex binary and the active Codex home and provider. Pass a model ID and reasoning effort explicitly. Omitting `--speed` runs one Standard/Fast pair for that model. Set `--speed standard`, `--speed fast`, or `--speed ultrafast` to run a single trial.
 
-| Check | Evidence to record |
-| --- | --- |
-| Provider acceptance | Record whether the configured provider accepts each requested speed. The served speed remains unknown. |
-| Saved metrics | Match each turn to its rollout. Record whether the completion line is readable on the first attempt and the observed wait if delayed. Check first-token timing, duration, and output usage. Compare the latter two with live records when available. |
+```sh
+bun scripts/spikes/codex-benchmark-live-check.ts --model gpt-6-luna --effort medium
+bun scripts/spikes/codex-benchmark-live-check.ts --model gpt-6.2-sol --effort medium --speed ultrafast
+```
+
+On 2026-11-18, Codex CLI 0.170.0 completed all three requests through the configured `openai` provider with `medium` reasoning effort and the LRU prompt below. Each trial used a fresh persisted thread and produced a single assistant message with no reported tool activity or reroute.
+
+| Model | Requested speed | Sent tier | Saved first token (ms) | Saved duration (ms) | Saved output tokens | Turn output tok/s | Terminal record on first read |
+| --- | --- | --- | ---: | ---: | ---: | ---: | --- |
+| `gpt-6-luna` | Standard | `default` | 3,379 | 9,741 | 354 | 36.34 | Yes (2 ms) |
+| `gpt-6-luna` | Fast | `priority` | 2,698 | 6,843 | 344 | 50.27 | Yes (1 ms) |
+| `gpt-6.2-sol` | Ultrafast | `ultrafast` | 4,044 | 5,804 | 361 | 62.20 | Yes (2 ms) |
+
+Every `thread/start` response supplied a rollout path. The first read found the matching `task_complete` while app-server was still running. The last column measures elapsed time from receipt of `turn/completed` through reading and parsing that record. Saved duration and output tokens matched the live values for every trial. Path recovery and delayed visibility still need fixture coverage.
+
+The completed turns establish request acceptance for these selections. Served speed remains unknown. Each row is a single observation, and the Ultrafast trial uses a different model.
 
 ## Key Findings
 
 - `codex-info models` already reads Codex's picker-visible catalog. The Codex 0.170.0 generated `Model` type includes `serviceTiers` and `defaultServiceTier`, which the current report does not surface. Catalog entries can inform selection. Trial outcomes reflect request compatibility under the current provider and account. [^catalog]
 - The shared Codex thread factory sets `model_provider` in the SDK's `config` option when a provider override is selected. Helpers inherit the service tier today. The SDK forwards `config` entries as CLI configuration overrides, so the factory could use that option to pass an explicit `service_tier`. Codex documents `fast` as mapping to the request value `priority`. [^execution] [^sdk] [^config]
-- TypeScript protocol bindings generated with Codex 0.170.0 using `codex app-server generate-ts --out <scratch-dir>` confirm `TurnStartParams.serviceTierForTurn`, `Thread.path`, and the identifiers on text delta and turn completion notifications. The path is nullable. A persisted thread with a local rollout path is the candidate for retrieving the trial's saved records. Path availability and persistence timing still need runtime evidence. [^app-server]
+- TypeScript protocol bindings generated with Codex 0.170.0 using `codex app-server generate-ts --out <scratch-dir>` confirm `TurnStartParams.serviceTierForTurn`, `Thread.path`, and the identifiers on text delta and turn completion notifications. The path is nullable. The first live check retrieved each run's saved records using the path returned at thread start. [^app-server]
 - The Codex 0.170.0 rollout policy persists turn boundaries and token usage snapshots. Saved `task_complete` records can include `duration_ms` and `time_to_first_token_ms`. The latter is Codex's internal turn-start-to-first-token timing, which can be triggered by reasoning events before visible text. Ordinary turns can emit the terminal notification before flushing their saved completion record. [^history] [^rollout-write]
 - Codex 0.170.0 returns the configured thread `serviceTier` from `thread/start`. Its completion notifications expose turn status, and the experimental `rawResponse/completed` event exposes counters and generic usage metadata. The inspected protocol has no documented per-trial served-tier field. The direct OpenAI Responses API reports the effective tier in its response object. [^app-server] [^api-fast]
 
