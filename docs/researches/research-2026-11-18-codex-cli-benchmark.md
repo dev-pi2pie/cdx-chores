@@ -104,6 +104,8 @@ Local rollouts are written under the running Codex home, normally `~/.codex/sess
 
 Record both thread and turn IDs. On `turn/completed`, read complete JSONL lines immediately while app-server is running, including for failed and interrupted turns. Match the saved `task_started` and the terminal record by turn ID. A `task_complete` closes an ordinary turn and may contain an error. A `turn_aborted` closes an interrupted turn. Retry an unavailable path or missing matching terminal record within a bounded deadline. At expiry, keep the live outcome and mark metrics that lack saved evidence unavailable. [^app-server] [^history] [^rollout-write]
 
+If the `turn/start` reply never arrives, `turn/started` and `turn/completed` notifications with the same turn ID on the trial’s owned thread establish the outcome and let rollout readback proceed. [Missing-reply verification](../plans/jobs/2026-11-18-codex-cli-benchmark.md#provider-errors-and-missing-turn-start-replies)
+
 ### Cancellation While Waiting for a Turn ID
 
 The CLI sends `turn/start` once when a trial reaches inference. Ctrl-C can arrive after the local app-server starts the turn but before the CLI learns its ID from the reply or a `turn/started` notification. The CLI already knows the thread ID, but `turn/interrupt` requires both IDs. Exiting immediately would give up the chance to interrupt a turn whose ID is on its way. Waiting for the ordinary RPC deadline previously delayed exit by 15 seconds when the server withheld the ID.

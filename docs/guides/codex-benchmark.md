@@ -69,7 +69,9 @@ cdx-chores codex-bench --prompt-file ./task.txt --runs 1 \
   --json --show-prompt --show-token-usage > report.json
 ```
 
-`--json` takes precedence over `--compact`. Stdout contains one JSON report. Terminal stderr shows a temporary status that clears as the run finishes. Redirected stderr carries diagnostics only in JSON mode. In human mode, stderr also carries the startup workload and, in detailed mode with usage enabled, per-request token totals. Use the global `--no-color` option or set `NO_COLOR` for plain terminal output.
+`--json` takes precedence over `--compact`. Once benchmark execution begins, stdout contains one JSON report, including when app-server initialization fails. An unreadable or invalid prompt file fails validation before the benchmark starts. The CLI exits with status 2, writes the diagnostic to stderr, and leaves stdout empty.
+
+Terminal stderr shows a temporary status that clears as the run finishes. Redirected stderr carries diagnostics only in JSON mode. In human mode, stderr also carries the startup workload and, in detailed mode with usage enabled, per-request token totals. Use the global `--no-color` option or set `NO_COLOR` for plain terminal output.
 
 JSON request fields keep `null` for inherited selections. Check `trials[].configuredTier` and `trials[].resolvedReasoningEffort` for the available per-trial values, and `sentTier` for any explicit tier override sent to app-server. `servedSpeed` remains `null`. JSON timing values use milliseconds. `--show-prompt` adds `prompt.text`, and `--show-token-usage` adds detailed usage counts and invocation totals.
 
@@ -77,9 +79,11 @@ Both report formats preserve a relative prompt path as supplied and abbreviate p
 
 ## Manage Benchmark Sessions
 
-The benchmark keeps its sessions by default, including warm-ups. Use `--session-retention archive` to move them out of active history while preserving the rollout. `--session-retention delete` permanently removes the sessions after confirmed turn completion and rollout readback or its deadline. Retention applies to sessions created by the invocation. A cleanup failure preserves the report and returns exit status 1. See the [shared retention guidance](codex-execution-configuration.md#retain-codex-sessions) for compatibility.
+The benchmark keeps its sessions by default, including warm-ups. Use `--session-retention archive` to move them out of active history while preserving the rollout. `--session-retention delete` permanently removes the sessions after confirmed turn completion and rollout readback or its deadline. Retention applies to sessions created by the invocation. A cleanup failure preserves the report and ordinarily returns exit status 1. If Ctrl-C also interrupted the invocation, the CLI reports the cleanup error and exits with status 130. See the [shared retention guidance](codex-execution-configuration.md#retain-codex-sessions) for compatibility.
 
-An unavailable speed produces a diagnostic while supported combinations continue. A failed trial, transport loss, a failed shutdown, or zero completed measured trials returns exit status 1. When a turn exceeds its 120-second deadline, the benchmark marks it failed and preserves available usage. It can start the next trial once Codex confirms the interruption. If the app-server connection is lost during the workload, JSON retains completed results and records the reason in `run.transportError`.
+An unavailable speed produces a diagnostic while supported combinations continue. On an invocation that runs without local cancellation, a failed trial, transport loss, a failed shutdown, or zero completed measured trials returns exit status 1. When a turn exceeds its 120-second deadline, the benchmark marks it failed and preserves available usage. It can start the next trial once Codex confirms the interruption. If the app-server connection is lost during the workload, JSON retains completed results and records the reason in `run.transportError`.
+
+A transient tier lookup failure can leave a failed warm-up alongside successful measurements. For example, if discovery fails during the Fast warm-up in a Fast/Standard comparison, the measured Fast trial can try the failed lookup again. Even if both measured trials complete, the report retains the warm-up failure and the CLI exits with status 1.
 
 If app-server interrupts a turn on its own, the trial is reported as `cancelled`. The CLI prints a diagnostic and exits with status 1 even when other measurements succeeded. Ctrl-C returns status 130, including during app-server initialization, tier discovery, and thread startup.
 
