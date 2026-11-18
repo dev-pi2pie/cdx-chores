@@ -464,6 +464,35 @@ test.skipIf(process.platform === "win32").each(["model/list", "config/read"] as 
   },
 );
 
+test.skipIf(process.platform === "win32")(
+  "CLI cancels a pending thread start on SIGINT before inference",
+  async () => {
+    await withRunnerFixture({ withholdThreadStartReply: true }, async ({ options, trace }) => {
+      const cli = startCliBenchmark(options, ["--json"]);
+      try {
+        await waitForMethod(trace, "thread/start");
+        cli.child.kill("SIGINT");
+        const result = await cli.completion;
+        expect(result.reason).toBe("exit-failed");
+        expect(result.exitCode).toBe(130);
+        expect(JSON.parse(result.stdout)).toMatchObject({
+          run: { interrupted: true, transportError: null, shutdownError: null },
+          trials: [{ status: "cancelled", inferenceAttempted: false, threadId: null }],
+        });
+        expect((await trace()).map(({ method }) => method)).toEqual([
+          "initialize",
+          "initialized",
+          "thread/start",
+        ]);
+      } finally {
+        cli.shutdown();
+        await cli.completion;
+      }
+    });
+  },
+  15_000,
+);
+
 test.each(["confirmed", "unconfirmed"] as const)(
   "CLI fails a timed-out trial with %s interruption and recovers partial usage",
   async (interrupt) => {

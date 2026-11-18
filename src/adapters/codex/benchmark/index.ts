@@ -176,15 +176,19 @@ class BenchmarkRunner {
         trial.error = `${model ?? "The inherited model"} does not advertise ${requestedSpeed}.`;
         return;
       }
-      const startedThread = await this.server.request<ThreadStartResponse>("thread/start", {
-        cwd,
-        model: model ?? undefined,
-        modelProvider: provider ?? undefined,
-        ephemeral: false,
-        approvalPolicy: "never",
-        sandbox: "read-only",
-        config: { web_search: "disabled", "features.shell_tool": false },
-      });
+      const startedThread = await this.server.request<ThreadStartResponse>(
+        "thread/start",
+        {
+          cwd,
+          model: model ?? undefined,
+          modelProvider: provider ?? undefined,
+          ephemeral: false,
+          approvalPolicy: "never",
+          sandbox: "read-only",
+          config: { web_search: "disabled", "features.shell_tool": false },
+        },
+        { signal },
+      );
       trial.threadId = startedThread.thread.id;
       if (!trial.threadId || this.ownedThreadIds.has(trial.threadId)) {
         throw new Error("Codex app-server did not return a new benchmark thread ID.");
