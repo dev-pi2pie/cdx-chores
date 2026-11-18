@@ -1,7 +1,7 @@
 ---
 title: "Codex CLI Benchmark Implementation"
 created-date: 2026-11-18
-status: draft
+status: active
 agent: codex
 ---
 
@@ -13,7 +13,7 @@ The first live check on Codex 0.170.0 completed a Luna Standard/Fast pair and a 
 
 ## Implementation Record
 
-When implementation starts, create one unified job record under `docs/plans/jobs/` and link it here. Update the same record as work proceeds through all six phases. For each phase, record what changed, decisions that affect the implementation, and verification commands and results.
+Update the [unified job record](jobs/2026-11-18-codex-cli-benchmark.md) as work proceeds through all six phases. For each phase, record what changed, decisions that affect the implementation, and verification commands and results.
 
 ## Phase 1. Verify Rollout Recovery Offline
 
@@ -27,10 +27,12 @@ Exercise the [live-check spike](../../scripts/spikes/codex-benchmark-live-check.
 | Interrupted turn and attribution | Match `task_started` and `turn_aborted` by turn ID. Cover cumulative snapshots counted once, interruption with partial usage and no terminal line, a later start ending attribution, and a snapshot without a matching start. |
 | Session retention | Use synthetic sessions to verify omitted and explicit `keep`, explicit `archive` and `delete`, cleanup only after confirmed completion and readback or deadline, preservation of captured metrics on cleanup failure, and cleanup scoped to the invocation's thread IDs. |
 
-- [ ] Add the offline fixture harness with a temporary Codex home and real JSONL.
-- [ ] Pass the delayed-write and path-fallback fixtures. Gate the write on the first read and assert ordering and recovered values without requiring exact timing.
-- [ ] Pass the deadline, interruption, and attribution fixtures. Record the retry deadline and interval chosen for the command.
-- [ ] Pass the retention fixture for all modes and cleanup outcomes in the table.
+- [x] Add the offline fixture harness with a temporary Codex home and real JSONL.
+- [x] Pass the delayed-write and path-fallback fixtures. Gate the write on the first read and assert ordering and recovered values without requiring exact timing.
+- [x] Pass the deadline, interruption, and attribution fixtures. Record the retry deadline and interval chosen for the command.
+- [x] Pass the retention fixture for all modes and cleanup outcomes in the table.
+
+Phase 1 evidence and the reviewed code range are recorded in the [unified job record](jobs/2026-11-18-codex-cli-benchmark.md#phase-1-offline-rollout-recovery).
 
 ## Phase 2. Verify Speed Request Wiring Offline
 

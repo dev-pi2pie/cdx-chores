@@ -112,7 +112,7 @@ The TypeScript SDK 0.170.0 exposes thread IDs and turn execution. Archive and de
 
 Use 0.170.0 as the verified integration baseline for both operations. For an executable override, verify support on the selected binary and use the same resolved executable and Codex home as the helper that created the thread. Report an unavailable RPC as a retention failure and preserve the helper result. [^thread-retention-versions]
 
-A synthetic app-server and temporary JSONL files verified the live-check script's retention order. The fake server withheld the path until the second `thread/read`, then provided the completed rollout. The script retained the metrics after the fake server moved or removed the file. The check also covered `keep`, cleanup rejection, deadline expiry with partial usage, and a turn without confirmed completion. Verifying a completion line that becomes readable after an initial file read remains a separate fixture case.
+A synthetic app-server and temporary JSONL files verified the live-check script's retention order. The script preserved captured metrics after the fake server moved or removed the rollout. The fixtures covered `keep`, cleanup rejection, deadline expiry with partial usage, and a turn without confirmed completion. [Phase 1 evidence](../plans/jobs/2026-11-18-codex-cli-benchmark.md#phase-1-offline-rollout-recovery)
 
 A separate live check ran one `gpt-6-luna` Standard trial at `medium` effort for each explicit retention mode. The archived rollout appeared in archived storage, the kept rollout stayed active, and the deleted rollout was absent from both locations. All three reported saved durations and output counts that matched the live values.
 
@@ -190,6 +190,8 @@ Share speed validation across the command surfaces. Preserve omitted benchmark s
 Capture outgoing requests against a fixture provider for both the SDK helper and app-server paths. With Fast configured, check that explicit Standard overrides Fast and that omission inherits Fast on each path. With Standard configured, verify that explicit Fast sends the Fast tier on both paths. Verify the request mapping for each supported explicit speed. The live check tests provider acceptance. [^sdk] [^app-server]
 
 ### Saved Records and Output Checks
+
+The Phase 1 fixtures recovered a terminal line finished after the rollout reader's first read and a path returned on the second `thread/read`. They also verified deadline expiry and partial usage attribution. The live-check script uses a 50 ms retry interval and a 2 s deadline starting at the matching completion notification. [Phase 1 evidence](../plans/jobs/2026-11-18-codex-cli-benchmark.md#phase-1-offline-rollout-recovery)
 
 Use a custom Codex home fixture to verify lookup by the returned thread path, including an initially absent path recovered through `thread/read`. Delay the saved terminal line until after the live event to test the immediate read, retry, and deadline expiry. Include fixtures for an interrupted turn with a matching `turn_aborted`, an interrupted turn with only attributable partial usage, and a snapshot without an attributable start. Check duplicate cumulative snapshots, missing timing and usage, and token rate calculation in terminal and JSON output. Verify run-count validation and scheduling across model and speed combinations. Replay live notifications to check progress and cancellation, including clean JSON stdout. Verify fresh-thread tool isolation with the intended Codex configuration.
 
