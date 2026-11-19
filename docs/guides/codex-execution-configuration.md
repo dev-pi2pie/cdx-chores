@@ -1,7 +1,7 @@
 ---
 title: "Codex Execution Configuration"
 created-date: 2026-09-05
-modified-date: 2026-11-18
+modified-date: 2026-11-19
 status: completed
 agent: codex
 ---
@@ -14,7 +14,7 @@ The Codex helper commands in the table below accept these execution options. The
 | ----------------------------------- | ------------------------------------- | -------------------------------------- |
 | `--codex-model <model>`             | Inherit model selection from Codex    | Request the supplied model ID          |
 | `--codex-provider <provider-id>`    | Inherit provider selection from Codex | Request the supplied provider ID       |
-| `--codex-reasoning-effort <effort>` | Request `low`                         | Request the supplied recognized effort |
+| `--codex-reasoning-effort <effort>` | Helpers request `low`. `codex-bench` inherits from Codex. | Request the supplied recognized effort |
 | `--codex-speed <speed>`              | Inherit the configured speed           | Request `standard`, `fast`, or `ultrafast` |
 
 Inheritance means the configuration loaded by the helper's Codex process. A selection in another terminal or desktop session is not automatically forwarded. A model-only override leaves provider resolution to Codex; a provider-only override leaves model resolution to Codex. These options do not rewrite configuration or enable a Codex workflow by themselves.
@@ -40,7 +40,7 @@ Speed selects the requested service tier. Use `standard` to override an inherite
 
 Place execution options after the adopted command. Root and parent commands do not accept them. Direct `data query --codex-suggest-headers` and `data extract --codex-suggest-headers` / `--codex-suggest-shape` keep inherited model/provider selection and the `low` helper default. Direct `rename cleanup` and deterministic Markdown commands also do not expose these options.
 
-`codex-bench` inherits reasoning effort from Codex when the effort flag is omitted. It accepts repeated model and speed flags for a matrix, or repeated `--case MODEL=SPEED` entries for exact pairs. Provider and reasoning effort each take one value for the invocation. See [Codex Benchmark](codex-benchmark.md) for examples and how to read the results.
+`codex-bench` accepts repeated model and speed flags for a matrix, or repeated `--case MODEL=SPEED` entries for exact pairs. Provider and reasoning effort each take one value for the invocation. See [Codex Benchmark](codex-benchmark.md) for examples and how to read the results.
 
 The PDF `--profile` option retains its rendering-profile meaning. There is no `--codex-profile`, `--codex-fast`, or `--oss` option in `cdx-chores`. Provider definitions and authentication are configured through Codex, rather than through provider URLs, credentials, or profile loaders in this tool.
 

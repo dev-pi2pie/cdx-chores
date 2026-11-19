@@ -1,7 +1,7 @@
 ---
 title: "Data DuckDB Usage"
 created-date: 2026-03-12
-modified-date: 2026-11-06
+modified-date: 2026-11-19
 status: completed
 agent: codex
 ---
@@ -112,17 +112,13 @@ Manual cache cleanup should be treated as an advanced fallback, not the primary 
 - `data parquet preview` retains its existing preview controls and output.
 - Lightweight `data preview`, CSV/TSV/JSON conversions, and `data stack` use independent processing paths. Queries subsequently run against their output use the installed DuckDB engine.
 
-Under DuckDB 2, a filter such as `status ~ 'active'` can also match `inactive`. Use `regexp_full_match(status, 'active')` when whole-string matching is intended.
-
 ### DuckDB 2 migration
 
-The `0.2.2-canary.2` baseline uses `@duckdb/node-api@2.0.0-r.1` with DuckDB `2.0.0`. Install matching extensions for the new runtime using the explicit commands above. An older runtime's cache does not satisfy that requirement.
-
-Submitted SQL, including saved queries and Codex drafts, runs with DuckDB 2 semantics. Review these changes before replaying older SQL:
+`cdx-chores` switched to DuckDB 2.0.0 (`@duckdb/node-api@2.0.0-r.1`) in `v0.2.2-canary.2`. If you use Excel or SQLite, install the matching extensions for the new engine. Before rerunning saved SQL or Codex drafts, check the expressions below for changes in results or errors.
 
 | Earlier behavior | DuckDB 2 behavior | Migration |
 | --- | --- | --- |
-| `~` matches the whole string | Matches a substring | Use `regexp_full_match` for whole-string matching. |
+| `~` matches the whole string | `status ~ 'active'` also matches `inactive` | Use `regexp_full_match(status, 'active')` for a whole-string match. |
 | `x -> x + 1` lambda | Disabled by default | Use `lambda x: x + 1`. |
 | `2 * 3!` → `(2 * 3)!` = `720` | `2 * 3!` → `2 * (3!)` = `12` | Use parentheses to make the calculation order explicit. |
 | `X'AB'` / `B'101'` are text | Produce `BLOB` / `BIT` | Use ordinary strings when text is intended. |
@@ -133,4 +129,4 @@ Submitted SQL, including saved queries and Codex drafts, runs with DuckDB 2 sema
 
 Queries are not automatically rewritten. See the [official migration guide](https://duckdb.org/docs/2.0/operations_manual/migration) for additional changes and the [data query guide](data-query-usage.md) for command usage.
 
-DuckDB input files are attached read-only. DuckDB 2 reads supported older-format files without converting the source. New databases created with its default storage are unreadable by DuckDB 1.x. For files that must be read by 1.5.6, explicitly create them with `STORAGE_VERSION 'v1.5.6'`. This selects a file format independently of dependency pinning. The installed engine checks whether it supports the supplied target. See [storage compatibility](https://duckdb.org/docs/2.0/internals/storage).
+The CLI attaches DuckDB inputs read-only. In the migration check, DuckDB 2.0.0 opened a database created by 1.5.6 and left its bytes unchanged. In the other direction, 1.5.6 could read a file created by 2.0.0 with `STORAGE_VERSION 'v1.5.6'` and rejected one created with the 2.0.0 default. Select that storage version when creating a database for a 1.5.6 reader. See [storage compatibility](https://duckdb.org/docs/2.0/internals/storage).

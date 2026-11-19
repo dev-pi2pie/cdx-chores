@@ -9,33 +9,15 @@ test("benchmark help explains shared runs, inheritance, retention and both outpu
   expect(help).toContain("Codex model override (repeatable)");
   expect(help).toContain("standard, fast, or ultrafast (repeatable, default: inherit)");
   expect(help).toContain("keep (default), archive, or permanently delete");
-  expect(help).toContain("Use one --runs value for every matrix combination or --case occurrence.");
-  expect(help).toContain(
-    "--case <MODEL=SPEED> Compare an explicit model and speed pair (repeatable)",
-  );
-  expect(help).toContain(
-    "--case splits on the last '=' and accepts standard, fast, ultrafast, or inherit",
-  );
-  expect(help).toContain("These selectors cannot be mixed.");
+  expect(help).toContain("Choose either a model/speed matrix or explicit --case pairs.");
+  expect(help).toContain("Omitted Codex settings are inherited.");
+  expect(help).toContain("Each combination or case occurrence gets one warm-up");
+  expect(help).toContain("Measured trials per combination or case occurrence (default: 3)");
+  expect(help).toContain("Repeated pairs share a summary row.");
   expect(help).toContain("codex-bench --case MODEL=fast --case OTHER_MODEL=ultrafast --runs 1");
-  expect(help).toContain("Omit --prompt-file to use the built-in sample prompt.");
-  expect(help).toContain("Use --no-color or set NO_COLOR to disable colors.");
-  expect(help).toContain(
-    "Omitted model, provider, reasoning effort, and speed inherit from Codex.",
-  );
-  expect(help).toContain(
-    "codex-bench --codex-model MODEL --codex-speed standard --codex-speed fast",
-  );
-  expect(help).toContain("--compact Show median metrics and summarize requested token totals");
-  expect(help).toContain("JSON mode shows a temporary status on terminal stderr");
-  expect(help).toContain("Redirected stderr carries diagnostics only");
-  expect(help).toContain("Include the prompt text in the report as prompt.text in JSON");
-  expect(help).toContain("Relative prompt-file paths appear as supplied");
-  expect(help).toContain("Use --absolute or --abs to show literal absolute paths");
-  expect(help).toContain("codex-bench --compact --show-token-usage");
-  expect(help).toContain(
-    "codex-bench --prompt-file ./task.txt --json --show-prompt --show-token-usage > report.json",
-  );
+  expect(help).toContain("codex-bench --codex-model MODEL --codex-speed standard --codex-speed fast");
+  expect(help).toContain("--compact Show medians");
+  expect(help).toContain("--json Write one JSON report to stdout");
 });
 
 test("Interactive help explains its command-local Codex options", () => {

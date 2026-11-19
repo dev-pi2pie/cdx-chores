@@ -8,7 +8,7 @@ agent: codex
 
 ## Run A Comparison
 
-`cdx-chores codex-bench` runs the same prompt in fresh Codex sessions and reports the timing and token counts Codex saved for each turn. Use a working Codex configuration and select models and tiers your provider supports.
+`cdx-chores codex-bench` runs the same prompt in fresh Codex sessions and reports timing for each model and speed. Add `--show-token-usage` for reported token counts. Use a working Codex configuration and select models and tiers your provider supports.
 
 ```sh
 cdx-chores doctor --details
@@ -16,7 +16,9 @@ cdx-chores codex-info models --details
 cdx-chores codex-bench --runs 1
 ```
 
-The benchmark check in `doctor` verifies app-server startup and the Codex CLI version. Use Codex 0.170.0 or newer for the verified baseline. `codex-info models --details` lists advertised tiers and catalog defaults when available. A completed trial confirms the provider accepted its request. The report identifies the requested speed and keeps served speed unknown.
+**Why send the prompt twice?** `codex-bench` compares repeated requests. A model’s first request can take longer than later ones. With only one measured trial, that extra time could make one model or speed look slower simply because of its first request. The benchmark gives each case one warm-up, then counts the next request as its first measurement. Both requests start in fresh sessions so each receives the same prompt with no prior conversation history.
+
+The benchmark check in `doctor` verifies app-server startup and the Codex CLI version. Use Codex 0.170.0 or newer for the verified baseline. `codex-info models --details` lists advertised tiers and catalog defaults when available. A completed trial confirms the provider accepted its request. The report shows the requested speed. Codex does not report which speed served the request.
 
 ### Compare A Model And Speed Matrix
 
@@ -31,11 +33,19 @@ Flag placement does not pair a model with a speed. The benchmark rotates the sta
 
 ### Compare Specific Pairs
 
-Use repeatable `--case MODEL=SPEED` to choose the exact pairs. This example schedules two pairs. The cases run in input order during the warm-up round and in every measured round.
+Use repeatable `--case MODEL=SPEED` to choose the exact pairs. The example below sends six requests, with two measured trials per pair.
 
 ```sh
 cdx-chores codex-bench --case model-a=fast --case model-b=ultrafast \
-  --codex-reasoning-effort low --runs 1 --compact
+  --codex-reasoning-effort low --runs 2 --compact
+```
+
+Each round follows the order of the `--case` flags.
+
+```text
+Warm-up round      model-a=fast -> model-b=ultrafast
+Measured round 1   model-a=fast -> model-b=ultrafast
+Measured round 2   model-a=fast -> model-b=ultrafast
 ```
 
 `SPEED` accepts `standard`, `fast`, `ultrafast`, or `inherit`. The value splits at the last `=`, so `--case "model=a=inherit"` selects the model ID `model=a` and inherits its speed. Use either `--case` or the matrix selectors in an invocation. Repeating an identical case adds trials to the same summary row.
@@ -44,7 +54,7 @@ One `--codex-reasoning-effort` value applies to the entire invocation regardless
 
 ### Set The Workload
 
-`--runs` takes one positive integer and defaults to 3 measured trials per matrix combination or `--case` occurrence. Each also gets one warm-up in its own fresh session using the same prompt and settings. A warm-up stays out of measured metrics and completed-trial counts. With `--show-token-usage`, its reported tokens contribute to the warm-up subtotal in terminal output and to the invocation total. For one pair, `--runs 3` sends four requests.
+`--runs` takes one positive integer and defaults to 3 measured trials per matrix combination or `--case` occurrence. Each gets one additional warm-up. Only measured trials count toward completion and timing statistics. Warm-ups also use tokens. `--show-token-usage` includes their reported usage in the invocation total and shows a warm-up subtotal in detailed terminal output.
 
 The default prompt asks for an explanation of an LRU cache. Pass `--prompt-file` to use one nonempty UTF-8 prompt for all requests. Use `--show-prompt` to include the submitted text in the report.
 
@@ -80,6 +90,8 @@ Both report formats preserve a relative prompt path as supplied and abbreviate p
 ## Manage Benchmark Sessions
 
 The benchmark keeps its sessions by default, including warm-ups. Use `--session-retention archive` to move them out of active history while preserving the rollout. `--session-retention delete` permanently removes the sessions after confirmed turn completion and rollout readback or its deadline. Retention applies to sessions created by the invocation. A cleanup failure preserves the report and ordinarily returns exit status 1. If Ctrl-C also interrupted the invocation, the CLI reports the cleanup error and exits with status 130. See the [shared retention guidance](codex-execution-configuration.md#retain-codex-sessions) for compatibility.
+
+## Failures and exit codes
 
 An unavailable speed produces a diagnostic while supported combinations continue. On an invocation that runs without local cancellation, a failed trial, transport loss, a failed shutdown, or zero completed measured trials returns exit status 1. When a turn exceeds its 120-second deadline, the benchmark marks it failed and preserves available usage. It can start the next trial once Codex confirms the interruption. If the app-server connection is lost during the workload, JSON retains completed results and records the reason in `run.transportError`.
 
