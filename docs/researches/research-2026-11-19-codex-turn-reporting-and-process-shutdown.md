@@ -13,10 +13,9 @@ If a Codex request fails or its process stops, what can `cdx-chores` still repor
 
 The benchmark talks directly to `codex app-server`. The dotted branches mark the two outcomes reproduced with a synthetic server. SDK helpers run prompts through `thread.run()`. Cancellation on that path still needs verification on SDK 0.170.0.
 
+**Before — cdx-chores v0.2.2-canary.6 benchmark execution**
+
 ```mermaid
----
-title: Before — cdx-chores v0.2.2-canary.6 benchmark execution
----
 flowchart TD
     thread["thread/start returns a thread ID"] --> dispatch["Record attempt and tier, then write turn/start"]
     dispatch -.->|Write throws| unsent["JSON reports an unsent turn as attempted and marks usage partial."]
@@ -30,10 +29,9 @@ flowchart TD
 
 The proposed flow records an attempt only after the transport queues the write. If shutdown fails, the CLI includes the error alongside the completed trials in the same JSON report.
 
+**Proposed**
+
 ```mermaid
----
-title: Proposed
----
 flowchart TD
     thread["thread/start returns a thread ID"] --> dispatch{"Did the local transport queue turn/start?"}
     dispatch -->|Write refused| unsent["Record failed trial with thread ID<br/>inferenceAttempted = false, sentTier = null"]
