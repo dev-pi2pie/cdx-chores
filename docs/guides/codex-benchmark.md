@@ -56,7 +56,21 @@ One `--codex-reasoning-effort` value applies to the entire invocation regardless
 
 `--runs` takes one positive integer and defaults to 3 measured trials per matrix combination or `--case` occurrence. Each gets one additional warm-up. Only measured trials count toward completion and timing statistics. Warm-ups also use tokens. `--show-token-usage` includes their reported usage in the invocation total and shows a warm-up subtotal in detailed terminal output.
 
-The default prompt asks for an explanation of an LRU cache. Pass `--prompt-file` to use one nonempty UTF-8 prompt for all requests. Use `--show-prompt` to include the submitted text in the report.
+The built-in prompt asks Codex to explain an LRU cache. Use `--prompt-file` to supply your own. Markdown (`.md`), plain text (`.txt`), and extensionless files all work. The CLI reads the contents as UTF-8 text and requires at least one non-whitespace character. Markdown is sent as written. Use `--show-prompt` to include the submitted text in the report.
+
+Choose one sample per comparison so every model and speed receives the same workload.
+
+| Sample prompt | Requested response |
+| --- | --- |
+| [summarize-exhibit.txt](../../examples/playground/codex-bench-prompt/summarize-exhibit.txt) | A two-sentence newsletter announcement for a museum exhibit. |
+| [extract-records.md](../../examples/playground/codex-bench-prompt/extract-records.md) | A JSON array of failed job names in table order. |
+| [trace-cache.md](../../examples/playground/codex-bench-prompt/trace-cache.md) | Eight hit/miss outcomes and the final LRU cache order. |
+
+From the repository root, run one warm-up and one measured trial with the museum exhibit prompt.
+
+```sh
+cdx-chores codex-bench --prompt-file examples/playground/codex-bench-prompt/summarize-exhibit.txt --runs 1
+```
 
 ## Read The Results
 
@@ -68,9 +82,13 @@ The report groups trials by model and requested speed. The speed and reasoning c
 | Turn output tok/s | Reported output tokens, including reasoning tokens, divided by the full recorded turn duration in seconds. |
 | Turn time | Full duration Codex recorded for the turn. |
 
+Read **Turn time** alongside **Output tok/s**. A task can require several reasoning steps even when it asks for a short answer. A simpler prompt can ask for a much longer response. A short answer can finish sooner yet show a lower token rate because the time before the first token accounts for a larger share of the turn. To compare models or speeds, keep the prompt and its output instructions the same.
+
 The detailed table shows a single value for one usable sample, minimum–maximum for two, and minimum / median / maximum for three or more. `--compact` shows medians. Each metric can have fewer usable samples than completed trials. A usable sample comes from a completed prompt-only response with one assistant text message in the final-answer phase when Codex supplies it, without a model reroute or tool activity. The table uses `—` for unavailable metrics.
 
-`--show-token-usage` adds reported usage. The detailed terminal view includes per-request counts and separate warm-up, measured, and invocation totals. The compact view shows one totals line. Attributable usage from failed or interrupted attempts contributes to totals, and incomplete coverage is marked partial.
+In compact mode, **Output tok/s** is the median of the usable measured trials’ individual output rates. With `--show-token-usage`, the **Tokens** line sums reported usage across requests, including input and output tokens. It shows warm-up, measured, and invocation totals. To reproduce a trial’s rate, divide that trial’s output tokens by its own turn time in seconds. The detailed terminal view shows per-request counts as well as totals. Totals include attributable usage from failed or interrupted attempts, with incomplete coverage marked partial.
+
+Input token counts show how much input Codex reported for each turn. The benchmark omits **Input tok/s** because the recorded timings do not isolate the time spent processing that input.
 
 ### Write A JSON Report
 
