@@ -22,6 +22,9 @@ md-pdf/**/*.json
 md-pdf/**/*-md-pdf-profile-*.yml
 md-pdf/**/md-pdf-template-*/
 md-pdf/smoke/**
+# Codex Bench Prompt File Samples
+!codex-bench-prompt/
+!codex-bench-prompt/*
 
 # misc
 ### macOS ###

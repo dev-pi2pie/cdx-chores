@@ -1,7 +1,7 @@
 ---
 title: "Data Extract Usage"
 created-date: 2026-03-18
-modified-date: 2026-11-06
+modified-date: 2026-11-19
 status: completed
 agent: codex
 ---
@@ -10,7 +10,7 @@ agent: codex
 
 `data extract` materializes one shaped logical table from one local input file into a clean `.csv`, `.tsv`, or `.json` artifact.
 
-SQLite and Excel extraction requires matching extensions installed explicitly through [DuckDB setup](data-duckdb-usage.md). DuckDB database inputs are attached read-only.
+To extract data from SQLite or Excel, [install the matching DuckDB extensions](data-duckdb-usage.md) first. DuckDB database inputs are attached read-only.
 
 Today, this command is most valuable for source-shaping work, especially Excel-oriented cleanup before materialization. It remains format-general at the input level, but its distinctive shaping controls are currently centered on Excel.
 

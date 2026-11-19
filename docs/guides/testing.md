@@ -1,7 +1,7 @@
 ---
 title: "Contributor Testing Guide"
 created-date: 2026-09-06
-modified-date: 2026-11-12
+modified-date: 2026-11-19
 status: completed
 agent: codex
 ---
@@ -144,11 +144,11 @@ Routine DuckDB fixtures use the installed Node API engine's default storage. The
 
 The [single-table fixture seeder](../../test/data-sources/fixtures/duckdb.ts) accepts an optional `storageVersion` string. Omit it to keep the engine default. Explicit values are encoded as SQL literals in `ATTACH`, and invalid or unsupported values retain DuckDB's error. Storage targets select file compatibility independently of dependency versions. Fixture regressions cover defaults, an alternate format, native errors and recovery before temporary-directory cleanup.
 
-Reader regressions under `test/data-query/adapters/` exercise bounded result reuse, introspection failure cleanup and `VARIANT` metadata capture before closure. The [Phase 2 comparison](../plans/jobs/2026-11-06-v0.2.2-canary.2-dependency-refresh.md#comparison-evidence) retains actual older-producer evidence separately from newer-writer/older-format coverage.
+Reader regressions under `test/data-query/adapters/` exercise bounded result reuse, introspection failure cleanup and `VARIANT` metadata capture before closure. The [migration comparison](../plans/jobs/2026-11-06-v0.2.2-canary.2-dependency-refresh.md#comparison-evidence) also checks a database created by the 1.5.6 engine.
 
 ### DuckDB compatibility evaluation
 
-The manual probes in [`scripts/duckdb-compatibility/`](../../scripts/duckdb-compatibility/) compare `@duckdb/node-api@1.5.6-r.2` with `2.0.0-r.1`. Their original product comparisons include the expected failures documented in Phase 2. Use the routine regressions above to verify the migrated repository. For comparative evaluation, supply separate reviewed package roots, copied fixtures/databases, and isolated extension caches. Product probes require copied source and built output with the selected dependency. Keep the repository manifest and original inputs unchanged.
+The manual probes in [`scripts/duckdb-compatibility/`](../../scripts/duckdb-compatibility/) compare `@duckdb/node-api@1.5.6-r.2` with `2.0.0-r.1`. Use these probes to reproduce the migration comparison. Use the routine tests above to check the current implementation. For comparative evaluation, supply separate reviewed package roots, copied fixtures/databases, and isolated extension caches. Product probes require copied source and built output with the selected dependency. Keep the repository manifest and original inputs unchanged.
 
 | Probe | Runtime | Coverage |
 | --- | --- | --- |
@@ -159,4 +159,4 @@ The manual probes in [`scripts/duckdb-compatibility/`](../../scripts/duckdb-comp
 
 The first three probes accept `--package-root` and an empty `--work-dir`. Their headers list additional required inputs. The extension probe accepts `--scratch-dir` and creates a unique cache. It downloads extensions explicitly. Review npm artifacts before executing any probe, and preserve DuckDB signature and engine/platform checks.
 
-Phase 2 reports assert expected differences as well as compatible behavior. The expected reader-reuse failures identified cleanup requirements implemented in Phase 3. For an adapted candidate copy, run `product.mjs` with `--generation candidate --expect-reader-cleanup` to require reader reuse to pass. Keep comparative results separate from current migration verification in the [shared migration record](../plans/jobs/2026-11-06-v0.2.2-canary.2-dependency-refresh.md).
+The original product probe records the reader-reuse failure seen during migration. To verify that a migrated candidate closes the reader and can reuse its connection, run `product.mjs` with `--generation candidate --expect-reader-cleanup`. See the [migration record](../plans/jobs/2026-11-06-v0.2.2-canary.2-dependency-refresh.md) for the original results.

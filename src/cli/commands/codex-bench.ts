@@ -194,40 +194,28 @@ export function registerCodexBenchCommand(program: Command, runtime: CliRuntime)
     true,
   )
     .addOption(
-      new Option("--case <MODEL=SPEED>", "Compare an explicit model and speed pair (repeatable)")
+      new Option("--case <MODEL=SPEED>", "Model/speed pair (repeatable, speed may be inherit)")
         .argParser(parseCase)
         .conflicts(["codexModel", "codexSpeed"]),
     )
     .option(
       "--runs <count>",
-      "Measured trials per matrix combination or --case occurrence (default: 3)",
+      "Measured trials per combination or case occurrence (default: 3)",
       parseRuns,
     )
-    .option("--prompt-file <path>", "Use a UTF-8 prompt file for every trial")
-    .option("--compact", "Show median metrics and summarize requested token totals")
+    .option("--prompt-file <path>", "UTF-8 prompt file (default: built-in sample)")
+    .option("--compact", "Show medians and optional token totals")
     .option("--json", "Write one JSON report to stdout")
-    .option("--show-prompt", "Include the prompt text in the report as prompt.text in JSON")
-    .option(
-      "--show-token-usage",
-      "Include reported token usage and warm-up totals in the selected output",
-    )
+    .option("--show-prompt", "Include the submitted prompt")
+    .option("--show-token-usage", "Include token usage and warm-up totals")
     .addHelpText(
       "after",
-      "\nUse one --runs value for every matrix combination or --case occurrence. Each also gets one warm-up.\n" +
-        "Use --codex-model and --codex-speed for a matrix, or repeat --case for explicit pairs. These selectors cannot be mixed.\n" +
-        "--case splits on the last '=' and accepts standard, fast, ultrafast, or inherit as SPEED.\n" +
-        "Cases run in the order supplied in each round. Repeating a pair adds trials to the same summary row.\n" +
-        "Omitted model, provider, reasoning effort, and speed inherit from Codex.\n" +
-        "Omit --prompt-file to use the built-in sample prompt.\n" +
-        "JSON mode shows a temporary status on terminal stderr. Redirected stderr carries diagnostics only.\n" +
-        "Relative prompt-file paths appear as supplied. --absolute and --abs resolve them from the working directory.\n" +
-        "Home paths are shortened in reports. Use --absolute or --abs to show literal absolute paths.\n" +
-        "Use --no-color or set NO_COLOR to disable colors.\n\n" +
+      "\nChoose either a model/speed matrix or explicit --case pairs. Omitted Codex settings are inherited.\n" +
+        "Each combination or case occurrence gets one warm-up before its measured trials.\n" +
+        "Cases run in input order each round. Repeated pairs share a summary row.\n\n" +
         "Examples\n" +
         "  cdx-chores codex-bench --codex-model MODEL --codex-speed standard --codex-speed fast\n" +
-        "  cdx-chores codex-bench --case MODEL=fast --case OTHER_MODEL=ultrafast --runs 1\n" +
-        "  cdx-chores codex-bench --compact --show-token-usage\n" +
-        "  cdx-chores codex-bench --prompt-file ./task.txt --json --show-prompt --show-token-usage > report.json\n",
+        "  cdx-chores codex-bench --case MODEL=fast --case OTHER_MODEL=ultrafast --runs 1\n",
     )
     .action(async (options: BenchmarkCommandOptions) => actionCodexBenchmark(runtime, options));
 }

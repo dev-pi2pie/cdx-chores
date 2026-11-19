@@ -1,0 +1,6 @@
+Use these museum notes to write exactly two sentences for a visitor newsletter. In the first sentence, introduce the exhibit and its subject. In the second, give the opening date and location.
+
+- Exhibit title: A City in Postcards
+- Subject: Everyday street scenes photographed between 1900 and 1930
+- Opening date: June 12
+- Location: East Gallery
