@@ -165,5 +165,6 @@ Remember cancellation for the lifetime of the application suite. Verify that the
 
 ## Related Plans
 
+- [Codex turn reporting and app-server shutdown](../plans/plan-2026-11-20-codex-turn-reporting-and-app-server-shutdown.md)
 - [Codex CLI benchmark](../plans/plan-2026-11-18-codex-cli-benchmark.md)
 - [Codex request timeout contract](../plans/plan-2026-08-21-codex-request-timeout-contract.md)
