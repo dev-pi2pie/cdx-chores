@@ -1,7 +1,7 @@
 ---
 title: "Codex turn reporting and app-server shutdown implementation"
 created-date: 2026-11-20
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -76,3 +76,28 @@ Code review covered `be71da97..425b37c2` with no outstanding Phase 3 findings. T
 | Codex integration | 30 | 274 | Passed |
 
 The application suite finished about 2.5 seconds inside its 300-second budget. The cause of the historical timeout remains open. [Application-suite investigation](2026-11-20-canary-7-turn-reporting-and-shutdown.md)
+
+## Phase 4. Documentation and validation
+
+At `5a77fe83`, the built Node.js 24.22.3 benchmark and Bun 1.4.5 live check each reported Codex 0.171.0 in all four synthetic scenarios. The comparison kept the 15-second start deadline and shortened the completion wait to 500 ms. Each first Standard result was checked against the trace for its own thread and turn IDs, archive request, and position of the next Fast request. All eight observations matched the Phase 2 expectations. [v0.2.2-canary.7 full-deadline baseline](2026-11-20-canary-7-withheld-turn-start-reply.md#full-deadline-observations)
+
+| Standard turn | Built benchmark | Standard/Fast live check |
+| --- | --- | --- |
+| Start reply and matching completion | Completed, archived Standard, then started Fast. Exit 0. | Same order and exit. |
+| Reply withheld, matching completion received | Recovered Standard, archived it, then started Fast. Exit 0. | Same order and exit. At the baseline it had skipped archive. |
+| Reply withheld, announced Standard still active | Interrupted the announced turn. After acknowledgement alone, it skipped archive and stopped before Fast. Exit 1. At the baseline it had stopped without interrupting. | Timed out, skipped archive, and stopped before Fast without interrupting. Exit 1. At the baseline Fast had overlapped Standard. |
+| Reply received, completion wait expired | Interrupted the identified turn. After acknowledgement alone, it skipped archive and stopped before Fast. Exit 1. The baseline also stopped before Fast. | Timed out, skipped archive, and stopped before Fast without interrupting. Exit 1. At the baseline Fast had overlapped Standard. |
+
+The 106 focused regressions passed with 802 assertions across dispatch, turn recovery, shutdown, SDK retention, and readiness. The build, TypeScript check, lint, and formatting of all 22 changed source and test files passed. Repository-wide formatting flagged only the unchanged benchmark help test recorded in Phase 1.
+
+The full managed invocation exited 1. The application suite reached its 300-second limit during the guided frames workflow. It received `SIGTERM` at 300.039 seconds and stopped without escalation. The fixture's `result.ok` assertion failed before its workflow assertions. The other 2,537 application cases passed, and the runner continued through Codex and Pandoc. The guided frames test then passed alone in 5.28 seconds. [Guided frames test](../../../test/video/interactive/frames-workflow.app.test.ts)
+
+| Managed suite | Cases | Assertions | Result |
+| --- | ---: | ---: | --- |
+| Unit | 2,141 | 127,967 | Passed in the full invocation |
+| Application | 2,538 | 16,265 | One failure at the 300-second limit in the full invocation |
+| Application rerun | 2,538 | 16,266 | Passed alone in 285.67 seconds under the same limit |
+| Codex integration | 30 | 274 | Passed in the full invocation |
+| Pandoc integration | 5 | 162 | Passed in the full invocation |
+
+Whole-plan code and test review covered `3cf61889..5a77fe83`, including the intervening [app-server version parsing changes](2026-11-20-codex-app-server-version-parsing.md). Review found no outstanding in-scope correctness or coverage issues. The plan, guides, research, and job record agree on caller behavior and the limits of the evidence. Their repository links and anchors passed validation. Native provider ordering and MCP teardown, buffered SDK prompt cancellation, and discovery transport shutdown remain open. The application suite still exceeds the 240-second reassessment threshold. Suite-wide cancellation and the cause of the historical 300-second timeout remain separate investigations. [Research scope and runner evidence](../../researches/research-2026-11-19-codex-turn-reporting-and-process-shutdown.md#test-runner-evidence)

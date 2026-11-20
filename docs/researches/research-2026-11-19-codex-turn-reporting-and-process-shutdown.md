@@ -143,6 +143,8 @@ Four more fixtures started after the cancelled fixture recorded completion. Thre
 
 **Why the earlier suite reached 300 seconds remains open.** A focused run overlapped that invocation for about 56 seconds. All three subsequent isolated canary.7 runs finished within the allowance and crossed the 240-second reassessment threshold. Their timings identify where to profile current costs. The contribution of concurrent work or any test family to the earlier timeout is still unknown. [Timeout decision and measurement method](../plans/jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#timeout-decision)
 
+A later 0.171.0 validation also reached the 300-second limit, this time during the guided frames workflow. The suite stopped after `SIGTERM`, the Codex and Pandoc suites ran, and the guided frames test passed in isolation. The full application suite then passed alone in 285.67 seconds under the same limit. The earlier run’s missing completion receipt and forced termination remain specific to that invocation. [Phase 4 validation](../plans/jobs/2026-11-20-codex-turn-reporting-and-app-server-shutdown.md#phase-4-documentation-and-validation)
+
 ## Implementation Direction
 
 The CLI changes were verified against synthetic app-server faults with the 0.171.0 SDK installed. The unified record links the dispatch, recovery, and shutdown evidence. Native provider event ordering, native MCP cleanup, SDK prompt cancellation, and discovery shutdown still need separate checks. [Implementation record](../plans/jobs/2026-11-20-codex-turn-reporting-and-app-server-shutdown.md)
