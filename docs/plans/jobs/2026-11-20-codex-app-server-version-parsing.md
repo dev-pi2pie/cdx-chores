@@ -67,3 +67,21 @@ The separate eight-case lifecycle comparison ran the built benchmark under Node.
 The 15 focused extractor tests and 30 focused caller cases passed. Managed validation passed 2,138 unit tests, 2,538 application tests, and 30 Codex integration tests. The build, TypeScript check, lint, and changed-file formatting passed. Repository-wide formatting still flagged the earlier benchmark help test.
 
 Regression coverage and maintainability reviews covered `29a5873722deae9eccddf8e36374a1efffaac2df..66b3891a938f2cd19c776f59491a841fc59a3921`. Documentation review checked the evidence and wording. No actionable findings remain.
+
+## Third follow-up. Empty originator override
+
+At `40100240`, the shared extractor discarded the empty `CODEX_INTERNAL_ORIGINATOR_OVERRIDE` value even though bundled Codex 0.171.0 used it literally. Direct native `initialize` requests confirmed the prefixes below. Both packaged commands used a fresh isolated home for each run. Doctor exited 0 in all baseline cases.
+
+| Override     | Native `userAgent` prefix, JSON-quoted | Baseline doctor status and version | Baseline provider discovery |
+| ------------ | -------------------------------------- | ---------------------------------- | --------------------------- |
+| Unset        | `"cdx_chores/0.171.0"`                 | `met`, `0.171.0`                   | Exit 0, `0.171.0`           |
+| Empty string | `"/0.171.0"`                           | `unverified`, null                 | Exit 1, invalid CLI version |
+| Single space | `" /0.171.0"`                          | `met`, `0.171.0`                   | Exit 0, `0.171.0`           |
+
+At `ee538f4f`, any defined override supplies a literal prefix, including `/` for the empty string. The paired regression accepts `/0.171.0` with the empty override and rejects the same response when the override is unset. The single-space and malformed-response controls passed. The new empty-success case was the only failure when the final 18-case test matrix ran against the baseline extractor.
+
+Rebuilt and packed `ee538f4f` on macOS arm64 with Node.js 26.13.1. With bundled Codex 0.171.0 and isolated homes, `doctor --json` and `codex-info providers --json` exited 0 and returned `0.171.0` for all three settings. Doctor reported `met` in each case, and discovery returned the configured synthetic provider.
+
+All 18 extractor tests, 58 focused application tests, 2,141 managed unit tests, and 30 managed Codex integration tests passed. The build, type check, lint, and changed-file formatting passed. Repository-wide formatting still flagged the earlier benchmark help test.
+
+Regression coverage and maintainability reviews covered `40100240586f455dfee17ce0d7de7e84dc11ac97..ee538f4fe131e00fa8966b572373b85f3b809d60`. Documentation review checked the evidence and wording. No actionable findings remain.
