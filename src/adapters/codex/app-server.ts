@@ -36,6 +36,12 @@ export class CodexAppServerError extends Error {
   }
 }
 
+export class CodexRequestTimeoutError extends Error {
+  constructor(readonly method: string) {
+    super(`${method}: Codex app-server request timed out.`);
+  }
+}
+
 export class CodexAppServer {
   private readonly child: ChildProcessWithoutNullStreams;
   private readonly closed: Promise<void>;
@@ -192,7 +198,7 @@ export class CodexAppServer {
       };
       const onAbort = () => pending.reject(signal?.reason);
       const deadline = setTimeout(() => {
-        pending.reject(new Error(`${method}: Codex app-server request timed out.`));
+        pending.reject(new CodexRequestTimeoutError(method));
       }, timeoutMs);
       const pending: PendingRequest = {
         method,

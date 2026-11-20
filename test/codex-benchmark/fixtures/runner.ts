@@ -24,6 +24,9 @@ interface Scenario {
   rerouted?: boolean;
   interrupt?: "confirmed" | "unconfirmed";
   withholdStartReply?: boolean;
+  withholdStartReplyThread?: number;
+  omitTurnStart?: boolean;
+  traceLifecycle?: boolean;
   mismatchedCompletion?: "thread" | "turn";
   holdTurnStart?: boolean;
   waitForInterruptThread?: number;

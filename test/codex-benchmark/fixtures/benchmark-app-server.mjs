@@ -201,20 +201,32 @@ async function run() {
         });
         break;
       }
+      case "fixture/announce-late-turn":
+        if (!scenario.omitTurnStart) throw new Error("Unexpected late announcement request.");
+        openTurn(thread);
+        reply({});
+        break;
       case "turn/start":
+        if (scenario.omitTurnStart) break;
         if (scenario.holdTurnStart) {
           while (!existsSync(join(home, "release-turn-start"))) await delay(10);
         }
         openTurn(thread);
         if (scenario.mismatchedCompletion) {
-          notification("turn/completed", {
+          const unrelated = {
             threadId: scenario.mismatchedCompletion === "thread" ? "other-thread" : thread.id,
             turn: {
               id: scenario.mismatchedCompletion === "turn" ? "other-turn" : thread.turnId,
               status: "completed",
             },
+          };
+          trace({
+            method: "turn/completed",
+            params: { threadId: unrelated.threadId, turnId: unrelated.turn.id },
           });
-          reject("fixture rejected turn/start after unrelated completion");
+          notification("turn/completed", unrelated);
+          if (!scenario.withholdStartReply)
+            reject("fixture rejected turn/start after unrelated completion");
           break;
         }
         if (

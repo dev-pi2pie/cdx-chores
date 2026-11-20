@@ -1,7 +1,7 @@
 import { isAbsolute } from "node:path";
 
 import { resolveCodexSessionRetention } from "../../../utils/codex-session-retention";
-import { CodexAppServer, CodexAppServerError } from "../app-server";
+import { CodexAppServer, CodexAppServerError, CodexRequestTimeoutError } from "../app-server";
 import { resolveDiscoveryExecutable } from "../discovery/executable";
 import { applyCodexSessionRetention } from "../session-retention";
 import { BenchmarkCatalog, isTierRejection } from "./catalog";
@@ -262,9 +262,23 @@ class BenchmarkRunner {
           : "failed";
       trial.turnId ??= observer?.startedTurnId ?? null;
       if (thread && trial.turnId && !completionConfirmed) {
-        // Do not start another trial while this turn may still be running.
-        this.canStartTrial = false;
-        await this.recover(trial, thread, trial.turnId);
+        let receivedAt: number | undefined;
+        if (
+          error instanceof CodexRequestTimeoutError &&
+          error.method === "turn/start" &&
+          observer &&
+          !signal?.aborted &&
+          !this.server.signal.aborted
+        ) {
+          try {
+            ({ receivedAt } = await this.interrupt(observer, thread.id, trial.turnId));
+            completionConfirmed = true;
+          } catch (interruptError) {
+            trial.error += ` ${messageFrom(interruptError)}`;
+          }
+        }
+        this.canStartTrial = completionConfirmed;
+        await this.recover(trial, thread, trial.turnId, receivedAt);
       } else if (turnMayBeActive && !(error instanceof CodexAppServerError)) {
         this.canStartTrial = false;
       }
