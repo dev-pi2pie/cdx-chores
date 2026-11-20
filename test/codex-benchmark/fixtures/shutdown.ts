@@ -11,6 +11,7 @@ import {
   observeProcessGroup,
 } from "../../../scripts/testing/execution/process-table";
 import {
+  completeRejectedFixtureLaunch,
   registerFixtureProcess,
   startFixtureProcess,
 } from "../../../scripts/testing/fixtures/fixture-process";
@@ -107,10 +108,15 @@ export function withShutdownFixture<T>(
             if (!canClean) throw new Error("Shutdown fixture can launch only one caller.");
             receipt = registerFixtureProcess();
             canClean = false;
-            caller = startFixtureProcess({
-              ...options,
-              env: { ...options.env, FIXTURE_RECORD_APP_SERVER: "1" },
-            });
+            try {
+              caller = startFixtureProcess({
+                ...options,
+                env: { ...options.env, FIXTURE_RECORD_APP_SERVER: "1" },
+              });
+            } catch (error) {
+              canClean = completeRejectedFixtureLaunch(receipt, error);
+              throw error;
+            }
             return caller;
           },
         });

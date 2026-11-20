@@ -2,6 +2,7 @@ import { lstatSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { join, resolve } from "node:path";
 import {
+  ProcessLaunchRejectedError,
   startOwnedProcess,
   type OwnedProcess,
   type OwnedProcessOptions,
@@ -43,6 +44,22 @@ export function registerFixtureProcess() {
   };
 }
 
+export function completeRejectedFixtureLaunch(
+  receipt: ReturnType<typeof registerFixtureProcess>,
+  error: unknown,
+): boolean {
+  if (!(error instanceof ProcessLaunchRejectedError)) return false;
+  try {
+    receipt?.complete({ stopped: true, reason: "launch-rejected" });
+    return true;
+  } catch (receiptError) {
+    throw new AggregateError(
+      [error, receiptError],
+      "Could not record the rejected fixture launch.",
+    );
+  }
+}
+
 /** Detached nested groups must hand ownership back to the outer suite before Bun exits. */
 export function startFixtureProcess(
   options: OwnedProcessOptions,
@@ -67,7 +84,7 @@ export function startFixtureProcess(
     owned = startOwnedProcess({ ...options, signal: cancellation.signal }, observer);
   } catch (error) {
     removeListeners();
-    receipt.complete({ stopped: true, reason: "launch-rejected" });
+    completeRejectedFixtureLaunch(receipt, error);
     throw error;
   }
   try {

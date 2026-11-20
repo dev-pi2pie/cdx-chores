@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { access, readFile, readdir, unlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { Writable } from "node:stream";
+import { ProcessLaunchRejectedError } from "../../scripts/testing/execution/process";
 import { isLiveProcess, observeProcessGroup } from "../../scripts/testing/execution/process-table";
 import { removeFixtureDir } from "../../scripts/testing/fixtures/fixture-exports";
 import { runManagedTests } from "../../scripts/testing/orchestration/runner";
@@ -22,9 +23,15 @@ import {
   withShutdownFixture,
 } from "./fixtures/shutdown";
 
+const preSpawnErrors = {
+  "invalid deadline": "Invalid process deadline.",
+  "already-aborted signal": "Process launch was cancelled before allocation.",
+} as const;
 const cases = [
   "assertion failure",
   "launch rejected",
+  "invalid deadline",
+  "already-aborted signal",
   "missing spawn receipt",
   "interrupted spawn receipt",
   "partial spawn receipt",
@@ -38,8 +45,12 @@ interface Control {
   neverStarted?: boolean;
 }
 
+function isPreSpawnCase(mode: Case): mode is keyof typeof preSpawnErrors {
+  return mode in preSpawnErrors;
+}
+
 function canVerify(mode: Case) {
-  return mode === "assertion failure" || mode === "launch rejected";
+  return mode === "assertion failure" || mode === "launch rejected" || isPreSpawnCase(mode);
 }
 
 async function runControl(mode: Case, control: Control) {
@@ -53,6 +64,16 @@ async function runControl(mode: Case, control: Control) {
     { resistantLeader: true, resistantWorker: true },
     async (fixture) => {
       control.home = fixture.home;
+      if (isPreSpawnCase(mode)) {
+        const preSpawn =
+          mode === "invalid deadline" ? { timeoutMs: 0 } : { signal: AbortSignal.abort() };
+        const owned = startShutdownLiveCheck(
+          { ...fixture, start: (options) => fixture.start({ ...options, ...preSpawn }) },
+          "allowed",
+        );
+        await owned.completion;
+        throw new Error("The caller launch should have been rejected before spawning.");
+      }
       const launch =
         mode === "launch rejected"
           ? {
@@ -104,7 +125,16 @@ async function checkFailure(mode: Case, control: Control) {
   );
   const { home } = control;
   if (!home) throw error ?? new Error("Control failed before fixture allocation.");
-  if (canVerify(mode)) {
+  if (isPreSpawnCase(mode)) {
+    expect(error).toBeInstanceOf(ProcessLaunchRejectedError);
+    expect(error).toMatchObject({
+      message: preSpawnErrors[mode],
+      cause: { message: preSpawnErrors[mode] },
+    });
+    control.callerStopped = true;
+    control.neverStarted = true;
+    await expect(access(dirname(home))).rejects.toMatchObject({ code: "ENOENT" });
+  } else if (canVerify(mode)) {
     expect(String(error)).toContain(
       mode === "assertion failure"
         ? "Injected ordinary fixture assertion"
@@ -172,7 +202,7 @@ async function withFixtureContext(value: string | undefined, run: () => Promise<
   }
 }
 
-async function checkRejectedHandoff(context: RunContext) {
+async function checkRejectedHandoff(context: RunContext, count: number) {
   const directory = join(suitePath(context, "app", "scratch"), "processes");
   const names = await readdir(directory);
   const completions = await Promise.all(
@@ -181,9 +211,15 @@ async function checkRejectedHandoff(context: RunContext) {
       .map(async (name) => JSON.parse(await readFile(join(directory, name), "utf8"))),
   );
   expect(completions).toHaveLength(2);
-  const rejected = completions.find(({ reason }) => reason === "launch-rejected");
-  expect(rejected).toMatchObject({ state: "complete", stopped: true });
-  expect(names).not.toContain(rejected.id + ".started.json");
+  const rejected = completions.filter(({ reason }) => reason === "launch-rejected");
+  expect(rejected).toHaveLength(count);
+  for (const entry of rejected) {
+    expect(entry).toMatchObject({ state: "complete", stopped: true });
+    expect(entry.pid).toBeUndefined();
+    expect(entry.groupId).toBeUndefined();
+    expect(names).toContain(entry.id + ".pending.json");
+    expect(names).not.toContain(entry.id + ".started.json");
+  }
 }
 
 test.skipIf(process.platform === "win32").each(cases)(
@@ -245,7 +281,9 @@ test.skipIf(process.platform === "win32").each(cases)(
               await withFixtureContext(options.env[TEST_CONTEXT_ENV], () =>
                 checkFailure(mode, control),
               );
-              if (mode === "launch rejected") await checkRejectedHandoff(context!);
+              if (mode === "launch rejected" || isPreSpawnCase(mode)) {
+                await checkRejectedHandoff(context!, isPreSpawnCase(mode) ? 2 : 1);
+              }
             } catch (error) {
               fixtureFailure = error;
             }

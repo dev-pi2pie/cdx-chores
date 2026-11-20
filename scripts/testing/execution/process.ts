@@ -74,6 +74,33 @@ export interface ProcessObserver {
   observe(groupId: number, timeoutMs: number): Promise<ProcessMember[]>;
 }
 
+/** The launch was rejected before attempting to spawn a child. */
+export class ProcessLaunchRejectedError extends Error {
+  constructor(cause: unknown) {
+    super(cause instanceof Error ? cause.message : String(cause), { cause });
+  }
+}
+
+function checkLaunch(options: OwnedProcessOptions): number {
+  try {
+    requireProcessCapabilities();
+    for (const value of [options.timeoutMs, options.graceMs, options.cleanupMs]) {
+      if (!Number.isSafeInteger(value) || value <= 0) throw new Error("Invalid process deadline.");
+    }
+    if (options.cleanupMs <= options.graceMs) {
+      throw new Error("Cleanup allowance must exceed the graceful shutdown allowance.");
+    }
+    const maximum = options.maxOutputBytes ?? 1024 * 1024;
+    if (!Number.isSafeInteger(maximum) || maximum <= 0) throw new Error("Invalid output limit.");
+    if (options.signal?.aborted) throw new Error("Process launch was cancelled before allocation.");
+    if (options.output?.signal.aborted)
+      throw new Error("Process launch output delivery was already unavailable.");
+    return maximum;
+  } catch (error) {
+    throw new ProcessLaunchRejectedError(error);
+  }
+}
+
 /**
  * Own one POSIX process group. Descendants must remain in the inherited group;
  * processes that create a new group/session are outside this containment boundary.
@@ -85,18 +112,7 @@ export function startOwnedProcess(
   options: OwnedProcessOptions,
   observer: ProcessObserver = { observe: observeProcessGroup },
 ): OwnedProcess {
-  requireProcessCapabilities();
-  for (const value of [options.timeoutMs, options.graceMs, options.cleanupMs]) {
-    if (!Number.isSafeInteger(value) || value <= 0) throw new Error("Invalid process deadline.");
-  }
-  if (options.cleanupMs <= options.graceMs) {
-    throw new Error("Cleanup allowance must exceed the graceful shutdown allowance.");
-  }
-  const maximum = options.maxOutputBytes ?? 1024 * 1024;
-  if (!Number.isSafeInteger(maximum) || maximum <= 0) throw new Error("Invalid output limit.");
-  if (options.signal?.aborted) throw new Error("Process launch was cancelled before allocation.");
-  if (options.output?.signal.aborted)
-    throw new Error("Process launch output delivery was already unavailable.");
+  const maximum = checkLaunch(options);
 
   const started = performance.now();
   const child = spawn(options.executable, [...options.args], {
