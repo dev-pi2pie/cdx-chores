@@ -2,7 +2,7 @@
 title: "Evidence for Codex benchmark lifecycle decisions"
 created-date: 2026-11-20
 modified-date: 2026-11-20
-status: in-progress
+status: completed
 agent: codex
 ---
 

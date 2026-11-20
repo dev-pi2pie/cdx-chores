@@ -2,7 +2,7 @@
 title: "Codex benchmark lifecycle corrections implementation"
 created-date: 2026-11-20
 modified-date: 2026-11-20
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -61,3 +61,15 @@ Checkpoint `f483ebe6` converts the three tracked benchmark preloads and the gene
 **Validation at `f483ebe6`.** On macOS with Bun 1.4.5 and Node 26.13.1, 235 benchmark and readiness application cases and eight SDK retention cases passed. With Node 22.23.5, scoped managed app and Codex runs passed 60 and eight cases and completed cleanup. Eight additional Bun TTY, EOF and deadline cases passed with that Node version on the fixture path. The packaged Node CLI passed a preload URL containing spaces and reserved characters on both Node versions. TypeScript, lint, test formatting, preload reference, document link and diff checks passed.
 
 **Review.** Test and maintainability reviews of `adbf4a69..f483ebe6` found no material issues.
+
+## Phase 4. Documentation, validation and closeout
+
+**Initial managed run at `cc9eb597`.** Unit passed. Application reached its 300-second deadline after printing 2,519 case outcomes. The runner stopped Application, retained scratch for an incomplete nested process receipt and left Codex and Pandoc unrun. A later signal-zero probe found the recorded group absent. The `decoder-partial` case failed during the timed-out run and passed on its own at `825320e6`. The aggregate timeout's cause remains unconfirmed.
+
+**Managed rerun at `bcf61d96`.** The Application execution limit increased to 360 seconds. `bun run test:all` passed 2,141 Unit, 2,628 Application, 30 Codex and 5 Pandoc cases with zero failures, errors or skips. Application finished in 345.98 seconds, including the decoder case. All suite processes stopped without escalation, and the runner removed the rerun's scratch and results.
+
+**Focused validation at `bcf61d96`.** All 78 selected lifecycle cases passed, covering both callers' dispatch, identity, retention, timeout, POSIX shutdown and receipt handling, plus EOF and TTY hooks. The Node-target build passed. Package smoke passed on Node 22.23.5 and 26.13.1 for ESM and CommonJS consumers, structured and generic refusals, and a timing conflict during retention. TypeScript, lint, formatting, whitespace, Markdown links and anchors, and Mermaid syntax passed. All 28 existing checkpoint and range references resolve to the same commits at eight characters.
+
+**Review.** Code and test reviews covered `138e113e..825320e6` and the widened `138e113e..bcf61d96` with no material findings. Both reviewers found the six-minute limit justified for the observed workload. The roughly 14 seconds of headroom leaves reliability under timing variation unverified. Documentation review checked the guide, research, plan and job record against the implementation and evidence. [Benchmark guide](../../guides/codex-benchmark.md) · [Implementation plan](../plan-2026-11-20-codex-benchmark-lifecycle-corrections.md#phase-4-documentation-validation-and-closeout)
+
+**Evidence limits.** The native Codex 0.171.0 probe observed the structured input-size refusal. Tagged source inspection supports the Core reply-loss path. The shutdown and cleanup regressions use synthetic POSIX groups on macOS. Other native error ordering, real fault frequency, Windows descendant cleanup and escaped descendants remain unverified. [Lifecycle research](../../researches/research-2026-11-20-codex-benchmark-lifecycle-evidence.md)
