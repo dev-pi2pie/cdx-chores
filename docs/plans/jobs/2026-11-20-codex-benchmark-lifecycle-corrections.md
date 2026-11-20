@@ -124,3 +124,11 @@ Checkpoint `64544ab0` checks the executable and the argument list passed to `spa
 **Regression evidence.** Both new inputs failed the direct and managed controls before the fix. Each managed control retained scratch with two pending receipts and skipped later suites. After the fix, all four controls passed. Both managed handoffs completed as `launch-rejected` without a PID, group ID or start record, allowing scratch removal and later suites. Existing uncertainty controls still withheld cleanup.
 
 **Validation and review.** All 80 focused Application cases and 2,141 managed Unit cases passed. Build, TypeScript, lint, formatting and diff checks passed. Maintainability and test reviews of `a757ece4..64544ab0` found no material issues.
+
+## Detached Peer-Closure Cleanup Follow-Up
+
+Checkpoint `ca4603d4` uses the shutdown fixture's managed handoff for peer-close cases. Registration starts when the fixture launches its caller. The spawn receipt identifies the detached app-server group, and scratch cleanup requires verified shutdown. A setup failure before caller launch leaves no pending receipt. [Peer fixture](../../../test/codex-benchmark/fixtures/shutdown.ts) · [Cleanup controls](../../../test/codex-benchmark/shared-shutdown-cleanup.app.test.ts)
+
+**Regression evidence.** Before the fix, a detached peer was still live when fixture cleanup failed, yet scratch was removed and the managed runner scheduled Codex and Pandoc. After the fix, a stalled peer or missing spawn receipt retained scratch and left the managed handoff pending, so later suites were skipped. The stalled synthetic peer was released independently and observed stopped before test teardown. Verified peer closure and pre-launch setup failure allowed cleanup and continued scheduling.
+
+**Validation and review.** All 78 focused Application cases passed, including the Node benchmark and live-check peer-close and backpressure controls. TypeScript, lint, formatting and diff checks passed. Maintainability and test reviews of `351877b6..ca4603d4` found no material issues.
