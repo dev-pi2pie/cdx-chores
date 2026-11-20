@@ -85,3 +85,20 @@ Rebuilt and packed `ee538f4f` on macOS arm64 with Node.js 26.13.1. With bundled 
 All 18 extractor tests, 58 focused application tests, 2,141 managed unit tests, and 30 managed Codex integration tests passed. The build, type check, lint, and changed-file formatting passed. Repository-wide formatting still flagged the earlier benchmark help test.
 
 Regression coverage and maintainability reviews covered `40100240586f455dfee17ce0d7de7e84dc11ac97..ee538f4fe131e00fa8966b572373b85f3b809d60`. Documentation review checked the evidence and wording. No actionable findings remain.
+
+## Fourth follow-up. Live-check worker shutdown
+
+At `2520f49e`, a synthetic app-server with a resistant worker reproduced the review finding. The live check reported completed trials and exited successfully while the worker was still alive.
+
+At `07ac9c72`, the live check starts app-server in its own process group on POSIX and shares the benchmark's bounded shutdown routine. The routine closes the app-server pipes, signals the group, escalates as needed, and verifies exit. The live check forwards app-server stderr through a pipe it owns so a surviving process cannot keep the caller's stderr open. [Shared shutdown](../../../src/adapters/codex/app-server-shutdown.ts) · [Live check](../../../scripts/spikes/codex-benchmark-live-check.ts)
+
+| Fixture scenario | Verified outcome |
+| --- | --- |
+| Normal completion | Both trials remained in JSON, the group was empty at exit, and the live check exited 0. |
+| `SIGINT` during initialization | No trial started, the group was empty at exit, and the live check exited 130. |
+| `SIGTERM` during initialization | No trial started, the group was empty at exit, and the live check exited 143. |
+| Denied escalation | Both completed trials remained in JSON, stderr reported the shutdown failure, and the live check exited 1. Independent process observation confirmed the leader and worker were still alive at exit. |
+
+On macOS, 120 focused tests passed across shared shutdown, benchmark execution, turn and rollout recovery, doctor, and SDK retention. The eight-case synthetic lifecycle comparison passed with both callers reporting Codex 0.171.0. Build, type checking, lint, touched-file formatting, and `git diff --check` passed. [Shutdown regression](../../../test/codex-benchmark/shared-shutdown.app.test.ts) · [Lifecycle comparison](../../../scripts/spikes/codex-turn-lifecycle/README.md)
+
+Code review covered `2520f49e5658904114b09be30ed8c19f63d41a60..07ac9c72bbc72c645a3f1a72c485b159728a99d6` and found no actionable issues.
