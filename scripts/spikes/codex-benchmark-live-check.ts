@@ -4,6 +4,7 @@ import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
+import { createAppServerShutdown } from "../../src/adapters/codex/app-server-shutdown.ts";
 import { extractAppServerVersion } from "../../src/adapters/codex/app-server-version.ts";
 import {
   readSavedTurn,
@@ -61,17 +62,21 @@ interface Message {
 class LiveRequestRejected extends Error {}
 
 function startAppServer({ executable, args }: typeof defaultAppServer, env: NodeJS.ProcessEnv) {
+  const separateGroup = process.platform !== "win32";
   const child = spawn(executable, args, {
     env,
-    stdio: ["pipe", "pipe", "inherit"],
+    stdio: "pipe",
+    detached: separateGroup,
   });
-  const closed = new Promise<void>((resolve) => child.once("close", () => resolve()));
+  const shutdown = createAppServerShutdown(child, separateGroup);
   const lines = createInterface({ input: child.stdout });
   const events = new EventEmitter();
   const stopped = new AbortController();
   const stop = () => stopped.abort(new Error("Codex app-server stopped."));
   child.on("error", (error) => stopped.abort(error));
   child.stdin.on("error", (error) => stopped.abort(error));
+  child.stderr.on("error", (error) => stopped.abort(error));
+  child.stderr.pipe(process.stderr, { end: false });
   lines.once("close", stop);
 
   const liveTurns = new Map<string, LiveTurn>();
@@ -186,16 +191,9 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
       if (!live?.completion) throw new Error("Matching turn completion was unavailable.");
       return { live, ...live.completion };
     },
-    async close() {
+    close() {
       lines.close();
-      child.stdin.destroy();
-      child.kill();
-      const forceKill = setTimeout(() => child.kill("SIGKILL"), 1_000);
-      try {
-        await closed;
-      } finally {
-        clearTimeout(forceKill);
-      }
+      return shutdown();
     },
   };
 }
@@ -396,6 +394,22 @@ export async function runLiveCheck(
 
   const env = { ...process.env };
   const server = startAppServer(appServer, env);
+  let closing: Promise<void> | undefined;
+  let shutdownFailed = false;
+  let signalExit: number | undefined;
+  const close = () =>
+    (closing ??= server.close().catch((error: unknown) => {
+      shutdownFailed = true;
+      console.error(`Shutdown failed: ${String(error)}`);
+    }));
+  const cancel = (exitCode: number) => {
+    signalExit ??= exitCode;
+    void close();
+  };
+  const interrupt = () => cancel(130);
+  const terminate = () => cancel(143);
+  process.on("SIGINT", interrupt);
+  process.on("SIGTERM", terminate);
   try {
     const init = await server.request<{ userAgent?: unknown }>("initialize", {
       clientInfo: { name: "cdx_chores", title: "cdx-chores", version: "1" },
@@ -414,6 +428,7 @@ export async function runLiveCheck(
     }));
     const results = [];
     for (const { requestedSpeed, sentTier } of trials) {
+      if (signalExit !== undefined) break;
       try {
         const { stopScheduling, ...result } = await runTrial(
           server,
@@ -434,8 +449,14 @@ export async function runLiveCheck(
     console.log(
       JSON.stringify({ codexVersion, model, effort, sessionRetention, results }, null, 2),
     );
+  } catch (error) {
+    await close();
+    if (signalExit === undefined) throw error;
   } finally {
-    await server.close();
+    await close();
+    process.off("SIGINT", interrupt);
+    process.off("SIGTERM", terminate);
+    if (signalExit !== undefined || shutdownFailed) process.exitCode = signalExit ?? 1;
   }
 }
 

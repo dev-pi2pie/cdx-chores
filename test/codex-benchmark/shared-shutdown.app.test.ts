@@ -105,3 +105,82 @@ test.skipIf(process.platform === "win32").each(["allowed", "denied", "undelivere
   },
   12_000,
 );
+
+test.skipIf(process.platform === "win32").each([
+  { mode: "normal", signal: null, escalation: "allowed", exitCode: 0 },
+  { mode: "SIGINT", signal: "SIGINT", escalation: "allowed", exitCode: 130 },
+  { mode: "SIGTERM", signal: "SIGTERM", escalation: "allowed", exitCode: 143 },
+  { mode: "denied escalation", signal: null, escalation: "denied", exitCode: 1 },
+] as const)(
+  "live check verifies worker shutdown on $mode",
+  async ({ signal, escalation, exitCode }) => {
+    await withRunnerFixture(
+      { resistantWorker: true, resistantLeader: true, stallInitialization: signal !== null },
+      async ({ home, options, trace }) => {
+        const owned = startFixtureProcess({
+          executable: process.execPath,
+          args: [
+            "--preload",
+            join(import.meta.dir, "fixtures/shutdown-signal.cjs"),
+            join(REPO_ROOT, "scripts/spikes/codex-turn-lifecycle/live.ts"),
+          ],
+          env: { ...options.env, FIXTURE_ESCALATION: escalation },
+          cwd: options.cwd,
+          timeoutMs: 6_000,
+          graceMs: 600,
+          cleanupMs: 1_500,
+        });
+        const observeExit = once(owned.child, "exit").then(requireProcessObservation);
+        const workerIdentity = async () =>
+          JSON.parse(await readFile(join(home, "worker.pid"), "utf8")) as {
+            pid: number;
+            groupId: number;
+          };
+        try {
+          if (signal) {
+            const deadline = performance.now() + 2_000;
+            while (!traceMethod(await trace(), "initialize").length) {
+              if (performance.now() >= deadline) throw new Error("Fixture did not initialize.");
+              await delay(20);
+            }
+            owned.child.kill(signal);
+          }
+          const [processes, result] = await Promise.all([observeExit, owned.completion]);
+          const { pid: worker, groupId: leader } = await workerIdentity();
+          expect(leader).toBeGreaterThan(1);
+          expect(worker).toBeGreaterThan(1);
+          const liveMembers = processes.filter((p) => p.groupId === leader && isLiveProcess(p));
+          expect(liveMembers.map((p) => p.pid).sort((a, b) => a - b)).toEqual(
+            escalation === "denied" ? [leader, worker].sort((a, b) => a - b) : [],
+          );
+          expect(result.issues).toEqual([]);
+          expect(result.exitCode, result.stderr).toBe(exitCode);
+          if (signal) {
+            expect(traceMethod(await trace(), "turn/start")).toHaveLength(0);
+          } else {
+            expect(JSON.parse(result.stdout).results).toMatchObject([
+              { status: "completed", requestedSpeed: "standard" },
+              { status: "completed", requestedSpeed: "fast" },
+            ]);
+          }
+          if (escalation === "denied") expect(result.stderr).toContain("Shutdown failed");
+        } finally {
+          await writeFile(join(home, "release-shutdown"), "");
+          owned.shutdown();
+          await Promise.allSettled([observeExit, owned.completion]);
+          const identity = await workerIdentity().catch(() => undefined);
+          if (identity) {
+            const live = () =>
+              requireProcessObservation().some(
+                (p) => (p.pid === identity.pid || p.pid === identity.groupId) && isLiveProcess(p),
+              );
+            const deadline = performance.now() + 1_000;
+            while (live() && performance.now() < deadline) await delay(20);
+            expect(live()).toBe(false);
+          }
+        }
+      },
+    );
+  },
+  10_000,
+);

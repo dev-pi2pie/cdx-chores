@@ -1,13 +1,11 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { StringDecoder } from "node:string_decoder";
-import { setTimeout as delay } from "node:timers/promises";
 
+import { createAppServerShutdown } from "./app-server-shutdown";
 import { isRecord } from "./discovery/transport";
 
 const maxLineBytes = 8 * 1024 * 1024;
 const requestTimeoutMs = 15_000;
-const shutdownGraceMs = 1_000;
-const shutdownVerificationMs = 1_000;
 
 type NotificationListener = (method: string, params: unknown) => void;
 
@@ -45,15 +43,12 @@ export class CodexRequestTimeoutError extends Error {
 
 export class CodexAppServer {
   private readonly child: ChildProcessWithoutNullStreams;
-  private readonly closed: Promise<void>;
+  private readonly shutdown: () => Promise<void>;
   private readonly stopped = new AbortController();
   private readonly pending = new Map<number, PendingRequest>();
   private readonly listeners = new Set<NotificationListener>();
   private nextId = 0;
-  private exited = false;
   private unexpectedStdoutEnd = false;
-  private readonly separateGroup: boolean;
-  private closing?: Promise<void>;
 
   constructor(
     executable: string,
@@ -62,29 +57,21 @@ export class CodexAppServer {
     { isolateSignals = false }: { isolateSignals?: boolean } = {},
   ) {
     // Keep a benchmark's app-server available for turn/interrupt after foreground Ctrl-C.
-    this.separateGroup = isolateSignals && process.platform !== "win32";
+    const separateGroup = isolateSignals && process.platform !== "win32";
     this.child = spawn(executable, ["app-server"], {
       cwd,
       env,
       stdio: "pipe",
       windowsHide: true,
-      detached: this.separateGroup,
+      detached: separateGroup,
     });
     this.child.on("error", (error) => this.fail(error));
     this.child.stdin.on("error", (error) => this.fail(error));
     this.child.stdout.on("error", (error) => this.fail(error));
     this.child.stderr.on("error", (error) => this.fail(error));
     this.child.stderr.resume();
-    this.child.on("exit", () => {
-      this.exited = true;
-    });
-    this.closed = new Promise((resolve) => {
-      this.child.once("close", (code, signal) => {
-        this.exited = true;
-        this.fail(appServerExitError(code, signal));
-        resolve();
-      });
-    });
+    this.shutdown = createAppServerShutdown(this.child, separateGroup);
+    this.child.once("close", (code, signal) => this.fail(appServerExitError(code, signal)));
     this.child.stdout.once("end", () => {
       if (this.signal.aborted) return;
       this.unexpectedStdoutEnd = true;
@@ -248,70 +235,8 @@ export class CodexAppServer {
     }
   }
 
-  private kill(signal: NodeJS.Signals): void {
-    const pid = this.child.pid;
-    if (!pid || (!this.separateGroup && this.exited)) return;
-    try {
-      process.kill(this.separateGroup ? -pid : pid, signal);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
-    }
-  }
-
-  private async closedBy(deadline: number): Promise<boolean> {
-    const timer = new AbortController();
-    try {
-      return await Promise.race([
-        this.closed.then(() => true),
-        delay(Math.max(0, deadline - performance.now()), false, { signal: timer.signal }),
-      ]);
-    } finally {
-      timer.abort();
-    }
-  }
-
-  private async waitForGroupExit(groupId: number, deadline: number): Promise<void> {
-    while (true) {
-      try {
-        process.kill(-groupId, 0);
-      } catch (error) {
-        const code = (error as NodeJS.ErrnoException).code;
-        if (code === "ESRCH") return;
-        if (code !== "EPERM") throw error;
-      }
-      if (performance.now() >= deadline)
-        throw new Error(
-          "Codex app-server process group did not stop before its shutdown deadline.",
-        );
-      await delay(20);
-    }
-  }
-
   close(): Promise<void> {
-    return (this.closing ??= this.stopProcess());
-  }
-
-  private async stopProcess(): Promise<void> {
     this.fail(new Error("Codex app-server was closed."));
-    this.child.stdin.destroy();
-    this.child.stdout.destroy();
-    this.child.stderr.destroy();
-    const graceDeadline = performance.now() + shutdownGraceMs;
-    try {
-      this.kill("SIGTERM");
-      const closed = await this.closedBy(graceDeadline);
-      const deadline = Math.min(graceDeadline, performance.now()) + shutdownVerificationMs;
-      // An owned group may still contain workers after its leader has closed.
-      if (!closed || this.separateGroup) this.kill("SIGKILL");
-      if (!closed && !(await this.closedBy(deadline)))
-        throw new Error("Codex app-server child did not close before its shutdown deadline.");
-      if (this.separateGroup && this.child.pid) {
-        await this.waitForGroupExit(this.child.pid, deadline);
-      }
-    } catch (error) {
-      // A child whose exit we cannot confirm must not pin the caller's event loop.
-      this.child.unref();
-      throw error;
-    }
+    return this.shutdown();
   }
 }
