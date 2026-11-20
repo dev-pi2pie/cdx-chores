@@ -1,17 +1,27 @@
 import { spawn } from "node:child_process";
 import { EventEmitter, once } from "node:events";
 import { createInterface } from "node:readline";
+import { setImmediate } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
+import {
+  claimThreadId,
+  isAppServerId,
+  TurnStartEvidence,
+} from "../../src/adapters/codex/app-server-identity.ts";
 import { createAppServerShutdown } from "../../src/adapters/codex/app-server-shutdown.ts";
 import { extractAppServerVersion } from "../../src/adapters/codex/app-server-version.ts";
 import { writeAppServerTurn } from "../../src/adapters/codex/app-server-write.ts";
+import { CodexAppServerError, isTurnInputTooLarge } from "../../src/adapters/codex/app-server.ts";
 import {
   readSavedTurn,
   type RolloutReadOptions,
 } from "../../src/adapters/codex/benchmark/rollout.ts";
-import { applyCodexSessionRetention } from "../../src/adapters/codex/session-retention.ts";
+import {
+  applyCodexSessionRetention,
+  type CodexSessionRetentionResult,
+} from "../../src/adapters/codex/session-retention.ts";
 import { resolveCodexSpeed, type CodexSpeed } from "../../src/utils/codex-execution.ts";
 import {
   resolveCodexSessionRetention,
@@ -50,7 +60,7 @@ interface Message {
   id?: number | string;
   method?: string;
   result?: unknown;
-  error?: { message: string };
+  error?: unknown;
   params?: {
     threadId?: string;
     turnId?: string;
@@ -59,8 +69,6 @@ interface Message {
     item?: { type: string };
   };
 }
-
-class LiveRequestRejected extends Error {}
 
 function startAppServer({ executable, args }: typeof defaultAppServer, env: NodeJS.ProcessEnv) {
   const separateGroup = process.platform !== "win32";
@@ -81,7 +89,7 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
   lines.once("close", stop);
 
   const liveTurns = new Map<string, LiveTurn>();
-  const announcedTurns = new Map<string, string>();
+  const starts = new Map<string, TurnStartEvidence>();
   const turnKey = (threadId: string, turnId: string) => JSON.stringify([threadId, turnId]);
   let nextId = 0;
   const send = (message: object, onQueued?: () => void): void => {
@@ -122,14 +130,18 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
       }
 
       const params = message.params;
+      if (typeof params?.threadId !== "string") return;
+      const start = starts.get(params.threadId);
+      if (!start) return;
       const lifecycle = message.method === "turn/started" || message.method === "turn/completed";
+      if (lifecycle || typeof params.turnId === "string") start.observed = true;
       const turnId = lifecycle ? params?.turn?.id : params?.turnId;
-      if (typeof params?.threadId !== "string" || typeof turnId !== "string" || !turnId) return;
+      if (!isAppServerId(turnId)) return;
       const key = turnKey(params.threadId, turnId);
       const live: LiveTurn = liveTurns.get(key) ?? { itemTypes: [] };
       liveTurns.set(key, live);
       if (message.method === "turn/started" && params.turn) {
-        announcedTurns.set(params.threadId, turnId);
+        start.recordStart(turnId);
       } else if (
         message.method === "turn/completed" &&
         params.turn &&
@@ -144,7 +156,7 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
       } else if (message.method === "model/rerouted") {
         live.rerouted = true;
       }
-      if (lifecycle && live.completion && announcedTurns.get(params.threadId) === turnId) {
+      if (lifecycle && live.completion && start.turnId === turnId) {
         events.emit(`announced-terminal:${params.threadId}`, turnId);
       }
     } catch (error) {
@@ -165,7 +177,10 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
     // A child-process reply arrives on a later I/O turn. Install the waiter only
     // after a successful local write so a thrown write leaves no pending listener.
     const [message] = (await wait(`request:${id}`, timeoutMs, method, cancel)) as [Message];
-    if (message.error) throw new LiveRequestRejected(`${method}: ${message.error.message}`);
+    if (message.id !== id || "result" in message === "error" in message) {
+      throw new Error("Codex app-server returned an invalid response.");
+    }
+    if ("error" in message) throw new CodexAppServerError(method, message.error);
     return message.result as T;
   }
 
@@ -175,30 +190,50 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
       send({ method });
     },
     request,
-    announcedTurnId(threadId: string) {
-      return announcedTurns.get(threadId);
-    },
-    async startTurn(threadId: string, params: object, onQueued: () => void) {
+    async startTurn(
+      threadId: string,
+      params: object,
+      start: TurnStartEvidence,
+      onQueued: () => void,
+    ) {
+      starts.set(threadId, start);
       const settled = new AbortController();
       const terminal = once(events, `announced-terminal:${threadId}`, {
-        signal: settled.signal,
-      }).then(([id]) => id as string);
+        signal: AbortSignal.any([settled.signal, start.signal]),
+      }).then(async ([id]) => {
+        // Let a reply from the same input batch settle before inferring the start.
+        await setImmediate(undefined, { signal: settled.signal });
+        start.assertUnambiguous();
+        return id as string;
+      });
       try {
-        const reply = request<{ turn: Turn }>(
+        const reply = request(
           "turn/start",
           { ...params, threadId },
           requestTimeoutMs,
           settled.signal,
           onQueued,
         );
-        return await Promise.race([terminal, reply.then(({ turn }) => turn.id)]);
+        return await Promise.race([terminal, reply.then((result) => start.recordReply(result))]);
+      } catch (error) {
+        start.assertUnambiguous();
+        throw error;
       } finally {
         settled.abort();
       }
     },
-    async waitForCompletion(threadId: string, turnId: string) {
+    async waitForCompletion(threadId: string, turnId: string, start: TurnStartEvidence) {
+      start.assertUnambiguous();
       const key = turnKey(threadId, turnId);
-      if (!liveTurns.get(key)?.completion) await wait(`turn:${key}`, 120_000, "Turn completion");
+      if (!liveTurns.get(key)?.completion) {
+        try {
+          await wait(`turn:${key}`, 120_000, "Turn completion", start.signal);
+        } catch (error) {
+          start.assertUnambiguous();
+          throw error;
+        }
+      }
+      start.assertUnambiguous();
       const live = liveTurns.get(key);
       if (!live?.completion) throw new Error("Matching turn completion was unavailable.");
       return { live, ...live.completion };
@@ -252,47 +287,54 @@ async function runTrial(
   trial: { tier: string; sentTier: string | null },
   retention: CodexSessionRetention,
   rolloutReadOptions: RolloutReadOptions | undefined,
+  ownedThreadIds: Set<string>,
 ) {
-  const { thread } = await server.request<{ thread: Thread }>("thread/start", {
+  const response = await server.request<{ thread: Thread }>("thread/start", {
     model,
     ephemeral: false,
     approvalPolicy: "never",
     sandbox: "read-only",
   });
+  const thread = response?.thread;
+  claimThreadId(thread?.id, ownedThreadIds);
+  const start = new TurnStartEvidence();
   let completion: Awaited<ReturnType<AppServer["waitForCompletion"]>>;
-  let turnId: string | undefined;
+  const failed = async (error: unknown, appliedRetention?: CodexSessionRetentionResult) => {
+    process.exitCode = 1;
+    const dispatched = trial.sentTier !== null;
+    return {
+      stopScheduling: dispatched && (start.observed || !isTurnInputTooLarge(error)),
+      provider: thread.modelProvider,
+      threadId: thread.id,
+      turnId: dispatched ? (start.turnId ?? null) : null,
+      status: "error",
+      error: String(error),
+      sessionRetention:
+        appliedRetention ??
+        (await applyCodexSessionRetention({
+          mode: retention,
+          threadId: thread.id,
+          completed: false,
+          request: (method, params) => server.request(method, params),
+        })),
+    };
+  };
   try {
-    turnId = await server.startTurn(
+    const turnId = await server.startTurn(
       thread.id,
       {
         effort,
         serviceTierForTurn: trial.tier,
         input: [{ type: "text", text: prompt, text_elements: [] }],
       },
+      start,
       () => {
         trial.sentTier = trial.tier;
       },
     );
-    completion = await server.waitForCompletion(thread.id, turnId);
+    completion = await server.waitForCompletion(thread.id, turnId, start);
   } catch (error) {
-    process.exitCode = 1;
-    const dispatched = trial.sentTier !== null;
-    const knownTurnId = dispatched ? (turnId ?? server.announcedTurnId(thread.id)) : undefined;
-    return {
-      stopScheduling:
-        dispatched && (knownTurnId !== undefined || !(error instanceof LiveRequestRejected)),
-      provider: thread.modelProvider,
-      threadId: thread.id,
-      turnId: knownTurnId ?? null,
-      status: "error",
-      error: String(error),
-      sessionRetention: await applyCodexSessionRetention({
-        mode: retention,
-        threadId: thread.id,
-        completed: false,
-        request: (method, params) => server.request(method, params),
-      }),
-    };
+    return failed(error);
   }
   const { turn, live, receivedAt } = completion;
   const { terminal, outputTokens, usage, ...rollout } = await readSavedTurn({
@@ -310,6 +352,11 @@ async function runTrial(
       return refreshed.path;
     },
   });
+  try {
+    start.assertUnambiguous();
+  } catch (error) {
+    return failed(error);
+  }
   const durationMs = terminal?.duration_ms ?? null;
   const firstTokenMs = terminal?.time_to_first_token_ms ?? null;
   const durationMatchesLive = compare(durationMs, turn.durationMs);
@@ -330,6 +377,7 @@ async function runTrial(
     completed: true,
     request: (method, params) => server.request(method, params),
   });
+  if (start.conflicting) return failed(start.signal.reason, sessionRetention);
   if (sessionRetention.status === "failed") process.exitCode = 1;
   return {
     stopScheduling: false,
@@ -442,6 +490,7 @@ export async function runLiveCheck(
       tier: tierFor(catalogModel, requestedSpeed),
     }));
     const results = [];
+    const ownedThreadIds = new Set<string>();
     for (const { requestedSpeed, tier } of trials) {
       if (signalExit !== undefined || server.signal.aborted) break;
       const trial = { tier, sentTier: null as string | null };
@@ -453,6 +502,7 @@ export async function runLiveCheck(
           trial,
           sessionRetention,
           rollout,
+          ownedThreadIds,
         );
         results.push({ requestedSpeed, sentTier: trial.sentTier, ...result });
         if (stopScheduling) break;

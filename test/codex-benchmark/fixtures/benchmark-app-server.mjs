@@ -23,6 +23,21 @@ const traceLifecycle = (method, params) => {
   if (scenario.traceLifecycle) trace({ method, params });
 };
 const notification = (method, params) => send({ method, params });
+async function waitForReceipt(name) {
+  const path = join(home, name);
+  const deadline = performance.now() + 2_000;
+  while (!existsSync(path)) {
+    if (performance.now() >= deadline) throw new Error(`Fixture did not receive ${name}`);
+    await delay(10);
+  }
+}
+
+function conflictingStart(thread) {
+  const turnId = "conflicting-turn";
+  traceLifecycle("turn/started", { threadId: thread.id, turnId });
+  notification("turn/started", { threadId: thread.id, turn: { id: turnId } });
+}
+
 const event = (type, payload) =>
   `${JSON.stringify({ type: "event_msg", payload: { type, ...payload } })}\n`;
 const tokenCount = {
@@ -69,7 +84,8 @@ function completeTurn(thread, status, error = null) {
     status === "interrupted"
       ? event("turn_aborted", { turn_id: turnId, reason: "interrupted" })
       : event("task_complete", { turn_id: turnId, duration_ms: 800, time_to_first_token_ms: 200 });
-  appendFileSync(thread.path, scenario.delayed ? terminal.slice(0, -1) : terminal);
+  const unfinished = scenario.delayed || thread.id === `thread-${scenario.unfinishedRolloutThread}`;
+  appendFileSync(thread.path, unfinished ? terminal.slice(0, -1) : terminal);
   if (status === "completed") {
     const identity = { threadId: thread.id, turnId };
     if (scenario.rerouted)
@@ -189,6 +205,10 @@ async function run() {
           reject("fixture rejected thread/start");
           break;
         }
+        if (threadNumber === scenario.threadStartReply?.at) {
+          reply(scenario.threadStartReply.result);
+          break;
+        }
         const settings = scenario.threadSettings?.[threads.size];
         const newId = `thread-${threadNumber}`;
         const started = {
@@ -234,6 +254,54 @@ async function run() {
         reply({});
         break;
       case "turn/start":
+        if (thread.id === `thread-${scenario.turnStartRefusal?.at}`) {
+          const { error, evidence, errorFirst } = scenario.turnStartRefusal;
+          const turn = { id: `turn-${thread.id}` };
+          const started = { method: "turn/started", params: { threadId: thread.id, turn } };
+          const terminal = {
+            method: "turn/completed",
+            params: {
+              threadId: evidence === "other-thread" ? "other-thread" : thread.id,
+              turn: { ...turn, status: "completed" },
+            },
+          };
+          const messages = [];
+          if (evidence === "started" || evidence === "pair") messages.push(started);
+          if (evidence === "terminal" || evidence === "pair" || evidence === "other-thread")
+            messages.push(terminal);
+          if (evidence === "item") {
+            messages.push({
+              method: "item/started",
+              params: { threadId: thread.id, turnId: turn.id, item: { id: "reply" } },
+            });
+          }
+          if (errorFirst) messages.unshift({ id, error });
+          else messages.push({ id, error });
+          for (const message of messages) {
+            if (message.method) traceLifecycle(message.method, message.params);
+            else traceLifecycle("fixture/turn-start-error", { threadId: thread.id });
+          }
+          process.stdout.write(
+            messages.map((message) => JSON.stringify(message)).join("\n") + "\n",
+          );
+          break;
+        }
+        if (thread.id === `thread-${scenario.turnStartReply?.at}`) {
+          if (scenario.turnStartReply.announce) openTurn(thread);
+          reply(scenario.turnStartReply.result);
+          if (scenario.turnStartReply.complete) completeTurn(thread, "completed");
+          break;
+        }
+        if (scenario.conflictingStart === "after-reply" && thread.id === "thread-1") {
+          traceLifecycle("fixture/turn-start-reply", {
+            threadId: thread.id,
+            turnId: `turn-${thread.id}`,
+          });
+          reply({ turn: { id: `turn-${thread.id}` } });
+          await waitForReceipt("caller-turn-reply");
+          conflictingStart(thread);
+          break;
+        }
         if (scenario.omitTurnStart) break;
         if (scenario.holdTurnStart) {
           while (!existsSync(join(home, "release-turn-start"))) await delay(10);
@@ -287,6 +355,10 @@ async function run() {
           completeTurn(thread, "interrupted", message === null ? null : { message });
         } else {
           completeTurn(thread, "completed");
+          if (scenario.conflictingStart === "during-readback" && thread.id === "thread-1") {
+            await waitForReceipt("caller-rollout-read");
+            conflictingStart(thread);
+          }
           if (thread.id === `thread-${scenario.endStdoutAfterThread}`) {
             process.stdout.end(() => trace({ method: "stdout-ended" }));
           }
@@ -316,6 +388,9 @@ async function run() {
         }
         if (method === "thread/archive") renameSync(thread.path, `${thread.path}.archive`);
         else unlinkSync(thread.path);
+        if (scenario.conflictingStart === "during-retention" && thread.id === "thread-1") {
+          conflictingStart(thread);
+        }
         reply({});
         break;
       default:

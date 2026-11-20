@@ -380,9 +380,9 @@ test.each(["thread/start", "turn/start"] as const)(
       const turnRequests = traceMethod(await trace(), "turn/start");
       const attempted = method === "turn/start";
       expect(turnRequests.map(({ params }) => params?.serviceTierForTurn)).toEqual(
-        attempted ? ["priority", "priority"] : [],
+        attempted ? ["priority"] : [],
       );
-      expect(trials).toHaveLength(2);
+      expect(trials).toHaveLength(attempted ? 1 : 2);
       for (const trial of trials) {
         expect(trial).toMatchObject({
           status: "failed",
@@ -394,6 +394,50 @@ test.each(["thread/start", "turn/start"] as const)(
     });
   },
 );
+
+test("an ambiguous RPC error about the tier still fails after earlier measurements", async () => {
+  await withRunnerFixture(
+    {
+      turnStartRefusal: {
+        at: 3,
+        error: {
+          code: -32602,
+          message: 'Unsupported parameter: "service_tier" is not supported with this model.',
+        },
+      },
+    },
+    async ({ options, trace }) => {
+      const result = await startCliBenchmark({ ...options, runs: 3 }, [
+        "--json",
+        "--codex-speed",
+        "standard",
+        "--session-retention",
+        "archive",
+      ]).completion;
+      expect(result.exitCode).toBe(1);
+      const { trials, run } = JSON.parse(result.stdout);
+      expect(run.completedMeasuredTrials).toBe(1);
+      expect(trials).toMatchObject([
+        { status: "completed" },
+        { status: "completed" },
+        {
+          status: "failed",
+          inferenceAttempted: true,
+          sentTier: "default",
+          turnId: null,
+          sessionRetention: { status: "skipped" },
+        },
+      ]);
+      const events = await trace();
+      expect(traceMethod(events, "thread/start")).toHaveLength(3);
+      expect(traceMethod(events, "turn/start")).toHaveLength(3);
+      expect(traceMethod(events, "thread/archive").map(({ params }) => params?.threadId)).toEqual([
+        "thread-1",
+        "thread-2",
+      ]);
+    },
+  );
+});
 
 test.each([1, 2])(
   "CLI reports transport loss during readback and keeps completed results with %i measured trials scheduled",

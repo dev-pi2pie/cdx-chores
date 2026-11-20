@@ -42,6 +42,16 @@ interface Scenario {
   rejectStart?: "thread/start" | "turn/start";
   rejectThreadStartAt?: number;
   rejectTurnStartThread?: number;
+  threadStartReply?: { at: number; result: unknown };
+  turnStartReply?: { at: number; result: unknown; announce?: boolean; complete?: boolean };
+  turnStartRefusal?: {
+    at: number;
+    error: { code: number; message: string; data?: unknown };
+    evidence?: "started" | "terminal" | "pair" | "item" | "other-thread";
+    errorFirst?: boolean;
+  };
+  conflictingStart?: "after-reply" | "during-readback" | "during-retention";
+  unfinishedRolloutThread?: number;
   closeStdinOnThreadStart?: number;
   retentionError?: boolean;
   usageSnapshots?: Array<Record<string, number> | null>;

@@ -1,13 +1,14 @@
 import { isAbsolute } from "node:path";
 
 import { resolveCodexSessionRetention } from "../../../utils/codex-session-retention";
-import { CodexAppServer, CodexAppServerError, CodexRequestTimeoutError } from "../app-server";
+import { CodexAppServer, CodexRequestTimeoutError, isTurnInputTooLarge } from "../app-server";
+import { claimThreadId } from "../app-server-identity";
 import { extractAppServerVersion } from "../app-server-version";
 import { resolveDiscoveryExecutable } from "../discovery/executable";
 import { applyCodexSessionRetention } from "../session-retention";
 import { BenchmarkCatalog, isTierRejection } from "./catalog";
 import { readSavedTurn } from "./rollout";
-import { TrialObserver, type Turn } from "./turn";
+import { TrialObserver } from "./turn";
 import {
   benchmarkWorkload,
   type BenchmarkOptions,
@@ -95,7 +96,7 @@ class BenchmarkRunner {
     try {
       return { ...(await observer.waitForCompletion(turnId, waiting)), timedOut: false };
     } catch (error) {
-      if (stopped.aborted) throw error;
+      if (stopped.aborted || observer.start.conflicting) throw error;
       const timedOut = deadline.aborted && waiting.reason === deadline.reason;
       try {
         return { ...(await this.interrupt(observer, threadId, turnId)), timedOut };
@@ -189,12 +190,10 @@ class BenchmarkRunner {
         },
         { signal },
       );
-      trial.threadId = startedThread.thread.id;
-      if (!trial.threadId || this.ownedThreadIds.has(trial.threadId)) {
-        throw new Error("Codex app-server did not return a new benchmark thread ID.");
-      }
-      this.ownedThreadIds.add(trial.threadId);
-      thread = startedThread.thread;
+      const freshThread = startedThread?.thread;
+      claimThreadId(freshThread?.id, this.ownedThreadIds);
+      thread = freshThread;
+      trial.threadId = thread.id;
       trial.resolvedModel = startedThread.model ?? thread.model ?? null;
       trial.resolvedProvider = startedThread.modelProvider ?? thread.modelProvider ?? null;
       trial.resolvedReasoningEffort =
@@ -204,7 +203,7 @@ class BenchmarkRunner {
       observer = new TrialObserver(this.server, thread.id, this.options.onFirstText);
       this.server.signal.throwIfAborted();
       trial.turnId = await observer.waitForStart(
-        this.server.request<{ turn: Turn }>(
+        this.server.request(
           "turn/start",
           {
             threadId: thread.id,
@@ -249,18 +248,20 @@ class BenchmarkRunner {
       ) {
         trial.status = "unavailable";
       }
-      trial.eligible =
+      const eligible =
         trial.status === "completed" && !trial.warmup && observer.isEligible(turn.id);
       await this.recover(trial, thread, turn.id, receivedAt);
+      observer.start.assertUnambiguous();
+      trial.eligible = eligible;
     } catch (error) {
       trial.error = messageFrom(error);
       trial.status = signal?.aborted
         ? "cancelled"
-        : requestedSpeed && isTierRejection(trial.error)
+        : !trial.inferenceAttempted && requestedSpeed && isTierRejection(trial.error)
           ? "unavailable"
           : "failed";
-      if (trial.inferenceAttempted) trial.turnId ??= observer?.startedTurnId ?? null;
-      if (thread && trial.turnId && !completionConfirmed) {
+      if (trial.inferenceAttempted) trial.turnId = observer?.start.turnId ?? null;
+      if (thread && trial.turnId && !completionConfirmed && !observer?.start.conflicting) {
         let receivedAt: number | undefined;
         if (
           error instanceof CodexRequestTimeoutError &&
@@ -278,18 +279,29 @@ class BenchmarkRunner {
         }
         this.canStartTrial = completionConfirmed;
         await this.recover(trial, thread, trial.turnId, receivedAt);
-      } else if (trial.inferenceAttempted && !(error instanceof CodexAppServerError)) {
-        this.canStartTrial = false;
+      } else if (trial.inferenceAttempted) {
+        this.canStartTrial = isTurnInputTooLarge(error) && observer?.start.observed === false;
       }
     } finally {
-      observer?.close();
-      if (thread) {
-        trial.sessionRetention = await applyCodexSessionRetention({
-          mode: this.retention,
-          threadId: thread.id,
-          completed: completionConfirmed,
-          request: (method, params) => this.server.request(method, params),
-        });
+      try {
+        if (thread) {
+          trial.sessionRetention = await applyCodexSessionRetention({
+            mode: this.retention,
+            threadId: thread.id,
+            completed: completionConfirmed && !observer?.start.conflicting,
+            request: (method, params) => this.server.request(method, params),
+          });
+        }
+      } finally {
+        observer?.close();
+        if (observer?.start.conflicting) {
+          this.canStartTrial = false;
+          trial.status = signal?.aborted ? "cancelled" : "failed";
+          trial.error = messageFrom(observer.start.signal.reason);
+          trial.turnId = null;
+          trial.eligible = false;
+          trial.usagePartial = trial.usage !== null;
+        }
       }
     }
   }

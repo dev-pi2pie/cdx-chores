@@ -27,13 +27,30 @@ function appServerExitError(code: number | null, signal: NodeJS.Signals | null):
 }
 
 export class CodexAppServerError extends Error {
+  readonly code: number | undefined;
+  readonly data: unknown;
+
   constructor(
-    method: string,
-    readonly code: number | undefined,
-    detail: string,
+    readonly method: string,
+    responseError: unknown,
   ) {
+    const error = isRecord(responseError) ? responseError : {};
+    const detail =
+      typeof error.message === "string" ? error.message : "Codex app-server request failed.";
     super(`${method}: ${detail}`);
+    this.code = typeof error.code === "number" ? error.code : undefined;
+    this.data = error.data;
   }
+}
+
+export function isTurnInputTooLarge(error: unknown): boolean {
+  return (
+    error instanceof CodexAppServerError &&
+    error.method === "turn/start" &&
+    error.code === -32602 &&
+    isRecord(error.data) &&
+    error.data.input_error_code === "input_too_large"
+  );
 }
 
 export class CodexRequestTimeoutError extends Error {
@@ -151,14 +168,7 @@ export class CodexAppServer {
       const pending = this.pending.get(message.id);
       if (!pending) return; // A response may arrive after its request times out or is cancelled.
       if ("error" in message) {
-        const error = isRecord(message.error) ? message.error : {};
-        pending.reject(
-          new CodexAppServerError(
-            pending.method,
-            typeof error.code === "number" ? error.code : undefined,
-            typeof error.message === "string" ? error.message : "Codex app-server request failed.",
-          ),
-        );
+        pending.reject(new CodexAppServerError(pending.method, message.error));
       } else {
         pending.resolve(message.result);
       }
