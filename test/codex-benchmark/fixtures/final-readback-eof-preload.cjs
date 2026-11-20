@@ -14,7 +14,7 @@ childProcess.spawn = (executable, args, options) => {
 };
 
 const home = process.env.CODEX_HOME;
-const finalRollout = join(home, "thread-2.jsonl");
+const finalRollout = join(home, `thread-${process.env.FIXTURE_TURN_THREAD ?? 2}.jsonl`);
 const readFile = files.readFile;
 files.readFile = async (path, options) => {
   // Resume only after the parent has dispatched EOF and its transport handler has run.

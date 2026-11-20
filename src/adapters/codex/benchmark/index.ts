@@ -167,7 +167,6 @@ class BenchmarkRunner {
     let thread: Thread | undefined;
     let observer: TrialObserver | undefined;
     let completionConfirmed = false;
-    let turnMayBeActive = false;
     try {
       const tier =
         requestedSpeed === null ? undefined : await this.catalog.tierFor(model, requestedSpeed);
@@ -204,7 +203,6 @@ class BenchmarkRunner {
       signal?.throwIfAborted();
       observer = new TrialObserver(this.server, thread.id, this.options.onFirstText);
       this.server.signal.throwIfAborted();
-      turnMayBeActive = true;
       trial.turnId = await observer.waitForStart(
         this.server.request<{ turn: Turn }>(
           "turn/start",
@@ -261,7 +259,7 @@ class BenchmarkRunner {
         : requestedSpeed && isTierRejection(trial.error)
           ? "unavailable"
           : "failed";
-      trial.turnId ??= observer?.startedTurnId ?? null;
+      if (trial.inferenceAttempted) trial.turnId ??= observer?.startedTurnId ?? null;
       if (thread && trial.turnId && !completionConfirmed) {
         let receivedAt: number | undefined;
         if (
@@ -280,7 +278,7 @@ class BenchmarkRunner {
         }
         this.canStartTrial = completionConfirmed;
         await this.recover(trial, thread, trial.turnId, receivedAt);
-      } else if (turnMayBeActive && !(error instanceof CodexAppServerError)) {
+      } else if (trial.inferenceAttempted && !(error instanceof CodexAppServerError)) {
         this.canStartTrial = false;
       }
     } finally {

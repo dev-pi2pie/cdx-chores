@@ -3,6 +3,7 @@
 import { spawn } from "node:child_process";
 import {
   appendFileSync,
+  closeSync,
   existsSync,
   readFileSync,
   renameSync,
@@ -112,6 +113,7 @@ async function run() {
     if (!existsSync(readyPath)) throw new Error("The fixture worker did not start.");
   }
   let rejectFirstLookup = scenario.rejectFirstLookup;
+  let threadStarts = 0;
   for await (const line of createInterface({ input: process.stdin })) {
     const { id, method, params } = JSON.parse(line);
     if (method === "initialize" && scenario.stallInitialization)
@@ -182,8 +184,13 @@ async function run() {
         break;
       case "thread/start": {
         if (params.ephemeral !== false) throw new Error("Use a persisted thread.");
+        const threadNumber = ++threadStarts;
+        if (threadNumber === scenario.rejectThreadStartAt) {
+          reject("fixture rejected thread/start");
+          break;
+        }
         const settings = scenario.threadSettings?.[threads.size];
-        const newId = `thread-${threads.size + 1}`;
+        const newId = `thread-${threadNumber}`;
         const started = {
           id: newId,
           path: join(home, `${newId}.jsonl`),
@@ -197,6 +204,12 @@ async function run() {
           trace({ method: "fixture/thread-created", params: { threadId: newId } });
           break;
         }
+        const closeInput = threadNumber === scenario.closeStdinOnThreadStart;
+        if (closeInput) {
+          process.stdin.pause();
+          closeSync(0);
+          trace({ method: "stdin-closed", params: { pid: process.pid } });
+        }
         reply({
           ...settings,
           thread: {
@@ -207,6 +220,12 @@ async function run() {
                 : started.path,
           },
         });
+        if (closeInput) {
+          const releasePath = join(home, "release-shutdown");
+          const deadline = performance.now() + 5_000;
+          while (performance.now() < deadline && !existsSync(releasePath)) await delay(20);
+          return;
+        }
         break;
       }
       case "fixture/announce-late-turn":

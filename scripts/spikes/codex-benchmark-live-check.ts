@@ -6,6 +6,7 @@ import { parseArgs } from "node:util";
 
 import { createAppServerShutdown } from "../../src/adapters/codex/app-server-shutdown.ts";
 import { extractAppServerVersion } from "../../src/adapters/codex/app-server-version.ts";
+import { writeAppServerTurn } from "../../src/adapters/codex/app-server-write.ts";
 import {
   readSavedTurn,
   type RolloutReadOptions,
@@ -83,7 +84,15 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
   const announcedTurns = new Map<string, string>();
   const turnKey = (threadId: string, turnId: string) => JSON.stringify([threadId, turnId]);
   let nextId = 0;
-  const send = (message: object) => child.stdin.write(`${JSON.stringify(message)}\n`);
+  const send = (message: object, onQueued?: () => void): void => {
+    const line = `${JSON.stringify(message)}\n`;
+    if (onQueued) {
+      writeAppServerTurn(child.stdin, line, (error) => stopped.abort(error));
+      onQueued();
+    } else {
+      child.stdin.write(line);
+    }
+  };
   async function wait(event: string, timeoutMs: number, operation: string, cancel?: AbortSignal) {
     const deadline = AbortSignal.timeout(timeoutMs);
     const signal = AbortSignal.any([stopped.signal, deadline, ...(cancel ? [cancel] : [])]);
@@ -148,10 +157,11 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
     params: object,
     timeoutMs = requestTimeoutMs,
     cancel?: AbortSignal,
+    onQueued?: () => void,
   ): Promise<T> {
     const id = ++nextId;
     stopped.signal.throwIfAborted();
-    send({ id, method, params });
+    send({ id, method, params }, onQueued);
     // A child-process reply arrives on a later I/O turn. Install the waiter only
     // after a successful local write so a thrown write leaves no pending listener.
     const [message] = (await wait(`request:${id}`, timeoutMs, method, cancel)) as [Message];
@@ -160,6 +170,7 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
   }
 
   return {
+    signal: stopped.signal,
     notify(method: string) {
       send({ method });
     },
@@ -167,7 +178,7 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
     announcedTurnId(threadId: string) {
       return announcedTurns.get(threadId);
     },
-    async startTurn(threadId: string, params: object) {
+    async startTurn(threadId: string, params: object, onQueued: () => void) {
       const settled = new AbortController();
       const terminal = once(events, `announced-terminal:${threadId}`, {
         signal: settled.signal,
@@ -178,6 +189,7 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
           { ...params, threadId },
           requestTimeoutMs,
           settled.signal,
+          onQueued,
         );
         return await Promise.race([terminal, reply.then(({ turn }) => turn.id)]);
       } finally {
@@ -237,8 +249,7 @@ async function runTrial(
   server: AppServer,
   model: string,
   effort: string,
-  requestedSpeed: CodexSpeed,
-  tier: string,
+  trial: { tier: string; sentTier: string | null },
   retention: CodexSessionRetention,
   rolloutReadOptions: RolloutReadOptions | undefined,
 ) {
@@ -251,19 +262,25 @@ async function runTrial(
   let completion: Awaited<ReturnType<AppServer["waitForCompletion"]>>;
   let turnId: string | undefined;
   try {
-    turnId = await server.startTurn(thread.id, {
-      effort,
-      serviceTierForTurn: tier,
-      input: [{ type: "text", text: prompt, text_elements: [] }],
-    });
+    turnId = await server.startTurn(
+      thread.id,
+      {
+        effort,
+        serviceTierForTurn: trial.tier,
+        input: [{ type: "text", text: prompt, text_elements: [] }],
+      },
+      () => {
+        trial.sentTier = trial.tier;
+      },
+    );
     completion = await server.waitForCompletion(thread.id, turnId);
   } catch (error) {
     process.exitCode = 1;
-    const knownTurnId = turnId ?? server.announcedTurnId(thread.id);
+    const dispatched = trial.sentTier !== null;
+    const knownTurnId = dispatched ? (turnId ?? server.announcedTurnId(thread.id)) : undefined;
     return {
-      stopScheduling: knownTurnId !== undefined || !(error instanceof LiveRequestRejected),
-      requestedSpeed,
-      sentTier: tier,
+      stopScheduling:
+        dispatched && (knownTurnId !== undefined || !(error instanceof LiveRequestRejected)),
       provider: thread.modelProvider,
       threadId: thread.id,
       turnId: knownTurnId ?? null,
@@ -316,8 +333,6 @@ async function runTrial(
   if (sessionRetention.status === "failed") process.exitCode = 1;
   return {
     stopScheduling: false,
-    requestedSpeed,
-    sentTier: tier,
     provider: thread.modelProvider,
     threadId: thread.id,
     turnId: turn.id,
@@ -424,27 +439,36 @@ export async function runLiveCheck(
     }
     const trials = requestedSpeeds.map((requestedSpeed) => ({
       requestedSpeed,
-      sentTier: tierFor(catalogModel, requestedSpeed),
+      tier: tierFor(catalogModel, requestedSpeed),
     }));
     const results = [];
-    for (const { requestedSpeed, sentTier } of trials) {
-      if (signalExit !== undefined) break;
+    for (const { requestedSpeed, tier } of trials) {
+      if (signalExit !== undefined || server.signal.aborted) break;
+      const trial = { tier, sentTier: null as string | null };
       try {
         const { stopScheduling, ...result } = await runTrial(
           server,
           model,
           effort,
-          requestedSpeed,
-          sentTier,
+          trial,
           sessionRetention,
           rollout,
         );
-        results.push(result);
+        results.push({ requestedSpeed, sentTier: trial.sentTier, ...result });
         if (stopScheduling) break;
       } catch (error) {
         process.exitCode = 1;
-        results.push({ requestedSpeed, sentTier, status: "error", error: String(error) });
+        results.push({
+          requestedSpeed,
+          sentTier: trial.sentTier,
+          status: "error",
+          error: String(error),
+        });
       }
+    }
+    if (signalExit === undefined && server.signal.aborted) {
+      process.exitCode = 1;
+      console.error(`Transport failed: ${String(server.signal.reason)}`);
     }
     console.log(
       JSON.stringify({ codexVersion, model, effort, sessionRetention, results }, null, 2),

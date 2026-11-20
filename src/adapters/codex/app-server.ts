@@ -2,6 +2,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { StringDecoder } from "node:string_decoder";
 
 import { createAppServerShutdown } from "./app-server-shutdown";
+import { writeAppServerTurn } from "./app-server-write";
 import { isRecord } from "./discovery/transport";
 
 const maxLineBytes = 8 * 1024 * 1024;
@@ -117,9 +118,15 @@ export class CodexAppServer {
     for (const pending of this.pending.values()) pending.reject(error);
   }
 
-  private send(message: object): void {
+  private send(message: object, onQueued?: () => void): void {
     this.signal.throwIfAborted();
-    this.child.stdin.write(`${JSON.stringify(message)}\n`);
+    const line = `${JSON.stringify(message)}\n`;
+    if (onQueued) {
+      writeAppServerTurn(this.child.stdin, line, (error) => this.fail(error));
+      onQueued();
+    } else {
+      this.child.stdin.write(line);
+    }
   }
 
   private receive(line: string): void {
@@ -203,12 +210,7 @@ export class CodexAppServer {
       this.pending.set(id, pending);
       signal?.addEventListener("abort", onAbort, { once: true });
       try {
-        // An ended stream can return false without queuing bytes. Other requests
-        // keep their native error, including ENOENT when initialization fails.
-        if (onQueued && !this.child.stdin.writable)
-          throw new Error("Codex app-server stdin is not writable.");
-        this.send({ id, method, params });
-        onQueued?.();
+        this.send({ id, method, params }, onQueued);
       } catch (error) {
         pending.reject(error);
       }

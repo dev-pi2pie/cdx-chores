@@ -1,7 +1,12 @@
 import { expect } from "bun:test";
 import { chmod, copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 
+import {
+  isLiveProcess,
+  requireProcessObservation,
+} from "../../../scripts/testing/execution/process-table";
 import { startFixtureProcess } from "../../../scripts/testing/fixtures/fixture-process.ts";
 import type { BenchmarkOptions } from "../../../src/adapters/codex/benchmark/types";
 import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
@@ -35,7 +40,9 @@ interface Scenario {
   serverInterrupt?: { thread: number; message: string | null };
   rejectFast?: string;
   rejectStart?: "thread/start" | "turn/start";
+  rejectThreadStartAt?: number;
   rejectTurnStartThread?: number;
+  closeStdinOnThreadStart?: number;
   retentionError?: boolean;
   usageSnapshots?: Array<Record<string, number> | null>;
   resistantWorker?: boolean;
@@ -73,34 +80,49 @@ export async function withRunnerFixture<T>(
     await chmod(executable, 0o755);
     await writeFile(join(home, "scenario.json"), JSON.stringify(scenario));
     await writeFile(join(home, "unrelated.jsonl"), "unrelated\n");
-    const result = await exercise({
-      home,
-      options: {
-        cwd: root,
-        env: {
-          PATH: process.env.PATH,
-          HOME: root,
-          CODEX_HOME: home,
-          CDX_CHORES_CODEX_PATH: executable,
+    const trace = async () => {
+      const text = await readFile(tracePath, "utf8").catch((error: NodeJS.ErrnoException) => {
+        if (error.code === "ENOENT") return "";
+        throw error;
+      });
+      return text
+        .split("\n")
+        .slice(0, -1)
+        .map((line) => JSON.parse(line) as BenchmarkProtocolEvent);
+    };
+    try {
+      const result = await exercise({
+        home,
+        options: {
+          cwd: root,
+          env: {
+            PATH: process.env.PATH,
+            HOME: root,
+            CODEX_HOME: home,
+            CDX_CHORES_CODEX_PATH: executable,
+          },
+          models: [],
+          speeds: [],
+          runs: 1,
+          prompt: "fixture prompt",
         },
-        models: [],
-        speeds: [],
-        runs: 1,
-        prompt: "fixture prompt",
-      },
-      trace: async () => {
-        const text = await readFile(tracePath, "utf8").catch((error: NodeJS.ErrnoException) => {
-          if (error.code === "ENOENT") return "";
-          throw error;
-        });
-        return text
-          .split("\n")
-          .slice(0, -1)
-          .map((line) => JSON.parse(line) as BenchmarkProtocolEvent);
-      },
-    });
-    expect(await readFile(join(home, "unrelated.jsonl"), "utf8")).toBe("unrelated\n");
-    return result;
+        trace,
+      });
+      expect(await readFile(join(home, "unrelated.jsonl"), "utf8")).toBe("unrelated\n");
+      return result;
+    } finally {
+      if (scenario.closeStdinOnThreadStart !== undefined) {
+        const pid = traceMethod(await trace(), "stdin-closed")[0]?.params?.pid;
+        if (typeof pid === "number") {
+          await writeFile(join(home, "release-shutdown"), "");
+          const live = () =>
+            requireProcessObservation().some((entry) => entry.pid === pid && isLiveProcess(entry));
+          const deadline = performance.now() + 1_000;
+          while (live() && performance.now() < deadline) await delay(20);
+          expect(live()).toBe(false);
+        }
+      }
+    }
   });
 }
 
