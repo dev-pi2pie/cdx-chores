@@ -124,7 +124,6 @@ export class CodexAppServer {
 
   private send(message: object): void {
     this.signal.throwIfAborted();
-    if (!this.child.stdin.writable) throw new Error("Codex app-server stdin is not writable.");
     this.child.stdin.write(`${JSON.stringify(message)}\n`);
   }
 
@@ -209,6 +208,10 @@ export class CodexAppServer {
       this.pending.set(id, pending);
       signal?.addEventListener("abort", onAbort, { once: true });
       try {
+        // An ended stream can return false without queuing bytes. Other requests
+        // keep their native error, including ENOENT when initialization fails.
+        if (onQueued && !this.child.stdin.writable)
+          throw new Error("Codex app-server stdin is not writable.");
         this.send({ id, method, params });
         onQueued?.();
       } catch (error) {
