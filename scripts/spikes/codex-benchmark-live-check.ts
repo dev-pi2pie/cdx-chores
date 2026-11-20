@@ -19,6 +19,7 @@ const defaultAppServer = {
   executable: fileURLToPath(new URL("../../node_modules/.bin/codex", import.meta.url)),
   args: ["app-server", "--listen", "stdio://"],
 };
+const requestTimeoutMs = 15_000;
 const prompt =
   "Explain how an LRU cache works to a junior developer. Cover a cache hit, a cache miss, and an eviction. Walk through a short example with a capacity of three. Write about 250 words and answer directly without using tools.";
 
@@ -56,6 +57,8 @@ interface Message {
   };
 }
 
+class LiveCheckTimeout extends Error {}
+
 function startAppServer({ executable, args }: typeof defaultAppServer) {
   const child = spawn(executable, args, {
     stdio: ["pipe", "pipe", "inherit"],
@@ -70,12 +73,21 @@ function startAppServer({ executable, args }: typeof defaultAppServer) {
   lines.once("close", stop);
 
   const liveTurns = new Map<string, LiveTurn>();
+  const announcedTurns = new Map<string, string>();
+  const turnKey = (threadId: string, turnId: string) => JSON.stringify([threadId, turnId]);
   let nextId = 0;
   const send = (message: object) => child.stdin.write(`${JSON.stringify(message)}\n`);
-  const wait = (event: string, timeoutMs: number) =>
-    once(events, event, {
-      signal: AbortSignal.any([stopped.signal, AbortSignal.timeout(timeoutMs)]),
-    });
+  async function wait(event: string, timeoutMs: number, operation: string, cancel?: AbortSignal) {
+    const deadline = AbortSignal.timeout(timeoutMs);
+    const signal = AbortSignal.any([stopped.signal, deadline, ...(cancel ? [cancel] : [])]);
+    try {
+      return await once(events, event, { signal });
+    } catch (error) {
+      if (deadline.aborted && signal.reason === deadline.reason)
+        throw new LiveCheckTimeout(`${operation} timed out.`);
+      throw error;
+    }
+  }
 
   lines.on("line", (line) => {
     try {
@@ -93,12 +105,19 @@ function startAppServer({ executable, args }: typeof defaultAppServer) {
       }
 
       const params = message.params;
-      const turnId = params?.turn?.id ?? params?.turnId;
-      if (!params?.threadId || !turnId) return;
-      const key = `${params.threadId}:${turnId}`;
+      const lifecycle = message.method === "turn/started" || message.method === "turn/completed";
+      const turnId = lifecycle ? params?.turn?.id : params?.turnId;
+      if (typeof params?.threadId !== "string" || typeof turnId !== "string" || !turnId) return;
+      const key = turnKey(params.threadId, turnId);
       const live: LiveTurn = liveTurns.get(key) ?? { itemTypes: [] };
       liveTurns.set(key, live);
-      if (message.method === "turn/completed" && params.turn) {
+      if (message.method === "turn/started" && params.turn) {
+        announcedTurns.set(params.threadId, turnId);
+      } else if (
+        message.method === "turn/completed" &&
+        params.turn &&
+        ["completed", "interrupted", "failed"].includes(params.turn.status)
+      ) {
         live.completion = { turn: params.turn, receivedAt: performance.now() };
         events.emit(`turn:${key}`);
       } else if (message.method === "thread/tokenUsage/updated") {
@@ -108,26 +127,58 @@ function startAppServer({ executable, args }: typeof defaultAppServer) {
       } else if (message.method === "model/rerouted") {
         live.rerouted = true;
       }
+      if (lifecycle && live.completion && announcedTurns.get(params.threadId) === turnId) {
+        events.emit(`announced-terminal:${params.threadId}`, turnId);
+      }
     } catch (error) {
       stopped.abort(error);
     }
   });
 
+  async function request<T>(
+    method: string,
+    params: object,
+    timeoutMs = requestTimeoutMs,
+    cancel?: AbortSignal,
+  ): Promise<T> {
+    const id = ++nextId;
+    stopped.signal.throwIfAborted();
+    send({ id, method, params });
+    // A child-process reply arrives on a later I/O turn. Install the waiter only
+    // after a successful local write so a thrown write leaves no pending listener.
+    const [message] = (await wait(`request:${id}`, timeoutMs, method, cancel)) as [Message];
+    if (message.error) throw new Error(`${method}: ${message.error.message}`);
+    return message.result as T;
+  }
+
   return {
     notify(method: string) {
       send({ method });
     },
-    async request<T>(method: string, params: object, timeoutMs = 15_000): Promise<T> {
-      const id = ++nextId;
-      const response = wait(`request:${id}`, timeoutMs);
-      send({ id, method, params });
-      const [message] = (await response) as [Message];
-      if (message.error) throw new Error(`${method}: ${message.error.message}`);
-      return message.result as T;
+    request,
+    announcedTurnId(threadId: string) {
+      return announcedTurns.get(threadId);
+    },
+    async startTurn(threadId: string, params: object) {
+      const settled = new AbortController();
+      const terminal = once(events, `announced-terminal:${threadId}`, {
+        signal: settled.signal,
+      }).then(([id]) => id as string);
+      try {
+        const reply = request<{ turn: Turn }>(
+          "turn/start",
+          { ...params, threadId },
+          requestTimeoutMs,
+          settled.signal,
+        );
+        return await Promise.race([terminal, reply.then(({ turn }) => turn.id)]);
+      } finally {
+        settled.abort();
+      }
     },
     async waitForCompletion(threadId: string, turnId: string) {
-      const key = `${threadId}:${turnId}`;
-      if (!liveTurns.get(key)?.completion) await wait(`turn:${key}`, 120_000);
+      const key = turnKey(threadId, turnId);
+      if (!liveTurns.get(key)?.completion) await wait(`turn:${key}`, 120_000, "Turn completion");
       const live = liveTurns.get(key);
       if (!live?.completion) throw new Error("Matching turn completion was unavailable.");
       return { live, ...live.completion };
@@ -197,21 +248,23 @@ async function runTrial(
     sandbox: "read-only",
   });
   let completion: Awaited<ReturnType<AppServer["waitForCompletion"]>>;
+  let turnId: string | undefined;
   try {
-    const started = await server.request<{ turn: Turn }>("turn/start", {
-      threadId: thread.id,
+    turnId = await server.startTurn(thread.id, {
       effort,
       serviceTierForTurn: tier,
       input: [{ type: "text", text: prompt, text_elements: [] }],
     });
-    completion = await server.waitForCompletion(thread.id, started.turn.id);
+    completion = await server.waitForCompletion(thread.id, turnId);
   } catch (error) {
     process.exitCode = 1;
     return {
+      stopScheduling: error instanceof LiveCheckTimeout,
       requestedSpeed,
       sentTier: tier,
       provider: thread.modelProvider,
       threadId: thread.id,
+      turnId: turnId ?? server.announcedTurnId(thread.id) ?? null,
       status: "error",
       error: String(error),
       sessionRetention: await applyCodexSessionRetention({
@@ -260,6 +313,7 @@ async function runTrial(
   });
   if (sessionRetention.status === "failed") process.exitCode = 1;
   return {
+    stopScheduling: false,
     requestedSpeed,
     sentTier: tier,
     provider: thread.modelProvider,
@@ -355,17 +409,17 @@ export async function runLiveCheck(
     const results = [];
     for (const { requestedSpeed, sentTier } of trials) {
       try {
-        results.push(
-          await runTrial(
-            server,
-            model,
-            effort,
-            requestedSpeed,
-            sentTier,
-            sessionRetention,
-            rollout,
-          ),
+        const { stopScheduling, ...result } = await runTrial(
+          server,
+          model,
+          effort,
+          requestedSpeed,
+          sentTier,
+          sessionRetention,
+          rollout,
         );
+        results.push(result);
+        if (stopScheduling) break;
       } catch (error) {
         process.exitCode = 1;
         results.push({ requestedSpeed, sentTier, status: "error", error: String(error) });

@@ -1,5 +1,7 @@
 // Loaded only in the isolated caller. Allow full startup time for the fixture process.
 import { mock } from "bun:test";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { CodexAppServer } from "../../../src/adapters/codex/app-server.ts";
 import * as retention from "../../../src/adapters/codex/session-retention.ts";
 
@@ -10,7 +12,11 @@ CodexAppServer.prototype.request = function (method, params, options) {
 };
 
 const timeout = AbortSignal.timeout.bind(AbortSignal);
-AbortSignal.timeout = (ms) => timeout(ms === 120_000 || ms === 2_000 ? 200 : ms);
+const fixtureTrace = join(process.env.CODEX_HOME, "events.jsonl");
+AbortSignal.timeout = (ms) => {
+  if (ms === 15_000 && existsSync(fixtureTrace)) return timeout(200);
+  return timeout(ms === 120_000 || ms === 2_000 ? 200 : ms);
+};
 
 if (process.env.FIXTURE_LATE_TURN === "1") {
   const apply = retention.applyCodexSessionRetention;
