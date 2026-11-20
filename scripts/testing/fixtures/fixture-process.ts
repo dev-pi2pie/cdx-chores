@@ -5,6 +5,7 @@ import {
   startOwnedProcess,
   type OwnedProcess,
   type OwnedProcessOptions,
+  type OwnedProcessResult,
   type ProcessObserver,
 } from "../execution/process.ts";
 import {
@@ -16,13 +17,10 @@ import {
 } from "../ownership/run-context.ts";
 import type { Suite } from "../suites/selection.ts";
 
-/** Detached nested groups must hand ownership back to the outer suite before Bun exits. */
-export function startFixtureProcess(
-  options: OwnedProcessOptions,
-  observer?: ProcessObserver,
-): OwnedProcess {
+/** Start a managed handoff before launching work, including a group launched by a fixture caller. */
+export function registerFixtureProcess() {
   const context = readFixtureContext(process.env, resolve(import.meta.dirname, "../../.."));
-  if (!context) return startOwnedProcess(options, observer);
+  if (!context) return undefined;
   const id = randomUUID();
   const directory = join(suitePath(context.run, context.suite, "scratch"), "processes");
   const write = (suffix: string, value: object) => {
@@ -32,6 +30,26 @@ export function startFixtureProcess(
   };
   // An incomplete pending receipt is intentionally unresolved, even before a PID was recorded.
   write(".pending", { state: "pending" });
+  return {
+    started: (pid: number | undefined) => write(".started", { state: "started", pid }),
+    complete: (
+      result:
+        | Pick<OwnedProcessResult, "pid" | "groupId" | "stopped" | "reason">
+        | {
+            stopped: true;
+            reason: "launch-rejected";
+          },
+    ) => write(".complete", { state: "complete", ...result }),
+  };
+}
+
+/** Detached nested groups must hand ownership back to the outer suite before Bun exits. */
+export function startFixtureProcess(
+  options: OwnedProcessOptions,
+  observer?: ProcessObserver,
+): OwnedProcess {
+  const receipt = registerFixtureProcess();
+  if (!receipt) return startOwnedProcess(options, observer);
   const cancellation = new AbortController();
   const cancel = () => cancellation.abort();
   const removeListeners = () => {
@@ -49,11 +67,11 @@ export function startFixtureProcess(
     owned = startOwnedProcess({ ...options, signal: cancellation.signal }, observer);
   } catch (error) {
     removeListeners();
-    write(".complete", { state: "complete", stopped: true, reason: "launch-rejected" });
+    receipt.complete({ stopped: true, reason: "launch-rejected" });
     throw error;
   }
   try {
-    write(".started", { state: "started", pid: owned.child.pid });
+    receipt.started(owned.child.pid);
   } catch {
     owned.shutdown();
     // Keep pending unresolved if the handoff itself cannot be persisted.
@@ -74,13 +92,8 @@ export function startFixtureProcess(
     completion: owned.completion
       .then((result) => {
         try {
-          write(".complete", {
-            state: "complete",
-            pid: result.pid,
-            groupId: result.groupId,
-            stopped: result.stopped,
-            reason: result.reason,
-          });
+          const { pid, groupId, stopped, reason } = result;
+          receipt.complete({ pid, groupId, stopped, reason });
           return result;
         } catch {
           return {

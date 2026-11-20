@@ -75,15 +75,18 @@ export function traceMethod(events: BenchmarkProtocolEvent[], method: string) {
   return events.filter((event) => event.method === method);
 }
 
+export interface RunnerFixture {
+  home: string;
+  options: Extract<BenchmarkOptions, { models: readonly string[] }>;
+  trace: () => Promise<BenchmarkProtocolEvent[]>;
+}
+
 export async function withRunnerFixture<T>(
   scenario: Scenario,
-  exercise: (fixture: {
-    home: string;
-    options: Extract<BenchmarkOptions, { models: readonly string[] }>;
-    trace: () => Promise<BenchmarkProtocolEvent[]>;
-  }) => Promise<T>,
+  exercise: (fixture: RunnerFixture) => Promise<T>,
+  canClean?: () => boolean,
 ): Promise<T> {
-  return withTempFixtureDir("codex-benchmark-runner", async (root) => {
+  const run = async (root: string) => {
     const home = join(root, "codex-home");
     const executable = join(root, "codex-fixture.mjs");
     const tracePath = join(home, "events.jsonl");
@@ -138,7 +141,8 @@ export async function withRunnerFixture<T>(
         }
       }
     }
-  });
+  };
+  return withTempFixtureDir("codex-benchmark-runner", run, canClean);
 }
 
 export function startCliBenchmark(options: BenchmarkOptions, args: string[], preload?: string) {

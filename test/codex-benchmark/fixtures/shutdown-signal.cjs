@@ -15,7 +15,8 @@ if (process.env.FIXTURE_RECORD_APP_SERVER === "1") {
     }
     writeFileSync(receipt, "starting", { flag: "wx" });
     const child = spawn(executable, args, options);
-    writeFileSync(receipt, String(child.pid ?? "not-started"));
+    // A partial write may contain a shorter, valid-looking PID.
+    writeFileSync(receipt, `${child.pid ?? "not-started"}\n`);
     return child;
   };
   syncBuiltinESMExports();
