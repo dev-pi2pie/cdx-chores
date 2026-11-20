@@ -39,12 +39,29 @@ async function readLeader(home: string) {
   return leader;
 }
 
+async function readSpawnedLeader(home: string) {
+  let receipt: string;
+  try {
+    receipt = await readFile(join(home, "app-server-spawn"), "utf8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+    throw error;
+  }
+  if (receipt === "not-started") return undefined;
+  const pid = Number(receipt);
+  if (!Number.isSafeInteger(pid) || pid <= 1) {
+    throw new Error("Incomplete fixture app-server spawn receipt.");
+  }
+  return pid;
+}
+
 async function checkShutdownAtExit(
   home: string,
   exit: CallerExit,
   escalation: "allowed" | "denied" | "undelivered",
 ) {
   const leader = await readLeader(home);
+  expect(await readSpawnedLeader(home)).toBe(leader);
   const worker = JSON.parse(await readFile(join(home, "worker.pid"), "utf8")) as {
     pid: number;
     groupId: number;
@@ -79,18 +96,20 @@ async function releaseShutdownFixture(home: string, caller: OwnedProcess) {
   } finally {
     caller.shutdown();
     const result = await caller.completion;
-    // The leader receipt precedes worker startup. Check the group even if worker readiness failed.
-    const leader = await readLeader(home);
-    const deadline = performance.now() + 1_000;
-    let remaining: ProcessMember[];
-    do {
-      remaining = (await observeProcessGroup(leader, deadline - performance.now())).filter(
-        isLiveProcess,
-      );
-      if (remaining.length === 0) break;
-      await delay(20);
-    } while (performance.now() < deadline);
-    expect(remaining).toEqual([]);
+    // Both fixture readiness receipts can be absent when an assertion fails.
+    const leader = await readSpawnedLeader(home);
+    if (leader !== undefined) {
+      const deadline = performance.now() + 1_000;
+      let remaining: ProcessMember[];
+      do {
+        remaining = (await observeProcessGroup(leader, deadline - performance.now())).filter(
+          isLiveProcess,
+        );
+        if (remaining.length === 0) break;
+        await delay(20);
+      } while (performance.now() < deadline);
+      expect(remaining).toEqual([]);
+    }
     expect(result.stopped, result.issues.join("\n")).toBe(true);
   }
 }
@@ -120,7 +139,7 @@ test.skipIf(process.platform === "win32").each(["allowed", "denied", "undelivere
             "--runs",
             "1",
           ],
-          env: { ...options.env, FIXTURE_ESCALATION: escalation },
+          env: { ...options.env, FIXTURE_ESCALATION: escalation, FIXTURE_RECORD_APP_SERVER: "1" },
           cwd: options.cwd,
           timeoutMs: 6_000,
           graceMs: 600,
@@ -193,7 +212,7 @@ test.skipIf(process.platform === "win32").each([
             "--session-retention",
             "archive",
           ],
-          env: { ...options.env, FIXTURE_ESCALATION: escalation },
+          env: { ...options.env, FIXTURE_ESCALATION: escalation, FIXTURE_RECORD_APP_SERVER: "1" },
           cwd: options.cwd,
           timeoutMs: 6_000,
           graceMs: 600,

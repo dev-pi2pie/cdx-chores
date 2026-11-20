@@ -1,8 +1,26 @@
 // Required only by the fixture CLI. The parent test observes its actual exit.
-const { appendFileSync, existsSync, readFileSync } = require("node:fs");
+const { appendFileSync, existsSync, readFileSync, writeFileSync } = require("node:fs");
 const { join } = require("node:path");
 const kill = process.kill;
 const leaderPath = join(process.env.CODEX_HOME, "leader.pid");
+
+if (process.env.FIXTURE_RECORD_APP_SERVER === "1") {
+  const childProcess = require("node:child_process");
+  const { syncBuiltinESMExports } = require("node:module");
+  const spawn = childProcess.spawn;
+  const receipt = join(process.env.CODEX_HOME, "app-server-spawn");
+  childProcess.spawn = (executable, args, options) => {
+    if (executable !== process.env.CDX_CHORES_CODEX_PATH || args?.[0] !== "app-server") {
+      return spawn(executable, args, options);
+    }
+    writeFileSync(receipt, "starting", { flag: "wx" });
+    const child = spawn(executable, args, options);
+    writeFileSync(receipt, String(child.pid ?? "not-started"));
+    return child;
+  };
+  syncBuiltinESMExports();
+}
+
 process.kill = function (pid, signal) {
   if (
     (signal === "SIGTERM" || signal === "SIGKILL") &&
