@@ -116,3 +116,11 @@ Checkpoint `c71258ce` rejects an empty executable before spawn and preserves the
 **Regression evidence.** The two new cases failed before the fix. The managed control retained scratch and skipped later suites with two pending receipts and no start records. After the fix, both cases passed. The managed control completed both no-launch receipts without a PID or group ID, removed scratch and ran the later suites. The existing uncertainty controls still withheld cleanup.
 
 **Validation and review.** All 76 focused Application cases and 2,141 managed Unit cases passed. Build, TypeScript, lint, formatting and diff checks passed. Maintainability and test reviews of `10059418..c71258ce` found no material issues.
+
+## NUL Byte Rejection Follow-Up
+
+Checkpoint `64544ab0` checks the executable and the argument list passed to `spawn`. NUL bytes are rejected before launch with `ERR_INVALID_ARG_VALUE` on the rejection and its `TypeError` cause. The diagnostic names `file` or the offending argument index. A process check confirmed that a whitespace-only executable name and valid empty and whitespace arguments still pass through unchanged. [Launch validation](../../../scripts/testing/execution/process.ts) · [Shutdown cleanup tests](../../../test/codex-benchmark/shared-shutdown-cleanup.app.test.ts)
+
+**Regression evidence.** Both new inputs failed the direct and managed controls before the fix. Each managed control retained scratch with two pending receipts and skipped later suites. After the fix, all four controls passed. Both managed handoffs completed as `launch-rejected` without a PID, group ID or start record, allowing scratch removal and later suites. Existing uncertainty controls still withheld cleanup.
+
+**Validation and review.** All 80 focused Application cases and 2,141 managed Unit cases passed. Build, TypeScript, lint, formatting and diff checks passed. Maintainability and test reviews of `a757ece4..64544ab0` found no material issues.
