@@ -12,14 +12,16 @@ When a Codex operation fails, what can the CLI still tell the user about the tur
 
 The `v0.2.2-canary.7` dependency refresh moved the SDK and bundled CLI to 0.171.0 and passed all 4,639 tests. Separate checks against the built canary.7 CLI reproduced both failures with a synthetic app-server. How the native binary behaves under equivalent faults remains open. [Dependency refresh](../plans/jobs/2026-11-20-v0.2.2-canary.7-dependency-refresh.md) · [v0.2.2-canary.7 investigation](../plans/jobs/2026-11-20-canary-7-turn-reporting-and-shutdown.md)
 
-## Which commands talk to Codex?
+## Scope by caller and test runner
 
-| Command or action | How it uses Codex | What the caller needs back |
+| Caller or component | Scope of the proposal | Outcome to verify |
 | --- | --- | --- |
-| `codex-bench` | Talks directly to `codex app-server` for trial threads, turns, and retention. | A report containing the measurements already collected and any shutdown error. [Benchmark runner](../../src/adapters/codex/benchmark/index.ts) |
-| Codex helpers for rename, data query/stack, Markdown/PDF, and interactive workflows | Run prompts through SDK `thread.run()` and `codex exec`. Helpers with archive or delete selected can open an app-server after final thread use. | The helper’s answer or original error, plus a diagnostic if requested retention failed or was skipped. Supported flags vary by command. [Command scope](../guides/codex-execution-configuration.md#command-scope) · [SDK helper entry point](../../src/adapters/codex/shared.ts) |
-| `doctor` benchmark readiness check | Initializes an app-server, reads the reported version, and closes the connection. It creates no trial thread. | A readiness diagnostic. [Doctor probe](../../src/cli/doctor/codex-benchmark.ts) |
-| `codex-info` discovery | Uses `DiscoveryTransport` to initialize an app-server, read configuration, and request model metadata when needed. | Discovery results. This transport has its own shutdown implementation. [Discovery](../../src/adapters/codex/discovery/index.ts) · [Transport](../../src/adapters/codex/discovery/transport.ts) |
+| `codex-bench` | Direct turn dispatch, timeout recovery, and shared app-server shutdown. | Count queued writes as attempts. After an ambiguous start, require matching terminal evidence before archive or another trial. Preserve completed trials in JSON if shutdown fails. [Benchmark runner](../../src/adapters/codex/benchmark/index.ts) |
+| Standard/Fast live check (developer tool) | Direct turn scheduling through its own app-server client. | Recover a matching Standard completion even if the start reply is missing. If completion is still unknown at timeout, skip archive and stop before Fast. [Live check](../../scripts/spikes/codex-benchmark-live-check.ts) |
+| SDK helpers for rename, data query/stack, Markdown/PDF, and interactive workflows | Shared shutdown when a helper opens an app-server for archive or delete. Prompt execution through SDK `thread.run()` has a separate cancellation check. | Preserve the answer or original error and report failed or skipped retention. The default `keep` opens no retention app-server. [Command scope](../guides/codex-execution-configuration.md#command-scope) · [SDK helper entry point](../../src/adapters/codex/shared.ts) |
+| `doctor` benchmark readiness check | Shared shutdown after the probe reads the app-server version. | Return a readiness diagnostic within the shutdown deadline. [Doctor probe](../../src/cli/doctor/codex-benchmark.ts) |
+| `codex-info` discovery | Separate verification for `DiscoveryTransport`, which owns its shutdown. | Check discovery shutdown directly. The shared-close regression exercises a different transport. [Discovery](../../src/adapters/codex/discovery/index.ts) · [Transport](../../src/adapters/codex/discovery/transport.ts) |
+| Managed application-suite runner | Test infrastructure for fixture cancellation and suite timing. | After cancellation, the active fixture records completion and the next fixture never acquires a PID. The cause of the original 300-second timeout remains open. [Test-runner evidence](#test-runner-evidence) |
 
 ## One helper session, from prompt to retention
 
@@ -147,12 +149,19 @@ Four more fixtures started after the cancelled fixture recorded completion. Thre
 
 The canary.7 investigation supports the following changes and timing decision. Runtime fixes and their regression checks are pending. [v0.2.2-canary.7 investigation](../plans/jobs/2026-11-20-canary-7-turn-reporting-and-shutdown.md)
 
-- **Dispatch.** Record the attempt and sent tier once the transport queues `turn/start`. A refused write preserves the thread ID and the completeness of earlier usage totals. A queued request still counts if the server rejects it or its reply is lost.
+### Direct turn handling
+
+- **Benchmark dispatch accounting.** Record the attempt and sent tier once the transport queues `turn/start`. A refused write preserves the thread ID and the completeness of earlier usage totals. A queued request still counts if the server rejects it or its reply is lost.
 - **Benchmark start timeout.** Recover a cached terminal event for the announced turn. If completion is unconfirmed and the turn ID is known, use the existing targeted interrupt and bounded confirmation wait. If the ID or confirmation is still missing, skip archive and stop scheduling. [Proposed flow and regression case](#when-can-the-next-turn-start-if-the-start-reply-is-missing)
 - **Standard/Fast live check.** Match a cached terminal event to Standard’s thread and turn IDs even if the start reply is missing. At either the start or completion deadline, report the timeout and end the comparison before archive or Fast if Standard’s completion remains unconfirmed.
-- **Shutdown.** Preserve all completed trials in one JSON report. When shutdown fails, return within a deadline with a nonzero exit and `run.shutdownError`. Report the owned group as stopped only after verifying its exit.
-- **Suite cancellation.** Remember cancellation for the lifetime of the suite. Let the active fixture record its completion and reject subsequent fixture launches before they allocate a PID.
-- **Timing.** Keep the 300-second application-suite allowance while profiling the video and Codex benchmark test families.
+
+### Shared app-server shutdown
+
+Bound `CodexAppServer.close()` for the benchmark, SDK helper retention, and the `doctor` probe. Report the owned process group as stopped only after verifying its exit. On shutdown failure, the benchmark should emit one JSON report with all completed trials and `run.shutdownError`, then exit nonzero. Helpers that open the app-server to archive or delete should preserve the answer or original error and report the retention diagnostic. The probe should return a readiness diagnostic within the deadline. SDK prompt cancellation and shutdown through the separate `codex-info` discovery transport still need their own checks.
+
+### Managed test runner
+
+Remember cancellation for the lifetime of the application suite. Verify that the active fixture records its completion and that the next fixture never acquires a PID. The cause of the earlier suite timeout remains open. Keep the 300-second allowance while profiling the video and Codex benchmark test families.
 
 ## Related Plans
 
