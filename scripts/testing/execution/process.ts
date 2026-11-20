@@ -87,9 +87,14 @@ export class ProcessLaunchRejectedError extends Error {
   }
 }
 
-function invalidSpawnArgument(field: string, requirement: string, value: string): TypeError {
+function invalidSpawnValue(
+  field: string,
+  requirement: string,
+  value: string,
+  kind: "argument" | "property" = "argument",
+): TypeError {
   return Object.assign(
-    new TypeError(`The argument '${field}' ${requirement}. Received ${inspect(value)}`),
+    new TypeError(`The ${kind} '${field}' ${requirement}. Received ${inspect(value)}`),
     { code: "ERR_INVALID_ARG_VALUE" },
   );
 }
@@ -109,18 +114,40 @@ function checkLaunch(options: OwnedProcessOptions) {
     if (options.output?.signal.aborted)
       throw new Error("Process launch output delivery was already unavailable.");
     const executable = options.executable;
-    if (executable === "") throw invalidSpawnArgument("file", "cannot be empty", executable);
+    if (executable === "") throw invalidSpawnValue("file", "cannot be empty", executable);
     const nullByteRequirement = "must be a string without null bytes";
     if (typeof executable === "string" && executable.includes("\0")) {
-      throw invalidSpawnArgument("file", nullByteRequirement, executable);
+      throw invalidSpawnValue("file", nullByteRequirement, executable);
     }
     const args = [...options.args];
     for (const [index, arg] of args.entries()) {
       if (typeof arg === "string" && arg.includes("\0")) {
-        throw invalidSpawnArgument(`args[${index}]`, nullByteRequirement, arg);
+        throw invalidSpawnValue(`args[${index}]`, nullByteRequirement, arg);
       }
     }
-    return { maximum, executable, args };
+    const cwd = options.cwd;
+    if (typeof cwd === "string" && cwd.includes("\0")) {
+      throw invalidSpawnValue(
+        "options.cwd",
+        "must be a string or Uint8Array without null bytes",
+        cwd,
+        "property",
+      );
+    }
+    const env = { ...options.env };
+    for (const [key, value] of Object.entries(env)) {
+      if (value === undefined) continue; // spawn omits undefined entries.
+      const candidate = key.includes("\0") ? key : value;
+      if (typeof candidate === "string" && candidate.includes("\0")) {
+        throw invalidSpawnValue(
+          `options.env['${key}']`,
+          nullByteRequirement,
+          candidate,
+          "property",
+        );
+      }
+    }
+    return { maximum, executable, args, cwd, env };
   } catch (error) {
     throw new ProcessLaunchRejectedError(error);
   }
@@ -137,12 +164,12 @@ export function startOwnedProcess(
   options: OwnedProcessOptions,
   observer: ProcessObserver = { observe: observeProcessGroup },
 ): OwnedProcess {
-  const { maximum, executable, args } = checkLaunch(options);
+  const { maximum, executable, args, cwd, env } = checkLaunch(options);
 
   const started = performance.now();
   const child = spawn(executable, args, {
-    cwd: options.cwd,
-    env: { ...options.env },
+    cwd,
+    env,
     detached: true,
     stdio: "pipe",
   });

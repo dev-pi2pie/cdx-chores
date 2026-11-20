@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
+import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
@@ -138,6 +139,33 @@ describe("owned process lifecycle", () => {
     expect(result.reason).toBe("completed");
     expect(result.signals).toEqual([]);
     await assertStopped(result);
+  });
+
+  test("preserves valid cwd and environment values and omits undefined entries", async () => {
+    await withTempFixtureDir("process-launch-options", async (root) => {
+      const cwd = join(root, " spaced directory ");
+      await mkdir(cwd);
+      const result = await startOwnedProcess(
+        options("exit", {
+          args: [
+            "-e",
+            "console.log(JSON.stringify([process.cwd(), process.env[' SPACED '], process.env.EMPTY, Object.hasOwn(process.env, 'OMITTED')]))",
+          ],
+          cwd,
+          env: {
+            PATH: process.env.PATH,
+            " SPACED ": " value ",
+            EMPTY: "",
+            "OMITTED\0KEY": undefined,
+          },
+        }),
+      ).completion;
+      assertSuccessful(result);
+      const [directory, spaced, empty, omittedPresent] = JSON.parse(result.stdout);
+      expect(directory).toEndWith("/ spaced directory ");
+      expect([spaced, empty, omittedPresent]).toEqual([" value ", "", false]);
+      await assertStopped(result);
+    });
   });
 
   test("preserves the subject's nonzero exit without calling it a cleanup failure", async () => {

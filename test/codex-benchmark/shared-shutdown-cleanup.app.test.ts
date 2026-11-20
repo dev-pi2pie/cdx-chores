@@ -62,6 +62,30 @@ const preSpawnCases = {
       code: "ERR_INVALID_ARG_VALUE",
     },
   },
+  "NUL in cwd": {
+    options: { cwd: "fixture\0directory" },
+    error: {
+      message:
+        "The property 'options.cwd' must be a string or Uint8Array without null bytes. Received 'fixture\\x00directory'",
+      code: "ERR_INVALID_ARG_VALUE",
+    },
+  },
+  "NUL in env key": {
+    options: { env: { "FIXTURE\0KEY": "value" } },
+    error: {
+      message:
+        "The property 'options.env['FIXTURE\0KEY']' must be a string without null bytes. Received 'FIXTURE\\x00KEY'",
+      code: "ERR_INVALID_ARG_VALUE",
+    },
+  },
+  "NUL in env value": {
+    options: { env: { FIXTURE_KEY: "value\0suffix" } },
+    error: {
+      message:
+        "The property 'options.env['FIXTURE_KEY']' must be a string without null bytes. Received 'value\\x00suffix'",
+      code: "ERR_INVALID_ARG_VALUE",
+    },
+  },
 } as const;
 const cases = [
   "assertion failure",
@@ -71,6 +95,9 @@ const cases = [
   "empty executable",
   "NUL in executable",
   "NUL in argument",
+  "NUL in cwd",
+  "NUL in env key",
+  "NUL in env value",
   "missing spawn receipt",
   "interrupted spawn receipt",
   "partial spawn receipt",
