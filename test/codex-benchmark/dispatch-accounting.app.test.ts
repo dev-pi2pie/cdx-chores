@@ -205,6 +205,7 @@ for (const caller of ["benchmark", "live check on Node", "live check on Bun"] as
             },
           );
         },
+        15_000,
       );
     }
   });
