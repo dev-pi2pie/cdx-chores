@@ -33,8 +33,8 @@ Use the existing start RPC, completion, and interrupt-confirmation deadlines. Ma
 | Reply and turn ID both missing when handling the RPC timeout | Record the attempt, sent tier, thread ID, and null turn ID. Stop immediately and skip interrupt and archive. | Report the timeout and stop immediately without interrupt, archive, or Fast. |
 | Reply received, completion deadline expires | Interrupt the known turn and apply the same confirmation rule. | Report the timeout, skip archive, and stop before Fast. |
 
-- [ ] Add focused regressions for cached completion, confirmed interruption, acknowledgement alone, and a terminal event for another thread or turn. Verify that unrelated events cannot authorize archive or the next start.
-- [ ] Cover the no-ID case by withholding both the reply and announcement until the callers exit. In a second regression, deliver the announcement after each caller has recorded the timeout decision and before teardown finishes. Verify in both traces that neither caller issues an interrupt, archive, or subsequent start. The canary.7 spike announced an ID before timeout in every run.
+- [x] Add focused regressions for cached completion, confirmed interruption, acknowledgement alone, and a terminal event for another thread or turn. Verify that unrelated events cannot authorize archive or the next start.
+- [x] Cover the no-ID case by withholding both the reply and announcement until the callers exit. In a second regression, deliver the announcement after each caller has recorded the timeout decision and before teardown finishes. Verify in both traces that neither caller issues an interrupt, archive, or subsequent start. The canary.7 spike announced an ID before timeout in every run.
 
 ## Phase 3. Bounded shared shutdown
 

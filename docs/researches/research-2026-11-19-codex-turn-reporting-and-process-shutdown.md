@@ -76,13 +76,13 @@ The acceptance check compares the trace with JSON. A refused local write should 
 
 **Observed on v0.2.2-canary.7.** The synthetic server announced Standard’s turn ID in every case. When it withheld the start reply but sent a matching completion before the 15-second RPC deadline, the benchmark recovered the result and archived Standard. The live check received the completion but reported a start timeout and skipped archive. When Standard stayed active through that deadline, neither caller sent an interrupt. The benchmark stopped scheduling, while the live check started Fast. A separate control delivered the start reply and let the 120-second completion wait expire. Only in that control did the benchmark interrupt the known turn and require a matching terminal event before continuing. [Withheld-reply investigation](../plans/jobs/2026-11-20-canary-7-withheld-turn-start-reply.md#full-deadline-observations)
 
-**Proposed flow for a queued `turn/start` at the start RPC deadline**
+**Phase 2 flow for a queued `turn/start` with a missing reply**
 
 ```mermaid
 flowchart TD
-    timeout["Queued turn/start has no reply at the RPC deadline"] --> evidence{"What has the caller observed?"}
+    timeout["Queued turn/start has no reply"] --> evidence{"What evidence arrives before the RPC deadline?"}
     evidence -->|Terminal event matching the announced thread and turn IDs| eligible["Apply requested retention and allow the next trial"]
-    evidence -->|Turn ID known, completion unconfirmed| caller{"Which caller?"}
+    evidence -->|Deadline with known ID, completion unconfirmed| caller{"Which caller?"}
     evidence -->|No turn ID when handling the timeout| stop["Report unconfirmed completion, skip archive, and stop scheduling"]
     caller -->|Standard/Fast live check| stop
     caller -->|Benchmark| interrupt["Send turn/interrupt for the known thread and turn"]
@@ -93,7 +93,7 @@ flowchart TD
 
 The benchmark preserves the attempt and sent tier on every path. If it interrupts after the start timeout, it keeps the trial failed and reports any usage attributable to that turn, even when the terminal event permits archive and another trial.
 
-**Regression case still to test.** If the caller has no turn ID when it handles the start RPC timeout, it stops scheduling immediately. A later announcement does not reopen that decision. Keep the start reply and announcement withheld until the caller exits. Check that the benchmark reports the thread ID, a null turn ID, and an attempted dispatch. For both callers, verify that the protocol trace ends without an interrupt, an archive request, or another turn start.
+**Verified without a turn ID.** In both synthetic callers, a start timeout with no announced ID skipped archive and stopped scheduling. An announcement delivered after that decision triggered no interrupt or later trial. The benchmark preserved the attempt, sent tier, and thread ID with a null turn ID. [Phase 2 implementation record](../plans/jobs/2026-11-20-codex-turn-reporting-and-app-server-shutdown.md#phase-2-turn-recovery-and-scheduling)
 
 ## What survives a shutdown failure?
 
@@ -147,12 +147,12 @@ Four more fixtures started after the cancelled fixture recorded completion. Thre
 
 ## Implementation Direction
 
-The canary.7 investigation supports the following changes and timing decision. Phase 1 verified benchmark dispatch accounting. Turn-timeout recovery, shared shutdown, and managed suite cancellation remain pending. [v0.2.2-canary.7 investigation](../plans/jobs/2026-11-20-canary-7-turn-reporting-and-shutdown.md) · [Phase 1 implementation record](../plans/jobs/2026-11-20-codex-turn-reporting-and-app-server-shutdown.md#phase-1-benchmark-dispatch-accounting)
+The canary.7 investigation supports the following changes and timing decision. Phases 1 and 2 verified dispatch accounting and turn-timeout recovery against a synthetic app-server. Shared shutdown and managed suite cancellation remain pending. [v0.2.2-canary.7 investigation](../plans/jobs/2026-11-20-canary-7-turn-reporting-and-shutdown.md) · [Implementation record](../plans/jobs/2026-11-20-codex-turn-reporting-and-app-server-shutdown.md)
 
 ### Direct turn handling
 
 - **Benchmark dispatch accounting.** Record the attempt and sent tier once the transport queues `turn/start`. A refused write preserves the thread ID and the completeness of earlier usage totals. A queued request still counts if the server rejects it or its reply is lost.
-- **Benchmark start timeout.** Recover a cached terminal event for the announced turn. If completion is unconfirmed and the turn ID is known, use the existing targeted interrupt and bounded confirmation wait. If the ID or confirmation is still missing, skip archive and stop scheduling. [Proposed flow and regression case](#when-can-the-next-turn-start-if-the-start-reply-is-missing)
+- **Benchmark start timeout.** Recover a cached terminal event for the announced turn. If completion is unconfirmed and the turn ID is known, use the existing targeted interrupt and bounded confirmation wait. If the ID or confirmation is still missing, skip archive and stop scheduling. [Verified flow and regression case](#when-can-the-next-turn-start-if-the-start-reply-is-missing)
 - **Standard/Fast live check.** Match a cached terminal event to Standard’s thread and turn IDs even if the start reply is missing. At either the start or completion deadline, report the timeout and end the comparison before archive or Fast if Standard’s completion remains unconfirmed.
 
 ### Shared app-server shutdown
