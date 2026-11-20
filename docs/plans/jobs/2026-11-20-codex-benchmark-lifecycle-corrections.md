@@ -108,3 +108,11 @@ Checkpoint `e3e5232c` keeps the maintainer command on a dedicated Node-targeted 
 **Validation and review.** At `e3e5232c`, all 66 focused cases passed. The six command cases also passed with Node 22.23.5 on the fixture path. The dedicated bundle build and help, package build, built CLI help, TypeScript, lint, formatting, Markdown links and diff checks passed. Managed `bun run test:all` passed 2,141 Unit, 2,638 Application, 30 Codex and 5 Pandoc cases with zero failures, errors or skips. Application execution took 328.691 seconds. The runner verified shutdown without escalation and removed the run's scratch and results. Maintainability, test and documentation reviews of `54e5ac52..e3e5232c` found no material issues.
 
 **Superseded runs.** The direct-source revision `f07cecb2` passed managed validation. The run at `1adaddfd` was canceled during Application after the direct-Bun guard was requested. It escalated and retained scratch for one incomplete nested receipt. Later signal-zero probes found the recorded leader and group absent.
+
+## Empty Executable Rejection Follow-Up
+
+Checkpoint `c71258ce` rejects an empty executable before spawn and preserves the native diagnostic and `ERR_INVALID_ARG_VALUE` on the rejection and its `TypeError` cause. A whitespace-only executable name and a path ending in whitespace both launched as supplied in isolated checks. [Launch validation](../../../scripts/testing/execution/process.ts) · [Shutdown cleanup tests](../../../test/codex-benchmark/shared-shutdown-cleanup.app.test.ts)
+
+**Regression evidence.** The two new cases failed before the fix. The managed control retained scratch and skipped later suites with two pending receipts and no start records. After the fix, both cases passed. The managed control completed both no-launch receipts without a PID or group ID, removed scratch and ran the later suites. The existing uncertainty controls still withheld cleanup.
+
+**Validation and review.** All 76 focused Application cases and 2,141 managed Unit cases passed. Build, TypeScript, lint, formatting and diff checks passed. Maintainability and test reviews of `10059418..c71258ce` found no material issues.
