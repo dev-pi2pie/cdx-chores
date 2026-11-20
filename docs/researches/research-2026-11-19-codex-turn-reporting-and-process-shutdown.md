@@ -147,7 +147,7 @@ Four more fixtures started after the cancelled fixture recorded completion. Thre
 
 ## Implementation Direction
 
-The canary.7 investigation supports the following changes and timing decision. Runtime fixes and their regression checks are pending. [v0.2.2-canary.7 investigation](../plans/jobs/2026-11-20-canary-7-turn-reporting-and-shutdown.md)
+The canary.7 investigation supports the following changes and timing decision. Phase 1 verified benchmark dispatch accounting. Turn-timeout recovery, shared shutdown, and managed suite cancellation remain pending. [v0.2.2-canary.7 investigation](../plans/jobs/2026-11-20-canary-7-turn-reporting-and-shutdown.md) · [Phase 1 implementation record](../plans/jobs/2026-11-20-codex-turn-reporting-and-app-server-shutdown.md#phase-1-benchmark-dispatch-accounting)
 
 ### Direct turn handling
 

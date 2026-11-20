@@ -1,7 +1,7 @@
 ---
 title: "Codex turn reporting and app-server shutdown"
 created-date: 2026-11-20
-status: draft
+status: active
 agent: codex
 ---
 
@@ -13,13 +13,13 @@ Direct turn handling applies to `codex-bench` and the Standard/Fast live check. 
 
 ## Implementation Record
 
-When Phase 1 begins, create one job record for all four phases at `docs/plans/jobs/YYYY-MM-DD-codex-turn-reporting-and-app-server-shutdown.md`. Use the UTC implementation start date and link the record from this section. Under each matching phase heading, record what changed, the revision or range tested, the observed results, and any outstanding checks.
+The [unified job record](jobs/2026-11-20-codex-turn-reporting-and-app-server-shutdown.md) tracks changes, tested revisions, observed results, and outstanding checks under the matching phase headings.
 
 ## Phase 1. Benchmark dispatch accounting
 
-- [ ] Record `inferenceAttempted` and `sentTier` when the transport queues `turn/start`. A queued write counts even under backpressure or if the RPC later fails. [App-server transport](../../src/adapters/codex/app-server.ts) · [Benchmark runner](../../src/adapters/codex/benchmark/index.ts)
-- [ ] Compare the built CLI’s JSON with the server trace after a successful warm-up. Refuse the measured write locally and verify that only the warm-up reaches the server. The failed trial keeps its thread ID, reports `inferenceAttempted: false` and `sentTier: null`, and leaves the warm-up usage total complete.
-- [ ] Queue the measured write and have the server reject it. Verify that both requests reached the server, the failed trial retains its attempt and sent tier, and the total is partial when measured usage is unavailable.
+- [x] Record `inferenceAttempted` and `sentTier` when the transport queues `turn/start`. A queued write counts even under backpressure or if the RPC later fails. [App-server transport](../../src/adapters/codex/app-server.ts) · [Benchmark runner](../../src/adapters/codex/benchmark/index.ts)
+- [x] Compare the built CLI’s JSON with the server trace after a successful warm-up. Refuse the measured write locally and verify that only the warm-up reaches the server. The failed trial keeps its thread ID, reports `inferenceAttempted: false` and `sentTier: null`, and leaves the warm-up usage total complete.
+- [x] Queue the measured write and have the server reject it. Verify that both requests reached the server, the failed trial retains its attempt and sent tier, and the total is partial when measured usage is unavailable.
 
 ## Phase 2. Turn recovery and scheduling
 
