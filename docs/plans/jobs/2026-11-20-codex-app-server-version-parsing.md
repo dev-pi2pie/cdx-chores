@@ -29,3 +29,20 @@ Each successful provider report contained version `0.171.0`, `probe_proxy` as th
 - `bun run build`, `node_modules/.bin/tsc --noEmit`, `bun run lint`, `git diff --check`, and formatting checks on the changed source and test files passed. Repository-wide `bun run format:check` reported one pre-existing issue in the [benchmark help test](../../../test/codex-benchmark/help.app.test.ts).
 - Regression coverage and maintainability review covered `99e8238edf42d6bcad9a2ea63e2dbdf24b4feabf..a550937133fcbf395cc5b917969dccb4802907cf` with no actionable findings.
 - Documentation review checked the evidence and wording in this record and found no actionable issues.
+
+## Follow-up
+
+At `7d336945`, the lifecycle spike still sent `appServerVersion: "0.171.0"` after the synthetic fixture switched to `appServerUserAgent`. The fixture fell back to `cdx_chores/0.170.0`. Both callers reported `0.170.0` in all eight observations, and the comparison exited 0. The repository search found one caller using the retired field.
+
+At `2a077b99`, the spike sends `cdx_chores/<installed SDK version>` and requires that version in `run.codexVersion` for the built benchmark and `codexVersion` for the live check. The documented build and comparison ran on macOS with Node.js 24.22.3 and Bun 1.4.5. All eight reports identified `0.171.0` and the comparison exited 0. The caller reports, exit statuses, and protocol traces agreed with the accepted outcomes. [Comparison guide](../../../scripts/spikes/codex-turn-lifecycle/README.md) · [Phase 2 outcomes](2026-11-20-codex-turn-reporting-and-app-server-shutdown.md#phase-2-turn-recovery-and-scheduling)
+
+| Scenario            | Turn, archive, and Fast start                                   | Benchmark interrupt | Live check interrupt | Both caller exits |
+| ------------------- | --------------------------------------------------------------- | ------------------- | -------------------- | ----------------- |
+| Normal              | Matching Standard completion, then archive, then Fast           | None                | None                 | 0                 |
+| No reply + terminal | Recovered matching Standard completion, then archive, then Fast | None                | None                 | 0                 |
+| No reply + active   | No matching completion, archive skipped, Fast did not start     | Acknowledged        | None                 | 1                 |
+| Reply + ack only    | No matching completion, archive skipped, Fast did not start     | Acknowledged        | None                 | 1                 |
+
+Two negative controls used a temporary copy of the runner with an altered fixture user agent. With `cdx_chores/0.170.0`, both reports contained the wrong version. With an unversioned token, the benchmark reported null and the live check omitted the field. Each control rejected all eight observations, named each caller and scenario, and exited 1.
+
+The 20 focused turn-recovery tests, build, TypeScript check, lint, and changed-file formatting passed. Repository-wide formatting still flagged the benchmark help test recorded above. Regression coverage and maintainability reviews covered `7d336945b809c1aa080a738647688bf8b1f6d84e..2a077b99804ea2b670c1a061c05eadafc4b92262`. The unversioned control resolved the coverage finding. Documentation review checked the evidence and wording, and no actionable findings remain.
