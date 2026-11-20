@@ -73,3 +73,22 @@ Checkpoint `f483ebe6` converts the three tracked benchmark preloads and the gene
 **Review.** Code and test reviews covered `138e113e..825320e6` and the widened `138e113e..bcf61d96` with no material findings. Both reviewers found the six-minute limit justified for the observed workload. The roughly 14 seconds of headroom leaves reliability under timing variation unverified. Documentation review checked the guide, research, plan and job record against the implementation and evidence. [Benchmark guide](../../guides/codex-benchmark.md) · [Implementation plan](../plan-2026-11-20-codex-benchmark-lifecycle-corrections.md#phase-4-documentation-validation-and-closeout)
 
 **Evidence limits.** The native Codex 0.171.0 probe observed the structured input-size refusal. Tagged source inspection supports the Core reply-loss path. The shutdown and cleanup regressions use synthetic POSIX groups on macOS. Other native error ordering, real fault frequency, Windows descendant cleanup and escaped descendants remain unverified. [Lifecycle research](../../researches/research-2026-11-20-codex-benchmark-lifecycle-evidence.md)
+
+## Fixture Readback Timing Follow-Up
+
+Checkpoint `df48b2f2` uses a 250 ms test-only readback deadline for selected turns in 11 scenarios. The cases still exercise real subprocesses and rollout readback and verify protocol order and retention decisions. The single-measurement readback-loss and unconfirmed turn-timeout controls retain the default two-second readback. Both signal orders retain the normal interrupt wait and check that sending the second signal succeeds and the first signal determines the exit status. Production deadlines and the 360-second Application limit are unchanged. [Turn recovery tests](../../../test/codex-benchmark/turn-recovery.app.test.ts) · [Benchmark runner tests](../../../test/codex-benchmark/benchmark-runner.app.test.ts)
+
+**Application timing.** Three sequential `bun run test:integration:app --keep-results` runs at `2d934865` preceded three runs with the identical test changes committed in `df48b2f2`. Times are managed test-process seconds. Headroom is measured against 360 seconds.
+
+| Run | Before | After | Headroom before | Headroom after |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | 343.762 | 326.394 | 16.238 | 33.606 |
+| 2 | 343.533 | 323.408 | 16.467 | 36.592 |
+| 3 | 347.399 | 323.631 | 12.601 | 36.369 |
+| Median | 343.762 | 323.631 | 16.238 | 36.369 |
+
+Median execution fell by 20.131 seconds. Median summed JUnit case times fell by 12.140 seconds in the turn-recovery file and 7.193 seconds in the benchmark-runner file. These six samples measure the observed workload. Reliability under other loads remains unverified.
+
+**Validation.** The 128 focused cases passed. All six managed runs passed the same 2,628 cases across 313 files, with no errors, failures or skips. The runner verified process shutdown without escalation and removed scratch while retaining reports. TypeScript, scoped lint and formatting, Markdown links and anchors, and diff checks passed.
+
+**Guide and review.** The benchmark guide clarifies that observed turn evidence for the refused thread blocks continuation even when IDs agree. Other threads' events leave that decision unchanged. Maintainability, test and documentation reviews of `2d934865..41335ad5` found no material issues. [Benchmark guide](../../guides/codex-benchmark.md#failures-and-exit-codes)
