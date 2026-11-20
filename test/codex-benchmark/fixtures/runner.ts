@@ -55,6 +55,7 @@ interface Scenario {
     | "during-readback"
     | "reply-during-readback"
     | "during-retention";
+  retentionConflictThread?: number;
   unfinishedRolloutThread?: number;
   closeStdinOnThreadStart?: number;
   retentionError?: boolean;

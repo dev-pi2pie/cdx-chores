@@ -174,7 +174,7 @@ describe.each(["benchmark", "live check"] as const)("%s turn recovery", (caller)
   );
 
   test.each(["normal", "withheld"] as const)("recovers Standard with a %s reply", async (reply) => {
-    const { first, turns, events, archives, interrupts, exit } = await runRecovery(caller, {
+    const { first, trials, turns, events, archives, interrupts, exit } = await runRecovery(caller, {
       withholdStartReplyThread: reply === "withheld" ? 1 : undefined,
     });
     expect(exit).toBe(0);
@@ -184,6 +184,22 @@ describe.each(["benchmark", "live check"] as const)("%s turn recovery", (caller)
       status: "completed",
       sessionRetention: { status: "archived" },
     });
+    if (caller === "benchmark") {
+      for (const [trial, warmup] of [
+        [first, true],
+        [trials[2], false],
+      ] as const) {
+        expect(trial).toMatchObject({
+          turnId: warmup ? "turn-thread-1" : "turn-thread-3",
+          warmup,
+          eligible: !warmup,
+          codexFirstTokenMs: 200,
+          turnDurationMs: 800,
+          turnOutputTokensPerSecond: 100,
+          tokenUsage: { counts: { totalTokens: 230 }, partial: false },
+        });
+      }
+    }
     const firstThread = events
       .filter(({ params }) => params?.threadId === "thread-1")
       .map(({ method }) => method);
@@ -479,37 +495,65 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
         "during-retention": { name: undefined, trace: "thread/archive" },
       } as const;
       const retained = conflictingStart === "during-retention";
-      const { first, turns, events, archives, interrupts, exit } = await runRecovery(
+      // A measured turn can already be eligible when the archive is sent.
+      const measured = caller === "benchmark" && retained;
+      const failedThread = measured ? 3 : 1;
+      const threadId = `thread-${failedThread}`;
+      const { trials, turns, events, archives, interrupts, exit } = await runRecovery(
         caller,
-        { conflictingStart },
+        { conflictingStart, retentionConflictThread: measured ? failedThread : undefined },
         { gate: gate[conflictingStart].name },
       );
+      const trial = trials[failedThread - 1];
       expect(exit).toBe(1);
-      expect(first).toMatchObject({
+      expect(trials).toHaveLength(failedThread);
+      expect(trial).toMatchObject({
+        threadId,
         turnId: null,
         sentTier: "default",
         error: expect.stringContaining("conflicting turn IDs"),
         sessionRetention: { status: retained ? "archived" : "skipped" },
       });
-      if (caller === "benchmark" && conflictingStart !== "after-reply") {
-        expect(first.tokenUsage).toMatchObject({ partial: true });
+      if (caller === "benchmark") {
+        expect(trial).toMatchObject({
+          warmup: !measured,
+          status: "failed",
+          eligible: false,
+          codexFirstTokenMs: null,
+          turnDurationMs: null,
+          turnOutputTokensPerSecond: null,
+          tokenUsage: {
+            counts:
+              conflictingStart === "after-reply"
+                ? null
+                : { inputTokens: 150, outputTokens: 80, totalTokens: 230 },
+            partial: true,
+          },
+        });
       }
       const conflict = events.findIndex(
         ({ method, params }) =>
+          params?.threadId === threadId &&
           method ===
             (conflictingStart === "reply-during-readback"
               ? "fixture/turn-start-reply"
-              : "turn/started") && params?.turnId === "conflicting-turn",
+              : "turn/started") &&
+          params?.turnId === "conflicting-turn",
       );
       const beforeConflict = events.findIndex(
-        ({ method }) => method === gate[conflictingStart].trace,
+        ({ method, params }) =>
+          method === gate[conflictingStart].trace &&
+          (method === "fixture/rollout-read"
+            ? params?.turnId === `turn-${threadId}`
+            : params?.threadId === threadId),
       );
       expect(beforeConflict).toBeGreaterThanOrEqual(0);
       expect(conflict).toBeGreaterThan(beforeConflict);
-      expect(turns).toEqual(["default"]);
-      expect(archives).toEqual(retained ? ["thread-1"] : []);
+      expect(turns).toEqual(measured ? ["default", "priority", "default"] : ["default"]);
+      const precedingArchives = measured ? ["thread-1", "thread-2"] : [];
+      expect(archives).toEqual(retained ? [...precedingArchives, threadId] : []);
       expect(interrupts).toEqual([]);
-      expect(traceMethod(events, "thread/start")).toHaveLength(1);
+      expect(traceMethod(events, "thread/start")).toHaveLength(failedThread);
     },
     15_000,
   );

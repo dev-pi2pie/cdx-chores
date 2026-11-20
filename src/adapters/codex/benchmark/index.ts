@@ -302,6 +302,8 @@ class BenchmarkRunner {
           trial.status = signal?.aborted ? "cancelled" : "failed";
           trial.error = messageFrom(observer.start.signal.reason);
           trial.turnId = null;
+          trial.firstTokenMs = null;
+          trial.durationMs = null;
           trial.eligible = false;
           trial.usagePartial = trial.usage !== null;
         }

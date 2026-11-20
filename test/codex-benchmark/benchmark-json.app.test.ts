@@ -288,6 +288,9 @@ test("adds attributable usage from an incomplete warm-up and marks missing trial
       expect(report.trials[0]).toMatchObject({
         status: "failed",
         warmup: true,
+        turnId: "turn-thread-1",
+        codexFirstTokenMs: 200,
+        turnDurationMs: 800,
         tokenUsage: { partial: true, counts: { inputTokens: 45, outputTokens: null } },
         turnOutputTokensPerSecond: null,
       });

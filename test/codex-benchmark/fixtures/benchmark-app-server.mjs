@@ -397,7 +397,10 @@ async function run() {
         }
         if (method === "thread/archive") renameSync(thread.path, `${thread.path}.archive`);
         else unlinkSync(thread.path);
-        if (scenario.conflictingStart === "during-retention" && thread.id === "thread-1") {
+        if (
+          scenario.conflictingStart === "during-retention" &&
+          thread.id === `thread-${scenario.retentionConflictThread ?? 1}`
+        ) {
           conflictingStart(thread);
         }
         reply({});
