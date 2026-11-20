@@ -50,3 +50,29 @@ Review caught a live-check path that could still start Fast after Standard was a
 | Codex integration | 27 | 252 | Passed |
 
 The build, TypeScript check, lint, and formatting checks on changed files passed. Repository-wide formatting continued to flag the benchmark help test recorded in Phase 1.
+
+## Phase 3. Bounded shared shutdown
+
+The shutdown fixtures ran on macOS arm64 with Node.js 26.13.1 and Codex SDK 0.171.0. At `be71da97`, the synthetic server completed a warm-up and one measured trial. With group `SIGKILL` denied, the built Node CLI exited 1 after 1.006 seconds with empty stdout. A process-table snapshot at CLI exit found the leader and worker alive. With escalation allowed, the CLI emitted both trials, exited 0, and left the group empty. [Canary.7 shutdown baseline](2026-11-20-canary-7-turn-reporting-and-shutdown.md)
+
+The shared close now propagates signal errors to the caller and bounds the time spent awaiting child closure and owned-group exit. The table shows the packaged Node CLI at `425b37c2`. An independent observer measured from the first `SIGTERM` to CLI exit, parsed the entire stdout stream, and inspected the group before releasing the fixture. All three groups were empty after cleanup. The regression exercises the same three outcomes. [Shared close](../../../src/adapters/codex/app-server.ts) · [Benchmark shutdown tests](../../../test/codex-benchmark/shared-shutdown.app.test.ts)
+
+| Group escalation after both trials completed | CLI exit | JSON report | Live group members at CLI exit |
+| --- | --- | --- | --- |
+| Allowed | 0 in 1.012 s | Both trials completed. `run.shutdownError` was null. | None |
+| Denied while the leader was alive | 1 in 1.011 s | Both trials completed. `run.shutdownError` identified the denied signal. | Leader and worker |
+| Signal call returned success without delivering `SIGKILL` | 1 in 2.010 s | Both trials completed. `run.shutdownError` reported the child closure deadline. | Leader and worker |
+
+With the installed SDK and a synthetic executable, an archive request succeeded before a direct-child signal error. The helper returned its answer and wrote the failed-retention diagnostic to stderr. An equivalent delete case preserved the original helper error. The default `keep` trace contained only SDK prompt execution. [SDK retention tests](../../../test/codex-benchmark/sdk-retention.codex.test.ts)
+
+After successful initialization, the Node readiness probe returned `failed` with the reported version and a shutdown diagnostic. It exited in 2.003 seconds while the direct child was still alive. When initialization and shutdown both failed, the probe preserved both diagnostics. The missing-executable control retained its configuration hint. [Doctor shutdown tests](../../../test/doctor/commands/codex-benchmark.app.test.ts) · [Executable diagnostic](../../../test/doctor/commands/environment.app.test.ts)
+
+Code review covered `be71da97..425b37c2` with no outstanding Phase 3 findings. The build, TypeScript check, lint, and formatting of all ten changed source and test files passed. Repository-wide formatting still flagged the benchmark help test recorded in Phase 1.
+
+| Final managed suite at `425b37c2` | Cases | Assertions | Outcome |
+| --- | ---: | ---: | --- |
+| Unit | 2,123 | 127,949 | Passed |
+| Application | 2,514 | 16,173 | Passed in 297.48 seconds |
+| Codex integration | 30 | 274 | Passed |
+
+The application suite finished about 2.5 seconds inside its 300-second budget. The cause of the historical timeout remains open. [Application-suite investigation](2026-11-20-canary-7-turn-reporting-and-shutdown.md)
