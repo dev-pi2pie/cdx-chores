@@ -5,7 +5,7 @@ export function extractAppServerVersion(userAgent: unknown, env: NodeJS.ProcessE
   if (typeof userAgent !== "string") return undefined;
 
   const originator = env.CODEX_INTERNAL_ORIGINATOR_OVERRIDE;
-  const configuredPrefix = originator ? `${originator}/` : undefined;
+  const configuredPrefix = originator === undefined ? undefined : `${originator}/`;
   const prefix =
     configuredPrefix && userAgent.startsWith(configuredPrefix)
       ? configuredPrefix

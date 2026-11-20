@@ -8,6 +8,10 @@ test.each([
   ["Codex Exec", "Codex Exec/0.171.0 (fixture)", "0.171.0"],
   ["codex/exec", "codex/exec/0.171.0-beta.1+build.2", "0.171.0-beta.1+build.2"],
   ["Codex [Exec]+", "Codex [Exec]+/0.171.0", "0.171.0"],
+  ["", "/0.171.0", "0.171.0"],
+  [undefined, "/0.171.0", undefined],
+  [" ", " /0.171.0", "0.171.0"],
+  ["", "/invalid cdx_chores/0.171.0", undefined],
   [undefined, "Codex Exec/0.171.0", undefined],
   [undefined, "codex/exec/0.171.0", undefined],
   ["Codex Exec", "Codex exec/0.171.0", undefined],
@@ -16,7 +20,6 @@ test.each([
   ["Codex Exec", "Codex Exec/ 0.171.0", undefined],
   ["codex/exec", "codex/exec/0.171.0/extra", undefined],
   ["codex/exec", "codex/exec/0.171.0+", undefined],
-  [undefined, "/0.171.0", undefined],
   [undefined, 171, undefined],
 ] as const)(
   "extracts a leading version with override %j and agent %j",
