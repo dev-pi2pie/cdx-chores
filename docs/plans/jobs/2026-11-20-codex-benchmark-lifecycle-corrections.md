@@ -28,6 +28,12 @@ Implementation `3ef45fdb5ec1a3e85c5127e813ce8cf1b6a5f8e6` gates scheduling and r
 
 **Review.** Initial review led to immediate wake-up on conflicting start IDs and stronger ordering assertions. A later test showed the live check discarded a contradictory original start reply during readback. Both callers now observe this conflict within the original request deadline and stop before retention or the successor. They also recheck evidence before continuing after a structured refusal. Test and maintainability re-reviews of `2945140c0aaaf993845d5110c6ba92fac3e72546..e2710756e59f413c002ce9982346fd2f5067ccd4` found no outstanding Phase 2 issues.
 
+### Phase 2 Follow-Up
+
+Checkpoint `c3be46144619706578079b24e7dee9c2595f7e1f` clears first-token and duration fields when conflicting start evidence invalidates the benchmark turn ID. Before the fix, two readback conflicts and a measured-trial retention conflict each retained stale timings in the JSON row. After the fix, the row preserves recovered counts as partial, shows null throughput, and remains ineligible. The readback conflicts skip retention, the measured-trial conflict preserves its already-issued archive, and all three stop before the next planned trial. Known-ID completed and failed controls retain their timings. [Turn recovery tests](../../../test/codex-benchmark/turn-recovery.app.test.ts) · [Benchmark JSON tests](../../../test/codex-benchmark/benchmark-json.app.test.ts)
+
+**Validation and review at `c3be4614`.** All 156 recovery, JSON, runner and rollout application tests and 30 benchmark unit tests passed. The built Node CLI passed controls for a known measured turn and a timing conflict during archive. Build, TypeScript, lint, changed-file formatting and diff checks passed. Test and maintainability reviews of `c96ac2148d558b5e0dfcd7e27dc85344aac7cdcb..c3be46144619706578079b24e7dee9c2595f7e1f` found no material issues.
+
 ## Phase 3. Live-check test launcher and shutdown
 
 Checkpoint `4a014cc78294ad2c5f32b1053fbdeb1358461ead` moves the turn-recovery and shared-shutdown suites to the test-owned launcher for the Standard/Fast live check. It adds the undelivered group `SIGKILL` regression and preserves the normal, cancellation and denied-escalation controls. [Implementation plan](../plan-2026-11-20-codex-benchmark-lifecycle-corrections.md#phase-3-live-check-test-launcher-and-shutdown) · [Shutdown tests](../../../test/codex-benchmark/shared-shutdown.app.test.ts)
