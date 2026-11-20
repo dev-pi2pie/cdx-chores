@@ -33,6 +33,13 @@ interface Trial {
   sessionRetention?: { status: string };
 }
 
+interface CallerReport {
+  run?: { codexVersion?: unknown };
+  codexVersion?: unknown;
+  trials?: Trial[];
+  results?: Trial[];
+}
+
 function summarize(
   trace: TraceEvent[],
   trials: Trial[],
@@ -109,12 +116,16 @@ async function runMatrix() {
   const fixture = join(owner, "app-server.mjs");
   await copyFile(join(repo, "test/codex-benchmark/fixtures/benchmark-app-server.mjs"), fixture);
   await chmod(fixture, 0o700);
-  const appVersion = JSON.parse(
+  const { version: appVersion }: { version?: unknown } = JSON.parse(
     await readFile(join(repo, "node_modules/@openai/codex-sdk/package.json"), "utf8"),
-  ).version;
+  );
+  if (typeof appVersion !== "string" || !appVersion) {
+    throw new Error("The installed Codex SDK package did not report a version.");
+  }
   const callers = [
     {
       name: "codex-bench",
+      reportedVersion: (report: CallerReport) => report.run?.codexVersion,
       executable: "node",
       args: [
         "--import",
@@ -136,20 +147,21 @@ async function runMatrix() {
     },
     {
       name: "live check",
+      reportedVersion: (report: CallerReport) => report.codexVersion,
       executable: process.execPath,
       args: ["--preload", source("deadline.mjs"), source("live.ts")],
     },
   ];
 
   const runs = scenarios.flatMap(({ name, config }, index) =>
-    callers.map(async ({ name: caller, executable, args }, callerIndex) => {
+    callers.map(async ({ name: caller, executable, args, reportedVersion }, callerIndex) => {
       const home = join(owner, `${index + 1}-${callerIndex + 1}`);
       await mkdir(home);
       await writeFile(
         join(home, "scenario.json"),
         JSON.stringify({
           ...config,
-          appServerVersion: appVersion,
+          appServerUserAgent: `cdx_chores/${appVersion}`,
           traceLifecycle: true,
         }),
       );
@@ -180,13 +192,19 @@ async function runMatrix() {
           `${caller} / ${name} failed to produce an observation. Exit ${code ?? "by signal"}.`,
         );
       }
-      const report: { trials?: Trial[]; results?: Trial[] } = JSON.parse(stdout);
+      const report: CallerReport = JSON.parse(stdout);
+      const version = reportedVersion(report);
+      if (version !== appVersion) {
+        throw new Error(
+          `Expected Codex version ${appVersion} for ${caller} / ${name}, received ${JSON.stringify(version) ?? "no value"}.`,
+        );
+      }
       const trace: TraceEvent[] = (await readFile(join(home, "events.jsonl"), "utf8"))
         .trim()
         .split("\n")
         .map((line) => JSON.parse(line));
       const summary = summarize(trace, report.trials ?? report.results ?? [], config);
-      return { Caller: caller, Case: name, ...summary, Exit: code };
+      return { Caller: caller, Case: name, Version: version, ...summary, Exit: code };
     }),
   );
   const results = await Promise.allSettled(runs);
