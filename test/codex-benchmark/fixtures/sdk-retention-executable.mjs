@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { appendFileSync } from "node:fs";
+import { appendFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { createInterface } from "node:readline";
 
 const threadId = "owned-fixture-thread";
@@ -11,6 +12,8 @@ function record(event) {
 }
 
 if (process.argv[2] === "app-server") {
+  record("app-server-started");
+  writeFileSync(join(process.env.CODEX_HOME, "leader.pid"), String(process.pid));
   createInterface({ input: process.stdin }).on("line", (line) => {
     const request = JSON.parse(line);
     if (request.method === "initialized") return;
@@ -21,6 +24,10 @@ if (process.argv[2] === "app-server") {
       return;
     }
     record(`${request.method}:${request.params.threadId}`);
+    if (process.env.FIXTURE_ESCALATION === "deny-term") {
+      console.log(JSON.stringify({ id: request.id, result: {} }));
+      return;
+    }
     console.log(
       JSON.stringify({
         id: request.id,

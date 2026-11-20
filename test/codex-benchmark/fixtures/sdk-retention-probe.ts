@@ -12,13 +12,17 @@ const cwd = process.cwd();
 const home = process.env.CODEX_HOME;
 assert(home);
 
-if (scenario === "rpc-error" || scenario === "work-error" || scenario === "cancelled") {
+async function probeSyntheticTurn() {
   assert(fixturePrompt);
   const abort = new AbortController();
+  const sessionRetention = scenario === "delete-close-error" ? "delete" : "archive";
   try {
     const result = await withCodexReadOnlyThread(
       cwd,
-      { codexPathOverride: fixturePrompt, codexExecution: { sessionRetention: "archive" } },
+      {
+        codexPathOverride: fixturePrompt,
+        ...(scenario === "default-keep" ? {} : { codexExecution: { sessionRetention } }),
+      },
       async (thread) => {
         const turn = thread.run("Run the synthetic probe.", { signal: abort.signal });
         if (scenario === "cancelled") {
@@ -27,7 +31,8 @@ if (scenario === "rpc-error" || scenario === "work-error" || scenario === "cance
           abort.abort();
         }
         const result = await turn;
-        if (scenario === "work-error") throw new Error("Original helper error.");
+        if (scenario === "work-error" || scenario === "delete-close-error")
+          throw new Error("Original helper error.");
         return result;
       },
     );
@@ -35,10 +40,10 @@ if (scenario === "rpc-error" || scenario === "work-error" || scenario === "cance
   } catch (error) {
     console.log(error instanceof Error ? error.message : String(error));
   }
-  process.exit(0);
 }
 
-execFileSync("git", ["init", "--quiet"], { cwd });
+if (scenario === "one-shot" || scenario === "reuse")
+  execFileSync("git", ["init", "--quiet"], { cwd });
 
 const active = () => globSync(join(home, "sessions", "**", "rollout-*.jsonl")).sort();
 const archived = () => globSync(join(home, "archived_sessions", "rollout-*.jsonl")).sort();
@@ -62,8 +67,7 @@ if (scenario === "one-shot") {
   });
   assert.deepEqual(active(), sentinel);
   assert.deepEqual(archived(), []);
-} else {
-  assert.equal(scenario, "reuse");
+} else if (scenario === "reuse") {
   const rollout = await withCodexReadOnlyThread(
     cwd,
     { codexExecution: { speed: "standard", sessionRetention: "archive" } },
@@ -89,4 +93,6 @@ if (scenario === "one-shot") {
     archived().map((path) => basename(path)),
     [rollout],
   );
+} else {
+  await probeSyntheticTurn();
 }

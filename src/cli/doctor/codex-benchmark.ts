@@ -55,18 +55,16 @@ export async function inspectCodexBenchmark(
     return { status: "failed", version: null, minimumVersion, detail: executableHint };
   }
 
+  let server: CodexAppServer | undefined;
+  let readiness: CodexBenchmarkPrerequisites;
   try {
-    const server = new CodexAppServer(executable, cwd, serverEnv);
-    try {
-      const result = await server.initialize(initializeTimeoutMs);
-      if (!isRecord(result)) throw new Error("Invalid app-server initialization response.");
-      return assessInitializedVersion(result.userAgent);
-    } finally {
-      await server.close();
-    }
+    server = new CodexAppServer(executable, cwd, serverEnv);
+    const result = await server.initialize(initializeTimeoutMs);
+    if (!isRecord(result)) throw new Error("Invalid app-server initialization response.");
+    readiness = assessInitializedVersion(result.userAgent);
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;
-    return {
+    readiness = {
       status: "failed",
       version: null,
       minimumVersion,
@@ -76,4 +74,16 @@ export async function inspectCodexBenchmark(
           : "App-server initialization failed. Run the selected Codex executable with `app-server` to diagnose startup.",
     };
   }
+  try {
+    await server?.close();
+  } catch {
+    const detail =
+      "App-server shutdown failed. Check whether the selected Codex process is still running.";
+    return {
+      ...readiness,
+      status: "failed",
+      detail: readiness.status === "failed" ? readiness.detail + " " + detail : detail,
+    };
+  }
+  return readiness;
 }

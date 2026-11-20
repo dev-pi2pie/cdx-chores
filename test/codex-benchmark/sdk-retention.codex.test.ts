@@ -68,6 +68,9 @@ test.each([
   { scenario: "rpc-error", result: "fixture-answer", cancelled: false },
   { scenario: "work-error", result: "Original helper error.", cancelled: false },
   { scenario: "cancelled", result: /abort/i, cancelled: true },
+  { scenario: "archive-close-error", result: "fixture-answer", cancelled: false },
+  { scenario: "delete-close-error", result: "Original helper error.", cancelled: false },
+  { scenario: "default-keep", result: "fixture-answer", cancelled: false },
 ] as const)(
   "SDK retention preserves helper outcome when $scenario occurs",
   async ({ scenario, result, cancelled }) => {
@@ -81,14 +84,25 @@ test.each([
         await chmod(executable, 0o755);
         const events = join(root, "retention-events.jsonl");
         const home = join(root, "home", ".codex");
+        const closeFailure = scenario.endsWith("-close-error");
+        const keep = scenario === "default-keep";
+        const mode = scenario === "delete-close-error" ? "delete" : "archive";
         const probe = await start({
           executable: "node",
-          args: [driverPath, scenario, executable],
+          args: [
+            ...(closeFailure
+              ? ["--require", join(import.meta.dir, "fixtures/shutdown-signal.cjs")]
+              : []),
+            driverPath,
+            scenario,
+            executable,
+          ],
           env: {
             ...env,
             CDX_CHORES_CODEX_PATH: join(root, "other-codex"),
             CDX_RETENTION_EVENTS: events,
             CDX_RETENTION_CANCEL: cancelled ? "1" : "0",
+            FIXTURE_ESCALATION: closeFailure ? "deny-term" : undefined,
             CODEX_HOME: home,
           },
           timeoutMs: 7_500,
@@ -103,13 +117,29 @@ test.each([
         expect(timeline.map((entry) => entry.event)).toEqual(
           cancelled
             ? ["exec-started"]
-            : ["exec-started", "exec-exited", "thread/archive:owned-fixture-thread"],
+            : keep
+              ? ["exec-started", "exec-exited"]
+              : [
+                  "exec-started",
+                  "exec-exited",
+                  "app-server-started",
+                  `thread/${mode}:owned-fixture-thread`,
+                ],
         );
         expect(timeline.every((entry) => entry.home === home && entry.cwd === cwd)).toBe(true);
+        if (keep) {
+          expect(probe.stderr).toBe("");
+          return;
+        }
         expect(probe.stderr).toContain("owned-fixture-thread");
         expect(probe.stderr).toContain(
-          cancelled ? "skipped" : "Fixture binary does not support retention",
+          cancelled
+            ? "skipped"
+            : closeFailure
+              ? "Fixture denied app-server SIGTERM."
+              : "Fixture binary does not support retention",
         );
+        if (closeFailure) expect(probe.stderr).toContain(`Codex session ${mode} failed`);
       });
     });
   },
