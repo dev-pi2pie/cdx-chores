@@ -1,5 +1,6 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
+import { inspect } from "node:util";
 
 import { requireProcessCapabilities } from "./process-capabilities.ts";
 import type { OutputDelivery } from "./output.ts";
@@ -86,7 +87,14 @@ export class ProcessLaunchRejectedError extends Error {
   }
 }
 
-function checkLaunch(options: OwnedProcessOptions): number {
+function invalidSpawnArgument(field: string, requirement: string, value: string): TypeError {
+  return Object.assign(
+    new TypeError(`The argument '${field}' ${requirement}. Received ${inspect(value)}`),
+    { code: "ERR_INVALID_ARG_VALUE" },
+  );
+}
+
+function checkLaunch(options: OwnedProcessOptions) {
   try {
     requireProcessCapabilities();
     for (const value of [options.timeoutMs, options.graceMs, options.cleanupMs]) {
@@ -100,12 +108,19 @@ function checkLaunch(options: OwnedProcessOptions): number {
     if (options.signal?.aborted) throw new Error("Process launch was cancelled before allocation.");
     if (options.output?.signal.aborted)
       throw new Error("Process launch output delivery was already unavailable.");
-    if (options.executable === "") {
-      throw Object.assign(new TypeError("The argument 'file' cannot be empty. Received ''"), {
-        code: "ERR_INVALID_ARG_VALUE",
-      });
+    const executable = options.executable;
+    if (executable === "") throw invalidSpawnArgument("file", "cannot be empty", executable);
+    const nullByteRequirement = "must be a string without null bytes";
+    if (typeof executable === "string" && executable.includes("\0")) {
+      throw invalidSpawnArgument("file", nullByteRequirement, executable);
     }
-    return maximum;
+    const args = [...options.args];
+    for (const [index, arg] of args.entries()) {
+      if (typeof arg === "string" && arg.includes("\0")) {
+        throw invalidSpawnArgument(`args[${index}]`, nullByteRequirement, arg);
+      }
+    }
+    return { maximum, executable, args };
   } catch (error) {
     throw new ProcessLaunchRejectedError(error);
   }
@@ -122,10 +137,10 @@ export function startOwnedProcess(
   options: OwnedProcessOptions,
   observer: ProcessObserver = { observe: observeProcessGroup },
 ): OwnedProcess {
-  const maximum = checkLaunch(options);
+  const { maximum, executable, args } = checkLaunch(options);
 
   const started = performance.now();
-  const child = spawn(options.executable, [...options.args], {
+  const child = spawn(executable, args, {
     cwd: options.cwd,
     env: { ...options.env },
     detached: true,

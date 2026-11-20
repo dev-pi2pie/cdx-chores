@@ -39,6 +39,22 @@ const preSpawnCases = {
       code: "ERR_INVALID_ARG_VALUE",
     },
   },
+  "NUL in executable": {
+    options: { executable: "launcher\0suffix" },
+    error: {
+      message:
+        "The argument 'file' must be a string without null bytes. Received 'launcher\\x00suffix'",
+      code: "ERR_INVALID_ARG_VALUE",
+    },
+  },
+  "NUL in argument": {
+    options: { args: ["--version", " ", "arg\0suffix"] },
+    error: {
+      message:
+        "The argument 'args[2]' must be a string without null bytes. Received 'arg\\x00suffix'",
+      code: "ERR_INVALID_ARG_VALUE",
+    },
+  },
 } as const;
 const cases = [
   "assertion failure",
@@ -46,6 +62,8 @@ const cases = [
   "invalid deadline",
   "already-aborted signal",
   "empty executable",
+  "NUL in executable",
+  "NUL in argument",
   "missing spawn receipt",
   "interrupted spawn receipt",
   "partial spawn receipt",
@@ -142,7 +160,7 @@ async function checkFailure(mode: Case, control: Control) {
     const expectedError = preSpawnCases[mode].error;
     expect(error).toBeInstanceOf(ProcessLaunchRejectedError);
     expect(error).toMatchObject({ ...expectedError, cause: expectedError });
-    if (mode === "empty executable") expect((error as Error).cause).toBeInstanceOf(TypeError);
+    if ("code" in expectedError) expect((error as Error).cause).toBeInstanceOf(TypeError);
     control.callerStopped = true;
     control.neverStarted = true;
     await expect(access(dirname(home))).rejects.toMatchObject({ code: "ENOENT" });
