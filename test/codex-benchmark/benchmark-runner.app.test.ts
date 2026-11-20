@@ -502,7 +502,7 @@ test("CLI reports stdout EOF during a turn while the app-server is still alive",
 
 test("CLI reports stdout EOF observed during final rollout readback", async () => {
   await withRunnerFixture({ endStdoutAfterThread: 2 }, async ({ home, options, trace }) => {
-    const preload = join(import.meta.dir, "fixtures", "final-readback-eof-preload.cjs");
+    const preload = join(import.meta.dir, "fixtures", "final-readback-eof-preload.mjs");
     const result = await startCliBenchmark(options, ["--json"], preload).completion;
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("Transport failed");
@@ -851,7 +851,7 @@ test.each(["confirmed", "unconfirmed"] as const)(
     await withRunnerFixture(
       { waitForInterruptThread: 2, interrupt },
       async ({ options, trace }) => {
-        const preload = join(options.cwd, "turn-deadline.cjs");
+        const preload = join(options.cwd, "turn-deadline.mjs");
         await writeFile(
           preload,
           [

@@ -1,5 +1,5 @@
-const { Socket } = require("node:net");
-const { ok, strictEqual } = require("node:assert");
+import { ok, strictEqual } from "node:assert";
+import { Socket } from "node:net";
 
 const write = Socket.prototype.write;
 const mode = process.env.FIXTURE_TURN_WRITE;

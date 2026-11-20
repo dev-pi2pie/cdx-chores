@@ -1,6 +1,7 @@
 ---
 title: "Test fixture ESM migration"
 created-date: 2026-11-18
+modified-date: 2026-11-20
 status: completed
 agent: codex
 ---
@@ -15,7 +16,7 @@ Converted five standalone Node test fixtures to ESM and updated their launch pat
 | Test-runner process | `process-subject.cjs` | [process-subject.mjs](../../../test/test-runner/fixtures/process-subject.mjs) |
 | Video resolver | `probe.cjs` | [probe.mjs](../../../test/video/frames/fixtures/probe.mjs) |
 
-The entire generated `dist/cjs/` tree, including `dist/cjs/index.cjs`, is outside the migration. The DOCX CommonJS consumer and test-runner `.cjs` discovery cases exercise that format deliberately. The [EOF preload](../../../test/codex-benchmark/fixtures/final-readback-eof-preload.cjs) uses CommonJS so Bun applies its built-in module patches before the CLI loads.
+The entire generated `dist/cjs/` tree, including `dist/cjs/index.cjs`, is outside the migration. The DOCX CommonJS consumer and test-runner `.cjs` discovery cases exercise that format deliberately. This migration kept the EOF preload in CommonJS so Bun applied its built-in patches before the CLI loaded. The later [ESM preload](../../../test/codex-benchmark/fixtures/final-readback-eof-preload.mjs) preserves that behavior through `createRequire` and `syncBuiltinESMExports`.
 
 ## Verification
 

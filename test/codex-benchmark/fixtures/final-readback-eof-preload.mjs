@@ -1,7 +1,10 @@
+import { createRequire, syncBuiltinESMExports } from "node:module";
+import { join } from "node:path";
+
+// Load mutable built-ins through require so the patches reach named imports under Bun.
+const require = createRequire(import.meta.url);
 const childProcess = require("node:child_process");
 const files = require("node:fs/promises");
-const { syncBuiltinESMExports } = require("node:module");
-const { join } = require("node:path");
 
 let stdoutEnded;
 const spawn = childProcess.spawn;

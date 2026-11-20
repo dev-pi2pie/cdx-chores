@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
+import { pathToFileURL } from "node:url";
 import {
   isLiveProcess,
   type ProcessMember,
@@ -94,8 +95,8 @@ test.skipIf(process.platform === "win32").each(["allowed", "denied", "undelivere
         const owned = start({
           executable: "node",
           args: [
-            "--require",
-            join(import.meta.dir, "fixtures/shutdown-signal.cjs"),
+            "--import",
+            pathToFileURL(join(import.meta.dir, "fixtures/shutdown-signal.mjs")).href,
             cli,
             "codex-bench",
             "--json",

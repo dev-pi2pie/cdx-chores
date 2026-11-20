@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { access } from "node:fs/promises";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { startFixtureProcess } from "../../scripts/testing/fixtures/fixture-process";
 import { REPO_ROOT } from "../helpers/cli-test-utils";
 import { traceMethod, withRunnerFixture } from "./fixtures/runner";
@@ -59,11 +60,15 @@ for (const caller of ["benchmark", "live check on Node", "live check on Bun"] as
       const retention = scenario.retention ?? "archive";
       const writePreload = ["refused", "ended", "peer-closed", "backpressure"].includes(mode);
       if (onBun && writePreload) continue;
-      const preload = writePreload
-        ? "turn-write-preload.cjs"
+      const preloadName = writePreload
+        ? "turn-write-preload.mjs"
         : mode === "loss-after-completion"
-          ? "final-readback-eof-preload.cjs"
+          ? "final-readback-eof-preload.mjs"
           : undefined;
+      const preload = preloadName && join(import.meta.dir, "fixtures", preloadName);
+      const preloadArgs = preload
+        ? [onBun ? "--preload" : "--import", onBun ? preload : pathToFileURL(preload).href]
+        : [];
       test.skipIf(mode === "peer-closed" && process.platform === "win32")(
         `${mode} write with ${retention} requested`,
         async () => {
@@ -94,18 +99,7 @@ for (const caller of ["benchmark", "live check on Node", "live check on Bun"] as
                 : ["--model", "model-a", "--effort", "low"];
               const result = await startFixtureProcess({
                 executable: onBun ? process.execPath : "node",
-                args: [
-                  ...(preload
-                    ? [
-                        onBun ? "--preload" : "--require",
-                        join(import.meta.dir, "fixtures", preload),
-                      ]
-                    : []),
-                  script,
-                  ...args,
-                  "--session-retention",
-                  retention,
-                ],
+                args: [...preloadArgs, script, ...args, "--session-retention", retention],
                 env: {
                   ...options.env,
                   FIXTURE_TURN_WRITE: mode,

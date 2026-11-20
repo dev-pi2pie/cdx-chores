@@ -341,7 +341,7 @@ test("prints red trial and retention failures after clearing the JSON progress l
 
 test("uses terminal color only when stdout is a TTY and colors are enabled", async () => {
   await withRunnerFixture({}, async ({ options }) => {
-    const preload = join(options.cwd, "stdout-tty.cjs");
+    const preload = join(options.cwd, "stdout-tty.mjs");
     await writeFile(preload, 'Object.defineProperty(process.stdout, "isTTY", { value: true });');
     const styled = await startCliBenchmark(options, [], preload).completion;
     const disabled = await startCliBenchmark(options, ["--no-color"], preload).completion;

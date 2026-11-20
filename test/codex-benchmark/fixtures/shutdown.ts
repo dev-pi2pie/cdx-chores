@@ -28,7 +28,7 @@ export function startShutdownLiveCheck(
     executable: process.execPath,
     args: [
       "--preload",
-      join(import.meta.dir, "shutdown-signal.cjs"),
+      join(import.meta.dir, "shutdown-signal.mjs"),
       join(import.meta.dir, "runner-live-check.ts"),
       "--model",
       "model-a",

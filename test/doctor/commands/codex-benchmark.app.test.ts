@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { once } from "node:events";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 
 import {
   requireProcessObservation,
@@ -66,8 +67,9 @@ test.skipIf(process.platform === "win32").each([
         const owned = startFixtureProcess({
           executable: "node",
           args: [
-            "--require",
-            join(REPO_ROOT, "test/codex-benchmark/fixtures/shutdown-signal.cjs"),
+            "--import",
+            pathToFileURL(join(REPO_ROOT, "test/codex-benchmark/fixtures/shutdown-signal.mjs"))
+              .href,
             "--input-type=module",
             "-e",
             'import { inspectCodexBenchmark } from "./probe.mjs"; console.log(JSON.stringify(await inspectCodexBenchmark(process.cwd())));',

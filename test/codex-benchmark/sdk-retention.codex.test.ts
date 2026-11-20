@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { chmod, readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 
 import { lifecycleDiagnostic, withLiveCodexFixture } from "../codex-info/live-fixture";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
@@ -91,7 +92,10 @@ test.each([
           executable: "node",
           args: [
             ...(closeFailure
-              ? ["--require", join(import.meta.dir, "fixtures/shutdown-signal.cjs")]
+              ? [
+                  "--import",
+                  pathToFileURL(join(import.meta.dir, "fixtures/shutdown-signal.mjs")).href,
+                ]
               : []),
             driverPath,
             scenario,
@@ -139,7 +143,18 @@ test.each([
               ? "Fixture denied app-server SIGTERM."
               : "Fixture binary does not support retention",
         );
-        if (closeFailure) expect(probe.stderr).toContain(`Codex session ${mode} failed`);
+        if (closeFailure) {
+          expect(probe.stderr).toContain(`Codex session ${mode} failed`);
+          const leader = Number(await readFile(join(home, "leader.pid"), "utf8"));
+          const signals = (await readFile(join(home, "signals.jsonl"), "utf8"))
+            .trim()
+            .split("\n")
+            .map((line) => JSON.parse(line));
+          expect(signals).toMatchObject([{ pid: leader, signal: "SIGTERM" }]);
+          await expect(readFile(join(home, "app-server-spawn"))).rejects.toMatchObject({
+            code: "ENOENT",
+          });
+        }
       });
     });
   },

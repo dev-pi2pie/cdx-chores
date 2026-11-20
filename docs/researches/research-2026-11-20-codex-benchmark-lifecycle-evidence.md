@@ -71,7 +71,7 @@ The automated suites cover denied escalation for both callers and undelivered es
 
 [^transport]: [App-server requests and stream errors](../../src/adapters/codex/app-server.ts)
 [^usage]: [Benchmark token accounting](../../src/cli/codex-bench/usage.ts)
-[^dispatch]: [Dispatch accounting cases](../../test/codex-benchmark/dispatch-accounting.app.test.ts) · [Local refusal and backpressure controls](../../test/codex-benchmark/fixtures/turn-write-preload.cjs)
+[^dispatch]: [Dispatch accounting cases](../../test/codex-benchmark/dispatch-accounting.app.test.ts) · [Local refusal and backpressure controls](../../test/codex-benchmark/fixtures/turn-write-preload.mjs)
 [^runner-tests]: [Benchmark runner cases](../../test/codex-benchmark/benchmark-runner.app.test.ts)
 [^live]: [Standard/Fast live check](../../scripts/spikes/codex-benchmark-live-check.ts)
 [^benchmark]: [Benchmark runner](../../src/adapters/codex/benchmark/index.ts) · [Turn observer](../../src/adapters/codex/benchmark/turn.ts)

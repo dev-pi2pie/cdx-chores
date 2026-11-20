@@ -1,12 +1,14 @@
-// Required only by the fixture CLI. The parent test observes its actual exit.
-const { appendFileSync, existsSync, readFileSync, writeFileSync } = require("node:fs");
-const { join } = require("node:path");
+// Preloaded only by the fixture caller. The parent test observes its actual exit.
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { createRequire, syncBuiltinESMExports } from "node:module";
+import { join } from "node:path";
+
 const kill = process.kill;
 const leaderPath = join(process.env.CODEX_HOME, "leader.pid");
 
 if (process.env.FIXTURE_RECORD_APP_SERVER === "1") {
-  const childProcess = require("node:child_process");
-  const { syncBuiltinESMExports } = require("node:module");
+  // Bun's named spawn import sees the patch when the built-in is loaded through require.
+  const childProcess = createRequire(import.meta.url)("node:child_process");
   const spawn = childProcess.spawn;
   const receipt = join(process.env.CODEX_HOME, "app-server-spawn");
   childProcess.spawn = (executable, args, options) => {
