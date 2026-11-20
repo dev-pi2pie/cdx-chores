@@ -63,6 +63,7 @@ The automated suites cover denied escalation for both callers and undelivered es
 
 ## Related Plans
 
+- [Codex benchmark lifecycle corrections](../plans/plan-2026-11-20-codex-benchmark-lifecycle-corrections.md)
 - [Codex turn reporting and app-server shutdown](../plans/plan-2026-11-20-codex-turn-reporting-and-app-server-shutdown.md)
 - [Codex CLI benchmark](../plans/plan-2026-11-18-codex-cli-benchmark.md)
 
