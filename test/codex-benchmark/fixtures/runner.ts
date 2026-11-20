@@ -39,6 +39,7 @@ interface Scenario {
   retentionError?: boolean;
   usageSnapshots?: Array<Record<string, number> | null>;
   resistantWorker?: boolean;
+  resistantLeader?: boolean;
   streamText?: "matching" | "unrelated";
   threadSettings?: Array<{ serviceTier?: string | null; reasoningEffort?: string | null }>;
 }

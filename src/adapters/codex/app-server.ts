@@ -6,7 +6,8 @@ import { isRecord } from "./discovery/transport";
 
 const maxLineBytes = 8 * 1024 * 1024;
 const requestTimeoutMs = 15_000;
-const groupShutdownTimeoutMs = 1_000;
+const shutdownGraceMs = 1_000;
+const shutdownVerificationMs = 1_000;
 
 type NotificationListener = (method: string, params: unknown) => void;
 
@@ -52,6 +53,7 @@ export class CodexAppServer {
   private exited = false;
   private unexpectedStdoutEnd = false;
   private readonly separateGroup: boolean;
+  private closing?: Promise<void>;
 
   constructor(
     executable: string,
@@ -247,19 +249,28 @@ export class CodexAppServer {
   }
 
   private kill(signal: NodeJS.Signals): void {
-    if (this.separateGroup && this.child.pid) {
-      try {
-        process.kill(-this.child.pid, signal);
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
-      }
-    } else if (!this.exited) {
-      this.child.kill(signal);
+    const pid = this.child.pid;
+    if (!pid || (!this.separateGroup && this.exited)) return;
+    try {
+      process.kill(this.separateGroup ? -pid : pid, signal);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
     }
   }
 
-  private async waitForGroupExit(groupId: number): Promise<void> {
-    const deadline = performance.now() + groupShutdownTimeoutMs;
+  private async closedBy(deadline: number): Promise<boolean> {
+    const timer = new AbortController();
+    try {
+      return await Promise.race([
+        this.closed.then(() => true),
+        delay(Math.max(0, deadline - performance.now()), false, { signal: timer.signal }),
+      ]);
+    } finally {
+      timer.abort();
+    }
+  }
+
+  private async waitForGroupExit(groupId: number, deadline: number): Promise<void> {
     while (true) {
       try {
         process.kill(-groupId, 0);
@@ -276,22 +287,31 @@ export class CodexAppServer {
     }
   }
 
-  async close(): Promise<void> {
+  close(): Promise<void> {
+    return (this.closing ??= this.stopProcess());
+  }
+
+  private async stopProcess(): Promise<void> {
     this.fail(new Error("Codex app-server was closed."));
     this.child.stdin.destroy();
     this.child.stdout.destroy();
     this.child.stderr.destroy();
-    this.kill("SIGTERM");
-    const forceKill = setTimeout(() => this.kill("SIGKILL"), 1_000);
+    const graceDeadline = performance.now() + shutdownGraceMs;
     try {
-      await this.closed;
-      // The group can still contain workers after its leader has exited.
+      this.kill("SIGTERM");
+      const closed = await this.closedBy(graceDeadline);
+      const deadline = Math.min(graceDeadline, performance.now()) + shutdownVerificationMs;
+      // An owned group may still contain workers after its leader has closed.
+      if (!closed || this.separateGroup) this.kill("SIGKILL");
+      if (!closed && !(await this.closedBy(deadline)))
+        throw new Error("Codex app-server child did not close before its shutdown deadline.");
       if (this.separateGroup && this.child.pid) {
-        this.kill("SIGKILL");
-        await this.waitForGroupExit(this.child.pid);
+        await this.waitForGroupExit(this.child.pid, deadline);
       }
-    } finally {
-      clearTimeout(forceKill);
+    } catch (error) {
+      // A child whose exit we cannot confirm must not pin the caller's event loop.
+      this.child.unref();
+      throw error;
     }
   }
 }

@@ -87,18 +87,26 @@ function completeTurn(thread, status, error = null) {
   notification("turn/completed", { threadId: thread.id, turn: { id: turnId, status, error } });
 }
 
+function resistShutdown() {
+  process.on("SIGTERM", () => {});
+  // Survive stdin closure and TERM, but stop if the fixture owner exits unexpectedly.
+  setTimeout(() => {}, 6_000);
+  const releasePath = join(home, "release-shutdown");
+  setInterval(() => {
+    if (existsSync(releasePath)) process.exit(0);
+  }, 20).unref();
+}
+
 async function run() {
+  if (scenario.resistantLeader) {
+    writeFileSync(join(home, "leader.pid"), String(process.pid));
+    resistShutdown();
+  }
   if (scenario.resistantWorker) {
     const readyPath = join(home, "worker.pid");
-    const worker = spawn(
-      process.execPath,
-      [
-        "-e",
-        'process.on("SIGTERM", () => {}); setTimeout(() => {}, 6000); require("node:fs").writeFileSync(process.argv[1], JSON.stringify({ pid: process.pid, groupId: process.ppid }));',
-        readyPath,
-      ],
-      { stdio: "ignore" },
-    );
+    const worker = spawn(process.execPath, [process.argv[1], "resistant-worker"], {
+      stdio: "ignore",
+    });
     worker.unref();
     for (let attempt = 0; attempt < 100 && !existsSync(readyPath); attempt++) await delay(10);
     if (!existsSync(readyPath)) throw new Error("The fixture worker did not start.");
@@ -297,4 +305,12 @@ async function run() {
   }
 }
 
-void run();
+if (process.argv[2] === "resistant-worker") {
+  resistShutdown();
+  writeFileSync(
+    join(home, "worker.pid"),
+    JSON.stringify({ pid: process.pid, groupId: process.ppid }),
+  );
+} else {
+  void run();
+}
