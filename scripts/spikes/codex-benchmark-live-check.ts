@@ -35,6 +35,10 @@ const defaultAppServer = {
 const requestTimeoutMs = 15_000;
 const prompt =
   "Explain how an LRU cache works to a junior developer. Cover a cache hit, a cache miss, and an eviction. Walk through a short example with a capacity of three. Write about 250 words and answer directly without using tools.";
+const usage =
+  "Usage: node examples/playground/codex-benchmark-live-check.mjs --model <id> --effort <effort> [--speed standard|fast|ultrafast] [--session-retention archive|keep|delete]";
+const buildInstructions =
+  "From the repository root, build the Node.js bundle with:\n  bun build scripts/spikes/codex-benchmark-live-check.ts --target=node --format=esm --outfile=examples/playground/codex-benchmark-live-check.mjs";
 
 interface Thread {
   id: string;
@@ -435,10 +439,9 @@ export async function runLiveCheck(
       help: { type: "boolean" },
     },
   });
-  const usage =
-    "Usage: node examples/playground/codex-benchmark-live-check.mjs --model <id> --effort <effort> [--speed standard|fast|ultrafast] [--session-retention archive|keep|delete]";
   if (values.help) {
     console.log(usage);
+    console.log(buildInstructions);
     console.log(
       "Session retention defaults to keep. Delete permanently removes the trial session.",
     );
@@ -538,11 +541,19 @@ export async function runLiveCheck(
 }
 
 if (import.meta.main) {
-  const executable = process.env.CDX_CHORES_CODEX_PATH?.trim() || defaultAppServer.executable;
-  await runLiveCheck(process.argv.slice(2), {
-    appServer: { ...defaultAppServer, executable },
-  }).catch((error: unknown) => {
-    console.error(String(error));
+  const args = process.argv.slice(2);
+  if (process.versions.bun && !(args.length === 1 && args[0] === "--help")) {
+    console.error(
+      `Run the maintainer live check with the Node.js bundle.\n${buildInstructions}\n${usage}`,
+    );
     process.exitCode = 1;
-  });
+  } else {
+    const executable = process.env.CDX_CHORES_CODEX_PATH?.trim() || defaultAppServer.executable;
+    await runLiveCheck(args, {
+      appServer: { ...defaultAppServer, executable },
+    }).catch((error: unknown) => {
+      console.error(String(error));
+      process.exitCode = 1;
+    });
+  }
 }

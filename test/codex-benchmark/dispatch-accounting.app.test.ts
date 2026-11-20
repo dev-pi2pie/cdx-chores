@@ -53,6 +53,36 @@ async function buildNodeCaller(entry: string, cwd: string) {
 
 const maintainerEntry = join(REPO_ROOT, "scripts/spikes/codex-benchmark-live-check.ts");
 const maintainerBundle = "examples/playground/codex-benchmark-live-check.mjs";
+const maintainerArgs = ["--model", "model-a", "--effort", "low", "--session-retention", "archive"];
+
+test.each([
+  { name: "live arguments", args: maintainerArgs, code: 1 },
+  { name: "help", args: ["--help"], code: 0 },
+])("maintainer source on Bun shows build and run commands for $name", async ({ args, code }) => {
+  await withRunnerFixture({ resistantLeader: true }, async ({ home, options, trace }) => {
+    const result = await startFixtureProcess({
+      executable: process.execPath,
+      args: [maintainerEntry, ...args],
+      cwd: options.cwd,
+      env: options.env ?? {},
+      timeoutMs: 6_000,
+      graceMs: 600,
+      cleanupMs: 1_500,
+    }).completion;
+    expect(result.stopped).toBe(true);
+    expect(result.issues).toEqual([]);
+    expect(result.exitCode, result.stderr).toBe(code);
+    const instructions = code === 0 ? result.stdout : result.stderr;
+    expect(instructions).toContain(
+      "bun build scripts/spikes/codex-benchmark-live-check.ts --target=node --format=esm --outfile=" +
+        maintainerBundle,
+    );
+    expect(instructions).toContain("node " + maintainerBundle + " --model");
+    if (code === 1) expect(result.stdout).toBe("");
+    expect(await trace()).toEqual([]);
+    await expect(access(join(home, "leader.pid"))).rejects.toMatchObject({ code: "ENOENT" });
+  });
+});
 
 async function startMaintainerBundle(cwd: string, env: NodeJS.ProcessEnv) {
   await mkdir(join(cwd, "examples", "playground"), { recursive: true });
@@ -74,15 +104,7 @@ async function startMaintainerBundle(cwd: string, env: NodeJS.ProcessEnv) {
   expect(build.ok, build.stderr).toBe(true);
   return startFixtureProcess({
     executable: "node",
-    args: [
-      maintainerBundle,
-      "--model",
-      "model-a",
-      "--effort",
-      "low",
-      "--session-retention",
-      "archive",
-    ],
+    args: [maintainerBundle, ...maintainerArgs],
     cwd,
     env,
     ...limits,
