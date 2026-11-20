@@ -63,14 +63,19 @@ async function runRecovery(caller: Caller, scenario: Scenario, late = false) {
   });
 }
 
-test.each(["confirmed", "unconfirmed"] as const)(
-  "benchmark start timeout with %s interruption",
-  async (interrupt) => {
+test.each([
+  { interrupt: "confirmed", withholdInterruptReply: false },
+  { interrupt: "confirmed", withholdInterruptReply: true },
+  { interrupt: "unconfirmed", withholdInterruptReply: false },
+] as const)(
+  "benchmark start timeout with $interrupt interruption (withhold reply: $withholdInterruptReply)",
+  async ({ interrupt, withholdInterruptReply }) => {
     const confirmed = interrupt === "confirmed";
     const { first, turns, interrupts, archives, events, exit } = await runRecovery("benchmark", {
       withholdStartReplyThread: 1,
       waitForInterruptThread: 1,
       interrupt,
+      withholdInterruptReply,
     });
     expect(exit).toBe(1);
     expect(first).toMatchObject({
@@ -84,7 +89,9 @@ test.each(["confirmed", "unconfirmed"] as const)(
       sessionRetention: { status: confirmed ? "archived" : "skipped" },
     });
     expect(interrupts).toEqual([{ threadId: "thread-1", turnId: "turn-thread-1" }]);
-    expect(traceMethod(events, "fixture/turn-interrupt-reply")).toHaveLength(1);
+    expect(traceMethod(events, "fixture/turn-interrupt-reply")).toHaveLength(
+      withholdInterruptReply ? 0 : 1,
+    );
     if (confirmed) {
       expect(archives[0]).toBe("thread-1");
       expect(turns.slice(0, 2)).toEqual(["default", "priority"]);
@@ -200,6 +207,46 @@ describe.each(["benchmark", "live check"] as const)("%s turn recovery", (caller)
       if (late) expect(stderr).toContain("fixture received reply after late announcement");
     },
   );
+});
+
+test.each(["rejected", "disconnected"] as const)(
+  "live check stops after an announced turn is %s",
+  async (failure) => {
+    const { first, turns, archives, interrupts, exit } = await runRecovery(
+      "live check",
+      failure === "rejected"
+        ? { mismatchedCompletion: "turn" }
+        : { withholdStartReplyThread: 1, endStdoutDuringThread: 1 },
+    );
+    expect(exit).toBe(1);
+    expect(first).toMatchObject({
+      turnId: "turn-thread-1",
+      status: "error",
+      error: expect.stringContaining(
+        failure === "rejected" ? "fixture rejected turn/start" : "app-server stopped",
+      ),
+      sessionRetention: { status: "skipped" },
+    });
+    expect(turns).toEqual(["default"]);
+    expect(archives).toEqual([]);
+    expect(interrupts).toEqual([]);
+  },
+);
+
+test("live check can continue after an explicit rejection with no announced turn", async () => {
+  const { first, turns, archives, interrupts, exit } = await runRecovery("live check", {
+    rejectTurnStartThread: 1,
+  });
+  expect(exit).toBe(1);
+  expect(first).toMatchObject({
+    turnId: null,
+    status: "error",
+    error: expect.stringContaining("fixture rejected turn/start"),
+    sessionRetention: { status: "skipped" },
+  });
+  expect(turns).toEqual(["default", "priority"]);
+  expect(archives).toEqual(["thread-2"]);
+  expect(interrupts).toEqual([]);
 });
 
 test.each(["start", "completion"] as const)(

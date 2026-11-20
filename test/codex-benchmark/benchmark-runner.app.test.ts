@@ -516,10 +516,39 @@ test.each(["thread", "turn"] as const)(
       ]);
       const events = await trace();
       expect(traceMethod(events, "turn/start")).toHaveLength(1);
+      expect(traceMethod(events, "turn/interrupt")).toHaveLength(0);
       expect(traceMethod(events, "thread/archive")).toHaveLength(0);
     });
   },
 );
+
+test("transport loss with an announced turn preserves its ID and stops scheduling", async () => {
+  await withRunnerFixture(
+    { withholdStartReplyThread: 1, endStdoutDuringThread: 1 },
+    async ({ options, trace }) => {
+      const report = await runCodexBenchmark({
+        ...options,
+        sessionRetention: "archive",
+        rollout: { deadlineMs: 100 },
+      });
+      expect(report.transportError).toContain("stdout ended");
+      expect(report.trials).toMatchObject([
+        {
+          threadId: "thread-1",
+          turnId: "turn-thread-1",
+          inferenceAttempted: true,
+          status: "failed",
+          error: expect.stringContaining("stdout ended"),
+          sessionRetention: { status: "skipped" },
+        },
+      ]);
+      const events = await trace();
+      expect(traceMethod(events, "thread/start")).toHaveLength(1);
+      expect(traceMethod(events, "turn/interrupt")).toHaveLength(0);
+      expect(traceMethod(events, "thread/archive")).toHaveLength(0);
+    },
+  );
+});
 
 test("CLI returns a zero-trial JSON report when initialization is rejected", async () => {
   await withRunnerFixture({ initializeError: true }, async ({ options, trace }) => {

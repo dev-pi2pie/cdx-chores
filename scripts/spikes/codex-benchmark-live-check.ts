@@ -57,7 +57,7 @@ interface Message {
   };
 }
 
-class LiveCheckTimeout extends Error {}
+class LiveRequestRejected extends Error {}
 
 function startAppServer({ executable, args }: typeof defaultAppServer) {
   const child = spawn(executable, args, {
@@ -84,7 +84,8 @@ function startAppServer({ executable, args }: typeof defaultAppServer) {
       return await once(events, event, { signal });
     } catch (error) {
       if (deadline.aborted && signal.reason === deadline.reason)
-        throw new LiveCheckTimeout(`${operation} timed out.`);
+        throw new Error(`${operation} timed out.`);
+      if (stopped.signal.aborted && signal.reason === stopped.signal.reason) throw signal.reason;
       throw error;
     }
   }
@@ -147,7 +148,7 @@ function startAppServer({ executable, args }: typeof defaultAppServer) {
     // A child-process reply arrives on a later I/O turn. Install the waiter only
     // after a successful local write so a thrown write leaves no pending listener.
     const [message] = (await wait(`request:${id}`, timeoutMs, method, cancel)) as [Message];
-    if (message.error) throw new Error(`${method}: ${message.error.message}`);
+    if (message.error) throw new LiveRequestRejected(`${method}: ${message.error.message}`);
     return message.result as T;
   }
 
@@ -258,13 +259,14 @@ async function runTrial(
     completion = await server.waitForCompletion(thread.id, turnId);
   } catch (error) {
     process.exitCode = 1;
+    const knownTurnId = turnId ?? server.announcedTurnId(thread.id);
     return {
-      stopScheduling: error instanceof LiveCheckTimeout,
+      stopScheduling: knownTurnId !== undefined || !(error instanceof LiveRequestRejected),
       requestedSpeed,
       sentTier: tier,
       provider: thread.modelProvider,
       threadId: thread.id,
-      turnId: turnId ?? server.announcedTurnId(thread.id) ?? null,
+      turnId: knownTurnId ?? null,
       status: "error",
       error: String(error),
       sessionRetention: await applyCodexSessionRetention({

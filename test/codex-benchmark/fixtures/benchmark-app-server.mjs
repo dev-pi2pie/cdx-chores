@@ -267,11 +267,13 @@ async function run() {
         break;
       case "turn/interrupt":
         if (params.turnId !== thread.turnId) throw new Error("Interrupted the wrong turn.");
-        reply({});
-        traceLifecycle("fixture/turn-interrupt-reply", {
-          threadId: thread.id,
-          turnId: thread.turnId,
-        });
+        if (!scenario.withholdInterruptReply) {
+          reply({});
+          traceLifecycle("fixture/turn-interrupt-reply", {
+            threadId: thread.id,
+            turnId: thread.turnId,
+          });
+        }
         if (scenario.interrupt !== "unconfirmed") completeTurn(thread, "interrupted");
         break;
       case "thread/read":
