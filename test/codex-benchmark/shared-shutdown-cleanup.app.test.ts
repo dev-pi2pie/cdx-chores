@@ -23,15 +23,29 @@ import {
   withShutdownFixture,
 } from "./fixtures/shutdown";
 
-const preSpawnErrors = {
-  "invalid deadline": "Invalid process deadline.",
-  "already-aborted signal": "Process launch was cancelled before allocation.",
+const preSpawnCases = {
+  "invalid deadline": {
+    options: { timeoutMs: 0 },
+    error: { message: "Invalid process deadline." },
+  },
+  "already-aborted signal": {
+    options: { signal: AbortSignal.abort() },
+    error: { message: "Process launch was cancelled before allocation." },
+  },
+  "empty executable": {
+    options: { executable: "" },
+    error: {
+      message: "The argument 'file' cannot be empty. Received ''",
+      code: "ERR_INVALID_ARG_VALUE",
+    },
+  },
 } as const;
 const cases = [
   "assertion failure",
   "launch rejected",
   "invalid deadline",
   "already-aborted signal",
+  "empty executable",
   "missing spawn receipt",
   "interrupted spawn receipt",
   "partial spawn receipt",
@@ -45,8 +59,8 @@ interface Control {
   neverStarted?: boolean;
 }
 
-function isPreSpawnCase(mode: Case): mode is keyof typeof preSpawnErrors {
-  return mode in preSpawnErrors;
+function isPreSpawnCase(mode: Case): mode is keyof typeof preSpawnCases {
+  return mode in preSpawnCases;
 }
 
 function canVerify(mode: Case) {
@@ -65,8 +79,7 @@ async function runControl(mode: Case, control: Control) {
     async (fixture) => {
       control.home = fixture.home;
       if (isPreSpawnCase(mode)) {
-        const preSpawn =
-          mode === "invalid deadline" ? { timeoutMs: 0 } : { signal: AbortSignal.abort() };
+        const { options: preSpawn } = preSpawnCases[mode];
         const owned = startShutdownLiveCheck(
           { ...fixture, start: (options) => fixture.start({ ...options, ...preSpawn }) },
           "allowed",
@@ -126,11 +139,10 @@ async function checkFailure(mode: Case, control: Control) {
   const { home } = control;
   if (!home) throw error ?? new Error("Control failed before fixture allocation.");
   if (isPreSpawnCase(mode)) {
+    const expectedError = preSpawnCases[mode].error;
     expect(error).toBeInstanceOf(ProcessLaunchRejectedError);
-    expect(error).toMatchObject({
-      message: preSpawnErrors[mode],
-      cause: { message: preSpawnErrors[mode] },
-    });
+    expect(error).toMatchObject({ ...expectedError, cause: expectedError });
+    if (mode === "empty executable") expect((error as Error).cause).toBeInstanceOf(TypeError);
     control.callerStopped = true;
     control.neverStarted = true;
     await expect(access(dirname(home))).rejects.toMatchObject({ code: "ENOENT" });

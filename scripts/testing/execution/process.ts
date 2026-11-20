@@ -76,8 +76,13 @@ export interface ProcessObserver {
 
 /** The launch was rejected before attempting to spawn a child. */
 export class ProcessLaunchRejectedError extends Error {
+  declare readonly code?: string;
+
   constructor(cause: unknown) {
     super(cause instanceof Error ? cause.message : String(cause), { cause });
+    if (cause instanceof Error && "code" in cause && typeof cause.code === "string") {
+      this.code = cause.code;
+    }
   }
 }
 
@@ -95,6 +100,11 @@ function checkLaunch(options: OwnedProcessOptions): number {
     if (options.signal?.aborted) throw new Error("Process launch was cancelled before allocation.");
     if (options.output?.signal.aborted)
       throw new Error("Process launch output delivery was already unavailable.");
+    if (options.executable === "") {
+      throw Object.assign(new TypeError("The argument 'file' cannot be empty. Received ''"), {
+        code: "ERR_INVALID_ARG_VALUE",
+      });
+    }
     return maximum;
   } catch (error) {
     throw new ProcessLaunchRejectedError(error);
