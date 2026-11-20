@@ -8,7 +8,9 @@ agent: codex
 
 ## Research question
 
-When a Codex operation fails, what can the CLI still tell the user about the turn, saved session, and local process? The maintainer’s latest `bun run test:all` passed on `v0.2.2-canary.6`. Two targeted benchmark checks on that source exposed a misreported attempt and a missing JSON report. Both used a Node CLI built from the tagged source, one warm-up, one measured trial, and a synthetic app-server. The normal control exited 0 with both turns and complete usage. The frequency of the injected failures in ordinary use is unknown. [Benchmark fixture](../../test/codex-benchmark/fixtures/benchmark-app-server.mjs)
+When a Codex operation fails, what can the CLI still tell the user about the turn, saved session, and local process? The full suite passed on `v0.2.2-canary.6` with Codex 0.170.0. Two targeted benchmark checks on that source exposed a misreported attempt and a missing JSON report. Both used a Node CLI built from the tagged source, one warm-up, one measured trial, and a synthetic app-server. The normal control exited 0 with both turns and complete usage. The frequency of the injected failures in ordinary use is unknown. [Benchmark fixture](../../test/codex-benchmark/fixtures/benchmark-app-server.mjs)
+
+The `v0.2.2-canary.7` dependency refresh moved the SDK and bundled CLI to 0.171.0 and passed all 4,639 tests. The benchmark dispatch and shutdown code is unchanged from canary.6. Repeating the two injected failures on canary.7 remains open. [Dependency refresh and verification](../plans/jobs/2026-11-20-v0.2.2-canary.7-dependency-refresh.md)
 
 ## Which commands talk to Codex?
 
@@ -23,7 +25,7 @@ When a Codex operation fails, what can the CLI still tell the user about the tur
 
 For example, `data query codex` captures a SQL draft through the SDK. If the helper reuses a thread, it can finish follow-ups before retention runs. With the default `keep`, it opens no retention app-server. With `archive` or `delete`, it needs the owned thread ID and confirmation that its last turn completed. The wrapper uses the SDK result’s usage field as completion evidence. [SQL helper](../../src/cli/data-query/runner.ts) · [Thread lifecycle](../../src/adapters/codex/session-lifecycle.ts)
 
-**Current — cdx-chores v0.2.2-canary.6 helper session**
+**cdx-chores v0.2.2-canary.6 helper session**
 
 ```mermaid
 flowchart TD
@@ -99,21 +101,26 @@ flowchart TD
 
 **Other callers to verify.** Helper retention and the `doctor` probe share `CodexAppServer.close()`. The empty-stdout result was reproduced through the benchmark only. For helper retention, inject a shutdown failure after a successful SDK turn and check that the answer survives with a retention diagnostic. For `doctor`, check that the probe returns a diagnostic within a deadline. Assess `codex-info` separately through its discovery transport.
 
-## Upstream applicability to 0.170.0
+## Upstream applicability to Codex 0.171.0
 
-The lockfile resolves both `@openai/codex-sdk` and the native Codex CLI to `0.170.0`. Helpers submit prompts with the SDK’s `thread.run()` through `codex exec`. The benchmark launches `codex app-server` through its own transport. The three upstream reports were open on 2026-11-19. Each needs a check against the component and call sequence we ship. [Dependency lock](../../bun.lock) · [SDK helper lifecycle](../../src/adapters/codex/session-lifecycle.ts)
+The published TypeScript SDK JavaScript and declarations match 0.170.0. The native `codex exec` that runs helper prompts now uses the shared app-server client. The native app-server also ties each `turn/interrupt` reply to its target turn and returns an error if its thread listener shuts down. For the Standard/Fast check, record the target turn ID, interrupt reply, and matching terminal event before evaluating when Fast started. The benchmark still queues its own writes and runs its own shutdown timer. [Package comparison](../plans/jobs/2026-11-20-v0.2.2-canary.7-dependency-refresh.md#package-review) · [Native exec change](https://github.com/openai/codex/pull/61706) · [Interrupt ordering change](https://github.com/openai/codex/pull/62066)
 
-| Upstream observation | Evidence still needed |
+All four issues below were open on 2026-11-20.
+
+| Upstream evidence | What to check on 0.171.0 |
 | --- | --- |
-| On Linux, a streamed iterator’s `events.return()` resolved while a direct child that ignored `SIGTERM` was still alive. [SDK #36658](https://github.com/openai/codex/issues/36658) | Repeat the streamed control on SDK 0.170.0, then cancel a helper’s actual `thread.run()` against the same child. Record when the helper settles and whether the child is still alive. |
-| Closing a streamed iterator and immediately aborting its signal crashed the Node host with an unhandled `AbortError` in an upstream checkout. [SDK #51537](https://github.com/openai/codex/issues/51537) | Compare that ordering with the helper’s normal abort path on 0.170.0 in a disposable Node host. Distinguish a rejected operation from an exception that terminates the host. |
-| Closing stdin on native CLI 0.157.1 could interrupt stdio MCP cleanup and leave a descendant alive on macOS. [App-server #48524](https://github.com/openai/codex/issues/48524) | Exercise native CLI 0.170.0 with a controlled MCP child. Observe the server, child, and descendant separately, including which processes belong to the owned group. |
-
-These reports identify cases worth testing. The local report-loss reproduction used a synthetic server and already identifies a failure in our timer. An SDK upgrade or broader process supervisor would need evidence that it addresses a failure on the relevant production path. The scope of `v0.2.2-canary.7` remains open.
+| On Linux, `events.return()` resolved while a streamed turn’s direct child was still alive after ignoring `SIGTERM`. Early iterator cleanup in 0.171.0 still requests termination without awaiting exit. [SDK #36658](https://github.com/openai/codex/issues/36658) · [Tagged SDK executor](https://github.com/openai/codex/blob/rust-v0.171.0/sdk/typescript/src/exec.ts#L248-L263) | Repeat the streamed control, then cancel a helper’s buffered `thread.run()` against the same fixture. Observe when the helper settles and when the child exits. |
+| Closing a streamed iterator and immediately aborting its signal terminated the Node host with an unhandled `AbortError`. The SDK still removes the child’s listeners during cleanup. [SDK #51537](https://github.com/openai/codex/issues/51537) | In a disposable Node host, compare that sequence with a helper’s normal abort path. Record whether the helper rejects and whether the host survives. |
+| On macOS, closing app-server stdin cut short stdio MCP cleanup and left descendants alive on 0.157.1 and 0.158.0. A Linux trace on 0.163.0 also showed premature termination after the parent sent `SIGTERM`. [App-server #48524](https://github.com/openai/codex/issues/48524) · [macOS follow-up](https://github.com/openai/codex/issues/48524#issuecomment-5882628955) · [Linux trace](https://github.com/openai/codex/issues/48524#issuecomment-6251417643) | Compare stdin EOF alone with the pipe closure and `SIGTERM` used by our transport. Check the MCP server’s cleanup marker, each process’s exit, and which descendants belong to the owned group. |
+| The tagged `exec --json` code ends an interrupted turn without emitting a terminal JSON turn event. The native runner records a matching interruption as an error and exits nonzero. [Exec #50585](https://github.com/openai/codex/issues/50585) · [JSON event mapping](https://github.com/openai/codex/blob/rust-v0.171.0/codex-rs/exec/src/event_processor_with_jsonl_output.rs#L528-L568) · [Native exit handling](https://github.com/openai/codex/blob/rust-v0.171.0/codex-rs/exec/src/lib.rs#L1473-L1545) | Interrupt a helper turn with retention requested. Capture the SDK result or error, native exit status, and whether the helper skips retention for the interrupted turn. |
 
 ## Test-runner evidence
 
-An earlier application-suite timeout cancelled an active frame-menu fixture. Later fixtures still started, and the runner retained scratch when one lacked a completion receipt. The named arrow-input case passed five isolated repetitions. Investigate whether suite cancellation prevents the next fixture from launching as a separate runner question. The passing canary.6 suite and the earlier timeout are both relevant to test reliability. Neither establishes an SDK defect. [Fixture launcher](../../scripts/testing/fixtures/fixture-process.ts)
+**What the receipts established.** In an earlier managed run, the application suite reached its 300-second deadline. The runner sent `SIGTERM` at 300.025 seconds. The active `raw-fragmented-arrows` fixture recorded `cancelled` and `stopped: true` after 0.852 seconds of its own 12-second allowance. Its `result.ok` assertion failed before the test compared the arrow-key behavior. The case passed five isolated repetitions. [Frame-menu fixture](../../test/video/interactive/fixtures/frames-menu-fixture.ts) · [Arrow-input test](../../test/video/interactive/frames-menu-bytes.app.test.ts)
+
+Four more fixtures started after the cancelled fixture recorded completion. Three completed. The fourth had a start receipt and no completion receipt. The runner sent `SIGKILL` to the outer suite at 301.026 seconds and confirmed that it stopped. With the fourth fixture’s exit unverified, the runner retained scratch and skipped the Codex and Pandoc suites. The launcher installs and removes signal listeners for each fixture, so a later launch can miss a cancellation already delivered to the suite. A focused regression should cancel the suite during fixture A, verify A’s completion receipt, and check that a subsequent attempt to launch fixture B allocates no child PID. [Fixture launch and receipt verification](../../scripts/testing/fixtures/fixture-process.ts)
+
+**Why the suite reached 300 seconds remains open.** A separate focused run overlapped the failed invocation for about 56 seconds. In one passing run the benchmark-runner cases accounted for 45.7 seconds of summed case time. How much either factor contributed to the timeout is unknown. The repository calls for reassessment after any timeout or repeated runs above 240 seconds. Repeat the application suite in isolation with the same Node and Bun versions, compare test-process elapsed times across equivalent runs, and use per-case timings to locate the largest costs before changing the allowance. [Timeout decision and measurement method](../plans/jobs/2026-10-18-application-test-costs-and-timeout-budgeting.md#timeout-decision)
 
 ## Related Plans
 
