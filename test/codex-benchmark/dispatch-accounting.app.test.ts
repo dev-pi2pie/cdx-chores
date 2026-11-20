@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { access, symlink } from "node:fs/promises";
-import { delimiter, join } from "node:path";
+import { access, mkdir, symlink } from "node:fs/promises";
+import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
 import { startFixtureProcess } from "../../scripts/testing/fixtures/fixture-process";
-import { REPO_ROOT, withTempFixtureDir } from "../helpers/cli-test-utils";
+import { REPO_ROOT } from "../helpers/cli-test-utils";
 import { traceMethod, withRunnerFixture } from "./fixtures/runner";
 
 const cases = [
@@ -52,89 +52,114 @@ async function buildNodeCaller(entry: string, cwd: string) {
 }
 
 const maintainerEntry = join(REPO_ROOT, "scripts/spikes/codex-benchmark-live-check.ts");
-const maintainerArgs = [maintainerEntry, "--model", "model-a", "--effort", "low"];
+const maintainerBundle = "examples/playground/codex-benchmark-live-check.mjs";
 
-for (const executable of ["node", process.execPath]) {
-  test.skipIf(process.platform === "win32").each(["peer-closed", "backpressure"] as const)(
-    `maintainer command via ${executable === "node" ? "Node" : "Bun"} handles %s`,
-    async (mode) => {
-      const closed = mode === "peer-closed";
-      await withRunnerFixture(
-        { closeStdinOnThreadStart: closed ? 1 : undefined },
-        async ({ options, trace }) => {
-          const preload = pathToFileURL(join(import.meta.dir, "fixtures/turn-write-preload.mjs"));
-          const result = await startFixtureProcess({
-            executable,
-            args: [...maintainerArgs, "--session-retention", "archive"],
-            cwd: REPO_ROOT,
-            env: {
-              ...options.env,
-              NODE_OPTIONS: `--import=${preload.href}`,
-              FIXTURE_TURN_WRITE: mode,
-              FIXTURE_TURN_THREAD: "1",
-            },
-            timeoutMs: 6_000,
-            graceMs: 600,
-            cleanupMs: 1_500,
-          }).completion;
-          expect(result.stopped).toBe(true);
-          expect(result.issues).toEqual([]);
-          expect(result.exitCode, result.stderr).toBe(closed ? 1 : 0);
-          expect(result.stderr).toContain(
-            closed ? "observed immediate EPIPE" : "observed backpressure",
-          );
-          const { results } = JSON.parse(result.stdout);
-          expect(results).toHaveLength(closed ? 1 : 2);
-          if (closed) {
-            expect(result.stderr).toContain("Transport failed");
-            expect(results[0]).toMatchObject({
-              requestedSpeed: "standard",
-              status: "error",
-              error: expect.stringContaining("EPIPE"),
-              sentTier: null,
-              sessionRetention: { status: "skipped", threadId: "thread-1" },
-            });
-          } else {
-            expect(results).toMatchObject([
-              { requestedSpeed: "standard", status: "completed", sentTier: "default" },
-              { requestedSpeed: "fast", status: "completed", sentTier: "priority" },
-            ]);
-          }
-          const events = await trace();
-          expect(traceMethod(events, "thread/start")).toHaveLength(closed ? 1 : 2);
-          expect(traceMethod(events, "stdin-closed")).toHaveLength(closed ? 1 : 0);
-          const expectedThreads = closed ? [] : ["thread-1", "thread-2"];
-          for (const method of ["turn/start", "thread/archive"]) {
-            expect(traceMethod(events, method).map(({ params }) => params?.threadId)).toEqual(
-              expectedThreads,
-            );
-          }
-          expect(traceMethod(events, "thread/delete")).toEqual([]);
-        },
-      );
-    },
-    10_000,
-  );
+async function startMaintainerBundle(cwd: string, env: NodeJS.ProcessEnv) {
+  await mkdir(join(cwd, "examples", "playground"), { recursive: true });
+  const limits = { timeoutMs: 6_000, graceMs: 600, cleanupMs: 1_500 };
+  const build = await startFixtureProcess({
+    executable: process.execPath,
+    args: [
+      "build",
+      maintainerEntry,
+      "--target=node",
+      "--format=esm",
+      "--outfile=" + maintainerBundle,
+    ],
+    cwd,
+    env: { PATH: process.env.PATH },
+    ...limits,
+  }).completion;
+  expect(build.stopped).toBe(true);
+  expect(build.ok, build.stderr).toBe(true);
+  return startFixtureProcess({
+    executable: "node",
+    args: [
+      maintainerBundle,
+      "--model",
+      "model-a",
+      "--effort",
+      "low",
+      "--session-retention",
+      "archive",
+    ],
+    cwd,
+    env,
+    ...limits,
+  });
 }
+
+test.skipIf(process.platform === "win32").each(["peer-closed", "backpressure"] as const)(
+  "maintainer bundle handles %s",
+  async (mode) => {
+    const closed = mode === "peer-closed";
+    await withRunnerFixture(
+      { closeStdinOnThreadStart: closed ? 1 : undefined },
+      async ({ options, trace }) => {
+        const { CDX_CHORES_CODEX_PATH: fixture, ...env } = options.env ?? {};
+        if (!fixture) throw new Error("The bundle test requires a synthetic app-server.");
+        const bin = join(options.cwd, "node_modules", ".bin");
+        await mkdir(bin, { recursive: true });
+        // Exercise the fallback at the documented depth and give the override a distinct default.
+        await symlink(closed ? process.execPath : fixture, join(bin, "codex"));
+        const preload = pathToFileURL(join(import.meta.dir, "fixtures/turn-write-preload.mjs"));
+        const owned = await startMaintainerBundle(options.cwd, {
+          ...env,
+          ...(closed ? { CDX_CHORES_CODEX_PATH: " " + fixture + " " } : {}),
+          NODE_OPTIONS: "--import=" + preload.href,
+          FIXTURE_TURN_WRITE: mode,
+          FIXTURE_TURN_THREAD: "1",
+        });
+        const result = await owned.completion;
+        expect(result.stopped).toBe(true);
+        expect(result.issues).toEqual([]);
+        expect(result.exitCode, result.stderr).toBe(closed ? 1 : 0);
+        expect(result.stderr).toContain(
+          closed ? "observed immediate EPIPE" : "observed backpressure",
+        );
+        const { results } = JSON.parse(result.stdout);
+        expect(results).toHaveLength(closed ? 1 : 2);
+        if (closed) {
+          expect(result.stderr).toContain("Transport failed");
+          expect(results[0]).toMatchObject({
+            requestedSpeed: "standard",
+            status: "error",
+            error: expect.stringContaining("EPIPE"),
+            sentTier: null,
+            sessionRetention: { status: "skipped", threadId: "thread-1" },
+          });
+        } else {
+          expect(results).toMatchObject([
+            { requestedSpeed: "standard", status: "completed", sentTier: "default" },
+            { requestedSpeed: "fast", status: "completed", sentTier: "priority" },
+          ]);
+        }
+        const events = await trace();
+        expect(traceMethod(events, "thread/start")).toHaveLength(closed ? 1 : 2);
+        expect(traceMethod(events, "stdin-closed")).toHaveLength(closed ? 1 : 0);
+        const expectedThreads = closed ? [] : ["thread-1", "thread-2"];
+        for (const method of ["turn/start", "thread/archive"]) {
+          expect(traceMethod(events, method).map(({ params }) => params?.threadId)).toEqual(
+            expectedThreads,
+          );
+        }
+        expect(traceMethod(events, "thread/delete")).toEqual([]);
+      },
+    );
+  },
+  15_000,
+);
 
 test.skipIf(process.platform === "win32").each([
   ["SIGINT", 130],
   ["SIGTERM", 143],
 ] as const)(
-  "maintainer command via Bun preserves %s exit",
+  "maintainer bundle preserves %s exit",
   async (signal, exitCode) => {
     await withRunnerFixture(
       { withholdStartReplyThread: 1, waitForInterruptThread: 1 },
       async ({ options, trace }) => {
-        const owned = startFixtureProcess({
-          executable: process.execPath,
-          args: maintainerArgs,
-          cwd: REPO_ROOT,
-          env: options.env ?? {},
-          timeoutMs: 6_000,
-          graceMs: 600,
-          cleanupMs: 1_500,
-        });
+        const owned = await startMaintainerBundle(options.cwd, options.env ?? {});
         try {
           const deadline = performance.now() + 2_000;
           while (traceMethod(await trace(), "turn/start").length === 0) {
@@ -149,6 +174,7 @@ test.skipIf(process.platform === "win32").each([
           const events = await trace();
           expect(traceMethod(events, "turn/start")).toHaveLength(1);
           expect(traceMethod(events, "turn/interrupt")).toEqual([]);
+          expect(traceMethod(events, "thread/archive")).toEqual([]);
         } finally {
           owned.shutdown();
           await owned.completion;
@@ -156,29 +182,7 @@ test.skipIf(process.platform === "win32").each([
       },
     );
   },
-  10_000,
-);
-
-test.skipIf(process.platform === "win32")(
-  "maintainer command rejects Bun found as node",
-  async () => {
-    await withTempFixtureDir("maintainer-node-alias", async (root) => {
-      await symlink(process.execPath, join(root, "node"));
-      const result = await startFixtureProcess({
-        executable: process.execPath,
-        args: [maintainerEntry, "--help"],
-        cwd: REPO_ROOT,
-        env: { PATH: root + delimiter + process.env.PATH },
-        timeoutMs: 3_000,
-        graceMs: 600,
-        cleanupMs: 1_500,
-      }).completion;
-      expect(result.stopped).toBe(true);
-      expect(result.issues).toEqual([]);
-      expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain("The live check requires Node.js on PATH.");
-    });
-  },
+  15_000,
 );
 
 for (const caller of ["benchmark", "live check on Node", "live check on Bun"] as const) {

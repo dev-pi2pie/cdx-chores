@@ -1,4 +1,4 @@
-import { isRecord } from "./discovery/transport.ts";
+import { isRecord } from "./discovery/transport";
 
 export function isAppServerId(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;

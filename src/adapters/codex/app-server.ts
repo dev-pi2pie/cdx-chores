@@ -1,9 +1,9 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { StringDecoder } from "node:string_decoder";
 
-import { createAppServerShutdown } from "./app-server-shutdown.ts";
-import { writeAppServerTurn } from "./app-server-write.ts";
-import { isRecord } from "./discovery/transport.ts";
+import { createAppServerShutdown } from "./app-server-shutdown";
+import { writeAppServerTurn } from "./app-server-write";
+import { isRecord } from "./discovery/transport";
 
 const maxLineBytes = 8 * 1024 * 1024;
 const requestTimeoutMs = 15_000;
@@ -27,16 +27,17 @@ function appServerExitError(code: number | null, signal: NodeJS.Signals | null):
 }
 
 export class CodexAppServerError extends Error {
-  readonly method: string;
   readonly code: number | undefined;
   readonly data: unknown;
 
-  constructor(method: string, responseError: unknown) {
+  constructor(
+    readonly method: string,
+    responseError: unknown,
+  ) {
     const error = isRecord(responseError) ? responseError : {};
     const detail =
       typeof error.message === "string" ? error.message : "Codex app-server request failed.";
     super(`${method}: ${detail}`);
-    this.method = method;
     this.code = typeof error.code === "number" ? error.code : undefined;
     this.data = error.data;
   }
@@ -53,11 +54,8 @@ export function isTurnInputTooLarge(error: unknown): boolean {
 }
 
 export class CodexRequestTimeoutError extends Error {
-  readonly method: string;
-
-  constructor(method: string) {
+  constructor(readonly method: string) {
     super(`${method}: Codex app-server request timed out.`);
-    this.method = method;
   }
 }
 

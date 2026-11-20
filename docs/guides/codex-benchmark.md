@@ -133,13 +133,7 @@ If app-server startup or initialization fails, the CLI returns status 1 and prin
 
 ## Standard/Fast live check
 
-Run the [maintainer live check](../../scripts/spikes/codex-benchmark-live-check.ts) from the repository root with a supported Node.js version. It uses the repository's Codex binary by default. Set `CDX_CHORES_CODEX_PATH` to select another app-server executable.
-
-```sh
-node scripts/spikes/codex-benchmark-live-check.ts --model MODEL --effort low
-```
-
-On POSIX, invoking the script with Bun replaces that process with Node.js from `PATH`. The live check uses the same local-acceptance rule for `sentTier` and the same thread identity, scheduling and retention rules. It stops an unsettled trial at its start or completion deadline without issuing a turn interrupt. On `SIGINT` or `SIGTERM` it starts app-server shutdown and preserves the first signal's exit status.
+The [maintainer live check](../../scripts/spikes/codex-benchmark-live-check.ts) uses the same local-acceptance rule for `sentTier` and the same thread identity, scheduling and retention rules. It stops an unsettled trial at its start or completion deadline without issuing a turn interrupt. On `SIGINT` or `SIGTERM` it starts app-server shutdown and preserves the first signal's exit status.
 
 Both callers require child close for successful shutdown. For a separately owned POSIX process group, they also require a signal-zero probe to return `ESRCH`. The live check reports shutdown failure on stderr and exits with status 1 in the absence of local cancellation, with any completed Standard/Fast results still in JSON.
 

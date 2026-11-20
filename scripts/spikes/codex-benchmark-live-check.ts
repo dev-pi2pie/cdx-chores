@@ -436,7 +436,7 @@ export async function runLiveCheck(
     },
   });
   const usage =
-    "Usage: node scripts/spikes/codex-benchmark-live-check.ts --model <id> --effort <effort> [--speed standard|fast|ultrafast] [--session-retention archive|keep|delete]";
+    "Usage: node examples/playground/codex-benchmark-live-check.mjs --model <id> --effort <effort> [--speed standard|fast|ultrafast] [--session-retention archive|keep|delete]";
   if (values.help) {
     console.log(usage);
     console.log(
@@ -538,26 +538,11 @@ export async function runLiveCheck(
 }
 
 if (import.meta.main) {
-  try {
-    const args = process.argv.slice(2);
-    const reexec = "CDX_CHORES_LIVE_CHECK_NODE_REEXEC";
-    if (process.versions.bun) {
-      if (!process.execve || process.platform === "win32") {
-        throw new Error("Run the live check with Node.js.");
-      }
-      const node = process.env[reexec] === "1" ? null : Bun.which("node");
-      if (!node) throw new Error("The live check requires Node.js on PATH.");
-      // Replace the Bun process so signals and exit status belong to the Node caller.
-      process.execve(node, [node, fileURLToPath(import.meta.url), ...args], {
-        ...process.env,
-        [reexec]: "1",
-      });
-    }
-    delete process.env[reexec];
-    const executable = process.env.CDX_CHORES_CODEX_PATH?.trim() || defaultAppServer.executable;
-    await runLiveCheck(args, { appServer: { ...defaultAppServer, executable } });
-  } catch (error) {
+  const executable = process.env.CDX_CHORES_CODEX_PATH?.trim() || defaultAppServer.executable;
+  await runLiveCheck(process.argv.slice(2), {
+    appServer: { ...defaultAppServer, executable },
+  }).catch((error: unknown) => {
     console.error(String(error));
     process.exitCode = 1;
-  }
+  });
 }
