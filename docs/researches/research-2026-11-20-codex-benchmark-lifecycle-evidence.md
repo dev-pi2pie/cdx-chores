@@ -2,40 +2,44 @@
 title: "Evidence for Codex benchmark lifecycle decisions"
 created-date: 2026-11-20
 modified-date: 2026-11-20
-status: draft
+status: in-progress
 agent: codex
 ---
 
-## Recommended caller behavior
+## Implemented caller behavior
 
-- **Dispatch.** Require a fresh, nonempty thread ID before dispatch. Count a `codex-bench` attempt and record any explicit `sentTier` when app-server stdin accepts the client’s `turn/start` write. Have the Standard/Fast live check use the same evidence for `sentTier`. A proven local refusal leaves the trial unattempted and can permit the next planned trial. Continuation requires a healthy connection and an uncancelled run. [^transport] [^usage] [^benchmark] [^live]
-- **Retention and scheduling.** A matching `turn/completed` for the owned thread and turn permits archive or delete after readback or its deadline. Preserve `data.input_error_code` in both callers to recognize refusals before Core submission, such as `input_too_large`. With no conflicting turn evidence, a recognized refusal permits the next planned trial on a healthy, uncancelled connection and skips archive or delete. Ambiguous submission without confirmed completion stops scheduling and skips archive or delete. Keep the callers’ existing timeout and interrupt policies. [^benchmark] [^live] [^retention] [^native-turn-start]
-- **Shutdown.** Keep the existing contract. Require child `close` and, for a separately owned POSIX group, a signal 0 probe that returns `ESRCH`. [^shutdown]
+Both callers require a fresh, nonempty thread ID and use local stdin acceptance of `turn/start` to record an explicit `sentTier`. The benchmark also records `inferenceAttempted`. A proven local refusal can allow the next planned trial. Continuation requires a healthy connection and an uncancelled run. [^transport] [^usage] [^benchmark] [^live]
 
-**Proposed behavior after local stdin acceptance**
+After local acceptance, a recognized pre-submission refusal can also permit continuation without archive or delete. Both callers recognize the structured `input_too_large` error when no conflicting turn evidence has been observed. An unsettled start after recovery stops the workload. A matching live terminal event can permit retention after readback or its deadline. A conflicting start during readback prevents retention. If a retention request is already in flight when the conflict arrives, both callers preserve its result and stop scheduling. [^benchmark] [^live] [^retention] [^native-turn-start]
+
+**Decision after local stdin acceptance**
 
 ```mermaid
 flowchart TD
     A["Keep attempt and explicit tier"] --> B{"Evidence after recovery"}
-    B -->|"Matching terminal"| T["Readback or deadline<br/>Eligible for requested retention"]
+    B -->|"Matching terminal"| T["Readback or deadline"]
     B -->|"Pre-submission refusal<br/>No conflicting turn evidence"| R["Skip archive or delete"]
-    B -->|"Submission unsettled"| S["Skip archive or delete<br/>Stop scheduling"]
-    T --> N["Next planned trial"]
+    B -->|"Unsettled or conflicting"| S["Skip archive or delete<br/>Stop scheduling"]
+    T -->|"Identity confirmed"| E["Eligible for requested retention"]
+    T -->|"Conflict"| S
+    E --> N["Next planned trial on a healthy,<br/>uncancelled connection"]
     R --> N
 ```
+
+The guide describes report fields and caller-specific deadlines. The implementation record contains the validation evidence. [Benchmark guide](../guides/codex-benchmark.md) · [Implementation record](../plans/jobs/2026-11-20-codex-benchmark-lifecycle-corrections.md)
 
 ## Evidence
 
 ### Client dispatch
 
-In the refusal probe, the server closed stdin before replying to the measured `thread/start`. The client saw writable stdin before the `turn/start` write in both cases below. Today, `codex-bench` calls `onQueued` when `write()` returns without throwing. Checking `stdin.errored` before the callback distinguishes peer closure from backpressure. [^transport] [^dispatch]
+In the refusal probe, the server closed stdin before replying to the measured `thread/start`. The client saw writable stdin before the `turn/start` write in both cases below. Previously, `codex-bench` called `onQueued` when `write()` returned without throwing. Both callers now check for an immediate stream error before the callback. [^transport] [^dispatch]
 
-| Measured `write()` returned `false` | Server trace | Current report | Recommended report |
+| Measured `write()` returned `false` | Server trace | Benchmark before correction | Verified benchmark report |
 | --- | --- | --- | --- |
 | Immediate `EPIPE` | Warm-up only | `inferenceAttempted: true`, `sentTier: "default"`. The 230-token total is marked partial. | `inferenceAttempted: false`, `sentTier: null`. The 230-token total stays complete. |
-| Backpressure with bytes buffered and no immediate error | One measured `turn/start` after warm-up | Attempt recorded with `sentTier: "default"` | Same as current |
+| Backpressure with bytes buffered and no immediate error | One measured `turn/start` after warm-up | Attempt recorded with `sentTier: "default"` | Attempt recorded with `sentTier: "default"` |
 
-When a separate benchmark write threw before submitting bytes, the benchmark recorded no attempt and stopped despite a healthy transport. When stdout closed after the server received the measured request, the benchmark correctly preserved the attempt and tier. The live check currently reports the selected tier even if `thread/start` is rejected or peer-closed stdin prevents the `turn/start` write. [^runner-tests] [^benchmark] [^live]
+The regression suite also covers a local write refusal on a healthy connection. Both callers skip retention for that thread and can proceed to the next planned trial. Later transport loss preserves the accepted attempt and tier and stops scheduling. The live check reports a null `sentTier` when `thread/start` fails or stdin refuses the `turn/start` write. [^dispatch] [^runner-tests] [^benchmark] [^live]
 
 ### Core submission
 
@@ -43,23 +47,23 @@ Native Codex CLI 0.171.0 rejected oversized text on a fresh thread with `-32602`
 
 The tagged app-server checks input size before calling Core. Accepted start or steer outcomes return a turn ID, and Core documents that declined input is neither recorded nor enqueued. Source inspection also shows that Core enqueues input before awaiting its internal reply. Losing that reply returns `InternalAgentDied`, which app-server maps to an internal RPC error. Event ordering for other native rejections remains unverified. [^native-turn-start] [^native-core] [^native-reply-loss]
 
-Both callers currently allow another trial after a generic `turn/start` RPC rejection if no turn is known. The synthetic regressions exercise that behavior. [^benchmark] [^live] [^runner-tests] [^recovery]
+Before the corrections, both callers could schedule another trial after a generic `turn/start` error with no known turn. The synthetic regressions verify that the structured refusal can permit continuation and that a generic error or conflicting turn evidence stops scheduling while completion is unconfirmed. [^benchmark] [^live] [^runner-tests] [^recovery]
 
 ### Turn identity and completion
 
-In a synthetic live-check probe, reusing thread and turn IDs let one Standard terminal event count as two completions. The live check sent two `thread/archive` requests for the same thread and exited 0 after the fixture acknowledged both. The benchmark rejected the duplicate thread ID before a second `turn/start`. [^live] [^benchmark]
+Before the corrections, one synthetic live-check probe reused thread and turn IDs so that one Standard terminal event counted as two completions. The live check sent two archives for the same thread and exited 0 after the fixture acknowledged both. The benchmark rejected the duplicate ID before dispatch. The regression suite now verifies that both callers reject a reused or malformed thread ID before dispatch or retention. [^live] [^benchmark] [^recovery]
 
 Both callers can recover a missing start reply from `turn/started` and a matching `turn/completed` before the start deadline. On an unconfirmed timeout, the benchmark can interrupt a known turn and await its terminal event. The live check stops. A saved `task_complete` can supply timings and helps establish complete usage. The matching live event can authorize retention even when that saved record is absent. [^benchmark] [^live] [^retention] [^recovery]
 
+The regressions exercise a contradictory start notification and a contradictory original RPC reply arriving during readback. They also cover a conflict after archive is sent. When a conflict invalidates the benchmark turn ID, its JSON row clears the timings and throughput, excludes the trial from summaries, and preserves attributable token usage as partial. A known turn ID can still support saved timings on a failed trial. [^recovery] [^record]
+
 ### Shutdown
 
-The automated suites cover denied escalation for both callers and undelivered escalation for the benchmark. In a separate live-check probe, the group-directed `SIGKILL` call reported success with delivery suppressed. The live check exited 1 with both completed Standard/Fast results and a shutdown deadline diagnostic on stderr. The leader and worker were still alive at caller exit. Cleanup outside the owned POSIX group, Windows descendant cleanup and fault frequency remain unverified. [^shutdown-tests] [^shutdown-record] [^earlier]
+Both callers require child `close` for successful shutdown and require a signal-zero probe to return `ESRCH` for a separately owned POSIX group. In the synthetic live-check regression, group-directed `SIGKILL` reports success with delivery suppressed. The caller exits 1 with both completed Standard/Fast results and a shutdown deadline diagnostic on stderr. Process-table observation at caller exit finds the leader and worker alive before fixture release. This case exercises the child-close deadline. A separate benchmark control covers the group-disappearance deadline. [^shutdown] [^shutdown-tests] [^runner-tests] [^shutdown-record]
 
-## Regression coverage to add
+The recovery and shutdown suites use a test-owned launcher. The cleanup controls make receipt or observation failures visible through retained scratch and skipped successor suites, and inject uncertainty only after independent confirmation that the synthetic group stopped. The benchmark preloads use ESM in both runtimes and preserve the same dispatch, EOF and signal observations. [^recovery] [^shutdown-tests] [^cleanup] [^record]
 
-- **Dispatch and scheduling.** Cover healthy local refusal, immediate `EPIPE`, backpressure and transport loss after local acceptance. Replace generic-rejection continuation expectations with cases for structured refusal, generic errors and conflicting turn evidence. Assert attempt and tier accounting alongside scheduling and retention decisions. [^dispatch] [^runner-tests] [^recovery]
-- **Turn identity.** Verify that duplicate thread IDs prevent a second start and archive, with distinct IDs as the control. [^live] [^recovery]
-- **Shutdown and test ownership.** Automate the live check’s undelivered `SIGKILL` case, including exit 1, the deadline diagnostic, both surviving processes at exit and both retained results. Move the turn-recovery and shutdown suites from the fixed manual launcher to a test-owned launcher. [^recovery] [^shutdown-tests] [^launcher]
+The shutdown observations cover synthetic POSIX groups on macOS. Cleanup of escaped descendants, Windows descendant cleanup and fault frequency remain unverified. [^shutdown-tests] [^earlier]
 
 ## Related Plans
 
@@ -69,7 +73,7 @@ The automated suites cover denied escalation for both callers and undelivered es
 
 ## References
 
-[^transport]: [App-server requests and stream errors](../../src/adapters/codex/app-server.ts)
+[^transport]: [App-server requests](../../src/adapters/codex/app-server.ts) · [Turn write acceptance](../../src/adapters/codex/app-server-write.ts)
 [^usage]: [Benchmark token accounting](../../src/cli/codex-bench/usage.ts)
 [^dispatch]: [Dispatch accounting cases](../../test/codex-benchmark/dispatch-accounting.app.test.ts) · [Local refusal and backpressure controls](../../test/codex-benchmark/fixtures/turn-write-preload.mjs)
 [^runner-tests]: [Benchmark runner cases](../../test/codex-benchmark/benchmark-runner.app.test.ts)
@@ -83,5 +87,6 @@ The automated suites cover denied escalation for both callers and undelivered es
 [^shutdown]: [Shared app-server shutdown](../../src/adapters/codex/app-server-shutdown.ts) · [Benchmark CLI exit handling](../../src/cli/commands/codex-bench.ts)
 [^shutdown-tests]: [Shared shutdown cases](../../test/codex-benchmark/shared-shutdown.app.test.ts)
 [^shutdown-record]: [Live-check shutdown and benchmark exit handling](../plans/jobs/2026-11-20-codex-app-server-version-parsing.md#fourth-follow-up-live-check-worker-shutdown)
-[^launcher]: [Manual lifecycle launcher](../../scripts/spikes/codex-turn-lifecycle/live.ts)
+[^cleanup]: [Shutdown fixture cleanup tests](../../test/codex-benchmark/shared-shutdown-cleanup.app.test.ts)
+[^record]: [Timing follow-up](../plans/jobs/2026-11-20-codex-benchmark-lifecycle-corrections.md#phase-2-follow-up) · [Shutdown fixture cleanup follow-up](../plans/jobs/2026-11-20-codex-benchmark-lifecycle-corrections.md#phase-3-cleanup-follow-up) · [Benchmark preload follow-up](../plans/jobs/2026-11-20-codex-benchmark-lifecycle-corrections.md#benchmark-preload-follow-up)
 [^earlier]: [Earlier turn reporting and process shutdown research](research-2026-11-19-codex-turn-reporting-and-process-shutdown.md)

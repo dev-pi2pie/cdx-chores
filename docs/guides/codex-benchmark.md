@@ -18,7 +18,7 @@ cdx-chores codex-bench --runs 1
 
 **Why send the prompt twice?** `codex-bench` compares repeated requests. A model’s first request can take longer than later ones. With only one measured trial, that extra time could make one model or speed look slower simply because of its first request. The benchmark gives each case one warm-up, then counts the next request as its first measurement. Both requests start in fresh sessions so each receives the same prompt with no prior conversation history.
 
-The benchmark check in `doctor` initializes the app-server, reads its version, and closes it. If shutdown fails, the check reports `failed` and keeps any version it read. Use Codex 0.170.0 or newer for the verified baseline. `codex-info models --details` lists advertised tiers and catalog defaults when available. A completed trial confirms the provider accepted its request. The report shows the requested speed. Codex does not report which speed served the request.
+The benchmark check in `doctor` initializes the app-server, reads its version, and closes it. The check uses Codex 0.170.0 as its minimum. If shutdown fails, it reports `failed` and keeps any version it read. `codex-info models --details` lists advertised tiers and catalog defaults when available. A completed trial has a matching live completion for its thread and turn. The report shows the requested speed. Codex does not report which speed served the request.
 
 ### Compare A Model And Speed Matrix
 
@@ -101,19 +101,25 @@ cdx-chores codex-bench --prompt-file ./task.txt --runs 1 \
 
 Terminal stderr shows a temporary status that clears as the run finishes. Redirected stderr carries diagnostics only in JSON mode. In human mode, stderr also carries the startup workload and, in detailed mode with usage enabled, per-request token totals. Use the global `--no-color` option or set `NO_COLOR` for plain terminal output.
 
-JSON request fields keep `null` for inherited selections. Check `trials[].configuredTier` and `trials[].resolvedReasoningEffort` for the available per-trial values, and `sentTier` for any explicit tier override on a queued request. A trial sets `inferenceAttempted` when the transport queues `turn/start`, even under backpressure or if the server later rejects it. A local write refusal leaves `inferenceAttempted: false` and `sentTier: null` and preserves the completeness of earlier usage totals. An attempted trial with missing usage makes the total partial. `servedSpeed` remains `null`. JSON timing values use milliseconds. `--show-prompt` adds `prompt.text`, and `--show-token-usage` adds detailed usage counts and invocation totals.
+JSON request fields keep `null` for inherited selections. Check `trials[].configuredTier` and `trials[].resolvedReasoningEffort` for available per-trial settings and `sentTier` for any explicit tier override accepted by app-server stdin. The benchmark sets `inferenceAttempted` when stdin accepts `turn/start`, including when it buffers the write under backpressure. A local refusal, including an immediate closed-pipe error, leaves `inferenceAttempted: false` and `sentTier: null`. Earlier complete usage stays complete. A later RPC error or transport failure preserves an accepted attempt and its explicit tier. Missing usage for an attempted trial makes the total partial. `servedSpeed` remains `null`.
+
+JSON timing values use milliseconds. If conflicting start evidence invalidates a turn ID, the benchmark clears the ID, first-token and duration fields, excludes that trial from timing summaries, and reports null throughput. It keeps attributable token counts as partial. `--show-prompt` adds `prompt.text`, and `--show-token-usage` adds detailed usage counts and invocation totals.
 
 Both report formats preserve a relative prompt path as supplied and abbreviate paths inside the user's home as `~` on macOS and Unix-like systems or `%USERPROFILE%` on Windows. Use the global `--absolute` or `--abs` option before `codex-bench` to show literal absolute paths, resolving a relative prompt path from the invocation directory.
 
 ## Manage Benchmark Sessions
 
-The benchmark keeps its sessions by default, including warm-ups. Use `--session-retention archive` to move them out of active history while preserving the rollout. `--session-retention delete` permanently removes the sessions after confirmed turn completion and rollout readback or its deadline. Retention applies to sessions created by the invocation. A cleanup failure preserves the report and ordinarily returns exit status 1. If Ctrl-C also interrupted the invocation, the CLI reports the cleanup error and exits with status 130. See the [shared retention guidance](codex-execution-configuration.md#retain-codex-sessions) for compatibility.
+The benchmark keeps its sessions by default, including warm-ups. Use `--session-retention archive` to move them out of active history while preserving the rollout. `--session-retention delete` permanently removes them. Both options require a nonempty thread ID that is fresh for the invocation and a live `turn/completed` event matching that thread and its known turn. The benchmark applies retention after rollout readback or its deadline. A matching live terminal event can authorize retention even when the saved `task_complete` needed for timing is missing. A cleanup failure preserves the report and ordinarily returns exit status 1. If Ctrl-C also interrupted the invocation, the CLI reports the cleanup error and exits with status 130. See the [shared retention guidance](codex-execution-configuration.md#retain-codex-sessions) for compatibility.
 
 ## Failures and exit codes
 
 An unavailable speed produces a diagnostic while supported combinations continue. On an invocation that runs without local cancellation, a failed trial, transport loss, a failed shutdown, or zero completed measured trials returns exit status 1. If the app-server connection is lost during the workload, JSON retains completed results and records the reason in `run.transportError`. If shutdown fails, `--json` still writes one report with the recorded trials and the reason in `run.shutdownError`.
 
-While the `turn/start` reply is pending, a terminal event matching the announced thread and turn IDs lets the benchmark recover the result immediately. If the 15-second start deadline expires with a known turn ID and completion remains unconfirmed, the benchmark interrupts that turn. It also interrupts a known turn that exceeds its 120-second completion deadline. The timed-out trial stays failed and keeps any attributable usage. Only a matching terminal event permits requested retention and another trial. If the turn ID is missing at the start timeout or the interrupt receives only an acknowledgement by the confirmation deadline, the benchmark skips retention and stops scheduling.
+A failed or ambiguous start can affect the rest of the workload. A proven local refusal on a healthy connection allows the next planned trial. After local acceptance, Codex's structured input-too-large refusal (`-32602` with `data.input_error_code: "input_too_large"`) allows the next planned trial if the connection is healthy, the run is uncancelled, and no conflicting turn evidence is observed. The refused trial stays failed and skips archive and delete. A generic RPC error with unconfirmed completion also skips archive and delete and stops scheduling.
+
+While the `turn/start` reply is pending, a live terminal event matching the announced thread and turn lets the benchmark recover the result. If the 15-second start deadline expires with a known turn ID and completion remains unconfirmed, the benchmark interrupts that turn. It also interrupts a known turn that exceeds its 120-second completion deadline. The timed-out trial stays failed and keeps any attributable usage. A matching terminal event after interruption permits requested retention and another trial on a healthy, uncancelled run. A missing turn ID or an interrupt acknowledgement without a matching terminal by the confirmation deadline causes the benchmark to skip retention and stop scheduling.
+
+If competing start IDs become visible before retention, the benchmark skips archive and delete and stops scheduling. A conflict detected while a retention request is already in flight still stops later trials. The report preserves the outcome of the request already sent.
 
 A transient tier lookup failure can leave a failed warm-up alongside successful measurements. For example, if discovery fails during the Fast warm-up in a Fast/Standard comparison, the measured Fast trial can try the failed lookup again. Even if both measured trials complete, the report retains the warm-up failure and the CLI exits with status 1.
 
@@ -125,7 +131,17 @@ If Ctrl-C arrives after `turn/start` is sent, the CLI allows one second for a pe
 
 If app-server startup or initialization fails, the CLI returns status 1 and prints the reason on stderr. JSON includes the reason in `run.startupError`, the requested workload, and an empty `trials` array.
 
+## Standard/Fast live check
+
+The [maintainer live check](../../scripts/spikes/codex-benchmark-live-check.ts) uses the same local-acceptance rule for `sentTier` and the same thread identity, scheduling and retention rules. It stops an unsettled trial at its start or completion deadline without issuing a turn interrupt. On `SIGINT` or `SIGTERM` it starts app-server shutdown and preserves the first signal's exit status.
+
+Both callers require child close for successful shutdown. For a separately owned POSIX process group, they also require a signal-zero probe to return `ESRCH`. The live check reports shutdown failure on stderr and exits with status 1 in the absence of local cancellation, with any completed Standard/Fast results still in JSON.
+
 ## Related Guides
 
 - [Codex execution configuration](codex-execution-configuration.md)
 - [CLI output and color](cli-output-and-color.md)
+
+## Related Research
+
+- [Evidence for Codex benchmark lifecycle decisions](../researches/research-2026-11-20-codex-benchmark-lifecycle-evidence.md)

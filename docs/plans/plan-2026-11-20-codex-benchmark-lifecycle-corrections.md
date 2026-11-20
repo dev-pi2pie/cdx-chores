@@ -43,7 +43,7 @@ For every continuation or stop check in Phases 1 and 2, trace a distinguishable 
 ## Phase 4. Documentation, validation and closeout
 
 - [ ] Update the guide and research with verified behavior and evidence limits. Check the document links. [Benchmark guide](../guides/codex-benchmark.md)
-- [ ] Run the focused regressions, unit, application and Codex integration suites, Node-target build, TypeScript checks, lint and whitespace checks. Record results in the unified job record.
+- [ ] Run the focused regressions and managed `bun run test:all` for the unit, application, Codex and Pandoc suites. Verify cleanup, the Node-target build and package smoke, TypeScript, lint, formatting and whitespace checks. Record results in the unified job record.
 - [ ] Review the full implementation range, including tests and affected documentation. Record the exact base and tip, findings and any re-review with fixes included. Close the checklist, plan and job record when the evidence supports completion.
 
 ## Related Research
