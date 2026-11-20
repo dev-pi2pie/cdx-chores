@@ -102,3 +102,14 @@ At `07ac9c72`, the live check starts app-server in its own process group on POSI
 On macOS, 120 focused tests passed across shared shutdown, benchmark execution, turn and rollout recovery, doctor, and SDK retention. The eight-case synthetic lifecycle comparison passed with both callers reporting Codex 0.171.0. Build, type checking, lint, touched-file formatting, and `git diff --check` passed. [Shutdown regression](../../../test/codex-benchmark/shared-shutdown.app.test.ts) · [Lifecycle comparison](../../../scripts/spikes/codex-turn-lifecycle/README.md)
 
 Code review covered `2520f49e5658904114b09be30ed8c19f63d41a60..07ac9c72bbc72c645a3f1a72c485b159728a99d6` and found no actionable issues.
+
+## Fifth follow-up. Benchmark tier rejection and signal exit codes
+
+| Finding | Baseline | Verified result |
+| --- | --- | --- |
+| Quoted service-tier parameter | At `74b84cc4`, Fast received `Unsupported parameter: "service_tier" is not supported with this model.` The CLI exited 1 despite a completed Standard measurement. | At `67b32e5f`, Fast reported `unavailable` with the original diagnostic and 80 attributable output tokens. Standard completed and the CLI exited 0. A rejected `"image_url"` parameter that mentioned the service tier still produced `failed` and exit 1. |
+| First cancellation signal | At `67b32e5f`, sending SIGTERM during an active turn and then SIGINT during cleanup produced exit 130. | At `ca11412a`, SIGTERM first produced 143 and SIGINT first produced 130. Each trace showed one start and one interrupt. With completion unconfirmed, both JSON reports preserved the cancelled trial and skipped archive. |
+
+The built Node.js 26.13.1 CLI reproduced the corrected tier outcome on macOS. Separate SIGTERM and SIGINT checks with a confirmed turn interruption returned 143 and 130, preserved the cancelled trial in JSON, and archived its thread. [CLI regression cases](../../../test/codex-benchmark/benchmark-runner.app.test.ts) · [Exit-code guide](../../guides/codex-benchmark.md#failures-and-exit-codes)
+
+At `ca11412a`, all 164 benchmark unit and application tests passed, as did the managed suites for unit (2,141 cases), application (2,545), and Codex integration (30). The build, TypeScript check, lint, changed-file formatting, and `git diff --check` passed. Repository-wide formatting still flagged the benchmark help test recorded above. Code and regression review found no outstanding findings in `74b84cc4..ca11412a`. [Release-range quality review](2026-11-20-v0.2.2-canary.7-code-quality-review.md)

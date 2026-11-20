@@ -117,7 +117,7 @@ While the `turn/start` reply is pending, a terminal event matching the announced
 
 A transient tier lookup failure can leave a failed warm-up alongside successful measurements. For example, if discovery fails during the Fast warm-up in a Fast/Standard comparison, the measured Fast trial can try the failed lookup again. Even if both measured trials complete, the report retains the warm-up failure and the CLI exits with status 1.
 
-If app-server interrupts a turn on its own, the trial is reported as `cancelled`. The CLI prints a diagnostic and exits with status 1 even when other measurements succeeded. Ctrl-C returns status 130, including during app-server initialization, tier discovery, and thread startup.
+If app-server interrupts a turn on its own, the trial is reported as `cancelled`. The CLI prints a diagnostic and exits with status 1 even when other measurements succeeded. On local cancellation the CLI writes the partial report. Ctrl-C (`SIGINT`) returns status 130 and `SIGTERM` returns 143. If another signal arrives during cleanup, the first signal determines the exit status.
 
 If Ctrl-C interrupts a pending `thread/start` request, app-server may already have created the session. The cancelled trial shows `threadId: null` and `sessionRetention: null` because the CLI can only archive or delete a session whose ID it has received.
 
