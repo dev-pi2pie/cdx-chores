@@ -92,3 +92,9 @@ Median execution fell by 20.131 seconds. Median summed JUnit case times fell by 
 **Validation.** The 128 focused cases passed. All six managed runs passed the same 2,628 cases across 313 files, with no errors, failures or skips. The runner verified process shutdown without escalation and removed scratch while retaining reports. TypeScript, scoped lint and formatting, Markdown links and anchors, and diff checks passed.
 
 **Guide and review.** The benchmark guide clarifies that observed turn evidence for the refused thread blocks continuation even when IDs agree. Other threads' events leave that decision unchanged. Maintainability, test and documentation reviews of `2d934865..41335ad5` found no material issues. [Benchmark guide](../../guides/codex-benchmark.md#failures-and-exit-codes)
+
+## Shutdown Fixture Pre-Spawn Rejection Follow-Up
+
+Checkpoint `514831d1` classifies failures from checks before spawn as confirmed launch rejections. The shutdown fixture preserves the setup error and completes both managed handoffs without a PID when an invalid deadline or an already-aborted signal prevents launch. The managed runner treats these as ordinary fixture failures, cleans up and runs the later suites. Unclassified failures and unverified app-server shutdown still leave unresolved receipts and withhold cleanup. [Fixture receipt handling](../../../scripts/testing/fixtures/fixture-process.ts) · [Shutdown cleanup tests](../../../test/codex-benchmark/shared-shutdown-cleanup.app.test.ts)
+
+**Validation and review.** All 74 focused shutdown and managed runner cases passed, including direct and managed controls for both launch rejections and the existing uncertain shutdown cases. TypeScript, lint, formatting and diff checks passed. Maintainability and test reviews of `1d76b593..514831d1` found no material issues.
