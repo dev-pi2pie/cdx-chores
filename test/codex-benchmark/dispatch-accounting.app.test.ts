@@ -5,7 +5,13 @@ import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
 import { startFixtureProcess } from "../../scripts/testing/fixtures/fixture-process";
 import { REPO_ROOT } from "../helpers/cli-test-utils";
-import { traceMethod, withRunnerFixture } from "./fixtures/runner";
+import {
+  buildNodeCaller,
+  traceMethod,
+  withRunnerFixture,
+  type RunnerFixture,
+} from "./fixtures/runner";
+import { withDispatchFixture } from "./fixtures/shutdown";
 
 const cases = [
   {
@@ -43,14 +49,6 @@ const cases = [
   },
 ];
 
-async function buildNodeCaller(entry: string, cwd: string) {
-  const build = await Bun.build({ entrypoints: [entry], packages: "external", target: "node" });
-  expect(build.success).toBe(true);
-  const executable = join(cwd, "caller.mjs");
-  await Bun.write(executable, build.outputs[0]!);
-  return executable;
-}
-
 const maintainerEntry = join(REPO_ROOT, "scripts/spikes/codex-benchmark-live-check.ts");
 const maintainerBundle = "examples/playground/codex-benchmark-live-check.mjs";
 const maintainerArgs = ["--model", "model-a", "--effort", "low", "--session-retention", "archive"];
@@ -84,7 +82,11 @@ test.each([
   });
 });
 
-async function startMaintainerBundle(cwd: string, env: NodeJS.ProcessEnv) {
+async function startMaintainerBundle(
+  cwd: string,
+  env: NodeJS.ProcessEnv,
+  start: RunnerFixture["start"] = startFixtureProcess,
+) {
   await mkdir(join(cwd, "examples", "playground"), { recursive: true });
   const limits = { timeoutMs: 6_000, graceMs: 600, cleanupMs: 1_500 };
   const build = await startFixtureProcess({
@@ -102,7 +104,7 @@ async function startMaintainerBundle(cwd: string, env: NodeJS.ProcessEnv) {
   }).completion;
   expect(build.stopped).toBe(true);
   expect(build.ok, build.stderr).toBe(true);
-  return startFixtureProcess({
+  return start({
     executable: "node",
     args: [maintainerBundle, ...maintainerArgs],
     cwd,
@@ -115,9 +117,9 @@ test.skipIf(process.platform === "win32").each(["peer-closed", "backpressure"] a
   "maintainer bundle handles %s",
   async (mode) => {
     const closed = mode === "peer-closed";
-    await withRunnerFixture(
+    await withDispatchFixture(
       { closeStdinOnThreadStart: closed ? 1 : undefined },
-      async ({ options, trace }) => {
+      async ({ options, start, trace }) => {
         const { CDX_CHORES_CODEX_PATH: fixture, ...env } = options.env ?? {};
         if (!fixture) throw new Error("The bundle test requires a synthetic app-server.");
         const bin = join(options.cwd, "node_modules", ".bin");
@@ -125,13 +127,17 @@ test.skipIf(process.platform === "win32").each(["peer-closed", "backpressure"] a
         // Exercise the fallback at the documented depth and give the override a distinct default.
         await symlink(closed ? process.execPath : fixture, join(bin, "codex"));
         const preload = pathToFileURL(join(import.meta.dir, "fixtures/turn-write-preload.mjs"));
-        const owned = await startMaintainerBundle(options.cwd, {
-          ...env,
-          ...(closed ? { CDX_CHORES_CODEX_PATH: " " + fixture + " " } : {}),
-          NODE_OPTIONS: "--import=" + preload.href,
-          FIXTURE_TURN_WRITE: mode,
-          FIXTURE_TURN_THREAD: "1",
-        });
+        const owned = await startMaintainerBundle(
+          options.cwd,
+          {
+            ...env,
+            ...(closed ? { CDX_CHORES_CODEX_PATH: " " + fixture + " " } : {}),
+            NODE_OPTIONS: "--import=" + preload.href,
+            FIXTURE_TURN_WRITE: mode,
+            FIXTURE_TURN_THREAD: "1",
+          },
+          start,
+        );
         const result = await owned.completion;
         expect(result.stopped).toBe(true);
         expect(result.issues).toEqual([]);
@@ -229,7 +235,7 @@ for (const caller of ["benchmark", "live check on Node", "live check on Bun"] as
       test.skipIf(mode === "peer-closed" && process.platform === "win32")(
         `${mode} write with ${retention} requested`,
         async () => {
-          await withRunnerFixture(
+          await withDispatchFixture(
             {
               rejectThreadStartAt: mode === "thread-rejected" ? fault : undefined,
               rejectTurnStartThread: mode === "rejected" ? fault : undefined,
@@ -237,7 +243,7 @@ for (const caller of ["benchmark", "live check on Node", "live check on Bun"] as
               endStdoutDuringThread: mode === "later-loss" ? fault : undefined,
               endStdoutAfterThread: mode === "loss-after-completion" ? fault : undefined,
             },
-            async ({ home, options, trace }) => {
+            async ({ home, options, start, trace }) => {
               const entry = join(
                 REPO_ROOT,
                 benchmark ? "src/bin.ts" : "test/codex-benchmark/fixtures/runner-live-check.ts",
@@ -254,7 +260,7 @@ for (const caller of ["benchmark", "live check on Node", "live check on Bun"] as
                     "--show-token-usage",
                   ]
                 : ["--model", "model-a", "--effort", "low"];
-              const result = await startFixtureProcess({
+              const result = await start({
                 executable: onBun ? process.execPath : "node",
                 args: [...preloadArgs, script, ...args, "--session-retention", retention],
                 env: {

@@ -115,9 +115,10 @@ function resistShutdown() {
 }
 
 async function run() {
-  if (scenario.resistantLeader) {
+  if (scenario.resistantLeader || scenario.stallPeerShutdown) {
     writeFileSync(join(home, "leader.pid"), String(process.pid));
-    resistShutdown();
+    if (scenario.stallPeerShutdown) process.on("SIGTERM", () => {});
+    else resistShutdown();
   }
   if (scenario.resistantWorker) {
     const readyPath = join(home, "worker.pid");
@@ -241,8 +242,11 @@ async function run() {
           },
         });
         if (closeInput) {
-          const releasePath = join(home, "release-shutdown");
-          const deadline = performance.now() + 5_000;
+          const releasePath = join(
+            home,
+            scenario.stallPeerShutdown ? "release-stalled-peer" : "release-shutdown",
+          );
+          const deadline = performance.now() + (scenario.stallPeerShutdown ? 8_000 : 5_000);
           while (performance.now() < deadline && !existsSync(releasePath)) await delay(20);
           return;
         }

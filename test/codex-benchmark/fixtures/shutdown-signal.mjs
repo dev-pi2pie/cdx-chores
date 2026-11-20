@@ -11,8 +11,12 @@ if (process.env.FIXTURE_RECORD_APP_SERVER === "1") {
   const childProcess = createRequire(import.meta.url)("node:child_process");
   const spawn = childProcess.spawn;
   const receipt = join(process.env.CODEX_HOME, "app-server-spawn");
+  const fixturePath = process.env.CDX_CHORES_CODEX_PATH;
   childProcess.spawn = (executable, args, options) => {
-    if (executable !== process.env.CDX_CHORES_CODEX_PATH || args?.[0] !== "app-server") {
+    if (
+      (executable !== fixturePath && executable !== fixturePath?.trim()) ||
+      args?.[0] !== "app-server"
+    ) {
       return spawn(executable, args, options);
     }
     writeFileSync(receipt, "starting", { flag: "wx" });

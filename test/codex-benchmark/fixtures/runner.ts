@@ -1,12 +1,7 @@
 import { expect } from "bun:test";
 import { chmod, copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { setTimeout as delay } from "node:timers/promises";
-
-import {
-  isLiveProcess,
-  requireProcessObservation,
-} from "../../../scripts/testing/execution/process-table";
+import type { OwnedProcess, OwnedProcessOptions } from "../../../scripts/testing/execution/process";
 import { startFixtureProcess } from "../../../scripts/testing/fixtures/fixture-process.ts";
 import type { BenchmarkOptions } from "../../../src/adapters/codex/benchmark/types";
 import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
@@ -58,6 +53,7 @@ interface Scenario {
   retentionConflictThread?: number;
   unfinishedRolloutThread?: number;
   closeStdinOnThreadStart?: number;
+  stallPeerShutdown?: boolean;
   retentionError?: boolean;
   usageSnapshots?: Array<Record<string, number> | null>;
   resistantWorker?: boolean;
@@ -79,6 +75,15 @@ export interface RunnerFixture {
   home: string;
   options: Extract<BenchmarkOptions, { models: readonly string[] }>;
   trace: () => Promise<BenchmarkProtocolEvent[]>;
+  start(options: OwnedProcessOptions): OwnedProcess;
+}
+
+export async function buildNodeCaller(entry: string, cwd: string) {
+  const build = await Bun.build({ entrypoints: [entry], packages: "external", target: "node" });
+  expect(build.success).toBe(true);
+  const executable = join(cwd, "caller.mjs");
+  await Bun.write(executable, build.outputs[0]!);
+  return executable;
 }
 
 export async function withRunnerFixture<T>(
@@ -108,39 +113,26 @@ export async function withRunnerFixture<T>(
         .slice(0, -1)
         .map((line) => JSON.parse(line) as BenchmarkProtocolEvent);
     };
-    try {
-      const result = await exercise({
-        home,
-        options: {
-          cwd: root,
-          env: {
-            PATH: process.env.PATH,
-            HOME: root,
-            CODEX_HOME: home,
-            CDX_CHORES_CODEX_PATH: executable,
-          },
-          models: [],
-          speeds: [],
-          runs: 1,
-          prompt: "fixture prompt",
+    const result = await exercise({
+      home,
+      options: {
+        cwd: root,
+        env: {
+          PATH: process.env.PATH,
+          HOME: root,
+          CODEX_HOME: home,
+          CDX_CHORES_CODEX_PATH: executable,
         },
-        trace,
-      });
-      expect(await readFile(join(home, "unrelated.jsonl"), "utf8")).toBe("unrelated\n");
-      return result;
-    } finally {
-      if (scenario.closeStdinOnThreadStart !== undefined) {
-        const pid = traceMethod(await trace(), "stdin-closed")[0]?.params?.pid;
-        if (typeof pid === "number") {
-          await writeFile(join(home, "release-shutdown"), "");
-          const live = () =>
-            requireProcessObservation().some((entry) => entry.pid === pid && isLiveProcess(entry));
-          const deadline = performance.now() + 1_000;
-          while (live() && performance.now() < deadline) await delay(20);
-          expect(live()).toBe(false);
-        }
-      }
-    }
+        models: [],
+        speeds: [],
+        runs: 1,
+        prompt: "fixture prompt",
+      },
+      trace,
+      start: startFixtureProcess,
+    });
+    expect(await readFile(join(home, "unrelated.jsonl"), "utf8")).toBe("unrelated\n");
+    return result;
   };
   return withTempFixtureDir("codex-benchmark-runner", run, canClean);
 }

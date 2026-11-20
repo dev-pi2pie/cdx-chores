@@ -2,7 +2,12 @@ import { expect, test } from "bun:test";
 import { access, readFile, readdir, unlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { Writable } from "node:stream";
-import { ProcessLaunchRejectedError } from "../../scripts/testing/execution/process";
+import { setTimeout as delay } from "node:timers/promises";
+import { pathToFileURL } from "node:url";
+import {
+  ProcessLaunchRejectedError,
+  type OwnedProcessResult,
+} from "../../scripts/testing/execution/process";
 import { isLiveProcess, observeProcessGroup } from "../../scripts/testing/execution/process-table";
 import { removeFixtureDir } from "../../scripts/testing/fixtures/fixture-exports";
 import { runManagedTests } from "../../scripts/testing/orchestration/runner";
@@ -17,9 +22,11 @@ import {
 import { classifyTestFiles } from "../../scripts/testing/suites/selection";
 import { REPO_ROOT } from "../helpers/cli-test-utils";
 import { completed, writeReport } from "../test-runner/runner-support";
+import { buildNodeCaller, traceMethod, type BenchmarkProtocolEvent } from "./fixtures/runner";
 import {
   readSpawnedLeader,
   startShutdownLiveCheck,
+  withDispatchFixture,
   withShutdownFixture,
 } from "./fixtures/shutdown";
 
@@ -68,6 +75,10 @@ const cases = [
   "interrupted spawn receipt",
   "partial spawn receipt",
   "observation failure",
+  "peer fixture setup failure",
+  "verified peer closure",
+  "peer closure without spawn receipt",
+  "stalled peer closure",
 ] as const;
 type Case = (typeof cases)[number];
 interface Control {
@@ -75,6 +86,11 @@ interface Control {
   groupId?: number;
   callerStopped?: boolean;
   neverStarted?: boolean;
+  peer?: {
+    result: OwnedProcessResult;
+    stdinClosed: BenchmarkProtocolEvent[];
+    leaderLiveAtCallerExit: boolean;
+  };
 }
 
 function isPreSpawnCase(mode: Case): mode is keyof typeof preSpawnCases {
@@ -82,10 +98,76 @@ function isPreSpawnCase(mode: Case): mode is keyof typeof preSpawnCases {
 }
 
 function canVerify(mode: Case) {
-  return mode === "assertion failure" || mode === "launch rejected" || isPreSpawnCase(mode);
+  return (
+    mode === "assertion failure" ||
+    mode === "launch rejected" ||
+    mode === "peer fixture setup failure" ||
+    mode === "verified peer closure" ||
+    isPreSpawnCase(mode)
+  );
+}
+
+function runPeerControl(mode: Case, control: Control) {
+  const stalled = mode === "stalled peer closure";
+  return withDispatchFixture(
+    { closeStdinOnThreadStart: 1, stallPeerShutdown: stalled },
+    async ({ home, options, start, trace }) => {
+      control.home = home;
+      if (mode === "peer fixture setup failure")
+        throw new Error("Injected peer fixture setup failure.");
+      const fixtureDir = join(import.meta.dir, "fixtures");
+      const caller = await buildNodeCaller(join(fixtureDir, "runner-live-check.ts"), options.cwd);
+      const result = await start({
+        executable: "node",
+        args: [
+          "--import",
+          pathToFileURL(join(fixtureDir, "turn-write-preload.mjs")).href,
+          caller,
+          "--model",
+          "model-a",
+          "--effort",
+          "low",
+        ],
+        cwd: options.cwd,
+        env: {
+          ...options.env,
+          FIXTURE_ESCALATION: stalled ? "undelivered" : "allowed",
+          FIXTURE_TURN_WRITE: "peer-closed",
+          FIXTURE_TURN_THREAD: "1",
+        },
+        timeoutMs: 6_000,
+        graceMs: 600,
+        cleanupMs: 1_500,
+      }).completion;
+      control.callerStopped = result.stopped;
+      const leader = await readSpawnedLeader(home);
+      control.groupId = leader;
+      if (leader === undefined) throw new Error("Missing peer group identity.");
+      const members = await observeProcessGroup(leader, 500);
+      control.peer = {
+        result,
+        stdinClosed: traceMethod(await trace(), "stdin-closed"),
+        leaderLiveAtCallerExit: members.some(
+          (member) => member.pid === leader && isLiveProcess(member),
+        ),
+      };
+      if (mode === "peer closure without spawn receipt")
+        await unlink(join(home, "app-server-spawn"));
+      if (mode === "verified peer closure")
+        throw new Error("Injected assertion after peer closure.");
+    },
+  );
 }
 
 async function runControl(mode: Case, control: Control) {
+  if (
+    mode === "peer fixture setup failure" ||
+    mode === "verified peer closure" ||
+    mode === "peer closure without spawn receipt" ||
+    mode === "stalled peer closure"
+  ) {
+    return runPeerControl(mode, control);
+  }
   const observe =
     mode === "observation failure"
       ? async () => {
@@ -156,6 +238,32 @@ async function checkFailure(mode: Case, control: Control) {
   );
   const { home } = control;
   if (!home) throw error ?? new Error("Control failed before fixture allocation.");
+  if (mode === "peer fixture setup failure") {
+    expect(String(error)).toContain("Injected peer fixture setup failure.");
+    await expect(access(dirname(home))).rejects.toMatchObject({ code: "ENOENT" });
+    return;
+  }
+  if (
+    mode === "verified peer closure" ||
+    mode === "peer closure without spawn receipt" ||
+    mode === "stalled peer closure"
+  ) {
+    const peer = control.peer;
+    if (!peer) throw new Error("Missing peer observations.", { cause: error });
+    expect(peer.result.stopped).toBe(true);
+    expect(peer.result.exitCode, peer.result.stderr).toBe(1);
+    expect(peer.result.stderr).toContain("observed immediate EPIPE");
+    expect(peer.leaderLiveAtCallerExit).toBe(mode === "stalled peer closure");
+    expect(peer.stdinClosed).toEqual([
+      { method: "stdin-closed", params: { pid: control.groupId } },
+    ]);
+    if (mode === "stalled peer closure") expect(peer.result.stderr).toContain("shutdown deadline");
+    if (mode === "verified peer closure") {
+      expect(String(error)).toContain("Injected assertion after peer closure.");
+      await expect(access(dirname(home))).rejects.toMatchObject({ code: "ENOENT" });
+      return;
+    }
+  }
   if (isPreSpawnCase(mode)) {
     const expectedError = preSpawnCases[mode].error;
     expect(error).toBeInstanceOf(ProcessLaunchRejectedError);
@@ -176,12 +284,18 @@ async function checkFailure(mode: Case, control: Control) {
     const messages = (error as AggregateError).errors.map(String).join("\n");
     expect(messages).toContain("Fixture cleanup unverified; scratch retained");
     const receipt = join(home, "app-server-spawn");
-    if (mode === "missing spawn receipt") {
+    if (mode === "missing spawn receipt" || mode === "peer closure without spawn receipt") {
       expect(messages).toContain("ENOENT");
       await expect(access(receipt)).rejects.toMatchObject({ code: "ENOENT" });
     } else if (mode === "observation failure") {
       expect(messages).toContain("Injected group observation failure");
       expect(await readFile(receipt, "utf8")).toBe(String(control.groupId) + "\n");
+    } else if (mode === "stalled peer closure") {
+      expect(messages).toMatch(
+        /Fixture app-server group was still live at the cleanup deadline\.|Process-state observation failed or timed out\./,
+      );
+      expect(await readFile(receipt, "utf8")).toBe(String(control.groupId) + "\n");
+      expect((await observeProcessGroup(control.groupId!, 500)).some(isLiveProcess)).toBe(true);
     } else {
       expect(messages).toContain("Incomplete fixture app-server spawn receipt");
       expect(await readFile(receipt, "utf8")).toBe(
@@ -189,8 +303,11 @@ async function checkFailure(mode: Case, control: Control) {
       );
     }
     await access(join(home, "release-shutdown"));
-    await access(join(home, "leader.pid"));
-    await access(join(home, "worker.pid"));
+    if (mode === "stalled peer closure" || mode === "peer closure without spawn receipt") {
+      await access(join(home, "events.jsonl"));
+    } else {
+      await Promise.all([access(join(home, "leader.pid")), access(join(home, "worker.pid"))]);
+    }
   }
 }
 
@@ -204,9 +321,23 @@ async function exists(path: string) {
   }
 }
 
-async function cleanControl(control: Control) {
+async function cleanControl(mode: Case, control: Control) {
   if (!control.home) return;
   const directory = dirname(control.home);
+  if (mode === "stalled peer closure" && control.groupId !== undefined) {
+    try {
+      await writeFile(join(control.home, "release-stalled-peer"), "");
+    } catch (error) {
+      // A fixture that removed scratch too early must still wait for the peer's fallback exit.
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+    const deadline = performance.now() + 8_500;
+    while ((await observeProcessGroup(control.groupId, 500)).some(isLiveProcess)) {
+      if (performance.now() >= deadline)
+        throw new Error("Stalled peer did not stop after release.");
+      await delay(20);
+    }
+  }
   if (!(await exists(directory))) return;
   // Retire control artifacts only with independent proof of both process boundaries.
   if (
@@ -260,7 +391,7 @@ test.skipIf(process.platform === "win32").each(cases)(
       try {
         await checkFailure(mode, control);
       } finally {
-        await cleanControl(control);
+        await cleanControl(mode, control);
       }
     }),
   10_000,
@@ -314,6 +445,31 @@ test.skipIf(process.platform === "win32").each(cases)(
               if (mode === "launch rejected" || isPreSpawnCase(mode)) {
                 await checkRejectedHandoff(context!, isPreSpawnCase(mode) ? 2 : 1);
               }
+              if (mode === "peer fixture setup failure" || mode === "verified peer closure") {
+                const directory = join(suitePath(context!, "app", "scratch"), "processes");
+                const names = await readdir(directory);
+                if (mode === "peer fixture setup failure") {
+                  expect(names).toEqual([]);
+                } else {
+                  const completions = await Promise.all(
+                    names
+                      .filter((name) => name.endsWith(".complete.json"))
+                      .map(async (name) =>
+                        JSON.parse(await readFile(join(directory, name), "utf8")),
+                      ),
+                  );
+                  expect(completions).toHaveLength(2);
+                  expect(completions).toContainEqual(
+                    expect.objectContaining({
+                      state: "complete",
+                      stopped: true,
+                      reason: "completed",
+                      pid: control.groupId,
+                      groupId: control.groupId,
+                    }),
+                  );
+                }
+              }
             } catch (error) {
               fixtureFailure = error;
             }
@@ -322,7 +478,6 @@ test.skipIf(process.platform === "win32").each(cases)(
           },
         },
       });
-      if (fixtureFailure !== undefined) throw fixtureFailure;
       const root = context!.root;
       const states = result.summary.leaves.map(({ state }) => state);
       expect(result.exitCode).toBe(1);
@@ -332,6 +487,7 @@ test.skipIf(process.platform === "win32").each(cases)(
           ? ["passed", "failed", "passed", "passed"]
           : ["passed", "failed", "not-run", "not-run"],
       );
+      if (fixtureFailure !== undefined) throw fixtureFailure;
       if (stopped) {
         await expect(access(root)).rejects.toMatchObject({ code: "ENOENT" });
       } else {
@@ -354,7 +510,7 @@ test.skipIf(process.platform === "win32").each(cases)(
         );
         expect(unresolved).toHaveLength(1);
         const started = unresolved[0]!.replace(".pending.", ".started.");
-        if (mode === "observation failure") {
+        if (mode === "observation failure" || mode === "stalled peer closure") {
           expect(JSON.parse(await readFile(join(directory, started), "utf8"))).toMatchObject({
             state: "started",
             pid: control.groupId,
@@ -364,7 +520,7 @@ test.skipIf(process.platform === "win32").each(cases)(
         }
       }
     } finally {
-      await cleanControl(control);
+      await cleanControl(mode, control);
       if (context && (await exists(context.root))) await removeRun(context);
     }
   },

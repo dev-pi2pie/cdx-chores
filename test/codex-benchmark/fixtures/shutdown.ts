@@ -1,11 +1,8 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import type {
-  OwnedProcess,
-  OwnedProcessOptions,
-  OwnedProcessResult,
-} from "../../../scripts/testing/execution/process";
+import { pathToFileURL } from "node:url";
+import type { OwnedProcess, OwnedProcessResult } from "../../../scripts/testing/execution/process";
 import {
   isLiveProcess,
   observeProcessGroup,
@@ -17,12 +14,8 @@ import {
 } from "../../../scripts/testing/fixtures/fixture-process";
 import { withRunnerFixture, type RunnerFixture } from "./runner";
 
-interface ShutdownFixture extends RunnerFixture {
-  start(options: OwnedProcessOptions): OwnedProcess;
-}
-
 export function startShutdownLiveCheck(
-  { start, options }: ShutdownFixture,
+  { start, options }: RunnerFixture,
   escalation: "allowed" | "denied" | "undelivered",
 ) {
   return start({
@@ -92,7 +85,7 @@ async function verifyReleasedGroup(
 
 export function withShutdownFixture<T>(
   scenario: Parameters<typeof withRunnerFixture>[0],
-  exercise: (fixture: ShutdownFixture) => Promise<T>,
+  exercise: (fixture: RunnerFixture) => Promise<T>,
   observe = observeProcessGroup,
 ): Promise<T> {
   let canClean = true;
@@ -106,8 +99,8 @@ export function withShutdownFixture<T>(
           ...fixture,
           start(options) {
             if (!canClean) throw new Error("Shutdown fixture can launch only one caller.");
-            receipt = registerFixtureProcess();
             canClean = false;
+            receipt = registerFixtureProcess();
             try {
               caller = startFixtureProcess({
                 ...options,
@@ -128,5 +121,20 @@ export function withShutdownFixture<T>(
       }
     },
     () => canClean,
+  );
+}
+
+export function withDispatchFixture<T>(
+  scenario: Parameters<typeof withRunnerFixture>[0],
+  exercise: (fixture: RunnerFixture) => Promise<T>,
+): Promise<T> {
+  if (scenario.closeStdinOnThreadStart === undefined) return withRunnerFixture(scenario, exercise);
+  const preload = pathToFileURL(join(import.meta.dir, "shutdown-signal.mjs")).href;
+  return withShutdownFixture(scenario, (fixture) =>
+    exercise({
+      ...fixture,
+      start: (options) =>
+        fixture.start({ ...options, args: ["--import", preload, ...options.args] }),
+    }),
   );
 }
