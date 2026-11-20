@@ -30,10 +30,10 @@ For every continuation or stop check in Phases 1 and 2, trace a distinguishable 
 
 ## Phase 2. Thread identity, scheduling and retention
 
-- [ ] Require a fresh, nonempty thread ID. Missing or reused IDs produce no `turn/start`, archive or delete for that trial. [Turn recovery tests](../../test/codex-benchmark/turn-recovery.app.test.ts)
-- [ ] Recognize the Codex 0.171.0 structured refusal (`-32602`, `data.input_error_code: "input_too_large"`). Keep the attempt and tier and skip archive or delete. The next planned trial starts only on a healthy, uncancelled connection with no conflicting turn evidence. Generic errors without the discriminator or responses with conflicting turn evidence stop scheduling and skip archive or delete while completion remains unconfirmed.
-- [ ] Require `turn/completed` matching the owned thread and turn, including when recovering a withheld start reply. Requested archive or delete follows readback or its deadline and precedes any next trial. This applies even without a saved `task_complete`. `keep` sends no retention RPC. [Rollout recovery tests](../../test/codex-benchmark/rollout-recovery.app.test.ts)
-- [ ] Preserve each caller’s timeout and interrupt policy. Cancellation blocks later trials, preserves the initiating signal’s exit status and skips archive or delete when completion is unconfirmed. [Caller-specific timeout behavior](plan-2026-11-20-codex-turn-reporting-and-app-server-shutdown.md#phase-2-turn-recovery-and-scheduling)
+- [x] Require a fresh, nonempty thread ID. Missing or reused IDs produce no `turn/start`, archive or delete for that trial. [Turn recovery tests](../../test/codex-benchmark/turn-recovery.app.test.ts)
+- [x] Recognize the Codex 0.171.0 structured refusal (`-32602`, `data.input_error_code: "input_too_large"`). Keep the attempt and tier and skip archive or delete. The next planned trial starts only on a healthy, uncancelled connection with no conflicting turn evidence. Generic errors without the discriminator or responses with conflicting turn evidence stop scheduling and skip archive or delete while completion remains unconfirmed.
+- [x] Require `turn/completed` matching the owned thread and turn, including when recovering a withheld start reply. Requested archive or delete follows readback or its deadline and precedes any next trial. This applies even without a saved `task_complete`. `keep` sends no retention RPC. [Rollout recovery tests](../../test/codex-benchmark/rollout-recovery.app.test.ts)
+- [x] Preserve each caller’s timeout and interrupt policy. Cancellation blocks later trials, preserves the initiating signal’s exit status and skips archive or delete when completion is unconfirmed. [Caller-specific timeout behavior](plan-2026-11-20-codex-turn-reporting-and-app-server-shutdown.md#phase-2-turn-recovery-and-scheduling)
 
 ## Phase 3. Live-check test launcher and shutdown
 
