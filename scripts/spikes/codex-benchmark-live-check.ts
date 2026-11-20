@@ -4,6 +4,7 @@ import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
+import { extractAppServerVersion } from "../../src/adapters/codex/app-server-version.ts";
 import {
   readSavedTurn,
   type RolloutReadOptions,
@@ -59,8 +60,9 @@ interface Message {
 
 class LiveRequestRejected extends Error {}
 
-function startAppServer({ executable, args }: typeof defaultAppServer) {
+function startAppServer({ executable, args }: typeof defaultAppServer, env: NodeJS.ProcessEnv) {
   const child = spawn(executable, args, {
+    env,
     stdio: ["pipe", "pipe", "inherit"],
   });
   const closed = new Promise<void>((resolve) => child.once("close", () => resolve()));
@@ -392,11 +394,13 @@ export async function runLiveCheck(
   }
   const sessionRetention = resolveCodexSessionRetention(retentionValues?.[0]);
 
-  const server = startAppServer(appServer);
+  const env = { ...process.env };
+  const server = startAppServer(appServer, env);
   try {
-    const init = await server.request<{ userAgent: string }>("initialize", {
+    const init = await server.request<{ userAgent?: unknown }>("initialize", {
       clientInfo: { name: "cdx_chores", title: "cdx-chores", version: "1" },
     });
+    const codexVersion = extractAppServerVersion(init.userAgent, env)?.version;
     server.notify("initialized");
     const catalogModel = await findModel(server, model);
     if (
@@ -428,11 +432,7 @@ export async function runLiveCheck(
       }
     }
     console.log(
-      JSON.stringify(
-        { codexVersion: init.userAgent.split(/[ /]/)[1], model, effort, sessionRetention, results },
-        null,
-        2,
-      ),
+      JSON.stringify({ codexVersion, model, effort, sessionRetention, results }, null, 2),
     );
   } finally {
     await server.close();

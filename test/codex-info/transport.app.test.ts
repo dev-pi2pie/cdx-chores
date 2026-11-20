@@ -43,6 +43,7 @@ setInterval(() => {}, 1000);
       FIXTURE_LOG: log,
     };
     delete env.CODEX_HOME;
+    delete env.CODEX_INTERNAL_ORIGINATOR_OVERRIDE;
     await run(env, cwd, log);
     const pid = Number(await readFile(log + ".pid", "utf8").catch(() => "0"));
     if (pid) expect(() => process.kill(pid, 0)).toThrow();
@@ -92,23 +93,30 @@ describe("Codex information discovery transport", () => {
   });
 
   test.each([
-    ["codex_exec/0.171.0 (fixture)", "0.171.0"],
-    ["custom-originator/0.153.4+local", "0.153.4+local"],
-  ])("reads the version from app-server user agent %j", async (userAgent, version) => {
-    await withServer(
-      "",
-      async (env, cwd) => {
-        const result = await discoverCodexInfo({ cwd, env, view: "providers" });
-        expect(result.context.codexVersion).toBe(version);
-        expect(result.config.model_provider).toBe("custom");
-      },
-      userAgent,
-    );
-  });
+    ["codex_exec/0.171.0 (fixture)", "0.171.0", undefined],
+    ["custom-originator/0.153.4+local", "0.153.4+local", undefined],
+    ["Codex Exec/0.153.4-beta.1+local (fixture)", "0.153.4-beta.1+local", "Codex Exec"],
+    ["codex/exec/0.171.0", "0.171.0", "codex/exec"],
+  ] as const)(
+    "reads the version from app-server user agent %j",
+    async (userAgent, version, originator) => {
+      await withServer(
+        "",
+        async (env, cwd) => {
+          env.CODEX_INTERNAL_ORIGINATOR_OVERRIDE = originator;
+          const result = await discoverCodexInfo({ cwd, env, view: "providers" });
+          expect(result.context.codexVersion).toBe(version);
+          expect(result.config.model_provider).toBe("custom");
+        },
+        userAgent,
+      );
+    },
+  );
 
   test.each([
     "/0.171.0",
     "codex exec/0.171.0",
+    "codex/exec/0.171.0",
     "codex_exec/0.171.0/extra",
     "codex_exec/invalid cdx_chores/0.171.0",
     null,

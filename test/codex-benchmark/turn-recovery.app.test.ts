@@ -9,9 +9,17 @@ const preload = join(import.meta.dir, "fixtures/turn-recovery-preload.mjs");
 
 type Caller = "benchmark" | "live check";
 
-async function runRecovery(caller: Caller, scenario: Scenario, late = false) {
+async function runRecovery(
+  caller: Caller,
+  scenario: Scenario,
+  { late = false, originator }: { late?: boolean; originator?: string } = {},
+) {
   return withRunnerFixture({ ...scenario, traceLifecycle: true }, async ({ options, trace }) => {
-    const env = { ...options.env, FIXTURE_LATE_TURN: late ? "1" : "0" };
+    const env = {
+      ...options.env,
+      FIXTURE_LATE_TURN: late ? "1" : "0",
+      CODEX_INTERNAL_ORIGINATOR_OVERRIDE: originator,
+    };
     const child =
       caller === "benchmark"
         ? startCliBenchmark(
@@ -52,6 +60,7 @@ async function runRecovery(caller: Caller, scenario: Scenario, late = false) {
     const interrupts = traceMethod(events, "turn/interrupt").map(({ params }) => params);
     const archives = traceMethod(events, "thread/archive").map(({ params }) => params?.threadId);
     return {
+      codexVersion: caller === "benchmark" ? report.run.codexVersion : report.codexVersion,
       first: trials[0],
       turns,
       interrupts,
@@ -111,6 +120,19 @@ test.each([
 );
 
 describe.each(["benchmark", "live check"] as const)("%s turn recovery", (caller) => {
+  test.each(["codex/exec", undefined])(
+    "reports the version with originator override %j",
+    async (originator) => {
+      const { codexVersion, exit } = await runRecovery(
+        caller,
+        { appServerUserAgent: "codex/exec/0.171.0" },
+        { originator },
+      );
+      expect(exit).toBe(0);
+      expect(codexVersion).toBe(originator ? "0.171.0" : caller === "benchmark" ? null : undefined);
+    },
+  );
+
   test.each(["normal", "withheld"] as const)("recovers Standard with a %s reply", async (reply) => {
     const { first, turns, events, archives, interrupts, exit } = await runRecovery(caller, {
       withholdStartReplyThread: reply === "withheld" ? 1 : undefined,
@@ -176,7 +198,7 @@ describe.each(["benchmark", "live check"] as const)("%s turn recovery", (caller)
       const { first, turns, interrupts, archives, events, exit, stderr } = await runRecovery(
         caller,
         { omitTurnStart: true },
-        late,
+        { late },
       );
       expect(exit).toBe(1);
       expect(first).toMatchObject({

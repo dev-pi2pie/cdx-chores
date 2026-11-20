@@ -16,23 +16,27 @@ import { REPO_ROOT } from "../../helpers/cli-test-utils";
 import { createDoctorFixture } from "../fixtures";
 
 test.each([
-  ["cdx_chores/0.170.0", "met", "0.170.0"],
-  ["cdx_chores/0.170.0+local", "met", "0.170.0+local"],
-  ["cdx_chores/1.0.0", "met", "1.0.0"],
-  ["cdx_chores/0.169.9", "unverified", "0.169.9"],
-  ["cdx_chores/0.170.0-beta.1", "unverified", "0.170.0-beta.1"],
-  ["codex_exec/0.171.0 (fixture)", "met", "0.171.0"],
-  ["codex_exec/0.170.0-beta.1+local", "unverified", "0.170.0-beta.1+local"],
-  ["/0.171.0", "unverified", null],
-  ["codex exec/0.171.0", "unverified", null],
-  ["codex_exec/0.171.0/extra", "unverified", null],
-  ["codex_exec/invalid cdx_chores/0.171.0", "unverified", null],
-  [null, "unverified", null],
+  ["cdx_chores/0.170.0", "met", "0.170.0", undefined],
+  ["cdx_chores/0.170.0+local", "met", "0.170.0+local", undefined],
+  ["cdx_chores/1.0.0", "met", "1.0.0", undefined],
+  ["Codex Exec/0.169.9", "unverified", "0.169.9", "Codex Exec"],
+  ["codex/exec/0.170.0-beta.1", "unverified", "0.170.0-beta.1", "codex/exec"],
+  ["codex_exec/0.171.0 (fixture)", "met", "0.171.0", undefined],
+  ["codex_exec/0.170.0-beta.1+local", "unverified", "0.170.0-beta.1+local", undefined],
+  ["Codex Exec/0.170.0+local", "met", "0.170.0+local", "Codex Exec"],
+  ["codex/exec/0.171.0", "met", "0.171.0", "codex/exec"],
+  ["codex/exec/0.171.0", "unverified", null, undefined],
+  ["/0.171.0", "unverified", null, undefined],
+  ["codex exec/0.171.0", "unverified", null, undefined],
+  ["codex_exec/0.171.0/extra", "unverified", null, undefined],
+  ["codex_exec/invalid cdx_chores/0.171.0", "unverified", null, undefined],
+  [null, "unverified", null, undefined],
 ] as const)(
-  "doctor checks app-server user agent %j using only initialization",
-  async (appServerUserAgent, status, version) => {
+  "doctor checks app-server user agent %j, expects %s and %j with override %j",
+  async (appServerUserAgent, status, version, originator) => {
     await withRunnerFixture({ appServerUserAgent }, async ({ options, trace }) => {
-      const check = await inspectCodexBenchmark(options.cwd, options.env);
+      const env = { ...options.env, CODEX_INTERNAL_ORIGINATOR_OVERRIDE: originator };
+      const check = await inspectCodexBenchmark(options.cwd, env);
       expect(check).toMatchObject({ status, version, minimumVersion: "0.170.0" });
       const methods = (await trace()).map(({ method }) => method);
       expect(methods[0]).toBe("initialize");

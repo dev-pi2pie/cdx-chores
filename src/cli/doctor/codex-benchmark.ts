@@ -1,4 +1,5 @@
 import { CodexAppServer } from "../../adapters/codex/app-server";
+import { extractAppServerVersion } from "../../adapters/codex/app-server-version";
 import { resolveDiscoveryExecutable } from "../../adapters/codex/discovery/executable";
 import { isRecord } from "../../adapters/codex/discovery/transport";
 
@@ -14,12 +15,12 @@ export interface CodexBenchmarkPrerequisites {
   detail: string;
 }
 
-function assessInitializedVersion(userAgent: unknown): CodexBenchmarkPrerequisites {
-  const match =
-    typeof userAgent === "string"
-      ? /^[^/\s]+\/((\d+)\.(\d+)\.(\d+)(-[\w.-]+)?(?:\+[\w.-]+)?)(?:\s|$)/u.exec(userAgent)
-      : null;
-  if (!match) {
+function assessInitializedVersion(
+  userAgent: unknown,
+  env: NodeJS.ProcessEnv,
+): CodexBenchmarkPrerequisites {
+  const initializedVersion = extractAppServerVersion(userAgent, env);
+  if (!initializedVersion) {
     return {
       status: "unverified",
       version: null,
@@ -27,15 +28,14 @@ function assessInitializedVersion(userAgent: unknown): CodexBenchmarkPrerequisit
       detail: `App-server initialized but did not report a recognizable version. Use Codex ${minimumVersion} or newer.`,
     };
   }
-  const [, version, major, minor, patch, prerelease] = match;
-  const actual = [Number(major), Number(minor), Number(patch)];
+  const { version, core: actual, prerelease } = initializedVersion;
   const minimum = minimumVersion.split(".").map(Number);
   const difference = actual.map((part, index) => part - (minimum[index] ?? 0)).find(Boolean) ?? 0;
   const met =
     actual.every(Number.isSafeInteger) && (difference > 0 || (difference === 0 && !prerelease));
   return {
     status: met ? "met" : "unverified",
-    version: version ?? null,
+    version,
     minimumVersion,
     detail: met
       ? "Local app-server initialization succeeded."
@@ -61,7 +61,7 @@ export async function inspectCodexBenchmark(
     server = new CodexAppServer(executable, cwd, serverEnv);
     const result = await server.initialize(initializeTimeoutMs);
     if (!isRecord(result)) throw new Error("Invalid app-server initialization response.");
-    readiness = assessInitializedVersion(result.userAgent);
+    readiness = assessInitializedVersion(result.userAgent, serverEnv);
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;
     readiness = {

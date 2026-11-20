@@ -2,6 +2,7 @@ import { isAbsolute } from "node:path";
 
 import { resolveCodexSessionRetention } from "../../../utils/codex-session-retention";
 import { CodexAppServer, CodexAppServerError, CodexRequestTimeoutError } from "../app-server";
+import { extractAppServerVersion } from "../app-server-version";
 import { resolveDiscoveryExecutable } from "../discovery/executable";
 import { applyCodexSessionRetention } from "../session-retention";
 import { BenchmarkCatalog, isTierRejection } from "./catalog";
@@ -316,7 +317,7 @@ export async function runCodexBenchmark(options: BenchmarkOptions): Promise<Benc
         isolateSignals: true,
       });
       const initialized = await server.initialize(undefined, signal);
-      report.codexVersion = initialized.userAgent?.match(/^[^/]+\/([^\s]+)/)?.[1] ?? null;
+      report.codexVersion = extractAppServerVersion(initialized.userAgent, env)?.version ?? null;
       report.codexHome = rolloutPath(initialized.codexHome);
     } catch (error) {
       if (!(signal?.aborted && error === signal.reason)) report.startupError = messageFrom(error);

@@ -16,6 +16,15 @@ import {
   type BenchmarkProtocolEvent,
 } from "./fixtures/runner";
 
+test("reports the version using the supplied app-server environment", async () => {
+  await withRunnerFixture({ appServerUserAgent: "codex/exec/0.171.0" }, async ({ options }) => {
+    const env = { ...options.env, CODEX_INTERNAL_ORIGINATOR_OVERRIDE: "codex/exec" };
+    const report = await runCodexBenchmark({ ...options, env });
+    expect(report.startupError).toBeNull();
+    expect(report.codexVersion).toBe("0.171.0");
+  });
+});
+
 test("rotates the starting speed by round on fresh persisted threads", async () => {
   await withRunnerFixture({ phase: "final_answer" }, async ({ home, options, trace }) => {
     const report = await runCodexBenchmark({
