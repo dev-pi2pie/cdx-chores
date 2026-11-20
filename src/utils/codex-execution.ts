@@ -3,7 +3,7 @@ import type { ModelReasoningEffort } from "@openai/codex-sdk";
 import {
   resolveCodexSessionRetention,
   type CodexSessionRetention,
-} from "./codex-session-retention";
+} from "./codex-session-retention.ts";
 
 const CODEX_SPEEDS = ["standard", "fast", "ultrafast"] as const;
 export type CodexSpeed = (typeof CODEX_SPEEDS)[number];
