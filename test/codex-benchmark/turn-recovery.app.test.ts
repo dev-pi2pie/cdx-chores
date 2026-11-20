@@ -19,12 +19,14 @@ async function runRecovery(
     retention = "archive",
     cancel,
     gate,
+    shortReadback = false,
   }: {
     late?: boolean;
     originator?: string;
     retention?: "archive" | "delete";
     cancel?: "SIGTERM";
     gate?: "deadline" | "reply-conflict" | "readback-conflict";
+    shortReadback?: boolean;
   } = {},
 ) {
   return withRunnerFixture(
@@ -34,6 +36,8 @@ async function runRecovery(
         ...options.env,
         FIXTURE_LATE_TURN: late ? "1" : "0",
         FIXTURE_LIFECYCLE_GATE: cancel ? "cancel" : gate,
+        FIXTURE_SHORT_ROLLOUT_TURN:
+          caller === "benchmark" && shortReadback ? "turn-thread-1" : undefined,
         CODEX_INTERNAL_ORIGINATOR_OVERRIDE: originator,
       };
       const child =
@@ -224,11 +228,11 @@ describe.each(["benchmark", "live check"] as const)("%s turn recovery", (caller)
   test.each(["thread", "turn"] as const)(
     "ignores an unrelated %s terminal at start timeout",
     async (mismatchedCompletion) => {
-      const { first, turns, archives, interrupts, events } = await runRecovery(caller, {
-        withholdStartReply: true,
-        mismatchedCompletion,
-        interrupt: "unconfirmed",
-      });
+      const { first, turns, archives, interrupts, events } = await runRecovery(
+        caller,
+        { withholdStartReply: true, mismatchedCompletion, interrupt: "unconfirmed" },
+        { shortReadback: true },
+      );
       expect(first).toMatchObject({
         status: caller === "benchmark" ? "failed" : "error",
         sessionRetention: { status: "skipped" },
@@ -365,7 +369,7 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
           errorFirst: "errorFirst" in row,
         },
       },
-      { retention: "delete", late: "late" in row },
+      { retention: "delete", late: "late" in row, shortReadback: "known" in row },
     );
     expect(exit).toBe(1);
     expect(first).toMatchObject({
@@ -464,9 +468,18 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
       error: "conflicting turn IDs",
     },
   ])("stops after $label without using an invented turn ID", async (row) => {
-    const { first, turns, events, archives, interrupts, exit } = await runRecovery(caller, {
-      turnStartReply: { at: 1, result: row.result, announce: row.announce, complete: row.complete },
-    });
+    const { first, turns, events, archives, interrupts, exit } = await runRecovery(
+      caller,
+      {
+        turnStartReply: {
+          at: 1,
+          result: row.result,
+          announce: row.announce,
+          complete: row.complete,
+        },
+      },
+      { shortReadback: row.known },
+    );
     expect(exit).toBe(1);
     expect(first).toMatchObject({
       turnId: row.known ? "turn-thread-1" : null,
@@ -588,7 +601,7 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
     const { first, turns, events, archives, interrupts, exit } = await runRecovery(
       caller,
       { waitForInterruptThread: 1, interrupt: "unconfirmed" },
-      { cancel: "SIGTERM" },
+      { cancel: "SIGTERM", shortReadback: true },
     );
     expect(exit).toBe(143);
     expect(first).toMatchObject({

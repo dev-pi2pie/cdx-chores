@@ -7,6 +7,7 @@ import { TurnStartEvidence } from "../../../src/adapters/codex/app-server-identi
 import { CodexAppServer } from "../../../src/adapters/codex/app-server.ts";
 import { readSavedTurn } from "../../../src/adapters/codex/benchmark/rollout.ts";
 import * as retention from "../../../src/adapters/codex/session-retention.ts";
+import "./short-rollout-preload.mjs";
 
 const gate = process.env.FIXTURE_LIFECYCLE_GATE;
 const request = CodexAppServer.prototype.request;

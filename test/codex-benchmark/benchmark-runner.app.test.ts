@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { access, appendFile, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
+import { pathToFileURL } from "node:url";
 
 import {
   isLiveProcess,
@@ -15,6 +16,18 @@ import {
   withStderrTtyPreload,
   type BenchmarkProtocolEvent,
 } from "./fixtures/runner";
+
+const shortRolloutPreload = join(import.meta.dir, "fixtures/short-rollout-preload.mjs");
+
+function startCliWithShortReadback(
+  options: Parameters<typeof startCliBenchmark>[0],
+  args: string[],
+  thread: number,
+  preload = shortRolloutPreload,
+) {
+  const env = { ...options.env, FIXTURE_SHORT_ROLLOUT_TURN: `turn-thread-${thread}` };
+  return startCliBenchmark({ ...options, env }, args, preload);
+}
 
 test("reports the version using the supplied app-server environment", async () => {
   await withRunnerFixture({ appServerUserAgent: "codex/exec/0.171.0" }, async ({ options }) => {
@@ -443,7 +456,13 @@ test.each([1, 2])(
   "CLI reports transport loss during readback and keeps completed results with %i measured trials scheduled",
   async (runs) => {
     await withRunnerFixture({ exitDuringReadbackThread: 2 }, async ({ options, trace }) => {
-      const result = await startCliBenchmark({ ...options, runs }, ["--json"]).completion;
+      // Keep the default readback deadline in the control without a successor.
+      const trial = { ...options, runs };
+      const cli =
+        runs === 1
+          ? startCliBenchmark(trial, ["--json"])
+          : startCliWithShortReadback(trial, ["--json"], 2);
+      const result = await cli.completion;
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain("Transport failed");
       const report = JSON.parse(result.stdout);
@@ -464,12 +483,11 @@ test.each([1, 2])(
 
 test("CLI reports stdout EOF during a turn while the app-server is still alive", async () => {
   await withRunnerFixture({ endStdoutDuringThread: 3 }, async ({ options, trace }) => {
-    const result = await startCliBenchmark({ ...options, runs: 3 }, [
-      "--json",
-      "--show-token-usage",
-      "--session-retention",
-      "archive",
-    ]).completion;
+    const result = await startCliWithShortReadback(
+      { ...options, runs: 3 },
+      ["--json", "--show-token-usage", "--session-retention", "archive"],
+      3,
+    ).completion;
     expect(result.reason).toBe("exit-failed");
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("Transport failed");
@@ -1035,13 +1053,22 @@ test.skipIf(process.platform === "win32").each([
   async ({ first, second, exitCode }) => {
     await withRunnerFixture({ interrupt: "unconfirmed" }, async ({ options, trace }) => {
       const preload = await withStderrTtyPreload(options.cwd);
-      const cli = startCliBenchmark(options, ["--json", "--session-retention", "archive"], preload);
+      await appendFile(
+        preload,
+        `\nimport ${JSON.stringify(pathToFileURL(shortRolloutPreload).href)};\n`,
+      );
+      const cli = startCliWithShortReadback(
+        options,
+        ["--json", "--session-retention", "archive"],
+        1,
+        preload,
+      );
       try {
         await waitForMethod(trace, "turn/start");
         if (!cli.child.pid) throw new Error("Expected an owned CLI process.");
         process.kill(-cli.child.pid, first);
         await waitForMethod(trace, "turn/interrupt");
-        cli.child.kill(second);
+        expect(cli.child.kill(second)).toBe(true);
         const result = await cli.completion;
         expect(result.exitCode).toBe(exitCode);
         const cleared = result.stderr.lastIndexOf("\r\x1b[2K\r");
