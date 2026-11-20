@@ -70,7 +70,7 @@ flowchart TD
 
 The acceptance check compares the trace with JSON. A refused local write should preserve earlier usage totals. A queued request should count even if Codex rejects it or its reply is lost.
 
-**Delayed completion still needs a separate test.** A start notification can identify an active turn even if the RPC reply is late. Withhold the reply and compare the trace when a matching terminal event arrives with the trace when it never arrives. Check when the runner interrupts, applies archive or delete, and starts another trial. For the manual live check, verify whether Fast can start while Standard may still be running. The dispatch checks above did not exercise this ordering. [Turn observer](../../src/adapters/codex/benchmark/turn.ts) · [Retention policy](../../src/adapters/codex/session-retention.ts) · [Manual live check](../../scripts/spikes/codex-benchmark-live-check.ts)
+**Withheld start reply.** When Standard completed before the start RPC expired, the benchmark used the matching notification to recover the turn ID and archive the thread. The live check received the same notification but reported a start timeout. When Standard stayed active, the benchmark stopped scheduling and the live check started Fast. With the start reply restored, the benchmark interrupted the known turn at the completion deadline and required a matching terminal event before continuing. [v0.2.2-canary.7 withheld `turn/start` reply investigation](../plans/jobs/2026-11-20-canary-7-withheld-turn-start-reply.md)
 
 ## What survives a shutdown failure?
 
@@ -103,7 +103,7 @@ flowchart TD
 
 ## Upstream applicability to Codex 0.171.0
 
-The published TypeScript SDK JavaScript and declarations match 0.170.0. The native `codex exec` that runs helper prompts now uses the shared app-server client. The native app-server also ties each `turn/interrupt` reply to its target turn and returns an error if its thread listener shuts down. For the Standard/Fast check, record the target turn ID, interrupt reply, and matching terminal event before evaluating when Fast started. The benchmark still queues its own writes and runs its own shutdown timer. [Package comparison](../plans/jobs/2026-11-20-v0.2.2-canary.7-dependency-refresh.md#package-review) · [Native exec change](https://github.com/openai/codex/pull/61706) · [Interrupt ordering change](https://github.com/openai/codex/pull/62066)
+The published TypeScript SDK JavaScript and declarations match 0.170.0. The native `codex exec` that runs helper prompts now uses the shared app-server client. The native app-server also ties each `turn/interrupt` reply to its target turn and returns an error if its thread listener shuts down. The synthetic Standard/Fast comparison established how our callers handle those events. Their ordering with the native server and a provider remains open. The benchmark still queues its own writes and runs its own shutdown timer. [Package comparison](../plans/jobs/2026-11-20-v0.2.2-canary.7-dependency-refresh.md#package-review) · [Native exec change](https://github.com/openai/codex/pull/61706) · [Interrupt ordering change](https://github.com/openai/codex/pull/62066)
 
 All four issues below were open on 2026-11-20.
 
@@ -127,6 +127,8 @@ Four more fixtures started after the cancelled fixture recorded completion. Thre
 The canary.7 investigation supports the following changes and timing decision. Runtime fixes and their regression checks are pending. [v0.2.2-canary.7 investigation](../plans/jobs/2026-11-20-canary-7-turn-reporting-and-shutdown.md)
 
 - **Dispatch.** Record the attempt and sent tier once the transport queues `turn/start`. A refused write preserves the thread ID and the completeness of earlier usage totals. A queued request still counts if the server rejects it or its reply is lost.
+- **Benchmark start timeout.** If the start RPC times out after a turn was announced, use its thread and turn IDs with the existing interrupt and confirmation logic. Retain the failed trial and attributable usage. Require a matching terminal event before archive or another trial. An interrupt acknowledgement alone leaves the turn unconfirmed.
+- **Standard/Fast live check.** Match a cached terminal event to the announced Standard turn even if its start reply is missing. If Standard’s completion remains unconfirmed at timeout, report the error, skip archive, and end the comparison before Fast starts.
 - **Shutdown.** Preserve all completed trials in one JSON report. When shutdown fails, return within a deadline with a nonzero exit and `run.shutdownError`. Report the owned group as stopped only after verifying its exit.
 - **Suite cancellation.** Remember cancellation for the lifetime of the suite. Let the active fixture record its completion and reject subsequent fixture launches before they allocate a PID.
 - **Timing.** Keep the 300-second application-suite allowance while profiling the video and Codex benchmark test families.

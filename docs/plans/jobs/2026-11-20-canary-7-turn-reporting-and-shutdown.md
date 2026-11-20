@@ -15,3 +15,5 @@ Tested `v0.2.2-canary.7` at `0618462b` on macOS arm64 with Node.js 24.22.3 and B
 | Application-suite timing | Three isolated sequential runs each passed all 2,484 cases. The test process took 261.804, 251.235, and 259.019 seconds. All exceeded the 240-second reassessment threshold. Video and Codex benchmark tests accounted for the most summed case time. |
 
 The research records the resulting implementation direction. [Turn reporting and process shutdown](../../researches/research-2026-11-19-codex-turn-reporting-and-process-shutdown.md#implementation-direction) · [Timeout reassessment criteria](2026-10-18-application-test-costs-and-timeout-budgeting.md#timeout-decision)
+
+Follow-up: [v0.2.2-canary.7 withheld `turn/start` reply investigation](2026-11-20-canary-7-withheld-turn-start-reply.md).

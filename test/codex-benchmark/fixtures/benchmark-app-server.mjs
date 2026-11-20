@@ -18,6 +18,9 @@ const scenario = JSON.parse(readFileSync(join(home, "scenario.json"), "utf8"));
 const threads = new Map();
 const send = (message) => console.log(JSON.stringify(message));
 const trace = (event) => appendFileSync(join(home, "events.jsonl"), `${JSON.stringify(event)}\n`);
+const traceLifecycle = (method, params) => {
+  if (scenario.traceLifecycle) trace({ method, params });
+};
 const notification = (method, params) => send({ method, params });
 const event = (type, payload) =>
   `${JSON.stringify({ type: "event_msg", payload: { type, ...payload } })}\n`;
@@ -39,6 +42,7 @@ function openTurn(thread) {
     event("task_started", { turn_id: thread.turnId }) +
       (usage ? event("token_count", { info: { total_token_usage: usage } }) : ""),
   );
+  traceLifecycle("turn/started", { threadId: thread.id, turnId: thread.turnId });
   notification("turn/started", {
     threadId: thread.id,
     turn: { id: thread.turnId, status: "inProgress" },
@@ -156,6 +160,7 @@ async function run() {
           data: ["model-a", "model-b"].map((model) => ({
             model,
             isDefault: model === "model-a",
+            supportedReasoningEfforts: [{ reasoningEffort: "low" }],
             serviceTiers: [
               { id: "priority", name: "Fast" },
               ...(model === "model-a" ? [{ id: "ultrafast", name: "Ultrafast" }] : []),
@@ -209,8 +214,16 @@ async function run() {
           reject("fixture rejected turn/start after unrelated completion");
           break;
         }
-        if (!scenario.withholdStartReply)
+        if (
+          !scenario.withholdStartReply &&
+          thread.id !== `thread-${scenario.withholdStartReplyThread}`
+        ) {
           reply({ turn: { id: thread.turnId, status: "inProgress" } });
+          traceLifecycle("fixture/turn-start-reply", {
+            threadId: thread.id,
+            turnId: thread.turnId,
+          });
+        }
         if (thread.id === `thread-${scenario.endStdoutDuringThread}`) {
           process.stdout.end(() => trace({ method: "stdout-ended" }));
           break;
@@ -240,6 +253,10 @@ async function run() {
       case "turn/interrupt":
         if (params.turnId !== thread.turnId) throw new Error("Interrupted the wrong turn.");
         reply({});
+        traceLifecycle("fixture/turn-interrupt-reply", {
+          threadId: thread.id,
+          turnId: thread.turnId,
+        });
         if (scenario.interrupt !== "unconfirmed") completeTurn(thread, "interrupted");
         break;
       case "thread/read":
