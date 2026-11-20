@@ -129,6 +129,16 @@ test.each([
     exitCode: 0,
   },
   {
+    message: 'Unsupported parameter: "service_tier" is not supported with this model.',
+    status: "unavailable",
+    exitCode: 0,
+  },
+  {
+    message: 'Unsupported parameter: "image_url" is not supported with this service tier.',
+    status: "failed",
+    exitCode: 1,
+  },
+  {
     message: "Invalid value for 'service_tier': priority.",
     status: "unavailable",
     exitCode: 0,
