@@ -85,7 +85,13 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
   const prompt = await loadPrompt(runtime.cwd, options.promptFile);
   const { runCodexBenchmark } = await import("../../adapters/codex/benchmark");
   const cancellation = new AbortController();
-  const cancel = () => cancellation.abort();
+  let signalExitCode: number | undefined;
+  const cancel = (exitCode: number) => {
+    signalExitCode ??= exitCode;
+    cancellation.abort();
+  };
+  const interrupt = () => cancel(130);
+  const terminate = () => cancel(143);
   const workload: BenchmarkWorkloadOptions = {
     ...(options.case
       ? { cases: options.case }
@@ -102,8 +108,8 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
           transient: options.json,
           showTokenUsage: options.showTokenUsage && !options.compact,
         });
-  process.on("SIGINT", cancel);
-  process.on("SIGTERM", cancel);
+  process.on("SIGINT", interrupt);
+  process.on("SIGTERM", terminate);
   try {
     const result = await runCodexBenchmark({
       ...workload,
@@ -176,14 +182,14 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
         `${colors.red("Shutdown failed")}: ${safeTerminalText(result.shutdownError)}\n`,
       );
     }
-    if (result.interrupted) process.exitCode = 130;
+    if (signalExitCode !== undefined) process.exitCode = signalExitCode;
     else if (failed || completedMeasuredTrials === 0 || result.shutdownError) process.exitCode = 1;
   } finally {
     try {
       progress?.stop();
     } finally {
-      process.off("SIGINT", cancel);
-      process.off("SIGTERM", cancel);
+      process.off("SIGINT", interrupt);
+      process.off("SIGTERM", terminate);
     }
   }
 }

@@ -983,27 +983,38 @@ for (const json of [false, true]) {
   );
 }
 
-test.skipIf(process.platform === "win32")(
-  "clears JSON progress and keeps the skipped-retention warning on unconfirmed cancellation",
-  async () => {
+test.skipIf(process.platform === "win32").each([
+  { first: "SIGINT", second: "SIGTERM", exitCode: 130 },
+  { first: "SIGTERM", second: "SIGINT", exitCode: 143 },
+] as const)(
+  "clears JSON progress and keeps the skipped-retention warning when $first cancels the active turn",
+  async ({ first, second, exitCode }) => {
     await withRunnerFixture({ interrupt: "unconfirmed" }, async ({ options, trace }) => {
       const preload = await withStderrTtyPreload(options.cwd);
       const cli = startCliBenchmark(options, ["--json", "--session-retention", "archive"], preload);
       try {
         await waitForMethod(trace, "turn/start");
         if (!cli.child.pid) throw new Error("Expected an owned CLI process.");
-        process.kill(-cli.child.pid, "SIGINT");
+        process.kill(-cli.child.pid, first);
+        await waitForMethod(trace, "turn/interrupt");
+        cli.child.kill(second);
         const result = await cli.completion;
-        expect(result.exitCode).toBe(130);
+        expect(result.exitCode).toBe(exitCode);
         const cleared = result.stderr.lastIndexOf("\r\x1b[2K\r");
         const warning = "Session retention \x1b[33mskipped\x1b[39m (thread-1):";
         expect(cleared).toBeGreaterThan(-1);
         expect(result.stderr.indexOf(warning)).toBeGreaterThan(cleared);
-        expect(JSON.parse(result.stdout).trials[0]).toMatchObject({
+        const report = JSON.parse(result.stdout);
+        expect(report.run.interrupted).toBe(true);
+        expect(report.trials).toHaveLength(1);
+        expect(report.trials[0]).toMatchObject({
           status: "cancelled",
           sessionRetention: { status: "skipped" },
         });
-        expect(traceMethod(await trace(), "thread/archive")).toHaveLength(0);
+        const events = await trace();
+        expect(traceMethod(events, "turn/start")).toHaveLength(1);
+        expect(traceMethod(events, "turn/interrupt")).toHaveLength(1);
+        expect(traceMethod(events, "thread/archive")).toHaveLength(0);
       } finally {
         cli.shutdown();
         await cli.completion;
