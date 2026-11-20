@@ -150,10 +150,10 @@ async function run() {
         if (scenario.initializeError) {
           reject("fixture refused initialization");
         } else {
-          const version = scenario.appServerVersion;
+          const { appServerUserAgent = "cdx_chores/0.170.0" } = scenario;
           reply({
             codexHome: home,
-            userAgent: version === null ? null : `cdx_chores/${version ?? "0.170.0"}`,
+            userAgent: appServerUserAgent,
           });
         }
         break;

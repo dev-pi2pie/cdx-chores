@@ -16,16 +16,22 @@ import { REPO_ROOT } from "../../helpers/cli-test-utils";
 import { createDoctorFixture } from "../fixtures";
 
 test.each([
-  ["0.170.0", "met"],
-  ["0.170.0+local", "met"],
-  ["1.0.0", "met"],
-  ["0.169.9", "unverified"],
-  ["0.170.0-beta.1", "unverified"],
-  [null, "unverified"],
+  ["cdx_chores/0.170.0", "met", "0.170.0"],
+  ["cdx_chores/0.170.0+local", "met", "0.170.0+local"],
+  ["cdx_chores/1.0.0", "met", "1.0.0"],
+  ["cdx_chores/0.169.9", "unverified", "0.169.9"],
+  ["cdx_chores/0.170.0-beta.1", "unverified", "0.170.0-beta.1"],
+  ["codex_exec/0.171.0 (fixture)", "met", "0.171.0"],
+  ["codex_exec/0.170.0-beta.1+local", "unverified", "0.170.0-beta.1+local"],
+  ["/0.171.0", "unverified", null],
+  ["codex exec/0.171.0", "unverified", null],
+  ["codex_exec/0.171.0/extra", "unverified", null],
+  ["codex_exec/invalid cdx_chores/0.171.0", "unverified", null],
+  [null, "unverified", null],
 ] as const)(
-  "doctor checks app-server version %s using only initialization",
-  async (version, status) => {
-    await withRunnerFixture({ appServerVersion: version }, async ({ options, trace }) => {
+  "doctor checks app-server user agent %j using only initialization",
+  async (appServerUserAgent, status, version) => {
+    await withRunnerFixture({ appServerUserAgent }, async ({ options, trace }) => {
       const check = await inspectCodexBenchmark(options.cwd, options.env);
       expect(check).toMatchObject({ status, version, minimumVersion: "0.170.0" });
       const methods = (await trace()).map(({ method }) => method);
@@ -44,7 +50,7 @@ test.skipIf(process.platform === "win32").each([
   "doctor reports shutdown failure when initialization $initialization and the child is still alive",
   async ({ initializeError, escalation }) => {
     await withRunnerFixture(
-      { appServerVersion: "0.171.0", resistantLeader: true, initializeError },
+      { appServerUserAgent: "cdx_chores/0.171.0", resistantLeader: true, initializeError },
       async ({ home, options, trace }) => {
         const build = await Bun.build({
           entrypoints: [join(REPO_ROOT, "src/cli/doctor/codex-benchmark.ts")],

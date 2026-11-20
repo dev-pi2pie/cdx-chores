@@ -7,7 +7,7 @@ import type { BenchmarkOptions } from "../../../src/adapters/codex/benchmark/typ
 import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 interface Scenario {
-  appServerVersion?: string | null;
+  appServerUserAgent?: string | null;
   initializeError?: boolean;
   stallInitialization?: boolean;
   withholdThreadStartReply?: boolean;

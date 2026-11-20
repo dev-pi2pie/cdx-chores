@@ -34,7 +34,7 @@ export async function discoverCodexInfo(options: CodexDiscoveryOptions): Promise
     const version =
       typeof initialized.userAgent === "string"
         ? initialized.userAgent.match(
-            /^cdx_chores\/([0-9]+\.[0-9]+\.[0-9]+(?:[-+][\w.-]+)?)(?:\s|$)/,
+            /^[^/\s]+\/([0-9]+\.[0-9]+\.[0-9]+(?:[-+][\w.-]+)?)(?:\s|$)/,
           )?.[1]
         : undefined;
     if (!version) throw new Error("Codex discovery did not report a valid CLI version.");

@@ -17,7 +17,7 @@ export interface CodexBenchmarkPrerequisites {
 function assessInitializedVersion(userAgent: unknown): CodexBenchmarkPrerequisites {
   const match =
     typeof userAgent === "string"
-      ? /^cdx_chores\/((\d+)\.(\d+)\.(\d+)(-[\w.-]+)?(?:\+[\w.-]+)?)(?:\s|$)/u.exec(userAgent)
+      ? /^[^/\s]+\/((\d+)\.(\d+)\.(\d+)(-[\w.-]+)?(?:\+[\w.-]+)?)(?:\s|$)/u.exec(userAgent)
       : null;
   if (!match) {
     return {
