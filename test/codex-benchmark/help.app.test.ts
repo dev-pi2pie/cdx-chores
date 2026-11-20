@@ -15,7 +15,9 @@ test("benchmark help explains shared runs, inheritance, retention and both outpu
   expect(help).toContain("Measured trials per combination or case occurrence (default: 3)");
   expect(help).toContain("Repeated pairs share a summary row.");
   expect(help).toContain("codex-bench --case MODEL=fast --case OTHER_MODEL=ultrafast --runs 1");
-  expect(help).toContain("codex-bench --codex-model MODEL --codex-speed standard --codex-speed fast");
+  expect(help).toContain(
+    "codex-bench --codex-model MODEL --codex-speed standard --codex-speed fast",
+  );
   expect(help).toContain("--compact Show medians");
   expect(help).toContain("--json Write one JSON report to stdout");
 });
