@@ -1,7 +1,7 @@
 ---
 title: "Contributor Testing Guide"
 created-date: 2026-09-06
-modified-date: 2026-11-19
+modified-date: 2026-11-20
 status: completed
 agent: codex
 ---
@@ -57,7 +57,7 @@ See [DuckDB extension setup](data-duckdb-usage.md) for inspection and troublesho
 
 ## CI publishing runtimes
 
-The npm and GitHub Packages workflows build with Node.js 24.22.3 and Bun 1.4.4. These exact workflow versions are separate from the package compatibility minimum and do not require a `packageManager` field. Both workflows use frozen lockfile installation.
+The npm and GitHub Packages workflows build with Node.js 24.22.3 and Bun 1.4.5. These exact workflow versions are separate from the package compatibility minimum and do not require a `packageManager` field. Both workflows use frozen lockfile installation.
 
 Actions are pinned to full commit SHAs with release-version comments. The release-notes workflow uses the pinned git-cliff action's default executable version without a separate override. The npm publish step keeps `NODE_AUTH_TOKEN: ""` for its generated registry configuration and authenticates through OIDC; GitHub Packages uses `GITHUB_TOKEN`. The current publishing workflows build packages but do not run the managed test suites. Run the applicable checks before publishing. See the [CI action and runtime refresh record](../plans/jobs/2026-10-23-ci-action-pins-and-runtime-refresh.md) for the reviewed pins, verification, and remaining hardening work.
 
