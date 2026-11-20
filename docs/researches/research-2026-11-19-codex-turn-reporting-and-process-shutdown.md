@@ -1,69 +1,103 @@
 ---
 title: "Codex turn reporting and process shutdown in canary.6"
 created-date: 2026-11-19
+modified-date: 2026-11-20
 status: draft
 agent: codex
 ---
 
 ## Research question
 
-If a Codex request fails or its process stops, what can `cdx-chores` still report about the turn and its saved session? The maintainer’s latest `bun run test:all` passed on `v0.2.2-canary.6`. Two injected failures on that source affected benchmark JSON. The CLI reported an inference attempt after a refused write, and a denied shutdown signal prevented it from writing the report.
+When a Codex operation fails, what can the CLI still tell the user about the turn, saved session, and local process? The maintainer’s latest `bun run test:all` passed on `v0.2.2-canary.6`. Two targeted benchmark checks on that source exposed a misreported attempt and a missing JSON report. Both used a Node CLI built from the tagged source, one warm-up, one measured trial, and a synthetic app-server. The normal control exited 0 with both turns and complete usage. The frequency of the injected failures in ordinary use is unknown. [Benchmark fixture](../../test/codex-benchmark/fixtures/benchmark-app-server.mjs)
 
-## Benchmark execution flow
+## Which commands talk to Codex?
 
-The benchmark talks directly to `codex app-server`. The dotted branches mark the two outcomes reproduced with a synthetic server. SDK helpers run prompts through `thread.run()`. Cancellation on that path still needs verification on SDK 0.170.0.
+| Command or action | How it uses Codex | What the caller needs back |
+| --- | --- | --- |
+| `codex-bench` | Talks directly to `codex app-server` for trial threads, turns, and retention. | A report containing the measurements already collected and any shutdown error. [Benchmark runner](../../src/adapters/codex/benchmark/index.ts) |
+| Codex helpers for rename, data query/stack, Markdown/PDF, and interactive workflows | Run prompts through SDK `thread.run()` and `codex exec`. Helpers with archive or delete selected can open an app-server after final thread use. | The helper’s answer or original error, plus a diagnostic if requested retention failed or was skipped. Supported flags vary by command. [Command scope](../guides/codex-execution-configuration.md#command-scope) · [SDK helper entry point](../../src/adapters/codex/shared.ts) |
+| `doctor` benchmark readiness check | Initializes an app-server, reads the reported version, and closes the connection. It creates no trial thread. | A readiness diagnostic. [Doctor probe](../../src/cli/doctor/codex-benchmark.ts) |
+| `codex-info` discovery | Uses `DiscoveryTransport` to initialize an app-server, read configuration, and request model metadata when needed. | Discovery results. This transport has its own shutdown implementation. [Discovery](../../src/adapters/codex/discovery/index.ts) · [Transport](../../src/adapters/codex/discovery/transport.ts) |
 
-**Before — cdx-chores v0.2.2-canary.6 benchmark execution**
+## One helper session, from prompt to retention
+
+For example, `data query codex` captures a SQL draft through the SDK. If the helper reuses a thread, it can finish follow-ups before retention runs. With the default `keep`, it opens no retention app-server. With `archive` or `delete`, it needs the owned thread ID and confirmation that its last turn completed. The wrapper uses the SDK result’s usage field as completion evidence. [SQL helper](../../src/cli/data-query/runner.ts) · [Thread lifecycle](../../src/adapters/codex/session-lifecycle.ts)
+
+**Current — cdx-chores v0.2.2-canary.6 helper session**
 
 ```mermaid
 flowchart TD
-    thread["thread/start returns a thread ID"] --> dispatch["Record attempt and tier, then write turn/start"]
-    dispatch -.->|Write throws| unsent["JSON reports an unsent turn as attempted and marks usage partial."]
-    dispatch -->|Write succeeds| observe["Wait for a matching terminal event"]
-    observe -->|Completion confirmed| trial["Read saved usage and apply session retention"]
-    trial -->|Another trial| thread
-    trial -->|Last trial| close["Close app-server before writing the report"]
-    close -->|Shutdown succeeds| report["Write benchmark JSON"]
-    close -.->|Timed SIGKILL throws EPERM| lost["Completed trials, empty stdout"]
+    prompt["SDK thread.run() via codex exec"] --> result["Capture turn result or error"]
+    result -->|Follow-up on this thread| prompt
+    result -->|Final use| mode{"Retention mode?"}
+    mode -->|Keep| done["Return helper outcome"]
+    mode -->|Archive or delete| eligible{"Owned ID and completed last turn?"}
+    eligible -->|No| skip["Report skipped retention"]
+    eligible -->|Yes| server["Initialize app-server, request retention, then close"]
+    skip --> done
+    server -->|Success| done
+    server -->|On failure, warn and preserve the helper outcome.| done
 ```
 
-The proposed flow records an attempt only after the transport queues the write. If shutdown fails, the CLI includes the error alongside the completed trials in the same JSON report.
+## When does a benchmark turn count as dispatched?
 
-**Proposed**
+A successful `thread/start` supplies a session ID. On canary.6 the runner records the inference attempt and sent tier before writing `turn/start`. An attempted inference with missing counts makes the invocation’s usage total partial. [Benchmark runner](../../src/adapters/codex/benchmark/index.ts) · [Usage accounting](../../src/cli/codex-bench/usage.ts)
+
+**Before — cdx-chores v0.2.2-canary.6 benchmark dispatch**
 
 ```mermaid
 flowchart TD
-    thread["thread/start returns a thread ID"] --> dispatch{"Did the local transport queue turn/start?"}
-    dispatch -->|Write refused| unsent["Record failed trial with thread ID<br/>inferenceAttempted = false, sentTier = null"]
-    dispatch -->|Write queued| sent["Set inferenceAttempted = true and record the sent tier"]
-    sent -->|Server rejects request| rejected["Record failed trial and retain dispatch details"]
-    sent -->|Matching completion| trial["Read saved usage and apply session retention"]
-    trial -->|Another trial| thread
-    trial -->|Last trial| close["Shut down app-server and verify exit by deadline"]
-    unsent -->|Run ends| close
-    rejected -->|Run ends| close
-    close -->|Exit verified| report["Write benchmark JSON once with all recorded trials"]
+    thread["Receive thread ID"] --> record["Set inferenceAttempted and sentTier"]
+    record --> write["Write turn/start"]
+    write -.->|Write throws| unsent["JSON reports an unsent turn as attempted and marks usage partial."]
+    write -->|Server rejects queued request| rejected["Failed trial retains attempt and sent tier"]
+```
+
+**Observed.** When the second write threw before queuing any bytes, the fixture received only the first turn. JSON showed an attempt and the `default` tier for the second. In the rejection control, the fixture received and rejected both requests. Recording both attempts was correct.
+
+**Proposed — benchmark dispatch**
+
+```mermaid
+flowchart TD
+    thread["Receive thread ID"] --> write{"Did the transport queue turn/start?"}
+    write -->|Write refused| unsent["Keep thread ID, inferenceAttempted = false, sentTier = null"]
+    write -->|Write queued| sent["Set inferenceAttempted = true and record sent tier"]
+    sent -->|Server rejects request| rejected["Keep dispatch details on failed trial"]
+    sent -->|Matching completion| complete["Record turn result and recover usage"]
+```
+
+The acceptance check compares the trace with JSON. A refused local write should preserve earlier usage totals. A queued request should count even if Codex rejects it or its reply is lost.
+
+**Delayed completion still needs a separate test.** A start notification can identify an active turn even if the RPC reply is late. Withhold the reply and compare the trace when a matching terminal event arrives with the trace when it never arrives. Check when the runner interrupts, applies archive or delete, and starts another trial. For the manual live check, verify whether Fast can start while Standard may still be running. The dispatch checks above did not exercise this ordering. [Turn observer](../../src/adapters/codex/benchmark/turn.ts) · [Retention policy](../../src/adapters/codex/session-retention.ts) · [Manual live check](../../scripts/spikes/codex-benchmark-live-check.ts)
+
+## What survives a shutdown failure?
+
+At shutdown the benchmark already holds its trial records. On canary.6, a timer sends `SIGKILL` after one second of grace. If the timer callback throws, the error escapes the caller’s `await close()`. Catching and ignoring it could leave the CLI waiting indefinitely for the child, since the bounded group-exit check starts only after child closure. [App-server shutdown](../../src/adapters/codex/app-server.ts) · [Report writer](../../src/cli/commands/codex-bench.ts)
+
+**Before — cdx-chores v0.2.2-canary.6 benchmark shutdown**
+
+```mermaid
+flowchart TD
+    trials["Trials already recorded"] --> close["Request shutdown and await close()"]
+    close -->|Shutdown succeeds| report["Write benchmark JSON"]
+    close -.->|Timed SIGKILL throws EPERM| lost["CLI exits with empty stdout"]
+```
+
+**Observed.** Both turns completed while the fixture delayed exit beyond the grace period. With escalation allowed, the CLI exited 0 and returned both results. When the group kill threw `EPERM`, the CLI exited 1 without writing either result.
+
+**Proposed — benchmark shutdown**
+
+```mermaid
+flowchart TD
+    trials["Trials already recorded"] --> close["Request shutdown, escalate if needed, and verify exit by deadline"]
+    close -->|Exit verified| report["Write one JSON report with all recorded trials"]
     close -->|Shutdown failed or exit unverified| failure["Set run.shutdownError and a nonzero exit status"]
     failure --> report
 ```
 
-## What the benchmark can establish
+**First fix to evaluate.** Deny escalation while the leader is alive. Require a bounded nonzero CLI exit and valid JSON containing both completed trials and the shutdown diagnostic. Independently observe the owned group before claiming that its workers exited.
 
-1. **Dispatch.** A successful `thread/start` identifies a session. The runner sets `inferenceAttempted` and `sentTier` before it writes `turn/start`. If that write fails synchronously, the report still counts an attempt. This also affects token accounting because an attempted inference with missing counts makes the total partial. A request that the server receives and rejects legitimately counts as an attempt. [Benchmark runner](../../src/adapters/codex/benchmark/index.ts) · [Usage accounting](../../src/cli/codex-bench/usage.ts)
-2. **Completion and retention.** A start notification can identify an active turn even if the request reply is late. The runner needs a matching terminal event before it can safely advance or archive or delete the thread. Delayed completion remains untested in the canary.6 checks below. To test it, withhold the start reply and compare the request trace when terminal confirmation arrives with the trace when it never arrives. Check whether the manual live check starts Fast while Standard may still be running. [Turn observer](../../src/adapters/codex/benchmark/turn.ts) · [Session retention](../../src/adapters/codex/session-retention.ts) · [Manual live check](../../scripts/spikes/codex-benchmark-live-check.ts)
-3. **Process exit.** The runner accumulates measurements before closing the app-server. A shutdown failure should still let the caller read those measurements and `run.shutdownError`. In canary.6, a timer sends `SIGKILL` after a one-second grace period. An exception inside that callback escapes the caller’s `await close()`. Swallowing the exception could leave the caller waiting indefinitely for a live child. The bounded process-group check starts only after child closure. [App-server shutdown](../../src/adapters/codex/app-server.ts) · [Benchmark reporting](../../src/cli/commands/codex-bench.ts)
-
-## Local evidence on canary.6
-
-A Node CLI built from the tagged source ran one warm-up and one measured trial against the repository’s synthetic app-server. The checks compared its request and completion trace with CLI stdout. The normal control exited 0 with both turns and complete usage. Faults below were injected locally. Their frequency in ordinary use is unknown. [App-server fixture](../../test/codex-benchmark/fixtures/benchmark-app-server.mjs)
-
-| Condition | Observed result |
-| --- | --- |
-| The second `turn/start` write threw before queuing any bytes | The fixture received only the first turn. The report still marked the second as attempted, recorded tier `default`, and marked aggregate usage partial. |
-| The server explicitly rejected both `turn/start` requests | Both requests appeared in the trace. The report recorded attempted inference, the sent tier, and partial usage. |
-| The server delayed exit beyond the grace period | With escalation allowed, the CLI exited 0 and returned both results. With the group `SIGKILL` forced to throw `EPERM`, the trace still contained both completions, but the CLI exited 1 with empty stdout. |
-
-The first local fix to evaluate is bounded shutdown with report preservation. Repeat the denied-signal case while the leader is alive and require valid JSON containing both results, a shutdown diagnostic, and a bounded nonzero exit. Observe the owned process group independently before claiming cleanup succeeded. Dispatch accounting has a separate acceptance check: a refused local write should leave the trial’s sent tier empty and preserve earlier usage totals, while a dispatched request that is rejected should retain its attempt and tier.
+**Other callers to verify.** Helper retention and the `doctor` probe share `CodexAppServer.close()`. The empty-stdout result was reproduced through the benchmark only. For helper retention, inject a shutdown failure after a successful SDK turn and check that the answer survives with a retention diagnostic. For `doctor`, check that the probe returns a diagnostic within a deadline. Assess `codex-info` separately through its discovery transport.
 
 ## Upstream applicability to 0.170.0
 
