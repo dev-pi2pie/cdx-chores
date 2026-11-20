@@ -118,7 +118,10 @@ async function run() {
     }
     const thread = threads.get(params?.threadId);
     if (params?.threadId && !thread) throw new Error(`Unknown thread in ${method}`);
-    if (method === scenario.rejectStart) {
+    if (
+      method === scenario.rejectStart ||
+      (method === "turn/start" && thread.id === `thread-${scenario.rejectTurnStartThread}`)
+    ) {
       reject(`fixture rejected ${method}`);
       continue;
     }

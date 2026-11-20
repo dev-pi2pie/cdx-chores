@@ -462,8 +462,13 @@ test("CLI reports stdout EOF observed during final rollout readback", async () =
 
 test("CLI retains matching completions when turn/start replies are withheld", async () => {
   await withRunnerFixture({ withholdStartReply: true }, async ({ options, trace }) => {
-    const result = await startCliBenchmark(options, ["--json", "--session-retention", "archive"])
-      .completion;
+    const result = await startCliBenchmark(options, [
+      "--json",
+      "--codex-speed",
+      "standard",
+      "--session-retention",
+      "archive",
+    ]).completion;
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     const report = JSON.parse(result.stdout);
@@ -472,6 +477,8 @@ test("CLI retains matching completions when turn/start replies are withheld", as
       [true, false].map((warmup, index) => ({
         warmup,
         status: "completed",
+        inferenceAttempted: true,
+        sentTier: "default",
         threadId: `thread-${index + 1}`,
         turnId: `turn-thread-${index + 1}`,
         turnDurationMs: 800,
@@ -479,9 +486,14 @@ test("CLI retains matching completions when turn/start replies are withheld", as
         sessionRetention: { status: "archived" },
       })),
     );
+    const events = await trace();
     expect(
-      traceMethod(await trace(), "thread/archive").map(({ params }) => params?.threadId),
-    ).toEqual(["thread-1", "thread-2"]);
+      traceMethod(events, "turn/start").map(({ params }) => params?.serviceTierForTurn),
+    ).toEqual(["default", "default"]);
+    expect(traceMethod(events, "thread/archive").map(({ params }) => params?.threadId)).toEqual([
+      "thread-1",
+      "thread-2",
+    ]);
   });
 }, 15_000);
 

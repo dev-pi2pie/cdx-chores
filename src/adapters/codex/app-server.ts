@@ -19,6 +19,7 @@ interface PendingRequest {
 interface RequestOptions {
   timeoutMs?: number;
   signal?: AbortSignal;
+  onQueued?: () => void;
 }
 
 function appServerExitError(code: number | null, signal: NodeJS.Signals | null): Error {
@@ -123,6 +124,7 @@ export class CodexAppServer {
 
   private send(message: object): void {
     this.signal.throwIfAborted();
+    if (!this.child.stdin.writable) throw new Error("Codex app-server stdin is not writable.");
     this.child.stdin.write(`${JSON.stringify(message)}\n`);
   }
 
@@ -178,7 +180,7 @@ export class CodexAppServer {
   async request<T = unknown>(
     method: string,
     params: object,
-    { timeoutMs = requestTimeoutMs, signal }: RequestOptions = {},
+    { timeoutMs = requestTimeoutMs, signal, onQueued }: RequestOptions = {},
   ): Promise<T> {
     signal?.throwIfAborted();
     this.signal.throwIfAborted();
@@ -208,6 +210,7 @@ export class CodexAppServer {
       signal?.addEventListener("abort", onAbort, { once: true });
       try {
         this.send({ id, method, params });
+        onQueued?.();
       } catch (error) {
         pending.reject(error);
       }

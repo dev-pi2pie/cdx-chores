@@ -204,15 +204,22 @@ class BenchmarkRunner {
       observer = new TrialObserver(this.server, thread.id, this.options.onFirstText);
       this.server.signal.throwIfAborted();
       turnMayBeActive = true;
-      trial.inferenceAttempted = true;
-      trial.sentTier = tier ?? null;
       trial.turnId = await observer.waitForStart(
-        this.server.request<{ turn: Turn }>("turn/start", {
-          threadId: thread.id,
-          effort: reasoningEffort ?? undefined,
-          serviceTierForTurn: tier,
-          input: [{ type: "text", text: prompt, text_elements: [] }],
-        }),
+        this.server.request<{ turn: Turn }>(
+          "turn/start",
+          {
+            threadId: thread.id,
+            effort: reasoningEffort ?? undefined,
+            serviceTierForTurn: tier,
+            input: [{ type: "text", text: prompt, text_elements: [] }],
+          },
+          {
+            onQueued() {
+              trial.inferenceAttempted = true;
+              trial.sentTier = tier ?? null;
+            },
+          },
+        ),
         signal,
       );
       observer.watchFirstText(trial.turnId);

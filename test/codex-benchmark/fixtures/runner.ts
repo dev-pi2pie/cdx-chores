@@ -31,6 +31,7 @@ interface Scenario {
   serverInterrupt?: { thread: number; message: string | null };
   rejectFast?: string;
   rejectStart?: "thread/start" | "turn/start";
+  rejectTurnStartThread?: number;
   retentionError?: boolean;
   usageSnapshots?: Array<Record<string, number> | null>;
   resistantWorker?: boolean;
