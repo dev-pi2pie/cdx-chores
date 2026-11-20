@@ -44,7 +44,8 @@ export const SUITE_POLICIES: Readonly<Record<Suite, SuitePolicy>> = Object.freez
       "pdfjs",
     ]),
     preflight: limits(20_000),
-    execution: limits(300_000),
+    // The complete application regression set can exceed five minutes.
+    execution: limits(360_000),
   }),
   codex: Object.freeze({
     prerequisites: Object.freeze([...common, "Node.js", "Installed repository Codex CLI"]),
