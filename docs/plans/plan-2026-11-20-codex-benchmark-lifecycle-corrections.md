@@ -37,8 +37,8 @@ For every continuation or stop check in Phases 1 and 2, trace a distinguishable 
 
 ## Phase 3. Live-check test launcher and shutdown
 
-- [ ] Move the turn-recovery and shared-shutdown suites to a test-owned launcher that runs the Standard/Fast live check. [Turn recovery tests](../../test/codex-benchmark/turn-recovery.app.test.ts) · [Shared shutdown tests](../../test/codex-benchmark/shared-shutdown.app.test.ts)
-- [ ] On POSIX, cover group `SIGKILL` that reports success with delivery suppressed. Independently observe the leader and worker alive at caller exit before fixture release. Require exit `1`, a shutdown deadline diagnostic on stderr and both completed Standard/Fast results in JSON. Bound caller exit and verify fixture cleanup by a deadline, including after assertion failure.
+- [x] Move the turn-recovery and shared-shutdown suites to a test-owned launcher that runs the Standard/Fast live check. [Turn recovery tests](../../test/codex-benchmark/turn-recovery.app.test.ts) · [Shared shutdown tests](../../test/codex-benchmark/shared-shutdown.app.test.ts)
+- [x] On POSIX, cover group `SIGKILL` that reports success with delivery suppressed. Independently observe the leader and worker alive at caller exit before fixture release. Require exit `1`, a shutdown deadline diagnostic on stderr and both completed Standard/Fast results in JSON. Bound caller exit and verify fixture cleanup by a deadline, including after assertion failure.
 
 ## Phase 4. Documentation, validation and closeout
 
