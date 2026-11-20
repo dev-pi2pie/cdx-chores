@@ -2,7 +2,7 @@
 title: "Codex benchmark lifecycle corrections"
 created-date: 2026-11-20
 modified-date: 2026-11-20
-status: draft
+status: active
 agent: codex
 ---
 
@@ -12,11 +12,11 @@ Align dispatch reporting, scheduling and retention in `codex-bench` and the Stan
 
 ## Implementation Record
 
-Create `docs/plans/jobs/2026-11-20-codex-benchmark-lifecycle-corrections.md` when implementation starts and link it here. Use its actual UTC creation date in front matter. Under the matching numbered phase headings, record each completed phase’s checkpoint, tested revision, evidence and review outcome.
+The [unified job record](jobs/2026-11-20-codex-benchmark-lifecycle-corrections.md) records each completed phase’s checkpoint, tested revision, evidence and review outcome under the matching numbered headings.
 
 ## Phase 1. Local dispatch and reporting
 
-- [ ] Check reports and protocol traces through the built Node benchmark and the live check. Local stdin acceptance of `turn/start` sets the benchmark attempt and any explicit `sentTier` in both callers. Before acceptance, the benchmark reports `inferenceAttempted: false` and both report `sentTier: null`. [Dispatch tests](../../test/codex-benchmark/dispatch-accounting.app.test.ts)
+- [x] Check reports and protocol traces through the built Node benchmark and the live check. Local stdin acceptance of `turn/start` sets the benchmark attempt and any explicit `sentTier` in both callers. Before acceptance, the benchmark reports `inferenceAttempted: false` and both report `sentTier: null`. [Dispatch tests](../../test/codex-benchmark/dispatch-accounting.app.test.ts)
 
 For every continuation or stop check in Phases 1 and 2, trace a distinguishable planned successor’s `thread/start` and `turn/start` or their absence, including Fast after Standard in the live check.
 
