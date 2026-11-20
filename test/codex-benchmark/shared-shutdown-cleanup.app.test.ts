@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { access, readFile, readdir, writeFile } from "node:fs/promises";
+import { access, readFile, readdir, unlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { Writable } from "node:stream";
 import { isLiveProcess, observeProcessGroup } from "../../scripts/testing/execution/process-table";
@@ -22,12 +22,24 @@ import {
   withShutdownFixture,
 } from "./fixtures/shutdown";
 
-const cases = ["assertion failure", "partial spawn receipt", "observation failure"] as const;
+const cases = [
+  "assertion failure",
+  "launch rejected",
+  "missing spawn receipt",
+  "interrupted spawn receipt",
+  "partial spawn receipt",
+  "observation failure",
+] as const;
 type Case = (typeof cases)[number];
 interface Control {
   home?: string;
   groupId?: number;
   callerStopped?: boolean;
+  neverStarted?: boolean;
+}
+
+function canVerify(mode: Case) {
+  return mode === "assertion failure" || mode === "launch rejected";
 }
 
 async function runControl(mode: Case, control: Control) {
@@ -41,18 +53,42 @@ async function runControl(mode: Case, control: Control) {
     { resistantLeader: true, resistantWorker: true },
     async (fixture) => {
       control.home = fixture.home;
-      const owned = startShutdownLiveCheck(fixture, "allowed");
+      const launch =
+        mode === "launch rejected"
+          ? {
+              ...fixture,
+              options: {
+                ...fixture.options,
+                env: {
+                  ...fixture.options.env,
+                  CDX_CHORES_CODEX_PATH: join(fixture.home, "missing-app-server"),
+                },
+              },
+            }
+          : fixture;
+      const owned = startShutdownLiveCheck(launch, "allowed");
       const result = await owned.completion;
       control.callerStopped = result.stopped;
+      const receipt = join(fixture.home, "app-server-spawn");
       control.groupId = await readSpawnedLeader(fixture.home);
+      if (mode === "launch rejected") {
+        expect(result.exitCode, result.stderr).toBe(1);
+        expect(result.stderr).toContain("ENOENT");
+        expect(await readFile(receipt, "utf8")).toBe("not-started\n");
+        await expect(access(join(fixture.home, "leader.pid"))).rejects.toMatchObject({
+          code: "ENOENT",
+        });
+        control.neverStarted = true;
+        throw new Error("Expected app-server launch rejection.");
+      }
       expect(result.ok, result.stderr).toBe(true);
       if (control.groupId === undefined) throw new Error("Missing control group identity.");
       // Inject uncertainty only after the actual leader and worker have stopped.
       expect((await observeProcessGroup(control.groupId, 500)).some(isLiveProcess)).toBe(false);
       await access(join(fixture.home, "worker.pid"));
-      if (mode === "partial spawn receipt") {
-        await writeFile(join(fixture.home, "app-server-spawn"), String(control.groupId));
-      }
+      if (mode === "missing spawn receipt") await unlink(receipt);
+      if (mode === "interrupted spawn receipt") await writeFile(receipt, "starting");
+      if (mode === "partial spawn receipt") await writeFile(receipt, String(control.groupId));
       if (mode === "assertion failure") {
         expect(false, "Injected ordinary fixture assertion").toBe(true);
       }
@@ -68,24 +104,33 @@ async function checkFailure(mode: Case, control: Control) {
   );
   const { home } = control;
   if (!home) throw error ?? new Error("Control failed before fixture allocation.");
-  if (mode === "assertion failure") {
-    expect(String(error)).toContain("Injected ordinary fixture assertion");
+  if (canVerify(mode)) {
+    expect(String(error)).toContain(
+      mode === "assertion failure"
+        ? "Injected ordinary fixture assertion"
+        : "Expected app-server launch rejection",
+    );
     await expect(access(dirname(home))).rejects.toMatchObject({ code: "ENOENT" });
   } else {
     expect(error).toBeInstanceOf(AggregateError);
     const messages = (error as AggregateError).errors.map(String).join("\n");
     expect(messages).toContain("Fixture cleanup unverified; scratch retained");
-    expect(messages).toContain(
-      mode === "partial spawn receipt"
-        ? "Incomplete fixture app-server spawn receipt"
-        : "Injected group observation failure",
-    );
+    const receipt = join(home, "app-server-spawn");
+    if (mode === "missing spawn receipt") {
+      expect(messages).toContain("ENOENT");
+      await expect(access(receipt)).rejects.toMatchObject({ code: "ENOENT" });
+    } else if (mode === "observation failure") {
+      expect(messages).toContain("Injected group observation failure");
+      expect(await readFile(receipt, "utf8")).toBe(String(control.groupId) + "\n");
+    } else {
+      expect(messages).toContain("Incomplete fixture app-server spawn receipt");
+      expect(await readFile(receipt, "utf8")).toBe(
+        mode === "interrupted spawn receipt" ? "starting" : String(control.groupId),
+      );
+    }
     await access(join(home, "release-shutdown"));
     await access(join(home, "leader.pid"));
     await access(join(home, "worker.pid"));
-    expect(await readFile(join(home, "app-server-spawn"), "utf8")).toBe(
-      String(control.groupId) + (mode === "partial spawn receipt" ? "" : "\n"),
-    );
   }
 }
 
@@ -106,24 +151,52 @@ async function cleanControl(control: Control) {
   // Retire control artifacts only with independent proof of both process boundaries.
   if (
     !control.callerStopped ||
-    control.groupId === undefined ||
-    (await observeProcessGroup(control.groupId, 500)).some(isLiveProcess)
+    (!control.neverStarted &&
+      (control.groupId === undefined ||
+        (await observeProcessGroup(control.groupId, 500)).some(isLiveProcess)))
   ) {
     throw new Error("Control process shutdown is unverified; leaving its fixture in place.");
   }
   await removeFixtureDir(directory);
 }
 
+async function withFixtureContext(value: string | undefined, run: () => Promise<void>) {
+  const previous = process.env[TEST_CONTEXT_ENV];
+  if (value === undefined) delete process.env[TEST_CONTEXT_ENV];
+  else process.env[TEST_CONTEXT_ENV] = value;
+  try {
+    await run();
+  } finally {
+    if (previous === undefined) delete process.env[TEST_CONTEXT_ENV];
+    else process.env[TEST_CONTEXT_ENV] = previous;
+  }
+}
+
+async function checkRejectedHandoff(context: RunContext) {
+  const directory = join(suitePath(context, "app", "scratch"), "processes");
+  const names = await readdir(directory);
+  const completions = await Promise.all(
+    names
+      .filter((name) => name.endsWith(".complete.json"))
+      .map(async (name) => JSON.parse(await readFile(join(directory, name), "utf8"))),
+  );
+  expect(completions).toHaveLength(2);
+  const rejected = completions.find(({ reason }) => reason === "launch-rejected");
+  expect(rejected).toMatchObject({ state: "complete", stopped: true });
+  expect(names).not.toContain(rejected.id + ".started.json");
+}
+
 test.skipIf(process.platform === "win32").each(cases)(
   "direct shutdown fixture cleanup after %s",
-  async (mode) => {
-    const control: Control = {};
-    try {
-      await checkFailure(mode, control);
-    } finally {
-      await cleanControl(control);
-    }
-  },
+  (mode) =>
+    withFixtureContext(undefined, async () => {
+      const control: Control = {};
+      try {
+        await checkFailure(mode, control);
+      } finally {
+        await cleanControl(control);
+      }
+    }),
   10_000,
 );
 
@@ -134,7 +207,7 @@ test.skipIf(process.platform === "win32").each(cases)(
     const preflight: string[] = [];
     let context: RunContext | undefined;
     let fixtureFailure: unknown;
-    const stopped = mode === "assertion failure";
+    const stopped = canVerify(mode);
     const output: string[] = [];
     const capture = () =>
       new Writable({
@@ -168,15 +241,13 @@ test.skipIf(process.platform === "win32").each(cases)(
               return completed();
             }
             // Use the actual fixture with the selected leaf's ownership context.
-            const previous = process.env[TEST_CONTEXT_ENV];
-            process.env[TEST_CONTEXT_ENV] = options.env[TEST_CONTEXT_ENV];
             try {
-              await checkFailure(mode, control);
+              await withFixtureContext(options.env[TEST_CONTEXT_ENV], () =>
+                checkFailure(mode, control),
+              );
+              if (mode === "launch rejected") await checkRejectedHandoff(context!);
             } catch (error) {
               fixtureFailure = error;
-            } finally {
-              if (previous === undefined) delete process.env[TEST_CONTEXT_ENV];
-              else process.env[TEST_CONTEXT_ENV] = previous;
             }
             await writeReport(options, '<testcase name="expected failure"><failure/></testcase>');
             return completed({ ok: false, exitCode: 1, reason: "exit-failed" });
