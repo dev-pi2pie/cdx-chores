@@ -1,7 +1,7 @@
 ---
 title: "Codex Execution Configuration"
 created-date: 2026-09-05
-modified-date: 2026-11-19
+modified-date: 2026-11-20
 status: completed
 agent: codex
 ---
@@ -73,7 +73,9 @@ Existing consent prompts still control whether Codex runs. A new session resolve
 
 Use `--session-retention keep|archive|delete` after an adopted command, including the explicit `interactive` command. The default, `keep`, leaves its sessions in active history. `archive` moves them out of active history and keeps their rollouts. `delete` permanently removes the sessions and any descendant threads. The policy applies to threads created by the command. One-shot helpers release a thread after capturing its result, and multi-turn helpers release it after its final use, including retries, repairs, and regeneration. Benchmark warm-ups and measured trials follow the same policy after the completed turn's rollout readback or its deadline.
 
-Archive and delete use the selected Codex CLI's app-server. Archive is documented as of Codex CLI 0.61.0 and delete was introduced in 0.140.0. Both modes were verified with Codex 0.170.0, the benchmark's verified app-server baseline. Cleanup failures preserve captured results and report the affected thread. Benchmark cleanup failures also return exit status 1. [Retention version evidence](../researches/research-2026-11-18-codex-cli-benchmark.md#session-retention)
+Archive and delete use the selected Codex CLI's app-server. Archive is documented as of Codex CLI 0.61.0 and delete was introduced in 0.140.0. Both modes were verified with Codex 0.170.0, the benchmark's minimum verified version. [Retention version evidence](../researches/research-2026-11-18-codex-cli-benchmark.md#session-retention)
+
+SDK helpers using `keep` open no app-server for retention. If archive, delete, or the subsequent shutdown fails, the helper writes a retention diagnostic to stderr and preserves its answer or original error. The benchmark records its own cleanup and shutdown failures in the report. [Benchmark failures and exit codes](codex-benchmark.md#failures-and-exit-codes)
 
 ## Failures And Manual Reruns
 

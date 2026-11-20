@@ -2,7 +2,7 @@
 title: "Codex turn reporting and process shutdown in canary.6 and canary.7"
 created-date: 2026-11-19
 modified-date: 2026-11-20
-status: draft
+status: in-progress
 agent: codex
 ---
 
@@ -14,14 +14,14 @@ The `v0.2.2-canary.7` dependency refresh moved the SDK and bundled CLI to 0.171.
 
 ## Scope by caller and test runner
 
-| Caller or component | Scope of the proposal | Outcome to verify |
+| Caller or component | Scope | Verified outcome or outstanding check |
 | --- | --- | --- |
-| `codex-bench` | Direct turn dispatch, timeout recovery, and shared app-server shutdown. | Count queued writes as attempts. After an ambiguous start, require matching terminal evidence before archive or another trial. Preserve completed trials in JSON if shutdown fails. [Benchmark runner](../../src/adapters/codex/benchmark/index.ts) |
-| Standard/Fast live check (developer tool) | Direct turn scheduling through its own app-server client. | Recover a matching Standard completion even if the start reply is missing. If completion is still unknown at timeout, skip archive and stop before Fast. [Live check](../../scripts/spikes/codex-benchmark-live-check.ts) |
-| SDK helpers for rename, data query/stack, Markdown/PDF, and interactive workflows | Shared shutdown when a helper opens an app-server for archive or delete. Prompt execution through SDK `thread.run()` has a separate cancellation check. | Preserve the answer or original error and report failed or skipped retention. The default `keep` opens no retention app-server. [Command scope](../guides/codex-execution-configuration.md#command-scope) · [SDK helper entry point](../../src/adapters/codex/shared.ts) |
-| `doctor` benchmark readiness check | Shared shutdown after the probe reads the app-server version. | Return a readiness diagnostic within the shutdown deadline. [Doctor probe](../../src/cli/doctor/codex-benchmark.ts) |
-| `codex-info` discovery | Separate verification for `DiscoveryTransport`, which owns its shutdown. | Check discovery shutdown directly. The shared-close regression exercises a different transport. [Discovery](../../src/adapters/codex/discovery/index.ts) · [Transport](../../src/adapters/codex/discovery/transport.ts) |
-| Managed application-suite runner | Test infrastructure for fixture cancellation and suite timing. | After cancellation, the active fixture records completion and the next fixture never acquires a PID. The cause of the original 300-second timeout remains open. [Test-runner evidence](#test-runner-evidence) |
+| `codex-bench` | Direct turn dispatch, timeout recovery, and shared shutdown. | A refused write preserved earlier usage. A queued write counted even under backpressure. A matching terminal event allowed retention and continuation. Shutdown failure preserved completed trials in JSON. [Implementation record](../plans/jobs/2026-11-20-codex-turn-reporting-and-app-server-shutdown.md) |
+| Standard/Fast live check | Direct turn scheduling through its own app-server client. | Both the normal reply and the withheld reply with matching completion led to archive before Fast. When Standard remained unconfirmed at either deadline, the check skipped archive and stopped before Fast. [Turn recovery](../plans/jobs/2026-11-20-codex-turn-reporting-and-app-server-shutdown.md#phase-2-turn-recovery-and-scheduling) |
+| SDK helpers for rename, data query/stack, Markdown/PDF, and interactive workflows | Shared retention after SDK prompt execution. | The shared helper preserved its answer on archive shutdown failure and its original error on delete shutdown failure. Default `keep` opened no retention app-server. Cancellation during buffered SDK prompt execution remains open. [Command scope](../guides/codex-execution-configuration.md#command-scope) · [Retention checks](../plans/jobs/2026-11-20-codex-turn-reporting-and-app-server-shutdown.md#phase-3-bounded-shared-shutdown) |
+| `doctor` benchmark readiness | Shared shutdown after the version probe. | A shutdown failure returned a failed check within the fixture deadline, with the version when available. [Readiness checks](../plans/jobs/2026-11-20-codex-turn-reporting-and-app-server-shutdown.md#phase-3-bounded-shared-shutdown) |
+| `codex-info` discovery | Separate transport with its own shutdown. | Exit under a shutdown fault still needs direct verification. [Discovery transport](../../src/adapters/codex/discovery/transport.ts) |
+| Managed application-suite runner | Fixture cancellation and suite timing. | The receipts established that a later fixture acquired a PID after cancellation. Preventing that launch and identifying the cause of the original 300-second timeout remain open. [Test-runner evidence](#test-runner-evidence) |
 
 ## One helper session, from prompt to retention
 
@@ -59,7 +59,7 @@ flowchart TD
 
 **Observed.** When the second write threw before queuing any bytes, the fixture received only the first turn. JSON showed an attempt and the `default` tier for the second. In the rejection control, the fixture received and rejected both requests. Recording both attempts was correct.
 
-**Proposed — benchmark dispatch**
+**Verified benchmark dispatch**
 
 ```mermaid
 flowchart TD
@@ -70,7 +70,7 @@ flowchart TD
     sent -->|Matching completion| complete["Record turn result and recover usage"]
 ```
 
-The acceptance check compares the trace with JSON. A refused local write should preserve earlier usage totals. A queued request should count even if Codex rejects it or its reply is lost.
+In the built CLI, refusing the measured write left the 230-token warm-up total complete. Rejecting the queued request left the same total partial. A queued write under backpressure reached the server once. [Dispatch regressions and results](../plans/jobs/2026-11-20-codex-turn-reporting-and-app-server-shutdown.md#phase-1-benchmark-dispatch-accounting)
 
 ## When can the next turn start if the start reply is missing?
 
@@ -110,7 +110,7 @@ flowchart TD
 
 **Observed.** Both turns completed while the fixture delayed exit beyond the grace period. With escalation allowed, the CLI exited 0 and returned both results. When the group kill threw `EPERM`, the CLI exited 1 without writing either result.
 
-**Proposed — benchmark shutdown**
+**Verified benchmark shutdown**
 
 ```mermaid
 flowchart TD
@@ -120,9 +120,7 @@ flowchart TD
     failure --> report
 ```
 
-**Regression check.** Deny escalation while the leader is alive. Require a bounded nonzero CLI exit and valid JSON containing both completed trials and the shutdown diagnostic. Independently observe the owned group before claiming that its workers exited.
-
-**Other callers to verify.** Helper retention and the `doctor` probe share `CodexAppServer.close()`. The empty-stdout result was reproduced through the benchmark only. For helper retention, inject a shutdown failure after a successful SDK turn and check that the answer survives with a retention diagnostic. For `doctor`, check that the probe returns a diagnostic within a deadline. Assess `codex-info` separately through its discovery transport.
+**Verified on the 0.171.0 dependency baseline.** With group escalation allowed, the built CLI emitted both trials, exited 0, and left the owned group empty. When escalation was denied or the signal went undelivered, it emitted both trials and `run.shutdownError`, then exited 1 within the three-second test allowance. Independent observation found the leader and worker alive at CLI exit in both fault cases. SDK retention preserved its caller’s outcome and `doctor` returned a failed readiness check. [Shutdown results by caller](../plans/jobs/2026-11-20-codex-turn-reporting-and-app-server-shutdown.md#phase-3-bounded-shared-shutdown)
 
 ## Upstream applicability to Codex 0.171.0
 
@@ -147,17 +145,7 @@ Four more fixtures started after the cancelled fixture recorded completion. Thre
 
 ## Implementation Direction
 
-The canary.7 investigation supports the following changes and timing decision. Phases 1 and 2 verified dispatch accounting and turn-timeout recovery against a synthetic app-server. Shared shutdown and managed suite cancellation remain pending. [v0.2.2-canary.7 investigation](../plans/jobs/2026-11-20-canary-7-turn-reporting-and-shutdown.md) · [Implementation record](../plans/jobs/2026-11-20-codex-turn-reporting-and-app-server-shutdown.md)
-
-### Direct turn handling
-
-- **Benchmark dispatch accounting.** Record the attempt and sent tier once the transport queues `turn/start`. A refused write preserves the thread ID and the completeness of earlier usage totals. A queued request still counts if the server rejects it or its reply is lost.
-- **Benchmark start timeout.** Recover a cached terminal event for the announced turn. If completion is unconfirmed and the turn ID is known, use the existing targeted interrupt and bounded confirmation wait. If the ID or confirmation is still missing, skip archive and stop scheduling. [Verified flow and regression case](#when-can-the-next-turn-start-if-the-start-reply-is-missing)
-- **Standard/Fast live check.** Match a cached terminal event to Standard’s thread and turn IDs even if the start reply is missing. At either the start or completion deadline, report the timeout and end the comparison before archive or Fast if Standard’s completion remains unconfirmed.
-
-### Shared app-server shutdown
-
-Bound `CodexAppServer.close()` for the benchmark, SDK helper retention, and the `doctor` probe. Report the owned process group as stopped only after verifying its exit. On shutdown failure, the benchmark should emit one JSON report with all completed trials and `run.shutdownError`, then exit nonzero. Helpers that open the app-server to archive or delete should preserve the answer or original error and report the retention diagnostic. The probe should return a readiness diagnostic within the deadline. SDK prompt cancellation and shutdown through the separate `codex-info` discovery transport still need their own checks.
+The CLI changes were verified against synthetic app-server faults with the 0.171.0 SDK installed. The unified record links the dispatch, recovery, and shutdown evidence. Native provider event ordering, native MCP cleanup, SDK prompt cancellation, and discovery shutdown still need separate checks. [Implementation record](../plans/jobs/2026-11-20-codex-turn-reporting-and-app-server-shutdown.md)
 
 ### Managed test runner
 

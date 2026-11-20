@@ -1,7 +1,7 @@
 ---
 title: "Codex Benchmark"
 created-date: 2026-11-18
-modified-date: 2026-11-19
+modified-date: 2026-11-20
 status: completed
 agent: codex
 ---
@@ -18,7 +18,7 @@ cdx-chores codex-bench --runs 1
 
 **Why send the prompt twice?** `codex-bench` compares repeated requests. A model’s first request can take longer than later ones. With only one measured trial, that extra time could make one model or speed look slower simply because of its first request. The benchmark gives each case one warm-up, then counts the next request as its first measurement. Both requests start in fresh sessions so each receives the same prompt with no prior conversation history.
 
-The benchmark check in `doctor` verifies app-server startup and the Codex CLI version. Use Codex 0.170.0 or newer for the verified baseline. `codex-info models --details` lists advertised tiers and catalog defaults when available. A completed trial confirms the provider accepted its request. The report shows the requested speed. Codex does not report which speed served the request.
+The benchmark check in `doctor` initializes the app-server, reads its version, and closes it. If shutdown fails, the check reports `failed` and keeps any version it read. Use Codex 0.170.0 or newer for the verified baseline. `codex-info models --details` lists advertised tiers and catalog defaults when available. A completed trial confirms the provider accepted its request. The report shows the requested speed. Codex does not report which speed served the request.
 
 ### Compare A Model And Speed Matrix
 
@@ -101,7 +101,7 @@ cdx-chores codex-bench --prompt-file ./task.txt --runs 1 \
 
 Terminal stderr shows a temporary status that clears as the run finishes. Redirected stderr carries diagnostics only in JSON mode. In human mode, stderr also carries the startup workload and, in detailed mode with usage enabled, per-request token totals. Use the global `--no-color` option or set `NO_COLOR` for plain terminal output.
 
-JSON request fields keep `null` for inherited selections. Check `trials[].configuredTier` and `trials[].resolvedReasoningEffort` for the available per-trial values, and `sentTier` for any explicit tier override sent to app-server. `servedSpeed` remains `null`. JSON timing values use milliseconds. `--show-prompt` adds `prompt.text`, and `--show-token-usage` adds detailed usage counts and invocation totals.
+JSON request fields keep `null` for inherited selections. Check `trials[].configuredTier` and `trials[].resolvedReasoningEffort` for the available per-trial values, and `sentTier` for any explicit tier override on a queued request. A trial sets `inferenceAttempted` when the transport queues `turn/start`, even under backpressure or if the server later rejects it. A local write refusal leaves `inferenceAttempted: false` and `sentTier: null` and preserves the completeness of earlier usage totals. An attempted trial with missing usage makes the total partial. `servedSpeed` remains `null`. JSON timing values use milliseconds. `--show-prompt` adds `prompt.text`, and `--show-token-usage` adds detailed usage counts and invocation totals.
 
 Both report formats preserve a relative prompt path as supplied and abbreviate paths inside the user's home as `~` on macOS and Unix-like systems or `%USERPROFILE%` on Windows. Use the global `--absolute` or `--abs` option before `codex-bench` to show literal absolute paths, resolving a relative prompt path from the invocation directory.
 
@@ -111,7 +111,9 @@ The benchmark keeps its sessions by default, including warm-ups. Use `--session-
 
 ## Failures and exit codes
 
-An unavailable speed produces a diagnostic while supported combinations continue. On an invocation that runs without local cancellation, a failed trial, transport loss, a failed shutdown, or zero completed measured trials returns exit status 1. When a turn exceeds its 120-second deadline, the benchmark marks it failed and preserves available usage. It can start the next trial once Codex confirms the interruption. If the app-server connection is lost during the workload, JSON retains completed results and records the reason in `run.transportError`.
+An unavailable speed produces a diagnostic while supported combinations continue. On an invocation that runs without local cancellation, a failed trial, transport loss, a failed shutdown, or zero completed measured trials returns exit status 1. If the app-server connection is lost during the workload, JSON retains completed results and records the reason in `run.transportError`. If shutdown fails, `--json` still writes one report with the recorded trials and the reason in `run.shutdownError`.
+
+While the `turn/start` reply is pending, a terminal event matching the announced thread and turn IDs lets the benchmark recover the result immediately. If the 15-second start deadline expires with a known turn ID and completion remains unconfirmed, the benchmark interrupts that turn. It also interrupts a known turn that exceeds its 120-second completion deadline. The timed-out trial stays failed and keeps any attributable usage. Only a matching terminal event permits requested retention and another trial. If the turn ID is missing at the start timeout or the interrupt receives only an acknowledgement by the confirmation deadline, the benchmark skips retention and stops scheduling.
 
 A transient tier lookup failure can leave a failed warm-up alongside successful measurements. For example, if discovery fails during the Fast warm-up in a Fast/Standard comparison, the measured Fast trial can try the failed lookup again. Even if both measured trials complete, the report retains the warm-up failure and the CLI exits with status 1.
 

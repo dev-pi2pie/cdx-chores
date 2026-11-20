@@ -45,7 +45,7 @@ Use the existing start RPC, completion, and interrupt-confirmation deadlines. Ma
 ## Phase 4. Documentation and validation
 
 - [ ] Run the focused regressions and relevant suites. Repeat the manual lifecycle comparison and compare its eight observations with the canary.7 baseline and the Phase 2 expectations. Check the actual caller reports and protocol order for each case. [Comparison guide](../../scripts/spikes/codex-turn-lifecycle/README.md)
-- [ ] Update the research scope table with verified outcomes and preserve the original synthetic observations as the baseline. Revise the benchmark and caller guides wherever output, retention diagnostics, or readiness behavior changed. [Benchmark guide](../guides/codex-benchmark.md) · [Codex execution configuration](../guides/codex-execution-configuration.md)
+- [x] Update the research scope table with verified outcomes and preserve the original synthetic observations as the baseline. Revise the benchmark and caller guides wherever output, retention diagnostics, or readiness behavior changed. [Benchmark guide](../guides/codex-benchmark.md) · [Codex execution configuration](../guides/codex-execution-configuration.md)
 - [ ] Finalize the unified job record with outcomes by caller, suite results, and outstanding verification. Link it from the research.
 - [ ] Review the plan, guides, research, and job record for agreement. Verify links and anchors. Mark the plan complete when the record supports every in-scope acceptance criterion.
 
