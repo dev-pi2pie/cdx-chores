@@ -207,11 +207,12 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
         return id as string;
       });
       try {
+        // The reply can still contradict the recovered turn during readback.
         const reply = request(
           "turn/start",
           { ...params, threadId },
           requestTimeoutMs,
-          settled.signal,
+          start.signal,
           onQueued,
         );
         return await Promise.race([terminal, reply.then((result) => start.recordReply(result))]);
@@ -302,21 +303,23 @@ async function runTrial(
   const failed = async (error: unknown, appliedRetention?: CodexSessionRetentionResult) => {
     process.exitCode = 1;
     const dispatched = trial.sentTier !== null;
+    const turnId = dispatched ? (start.turnId ?? null) : null;
+    const sessionRetention =
+      appliedRetention ??
+      (await applyCodexSessionRetention({
+        mode: retention,
+        threadId: thread.id,
+        completed: false,
+        request: (method, params) => server.request(method, params),
+      }));
     return {
       stopScheduling: dispatched && (start.observed || !isTurnInputTooLarge(error)),
       provider: thread.modelProvider,
       threadId: thread.id,
-      turnId: dispatched ? (start.turnId ?? null) : null,
+      turnId: start.conflicting ? null : turnId,
       status: "error",
-      error: String(error),
-      sessionRetention:
-        appliedRetention ??
-        (await applyCodexSessionRetention({
-          mode: retention,
-          threadId: thread.id,
-          completed: false,
-          request: (method, params) => server.request(method, params),
-        })),
+      error: String(start.conflicting ? start.signal.reason : error),
+      sessionRetention,
     };
   };
   try {

@@ -253,7 +253,9 @@ async function run() {
         openTurn(thread);
         reply({});
         break;
-      case "turn/start":
+      case "turn/start": {
+        const conflictingReply =
+          scenario.conflictingStart === "reply-during-readback" && thread.id === "thread-1";
         if (thread.id === `thread-${scenario.turnStartRefusal?.at}`) {
           const { error, evidence, errorFirst } = scenario.turnStartRefusal;
           const turn = { id: `turn-${thread.id}` };
@@ -326,7 +328,8 @@ async function run() {
         }
         if (
           !scenario.withholdStartReply &&
-          thread.id !== `thread-${scenario.withholdStartReplyThread}`
+          thread.id !== `thread-${scenario.withholdStartReplyThread}` &&
+          !conflictingReply
         ) {
           reply({ turn: { id: thread.turnId, status: "inProgress" } });
           traceLifecycle("fixture/turn-start-reply", {
@@ -355,7 +358,12 @@ async function run() {
           completeTurn(thread, "interrupted", message === null ? null : { message });
         } else {
           completeTurn(thread, "completed");
-          if (scenario.conflictingStart === "during-readback" && thread.id === "thread-1") {
+          if (conflictingReply) {
+            await waitForReceipt("caller-rollout-read");
+            const turnId = "conflicting-turn";
+            traceLifecycle("fixture/turn-start-reply", { threadId: thread.id, turnId });
+            reply({ turn: { id: turnId } });
+          } else if (scenario.conflictingStart === "during-readback" && thread.id === "thread-1") {
             await waitForReceipt("caller-rollout-read");
             conflictingStart(thread);
           }
@@ -364,6 +372,7 @@ async function run() {
           }
         }
         break;
+      }
       case "turn/interrupt":
         if (params.turnId !== thread.turnId) throw new Error("Interrupted the wrong turn.");
         if (!scenario.withholdInterruptReply) {

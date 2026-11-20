@@ -168,6 +168,7 @@ class BenchmarkRunner {
     let thread: Thread | undefined;
     let observer: TrialObserver | undefined;
     let completionConfirmed = false;
+    let refusedBeforeSubmission = false;
     try {
       const tier =
         requestedSpeed === null ? undefined : await this.catalog.tierFor(model, requestedSpeed);
@@ -280,7 +281,8 @@ class BenchmarkRunner {
         this.canStartTrial = completionConfirmed;
         await this.recover(trial, thread, trial.turnId, receivedAt);
       } else if (trial.inferenceAttempted) {
-        this.canStartTrial = isTurnInputTooLarge(error) && observer?.start.observed === false;
+        refusedBeforeSubmission = isTurnInputTooLarge(error);
+        this.canStartTrial = false;
       }
     } finally {
       try {
@@ -294,6 +296,7 @@ class BenchmarkRunner {
         }
       } finally {
         observer?.close();
+        if (refusedBeforeSubmission) this.canStartTrial = observer?.start.observed === false;
         if (observer?.start.conflicting) {
           this.canStartTrial = false;
           trial.status = signal?.aborted ? "cancelled" : "failed";

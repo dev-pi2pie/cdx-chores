@@ -8,18 +8,20 @@ import { CodexAppServer } from "../../../src/adapters/codex/app-server.ts";
 import { readSavedTurn } from "../../../src/adapters/codex/benchmark/rollout.ts";
 import * as retention from "../../../src/adapters/codex/session-retention.ts";
 
+const gate = process.env.FIXTURE_LIFECYCLE_GATE;
 const request = CodexAppServer.prototype.request;
 CodexAppServer.prototype.request = function (method, params, options) {
-  if (method === "turn/start") options = { ...options, timeoutMs: 200 };
+  if (method === "turn/start" && gate !== "readback-conflict")
+    options = { ...options, timeoutMs: 200 };
   return request.call(this, method, params, options);
 };
 
 const timeout = AbortSignal.timeout.bind(AbortSignal);
 const home = process.env.CODEX_HOME;
 const fixtureTrace = join(home, "events.jsonl");
-const gate = process.env.FIXTURE_LIFECYCLE_GATE;
 AbortSignal.timeout = (ms) => {
-  if (ms === 15_000 && existsSync(fixtureTrace)) return timeout(200);
+  if (ms === 15_000 && gate !== "readback-conflict" && existsSync(fixtureTrace))
+    return timeout(200);
   if (ms === 120_000 && gate === "reply-conflict") return timeout(ms);
   return timeout(ms === 120_000 || ms === 2_000 ? 200 : ms);
 };

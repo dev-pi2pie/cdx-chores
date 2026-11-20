@@ -309,6 +309,7 @@ const tooLarge = {
 describe.each(["benchmark", "live check"] as const)("%s ownership and rejection", (caller) => {
   test.each([
     { label: "structured refusal", error: tooLarge, continues: true },
+    { label: "structured refusal with a late start", error: tooLarge, late: true },
     { label: "same code and message", error: { code: tooLarge.code, message: tooLarge.message } },
     { label: "wrong code", error: { ...tooLarge, code: -32603 } },
     { label: "unstructured data", error: { ...tooLarge, data: "input_too_large" } },
@@ -342,9 +343,10 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
     },
   ] as const)("checks submission evidence for $label", async (row) => {
     const continues = "continues" in row;
-    const { first, turns, events, interrupts, exit } = await runRecovery(
+    const { first, turns, events, interrupts, exit, stderr } = await runRecovery(
       caller,
       {
+        omitTurnStart: "late" in row,
         turnStartRefusal: {
           at: 1,
           error: row.error,
@@ -352,7 +354,7 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
           errorFirst: "errorFirst" in row,
         },
       },
-      { retention: "delete" },
+      { retention: "delete", late: "late" in row },
     );
     expect(exit).toBe(1);
     expect(first).toMatchObject({
@@ -366,6 +368,12 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
     if (caller === "benchmark") expect(first.inferenceAttempted).toBe(true);
     expect(interrupts).toEqual([]);
     expect(traceMethod(events, "thread/archive")).toEqual([]);
+    if ("late" in row) {
+      expect(stderr).toContain("fixture received reply after late announcement");
+      expect(traceMethod(events, "turn/started")).toMatchObject([
+        { params: { threadId: "thread-1", turnId: "turn-thread-1" } },
+      ]);
+    }
     if ("errorFirst" in row) {
       const rejection = events.findIndex(({ method }) => method === "fixture/turn-start-error");
       expect(rejection).toBeGreaterThanOrEqual(0);
@@ -461,12 +469,18 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
     expect(traceMethod(events, "thread/start")).toHaveLength(1);
   });
 
-  test.each(["after-reply", "during-readback", "during-retention"] as const)(
+  test.each([
+    "after-reply",
+    "during-readback",
+    "reply-during-readback",
+    "during-retention",
+  ] as const)(
     "stops after conflicting start %s",
     async (conflictingStart) => {
       const gate = {
         "after-reply": { name: "reply-conflict", trace: "fixture/turn-start-reply" },
         "during-readback": { name: "readback-conflict", trace: "fixture/rollout-read" },
+        "reply-during-readback": { name: "readback-conflict", trace: "fixture/rollout-read" },
         "during-retention": { name: undefined, trace: "thread/archive" },
       } as const;
       const retained = conflictingStart === "during-retention";
@@ -486,7 +500,11 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
         expect(first.tokenUsage).toMatchObject({ partial: true });
       }
       const conflict = events.findIndex(
-        ({ method, params }) => method === "turn/started" && params?.turnId === "conflicting-turn",
+        ({ method, params }) =>
+          method ===
+            (conflictingStart === "reply-during-readback"
+              ? "fixture/turn-start-reply"
+              : "turn/started") && params?.turnId === "conflicting-turn",
       );
       const beforeConflict = events.findIndex(
         ({ method }) => method === gate[conflictingStart].trace,

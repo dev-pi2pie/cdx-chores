@@ -50,7 +50,11 @@ interface Scenario {
     evidence?: "started" | "terminal" | "pair" | "item" | "other-thread";
     errorFirst?: boolean;
   };
-  conflictingStart?: "after-reply" | "during-readback" | "during-retention";
+  conflictingStart?:
+    | "after-reply"
+    | "during-readback"
+    | "reply-during-readback"
+    | "during-retention";
   unfinishedRolloutThread?: number;
   closeStdinOnThreadStart?: number;
   retentionError?: boolean;
