@@ -4,7 +4,13 @@ import { startFixtureProcess } from "../../scripts/testing/fixtures/fixture-proc
 import { REPO_ROOT } from "../helpers/cli-test-utils";
 import { traceMethod, withRunnerFixture } from "./fixtures/runner";
 
-test.each(["refused", "rejected", "backpressure"] as const)(
+const failures = {
+  refused: "fixture refused local write",
+  ended: "app-server stdin is not writable",
+  rejected: "fixture rejected turn/start",
+};
+
+test.each(["refused", "ended", "rejected", "backpressure"] as const)(
   "benchmark accounts for a %s measured turn write",
   async (mode) => {
     const rejected = mode === "rejected";
@@ -44,7 +50,7 @@ test.each(["refused", "rejected", "backpressure"] as const)(
         expect(result.issues).toEqual([]);
         expect(result.exitCode, result.stderr).toBe(completed ? 0 : 1);
         if (completed) expect(result.stderr).toContain("fixture observed backpressure");
-        const attempted = mode !== "refused";
+        const attempted = rejected || completed;
         const starts = traceMethod(await trace(), "turn/start");
         expect(starts.map(({ params }) => params?.threadId)).toEqual(
           attempted ? ["thread-1", "thread-2"] : ["thread-1"],
@@ -60,10 +66,7 @@ test.each(["refused", "rejected", "backpressure"] as const)(
           inferenceAttempted: attempted,
           sentTier: attempted ? "default" : null,
         });
-        if (!completed)
-          expect(report.trials[1].error).toContain(
-            rejected ? "fixture rejected turn/start" : "fixture refused local write",
-          );
+        if (!completed) expect(report.trials[1].error).toContain(failures[mode]);
         expect(report.tokenUsage).toMatchObject({
           partial: rejected,
           totals: { totalTokens: completed ? 460 : 230 },

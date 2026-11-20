@@ -2,11 +2,17 @@ const { Socket } = require("node:net");
 const { strictEqual } = require("node:assert");
 
 const write = Socket.prototype.write;
+let threadStarts = 0;
 Socket.prototype.write = function (chunk, ...args) {
   if (typeof chunk !== "string" || !chunk.startsWith('{"id":')) {
     return write.call(this, chunk, ...args);
   }
   const { method, params } = JSON.parse(chunk);
+  if (process.env.FIXTURE_TURN_WRITE === "ended") {
+    const result = write.call(this, chunk, ...args);
+    if (method === "thread/start" && ++threadStarts === 2) this.end();
+    return result;
+  }
   if (method !== "turn/start" || params.threadId !== "thread-2") {
     return write.call(this, chunk, ...args);
   }
