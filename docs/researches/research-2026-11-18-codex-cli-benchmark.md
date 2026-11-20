@@ -1,7 +1,7 @@
 ---
 title: "Codex CLI Benchmark and Speed Selection"
 created-date: 2026-11-18
-modified-date: 2026-11-19
+modified-date: 2026-11-20
 status: completed
 agent: codex
 ---
@@ -14,11 +14,11 @@ The speed selector also applies to commands that already accept Codex execution 
 
 ## First Live Check
 
-Run the [live check script](../../scripts/spikes/codex-benchmark-live-check.ts) manually from the repository root. It uses the repo's Codex binary and the active Codex home and provider. Pass a model ID and reasoning effort explicitly. Omitting `--speed` runs one Standard/Fast pair for that model. Set `--speed standard`, `--speed fast`, or `--speed ultrafast` to run a single trial.
+Run the [live check script](../../scripts/spikes/codex-benchmark-live-check.ts) from the repository root with Node.js. It uses the repo's Codex binary by default and the active Codex home and provider. Pass a model ID and reasoning effort explicitly. Omitting `--speed` runs one Standard/Fast pair for that model. Set `--speed standard`, `--speed fast`, or `--speed ultrafast` to run a single trial.
 
 ```sh
-bun scripts/spikes/codex-benchmark-live-check.ts --model gpt-6-luna --effort medium
-bun scripts/spikes/codex-benchmark-live-check.ts --model gpt-6.2-sol --effort medium --speed ultrafast
+node scripts/spikes/codex-benchmark-live-check.ts --model gpt-6-luna --effort medium
+node scripts/spikes/codex-benchmark-live-check.ts --model gpt-6.2-sol --effort medium --speed ultrafast
 ```
 
 On 2026-11-18, Codex CLI 0.170.0 completed all three requests through the configured `openai` provider with `medium` reasoning effort and the LRU prompt below. Each trial used a fresh persisted thread and produced a single assistant message with no reported tool activity or reroute.
