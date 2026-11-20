@@ -3,7 +3,6 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { startFixtureProcess } from "../../scripts/testing/fixtures/fixture-process";
-import { REPO_ROOT } from "../helpers/cli-test-utils";
 import { startCliBenchmark, traceMethod, withRunnerFixture } from "./fixtures/runner";
 
 type Scenario = Parameters<typeof withRunnerFixture>[0];
@@ -58,17 +57,13 @@ async function runRecovery(
               args: [
                 "--preload",
                 preload,
-                ...(retention === "archive"
-                  ? [join(REPO_ROOT, "scripts/spikes/codex-turn-lifecycle/live.ts")]
-                  : [
-                      join(import.meta.dir, "fixtures/dispatch-live-check.ts"),
-                      "--model",
-                      "model-a",
-                      "--effort",
-                      "low",
-                      "--session-retention",
-                      retention,
-                    ]),
+                join(import.meta.dir, "fixtures/runner-live-check.ts"),
+                "--model",
+                "model-a",
+                "--effort",
+                "low",
+                "--session-retention",
+                retention,
               ],
               env,
               cwd: options.cwd,

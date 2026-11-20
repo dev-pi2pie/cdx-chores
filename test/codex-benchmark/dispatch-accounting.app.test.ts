@@ -78,7 +78,7 @@ for (const caller of ["benchmark", "live check on Node", "live check on Bun"] as
             async ({ home, options, trace }) => {
               const entry = join(
                 REPO_ROOT,
-                benchmark ? "src/bin.ts" : "test/codex-benchmark/fixtures/dispatch-live-check.ts",
+                benchmark ? "src/bin.ts" : "test/codex-benchmark/fixtures/runner-live-check.ts",
               );
               const script = onBun ? entry : await buildNodeCaller(entry, options.cwd);
               const args = benchmark
