@@ -1,5 +1,6 @@
-import { expect, test } from "bun:test";
-import { access, readFile, readdir, unlink, writeFile } from "node:fs/promises";
+import { expect, spyOn, test } from "bun:test";
+import childProcess from "node:child_process";
+import { access, readFile, readdir, symlink, unlink, writeFile } from "node:fs/promises";
 import { constants, devNull } from "node:os";
 import { dirname, join } from "node:path";
 import { Writable } from "node:stream";
@@ -7,6 +8,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
 import {
   ProcessLaunchRejectedError,
+  type OwnedProcessOptions,
   type OwnedProcessResult,
 } from "../../scripts/testing/execution/process";
 import { isLiveProcess, observeProcessGroup } from "../../scripts/testing/execution/process-table";
@@ -97,6 +99,20 @@ const preSpawnCases = {
   },
   "cwd is an existing file": { ...fileCwdFailure, fileSuffix: "" },
   "cwd is the null device": { ...fileCwdFailure, options: { cwd: devNull } },
+  "cwd contains a symlink loop": {
+    options: {},
+    error: {
+      code: "ELOOP",
+      message: `ELOOP: too many symbolic links encountered, posix_spawn '${process.execPath}'`,
+    },
+  },
+  "cwd contains an overlong component": {
+    options: {},
+    error: {
+      code: "ENAMETOOLONG",
+      message: `ENAMETOOLONG: name too long, posix_spawn '${process.execPath}'`,
+    },
+  },
   "cwd traverses a file before a trailing slash": { ...fileCwdFailure, fileSuffix: "/" },
   "cwd traverses a file before a child component": { ...fileCwdFailure, fileSuffix: "/child" },
 } as const;
@@ -113,6 +129,8 @@ const cases = [
   "NUL in env value",
   "cwd is an existing file",
   "cwd is the null device",
+  "cwd contains a symlink loop",
+  "cwd contains an overlong component",
   "cwd traverses a file before a trailing slash",
   "cwd traverses a file before a child component",
   "missing spawn receipt",
@@ -224,14 +242,26 @@ async function runControl(mode: Case, control: Control) {
       control.home = fixture.home;
       if (isPreSpawnCase(mode)) {
         const preSpawn = preSpawnCases[mode];
-        const fileCwd =
-          "fileSuffix" in preSpawn
-            ? { cwd: join(fixture.home, "unrelated.jsonl") + preSpawn.fileSuffix }
-            : {};
+        const overrides: Partial<OwnedProcessOptions> = { ...preSpawn.options };
+        if ("fileSuffix" in preSpawn) {
+          overrides.cwd = join(fixture.home, "unrelated.jsonl") + preSpawn.fileSuffix;
+        } else if (mode === "cwd contains a symlink loop") {
+          overrides.cwd = join(fixture.home, "loop");
+          await symlink("loop", overrides.cwd);
+        } else if (mode === "cwd contains an overlong component") {
+          overrides.cwd = join(fixture.home, "x".repeat(512));
+        }
         const owned = startShutdownLiveCheck(
           {
             ...fixture,
-            start: (options) => fixture.start({ ...options, ...preSpawn.options, ...fileCwd }),
+            start: (options) => {
+              using spawn = spyOn(childProcess, "spawn");
+              try {
+                return fixture.start({ ...options, ...overrides });
+              } finally {
+                expect(spawn).not.toHaveBeenCalled();
+              }
+            },
           },
           "allowed",
         );
@@ -321,9 +351,9 @@ async function checkFailure(mode: Case, control: Control) {
     expect(error).toMatchObject({ ...expectedError, cause: expectedError });
     if ("code" in expectedError) {
       const { cause } = error as Error;
-      if (expectedError.code === "ENOTDIR") {
+      if (expectedError.code !== "ERR_INVALID_ARG_VALUE") {
         expect(cause).toMatchObject({
-          errno: -constants.errno.ENOTDIR,
+          errno: -constants.errno[expectedError.code],
           syscall: "spawn",
           path: process.execPath,
         });

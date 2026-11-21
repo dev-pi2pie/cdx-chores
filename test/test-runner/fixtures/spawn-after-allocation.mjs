@@ -11,9 +11,11 @@ import { startFixtureProcess } from "../../../scripts/testing/fixtures/fixture-p
 
 const childProcess = createRequire(import.meta.url)("node:child_process");
 const spawn = childProcess.spawn;
-const failure = Object.assign(new Error("spawn ENOTDIR"), {
-  code: "ENOTDIR",
-  errno: -constants.errno.ENOTDIR,
+const code = process.argv[2];
+assert(["ENOTDIR", "ELOOP", "ENAMETOOLONG"].includes(code));
+const failure = Object.assign(new Error(`spawn ${code}`), {
+  code,
+  errno: -constants.errno[code],
   syscall: "spawn",
 });
 let child;

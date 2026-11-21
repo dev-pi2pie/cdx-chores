@@ -2,7 +2,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { statSync } from "node:fs";
 import { constants } from "node:os";
 import { setTimeout as delay } from "node:timers/promises";
-import { inspect } from "node:util";
+import { getSystemErrorMessage, inspect } from "node:util";
 
 import { requireProcessCapabilities } from "./process-capabilities.ts";
 import type { OutputDelivery } from "./output.ts";
@@ -101,23 +101,30 @@ function invalidSpawnValue(
   );
 }
 
-function cwdHasNonDirectoryComponent(cwd: string): boolean {
+function cwdRejectionCode(cwd: string) {
   try {
-    // Keep ENOTDIR distinct from ENOENT across runtimes.
-    return !statSync(cwd).isDirectory();
+    return statSync(cwd).isDirectory() ? undefined : "ENOTDIR";
   } catch (error) {
-    return (error as NodeJS.ErrnoException | undefined)?.code === "ENOTDIR";
+    const code = (error as NodeJS.ErrnoException | undefined)?.code;
+    if (code === "ENOTDIR" || code === "ELOOP" || code === "ENAMETOOLONG") return code;
+    // Other cwd failures, including ENOENT, settle through the runtime.
+    return undefined;
   }
 }
 
-function nonDirectoryCwdError(executable: string): Error {
-  // Match the runtime's synchronous ENOTDIR diagnostic without entering public spawn().
+function cwdSpawnError(executable: string, code: "ENOTDIR" | "ELOOP" | "ENAMETOOLONG"): Error {
+  // Match the runtime's synchronous diagnostic without entering public spawn().
   const bun = process.versions.bun !== undefined;
+  const errno = -constants.errno[code];
   return Object.assign(
-    new Error(bun ? `ENOTDIR: not a directory, posix_spawn '${executable}'` : "spawn ENOTDIR"),
+    new Error(
+      bun
+        ? `${code}: ${getSystemErrorMessage(errno)}, posix_spawn '${executable}'`
+        : `spawn ${code}`,
+    ),
     {
-      errno: -constants.errno.ENOTDIR,
-      code: "ENOTDIR",
+      errno,
+      code,
       syscall: "spawn",
       ...(bun ? { path: executable } : {}),
     },
@@ -172,12 +179,9 @@ function checkLaunch(options: OwnedProcessOptions) {
         );
       }
     }
-    if (
-      typeof cwd === "string" &&
-      typeof executable === "string" &&
-      cwdHasNonDirectoryComponent(cwd)
-    ) {
-      throw nonDirectoryCwdError(executable);
+    if (typeof cwd === "string" && typeof executable === "string") {
+      const code = cwdRejectionCode(cwd);
+      if (code) throw cwdSpawnError(executable, code);
     }
     return { maximum, executable, args, cwd, env };
   } catch (error) {
