@@ -1,7 +1,7 @@
 ---
 title: "Codex Benchmark"
 created-date: 2026-11-18
-modified-date: 2026-11-20
+modified-date: 2026-11-21
 status: completed
 agent: codex
 ---
@@ -123,17 +123,19 @@ If competing start IDs become visible before retention, the benchmark skips arch
 
 A transient tier lookup failure can leave a failed warm-up alongside successful measurements. For example, if discovery fails during the Fast warm-up in a Fast/Standard comparison, the measured Fast trial can try the failed lookup again. Even if both measured trials complete, the report retains the warm-up failure and the CLI exits with status 1.
 
-If app-server interrupts a turn on its own, the trial is reported as `cancelled`. The CLI prints a diagnostic and exits with status 1 even when other measurements succeeded. On local cancellation the CLI writes the partial report. Ctrl-C (`SIGINT`) returns status 130 and `SIGTERM` returns 143. If another signal arrives during cleanup, the first signal determines the exit status.
+If app-server interrupts a turn on its own, the trial is reported as `cancelled`. The CLI prints a diagnostic and exits with status 1 even when other measurements succeeded. On Ctrl-C (`SIGINT`) or `SIGTERM`, the CLI writes the partial report and returns status 130 or 143 respectively. If another signal arrives during cleanup, the first signal determines the exit outcome.
+
+On POSIX, a hangup (`SIGHUP`) starts bounded shutdown of the benchmark’s detached app-server group, including while initialization is pending. With default signal handling, the caller terminates by `SIGHUP` after the shutdown attempt. If an installed hangup handler sets an exit code and allows cleanup to finish, the benchmark preserves that code.
 
 If Ctrl-C interrupts a pending `thread/start` request, app-server may already have created the session. The cancelled trial shows `threadId: null` and `sessionRetention: null` because the CLI can only archive or delete a session whose ID it has received.
 
 If Ctrl-C arrives after `turn/start` is sent, the CLI allows one second for a pending turn ID to arrive so it can interrupt that turn. If the ID remains unknown, the CLI stops scheduling trials, skips requested cleanup, and returns status 130 with the partial report.
 
-If app-server startup or initialization fails, the CLI returns status 1 and prints the reason on stderr. JSON includes the reason in `run.startupError`, the requested workload, and an empty `trials` array.
+If app-server startup or initialization fails without local cancellation, the CLI returns status 1 and prints the reason on stderr. JSON includes the reason in `run.startupError`, the requested workload, and an empty `trials` array.
 
 ## Standard/Fast live check
 
-The [maintainer live check](../../scripts/spikes/codex-benchmark-live-check.ts) uses the same local-acceptance rule for `sentTier` and the same thread identity, scheduling and retention rules. It stops an unsettled trial at its start or completion deadline without issuing a turn interrupt. On `SIGINT` or `SIGTERM` it starts app-server shutdown and preserves the first signal's exit status.
+The [maintainer live check](../../scripts/spikes/codex-benchmark-live-check.ts) uses the same local-acceptance rule for `sentTier` and the same thread identity, scheduling and retention rules. It stops an unsettled trial at its start or completion deadline without issuing a turn interrupt. On `SIGINT` or `SIGTERM` it starts app-server shutdown and preserves the first signal's exit status. It follows the same POSIX hangup policy as the benchmark. If HUP arrives during an active trial, the live check stops scheduling. If shutdown causes the trial to fail, the caller still exits with the code its installed HUP handler set.
 
 Both callers require child close for successful shutdown. For a separately owned POSIX process group, they also require a signal-zero probe to return `ESRCH`. The live check reports shutdown failure on stderr and exits with status 1 in the absence of local cancellation, with any completed Standard/Fast results still in JSON.
 

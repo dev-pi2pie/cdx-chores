@@ -6,7 +6,7 @@ status: in-progress
 agent: codex
 ---
 
-Part I records the verified benchmark design. Part II investigates who cleans up a detached app-server group when its caller receives a hangup and what lets the managed runner conclude that a child never started.
+Part I records the verified benchmark design. Part II records who cleans up a detached app-server group on hangup and what evidence lets the managed runner conclude that the requested process never started.
 
 ## Part I — Benchmark lifecycle decisions
 
@@ -100,31 +100,46 @@ With default HUP, all three callers exited in 2–3 ms and the preload recorded 
 
 At `528fdd65`, `statSync` succeeded on the device, `isFile()` returned false, and public `spawn` threw `ENOTDIR`. Both managed receipts stayed pending. The runner retained scratch and skipped Codex and Pandoc. Canary recorded a rejected launch, removed scratch and scheduled both suites. [^launch]
 
-### Settled decisions
+### Who owns shutdown on hangup?
 
-**Shutdown evidence.** With signal delivery allowed, success requires an empty owned group by caller exit within the shutdown bound and the expected caller signal outcome. The parent takes the process-table snapshot before fixture teardown. A successful signal send or the leader’s exit alone cannot establish that the worker stopped. [^shutdown-tests] [^exit-observation]
-
-**Launch evidence.** The shutdown fixture opens one receipt for the caller and one for its future app-server group. A rejection established before caller spawn closes both as `launch-rejected` without a PID, group ID or start record. The diagram traces the two outcomes for the device probe. [^launch] [^fixture-receipts] [^cleanup]
+The Node caller that launches the detached app-server owns its POSIX group until close. Both the benchmark and the maintainer live check register shared HUP cleanup at launch, before initialization can stall. The first signal determines the caller’s exit outcome. The four initialization regressions exercised both callers with default HUP handling and with an installed handler that selected exit code 42. [^signal-owners] [^hangup-cases]
 
 ```mermaid
 flowchart TD
-    A["stat succeeds on /dev/null"] --> B{"Which cwd check runs?"}
-    B -->|"Baseline: isFile() is false"| C["Enter public spawn"]
-    C --> D["spawn throws ENOTDIR"]
-    D --> E["Allocation uncertain to runner<br/>Keep receipts pending and scratch<br/>Skip later suites"]
-    B -->|"Required: isDirectory() is false"| F["Reject before spawn with ENOTDIR"]
-    F --> G["Close both receipts as launch-rejected<br/>Remove scratch and run later suites"]
+    A["Caller receives SIGHUP"] --> B["Caller starts bounded shutdown<br/>of its app-server group"]
+    B --> C["Caller exits by HUP or with<br/>the installed handler's exit code"]
+    C --> D["Parent samples live group members<br/>in the caller's exit callback"]
+    D --> E["Fixture teardown releases the group<br/>and independently checks shutdown"]
 ```
 
-The preflight already handles a regular file and a path that traverses one (`package.json/` or `package.json/child`). A missing path reaches native `ENOENT` settlement. The control for uncertainty allocates a live child and then throws a native-shaped `ENOTDIR` from public `spawn`. Its receipt stays pending even after the fixture independently stops the child. These cases bound the change to paths confirmed to be non-directories before spawn. [^cwd-controls] [^allocation-control]
+With signal delivery allowed, the resistant leader and worker required group TERM followed by KILL. The parent observed zero live members at caller exit, before teardown could affect the result. The denied and undelivered escalation controls bound that conclusion to successful cleanup of the owned group. These process observations cover synthetic POSIX groups. Windows descendant cleanup and processes that leave the owned group remain unverified. [^exit-observation] [^shutdown-tests] [^part-ii-record]
 
-### Implementation direction
+### What proves the requested process never started?
 
-**Hangup.** Both Node callers need a shared way to start bounded group shutdown on HUP while a request is pending. The regression should observe an empty group at caller exit, before the initialization fallback, with default HUP termination or the installed handler’s exit 42. Preserve the benchmark’s active-turn interrupt and partial report on INT/TERM and the live check’s immediate close. [^signal-owners] [^exit-observation] [^runner-tests] [^dispatch]
+The shutdown fixture registers a receipt for its caller and another for the app-server that caller could launch. When preflight proves a path failure before the caller enters public `spawn`, the fixture completes both as `launch-rejected` with `stopped: true` and no PID, group ID or start record. The injected Application failure remains visible, scratch is removed and Codex and Pandoc run. The device regression uses Node’s `os.devNull`, which resolved to the observed `/dev/null` in the probes. [^launch] [^fixture-receipts] [^cleanup] [^null-device]
 
-**Working directory.** Use `os.devNull` from `node:os` as the proposed direct and managed regression input. On the macOS probe host it resolved to the observed `/dev/null` in Node and Bun. Both tests should require a pre-spawn `ENOTDIR`. The managed test should also require two `launch-rejected` completions without PID, group ID or start records, scratch removal and continuation to Codex and Pandoc after the failed Application leaf. When public `spawn` throws `ENOTDIR` after allocating a child, the receipt must stay pending, scratch must be retained and later suites must be skipped. Node supplies the platform-specific device path. Managed process-group coverage here is POSIX. [^cwd-controls] [^allocation-control] [^null-device]
+```mermaid
+flowchart TD
+    A{"Preflight proves rejection<br/>before caller spawn?"}
+    A -->|Yes| B["Close both fixture receipts<br/>Remove scratch and run later suites"]
+    A -->|"No, including inconclusive probe"| C["Call public spawn"]
+    C -->|"Native child error or close"| D["Use native settlement<br/>and observed ownership"]
+    C -->|"Throws with allocation uncertain"| E["Leave receipt pending<br/>Retain scratch and withhold later suites"]
+```
 
-Part II remains in progress pending verification of both corrections.
+For an explicit relative executable, a lookup that prefixes its working directory can report a different error or reject a valid near-limit path. When that lookup reports a candidate path failure, a bounded helper changes to the requested directory and checks the path there. If the helper fails or returns inconclusive evidence, the runner calls public `spawn`. PATH searches and missing paths also use native settlement. A throw from public `spawn` can follow allocation even when it carries the same error code as a proven preflight rejection. [^launch] [^cwd-controls] [^allocation-control]
+
+### Before and after
+
+| Case | Before | Verified outcome |
+| --- | --- | --- |
+| HUP during initialization, both Node callers | At `528fdd65`, default HUP left two live members. With the installed handler, the initialization fallback ran and the caller exited 1. | At `39c4cca0`, default HUP terminated the caller by signal and the installed handler’s caller exited 42. All four exit snapshots showed an empty group. |
+| Live-check HUP after the first `turn/start` reply | At `411674fe`, the trial error overwrote exit code 42 with 1 even though the group stopped. | At `b7139c6a`, the caller exited 42, one trial started and the group was empty at caller exit. Ordinary trial failures still exited 1. |
+| Invalid working directory | The device at `528fdd65` and a symlink loop or overlong component at `411674fe` each left two pending receipts and blocked later suites. | The device at `971dbbc4` and both path errors at `bef25d53` produced two stopped rejection receipts. Scratch was removed and both later suites ran. |
+| Invalid explicit executable | At `bef25d53`, a file in the path, a symlink loop or an overlong name blocked later suites. At `f3bb3d7e`, a long working-directory prefix could still mask the relative lookup. | At `08b028bc`, all three errors produced the matching rejection before subject launch, including the long-directory cases. A valid near-limit relative command still ran. |
+| Public spawn throws after child allocation | The `ENOTDIR` control at `971dbbc4` retained scratch. | At `08b028bc`, `ENOTDIR`, `ELOOP` and `ENAMETOOLONG` each left the receipt pending, scratch retained and later suites unrun. The fixture independently observed and stopped the child. |
+
+Phase 3 validated the original corrections at `c025f088`. After the additional path and active-turn fixes, all 4,895 managed tests passed at `08b028bc`, and the final code review covered `ba2d93c1..08b028bc`. [^part-ii-record]
 
 ## Related Plans
 
@@ -161,3 +176,5 @@ Part II remains in progress pending verification of both corrections.
 [^cwd-controls]: [Verified file and path-component cases](../plans/jobs/2026-11-20-codex-benchmark-lifecycle-corrections.md#non-directory-working-directory-components-follow-up) · [Missing cwd control](../../test/test-runner/process.app.test.ts)
 [^allocation-control]: [Throw after child allocation](../../test/test-runner/fixtures/spawn-after-allocation.mjs) · [Pending receipt assertion](../../test/test-runner/fixture-context.app.test.ts)
 [^null-device]: [Node.js `os.devNull`](https://nodejs.org/api/os.html#osdevnull) · [Managed runner process capabilities](../../scripts/testing/execution/process-capabilities.ts)
+[^hangup-cases]: [Built Node caller hangup regressions](../../test/codex-benchmark/hangup.app.test.ts)
+[^part-ii-record]: [Part II implementation and validation record](../plans/jobs/2026-11-21-codex-benchmark-lifecycle-part-ii.md)
