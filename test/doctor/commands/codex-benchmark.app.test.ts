@@ -54,7 +54,7 @@ test.each([
 test.skipIf(process.platform === "win32").each([
   { mode: "verified", initializeError: false, escalation: "allowed", signal: null },
   { mode: "unverified", initializeError: false, escalation: "undelivered", signal: null },
-  { mode: "initialization error", initializeError: true, escalation: "undelivered", signal: null },
+  { mode: "initialization error", initializeError: true, escalation: "deny-term", signal: null },
   { mode: "cancelled", initializeError: false, escalation: "allowed", signal: "SIGINT" },
 ] as const)(
   "built doctor observes $mode app-server shutdown",
@@ -62,7 +62,7 @@ test.skipIf(process.platform === "win32").each([
     await withShutdownFixture(
       {
         appServerUserAgent: "cdx_chores/0.171.0",
-        resistantLeader: escalation === "undelivered",
+        resistantLeader: escalation !== "allowed",
         resistantWorker: true,
         initializeError,
         stallInitialization: signal !== null,
@@ -109,7 +109,7 @@ test.skipIf(process.platform === "win32").each([
         const { codexBenchmark } = JSON.parse(result.stdout);
         expect(codexBenchmark.status).toBe(escalation === "allowed" ? "met" : "failed");
         expect(codexBenchmark.version).toBe(initializeError ? null : "0.171.0");
-        if (escalation === "undelivered")
+        if (escalation !== "allowed")
           expect(codexBenchmark.detail).toContain("App-server shutdown failed");
         if (initializeError)
           expect(codexBenchmark.detail).toContain("App-server initialization failed");

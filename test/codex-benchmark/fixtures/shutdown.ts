@@ -171,7 +171,7 @@ async function readLeader(home: string) {
 export async function checkShutdownAtExit(
   home: string,
   exit: CallerExit,
-  escalation: "allowed" | "denied" | "undelivered",
+  escalation: "allowed" | "denied" | "undelivered" | "deny-term",
 ) {
   const leader = await readLeader(home);
   expect(await readSpawnedLeader(home)).toBe(leader);
@@ -196,9 +196,10 @@ export async function checkShutdownAtExit(
     .map((line) => JSON.parse(line) as { pid: number; signal: string; at: number });
   expect(signals).toMatchObject([
     { pid: -leader, signal: "SIGTERM" },
-    { pid: -leader, signal: "SIGKILL" },
+    ...(escalation === "deny-term" ? [] : [{ pid: -leader, signal: "SIGKILL" }]),
   ]);
-  expect(signals[1]!.at).toBeGreaterThanOrEqual(signals[0]!.at);
-  expect(exit.at).toBeGreaterThanOrEqual(signals[1]!.at);
+  const lastSignal = signals.at(-1)!;
+  expect(lastSignal.at).toBeGreaterThanOrEqual(signals[0]!.at);
+  expect(exit.at).toBeGreaterThanOrEqual(lastSignal.at);
   expect(exit.at - signals[0]!.at).toBeLessThanOrEqual(3_000);
 }
