@@ -91,7 +91,7 @@ test.skipIf(process.platform === "win32").each([
     await withShutdownFixture(
       {
         appServerUserAgent: "cdx_chores/0.171.0",
-        resistantLeader: signal !== null || escalation !== "allowed",
+        resistantLeader: signal === "SIGHUP" || escalation !== "allowed",
         resistantWorker: true,
         initializeError,
         stallInitialization: signal !== null,
