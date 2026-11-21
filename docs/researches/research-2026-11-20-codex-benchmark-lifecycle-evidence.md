@@ -131,15 +131,15 @@ For an explicit relative executable, a lookup that prefixes its working director
 
 ### Before and after
 
-| Case | Before | Verified outcome |
+The hangup probes recorded how the caller exited and whether any members of its app-server group were still alive at that point. The launch probes tracked the process receipts, whether scratch was removed and which suites ran next. [^part-ii-record]
+
+| Case | Before | After |
 | --- | --- | --- |
 | HUP during initialization, both Node callers | At `528fdd65`, default HUP left two live members. With the installed handler, the initialization fallback ran and the caller exited 1. | At `39c4cca0`, default HUP terminated the caller by signal and the installed handler’s caller exited 42. All four exit snapshots showed an empty group. |
 | Live-check HUP after the first `turn/start` reply | At `411674fe`, the trial error overwrote exit code 42 with 1 even though the group stopped. | At `b7139c6a`, the caller exited 42, one trial started and the group was empty at caller exit. Ordinary trial failures still exited 1. |
 | Invalid working directory | The device at `528fdd65` and a symlink loop or overlong component at `411674fe` each left two pending receipts and blocked later suites. | The device at `971dbbc4` and both path errors at `bef25d53` produced two stopped rejection receipts. Scratch was removed and both later suites ran. |
 | Invalid explicit executable | At `bef25d53`, a file in the path, a symlink loop or an overlong name blocked later suites. At `f3bb3d7e`, a long working-directory prefix could still mask the relative lookup. | At `08b028bc`, all three errors produced the matching rejection before subject launch, including the long-directory cases. A valid near-limit relative command still ran. |
 | Public spawn throws after child allocation | The `ENOTDIR` control at `971dbbc4` retained scratch. | At `08b028bc`, `ENOTDIR`, `ELOOP` and `ENAMETOOLONG` each left the receipt pending, scratch retained and later suites unrun. The fixture independently observed and stopped the child. |
-
-Phase 3 validated the original corrections at `c025f088`. After the additional path and active-turn fixes, all 4,895 managed tests passed at `08b028bc`, and the final code review covered `ba2d93c1..08b028bc`. [^part-ii-record]
 
 ## Related Plans
 
