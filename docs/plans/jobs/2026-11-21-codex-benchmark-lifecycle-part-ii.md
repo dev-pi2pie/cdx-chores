@@ -58,7 +58,24 @@ Phase 3 validated the two corrections at `c025f088`. [Phase 3 checklist](../plan
 
 The independent review of `ba2d93c1..411674fe` confirmed the stalled-initialization HUP outcomes for both benchmark callers, the doctor and SDK retention controls, the device and regular-file path rejections, and scratch retention after child allocation. All 4,874 managed tests passed at `411674fe`. Separate probes reproduced two open P3s. [Phase 4 checklist](../plan-2026-11-21-codex-benchmark-lifecycle-part-ii.md#phase-4-corrections-from-the-canary-review)
 
-| Open P3 | Canary (`ba2d93c1`) | Reviewed tip (`411674fe`) |
+| P3 at review | Canary (`ba2d93c1`) | Reviewed tip (`411674fe`) |
 | --- | --- | --- |
 | Live-check HUP after the first `turn/start` reply | The installed handler set exit code 42 and the caller exited 42, as it also did at `528fdd65`. | The group stopped and the next trial was skipped. The trial failure overwrote exit code 42 with 1. |
 | Working directory with a symlink loop (`ELOOP`) or a 512-byte component (`ENAMETOOLONG`) | Scratch was removed and Codex and Pandoc ran. | In both cases the two receipts stayed pending, scratch was retained and neither later suite ran. |
+
+## Active-turn hangup and launch-path failures
+
+| Checkpoint | Evidence |
+| --- | --- |
+| Live-check HUP, `b7139c6a` | At `2cc9b07a`, the trial failure overwrote exit code 42 with 1 when HUP arrived after the first `turn/start` reply. The corrected caller exited 42 within 2.5 seconds, started one trial and had zero live group members at caller exit before teardown. An ordinary trial failure still exited 1. |
+| Working directory, `bef25d53` | A symlink loop and an overlong component previously left two pending receipts. After the fix, Node and Bun matched native `ELOOP` and `ENAMETOOLONG` with zero calls to spawn the subject. Each managed case closed both receipts as `launch-rejected` with `stopped: true`, no PID, group ID or start record. Scratch was removed and Codex and Pandoc ran after the injected Application failure. |
+| Review `ba2d93c1..bef25d53` | Both original P3s were resolved. All 4,881 managed tests passed. The review reproduced the same scheduling failure with a valid working directory and an explicit executable path that crossed a regular file, looped through a symlink or contained an overlong component. |
+| Explicit executable, `f3bb3d7e` | All three common path cases produced the expected stopped receipts and resumed scheduling. Absolute and relative probes matched the native error in Node and Bun. PATH lookup and missing files still reached native spawn. |
+| Review `ba2d93c1..f3bb3d7e` | The full managed suite passed. A long working-directory prefix masked the error for a relative executable. All three managed reproductions retained scratch, left two receipts pending and skipped both later suites. |
+| Relative lookup, `08b028bc` | A bounded helper checks the relative path after changing directory. All three long-directory cases now close both receipts and resume scheduling. A valid near-limit command still ran, and an unavailable probe deferred to native spawn. |
+| Post-allocation control | For each of `ENOTDIR`, `ELOOP` and `ENAMETOOLONG`, the driver independently observed and stopped a real child. The runner kept its receipt pending without a PID, group ID or start record, retained scratch and withheld Codex and Pandoc. |
+| Validation at `08b028bc` | 297 focused tests passed across nine files. All 4,895 managed cases passed (2,141 Unit, 2,710 Application, 39 Codex, 5 Pandoc) with zero failures, errors or skips. Application took 351.968 seconds against the 360-second test-process limit. All managed preflight and test processes stopped without escalation and the observed run root, scratch and results were removed. |
+| Build and static checks | The Node build, extracted package CLI version and `codex-bench --help`, TypeScript, lint, formatting and full-range diff checks passed at `08b028bc`. |
+| Final review `ba2d93c1..08b028bc` | No actionable findings. All three P3s were resolved, including the long-directory cases. The review verified the earlier benchmark, doctor, SDK retention and runner controls. Helper throws, timeouts, nonzero exits and malformed output all deferred to native spawn. |
+
+[Phase 4 checklist](../plan-2026-11-21-codex-benchmark-lifecycle-part-ii.md#phase-4-corrections-from-the-canary-review)
