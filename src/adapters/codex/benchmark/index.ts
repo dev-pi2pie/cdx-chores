@@ -329,13 +329,16 @@ export async function runCodexBenchmark(options: BenchmarkOptions): Promise<Benc
   try {
     try {
       server = new CodexAppServer(resolveDiscoveryExecutable(env), cwd, env, {
-        isolateSignals: true,
+        onHangup: () => {
+          report.interrupted = true;
+        },
       });
       const initialized = await server.initialize(undefined, signal);
       report.codexVersion = extractAppServerVersion(initialized.userAgent, env)?.version ?? null;
       report.codexHome = rolloutPath(initialized.codexHome);
     } catch (error) {
-      if (!(signal?.aborted && error === signal.reason)) report.startupError = messageFrom(error);
+      if (!report.interrupted && !(signal?.aborted && error === signal.reason))
+        report.startupError = messageFrom(error);
       return report;
     }
     const runner = new BenchmarkRunner(server, options);
@@ -347,7 +350,7 @@ export async function runCodexBenchmark(options: BenchmarkOptions): Promise<Benc
       report.trials.push(trial);
       onTrial?.(trial);
     }
-    if (!signal?.aborted && server.signal.aborted) {
+    if (!report.interrupted && !signal?.aborted && server.signal.aborted) {
       report.transportError = messageFrom(server.stopReason);
     }
     return report;
@@ -357,6 +360,6 @@ export async function runCodexBenchmark(options: BenchmarkOptions): Promise<Benc
     } catch (error) {
       report.shutdownError = messageFrom(error);
     }
-    report.interrupted = signal?.aborted ?? false;
+    report.interrupted ||= signal?.aborted ?? false;
   }
 }

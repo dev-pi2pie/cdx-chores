@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
@@ -85,9 +86,18 @@ test.skipIf(process.platform === "win32").each([
       exitCode: 42,
     } as const,
   ]),
+  {
+    mode: "SIGHUP handler followed by SIGTERM during cleanup",
+    initializeError: false,
+    escalation: "allowed",
+    signal: "SIGHUP",
+    exitCode: 42,
+    followupSignal: "SIGTERM",
+  },
 ] as const)(
   "built doctor observes $mode app-server shutdown",
-  async ({ initializeError, escalation, signal, exitCode }) => {
+  async (scenario) => {
+    const { initializeError, escalation, signal, exitCode } = scenario;
     await withShutdownFixture(
       {
         appServerUserAgent: "cdx_chores/0.171.0",
@@ -128,6 +138,13 @@ test.skipIf(process.platform === "win32").each([
             await delay(20);
           }
           cancellationAt = signalCallerGroup(caller, signal);
+          if ("followupSignal" in scenario) {
+            while (!existsSync(join(home, "signals.jsonl"))) {
+              if (performance.now() >= deadline) throw new Error("Doctor did not start cleanup.");
+              await delay(10);
+            }
+            signalCallerGroup(caller, scenario.followupSignal);
+          }
         }
         const result = await caller.completion;
         await checkShutdownAtExit(home, callerExit(), escalation, cancellationAt);

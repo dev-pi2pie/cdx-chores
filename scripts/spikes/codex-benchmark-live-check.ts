@@ -11,6 +11,10 @@ import {
   TurnStartEvidence,
 } from "../../src/adapters/codex/app-server-identity.ts";
 import { createAppServerShutdown } from "../../src/adapters/codex/app-server-shutdown.ts";
+import {
+  checkAppServerLaunchDuringCancellation,
+  stopAppServerOnSignal,
+} from "../../src/adapters/codex/app-server-signals.ts";
 import { extractAppServerVersion } from "../../src/adapters/codex/app-server-version.ts";
 import { writeAppServerTurn } from "../../src/adapters/codex/app-server-write.ts";
 import { CodexAppServerError, isTurnInputTooLarge } from "../../src/adapters/codex/app-server.ts";
@@ -76,6 +80,7 @@ interface Message {
 
 function startAppServer({ executable, args }: typeof defaultAppServer, env: NodeJS.ProcessEnv) {
   const separateGroup = process.platform !== "win32";
+  if (separateGroup) checkAppServerLaunchDuringCancellation();
   const child = spawn(executable, args, {
     env,
     stdio: "pipe",
@@ -465,12 +470,23 @@ export async function runLiveCheck(
   const server = startAppServer(appServer, env);
   let closing: Promise<void> | undefined;
   let shutdownFailed = false;
+  let hungUp = false;
   let signalExit: number | undefined;
-  const close = () =>
-    (closing ??= server.close().catch((error: unknown) => {
-      shutdownFailed = true;
-      console.error(`Shutdown failed: ${String(error)}`);
-    }));
+  const close = (): Promise<void> =>
+    (closing ??= server
+      .close()
+      .catch((error: unknown) => {
+        shutdownFailed = true;
+        console.error(`Shutdown failed: ${String(error)}`);
+      })
+      .finally(() => releaseHangup?.()));
+  const releaseHangup =
+    process.platform === "win32"
+      ? undefined
+      : stopAppServerOnSignal(() => {
+          hungUp = true;
+          return close();
+        }, "hangup");
   const cancel = (exitCode: number) => {
     signalExit ??= exitCode;
     void close();
@@ -513,7 +529,7 @@ export async function runLiveCheck(
         results.push({ requestedSpeed, sentTier: trial.sentTier, ...result });
         if (stopScheduling) break;
       } catch (error) {
-        process.exitCode = 1;
+        if (!hungUp) process.exitCode = 1;
         results.push({
           requestedSpeed,
           sentTier: trial.sentTier,
@@ -522,7 +538,7 @@ export async function runLiveCheck(
         });
       }
     }
-    if (signalExit === undefined && server.signal.aborted) {
+    if (!hungUp && signalExit === undefined && server.signal.aborted) {
       process.exitCode = 1;
       console.error(`Transport failed: ${String(server.signal.reason)}`);
     }
@@ -531,12 +547,13 @@ export async function runLiveCheck(
     );
   } catch (error) {
     await close();
-    if (signalExit === undefined) throw error;
+    if (!hungUp && signalExit === undefined) throw error;
   } finally {
     await close();
     process.off("SIGINT", interrupt);
     process.off("SIGTERM", terminate);
-    if (signalExit !== undefined || shutdownFailed) process.exitCode = signalExit ?? 1;
+    if (signalExit !== undefined) process.exitCode = signalExit;
+    else if (shutdownFailed && !hungUp) process.exitCode = 1;
   }
 }
 

@@ -1,7 +1,8 @@
 ---
 title: "Codex benchmark lifecycle corrections, Part II — Process ownership and launch evidence"
 created-date: 2026-11-21
-status: draft
+modified-date: 2026-11-21
+status: active
 agent: codex
 ---
 
@@ -19,7 +20,7 @@ Record the implementation checkpoint, tested revision and observations that supp
 
 ## Phase 1. Hangup cleanup in both Node callers
 
-- [ ] Turn the hangup probe into four regression cases using the built Node `codex-bench` CLI and the maintainer Node bundle, each with default HUP and the installed exit-42 handler. Before the fix, confirm the default cases leave the leader and worker alive and the handler cases reach `initialize-fallback` and exit 1. [Built CLI and shutdown harness](../../test/codex-benchmark/shared-shutdown.app.test.ts) · [Maintainer bundle launcher](../../test/codex-benchmark/dispatch-accounting.app.test.ts)
+- [x] Turn the hangup probe into four regression cases using the built Node `codex-bench` CLI and the maintainer Node bundle, each with default HUP and the installed exit-42 handler. Before the fix, confirm the default cases leave the leader and worker alive and the handler cases reach `initialize-fallback` and exit 1. [Built Node hangup cases](../../test/codex-benchmark/hangup.app.test.ts)
 - [ ] Share POSIX HUP cleanup across both callers from detached launch through close. Start bounded shutdown on hangup while initialization is pending, release signal listeners when ownership ends, and preserve default signal termination or the installed handler’s exit policy through startup-error handling. Reuse the existing group shutdown and signal ownership logic where their contracts match. [Signal scope](../../src/adapters/codex/app-server-signals.ts) · [Bounded shutdown](../../src/adapters/codex/app-server-shutdown.ts)
 - [ ] In all four cases, verify caller and app-server group identities, wait for the resistant leader, worker and pending initialization, then signal the caller’s group. With escalation allowed, require group TERM and KILL, bounded caller exit before the initialization fallback, and zero live members in the parent’s caller-exit snapshot. Assert termination by `SIGHUP` for the default and normal exit code 42 for the handler. Release the fixture after the snapshot and independently verify teardown, including on assertion failure. [Exit observer and teardown](../../test/codex-benchmark/fixtures/shutdown.ts)
 - [ ] Rerun the doctor and SDK retention signal controls, the denied and undelivered escalation cases, and both benchmark callers’ INT/TERM controls. Verify the benchmark can interrupt a known active turn and emit its partial report, the live check closes immediately, and the initiating signal retains its exit status. [Benchmark cancellation](../../test/codex-benchmark/benchmark-runner.app.test.ts) · [Doctor](../../test/doctor/commands/codex-benchmark.app.test.ts) · [SDK retention](../../test/codex-benchmark/sdk-retention.codex.test.ts)

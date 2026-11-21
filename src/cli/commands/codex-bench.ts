@@ -183,7 +183,11 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
       );
     }
     if (signalExitCode !== undefined) process.exitCode = signalExitCode;
-    else if (failed || completedMeasuredTrials === 0 || result.shutdownError) process.exitCode = 1;
+    else if (
+      !result.interrupted &&
+      (failed || completedMeasuredTrials === 0 || result.shutdownError)
+    )
+      process.exitCode = 1;
   } finally {
     try {
       progress?.stop();
