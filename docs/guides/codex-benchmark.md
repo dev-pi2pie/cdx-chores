@@ -16,24 +16,24 @@ cdx-chores codex-info models --details
 cdx-chores codex-bench --runs 1
 ```
 
-**Why send the prompt twice?** `codex-bench` compares repeated requests. A model’s first request can take longer than later ones. With only one measured trial, that extra time could make one model or speed look slower simply because of its first request. The benchmark gives each case one warm-up, then counts the next request as its first measurement. Both requests start in fresh sessions so each receives the same prompt with no prior conversation history.
+`--runs 1` schedules one warm-up and one measured trial for each model and speed combination. The first request can take longer, so only the second counts toward the timing results. Each request starts a fresh Codex session with no conversation history.
 
-The benchmark check in `doctor` initializes the app-server, reads its version, and closes it. The check uses Codex 0.170.0 as its minimum. If shutdown fails, it reports `failed` and keeps any version it read. `codex-info models --details` lists advertised tiers and catalog defaults when available. A completed trial has a matching live completion for its thread and turn. The report shows the requested speed. Codex does not report which speed served the request.
+`doctor` checks that the app-server starts, reports a Codex version of at least 0.170.0, and shuts down. If shutdown fails, the check reports `failed` and keeps any version it read. `codex-info models --details` lists the tiers and defaults Codex advertises.
 
 ### Compare A Model And Speed Matrix
 
-Repeat `--codex-model` and `--codex-speed` to try every model at every selected speed. This example runs Standard and Fast for each model. Replace the illustrative model IDs with selections available in your Codex configuration.
+`--codex-model` and `--codex-speed` are repeatable. The benchmark tests every selected speed for each model, in the order you list the models. Replace `model-a` and `model-b` with model IDs available in your Codex configuration.
 
 ```sh
 cdx-chores codex-bench --codex-model model-a --codex-model model-b \
   --codex-speed standard --codex-speed fast --runs 1
 ```
 
-Flag placement does not pair a model with a speed. The benchmark rotates the starting speed across measured rounds. When omitted, model, speed, provider, and reasoning effort inherit from Codex. Use `standard` to request Standard explicitly.
+The warm-up and first measured round use the speeds in the order you list them. Each later round starts with the next speed in that list, wrapping around as needed. Omit model, speed, provider, or reasoning effort to use Codex settings. Use `standard` to request Standard explicitly.
 
 ### Compare Specific Pairs
 
-Use repeatable `--case MODEL=SPEED` to choose the exact pairs. The example below sends six requests, with two measured trials per pair.
+`--case MODEL=SPEED` is repeatable. Use one flag per pair you want to test. This example schedules six requests, including two measured trials per pair.
 
 ```sh
 cdx-chores codex-bench --case model-a=fast --case model-b=ultrafast \
@@ -48,15 +48,15 @@ Measured round 1   model-a=fast -> model-b=ultrafast
 Measured round 2   model-a=fast -> model-b=ultrafast
 ```
 
-`SPEED` accepts `standard`, `fast`, `ultrafast`, or `inherit`. The value splits at the last `=`, so `--case "model=a=inherit"` selects the model ID `model=a` and inherits its speed. Use either `--case` or the matrix selectors in an invocation. Repeating an identical case adds trials to the same summary row.
+Choose either `--case` or the matrix flags for each command. `SPEED` accepts `standard`, `fast`, `ultrafast`, or `inherit`. The value splits at the last `=`, so `--case "model=a=inherit"` selects the model ID `model=a` and inherits its speed. Repeating an identical case adds trials to the same summary row.
 
-One `--codex-reasoning-effort` value applies to the entire invocation regardless of flag order. With `--case MODEL=inherit`, inheritance in the case refers to speed. Omit the effort flag to let Codex resolve it for each trial. To compare Low and High, run the same workload twice with a different explicit effort on each run.
+Pass `--codex-reasoning-effort` at most once. It applies to every trial regardless of where you put it. Omit it to let Codex choose the effort for each trial. In `--case MODEL=inherit`, `inherit` applies only to speed. To compare Low and High effort, run the same workload once per effort.
 
 ### Set The Workload
 
-`--runs` takes one positive integer and defaults to 3 measured trials per matrix combination or `--case` occurrence. Each gets one additional warm-up. Only measured trials count toward completion and timing statistics. Warm-ups also use tokens. `--show-token-usage` includes their reported usage in the invocation total and shows a warm-up subtotal in detailed terminal output.
+Pass `--runs` once with a positive integer. It defaults to three measured trials per matrix combination or per `--case` flag, plus one warm-up for each. Only measured trials count toward completion and timing statistics. Warm-ups use tokens. `--show-token-usage` includes them in the total and shows a warm-up subtotal in detailed terminal output.
 
-The built-in prompt asks Codex to explain an LRU cache. Use `--prompt-file` to supply your own. Markdown (`.md`), plain text (`.txt`), and extensionless files all work. The CLI reads the contents as UTF-8 text and requires at least one non-whitespace character. Markdown is sent as written. Use `--show-prompt` to include the submitted text in the report.
+The built-in prompt asks Codex to explain an LRU cache. Use `--prompt-file` to supply your own UTF-8 text. Markdown (`.md`), plain text (`.txt`), and files without an extension all work. The file must contain at least one non-whitespace character. Codex receives Markdown as written. Add `--show-prompt` to include the prompt in the report.
 
 Choose one sample per comparison so every model and speed receives the same workload.
 
@@ -73,6 +73,8 @@ cdx-chores codex-bench --prompt-file examples/playground/codex-bench-prompt/summ
 ```
 
 ## Read The Results
+
+The benchmark marks a trial completed when Codex confirms completion for its thread and turn. The report shows the requested speed. Codex does not report which speed served the request.
 
 The report groups trials by model and requested speed. The speed and reasoning columns show inherited values when available from completed measured trials. For example, `Inherited (configured Fast)` describes the configured thread tier and `Inherited (Low)` describes the reported effort. Unavailable values show as `Inherited`. A `partial` label means only some completed measured trials supplied the same reported value. `Mixed` means the reported values differ.
 
@@ -97,13 +99,26 @@ cdx-chores codex-bench --prompt-file ./task.txt --runs 1 \
   --json --show-prompt --show-token-usage > report.json
 ```
 
-`--json` takes precedence over `--compact`. Once benchmark execution begins, stdout contains one JSON report, including when app-server initialization fails. An unreadable or invalid prompt file fails validation before the benchmark starts. The CLI exits with status 2, writes the diagnostic to stderr, and leaves stdout empty.
+`--show-prompt` adds `prompt.text`. `--show-token-usage` adds detailed token counts and totals for the run.
+
+`--json` overrides `--compact`. Once the benchmark starts, it writes one report to stdout, even if the app-server fails to initialize. On POSIX, default `SIGHUP` handling can end the run before it writes the report, leaving stdout empty.
+
+If the prompt file is unreadable or invalid, the CLI exits with status 2 before the benchmark starts. It writes an error to stderr and leaves stdout empty.
 
 Terminal stderr shows a temporary status that clears as the run finishes. Redirected stderr carries diagnostics only in JSON mode. In human mode, stderr also carries the startup workload and, in detailed mode with usage enabled, per-request token totals. Use the global `--no-color` option or set `NO_COLOR` for plain terminal output.
 
-JSON request fields keep `null` for inherited selections. Check `trials[].configuredTier` and `trials[].resolvedReasoningEffort` for available per-trial settings and `sentTier` for any explicit tier override accepted by app-server stdin. The benchmark sets `inferenceAttempted` when stdin accepts `turn/start`, including when it buffers the write under backpressure. A local refusal, including an immediate closed-pipe error, leaves `inferenceAttempted: false` and `sentTier: null`. Earlier complete usage stays complete. A later RPC error or transport failure preserves an accepted attempt and its explicit tier. Missing usage for an attempted trial makes the total partial. `servedSpeed` remains `null`.
+JSON request fields use `null` for inherited selections.
 
-JSON timing values use milliseconds. If conflicting start evidence invalidates a turn ID, the benchmark clears the ID, first-token and duration fields, excludes that trial from timing summaries, and reports null throughput. It keeps attributable token counts as partial. `--show-prompt` adds `prompt.text`, and `--show-token-usage` adds detailed usage counts and invocation totals.
+| Field in `trials[]` | What it shows |
+| --- | --- |
+| `configuredTier`, `resolvedReasoningEffort` | The configured tier and resolved reasoning effort, when available. |
+| `inferenceAttempted` | `true` once app-server stdin accepts `turn/start`, including when it buffers the write. |
+| `sentTier` | The explicit tier in the accepted write, or `null` if none was sent. |
+| `servedSpeed` | Always `null`. Codex does not report which speed served the request. |
+
+If the write fails before acceptance, such as with an immediate closed-pipe error, `inferenceAttempted` stays `false`, `sentTier` stays `null`, and earlier complete usage stays complete. A later RPC or connection failure preserves the recorded attempt and tier. Missing usage for an attempted trial makes the total partial.
+
+JSON timing values use milliseconds. If conflicting start evidence invalidates a turn ID, the benchmark clears the ID, first-token and duration fields, excludes that trial from timing summaries, and reports null throughput. It keeps attributable token counts as partial.
 
 Both report formats preserve a relative prompt path as supplied and abbreviate paths inside the user's home as `~` on macOS and Unix-like systems or `%USERPROFILE%` on Windows. Use the global `--absolute` or `--abs` option before `codex-bench` to show literal absolute paths, resolving a relative prompt path from the invocation directory.
 
@@ -113,25 +128,30 @@ The benchmark keeps its sessions by default, including warm-ups. Use `--session-
 
 ## Failures and exit codes
 
-An unavailable speed produces a diagnostic while supported combinations continue. On an invocation that runs without local cancellation, a failed trial, transport loss, a failed shutdown, or zero completed measured trials returns exit status 1. If the app-server connection is lost during the workload, JSON retains completed results and records the reason in `run.transportError`. If shutdown fails, `--json` still writes one report with the recorded trials and the reason in `run.shutdownError`.
+| What happened | Exit status and report |
+| --- | --- |
+| Ctrl-C (`SIGINT`) or `SIGTERM` | Partial report and exit `130` or `143`, respectively. The first signal determines the outcome. |
+| Default POSIX `SIGHUP` | Attempts bounded shutdown of the detached app-server group, then terminates by `SIGHUP`. Stdout may be empty. |
+| App-server startup or initialization failed | Exit `1`. Stderr gives the reason. JSON sets `run.startupError` and returns an empty `trials` array. |
+| App-server connection lost or shutdown failed | Exit `1`. JSON keeps recorded trials and sets `run.transportError` or `run.shutdownError`, respectively. |
+| A trial or session retention failed, Codex interrupted a turn, or no measured trial completed | Exit `1`. A failed warm-up counts even when measurements succeed. A turn Codex interrupts on its own is reported as `cancelled`. |
 
-A failed or ambiguous start can affect the rest of the workload. A proven local refusal on a healthy connection allows the next planned trial. After local acceptance, Codex's structured input-too-large refusal (`-32602` with `data.input_error_code: "input_too_large"`) allows the next planned trial if the connection is healthy, the run is uncancelled, and the caller has seen no turn evidence for the refused thread. A start event, a terminal event, or an item event with a turn ID on that thread blocks continuation even when the IDs agree. The refused trial stays failed and skips archive and delete. A generic RPC error with unconfirmed completion also skips archive and delete and stops scheduling.
+The exit-`1` rows apply without local cancellation. On POSIX, `SIGHUP` starts shutdown even during initialization. If an installed hangup handler sets an exit code and allows cleanup to finish, the benchmark preserves that code.
 
-While the `turn/start` reply is pending, a live terminal event matching the announced thread and turn lets the benchmark recover the result. If the 15-second start deadline expires with a known turn ID and completion remains unconfirmed, the benchmark interrupts that turn. It also interrupts a known turn that exceeds its 120-second completion deadline. The timed-out trial stays failed and keeps any attributable usage. A matching terminal event after interruption permits requested retention and another trial on a healthy, uncancelled run. A missing turn ID or an interrupt acknowledgement without a matching terminal by the confirmation deadline causes the benchmark to skip retention and stop scheduling.
+### When another trial can start
 
-If competing start IDs become visible before retention, the benchmark skips archive and delete and stops scheduling. A conflict detected while a retention request is already in flight still stops later trials. The report preserves the outcome of the request already sent.
+| What happened | What the benchmark does |
+| --- | --- |
+| Requested speed is unavailable | Reports it and continues with supported combinations. |
+| Local write refusal, or structured input-too-large rejection with no turn evidence | Skips archive and delete. Can start the next trial on a healthy, uncancelled run. |
+| A known turn times out | Sends an interrupt and keeps the failed trial and any attributable usage. A matching terminal event permits requested retention and another trial on a healthy, uncancelled run. |
+| An accepted start remains unsettled, or start IDs conflict | Stops scheduling and skips archive and delete. If a conflict arrives during a retention request, the report records that request’s outcome. |
 
-A transient tier lookup failure can leave a failed warm-up alongside successful measurements. For example, if discovery fails during the Fast warm-up in a Fast/Standard comparison, the measured Fast trial can try the failed lookup again. Even if both measured trials complete, the report retains the warm-up failure and the CLI exits with status 1.
+An input-too-large rejection marks the trial failed. To continue, it must have RPC code `-32602` and `data.input_error_code: "input_too_large"`. On that thread, any start or terminal event, or an item event with a turn ID, blocks the exception.
 
-If app-server interrupts a turn on its own, the trial is reported as `cancelled`. The CLI prints a diagnostic and exits with status 1 even when other measurements succeeded. On Ctrl-C (`SIGINT`) or `SIGTERM`, the CLI writes the partial report and returns status 130 or 143 respectively. If another signal arrives during cleanup, the first signal determines the exit outcome.
+A matching terminal event can recover a pending `turn/start` reply if Codex announced the thread and turn. The start deadline is 15 seconds and the completion deadline is 120 seconds. An interrupt acknowledgement alone leaves completion unconfirmed.
 
-On POSIX, a hangup (`SIGHUP`) starts bounded shutdown of the benchmark’s detached app-server group, including while initialization is pending. With default signal handling, the caller terminates by `SIGHUP` after the shutdown attempt. If an installed hangup handler sets an exit code and allows cleanup to finish, the benchmark preserves that code.
-
-If Ctrl-C interrupts a pending `thread/start` request, app-server may already have created the session. The cancelled trial shows `threadId: null` and `sessionRetention: null` because the CLI can only archive or delete a session whose ID it has received.
-
-If Ctrl-C arrives after `turn/start` is sent, the CLI allows one second for a pending turn ID to arrive so it can interrupt that turn. If the ID remains unknown, the CLI stops scheduling trials, skips requested cleanup, and returns status 130 with the partial report.
-
-If app-server startup or initialization fails without local cancellation, the CLI returns status 1 and prints the reason on stderr. JSON includes the reason in `run.startupError`, the requested workload, and an empty `trials` array.
+If Ctrl-C cancels a pending `thread/start`, Codex may already have created a session. The trial reports `threadId: null` and `sessionRetention: null`. If Ctrl-C arrives after `turn/start` is sent, the benchmark allows one second for the turn ID so it can interrupt the turn. If the ID stays unknown, it stops scheduling and skips requested retention.
 
 ## Standard/Fast live check
 

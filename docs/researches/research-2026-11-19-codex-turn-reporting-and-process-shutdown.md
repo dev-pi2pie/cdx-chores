@@ -1,7 +1,7 @@
 ---
 title: "Codex turn reporting and process shutdown in canary.6 and canary.7"
 created-date: 2026-11-19
-modified-date: 2026-11-20
+modified-date: 2026-11-21
 status: in-progress
 agent: codex
 ---
@@ -151,7 +151,7 @@ The CLI changes were verified against synthetic app-server faults with the 0.171
 
 ### Managed test runner
 
-Remember cancellation for the lifetime of the application suite. Verify that the active fixture records its completion and that the next fixture never acquires a PID. The cause of the earlier suite timeout remains open. Keep the 300-second allowance while profiling the video and Codex benchmark test families.
+Remember cancellation for the lifetime of the application suite. Verify that the active fixture records its completion and that the next fixture never acquires a PID. The cause of the earlier suite timeout remains open. Keep the current 360-second Application suite allowance while profiling the video and Codex benchmark test families. [Application suite policy](../../scripts/testing/suites/suite-policy.ts)
 
 ## Related Plans
 
