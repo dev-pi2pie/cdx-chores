@@ -14,6 +14,11 @@ assert(home);
 
 async function probeSyntheticTurn() {
   assert(fixturePrompt);
+  if (scenario === "archive-worker-caller-signal") {
+    process.once("SIGTERM", () => {
+      process.exitCode = 42;
+    });
+  }
   const abort = new AbortController();
   const sessionRetention = scenario === "delete-close-error" ? "delete" : "archive";
   try {

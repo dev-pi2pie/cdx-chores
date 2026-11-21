@@ -1,10 +1,12 @@
 import { expect, test } from "bun:test";
 import { chmod, readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
 
 import { lifecycleDiagnostic, withLiveCodexFixture } from "../codex-info/live-fixture";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
+import { checkShutdownAtExit, watchCallerExit, withShutdownFixture } from "./fixtures/shutdown";
 import { captureSpeedRequest, fixtureAnswer, fixturePrompt } from "./fixtures/speed-provider";
 
 const cases = [
@@ -150,7 +152,9 @@ test.each([
             .trim()
             .split("\n")
             .map((line) => JSON.parse(line));
-          expect(signals).toMatchObject([{ pid: leader, signal: "SIGTERM" }]);
+          expect(signals).toMatchObject([
+            { pid: process.platform === "win32" ? leader : -leader, signal: "SIGTERM" },
+          ]);
           await expect(readFile(join(home, "app-server-spawn"))).rejects.toMatchObject({
             code: "ENOENT",
           });
@@ -159,4 +163,95 @@ test.each([
     });
   },
   15_000,
+);
+
+test.skipIf(process.platform === "win32").each([
+  { escalation: "allowed", signal: null, output: "fixture-answer", exitCode: 0 },
+  { escalation: "undelivered", signal: null, output: "fixture-answer", exitCode: 0 },
+  { escalation: "undelivered", signal: null, output: "Original helper error.", exitCode: 0 },
+  { escalation: "allowed", signal: "SIGTERM", output: null, exitCode: null },
+  { escalation: "allowed", signal: "SIGTERM", output: "fixture-answer", exitCode: 42 },
+] as const)(
+  "SDK retention verifies its worker with $escalation escalation, signal $signal, outcome $output",
+  async ({ escalation, signal, output, exitCode }) => {
+    await withProbe(async (driverPath) => {
+      await withShutdownFixture({}, async ({ home, options, start }) => {
+        const executable = options.env?.CDX_CHORES_CODEX_PATH;
+        if (!executable) throw new Error("Missing fixture executable.");
+        await Bun.write(
+          executable,
+          Bun.file(join(import.meta.dir, "fixtures/sdk-retention-executable.mjs")),
+        );
+        const events = join(home, "retention-events.jsonl");
+        const mode = output === "Original helper error." ? "delete" : "archive";
+        const callerHandlesSignal = signal !== null && exitCode !== null;
+        const scenario = callerHandlesSignal
+          ? "archive-worker-caller-signal"
+          : mode === "delete"
+            ? "delete-close-error"
+            : "archive-worker";
+        const caller = start({
+          executable: "node",
+          args: [
+            "--import",
+            pathToFileURL(join(import.meta.dir, "fixtures/shutdown-signal.mjs")).href,
+            driverPath,
+            scenario,
+            executable,
+          ],
+          cwd: options.cwd,
+          env: {
+            ...options.env,
+            CDX_RETENTION_EVENTS: events,
+            CDX_RETENTION_WORKER: "1",
+            CDX_RETENTION_RPC: signal ? "stall" : "success",
+            FIXTURE_ESCALATION: escalation,
+          },
+          timeoutMs: 7_500,
+          graceMs: 600,
+          cleanupMs: 1_500,
+        });
+        const callerExit = watchCallerExit(caller);
+        if (signal) {
+          const deadline = performance.now() + 3_000;
+          while (
+            !(await Bun.file(events).exists()) ||
+            !(await Bun.file(events).text()).includes("thread/archive:")
+          ) {
+            if (performance.now() >= deadline)
+              throw new Error("Retention request did not reach the fixture.");
+            await delay(20);
+          }
+          expect(caller.child.kill(signal)).toBe(true);
+        }
+        const result = await caller.completion;
+        await checkShutdownAtExit(home, callerExit(), escalation);
+        expect(result.stopped).toBe(true);
+        expect(result.issues).toEqual([]);
+        expect(result.signal).toBe(callerHandlesSignal ? null : signal);
+        expect(result.exitCode, result.stderr).toBe(exitCode);
+        const timeline = (await readFile(events, "utf8"))
+          .trim()
+          .split("\n")
+          .map((line) => JSON.parse(line).event);
+        expect(timeline).toEqual([
+          "exec-started",
+          "exec-exited",
+          "app-server-started",
+          `thread/${mode}:owned-fixture-thread`,
+        ]);
+        if (output !== null) expect(result.stdout.trim()).toBe(output);
+        if (escalation === "undelivered") {
+          expect(result.stderr).toContain(`Codex session ${mode} failed`);
+          expect(result.stderr).toContain("shutdown deadline");
+        } else if (callerHandlesSignal) {
+          expect(result.stderr).toContain("Codex session archive failed");
+          expect(result.stderr).toContain("Codex app-server was closed.");
+        } else if (!signal) {
+          expect(result.stderr).toBe("");
+        }
+      });
+    });
+  },
+  12_000,
 );

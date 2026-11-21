@@ -58,7 +58,7 @@ export async function inspectCodexBenchmark(
   let server: CodexAppServer | undefined;
   let readiness: CodexBenchmarkPrerequisites;
   try {
-    server = new CodexAppServer(executable, cwd, serverEnv);
+    server = new CodexAppServer(executable, cwd, serverEnv, { cleanupOnSignal: true });
     const result = await server.initialize(initializeTimeoutMs);
     if (!isRecord(result)) throw new Error("Invalid app-server initialization response.");
     readiness = assessInitializedVersion(result.userAgent, serverEnv);

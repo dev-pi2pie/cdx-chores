@@ -1,3 +1,4 @@
+import { expect } from "bun:test";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -6,6 +7,8 @@ import type { OwnedProcess, OwnedProcessResult } from "../../../scripts/testing/
 import {
   isLiveProcess,
   observeProcessGroup,
+  requireProcessObservation,
+  type ProcessMember,
 } from "../../../scripts/testing/execution/process-table";
 import {
   completeRejectedFixtureLaunch,
@@ -137,4 +140,65 @@ export function withDispatchFixture<T>(
         fixture.start({ ...options, args: ["--import", preload, ...options.args] }),
     }),
   );
+}
+
+type CallerExit = { at: number; processes: ProcessMember[] };
+
+export function watchCallerExit({ child }: OwnedProcess) {
+  let observed: CallerExit | undefined;
+  let observationError: unknown;
+  child.once("exit", () => {
+    try {
+      observed = { at: Date.now(), processes: requireProcessObservation() };
+    } catch (error) {
+      observationError = error;
+    }
+  });
+  return () => {
+    if (!observed) throw observationError ?? new Error("Fixture caller exit was not observed.");
+    return observed;
+  };
+}
+
+async function readLeader(home: string) {
+  const leader = Number(await readFile(join(home, "leader.pid"), "utf8"));
+  if (!Number.isSafeInteger(leader) || leader <= 1) {
+    throw new Error("Missing valid fixture group leader.");
+  }
+  return leader;
+}
+
+export async function checkShutdownAtExit(
+  home: string,
+  exit: CallerExit,
+  escalation: "allowed" | "denied" | "undelivered",
+) {
+  const leader = await readLeader(home);
+  expect(await readSpawnedLeader(home)).toBe(leader);
+  const worker = JSON.parse(await readFile(join(home, "worker.pid"), "utf8")) as {
+    pid: number;
+    groupId: number;
+  };
+  expect(worker.groupId).toBe(leader);
+  expect(Number.isSafeInteger(worker.pid)).toBe(true);
+  expect(worker.pid).toBeGreaterThan(1);
+  expect(worker.pid).not.toBe(leader);
+  const members = exit.processes
+    .filter((p) => p.groupId === leader && isLiveProcess(p))
+    .map((p) => p.pid)
+    .sort((a, b) => a - b);
+  expect(members).toEqual(
+    escalation === "allowed" ? [] : [leader, worker.pid].sort((a, b) => a - b),
+  );
+  const signals = (await readFile(join(home, "signals.jsonl"), "utf8"))
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line) as { pid: number; signal: string; at: number });
+  expect(signals).toMatchObject([
+    { pid: -leader, signal: "SIGTERM" },
+    { pid: -leader, signal: "SIGKILL" },
+  ]);
+  expect(signals[1]!.at).toBeGreaterThanOrEqual(signals[0]!.at);
+  expect(exit.at).toBeGreaterThanOrEqual(signals[1]!.at);
+  expect(exit.at - signals[0]!.at).toBeLessThanOrEqual(3_000);
 }

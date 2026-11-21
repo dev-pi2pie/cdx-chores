@@ -1,17 +1,20 @@
 import { expect, test } from "bun:test";
-import { once } from "node:events";
-import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
 
-import {
-  requireProcessObservation,
-  isLiveProcess,
-} from "../../../scripts/testing/execution/process-table";
-import { startFixtureProcess } from "../../../scripts/testing/fixtures/fixture-process";
 import { actionDoctor } from "../../../src/cli/actions/doctor";
 import { inspectCodexBenchmark } from "../../../src/cli/doctor/codex-benchmark";
-import { withRunnerFixture } from "../../codex-benchmark/fixtures/runner";
+import {
+  buildNodeCaller,
+  traceMethod,
+  withRunnerFixture,
+} from "../../codex-benchmark/fixtures/runner";
+import {
+  checkShutdownAtExit,
+  watchCallerExit,
+  withShutdownFixture,
+} from "../../codex-benchmark/fixtures/shutdown";
 import { createActionTestRuntime } from "../../helpers/cli-action-test-utils";
 import { REPO_ROOT } from "../../helpers/cli-test-utils";
 import { createDoctorFixture } from "../fixtures";
@@ -49,77 +52,71 @@ test.each([
 );
 
 test.skipIf(process.platform === "win32").each([
-  { initialization: "succeeds", initializeError: false, escalation: "undelivered" },
-  { initialization: "fails", initializeError: true, escalation: "deny-term" },
-])(
-  "doctor reports shutdown failure when initialization $initialization and the child is still alive",
-  async ({ initializeError, escalation }) => {
-    await withRunnerFixture(
-      { appServerUserAgent: "cdx_chores/0.171.0", resistantLeader: true, initializeError },
-      async ({ home, options, trace }) => {
-        const build = await Bun.build({
-          entrypoints: [join(REPO_ROOT, "src/cli/doctor/codex-benchmark.ts")],
-          target: "node",
-          packages: "external",
-        });
-        expect(build.success).toBe(true);
-        await Bun.write(join(options.cwd, "probe.mjs"), build.outputs[0]!);
-        const owned = startFixtureProcess({
+  { mode: "verified", initializeError: false, escalation: "allowed", signal: null },
+  { mode: "unverified", initializeError: false, escalation: "undelivered", signal: null },
+  { mode: "initialization error", initializeError: true, escalation: "undelivered", signal: null },
+  { mode: "cancelled", initializeError: false, escalation: "allowed", signal: "SIGINT" },
+] as const)(
+  "built doctor observes $mode app-server shutdown",
+  async ({ initializeError, escalation, signal }) => {
+    await withShutdownFixture(
+      {
+        appServerUserAgent: "cdx_chores/0.171.0",
+        resistantLeader: escalation === "undelivered",
+        resistantWorker: true,
+        initializeError,
+        stallInitialization: signal !== null,
+      },
+      async ({ home, options, trace, start }) => {
+        const cli = await buildNodeCaller(join(REPO_ROOT, "src/bin.ts"), options.cwd);
+        const caller = start({
           executable: "node",
           args: [
             "--import",
             pathToFileURL(join(REPO_ROOT, "test/codex-benchmark/fixtures/shutdown-signal.mjs"))
               .href,
-            "--input-type=module",
-            "-e",
-            'import { inspectCodexBenchmark } from "./probe.mjs"; console.log(JSON.stringify(await inspectCodexBenchmark(process.cwd())));',
+            cli,
+            "doctor",
+            "--json",
           ],
           env: { ...options.env, FIXTURE_ESCALATION: escalation },
           cwd: options.cwd,
-          timeoutMs: 6_000,
+          timeoutMs: 10_000,
           graceMs: 600,
           cleanupMs: 1_500,
         });
-        let result;
-        try {
-          await once(owned.child, "exit");
-          const at = Date.now();
-          const processes = requireProcessObservation();
-          const pid = Number(await readFile(join(home, "leader.pid"), "utf8"));
-          const signals = (await readFile(join(home, "signals.jsonl"), "utf8"))
-            .trim()
-            .split("\n")
-            .map((line) => JSON.parse(line) as { pid: number; signal: string; at: number });
-          expect(signals.map((s) => [s.pid, s.signal])).toEqual(
-            initializeError
-              ? [[pid, "SIGTERM"]]
-              : [
-                  [pid, "SIGTERM"],
-                  [pid, "SIGKILL"],
-                ],
-          );
-          expect(at - signals[0]!.at).toBeGreaterThanOrEqual(0);
-          expect(at - signals[0]!.at).toBeLessThanOrEqual(3_000);
-          expect(
-            processes.some(
-              (p) => p.pid === pid && p.groupId === owned.child.pid && isLiveProcess(p),
-            ),
-          ).toBe(true);
-        } finally {
-          await writeFile(join(home, "release-shutdown"), "");
-          result = await owned.completion;
+        const callerExit = watchCallerExit(caller);
+        if (signal) {
+          const deadline = performance.now() + 5_000;
+          while (!traceMethod(await trace(), "initialize").length) {
+            if (performance.now() >= deadline) throw new Error("Doctor did not initialize.");
+            await delay(20);
+          }
+          expect(caller.child.kill(signal)).toBe(true);
         }
-        expect(result.ok, result.stderr || JSON.stringify(result.issues)).toBe(true);
-        const readiness = JSON.parse(result.stdout);
-        expect(readiness.status).toBe("failed");
-        expect(readiness.version).toBe(initializeError ? null : "0.171.0");
-        expect(readiness.detail).toContain("App-server shutdown failed");
-        if (initializeError) expect(readiness.detail).toContain("App-server initialization failed");
+        const result = await caller.completion;
+        await checkShutdownAtExit(home, callerExit(), escalation);
+        expect(result.stopped).toBe(true);
+        expect(result.issues).toEqual([]);
         expect((await trace())[0]?.method).toBe("initialize");
+        if (signal) {
+          expect(result.signal).toBe(signal);
+          expect(result.exitCode).toBeNull();
+          return;
+        }
+        // A failed benchmark prerequisite remains a diagnostic in the doctor report.
+        expect(result.exitCode, result.stderr).toBe(0);
+        const { codexBenchmark } = JSON.parse(result.stdout);
+        expect(codexBenchmark.status).toBe(escalation === "allowed" ? "met" : "failed");
+        expect(codexBenchmark.version).toBe(initializeError ? null : "0.171.0");
+        if (escalation === "undelivered")
+          expect(codexBenchmark.detail).toContain("App-server shutdown failed");
+        if (initializeError)
+          expect(codexBenchmark.detail).toContain("App-server initialization failed");
       },
     );
   },
-  10_000,
+  15_000,
 );
 
 test("doctor renders a failed initialization as a local diagnostic while retaining workflow checks", async () => {

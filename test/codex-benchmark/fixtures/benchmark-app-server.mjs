@@ -115,11 +115,11 @@ function resistShutdown() {
 }
 
 async function run() {
-  if (scenario.resistantLeader || scenario.stallPeerShutdown) {
+  if (scenario.resistantLeader || scenario.resistantWorker || scenario.stallPeerShutdown) {
     writeFileSync(join(home, "leader.pid"), String(process.pid));
-    if (scenario.stallPeerShutdown) process.on("SIGTERM", () => {});
-    else resistShutdown();
   }
+  if (scenario.stallPeerShutdown) process.on("SIGTERM", () => {});
+  else if (scenario.resistantLeader) resistShutdown();
   if (scenario.resistantWorker) {
     const readyPath = join(home, "worker.pid");
     const worker = spawn(process.execPath, [process.argv[1], "resistant-worker"], {

@@ -2,6 +2,10 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { StringDecoder } from "node:string_decoder";
 
 import { createAppServerShutdown } from "./app-server-shutdown";
+import {
+  checkAppServerLaunchDuringCancellation,
+  stopAppServerOnSignal,
+} from "./app-server-signals";
 import { writeAppServerTurn } from "./app-server-write";
 import { isRecord } from "./discovery/transport";
 
@@ -62,6 +66,7 @@ export class CodexRequestTimeoutError extends Error {
 export class CodexAppServer {
   private readonly child: ChildProcessWithoutNullStreams;
   private readonly shutdown: () => Promise<void>;
+  private readonly releaseSignalCleanup?: () => void;
   private readonly stopped = new AbortController();
   private readonly pending = new Map<number, PendingRequest>();
   private readonly listeners = new Set<NotificationListener>();
@@ -72,10 +77,14 @@ export class CodexAppServer {
     executable: string,
     cwd: string,
     env: NodeJS.ProcessEnv,
-    { isolateSignals = false }: { isolateSignals?: boolean } = {},
+    {
+      isolateSignals = false,
+      cleanupOnSignal = false,
+    }: { isolateSignals?: boolean; cleanupOnSignal?: boolean } = {},
   ) {
     // Keep a benchmark's app-server available for turn/interrupt after foreground Ctrl-C.
-    const separateGroup = isolateSignals && process.platform !== "win32";
+    const separateGroup = (isolateSignals || cleanupOnSignal) && process.platform !== "win32";
+    if (separateGroup && cleanupOnSignal) checkAppServerLaunchDuringCancellation();
     this.child = spawn(executable, ["app-server"], {
       cwd,
       env,
@@ -89,6 +98,9 @@ export class CodexAppServer {
     this.child.stderr.on("error", (error) => this.fail(error));
     this.child.stderr.resume();
     this.shutdown = createAppServerShutdown(this.child, separateGroup);
+    if (separateGroup && cleanupOnSignal) {
+      this.releaseSignalCleanup = stopAppServerOnSignal(() => this.close());
+    }
     this.child.once("close", (code, signal) => this.fail(appServerExitError(code, signal)));
     this.child.stdout.once("end", () => {
       if (this.signal.aborted) return;
@@ -247,8 +259,12 @@ export class CodexAppServer {
     }
   }
 
-  close(): Promise<void> {
+  async close(): Promise<void> {
     this.fail(new Error("Codex app-server was closed."));
-    return this.shutdown();
+    try {
+      await this.shutdown();
+    } finally {
+      this.releaseSignalCleanup?.();
+    }
   }
 }
