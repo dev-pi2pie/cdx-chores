@@ -160,10 +160,10 @@ export async function withStderrTtyPreload(cwd: string, writeTrace?: string): Pr
   const path = join(cwd, "stderr-tty.mjs");
   const ttyScript =
     "Object.defineProperties(process.stderr, { isTTY: { value: true }, columns: { value: 110 } });";
-  await writeFile(
-    path,
-    writeTrace
-      ? `import { appendFileSync } from "node:fs";
+  let script = ttyScript;
+
+  if (writeTrace) {
+    script = `import { appendFileSync } from "node:fs";
 ${ttyScript}
 for (const name of ["stdout", "stderr"]) {
   const stream = process[name];
@@ -173,8 +173,9 @@ for (const name of ["stdout", "stderr"]) {
     return write.call(this, chunk, ...args);
   };
 }
-`
-      : ttyScript,
-  );
+`;
+  }
+
+  await writeFile(path, script);
   return path;
 }
