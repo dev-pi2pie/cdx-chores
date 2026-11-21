@@ -10,7 +10,7 @@ The [Part II plan](../plan-2026-11-21-codex-benchmark-lifecycle-part-ii.md) trac
 
 ## Both Node callers received HUP during initialization
 
-The four [Phase 1 regression cases](../../../test/codex-benchmark/hangup.app.test.ts) exercised the built benchmark CLI and maintainer live check with a TERM-resistant fixture leader and worker on macOS. The parent verified both process groups before sending HUP and sampled the app-server group at caller exit, before teardown. [Phase 1 checklist](../plan-2026-11-21-codex-benchmark-lifecycle-part-ii.md#phase-1-hangup-cleanup-in-both-node-callers)
+The four regression cases exercised the built benchmark CLI and maintainer live check with a TERM-resistant fixture leader and worker. The parent verified both POSIX process groups before sending HUP and sampled the app-server group at caller exit, before teardown. [Regression cases](../../../test/codex-benchmark/hangup.app.test.ts) · [Phase 1 checklist](../plan-2026-11-21-codex-benchmark-lifecycle-part-ii.md#phase-1-hangup-cleanup-in-both-node-callers)
 
 | HUP policy, both callers | Before at `c482d937` | After at `39c4cca0` |
 | --- | --- | --- |
@@ -31,7 +31,7 @@ All four fixed cases observed group TERM followed by KILL, caller exit within 2.
 
 ## Launch receipts before and after child allocation
 
-At `971dbbc4`, a successful `statSync(cwd)` identifying a non-directory rejects the launch before public `spawn`. On macOS, Node 26.13.1 and Bun 1.4.5 both resolved `os.devNull` to `/dev/null`. In each runtime the rejection cause matched native `ENOTDIR`. A probe counted zero public spawn calls for the device and one for a valid directory. [Phase 2 checklist](../plan-2026-11-21-codex-benchmark-lifecycle-part-ii.md#phase-2-working-directory-rejection-before-spawn)
+At `971dbbc4`, a successful `statSync(cwd)` identifying a non-directory rejects the launch before public `spawn`. The Node and Bun probes both observed `/dev/null` for `os.devNull` and a rejection cause matching native `ENOTDIR`. A probe counted zero public spawn calls for the device and one for a valid directory. [Phase 2 checklist](../plan-2026-11-21-codex-benchmark-lifecycle-part-ii.md#phase-2-working-directory-rejection-before-spawn)
 
 | Case and tested revision | Launch evidence | Cleanup and scheduling |
 | --- | --- | --- |
@@ -43,13 +43,22 @@ At `971dbbc4`, all 387 runner and shutdown-fixture tests passed, including the 1
 
 ## Validation of both lifecycle corrections
 
-Phase 3 ran at `c025f088` on macOS with Bun 1.4.5 and Node 26.13.1. [Phase 3 checklist](../plan-2026-11-21-codex-benchmark-lifecycle-part-ii.md#phase-3-code-validation-and-review)
+Phase 3 validated the two corrections at `c025f088`. [Phase 3 checklist](../plan-2026-11-21-codex-benchmark-lifecycle-part-ii.md#phase-3-code-validation-and-review)
 
 | Check | Result |
 | --- | --- |
 | Targeted lifecycle and runner tests | 531 cases passed across 33 files, including caller-exit snapshots, independent teardown, launch receipts and later-suite scheduling. |
 | Managed `bun run test:all` | All 4,874 cases passed (2,141 Unit, 2,689 Application, 39 Codex, 5 Pandoc). Zero failures, errors or skips. Application test-process execution took 341.829 seconds against the 360-second limit. |
 | Managed cleanup | All preflight and test processes stopped without escalation. After finalization, the observed run directory, scratch and results were absent. |
-| Build and package | The Node build passed. Using the repository’s installed dependencies, the declared CLI entry in the extracted tarball reported version `0.2.2-canary.7` and displayed `codex-bench --help`. |
+| Build and package | The Node build passed. The declared CLI entry in the extracted tarball reported version `0.2.2-canary.7` and displayed `codex-bench --help`. |
 | Static checks | TypeScript, lint, formatting for all 16 changed TypeScript and JavaScript files, and the full-range diff check passed. |
 | Review `c482d937..c025f088` | Maintainability and test reviewers found no material issues across the two phases. |
+
+## Canary review found two additional lifecycle regressions
+
+The independent review of `ba2d93c1..411674fe` confirmed the stalled-initialization HUP outcomes for both benchmark callers, the doctor and SDK retention controls, the device and regular-file path rejections, and scratch retention after child allocation. All 4,874 managed tests passed at `411674fe`. Separate probes reproduced two open P3s. [Phase 4 checklist](../plan-2026-11-21-codex-benchmark-lifecycle-part-ii.md#phase-4-corrections-from-the-canary-review)
+
+| Open P3 | Canary (`ba2d93c1`) | Reviewed tip (`411674fe`) |
+| --- | --- | --- |
+| Live-check HUP after the first `turn/start` reply | The installed handler set exit code 42 and the caller exited 42, as it also did at `528fdd65`. | The group stopped and the next trial was skipped. The trial failure overwrote exit code 42 with 1. |
+| Working directory with a symlink loop (`ELOOP`) or a 512-byte component (`ENAMETOOLONG`) | Scratch was removed and Codex and Pandoc ran. | In both cases the two receipts stayed pending, scratch was retained and neither later suite ran. |

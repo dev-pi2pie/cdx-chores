@@ -8,7 +8,7 @@ agent: codex
 
 ## Outcome and scope
 
-Close two gaps in process ownership. Both Node benchmark callers must stop their detached app-server group on `SIGHUP` and preserve the caller’s signal outcome. The managed test runner must recognize a confirmed non-directory working directory before spawn and retain scratch whenever child allocation remains uncertain.
+Both Node benchmark callers must stop their detached app-server group on `SIGHUP` and preserve the caller’s signal outcome, including when a live-check trial returns an error during shutdown. The managed test runner must recognize a confirmed non-directory, a symlink loop or an overlong working-directory component before spawn and retain scratch whenever child allocation remains uncertain.
 
 The behavior baseline is `528fdd65`. Research commit `12fa4c89` records the comparison with canary `ba2d93c1`. The main benchmark’s hangup defect occurs on both revisions. The maintainer live check’s default-HUP leak and the runner’s device-cwd scheduling failure are regressions against canary. The process observations cover synthetic POSIX groups on macOS. [Part I plan](plan-2026-11-20-codex-benchmark-lifecycle-corrections.md) · [Part I job record](jobs/2026-11-20-codex-benchmark-lifecycle-corrections.md)
 
@@ -37,9 +37,19 @@ Record the implementation checkpoint, tested revision and observations that supp
 - [x] Run the targeted lifecycle and runner tests, `bun run test:all`, the Node-target build and packaged CLI smoke, TypeScript, lint, changed-file formatting and diff checks. Record suite outcomes, cleanup and tested revision in the unified job.
 - [x] Review the full Part II implementation and test range. Resolve findings, rerun affected checks and record the final tested revision and reviewed range before starting Phase 4.
 
-## Phase 4. Documentation validation and closeout
+## Phase 4. Corrections from the canary review
 
-- [ ] Use the Phase 3 results to update the benchmark guide with verified HUP behavior and Part II of the shared research with before/after evidence and platform limits. [Benchmark guide](../guides/codex-benchmark.md)
+The [canary review findings](jobs/2026-11-21-codex-benchmark-lifecycle-part-ii.md#canary-review-found-two-additional-lifecycle-regressions) give the before-fix observations for both P3s.
+
+- [ ] In the built maintainer live check, send `SIGHUP` after the first `turn/start` reply while the turn is still active. Preserve the installed handler’s exit code 42 when `runTrial` returns a failure. Require bounded caller exit, zero live group members at caller exit before fixture teardown, and no second trial. Verify an ordinary trial failure still exits 1 and rerun the stalled-initialization HUP controls. [Live-check trial handling](../../scripts/spikes/codex-benchmark-live-check.ts)
+- [ ] Cover a self-referencing working-directory symlink (`ELOOP`) and an overlong component (`ENAMETOOLONG`). For each case, verify the direct launch preserves the corresponding native-shaped cause from preflight and makes zero public `spawn` calls. In the managed fixture, require two stopped `launch-rejected` receipts with no PID, group ID or start record, scratch removal and execution of Codex and Pandoc after the injected Application failure. [Launch preflight](../../scripts/testing/execution/process.ts)
+- [ ] Exercise the opposite case with a matching error thrown after public `spawn` allocates a child. Verify the receipt stays pending, scratch is retained, Codex and Pandoc stay unrun, and the fixture independently stops the child. Rerun the `os.devNull`, regular-file path and missing-cwd controls. [Post-allocation control](../../test/test-runner/fixture-context.app.test.ts)
+- [ ] At the corrected revision, run the focused regressions and controls, `bun run test:all`, the Node build, packaged CLI smoke, TypeScript, lint, changed-file formatting and diff checks. Record the tested short SHA and results in the unified job.
+- [ ] Review all changes from this phase’s recorded baseline through the tested revision. Confirm that the fixes preserve previously verified behavior. Record the exact range and the outcome of each finding in the unified job record before Phase 5.
+
+## Phase 5. Documentation validation and closeout
+
+- [ ] Use the Phase 3 and Phase 4 results to update the benchmark guide with verified HUP behavior and Part II of the shared research with before/after evidence and platform limits. [Benchmark guide](../guides/codex-benchmark.md)
 - [ ] Review the affected documentation against the evidence in the unified job record. Check links, anchors and research diagrams. Resolve documentation findings and record the reviewed range and outcome.
 - [ ] Reconcile the plan checklists and the plan, job and research statuses with the verified outcomes.
 
