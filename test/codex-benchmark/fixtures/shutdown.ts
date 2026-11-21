@@ -90,6 +90,7 @@ export function withShutdownFixture<T>(
   scenario: Parameters<typeof withRunnerFixture>[0],
   exercise: (fixture: RunnerFixture) => Promise<T>,
   observe = observeProcessGroup,
+  startCaller: RunnerFixture["start"] = startFixtureProcess,
 ): Promise<T> {
   let canClean = true;
   return withRunnerFixture(
@@ -105,7 +106,7 @@ export function withShutdownFixture<T>(
             canClean = false;
             receipt = registerFixtureProcess();
             try {
-              caller = startFixtureProcess({
+              caller = startCaller({
                 ...options,
                 env: { ...options.env, FIXTURE_RECORD_APP_SERVER: "1" },
               });

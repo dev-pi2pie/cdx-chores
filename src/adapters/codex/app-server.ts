@@ -78,13 +78,13 @@ export class CodexAppServer {
     cwd: string,
     env: NodeJS.ProcessEnv,
     {
-      onHangup,
+      acceptHangup,
       cleanupOnSignal = false,
-    }: { onHangup?: () => void; cleanupOnSignal?: boolean } = {},
+    }: { acceptHangup?: () => boolean; cleanupOnSignal?: boolean } = {},
   ) {
     // Keep a benchmark's app-server available for turn/interrupt after foreground Ctrl-C.
     const separateGroup =
-      (onHangup !== undefined || cleanupOnSignal) && process.platform !== "win32";
+      (acceptHangup !== undefined || cleanupOnSignal) && process.platform !== "win32";
     if (separateGroup) checkAppServerLaunchDuringCancellation();
     this.child = spawn(executable, ["app-server"], {
       cwd,
@@ -99,13 +99,8 @@ export class CodexAppServer {
     this.child.stderr.on("error", (error) => this.fail(error));
     this.child.stderr.resume();
     this.shutdown = createAppServerShutdown(this.child, separateGroup);
-    if (separateGroup && cleanupOnSignal) {
-      this.releaseSignalCleanup = stopAppServerOnSignal(() => this.close());
-    } else if (separateGroup && onHangup) {
-      this.releaseSignalCleanup = stopAppServerOnSignal(() => {
-        onHangup();
-        return this.close();
-      }, "hangup");
+    if (separateGroup) {
+      this.releaseSignalCleanup = stopAppServerOnSignal(() => this.close(), acceptHangup);
     }
     this.child.once("close", (code, signal) => this.fail(appServerExitError(code, signal)));
     this.child.stdout.once("end", () => {

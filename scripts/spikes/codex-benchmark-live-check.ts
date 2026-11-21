@@ -11,6 +11,7 @@ import {
   TurnStartEvidence,
 } from "../../src/adapters/codex/app-server-identity.ts";
 import { createAppServerShutdown } from "../../src/adapters/codex/app-server-shutdown.ts";
+import { handleBenchmarkSignals } from "../../src/adapters/codex/benchmark/signals.ts";
 import {
   checkAppServerLaunchDuringCancellation,
   stopAppServerOnSignal,
@@ -470,8 +471,6 @@ export async function runLiveCheck(
   const server = startAppServer(appServer, env);
   let closing: Promise<void> | undefined;
   let shutdownFailed = false;
-  let hungUp = false;
-  let signalExit: number | undefined;
   const close = (): Promise<void> =>
     (closing ??= server
       .close()
@@ -480,21 +479,9 @@ export async function runLiveCheck(
         console.error(`Shutdown failed: ${String(error)}`);
       })
       .finally(() => releaseHangup?.()));
+  const signals = handleBenchmarkSignals(() => void close());
   const releaseHangup =
-    process.platform === "win32"
-      ? undefined
-      : stopAppServerOnSignal(() => {
-          hungUp = true;
-          return close();
-        }, "hangup");
-  const cancel = (exitCode: number) => {
-    signalExit ??= exitCode;
-    void close();
-  };
-  const interrupt = () => cancel(130);
-  const terminate = () => cancel(143);
-  process.on("SIGINT", interrupt);
-  process.on("SIGTERM", terminate);
+    process.platform === "win32" ? undefined : stopAppServerOnSignal(close, signals.acceptHangup);
   try {
     const init = await server.request<{ userAgent?: unknown }>("initialize", {
       clientInfo: { name: "cdx_chores", title: "cdx-chores", version: "1" },
@@ -514,7 +501,7 @@ export async function runLiveCheck(
     const results = [];
     const ownedThreadIds = new Set<string>();
     for (const { requestedSpeed, tier } of trials) {
-      if (signalExit !== undefined || server.signal.aborted) break;
+      if (signals.exitCode !== undefined || server.signal.aborted) break;
       const trial = { tier, sentTier: null as string | null };
       try {
         const { stopScheduling, ...result } = await runTrial(
@@ -529,7 +516,7 @@ export async function runLiveCheck(
         results.push({ requestedSpeed, sentTier: trial.sentTier, ...result });
         if (stopScheduling) break;
       } catch (error) {
-        if (!hungUp) process.exitCode = 1;
+        if (!signals.hungUp) process.exitCode = 1;
         results.push({
           requestedSpeed,
           sentTier: trial.sentTier,
@@ -538,7 +525,7 @@ export async function runLiveCheck(
         });
       }
     }
-    if (!hungUp && signalExit === undefined && server.signal.aborted) {
+    if (!signals.hungUp && signals.exitCode === undefined && server.signal.aborted) {
       process.exitCode = 1;
       console.error(`Transport failed: ${String(server.signal.reason)}`);
     }
@@ -547,13 +534,12 @@ export async function runLiveCheck(
     );
   } catch (error) {
     await close();
-    if (!hungUp && signalExit === undefined) throw error;
+    if (!signals.hungUp && signals.exitCode === undefined) throw error;
   } finally {
     await close();
-    process.off("SIGINT", interrupt);
-    process.off("SIGTERM", terminate);
-    if (signalExit !== undefined) process.exitCode = signalExit;
-    else if (shutdownFailed && !hungUp) process.exitCode = 1;
+    signals.release();
+    if (signals.exitCode !== undefined) process.exitCode = signals.exitCode;
+    else if (shutdownFailed && !signals.hungUp) process.exitCode = 1;
   }
 }
 

@@ -4,6 +4,7 @@ import { TextDecoder } from "node:util";
 import { InvalidArgumentError, Option, type Command } from "commander";
 
 import type { BenchmarkCase, BenchmarkWorkloadOptions } from "../../adapters/codex/benchmark/types";
+import { handleBenchmarkSignals } from "../../adapters/codex/benchmark/signals";
 import { resolveCodexSpeed, type CodexSpeed } from "../../utils/codex-execution";
 import { resolveCodexSessionRetention } from "../../utils/codex-session-retention";
 import { formatBenchmarkReportPath } from "../codex-bench/paths";
@@ -85,13 +86,6 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
   const prompt = await loadPrompt(runtime.cwd, options.promptFile);
   const { runCodexBenchmark } = await import("../../adapters/codex/benchmark");
   const cancellation = new AbortController();
-  let signalExitCode: number | undefined;
-  const cancel = (exitCode: number) => {
-    signalExitCode ??= exitCode;
-    cancellation.abort();
-  };
-  const interrupt = () => cancel(130);
-  const terminate = () => cancel(143);
   const workload: BenchmarkWorkloadOptions = {
     ...(options.case
       ? { cases: options.case }
@@ -108,13 +102,13 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
           transient: options.json,
           showTokenUsage: options.showTokenUsage && !options.compact,
         });
-  process.on("SIGINT", interrupt);
-  process.on("SIGTERM", terminate);
+  const signals = handleBenchmarkSignals(() => cancellation.abort());
   try {
     const result = await runCodexBenchmark({
       ...workload,
       cwd: runtime.cwd,
       signal: cancellation.signal,
+      acceptHangup: signals.acceptHangup,
       prompt: prompt.text,
       sessionRetention,
       onTrialStart: progress?.start,
@@ -182,7 +176,7 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
         `${colors.red("Shutdown failed")}: ${safeTerminalText(result.shutdownError)}\n`,
       );
     }
-    if (signalExitCode !== undefined) process.exitCode = signalExitCode;
+    if (signals.exitCode !== undefined) process.exitCode = signals.exitCode;
     else if (
       !result.interrupted &&
       (failed || completedMeasuredTrials === 0 || result.shutdownError)
@@ -192,8 +186,7 @@ async function actionCodexBenchmark(runtime: CliRuntime, options: BenchmarkComma
     try {
       progress?.stop();
     } finally {
-      process.off("SIGINT", interrupt);
-      process.off("SIGTERM", terminate);
+      signals.release();
     }
   }
 }

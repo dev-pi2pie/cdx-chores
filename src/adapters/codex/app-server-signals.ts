@@ -1,12 +1,12 @@
-type CloseAppServer = () => Promise<void>;
+type Owner = { close: () => Promise<void>; acceptHangup?: () => boolean };
 type CancellationSignal = "SIGHUP" | "SIGINT" | "SIGTERM";
 
-const hangupOwners = new Set<CloseAppServer>();
-const interruptOwners = new Set<CloseAppServer>();
-const closing = new Set<CloseAppServer>();
+const hangupOwners = new Set<Owner>();
+const interruptOwners = new Set<Owner>();
+const closing = new Set<Owner>();
 let defaultSignal: CancellationSignal | undefined;
 
-function listener(signal: CancellationSignal, owners: Set<CloseAppServer>) {
+function listener(signal: CancellationSignal, owners: Set<Owner>) {
   return { signal, owners, handle: () => cancel(signal, owners) };
 }
 
@@ -23,14 +23,21 @@ function updateListeners(): void {
   }
 }
 
-function cancel(signal: CancellationSignal, owners: Set<CloseAppServer>): void {
-  const targets = [...owners].filter((close) => !closing.has(close));
+function cancel(signal: CancellationSignal, owners: Set<Owner>): void {
+  const wouldTerminate = !closing.size && process.listenerCount(signal) === 1;
+  // Default termination ends ownership of every group in this process.
+  const candidates = [...(wouldTerminate ? hangupOwners : owners)].filter(
+    (owner) => !closing.has(owner),
+  );
+  const targets = candidates.filter(
+    (owner) => signal !== "SIGHUP" || owner.acceptHangup?.() !== false,
+  );
   if (!targets.length) return;
-  // The first signal owns the exit policy, even if another arrives during escalation.
-  if (!closing.size && process.listenerCount(signal) === 1) defaultSignal = signal;
-  for (const close of targets) closing.add(close);
-  void Promise.allSettled(targets.map((close) => close())).then(() => {
-    for (const close of targets) closing.delete(close);
+  // A caller already handling INT/TERM keeps its initiating disposition.
+  if (wouldTerminate && targets.length === candidates.length) defaultSignal = signal;
+  for (const owner of targets) closing.add(owner);
+  void Promise.allSettled(targets.map((owner) => owner.close())).then(() => {
+    for (const owner of targets) closing.delete(owner);
     if (closing.size) return;
     updateListeners();
     if (defaultSignal && process.listenerCount(defaultSignal) === 0) {
@@ -48,15 +55,16 @@ export function checkAppServerLaunchDuringCancellation(): void {
 
 /** Benchmark callers handle INT and TERM themselves so they can interrupt an active turn. */
 export function stopAppServerOnSignal(
-  close: CloseAppServer,
-  signals: "all" | "hangup" = "all",
+  close: () => Promise<void>,
+  acceptHangup?: () => boolean,
 ): () => void {
-  hangupOwners.add(close);
-  if (signals === "all") interruptOwners.add(close);
+  const owner = { close, acceptHangup };
+  hangupOwners.add(owner);
+  if (!acceptHangup) interruptOwners.add(owner);
   updateListeners();
   return () => {
-    hangupOwners.delete(close);
-    interruptOwners.delete(close);
+    hangupOwners.delete(owner);
+    interruptOwners.delete(owner);
     if (!closing.size) updateListeners();
   };
 }

@@ -1048,8 +1048,9 @@ for (const json of [false, true]) {
 test.skipIf(process.platform === "win32").each([
   { first: "SIGINT", second: "SIGTERM", exitCode: 130 },
   { first: "SIGTERM", second: "SIGINT", exitCode: 143 },
+  { first: "SIGTERM", second: "SIGHUP", exitCode: 143 },
 ] as const)(
-  "clears JSON progress and keeps the skipped-retention warning when $first cancels the active turn",
+  "keeps the $first exit, partial report and skipped-retention warning after $second during turn interruption",
   async ({ first, second, exitCode }) => {
     await withRunnerFixture({ interrupt: "unconfirmed" }, async ({ options, trace }) => {
       const preload = await withStderrTtyPreload(options.cwd);
@@ -1059,7 +1060,7 @@ test.skipIf(process.platform === "win32").each([
       );
       const cli = startCliWithShortReadback(
         options,
-        ["--json", "--session-retention", "archive"],
+        ["--json", "--session-retention", "archive", "--show-token-usage"],
         1,
         preload,
       );
@@ -1081,6 +1082,7 @@ test.skipIf(process.platform === "win32").each([
         expect(report.trials[0]).toMatchObject({
           status: "cancelled",
           sessionRetention: { status: "skipped" },
+          tokenUsage: { partial: true, counts: { totalTokens: 230 } },
         });
         const events = await trace();
         expect(traceMethod(events, "turn/start")).toHaveLength(1);

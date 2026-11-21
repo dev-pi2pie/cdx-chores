@@ -63,6 +63,7 @@ export type BenchmarkOptions = BenchmarkWorkloadOptions & {
   cwd: string;
   env?: NodeJS.ProcessEnv;
   signal?: AbortSignal;
+  acceptHangup?: () => boolean;
   prompt: string;
   sessionRetention?: CodexSessionRetention;
   onTrialStart?: (selection: BenchmarkSelection) => void;

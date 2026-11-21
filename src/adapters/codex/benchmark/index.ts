@@ -329,8 +329,10 @@ export async function runCodexBenchmark(options: BenchmarkOptions): Promise<Benc
   try {
     try {
       server = new CodexAppServer(resolveDiscoveryExecutable(env), cwd, env, {
-        onHangup: () => {
+        acceptHangup: () => {
+          if (options.acceptHangup?.() === false) return false;
           report.interrupted = true;
+          return true;
         },
       });
       const initialized = await server.initialize(undefined, signal);
