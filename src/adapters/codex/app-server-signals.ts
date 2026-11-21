@@ -1,15 +1,17 @@
-type CancellationSignal = "SIGINT" | "SIGTERM";
+const cancellationSignals = ["SIGHUP", "SIGINT", "SIGTERM"] as const;
+type CancellationSignal = (typeof cancellationSignals)[number];
 type CloseAppServer = () => Promise<void>;
 
 const ownedServers = new Set<CloseAppServer>();
 let cancelling = false;
 
-const interrupt = () => cancel("SIGINT");
-const terminate = () => cancel("SIGTERM");
+const listeners = cancellationSignals.map((signal) => ({
+  signal,
+  handle: () => cancel(signal),
+}));
 
 function removeListeners(): void {
-  process.off("SIGINT", interrupt);
-  process.off("SIGTERM", terminate);
+  for (const { signal, handle } of listeners) process.off(signal, handle);
 }
 
 function cancel(signal: CancellationSignal): void {
@@ -34,8 +36,7 @@ export function checkAppServerLaunchDuringCancellation(): void {
 /** Keep isolated groups reachable while the caller handles a foreground signal. */
 export function stopAppServerOnSignal(close: CloseAppServer): () => void {
   if (ownedServers.size === 0) {
-    process.prependListener("SIGINT", interrupt);
-    process.prependListener("SIGTERM", terminate);
+    for (const { signal, handle } of listeners) process.prependListener(signal, handle);
   }
   ownedServers.add(close);
   return () => {

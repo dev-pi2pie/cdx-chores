@@ -11,7 +11,9 @@ import {
   withRunnerFixture,
 } from "../../codex-benchmark/fixtures/runner";
 import {
+  callerCancellationSignals,
   checkShutdownAtExit,
+  signalCallerGroup,
   watchCallerExit,
   withShutdownFixture,
 } from "../../codex-benchmark/fixtures/shutdown";
@@ -52,22 +54,50 @@ test.each([
 );
 
 test.skipIf(process.platform === "win32").each([
-  { mode: "verified", initializeError: false, escalation: "allowed", signal: null },
-  { mode: "unverified", initializeError: false, escalation: "undelivered", signal: null },
-  { mode: "initialization error", initializeError: true, escalation: "deny-term", signal: null },
-  { mode: "cancelled", initializeError: false, escalation: "allowed", signal: "SIGINT" },
+  { mode: "verified", initializeError: false, escalation: "allowed", signal: null, exitCode: 0 },
+  {
+    mode: "unverified",
+    initializeError: false,
+    escalation: "undelivered",
+    signal: null,
+    exitCode: 0,
+  },
+  {
+    mode: "initialization error",
+    initializeError: true,
+    escalation: "deny-term",
+    signal: null,
+    exitCode: 0,
+  },
+  ...callerCancellationSignals.flatMap((signal) => [
+    {
+      mode: signal + " by default",
+      initializeError: false,
+      escalation: "allowed",
+      signal,
+      exitCode: null,
+    } as const,
+    {
+      mode: signal + " with a caller handler",
+      initializeError: false,
+      escalation: "allowed",
+      signal,
+      exitCode: 42,
+    } as const,
+  ]),
 ] as const)(
   "built doctor observes $mode app-server shutdown",
-  async ({ initializeError, escalation, signal }) => {
+  async ({ initializeError, escalation, signal, exitCode }) => {
     await withShutdownFixture(
       {
         appServerUserAgent: "cdx_chores/0.171.0",
-        resistantLeader: escalation !== "allowed",
+        resistantLeader: signal !== null || escalation !== "allowed",
         resistantWorker: true,
         initializeError,
         stallInitialization: signal !== null,
       },
       async ({ home, options, trace, start }) => {
+        const callerHandlesSignal = signal !== null && exitCode !== null;
         const cli = await buildNodeCaller(join(REPO_ROOT, "src/bin.ts"), options.cwd);
         const caller = start({
           executable: "node",
@@ -79,39 +109,46 @@ test.skipIf(process.platform === "win32").each([
             "doctor",
             "--json",
           ],
-          env: { ...options.env, FIXTURE_ESCALATION: escalation },
+          env: {
+            ...options.env,
+            FIXTURE_ESCALATION: escalation,
+            FIXTURE_CALLER_SIGNAL: callerHandlesSignal ? signal : undefined,
+          },
           cwd: options.cwd,
           timeoutMs: 10_000,
           graceMs: 600,
           cleanupMs: 1_500,
         });
         const callerExit = watchCallerExit(caller);
+        let cancellationAt: number | undefined;
         if (signal) {
           const deadline = performance.now() + 5_000;
           while (!traceMethod(await trace(), "initialize").length) {
             if (performance.now() >= deadline) throw new Error("Doctor did not initialize.");
             await delay(20);
           }
-          expect(caller.child.kill(signal)).toBe(true);
+          cancellationAt = signalCallerGroup(caller, signal);
         }
         const result = await caller.completion;
-        await checkShutdownAtExit(home, callerExit(), escalation);
+        await checkShutdownAtExit(home, callerExit(), escalation, cancellationAt);
         expect(result.stopped).toBe(true);
         expect(result.issues).toEqual([]);
-        expect((await trace())[0]?.method).toBe("initialize");
+        const events = await trace();
+        expect(events[0]?.method).toBe("initialize");
         if (signal) {
-          expect(result.signal).toBe(signal);
-          expect(result.exitCode).toBeNull();
-          return;
+          expect(traceMethod(events, "initialize-fallback")).toHaveLength(0);
+          expect(result.reason).toBe("exit-failed");
         }
+        expect(result.signal).toBe(callerHandlesSignal ? null : signal);
         // A failed benchmark prerequisite remains a diagnostic in the doctor report.
-        expect(result.exitCode, result.stderr).toBe(0);
+        expect(result.exitCode, result.stderr).toBe(exitCode);
+        if (exitCode === null) return;
         const { codexBenchmark } = JSON.parse(result.stdout);
-        expect(codexBenchmark.status).toBe(escalation === "allowed" ? "met" : "failed");
-        expect(codexBenchmark.version).toBe(initializeError ? null : "0.171.0");
+        expect(codexBenchmark.status).toBe(!signal && escalation === "allowed" ? "met" : "failed");
+        expect(codexBenchmark.version).toBe(initializeError || signal ? null : "0.171.0");
         if (escalation !== "allowed")
           expect(codexBenchmark.detail).toContain("App-server shutdown failed");
-        if (initializeError)
+        if (initializeError || signal)
           expect(codexBenchmark.detail).toContain("App-server initialization failed");
       },
     );

@@ -6,7 +6,13 @@ import { pathToFileURL } from "node:url";
 
 import { lifecycleDiagnostic, withLiveCodexFixture } from "../codex-info/live-fixture";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
-import { checkShutdownAtExit, watchCallerExit, withShutdownFixture } from "./fixtures/shutdown";
+import {
+  callerCancellationSignals,
+  checkShutdownAtExit,
+  signalCallerGroup,
+  watchCallerExit,
+  withShutdownFixture,
+} from "./fixtures/shutdown";
 import { captureSpeedRequest, fixtureAnswer, fixturePrompt } from "./fixtures/speed-provider";
 
 const cases = [
@@ -165,13 +171,17 @@ test.each([
   15_000,
 );
 
-test.skipIf(process.platform === "win32").each([
-  { escalation: "allowed", signal: null, output: "fixture-answer", exitCode: 0 },
-  { escalation: "undelivered", signal: null, output: "fixture-answer", exitCode: 0 },
-  { escalation: "undelivered", signal: null, output: "Original helper error.", exitCode: 0 },
-  { escalation: "allowed", signal: "SIGTERM", output: null, exitCode: null },
-  { escalation: "allowed", signal: "SIGTERM", output: "fixture-answer", exitCode: 42 },
-] as const)(
+test
+  .skipIf(process.platform === "win32")
+  .each([
+    { escalation: "allowed", signal: null, output: "fixture-answer", exitCode: 0 },
+    { escalation: "undelivered", signal: null, output: "fixture-answer", exitCode: 0 },
+    { escalation: "undelivered", signal: null, output: "Original helper error.", exitCode: 0 },
+    ...callerCancellationSignals.flatMap((signal) => [
+      { escalation: "allowed", signal, output: null, exitCode: null } as const,
+      { escalation: "allowed", signal, output: "fixture-answer", exitCode: 42 } as const,
+    ]),
+  ] as const)(
   "SDK retention verifies its worker with $escalation escalation, signal $signal, outcome $output",
   async ({ escalation, signal, output, exitCode }) => {
     await withProbe(async (driverPath) => {
@@ -185,11 +195,7 @@ test.skipIf(process.platform === "win32").each([
         const events = join(home, "retention-events.jsonl");
         const mode = output === "Original helper error." ? "delete" : "archive";
         const callerHandlesSignal = signal !== null && exitCode !== null;
-        const scenario = callerHandlesSignal
-          ? "archive-worker-caller-signal"
-          : mode === "delete"
-            ? "delete-close-error"
-            : "archive-worker";
+        const scenario = mode === "delete" ? "delete-close-error" : "archive-worker";
         const caller = start({
           executable: "node",
           args: [
@@ -206,12 +212,14 @@ test.skipIf(process.platform === "win32").each([
             CDX_RETENTION_WORKER: "1",
             CDX_RETENTION_RPC: signal ? "stall" : "success",
             FIXTURE_ESCALATION: escalation,
+            FIXTURE_CALLER_SIGNAL: callerHandlesSignal ? signal : undefined,
           },
           timeoutMs: 7_500,
           graceMs: 600,
           cleanupMs: 1_500,
         });
         const callerExit = watchCallerExit(caller);
+        let cancellationAt: number | undefined;
         if (signal) {
           const deadline = performance.now() + 3_000;
           while (
@@ -222,12 +230,13 @@ test.skipIf(process.platform === "win32").each([
               throw new Error("Retention request did not reach the fixture.");
             await delay(20);
           }
-          expect(caller.child.kill(signal)).toBe(true);
+          cancellationAt = signalCallerGroup(caller, signal);
         }
         const result = await caller.completion;
-        await checkShutdownAtExit(home, callerExit(), escalation);
+        await checkShutdownAtExit(home, callerExit(), escalation, cancellationAt);
         expect(result.stopped).toBe(true);
         expect(result.issues).toEqual([]);
+        if (signal) expect(result.reason).toBe("exit-failed");
         expect(result.signal).toBe(callerHandlesSignal ? null : signal);
         expect(result.exitCode, result.stderr).toBe(exitCode);
         const timeline = (await readFile(events, "utf8"))

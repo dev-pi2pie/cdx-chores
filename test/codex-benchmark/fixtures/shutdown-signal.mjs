@@ -6,6 +6,12 @@ import { join } from "node:path";
 const kill = process.kill;
 const leaderPath = join(process.env.CODEX_HOME, "leader.pid");
 
+if (process.env.FIXTURE_CALLER_SIGNAL) {
+  process.once(process.env.FIXTURE_CALLER_SIGNAL, () => {
+    process.exitCode = 42;
+  });
+}
+
 if (process.env.FIXTURE_RECORD_APP_SERVER === "1") {
   // Bun's named spawn import sees the patch when the built-in is loaded through require.
   const childProcess = createRequire(import.meta.url)("node:child_process");

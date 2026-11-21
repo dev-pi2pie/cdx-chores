@@ -160,6 +160,28 @@ export function watchCallerExit({ child }: OwnedProcess) {
   };
 }
 
+export const callerCancellationSignals = ["SIGHUP", "SIGINT", "SIGTERM"] as const;
+
+export function signalCallerGroup({ child }: OwnedProcess, signal: NodeJS.Signals): number {
+  const group = child.pid;
+  if (
+    !group ||
+    group <= 1 ||
+    !requireProcessObservation().some(
+      (member) =>
+        member.pid === group &&
+        member.parentPid === process.pid &&
+        member.groupId === group &&
+        isLiveProcess(member),
+    )
+  ) {
+    throw new Error("The fixture caller is not leading a live, separate process group.");
+  }
+  const sentAt = Date.now();
+  expect(process.kill(-group, signal)).toBe(true);
+  return sentAt;
+}
+
 async function readLeader(home: string) {
   const leader = Number(await readFile(join(home, "leader.pid"), "utf8"));
   if (!Number.isSafeInteger(leader) || leader <= 1) {
@@ -172,6 +194,7 @@ export async function checkShutdownAtExit(
   home: string,
   exit: CallerExit,
   escalation: "allowed" | "denied" | "undelivered" | "deny-term",
+  cancellationAt?: number,
 ) {
   const leader = await readLeader(home);
   expect(await readSpawnedLeader(home)).toBe(leader);
@@ -202,4 +225,9 @@ export async function checkShutdownAtExit(
   expect(lastSignal.at).toBeGreaterThanOrEqual(signals[0]!.at);
   expect(exit.at).toBeGreaterThanOrEqual(lastSignal.at);
   expect(exit.at - signals[0]!.at).toBeLessThanOrEqual(3_000);
+  if (cancellationAt !== undefined) {
+    // A caller-installed handler alone could leave the RPC waiting for its own timeout.
+    expect(signals[0]!.at - cancellationAt).toBeGreaterThanOrEqual(0);
+    expect(signals[0]!.at - cancellationAt).toBeLessThan(4_000);
+  }
 }
