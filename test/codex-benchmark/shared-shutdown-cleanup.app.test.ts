@@ -41,6 +41,17 @@ const fileCwdFailure = {
   },
 } as const;
 
+function invalidExecutable(
+  executable: string,
+  code: "ENOTDIR" | "ELOOP" | "ENAMETOOLONG",
+  description: string,
+) {
+  return {
+    options: { executable },
+    error: { code, message: `${code}: ${description}, posix_spawn '${executable}'` },
+  };
+}
+
 const preSpawnCases = {
   "invalid deadline": {
     options: { timeoutMs: 0 },
@@ -115,6 +126,21 @@ const preSpawnCases = {
   },
   "cwd traverses a file before a trailing slash": { ...fileCwdFailure, fileSuffix: "/" },
   "cwd traverses a file before a child component": { ...fileCwdFailure, fileSuffix: "/child" },
+  "executable traverses a regular file": invalidExecutable(
+    "unrelated.jsonl/../tool",
+    "ENOTDIR",
+    "not a directory",
+  ),
+  "executable contains a symlink loop": invalidExecutable(
+    "./loop",
+    "ELOOP",
+    "too many symbolic links encountered",
+  ),
+  "executable contains an overlong component": invalidExecutable(
+    "./" + "x".repeat(512),
+    "ENAMETOOLONG",
+    "name too long",
+  ),
 } as const;
 const cases = [
   "assertion failure",
@@ -133,6 +159,9 @@ const cases = [
   "cwd contains an overlong component",
   "cwd traverses a file before a trailing slash",
   "cwd traverses a file before a child component",
+  "executable traverses a regular file",
+  "executable contains a symlink loop",
+  "executable contains an overlong component",
   "missing spawn receipt",
   "interrupted spawn receipt",
   "partial spawn receipt",
@@ -243,11 +272,16 @@ async function runControl(mode: Case, control: Control) {
       if (isPreSpawnCase(mode)) {
         const preSpawn = preSpawnCases[mode];
         const overrides: Partial<OwnedProcessOptions> = { ...preSpawn.options };
+        if ("executable" in preSpawn.options) overrides.cwd = fixture.home;
         if ("fileSuffix" in preSpawn) {
           overrides.cwd = join(fixture.home, "unrelated.jsonl") + preSpawn.fileSuffix;
-        } else if (mode === "cwd contains a symlink loop") {
-          overrides.cwd = join(fixture.home, "loop");
-          await symlink("loop", overrides.cwd);
+        } else if (
+          mode === "cwd contains a symlink loop" ||
+          mode === "executable contains a symlink loop"
+        ) {
+          const loop = join(fixture.home, "loop");
+          await symlink("loop", loop);
+          if (mode === "cwd contains a symlink loop") overrides.cwd = loop;
         } else if (mode === "cwd contains an overlong component") {
           overrides.cwd = join(fixture.home, "x".repeat(512));
         }
@@ -346,7 +380,7 @@ async function checkFailure(mode: Case, control: Control) {
     }
   }
   if (isPreSpawnCase(mode)) {
-    const expectedError = preSpawnCases[mode].error;
+    const { error: expectedError, options } = preSpawnCases[mode];
     expect(error).toBeInstanceOf(ProcessLaunchRejectedError);
     expect(error).toMatchObject({ ...expectedError, cause: expectedError });
     if ("code" in expectedError) {
@@ -355,7 +389,7 @@ async function checkFailure(mode: Case, control: Control) {
         expect(cause).toMatchObject({
           errno: -constants.errno[expectedError.code],
           syscall: "spawn",
-          path: process.execPath,
+          path: "executable" in options ? options.executable : process.execPath,
         });
       } else {
         expect(cause).toBeInstanceOf(TypeError);

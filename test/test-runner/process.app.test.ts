@@ -1,10 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
-import { mkdir } from "node:fs/promises";
+import { mkdir, stat, symlink } from "node:fs/promises";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
 import {
+  ProcessLaunchRejectedError,
   startOwnedProcess,
   type OwnedProcess,
   type OwnedProcessOptions,
@@ -176,6 +177,26 @@ describe("owned process lifecycle", () => {
     expect(result.stderr).toBe("subject failure\n");
     expect(result.issues).toEqual([]);
     await assertStopped(result);
+  });
+
+  test("distinguishes the relative executable's path limit from its prefixed length", async () => {
+    await withTempFixtureDir("relative-launch", async (cwd) => {
+      await symlink(process.execPath, join(cwd, "tool"));
+      // Each extension is shorter than the prefix added by the parent-side lookup.
+      let executable = "./tool";
+      while (existsSync(cwd + "/" + executable)) {
+        executable = "./" + "/".repeat(cwd.length - 1) + executable;
+      }
+      await expect(stat(cwd + "/" + executable)).rejects.toMatchObject({ code: "ENAMETOOLONG" });
+      const result = await startOwnedProcess(
+        options("exit", { cwd, executable, args: ["--version"] }),
+      ).completion;
+      assertSuccessful(result);
+      const tooLong = "./" + "/".repeat(Buffer.byteLength(cwd) + 1) + executable;
+      expect(() => startOwnedProcess(options("exit", { cwd, executable: tooLong }))).toThrow(
+        ProcessLaunchRejectedError,
+      );
+    });
   });
 
   test.each(["server", "launcher"])("allows expected graceful shutdown of %s", async (mode) => {

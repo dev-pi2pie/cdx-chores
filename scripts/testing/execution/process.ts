@@ -1,5 +1,5 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { statSync } from "node:fs";
+import { accessSync, constants as fsConstants, realpathSync, statSync } from "node:fs";
 import { constants } from "node:os";
 import { setTimeout as delay } from "node:timers/promises";
 import { getSystemErrorMessage, inspect } from "node:util";
@@ -101,18 +101,49 @@ function invalidSpawnValue(
   );
 }
 
-function cwdRejectionCode(cwd: string) {
+function pathRejectionCode(code: string | undefined) {
+  if (code === "ENOTDIR" || code === "ELOOP" || code === "ENAMETOOLONG") return code;
+  return undefined;
+}
+
+function statErrorCode(path: string) {
   try {
-    return statSync(cwd).isDirectory() ? undefined : "ENOTDIR";
-  } catch (error) {
-    const code = (error as NodeJS.ErrnoException | undefined)?.code;
-    if (code === "ENOTDIR" || code === "ELOOP" || code === "ENAMETOOLONG") return code;
-    // Other cwd failures, including ENOENT, settle through the runtime.
+    statSync(path);
     return undefined;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code;
   }
 }
 
-function cwdSpawnError(executable: string, code: "ENOTDIR" | "ELOOP" | "ENAMETOOLONG"): Error {
+function launchPathRejectionCode(cwd: string, executable: string) {
+  try {
+    if (!statSync(cwd).isDirectory()) return "ENOTDIR";
+  } catch (error) {
+    return pathRejectionCode((error as NodeJS.ErrnoException).code);
+  }
+  // Leave PATH searches and missing files to the runtime.
+  if (!executable.includes("/")) return undefined;
+  let base: string | undefined;
+  try {
+    accessSync(cwd, fsConstants.X_OK);
+    // chdir resolves cwd symlinks before exec starts a separate path lookup.
+    if (!executable.startsWith("/")) base = realpathSync.native(cwd);
+  } catch {
+    return undefined;
+  }
+  // Preserve path components such as file/../tool for the filesystem to resolve.
+  const code = statErrorCode(base === undefined ? executable : `${base}/${executable}`);
+  if (base !== undefined && code === "ENAMETOOLONG") {
+    // Probe equal-length directory paths to distinguish the argument's own limit
+    // from a failure caused solely by prefixing cwd in the parent process.
+    const bytes = Buffer.byteLength(executable);
+    if (statErrorCode(base + "/".repeat(1 + bytes)) && statErrorCode("/".repeat(bytes)) !== code)
+      return undefined;
+  }
+  return pathRejectionCode(code);
+}
+
+function pathSpawnError(executable: string, code: "ENOTDIR" | "ELOOP" | "ENAMETOOLONG"): Error {
   // Match the runtime's synchronous diagnostic without entering public spawn().
   const bun = process.versions.bun !== undefined;
   const errno = -constants.errno[code];
@@ -180,8 +211,8 @@ function checkLaunch(options: OwnedProcessOptions) {
       }
     }
     if (typeof cwd === "string" && typeof executable === "string") {
-      const code = cwdRejectionCode(cwd);
-      if (code) throw cwdSpawnError(executable, code);
+      const code = launchPathRejectionCode(cwd, executable);
+      if (code) throw pathSpawnError(executable, code);
     }
     return { maximum, executable, args, cwd, env };
   } catch (error) {
