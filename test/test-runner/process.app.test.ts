@@ -1,4 +1,5 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
+import childProcess from "node:child_process";
 import { existsSync } from "node:fs";
 import { mkdir, stat, symlink } from "node:fs/promises";
 import { join } from "node:path";
@@ -196,6 +197,26 @@ describe("owned process lifecycle", () => {
       expect(() => startOwnedProcess(options("exit", { cwd, executable: tooLong }))).toThrow(
         ProcessLaunchRejectedError,
       );
+    });
+  });
+
+  test("leaves a relative launch to spawn when the directory probe is unavailable", async () => {
+    await withTempFixtureDir("relative-probe-failure", async (cwd) => {
+      await symlink("loop", join(cwd, "loop"));
+      using probe = spyOn(childProcess, "spawnSync").mockImplementation(() => {
+        throw new Error("Injected probe failure.");
+      });
+      using spawn = spyOn(childProcess, "spawn");
+      let launchError: unknown;
+      try {
+        await startOwnedProcess(options("exit", { cwd, executable: "./loop" })).completion;
+      } catch (error) {
+        launchError = error;
+      }
+      expect(probe).toHaveBeenCalledTimes(1);
+      expect(spawn).toHaveBeenCalledTimes(1);
+      expect(launchError).toMatchObject({ code: "ELOOP", syscall: "spawn" });
+      expect(launchError).not.toBeInstanceOf(ProcessLaunchRejectedError);
     });
   });
 

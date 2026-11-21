@@ -1,6 +1,15 @@
 import { expect, spyOn, test } from "bun:test";
 import childProcess from "node:child_process";
-import { access, readFile, readdir, symlink, unlink, writeFile } from "node:fs/promises";
+import {
+  access,
+  mkdir,
+  readFile,
+  readdir,
+  stat,
+  symlink,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
 import { constants, devNull } from "node:os";
 import { dirname, join } from "node:path";
 import { Writable } from "node:stream";
@@ -141,6 +150,22 @@ const preSpawnCases = {
     "ENAMETOOLONG",
     "name too long",
   ),
+  "relative ENOTDIR below a long cwd": {
+    ...invalidExecutable("./" + "/".repeat(512) + "file/tool", "ENOTDIR", "not a directory"),
+    deepCwd: true,
+  },
+  "relative ELOOP below a long cwd": {
+    ...invalidExecutable(
+      "./" + "/".repeat(512) + "loop",
+      "ELOOP",
+      "too many symbolic links encountered",
+    ),
+    deepCwd: true,
+  },
+  "relative ENAMETOOLONG below a long cwd": {
+    ...invalidExecutable("./" + "x".repeat(512), "ENAMETOOLONG", "name too long"),
+    deepCwd: true,
+  },
 } as const;
 const cases = [
   "assertion failure",
@@ -162,6 +187,9 @@ const cases = [
   "executable traverses a regular file",
   "executable contains a symlink loop",
   "executable contains an overlong component",
+  "relative ENOTDIR below a long cwd",
+  "relative ELOOP below a long cwd",
+  "relative ENAMETOOLONG below a long cwd",
   "missing spawn receipt",
   "interrupted spawn receipt",
   "partial spawn receipt",
@@ -182,6 +210,22 @@ interface Control {
     stdinClosed: BenchmarkProtocolEvent[];
     leaderLiveAtCallerExit: boolean;
   };
+}
+
+async function longWorkingDirectory(root: string) {
+  let cwd = root;
+  for (;;) {
+    try {
+      await stat(cwd + "/".repeat(512));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENAMETOOLONG") throw error;
+      await writeFile(join(cwd, "file"), "");
+      await symlink("loop", join(cwd, "loop"));
+      return cwd;
+    }
+    cwd = join(cwd, "d".repeat(100));
+    await mkdir(cwd);
+  }
 }
 
 function isPreSpawnCase(mode: Case): mode is keyof typeof preSpawnCases {
@@ -273,7 +317,9 @@ async function runControl(mode: Case, control: Control) {
         const preSpawn = preSpawnCases[mode];
         const overrides: Partial<OwnedProcessOptions> = { ...preSpawn.options };
         if ("executable" in preSpawn.options) overrides.cwd = fixture.home;
-        if ("fileSuffix" in preSpawn) {
+        if ("deepCwd" in preSpawn) {
+          overrides.cwd = await longWorkingDirectory(fixture.home);
+        } else if ("fileSuffix" in preSpawn) {
           overrides.cwd = join(fixture.home, "unrelated.jsonl") + preSpawn.fileSuffix;
         } else if (
           mode === "cwd contains a symlink loop" ||
