@@ -2,7 +2,7 @@
 title: "Codex benchmark lifecycle corrections, Part II — Process ownership and launch evidence"
 created-date: 2026-11-21
 modified-date: 2026-11-21
-status: active
+status: completed
 agent: codex
 ---
 
@@ -14,9 +14,7 @@ The behavior baseline is `528fdd65`. Research commit `12fa4c89` records the comp
 
 ## Implementation Record
 
-Use one [Part II job record](jobs/2026-11-21-codex-benchmark-lifecycle-part-ii.md) for all phases. Add an entry when there is work to report. Link it to the relevant phase checklist and choose a heading that describes what happened. Check off an item once the record contains its evidence.
-
-Record the implementation checkpoint, tested revision and observations that support the result. For reviews, give the exact `base..tip` range and outcome, including the widened range after fixes. Use short Git SHAs for checkpoints, tested revisions and both range endpoints. Generate each abbreviation with `git rev-parse --short=8 <commit>` so Git extends it if eight characters are ambiguous.
+The [Part II job record](jobs/2026-11-21-codex-benchmark-lifecycle-part-ii.md) links each phase checklist to its implementation checkpoints, tested revisions and observations. Reviews include the exact `base..tip` range and outcome, including widened ranges after corrections. Short SHAs follow `git rev-parse --short=8 <commit>`.
 
 ## Phase 1. Hangup cleanup in both Node callers
 
@@ -50,9 +48,9 @@ The [canary review findings](jobs/2026-11-21-codex-benchmark-lifecycle-part-ii.m
 
 ## Phase 5. Documentation validation and closeout
 
-- [ ] Use the Phase 3 and Phase 4 results to update the benchmark guide with verified HUP behavior and Part II of the shared research with before/after evidence and platform limits. [Benchmark guide](../guides/codex-benchmark.md)
-- [ ] Review the affected documentation against the evidence in the unified job record. Check links, anchors and research diagrams. Resolve documentation findings and record the reviewed range and outcome.
-- [ ] Reconcile the plan checklists and the plan, job and research statuses with the verified outcomes.
+- [x] Use the Phase 3 and Phase 4 results to update the benchmark guide with verified HUP behavior and Part II of the shared research with before/after evidence and platform limits. [Benchmark guide](../guides/codex-benchmark.md)
+- [x] Review the affected documentation against the evidence in the unified job record. Check links, anchors and research diagrams. Resolve documentation findings and record the reviewed range and outcome.
+- [x] Reconcile the plan checklists and the plan, job and research statuses with the verified outcomes.
 
 ## Related Research
 

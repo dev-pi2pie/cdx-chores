@@ -2,11 +2,11 @@
 title: "Codex benchmark lifecycle corrections, Part II — Implementation record"
 created-date: 2026-11-21
 modified-date: 2026-11-21
-status: in-progress
+status: completed
 agent: codex
 ---
 
-The [Part II plan](../plan-2026-11-21-codex-benchmark-lifecycle-part-ii.md) tracks the remaining work. Earlier results are in the [Part I job record](2026-11-20-codex-benchmark-lifecycle-corrections.md).
+This record covers all five phases of the completed [Part II plan](../plan-2026-11-21-codex-benchmark-lifecycle-part-ii.md). Earlier results are in the [Part I job record](2026-11-20-codex-benchmark-lifecycle-corrections.md).
 
 ## Both Node callers received HUP during initialization
 
@@ -79,3 +79,12 @@ The independent review of `ba2d93c1..411674fe` confirmed the stalled-initializat
 | Final review `ba2d93c1..08b028bc` | No actionable findings. All three P3s were resolved, including the long-directory cases. The review verified the earlier benchmark, doctor, SDK retention and runner controls. Helper throws, timeouts, nonzero exits and malformed output all deferred to native spawn. |
 
 [Phase 4 checklist](../plan-2026-11-21-codex-benchmark-lifecycle-part-ii.md#phase-4-corrections-from-the-canary-review)
+
+## Documentation validation and closeout
+
+| Check | Result |
+| --- | --- |
+| Guide and research, `39183f61` | The guide documents POSIX hangup behavior for both callers. Part II records the verified before/after results, launch receipts and platform limits. The Part I design section matches `9f01bbba`. |
+| Figures and references | All three Mermaid diagrams rendered. The exit snapshot precedes fixture teardown, and the launch diagram distinguishes proven rejection, native settlement and uncertain allocation. Repository-relative links, incoming links, heading anchors and research footnotes resolved. |
+| Documentation review, `9f01bbba..39183f61` | The documentation reviewer checked the guide and research against the implementation and unified record and found no material gaps. The 4,895 passing managed tests are the Phase 4 results at `08b028bc`. |
+| Closure | The reviewer verified all five checklists, the completed plan, research and job statuses, and the attribution of test evidence in the closeout diff against `39183f61`. [Phase 5 checklist](../plan-2026-11-21-codex-benchmark-lifecycle-part-ii.md#phase-5-documentation-validation-and-closeout) |
