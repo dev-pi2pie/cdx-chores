@@ -1,4 +1,6 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { statSync } from "node:fs";
+import { constants } from "node:os";
 import { setTimeout as delay } from "node:timers/promises";
 import { inspect } from "node:util";
 
@@ -99,6 +101,29 @@ function invalidSpawnValue(
   );
 }
 
+function isFileCwd(cwd: string): boolean {
+  try {
+    return statSync(cwd, { throwIfNoEntry: false })?.isFile() === true;
+  } catch {
+    // Let spawn report paths we cannot identify here.
+    return false;
+  }
+}
+
+function fileCwdSpawnError(executable: string): Error {
+  // Match the runtime's synchronous ENOTDIR diagnostic without entering public spawn().
+  const bun = process.versions.bun !== undefined;
+  return Object.assign(
+    new Error(bun ? `ENOTDIR: not a directory, posix_spawn '${executable}'` : "spawn ENOTDIR"),
+    {
+      errno: -constants.errno.ENOTDIR,
+      code: "ENOTDIR",
+      syscall: "spawn",
+      ...(bun ? { path: executable } : {}),
+    },
+  );
+}
+
 function checkLaunch(options: OwnedProcessOptions) {
   try {
     requireProcessCapabilities();
@@ -146,6 +171,9 @@ function checkLaunch(options: OwnedProcessOptions) {
           "property",
         );
       }
+    }
+    if (typeof cwd === "string" && typeof executable === "string" && isFileCwd(cwd)) {
+      throw fileCwdSpawnError(executable);
     }
     return { maximum, executable, args, cwd, env };
   } catch (error) {

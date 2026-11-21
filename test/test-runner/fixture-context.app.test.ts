@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { lstat, mkdir, readdir, readFile, rename, rm, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
-import { type OwnedProcess } from "../../scripts/testing/execution/process.ts";
+import { startOwnedProcess, type OwnedProcess } from "../../scripts/testing/execution/process.ts";
 import {
   inspectFixtureExports,
   registerFixtureOutput,
@@ -201,6 +201,36 @@ describe("managed fixture ownership and exports", () => {
 });
 
 describe("nested fixture process handoff", () => {
+  test("leaves native-shaped ENOTDIR unresolved when spawn threw after allocation", async () => {
+    await managed(false, async (context) => {
+      // The driver owns the deliberate untracked child and verifies its stop before exiting.
+      const driver = await startOwnedProcess({
+        executable: "node",
+        args: [join(import.meta.dir, "fixtures", "spawn-after-allocation.mjs")],
+        cwd: REPO_ROOT,
+        env: { PATH: process.env.PATH, [TEST_CONTEXT_ENV]: process.env[TEST_CONTEXT_ENV] },
+        timeoutMs: 6_000,
+        graceMs: 250,
+        cleanupMs: 1_500,
+      }).completion;
+      expect(driver.ok, driver.stderr).toBe(true);
+      expect(driver.stopped).toBe(true);
+      expect(driver.stdout).toContain("Observed and stopped the child from the throwing spawn.");
+      const directory = join(suitePath(context, "app", "scratch"), "processes");
+      const names = await readdir(directory);
+      expect(names).toHaveLength(1);
+      expect(names[0]).toEndWith(".pending.json");
+      const receipt = JSON.parse(await readFile(join(directory, names[0]!), "utf8"));
+      expect(receipt.state).toBe("pending");
+      expect(receipt.pid).toBeUndefined();
+      expect(receipt.groupId).toBeUndefined();
+      expect(inspectFixtureProcesses(context, "app")).toEqual({
+        stopped: false,
+        issues: ["Nested fixture process completion is pending."],
+      });
+    });
+  }, 9_000);
+
   test("pending and stopped:false receipts preserve unresolved ownership", async () => {
     await managed(false, async (context) => {
       const directory = join(suitePath(context, "app", "scratch"), "processes");

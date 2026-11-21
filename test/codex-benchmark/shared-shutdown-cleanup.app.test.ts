@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { access, readFile, readdir, unlink, writeFile } from "node:fs/promises";
+import { constants } from "node:os";
 import { dirname, join } from "node:path";
 import { Writable } from "node:stream";
 import { setTimeout as delay } from "node:timers/promises";
@@ -86,6 +87,13 @@ const preSpawnCases = {
       code: "ERR_INVALID_ARG_VALUE",
     },
   },
+  "cwd is an existing file": {
+    options: {},
+    error: {
+      message: `ENOTDIR: not a directory, posix_spawn '${process.execPath}'`,
+      code: "ENOTDIR",
+    },
+  },
 } as const;
 const cases = [
   "assertion failure",
@@ -98,6 +106,7 @@ const cases = [
   "NUL in cwd",
   "NUL in env key",
   "NUL in env value",
+  "cwd is an existing file",
   "missing spawn receipt",
   "interrupted spawn receipt",
   "partial spawn receipt",
@@ -207,8 +216,13 @@ async function runControl(mode: Case, control: Control) {
       control.home = fixture.home;
       if (isPreSpawnCase(mode)) {
         const { options: preSpawn } = preSpawnCases[mode];
+        const fileCwd =
+          mode === "cwd is an existing file" ? { cwd: join(fixture.home, "unrelated.jsonl") } : {};
         const owned = startShutdownLiveCheck(
-          { ...fixture, start: (options) => fixture.start({ ...options, ...preSpawn }) },
+          {
+            ...fixture,
+            start: (options) => fixture.start({ ...options, ...preSpawn, ...fileCwd }),
+          },
           "allowed",
         );
         await owned.completion;
@@ -295,7 +309,18 @@ async function checkFailure(mode: Case, control: Control) {
     const expectedError = preSpawnCases[mode].error;
     expect(error).toBeInstanceOf(ProcessLaunchRejectedError);
     expect(error).toMatchObject({ ...expectedError, cause: expectedError });
-    if ("code" in expectedError) expect((error as Error).cause).toBeInstanceOf(TypeError);
+    if ("code" in expectedError) {
+      const { cause } = error as Error;
+      if (expectedError.code === "ENOTDIR") {
+        expect(cause).toMatchObject({
+          errno: -constants.errno.ENOTDIR,
+          syscall: "spawn",
+          path: process.execPath,
+        });
+      } else {
+        expect(cause).toBeInstanceOf(TypeError);
+      }
+    }
     control.callerStopped = true;
     control.neverStarted = true;
     await expect(access(dirname(home))).rejects.toMatchObject({ code: "ENOENT" });
