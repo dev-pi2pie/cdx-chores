@@ -101,16 +101,16 @@ function invalidSpawnValue(
   );
 }
 
-function isFileCwd(cwd: string): boolean {
+function cwdHasNonDirectoryComponent(cwd: string): boolean {
   try {
-    return statSync(cwd, { throwIfNoEntry: false })?.isFile() === true;
-  } catch {
-    // Let spawn report paths we cannot identify here.
-    return false;
+    // Keep ENOTDIR distinct from ENOENT across runtimes.
+    return statSync(cwd).isFile();
+  } catch (error) {
+    return (error as NodeJS.ErrnoException | undefined)?.code === "ENOTDIR";
   }
 }
 
-function fileCwdSpawnError(executable: string): Error {
+function nonDirectoryCwdError(executable: string): Error {
   // Match the runtime's synchronous ENOTDIR diagnostic without entering public spawn().
   const bun = process.versions.bun !== undefined;
   return Object.assign(
@@ -172,8 +172,12 @@ function checkLaunch(options: OwnedProcessOptions) {
         );
       }
     }
-    if (typeof cwd === "string" && typeof executable === "string" && isFileCwd(cwd)) {
-      throw fileCwdSpawnError(executable);
+    if (
+      typeof cwd === "string" &&
+      typeof executable === "string" &&
+      cwdHasNonDirectoryComponent(cwd)
+    ) {
+      throw nonDirectoryCwdError(executable);
     }
     return { maximum, executable, args, cwd, env };
   } catch (error) {

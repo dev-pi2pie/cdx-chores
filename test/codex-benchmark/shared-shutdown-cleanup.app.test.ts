@@ -31,6 +31,14 @@ import {
   withShutdownFixture,
 } from "./fixtures/shutdown";
 
+const fileCwdFailure = {
+  options: {},
+  error: {
+    message: `ENOTDIR: not a directory, posix_spawn '${process.execPath}'`,
+    code: "ENOTDIR",
+  },
+} as const;
+
 const preSpawnCases = {
   "invalid deadline": {
     options: { timeoutMs: 0 },
@@ -87,13 +95,9 @@ const preSpawnCases = {
       code: "ERR_INVALID_ARG_VALUE",
     },
   },
-  "cwd is an existing file": {
-    options: {},
-    error: {
-      message: `ENOTDIR: not a directory, posix_spawn '${process.execPath}'`,
-      code: "ENOTDIR",
-    },
-  },
+  "cwd is an existing file": { ...fileCwdFailure, fileSuffix: "" },
+  "cwd traverses a file before a trailing slash": { ...fileCwdFailure, fileSuffix: "/" },
+  "cwd traverses a file before a child component": { ...fileCwdFailure, fileSuffix: "/child" },
 } as const;
 const cases = [
   "assertion failure",
@@ -107,6 +111,8 @@ const cases = [
   "NUL in env key",
   "NUL in env value",
   "cwd is an existing file",
+  "cwd traverses a file before a trailing slash",
+  "cwd traverses a file before a child component",
   "missing spawn receipt",
   "interrupted spawn receipt",
   "partial spawn receipt",
@@ -215,13 +221,15 @@ async function runControl(mode: Case, control: Control) {
     async (fixture) => {
       control.home = fixture.home;
       if (isPreSpawnCase(mode)) {
-        const { options: preSpawn } = preSpawnCases[mode];
+        const preSpawn = preSpawnCases[mode];
         const fileCwd =
-          mode === "cwd is an existing file" ? { cwd: join(fixture.home, "unrelated.jsonl") } : {};
+          "fileSuffix" in preSpawn
+            ? { cwd: join(fixture.home, "unrelated.jsonl") + preSpawn.fileSuffix }
+            : {};
         const owned = startShutdownLiveCheck(
           {
             ...fixture,
-            start: (options) => fixture.start({ ...options, ...preSpawn, ...fileCwd }),
+            start: (options) => fixture.start({ ...options, ...preSpawn.options, ...fileCwd }),
           },
           "allowed",
         );

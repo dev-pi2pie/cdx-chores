@@ -338,6 +338,21 @@ describe("owned process lifecycle", () => {
     expect(result.stopped).toBe(true);
   });
 
+  test("leaves an absent cwd to native launch settlement", async () => {
+    await withTempFixtureDir("absent-launch-directory", async (root) => {
+      const owned = startOwnedProcess(options("exit", { cwd: join(root, "absent", "child") }));
+      let launchError: unknown;
+      owned.child.once("error", (error) => {
+        launchError = error;
+      });
+      const result = await owned.completion;
+      expect(launchError).toMatchObject({ code: "ENOENT" });
+      expect(result).toMatchObject({ reason: "launch-failed", stopped: true });
+      expect(result.pid).toBeUndefined();
+      expect(result.groupId).toBeUndefined();
+    });
+  });
+
   test("bounds captured output and stops the producer", async () => {
     const result = await startOwnedProcess(options("flood", { maxOutputBytes: 128 })).completion;
     expect(result.reason).toBe("output-limit");
