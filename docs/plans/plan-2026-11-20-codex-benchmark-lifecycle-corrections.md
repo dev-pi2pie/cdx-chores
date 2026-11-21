@@ -14,6 +14,8 @@ Align dispatch reporting, scheduling and retention in `codex-bench` and the Stan
 
 The [unified job record](jobs/2026-11-20-codex-benchmark-lifecycle-corrections.md) records each completed phase’s checkpoint, tested revision, evidence and review outcome under the matching numbered headings.
 
+**Continuation.** The [Part II plan](plan-2026-11-21-codex-benchmark-lifecycle-part-ii.md) and its [unified job record](jobs/2026-11-21-codex-benchmark-lifecycle-part-ii.md) cover caller hangup and working-directory launch rejection from the `528fdd65` baseline.
+
 ## Phase 1. Local dispatch and reporting
 
 - [x] Check reports and protocol traces through the built Node benchmark and the live check. Local stdin acceptance of `turn/start` sets the benchmark attempt and any explicit `sentTier` in both callers. Before acceptance, the benchmark reports `inferenceAttempted: false` and both report `sentTier: null`. [Dispatch tests](../../test/codex-benchmark/dispatch-accounting.app.test.ts)

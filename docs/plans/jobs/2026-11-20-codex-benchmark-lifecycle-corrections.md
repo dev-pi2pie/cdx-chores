@@ -6,6 +6,8 @@ status: completed
 agent: codex
 ---
 
+**Continuation.** The [Part II plan](../plan-2026-11-21-codex-benchmark-lifecycle-part-ii.md) and its [unified job record](2026-11-21-codex-benchmark-lifecycle-part-ii.md) cover caller hangup and working-directory launch rejection from the `528fdd65` baseline.
+
 ## Phase 1. Local dispatch and reporting
 
 Implementation `91062b23` ties dispatch accounting to local stdin acceptance. Checkpoint `9449b660` gives the dispatch test deadline room for bounded fixture teardown. [Implementation plan](../plan-2026-11-20-codex-benchmark-lifecycle-corrections.md#phase-1-local-dispatch-and-reporting)

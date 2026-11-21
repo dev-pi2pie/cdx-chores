@@ -128,6 +128,7 @@ Part II remains in progress pending verification of both corrections.
 
 ## Related Plans
 
+- [Codex benchmark lifecycle corrections, Part II](../plans/plan-2026-11-21-codex-benchmark-lifecycle-part-ii.md)
 - [Codex benchmark lifecycle corrections](../plans/plan-2026-11-20-codex-benchmark-lifecycle-corrections.md)
 - [Codex turn reporting and app-server shutdown](../plans/plan-2026-11-20-codex-turn-reporting-and-app-server-shutdown.md)
 - [Codex CLI benchmark](../plans/plan-2026-11-18-codex-cli-benchmark.md)
