@@ -1,8 +1,14 @@
 import { describe, expect, test } from "bun:test";
+import { existsSync } from "node:fs";
 import { lstat, mkdir, readdir, readFile, rename, rm, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
-import { startOwnedProcess, type OwnedProcess } from "../../scripts/testing/execution/process.ts";
+import { Writable } from "node:stream";
+import {
+  startOwnedProcess,
+  type OwnedProcess,
+  type OwnedProcessResult,
+} from "../../scripts/testing/execution/process.ts";
 import {
   inspectFixtureExports,
   registerFixtureOutput,
@@ -14,12 +20,16 @@ import {
 import {
   allocateRun,
   fixtureEnvironment,
+  readFixtureContext,
   removeRun,
   suitePath,
   TEST_CONTEXT_ENV,
   type RunContext,
 } from "../../scripts/testing/ownership/run-context.ts";
+import { runManagedTests } from "../../scripts/testing/orchestration/runner.ts";
+import { classifyTestFiles, SUITES } from "../../scripts/testing/suites/selection.ts";
 import { REPO_ROOT, withTempFixtureDir } from "../helpers/cli-test-utils";
+import { completed, writeReport } from "./runner-support.ts";
 
 async function managed(keep: boolean, run: (context: RunContext) => Promise<void>) {
   const context = await allocateRun(REPO_ROOT, ["app"], keep);
@@ -201,22 +211,59 @@ describe("managed fixture ownership and exports", () => {
 });
 
 describe("nested fixture process handoff", () => {
-  test("leaves native-shaped ENOTDIR unresolved when spawn threw after allocation", async () => {
-    await managed(false, async (context) => {
-      // The driver owns the deliberate untracked child and verifies its stop before exiting.
-      const driver = await startOwnedProcess({
-        executable: "node",
-        args: [join(import.meta.dir, "fixtures", "spawn-after-allocation.mjs")],
-        cwd: REPO_ROOT,
-        env: { PATH: process.env.PATH, [TEST_CONTEXT_ENV]: process.env[TEST_CONTEXT_ENV] },
-        timeoutMs: 6_000,
-        graceMs: 250,
-        cleanupMs: 1_500,
-      }).completion;
-      expect(driver.ok, driver.stderr).toBe(true);
-      expect(driver.stopped).toBe(true);
-      expect(driver.stdout).toContain("Observed and stopped the child from the throwing spawn.");
-      const directory = join(suitePath(context, "app", "scratch"), "processes");
+  test("retains scratch and stops scheduling when spawn throws ENOTDIR after allocation", async () => {
+    let context: RunContext | undefined;
+    let driver: OwnedProcessResult | undefined;
+    const preflights: string[] = [];
+    const sink = new Writable({
+      write(_chunk, _encoding, done) {
+        done();
+      },
+    });
+    try {
+      const result = await runManagedTests(REPO_ROOT, ["all"], {
+        streams: { stdout: sink, stderr: sink },
+        dependencies: {
+          discover: async () =>
+            classifyTestFiles(SUITES.map((suite) => `test/example.${suite}.test.ts`)),
+          allocate: async (...args) => (context = await allocateRun(...args)),
+          preflight: async ({ suite }) => {
+            preflights.push(suite);
+            return { process: completed() };
+          },
+          execute: async (options) => {
+            await writeReport(options);
+            if (readFixtureContext(options.env, REPO_ROOT)!.suite !== "app") return completed();
+            // The driver verifies the untracked child independently of the runner's receipt.
+            driver = await startOwnedProcess({
+              executable: "node",
+              args: [join(import.meta.dir, "fixtures", "spawn-after-allocation.mjs")],
+              cwd: REPO_ROOT,
+              env: { PATH: process.env.PATH, [TEST_CONTEXT_ENV]: options.env[TEST_CONTEXT_ENV] },
+              timeoutMs: 6_000,
+              graceMs: 250,
+              cleanupMs: 1_500,
+            }).completion;
+            return driver;
+          },
+        },
+      });
+      expect(driver?.ok, driver?.stderr).toBe(true);
+      expect(driver?.stopped).toBe(true);
+      expect(driver?.stdout).toContain("Observed and stopped the child from the throwing spawn.");
+      expect(result.exitCode).toBe(1);
+      expect(preflights).toEqual(["unit", "app"]);
+      expect(result.summary.leaves.map((leaf) => leaf.state)).toEqual([
+        "passed",
+        "failed",
+        "not-run",
+        "not-run",
+      ]);
+      expect(result.summary.leaves[1]!.errors).toContain(
+        "Nested fixture process completion is pending.",
+      );
+      expect(result.summary.remainingOwnedPath).toBe(context!.root);
+      const directory = join(suitePath(context!, "app", "scratch"), "processes");
       const names = await readdir(directory);
       expect(names).toHaveLength(1);
       expect(names[0]).toEndWith(".pending.json");
@@ -224,11 +271,14 @@ describe("nested fixture process handoff", () => {
       expect(receipt.state).toBe("pending");
       expect(receipt.pid).toBeUndefined();
       expect(receipt.groupId).toBeUndefined();
-      expect(inspectFixtureProcesses(context, "app")).toEqual({
+      expect(inspectFixtureProcesses(context!, "app")).toEqual({
         stopped: false,
         issues: ["Nested fixture process completion is pending."],
       });
-    });
+    } finally {
+      if (context && driver?.ok && driver.stopped && existsSync(context.root))
+        await removeRun(context);
+    }
   }, 9_000);
 
   test("pending and stopped:false receipts preserve unresolved ownership", async () => {

@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { access, readFile, readdir, unlink, writeFile } from "node:fs/promises";
-import { constants } from "node:os";
+import { constants, devNull } from "node:os";
 import { dirname, join } from "node:path";
 import { Writable } from "node:stream";
 import { setTimeout as delay } from "node:timers/promises";
@@ -96,6 +96,7 @@ const preSpawnCases = {
     },
   },
   "cwd is an existing file": { ...fileCwdFailure, fileSuffix: "" },
+  "cwd is the null device": { ...fileCwdFailure, options: { cwd: devNull } },
   "cwd traverses a file before a trailing slash": { ...fileCwdFailure, fileSuffix: "/" },
   "cwd traverses a file before a child component": { ...fileCwdFailure, fileSuffix: "/child" },
 } as const;
@@ -111,6 +112,7 @@ const cases = [
   "NUL in env key",
   "NUL in env value",
   "cwd is an existing file",
+  "cwd is the null device",
   "cwd traverses a file before a trailing slash",
   "cwd traverses a file before a child component",
   "missing spawn receipt",

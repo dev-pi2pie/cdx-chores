@@ -104,7 +104,7 @@ function invalidSpawnValue(
 function cwdHasNonDirectoryComponent(cwd: string): boolean {
   try {
     // Keep ENOTDIR distinct from ENOENT across runtimes.
-    return statSync(cwd).isFile();
+    return !statSync(cwd).isDirectory();
   } catch (error) {
     return (error as NodeJS.ErrnoException | undefined)?.code === "ENOTDIR";
   }
