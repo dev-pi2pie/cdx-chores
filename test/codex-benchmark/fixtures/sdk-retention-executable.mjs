@@ -1,6 +1,9 @@
 #!/usr/bin/env node
-import { appendFileSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { appendFileSync, existsSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { createInterface } from "node:readline";
+import { setTimeout as delay } from "node:timers/promises";
 
 const threadId = "owned-fixture-thread";
 function record(event) {
@@ -10,7 +13,31 @@ function record(event) {
   );
 }
 
-if (process.argv[2] === "app-server") {
+function resistShutdown() {
+  process.on("SIGTERM", () => {});
+  setTimeout(() => process.exit(0), 7_000);
+  const release = join(process.env.CODEX_HOME, "release-shutdown");
+  setInterval(() => {
+    if (existsSync(release)) process.exit(0);
+  }, 20).unref();
+}
+
+if (process.argv[2] === "retention-worker") {
+  resistShutdown();
+  writeFileSync(
+    join(process.env.CODEX_HOME, "worker.pid"),
+    JSON.stringify({ pid: process.pid, groupId: process.ppid }),
+  );
+} else if (process.argv[2] === "app-server") {
+  record("app-server-started");
+  writeFileSync(join(process.env.CODEX_HOME, "leader.pid"), String(process.pid));
+  if (process.env.CDX_RETENTION_WORKER === "1") {
+    if (process.env.FIXTURE_ESCALATION === "undelivered") resistShutdown();
+    spawn(process.execPath, [process.argv[1], "retention-worker"], { stdio: "ignore" }).unref();
+    const ready = join(process.env.CODEX_HOME, "worker.pid");
+    for (let i = 0; i < 100 && !existsSync(ready); i++) await delay(10);
+    if (!existsSync(ready)) throw new Error("Retention worker did not start.");
+  }
   createInterface({ input: process.stdin }).on("line", (line) => {
     const request = JSON.parse(line);
     if (request.method === "initialized") return;
@@ -21,6 +48,14 @@ if (process.argv[2] === "app-server") {
       return;
     }
     record(`${request.method}:${request.params.threadId}`);
+    if (process.env.CDX_RETENTION_RPC === "stall") return;
+    if (
+      process.env.CDX_RETENTION_RPC === "success" ||
+      process.env.FIXTURE_ESCALATION === "deny-term"
+    ) {
+      console.log(JSON.stringify({ id: request.id, result: {} }));
+      return;
+    }
     console.log(
       JSON.stringify({
         id: request.id,

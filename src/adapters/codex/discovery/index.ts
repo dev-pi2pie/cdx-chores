@@ -1,5 +1,6 @@
 import { isAbsolute } from "node:path";
 
+import { extractAppServerVersion } from "../app-server-version";
 import { resolveDiscoveryExecutable } from "./executable";
 import { DiscoveryTransport, isRecord } from "./transport";
 import type { CodexDiscovery, CodexDiscoveryOptions } from "./types";
@@ -31,12 +32,7 @@ export async function discoverCodexInfo(options: CodexDiscoveryOptions): Promise
     ) {
       throw new Error("Codex discovery did not report a valid absolute Codex home.");
     }
-    const version =
-      typeof initialized.userAgent === "string"
-        ? initialized.userAgent.match(
-            /^cdx_chores\/([0-9]+\.[0-9]+\.[0-9]+(?:[-+][\w.-]+)?)(?:\s|$)/,
-          )?.[1]
-        : undefined;
+    const version = extractAppServerVersion(initialized.userAgent, env)?.version;
     if (!version) throw new Error("Codex discovery did not report a valid CLI version.");
     transport.initialized();
     const configuration = await transport.request("config/read", {

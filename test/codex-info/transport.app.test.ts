@@ -9,6 +9,7 @@ import { withTempFixtureDir } from "../helpers/cli-test-utils";
 async function withServer(
   behavior: string,
   run: (env: NodeJS.ProcessEnv, cwd: string, log: string) => Promise<void>,
+  userAgent: string | null = "cdx_chores/0.153.4 (test)",
 ): Promise<void> {
   await withTempFixtureDir("codex-info-transport", async (cwd) => {
     const executable = join(cwd, "server.cjs");
@@ -28,7 +29,7 @@ readline.createInterface({ input: process.stdin }).on("line", async (line) => {
   fs.appendFileSync(log, line + "\n");
   const { id, method, params } = request;
   ${behavior}
-  if (method === "initialize") send(id, { userAgent: "cdx_chores/0.153.4 (test)", codexHome: process.env.CODEX_HOME || "/synthetic/default" });
+  if (method === "initialize") send(id, { userAgent: ${JSON.stringify(userAgent)}, codexHome: process.env.CODEX_HOME || "/synthetic/default" });
   if (method === "config/read") send(id, { config: { model: process.env.FIXTURE_MODEL || null, model_provider: "custom", model_providers: { custom: { name: "Custom", secret: "hidden" } }, forwarded: process.env.UNRELATED_VALUE, launchCwd: process.cwd() } });
   if (method === "model/list") send(id, { data: [{ id: "model-" + (++page) }], nextCursor: page === 1 ? "page-two" : null });
 });
@@ -42,6 +43,7 @@ setInterval(() => {}, 1000);
       FIXTURE_LOG: log,
     };
     delete env.CODEX_HOME;
+    delete env.CODEX_INTERNAL_ORIGINATOR_OVERRIDE;
     await run(env, cwd, log);
     const pid = Number(await readFile(log + ".pid", "utf8").catch(() => "0"));
     if (pid) expect(() => process.kill(pid, 0)).toThrow();
@@ -87,6 +89,51 @@ describe("Codex information discovery transport", () => {
         expect(result.models).toBeNull();
         expect(await readFile(log, "utf8")).not.toContain("model/list");
       },
+    );
+  });
+
+  test.each([
+    ["codex_exec/0.171.0 (fixture)", "0.171.0", undefined],
+    ["custom-originator/0.153.4+local", "0.153.4+local", undefined],
+    ["Codex Exec/0.153.4-beta.1+local (fixture)", "0.153.4-beta.1+local", "Codex Exec"],
+    ["codex/exec/0.171.0", "0.171.0", "codex/exec"],
+  ] as const)(
+    "reads the version from app-server user agent %j",
+    async (userAgent, version, originator) => {
+      await withServer(
+        "",
+        async (env, cwd) => {
+          env.CODEX_INTERNAL_ORIGINATOR_OVERRIDE = originator;
+          const result = await discoverCodexInfo({ cwd, env, view: "providers" });
+          expect(result.context.codexVersion).toBe(version);
+          expect(result.config.model_provider).toBe("custom");
+        },
+        userAgent,
+      );
+    },
+  );
+
+  test.each([
+    "/0.171.0",
+    "codex exec/0.171.0",
+    "codex/exec/0.171.0",
+    "codex_exec/0.171.0/extra",
+    "codex_exec/invalid cdx_chores/0.171.0",
+    null,
+  ])("rejects malformed app-server user agent %j before discovery", async (userAgent) => {
+    await withServer(
+      "",
+      async (env, cwd, log) => {
+        await expect(discoverCodexInfo({ cwd, env, view: "providers" })).rejects.toThrow(
+          "Codex discovery did not report a valid CLI version.",
+        );
+        const methods = (await readFile(log, "utf8"))
+          .trim()
+          .split("\n")
+          .map((line) => JSON.parse(line).method);
+        expect(methods).toEqual(["initialize"]);
+      },
+      userAgent,
     );
   });
 

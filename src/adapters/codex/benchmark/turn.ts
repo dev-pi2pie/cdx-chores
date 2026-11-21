@@ -1,6 +1,8 @@
 import { EventEmitter, once } from "node:events";
+import { setImmediate } from "node:timers/promises";
 
 import type { CodexAppServer } from "../app-server";
+import { isAppServerId, TurnStartEvidence } from "../app-server-identity";
 import { isRecord } from "../discovery/transport";
 
 export interface Turn {
@@ -24,7 +26,7 @@ export class TrialObserver {
   private readonly turns = new Map<string, TurnEvidence>();
   private readonly events = new EventEmitter();
   readonly close: () => void;
-  startedTurnId?: string;
+  readonly start = new TurnStartEvidence();
   private observedTextTurnId?: string;
 
   constructor(
@@ -35,10 +37,11 @@ export class TrialObserver {
     this.close = server.onNotification((method, params) => {
       if (!isRecord(params) || params.threadId !== threadId) return;
       if (method === "turn/started" || method === "turn/completed") {
+        this.start.observed = true;
         const turn = params.turn;
-        if (!isRecord(turn) || typeof turn.id !== "string") return;
+        if (!isRecord(turn) || !isAppServerId(turn.id)) return;
         if (method === "turn/started") {
-          this.startedTurnId = turn.id;
+          this.start.recordStart(turn.id);
           this.events.emit("turnEvidence");
         } else if (
           turn.status === "completed" ||
@@ -53,6 +56,7 @@ export class TrialObserver {
           this.events.emit("turnEvidence");
         }
       } else if (typeof params.turnId === "string") {
+        this.start.observed = true;
         if (method === "item/started" || method === "item/completed") {
           this.recordItem(this.evidence(params.turnId), params.item);
         } else if (method === "model/rerouted") {
@@ -91,13 +95,17 @@ export class TrialObserver {
     evidence.items.set(item.id, { ...evidence.items.get(item.id), ...item });
   }
 
-  async waitForStart(response: Promise<{ turn: Turn }>, signal?: AbortSignal): Promise<string> {
-    const rpcTurn = response.then(({ turn }) => turn.id);
+  async waitForStart(response: Promise<unknown>, signal?: AbortSignal): Promise<string> {
+    const rpcTurn = response.then((result) => this.start.recordReply(result));
     let checkEvidence = () => {};
     let graceTimer: ReturnType<typeof setTimeout> | undefined;
     const observedTurn = new Promise<string>((resolve, reject) => {
       checkEvidence = () => {
-        const id = this.startedTurnId;
+        if (this.start.conflicting) {
+          reject(this.start.signal.reason);
+          return;
+        }
+        const id = this.start.turnId;
         // Cancellation needs a target immediately. Normal progress requires a
         // matching terminal notification to stand in for the missing RPC reply.
         if (id && (signal?.aborted || this.turns.get(id)?.completion)) resolve(id);
@@ -112,7 +120,13 @@ export class TrialObserver {
       checkEvidence();
     });
     try {
-      return await Promise.race([rpcTurn, observedTurn]);
+      const recoveredTurn = observedTurn.then(async (id) => {
+        // Let a reply from the same input batch settle before inferring the start.
+        if (!signal?.aborted) await setImmediate();
+        this.start.assertUnambiguous();
+        return id;
+      });
+      return await Promise.race([rpcTurn, recoveredTurn]);
     } finally {
       clearTimeout(graceTimer);
       signal?.removeEventListener("abort", checkEvidence);
@@ -121,8 +135,19 @@ export class TrialObserver {
   }
 
   async waitForCompletion(turnId: string, signal: AbortSignal) {
+    this.start.assertUnambiguous();
     const evidence = this.evidence(turnId);
-    if (!evidence.completion) await once(this.events, `turn:${turnId}`, { signal });
+    if (!evidence.completion) {
+      try {
+        await once(this.events, `turn:${turnId}`, {
+          signal: AbortSignal.any([signal, this.start.signal]),
+        });
+      } catch (error) {
+        this.start.assertUnambiguous();
+        throw error;
+      }
+    }
+    this.start.assertUnambiguous();
     if (!evidence.completion) throw new Error("Matching turn completion was unavailable.");
     return evidence.completion;
   }

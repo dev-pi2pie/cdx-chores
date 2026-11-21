@@ -1,12 +1,16 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { StringDecoder } from "node:string_decoder";
-import { setTimeout as delay } from "node:timers/promises";
 
+import { createAppServerShutdown } from "./app-server-shutdown";
+import {
+  checkAppServerLaunchDuringCancellation,
+  stopAppServerOnSignal,
+} from "./app-server-signals";
+import { writeAppServerTurn } from "./app-server-write";
 import { isRecord } from "./discovery/transport";
 
 const maxLineBytes = 8 * 1024 * 1024;
 const requestTimeoutMs = 15_000;
-const groupShutdownTimeoutMs = 1_000;
 
 type NotificationListener = (method: string, params: unknown) => void;
 
@@ -19,6 +23,7 @@ interface PendingRequest {
 interface RequestOptions {
   timeoutMs?: number;
   signal?: AbortSignal;
+  onQueued?: () => void;
 }
 
 function appServerExitError(code: number | null, signal: NodeJS.Signals | null): Error {
@@ -26,56 +31,78 @@ function appServerExitError(code: number | null, signal: NodeJS.Signals | null):
 }
 
 export class CodexAppServerError extends Error {
+  readonly code: number | undefined;
+  readonly data: unknown;
+
   constructor(
-    method: string,
-    readonly code: number | undefined,
-    detail: string,
+    readonly method: string,
+    responseError: unknown,
   ) {
+    const error = isRecord(responseError) ? responseError : {};
+    const detail =
+      typeof error.message === "string" ? error.message : "Codex app-server request failed.";
     super(`${method}: ${detail}`);
+    this.code = typeof error.code === "number" ? error.code : undefined;
+    this.data = error.data;
+  }
+}
+
+export function isTurnInputTooLarge(error: unknown): boolean {
+  return (
+    error instanceof CodexAppServerError &&
+    error.method === "turn/start" &&
+    error.code === -32602 &&
+    isRecord(error.data) &&
+    error.data.input_error_code === "input_too_large"
+  );
+}
+
+export class CodexRequestTimeoutError extends Error {
+  constructor(readonly method: string) {
+    super(`${method}: Codex app-server request timed out.`);
   }
 }
 
 export class CodexAppServer {
   private readonly child: ChildProcessWithoutNullStreams;
-  private readonly closed: Promise<void>;
+  private readonly shutdown: () => Promise<void>;
+  private readonly releaseSignalCleanup?: () => void;
   private readonly stopped = new AbortController();
   private readonly pending = new Map<number, PendingRequest>();
   private readonly listeners = new Set<NotificationListener>();
   private nextId = 0;
-  private exited = false;
   private unexpectedStdoutEnd = false;
-  private readonly separateGroup: boolean;
 
   constructor(
     executable: string,
     cwd: string,
     env: NodeJS.ProcessEnv,
-    { isolateSignals = false }: { isolateSignals?: boolean } = {},
+    {
+      acceptHangup,
+      cleanupOnSignal = false,
+    }: { acceptHangup?: () => boolean; cleanupOnSignal?: boolean } = {},
   ) {
     // Keep a benchmark's app-server available for turn/interrupt after foreground Ctrl-C.
-    this.separateGroup = isolateSignals && process.platform !== "win32";
+    const separateGroup =
+      (acceptHangup !== undefined || cleanupOnSignal) && process.platform !== "win32";
+    if (separateGroup) checkAppServerLaunchDuringCancellation();
     this.child = spawn(executable, ["app-server"], {
       cwd,
       env,
       stdio: "pipe",
       windowsHide: true,
-      detached: this.separateGroup,
+      detached: separateGroup,
     });
     this.child.on("error", (error) => this.fail(error));
     this.child.stdin.on("error", (error) => this.fail(error));
     this.child.stdout.on("error", (error) => this.fail(error));
     this.child.stderr.on("error", (error) => this.fail(error));
     this.child.stderr.resume();
-    this.child.on("exit", () => {
-      this.exited = true;
-    });
-    this.closed = new Promise((resolve) => {
-      this.child.once("close", (code, signal) => {
-        this.exited = true;
-        this.fail(appServerExitError(code, signal));
-        resolve();
-      });
-    });
+    this.shutdown = createAppServerShutdown(this.child, separateGroup);
+    if (separateGroup) {
+      this.releaseSignalCleanup = stopAppServerOnSignal(() => this.close(), acceptHangup);
+    }
+    this.child.once("close", (code, signal) => this.fail(appServerExitError(code, signal)));
     this.child.stdout.once("end", () => {
       if (this.signal.aborted) return;
       this.unexpectedStdoutEnd = true;
@@ -121,9 +148,15 @@ export class CodexAppServer {
     for (const pending of this.pending.values()) pending.reject(error);
   }
 
-  private send(message: object): void {
+  private send(message: object, onQueued?: () => void): void {
     this.signal.throwIfAborted();
-    this.child.stdin.write(`${JSON.stringify(message)}\n`);
+    const line = `${JSON.stringify(message)}\n`;
+    if (onQueued) {
+      writeAppServerTurn(this.child.stdin, line, (error) => this.fail(error));
+      onQueued();
+    } else {
+      this.child.stdin.write(line);
+    }
   }
 
   private receive(line: string): void {
@@ -148,14 +181,7 @@ export class CodexAppServer {
       const pending = this.pending.get(message.id);
       if (!pending) return; // A response may arrive after its request times out or is cancelled.
       if ("error" in message) {
-        const error = isRecord(message.error) ? message.error : {};
-        pending.reject(
-          new CodexAppServerError(
-            pending.method,
-            typeof error.code === "number" ? error.code : undefined,
-            typeof error.message === "string" ? error.message : "Codex app-server request failed.",
-          ),
-        );
+        pending.reject(new CodexAppServerError(pending.method, message.error));
       } else {
         pending.resolve(message.result);
       }
@@ -178,7 +204,7 @@ export class CodexAppServer {
   async request<T = unknown>(
     method: string,
     params: object,
-    { timeoutMs = requestTimeoutMs, signal }: RequestOptions = {},
+    { timeoutMs = requestTimeoutMs, signal, onQueued }: RequestOptions = {},
   ): Promise<T> {
     signal?.throwIfAborted();
     this.signal.throwIfAborted();
@@ -191,7 +217,7 @@ export class CodexAppServer {
       };
       const onAbort = () => pending.reject(signal?.reason);
       const deadline = setTimeout(() => {
-        pending.reject(new Error(`${method}: Codex app-server request timed out.`));
+        pending.reject(new CodexRequestTimeoutError(method));
       }, timeoutMs);
       const pending: PendingRequest = {
         method,
@@ -207,7 +233,7 @@ export class CodexAppServer {
       this.pending.set(id, pending);
       signal?.addEventListener("abort", onAbort, { once: true });
       try {
-        this.send({ id, method, params });
+        this.send({ id, method, params }, onQueued);
       } catch (error) {
         pending.reject(error);
       }
@@ -234,52 +260,12 @@ export class CodexAppServer {
     }
   }
 
-  private kill(signal: NodeJS.Signals): void {
-    if (this.separateGroup && this.child.pid) {
-      try {
-        process.kill(-this.child.pid, signal);
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
-      }
-    } else if (!this.exited) {
-      this.child.kill(signal);
-    }
-  }
-
-  private async waitForGroupExit(groupId: number): Promise<void> {
-    const deadline = performance.now() + groupShutdownTimeoutMs;
-    while (true) {
-      try {
-        process.kill(-groupId, 0);
-      } catch (error) {
-        const code = (error as NodeJS.ErrnoException).code;
-        if (code === "ESRCH") return;
-        if (code !== "EPERM") throw error;
-      }
-      if (performance.now() >= deadline)
-        throw new Error(
-          "Codex app-server process group did not stop before its shutdown deadline.",
-        );
-      await delay(20);
-    }
-  }
-
   async close(): Promise<void> {
     this.fail(new Error("Codex app-server was closed."));
-    this.child.stdin.destroy();
-    this.child.stdout.destroy();
-    this.child.stderr.destroy();
-    this.kill("SIGTERM");
-    const forceKill = setTimeout(() => this.kill("SIGKILL"), 1_000);
     try {
-      await this.closed;
-      // The group can still contain workers after its leader has exited.
-      if (this.separateGroup && this.child.pid) {
-        this.kill("SIGKILL");
-        await this.waitForGroupExit(this.child.pid);
-      }
+      await this.shutdown();
     } finally {
-      clearTimeout(forceKill);
+      this.releaseSignalCleanup?.();
     }
   }
 }

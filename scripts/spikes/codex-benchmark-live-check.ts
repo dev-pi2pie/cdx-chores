@@ -1,14 +1,32 @@
 import { spawn } from "node:child_process";
 import { EventEmitter, once } from "node:events";
 import { createInterface } from "node:readline";
+import { setImmediate } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
 import {
+  claimThreadId,
+  isAppServerId,
+  TurnStartEvidence,
+} from "../../src/adapters/codex/app-server-identity.ts";
+import { createAppServerShutdown } from "../../src/adapters/codex/app-server-shutdown.ts";
+import { handleBenchmarkSignals } from "../../src/adapters/codex/benchmark/signals.ts";
+import {
+  checkAppServerLaunchDuringCancellation,
+  stopAppServerOnSignal,
+} from "../../src/adapters/codex/app-server-signals.ts";
+import { extractAppServerVersion } from "../../src/adapters/codex/app-server-version.ts";
+import { writeAppServerTurn } from "../../src/adapters/codex/app-server-write.ts";
+import { CodexAppServerError, isTurnInputTooLarge } from "../../src/adapters/codex/app-server.ts";
+import {
   readSavedTurn,
   type RolloutReadOptions,
 } from "../../src/adapters/codex/benchmark/rollout.ts";
-import { applyCodexSessionRetention } from "../../src/adapters/codex/session-retention.ts";
+import {
+  applyCodexSessionRetention,
+  type CodexSessionRetentionResult,
+} from "../../src/adapters/codex/session-retention.ts";
 import { resolveCodexSpeed, type CodexSpeed } from "../../src/utils/codex-execution.ts";
 import {
   resolveCodexSessionRetention,
@@ -19,8 +37,13 @@ const defaultAppServer = {
   executable: fileURLToPath(new URL("../../node_modules/.bin/codex", import.meta.url)),
   args: ["app-server", "--listen", "stdio://"],
 };
+const requestTimeoutMs = 15_000;
 const prompt =
   "Explain how an LRU cache works to a junior developer. Cover a cache hit, a cache miss, and an eviction. Walk through a short example with a capacity of three. Write about 250 words and answer directly without using tools.";
+const usage =
+  "Usage: node examples/playground/codex-benchmark-live-check.mjs --model <id> --effort <effort> [--speed standard|fast|ultrafast] [--session-retention archive|keep|delete]";
+const buildInstructions =
+  "From the repository root, build the Node.js bundle with:\n  bun build scripts/spikes/codex-benchmark-live-check.ts --target=node --format=esm --outfile=examples/playground/codex-benchmark-live-check.mjs";
 
 interface Thread {
   id: string;
@@ -46,7 +69,7 @@ interface Message {
   id?: number | string;
   method?: string;
   result?: unknown;
-  error?: { message: string };
+  error?: unknown;
   params?: {
     threadId?: string;
     turnId?: string;
@@ -56,26 +79,50 @@ interface Message {
   };
 }
 
-function startAppServer({ executable, args }: typeof defaultAppServer) {
+function startAppServer({ executable, args }: typeof defaultAppServer, env: NodeJS.ProcessEnv) {
+  const separateGroup = process.platform !== "win32";
+  if (separateGroup) checkAppServerLaunchDuringCancellation();
   const child = spawn(executable, args, {
-    stdio: ["pipe", "pipe", "inherit"],
+    env,
+    stdio: "pipe",
+    detached: separateGroup,
   });
-  const closed = new Promise<void>((resolve) => child.once("close", () => resolve()));
+  const shutdown = createAppServerShutdown(child, separateGroup);
   const lines = createInterface({ input: child.stdout });
   const events = new EventEmitter();
   const stopped = new AbortController();
   const stop = () => stopped.abort(new Error("Codex app-server stopped."));
   child.on("error", (error) => stopped.abort(error));
   child.stdin.on("error", (error) => stopped.abort(error));
+  child.stderr.on("error", (error) => stopped.abort(error));
+  child.stderr.pipe(process.stderr, { end: false });
   lines.once("close", stop);
 
   const liveTurns = new Map<string, LiveTurn>();
+  const starts = new Map<string, TurnStartEvidence>();
+  const turnKey = (threadId: string, turnId: string) => JSON.stringify([threadId, turnId]);
   let nextId = 0;
-  const send = (message: object) => child.stdin.write(`${JSON.stringify(message)}\n`);
-  const wait = (event: string, timeoutMs: number) =>
-    once(events, event, {
-      signal: AbortSignal.any([stopped.signal, AbortSignal.timeout(timeoutMs)]),
-    });
+  const send = (message: object, onQueued?: () => void): void => {
+    const line = `${JSON.stringify(message)}\n`;
+    if (onQueued) {
+      writeAppServerTurn(child.stdin, line, (error) => stopped.abort(error));
+      onQueued();
+    } else {
+      child.stdin.write(line);
+    }
+  };
+  async function wait(event: string, timeoutMs: number, operation: string, cancel?: AbortSignal) {
+    const deadline = AbortSignal.timeout(timeoutMs);
+    const signal = AbortSignal.any([stopped.signal, deadline, ...(cancel ? [cancel] : [])]);
+    try {
+      return await once(events, event, { signal });
+    } catch (error) {
+      if (deadline.aborted && signal.reason === deadline.reason)
+        throw new Error(`${operation} timed out.`);
+      if (stopped.signal.aborted && signal.reason === stopped.signal.reason) throw signal.reason;
+      throw error;
+    }
+  }
 
   lines.on("line", (line) => {
     try {
@@ -93,12 +140,23 @@ function startAppServer({ executable, args }: typeof defaultAppServer) {
       }
 
       const params = message.params;
-      const turnId = params?.turn?.id ?? params?.turnId;
-      if (!params?.threadId || !turnId) return;
-      const key = `${params.threadId}:${turnId}`;
+      if (typeof params?.threadId !== "string") return;
+      const start = starts.get(params.threadId);
+      if (!start) return;
+      const lifecycle = message.method === "turn/started" || message.method === "turn/completed";
+      if (lifecycle || typeof params.turnId === "string") start.observed = true;
+      const turnId = lifecycle ? params?.turn?.id : params?.turnId;
+      if (!isAppServerId(turnId)) return;
+      const key = turnKey(params.threadId, turnId);
       const live: LiveTurn = liveTurns.get(key) ?? { itemTypes: [] };
       liveTurns.set(key, live);
-      if (message.method === "turn/completed" && params.turn) {
+      if (message.method === "turn/started" && params.turn) {
+        start.recordStart(turnId);
+      } else if (
+        message.method === "turn/completed" &&
+        params.turn &&
+        ["completed", "interrupted", "failed"].includes(params.turn.status)
+      ) {
         live.completion = { turn: params.turn, receivedAt: performance.now() };
         events.emit(`turn:${key}`);
       } else if (message.method === "thread/tokenUsage/updated") {
@@ -108,40 +166,92 @@ function startAppServer({ executable, args }: typeof defaultAppServer) {
       } else if (message.method === "model/rerouted") {
         live.rerouted = true;
       }
+      if (lifecycle && live.completion && start.turnId === turnId) {
+        events.emit(`announced-terminal:${params.threadId}`, turnId);
+      }
     } catch (error) {
       stopped.abort(error);
     }
   });
 
+  async function request<T>(
+    method: string,
+    params: object,
+    timeoutMs = requestTimeoutMs,
+    cancel?: AbortSignal,
+    onQueued?: () => void,
+  ): Promise<T> {
+    const id = ++nextId;
+    stopped.signal.throwIfAborted();
+    send({ id, method, params }, onQueued);
+    // A child-process reply arrives on a later I/O turn. Install the waiter only
+    // after a successful local write so a thrown write leaves no pending listener.
+    const [message] = (await wait(`request:${id}`, timeoutMs, method, cancel)) as [Message];
+    if (message.id !== id || "result" in message === "error" in message) {
+      throw new Error("Codex app-server returned an invalid response.");
+    }
+    if ("error" in message) throw new CodexAppServerError(method, message.error);
+    return message.result as T;
+  }
+
   return {
+    signal: stopped.signal,
     notify(method: string) {
       send({ method });
     },
-    async request<T>(method: string, params: object, timeoutMs = 15_000): Promise<T> {
-      const id = ++nextId;
-      const response = wait(`request:${id}`, timeoutMs);
-      send({ id, method, params });
-      const [message] = (await response) as [Message];
-      if (message.error) throw new Error(`${method}: ${message.error.message}`);
-      return message.result as T;
+    request,
+    async startTurn(
+      threadId: string,
+      params: object,
+      start: TurnStartEvidence,
+      onQueued: () => void,
+    ) {
+      starts.set(threadId, start);
+      const settled = new AbortController();
+      const terminal = once(events, `announced-terminal:${threadId}`, {
+        signal: AbortSignal.any([settled.signal, start.signal]),
+      }).then(async ([id]) => {
+        // Let a reply from the same input batch settle before inferring the start.
+        await setImmediate(undefined, { signal: settled.signal });
+        start.assertUnambiguous();
+        return id as string;
+      });
+      try {
+        // The reply can still contradict the recovered turn during readback.
+        const reply = request(
+          "turn/start",
+          { ...params, threadId },
+          requestTimeoutMs,
+          start.signal,
+          onQueued,
+        );
+        return await Promise.race([terminal, reply.then((result) => start.recordReply(result))]);
+      } catch (error) {
+        start.assertUnambiguous();
+        throw error;
+      } finally {
+        settled.abort();
+      }
     },
-    async waitForCompletion(threadId: string, turnId: string) {
-      const key = `${threadId}:${turnId}`;
-      if (!liveTurns.get(key)?.completion) await wait(`turn:${key}`, 120_000);
+    async waitForCompletion(threadId: string, turnId: string, start: TurnStartEvidence) {
+      start.assertUnambiguous();
+      const key = turnKey(threadId, turnId);
+      if (!liveTurns.get(key)?.completion) {
+        try {
+          await wait(`turn:${key}`, 120_000, "Turn completion", start.signal);
+        } catch (error) {
+          start.assertUnambiguous();
+          throw error;
+        }
+      }
+      start.assertUnambiguous();
       const live = liveTurns.get(key);
       if (!live?.completion) throw new Error("Matching turn completion was unavailable.");
       return { live, ...live.completion };
     },
-    async close() {
+    close() {
       lines.close();
-      child.stdin.destroy();
-      child.kill();
-      const forceKill = setTimeout(() => child.kill("SIGKILL"), 1_000);
-      try {
-        await closed;
-      } finally {
-        clearTimeout(forceKill);
-      }
+      return shutdown();
     },
   };
 }
@@ -185,42 +295,59 @@ async function runTrial(
   server: AppServer,
   model: string,
   effort: string,
-  requestedSpeed: CodexSpeed,
-  tier: string,
+  trial: { tier: string; sentTier: string | null },
   retention: CodexSessionRetention,
   rolloutReadOptions: RolloutReadOptions | undefined,
+  ownedThreadIds: Set<string>,
 ) {
-  const { thread } = await server.request<{ thread: Thread }>("thread/start", {
+  const response = await server.request<{ thread: Thread }>("thread/start", {
     model,
     ephemeral: false,
     approvalPolicy: "never",
     sandbox: "read-only",
   });
+  const thread = response?.thread;
+  claimThreadId(thread?.id, ownedThreadIds);
+  const start = new TurnStartEvidence();
   let completion: Awaited<ReturnType<AppServer["waitForCompletion"]>>;
-  try {
-    const started = await server.request<{ turn: Turn }>("turn/start", {
-      threadId: thread.id,
-      effort,
-      serviceTierForTurn: tier,
-      input: [{ type: "text", text: prompt, text_elements: [] }],
-    });
-    completion = await server.waitForCompletion(thread.id, started.turn.id);
-  } catch (error) {
-    process.exitCode = 1;
-    return {
-      requestedSpeed,
-      sentTier: tier,
-      provider: thread.modelProvider,
-      threadId: thread.id,
-      status: "error",
-      error: String(error),
-      sessionRetention: await applyCodexSessionRetention({
+  const failed = async (error: unknown, appliedRetention?: CodexSessionRetentionResult) => {
+    const dispatched = trial.sentTier !== null;
+    const turnId = dispatched ? (start.turnId ?? null) : null;
+    const sessionRetention =
+      appliedRetention ??
+      (await applyCodexSessionRetention({
         mode: retention,
         threadId: thread.id,
         completed: false,
         request: (method, params) => server.request(method, params),
-      }),
+      }));
+    return {
+      trialFailed: true,
+      stopScheduling: dispatched && (start.observed || !isTurnInputTooLarge(error)),
+      provider: thread.modelProvider,
+      threadId: thread.id,
+      turnId: start.conflicting ? null : turnId,
+      status: "error",
+      error: String(start.conflicting ? start.signal.reason : error),
+      sessionRetention,
     };
+  };
+  try {
+    const turnId = await server.startTurn(
+      thread.id,
+      {
+        effort,
+        serviceTierForTurn: trial.tier,
+        input: [{ type: "text", text: prompt, text_elements: [] }],
+      },
+      start,
+      () => {
+        trial.sentTier = trial.tier;
+      },
+    );
+    completion = await server.waitForCompletion(thread.id, turnId, start);
+  } catch (error) {
+    return failed(error);
   }
   const { turn, live, receivedAt } = completion;
   const { terminal, outputTokens, usage, ...rollout } = await readSavedTurn({
@@ -238,19 +365,22 @@ async function runTrial(
       return refreshed.path;
     },
   });
+  try {
+    start.assertUnambiguous();
+  } catch (error) {
+    return failed(error);
+  }
   const durationMs = terminal?.duration_ms ?? null;
   const firstTokenMs = terminal?.time_to_first_token_ms ?? null;
   const durationMatchesLive = compare(durationMs, turn.durationMs);
   const outputMatchesLive = compare(outputTokens, live.outputTokens);
-  if (
+  const invalidResult =
     turn.status !== "completed" ||
     firstTokenMs === null ||
     !durationMs ||
     outputTokens === null ||
     durationMatchesLive === false ||
-    outputMatchesLive === false
-  )
-    process.exitCode = 1;
+    outputMatchesLive === false;
 
   const sessionRetention = await applyCodexSessionRetention({
     mode: retention,
@@ -258,10 +388,10 @@ async function runTrial(
     completed: true,
     request: (method, params) => server.request(method, params),
   });
-  if (sessionRetention.status === "failed") process.exitCode = 1;
+  if (start.conflicting) return failed(start.signal.reason, sessionRetention);
   return {
-    requestedSpeed,
-    sentTier: tier,
+    trialFailed: invalidResult || sessionRetention.status === "failed",
+    stopScheduling: false,
     provider: thread.modelProvider,
     threadId: thread.id,
     turnId: turn.id,
@@ -313,10 +443,9 @@ export async function runLiveCheck(
       help: { type: "boolean" },
     },
   });
-  const usage =
-    "Usage: bun scripts/spikes/codex-benchmark-live-check.ts --model <id> --effort <effort> [--speed standard|fast|ultrafast] [--session-retention archive|keep|delete]";
   if (values.help) {
     console.log(usage);
+    console.log(buildInstructions);
     console.log(
       "Session retention defaults to keep. Delete permanently removes the trial session.",
     );
@@ -336,11 +465,26 @@ export async function runLiveCheck(
   }
   const sessionRetention = resolveCodexSessionRetention(retentionValues?.[0]);
 
-  const server = startAppServer(appServer);
+  const env = { ...process.env };
+  const server = startAppServer(appServer, env);
+  let closing: Promise<void> | undefined;
+  let shutdownFailed = false;
+  const close = (): Promise<void> =>
+    (closing ??= server
+      .close()
+      .catch((error: unknown) => {
+        shutdownFailed = true;
+        console.error(`Shutdown failed: ${String(error)}`);
+      })
+      .finally(() => releaseHangup?.()));
+  const signals = handleBenchmarkSignals(() => void close());
+  const releaseHangup =
+    process.platform === "win32" ? undefined : stopAppServerOnSignal(close, signals.acceptHangup);
   try {
-    const init = await server.request<{ userAgent: string }>("initialize", {
+    const init = await server.request<{ userAgent?: unknown }>("initialize", {
       clientInfo: { name: "cdx_chores", title: "cdx-chores", version: "1" },
     });
+    const codexVersion = extractAppServerVersion(init.userAgent, env)?.version;
     server.notify("initialized");
     const catalogModel = await findModel(server, model);
     if (
@@ -350,42 +494,68 @@ export async function runLiveCheck(
     }
     const trials = requestedSpeeds.map((requestedSpeed) => ({
       requestedSpeed,
-      sentTier: tierFor(catalogModel, requestedSpeed),
+      tier: tierFor(catalogModel, requestedSpeed),
     }));
     const results = [];
-    for (const { requestedSpeed, sentTier } of trials) {
+    const ownedThreadIds = new Set<string>();
+    for (const { requestedSpeed, tier } of trials) {
+      if (signals.exitCode !== undefined || server.signal.aborted) break;
+      const trial = { tier, sentTier: null as string | null };
       try {
-        results.push(
-          await runTrial(
-            server,
-            model,
-            effort,
-            requestedSpeed,
-            sentTier,
-            sessionRetention,
-            rollout,
-          ),
+        const { stopScheduling, trialFailed, ...result } = await runTrial(
+          server,
+          model,
+          effort,
+          trial,
+          sessionRetention,
+          rollout,
+          ownedThreadIds,
         );
+        if (trialFailed && !signals.hungUp) process.exitCode = 1;
+        results.push({ requestedSpeed, sentTier: trial.sentTier, ...result });
+        if (stopScheduling) break;
       } catch (error) {
-        process.exitCode = 1;
-        results.push({ requestedSpeed, sentTier, status: "error", error: String(error) });
+        if (!signals.hungUp) process.exitCode = 1;
+        results.push({
+          requestedSpeed,
+          sentTier: trial.sentTier,
+          status: "error",
+          error: String(error),
+        });
       }
     }
+    if (!signals.hungUp && signals.exitCode === undefined && server.signal.aborted) {
+      process.exitCode = 1;
+      console.error(`Transport failed: ${String(server.signal.reason)}`);
+    }
     console.log(
-      JSON.stringify(
-        { codexVersion: init.userAgent.split(/[ /]/)[1], model, effort, sessionRetention, results },
-        null,
-        2,
-      ),
+      JSON.stringify({ codexVersion, model, effort, sessionRetention, results }, null, 2),
     );
+  } catch (error) {
+    await close();
+    if (!signals.hungUp && signals.exitCode === undefined) throw error;
   } finally {
-    await server.close();
+    await close();
+    signals.release();
+    if (signals.exitCode !== undefined) process.exitCode = signals.exitCode;
+    else if (shutdownFailed && !signals.hungUp) process.exitCode = 1;
   }
 }
 
 if (import.meta.main) {
-  await runLiveCheck(process.argv.slice(2)).catch((error: unknown) => {
-    console.error(String(error));
+  const args = process.argv.slice(2);
+  if (process.versions.bun && !(args.length === 1 && args[0] === "--help")) {
+    console.error(
+      `Run the maintainer live check with the Node.js bundle.\n${buildInstructions}\n${usage}`,
+    );
     process.exitCode = 1;
-  });
+  } else {
+    const executable = process.env.CDX_CHORES_CODEX_PATH?.trim() || defaultAppServer.executable;
+    await runLiveCheck(args, {
+      appServer: { ...defaultAppServer, executable },
+    }).catch((error: unknown) => {
+      console.error(String(error));
+      process.exitCode = 1;
+    });
+  }
 }

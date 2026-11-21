@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { access, appendFile, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
+import { pathToFileURL } from "node:url";
 
 import {
   isLiveProcess,
@@ -15,6 +16,27 @@ import {
   withStderrTtyPreload,
   type BenchmarkProtocolEvent,
 } from "./fixtures/runner";
+
+const shortRolloutPreload = join(import.meta.dir, "fixtures/short-rollout-preload.mjs");
+
+function startCliWithShortReadback(
+  options: Parameters<typeof startCliBenchmark>[0],
+  args: string[],
+  thread: number,
+  preload = shortRolloutPreload,
+) {
+  const env = { ...options.env, FIXTURE_SHORT_ROLLOUT_TURN: `turn-thread-${thread}` };
+  return startCliBenchmark({ ...options, env }, args, preload);
+}
+
+test("reports the version using the supplied app-server environment", async () => {
+  await withRunnerFixture({ appServerUserAgent: "codex/exec/0.171.0" }, async ({ options }) => {
+    const env = { ...options.env, CODEX_INTERNAL_ORIGINATOR_OVERRIDE: "codex/exec" };
+    const report = await runCodexBenchmark({ ...options, env });
+    expect(report.startupError).toBeNull();
+    expect(report.codexVersion).toBe("0.171.0");
+  });
+});
 
 test("rotates the starting speed by round on fresh persisted threads", async () => {
   await withRunnerFixture({ phase: "final_answer" }, async ({ home, options, trace }) => {
@@ -118,6 +140,16 @@ test.each([
     message: "Service tier 'priority' is not eligible for this account.",
     status: "unavailable",
     exitCode: 0,
+  },
+  {
+    message: 'Unsupported parameter: "service_tier" is not supported with this model.',
+    status: "unavailable",
+    exitCode: 0,
+  },
+  {
+    message: 'Unsupported parameter: "image_url" is not supported with this service tier.',
+    status: "failed",
+    exitCode: 1,
   },
   {
     message: "Invalid value for 'service_tier': priority.",
@@ -361,9 +393,9 @@ test.each(["thread/start", "turn/start"] as const)(
       const turnRequests = traceMethod(await trace(), "turn/start");
       const attempted = method === "turn/start";
       expect(turnRequests.map(({ params }) => params?.serviceTierForTurn)).toEqual(
-        attempted ? ["priority", "priority"] : [],
+        attempted ? ["priority"] : [],
       );
-      expect(trials).toHaveLength(2);
+      expect(trials).toHaveLength(attempted ? 1 : 2);
       for (const trial of trials) {
         expect(trial).toMatchObject({
           status: "failed",
@@ -376,11 +408,61 @@ test.each(["thread/start", "turn/start"] as const)(
   },
 );
 
+test("an ambiguous RPC error about the tier still fails after earlier measurements", async () => {
+  await withRunnerFixture(
+    {
+      turnStartRefusal: {
+        at: 3,
+        error: {
+          code: -32602,
+          message: 'Unsupported parameter: "service_tier" is not supported with this model.',
+        },
+      },
+    },
+    async ({ options, trace }) => {
+      const result = await startCliBenchmark({ ...options, runs: 3 }, [
+        "--json",
+        "--codex-speed",
+        "standard",
+        "--session-retention",
+        "archive",
+      ]).completion;
+      expect(result.exitCode).toBe(1);
+      const { trials, run } = JSON.parse(result.stdout);
+      expect(run.completedMeasuredTrials).toBe(1);
+      expect(trials).toMatchObject([
+        { status: "completed" },
+        { status: "completed" },
+        {
+          status: "failed",
+          inferenceAttempted: true,
+          sentTier: "default",
+          turnId: null,
+          sessionRetention: { status: "skipped" },
+        },
+      ]);
+      const events = await trace();
+      expect(traceMethod(events, "thread/start")).toHaveLength(3);
+      expect(traceMethod(events, "turn/start")).toHaveLength(3);
+      expect(traceMethod(events, "thread/archive").map(({ params }) => params?.threadId)).toEqual([
+        "thread-1",
+        "thread-2",
+      ]);
+    },
+  );
+});
+
 test.each([1, 2])(
   "CLI reports transport loss during readback and keeps completed results with %i measured trials scheduled",
   async (runs) => {
     await withRunnerFixture({ exitDuringReadbackThread: 2 }, async ({ options, trace }) => {
-      const result = await startCliBenchmark({ ...options, runs }, ["--json"]).completion;
+      // Keep the default readback deadline in the control without a successor.
+      const trial = { ...options, runs };
+      const cli =
+        runs === 1
+          ? startCliBenchmark(trial, ["--json"])
+          : startCliWithShortReadback(trial, ["--json"], 2);
+      const result = await cli.completion;
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain("Transport failed");
       const report = JSON.parse(result.stdout);
@@ -401,12 +483,11 @@ test.each([1, 2])(
 
 test("CLI reports stdout EOF during a turn while the app-server is still alive", async () => {
   await withRunnerFixture({ endStdoutDuringThread: 3 }, async ({ options, trace }) => {
-    const result = await startCliBenchmark({ ...options, runs: 3 }, [
-      "--json",
-      "--show-token-usage",
-      "--session-retention",
-      "archive",
-    ]).completion;
+    const result = await startCliWithShortReadback(
+      { ...options, runs: 3 },
+      ["--json", "--show-token-usage", "--session-retention", "archive"],
+      3,
+    ).completion;
     expect(result.reason).toBe("exit-failed");
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("Transport failed");
@@ -439,7 +520,7 @@ test("CLI reports stdout EOF during a turn while the app-server is still alive",
 
 test("CLI reports stdout EOF observed during final rollout readback", async () => {
   await withRunnerFixture({ endStdoutAfterThread: 2 }, async ({ home, options, trace }) => {
-    const preload = join(import.meta.dir, "fixtures", "final-readback-eof-preload.cjs");
+    const preload = join(import.meta.dir, "fixtures", "final-readback-eof-preload.mjs");
     const result = await startCliBenchmark(options, ["--json"], preload).completion;
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("Transport failed");
@@ -462,8 +543,13 @@ test("CLI reports stdout EOF observed during final rollout readback", async () =
 
 test("CLI retains matching completions when turn/start replies are withheld", async () => {
   await withRunnerFixture({ withholdStartReply: true }, async ({ options, trace }) => {
-    const result = await startCliBenchmark(options, ["--json", "--session-retention", "archive"])
-      .completion;
+    const result = await startCliBenchmark(options, [
+      "--json",
+      "--codex-speed",
+      "standard",
+      "--session-retention",
+      "archive",
+    ]).completion;
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     const report = JSON.parse(result.stdout);
@@ -472,6 +558,8 @@ test("CLI retains matching completions when turn/start replies are withheld", as
       [true, false].map((warmup, index) => ({
         warmup,
         status: "completed",
+        inferenceAttempted: true,
+        sentTier: "default",
         threadId: `thread-${index + 1}`,
         turnId: `turn-thread-${index + 1}`,
         turnDurationMs: 800,
@@ -479,9 +567,14 @@ test("CLI retains matching completions when turn/start replies are withheld", as
         sessionRetention: { status: "archived" },
       })),
     );
+    const events = await trace();
     expect(
-      traceMethod(await trace(), "thread/archive").map(({ params }) => params?.threadId),
-    ).toEqual(["thread-1", "thread-2"]);
+      traceMethod(events, "turn/start").map(({ params }) => params?.serviceTierForTurn),
+    ).toEqual(["default", "default"]);
+    expect(traceMethod(events, "thread/archive").map(({ params }) => params?.threadId)).toEqual([
+      "thread-1",
+      "thread-2",
+    ]);
   });
 }, 15_000);
 
@@ -504,10 +597,39 @@ test.each(["thread", "turn"] as const)(
       ]);
       const events = await trace();
       expect(traceMethod(events, "turn/start")).toHaveLength(1);
+      expect(traceMethod(events, "turn/interrupt")).toHaveLength(0);
       expect(traceMethod(events, "thread/archive")).toHaveLength(0);
     });
   },
 );
+
+test("transport loss with an announced turn preserves its ID and stops scheduling", async () => {
+  await withRunnerFixture(
+    { withholdStartReplyThread: 1, endStdoutDuringThread: 1 },
+    async ({ options, trace }) => {
+      const report = await runCodexBenchmark({
+        ...options,
+        sessionRetention: "archive",
+        rollout: { deadlineMs: 100 },
+      });
+      expect(report.transportError).toContain("stdout ended");
+      expect(report.trials).toMatchObject([
+        {
+          threadId: "thread-1",
+          turnId: "turn-thread-1",
+          inferenceAttempted: true,
+          status: "failed",
+          error: expect.stringContaining("stdout ended"),
+          sessionRetention: { status: "skipped" },
+        },
+      ]);
+      const events = await trace();
+      expect(traceMethod(events, "thread/start")).toHaveLength(1);
+      expect(traceMethod(events, "turn/interrupt")).toHaveLength(0);
+      expect(traceMethod(events, "thread/archive")).toHaveLength(0);
+    },
+  );
+});
 
 test("CLI returns a zero-trial JSON report when initialization is rejected", async () => {
   await withRunnerFixture({ initializeError: true }, async ({ options, trace }) => {
@@ -747,7 +869,7 @@ test.each(["confirmed", "unconfirmed"] as const)(
     await withRunnerFixture(
       { waitForInterruptThread: 2, interrupt },
       async ({ options, trace }) => {
-        const preload = join(options.cwd, "turn-deadline.cjs");
+        const preload = join(options.cwd, "turn-deadline.mjs");
         await writeFile(
           preload,
           [
@@ -923,27 +1045,49 @@ for (const json of [false, true]) {
   );
 }
 
-test.skipIf(process.platform === "win32")(
-  "clears JSON progress and keeps the skipped-retention warning on unconfirmed cancellation",
-  async () => {
+test.skipIf(process.platform === "win32").each([
+  { first: "SIGINT", second: "SIGTERM", exitCode: 130 },
+  { first: "SIGTERM", second: "SIGINT", exitCode: 143 },
+  { first: "SIGTERM", second: "SIGHUP", exitCode: 143 },
+] as const)(
+  "keeps the $first exit, partial report and skipped-retention warning after $second during turn interruption",
+  async ({ first, second, exitCode }) => {
     await withRunnerFixture({ interrupt: "unconfirmed" }, async ({ options, trace }) => {
       const preload = await withStderrTtyPreload(options.cwd);
-      const cli = startCliBenchmark(options, ["--json", "--session-retention", "archive"], preload);
+      await appendFile(
+        preload,
+        `\nimport ${JSON.stringify(pathToFileURL(shortRolloutPreload).href)};\n`,
+      );
+      const cli = startCliWithShortReadback(
+        options,
+        ["--json", "--session-retention", "archive", "--show-token-usage"],
+        1,
+        preload,
+      );
       try {
         await waitForMethod(trace, "turn/start");
         if (!cli.child.pid) throw new Error("Expected an owned CLI process.");
-        process.kill(-cli.child.pid, "SIGINT");
+        process.kill(-cli.child.pid, first);
+        await waitForMethod(trace, "turn/interrupt");
+        expect(cli.child.kill(second)).toBe(true);
         const result = await cli.completion;
-        expect(result.exitCode).toBe(130);
+        expect(result.exitCode).toBe(exitCode);
         const cleared = result.stderr.lastIndexOf("\r\x1b[2K\r");
         const warning = "Session retention \x1b[33mskipped\x1b[39m (thread-1):";
         expect(cleared).toBeGreaterThan(-1);
         expect(result.stderr.indexOf(warning)).toBeGreaterThan(cleared);
-        expect(JSON.parse(result.stdout).trials[0]).toMatchObject({
+        const report = JSON.parse(result.stdout);
+        expect(report.run.interrupted).toBe(true);
+        expect(report.trials).toHaveLength(1);
+        expect(report.trials[0]).toMatchObject({
           status: "cancelled",
           sessionRetention: { status: "skipped" },
+          tokenUsage: { partial: true, counts: { totalTokens: 230 } },
         });
-        expect(traceMethod(await trace(), "thread/archive")).toHaveLength(0);
+        const events = await trace();
+        expect(traceMethod(events, "turn/start")).toHaveLength(1);
+        expect(traceMethod(events, "turn/interrupt")).toHaveLength(1);
+        expect(traceMethod(events, "thread/archive")).toHaveLength(0);
       } finally {
         cli.shutdown();
         await cli.completion;

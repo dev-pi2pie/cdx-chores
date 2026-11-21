@@ -80,6 +80,12 @@ const tierIsRejected = new RegExp(
   "i",
 );
 
+const unsupportedTierParameter = /\bunsupported parameter:\s*(["'])service_tier\1/i;
+
 export function isTierRejection(message: string): boolean {
-  return rejectedTier.test(message) || tierIsRejected.test(message);
+  return (
+    unsupportedTierParameter.test(message) ||
+    rejectedTier.test(message) ||
+    tierIsRejected.test(message)
+  );
 }

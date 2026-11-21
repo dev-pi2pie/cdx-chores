@@ -65,7 +65,9 @@ export async function withRetainedCodexThread<T>(
         threadId,
         completed,
         async request(method, params) {
-          const server = new CodexAppServer(launch.executable, launch.cwd, launch.env);
+          const server = new CodexAppServer(launch.executable, launch.cwd, launch.env, {
+            cleanupOnSignal: true,
+          });
           try {
             await server.initialize();
             await server.request(method, params);

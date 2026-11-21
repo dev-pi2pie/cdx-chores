@@ -1,9 +1,12 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
+import childProcess from "node:child_process";
 import { existsSync } from "node:fs";
+import { mkdir, stat, symlink } from "node:fs/promises";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
 import {
+  ProcessLaunchRejectedError,
   startOwnedProcess,
   type OwnedProcess,
   type OwnedProcessOptions,
@@ -140,6 +143,33 @@ describe("owned process lifecycle", () => {
     await assertStopped(result);
   });
 
+  test("preserves valid cwd and environment values and omits undefined entries", async () => {
+    await withTempFixtureDir("process-launch-options", async (root) => {
+      const cwd = join(root, " spaced directory ");
+      await mkdir(cwd);
+      const result = await startOwnedProcess(
+        options("exit", {
+          args: [
+            "-e",
+            "console.log(JSON.stringify([process.cwd(), process.env[' SPACED '], process.env.EMPTY, Object.hasOwn(process.env, 'OMITTED')]))",
+          ],
+          cwd,
+          env: {
+            PATH: process.env.PATH,
+            " SPACED ": " value ",
+            EMPTY: "",
+            "OMITTED\0KEY": undefined,
+          },
+        }),
+      ).completion;
+      assertSuccessful(result);
+      const [directory, spaced, empty, omittedPresent] = JSON.parse(result.stdout);
+      expect(directory).toEndWith("/ spaced directory ");
+      expect([spaced, empty, omittedPresent]).toEqual([" value ", "", false]);
+      await assertStopped(result);
+    });
+  });
+
   test("preserves the subject's nonzero exit without calling it a cleanup failure", async () => {
     const result = await startOwnedProcess(options("fail")).completion;
     expect(result.ok).toBe(false);
@@ -148,6 +178,46 @@ describe("owned process lifecycle", () => {
     expect(result.stderr).toBe("subject failure\n");
     expect(result.issues).toEqual([]);
     await assertStopped(result);
+  });
+
+  test("distinguishes the relative executable's path limit from its prefixed length", async () => {
+    await withTempFixtureDir("relative-launch", async (cwd) => {
+      await symlink(process.execPath, join(cwd, "tool"));
+      // Each extension is shorter than the prefix added by the parent-side lookup.
+      let executable = "./tool";
+      while (existsSync(cwd + "/" + executable)) {
+        executable = "./" + "/".repeat(cwd.length - 1) + executable;
+      }
+      await expect(stat(cwd + "/" + executable)).rejects.toMatchObject({ code: "ENAMETOOLONG" });
+      const result = await startOwnedProcess(
+        options("exit", { cwd, executable, args: ["--version"] }),
+      ).completion;
+      assertSuccessful(result);
+      const tooLong = "./" + "/".repeat(Buffer.byteLength(cwd) + 1) + executable;
+      expect(() => startOwnedProcess(options("exit", { cwd, executable: tooLong }))).toThrow(
+        ProcessLaunchRejectedError,
+      );
+    });
+  });
+
+  test("leaves a relative launch to spawn when the directory probe is unavailable", async () => {
+    await withTempFixtureDir("relative-probe-failure", async (cwd) => {
+      await symlink("loop", join(cwd, "loop"));
+      using probe = spyOn(childProcess, "spawnSync").mockImplementation(() => {
+        throw new Error("Injected probe failure.");
+      });
+      using spawn = spyOn(childProcess, "spawn");
+      let launchError: unknown;
+      try {
+        await startOwnedProcess(options("exit", { cwd, executable: "./loop" })).completion;
+      } catch (error) {
+        launchError = error;
+      }
+      expect(probe).toHaveBeenCalledTimes(1);
+      expect(spawn).toHaveBeenCalledTimes(1);
+      expect(launchError).toMatchObject({ code: "ELOOP", syscall: "spawn" });
+      expect(launchError).not.toBeInstanceOf(ProcessLaunchRejectedError);
+    });
   });
 
   test.each(["server", "launcher"])("allows expected graceful shutdown of %s", async (mode) => {
@@ -308,6 +378,21 @@ describe("owned process lifecycle", () => {
     expect(result.pid).toBeUndefined();
     expect(result.groupId).toBeUndefined();
     expect(result.stopped).toBe(true);
+  });
+
+  test("leaves an absent cwd to native launch settlement", async () => {
+    await withTempFixtureDir("absent-launch-directory", async (root) => {
+      const owned = startOwnedProcess(options("exit", { cwd: join(root, "absent", "child") }));
+      let launchError: unknown;
+      owned.child.once("error", (error) => {
+        launchError = error;
+      });
+      const result = await owned.completion;
+      expect(launchError).toMatchObject({ code: "ENOENT" });
+      expect(result).toMatchObject({ reason: "launch-failed", stopped: true });
+      expect(result.pid).toBeUndefined();
+      expect(result.groupId).toBeUndefined();
+    });
   });
 
   test("bounds captured output and stops the producer", async () => {

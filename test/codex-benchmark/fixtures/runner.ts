@@ -1,13 +1,13 @@
 import { expect } from "bun:test";
 import { chmod, copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-
+import type { OwnedProcess, OwnedProcessOptions } from "../../../scripts/testing/execution/process";
 import { startFixtureProcess } from "../../../scripts/testing/fixtures/fixture-process.ts";
 import type { BenchmarkOptions } from "../../../src/adapters/codex/benchmark/types";
 import { REPO_ROOT, withTempFixtureDir } from "../../helpers/cli-test-utils";
 
 interface Scenario {
-  appServerVersion?: string | null;
+  appServerUserAgent?: string | null;
   initializeError?: boolean;
   stallInitialization?: boolean;
   withholdThreadStartReply?: boolean;
@@ -24,6 +24,10 @@ interface Scenario {
   rerouted?: boolean;
   interrupt?: "confirmed" | "unconfirmed";
   withholdStartReply?: boolean;
+  withholdInterruptReply?: boolean;
+  withholdStartReplyThread?: number;
+  omitTurnStart?: boolean;
+  traceLifecycle?: boolean;
   mismatchedCompletion?: "thread" | "turn";
   holdTurnStart?: boolean;
   waitForInterruptThread?: number;
@@ -31,9 +35,29 @@ interface Scenario {
   serverInterrupt?: { thread: number; message: string | null };
   rejectFast?: string;
   rejectStart?: "thread/start" | "turn/start";
+  rejectThreadStartAt?: number;
+  rejectTurnStartThread?: number;
+  threadStartReply?: { at: number; result: unknown };
+  turnStartReply?: { at: number; result: unknown; announce?: boolean; complete?: boolean };
+  turnStartRefusal?: {
+    at: number;
+    error: { code: number; message: string; data?: unknown };
+    evidence?: "started" | "terminal" | "pair" | "item" | "other-thread";
+    errorFirst?: boolean;
+  };
+  conflictingStart?:
+    | "after-reply"
+    | "during-readback"
+    | "reply-during-readback"
+    | "during-retention";
+  retentionConflictThread?: number;
+  unfinishedRolloutThread?: number;
+  closeStdinOnThreadStart?: number;
+  stallPeerShutdown?: boolean;
   retentionError?: boolean;
   usageSnapshots?: Array<Record<string, number> | null>;
   resistantWorker?: boolean;
+  resistantLeader?: boolean;
   streamText?: "matching" | "unrelated";
   threadSettings?: Array<{ serviceTier?: string | null; reasoningEffort?: string | null }>;
 }
@@ -47,15 +71,27 @@ export function traceMethod(events: BenchmarkProtocolEvent[], method: string) {
   return events.filter((event) => event.method === method);
 }
 
+export interface RunnerFixture {
+  home: string;
+  options: Extract<BenchmarkOptions, { models: readonly string[] }>;
+  trace: () => Promise<BenchmarkProtocolEvent[]>;
+  start(options: OwnedProcessOptions): OwnedProcess;
+}
+
+export async function buildNodeCaller(entry: string, cwd: string) {
+  const build = await Bun.build({ entrypoints: [entry], packages: "external", target: "node" });
+  expect(build.success).toBe(true);
+  const executable = join(cwd, "caller.mjs");
+  await Bun.write(executable, build.outputs[0]!);
+  return executable;
+}
+
 export async function withRunnerFixture<T>(
   scenario: Scenario,
-  exercise: (fixture: {
-    home: string;
-    options: Extract<BenchmarkOptions, { models: readonly string[] }>;
-    trace: () => Promise<BenchmarkProtocolEvent[]>;
-  }) => Promise<T>,
+  exercise: (fixture: RunnerFixture) => Promise<T>,
+  canClean?: () => boolean,
 ): Promise<T> {
-  return withTempFixtureDir("codex-benchmark-runner", async (root) => {
+  const run = async (root: string) => {
     const home = join(root, "codex-home");
     const executable = join(root, "codex-fixture.mjs");
     const tracePath = join(home, "events.jsonl");
@@ -67,6 +103,16 @@ export async function withRunnerFixture<T>(
     await chmod(executable, 0o755);
     await writeFile(join(home, "scenario.json"), JSON.stringify(scenario));
     await writeFile(join(home, "unrelated.jsonl"), "unrelated\n");
+    const trace = async () => {
+      const text = await readFile(tracePath, "utf8").catch((error: NodeJS.ErrnoException) => {
+        if (error.code === "ENOENT") return "";
+        throw error;
+      });
+      return text
+        .split("\n")
+        .slice(0, -1)
+        .map((line) => JSON.parse(line) as BenchmarkProtocolEvent);
+    };
     const result = await exercise({
       home,
       options: {
@@ -82,20 +128,13 @@ export async function withRunnerFixture<T>(
         runs: 1,
         prompt: "fixture prompt",
       },
-      trace: async () => {
-        const text = await readFile(tracePath, "utf8").catch((error: NodeJS.ErrnoException) => {
-          if (error.code === "ENOENT") return "";
-          throw error;
-        });
-        return text
-          .split("\n")
-          .slice(0, -1)
-          .map((line) => JSON.parse(line) as BenchmarkProtocolEvent);
-      },
+      trace,
+      start: startFixtureProcess,
     });
     expect(await readFile(join(home, "unrelated.jsonl"), "utf8")).toBe("unrelated\n");
     return result;
-  });
+  };
+  return withTempFixtureDir("codex-benchmark-runner", run, canClean);
 }
 
 export function startCliBenchmark(options: BenchmarkOptions, args: string[], preload?: string) {
@@ -118,10 +157,14 @@ export function startCliBenchmark(options: BenchmarkOptions, args: string[], pre
 }
 
 export async function withStderrTtyPreload(cwd: string, writeTrace?: string): Promise<string> {
-  const path = join(cwd, "stderr-tty.cjs");
-  const traceScript = writeTrace
-    ? `
-const { appendFileSync } = require("node:fs");
+  const path = join(cwd, "stderr-tty.mjs");
+  const ttyScript =
+    "Object.defineProperties(process.stderr, { isTTY: { value: true }, columns: { value: 110 } });";
+  let script = ttyScript;
+
+  if (writeTrace) {
+    script = `import { appendFileSync } from "node:fs";
+${ttyScript}
 for (const name of ["stdout", "stderr"]) {
   const stream = process[name];
   const write = stream.write;
@@ -130,12 +173,9 @@ for (const name of ["stdout", "stderr"]) {
     return write.call(this, chunk, ...args);
   };
 }
-`
-    : "";
-  await writeFile(
-    path,
-    "Object.defineProperties(process.stderr, { isTTY: { value: true }, columns: { value: 110 } });" +
-      traceScript,
-  );
+`;
+  }
+
+  await writeFile(path, script);
   return path;
 }
