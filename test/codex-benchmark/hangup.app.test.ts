@@ -138,6 +138,52 @@ for (const [name, entry, args] of [
 }
 
 test.skipIf(process.platform === "win32")(
+  "built live check preserves installed HUP during an active turn",
+  async () => {
+    await withShutdownFixture(
+      {
+        traceLifecycle: true,
+        waitForInterruptThread: 1,
+        resistantLeader: true,
+        resistantWorker: true,
+      },
+      async ({ home, options, start, trace }) => {
+        const bundle = await buildNodeCaller(
+          join(REPO_ROOT, "scripts/spikes/codex-benchmark-live-check.ts"),
+          options.cwd,
+        );
+        const caller = start({
+          executable: "node",
+          args: ["--import", preload, bundle, "--model", "model-a", "--effort", "low"],
+          cwd: options.cwd,
+          env: { ...options.env, FIXTURE_CALLER_SIGNAL: "SIGHUP" },
+          timeoutMs: 8_000,
+          graceMs: 600,
+          cleanupMs: 1_500,
+        });
+        const atExit = watchCallerExit(caller);
+        await waitUntil(
+          async () => traceMethod(await trace(), "fixture/turn-start-reply").length === 1,
+          "Live check did not reach its first active turn.",
+        );
+        await readyGroup(home, trace, caller.child.pid);
+        const sentAt = signalCallerGroup(caller, "SIGHUP");
+        const result = await caller.completion;
+        const exit = atExit();
+        expect(exit.at - sentAt).toBeLessThan(2_500);
+        await checkShutdownAtExit(home, exit, "allowed", sentAt);
+        expect(traceMethod(await trace(), "thread/start")).toHaveLength(1);
+        expect(JSON.parse(result.stdout).results).toMatchObject([{ status: "error" }]);
+        expect(result.issues).toEqual([]);
+        expect(result.signal).toBeNull();
+        expect(result.exitCode).toBe(42);
+      },
+    );
+  },
+  15_000,
+);
+
+test.skipIf(process.platform === "win32")(
   "default TERM closes concurrent benchmark and doctor groups",
   async () => {
     const stalled = { stallInitialization: true, resistantLeader: true, resistantWorker: true };

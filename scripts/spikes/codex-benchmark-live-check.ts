@@ -311,7 +311,6 @@ async function runTrial(
   const start = new TurnStartEvidence();
   let completion: Awaited<ReturnType<AppServer["waitForCompletion"]>>;
   const failed = async (error: unknown, appliedRetention?: CodexSessionRetentionResult) => {
-    process.exitCode = 1;
     const dispatched = trial.sentTier !== null;
     const turnId = dispatched ? (start.turnId ?? null) : null;
     const sessionRetention =
@@ -323,6 +322,7 @@ async function runTrial(
         request: (method, params) => server.request(method, params),
       }));
     return {
+      trialFailed: true,
       stopScheduling: dispatched && (start.observed || !isTurnInputTooLarge(error)),
       provider: thread.modelProvider,
       threadId: thread.id,
@@ -374,15 +374,13 @@ async function runTrial(
   const firstTokenMs = terminal?.time_to_first_token_ms ?? null;
   const durationMatchesLive = compare(durationMs, turn.durationMs);
   const outputMatchesLive = compare(outputTokens, live.outputTokens);
-  if (
+  const invalidResult =
     turn.status !== "completed" ||
     firstTokenMs === null ||
     !durationMs ||
     outputTokens === null ||
     durationMatchesLive === false ||
-    outputMatchesLive === false
-  )
-    process.exitCode = 1;
+    outputMatchesLive === false;
 
   const sessionRetention = await applyCodexSessionRetention({
     mode: retention,
@@ -391,8 +389,8 @@ async function runTrial(
     request: (method, params) => server.request(method, params),
   });
   if (start.conflicting) return failed(start.signal.reason, sessionRetention);
-  if (sessionRetention.status === "failed") process.exitCode = 1;
   return {
+    trialFailed: invalidResult || sessionRetention.status === "failed",
     stopScheduling: false,
     provider: thread.modelProvider,
     threadId: thread.id,
@@ -504,7 +502,7 @@ export async function runLiveCheck(
       if (signals.exitCode !== undefined || server.signal.aborted) break;
       const trial = { tier, sentTier: null as string | null };
       try {
-        const { stopScheduling, ...result } = await runTrial(
+        const { stopScheduling, trialFailed, ...result } = await runTrial(
           server,
           model,
           effort,
@@ -513,6 +511,7 @@ export async function runLiveCheck(
           rollout,
           ownedThreadIds,
         );
+        if (trialFailed && !signals.hungUp) process.exitCode = 1;
         results.push({ requestedSpeed, sentTier: trial.sentTier, ...result });
         if (stopScheduling) break;
       } catch (error) {
