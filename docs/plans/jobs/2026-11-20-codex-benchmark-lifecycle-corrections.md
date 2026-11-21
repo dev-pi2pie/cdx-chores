@@ -1,7 +1,7 @@
 ---
 title: "Codex benchmark lifecycle corrections implementation"
 created-date: 2026-11-20
-modified-date: 2026-11-20
+modified-date: 2026-11-21
 status: completed
 agent: codex
 ---
@@ -140,3 +140,9 @@ Checkpoint `9b660044` rejects NUL bytes in the working directory and supplied en
 **Regression evidence.** All six new direct and managed controls failed before the fix. Each managed run retained scratch with two pending receipts and skipped later suites. After the fix, the controls passed. Both managed receipts completed as `launch-rejected` without a PID, group ID or start record, so scratch was removed and the later suites ran. Existing unverified shutdown controls still retained scratch and blocked successors.
 
 **Validation and review.** At `9b660044`, all 123 focused Application cases passed. Managed `bun run test:all` passed 2,141 Unit, 2,659 Application, 30 Codex and 5 Pandoc cases with zero failures, errors or skips. Application execution took 337.861 seconds. The runner verified process shutdown without escalation and removed scratch and results. The Node build and CLI and package smoke checks, TypeScript, lint, formatting, link and diff checks passed. Maintainability and test reviews of `22ac9f58..9b660044` found no material issues. Local tests verified detached-group cleanup with synthetic POSIX process groups.
+
+## Doctor and SDK Retention Worker Cleanup Follow-Up
+
+Checkpoint `62609262` gives the doctor benchmark probe and the SDK retention app-server separate POSIX groups and uses bounded shared shutdown for both. Cancellation attempts bounded group shutdown before restoring default signal termination. Caller-installed signal handlers retain their own exit policy. Doctor reports an unverified shutdown as a failed benchmark prerequisite. SDK retention warns while preserving the original result or error. Default keep, SDK prompt execution, and the child-only platform fallback are unchanged. [Doctor controls](../../../test/doctor/commands/codex-benchmark.app.test.ts) · [SDK retention controls](../../../test/codex-benchmark/sdk-retention.codex.test.ts)
+
+**Validation and review.** At `62609262`, 2,141 managed Unit and 35 managed Codex cases passed and both runs cleaned up. At `3bb7c51b`, 49 focused cases passed. The controls observed synthetic POSIX group members independently at caller exit for verified shutdown, undelivered escalation, denied termination, and cancellation. The Node build and doctor help, TypeScript, lint, formatting and diff checks passed. Test review restored the doctor's combined initialization and denied-termination diagnostic control in `3bb7c51b`. Test and maintainability re-reviews of `8b356a7f..3bb7c51b` found no remaining material issues. Detached workers that leave their group and Windows descendant cleanup remain outside this evidence.
