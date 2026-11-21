@@ -168,3 +168,16 @@ Checkpoint `da98d1b8` uses throwing `statSync` to distinguish `ENOTDIR` from mis
 **Regression evidence.** All four new direct and managed cases failed before the fix. Managed scratch was retained with two pending receipts and later suites were skipped. After the fix, both receipts completed as `launch-rejected` without PID or start records, scratch was removed, and later suites ran. The control that allocates a child and then throws a native-shaped `ENOTDIR` still leaves a pending receipt after independent cleanup. [Managed cleanup controls](../../../test/codex-benchmark/shared-shutdown-cleanup.app.test.ts) · [Post-allocation control](../../../test/test-runner/fixture-context.app.test.ts)
 
 **Validation and review.** At `da98d1b8`, all 95 focused cases passed. The three file path shapes matched native Node 26.13.1 and Bun 1.4.5 diagnostics on macOS. The post-allocation control also passed on Node 22.23.5. Managed `bun run test:all` passed 2,141 Unit, 2,674 Application, 39 Codex and 5 Pandoc cases with zero failures, errors or skips. Application execution took 346.535 seconds. The runner verified shutdown without escalation and removed scratch and results. Node build and package smoke, TypeScript, lint, formatting, link and diff checks passed. Maintainability and test reviews of `07f7bef1..da98d1b8` found no material issues.
+
+## Doctor Cooperative Leader Timing Follow-Up
+
+Checkpoint `ebec22e3` lets the app-server leader exit on group `SIGTERM` in the four doctor `SIGINT` and `SIGTERM` cancellation cases. The worker still resists `SIGTERM`, and the two `SIGHUP` controls retain a resistant leader. The production shutdown path and all assertions are unchanged. In a separate negative control, suppressing group `SIGKILL` left the worker alive after the leader exited. All four cases failed the existing group-membership assertion at caller exit. Fixture release and independent process observation confirmed teardown. [Doctor controls](../../../test/doctor/commands/codex-benchmark.app.test.ts)
+
+| Run | Baseline Application | Cooperative Application | Baseline headroom | Cooperative headroom | Baseline doctor | Cooperative doctor |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 347.293 | 343.917 | 12.707 | 16.083 | 14.338 | 10.508 |
+| 2 | 344.178 | 340.144 | 15.822 | 19.856 | 14.410 | 10.450 |
+| 3 | 342.282 | 338.952 | 17.718 | 21.048 | 14.323 | 10.488 |
+| Median | 344.178 | 340.144 | 15.822 | 19.856 | 14.338 | 10.488 |
+
+**Validation and review.** Times are seconds. Application columns use managed test-process elapsed time, with headroom against the unchanged 360-second limit. Doctor columns sum JUnit case times in the benchmark probe file. Compared with the earlier `c9b3ed40` series, the Application median fell by 4.034 seconds and the slowest run fell from 347.293 to 343.917 seconds. The doctor median fell by 3.850 seconds. All three sequential `bun run test:integration:app --keep-results` runs at `ebec22e3` passed 2,674 cases without retries. The runner verified shutdown without escalation and removed scratch. Maintainability and test reviews of `c9b3ed40..ebec22e3` found no material issues. The two series measure observed local conditions.
