@@ -28,3 +28,15 @@ All four fixed cases observed group TERM followed by KILL, caller exit within 2.
 | Managed suites at `39c4cca0` | 2,687 Application and 39 Codex cases passed with zero failures, errors or skips. Application test-process execution took 346.115 seconds against the 360-second limit. Both runs verified shutdown without escalation and removed scratch and results. |
 | Tooling | The Node build, packaged CLI help, TypeScript, lint, changed-file formatting and diff checks passed. |
 | Re-review `c482d937..39c4cca0` | Code and test reviewers found no remaining material issues. |
+
+## Launch receipts before and after child allocation
+
+At `971dbbc4`, a successful `statSync(cwd)` identifying a non-directory rejects the launch before public `spawn`. On macOS, Node 26.13.1 and Bun 1.4.5 both resolved `os.devNull` to `/dev/null`. In each runtime the rejection cause matched native `ENOTDIR`. A probe counted zero public spawn calls for the device and one for a valid directory. [Phase 2 checklist](../plan-2026-11-21-codex-benchmark-lifecycle-part-ii.md#phase-2-working-directory-rejection-before-spawn)
+
+| Case and tested revision | Launch evidence | Cleanup and scheduling |
+| --- | --- | --- |
+| Null device before the fix, `fc737957` | Direct and managed regressions failed. Both managed receipts remained pending without start records. | Direct and managed scratch remained. Application failed and Codex and Pandoc stayed unrun. |
+| Null device after the fix, `971dbbc4` | The caller and app-server receipts both completed as `launch-rejected` with `stopped: true`, no PID, group ID or start record. | Direct and managed scratch were removed. Application still failed as injected, then Codex and Pandoc ran. |
+| Public spawn threw after allocation, `971dbbc4` | The Node driver observed a live child, stopped it in teardown and verified an empty group. The runner had one pending receipt without a recorded PID, group ID or completion. | The runner retained scratch and left Codex and Pandoc unrun. The test inspected the receipt before removing the retained run. |
+
+At `971dbbc4`, all 387 runner and shutdown-fixture tests passed, including the 100 focused cases. Regular-file, trailing-slash, child-component and valid-directory controls passed. A missing working directory still settled through the native child error with `ENOENT`. TypeScript, lint, changed-file formatting and diff checks passed. Code and test reviewers found no material issues in `fc737957..971dbbc4`. [Direct and managed device cases](../../../test/codex-benchmark/shared-shutdown-cleanup.app.test.ts) · [Post-allocation control](../../../test/test-runner/fixture-context.app.test.ts)
