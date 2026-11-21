@@ -40,3 +40,16 @@ At `971dbbc4`, a successful `statSync(cwd)` identifying a non-directory rejects 
 | Public spawn threw after allocation, `971dbbc4` | The Node driver observed a live child, stopped it in teardown and verified an empty group. The runner had one pending receipt without a recorded PID, group ID or completion. | The runner retained scratch and left Codex and Pandoc unrun. The test inspected the receipt before removing the retained run. |
 
 At `971dbbc4`, all 387 runner and shutdown-fixture tests passed, including the 100 focused cases. Regular-file, trailing-slash, child-component and valid-directory controls passed. A missing working directory still settled through the native child error with `ENOENT`. TypeScript, lint, changed-file formatting and diff checks passed. Code and test reviewers found no material issues in `fc737957..971dbbc4`. [Direct and managed device cases](../../../test/codex-benchmark/shared-shutdown-cleanup.app.test.ts) · [Post-allocation control](../../../test/test-runner/fixture-context.app.test.ts)
+
+## Validation of both lifecycle corrections
+
+Phase 3 ran at `c025f088` on macOS with Bun 1.4.5 and Node 26.13.1. [Phase 3 checklist](../plan-2026-11-21-codex-benchmark-lifecycle-part-ii.md#phase-3-code-validation-and-review)
+
+| Check | Result |
+| --- | --- |
+| Targeted lifecycle and runner tests | 531 cases passed across 33 files, including caller-exit snapshots, independent teardown, launch receipts and later-suite scheduling. |
+| Managed `bun run test:all` | All 4,874 cases passed (2,141 Unit, 2,689 Application, 39 Codex, 5 Pandoc). Zero failures, errors or skips. Application test-process execution took 341.829 seconds against the 360-second limit. |
+| Managed cleanup | All preflight and test processes stopped without escalation. After finalization, the observed run directory, scratch and results were absent. |
+| Build and package | The Node build passed. Using the repository’s installed dependencies, the declared CLI entry in the extracted tarball reported version `0.2.2-canary.7` and displayed `codex-bench --help`. |
+| Static checks | TypeScript, lint, formatting for all 16 changed TypeScript and JavaScript files, and the full-range diff check passed. |
+| Review `c482d937..c025f088` | Maintainability and test reviewers found no material issues across the two phases. |

@@ -34,8 +34,8 @@ Record the implementation checkpoint, tested revision and observations that supp
 
 ## Phase 3. Code validation and review
 
-- [ ] Run the targeted lifecycle and runner tests, `bun run test:all`, the Node-target build and packaged CLI smoke, TypeScript, lint, changed-file formatting and diff checks. Record suite outcomes, cleanup and tested revision in the unified job.
-- [ ] Review the full Part II implementation and test range. Resolve findings, rerun affected checks and record the final tested revision and reviewed range before starting Phase 4.
+- [x] Run the targeted lifecycle and runner tests, `bun run test:all`, the Node-target build and packaged CLI smoke, TypeScript, lint, changed-file formatting and diff checks. Record suite outcomes, cleanup and tested revision in the unified job.
+- [x] Review the full Part II implementation and test range. Resolve findings, rerun affected checks and record the final tested revision and reviewed range before starting Phase 4.
 
 ## Phase 4. Documentation validation and closeout
 
