@@ -120,6 +120,19 @@ Pandoc 2.0 ran one parity pair per size. Timing covers one native 3.9 series, an
 
 **Independent review** — Clear for `02106060..f2041cb6`. The reviewer inspected both changed documentation files, checked range whitespace, and cross-checked the 2.0 and 3.9 results, PDF assertions, and timing summaries. No findings.
 
+### Canary review follow-up
+
+Independent canary review of `0dd77cf5..f2041cb6` found two offline scanner regressions. Both fixes and their fixtures are in `62f5f6f1..af2a673a`. [Scanner](../../../src/cli/markdown-pdf/profile/fence-signals.ts) · [Boundary fixtures](../../../test/markdown-pdf/actions/fixtures/markdown-source-fixtures.ts)
+
+| Finding | Verified correction |
+| --- | --- |
+| A matched fenced Div close left paragraph context and suppressed the next tilde fence. | The close of a recognized Div restores the block boundary. The fixtures cover nested Divs, single classes with internal or trailing colons, and braced attributes with adjacent colons. An unmatched `:::`, a split class, and Div-looking text inside code or a verbatim body stay outside Div matching. |
+| A real HTML block close after prose was missed, including a wrapped opening tag followed by a close. | The closing tag restores the boundary. Inline code, quoted attributes, and trailing prose preserve paragraph context. The summary blank-line and paragraph/comment controls still pass. |
+
+The retest passed 81 focused source cases, the focused authoring app case, and all 2,266 managed unit cases. The 51-case matrix ran on both real Pandoc versions. The 15 new cases matched both readers on code classes and headings, with a visible H1 and pipe table in every case. Profile, Template, and Project returned byte-identical signals across all four actual Pandoc-present and Pandoc-absent runs. The full app, HTML/PDF, and timing results above cover `02106060..f2041cb6`. Post-fix retests cover offline scanning and authoring.
+
+**Independent canary re-review** — Pending from `0dd77cf5`.
+
 ## Phase 5 — Docs Validation
 
 **Status** — Pending.
