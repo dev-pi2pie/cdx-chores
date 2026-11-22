@@ -57,7 +57,33 @@ Focused reviews verified the race fixture for the untitled direct fallback and p
 
 ## Phase 3 — Offline Source Scanning
 
-**Status** — Pending.
+**Status** — Implementation verified. Baseline `b5c195ad` and source and test checkpoint `64d7f6fb`.
+
+The shared scanner resumes at exact tag, comment, inline code, and verbatim offsets. Block context determines fence eligibility. When an apparent HTML opener and a later fenced delimiter straddle a heading or table, recovery preserves the intervening Markdown. Ordinary inline HTML keeps its source spelling in heading and table metrics. Profile, Template, and Project continue to share the bounded collector. [Source scanner](../../../src/cli/markdown-pdf/profile/fence-signals.ts) · [Cursor](../../../src/cli/markdown-pdf/profile/source-cursor.ts) · [Boundary fixtures](../../../test/markdown-pdf/actions/fixtures/markdown-source-fixtures.ts)
+
+| Boundary | Actual Pandoc 2.0 and 3.9 | Offline signals |
+| --- | --- | --- |
+| Closed `textarea` | 2.0 parsed the inner H1 and Python code. 3.9 treated the body as literal. | Counted only the later visible H1, pipe rows, and JavaScript fence. The `pre` control agreed on both versions. |
+| Tilde fence after `</summary>` | 3.9 admitted the adjacent fence, including after a wrapped close. Both versions admitted it after a blank line. | Required a blank line. Retained the visible H1 and table after the rejected example. |
+| Unclosed `div` | Both parsed subsequent Markdown. The H1s were top-level in 2.0 and nested in 3.9. | Counted both H1s, the fence, and the table rows. |
+| Paragraph close and comment | Both admitted a fence after a matched close with an adjacent comment and a bare close with a spaced comment. Both suppressed it after a matched close with a spaced comment. | Matched all three controls. |
+| Incomplete markup | A comment closer inside a later fence consumed an earlier H1 in both versions. An unfinished quoted tag before a pipe table produced no Table in either version. | Recovered the H1 and counted the pipe rows. |
+
+| Verification | Result |
+| --- | --- |
+| Focused source unit tests | 59 passed across `signals.unit.test.ts` and `source-boundaries.unit.test.ts`. Covered wrapped and quoted markup, same-line recovery, fence and inline code precedence, and line endings. |
+| Focused authoring app test | `bun test ./test/markdown-pdf/actions/authoring-source-signals.app.test.ts --path-ignore-patterns '**/fixtures/**'` passed. All three normal preparation entries returned the same signals with a discoverable Pandoc sentinel and with an empty `PATH`. |
+| `bun run test:unit` | 2,244 passed with zero failures or skips. |
+| `bun run test:integration:app` | 2,767 passed with zero failures or skips, including the isolated authoring parity fixture. |
+| Version-locked comparison | Ran the same 29 Markdown fixtures through real Pandoc 2.0 and 3.9. The offline scanner retained the final visible H1 and three pipe rows in every fixture. |
+| Actual authoring PATH matrix | All three preparation entries agreed with real 2.0 or 3.9 discoverable and on an empty `PATH`. All four runs returned byte-identical signals and made zero Pandoc calls. The fixture checked 50 scanned pipe rows, two overflow rows, source width, 12 distinct languages, one overflow language, one unlabeled fence, and the 20,000-character script cap. |
+| Static checks | Scoped TypeScript, targeted Oxfmt and Oxlint, and `git diff --check b5c195ad` passed. |
+
+The focused unit run used `bun test ./test/markdown-pdf/actions/profile-codex/{signals,source-boundaries}.unit.test.ts`. The version-locked comparison used the ignored spike driver `phase-3-source.ts <pandoc-executable> <version>`, which verifies the executable and reads each shared fixture with `--from markdown --to json`.
+
+Focused review added recovery tests for a closing delimiter inside a later fence, a complete literal body, a wrapped attribute with Markdown-looking lines, and preservation of inline HTML in source metrics.
+
+**Independent review** — Pending.
 
 ## Phase 4 — Integrated Renderer Validation
 

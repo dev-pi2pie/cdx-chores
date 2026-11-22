@@ -55,12 +55,14 @@ Independent review cleared `3444cb8f..66655a56`. The [Phase 2 job record](jobs/2
 
 ## Phase 3 — Offline Source Scanning
 
-- [ ] Refine the shared collector with a quote-aware cursor and block context. Use exact end offsets for tags, comments, verbatim regions, and inline code spans so the scanner can resume on the same line.
-- [ ] Treat closed `textarea` bodies as literal, require a blank line before a tilde fence after `</summary>`, and continue scanning Markdown inside an unclosed `div`. Verify the same policy across Pandoc availability and version.
-- [ ] Cover matched and bare closing tags, adjacent and spaced comments, wrapped or quoted attributes, and incomplete markup. Assert that a visible H1 and pipe table after the apparent fence still contribute source signals.
-- [ ] Verify Profile, Template, and Project authoring with Pandoc available and unavailable. Compare their bounded signals and exercise fence-only counts, source table row widths and counts, and overflow limits.
+- [x] Refine the shared collector with a quote-aware cursor and block context. Use exact end offsets for tags, comments, verbatim regions, and inline code spans so the scanner can resume on the same line.
+- [x] Treat closed `textarea` bodies as literal, require a blank line before a tilde fence after `</summary>`, and continue scanning Markdown inside an unclosed `div`. Verify the same policy across Pandoc availability and version.
+- [x] Cover matched and bare closing tags, adjacent and spaced comments, wrapped or quoted attributes, and incomplete markup. Assert that a visible H1 and pipe table after the apparent fence still contribute source signals.
+- [x] Verify Profile, Template, and Project authoring with Pandoc available and unavailable. Compare their bounded signals and exercise fence-only counts, source table row widths and counts, and overflow limits.
 
 **Checkpoint** — All three authoring entry points agree on source signals in both environments.
+
+Independent review is pending from `b5c195ad`. The [Phase 3 job record](jobs/2026-11-22-markdown-pdf-ast-rendering.md#phase-3--offline-source-scanning) records the checks.
 
 ## Phase 4 — Integrated Renderer Validation
 
