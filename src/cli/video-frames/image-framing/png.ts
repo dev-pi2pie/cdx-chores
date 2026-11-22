@@ -1,4 +1,6 @@
-import { MAX_PROFILE_BYTES, pngCrc, pngProfileChunk, type ImageProfile } from "../profile-chunks";
+import { crc32 } from "node:zlib";
+
+import { MAX_PROFILE_BYTES, pngProfileChunk, type ImageProfile } from "../profile-chunks";
 import { Header, invalidImageStream, type Framer, type ImageSink } from "./shared";
 
 export class PngFrames implements Framer {
@@ -21,7 +23,7 @@ export class PngFrames implements Framer {
   }
   private async capturedChunk() {
     const bytes = this.metadata.pop();
-    if (pngCrc(bytes.subarray(4, -4)) !== bytes.readUInt32BE(bytes.length - 4))
+    if (crc32(bytes.subarray(4, -4)) !== bytes.readUInt32BE(bytes.length - 4))
       throw invalidImageStream();
     const body = bytes.subarray(8, -4);
     if (this.type === "IHDR") {
