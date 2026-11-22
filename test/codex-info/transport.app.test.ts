@@ -7,17 +7,32 @@ import { discoverCodexInfo } from "../../src/adapters/codex/discovery";
 import { resolveDiscoveryExecutable } from "../../src/adapters/codex/discovery/executable";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
 
-function expectFixtureProcessExited(pid: number): void {
-  if (!Number.isSafeInteger(pid) || pid <= 0) {
-    throw new Error(`Invalid fixture PID: ${pid}.`);
+function fixtureExitErrors(pids: number[]): unknown[] {
+  const errors: unknown[] = [];
+  for (const pid of pids) {
+    if (!Number.isSafeInteger(pid) || pid <= 0) {
+      errors.push(new Error(`Invalid fixture PID: ${pid}.`));
+      continue;
+    }
+    try {
+      process.kill(pid, 0);
+      errors.push(new Error(`Fixture process ${pid} is still running.`));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ESRCH") errors.push(error);
+    }
   }
-  try {
-    process.kill(pid, 0);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ESRCH") return;
-    throw error;
+  return errors;
+}
+
+async function stopFixtureProcesses(log: string, pids: number[]): Promise<boolean> {
+  // The marker is read only by children belonging to this fixture directory.
+  await writeFile(log + ".stop", "");
+  const deadline = performance.now() + 1_000;
+  while (performance.now() < deadline) {
+    if (fixtureExitErrors(pids).length === 0) return true;
+    await delay(10);
   }
-  throw new Error(`Fixture process ${pid} is still running.`);
+  return false;
 }
 
 async function withServer(
@@ -28,7 +43,8 @@ async function withServer(
     expectedLaunches = 1,
   }: { userAgent?: string | null; expectedLaunches?: number } = {},
 ): Promise<void> {
-  await withTempFixtureDir("codex-info-transport", async (cwd) => {
+  let cleanupVerified = true;
+  const runFixture = async (cwd: string) => {
     const executable = join(cwd, "server.cjs");
     const log = join(cwd, "requests.jsonl");
     const pidLog = log + ".pids";
@@ -52,7 +68,9 @@ readline.createInterface({ input: process.stdin }).on("line", async (line) => {
   if (method === "config/read") send(id, { config: { model: process.env.FIXTURE_MODEL || null, model_provider: "custom", model_providers: { custom: { name: "Custom", secret: "hidden" } }, forwarded: process.env.UNRELATED_VALUE, launchCwd: process.cwd() } });
   if (method === "model/list") send(id, { data: [{ id: "model-" + (++page) }], nextCursor: page === 1 ? "page-two" : null });
 });
-setInterval(() => {}, 1000);
+setInterval(() => {
+  if (fs.existsSync(log + ".stop")) process.exit(0);
+}, 50);
 `,
     );
     await chmod(executable, 0o755);
@@ -63,6 +81,7 @@ setInterval(() => {}, 1000);
     };
     delete env.CODEX_HOME;
     delete env.CODEX_INTERNAL_ORIGINATOR_OVERRIDE;
+    cleanupVerified = false;
     const errors: unknown[] = [];
     try {
       await run(env, cwd, log);
@@ -72,20 +91,20 @@ setInterval(() => {}, 1000);
 
     try {
       const pids = (await readFile(pidLog, "utf8")).trim().split("\n").filter(Boolean).map(Number);
-      for (const pid of pids) {
-        try {
-          expectFixtureProcessExited(pid);
-        } catch (error) {
-          errors.push(error);
-        }
-      }
+      const exitErrors = fixtureExitErrors(pids);
+      errors.push(...exitErrors);
+      const launchesMatch = pids.length === expectedLaunches;
+      const needsStop = exitErrors.length > 0 || !launchesMatch;
+      const exited = !needsStop || (await stopFixtureProcesses(log, pids));
+      cleanupVerified = exited && launchesMatch;
       expect(pids).toHaveLength(expectedLaunches);
     } catch (error) {
       errors.push(error);
     }
     if (errors.length > 1) throw new AggregateError(errors, "Discovery fixture failed.");
     if (errors.length === 1) throw errors[0];
-  });
+  };
+  await withTempFixtureDir("codex-info-transport", runFixture, () => cleanupVerified);
 }
 
 async function waitForFixtureRequest(log: string, method: string, cursor?: string): Promise<void> {
