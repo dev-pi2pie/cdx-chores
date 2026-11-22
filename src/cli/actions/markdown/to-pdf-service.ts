@@ -8,7 +8,11 @@ import { execCommand } from "../../process";
 import type { CliRuntime } from "../../types";
 import { assertNonEmpty, displayPath, ensureFileExists } from "../shared";
 import { definedRecipeOptions, ensureExistingFile, ensureOutputDoesNotExist } from "./common";
-import { createMarkdownPdfRecipe, type MarkdownPdfRecipe } from "../../markdown-pdf/recipe";
+import {
+  createMarkdownPdfRecipe,
+  createMarkdownPdfTemplate,
+  type MarkdownPdfRecipe,
+} from "../../markdown-pdf/recipe";
 import {
   discoverMarkdownPdfRenderBundle,
   resolveMarkdownPdfRenderBundleInputs,
@@ -326,11 +330,27 @@ export async function executePlannedMarkdownPdfRender(
   const pandoc = await requireCommandAvailable("pandoc", runtime.platform, runner);
   requireCommandMinimumVersion(pandoc, MARKDOWN_PDF_MINIMUM_PANDOC_VERSION, "md to-pdf");
 
+  const prepared = plan.prepared;
+  const profile = {
+    ...prepared.normalizedProfile,
+    pageNumbers: prepared.pageNumberConfiguration.effective,
+  };
+  const templateForAstTitle =
+    !prepared.customTemplatePath &&
+    profile.titleBlock.metadataTitle === "auto" &&
+    !profile.cover.enabled
+      ? (duplicateVisibleTitleRisk: boolean) =>
+          createMarkdownPdfTemplate({
+            profile,
+            titleSignals: { ...prepared.titleSignals, duplicateVisibleTitleRisk },
+          })
+      : undefined;
   const result = await renderMarkdownPdf({
     bodyBoundary: plan.prepared.templateCompatibility.bodyBoundary,
     inputPath: plan.prepared.inputPath,
     outputPath: plan.outputPath,
     templateHtml: plan.prepared.recipe.templateHtml,
+    templateForAstTitle,
     defaultCss: plan.prepared.recipe.styleCss,
     customTemplatePath: plan.prepared.customTemplatePath,
     customCssPath: plan.prepared.customCssPath,
@@ -339,10 +359,7 @@ export async function executePlannedMarkdownPdfRender(
     overwrite: plan.overwrite,
     options: plan.prepared.options,
     pageNumbers: plan.prepared.pageNumberConfiguration.effective,
-    profile: {
-      ...plan.prepared.normalizedProfile,
-      pageNumbers: plan.prepared.pageNumberConfiguration.effective,
-    },
+    profile,
     code: plan.prepared.code,
     platform: runtime.platform,
     rendererCapabilityRequests: plan.prepared.rendererCapabilityRequests,

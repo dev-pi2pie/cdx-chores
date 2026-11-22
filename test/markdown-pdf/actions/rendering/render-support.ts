@@ -24,8 +24,18 @@ export function failing(stderr: string): ExecCommandResult {
   };
 }
 
+export function pandocTitleJson(title: string, heading: string): string {
+  const text = (c: string) => ({ t: "Str", c });
+  return JSON.stringify({
+    "pandoc-api-version": [1, 23, 1, 1],
+    meta: { title: { t: "MetaInlines", c: [text(title)] } },
+    blocks: [{ t: "Header", c: [1, ["heading", [], []], [text(heading)]] }],
+  });
+}
+
 export function createPdfRunner(options: {
   html: string;
+  pandocJson?: string;
   weasyprintVersion?: string;
   weasyprintHelp?: ExecCommandResult;
   weasyprintStderr?: string;
@@ -50,12 +60,14 @@ export function createPdfRunner(options: {
         return failing("pandoc render failed");
       }
       const outputIndex = args.indexOf("--output");
-      const htmlOutput = args[outputIndex + 1];
-      if (!htmlOutput) {
+      const output = args[outputIndex + 1];
+      if (!output) {
         return failing("missing output");
       }
-      await mkdir(dirname(htmlOutput), { recursive: true });
-      await writeFile(htmlOutput, options.html, "utf8");
+      const content = args[args.indexOf("--to") + 1] === "json" ? options.pandocJson : options.html;
+      if (content === undefined) return failing("missing mock Pandoc JSON output");
+      await mkdir(dirname(output), { recursive: true });
+      await writeFile(output, content, "utf8");
       return ok();
     }
     if (command === "weasyprint") {

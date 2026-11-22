@@ -9,6 +9,11 @@ import { execCommand, type ExecCommandResult } from "../process";
 import { highlightMarkdownPdfCodeBlocks } from "./code-highlight";
 import { finalizeMarkdownPdfPageNumberHtml } from "./page-number-html";
 import {
+  resolveMarkdownPdfPandocSource,
+  runMarkdownPdfPandocStage,
+  type MarkdownPdfAstTitleTemplate,
+} from "./pandoc-source";
+import {
   createMarkdownPdfCoverHtml,
   createMarkdownPdfCoverScaffold,
   MARKDOWN_PDF_PROFILE_TEXT_COVER_MARKER,
@@ -47,6 +52,7 @@ export interface RenderMarkdownPdfInput {
   inputPath: string;
   outputPath: string;
   templateHtml: string;
+  templateForAstTitle?: MarkdownPdfAstTitleTemplate;
   defaultCss?: string;
   customTemplatePath?: string;
   customCssPath?: string;
@@ -77,14 +83,16 @@ function splitLines(value: string): string[] {
     .filter((line) => line.length > 0);
 }
 
-function formatProcessFailure(command: string, result: ExecCommandResult): CliError {
-  return new CliError(
-    `${command} failed (${result.code ?? "unknown"}): ${result.stderr || result.stdout}`.trim(),
-    {
-      code: "PROCESS_FAILED",
-      exitCode: 1,
-    },
-  );
+function formatProcessFailure(
+  command: string,
+  result: ExecCommandResult,
+  precedingWarnings: string[] = [],
+): CliError {
+  const failure = `${command} failed (${result.code ?? "unknown"}): ${result.stderr || result.stdout}`;
+  return new CliError([...precedingWarnings, failure.trim()].join("\n"), {
+    code: "PROCESS_FAILED",
+    exitCode: 1,
+  });
 }
 
 async function createTempFile(dir: string, name: string, content: string): Promise<string> {
@@ -181,13 +189,21 @@ export async function renderMarkdownPdf(
 
   const tempDir = await mkdtemp(join(tmpdir(), "cdx-chores-md-pdf-"));
   try {
+    const source = await resolveMarkdownPdfPandocSource({
+      inputPath: input.inputPath,
+      cwd,
+      tempDir,
+      templateHtml: input.templateHtml,
+      templateForAstTitle: input.templateForAstTitle,
+      runner,
+    });
     const templatePath = input.customTemplatePath
       ? await createCustomTemplateRenderFile({
           sourcePath: input.customTemplatePath,
           tempDir,
           profile: input.profile,
         })
-      : await createTempFile(tempDir, "template.html", input.templateHtml);
+      : await createTempFile(tempDir, "template.html", source.templateHtml);
     const defaultCssPath =
       input.noDefaultCss || !input.defaultCss
         ? undefined
@@ -199,10 +215,10 @@ export async function renderMarkdownPdf(
     );
 
     const pandocArgs = [
-      input.inputPath,
+      source.path,
       "--standalone",
       "--from",
-      "markdown",
+      source.format,
       "--to",
       "html",
       "--template",
@@ -214,10 +230,20 @@ export async function renderMarkdownPdf(
       pandocArgs.push("--toc", "--toc-depth", String(input.options.tocDepth));
     }
 
-    const pandoc = await runner("pandoc", pandocArgs, { cwd });
+    const pandoc =
+      source.format === "json"
+        ? await runMarkdownPdfPandocStage(
+            runner,
+            "HTML writer",
+            pandocArgs,
+            cwd,
+            source.readerStderr,
+          )
+        : await runner("pandoc", pandocArgs, { cwd });
     if (!pandoc.ok) {
       throw formatProcessFailure("pandoc", pandoc);
     }
+    const pandocWarnings = [...splitLines(source.readerStderr), ...splitLines(pandoc.stderr)];
 
     const html = await createFinalHtml(input, pandocHtmlPath);
     await writeFile(finalHtmlPath, html, "utf8");
@@ -259,7 +285,11 @@ export async function renderMarkdownPdf(
 
     const weasyprint = await runner("weasyprint", weasyprintArgs, { cwd });
     if (!weasyprint.ok) {
-      throw formatProcessFailure("weasyprint", weasyprint);
+      throw formatProcessFailure(
+        "weasyprint",
+        weasyprint,
+        source.format === "json" ? pandocWarnings : [],
+      );
     }
     await writeBufferFileSafe(input.outputPath, await readFile(renderedPdfPath), {
       label: "PDF output",
@@ -270,7 +300,7 @@ export async function renderMarkdownPdf(
     return {
       pandoc,
       weasyprint,
-      warnings: [...splitLines(pandoc.stderr), ...splitLines(weasyprint.stderr)],
+      warnings: [...pandocWarnings, ...splitLines(weasyprint.stderr)],
       rendererCapabilities,
     };
   } finally {

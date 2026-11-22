@@ -6,7 +6,7 @@ import { actionMdToPdf } from "../../../../src/cli/actions";
 import type { MarkdownPdfProcessRunner } from "../../../../src/cli/markdown-pdf";
 import { MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME } from "../../../../src/cli/markdown-pdf/profile/page-number-format";
 import { synthesizeMdPdfTemplateCodex } from "../../../../src/cli/markdown-pdf/template-codex";
-import { createPdfRunner } from "./render-support";
+import { createPdfRunner, pandocTitleJson } from "./render-support";
 import {
   createSynthesisOutputPlan,
   createSynthesisSignals,
@@ -365,48 +365,56 @@ describe("cli action modules: md to-pdf profile rendering", () => {
     {
       label: "visible H1 matches the metadata title",
       body: ["# CJK Font Smoke", "", "Body."],
+      heading: "CJK Font Smoke",
       titleVisible: false,
     },
     {
       label: "only a fenced H1 matches the metadata title after a shorter marker",
       body: ["````md", "```", "# CJK Font Smoke", "````", "", "# Actual Heading"],
+      heading: "Actual Heading",
       titleVisible: true,
     },
-  ])("uses the automatic metadata title policy when $label", async ({ body, titleVisible }) => {
-    await withTempFixtureDir("md-to-pdf-profile-title-block-auto", async (fixtureDir) => {
-      const inputPath = join(fixtureDir, "cjk-font-smoke.md");
-      const profilePath = join(fixtureDir, "profile.yml");
-      let renderedTemplate = "";
-      await writeFile(
-        inputPath,
-        ["---", "title: CJK Font Smoke", "---", ...body].join("\n"),
-        "utf8",
-      );
-      await writeFile(profilePath, "titleBlock:\n  metadataTitle: auto\n", "utf8");
+  ])(
+    "uses the automatic metadata title policy when $label",
+    async ({ body, heading, titleVisible }) => {
+      await withTempFixtureDir("md-to-pdf-profile-title-block-auto", async (fixtureDir) => {
+        const inputPath = join(fixtureDir, "cjk-font-smoke.md");
+        const profilePath = join(fixtureDir, "profile.yml");
+        let renderedTemplate = "";
+        await writeFile(
+          inputPath,
+          ["---", "title: CJK Font Smoke", "---", ...body].join("\n"),
+          "utf8",
+        );
+        await writeFile(profilePath, "titleBlock:\n  metadataTitle: auto\n", "utf8");
 
-      const { runner } = createPdfRunner({ html: "<html><body>CJK Font Smoke</body></html>" });
-      const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
-        if (command === "pandoc" && !args.includes("--version")) {
-          const templatePath = args[args.indexOf("--template") + 1];
-          if (templatePath) {
-            renderedTemplate = await readFile(templatePath, "utf8");
+        const { runner } = createPdfRunner({
+          html: "<html><body>CJK Font Smoke</body></html>",
+          pandocJson: pandocTitleJson("CJK Font Smoke", heading),
+        });
+        const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
+          if (command === "pandoc" && args.includes("--template")) {
+            const templatePath = args[args.indexOf("--template") + 1];
+            if (templatePath) {
+              renderedTemplate = await readFile(templatePath, "utf8");
+            }
           }
-        }
-        return runner(command, args, runnerOptions);
-      };
-      const { runtime, expectNoStderr } = createActionTestRuntime();
+          return runner(command, args, runnerOptions);
+        };
+        const { runtime, expectNoStderr } = createActionTestRuntime();
 
-      await actionMdToPdf(runtime, {
-        input: toRepoRelativePath(inputPath),
-        profile: toRepoRelativePath(profilePath),
-        runner: capturingRunner,
+        await actionMdToPdf(runtime, {
+          input: toRepoRelativePath(inputPath),
+          profile: toRepoRelativePath(profilePath),
+          runner: capturingRunner,
+        });
+
+        expect(renderedTemplate.includes('class="document-title"')).toBe(titleVisible);
+        expect(renderedTemplate).toContain("$body$");
+        expectNoStderr();
       });
-
-      expect(renderedTemplate.includes('class="document-title"')).toBe(titleVisible);
-      expect(renderedTemplate).toContain("$body$");
-      expectNoStderr();
-    });
-  });
+    },
+  );
 
   test("preserves duplicate-capable metadata title block when direct profile rendering requests show", async () => {
     await withTempFixtureDir("md-to-pdf-profile-title-block-show", async (fixtureDir) => {
