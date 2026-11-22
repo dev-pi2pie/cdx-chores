@@ -8,6 +8,12 @@ export type MarkdownSourceToken =
   | { kind: "comment" | "code" | "text"; end: number }
   | { kind: "tag"; end: number; name: string; closing: boolean; selfClosing: boolean };
 
+export interface SourceLimits {
+  inlineLimit: number;
+  tagLimit: number;
+  nextMarkdownStructure: number;
+}
+
 const TAG_START = /<(\/?)([a-z][a-z0-9-]*)(?=[\s/>])/iy;
 const SPACE = /\s*/y;
 const ATTRIBUTE = /[^\s"'<>/=]+/y;
@@ -116,7 +122,10 @@ export class MarkdownSourceCursor {
     }
   }
 
-  read(start: number, inlineLimit: number, tagLimit: number): MarkdownSourceToken | undefined {
+  read(
+    start: number,
+    { inlineLimit, tagLimit, nextMarkdownStructure }: SourceLimits,
+  ): MarkdownSourceToken | undefined {
     const ch = this.source[start];
     if (ch === "\\" && /[<`\\]/.test(this.source[start + 1] ?? "")) {
       return { kind: "text", end: start + 2 };
@@ -133,9 +142,13 @@ export class MarkdownSourceCursor {
     if (!this.source.startsWith("<!--", start)) return this.readTag(start, inlineLimit, tagLimit);
 
     const close = this.matchingEnd("-->", start, start + 4);
+    if (!close) return undefined;
     const nextOpen = this.matchingEnd("<!--", start, start + 4);
-    return close && (!nextOpen || close.start < nextOpen.start)
-      ? { kind: "comment", end: close.end }
-      : undefined;
+    // Pandoc treats an inner opener as literal comment text. Recover at a
+    // separate opener only when visible Markdown intervenes before it.
+    if (nextOpen && nextMarkdownStructure <= nextOpen.start && nextOpen.start < close.start) {
+      return undefined;
+    }
+    return { kind: "comment", end: close.end };
   }
 }

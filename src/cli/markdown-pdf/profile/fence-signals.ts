@@ -1,4 +1,4 @@
-import { MarkdownSourceCursor } from "./source-cursor";
+import { MarkdownSourceCursor, type SourceLimits } from "./source-cursor";
 
 type FenceMarker = "`" | "~";
 
@@ -143,11 +143,9 @@ function fenceClose(fences: (FenceLine | undefined)[], index: number, fence: Fen
   return index;
 }
 
-interface SourceLine {
+interface SourceLine extends SourceLimits {
   start: number;
   end: number;
-  inlineLimit: number;
-  tagLimit: number;
 }
 
 function sourceLines(content: string, lines: string[]): SourceLine[] {
@@ -155,26 +153,35 @@ function sourceLines(content: string, lines: string[]): SourceLine[] {
   let start = 0;
   const positions = lines.map((line) => {
     const end = start + line.length;
-    const position = { start, end, inlineLimit: content.length, tagLimit: content.length };
+    const position = {
+      start,
+      end,
+      inlineLimit: content.length,
+      tagLimit: content.length,
+      nextMarkdownStructure: content.length,
+    };
     const newline = breaks.next().value;
     start = end + (newline?.[0].length ?? 0);
     return position;
   });
   let inlineLimit = content.length;
   let tagLimit = content.length;
+  let nextMarkdownStructure = content.length;
   for (let index = positions.length - 1; index >= 0; index--) {
     const line = lines[index]!;
     const position = positions[index]!;
     position.inlineLimit = inlineLimit;
     position.tagLimit = tagLimit;
-    if (!line.trim()) inlineLimit = position.start;
-    // A malformed wrapped tag must recover before a subsequent Markdown block.
-    if (
-      !line.trim() ||
-      /^ {0,3}(?:#{1,6}(?:[ \t]|$)|\||`{3,}|~{3,})/.test(line) ||
+    position.nextMarkdownStructure = nextMarkdownStructure;
+    const blank = !line.trim();
+    const markdownStructure =
+      ATX_HEADING.test(line) ||
       isPipeTableSeparator(line) ||
-      isPipeTableSeparator(lines[index + 1] ?? "")
-    ) {
+      isPipeTableSeparator(lines[index + 1] ?? "");
+    if (blank) inlineLimit = position.start;
+    if (markdownStructure) nextMarkdownStructure = position.start;
+    // A malformed wrapped tag must recover before a subsequent Markdown block.
+    if (blank || markdownStructure || /^ {0,3}(?:\||`{3,}|~{3,})/.test(line)) {
       tagLimit = position.start;
     }
   }
@@ -242,7 +249,7 @@ class BoundaryScanner {
   }
 
   scan(line: SourceLine, previous: BlockContext) {
-    const { start, end, inlineLimit, tagLimit } = line;
+    const { start, end } = line;
     let offset = Math.max(start, this.offset);
     let visible = " ".repeat(Math.min(offset, end) - start);
     let lineEnd = this.coversStart(line) ? this.lineEnd : undefined;
@@ -251,7 +258,7 @@ class BoundaryScanner {
     const headingLine = ATX_HEADING.test(this.content.slice(start, end));
 
     while (offset < end) {
-      const token = this.cursor.read(offset, inlineLimit, tagLimit);
+      const token = this.cursor.read(offset, line);
       const tokenEnd = token?.end ?? offset + 1;
       const text = this.content.slice(offset, Math.min(tokenEnd, end));
       if (token?.kind === "comment") {
@@ -260,6 +267,16 @@ class BoundaryScanner {
         visible += hasText && !lineEnd && tokenEnd <= end ? text : " ".repeat(text.length);
       } else if (token?.kind === "tag") {
         const { name, closing, selfClosing } = token;
+        if (!closing && !selfClosing && VERBATIM_TAGS.has(name)) {
+          const verbatimEnd = this.cursor.verbatimEnd(name, offset, tokenEnd);
+          if (verbatimEnd !== undefined) {
+            visible += " ".repeat(Math.min(verbatimEnd, end) - offset);
+            offset = this.offset = verbatimEnd;
+            lineEnd = "boundary";
+            blockTagOnLine = true;
+            continue;
+          }
+        }
         const blockStart = !hasText && (/^ {0,3}$/.test(visible) || lineEnd === "boundary");
         const structural =
           !headingLine &&
@@ -276,12 +293,6 @@ class BoundaryScanner {
               : matchedParagraph
                 ? "matched-paragraph"
                 : "boundary";
-          if (blockStart && !closing && !selfClosing && VERBATIM_TAGS.has(name)) {
-            offset = this.cursor.verbatimEnd(name, offset, tokenEnd) ?? tokenEnd;
-            visible += " ".repeat(Math.min(offset, end) - (tokenEnd - text.length));
-            this.offset = offset;
-            continue;
-          }
         }
         visible +=
           tokenEnd <= end && (!structural || (hasText && !blockStart))

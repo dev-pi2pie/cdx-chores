@@ -83,6 +83,10 @@ The focused unit run used `bun test ./test/markdown-pdf/actions/profile-codex/{s
 
 Focused review added recovery tests for a closing delimiter inside a later fence, a complete literal body, a wrapped attribute with Markdown-looking lines, and preservation of inline HTML in source metrics.
 
+Review of `b5c195ad..d70f4188` found two boundary defects. A complete comment can now contain a second opener. Recovery still preserves an intervening heading or pipe table before a separate later comment. Both Pandoc versions kept the adjacent JavaScript block in the complete-comment fixture. Closed `textarea` and `pre` regions after prose now keep their bodies literal. Pandoc 2.0 exposed the inner `textarea` heading, while 3.9 hid it. Both hid it in the `pre` control. Inline code and quoted attributes still shield apparent openers. All three corrected cases retained the later H1, JavaScript fence, and pipe rows.
+
+The follow-up passed 66 focused source cases, the focused authoring app test, and 2,251 managed unit cases. The expanded 36-fixture matrix ran on both real Pandoc versions. The four actual PATH runs again returned byte-identical Profile, Template, and Project signals. The full app suite rerun is part of Phase 4.
+
 **Independent review** — Pending.
 
 ## Phase 4 — Integrated Renderer Validation

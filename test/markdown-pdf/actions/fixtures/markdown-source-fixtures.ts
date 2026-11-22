@@ -19,6 +19,7 @@ const literal = [
   "</textarea>",
 ].join("\n");
 const summary = "<summary>Notes</summary>";
+const literalAfterProse = "Text before <textarea>\n\n# Literal\n\n| Literal | Pipe |\n</textarea>";
 
 function beforeFence(
   name: string,
@@ -37,6 +38,24 @@ function beforeFence(
 export const markdownSourceFixtures = [
   beforeFence("closed-textarea", literal),
   beforeFence("closed-pre", literal.replaceAll("textarea", "pre")),
+  beforeFence("textarea-after-prose", literalAfterProse),
+  beforeFence("pre-after-prose", literalAfterProse.replaceAll("textarea", "pre")),
+  beforeFence(
+    "wrapped-textarea-after-prose",
+    "Text before " + literal.replace(" title", "\n title"),
+  ),
+  beforeFence(
+    "textarea-opener-inside-inline-code",
+    "Text before `<textarea>`\n\n# Visible before close\n\n</textarea>",
+    true,
+    ["Visible before close"],
+  ),
+  beforeFence(
+    "pre-opener-inside-quoted-attribute",
+    'Text before <span title="<pre>">note</span>\n\n# Visible before close\n\n</pre>',
+    true,
+    ["Visible before close"],
+  ),
   beforeFence("unclosed-textarea", "<textarea>\n\n# Recovered heading\n", true, [
     "Recovered heading",
   ]),
@@ -87,6 +106,16 @@ export const markdownSourceFixtures = [
   beforeFence("unclosed-apparent-fence", "~~~~md\n# Recovered heading\n", true, [
     "Recovered heading",
   ]),
+  beforeFence("closed-comment-with-inner-opener", "<!-- outer\n<!-- inner\n# Literal\n-->"),
+  {
+    name: "abandoned-comment-before-table",
+    markdown:
+      "<!-- abandoned\n\n" +
+      visible.slice(visible.indexOf("|")) +
+      "\n\n<!-- distinct comment -->\n\n# Visible heading",
+    headings: ["Visible heading"],
+    languages: [],
+  },
   beforeFence(
     "abandoned-comment",
     "<!-- unclosed\n# Recovered heading\n\n<!-- distinct comment -->",
