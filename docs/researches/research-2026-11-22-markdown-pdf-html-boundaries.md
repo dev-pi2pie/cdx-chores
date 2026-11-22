@@ -93,3 +93,6 @@ Pandoc populates `$sourcefile$` from the input to the HTML writer. A JSON file w
 
 Passing `--variable sourcefile:context.md` inserts another entry alongside the JSON path. Pandoc 2.0 lists the JSON path first and 3.9 lists the Markdown path first. A compatible custom-template path must expose the same single original source entry and fallback page title as direct rendering.
 
+## Related Plans
+
+- [Markdown PDF AST rendering implementation](../plans/plan-2026-11-22-markdown-pdf-ast-rendering.md)
