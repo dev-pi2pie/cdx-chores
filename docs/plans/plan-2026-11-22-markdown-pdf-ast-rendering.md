@@ -33,12 +33,14 @@ Check off a task once its verification is recorded. Review each phase against it
 ## Phase 1 — AST Title Comparison
 
 - [x] Create and link the unified job record, populate its five phase sections, and record the implementation baseline.
-- [ ] Read the Pandoc document shapes needed by the title decision. Select the first Markdown H1 in document order at the top level or inside native Divs. ATX and Setext headings qualify. Cover raw HTML, verbatim bodies, quotes, lists, tables, and footnotes in the heading selection fixtures.
-- [ ] Compare displayed text from the parsed metadata title and eligible H1 with the same projection. Fold case and whitespace and preserve punctuation, including in inline code. Keep the metadata block when either projection is unsupported, including when a later H1 would match.
-- [ ] Require a matching label and destination in the H1 for every metadata title link. Verify that matching destinations allow deduplication, while the distinct-link fixture keeps the metadata title and both destinations.
-- [ ] Verify the contract with unit fixtures and actual Pandoc 2.0 and 3.9 output. Cover formatted titles, a false heading inside `<pre>` before a matching Div heading, and an earlier eligible H1 followed by a later match.
+- [x] Read the Pandoc document shapes needed by the title decision. Select the first Markdown H1 in document order at the top level or inside native Divs. ATX and Setext headings qualify. Cover raw HTML, verbatim bodies, quotes, lists, tables, and footnotes in the heading selection fixtures.
+- [x] Compare displayed text from the parsed metadata title and eligible H1 with the same projection. Fold case and whitespace and preserve punctuation, including in inline code. Keep the metadata block when either projection is unsupported, including when a later H1 would match.
+- [x] Require a matching label and destination in the H1 for every metadata title link. Verify that matching destinations allow deduplication, while the distinct-link fixture keeps the metadata title and both destinations.
+- [x] Verify the contract with unit fixtures and actual Pandoc 2.0 and 3.9 output. Cover formatted titles, a false heading inside `<pre>` before a matching Div heading, and an earlier eligible H1 followed by a later match.
 
 **Checkpoint** — Both versions agree on the comparison result for the documented cases.
+
+Verification is recorded in the [Phase 1 job record](jobs/2026-11-22-markdown-pdf-ast-rendering.md#phase-1--ast-title-comparison). Independent review is pending.
 
 ## Phase 2 — Shared Render Execution
 
