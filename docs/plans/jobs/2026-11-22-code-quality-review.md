@@ -50,3 +50,9 @@ Implementation started from `888c3b01`. Measure fixture costs and assess coverag
 | Focused verification | 208 benchmark and 40 interactive video cases passed. Controller case time fell from 6.290 s to 2.235 s. The same 32 export and sequence cases passed in 16.61 s at the baseline and 4.77–4.83 s across three runs after the change. TypeScript, lint, changed-file formatting, and diff checks passed. |
 | Managed verification at `9e6f5f9b` | Three sequential `bun run test:integration:app` runs passed all 2,738 cases across 316 files with zero failures, errors, or skips, valid reports, and verified cleanup. Execution took 350.939 s, 345.052 s, and 345.064 s. The slowest run left 9.061 s under the 360-second limit. |
 | Exact range review | Test and maintainability reviewers approved `888c3b01..229383c0` and re-reviewed the widened `888c3b01..9e6f5f9b` range with no actionable findings. |
+
+## Phase 4. Markdown PDF remote assets
+
+Implementation started from `d900e875`. Use WeasyPrint 70.0 or newer with protocol allowlist support for default-off rendering. The CLI option exists on earlier releases, and 70.0 carries the selected fetcher through to user-supplied stylesheets. Require this capability only when the existing remote-asset opt-in is off. [Phase 4 checklist](../plan-2026-11-22-code-quality-review.md#phase-4-markdown-pdf-remote-assets) · [WeasyPrint 70.0 release notes](https://doc.courtbouillon.org/weasyprint/v70.0/changelog.html#version-70-0)
+
+The WeasyPrint 70.0 capability check used a synthetic transport. HTML-linked and CLI-supplied stylesheets each made zero transport calls under the allowlist and one in the unrestricted control.

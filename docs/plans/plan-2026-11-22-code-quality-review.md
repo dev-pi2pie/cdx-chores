@@ -51,6 +51,8 @@ Improve the managed Application suite’s runtime and the value of its assertion
 
 ## Phase 4. Markdown PDF remote assets
 
+[Phase 4 implementation record](jobs/2026-11-22-code-quality-review.md#phase-4-markdown-pdf-remote-assets)
+
 - [ ] Establish whether supported WeasyPrint versions can enforce the existing remote-asset opt-in at asset load time. Record the evidence and any compatibility decision before implementation.
 - [ ] Integrate the supported enforcement path and verify default blocking, explicit opt-in, and ordinary local assets with controlled renderer fixtures. If support is insufficient, record the blocker and leave the phase open.
 
