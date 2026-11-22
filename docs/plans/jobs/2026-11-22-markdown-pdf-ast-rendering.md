@@ -91,7 +91,7 @@ The follow-up passed 66 focused source cases, the focused authoring app test, an
 
 ## Phase 4 — Integrated Renderer Validation
 
-**Status** — Verification passed from baseline `02106060`.
+**Status** — Verified and independently reviewed for `02106060..f2041cb6`.
 
 | Verification | Result |
 | --- | --- |
@@ -118,7 +118,7 @@ The small fixture was one section and 744 bytes. The larger fixture was 30 secti
 
 Pandoc 2.0 ran one parity pair per size. Timing covers one native 3.9 series, and pixel parity covers the sampled pages.
 
-**Independent review** — Pending.
+**Independent review** — Clear for `02106060..f2041cb6`. The reviewer inspected both changed documentation files, checked range whitespace, and cross-checked the 2.0 and 3.9 results, PDF assertions, and timing summaries. No findings.
 
 ## Phase 5 — Docs Validation
 

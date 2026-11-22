@@ -73,7 +73,7 @@ Independent review of `b5c195ad..d70f4188` found two boundary defects. Re-review
 
 **Checkpoint** — The integrated renderer evidence covers both Pandoc versions, output parity, and the intended title correction.
 
-Independent review is pending from `02106060`. The [Phase 4 job record](jobs/2026-11-22-markdown-pdf-ast-rendering.md#phase-4--integrated-renderer-validation) records the checks and timing.
+Independent review cleared `02106060..f2041cb6`. The [Phase 4 job record](jobs/2026-11-22-markdown-pdf-ast-rendering.md#phase-4--integrated-renderer-validation) records the checks, timing, and review outcome.
 
 ## Phase 5 — Docs Validation
 
