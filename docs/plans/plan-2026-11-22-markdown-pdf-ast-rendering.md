@@ -1,7 +1,8 @@
 ---
 title: "Markdown PDF AST rendering implementation"
 created-date: 2026-11-22
-status: draft
+modified-date: 2026-11-22
+status: active
 agent: codex
 ---
 
@@ -15,7 +16,7 @@ Use Pandoc’s parsed document for built-in automatic title deduplication. Keep 
 
 ## Unified job record
 
-Create `docs/plans/jobs/YYYY-MM-DD-markdown-pdf-ast-rendering.md` at the start of implementation. Use the UTC start date and the actual starting Git SHA. Set the job record to `in-progress`, set this plan to `active`, and link the two documents. The settled research is recorded at `0f260243`.
+Implementation started at `ddc5d119` and is tracked in the [unified job record](jobs/2026-11-22-markdown-pdf-ast-rendering.md). The settled research is recorded at `0f260243`.
 
 Give the record the same five phase headings as this plan. Under each heading, record status, a short outcome, verification commands and results, and review evidence. Use short Git SHAs for the reviewed range when commits exist. For uncommitted work, record the baseline SHA and the reviewed diff. Use repository-relative links and public-safe wording.
 
@@ -31,7 +32,7 @@ Check off a task once its verification is recorded. Review each phase against it
 
 ## Phase 1 — AST Title Comparison
 
-- [ ] Create and link the unified job record, populate its five phase sections, and record the implementation baseline.
+- [x] Create and link the unified job record, populate its five phase sections, and record the implementation baseline.
 - [ ] Read the Pandoc document shapes needed by the title decision. Select the first Markdown H1 in document order at the top level or inside native Divs. ATX and Setext headings qualify. Cover raw HTML, verbatim bodies, quotes, lists, tables, and footnotes in the heading selection fixtures.
 - [ ] Compare displayed text from the parsed metadata title and eligible H1 with the same projection. Fold case and whitespace and preserve punctuation, including in inline code. Keep the metadata block when either projection is unsupported, including when a later H1 would match.
 - [ ] Require a matching label and destination in the H1 for every metadata title link. Verify that matching destinations allow deduplication, while the distinct-link fixture keeps the metadata title and both destinations.
