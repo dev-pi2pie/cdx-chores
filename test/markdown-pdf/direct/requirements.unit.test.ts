@@ -68,15 +68,20 @@ describe("Markdown PDF dependency requirements", () => {
     });
   });
 
-  test("requires supported Pandoc and available WeasyPrint together", () => {
+  test("requires supported Pandoc and verified WeasyPrint restrictions for default rendering", () => {
     const supportedPandoc = commandStatus("pandoc", { version: "3.9" });
     const unsupportedPandoc = commandStatus("pandoc", { version: "1.19.2" });
     const unverifiedPandoc = commandStatus("pandoc", { version: "custom-build" });
     const missingPandoc = commandStatus("pandoc", { available: false });
-    const weasyprint = commandStatus("weasyprint", { version: "68.0" });
+    const weasyprint = commandStatus("weasyprint", { version: "70.0" });
     const missingWeasyprint = commandStatus("weasyprint", { available: false });
 
-    expect(assessMarkdownPdfRequirements(supportedPandoc, weasyprint).ready).toBe(true);
+    expect(assessMarkdownPdfRequirements(supportedPandoc, weasyprint, true).ready).toBe(true);
+    expect(assessMarkdownPdfRequirements(supportedPandoc, weasyprint)).toMatchObject({
+      ready: false,
+      readyWithRemoteAssets: true,
+      requirements: { restrictedAssets: { status: "unverified" } },
+    });
     expect(assessMarkdownPdfRequirements(unsupportedPandoc, weasyprint)).toMatchObject({
       ready: false,
       requirements: { pandoc: { status: "unsupported" } },

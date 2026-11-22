@@ -21,6 +21,8 @@ export const DOCTOR_CONDITION_IDS = [
   "dependency.fontconfig.coverage.missing",
   "markdown.pdf.renderer.capability.unsupported",
   "markdown.pdf.renderer.capability.unverified",
+  "markdown.pdf.asset-policy.unsupported",
+  "markdown.pdf.asset-policy.unverified",
   "data.query.runtime.unavailable",
   "data.query.extension.sqlite.unavailable",
   "data.query.extension.excel.unavailable",

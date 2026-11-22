@@ -31,7 +31,7 @@ export const DOCTOR_FIXTURE_COMMANDS: Record<DependencyCommand, CommandStatus> =
   weasyprint: {
     name: "weasyprint",
     available: true,
-    version: "68.0",
+    version: "70.0",
     installHint: "brew install weasyprint",
   },
   "fc-list": {
@@ -122,6 +122,7 @@ export function createDoctorFixture(
     query,
     inspectors: {
       inspectCodexBenchmark: async () => DOCTOR_FIXTURE_CODEX_BENCHMARK,
+      inspectMarkdownPdfProtocolAllowlist: async () => true,
       inspectCommand: async (command) => {
         calls.commands.push(command);
         return commands[command];
@@ -170,6 +171,7 @@ export function createExpectedDoctorJsonPayload(
   const markdownPdfRequirements = assessMarkdownPdfRequirements(
     fixture.commands.pandoc,
     fixture.commands.weasyprint,
+    true,
   );
   const markdownPdf = {
     ...markdownPdfRequirements,
@@ -262,6 +264,7 @@ export function createDoctorReportFromFixture(
       pandoc: fixture.commands.pandoc,
       queryExtensions: fixture.query,
       weasyprint: fixture.commands.weasyprint,
+      weasyprintProtocolAllowlist: true,
     },
   );
 }

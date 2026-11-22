@@ -79,11 +79,33 @@ export function projectMarkdown(projection: MutableProjection, report: DoctorRep
     });
   }
 
-  const baseRequirementsReady =
-    pandoc.status === "satisfied" &&
-    report.markdownPdf.requirements.weasyprint.status === "satisfied";
-  if (!baseRequirementsReady) {
+  if (!report.markdownPdf.readyWithRemoteAssets) {
     return;
+  }
+
+  const { status, minimumVersion } = report.markdownPdf.requirements.restrictedAssets;
+  if (status === "unsupported" || status === "unverified") {
+    const unsupported = status === "unsupported";
+    const requirement = `WeasyPrint ${minimumVersion} or newer with --allowed-protocols`;
+    addCondition(
+      projection,
+      {
+        id: unsupported
+          ? "markdown.pdf.asset-policy.unsupported"
+          : "markdown.pdf.asset-policy.unverified",
+        message: `Default Markdown PDF rendering requires ${requirement}. Basic rendering is available with explicit remote-asset opt-in`,
+        affectedWorkflowIds: ["markdown.pdf"],
+      },
+      "limited",
+    );
+    addAction(projection, {
+      id: unsupported ? "dependency.weasyprint.upgrade" : "dependency.weasyprint.verify",
+      class: "recommended",
+      message: unsupported
+        ? `Upgrade WeasyPrint to ${minimumVersion} or newer`
+        : `Verify ${requirement}`,
+      affectedWorkflowIds: ["markdown.pdf"],
+    });
   }
 
   const rendererStatuses = new Set(

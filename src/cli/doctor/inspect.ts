@@ -2,8 +2,18 @@ import {
   inspectCodexEnvironment,
   type CodexEnvironmentInspection,
 } from "../../adapters/codex/shared";
-import { inspectCommand, type CommandStatus, type DependencyCommandRunner } from "../deps";
+import {
+  assessCommandMinimumVersion,
+  inspectCommand,
+  type CommandStatus,
+  type DependencyCommandRunner,
+} from "../deps";
 import { inspectDataQueryExtensions } from "../duckdb/query";
+import {
+  inspectMarkdownPdfProtocolAllowlist,
+  MARKDOWN_PDF_RESTRICTED_WEASYPRINT_MINIMUM_VERSION,
+} from "../markdown-pdf/requirements";
+import { execCommand } from "../process";
 import type { CliRuntime } from "../types";
 import {
   inspectAdvertisedImageEncoders,
@@ -18,6 +28,7 @@ export interface DoctorInspectors {
   inspectCodexBenchmark: typeof inspectCodexBenchmark;
   inspectCodexEnvironment: () => Promise<CodexEnvironmentInspection>;
   inspectCommand: typeof inspectCommand;
+  inspectMarkdownPdfProtocolAllowlist: typeof inspectMarkdownPdfProtocolAllowlist;
   inspectAdvertisedImageEncoders: typeof inspectAdvertisedImageEncoders;
   inspectDataQueryExtensions: () => Promise<DoctorQueryInspection>;
 }
@@ -35,12 +46,14 @@ export interface DoctorInspection {
   pandoc: CommandStatus;
   queryExtensions: DoctorQueryInspection;
   weasyprint: CommandStatus;
+  weasyprintProtocolAllowlist: boolean;
 }
 
 const DEFAULT_DOCTOR_INSPECTORS: DoctorInspectors = {
   inspectCodexBenchmark,
   inspectCodexEnvironment,
   inspectCommand,
+  inspectMarkdownPdfProtocolAllowlist,
   inspectAdvertisedImageEncoders,
   inspectDataQueryExtensions,
 };
@@ -53,6 +66,7 @@ export async function inspectDoctor(
   } = {},
 ): Promise<DoctorInspection> {
   const inspectors = { ...DEFAULT_DOCTOR_INSPECTORS, ...options.inspectors };
+  const runner = options.dependencyRunner ?? execCommand;
   const [
     pandoc,
     ffmpeg,
@@ -67,7 +81,9 @@ export async function inspectDoctor(
     inspectors.inspectCommand("pandoc", runtime.platform, options.dependencyRunner),
     inspectors.inspectCommand("ffmpeg", runtime.platform, options.dependencyRunner),
     inspectors.inspectCommand("ffprobe", runtime.platform, options.dependencyRunner),
-    inspectors.inspectCommand("weasyprint", runtime.platform, options.dependencyRunner),
+    inspectors.inspectCommand("weasyprint", runtime.platform, (command, args) =>
+      runner(command, args, { cwd: runtime.cwd }),
+    ),
     inspectors.inspectCommand("fc-list", runtime.platform, options.dependencyRunner),
     inspectors.inspectCommand("fc-query", runtime.platform, options.dependencyRunner),
     inspectors.inspectDataQueryExtensions(),
@@ -88,5 +104,9 @@ export async function inspectDoctor(
     pandoc,
     queryExtensions,
     weasyprint,
+    weasyprintProtocolAllowlist:
+      assessCommandMinimumVersion(weasyprint, MARKDOWN_PDF_RESTRICTED_WEASYPRINT_MINIMUM_VERSION)
+        .status === "satisfied" &&
+      (await inspectors.inspectMarkdownPdfProtocolAllowlist(runner, runtime.cwd)),
   };
 }

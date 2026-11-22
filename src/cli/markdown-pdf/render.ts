@@ -25,6 +25,11 @@ import {
   type MarkdownPdfRendererCapabilityRequest,
 } from "./renderer-capabilities";
 import {
+  inspectMarkdownPdfProtocolAllowlist,
+  MARKDOWN_PDF_PROTOCOL_ALLOWLIST_OPTION,
+  MARKDOWN_PDF_RESTRICTED_WEASYPRINT_MINIMUM_VERSION,
+} from "./requirements";
+import {
   rejectRemoteMarkdownPdfAssetsWhenDisabled,
   rewriteMarkdownPdfTemplateLocalAssets,
 } from "./template-assets";
@@ -36,10 +41,6 @@ import type { NormalizedMarkdownPdfOptions } from "./validation";
 
 export type MarkdownPdfProcessRunner = typeof execCommand;
 export type MarkdownPdfCodeHighlighter = typeof highlightMarkdownPdfCodeBlocks;
-
-// WeasyPrint 70.0 carries the configured fetcher into user stylesheets.
-const RESTRICTED_WEASYPRINT_MINIMUM_VERSION = "70.0";
-const ALLOWED_PROTOCOLS_OPTION = "--allowed-protocols";
 
 export interface RenderMarkdownPdfInput {
   bodyBoundary: MarkdownPdfTemplateCompatibilityResult["bodyBoundary"];
@@ -173,7 +174,7 @@ export async function renderMarkdownPdf(
   if (!input.options.allowRemoteAssets) {
     requireCommandMinimumVersion(
       renderer,
-      RESTRICTED_WEASYPRINT_MINIMUM_VERSION,
+      MARKDOWN_PDF_RESTRICTED_WEASYPRINT_MINIMUM_VERSION,
       "Markdown PDF rendering with remote assets disabled",
     );
   }
@@ -233,15 +234,13 @@ export async function renderMarkdownPdf(
 
     const weasyprintArgs = ["--base-url", cwd];
     if (!input.options.allowRemoteAssets) {
-      const help = await runner("weasyprint", ["--help"], { cwd });
-      const output = `${help.stdout}\n${help.stderr}`;
-      if (!help.ok || !/(?:^|\s)--allowed-protocols(?=\s|=|$)/u.test(output)) {
+      if (!(await inspectMarkdownPdfProtocolAllowlist(runner, cwd))) {
         throw new CliError(
-          `Markdown PDF rendering with remote assets disabled requires WeasyPrint ${RESTRICTED_WEASYPRINT_MINIMUM_VERSION} or newer with ${ALLOWED_PROTOCOLS_OPTION} support.`,
+          `Markdown PDF rendering with remote assets disabled requires WeasyPrint ${MARKDOWN_PDF_RESTRICTED_WEASYPRINT_MINIMUM_VERSION} or newer with ${MARKDOWN_PDF_PROTOCOL_ALLOWLIST_OPTION} support.`,
           { code: "MARKDOWN_PDF_ASSET_POLICY_UNSUPPORTED", exitCode: 2 },
         );
       }
-      weasyprintArgs.push(ALLOWED_PROTOCOLS_OPTION, "file,data");
+      weasyprintArgs.push(MARKDOWN_PDF_PROTOCOL_ALLOWLIST_OPTION, "file,data");
     }
 
     if (input.htmlOutputPath) {

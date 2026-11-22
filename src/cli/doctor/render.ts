@@ -15,7 +15,11 @@ function markdownPdfCapabilityStatus(
   ) {
     return "unavailable";
   }
-  return requirements.requirements.pandoc.status === "unsupported" ? "unsupported" : "unverified";
+  return requirements.requirements.pandoc.status === "unsupported" ||
+    (requirements.requirements.pandoc.status === "satisfied" &&
+      requirements.requirements.restrictedAssets.status === "unsupported")
+    ? "unsupported"
+    : "unverified";
 }
 
 function markdownPdfCapabilityDetail(
@@ -34,6 +38,17 @@ function markdownPdfCapabilityDetail(
   }
   if (requirements.requirements.weasyprint.status === "missing") {
     details.push("WeasyPrint is missing");
+  } else if (
+    pandoc.status === "satisfied" &&
+    requirements.requirements.restrictedAssets.status !== "satisfied"
+  ) {
+    const { minimumVersion } = requirements.requirements.restrictedAssets;
+    details.push(
+      `Default rendering requires WeasyPrint ${minimumVersion} or newer with --allowed-protocols`,
+    );
+    if (requirements.readyWithRemoteAssets) {
+      details.push("Basic rendering is available with explicit remote-asset opt-in");
+    }
   }
   return details.length > 0 ? details.join("; ") : undefined;
 }

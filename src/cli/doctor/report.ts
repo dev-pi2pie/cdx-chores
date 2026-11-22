@@ -159,6 +159,7 @@ export function buildDoctorReport(
   const markdownPdfRequirements = assessMarkdownPdfRequirements(
     inspection.pandoc,
     inspection.weasyprint,
+    inspection.weasyprintProtocolAllowlist,
   );
   const markdownPdf = {
     ...markdownPdfRequirements,
