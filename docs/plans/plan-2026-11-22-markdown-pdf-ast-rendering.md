@@ -51,7 +51,7 @@ Independent review cleared `ddc5d119..79cff61f`. The [Phase 1 job record](jobs/2
 
 **Checkpoint** — Both entry points use the intended render path and preserve their output and failure contracts.
 
-Verification is recorded in the [Phase 2 job record](jobs/2026-11-22-markdown-pdf-ast-rendering.md#phase-2--shared-render-execution). Independent review is pending.
+Independent review cleared `3444cb8f..66655a56`. The [Phase 2 job record](jobs/2026-11-22-markdown-pdf-ast-rendering.md#phase-2--shared-render-execution) records the checks and outcome.
 
 ## Phase 3 — Offline Source Scanning
 
