@@ -107,3 +107,13 @@ Implementation started from `e8f504ce`. PNG, WebP, and JPEG each have a parser m
 | `6136d81d` | Extracted the three parsers with the same buffer ownership, profile handling, error behavior, and awaited sink calls. |
 | Verification | 482 before-and-after cases matched output bytes, sink call order, and error results for plain and profiled streams. All 18 deferred `begin`, `write`, and `complete` checks passed. The 30 framing and staging tests and 45 Node publication and export tests passed, including slow publication and byte backpressure. Build, TypeScript, lint, formatting, and diff checks passed. |
 | Exact range review | Maintainability and test reviewers approved `e8f504ce..6136d81d` with no actionable findings. |
+
+## Phase 8. Markdown PDF mock registrations
+
+Implementation started from `9c3b3e98`. The existing harness installer delegates to font discovery, session, Codex authoring, deterministic authoring, and rendering installers in that order. [Phase 8 checklist](../plan-2026-11-22-code-quality-review.md#phase-8-markdown-pdf-mock-registrations)
+
+| Checkpoint | Evidence |
+| --- | --- |
+| `a439ebd9` | Moved registrations and per-install counters to their owning services. Shared authoring and rendering defaults through one module and kept the existing harness contract and module URLs. |
+| Verification | All 473 Interactive Markdown PDF cases passed before and after the split. All seven registration bodies matched in order, and complete harness results matched for render retry, session retention, cleanup, and saved Project handoff. Two adjacent routing cases, TypeScript, lint, formatting, and diff checks passed. |
+| Exact range review | Maintainability and test reviewers approved `9c3b3e98..a439ebd9` with no actionable findings. |

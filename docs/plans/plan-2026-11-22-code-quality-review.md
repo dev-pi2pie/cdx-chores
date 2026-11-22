@@ -87,8 +87,10 @@ Improve the managed Application suite’s runtime and the value of its assertion
 
 ## Phase 8. Markdown PDF mock registrations
 
-- [ ] Split the session, authoring, and rendering mock registrations and counters by service behind the existing harness entry point.
-- [ ] Run the interactive Markdown PDF tests that consume those registrations and verify the same observed calls and state transitions.
+[Phase 8 implementation record](jobs/2026-11-22-code-quality-review.md#phase-8-markdown-pdf-mock-registrations)
+
+- [x] Split the session, authoring, and rendering mock registrations and counters by service behind the existing harness entry point.
+- [x] Run the interactive Markdown PDF tests that consume those registrations and verify the same observed calls and state transitions.
 
 ## Phase 9. Test-runner launch preflight
 
