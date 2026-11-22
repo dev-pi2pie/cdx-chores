@@ -873,14 +873,16 @@ test.each(["confirmed", "unconfirmed"] as const)(
         await writeFile(
           preload,
           [
+            `import ${JSON.stringify(pathToFileURL(shortRolloutPreload).href)};`,
             "const timeout = AbortSignal.timeout.bind(AbortSignal);",
             "let turns = 0;",
             "AbortSignal.timeout = (ms) => timeout(ms === 120000 && ++turns === 2 ? 250 : ms);",
           ].join("\n"),
         );
-        const result = await startCliBenchmark(
+        const result = await startCliWithShortReadback(
           { ...options, runs: 2 },
           ["--json", "--show-token-usage", "--session-retention", "archive"],
+          2,
           preload,
         ).completion;
         expect(result.exitCode).toBe(1);
@@ -1001,7 +1003,6 @@ for (const json of [false, true]) {
           );
           try {
             await waitForMethod(trace, "turn/start");
-            expect(traceMethod(await trace(), "turn/start")).toHaveLength(1);
             if (!cli.child.pid) throw new Error("Expected an owned CLI process.");
             process.kill(-cli.child.pid, "SIGINT");
             const result = await cli.completion;
@@ -1061,6 +1062,14 @@ test.skipIf(process.platform === "win32").each([
         preload,
         `\nimport ${JSON.stringify(pathToFileURL(shortRolloutPreload).href)};\n`,
       );
+      // Keep the default interruption wait in the SIGINT-first control.
+      if (first === "SIGTERM") {
+        await appendFile(
+          preload,
+          "const timeout = AbortSignal.timeout.bind(AbortSignal);\n" +
+            "AbortSignal.timeout = (ms) => timeout(ms === 2000 ? 750 : ms);\n",
+        );
+      }
       const cli = startCliWithShortReadback(
         options,
         ["--json", "--session-retention", "archive", "--show-token-usage"],

@@ -133,12 +133,11 @@ test.each([
   "benchmark start timeout with $interrupt interruption (withhold reply: $withholdInterruptReply)",
   async ({ interrupt, withholdInterruptReply }) => {
     const confirmed = interrupt === "confirmed";
-    const { first, turns, interrupts, archives, events, exit } = await runRecovery("benchmark", {
-      withholdStartReplyThread: 1,
-      waitForInterruptThread: 1,
-      interrupt,
-      withholdInterruptReply,
-    });
+    const { first, turns, interrupts, archives, events, exit } = await runRecovery(
+      "benchmark",
+      { withholdStartReplyThread: 1, waitForInterruptThread: 1, interrupt, withholdInterruptReply },
+      { shortReadback: !confirmed },
+    );
     expect(exit).toBe(1);
     expect(first).toMatchObject({
       status: "failed",
@@ -331,7 +330,8 @@ const tooLarge = {
 };
 
 describe.each(["benchmark", "live check"] as const)("%s ownership and rejection", (caller) => {
-  test.each([
+  // Each row uses its own caller, fixture directory, trace and app-server.
+  test.concurrent.each([
     { label: "structured refusal", error: tooLarge, continues: true },
     { label: "structured refusal with a late start", error: tooLarge, late: true },
     { label: "same code and message", error: { code: tooLarge.code, message: tooLarge.message } },

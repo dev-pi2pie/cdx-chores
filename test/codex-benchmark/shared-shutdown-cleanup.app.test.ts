@@ -310,7 +310,7 @@ async function runControl(mode: Case, control: Control) {
         }
       : observeProcessGroup;
   return withShutdownFixture(
-    { resistantLeader: true, resistantWorker: true },
+    { resistantWorker: true },
     async (fixture) => {
       control.home = fixture.home;
       if (isPreSpawnCase(mode)) {

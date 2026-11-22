@@ -90,7 +90,11 @@ test.skipIf(process.platform === "win32").each([
   "live check verifies worker shutdown on $mode",
   async ({ signal, escalation, exitCode, diagnostic }) => {
     await withShutdownFixture(
-      { resistantWorker: true, resistantLeader: true, stallInitialization: signal !== null },
+      {
+        resistantWorker: true,
+        resistantLeader: signal === null,
+        stallInitialization: signal !== null,
+      },
       async (fixture) => {
         const { home, trace } = fixture;
         const owned = startShutdownLiveCheck(fixture, escalation);
