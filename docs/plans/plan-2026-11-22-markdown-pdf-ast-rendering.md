@@ -40,7 +40,7 @@ Check off a task once its verification is recorded. Review each phase against it
 
 **Checkpoint** — Both versions agree on the comparison result for the documented cases.
 
-Verification is recorded in the [Phase 1 job record](jobs/2026-11-22-markdown-pdf-ast-rendering.md#phase-1--ast-title-comparison). Independent review is pending.
+Independent review cleared `ddc5d119..79cff61f`. The [Phase 1 job record](jobs/2026-11-22-markdown-pdf-ast-rendering.md#phase-1--ast-title-comparison) records the checks and outcome.
 
 ## Phase 2 — Shared Render Execution
 
