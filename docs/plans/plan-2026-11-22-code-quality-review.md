@@ -101,8 +101,10 @@ Improve the managed Application suite’s runtime and the value of its assertion
 
 ## Phase 10. CRC-32 built-in
 
-- [ ] Replace the PNG and three fixture-generator checksum implementations with `node:zlib.crc32`.
-- [ ] Compare PNG checksum results and generated fixture bytes, and run the affected image-framing and fixture tests.
+[Phase 10 implementation record](jobs/2026-11-22-code-quality-review.md#phase-10-crc-32-built-in)
+
+- [x] Replace the PNG and three fixture-generator checksum implementations with `node:zlib.crc32`.
+- [x] Compare PNG checksum results and generated fixture bytes, and run the affected image-framing and fixture tests.
 
 ## Phase 11. Docs Validation
 

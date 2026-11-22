@@ -127,3 +127,14 @@ Implementation started from `93135ac0`. Launch validation and its error class no
 | `c0c42ae5` | Validation wraps failures before the requested spawn. Native synchronous throws propagate with fixture ownership unresolved, and asynchronous launch errors still produce `launch-failed`. Source comparison confirmed the launch checks, public type declarations, and runner body match the baseline. |
 | Verification | All 70 focused process, output, fixture, capability, and observation tests passed before and after extraction. Coverage includes throws after allocation, relative-path probe fallback, missing executable and working directory, output draining, and group shutdown. The managed Unit suite passed 2,171 cases with verified cleanup. TypeScript, lint, formatting, and diff checks passed. |
 | Exact range review | Maintainability and test reviewers approved `93135ac0..c0c42ae5` with no actionable findings. |
+
+## Phase 10. CRC-32 built-in
+
+Implementation started from `42d1b203`. PNG framing and the DOCX, data-extract, and data-query fixture generators use `node:zlib.crc32`. [Phase 10 checklist](../plan-2026-11-22-code-quality-review.md#phase-10-crc-32-built-in)
+
+| Checkpoint | Evidence |
+| --- | --- |
+| `6033443e` | PNG uses the same chunk type and payload bytes and big-endian checksum fields. Eight checksum results and three encoded profile chunks matched the baseline. |
+| `2c222966` | ZIP generators keep the same entry bytes and little-endian local and central checksum fields. The baseline regenerated deterministically, and all 22 outputs matched byte-for-byte after the change. Independent ZIP checks verified 55 entry checksums in 10 DOCX and XLSX archives. |
+| Verification | 30 framing and staging tests and 30 DOCX and XLSX reader tests passed. The initial concurrent Node export run missed the expected earlier publication count in one WebP case. Three isolated reruns on each revision passed all 54 cases. Build, TypeScript, lint, formatting, and diff checks passed. |
+| Exact range review | Maintainability and test reviewers approved `42d1b203..2c222966` with no actionable findings. |
