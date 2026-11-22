@@ -57,7 +57,7 @@ Focused reviews verified the race fixture for the untitled direct fallback and p
 
 ## Phase 3 — Offline Source Scanning
 
-**Status** — Implementation verified. Baseline `b5c195ad` and source and test checkpoint `64d7f6fb`.
+**Status** — Verified and independently reviewed. Baseline `b5c195ad` and source and test checkpoint `64d7f6fb`.
 
 The shared scanner resumes at exact tag, comment, inline code, and verbatim offsets. Block context determines fence eligibility. When an apparent HTML opener and a later fenced delimiter straddle a heading or table, recovery preserves the intervening Markdown. Ordinary inline HTML keeps its source spelling in heading and table metrics. Profile, Template, and Project continue to share the bounded collector. [Source scanner](../../../src/cli/markdown-pdf/profile/fence-signals.ts) · [Cursor](../../../src/cli/markdown-pdf/profile/source-cursor.ts) · [Boundary fixtures](../../../test/markdown-pdf/actions/fixtures/markdown-source-fixtures.ts)
 
@@ -87,7 +87,7 @@ Review of `b5c195ad..d70f4188` found two boundary defects. A complete comment ca
 
 The follow-up passed 66 focused source cases, the focused authoring app test, and 2,251 managed unit cases. The expanded 36-fixture matrix ran on both real Pandoc versions. The four actual PATH runs again returned byte-identical Profile, Template, and Project signals. The full app suite rerun is part of Phase 4.
 
-**Independent review** — Pending.
+**Independent review** — Clear for `b5c195ad..c00a8f30` after both findings from `b5c195ad..d70f4188` were fixed. The reviewer inspected all eight changed files, checked the new regressions and recovery behavior, reran the 66 focused scanner and source-signal cases, and passed `git diff --check b5c195ad..c00a8f30`. No outstanding findings.
 
 ## Phase 4 — Integrated Renderer Validation
 

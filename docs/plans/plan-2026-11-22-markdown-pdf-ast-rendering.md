@@ -62,7 +62,7 @@ Independent review cleared `3444cb8f..66655a56`. The [Phase 2 job record](jobs/2
 
 **Checkpoint** — All three authoring entry points agree on source signals in both environments.
 
-Independent review is pending from `b5c195ad`. The [Phase 3 job record](jobs/2026-11-22-markdown-pdf-ast-rendering.md#phase-3--offline-source-scanning) records the checks.
+Independent review of `b5c195ad..d70f4188` found two boundary defects. Re-review cleared the widened range `b5c195ad..c00a8f30` after both fixes. The [Phase 3 job record](jobs/2026-11-22-markdown-pdf-ast-rendering.md#phase-3--offline-source-scanning) records the findings and verification.
 
 ## Phase 4 — Integrated Renderer Validation
 
