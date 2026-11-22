@@ -187,6 +187,9 @@ describe("Markdown PDF Codex profile signals", () => {
     ["<!--\n~~~Example\n~~~\n-->", "~~~", ["sh"]],
     ["<div>\nBody\n</div>", "~~~", ["sh"]],
     ["- Item\n  Continuation", "~~~", ["sh"]],
+    ["Term\n:   Meaning", "~~~", ["sh"]],
+    ["Term\n\n:   Meaning", "~~~", ["sh"]],
+    ["Two\nlines\n:   Meaning", "~~~", []],
     ["Paragraph.\n| A | B |\n| - | - |\n| 1 | 2 |", "~~~", []],
   ] as const)(
     "classifies %j followed by %j using Pandoc opener placement",
@@ -197,6 +200,16 @@ describe("Markdown PDF Codex profile signals", () => {
       expect(signals.codeFences.languages).toEqual([...languages]);
     },
   );
+
+  test("recognizes a tilde fence after a standalone HTML block", () => {
+    const signals = collectMarkdownPdfDocumentSignals(
+      ["<hr />", "~~~sh", "# Hidden", "| a | b | c |", "~~~", "", "# Visible heading"].join("\n"),
+    );
+    expect(signals.title.firstH1).toEqual({ present: true, charCount: "Visible heading".length });
+    expect(signals.headings.total).toBe(1);
+    expect(signals.tables.scannedRows).toBe(0);
+    expect(signals.codeFences.languages).toEqual(["sh"]);
+  });
 
   test.each([
     [String.raw`~~~{.python key="a\" b"}`, ["python"]],

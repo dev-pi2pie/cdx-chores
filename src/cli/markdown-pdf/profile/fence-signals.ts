@@ -49,7 +49,12 @@ type BlockContext =
   | "paragraph"
   | "pipe-table"
   | "html-comment"
+  | "definition-term"
   | { listIndent: number };
+
+const DEFINITION_MARKER = /^ {0,3}[:~] +/;
+const HTML_BLOCK_END =
+  /^ {0,3}(?:<(?:hr|meta|col)(?=[ \t/>])[^>]*>|<(?:[a-z][^>]*>.*<)?\/(?:div|section|article|aside|figure|table|blockquote|pre|main|script|style|textarea)>)[ \t]*$/i;
 
 function isPipeTableSeparator(line: string): boolean {
   if (!line.includes("|")) return false;
@@ -61,20 +66,26 @@ function isPipeTableSeparator(line: string): boolean {
 }
 
 function blockContext(
-  line: string,
-  nextLine: string,
+  lines: string[],
+  index: number,
   previous: BlockContext,
-  hasCommentClose: boolean,
+  lastCommentClose: number,
 ): BlockContext {
+  const line = lines[index]!;
+  const nextLine = lines[index + 1] ?? "";
   if (
     previous === "html-comment" ||
-    (previous !== "paragraph" && hasCommentClose && /^ {0,3}<!--/.test(line))
+    (previous !== "paragraph" && index <= lastCommentClose && /^ {0,3}<!--/.test(line))
   ) {
     const close = line.indexOf("-->");
     if (close === -1) return "html-comment";
     return line.slice(close + 3).trim() ? "paragraph" : "boundary";
   }
-  if (!line.trim()) return "boundary";
+  if (!line.trim()) return previous === "definition-term" ? previous : "boundary";
+  if (previous === "definition-term") {
+    const marker = DEFINITION_MARKER.exec(line);
+    if (marker) return { listIndent: marker[0].length };
+  }
   if (
     previous !== "paragraph" &&
     line.includes("|") &&
@@ -85,17 +96,13 @@ function blockContext(
   if (/^ {0,3}(?:=+|-+|(?:\*[ \t]*){3,}|(?:_[ \t]*){3,}|(?:-[ \t]*){3,})[ \t]*$/.test(line)) {
     return "boundary";
   }
-  if (
-    /^ {0,3}<(?:[a-z][^>]*>.*<)?\/(?:div|section|article|aside|figure|table|blockquote|pre)>[ \t]*$/i.test(
-      line,
-    )
-  ) {
-    return "boundary";
-  }
+  if (HTML_BLOCK_END.test(line)) return "boundary";
   if (previous !== "paragraph") {
     const list = /^ {0,3}(?:[-+*]|\d+[.)]) +/.exec(line);
     if (list) return { listIndent: list[0].length };
     if (/^(?: {0,3}#{1,6}(?:[ \t]|$)| {4}|\t)/.test(line)) return "boundary";
+    const definition = nextLine.trim() ? nextLine : (lines[index + 2] ?? "");
+    if (DEFINITION_MARKER.test(definition)) return "definition-term";
   }
   if (typeof previous === "object") return previous;
   return "paragraph";
@@ -152,7 +159,7 @@ export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
     }
     const line = lines[index]!;
     ordinaryLines.push(line);
-    context = blockContext(line, lines[index + 1] ?? "", context, index <= lastCommentClose);
+    context = blockContext(lines, index, context, lastCommentClose);
   }
   return { ordinaryLines, fenceLanguages };
 }
