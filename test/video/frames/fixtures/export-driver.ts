@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readFile, readdir, writeFile, stat } from "node:fs/promises";
 import { FrameResolver } from "../../../../src/cli/video-frames/resolver";
@@ -13,6 +14,8 @@ async function main() {
   process.env.CDX_FRAME_MODE = mode;
   const source = join(root, "source.bin"),
     folder = join(root, "images");
+  let firstPublication = mode === "webp-zero" ? join(root, "first-image-published") : undefined;
+  if (firstPublication) process.env.CDX_FRAME_FIRST_PUBLICATION = firstPublication;
   await writeFile(source, "original source");
   const resolver = new FrameResolver(source, { ffprobe: tool });
   const roles = await resolver.resolveSet("first-middle-last");
@@ -57,7 +60,11 @@ async function main() {
           const { written } = state;
           if (written && !changed && mode === "source-changed") {
             changed = true;
-            void writeFile(source, "changed");
+            writeFileSync(source, "changed");
+          }
+          if (written && firstPublication) {
+            writeFileSync(firstPublication, "");
+            firstPublication = undefined;
           }
           if (written && mode === "cancel") control.abort();
           if (state.phase === "finishing" && mode === "finish-cancel") control.abort();

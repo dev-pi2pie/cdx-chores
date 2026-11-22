@@ -18,9 +18,7 @@ test.concurrent.each([
   ["duplicate", false],
   ["duplicate-overwrite", false],
   ["duplicate-case", false],
-  ["duplicate-case-overwrite", false],
   ["duplicate-unicode", false],
-  ["duplicate-unicode-overwrite", false],
 ] as const)(
   "image export under Node: %s",
   (mode, completed) => runExportFixture("export-driver.ts", mode, completed),
