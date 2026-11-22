@@ -1,5 +1,6 @@
 // Loaded only in the isolated caller. Allow full startup time for the fixture process.
 import { mock } from "bun:test";
+import { EventEmitter } from "node:events";
 import { appendFileSync, existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -25,13 +26,27 @@ const home = process.env.CODEX_HOME;
 const fixtureTrace = join(home, "events.jsonl");
 const traceLifecycle = (method, params) =>
   appendFileSync(fixtureTrace, JSON.stringify({ method, params }) + "\n");
+let currentDeadline;
 AbortSignal.timeout = (ms) => {
+  if (ms === 15_000 && gate === "start-deadline-race") {
+    currentDeadline = new AbortController();
+    return currentDeadline.signal;
+  }
   if (ms === 15_000 && !needsFullStartDeadline && existsSync(fixtureTrace)) return timeout(200);
   if (ms === 120_000 && gate === "reply-conflict") return timeout(ms);
   return timeout(ms === 120_000 || ms === 2_000 ? 200 : ms);
 };
 
-if (gate === "start-deadline") {
+if (gate === "start-deadline-race") {
+  const emit = EventEmitter.prototype.emit;
+  EventEmitter.prototype.emit = function (event, ...args) {
+    const delivered = emit.call(this, event, ...args);
+    if (event === "announced-terminal:thread-1") currentDeadline.abort();
+    return delivered;
+  };
+}
+
+if (gate === "start-deadline" || gate === "start-deadline-race") {
   const trackReply = TurnStartEvidence.prototype.trackReply;
   TurnStartEvidence.prototype.trackReply = function (response) {
     return trackReply.call(

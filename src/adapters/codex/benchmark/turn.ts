@@ -30,7 +30,7 @@ export class TrialObserver {
   private observedTextTurnId?: string;
 
   constructor(
-    server: CodexAppServer,
+    server: Pick<CodexAppServer, "onNotification">,
     threadId: string,
     private readonly onFirstText?: () => void,
   ) {
@@ -97,6 +97,7 @@ export class TrialObserver {
 
   async waitForStart(response: Promise<unknown>, signal?: AbortSignal): Promise<string> {
     const rpcTurn = this.start.trackReply(response);
+    const hasCompletion = (id: string) => this.turns.get(id)?.completion !== undefined;
     let checkEvidence = () => {};
     let graceTimer: ReturnType<typeof setTimeout> | undefined;
     const observedTurn = new Promise<string>((resolve, reject) => {
@@ -108,7 +109,7 @@ export class TrialObserver {
         const id = this.start.turnId;
         // Cancellation needs a target immediately. Normal progress requires a
         // matching terminal notification to stand in for the missing RPC reply.
-        if (id && (signal?.aborted || this.turns.get(id)?.completion)) resolve(id);
+        if (id && (signal?.aborted || hasCompletion(id))) resolve(id);
         else if (signal?.aborted)
           graceTimer ??= setTimeout(
             () => reject(new Error("Turn ID was unavailable after cancellation.")),
@@ -127,6 +128,8 @@ export class TrialObserver {
         return id;
       });
       return await Promise.race([rpcTurn, recoveredTurn]);
+    } catch (error) {
+      return this.start.recoverCompletedTurn(error, hasCompletion);
     } finally {
       clearTimeout(graceTimer);
       signal?.removeEventListener("abort", checkEvidence);

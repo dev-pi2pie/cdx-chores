@@ -226,8 +226,10 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
         );
         return await Promise.race([terminal, reply]);
       } catch (error) {
-        start.assertUnambiguous();
-        throw error;
+        return start.recoverCompletedTurn(
+          error,
+          (turnId) => liveTurns.get(turnKey(threadId, turnId))?.completion !== undefined,
+        );
       } finally {
         settled.abort();
       }

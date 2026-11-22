@@ -1,6 +1,10 @@
 import { CodexRequestTimeoutError } from "./app-server";
 import { isRecord } from "./discovery/transport";
 
+function isTurnStartTimeout(error: unknown): boolean {
+  return error instanceof CodexRequestTimeoutError && error.method === "turn/start";
+}
+
 export function isAppServerId(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
@@ -63,6 +67,13 @@ export class TurnStartEvidence {
     return this.reply;
   }
 
+  recoverCompletedTurn(error: unknown, hasCompletion: (turnId: string) => boolean): string {
+    this.assertUnambiguous();
+    const id = this.turnId;
+    if (id && isTurnStartTimeout(error) && hasCompletion(id)) return id;
+    throw error;
+  }
+
   /** A matching terminal notification can replace a reply that never arrives. */
   async reconcileReply(signal?: AbortSignal): Promise<void> {
     this.assertUnambiguous();
@@ -77,9 +88,7 @@ export class TurnStartEvidence {
       if (waiting) await Promise.race([this.reply, cancelled.promise]);
       else await this.reply;
     } catch (error) {
-      if (!(error instanceof CodexRequestTimeoutError && error.method === "turn/start")) {
-        throw error;
-      }
+      if (!isTurnStartTimeout(error)) throw error;
     } finally {
       waiting?.removeEventListener("abort", onAbort);
     }

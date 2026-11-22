@@ -25,7 +25,13 @@ async function runRecovery(
     originator?: string;
     retention?: "archive" | "delete";
     cancel?: "SIGTERM";
-    gate?: "deadline" | "reply-conflict" | "readback-conflict" | "late-reply" | "start-deadline";
+    gate?:
+      | "deadline"
+      | "reply-conflict"
+      | "readback-conflict"
+      | "late-reply"
+      | "start-deadline"
+      | "start-deadline-race";
     shortReadback?: boolean;
   } = {},
 ) {
@@ -697,3 +703,21 @@ test.each(["start", "completion"] as const)(
     expect(interrupts).toEqual([]);
   },
 );
+
+test("live check recovers when the start deadline races with matching completion", async () => {
+  const { first, turns, events, archives, exit } = await runRecovery(
+    "live check",
+    { withholdStartReplyThread: 1 },
+    { gate: "start-deadline-race" },
+  );
+  expect(exit).toBe(0);
+  expect(first).toMatchObject({ status: "completed", turnId: "turn-thread-1" });
+  expect(turns).toEqual(["default", "priority"]);
+  expect(archives).toEqual(["thread-1", "thread-2"]);
+  const terminal = events.findIndex(({ method }) => method === "turn/completed");
+  const deadline = events.findIndex(({ method }) => method === "fixture/turn-start-deadline");
+  const archive = events.findIndex(({ method }) => method === "thread/archive");
+  expect(terminal).toBeGreaterThanOrEqual(0);
+  expect(deadline).toBeGreaterThan(terminal);
+  expect(archive).toBeGreaterThan(deadline);
+});
