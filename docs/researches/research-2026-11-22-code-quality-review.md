@@ -16,7 +16,7 @@ This review covers behavior, test coverage, module boundaries, and opportunities
 | --- | --- | --- |
 | CSV path containment · P2 | Replay checked path strings and missed symlinked parents. The settled approach validates both endpoint parents against the canonical working directory and uses a shared segment-aware lexical check under the stable-parent contract. | [CSV replay](../../src/cli/rename-plan-csv.ts#L67), [file I/O](../../src/cli/file-io.ts#L24) |
 | Application test cost and coverage | Repeated 360-second timeouts leave the managed suite without dependable headroom. Profile the costly fixtures and audit their assertions for tautologies and duplicate coverage. | [Timing and coverage evidence](#application-test-cost-and-coverage), [suite limit](../../scripts/testing/suites/suite-policy.ts#L47) |
-| Markdown PDF remote assets · P2 | The preflight misses stylesheet contents reached through local HTML stylesheet links. Evaluate whether supported WeasyPrint versions can enforce the remote-asset opt-in at the asset-loading boundary. | [Asset preflight](../../src/cli/markdown-pdf/template-assets/remote-policy.ts#L180), [renderer invocation](../../src/cli/markdown-pdf/render.ts#L217) |
+| Markdown PDF remote assets · P2 | Preflight alone missed asset loads through locally linked stylesheets. Apply the default scheme policy at the shared WeasyPrint invocation and retain early diagnostics. | [Settled asset policy](#markdown-pdf-remote-assets), [renderer invocation](../../src/cli/markdown-pdf/render.ts#L260) |
 | Markdown fence parsing | The title and code scanners can close a fence on a shorter marker. Heading and table counts also include matching lines inside fences. Apply the settled behavior below. | [Title scanner](../../src/cli/markdown-pdf/profile/signals.ts#L180), [code scanner](../../src/cli/markdown-pdf/profile/signals.ts#L263), [signal collection](../../src/cli/markdown-pdf/profile/signals.ts#L348) |
 | Codex cancellation coverage | A fixed delay can abort before the child starts, and the fixture records only the last PID. Wait for `config/read` before aborting and verify that every launched child exits. | [Discovery transport tests](../../test/codex-info/transport.app.test.ts#L313) |
 | Inline prompts | Path and text prompts duplicate terminal setup, cancellation, and teardown. Share the session lifecycle, keep completion logic in each prompt, and use `Set` for path suggestion deduplication. | [Path prompt](../../src/cli/prompts/path-inline.ts#L242), [text prompt](../../src/cli/prompts/text-inline.ts#L253) |
@@ -78,6 +78,10 @@ Use the renderer’s Pandoc Markdown input mode as the reference for top-level f
 ### CSV replay containment
 
 Stable parents are the filesystem assumption for CSV replay. Preflight checks both endpoint parents against the canonical working directory and validates file types for all planned moves before staging. Segment-aware containment accepts names such as `..draft` and preserves each caller’s rule for root equality.
+
+### Markdown PDF remote assets
+
+Enforce the default `file:` and `data:` scheme allowlist at asset load time. WeasyPrint 70.0 carries the configured fetcher through user-supplied stylesheets, so restricted rendering requires that version or newer and a CLI that exposes the protocol option. Explicit remote-asset opt-in follows basic renderer availability and the effective Profile’s capability requirements. Doctor distinguishes readiness for those two render modes. [WeasyPrint 70.0 release notes](https://doc.courtbouillon.org/weasyprint/v70.0/changelog.html#version-70-0), [Markdown PDF asset behavior](../guides/markdown-pdf-usage.md#images-and-assets)
 
 ## Related Plans
 

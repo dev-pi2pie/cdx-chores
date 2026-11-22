@@ -1,7 +1,7 @@
 ---
 title: "Interactive Markdown PDF Usage"
 created-date: 2026-07-22
-modified-date: 2026-09-24
+modified-date: 2026-11-22
 status: completed
 agent: codex
 ---
@@ -50,7 +50,9 @@ The root-level form is rejected. If the option is omitted, Interactive mode uses
 
 Choose `md`, then choose `to-pdf` or `pdf-recipes`.
 
-Rendering requires Pandoc 2.0 or newer and WeasyPrint. Codex-assisted preparation also requires configured Codex support. Check available capabilities with:
+Rendering requires Pandoc 2.0 or newer and WeasyPrint 70.0 or newer with `--allowed-protocols`. Interactive rendering uses the default asset policy. For explicit remote-asset opt-in, use the direct command. Codex-assisted preparation also requires configured Codex support. [Images and assets](markdown-pdf-usage.md#images-and-assets)
+
+Check available capabilities with:
 
 ```bash
 cdx-chores doctor

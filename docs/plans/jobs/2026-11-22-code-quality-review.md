@@ -56,3 +56,11 @@ Implementation started from `888c3b01`. Measure fixture costs and assess coverag
 Implementation started from `d900e875`. Use WeasyPrint 70.0 or newer with protocol allowlist support for default-off rendering. The CLI option exists on earlier releases, and 70.0 carries the selected fetcher through to user-supplied stylesheets. Require this capability only when the existing remote-asset opt-in is off. [Phase 4 checklist](../plan-2026-11-22-code-quality-review.md#phase-4-markdown-pdf-remote-assets) · [WeasyPrint 70.0 release notes](https://doc.courtbouillon.org/weasyprint/v70.0/changelog.html#version-70-0)
 
 The WeasyPrint 70.0 capability check used a synthetic transport. HTML-linked and CLI-supplied stylesheets each made zero transport calls under the allowlist and one in the unrestricted control.
+
+| Checkpoint | Evidence |
+| --- | --- |
+| `27ee5daa` | Added the shared renderer version and option gate and applied the `file,data` restriction when remote assets are disabled. Preserved preflight diagnostics and explicit opt-in. Kept legacy page-number evidence renders on the explicit fixture opt-in path. |
+| Review corrections `b9ebdc8d` and `d7fa1a61` | Added a failed-probe regression that preserves existing PDF and HTML outputs. Aligned Doctor’s default readiness with the renderer and exposed basic opt-in readiness separately. |
+| Renderer verification | Source and built CLI runs with WeasyPrint 70.0 blocked synthetic transport by default, fetched once with explicit opt-in, and rendered ordinary local and embedded assets. Renderer-denied loads surfaced a warning. An older renderer rejected default mode and rendered benign local input with opt-in. Version fixtures also covered newer stable releases and unverified capabilities. |
+| Verification at `d7fa1a61` | 2,171 unit tests and 1,730 focused Markdown PDF and Doctor cases passed. Managed Application (2,749 cases) and Pandoc (5 cases) passed with valid reports and verified cleanup. Build, TypeScript, lint, changed-file formatting, and diff checks passed. |
+| Exact range review | Security and test reviewers approved `d900e875..d7fa1a61` after the review corrections. |
