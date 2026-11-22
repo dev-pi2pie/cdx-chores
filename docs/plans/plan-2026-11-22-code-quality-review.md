@@ -8,7 +8,7 @@ agent: codex
 
 ## Scope
 
-Address the nine findings in the Code Quality Review across `src/`, `test/`, and `scripts/`. Start with Markdown PDF fence signals. Preserve public entry points, output contracts, and Node.js compatibility when extracting modules or replacing helpers. [Code Quality Review](../researches/research-2026-11-22-code-quality-review.md#findings)
+Address the ten findings in the Code Quality Review across `src/`, `test/`, and `scripts/`. Preserve public entry points, output contracts, and Node.js compatibility when extracting modules or replacing helpers. [Code Quality Review](../researches/research-2026-11-22-code-quality-review.md#findings)
 
 ## Related Research
 
@@ -38,42 +38,51 @@ Replay assumes the canonical working directory and endpoint parents stay stable 
 - [x] Share segment-aware lexical containment across replay and file I/O. Preserve each caller’s root-equality rules and reject cross-volume paths.
 - [x] Verify nested `..draft` replay, invalid-parent and file rejections before mutation, and Windows drive and UNC rules. Review the exact implementation range under the stable-parent contract.
 
-## Phase 3. Markdown PDF remote assets
+## Phase 3. Application test cost and coverage
+
+Improve the managed Application suite’s runtime and the value of its assertions. Start with the measured Codex benchmark costs and the video tests near the cutoff. Keep the existing 360-second limit. [Application timing and coverage evidence](../researches/research-2026-11-22-code-quality-review.md#application-test-cost-and-coverage)
+
+- [ ] Capture baseline suite and per-file timings. Use streamed case output when a timeout prevents report generation, and run any affected fixture independently to distinguish suite budget pressure from a fixture failure.
+- [ ] Reduce measured fixture costs by reusing setup or replacing incidental waits with observed events where they preserve the same behavior. Keep representative checks for real deadlines, signals, and process cleanup.
+- [ ] Audit the affected tests for tautological assertions and duplicate coverage. Use independent expected outcomes and consolidate duplicate cases only when a retained test covers the same behavior at the same boundary.
+- [ ] Compare focused timings and coverage before and after. Run `bun run test:integration:app` three times sequentially under the existing policy. Require zero failures, errors, or skips, valid reports, and verified cleanup. Record the slowest run and its headroom.
+
+## Phase 4. Markdown PDF remote assets
 
 - [ ] Establish whether supported WeasyPrint versions can enforce the existing remote-asset opt-in at asset load time. Record the evidence and any compatibility decision before implementation.
 - [ ] Integrate the supported enforcement path and verify default blocking, explicit opt-in, and ordinary local assets with controlled renderer fixtures. If support is insufficient, record the blocker and leave the phase open.
 
-## Phase 4. Codex cancellation coverage
+## Phase 5. Codex cancellation coverage
 
 - [ ] Wait for `config/read` before cancelling and track every fixture PID across invocations.
 - [ ] Run the discovery transport tests and verify termination of each launched fixture process.
 
-## Phase 5. Inline prompt lifecycle
+## Phase 6. Inline prompt lifecycle
 
 - [ ] Share terminal setup, cancellation, and teardown across path and text prompts. Keep completion behavior local and use `Set` for path suggestions in their existing order.
 - [ ] Run the prompt tests for completion, cancellation, and terminal restoration.
 
-## Phase 6. Image framing modules
+## Phase 7. Image framing modules
 
 - [ ] Separate the PNG, WebP, and JPEG streaming parsers behind the existing factory.
 - [ ] Run framing and publication tests for chunk boundaries, output bytes, and sink backpressure.
 
-## Phase 7. Markdown PDF mock registrations
+## Phase 8. Markdown PDF mock registrations
 
 - [ ] Split the session, authoring, and rendering mock registrations and counters by service behind the existing harness entry point.
 - [ ] Run the interactive Markdown PDF tests that consume those registrations and verify the same observed calls and state transitions.
 
-## Phase 8. Test-runner launch preflight
+## Phase 9. Test-runner launch preflight
 
 - [ ] Extract launch validation behind the existing process runner entry point and preserve the distinction between launch rejection and spawn failure.
 - [ ] Run the process-runner tests for launch errors, output draining, and group shutdown.
 
-## Phase 9. CRC-32 built-in
+## Phase 10. CRC-32 built-in
 
 - [ ] Replace the PNG and three fixture-generator checksum implementations with `node:zlib.crc32`.
 - [ ] Compare PNG checksum results and generated fixture bytes, and run the affected image-framing and fixture tests.
 
-## Phase 10. Docs Validation
+## Phase 11. Docs Validation
 
 - [ ] Validate the affected research, plan, and unified job record for working links, headings, Mermaid rendering, repository-relative references, and public-safe wording.
 - [ ] Reconcile phase checklists and document statuses with the recorded implementation and review evidence.

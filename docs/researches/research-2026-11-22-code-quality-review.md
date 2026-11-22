@@ -8,13 +8,14 @@ agent: codex
 
 ## Scope
 
-This review covers `src/`, `test/`, and `scripts/` at `bfb3e23c`. It records behavior and test gaps, module boundaries that could be easier to maintain, and places where Node or JavaScript built-ins could simplify the code. The security findings are based on source inspection.
+This review covers behavior, test coverage, module boundaries, and opportunities to simplify code with Node.js or JavaScript built-ins across `src/`, `test/`, and `scripts/`. The security findings are based on source inspection.
 
 ## Findings
 
 | Finding | Evidence and direction | Code |
 | --- | --- | --- |
-| CSV path containment · P2 | Replay checks path strings and misses symlinked parents. Validate the actual parents of both endpoints against the canonical working directory. Path-based preflight requires parents to stay stable through the rename. Decide whether concurrent parent replacement is in scope and, if so, require race-resistant containment during the move. Share a segment-aware lexical check that accepts names such as `..draft`, rejects cross-volume paths, and preserves each caller’s rule for accepting the root itself. | [CSV replay](../../src/cli/rename-plan-csv.ts#L67), [file I/O](../../src/cli/file-io.ts#L24) |
+| CSV path containment · P2 | Replay checked path strings and missed symlinked parents. The settled approach validates both endpoint parents against the canonical working directory and uses a shared segment-aware lexical check under the stable-parent contract. | [CSV replay](../../src/cli/rename-plan-csv.ts#L67), [file I/O](../../src/cli/file-io.ts#L24) |
+| Application test cost and coverage | Repeated 360-second timeouts leave the managed suite without dependable headroom. Profile the costly fixtures and audit their assertions for tautologies and duplicate coverage. | [Timing and coverage evidence](#application-test-cost-and-coverage), [suite limit](../../scripts/testing/suites/suite-policy.ts#L47) |
 | Markdown PDF remote assets · P2 | The preflight misses stylesheet contents reached through local HTML stylesheet links. Evaluate whether supported WeasyPrint versions can enforce the remote-asset opt-in at the asset-loading boundary. | [Asset preflight](../../src/cli/markdown-pdf/template-assets/remote-policy.ts#L180), [renderer invocation](../../src/cli/markdown-pdf/render.ts#L217) |
 | Markdown fence parsing | The title and code scanners can close a fence on a shorter marker. Heading and table counts also include matching lines inside fences. Apply the settled behavior below. | [Title scanner](../../src/cli/markdown-pdf/profile/signals.ts#L180), [code scanner](../../src/cli/markdown-pdf/profile/signals.ts#L263), [signal collection](../../src/cli/markdown-pdf/profile/signals.ts#L348) |
 | Codex cancellation coverage | A fixed delay can abort before the child starts, and the fixture records only the last PID. Wait for `config/read` before aborting and verify that every launched child exits. | [Discovery transport tests](../../test/codex-info/transport.app.test.ts#L313) |
@@ -24,28 +25,34 @@ This review covers `src/`, `test/`, and `scripts/` at `bfb3e23c`. It records beh
 | Test-runner structure | Launch preflight shares a module with output draining and process-group shutdown. Extract preflight while preserving the distinction between a rejected launch and a spawn failure. | [Process runner](../../scripts/testing/execution/process.ts#L187) |
 | CRC-32 built-in | PNG framing and three fixture generators calculate CRC-32 manually. Sample checksums matched `node:zlib.crc32`. Compare generated fixture bytes before replacing the custom implementations. | [PNG profile chunks](../../src/cli/video-frames/profile-chunks.ts#L38), [DOCX fixtures](../../scripts/generate-docx-fixtures.mjs#L69), [data-extract fixtures](../../scripts/generate-data-extract-fixtures.mjs#L164), [data-query fixtures](../../scripts/generate-data-query-fixtures.mjs#L190) |
 
+## Application test cost and coverage
+
+Codex benchmark fixtures contributed the most observed case time, especially the benchmark runner and turn recovery tests. A video failure near the suite cutoff warrants separate investigation because the deadline may interrupt a healthy fixture. [Earlier timeout evidence](../plans/jobs/2026-11-22-codex-benchmark-branch-review.md#L16), [benchmark runner tests](../../test/codex-benchmark/benchmark-runner.app.test.ts), [turn recovery tests](../../test/codex-benchmark/turn-recovery.app.test.ts)
+
+Start with repeated fixture setup and incidental waits in the measured files. Prefer observed events when they preserve the behavior under test, and retain representative checks of real deadlines, signals, and shutdown. For each suspect assertion, identify a regression that should make it fail. Use independent expected outcomes and consolidate comparisons that cover the same behavior at the same boundary. Generated passing cases can still serve as inputs to runner tests whose enclosing assertions verify selection or reporter behavior. [Earlier timing analysis](research-2026-10-17-application-test-costs-and-timeout-budgeting.md#reassessment-criteria), [reporter fixture](../../test/test-runner/presentation.app.test.ts#L327)
+
 ## Settled Decisions
 
 ### Fenced code and document structure
 
-#### Current and proposed signal flow
+#### Original and shared signal flow
 
 ```mermaid
 flowchart LR
-    subgraph current["Current signal collection"]
+    subgraph current["Original signal collection"]
         currentBody["Markdown body"] --> titleScan["Title scanner tracks fences"]
         currentBody --> structureCounts["Heading and table counters scan all lines"]
         currentBody --> codeScan["Code scanner tracks fences independently"]
     end
 
-    subgraph proposed["Proposed signal collection"]
+    subgraph proposed["Shared signal collection"]
         proposedBody["Markdown body"] --> fenceScan["Shared fence scanner"]
         fenceScan -->|"Lines outside matched fences"| structureSignals["Title, heading, and table signals"]
         fenceScan -->|"Matched code fence openers"| codeSignals["Code-language and unlabeled-fence signals"]
     end
 ```
 
-A checked example with one real heading and a fenced shell snippet containing a `#` comment and a pipe currently produces two headings and one table row. The expected result is one heading, zero table rows, and `sh` as the code language. This keeps code examples from inflating layout suggestions and project report metrics. [Layout signals](../../src/cli/markdown-pdf/template-codex/recipe-signals.ts#L104), [project report](../../src/cli/markdown-pdf/project-codex/report.ts#L109)
+Under the original scanners, one real heading and a fenced shell snippet containing a `#` comment and a pipe could produce two headings and one table row. The shared scanner should yield one heading, zero table rows, and `sh` as the code language. This keeps code examples from inflating layout suggestions and project report metrics. [Layout signals](../../src/cli/markdown-pdf/template-codex/recipe-signals.ts#L104), [project report](../../src/cli/markdown-pdf/project-codex/report.ts#L109)
 
 Use the shared scanner in both document-level signal collection and direct PDF title detection. Keep the existing heading and table heuristics on lines outside fences. Preserve the signal schema, count limits, and privacy checks. [Document signals](../../src/cli/markdown-pdf/profile/signals.ts#L348), [direct PDF title handling](../../src/cli/actions/markdown/to-pdf-service.ts#L249)
 
@@ -66,11 +73,9 @@ Use the renderer’s Pandoc Markdown input mode as the reference for top-level f
 - In the template signal suite, add a case with a narrow real table and a fenced table lookalike wide enough to trigger a `strong` signal if counted. With no explicit layout preset, assert that the real table yields a `weak` signal and that the `wide-table` preset is not inferred. [Template signal tests](../../test/markdown-pdf/actions/template-codex/signal-collection.app.test.ts#L195), [table risk thresholds](../../src/cli/markdown-pdf/profile/layout-policy.ts#L23)
 - Run the two updated suites with their existing ordinary-content cases to verify both downstream paths.
 
-Phase 1 implemented these rules in the signal layer using top-level block-boundary heuristics. The verification results and exact reviewed range are recorded in the [Phase 1 implementation record](../plans/jobs/2026-11-22-code-quality-review.md#phase-1-markdown-fenced-code-signals).
-
 ### CSV replay containment
 
-Phase 2 uses stable parents as its filesystem boundary. Replay resolves cwd once and preflights both endpoint parents and the file types for all planned moves before staging. The shared lexical check accepts names such as `..draft` and preserves each caller’s rule for root equality. The verification and approved code range are in the [Phase 2 implementation record](../plans/jobs/2026-11-22-code-quality-review.md#phase-2-csv-path-containment).
+Stable parents are the filesystem assumption for CSV replay. Preflight checks both endpoint parents against the canonical working directory and validates file types for all planned moves before staging. Segment-aware containment accepts names such as `..draft` and preserves each caller’s rule for root equality.
 
 ## Related Plans
 
