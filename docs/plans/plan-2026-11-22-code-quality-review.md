@@ -66,8 +66,10 @@ Improve the managed Application suite’s runtime and the value of its assertion
 
 ## Phase 5. Codex cancellation coverage
 
-- [ ] Wait for `config/read` before cancelling and track every fixture PID across invocations.
-- [ ] Run the discovery transport tests and verify termination of each launched fixture process.
+[Phase 5 implementation record](jobs/2026-11-22-code-quality-review.md#phase-5-codex-cancellation-coverage)
+
+- [x] Wait for `config/read` before cancelling and track every fixture PID across invocations.
+- [x] Run the discovery transport tests and verify termination of each launched fixture process.
 
 ## Phase 6. Inline prompt lifecycle
 

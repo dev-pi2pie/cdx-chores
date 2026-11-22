@@ -76,3 +76,14 @@ WeasyPrint’s `URLFetcher.allowed_protocols` filters schemes at load time. Vers
 | Opt-in feedback | All three versions emitted one stderr info line with color on a color-enabled terminal and plain text when color was disabled or stderr was redirected. |
 | Automated verification | 801 focused Doctor and Markdown PDF tests and 2,171 managed unit tests passed. Build, type check, lint, changed-code formatting, and diff checks passed. |
 | Exact code review | Maintainability and test reviewers approved `0154c81b..3f686692` with no actionable findings. |
+
+## Phase 5. Codex cancellation coverage
+
+Implementation started from `2725722b`. The discovery transport tests now cancel after observing the pending request and check that every fixture process exits. [Phase 5 checklist](../plan-2026-11-22-code-quality-review.md#phase-5-codex-cancellation-coverage)
+
+| Checkpoint | Evidence |
+| --- | --- |
+| `e9b6ce22` | Wait for `config/read` or the second `model/list` request before aborting. Append one PID per launch, require both launches in the repeated-invocation case, and verify every exit with `ESRCH`. |
+| `0a1eeeda` | When a child is still running, preserve the failure and request bounded fixture-scoped shutdown. Retain diagnostics when exit or launch count is unverified. |
+| Verification | All 40 discovery transport cases passed. Five lifecycle cases passed five repetitions each. An injected scenario failure confirmed the fallback stopped a pending child and preserved both the scenario and exit failures. TypeScript, lint, formatting, and diff checks passed. |
+| Exact range review | The test reviewer approved `2725722b..0a1eeeda` after the teardown correction. |
