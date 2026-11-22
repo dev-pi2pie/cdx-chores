@@ -1,26 +1,45 @@
 import { describe, expect, test } from "bun:test";
 import { chmod, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 
 import { discoverCodexInfo } from "../../src/adapters/codex/discovery";
 import { resolveDiscoveryExecutable } from "../../src/adapters/codex/discovery/executable";
 import { withTempFixtureDir } from "../helpers/cli-test-utils";
 
+function expectFixtureProcessExited(pid: number): void {
+  if (!Number.isSafeInteger(pid) || pid <= 0) {
+    throw new Error(`Invalid fixture PID: ${pid}.`);
+  }
+  try {
+    process.kill(pid, 0);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ESRCH") return;
+    throw error;
+  }
+  throw new Error(`Fixture process ${pid} is still running.`);
+}
+
 async function withServer(
   behavior: string,
   run: (env: NodeJS.ProcessEnv, cwd: string, log: string) => Promise<void>,
-  userAgent: string | null = "cdx_chores/0.153.4 (test)",
+  {
+    userAgent = "cdx_chores/0.153.4 (test)",
+    expectedLaunches = 1,
+  }: { userAgent?: string | null; expectedLaunches?: number } = {},
 ): Promise<void> {
   await withTempFixtureDir("codex-info-transport", async (cwd) => {
     const executable = join(cwd, "server.cjs");
     const log = join(cwd, "requests.jsonl");
+    const pidLog = log + ".pids";
+    await Promise.all([writeFile(log, ""), writeFile(pidLog, "")]);
     await writeFile(
       executable,
       String.raw`#!/usr/bin/env node
 const fs = require("node:fs");
 const readline = require("node:readline");
 const log = process.env.FIXTURE_LOG;
-fs.writeFileSync(log + ".pid", String(process.pid));
+fs.appendFileSync(log + ".pids", process.pid + "\n");
 const send = (id, result) => process.stdout.write(JSON.stringify({ id, result }) + "\n");
 let page = 0;
 ${behavior.includes("resistTermination") ? 'process.on("SIGTERM", () => {});' : ""}
@@ -44,10 +63,66 @@ setInterval(() => {}, 1000);
     };
     delete env.CODEX_HOME;
     delete env.CODEX_INTERNAL_ORIGINATOR_OVERRIDE;
-    await run(env, cwd, log);
-    const pid = Number(await readFile(log + ".pid", "utf8").catch(() => "0"));
-    if (pid) expect(() => process.kill(pid, 0)).toThrow();
+    const errors: unknown[] = [];
+    try {
+      await run(env, cwd, log);
+    } catch (error) {
+      errors.push(error);
+    }
+
+    try {
+      const pids = (await readFile(pidLog, "utf8")).trim().split("\n").filter(Boolean).map(Number);
+      for (const pid of pids) {
+        try {
+          expectFixtureProcessExited(pid);
+        } catch (error) {
+          errors.push(error);
+        }
+      }
+      expect(pids).toHaveLength(expectedLaunches);
+    } catch (error) {
+      errors.push(error);
+    }
+    if (errors.length > 1) throw new AggregateError(errors, "Discovery fixture failed.");
+    if (errors.length === 1) throw errors[0];
   });
+}
+
+async function waitForFixtureRequest(log: string, method: string, cursor?: string): Promise<void> {
+  const deadline = performance.now() + 3_000;
+  while (performance.now() < deadline) {
+    const lines = (await readFile(log, "utf8")).split("\n").slice(0, -1);
+    if (
+      lines.some((line) => {
+        const request = JSON.parse(line);
+        return request.method === method && request.params?.cursor === cursor;
+      })
+    ) {
+      return;
+    }
+    await delay(10);
+  }
+  throw new Error(`Fixture did not receive ${method}${cursor ? ` with cursor ${cursor}` : ""}.`);
+}
+
+async function expectDiscoveryCancellation(
+  options: Pick<Parameters<typeof discoverCodexInfo>[0], "cwd" | "env" | "view">,
+  log: string,
+  method: string,
+  cursor?: string,
+): Promise<void> {
+  const controller = new AbortController();
+  const outcome = discoverCodexInfo({ ...options, signal: controller.signal }).then(
+    () => null,
+    (error: unknown) => error,
+  );
+  try {
+    await waitForFixtureRequest(log, method, cursor);
+  } finally {
+    controller.abort();
+    await outcome;
+  }
+  expect(await outcome).toMatchObject({ message: "Codex discovery was cancelled." });
 }
 
 describe("Codex information discovery transport", () => {
@@ -108,7 +183,7 @@ describe("Codex information discovery transport", () => {
           expect(result.context.codexVersion).toBe(version);
           expect(result.config.model_provider).toBe("custom");
         },
-        userAgent,
+        { userAgent },
       );
     },
   );
@@ -133,22 +208,26 @@ describe("Codex information discovery transport", () => {
           .map((line) => JSON.parse(line).method);
         expect(methods).toEqual(["initialize"]);
       },
-      userAgent,
+      { userAgent },
     );
   });
 
   test("snapshots the environment and does not retain homes across invocations", async () => {
-    await withServer("", async (env, cwd) => {
-      env.CODEX_HOME = "/synthetic/first";
-      const firstPromise = discoverCodexInfo({ cwd, env, view: "providers" });
-      env.CODEX_HOME = "/synthetic/second";
-      const first = await firstPromise;
-      const second = await discoverCodexInfo({ cwd, env, view: "providers" });
-      expect(first.context.codexHome).toBe("/synthetic/first");
-      expect(second.context.codexHome).toBe("/synthetic/second");
-      expect(first.context.codexHomeSource).toBe("environment");
-      expect(second.context.codexHomeSource).toBe("environment");
-    });
+    await withServer(
+      "",
+      async (env, cwd) => {
+        env.CODEX_HOME = "/synthetic/first";
+        const firstPromise = discoverCodexInfo({ cwd, env, view: "providers" });
+        env.CODEX_HOME = "/synthetic/second";
+        const first = await firstPromise;
+        const second = await discoverCodexInfo({ cwd, env, view: "providers" });
+        expect(first.context.codexHome).toBe("/synthetic/first");
+        expect(second.context.codexHome).toBe("/synthetic/second");
+        expect(first.context.codexHomeSource).toBe("environment");
+        expect(second.context.codexHomeSource).toBe("environment");
+      },
+      { expectedLaunches: 2 },
+    );
   });
 
   test.each(["", "relative-home", "   "])(
@@ -310,17 +389,9 @@ describe("Codex information discovery transport", () => {
     );
   });
 
-  test("cancellation terminates the owned child", async () => {
-    await withServer('if (method === "config/read") return;', async (env, cwd) => {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 150);
-      try {
-        await expect(
-          discoverCodexInfo({ cwd, env, view: "providers", signal: controller.signal }),
-        ).rejects.toThrow("cancelled");
-      } finally {
-        clearTimeout(timer);
-      }
+  test("cancellation at a pending config read terminates the owned child", async () => {
+    await withServer('if (method === "config/read") return;', async (env, cwd, log) => {
+      await expectDiscoveryCancellation({ cwd, env, view: "providers" }, log, "config/read");
     });
   });
 
@@ -342,35 +413,12 @@ describe("Codex information discovery transport", () => {
     await withServer(
       'if (method === "model/list" && params.cursor) return;',
       async (env, cwd, log) => {
-        const controller = new AbortController();
-        const discovery = discoverCodexInfo({
-          cwd,
-          env,
-          view: "models",
-          signal: controller.signal,
-        });
-        // Observe the actual second request before cancellation; a fixed delay
-        // could cancel initialization instead on a loaded test machine.
-        const outcome = discovery.then(
-          (result) => ({ result, error: null }),
-          (error: Error) => ({ result: null, error }),
+        await expectDiscoveryCancellation(
+          { cwd, env, view: "models" },
+          log,
+          "model/list",
+          "page-two",
         );
-        try {
-          const until = Date.now() + 3000;
-          let requests = "";
-          while (!requests.includes('"cursor":"page-two"') && Date.now() < until) {
-            requests = await readFile(log, "utf8").catch(() => "");
-            if (!requests.includes('"cursor":"page-two"')) {
-              await new Promise((resolve) => setTimeout(resolve, 10));
-            }
-          }
-          expect(requests).toContain('"cursor":"page-two"');
-        } finally {
-          controller.abort();
-          const settled = await outcome;
-          expect(settled.result).toBeNull();
-          expect(settled.error?.message).toContain("cancelled");
-        }
       },
     );
   });
