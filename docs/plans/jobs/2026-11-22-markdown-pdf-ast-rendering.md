@@ -131,7 +131,7 @@ Independent canary review of `0dd77cf5..f2041cb6` found two offline scanner regr
 
 The retest passed 81 focused source cases, the focused authoring app case, and all 2,266 managed unit cases. The 51-case matrix ran on both real Pandoc versions. The 15 new cases matched both readers on code classes and headings, with a visible H1 and pipe table in every case. Profile, Template, and Project returned byte-identical signals across all four actual Pandoc-present and Pandoc-absent runs. The full app, HTML/PDF, and timing results above cover `02106060..f2041cb6`. Post-fix retests cover offline scanning and authoring.
 
-**Independent canary re-review** — Pending from `0dd77cf5`.
+**Independent canary re-review** — Clear for `0dd77cf5..1e040ace`, including fix `af2a673a`. The reviewer checked the full committed diff and range whitespace, inspected the post-review changes and all 15 regression fixtures, and independently reran all 81 focused source tests successfully. No further actionable findings. [Phase 4 plan](../plan-2026-11-22-markdown-pdf-ast-rendering.md#phase-4--integrated-renderer-validation)
 
 ## Phase 5 — Docs Validation
 

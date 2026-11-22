@@ -75,6 +75,8 @@ Independent review of `b5c195ad..d70f4188` found two boundary defects. Re-review
 
 Independent review cleared `02106060..f2041cb6`. The [Phase 4 job record](jobs/2026-11-22-markdown-pdf-ast-rendering.md#phase-4--integrated-renderer-validation) records the checks, timing, and review outcome.
 
+Independent canary re-review cleared `0dd77cf5..1e040ace`. The [canary follow-up](jobs/2026-11-22-markdown-pdf-ast-rendering.md#canary-review-follow-up) records the fixes and review checks.
+
 ## Phase 5 — Docs Validation
 
 - [ ] Check the [Markdown PDF usage guide](../guides/markdown-pdf-usage.md), [interactive guide](../guides/markdown-pdf-interactive-usage.md), and related authoring guidance against the validated behavior. Update guidance where the user-visible contract changes.
