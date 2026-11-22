@@ -121,27 +121,8 @@ test("skips a missing tier per model and continues supported combinations", asyn
   });
 });
 
-test.each([
-  {
-    message: "Service tier priority is not supported for this account.",
-    status: "unavailable",
-    exitCode: 0,
-  },
-  {
-    message: "This account does not support the priority service tier.",
-    status: "unavailable",
-    exitCode: 0,
-  },
-  {
-    message: "This account is not eligible for the priority service tier.",
-    status: "unavailable",
-    exitCode: 0,
-  },
-  {
-    message: "Service tier 'priority' is not eligible for this account.",
-    status: "unavailable",
-    exitCode: 0,
-  },
+// tier-rejection.unit.test.ts covers the provider wording variants.
+test.concurrent.each([
   {
     message: 'Unsupported parameter: "service_tier" is not supported with this model.',
     status: "unavailable",
@@ -149,26 +130,6 @@ test.each([
   },
   {
     message: 'Unsupported parameter: "image_url" is not supported with this service tier.',
-    status: "failed",
-    exitCode: 1,
-  },
-  {
-    message: "Invalid value for 'service_tier': priority.",
-    status: "unavailable",
-    exitCode: 0,
-  },
-  {
-    message: "Image input is not eligible for this model at the priority service tier.",
-    status: "failed",
-    exitCode: 1,
-  },
-  {
-    message: "This model does not support image input at the priority service tier.",
-    status: "failed",
-    exitCode: 1,
-  },
-  {
-    message: "Image input is not supported by this model at the priority service tier.",
     status: "failed",
     exitCode: 1,
   },
@@ -383,7 +344,7 @@ test.skipIf(process.platform === "win32")(
   },
 );
 
-test.each(["thread/start", "turn/start"] as const)(
+test.concurrent.each(["thread/start", "turn/start"] as const)(
   "CLI records a sent tier only on turn requests when %s is rejected",
   async (method) => {
     await withRunnerFixture({ rejectStart: method }, async ({ options, trace }) => {
@@ -453,7 +414,7 @@ test("an ambiguous RPC error about the tier still fails after earlier measuremen
   );
 });
 
-test.each([1, 2])(
+test.concurrent.each([1, 2])(
   "CLI reports transport loss during readback and keeps completed results with %i measured trials scheduled",
   async (runs) => {
     await withRunnerFixture({ exitDuringReadbackThread: 2 }, async ({ options, trace }) => {
@@ -746,7 +707,7 @@ test.skipIf(process.platform === "win32")(
   },
 );
 
-test.each(["model/list", "config/read"] as const)(
+test.concurrent.each(["model/list", "config/read"] as const)(
   "CLI recovers the measured Fast trial after a transient %s failure",
   async (method) => {
     await withRunnerFixture({ rejectFirstLookup: method }, async ({ options, trace }) => {
@@ -863,7 +824,7 @@ test.skipIf(process.platform === "win32")(
   15_000,
 );
 
-test.each(["confirmed", "unconfirmed"] as const)(
+test.concurrent.each(["confirmed", "unconfirmed"] as const)(
   "CLI fails a timed-out trial with %s interruption and recovers partial usage",
   async (interrupt) => {
     await withRunnerFixture(
@@ -915,7 +876,7 @@ test.each(["confirmed", "unconfirmed"] as const)(
   15_000,
 );
 
-test.each([null, "fixture interrupted the turn"])(
+test.concurrent.each([null, "fixture interrupted the turn"])(
   "CLI fails a server-interrupted trial after a completed measurement (reason: %s)",
   async (message) => {
     await withRunnerFixture(
@@ -1049,7 +1010,8 @@ for (const json of [false, true]) {
   );
 }
 
-test.skipIf(process.platform === "win32").each([
+// Every signal pair targets its own CLI process group.
+test.skipIf(process.platform === "win32").concurrent.each([
   { first: "SIGINT", second: "SIGTERM", exitCode: 130 },
   { first: "SIGTERM", second: "SIGINT", exitCode: 143 },
   { first: "SIGTERM", second: "SIGHUP", exitCode: 143 },

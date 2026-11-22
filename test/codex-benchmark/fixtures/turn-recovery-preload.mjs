@@ -82,6 +82,21 @@ if (gate === "reply-conflict") {
   };
 }
 
+if (gate === "late-reply") {
+  const reconcileReply = TurnStartEvidence.prototype.reconcileReply;
+  TurnStartEvidence.prototype.reconcileReply = function (signal) {
+    const reconciliation = reconcileReply.call(this, signal);
+    if (this.turnId === "turn-thread-1") {
+      traceLifecycle("fixture/reconcile-start-reply", {
+        threadId: "thread-1",
+        turnId: this.turnId,
+      });
+      writeFileSync(join(home, "caller-reconciling-reply"), "");
+    }
+    return reconciliation;
+  };
+}
+
 if (["deadline", "readback-conflict", "late-reply", "start-deadline"].includes(gate)) {
   const read = readSavedTurn;
   mock.module("../../../src/adapters/codex/benchmark/rollout.ts", () => ({
@@ -107,7 +122,6 @@ if (["deadline", "readback-conflict", "late-reply", "start-deadline"].includes(g
       }
       if (gate === "late-reply") {
         traceLifecycle("fixture/rollout-finished", { turnId: options.turnId });
-        writeFileSync(join(home, "caller-rollout-finished"), "");
       }
       return result;
     },

@@ -85,7 +85,7 @@ async function runRecovery(
         if (cancel) {
           const deadline = performance.now() + 2_000;
           const receipt =
-            gate === "late-reply" ? "caller-rollout-finished" : "caller-turn-observed";
+            gate === "late-reply" ? "caller-reconciling-reply" : "caller-turn-observed";
           while (!existsSync(join(home, receipt))) {
             if (performance.now() >= deadline)
               throw new Error(`Missing caller receipt ${receipt}.`);
@@ -125,7 +125,7 @@ async function runRecovery(
   );
 }
 
-test.each([
+test.concurrent.each([
   { interrupt: "confirmed", withholdInterruptReply: false },
   { interrupt: "confirmed", withholdInterruptReply: true },
   { interrupt: "unconfirmed", withholdInterruptReply: false },
@@ -233,7 +233,7 @@ describe.each(["benchmark", "live check"] as const)("%s turn recovery", (caller)
     expect(turns.slice(0, 2)).toEqual(["default", "priority"]);
     expect(interrupts).toEqual([]);
   });
-  test.each(["thread", "turn"] as const)(
+  test.concurrent.each(["thread", "turn"] as const)(
     "ignores an unrelated %s terminal at start timeout",
     async (mismatchedCompletion) => {
       const { first, turns, archives, interrupts, events } = await runRecovery(
@@ -259,7 +259,7 @@ describe.each(["benchmark", "live check"] as const)("%s turn recovery", (caller)
     },
   );
 
-  test.each(["withheld", "late"] as const)(
+  test.concurrent.each(["withheld", "late"] as const)(
     "stops after a no-ID timeout with the announcement %s",
     async (announcement) => {
       const late = announcement === "late";
@@ -335,8 +335,6 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
     { label: "structured refusal", error: tooLarge, continues: true },
     { label: "structured refusal with a late start", error: tooLarge, late: true },
     { label: "same code and message", error: { code: tooLarge.code, message: tooLarge.message } },
-    { label: "wrong code", error: { ...tooLarge, code: -32603 } },
-    { label: "unstructured data", error: { ...tooLarge, data: "input_too_large" } },
     { label: "typed refusal with a start", error: tooLarge, evidence: "started", known: true },
     { label: "typed refusal with a terminal only", error: tooLarge, evidence: "terminal" },
     {
@@ -418,7 +416,7 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
     }
   });
 
-  test.each([null, {}, { thread: { id: 123 } }, { thread: { id: " " } }])(
+  test.concurrent.each([null, { thread: { id: " " } }])(
     "rejects malformed thread/start result %j before dispatch",
     async (result) => {
       const { first, turns, events, archives, exit } = await runRecovery(caller, {
@@ -502,7 +500,7 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
     expect(traceMethod(events, "thread/start")).toHaveLength(1);
   });
 
-  test.each([
+  test.concurrent.each([
     "after-reply",
     "during-readback",
     "reply-during-readback",
@@ -515,7 +513,7 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
         "after-reply": { name: "reply-conflict", trace: "fixture/turn-start-reply" },
         "during-readback": { name: "readback-conflict", trace: "fixture/rollout-read" },
         "reply-during-readback": { name: "readback-conflict", trace: "fixture/rollout-read" },
-        "reply-after-readback": { name: "late-reply", trace: "fixture/rollout-finished" },
+        "reply-after-readback": { name: "late-reply", trace: "fixture/reconcile-start-reply" },
         "during-retention": { name: undefined, trace: "thread/archive" },
       } as const;
       const retained = conflictingStart === "during-retention";
@@ -606,7 +604,7 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
     expect(turns.slice(0, 2)).toEqual(["default", "priority"]);
   });
 
-  test.each(["matching", "rejected", "withheld"] as const)(
+  test.concurrent.each(["matching", "rejected", "withheld"] as const)(
     "reconciles a %s start reply before retention and successor dispatch",
     async (reply) => {
       const withheld = reply === "withheld";
@@ -627,6 +625,14 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
       );
       expect(readback).toBeGreaterThanOrEqual(0);
       expect(replied).toBeGreaterThan(readback);
+      if (!withheld) {
+        const reconciling = events.findIndex(
+          ({ method, params }) =>
+            method === "fixture/reconcile-start-reply" && params?.turnId === "turn-thread-1",
+        );
+        expect(reconciling).toBeGreaterThan(readback);
+        expect(replied).toBeGreaterThan(reconciling);
+      }
       if (reply === "rejected") {
         expect(exit).toBe(1);
         expect(first.error).toContain("fixture rejected the late reply");
@@ -680,7 +686,7 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
   });
 });
 
-test.each(["start", "completion"] as const)(
+test.concurrent.each(["start", "completion"] as const)(
   "live check stops Standard at the %s deadline",
   async (deadline) => {
     const { first, turns, events, archives, interrupts, exit } = await runRecovery("live check", {

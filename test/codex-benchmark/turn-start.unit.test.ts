@@ -1,5 +1,10 @@
 import { expect, test } from "bun:test";
-import { CodexRequestTimeoutError } from "../../src/adapters/codex/app-server";
+import {
+  CodexAppServerError,
+  CodexRequestTimeoutError,
+  isTurnInputTooLarge,
+} from "../../src/adapters/codex/app-server";
+import { claimThreadId } from "../../src/adapters/codex/app-server-identity";
 import { TrialObserver } from "../../src/adapters/codex/benchmark/turn";
 
 test.each([
@@ -39,3 +44,30 @@ test.each([
     }
   },
 );
+
+const refusal = {
+  code: -32602,
+  message: "Input exceeds the maximum length of 1048576 characters.",
+  data: { input_error_code: "input_too_large" },
+};
+
+test.each([
+  ["structured refusal", refusal, true],
+  ["same code and message", { code: refusal.code, message: refusal.message }, false],
+  ["wrong code", { ...refusal, code: -32603 }, false],
+  ["unstructured data", { ...refusal, data: "input_too_large" }, false],
+] as const)("classifies turn/start input refusal with %s", (_label, error, refused) => {
+  expect(isTurnInputTooLarge(new CodexAppServerError("turn/start", error))).toBe(refused);
+});
+
+test.each([
+  ["missing", undefined],
+  ["numeric", 123],
+  ["whitespace-only", " "],
+] as const)("rejects a %s thread ID without claiming it", (_label, id) => {
+  const owned = new Set(["thread-1"]);
+  expect(() => claimThreadId(id, owned)).toThrow(
+    "Codex app-server did not return a new thread ID.",
+  );
+  expect([...owned]).toEqual(["thread-1"]);
+});

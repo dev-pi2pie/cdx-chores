@@ -370,8 +370,7 @@ async function run() {
           }
           if (delayedReply) {
             if (scenario.conflictingStart === "reply-after-readback") {
-              await waitForReceipt("caller-rollout-finished");
-              await delay(100);
+              await waitForReceipt("caller-reconciling-reply");
             } else {
               await waitForReceipt("caller-rollout-read");
             }
