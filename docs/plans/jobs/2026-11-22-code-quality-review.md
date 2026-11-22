@@ -97,3 +97,13 @@ Implementation started from `25866e74`. Path and text prompts share raw-session 
 | `ede53e55` | Shared session restores terminal mode, detaches listeners, and clears prompt rows on settlement. Cancellation attempts a final draft notification and preserves the cancellation error if the callback throws. Path Tab cycling deduplicates with `Set` in first-seen order, and pending completion stays silent after exit. |
 | Verification | 94 prompt, TUI, and renderer tests passed, including Tab order and wraparound, cancellation during a pending lookup, and a throwing draft observer. All 10 Node terminal-input cases passed, including raw and decoded Escape handoff and fragmented arrows. Build, TypeScript, lint, formatting, and diff checks passed. |
 | Exact range review | Maintainability and test reviewers approved `25866e74..ede53e55` with no actionable findings. |
+
+## Phase 7. Image framing modules
+
+Implementation started from `e8f504ce`. PNG, WebP, and JPEG each have a parser module behind the existing `imageFramer` factory. The factory validates profiles and selects a parser. The parsers share header accumulation and the framing error. [Phase 7 checklist](../plan-2026-11-22-code-quality-review.md#phase-7-image-framing-modules)
+
+| Checkpoint | Evidence |
+| --- | --- |
+| `6136d81d` | Extracted the three parsers with the same buffer ownership, profile handling, error behavior, and awaited sink calls. |
+| Verification | 482 before-and-after cases matched output bytes, sink call order, and error results for plain and profiled streams. All 18 deferred `begin`, `write`, and `complete` checks passed. The 30 framing and staging tests and 45 Node publication and export tests passed, including slow publication and byte backpressure. Build, TypeScript, lint, formatting, and diff checks passed. |
+| Exact range review | Maintainability and test reviewers approved `e8f504ce..6136d81d` with no actionable findings. |

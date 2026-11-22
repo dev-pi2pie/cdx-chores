@@ -80,8 +80,10 @@ Improve the managed Application suite’s runtime and the value of its assertion
 
 ## Phase 7. Image framing modules
 
-- [ ] Separate the PNG, WebP, and JPEG streaming parsers behind the existing factory.
-- [ ] Run framing and publication tests for chunk boundaries, output bytes, and sink backpressure.
+[Phase 7 implementation record](jobs/2026-11-22-code-quality-review.md#phase-7-image-framing-modules)
+
+- [x] Separate the PNG, WebP, and JPEG streaming parsers behind the existing factory.
+- [x] Run framing and publication tests for chunk boundaries, output bytes, and sink backpressure.
 
 ## Phase 8. Markdown PDF mock registrations
 
