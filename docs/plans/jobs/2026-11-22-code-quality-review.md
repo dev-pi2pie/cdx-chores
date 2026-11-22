@@ -64,3 +64,15 @@ The WeasyPrint 70.0 capability check used a synthetic transport. HTML-linked and
 | Renderer verification | Source and built CLI runs with WeasyPrint 70.0 blocked synthetic transport by default, fetched once with explicit opt-in, and rendered ordinary local and embedded assets. Renderer-denied loads surfaced a warning. An older renderer rejected default mode and rendered benign local input with opt-in. Version fixtures also covered newer stable releases and unverified capabilities. |
 | Verification at `d7fa1a61` | 2,171 unit tests and 1,730 focused Markdown PDF and Doctor cases passed. Managed Application (2,749 cases) and Pandoc (5 cases) passed with valid reports and verified cleanup. Build, TypeScript, lint, changed-file formatting, and diff checks passed. |
 | Exact range review | Security and test reviewers approved `d900e875..d7fa1a61` after the review corrections. |
+
+### WeasyPrint compatibility follow-up
+
+WeasyPrint’s `URLFetcher.allowed_protocols` filters schemes at load time. Version 69.0 exposes the CLI option. Version 70.0 passes the HTML document’s configured fetcher to CSS supplied through `--stylesheet`, so the same `file,data` restriction covers those stylesheet loads and their imports. [URLFetcher API](https://doc.courtbouillon.org/weasyprint/v70.0/api_reference.html#weasyprint.urls.URLFetcher) · [70.0 stylesheet handling](https://github.com/Kozea/WeasyPrint/blob/v70.0/weasyprint/document.py#L146-L152) · [70.0 release notes](https://doc.courtbouillon.org/weasyprint/v70.0/changelog.html#version-70-0)
+
+| Evidence | Result |
+| --- | --- |
+| WeasyPrint 65.1 and 69.0 | The built CLI reported `limited` in Doctor Summary and Details. JSON reported default readiness false and opt-in readiness true. Default direct and Interactive export stopped before writing a PDF. Explicit opt-in rendered a PDF with an advanced Profile. |
+| WeasyPrint 70.0 | Summary reported `ready`, Details reported `available`, and JSON reported both modes ready. Default direct and Interactive export produced PDFs from local and embedded assets. Supplied CSS made zero synthetic transport requests when restricted and one in the unrestricted control. |
+| Opt-in feedback | All three versions emitted one stderr info line with color on a color-enabled terminal and plain text when color was disabled or stderr was redirected. |
+| Automated verification | 801 focused Doctor and Markdown PDF tests and 2,171 managed unit tests passed. Build, type check, lint, changed-code formatting, and diff checks passed. |
+| Exact code review | Maintainability and test reviewers approved `0154c81b..3f686692` with no actionable findings. |

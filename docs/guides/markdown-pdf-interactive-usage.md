@@ -50,7 +50,7 @@ The root-level form is rejected. If the option is omitted, Interactive mode uses
 
 Choose `md`, then choose `to-pdf` or `pdf-recipes`.
 
-Rendering requires Pandoc 2.0 or newer and WeasyPrint 70.0 or newer with `--allowed-protocols`. Interactive rendering uses the default asset policy. For explicit remote-asset opt-in, use the direct command. Codex-assisted preparation also requires configured Codex support. [Images and assets](markdown-pdf-usage.md#images-and-assets)
+Rendering requires Pandoc 2.0 or newer and WeasyPrint 70.0 or newer with `--allowed-protocols`. Interactive rendering uses the default asset policy. The direct command supports explicit remote-asset opt-in, including on WeasyPrint 65.1 and 69.0. Codex-assisted preparation also requires configured Codex support. [WeasyPrint compatibility](markdown-pdf-usage.md#weasyprint-compatibility)
 
 Check available capabilities with:
 

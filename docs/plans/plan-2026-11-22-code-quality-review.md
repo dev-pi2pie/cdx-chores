@@ -58,11 +58,11 @@ Improve the managed Application suite’s runtime and the value of its assertion
 
 ### Follow-Up. WeasyPrint compatibility and guidance
 
-- [ ] Show `limited` in `doctor --details` when explicit opt-in is available and default export is unavailable. Preserve the existing JSON readiness fields.
-- [ ] Show an informational line on stderr when rendering with `--allow-remote-assets`. Use the CLI’s info color when enabled and plain text otherwise.
-- [ ] Add a compact version table to the Markdown PDF usage guide and link to it from the Interactive guide. Cover the 65.1 minimum for advanced Profile features, explicit opt-in on older renderers, and the 70.0+ protocol allowlist requirement for default and Interactive export.
-- [ ] Verify default and Interactive export, explicit opt-in, and Doctor with WeasyPrint 65.1, 69.0, and 70.0 in temporary `uv` environments. Check the info line with color enabled and disabled.
-- [ ] Review the exact follow-up range and record the results in the existing Phase 4 job entry. Cite WeasyPrint’s URL fetcher API and the 70.0 change that applies the configured fetcher to supplied stylesheets. Omit local setup details.
+- [x] Show `limited` in `doctor --details` when explicit opt-in is available and default export is unavailable. Preserve the existing JSON readiness fields.
+- [x] Show an informational line on stderr when rendering with `--allow-remote-assets`. Use the CLI’s info color when enabled and plain text otherwise.
+- [x] Add a compact version table to the Markdown PDF usage guide and link to it from the Interactive guide. Cover the 65.1 minimum for advanced Profile features, explicit opt-in on older renderers, and the 70.0+ protocol allowlist requirement for default and Interactive export.
+- [x] Verify default and Interactive export, explicit opt-in, and Doctor with WeasyPrint 65.1, 69.0, and 70.0 in temporary `uv` environments. Check the info line with color enabled and disabled.
+- [x] Review the exact follow-up range and record the results in the existing Phase 4 job entry. Cite WeasyPrint’s URL fetcher API and the 70.0 change that applies the configured fetcher to supplied stylesheets. Omit local setup details.
 
 ## Phase 5. Codex cancellation coverage
 

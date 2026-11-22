@@ -31,7 +31,7 @@ For machine-readable checks:
 cdx-chores doctor --json
 ```
 
-Doctor reports default Markdown PDF readiness through `capabilities["md.to-pdf"]` and `markdownPdf.ready`. The JSON field `markdownPdf.requirements.restrictedAssets` describes the renderer check, and `markdownPdf.readyWithRemoteAssets` reports basic readiness with explicit opt-in. Effective Profile capabilities are checked at render time.
+Doctor shows `md.to-pdf` as `limited` in `--details` when explicit opt-in is available and default export is unavailable. In JSON, `capabilities["md.to-pdf"]` and `markdownPdf.ready` report default readiness. `markdownPdf.requirements.restrictedAssets` describes the renderer check, and `markdownPdf.readyWithRemoteAssets` reports basic readiness with explicit opt-in. Effective Profile capabilities are checked at render time. [WeasyPrint compatibility](#weasyprint-compatibility)
 
 ## Current Command Boundary
 
@@ -892,11 +892,23 @@ cdx-chores md to-pdf --input ./docs/report.md
 
 Local images should render in the PDF when WeasyPrint can load the file. Missing local images are allowed to render with WeasyPrint warnings, and the CLI surfaces those warnings before the success line.
 
-WeasyPrint permits only `file:` and `data:` asset URL schemes by default, including loads initiated by stylesheets. Relative assets resolve against their usual base. Preflight reports detected remote references as errors. A load denied by WeasyPrint during rendering can appear as a warning with the affected asset omitted. Opt in explicitly when a trusted document should fetch remote assets:
+WeasyPrint permits only `file:` and `data:` asset URL schemes by default, including loads initiated by stylesheets. Relative assets resolve against their usual base. Preflight reports detected remote references as errors. A load denied by WeasyPrint during rendering can appear as a warning with the affected asset omitted.
+
+### WeasyPrint compatibility
+
+| WeasyPrint | Default direct and Interactive export | Direct export with `--allow-remote-assets` |
+| --- | --- | --- |
+| Below `65.1` | Requires an upgrade | Basic export if the effective Profile needs no advanced renderer capabilities |
+| `65.1` through `69.x` | Requires an upgrade | Available, including advanced page counters and header/footer styling |
+| `70.0` or newer | Available with `--allowed-protocols` support | Available with remote asset loading enabled |
+
+Use explicit opt-in when a trusted document should fetch remote assets:
 
 ```bash
 cdx-chores md to-pdf --input ./report.md --allow-remote-assets
 ```
+
+The command prints `Info: Remote asset loading is enabled for this render.` on stderr.
 
 ## Related Docs
 
