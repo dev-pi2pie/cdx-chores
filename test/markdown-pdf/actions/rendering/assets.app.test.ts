@@ -261,7 +261,7 @@ describe("cli action modules: md to-pdf assets", () => {
       const inputPath = join(fixtureDir, "report.md");
       await writeFile(inputPath, "# Report\n", "utf8");
       const { calls, runner } = createPdfRunner({ html: createRemoteInlineCssHtml() });
-      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      const { runtime, stdout, stderr } = createActionTestRuntime();
 
       await actionMdToPdf(runtime, {
         input: toRepoRelativePath(inputPath),
@@ -273,7 +273,7 @@ describe("cli action modules: md to-pdf assets", () => {
         calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(true);
       expect(stdout.text).toContain("Wrote PDF:");
-      expectNoStderr();
+      expect(stderr.text).toBe("Info: Remote asset loading is enabled for this render.\n");
     });
   });
 
@@ -288,7 +288,7 @@ describe("cli action modules: md to-pdf assets", () => {
         "utf8",
       );
       const { calls, runner } = createPdfRunner({ html: "<html><body></body></html>" });
-      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+      const { runtime, stdout, stderr } = createActionTestRuntime();
 
       await actionMdToPdf(runtime, {
         input: toRepoRelativePath(inputPath),
@@ -301,7 +301,7 @@ describe("cli action modules: md to-pdf assets", () => {
         calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(true);
       expect(stdout.text).toContain("Wrote PDF:");
-      expectNoStderr();
+      expect(stderr.text).toBe("Info: Remote asset loading is enabled for this render.\n");
     });
   });
 
@@ -437,26 +437,39 @@ describe("cli action modules: md to-pdf assets", () => {
     });
   });
 
-  test("allows remote image assets with explicit opt in", async () => {
-    await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
-      const inputPath = join(fixtureDir, "report.md");
-      await writeFile(inputPath, "# Report\n\n![Remote](https://example.com/chart.png)\n", "utf8");
-      const { calls, runner } = createPdfRunner({
-        html: '<html><body><img src="https://example.com/chart.png"></body></html>',
-      });
-      const { runtime, stdout, expectNoStderr } = createActionTestRuntime();
+  test.each([
+    ["TTY with color", true, true, "\u001b[36mInfo:\u001b[39m"],
+    ["TTY without color", false, true, "Info:"],
+    ["redirected stderr", true, false, "Info:"],
+  ] as const)(
+    "allows remote image assets with explicit opt in and %s",
+    async (_label, colorEnabled, isTTY, infoLabel) => {
+      await withTempFixtureDir("md-to-pdf-action", async (fixtureDir) => {
+        const inputPath = join(fixtureDir, "report.md");
+        await writeFile(
+          inputPath,
+          "# Report\n\n![Remote](https://example.com/chart.png)\n",
+          "utf8",
+        );
+        const { calls, runner } = createPdfRunner({
+          html: '<html><body><img src="https://example.com/chart.png"></body></html>',
+        });
+        const { runtime, stdout, stderr } = createActionTestRuntime({ colorEnabled });
+        Object.assign(runtime.stderr, { isTTY });
 
-      await actionMdToPdf(runtime, {
-        input: toRepoRelativePath(inputPath),
-        allowRemoteAssets: true,
-        runner,
-      });
+        await actionMdToPdf(runtime, {
+          input: toRepoRelativePath(inputPath),
+          allowRemoteAssets: true,
+          runner,
+        });
 
-      expect(
-        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
-      ).toBe(true);
-      expect(stdout.text).toContain("Wrote PDF:");
-      expectNoStderr();
-    });
-  });
+        expect(
+          calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
+        ).toBe(true);
+        expect(stdout.text).toContain("Wrote PDF:");
+        expect(stdout.text).not.toContain("Remote asset loading");
+        expect(stderr.text).toBe(`${infoLabel} Remote asset loading is enabled for this render.\n`);
+      });
+    },
+  );
 });

@@ -272,7 +272,7 @@ describe("doctor action dependency integration", () => {
       "below baseline",
       "65.0",
       "installed (65.0)",
-      "md.to-pdf: unsupported",
+      "md.to-pdf: limited (use --allow-remote-assets; default requires WeasyPrint 70.0+)",
       "pageNumbers.start: unsupported, minimum=65.1, diagnostic=MARKDOWN_PDF_RENDERER_CAPABILITY_UNSUPPORTED",
       true,
     ],
@@ -280,7 +280,7 @@ describe("doctor action dependency integration", () => {
       "unverified renderer",
       "custom-build",
       "installed (custom-build)",
-      "md.to-pdf: unverified",
+      "md.to-pdf: limited (use --allow-remote-assets; verify WeasyPrint 70.0+ protocol support for default export)",
       "pageNumbers.start: unverified, minimum=65.1, diagnostic=MARKDOWN_PDF_RENDERER_CAPABILITY_UNVERIFIED",
       true,
     ],
@@ -296,7 +296,7 @@ describe("doctor action dependency integration", () => {
       "exact baseline",
       "65.1",
       "installed (65.1)",
-      "md.to-pdf: unsupported",
+      "md.to-pdf: limited (use --allow-remote-assets; default requires WeasyPrint 70.0+)",
       "pageNumbers.start: satisfied, minimum=65.1",
       false,
     ],
@@ -358,9 +358,10 @@ describe("doctor action dependency integration", () => {
     }
     expect(payload.markdownPdf.ready).toBeFalse();
     expect(payload.markdownPdf.readyWithRemoteAssets).toBeTrue();
-    expect(humanRuntime.stdout.text).toContain("md.to-pdf: unsupported");
+    expect(payload.capabilities["md.to-pdf"]).toBeFalse();
+    expect(payload.markdownPdf.requirements.restrictedAssets.status).toBe("unsupported");
     expect(humanRuntime.stdout.text).toContain(
-      "Basic rendering is available with explicit remote-asset opt-in",
+      "md.to-pdf: limited (use --allow-remote-assets; default requires WeasyPrint 70.0+)",
     );
   });
 

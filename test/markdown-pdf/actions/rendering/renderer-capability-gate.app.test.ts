@@ -122,7 +122,7 @@ describe("Markdown PDF renderer capability gate", () => {
           "utf8",
         );
         const { runner } = runnerWithWeasyPrintVersion("65.1");
-        const { runtime, expectNoStderr } = createActionTestRuntime();
+        const { runtime, stderr } = createActionTestRuntime();
 
         await actionMdToPdf(runtime, {
           input: toRepoRelativePath(inputPath),
@@ -133,7 +133,7 @@ describe("Markdown PDF renderer capability gate", () => {
         });
 
         expect(await readFile(outputPath, "utf8")).toContain("%PDF");
-        expectNoStderr();
+        expect(stderr.text).toBe("Info: Remote asset loading is enabled for this render.\n");
       });
     },
   );
@@ -146,7 +146,7 @@ describe("Markdown PDF renderer capability gate", () => {
         const outputPath = join(fixtureDir, "report.pdf");
         await writeFile(inputPath, "# Report\n", "utf8");
         const { calls, runner } = runnerWithWeasyPrintVersion(version);
-        const { runtime, expectNoStderr } = createActionTestRuntime();
+        const { runtime, stderr } = createActionTestRuntime();
 
         await actionMdToPdf(runtime, {
           input: toRepoRelativePath(inputPath),
@@ -159,7 +159,7 @@ describe("Markdown PDF renderer capability gate", () => {
         expect(
           calls.filter(({ command, args }) => command === "weasyprint" && args.includes("--info")),
         ).toHaveLength(1);
-        expectNoStderr();
+        expect(stderr.text).toBe("Info: Remote asset loading is enabled for this render.\n");
       });
     },
   );
@@ -215,7 +215,7 @@ describe("Markdown PDF renderer capability gate", () => {
       await writeFile(inputPath, "# Report\n", "utf8");
       await writeFile(profilePath, "pageNumbers:\n  enabled: true\n  start: 0\n", "utf8");
       const { runner } = runnerWithWeasyPrintVersion("65.0");
-      const { runtime, expectNoStderr } = createActionTestRuntime();
+      const { runtime, stderr } = createActionTestRuntime();
 
       await actionMdToPdf(runtime, {
         input: toRepoRelativePath(inputPath),
@@ -227,7 +227,7 @@ describe("Markdown PDF renderer capability gate", () => {
       });
 
       expect(await readFile(outputPath, "utf8")).toContain("%PDF");
-      expectNoStderr();
+      expect(stderr.text).toBe("Info: Remote asset loading is enabled for this render.\n");
     });
   });
 
@@ -277,7 +277,7 @@ describe("Markdown PDF renderer capability gate", () => {
       await writeFile(inputPath, "# Report\n", "utf8");
       await writeFile(profilePath, 'header:\n  style:\n    color: "#123456"\n', "utf8");
       const { runner } = runnerWithWeasyPrintVersion("65.0");
-      const { runtime, expectNoStderr } = createActionTestRuntime();
+      const { runtime, stderr } = createActionTestRuntime();
 
       await actionMdToPdf(runtime, {
         input: toRepoRelativePath(inputPath),
@@ -288,7 +288,7 @@ describe("Markdown PDF renderer capability gate", () => {
       });
 
       expect(await readFile(outputPath, "utf8")).toContain("%PDF");
-      expectNoStderr();
+      expect(stderr.text).toBe("Info: Remote asset loading is enabled for this render.\n");
     });
   });
 
@@ -418,7 +418,7 @@ describe("Markdown PDF renderer capability gate", () => {
       await writeFile(inputPath, "# Report\n", "utf8");
       await writeFile(profilePath, "pageNumbers:\n  enabled: true\n  start: 0\n", "utf8");
       const { runner } = runnerWithWeasyPrintVersion("65.1");
-      const { runtime, expectNoStderr } = createActionTestRuntime();
+      const { runtime, stderr } = createActionTestRuntime();
 
       await actionMdToPdf(runtime, {
         input: toRepoRelativePath(inputPath),
@@ -429,7 +429,7 @@ describe("Markdown PDF renderer capability gate", () => {
       });
 
       expect(await readFile(outputPath, "utf8")).toContain("%PDF");
-      expectNoStderr();
+      expect(stderr.text).toBe("Info: Remote asset loading is enabled for this render.\n");
     });
   });
 

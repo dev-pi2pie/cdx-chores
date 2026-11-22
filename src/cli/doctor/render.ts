@@ -7,24 +7,31 @@ import type { DoctorWorkflowId, DoctorWorkflowProjection, DoctorWorkflowState } 
 
 function markdownPdfCapabilityStatus(
   requirements: DoctorReport["markdownPdf"],
-): "available" | "unavailable" | "unsupported" | "unverified" {
+): "available" | "limited" | "unavailable" | "unsupported" | "unverified" {
   if (requirements.ready) return "available";
+  if (requirements.readyWithRemoteAssets) return "limited";
   if (
     requirements.requirements.pandoc.status === "missing" ||
     requirements.requirements.weasyprint.status === "missing"
   ) {
     return "unavailable";
   }
-  return requirements.requirements.pandoc.status === "unsupported" ||
-    (requirements.requirements.pandoc.status === "satisfied" &&
-      requirements.requirements.restrictedAssets.status === "unsupported")
-    ? "unsupported"
-    : "unverified";
+  return requirements.requirements.pandoc.status === "unsupported" ? "unsupported" : "unverified";
 }
 
 function markdownPdfCapabilityDetail(
   requirements: DoctorReport["markdownPdf"],
 ): string | undefined {
+  if (!requirements.ready && requirements.readyWithRemoteAssets) {
+    const { minimumVersion, status } = requirements.requirements.restrictedAssets;
+    const renderer = `WeasyPrint ${minimumVersion}+`;
+    const defaultDetail =
+      status === "unverified"
+        ? `verify ${renderer} protocol support for default export`
+        : `default requires ${renderer}`;
+    return `use --allow-remote-assets; ${defaultDetail}`;
+  }
+
   const details: string[] = [];
   const pandoc = requirements.requirements.pandoc;
   if (pandoc.status === "missing") {
@@ -38,17 +45,6 @@ function markdownPdfCapabilityDetail(
   }
   if (requirements.requirements.weasyprint.status === "missing") {
     details.push("WeasyPrint is missing");
-  } else if (
-    pandoc.status === "satisfied" &&
-    requirements.requirements.restrictedAssets.status !== "satisfied"
-  ) {
-    const { minimumVersion } = requirements.requirements.restrictedAssets;
-    details.push(
-      `Default rendering requires WeasyPrint ${minimumVersion} or newer with --allowed-protocols`,
-    );
-    if (requirements.readyWithRemoteAssets) {
-      details.push("Basic rendering is available with explicit remote-asset opt-in");
-    }
   }
   return details.length > 0 ? details.join("; ") : undefined;
 }

@@ -81,6 +81,13 @@ export async function actionMdToPdf(runtime: CliRuntime, options: MdToPdfOptions
     });
   }
 
+  if (prepared.options.allowRemoteAssets) {
+    printLine(
+      runtime.stderr,
+      `${styleCliDiagnosticLabel(runtime, runtime.stderr, "notice", "Info:")} Remote asset loading is enabled for this render.`,
+    );
+  }
+
   const result = await executePlannedMarkdownPdfRender(runtime, plan, {
     runner: options.runner,
     codeHighlighter: options.codeHighlighter,
