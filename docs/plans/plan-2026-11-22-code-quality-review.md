@@ -73,8 +73,10 @@ Improve the managed Application suite’s runtime and the value of its assertion
 
 ## Phase 6. Inline prompt lifecycle
 
-- [ ] Share terminal setup, cancellation, and teardown across path and text prompts. Keep completion behavior local and use `Set` for path suggestions in their existing order.
-- [ ] Run the prompt tests for completion, cancellation, and terminal restoration.
+[Phase 6 implementation record](jobs/2026-11-22-code-quality-review.md#phase-6-inline-prompt-lifecycle)
+
+- [x] Share terminal setup, cancellation, and teardown across path and text prompts. Keep completion behavior local and use `Set` for path suggestions in their existing order.
+- [x] Run the prompt tests for completion, cancellation, and terminal restoration.
 
 ## Phase 7. Image framing modules
 

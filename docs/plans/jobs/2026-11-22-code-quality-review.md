@@ -87,3 +87,13 @@ Implementation started from `2725722b`. The discovery transport tests now cancel
 | `0a1eeeda` | When a child is still running, preserve the failure and request bounded fixture-scoped shutdown. Retain diagnostics when exit or launch count is unverified. |
 | Verification | All 40 discovery transport cases passed. Five lifecycle cases passed five repetitions each. An injected scenario failure confirmed the fallback stopped a pending child and preserved both the scenario and exit failures. TypeScript, lint, formatting, and diff checks passed. |
 | Exact range review | The test reviewer approved `2725722b..0a1eeeda` after the teardown correction. |
+
+## Phase 6. Inline prompt lifecycle
+
+Implementation started from `25866e74`. Path and text prompts share raw-session setup, key parsing, cancellation, and one-time teardown. Each prompt owns its completion and validation. [Phase 6 checklist](../plan-2026-11-22-code-quality-review.md#phase-6-inline-prompt-lifecycle)
+
+| Checkpoint | Evidence |
+| --- | --- |
+| `ede53e55` | Shared session restores terminal mode, detaches listeners, and clears prompt rows on settlement. Cancellation attempts a final draft notification and preserves the cancellation error if the callback throws. Path Tab cycling deduplicates with `Set` in first-seen order, and pending completion stays silent after exit. |
+| Verification | 94 prompt, TUI, and renderer tests passed, including Tab order and wraparound, cancellation during a pending lookup, and a throwing draft observer. All 10 Node terminal-input cases passed, including raw and decoded Escape handoff and fragmented arrows. Build, TypeScript, lint, formatting, and diff checks passed. |
+| Exact range review | Maintainability and test reviewers approved `25866e74..ede53e55` with no actionable findings. |
