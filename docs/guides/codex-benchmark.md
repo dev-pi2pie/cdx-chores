@@ -1,7 +1,7 @@
 ---
 title: "Codex Benchmark"
 created-date: 2026-11-18
-modified-date: 2026-11-21
+modified-date: 2026-11-22
 status: completed
 agent: codex
 ---
@@ -124,7 +124,7 @@ Both report formats preserve a relative prompt path as supplied and abbreviate p
 
 ## Manage Benchmark Sessions
 
-The benchmark keeps its sessions by default, including warm-ups. Use `--session-retention archive` to move them out of active history while preserving the rollout. `--session-retention delete` permanently removes them. Both options require a nonempty thread ID that is fresh for the invocation and a live `turn/completed` event matching that thread and its known turn. The benchmark applies retention after rollout readback or its deadline. A matching live terminal event can authorize retention even when the saved `task_complete` needed for timing is missing. A cleanup failure preserves the report and ordinarily returns exit status 1. If Ctrl-C also interrupted the invocation, the CLI reports the cleanup error and exits with status 130. See the [shared retention guidance](codex-execution-configuration.md#retain-codex-sessions) for compatibility.
+The benchmark keeps its sessions by default, including warm-ups. Use `--session-retention archive` to move them out of active history while preserving the rollout. `--session-retention delete` permanently removes them. Both options require a nonempty thread ID that is fresh for the invocation and a live `turn/completed` event matching that thread and its known turn. The benchmark applies retention after rollout readback or its deadline and after resolving any pending `turn/start` reply. A matching live terminal event can authorize retention even when the saved `task_complete` needed for timing is missing. A cleanup failure preserves the report and ordinarily returns exit status 1. If Ctrl-C also interrupted the invocation, the CLI reports the cleanup error and exits with status 130. See the [shared retention guidance](codex-execution-configuration.md#retain-codex-sessions) for compatibility.
 
 ## Failures and exit codes
 
@@ -145,19 +145,19 @@ The exit-`1` rows apply without local cancellation. On POSIX, `SIGHUP` starts sh
 | Requested speed is unavailable | Reports it and continues with supported combinations. |
 | Local write refusal, or structured input-too-large rejection with no turn evidence | Skips archive and delete. Can start the next trial on a healthy, uncancelled run. |
 | A known turn times out | Sends an interrupt and keeps the failed trial and any attributable usage. A matching terminal event permits requested retention and another trial on a healthy, uncancelled run. |
-| An accepted start remains unsettled, or start IDs conflict | Stops scheduling and skips archive and delete. If a conflict arrives during a retention request, the report records that request’s outcome. |
+| An accepted start remains unsettled, or start IDs conflict | Stops scheduling and skips archive and delete. If a conflicting start notification arrives during a retention request, the report records that request’s outcome. |
 
 An input-too-large rejection marks the trial failed. To continue, it must have RPC code `-32602` and `data.input_error_code: "input_too_large"`. On that thread, any start or terminal event, or an item event with a turn ID, blocks the exception.
 
-A matching terminal event can recover a pending `turn/start` reply if Codex announced the thread and turn. The start deadline is 15 seconds and the completion deadline is 120 seconds. An interrupt acknowledgement alone leaves completion unconfirmed.
+A matching terminal notification can start rollout readback while the `turn/start` reply is pending. Before applying retention or scheduling another trial, the benchmark waits for the reply to match the announced turn or for the 15-second start deadline to expire. A matching terminal notification already received at that deadline can stand in for the missing reply. A conflicting or rejected reply fails the trial and stops scheduling. The completion deadline is 120 seconds. An interrupt acknowledgement alone leaves completion unconfirmed.
 
-If Ctrl-C cancels a pending `thread/start`, Codex may already have created a session. The trial reports `threadId: null` and `sessionRetention: null`. If Ctrl-C arrives after `turn/start` is sent, the benchmark allows one second for the turn ID so it can interrupt the turn. If the ID stays unknown, it stops scheduling and skips requested retention.
+If Ctrl-C cancels a pending `thread/start`, Codex may already have created a session. The trial reports `threadId: null` and `sessionRetention: null`. If Ctrl-C arrives after `turn/start` is sent, the benchmark allows one second for the turn ID so it can interrupt the turn. Cancellation skips archive and delete if completion remains unconfirmed or the start reply is still pending after readback.
 
 ## Standard/Fast live check
 
 The [maintainer live check](../../scripts/spikes/codex-benchmark-live-check.ts) uses the same local-acceptance rule for `sentTier` and the same thread identity, scheduling and retention rules. It stops an unsettled trial at its start or completion deadline without issuing a turn interrupt. On `SIGINT` or `SIGTERM` it starts app-server shutdown and preserves the first signal's exit status. It follows the same POSIX hangup policy as the benchmark. If HUP arrives during an active trial, the live check stops scheduling. If shutdown causes the trial to fail, the caller still exits with the code its installed HUP handler set.
 
-Both callers require child close for successful shutdown. For a separately owned POSIX process group, they also require a signal-zero probe to return `ESRCH`. The live check reports shutdown failure on stderr and exits with status 1 in the absence of local cancellation, with any completed Standard/Fast results still in JSON.
+Both callers require child close for successful shutdown. For a separately owned POSIX process group, they also require a signal-zero probe to return `ESRCH`. A signal permission error leaves these checks running within the shutdown deadline. If verification fails, the shutdown error preserves the signal denial. The live check reports shutdown failure on stderr and exits with status 1 in the absence of local cancellation, with any completed Standard/Fast results still in JSON.
 
 ## Related Guides
 
