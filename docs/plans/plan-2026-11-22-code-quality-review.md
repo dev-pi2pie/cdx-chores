@@ -42,6 +42,8 @@ Replay assumes the canonical working directory and endpoint parents stay stable 
 
 Improve the managed Application suite’s runtime and the value of its assertions. Start with the measured Codex benchmark costs and the video tests near the cutoff. Keep the existing 360-second limit. [Application timing and coverage evidence](../researches/research-2026-11-22-code-quality-review.md#application-test-cost-and-coverage)
 
+[Phase 3 implementation record](jobs/2026-11-22-code-quality-review.md#phase-3-application-test-cost-and-coverage)
+
 - [ ] Capture baseline suite and per-file timings. Use streamed case output when a timeout prevents report generation, and run any affected fixture independently to distinguish suite budget pressure from a fixture failure.
 - [ ] Reduce measured fixture costs by reusing setup or replacing incidental waits with observed events where they preserve the same behavior. Keep representative checks for real deadlines, signals, and process cleanup.
 - [ ] Audit the affected tests for tautological assertions and duplicate coverage. Use independent expected outcomes and consolidate duplicate cases only when a retained test covers the same behavior at the same boundary.
