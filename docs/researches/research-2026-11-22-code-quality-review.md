@@ -2,7 +2,7 @@
 title: "Code Quality Review"
 created-date: 2026-11-22
 modified-date: 2026-11-22
-status: draft
+status: in-progress
 agent: codex
 ---
 
@@ -41,7 +41,7 @@ flowchart LR
     subgraph proposed["Proposed signal collection"]
         proposedBody["Markdown body"] --> fenceScan["Shared fence scanner"]
         fenceScan -->|"Lines outside matched fences"| structureSignals["Title, heading, and table signals"]
-        fenceScan -->|"Matched fence openers"| codeSignals["Code-language and unlabeled-fence signals"]
+        fenceScan -->|"Matched code fence openers"| codeSignals["Code-language and unlabeled-fence signals"]
     end
 ```
 
@@ -56,6 +56,7 @@ Use the renderer’s Pandoc Markdown input mode as the reference for top-level f
 - An opening fence uses at least three consecutive backticks or tildes. Top-level marker lines allow up to three leading spaces. After a paragraph, a backtick fence may start on the next line. A tilde fence in that position requires a blank line.
 - A closing line uses the same marker character and at least as many markers as the opener. Only spaces or tabs may follow the closing run. A shorter marker or a marker followed by a label stays inside the code block.
 - A candidate opener with no valid close through the end of input leaves its lines available to ordinary signal collection. Scanning continues so a later valid fence can still be recognized.
+- Pandoc raw-format fences such as `{=html}` exclude their bodies from structure signals. Code-language and unlabeled counts apply to fenced code blocks.
 
 #### Verification plan
 
@@ -64,6 +65,8 @@ Use the renderer’s Pandoc Markdown input mode as the reference for top-level f
 - In the direct-render suite, add a case with `metadataTitle: auto` and a four-backtick opener. Put a three-backtick line before a fenced H1 that matches the frontmatter title. After the valid four-backtick close, put a different H1. Assert that the generated template retains the metadata title block. [Direct-render tests](../../test/markdown-pdf/actions/rendering/profile-rendering.app.test.ts#L364)
 - In the template signal suite, add a case with a narrow real table and a fenced table lookalike wide enough to trigger a `strong` signal if counted. With no explicit layout preset, assert that the real table yields a `weak` signal and that the `wide-table` preset is not inferred. [Template signal tests](../../test/markdown-pdf/actions/template-codex/signal-collection.app.test.ts#L195), [table risk thresholds](../../src/cli/markdown-pdf/profile/layout-policy.ts#L23)
 - Run the two updated suites with their existing ordinary-content cases to verify both downstream paths.
+
+Phase 1 implemented these rules in the signal layer using top-level block-boundary heuristics. The verification results and exact reviewed range are recorded in the [Phase 1 implementation record](../plans/jobs/2026-11-22-code-quality-review.md#phase-1-markdown-fenced-code-signals).
 
 ## Related Plans
 

@@ -1,7 +1,8 @@
 ---
 title: "Code Quality Review Implementation Plan"
 created-date: 2026-11-22
-status: draft
+modified-date: 2026-11-22
+status: active
 agent: codex
 ---
 
@@ -21,9 +22,11 @@ Create one unified job record under `docs/plans/jobs/` when implementation start
 
 Scope the change to top-level fences in the renderer’s Pandoc Markdown mode. Share fence recognition across document signals and direct PDF title detection. Preserve signal schemas, limits, privacy, and existing heading and table heuristics outside fenced blocks. [Settled fence decision](../researches/research-2026-11-22-code-quality-review.md#fenced-code-and-document-structure)
 
-- [ ] Use one scanner to route lines outside matched fences to title, heading, and table signals and matched openers to code signals.
-- [ ] Verify both marker types, opener placement, indentation, closing length, trailing text, and unclosed openers against the settled rules and Pandoc. Run the focused Bun signal regressions.
-- [ ] Verify direct rendering retains the metadata title after a shorter marker inside a valid fence and template layout stays `weak` for a real narrow table alongside a fenced wide lookalike. Run both suites with their ordinary-content cases. [Verification plan](../researches/research-2026-11-22-code-quality-review.md#verification-plan)
+[Phase 1 implementation record](jobs/2026-11-22-code-quality-review.md#phase-1-markdown-fenced-code-signals)
+
+- [x] Use one scanner to route lines outside matched fences to title, heading, and table signals and matched openers to code signals.
+- [x] Verify both marker types, opener placement, indentation, closing length, trailing text, and unclosed openers against the settled rules and Pandoc. Run the focused Bun signal regressions.
+- [x] Verify direct rendering retains the metadata title after a shorter marker inside a valid fence and template layout stays `weak` for a real narrow table alongside a fenced wide lookalike. Run both suites with their ordinary-content cases. [Verification plan](../researches/research-2026-11-22-code-quality-review.md#verification-plan)
 
 ## Phase 2. CSV path containment
 
