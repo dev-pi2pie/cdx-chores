@@ -70,6 +70,35 @@ describe("text inline terminal controller", () => {
     expect(stdin.listenerCount("keypress")).toBe(0);
   });
 
+  test("a failing draft callback still restores the terminal on cancellation", async () => {
+    const stdin = new FakePromptReadStream();
+    const stdout = new FakePromptWriteStream();
+    const controller = new AbortController();
+    let draftOnCancel: string | undefined;
+    const prompt = promptTextInlineGhost({
+      message: "Template",
+      ghostText: "",
+      initialValue: "draft",
+      stdin: stdin as unknown as NodeJS.ReadStream,
+      stdout: stdout as unknown as NodeJS.WritableStream,
+      signal: controller.signal,
+      onChange: (value) => {
+        if (controller.signal.aborted) {
+          draftOnCancel = value;
+          throw new Error("Draft callback failed");
+        }
+      },
+      validate: () => true,
+    });
+    await nextRenderTick();
+    controller.abort();
+    await expect(prompt).rejects.toMatchObject({ name: "ExitPromptError" });
+    expect(draftOnCancel).toBe("draft");
+    expect(stdin.rawModeCalls).toEqual([true, false]);
+    expect(stdin.listenerCount("keypress")).toBe(0);
+    expect(stdout.text).toContain("\x1b[?25h");
+  });
+
   test("promptTextInlineGhost prints help lines once while rerendering only the input line", async () => {
     const stdin = new FakePromptReadStream();
     const stdout = new FakePromptWriteStream();

@@ -49,6 +49,7 @@ async function createPromptHarness(options?: {
   fixtureName?: string;
   columns?: number;
   setup?: (fixtureDir: string) => Promise<void>;
+  signal?: AbortSignal;
   resolveSuggestions?: Parameters<typeof promptPathInlineGhost>[0]["resolveSuggestions"];
   validate?: Parameters<typeof promptPathInlineGhost>[0]["validate"];
 }): Promise<{
@@ -79,6 +80,7 @@ async function createPromptHarness(options?: {
     },
     stdin: stdin as unknown as NodeJS.ReadStream,
     stdout: stdout as unknown as NodeJS.WritableStream,
+    signal: options?.signal,
     validate: options?.validate ?? ((value) => (value.trim().length > 0 ? true : "Required")),
     suggestionFilter: { targetKind: "any" },
     resolveSuggestions: options?.resolveSuggestions,
@@ -255,6 +257,69 @@ describe("path inline prompt controller", () => {
       await expect(prompt).resolves.toBe("./downloads/");
       expect(stdout.text).toContain("Path ./downloads/");
     } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("Tab cycles unique replacements in suggestion order and wraps", async () => {
+    const { fixtureDir, stdin, stdout, prompt } = await createPromptHarness({
+      resolveSuggestions: async ({ cwd, input }) =>
+        input === "d"
+          ? ["downloads", "docs", "downloads", "drafts"].map((name) => ({
+              name,
+              kind: "directory",
+              label: name,
+              replacement: `./${name}/`,
+              absolutePath: join(cwd, name),
+            }))
+          : [],
+    });
+    try {
+      stdin.emit("keypress", "d", { name: "d" });
+      await nextRenderTick();
+      for (const name of ["downloads", "docs", "drafts", "downloads"]) {
+        const beforeTab = stdout.text.length;
+        stdin.emit("keypress", "\t", { name: "tab" });
+        await nextRenderTick();
+        expect(stdout.text.slice(beforeTab)).toContain(`Path ./${name}/`);
+      }
+      stdin.emit("keypress", "\r", { name: "return" });
+      await expect(prompt).resolves.toBe("./downloads/");
+    } finally {
+      await rm(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  test("a pending Tab lookup stays silent after cancellation", async () => {
+    const controller = new AbortController();
+    const lookupStarted = Promise.withResolvers<void>();
+    const releaseLookup = Promise.withResolvers<void>();
+    let initialLookup = true;
+    const { fixtureDir, stdin, stdout, prompt } = await createPromptHarness({
+      signal: controller.signal,
+      resolveSuggestions: async () => {
+        if (initialLookup) {
+          initialLookup = false;
+          return [];
+        }
+        lookupStarted.resolve();
+        await releaseLookup.promise;
+        return [];
+      },
+    });
+    try {
+      stdin.emit("keypress", "\t", { name: "tab" });
+      await lookupStarted.promise;
+      controller.abort();
+      await expect(prompt).rejects.toMatchObject({ name: "ExitPromptError" });
+      const outputAfterCancel = stdout.text;
+      releaseLookup.resolve();
+      await nextRenderTick();
+      expect(stdout.text).toBe(outputAfterCancel);
+      expect(stdin.rawModeCalls).toEqual([true, false]);
+      expect(stdin.listenerCount("keypress")).toBe(0);
+    } finally {
+      releaseLookup.resolve();
       await rm(fixtureDir, { recursive: true, force: true });
     }
   });
