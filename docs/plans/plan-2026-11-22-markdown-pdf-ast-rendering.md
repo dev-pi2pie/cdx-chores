@@ -66,12 +66,14 @@ Independent review of `b5c195ad..d70f4188` found two boundary defects. Re-review
 
 ## Phase 4 — Integrated Renderer Validation
 
-- [ ] Run `bun run test:unit`, `bun run test:integration:app`, and `bun run test:integration:pandoc`. Run the targeted renderer compatibility cases with actual Pandoc 2.0 and 3.9 through the implemented path.
-- [ ] Check standalone HTML for title behavior, TOC targets, relative assets, tables, and highlighting. Verify both links survive in the distinct-link case.
-- [ ] Render representative PDFs with WeasyPrint. Compare page counts and extracted text for parity inputs. Verify the corrected PDF has one visible title and retains its PDF title metadata.
-- [ ] Compare eligible built-in renders on small and larger inputs, using equivalent output for timing. Record Pandoc time and full PDF wall time separately, with the sample count and observed variation.
+- [x] Run `bun run test:unit`, `bun run test:integration:app`, and `bun run test:integration:pandoc`. Run the targeted renderer compatibility cases with actual Pandoc 2.0 and 3.9 through the implemented path.
+- [x] Check standalone HTML for title behavior, TOC targets, relative assets, tables, and highlighting. Verify both links survive in the distinct-link case.
+- [x] Render representative PDFs with WeasyPrint. Compare page counts and extracted text for parity inputs. Verify the corrected PDF has one visible title and retains its PDF title metadata.
+- [x] Compare eligible built-in renders on small and larger inputs, using equivalent output for timing. Record Pandoc time and full PDF wall time separately, with the sample count and observed variation.
 
 **Checkpoint** — The integrated renderer evidence covers both Pandoc versions, output parity, and the intended title correction.
+
+Independent review is pending from `02106060`. The [Phase 4 job record](jobs/2026-11-22-markdown-pdf-ast-rendering.md#phase-4--integrated-renderer-validation) records the checks and timing.
 
 ## Phase 5 — Docs Validation
 

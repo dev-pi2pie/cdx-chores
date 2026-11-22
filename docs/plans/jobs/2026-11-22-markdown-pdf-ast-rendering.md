@@ -91,7 +91,34 @@ The follow-up passed 66 focused source cases, the focused authoring app test, an
 
 ## Phase 4 — Integrated Renderer Validation
 
-**Status** — Pending.
+**Status** — Verification passed from baseline `02106060`.
+
+| Verification | Result |
+| --- | --- |
+| `bun run test:unit` | 2,251 passed. |
+| `bun run test:integration:pandoc` | 26 passed on Pandoc 3.9. |
+| `bun run test:integration:app` | 2,767 passed in the serial run, including the shared interactive routes and offline authoring case. |
+| Shared rendering | Real Pandoc 2.0 and 3.9 and WeasyPrint 70.0 rendered all five compatibility fixtures. The eligible route wrote HTML from the same JSON checkpoint that the reader produced. Explicit show and hide, cover, untitled, and custom-template renders used direct conversion. The custom fixture received one original `$sourcefile$` entry and `context` as fallback `$pagetitle$`. Temporary checkpoints were cleaned up. |
+| Standalone HTML | Matching links suppressed the metadata block. Distinct links kept the metadata title destination `https://example.com/quickstart` and body H1 destination `https://example.com/reference`. Both also appeared as PDF link annotations. Unsupported math kept the title block. Both versions resolved `#visible` and `#included` in the depth-2 TOC and excluded the depth-3 entry. Only 3.9 listed the nested `#guide` entry, and both rendered its linked body H1. The relative SVG, highlighted code, and table cells survived. |
+| Real PDF parity | On each Pandoc version, direct and AST output matched in HTML, exact per-page extracted text, and title metadata for the 1-page and 21-page reports. Poppler rasters matched on the small page and large pages 1, 11, and 21. The relative SVG passed a pixel check on both versions. Visual inspection covered the title, cover, SVG, highlighted code, and tables. |
+| Duplicate title control | With the TOC disabled, the one-page PDF went from two visible copies under explicit show to one under automatic title handling. Both retained `Title sentinel 957` as PDF Title metadata and preserved the remaining text. The cover control produced a two-page PDF with the same metadata title. |
+
+The managed suites ran serially with zero failures or skips. The version-locked checks used the five [shared render fixtures](../../../test/markdown-pdf/actions/rendering/ast-render-fixtures.ts) and the implemented [prepare, plan, and execute service](../../../src/cli/actions/markdown/to-pdf-service.ts). The ignored Bun driver `phase-4-render.ts <pandoc-executable> <version> <weasyprint-executable>` verified the tools and captured subprocess routes. The separate `phase-4-verify.py` check used pdfplumber and Poppler for PDF assertions.
+
+### Native timing
+
+The small fixture was one section and 744 bytes. The larger fixture was 30 sections and 42,450 bytes. Native Pandoc 3.9 ran two warm-up pairs and seven measured pairs per size, alternating direct explicit show and eligible automatic title handling. Both routes used the same source, working directory, options, and stylesheet. Every pair produced identical standalone HTML, including its title block. Pandoc time sums conversion subprocesses and excludes version probes. Full time starts from the prepared plan and includes probes, rendering, and publishing. Values are milliseconds, median [min–max]. The delta is calculated within each pair.
+
+| Fixture | Scope | Direct | AST | Paired AST increase |
+| --- | --- | ---: | ---: | ---: |
+| Small | Pandoc | 28.4 [25.8–29.0] | 55.7 [52.5–56.2] | 26.9 [24.3–30.3] |
+| Small | Full PDF | 1,640.5 [1,630.9–1,651.9] | 1,668.6 [1,662.8–1,680.2] | 32.2 [10.9–39.7] |
+| Larger | Pandoc | 69.5 [66.5–74.7] | 108.0 [96.1–119.3] | 41.5 [21.3–47.0] |
+| Larger | Full PDF | 2,066.7 [2,050.3–2,073.8] | 2,102.0 [2,082.9–2,139.3] | 37.2 [9.3–89.0] |
+
+Pandoc 2.0 ran one parity pair per size. Timing covers one native 3.9 series, and pixel parity covers the sampled pages.
+
+**Independent review** — Pending.
 
 ## Phase 5 — Docs Validation
 
