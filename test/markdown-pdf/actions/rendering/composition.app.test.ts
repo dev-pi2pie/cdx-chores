@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 import { actionMdToPdf } from "../../../../src/cli/actions";
 import type { MarkdownPdfProcessRunner } from "../../../../src/cli/markdown-pdf";
 import { MARKDOWN_PDF_LOGICAL_PAGE_COUNTER_NAME } from "../../../../src/cli/markdown-pdf/profile/page-number-format";
-import { createPdfRunner, ok } from "./render-support";
+import { createPdfRunner, ok, pandocTitleJson } from "./render-support";
 import { createActionTestRuntime } from "../../../helpers/cli-action-test-utils";
 import { toRepoRelativePath, withTempFixtureDir } from "../../../helpers/cli-test-utils";
 
@@ -42,6 +42,7 @@ describe("Markdown PDF rendering composition", () => {
 
       const { runner } = createPdfRunner({
         html: '<html><body><main class="document-body"></main></body></html>',
+        pandocJson: pandocTitleJson("Quarterly Report", "Report"),
       });
       const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
         if (command === "weasyprint" && args.includes("--base-url")) {
