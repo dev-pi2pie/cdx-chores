@@ -31,7 +31,29 @@ Focused fixture review found no material coverage gaps. The documentation rechec
 
 ## Phase 2 — Shared Render Execution
 
-**Status** — Pending.
+**Status** — Implementation verified. Baseline `3444cb8f`, implementation checkpoint `25a1e481`, and page-chrome fixture checkpoint `dcd658ff`.
+
+The shared execution service uses the resolved template, title mode, and cover settings. For built-in automatic titles with the cover disabled, each attempt snapshots the current Markdown. The front-matter title check and conversion use those bytes. A nonempty string selects the JSON path. Pandoc's reader writes one checkpoint, the title comparator reads it, and the HTML writer consumes the original checkpoint. Custom, explicit-mode, and cover renders consume the original input directly. [Shared service](../../../src/cli/actions/markdown/to-pdf-service.ts) · [Pandoc source preparation](../../../src/cli/markdown-pdf/pandoc-source.ts)
+
+Prepared interactive execution with Pandoc absent from `PATH` made no dependency calls before confirmation. A durable generated Profile retry kept the existing recipe and PDF through a writer failure, cleaned the failed checkpoint, and used the edited Markdown on its next attempt. Direct CLI fixtures also edited the file after the title check on both conversion paths and verified that the chosen snapshot stayed consistent.
+
+| Verification | Result |
+| --- | --- |
+| Focused Bun app tests | 149 passed across the shared execution, prepared render, profile rendering, write lifecycle, and interactive source and retry fixtures. Four composition cases passed after the page-chrome test supplied its AST fixture. |
+| `bun run test:unit` | 2,211 passed, zero failures or skips. |
+| `bun run test:integration:app` | Final serial run passed 2,766 cases with zero failures or skips. |
+| `bun run test:integration:pandoc` | 26 passed on Pandoc 3.9, including five shared execution fixtures. |
+| Shared version-locked matrix | The same five fixtures passed on verified Pandoc 2.0 and 3.9. Matching links suppressed the duplicate, distinct links retained both destinations, and valid unsupported math retained the title block. The matrix also verified TOC depth, a relative SVG, highlighted code, table cells, and direct untitled and custom-template output. Both versions exposed one original custom-template `$sourcefile$` entry and `context` as the fallback `$pagetitle$`. |
+| Diagnostics, cleanup, and output | The app fixtures checked reader, malformed or missing JSON, invalid envelope, and writer errors against both existing HTML and PDF outputs. They verified cleanup, retained reader diagnostics on writer and JSON failures, and ordered warnings from reader through writer and PDF renderer. A subsequent WeasyPrint failure kept both Pandoc diagnostics and the original PDF. The shared asset gate rejected a remote image before publication. |
+| Formatting, lint, and whitespace | The changed TypeScript files passed targeted Oxfmt and Oxlint checks. The phase diff passed `git diff --check 3444cb8f`. |
+
+The focused app run selected the AST, profile, prepared-render, and write-lifecycle app tests under `test/markdown-pdf/actions/rendering/` and the shared-render, render-sources, and generated-lifecycle app tests under `test/markdown-pdf/interactive/`. It used `bun test` with `--path-ignore-patterns '**/fixtures/**'`.
+
+The cross-version run used the ignored local driver with `bun examples/playground/markdown-pdf-html-spike/phase-2-render.ts <pandoc-executable> <version>`. To reproduce with the tracked tests, select the expected binary on `PATH`, verify `pandoc --version`, and run `bun test ./test/markdown-pdf/actions/rendering/ast-render.pandoc.test.ts --path-ignore-patterns '**/fixtures/**'`. These cases run the production service with real Pandoc and a WeasyPrint fixture boundary. PDF layout and timing are Phase 4 checks.
+
+Focused reviews verified the race fixture for the untitled direct fallback and preservation of both Pandoc diagnostics when WeasyPrint returns a failure.
+
+**Independent review** — Pending.
 
 ## Phase 3 — Offline Source Scanning
 

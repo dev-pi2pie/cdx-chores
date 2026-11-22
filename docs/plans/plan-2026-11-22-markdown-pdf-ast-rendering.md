@@ -44,12 +44,14 @@ Independent review cleared `ddc5d119..79cff61f`. The [Phase 1 job record](jobs/2
 
 ## Phase 2 — Shared Render Execution
 
-- [ ] Route shared CLI and interactive render execution through `Markdown → Pandoc JSON → standalone HTML` when the template is built-in, `metadataTitle` is `auto`, front matter supplies a nonempty string title, and the cover is disabled. Preparation stays independent of Pandoc. Use the installed Pandoc’s `--from=markdown` reader once and pass that same AST to the HTML writer.
-- [ ] Keep direct conversion for custom templates, explicit `show` and `hide` modes, cover-driven titles, and inputs without an eligible front-matter title. Verify route selection and process calls in the shared service, including prepared and resumed interactive renders.
-- [ ] Preserve the Markdown working directory, writer and TOC options, relative assets and asset restrictions, highlighting, and the existing HTML and PDF output handling. Verify a direct custom-template render receives the original single `$sourcefile$` entry and expected fallback `$pagetitle$`.
-- [ ] Preserve warning order from the reader and writer. Exercise reader failure, invalid AST output, and writer failure. Verify stage-specific diagnostics, temporary file cleanup, and preservation of existing output files on those failures.
+- [x] Route shared CLI and interactive render execution through `Markdown → Pandoc JSON → standalone HTML` when the template is built-in, `metadataTitle` is `auto`, front matter supplies a nonempty string title, and the cover is disabled. Preparation stays independent of Pandoc. Use the installed Pandoc’s `--from=markdown` reader once and pass that same AST to the HTML writer.
+- [x] Keep direct conversion for custom templates, explicit `show` and `hide` modes, cover-driven titles, and inputs without an eligible front-matter title. Verify route selection and process calls in the shared service, including prepared and resumed interactive renders.
+- [x] Preserve the Markdown working directory, writer and TOC options, relative assets and asset restrictions, highlighting, and the existing HTML and PDF output handling. Verify a direct custom-template render receives the original single `$sourcefile$` entry and expected fallback `$pagetitle$`.
+- [x] Preserve warning order from the reader and writer. Exercise reader failure, invalid AST output, and writer failure. Verify stage-specific diagnostics, temporary file cleanup, and preservation of existing output files on those failures.
 
 **Checkpoint** — Both entry points use the intended render path and preserve their output and failure contracts.
+
+Verification is recorded in the [Phase 2 job record](jobs/2026-11-22-markdown-pdf-ast-rendering.md#phase-2--shared-render-execution). Independent review is pending.
 
 ## Phase 3 — Offline Source Scanning
 
