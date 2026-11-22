@@ -31,6 +31,8 @@ Codex benchmark fixtures contributed the most observed case time, especially the
 
 Start with repeated fixture setup and incidental waits in the measured files. Prefer observed events when they preserve the behavior under test, and retain representative checks of real deadlines, signals, and shutdown. For each suspect assertion, identify a regression that should make it fail. Use independent expected outcomes and consolidate comparisons that cover the same behavior at the same boundary. Generated passing cases can still serve as inputs to runner tests whose enclosing assertions verify selection or reporter behavior. [Earlier timing analysis](research-2026-10-17-application-test-costs-and-timeout-budgeting.md#reassessment-criteria), [reporter fixture](../../test/test-runner/presentation.app.test.ts#L327)
 
+Share immutable build outputs across independent scenarios and give each scenario its own inputs, process, and cleanup. Assert the expected completion outcome at the driver boundary. Use decoded Escape for picker state transitions while keeping raw-byte cases that exercise the terminal decoder. The managed suite’s elapsed time and headroom show whether the combined savings are enough under the existing limit. [Export fixture](../../test/video/frames/fixtures/run-export-fixture.ts), [raw-byte checks](../../test/video/interactive/frames-menu-bytes.app.test.ts)
+
 ## Settled Decisions
 
 ### Fenced code and document structure

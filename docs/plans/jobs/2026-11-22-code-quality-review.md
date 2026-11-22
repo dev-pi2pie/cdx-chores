@@ -41,3 +41,12 @@ Implementation started from `888c3b01`. Measure fixture costs and assess coverag
 | Managed Application suite | The suite reached its 360-second cutoff during video sequence tests after 2,690 reported passes and no assertion failures. JUnit was unavailable and cleanup was withheld because a fixture handoff was incomplete. |
 | Summed case times | Benchmark runner 39.171 s, turn recovery 36.612 s, shutdown cleanup 20.675 s, and shared shutdown 14.837 s. |
 | Focused video run | All 40 controller, menu, raw-byte, and workflow cases passed, including the fragmented-arrow case. Controller cases summed to 6.290 s. |
+
+| Checkpoint | Evidence |
+| --- | --- |
+| `0391dd26` and `229383c0` | Shortened selected benchmark waits, used cooperative leaders where shutdown controls observe resistant workers, ran independent refusal cases concurrently, and used decoded Escape for picker state checks. Kept default deadline, raw-byte, signal, and shutdown coverage. Removed a repeated turn-count assertion and retained the final trace check. |
+| First managed attempt at `229383c0` | Reached the 360-second cutoff after 2,732 reported passes and no assertion failures. The fragmented-arrow case passed. Process shutdown and cleanup completed. |
+| `9e6f5f9b` | Shared immutable Node bundles across independent export cases. Each case kept its own process and fixture directory and now asserts its expected completion outcome. |
+| Focused verification | 208 benchmark and 40 interactive video cases passed. Controller case time fell from 6.290 s to 2.235 s. The same 32 export and sequence cases passed in 16.61 s at the baseline and 4.77–4.83 s across three runs after the change. TypeScript, lint, changed-file formatting, and diff checks passed. |
+| Managed verification at `9e6f5f9b` | Three sequential `bun run test:integration:app` runs passed all 2,738 cases across 316 files with zero failures, errors, or skips, valid reports, and verified cleanup. Execution took 350.939 s, 345.052 s, and 345.064 s. The slowest run left 9.061 s under the 360-second limit. |
+| Exact range review | Test and maintainability reviewers approved `888c3b01..229383c0` and re-reviewed the widened `888c3b01..9e6f5f9b` range with no actionable findings. |

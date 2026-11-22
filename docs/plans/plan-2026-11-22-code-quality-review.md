@@ -44,10 +44,10 @@ Improve the managed Application suite’s runtime and the value of its assertion
 
 [Phase 3 implementation record](jobs/2026-11-22-code-quality-review.md#phase-3-application-test-cost-and-coverage)
 
-- [ ] Capture baseline suite and per-file timings. Use streamed case output when a timeout prevents report generation, and run any affected fixture independently to distinguish suite budget pressure from a fixture failure.
-- [ ] Reduce measured fixture costs by reusing setup or replacing incidental waits with observed events where they preserve the same behavior. Keep representative checks for real deadlines, signals, and process cleanup.
-- [ ] Audit the affected tests for tautological assertions and duplicate coverage. Use independent expected outcomes and consolidate duplicate cases only when a retained test covers the same behavior at the same boundary.
-- [ ] Compare focused timings and coverage before and after. Run `bun run test:integration:app` three times sequentially under the existing policy. Require zero failures, errors, or skips, valid reports, and verified cleanup. Record the slowest run and its headroom.
+- [x] Capture baseline suite and per-file timings. Use streamed case output when a timeout prevents report generation, and run any affected fixture independently to distinguish suite budget pressure from a fixture failure.
+- [x] Reduce measured fixture costs by reusing setup or replacing incidental waits with observed events where they preserve the same behavior. Keep representative checks for real deadlines, signals, and process cleanup.
+- [x] Audit the affected tests for tautological assertions and duplicate coverage. Use independent expected outcomes and consolidate duplicate cases only when a retained test covers the same behavior at the same boundary.
+- [x] Compare focused timings and coverage before and after. Run `bun run test:integration:app` three times sequentially under the existing policy. Require zero failures, errors, or skips, valid reports, and verified cleanup. Record the slowest run and its headroom.
 
 ## Phase 4. Markdown PDF remote assets
 
