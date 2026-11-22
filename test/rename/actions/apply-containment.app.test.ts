@@ -43,6 +43,18 @@ describe("rename apply path containment", () => {
       "INVALID_RENAME_PLAN",
       "old_path must be an existing regular file",
     ],
+    [
+      "linked.txt",
+      "renamed.txt",
+      "INVALID_RENAME_PLAN",
+      "old_path must be an existing regular file",
+    ],
+    [
+      "missing.txt",
+      "renamed.txt",
+      "INVALID_RENAME_PLAN",
+      "old_path must be an existing regular file",
+    ],
     ["nested/second.txt", "nested", "INVALID_RENAME_PLAN", "new_path cannot be a directory"],
   ] as const)("rejects %s to %s during preflight", async (from, to, code, messageIncludes) => {
     await withTempFixtureDir("rename-replay-preflight", async (cwd) => {
@@ -51,12 +63,16 @@ describe("rename apply path containment", () => {
       await symlink(nested, join(cwd, "alias"), process.platform === "win32" ? "junction" : "dir");
       await writeFile(join(cwd, "first.txt"), "first");
       await writeFile(join(nested, "second.txt"), "second");
+      if (from === "linked.txt") {
+        await symlink(join(nested, "second.txt"), join(cwd, from), "file");
+      }
       const csv = "plan.csv";
       const text = createRenamePlanCsvText(RENAME_PLAN_HEADERS, [
         createRenamePlanRow("first.txt", "first-renamed.txt"),
         createRenamePlanRow(from, to),
       ]);
       await writeFile(join(cwd, csv), text);
+      const entriesBefore = (await readdir(cwd)).sort();
 
       const { runtime } = createCapturedRuntime({ cwd });
       await expectCliError(() => actionRenameApply(runtime, { csv }), {
@@ -65,7 +81,7 @@ describe("rename apply path containment", () => {
         messageIncludes,
       });
 
-      expect((await readdir(cwd)).sort()).toEqual(["alias", "first.txt", "nested", "plan.csv"]);
+      expect((await readdir(cwd)).sort()).toEqual(entriesBefore);
       expect(await readFile(join(cwd, "first.txt"), "utf8")).toBe("first");
       expect(await readdir(nested)).toEqual(["second.txt"]);
       expect(await readFile(join(nested, "second.txt"), "utf8")).toBe("second");
