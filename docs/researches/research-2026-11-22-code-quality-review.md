@@ -64,3 +64,7 @@ Use the renderer’s Pandoc Markdown input mode as the reference for top-level f
 - In the direct-render suite, add a case with `metadataTitle: auto` and a four-backtick opener. Put a three-backtick line before a fenced H1 that matches the frontmatter title. After the valid four-backtick close, put a different H1. Assert that the generated template retains the metadata title block. [Direct-render tests](../../test/markdown-pdf/actions/rendering/profile-rendering.app.test.ts#L364)
 - In the template signal suite, add a case with a narrow real table and a fenced table lookalike wide enough to trigger a `strong` signal if counted. With no explicit layout preset, assert that the real table yields a `weak` signal and that the `wide-table` preset is not inferred. [Template signal tests](../../test/markdown-pdf/actions/template-codex/signal-collection.app.test.ts#L195), [table risk thresholds](../../src/cli/markdown-pdf/profile/layout-policy.ts#L23)
 - Run the two updated suites with their existing ordinary-content cases to verify both downstream paths.
+
+## Related Plans
+
+- [Code Quality Review Implementation Plan](../plans/plan-2026-11-22-code-quality-review.md)
