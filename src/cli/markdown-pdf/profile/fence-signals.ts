@@ -2,6 +2,7 @@ type FenceMarker = "`" | "~";
 
 interface FenceLine {
   marker: FenceMarker;
+  indent: number;
   length: number;
   info: string;
   hasClose: boolean;
@@ -13,23 +14,27 @@ interface MarkdownFenceScan {
 }
 
 function readFenceLine(line: string): FenceLine | undefined {
-  const match = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
-  const run = match?.[1];
+  const match = /^( {0,3})(`{3,}|~{3,})(.*)$/.exec(line);
+  const run = match?.[2];
   if (!run) return undefined;
   return {
     marker: run.startsWith("`") ? "`" : "~",
+    indent: match[1]!.length,
     length: run.length,
-    info: (match[2] ?? "").replace(/^[ \t]+|[ \t]+$/g, ""),
+    info: (match[3] ?? "").replace(/^[ \t]+|[ \t]+$/g, ""),
     hasClose: false,
   };
 }
 
-function fenceLanguage(info: string): string | undefined {
+function fenceLanguage(info: string): string | null | undefined {
+  // Pandoc raw blocks hide Markdown structure but do not carry a code language.
+  if (/^\{[ \t]*=[a-z0-9_-]+[ \t]*\}$/i.test(info)) return null;
   const match = /^([^\s`{}]*)(?:[ \t]*\{(.*)\})?$/.exec(info);
   if (!match) return undefined;
 
   const attributes = match[2]?.trim() ?? "";
-  const token = /([.#][^\s{}]+|[^\s{}=]+=(?:"[^"\n]*"|'[^'\n]*'|[^\s{}]+))(?:[ \t]+|$)/gy;
+  const token =
+    /([.#][^\s{}]+|[^\s{}=]+=(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s{}"']+))(?:[ \t]+|$)/gy;
   let firstClass: string | undefined;
   while (token.lastIndex < attributes.length) {
     const attribute = token.exec(attributes)?.[1];
@@ -39,7 +44,12 @@ function fenceLanguage(info: string): string | undefined {
   return (match[1] || firstClass || "").toLowerCase();
 }
 
-type BlockContext = "boundary" | "paragraph" | "pipe-table";
+type BlockContext =
+  | "boundary"
+  | "paragraph"
+  | "pipe-table"
+  | "html-comment"
+  | { listIndent: number };
 
 function isPipeTableSeparator(line: string): boolean {
   if (!line.includes("|")) return false;
@@ -50,20 +60,44 @@ function isPipeTableSeparator(line: string): boolean {
   return cells.length > 1 && cells.every((cell) => /^:?-+:?$/.test(cell.trim()));
 }
 
-function blockContext(line: string, nextLine: string, previous: BlockContext): BlockContext {
+function blockContext(
+  line: string,
+  nextLine: string,
+  previous: BlockContext,
+  hasCommentClose: boolean,
+): BlockContext {
+  if (
+    previous === "html-comment" ||
+    (previous !== "paragraph" && hasCommentClose && /^ {0,3}<!--/.test(line))
+  ) {
+    const close = line.indexOf("-->");
+    if (close === -1) return "html-comment";
+    return line.slice(close + 3).trim() ? "paragraph" : "boundary";
+  }
   if (!line.trim()) return "boundary";
-  if (line.includes("|") && (previous === "pipe-table" || isPipeTableSeparator(nextLine))) {
+  if (
+    previous !== "paragraph" &&
+    line.includes("|") &&
+    (previous === "pipe-table" || isPipeTableSeparator(nextLine))
+  ) {
     return "pipe-table";
   }
   if (/^ {0,3}(?:=+|-+|(?:\*[ \t]*){3,}|(?:_[ \t]*){3,}|(?:-[ \t]*){3,})[ \t]*$/.test(line)) {
     return "boundary";
   }
   if (
-    previous !== "paragraph" &&
-    /^(?: {0,3}(?:#{1,6}(?:[ \t]|$)|(?:[-+*]|\d+[.)])[ \t])| {4}|\t)/.test(line)
+    /^ {0,3}<(?:[a-z][^>]*>.*<)?\/(?:div|section|article|aside|figure|table|blockquote|pre)>[ \t]*$/i.test(
+      line,
+    )
   ) {
     return "boundary";
   }
+  if (previous !== "paragraph") {
+    const list = /^ {0,3}(?:[-+*]|\d+[.)]) +/.exec(line);
+    if (list) return { listIndent: list[0].length };
+    if (/^(?: {0,3}#{1,6}(?:[ \t]|$)| {4}|\t)/.test(line)) return "boundary";
+  }
+  if (typeof previous === "object") return previous;
   return "paragraph";
 }
 
@@ -92,6 +126,7 @@ function closesFence(opener: FenceLine, candidate: FenceLine | undefined): boole
 export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
   const lines = content.split(/\r\n?|\n/);
   const fences = lines.map(readFenceLine);
+  const lastCommentClose = lines.findLastIndex((line) => line.includes("-->"));
   markCandidatesWithClosers(fences);
 
   const ordinaryLines: string[] = [];
@@ -99,10 +134,15 @@ export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
   let context: BlockContext = "boundary";
   for (let index = 0; index < lines.length; index++) {
     const fence = fences[index];
-    if (fence?.hasClose && (fence.marker === "`" || context !== "paragraph")) {
+    if (
+      fence?.hasClose &&
+      context !== "html-comment" &&
+      (typeof context !== "object" || fence.indent < context.listIndent) &&
+      (fence.marker === "`" || context !== "paragraph")
+    ) {
       const language = fenceLanguage(fence.info);
       if (language !== undefined) {
-        fenceLanguages.push(language);
+        if (language !== null) fenceLanguages.push(language);
         do {
           index++;
         } while (index < fences.length && !closesFence(fence, fences[index]));
@@ -112,7 +152,7 @@ export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
     }
     const line = lines[index]!;
     ordinaryLines.push(line);
-    context = blockContext(line, lines[index + 1] ?? "", context);
+    context = blockContext(line, lines[index + 1] ?? "", context, index <= lastCommentClose);
   }
   return { ordinaryLines, fenceLanguages };
 }

@@ -182,6 +182,12 @@ describe("Markdown PDF Codex profile signals", () => {
     ["Paragraph.\n", "~~~", ["sh"]],
     ["# Heading", "~~~", ["sh"]],
     ["", "    ~~~", []],
+    ["<!-- Note -->", "~~~", ["sh"]],
+    ["Paragraph.\n<!-- Inline note -->", "~~~", []],
+    ["<!--\n~~~Example\n~~~\n-->", "~~~", ["sh"]],
+    ["<div>\nBody\n</div>", "~~~", ["sh"]],
+    ["- Item\n  Continuation", "~~~", ["sh"]],
+    ["Paragraph.\n| A | B |\n| - | - |\n| 1 | 2 |", "~~~", []],
   ] as const)(
     "classifies %j followed by %j using Pandoc opener placement",
     (before, opener, languages) => {
@@ -191,6 +197,20 @@ describe("Markdown PDF Codex profile signals", () => {
       expect(signals.codeFences.languages).toEqual([...languages]);
     },
   );
+
+  test.each([
+    [String.raw`~~~{.python key="a\" b"}`, ["python"]],
+    ["~~~{=html}", []],
+  ] as const)("excludes structure inside attributed fence %s", (opener, languages) => {
+    const signals = collectMarkdownPdfDocumentSignals(
+      [opener, "# Hidden", "| a | b | c |", "~~~", "", "# Visible heading"].join("\n"),
+    );
+    expect(signals.title.firstH1).toEqual({ present: true, charCount: "Visible heading".length });
+    expect(signals.headings.total).toBe(1);
+    expect(signals.tables.scannedRows).toBe(0);
+    expect(signals.codeFences.languages).toEqual([...languages]);
+    expect(signals.codeFences.unlabeledCount).toBe(0);
+  });
 
   test("collects bounded font summaries without font paths", () => {
     const normalizedProfile = normalizeMarkdownPdfProfile({
