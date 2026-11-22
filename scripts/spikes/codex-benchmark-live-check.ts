@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
 import {
-  CodexAppServerExitError,
+  CodexAppServerTransportClosedError,
   observeAppServerExit,
 } from "../../src/adapters/codex/app-server-exit.ts";
 import {
@@ -402,7 +402,7 @@ async function runTrial(
   const sessionRetention = await applyCodexSessionRetention({
     mode: retention,
     threadId: thread.id,
-    completed: !(server.stopReason instanceof CodexAppServerExitError),
+    completed: !(server.stopReason instanceof CodexAppServerTransportClosedError),
     request: (method, params) => server.request(method, params),
   });
   if (start.conflicting) return failed(start.signal.reason, sessionRetention);

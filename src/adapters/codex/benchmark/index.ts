@@ -2,7 +2,7 @@ import { isAbsolute } from "node:path";
 
 import { resolveCodexSessionRetention } from "../../../utils/codex-session-retention";
 import { CodexAppServer, CodexRequestTimeoutError, isTurnInputTooLarge } from "../app-server";
-import { CodexAppServerExitError } from "../app-server-exit";
+import { CodexAppServerTransportClosedError } from "../app-server-exit";
 import { claimThreadId } from "../app-server-identity";
 import { extractAppServerVersion } from "../app-server-version";
 import { resolveDiscoveryExecutable } from "../discovery/executable";
@@ -255,7 +255,7 @@ class BenchmarkRunner {
         trial.status === "completed" && !trial.warmup && observer.isEligible(turn.id);
       await this.recover(trial, thread, turn.id, receivedAt);
       await observer.start.reconcileReply(signal);
-      retentionConfirmed = !(this.server.stopReason instanceof CodexAppServerExitError);
+      retentionConfirmed = true;
       trial.eligible = eligible;
     } catch (error) {
       trial.error = messageFrom(error);
@@ -292,10 +292,12 @@ class BenchmarkRunner {
     } finally {
       try {
         if (thread) {
+          const transportClosed =
+            this.server.stopReason instanceof CodexAppServerTransportClosedError;
           trial.sessionRetention = await applyCodexSessionRetention({
             mode: this.retention,
             threadId: thread.id,
-            completed: retentionConfirmed && !observer?.start.conflicting,
+            completed: retentionConfirmed && !observer?.start.conflicting && !transportClosed,
             request: (method, params) => this.server.request(method, params),
           });
         }

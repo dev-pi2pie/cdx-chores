@@ -1,10 +1,10 @@
 import { CodexRequestTimeoutError } from "./app-server";
-import { CodexAppServerExitError } from "./app-server-exit";
+import { CodexAppServerTransportClosedError } from "./app-server-exit";
 import { isRecord } from "./discovery/transport";
 
 function isMissingTurnStartReply(error: unknown): boolean {
   return (
-    error instanceof CodexAppServerExitError ||
+    error instanceof CodexAppServerTransportClosedError ||
     (error instanceof CodexRequestTimeoutError && error.method === "turn/start")
   );
 }

@@ -4,16 +4,19 @@ import {
   CodexRequestTimeoutError,
   isTurnInputTooLarge,
 } from "../../src/adapters/codex/app-server";
+import { CodexAppServerTransportClosedError } from "../../src/adapters/codex/app-server-exit";
 import { claimThreadId } from "../../src/adapters/codex/app-server-identity";
 import { TrialObserver } from "../../src/adapters/codex/benchmark/turn";
 
 test.each([
-  { completion: "matching", timedOut: true },
-  { completion: "unrelated", timedOut: true },
-  { completion: "matching", timedOut: false },
+  { completion: "matching", failure: "timeout" },
+  { completion: "unrelated", failure: "timeout" },
+  { completion: "matching", failure: "EOF" },
+  { completion: "unrelated", failure: "EOF" },
+  { completion: "matching", failure: "error" },
 ] as const)(
-  "handles $completion completion evidence when the reply times out: $timedOut",
-  async ({ completion, timedOut }) => {
+  "handles $completion completion evidence after a start reply failure: $failure",
+  async ({ completion, failure }) => {
     let notify: (method: string, params: unknown) => void = () => {};
     const observer = new TrialObserver(
       {
@@ -31,12 +34,15 @@ test.each([
       threadId: "thread-1",
       turn: { id: completion === "matching" ? "turn-1" : "turn-2", status: "completed" },
     });
-    const error = timedOut
-      ? new CodexRequestTimeoutError("turn/start")
-      : new Error("Request failed.");
+    const errors = {
+      timeout: new CodexRequestTimeoutError("turn/start"),
+      EOF: new CodexAppServerTransportClosedError("Codex app-server stdout ended unexpectedly."),
+      error: new Error("Request failed."),
+    };
+    const error = errors[failure];
     reply.reject(error);
 
-    if (completion === "matching" && timedOut) {
+    if (completion === "matching" && failure !== "error") {
       await expect(start).resolves.toBe("turn-1");
       await expect(observer.start.reconcileReply()).resolves.toBeUndefined();
     } else {
