@@ -1,3 +1,5 @@
+import { MarkdownSourceCursor } from "./source-cursor";
+
 type FenceMarker = "`" | "~";
 
 interface FenceLine {
@@ -48,13 +50,28 @@ type BlockContext =
   | "boundary"
   | "paragraph"
   | "pipe-table"
-  | "html-comment"
   | "definition-term"
   | { listIndent: number };
 
 const DEFINITION_MARKER = /^ {0,3}[:~] +/;
-const HTML_BLOCK_END =
-  /^ {0,3}(?:<(?:hr|meta|col)(?=[ \t/>])[^>]*>|<(?:[a-z][^>]*>.*<)?\/(?:div|section|article|aside|figure|table|blockquote|pre|main|script|style|textarea)>)[ \t]*$/i;
+const ATX_HEADING = /^ {0,3}#{1,6}(?:[ \t]|$)/;
+const VERBATIM_TAGS = new Set(["pre", "script", "style", "textarea"]);
+const BLOCK_TAGS = new Set([
+  "div",
+  "section",
+  "article",
+  "aside",
+  "figure",
+  "table",
+  "blockquote",
+  "main",
+  "p",
+  "summary",
+  "hr",
+  "meta",
+  "col",
+  ...VERBATIM_TAGS,
+]);
 
 function isPipeTableSeparator(line: string): boolean {
   if (!line.includes("|")) return false;
@@ -66,21 +83,12 @@ function isPipeTableSeparator(line: string): boolean {
 }
 
 function blockContext(
+  line: string,
   lines: string[],
   index: number,
   previous: BlockContext,
-  lastCommentClose: number,
 ): BlockContext {
-  const line = lines[index]!;
   const nextLine = lines[index + 1] ?? "";
-  if (
-    previous === "html-comment" ||
-    (previous !== "paragraph" && index <= lastCommentClose && /^ {0,3}<!--/.test(line))
-  ) {
-    const close = line.indexOf("-->");
-    if (close === -1) return "html-comment";
-    return line.slice(close + 3).trim() ? "paragraph" : "boundary";
-  }
   if (!line.trim()) return previous === "definition-term" ? previous : "boundary";
   if (previous === "definition-term") {
     const marker = DEFINITION_MARKER.exec(line);
@@ -96,7 +104,6 @@ function blockContext(
   if (/^ {0,3}(?:=+|-+|(?:\*[ \t]*){3,}|(?:_[ \t]*){3,}|(?:-[ \t]*){3,})[ \t]*$/.test(line)) {
     return "boundary";
   }
-  if (HTML_BLOCK_END.test(line)) return "boundary";
   if (previous !== "paragraph") {
     const list = /^ {0,3}(?:[-+*]|\d+[.)]) +/.exec(line);
     if (list) return { listIndent: list[0].length };
@@ -130,36 +137,216 @@ function closesFence(opener: FenceLine, candidate: FenceLine | undefined): boole
   );
 }
 
+function fenceClose(fences: (FenceLine | undefined)[], index: number, fence: FenceLine) {
+  do index++;
+  while (index < fences.length && !closesFence(fence, fences[index]));
+  return index;
+}
+
+interface SourceLine {
+  start: number;
+  end: number;
+  inlineLimit: number;
+  tagLimit: number;
+}
+
+function sourceLines(content: string, lines: string[]): SourceLine[] {
+  const breaks = content.matchAll(/\r\n?|\n/g);
+  let start = 0;
+  const positions = lines.map((line) => {
+    const end = start + line.length;
+    const position = { start, end, inlineLimit: content.length, tagLimit: content.length };
+    const newline = breaks.next().value;
+    start = end + (newline?.[0].length ?? 0);
+    return position;
+  });
+  let inlineLimit = content.length;
+  let tagLimit = content.length;
+  for (let index = positions.length - 1; index >= 0; index--) {
+    const line = lines[index]!;
+    const position = positions[index]!;
+    position.inlineLimit = inlineLimit;
+    position.tagLimit = tagLimit;
+    if (!line.trim()) inlineLimit = position.start;
+    // A malformed wrapped tag must recover before a subsequent Markdown block.
+    if (
+      !line.trim() ||
+      /^ {0,3}(?:#{1,6}(?:[ \t]|$)|\||`{3,}|~{3,})/.test(line) ||
+      isPipeTableSeparator(line) ||
+      isPipeTableSeparator(lines[index + 1] ?? "")
+    ) {
+      tagLimit = position.start;
+    }
+  }
+  return positions;
+}
+
+function fenceRecoveryBoundaries(
+  lines: string[],
+  positions: SourceLine[],
+  fences: (FenceLine | undefined)[],
+) {
+  // A later, complete Markdown fence cannot supply a missing HTML delimiter
+  // across an intervening heading or table. Immediately following apparent
+  // fences stay literal when the HTML opener has a complete end.
+  const bodies: { start: number; end: number; precedingStructure: number }[] = [];
+  let precedingStructure: number | undefined;
+  for (let index = 0; index < fences.length; index++) {
+    const line = lines[index]!;
+    if (ATX_HEADING.test(line) || isPipeTableSeparator(line)) {
+      precedingStructure = positions[index]!.start;
+    }
+    const fence = fences[index];
+    if (!fence?.hasClose || (fence.marker === "~" && lines[index - 1]?.trim())) continue;
+    if (fenceLanguage(fence.info) === undefined) continue;
+    const close = fenceClose(fences, index, fence);
+    if (precedingStructure !== undefined) {
+      bodies.push({
+        start: positions[index + 1]!.start,
+        end: positions[close]!.start,
+        precedingStructure,
+      });
+    }
+    index = close;
+  }
+  return (delimiter: number) => {
+    let low = 0;
+    let high = bodies.length;
+    while (low < high) {
+      const middle = Math.floor((low + high) / 2);
+      if (bodies[middle]!.end <= delimiter) low = middle + 1;
+      else high = middle;
+    }
+    const body = bodies[low];
+    return body && delimiter >= body.start ? body.precedingStructure : undefined;
+  };
+}
+
+type LineEnd = "boundary" | "paragraph" | "matched-paragraph";
+
+class BoundaryScanner {
+  private readonly cursor: MarkdownSourceCursor;
+  private offset = 0;
+  private lineEnd: LineEnd | undefined;
+  private openParagraphs = 0;
+
+  constructor(
+    private readonly content: string,
+    fenceRecoveryBoundary: (delimiter: number) => number | undefined,
+  ) {
+    this.cursor = new MarkdownSourceCursor(content, fenceRecoveryBoundary);
+  }
+
+  coversStart(line: SourceLine) {
+    return this.offset > line.start;
+  }
+
+  scan(line: SourceLine, previous: BlockContext) {
+    const { start, end, inlineLimit, tagLimit } = line;
+    let offset = Math.max(start, this.offset);
+    let visible = " ".repeat(Math.min(offset, end) - start);
+    let lineEnd = this.coversStart(line) ? this.lineEnd : undefined;
+    let hasText = false;
+    let blockTagOnLine = false;
+    const headingLine = ATX_HEADING.test(this.content.slice(start, end));
+
+    while (offset < end) {
+      const token = this.cursor.read(offset, inlineLimit, tagLimit);
+      const tokenEnd = token?.end ?? offset + 1;
+      const text = this.content.slice(offset, Math.min(tokenEnd, end));
+      if (token?.kind === "comment") {
+        if (lineEnd === "matched-paragraph" && offset > this.offset) lineEnd = "paragraph";
+        if (!hasText) lineEnd ??= previous === "paragraph" ? "paragraph" : "boundary";
+        visible += hasText && !lineEnd && tokenEnd <= end ? text : " ".repeat(text.length);
+      } else if (token?.kind === "tag") {
+        const { name, closing, selfClosing } = token;
+        const blockStart = !hasText && (/^ {0,3}$/.test(visible) || lineEnd === "boundary");
+        const structural =
+          !headingLine &&
+          BLOCK_TAGS.has(name) &&
+          (blockStart || name === "p" || name === "summary" || (closing && blockTagOnLine));
+        if (structural) {
+          blockTagOnLine = true;
+          const matchedParagraph = name === "p" && closing && this.openParagraphs > 0;
+          if (matchedParagraph) this.openParagraphs--;
+          if (name === "p" && !closing && !selfClosing) this.openParagraphs++;
+          lineEnd =
+            name === "summary" && closing
+              ? "paragraph"
+              : matchedParagraph
+                ? "matched-paragraph"
+                : "boundary";
+          if (blockStart && !closing && !selfClosing && VERBATIM_TAGS.has(name)) {
+            offset = this.cursor.verbatimEnd(name, offset, tokenEnd) ?? tokenEnd;
+            visible += " ".repeat(Math.min(offset, end) - (tokenEnd - text.length));
+            this.offset = offset;
+            continue;
+          }
+        }
+        visible +=
+          tokenEnd <= end && (!structural || (hasText && !blockStart))
+            ? text
+            : " ".repeat(text.length);
+        if (!structural && tokenEnd <= end) {
+          hasText = true;
+          lineEnd = undefined;
+        }
+      } else {
+        visible += text;
+        if (text.trim()) {
+          hasText = true;
+          lineEnd = tokenEnd > end ? "paragraph" : undefined;
+        }
+      }
+      offset = tokenEnd;
+      if (token) this.offset = offset;
+    }
+    this.lineEnd = lineEnd;
+    return { visible, context: lineEnd === "matched-paragraph" ? ("boundary" as const) : lineEnd };
+  }
+}
+
 export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
   const lines = content.split(/\r\n?|\n/);
+  const positions = sourceLines(content, lines);
   const fences = lines.map(readFenceLine);
-  const lastCommentClose = lines.findLastIndex((line) => line.includes("-->"));
   markCandidatesWithClosers(fences);
+  const scanner = new BoundaryScanner(content, fenceRecoveryBoundaries(lines, positions, fences));
 
   const ordinaryLines: string[] = [];
   const fenceLanguages: string[] = [];
   let context: BlockContext = "boundary";
+  let rejectedTilde: FenceLine | undefined;
   for (let index = 0; index < lines.length; index++) {
     const fence = fences[index];
+    const position = positions[index]!;
+    const line = lines[index]!;
+    const followsRejectedTilde = rejectedTilde && closesFence(rejectedTilde, fence);
+    if (followsRejectedTilde) rejectedTilde = undefined;
     if (
       fence?.hasClose &&
-      context !== "html-comment" &&
-      (typeof context !== "object" || fence.indent < context.listIndent) &&
-      (fence.marker === "`" || context !== "paragraph")
+      !followsRejectedTilde &&
+      !scanner.coversStart(position) &&
+      (typeof context !== "object" || fence.indent < context.listIndent)
     ) {
       const language = fenceLanguage(fence.info);
-      if (language !== undefined) {
+      if (fence.marker === "~" && context === "paragraph") {
+        if (fence.info && language !== undefined) rejectedTilde ??= fence;
+      } else if (language !== undefined) {
         if (language !== null) fenceLanguages.push(language);
-        do {
-          index++;
-        } while (index < fences.length && !closesFence(fence, fences[index]));
+        index = fenceClose(fences, index, fence);
+        if (fence.marker === "~") rejectedTilde = undefined;
         context = "boundary";
         continue;
       }
     }
-    const line = lines[index]!;
-    ordinaryLines.push(line);
-    context = blockContext(lines, index, context, lastCommentClose);
+    if (!scanner.coversStart(position) && context === "boundary" && /^(?: {4}|\t)/.test(line)) {
+      ordinaryLines.push(line);
+      continue;
+    }
+    const { visible, context: tokenContext } = scanner.scan(position, context);
+    ordinaryLines.push(visible);
+    context = tokenContext ?? blockContext(visible, lines, index, context);
   }
   return { ordinaryLines, fenceLanguages };
 }
