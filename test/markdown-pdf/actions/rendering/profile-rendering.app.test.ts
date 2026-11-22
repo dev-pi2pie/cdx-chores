@@ -361,14 +361,25 @@ describe("cli action modules: md to-pdf profile rendering", () => {
     });
   });
 
-  test("suppresses duplicate metadata title block for direct profile rendering by default", async () => {
+  test.each([
+    {
+      label: "visible H1 matches the metadata title",
+      body: ["# CJK Font Smoke", "", "Body."],
+      titleVisible: false,
+    },
+    {
+      label: "only a fenced H1 matches the metadata title after a shorter marker",
+      body: ["````md", "```", "# CJK Font Smoke", "````", "", "# Actual Heading"],
+      titleVisible: true,
+    },
+  ])("uses the automatic metadata title policy when $label", async ({ body, titleVisible }) => {
     await withTempFixtureDir("md-to-pdf-profile-title-block-auto", async (fixtureDir) => {
       const inputPath = join(fixtureDir, "cjk-font-smoke.md");
       const profilePath = join(fixtureDir, "profile.yml");
       let renderedTemplate = "";
       await writeFile(
         inputPath,
-        ["---", "title: CJK Font Smoke", "---", "# CJK Font Smoke", "", "Body."].join("\n"),
+        ["---", "title: CJK Font Smoke", "---", ...body].join("\n"),
         "utf8",
       );
       await writeFile(profilePath, "titleBlock:\n  metadataTitle: auto\n", "utf8");
@@ -391,7 +402,7 @@ describe("cli action modules: md to-pdf profile rendering", () => {
         runner: capturingRunner,
       });
 
-      expect(renderedTemplate).not.toContain('class="document-title"');
+      expect(renderedTemplate.includes('class="document-title"')).toBe(titleVisible);
       expect(renderedTemplate).toContain("$body$");
       expectNoStderr();
     });

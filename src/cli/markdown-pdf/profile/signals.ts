@@ -1,4 +1,5 @@
 import { parseMarkdown } from "../../../markdown";
+import { scanMarkdownPdfFences } from "./fence-signals";
 import { checkMarkdownPdfProfileFontCoverage } from "./font-coverage";
 import type {
   CheckMarkdownPdfProfileFontCoverageInput,
@@ -160,11 +161,11 @@ function collectScriptSignals(content: string): MarkdownPdfScriptSignals {
   };
 }
 
-function collectHeadingSignals(content: string): MarkdownPdfHeadingSignals {
+function collectHeadingSignals(lines: string[]): MarkdownPdfHeadingSignals {
   const byDepth: Record<string, number> = {};
   let total = 0;
   let maxDepth = 0;
-  for (const line of content.split("\n")) {
+  for (const line of lines) {
     const match = /^(#{1,6})[\t ]+\S/.exec(line);
     if (!match) {
       continue;
@@ -178,23 +179,11 @@ function collectHeadingSignals(content: string): MarkdownPdfHeadingSignals {
 }
 
 export function firstMarkdownH1Text(content: string): string | undefined {
-  let fenceMarker: string | null = null;
-  for (const line of content.split("\n")) {
-    const fenceMatch = /^[\t ]*(```+|~~~+)/.exec(line);
-    if (fenceMatch) {
-      const marker = fenceMatch[1] ?? "";
-      if (fenceMarker) {
-        if (marker.startsWith(fenceMarker[0] ?? "")) {
-          fenceMarker = null;
-        }
-      } else {
-        fenceMarker = marker;
-      }
-      continue;
-    }
-    if (fenceMarker) {
-      continue;
-    }
+  return firstH1InLines(scanMarkdownPdfFences(content).ordinaryLines);
+}
+
+function firstH1InLines(lines: string[]): string | undefined {
+  for (const line of lines) {
     const match = /^#[\t ]+(.+?)(?:\s+\{[#.][^}]*})?\s*#*\s*$/.exec(line);
     const title = match?.[1]?.trim();
     if (title) {
@@ -223,9 +212,15 @@ export function collectMarkdownPdfTitleSignals(
   content: string,
   data: Record<string, unknown> | null,
 ): MarkdownPdfTitleSignals {
+  return buildTitleSignals(firstMarkdownH1Text(content), data);
+}
+
+function buildTitleSignals(
+  firstH1: string | undefined,
+  data: Record<string, unknown> | null,
+): MarkdownPdfTitleSignals {
   const frontmatterTitle =
     typeof data?.title === "string" && data.title.trim().length > 0 ? data.title.trim() : undefined;
-  const firstH1 = firstMarkdownH1Text(content);
   const normalizedFrontmatterTitle = normalizedMarkdownPdfTitle(frontmatterTitle);
   const normalizedFirstH1 = normalizedMarkdownPdfTitle(firstH1);
   const normalizedTitleMatch =
@@ -249,8 +244,8 @@ function tableColumnCount(line: string): number {
   return trimmed.split("|").filter((cell) => cell.trim().length > 0).length;
 }
 
-function collectTableSignals(content: string): MarkdownPdfTableSignals {
-  const rows = content.split("\n").filter((line) => tableColumnCount(line) > 1);
+function collectTableSignals(lines: string[]): MarkdownPdfTableSignals {
+  const rows = lines.filter((line) => tableColumnCount(line) > 1);
   const scannedRows = rows.slice(0, MARKDOWN_PDF_SIGNAL_TABLE_ROW_LIMIT);
   return {
     scannedRows: scannedRows.length,
@@ -260,27 +255,12 @@ function collectTableSignals(content: string): MarkdownPdfTableSignals {
   };
 }
 
-function collectCodeFenceSignals(content: string): MarkdownPdfCodeFenceSignals {
+function collectCodeFenceSignals(fenceLanguages: string[]): MarkdownPdfCodeFenceSignals {
   const languages: string[] = [];
   const seen = new Set<string>();
   let unlabeledCount = 0;
   let overflowLanguageCount = 0;
-  let fenceMarker: string | null = null;
-
-  for (const line of content.split("\n")) {
-    const match = /^[\t ]*(```+|~~~+)[\t ]*([^\s`]*)?/.exec(line);
-    if (!match) {
-      continue;
-    }
-    const marker = match[1] ?? "";
-    if (fenceMarker) {
-      if (marker.startsWith(fenceMarker[0] ?? "")) {
-        fenceMarker = null;
-      }
-      continue;
-    }
-    fenceMarker = marker;
-    const label = (match[2] ?? "").trim().toLowerCase();
+  for (const label of fenceLanguages) {
     if (!label) {
       unlabeledCount += 1;
       continue;
@@ -347,14 +327,15 @@ function collectFrontmatterSignals(
 
 export function collectMarkdownPdfDocumentSignals(markdown: string): MarkdownPdfDocumentSignals {
   const parsed = parseMarkdown(markdown);
+  const { ordinaryLines, fenceLanguages } = scanMarkdownPdfFences(parsed.content);
   return {
     available: true,
-    headings: collectHeadingSignals(parsed.content),
-    tables: collectTableSignals(parsed.content),
-    codeFences: collectCodeFenceSignals(parsed.content),
+    headings: collectHeadingSignals(ordinaryLines),
+    tables: collectTableSignals(ordinaryLines),
+    codeFences: collectCodeFenceSignals(fenceLanguages),
     assets: collectAssetSignals(parsed.content),
     frontmatter: collectFrontmatterSignals(parsed.data),
-    title: collectMarkdownPdfTitleSignals(parsed.content, parsed.data),
+    title: buildTitleSignals(firstH1InLines(ordinaryLines), parsed.data),
     scripts: collectScriptSignals(parsed.content),
   };
 }
