@@ -79,7 +79,7 @@ describe("Markdown PDF rendering write lifecycle", () => {
       ).rejects.toThrow("Failed to highlight Markdown PDF code blocks");
 
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(false);
       expect(await readFile(outputPath, "utf8")).toBe("existing-pdf");
       expect(await readFile(htmlOutput, "utf8")).toBe("existing-html");
@@ -119,7 +119,7 @@ describe("Markdown PDF rendering write lifecycle", () => {
       ).rejects.toThrow("Remote assets are disabled");
 
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(false);
       expect(await readFile(outputPath, "utf8")).toBe("existing-pdf");
       expect(await readFile(htmlOutput, "utf8")).toBe("existing-html");

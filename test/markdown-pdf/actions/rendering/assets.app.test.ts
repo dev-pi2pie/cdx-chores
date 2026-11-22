@@ -39,7 +39,7 @@ describe("cli action modules: md to-pdf assets", () => {
 
       expect(error.message).toContain("https://example.com/logo.png");
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(false);
       expectNoOutput();
     });
@@ -77,7 +77,7 @@ describe("cli action modules: md to-pdf assets", () => {
       );
 
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(false);
       expectNoOutput();
     });
@@ -115,7 +115,7 @@ describe("cli action modules: md to-pdf assets", () => {
       );
 
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(false);
       expectNoOutput();
     });
@@ -154,7 +154,7 @@ describe("cli action modules: md to-pdf assets", () => {
 
       expect(error.message).not.toContain("https://example.com/outside-logo.png");
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(false);
       expectNoOutput();
     });
@@ -195,7 +195,7 @@ describe("cli action modules: md to-pdf assets", () => {
 
       expect(error.message).not.toContain("https://example.com/symlink-logo.png");
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(false);
       expectNoOutput();
     });
@@ -226,7 +226,7 @@ describe("cli action modules: md to-pdf assets", () => {
       );
 
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(false);
       expectNoOutput();
     });
@@ -250,7 +250,7 @@ describe("cli action modules: md to-pdf assets", () => {
 
       expect(error.message).toContain("https://example.com/banner.png");
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(false);
       expectNoOutput();
     });
@@ -270,7 +270,7 @@ describe("cli action modules: md to-pdf assets", () => {
       });
 
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(true);
       expect(stdout.text).toContain("Wrote PDF:");
       expectNoStderr();
@@ -298,7 +298,7 @@ describe("cli action modules: md to-pdf assets", () => {
       });
 
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(true);
       expect(stdout.text).toContain("Wrote PDF:");
       expectNoStderr();
@@ -334,7 +334,7 @@ describe("cli action modules: md to-pdf assets", () => {
 
       expect(error.message).toContain("//example.com/banner.png");
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(false);
       expectNoOutput();
     });
@@ -362,7 +362,7 @@ describe("cli action modules: md to-pdf assets", () => {
       });
 
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(true);
       expect(stdout.text).toContain("Wrote PDF:");
       expectNoStderr();
@@ -405,7 +405,7 @@ describe("cli action modules: md to-pdf assets", () => {
       );
 
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(false);
       expectNoOutput();
     });
@@ -431,7 +431,7 @@ describe("cli action modules: md to-pdf assets", () => {
 
       expect(error.message).toContain("https://example.com/chart.png");
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(false);
       expectNoOutput();
     });
@@ -453,7 +453,7 @@ describe("cli action modules: md to-pdf assets", () => {
       });
 
       expect(
-        calls.some((call) => call.command === "weasyprint" && !call.args.includes("--info")),
+        calls.some((call) => call.command === "weasyprint" && call.args.includes("--base-url")),
       ).toBe(true);
       expect(stdout.text).toContain("Wrote PDF:");
       expectNoStderr();

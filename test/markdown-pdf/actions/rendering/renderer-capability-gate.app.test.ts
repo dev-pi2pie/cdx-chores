@@ -109,7 +109,7 @@ describe("Markdown PDF renderer capability gate", () => {
   );
 
   test.each(["pdfPage", "pdfPages"] as const)(
-    "renders a format-only {%s} capability at the WeasyPrint 65.1 baseline",
+    "renders a format-only {%s} capability at the WeasyPrint 65.1 baseline with explicit opt-in",
     async (token) => {
       await withTempFixtureDir(`md-pdf-capability-${token}-accept`, async (fixtureDir) => {
         const inputPath = join(fixtureDir, "report.md");
@@ -128,6 +128,7 @@ describe("Markdown PDF renderer capability gate", () => {
           input: toRepoRelativePath(inputPath),
           profile: toRepoRelativePath(profilePath),
           output: toRepoRelativePath(outputPath),
+          allowRemoteAssets: true,
           runner,
         });
 
@@ -138,7 +139,7 @@ describe("Markdown PDF renderer capability gate", () => {
   );
 
   test.each(["65.0", "custom-build"])(
-    "keeps the basic render path on WeasyPrint %s when no advanced control is effective",
+    "keeps the basic opt-in render path on WeasyPrint %s when no advanced control is effective",
     async (version) => {
       await withTempFixtureDir("md-pdf-capability-basic", async (fixtureDir) => {
         const inputPath = join(fixtureDir, "report.md");
@@ -150,6 +151,7 @@ describe("Markdown PDF renderer capability gate", () => {
         await actionMdToPdf(runtime, {
           input: toRepoRelativePath(inputPath),
           output: toRepoRelativePath(outputPath),
+          allowRemoteAssets: true,
           runner,
         });
 
@@ -220,6 +222,7 @@ describe("Markdown PDF renderer capability gate", () => {
         profile: toRepoRelativePath(profilePath),
         pageNumbers: false,
         output: toRepoRelativePath(outputPath),
+        allowRemoteAssets: true,
         runner,
       });
 
@@ -280,6 +283,7 @@ describe("Markdown PDF renderer capability gate", () => {
         input: toRepoRelativePath(inputPath),
         profile: toRepoRelativePath(profilePath),
         output: toRepoRelativePath(outputPath),
+        allowRemoteAssets: true,
         runner,
       });
 
@@ -420,6 +424,7 @@ describe("Markdown PDF renderer capability gate", () => {
         input: toRepoRelativePath(inputPath),
         profile: toRepoRelativePath(profilePath),
         output: toRepoRelativePath(outputPath),
+        allowRemoteAssets: true,
         runner,
       });
 
@@ -444,13 +449,16 @@ describe("Markdown PDF renderer capability gate", () => {
           input: toRepoRelativePath(inputPath),
           profile: toRepoRelativePath(profilePath),
           output: toRepoRelativePath(outputPath),
+          allowRemoteAssets: true,
           runner,
         });
 
         expect(await readFile(outputPath, "utf8")).toContain("%PDF");
         expect(calls.some(({ command }) => command === "pandoc")).toBeTrue();
         expect(
-          calls.some(({ command, args }) => command === "weasyprint" && !args.includes("--info")),
+          calls.some(
+            ({ command, args }) => command === "weasyprint" && args.includes("--base-url"),
+          ),
         ).toBeTrue();
       });
     },

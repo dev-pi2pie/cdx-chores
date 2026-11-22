@@ -12,6 +12,7 @@ import {
 import { renderMarkdownPdf } from "../../../../src/cli/markdown-pdf/render";
 import { normalizeMarkdownPdfOptions } from "../../../../src/cli/markdown-pdf/validation";
 import { withPandocFixtureDir } from "../../pandoc-support";
+import { ok } from "./render-support";
 
 type Node = DefaultTreeAdapterTypes.Node;
 
@@ -92,8 +93,10 @@ ${createMarkdownPdfCoverScaffold(profile)}<main class="document-body">$body$</ma
             }
             // This lane validates real Pandoc output; PDF layout is covered by smoke renders.
             expect(command).toBe("weasyprint");
+            if (args.includes("--info")) return ok("WeasyPrint version 70.0\n");
+            if (args.includes("--help")) return ok("  --allowed-protocols ALLOWED_PROTOCOLS\n");
             await writeFile(args.at(-1)!, "%PDF stub");
-            return { ok: true, code: 0, signal: null, stdout: "", stderr: "" };
+            return ok();
           },
         });
         const document = parse(await readFile(htmlPath, "utf8"));

@@ -2,6 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, parse as parsePath } from "node:path";
 
+import { requireCommandMinimumVersion } from "../deps";
 import { CliError } from "../errors";
 import { readTextFileRequired, writeBufferFileSafe, writeTextFileSafe } from "../file-io";
 import { execCommand, type ExecCommandResult } from "../process";
@@ -17,6 +18,13 @@ import {
 } from "./profile";
 import { MARKDOWN_PDF_COVER_STYLES } from "./profile/feature-registry";
 import {
+  assessMarkdownPdfRendererCapabilities,
+  assertMarkdownPdfRendererCapabilities,
+  requireMarkdownPdfRenderer,
+  type MarkdownPdfRendererCapabilityAssessment,
+  type MarkdownPdfRendererCapabilityRequest,
+} from "./renderer-capabilities";
+import {
   rejectRemoteMarkdownPdfAssetsWhenDisabled,
   rewriteMarkdownPdfTemplateLocalAssets,
 } from "./template-assets";
@@ -28,6 +36,10 @@ import type { NormalizedMarkdownPdfOptions } from "./validation";
 
 export type MarkdownPdfProcessRunner = typeof execCommand;
 export type MarkdownPdfCodeHighlighter = typeof highlightMarkdownPdfCodeBlocks;
+
+// WeasyPrint 70.0 carries the configured fetcher into user stylesheets.
+const RESTRICTED_WEASYPRINT_MINIMUM_VERSION = "70.0";
+const ALLOWED_PROTOCOLS_OPTION = "--allowed-protocols";
 
 export interface RenderMarkdownPdfInput {
   bodyBoundary: MarkdownPdfTemplateCompatibilityResult["bodyBoundary"];
@@ -44,6 +56,8 @@ export interface RenderMarkdownPdfInput {
   pageNumbers: NormalizedMarkdownPdfPageNumbers;
   profile?: NormalizedMarkdownPdfProfile;
   code?: EffectiveMarkdownPdfCodeOptions;
+  platform?: NodeJS.Platform;
+  rendererCapabilityRequests?: readonly MarkdownPdfRendererCapabilityRequest[];
   runner?: MarkdownPdfProcessRunner;
   codeHighlighter?: MarkdownPdfCodeHighlighter;
 }
@@ -52,6 +66,7 @@ export interface RenderMarkdownPdfResult {
   pandoc: ExecCommandResult;
   weasyprint: ExecCommandResult;
   warnings: string[];
+  rendererCapabilities: MarkdownPdfRendererCapabilityAssessment;
 }
 
 function splitLines(value: string): string[] {
@@ -146,6 +161,23 @@ export async function renderMarkdownPdf(
   input: RenderMarkdownPdfInput,
 ): Promise<RenderMarkdownPdfResult> {
   const runner = input.runner ?? execCommand;
+  const cwd = dirname(input.inputPath);
+  const requests = input.rendererCapabilityRequests ?? [];
+  const renderer = await requireMarkdownPdfRenderer(
+    requests,
+    input.platform ?? process.platform,
+    (command, args) => runner(command, args, { cwd }),
+  );
+  const rendererCapabilities = assessMarkdownPdfRendererCapabilities({ renderer });
+  assertMarkdownPdfRendererCapabilities({ assessment: rendererCapabilities, requests });
+  if (!input.options.allowRemoteAssets) {
+    requireCommandMinimumVersion(
+      renderer,
+      RESTRICTED_WEASYPRINT_MINIMUM_VERSION,
+      "Markdown PDF rendering with remote assets disabled",
+    );
+  }
+
   const tempDir = await mkdtemp(join(tmpdir(), "cdx-chores-md-pdf-"));
   try {
     const templatePath = input.customTemplatePath
@@ -181,7 +213,7 @@ export async function renderMarkdownPdf(
       pandocArgs.push("--toc", "--toc-depth", String(input.options.tocDepth));
     }
 
-    const pandoc = await runner("pandoc", pandocArgs, { cwd: dirname(input.inputPath) });
+    const pandoc = await runner("pandoc", pandocArgs, { cwd });
     if (!pandoc.ok) {
       throw formatProcessFailure("pandoc", pandoc);
     }
@@ -192,12 +224,25 @@ export async function renderMarkdownPdf(
     await rejectRemoteMarkdownPdfAssetsWhenDisabled({
       html,
       cssPaths,
-      htmlBaseDirectory: dirname(input.inputPath),
+      htmlBaseDirectory: cwd,
       allowRemoteAssets: input.options.allowRemoteAssets,
       htmlCssAdditionalRootDirectories: input.customTemplatePath
         ? [dirname(input.customTemplatePath)]
         : [],
     });
+
+    const weasyprintArgs = ["--base-url", cwd];
+    if (!input.options.allowRemoteAssets) {
+      const help = await runner("weasyprint", ["--help"], { cwd });
+      const output = `${help.stdout}\n${help.stderr}`;
+      if (!help.ok || !/(?:^|\s)--allowed-protocols(?=\s|=|$)/u.test(output)) {
+        throw new CliError(
+          `Markdown PDF rendering with remote assets disabled requires WeasyPrint ${RESTRICTED_WEASYPRINT_MINIMUM_VERSION} or newer with ${ALLOWED_PROTOCOLS_OPTION} support.`,
+          { code: "MARKDOWN_PDF_ASSET_POLICY_UNSUPPORTED", exitCode: 2 },
+        );
+      }
+      weasyprintArgs.push(ALLOWED_PROTOCOLS_OPTION, "file,data");
+    }
 
     if (input.htmlOutputPath) {
       await writeTextFileSafe(input.htmlOutputPath, html, {
@@ -208,15 +253,12 @@ export async function renderMarkdownPdf(
     }
 
     const renderedPdfPath = join(tempDir, "rendered.pdf");
-    const weasyprintArgs = ["--base-url", dirname(input.inputPath)];
     for (const cssPath of cssPaths) {
       weasyprintArgs.push("--stylesheet", cssPath);
     }
     weasyprintArgs.push(finalHtmlPath, renderedPdfPath);
 
-    const weasyprint = await runner("weasyprint", weasyprintArgs, {
-      cwd: dirname(input.inputPath),
-    });
+    const weasyprint = await runner("weasyprint", weasyprintArgs, { cwd });
     if (!weasyprint.ok) {
       throw formatProcessFailure("weasyprint", weasyprint);
     }
@@ -230,6 +272,7 @@ export async function renderMarkdownPdf(
       pandoc,
       weasyprint,
       warnings: [...splitLines(pandoc.stderr), ...splitLines(weasyprint.stderr)],
+      rendererCapabilities,
     };
   } finally {
     await rm(tempDir, { recursive: true, force: true });

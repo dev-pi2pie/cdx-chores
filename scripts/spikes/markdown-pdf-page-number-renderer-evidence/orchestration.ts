@@ -258,6 +258,8 @@ async function runRendererEvidenceInLaboratory(
       }
     }
 
+    // The controlled fixtures compare page numbering on legacy renderers.
+    const fixtureRenderOptions = ["--overwrite", "--allow-remote-assets"];
     const launchDirectory = join(labRoot, "results", candidate.id, "actual-launch");
     await mkdir(launchDirectory, { recursive: true });
     const launchPdf = join(launchDirectory, "output.pdf");
@@ -276,7 +278,7 @@ async function runRendererEvidenceInLaboratory(
           contract.launch.profilePath,
           "--output",
           launchPdf,
-          "--overwrite",
+          ...fixtureRenderOptions,
         ],
         { candidateId: candidate.id, env: selectedEnvironment },
       ),
@@ -336,7 +338,7 @@ async function runRendererEvidenceInLaboratory(
           ...(productLaunch.cssPath ? ["--css", productLaunch.cssPath] : []),
           "--output",
           productPdf,
-          "--overwrite",
+          ...fixtureRenderOptions,
         ],
         pngPages: scenario.expected.pngPages,
         validate: (evidence) => validatePdfEvidence(scenario, evidence),
@@ -427,7 +429,7 @@ async function runRendererEvidenceInLaboratory(
                 ]),
             "--output",
             projectPdf,
-            "--overwrite",
+            ...fixtureRenderOptions,
           ],
           pngPages: scenario.expected.pngPages,
           validate: (evidence) => validatePdfEvidence(scenario, evidence),

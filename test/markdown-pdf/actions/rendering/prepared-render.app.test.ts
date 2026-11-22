@@ -227,11 +227,17 @@ describe("Markdown PDF prepared render service", () => {
 
       await executePlannedMarkdownPdfRender(runtime, plan, { runner });
 
-      expect(calls.map(({ command }) => command)).toEqual([
-        "pandoc",
-        "weasyprint",
-        "pandoc",
-        "weasyprint",
+      expect(
+        calls.map(({ command, args }) => [
+          command,
+          args.includes("--output") ? "--output" : args[0],
+        ]),
+      ).toEqual([
+        ["pandoc", "--version"],
+        ["weasyprint", "--info"],
+        ["pandoc", "--output"],
+        ["weasyprint", "--help"],
+        ["weasyprint", "--base-url"],
       ]);
       expect(await readFile(outputPath, "utf8")).toContain("%PDF");
     });
@@ -273,7 +279,7 @@ describe("Markdown PDF prepared render service", () => {
       });
       const weasyprintInputs: string[] = [];
       const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
-        if (command === "weasyprint" && !args.includes("--info")) {
+        if (command === "weasyprint" && args.includes("--base-url")) {
           const htmlPath = args.at(-2);
           if (htmlPath) {
             weasyprintInputs.push(await readFile(htmlPath, "utf8"));

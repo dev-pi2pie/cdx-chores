@@ -26,6 +26,8 @@ export function failing(stderr: string): ExecCommandResult {
 
 export function createPdfRunner(options: {
   html: string;
+  weasyprintVersion?: string;
+  weasyprintHelp?: string;
   weasyprintStderr?: string;
   failPandoc?: boolean;
   failWeasyprint?: boolean;
@@ -38,7 +40,10 @@ export function createPdfRunner(options: {
       return ok("pandoc 3.1\n");
     }
     if (command === "weasyprint" && args.includes("--info")) {
-      return ok("WeasyPrint version 68.0\n");
+      return ok(`WeasyPrint version ${options.weasyprintVersion ?? "70.0"}\n`);
+    }
+    if (command === "weasyprint" && args.includes("--help")) {
+      return ok(options.weasyprintHelp ?? "  --allowed-protocols ALLOWED_PROTOCOLS\n");
     }
     if (command === "pandoc") {
       if (options.failPandoc) {

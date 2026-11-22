@@ -46,7 +46,7 @@ describe("Markdown PDF rendering core", () => {
         "markdown",
       ]);
       const weasyprintRender = calls.find(
-        (call) => call.command === "weasyprint" && !call.args.includes("--info"),
+        (call) => call.command === "weasyprint" && call.args.includes("--base-url"),
       );
       expect(weasyprintRender?.args).toContain("--base-url");
       expect(weasyprintRender?.args[weasyprintRender.args.indexOf("--base-url") + 1]).toBe(

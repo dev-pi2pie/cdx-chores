@@ -40,7 +40,7 @@ describe("cli action modules: md to-pdf profile rendering", () => {
         html: '<html><body><main class="document-body">Report</main></body></html>',
       });
       const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
-        if (command === "weasyprint" && !args.includes("--info")) {
+        if (command === "weasyprint" && args.includes("--base-url")) {
           const stylesheetIndexes = args
             .map((argument, index) => (argument === "--stylesheet" ? index : -1))
             .filter((index) => index >= 0);
@@ -140,7 +140,7 @@ describe("cli action modules: md to-pdf profile rendering", () => {
             renderedTemplate = await readFile(templatePath, "utf8");
           }
         }
-        if (command === "weasyprint" && !args.includes("--info")) {
+        if (command === "weasyprint" && args.includes("--base-url")) {
           const commandStyles: string[] = [];
           const stylesheetIndexes = args
             .map((arg, index) => (arg === "--stylesheet" ? index : -1))
@@ -255,7 +255,7 @@ describe("cli action modules: md to-pdf profile rendering", () => {
 
       const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
       const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
-        if (command === "weasyprint" && !args.includes("--info")) {
+        if (command === "weasyprint" && args.includes("--base-url")) {
           const stylesheetIndexes = args
             .map((arg, index) => (arg === "--stylesheet" ? index : -1))
             .filter((index) => index >= 0);
@@ -330,7 +330,7 @@ describe("cli action modules: md to-pdf profile rendering", () => {
 
       const { runner } = createPdfRunner({ html: "<html><body>Wide Report</body></html>" });
       const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
-        if (command === "weasyprint" && !args.includes("--info")) {
+        if (command === "weasyprint" && args.includes("--base-url")) {
           const stylesheetIndexes = args
             .map((arg, index) => (arg === "--stylesheet" ? index : -1))
             .filter((index) => index >= 0);
@@ -466,7 +466,7 @@ describe("cli action modules: md to-pdf profile rendering", () => {
 
       const { runner } = createPdfRunner({ html: "<html><body>Report</body></html>" });
       const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
-        if (command === "weasyprint" && !args.includes("--info")) {
+        if (command === "weasyprint" && args.includes("--base-url")) {
           const stylesheetIndexes = args
             .map((arg, index) => (arg === "--stylesheet" ? index : -1))
             .filter((index) => index >= 0);

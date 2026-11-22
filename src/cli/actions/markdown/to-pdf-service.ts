@@ -40,10 +40,7 @@ import {
   type MarkdownPdfDiagnostics,
 } from "../../markdown-pdf/diagnostics";
 import {
-  assertMarkdownPdfRendererCapabilities,
-  assessMarkdownPdfRendererCapabilities,
   collectMarkdownPdfRendererCapabilityRequests,
-  type MarkdownPdfRendererCapabilityAssessment,
   type MarkdownPdfRendererCapabilityRequest,
 } from "../../markdown-pdf/renderer-capabilities";
 import {
@@ -112,43 +109,6 @@ export interface ExecutePlannedMarkdownPdfRenderOptions {
 
 export interface MarkdownPdfRenderExecutionResult extends RenderMarkdownPdfResult {
   diagnostics: MarkdownPdfDiagnostics;
-  rendererCapabilities: MarkdownPdfRendererCapabilityAssessment;
-}
-
-async function requireMarkdownPdfRenderer(
-  requests: readonly MarkdownPdfRendererCapabilityRequest[],
-  platform: NodeJS.Platform,
-  runner: MarkdownPdfProcessRunner,
-) {
-  try {
-    return await requireCommandAvailable("weasyprint", platform, runner);
-  } catch (error) {
-    if (!(error instanceof CliError) || requests.length === 0) {
-      throw error;
-    }
-
-    if (error.code === "DEPENDENCY_CHECK_FAILED") {
-      assertMarkdownPdfRendererCapabilities({
-        assessment: assessMarkdownPdfRendererCapabilities({ probeFailed: true }),
-        requests,
-      });
-    }
-    if (error.code === "DEPENDENCY_MISSING") {
-      assertMarkdownPdfRendererCapabilities({
-        assessment: assessMarkdownPdfRendererCapabilities({
-          renderer: {
-            name: "weasyprint",
-            available: false,
-            version: null,
-            installHint: "",
-          },
-        }),
-        requests,
-      });
-    }
-
-    throw error;
-  }
 }
 
 export const MARKDOWN_PDF_PAGE_NUMBERS_REQUIRE_DEFAULT_CSS_REASON =
@@ -365,16 +325,6 @@ export async function executePlannedMarkdownPdfRender(
   const runner = options.runner ?? execCommand;
   const pandoc = await requireCommandAvailable("pandoc", runtime.platform, runner);
   requireCommandMinimumVersion(pandoc, MARKDOWN_PDF_MINIMUM_PANDOC_VERSION, "md to-pdf");
-  const weasyprint = await requireMarkdownPdfRenderer(
-    plan.prepared.rendererCapabilityRequests,
-    runtime.platform,
-    runner,
-  );
-  const rendererCapabilities = assessMarkdownPdfRendererCapabilities({ renderer: weasyprint });
-  assertMarkdownPdfRendererCapabilities({
-    assessment: rendererCapabilities,
-    requests: plan.prepared.rendererCapabilityRequests,
-  });
 
   const result = await renderMarkdownPdf({
     bodyBoundary: plan.prepared.templateCompatibility.bodyBoundary,
@@ -394,13 +344,14 @@ export async function executePlannedMarkdownPdfRender(
       pageNumbers: plan.prepared.pageNumberConfiguration.effective,
     },
     code: plan.prepared.code,
+    platform: runtime.platform,
+    rendererCapabilityRequests: plan.prepared.rendererCapabilityRequests,
     runner,
     codeHighlighter: options.codeHighlighter,
   });
   return {
     ...result,
     diagnostics: plan.prepared.diagnostics,
-    rendererCapabilities,
     warnings: [...markdownPdfDiagnosticWarnings(plan.prepared.diagnostics), ...result.warnings],
   };
 }
