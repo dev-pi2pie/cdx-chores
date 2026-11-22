@@ -20,3 +20,14 @@ Phase 1 completed through `d2ee7658`. Document signals and direct PDF title dete
 | Review `6b83f5a6..1f16a2fa` | Found a gap after a standalone HTML block. Correction `d2ee7658` covered that boundary and simple definition-list boundaries. |
 | Verification at `d2ee7658` | 2,167 unit tests and 65 focused signal and consumer tests passed. The focused run includes 26 signal unit tests and both consumer regressions. Pandoc comparisons agreed on 34 cases. TypeScript, lint, changed-file formatting, and diff checks passed. |
 | Final review `6b83f5a6..d2ee7658` | Test and maintainability reviews found no remaining actionable issues in the agreed scope. |
+
+## Phase 2. CSV path containment
+
+Phase 2 completed through `ac268997`. CSV replay resolves its working directory once and validates both endpoint parents before staging moves. The working directory and endpoint parents must stay stable through replay. [Replay checklist](../plan-2026-11-22-code-quality-review.md#phase-2-csv-path-containment) · [Replay contract](../../guides/rename-plan-csv-schema.md#strict-replay-contract)
+
+| Checkpoint | Evidence |
+| --- | --- |
+| Implementation `59c36b53` | Shared segment-aware lexical containment, validated existing non-symlinked parents against canonical cwd, and rejected invalid source files and directory destinations during preflight. |
+| Review `93ee3735..59c36b53` | Security review approved the stable-parent boundary. Test review requested coverage for missing and symlinked source files. Checkpoint `ac268997` added both cases. |
+| Verification at `ac268997` | 2,171 unit tests, 125 rename action tests, and 36 focused path, replay, and writer tests passed. Isolated fixtures verified `..draft` replay and rejection before file or CSV changes. `path.win32` checks covered drive and UNC roots and ambiguous path components. TypeScript, lint, changed-file formatting, and diff checks passed. |
+| Final review `93ee3735..ac268997` | Security and test reviewers approved the exact widened range for the stable-parent contract. |

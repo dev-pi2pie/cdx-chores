@@ -68,6 +68,10 @@ Use the renderer’s Pandoc Markdown input mode as the reference for top-level f
 
 Phase 1 implemented these rules in the signal layer using top-level block-boundary heuristics. The verification results and exact reviewed range are recorded in the [Phase 1 implementation record](../plans/jobs/2026-11-22-code-quality-review.md#phase-1-markdown-fenced-code-signals).
 
+### CSV replay containment
+
+Phase 2 uses stable parents as its filesystem boundary. Replay resolves cwd once and preflights both endpoint parents and the file types for all planned moves before staging. The shared lexical check accepts names such as `..draft` and preserves each caller’s rule for root equality. The verification and approved code range are in the [Phase 2 implementation record](../plans/jobs/2026-11-22-code-quality-review.md#phase-2-csv-path-containment).
+
 ## Related Plans
 
 - [Code Quality Review Implementation Plan](../plans/plan-2026-11-22-code-quality-review.md)

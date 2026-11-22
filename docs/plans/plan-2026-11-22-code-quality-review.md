@@ -30,9 +30,13 @@ Scope the change to top-level fences in the renderer’s Pandoc Markdown mode. S
 
 ## Phase 2. CSV path containment
 
-- [ ] Define whether replay must tolerate concurrent parent replacement. Validate both endpoint parents for stable-parent preflight. If concurrent replacement is in scope, enforce containment during the move.
-- [ ] Share segment-aware lexical containment where callers have matching contracts. Preserve each caller’s root-equality rules and reject cross-volume paths.
-- [ ] Verify allowed paths such as `..draft`, rejections for out-of-root parents and cross-volume paths, and the accepted concurrency contract using isolated fixtures.
+Replay assumes the canonical working directory and endpoint parents stay stable throughout validation and execution.
+
+[Phase 2 implementation record](jobs/2026-11-22-code-quality-review.md#phase-2-csv-path-containment)
+
+- [x] Validate both endpoint parents and file types for all planned moves before staging any file.
+- [x] Share segment-aware lexical containment across replay and file I/O. Preserve each caller’s root-equality rules and reject cross-volume paths.
+- [x] Verify nested `..draft` replay, invalid-parent and file rejections before mutation, and Windows drive and UNC rules. Review the exact implementation range under the stable-parent contract.
 
 ## Phase 3. Markdown PDF remote assets
 
