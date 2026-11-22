@@ -117,3 +117,13 @@ Implementation started from `9c3b3e98`. The existing harness installer delegates
 | `a439ebd9` | Moved registrations and per-install counters to their owning services. Shared authoring and rendering defaults through one module and kept the existing harness contract and module URLs. |
 | Verification | All 473 Interactive Markdown PDF cases passed before and after the split. All seven registration bodies matched in order, and complete harness results matched for render retry, session retention, cleanup, and saved Project handoff. Two adjacent routing cases, TypeScript, lint, formatting, and diff checks passed. |
 | Exact range review | Maintainability and test reviewers approved `9c3b3e98..a439ebd9` with no actionable findings. |
+
+## Phase 9. Test-runner launch preflight
+
+Implementation started from `93135ac0`. Launch validation and its error class now live in a dedicated module. The process runner still exposes the same entry point and error constructor. [Phase 9 checklist](../plan-2026-11-22-code-quality-review.md#phase-9-test-runner-launch-preflight)
+
+| Checkpoint | Evidence |
+| --- | --- |
+| `c0c42ae5` | Validation wraps failures before the requested spawn. Native synchronous throws propagate with fixture ownership unresolved, and asynchronous launch errors still produce `launch-failed`. Source comparison confirmed the launch checks, public type declarations, and runner body match the baseline. |
+| Verification | All 70 focused process, output, fixture, capability, and observation tests passed before and after extraction. Coverage includes throws after allocation, relative-path probe fallback, missing executable and working directory, output draining, and group shutdown. The managed Unit suite passed 2,171 cases with verified cleanup. TypeScript, lint, formatting, and diff checks passed. |
+| Exact range review | Maintainability and test reviewers approved `93135ac0..c0c42ae5` with no actionable findings. |

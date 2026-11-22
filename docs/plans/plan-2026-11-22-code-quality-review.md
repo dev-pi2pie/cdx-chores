@@ -94,8 +94,10 @@ Improve the managed Application suite’s runtime and the value of its assertion
 
 ## Phase 9. Test-runner launch preflight
 
-- [ ] Extract launch validation behind the existing process runner entry point and preserve the distinction between launch rejection and spawn failure.
-- [ ] Run the process-runner tests for launch errors, output draining, and group shutdown.
+[Phase 9 implementation record](jobs/2026-11-22-code-quality-review.md#phase-9-test-runner-launch-preflight)
+
+- [x] Extract launch validation behind the existing process runner entry point and preserve the distinction between launch rejection and spawn failure.
+- [x] Run the process-runner tests for launch errors, output draining, and group shutdown.
 
 ## Phase 10. CRC-32 built-in
 
