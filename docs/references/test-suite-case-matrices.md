@@ -1,7 +1,7 @@
 ---
 title: "Test Suite Contract Ownership Catalog"
 created-date: 2026-08-23
-modified-date: 2026-10-23
+modified-date: 2026-11-22
 status: completed
 agent: codex
 ---
@@ -34,6 +34,7 @@ Use the [Testing Guide](../guides/testing.md) for suite selection, prerequisites
 | Video                      | `test/video/`                                                                                                                                   | conversion actions, frame selection/export, command behavior, and Interactive flows                        |
 | Platform and utilities     | `test/codex-adapters/`, `test/fonts/`, `test/release-tooling/`, `test/utils/`                                                                   | shared adapter, font, release-tooling, and utility contracts                                               |
 | Codex discovery            | `test/codex-info/`                                                                                                                              | protocol parsing, transport, and isolated installed-Codex verification                                     |
+| Codex benchmark            | `test/codex-benchmark/`                                                                                                                         | tier rejection and malformed replies in unit tests, CLI outcomes and recovery, cancellation, and cleanup in Application tests |
 | Test runner                | `test/test-runner/`                                                                                                                             | suite discovery, prerequisites, process/output ownership, reporting, retention, and terminal presentation  |
 | Shared fixtures            | `test/fixtures/`                                                                                                                                | checked-in data consumed by more than one accepted owner                                                   |
 | Global helpers             | `test/helpers/`                                                                                                                                 | independently reused, feature-neutral test infrastructure only                                             |
