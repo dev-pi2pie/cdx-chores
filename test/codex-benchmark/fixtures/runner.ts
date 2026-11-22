@@ -15,6 +15,7 @@ interface Scenario {
   rejectFirstLookup?: "model/list" | "config/read";
   configuredModel?: string | null;
   exitDuringReadbackThread?: number;
+  leaderExitDuringTurn?: "before-completion" | "after-completion";
   endStdoutDuringThread?: number;
   endStdoutAfterThread?: number;
   phase?: string | null;

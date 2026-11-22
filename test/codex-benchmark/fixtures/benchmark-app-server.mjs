@@ -123,7 +123,7 @@ async function run() {
   if (scenario.resistantWorker) {
     const readyPath = join(home, "worker.pid");
     const worker = spawn(process.execPath, [process.argv[1], "resistant-worker"], {
-      stdio: "ignore",
+      stdio: scenario.leaderExitDuringTurn ? ["ignore", "inherit", "ignore"] : "ignore",
     });
     worker.unref();
     for (let attempt = 0; attempt < 100 && !existsSync(readyPath); attempt++) await delay(10);
@@ -258,6 +258,7 @@ async function run() {
         reply({});
         break;
       case "turn/start": {
+        if (scenario.leaderExitDuringTurn === "before-completion") process.exit(17);
         const delayedReply =
           thread.id === "thread-1" &&
           ["reply-during-readback", "reply-after-readback"].includes(scenario.conflictingStart);
@@ -363,6 +364,10 @@ async function run() {
           completeTurn(thread, "interrupted", message === null ? null : { message });
         } else {
           completeTurn(thread, "completed");
+          if (scenario.leaderExitDuringTurn === "after-completion") {
+            process.stdout.write("", () => process.exit(17));
+            return;
+          }
           if (delayedReply) {
             if (scenario.conflictingStart === "reply-after-readback") {
               await waitForReceipt("caller-rollout-finished");

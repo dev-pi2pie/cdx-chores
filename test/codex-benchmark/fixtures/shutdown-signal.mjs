@@ -43,6 +43,19 @@ if (process.env.FIXTURE_RECORD_APP_SERVER === "1") {
     const child = spawn(executable, args, options);
     // A partial write may contain a shorter, valid-looking PID.
     writeFileSync(receipt, `${child.pid ?? "not-started"}\n`);
+    if (process.env.FIXTURE_READ_TURN_AFTER_EXIT === "1") {
+      const write = child.stdin.write;
+      child.stdin.write = function (chunk, ...args) {
+        if (JSON.parse(chunk).method === "turn/start") {
+          child.stdout.pause();
+          child.stdout.prependOnceListener("data", () => {
+            writeFileSync(join(owner.home, "turn-read-exit-code"), String(child.exitCode));
+          });
+          child.once("exit", () => child.stdout.resume());
+        }
+        return write.call(this, chunk, ...args);
+      };
+    }
     return child;
   };
   syncBuiltinESMExports();

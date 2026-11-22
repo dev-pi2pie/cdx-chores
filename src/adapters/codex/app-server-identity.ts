@@ -1,8 +1,12 @@
 import { CodexRequestTimeoutError } from "./app-server";
+import { CodexAppServerExitError } from "./app-server-exit";
 import { isRecord } from "./discovery/transport";
 
-function isTurnStartTimeout(error: unknown): boolean {
-  return error instanceof CodexRequestTimeoutError && error.method === "turn/start";
+function isMissingTurnStartReply(error: unknown): boolean {
+  return (
+    error instanceof CodexAppServerExitError ||
+    (error instanceof CodexRequestTimeoutError && error.method === "turn/start")
+  );
 }
 
 export function isAppServerId(value: unknown): value is string {
@@ -70,7 +74,7 @@ export class TurnStartEvidence {
   recoverCompletedTurn(error: unknown, hasCompletion: (turnId: string) => boolean): string {
     this.assertUnambiguous();
     const id = this.turnId;
-    if (id && isTurnStartTimeout(error) && hasCompletion(id)) return id;
+    if (id && isMissingTurnStartReply(error) && hasCompletion(id)) return id;
     throw error;
   }
 
@@ -88,7 +92,7 @@ export class TurnStartEvidence {
       if (waiting) await Promise.race([this.reply, cancelled.promise]);
       else await this.reply;
     } catch (error) {
-      if (!isTurnStartTimeout(error)) throw error;
+      if (!isMissingTurnStartReply(error)) throw error;
     } finally {
       waiting?.removeEventListener("abort", onAbort);
     }

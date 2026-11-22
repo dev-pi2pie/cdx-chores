@@ -2,6 +2,7 @@ import { isAbsolute } from "node:path";
 
 import { resolveCodexSessionRetention } from "../../../utils/codex-session-retention";
 import { CodexAppServer, CodexRequestTimeoutError, isTurnInputTooLarge } from "../app-server";
+import { CodexAppServerExitError } from "../app-server-exit";
 import { claimThreadId } from "../app-server-identity";
 import { extractAppServerVersion } from "../app-server-version";
 import { resolveDiscoveryExecutable } from "../discovery/executable";
@@ -254,7 +255,7 @@ class BenchmarkRunner {
         trial.status === "completed" && !trial.warmup && observer.isEligible(turn.id);
       await this.recover(trial, thread, turn.id, receivedAt);
       await observer.start.reconcileReply(signal);
-      retentionConfirmed = true;
+      retentionConfirmed = !(this.server.stopReason instanceof CodexAppServerExitError);
       trial.eligible = eligible;
     } catch (error) {
       trial.error = messageFrom(error);
@@ -349,15 +350,16 @@ export async function runCodexBenchmark(options: BenchmarkOptions): Promise<Benc
     }
     const runner = new BenchmarkRunner(server, options);
     for (const selection of benchmarkWorkload(options)) {
-      if (signal?.aborted || server.signal.aborted || !runner.canStartTrial) break;
+      if (signal?.aborted || server.stopReason !== undefined || !runner.canStartTrial) break;
       onTrialStart?.(selection);
       const trial = trialRecord(selection);
       await runner.runTrial(trial);
       report.trials.push(trial);
       onTrial?.(trial);
     }
-    if (!report.interrupted && !signal?.aborted && server.signal.aborted) {
-      report.transportError = messageFrom(server.stopReason);
+    const stopReason = server.stopReason;
+    if (!report.interrupted && !signal?.aborted && stopReason !== undefined) {
+      report.transportError = messageFrom(stopReason);
     }
     return report;
   } finally {
