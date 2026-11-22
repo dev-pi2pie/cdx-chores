@@ -2,7 +2,7 @@
 title: "Code Quality Review Implementation Record"
 created-date: 2026-11-22
 modified-date: 2026-11-22
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -138,3 +138,15 @@ Implementation started from `42d1b203`. PNG framing and the DOCX, data-extract, 
 | `2c222966` | ZIP generators keep the same entry bytes and little-endian local and central checksum fields. The baseline regenerated deterministically, and all 22 outputs matched byte-for-byte after the change. Independent ZIP checks verified 55 entry checksums in 10 DOCX and XLSX archives. |
 | Verification | 30 framing and staging tests and 30 DOCX and XLSX reader tests passed. The initial concurrent Node export run missed the expected earlier publication count in one WebP case. Three isolated reruns on each revision passed all 54 cases. Build, TypeScript, lint, formatting, and diff checks passed. |
 | Exact range review | Maintainability and test reviewers approved `42d1b203..2c222966` with no actionable findings. |
+
+## Phase 11. Docs Validation
+
+Documentation validation started from `8c667ab7`. [Phase 11 checklist](../plan-2026-11-22-code-quality-review.md#phase-11-docs-validation)
+
+| Check | Result |
+| --- | --- |
+| Links and headings | Checked 67 repository links across the research, plan, and unified job record. Retargeted stale research links to the current implementations and tests. Checked linked guidance and opened the three upstream WeasyPrint reference pages. |
+| Mermaid | Rendered the Markdown fence diagram to SVG with `beautiful-mermaid`. Both flows, their labels, and all six edges were present and matched the original and shared signal paths. |
+| Checklist evidence | Matched Phases 1–10 and the WeasyPrint follow-up to their recorded verification and review evidence. Confirmed all 15 recorded implementation review ranges are in branch history. |
+| Wording and format | Checked public-safe wording, repository-relative paths, and whitespace in the docs diff. |
+| Documentation review | `docs_reviewer` flagged the launch-validation link. The corrected link points to `checkLaunch`, and re-review found no remaining material issues. |
