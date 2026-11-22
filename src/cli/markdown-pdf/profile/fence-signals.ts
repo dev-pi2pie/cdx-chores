@@ -46,6 +46,18 @@ function fenceLanguage(info: string): string | null | undefined {
   return (match[1] || firstClass || "").toLowerCase();
 }
 
+function readDivFence(line: string): "open" | "close" | undefined {
+  const info = /^:{3,}(.*)$/.exec(line)?.[1]?.trim();
+  if (info === undefined) return undefined;
+  if (!info) return "close";
+  if (info.startsWith("{")) {
+    const attributes = info.replace(/[ \t]*:+$/, "");
+    return fenceLanguage(attributes) == null ? undefined : "open";
+  }
+  const className = info.replace(/[ \t]+:+$/, "");
+  return /^[^\s{}]+$/.test(className) ? "open" : undefined;
+}
+
 type BlockContext =
   | "boundary"
   | "paragraph"
@@ -56,6 +68,7 @@ type BlockContext =
 const DEFINITION_MARKER = /^ {0,3}[:~] +/;
 const ATX_HEADING = /^ {0,3}#{1,6}(?:[ \t]|$)/;
 const VERBATIM_TAGS = new Set(["pre", "script", "style", "textarea"]);
+const VOID_BLOCK_TAGS = new Set(["hr", "meta", "col"]);
 const BLOCK_TAGS = new Set([
   "div",
   "section",
@@ -67,9 +80,7 @@ const BLOCK_TAGS = new Set([
   "main",
   "p",
   "summary",
-  "hr",
-  "meta",
-  "col",
+  ...VOID_BLOCK_TAGS,
   ...VERBATIM_TAGS,
 ]);
 
@@ -254,7 +265,6 @@ class BoundaryScanner {
     let visible = " ".repeat(Math.min(offset, end) - start);
     let lineEnd = this.coversStart(line) ? this.lineEnd : undefined;
     let hasText = false;
-    let blockTagOnLine = false;
     const headingLine = ATX_HEADING.test(this.content.slice(start, end));
 
     while (offset < end) {
@@ -273,7 +283,6 @@ class BoundaryScanner {
             visible += " ".repeat(Math.min(verbatimEnd, end) - offset);
             offset = this.offset = verbatimEnd;
             lineEnd = "boundary";
-            blockTagOnLine = true;
             continue;
           }
         }
@@ -281,9 +290,11 @@ class BoundaryScanner {
         const structural =
           !headingLine &&
           BLOCK_TAGS.has(name) &&
-          (blockStart || name === "p" || name === "summary" || (closing && blockTagOnLine));
+          (blockStart ||
+            name === "p" ||
+            name === "summary" ||
+            (closing && !VOID_BLOCK_TAGS.has(name)));
         if (structural) {
-          blockTagOnLine = true;
           const matchedParagraph = name === "p" && closing && this.openParagraphs > 0;
           if (matchedParagraph) this.openParagraphs--;
           if (name === "p" && !closing && !selfClosing) this.openParagraphs++;
@@ -327,17 +338,19 @@ export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
   const ordinaryLines: string[] = [];
   const fenceLanguages: string[] = [];
   let context: BlockContext = "boundary";
+  let divDepth = 0;
   let rejectedTilde: FenceLine | undefined;
   for (let index = 0; index < lines.length; index++) {
     const fence = fences[index];
     const position = positions[index]!;
     const line = lines[index]!;
+    const covered = scanner.coversStart(position);
     const followsRejectedTilde = rejectedTilde && closesFence(rejectedTilde, fence);
     if (followsRejectedTilde) rejectedTilde = undefined;
     if (
       fence?.hasClose &&
       !followsRejectedTilde &&
-      !scanner.coversStart(position) &&
+      !covered &&
       (typeof context !== "object" || fence.indent < context.listIndent)
     ) {
       const language = fenceLanguage(fence.info);
@@ -351,8 +364,15 @@ export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
         continue;
       }
     }
-    if (!scanner.coversStart(position) && context === "boundary" && /^(?: {4}|\t)/.test(line)) {
+    if (!covered && context === "boundary" && /^(?: {4}|\t)/.test(line)) {
       ordinaryLines.push(line);
+      continue;
+    }
+    const divFence = covered ? undefined : readDivFence(line);
+    if ((divFence === "open" && context === "boundary") || (divFence === "close" && divDepth > 0)) {
+      divDepth += divFence === "open" ? 1 : -1;
+      ordinaryLines.push(line);
+      context = "boundary";
       continue;
     }
     const { visible, context: tokenContext } = scanner.scan(position, context);
