@@ -258,8 +258,9 @@ async function run() {
         reply({});
         break;
       case "turn/start": {
-        const conflictingReply =
-          scenario.conflictingStart === "reply-during-readback" && thread.id === "thread-1";
+        const delayedReply =
+          thread.id === "thread-1" &&
+          ["reply-during-readback", "reply-after-readback"].includes(scenario.conflictingStart);
         if (thread.id === `thread-${scenario.turnStartRefusal?.at}`) {
           const { error, evidence, errorFirst } = scenario.turnStartRefusal;
           const turn = { id: `turn-${thread.id}` };
@@ -333,7 +334,7 @@ async function run() {
         if (
           !scenario.withholdStartReply &&
           thread.id !== `thread-${scenario.withholdStartReplyThread}` &&
-          !conflictingReply
+          !delayedReply
         ) {
           reply({ turn: { id: thread.turnId, status: "inProgress" } });
           traceLifecycle("fixture/turn-start-reply", {
@@ -362,11 +363,18 @@ async function run() {
           completeTurn(thread, "interrupted", message === null ? null : { message });
         } else {
           completeTurn(thread, "completed");
-          if (conflictingReply) {
-            await waitForReceipt("caller-rollout-read");
-            const turnId = "conflicting-turn";
+          if (delayedReply) {
+            if (scenario.conflictingStart === "reply-after-readback") {
+              await waitForReceipt("caller-rollout-finished");
+              await delay(100);
+            } else {
+              await waitForReceipt("caller-rollout-read");
+            }
+            const turnId =
+              scenario.lateStartReply === "matching" ? thread.turnId : "conflicting-turn";
             traceLifecycle("fixture/turn-start-reply", { threadId: thread.id, turnId });
-            reply({ turn: { id: turnId } });
+            if (scenario.lateStartReply === "rejected") reject("fixture rejected the late reply");
+            else reply({ turn: { id: turnId } });
           } else if (scenario.conflictingStart === "during-readback" && thread.id === "thread-1") {
             await waitForReceipt("caller-rollout-read");
             conflictingStart(thread);

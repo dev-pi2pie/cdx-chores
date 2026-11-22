@@ -25,7 +25,7 @@ async function runRecovery(
     originator?: string;
     retention?: "archive" | "delete";
     cancel?: "SIGTERM";
-    gate?: "deadline" | "reply-conflict" | "readback-conflict";
+    gate?: "deadline" | "reply-conflict" | "readback-conflict" | "late-reply" | "start-deadline";
     shortReadback?: boolean;
   } = {},
 ) {
@@ -35,7 +35,7 @@ async function runRecovery(
       const env = {
         ...options.env,
         FIXTURE_LATE_TURN: late ? "1" : "0",
-        FIXTURE_LIFECYCLE_GATE: cancel ? "cancel" : gate,
+        FIXTURE_LIFECYCLE_GATE: gate ?? (cancel ? "cancel" : undefined),
         FIXTURE_SHORT_ROLLOUT_TURN:
           caller === "benchmark" && shortReadback ? "turn-thread-1" : undefined,
         CODEX_INTERNAL_ORIGINATOR_OVERRIDE: originator,
@@ -78,8 +78,11 @@ async function runRecovery(
       try {
         if (cancel) {
           const deadline = performance.now() + 2_000;
-          while (!existsSync(join(home, "caller-turn-observed"))) {
-            if (performance.now() >= deadline) throw new Error("Caller did not observe a turn ID.");
+          const receipt =
+            gate === "late-reply" ? "caller-rollout-finished" : "caller-turn-observed";
+          while (!existsSync(join(home, receipt))) {
+            if (performance.now() >= deadline)
+              throw new Error(`Missing caller receipt ${receipt}.`);
             await delay(10);
           }
           child.child.kill(cancel);
@@ -497,6 +500,7 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
     "after-reply",
     "during-readback",
     "reply-during-readback",
+    "reply-after-readback",
     "during-retention",
   ] as const)(
     "stops after conflicting start %s",
@@ -505,6 +509,7 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
         "after-reply": { name: "reply-conflict", trace: "fixture/turn-start-reply" },
         "during-readback": { name: "readback-conflict", trace: "fixture/rollout-read" },
         "reply-during-readback": { name: "readback-conflict", trace: "fixture/rollout-read" },
+        "reply-after-readback": { name: "late-reply", trace: "fixture/rollout-finished" },
         "during-retention": { name: undefined, trace: "thread/archive" },
       } as const;
       const retained = conflictingStart === "during-retention";
@@ -548,15 +553,13 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
         ({ method, params }) =>
           params?.threadId === threadId &&
           method ===
-            (conflictingStart === "reply-during-readback"
-              ? "fixture/turn-start-reply"
-              : "turn/started") &&
+            (conflictingStart.startsWith("reply-") ? "fixture/turn-start-reply" : "turn/started") &&
           params?.turnId === "conflicting-turn",
       );
       const beforeConflict = events.findIndex(
         ({ method, params }) =>
           method === gate[conflictingStart].trace &&
-          (method === "fixture/rollout-read"
+          (method.startsWith("fixture/rollout-")
             ? params?.turnId === `turn-${threadId}`
             : params?.threadId === threadId),
       );
@@ -595,6 +598,60 @@ describe.each(["benchmark", "live check"] as const)("%s ownership and rejection"
     expect(retention).toBeGreaterThan(deadline);
     expect(successor).toBeGreaterThan(retention);
     expect(turns.slice(0, 2)).toEqual(["default", "priority"]);
+  });
+
+  test.each(["matching", "rejected", "withheld"] as const)(
+    "reconciles a %s start reply before retention and successor dispatch",
+    async (reply) => {
+      const withheld = reply === "withheld";
+      const { first, turns, events, archives, exit } = await runRecovery(
+        caller,
+        withheld
+          ? { withholdStartReplyThread: 1 }
+          : { conflictingStart: "reply-after-readback", lateStartReply: reply },
+        { gate: withheld ? "start-deadline" : "late-reply" },
+      );
+      const replied = events.findIndex(
+        ({ method, params }) =>
+          method === (withheld ? "fixture/turn-start-deadline" : "fixture/turn-start-reply") &&
+          params?.turnId === (reply === "rejected" ? "conflicting-turn" : "turn-thread-1"),
+      );
+      const readback = events.findIndex(
+        ({ method }) => method === (withheld ? "fixture/rollout-read" : "fixture/rollout-finished"),
+      );
+      expect(readback).toBeGreaterThanOrEqual(0);
+      expect(replied).toBeGreaterThan(readback);
+      if (reply === "rejected") {
+        expect(exit).toBe(1);
+        expect(first.error).toContain("fixture rejected the late reply");
+        expect(first.sessionRetention.status).toBe("skipped");
+        expect(archives).toEqual([]);
+        expect(turns).toEqual(["default"]);
+        return;
+      }
+      expect(exit).toBe(0);
+      expect(first.status).toBe("completed");
+      const archive = events.findIndex(({ method }) => method === "thread/archive");
+      expect(archive).toBeGreaterThan(replied);
+      const successor = events.findIndex(
+        ({ method, params }) => method === "turn/start" && params?.threadId === "thread-2",
+      );
+      expect(successor).toBeGreaterThan(archive);
+      expect(turns.slice(0, 2)).toEqual(["default", "priority"]);
+    },
+  );
+
+  test("cancels after readback while the start reply is pending", async () => {
+    const { first, turns, archives, interrupts, exit } = await runRecovery(
+      caller,
+      { withholdStartReplyThread: 1 },
+      { cancel: "SIGTERM", gate: "late-reply" },
+    );
+    expect(exit).toBe(143);
+    expect(first.sessionRetention.status).toBe("skipped");
+    expect(archives).toEqual([]);
+    expect(turns).toEqual(["default"]);
+    expect(interrupts).toEqual([]);
   });
 
   test("cancels an unsettled turn without retaining it or starting its successor", async () => {

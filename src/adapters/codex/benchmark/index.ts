@@ -168,6 +168,7 @@ class BenchmarkRunner {
     let thread: Thread | undefined;
     let observer: TrialObserver | undefined;
     let completionConfirmed = false;
+    let retentionConfirmed = false;
     let refusedBeforeSubmission = false;
     try {
       const tier =
@@ -252,7 +253,8 @@ class BenchmarkRunner {
       const eligible =
         trial.status === "completed" && !trial.warmup && observer.isEligible(turn.id);
       await this.recover(trial, thread, turn.id, receivedAt);
-      observer.start.assertUnambiguous();
+      await observer.start.reconcileReply(signal);
+      retentionConfirmed = true;
       trial.eligible = eligible;
     } catch (error) {
       trial.error = messageFrom(error);
@@ -261,6 +263,7 @@ class BenchmarkRunner {
         : !trial.inferenceAttempted && requestedSpeed && isTierRejection(trial.error)
           ? "unavailable"
           : "failed";
+      trial.usagePartial ||= trial.usage !== null;
       if (trial.inferenceAttempted) trial.turnId = observer?.start.turnId ?? null;
       if (thread && trial.turnId && !completionConfirmed && !observer?.start.conflicting) {
         let receivedAt: number | undefined;
@@ -274,6 +277,7 @@ class BenchmarkRunner {
           try {
             ({ receivedAt } = await this.interrupt(observer, thread.id, trial.turnId));
             completionConfirmed = true;
+            retentionConfirmed = true;
           } catch (interruptError) {
             trial.error += ` ${messageFrom(interruptError)}`;
           }
@@ -290,7 +294,7 @@ class BenchmarkRunner {
           trial.sessionRetention = await applyCodexSessionRetention({
             mode: this.retention,
             threadId: thread.id,
-            completed: completionConfirmed && !observer?.start.conflicting,
+            completed: retentionConfirmed && !observer?.start.conflicting,
             request: (method, params) => this.server.request(method, params),
           });
         }

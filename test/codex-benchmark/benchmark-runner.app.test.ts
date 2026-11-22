@@ -18,6 +18,7 @@ import {
 } from "./fixtures/runner";
 
 const shortRolloutPreload = join(import.meta.dir, "fixtures/short-rollout-preload.mjs");
+const turnRecoveryPreload = join(import.meta.dir, "fixtures/turn-recovery-preload.mjs");
 
 function startCliWithShortReadback(
   options: Parameters<typeof startCliBenchmark>[0],
@@ -543,13 +544,11 @@ test("CLI reports stdout EOF observed during final rollout readback", async () =
 
 test("CLI retains matching completions when turn/start replies are withheld", async () => {
   await withRunnerFixture({ withholdStartReply: true }, async ({ options, trace }) => {
-    const result = await startCliBenchmark(options, [
-      "--json",
-      "--codex-speed",
-      "standard",
-      "--session-retention",
-      "archive",
-    ]).completion;
+    const result = await startCliBenchmark(
+      options,
+      ["--json", "--codex-speed", "standard", "--session-retention", "archive"],
+      turnRecoveryPreload,
+    ).completion;
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     const report = JSON.parse(result.stdout);
@@ -709,11 +708,12 @@ test("interrupts the matching turn when its ID arrives just after cancellation",
       const result = await run;
       expect(result.interrupted).toBe(true);
       expect(result.trials).toMatchObject([
-        { status: "cancelled", turnId: "turn-thread-1", sessionRetention: { status: "archived" } },
+        { status: "cancelled", turnId: "turn-thread-1", sessionRetention: { status: "skipped" } },
       ]);
       expect(traceMethod(await trace(), "turn/interrupt").map(({ params }) => params)).toEqual([
         { threadId: "thread-1", turnId: "turn-thread-1" },
       ]);
+      expect(traceMethod(await trace(), "thread/archive")).toEqual([]);
     },
   );
 });
@@ -982,7 +982,7 @@ test("CLI reports a failed turn, continues, and retains only confirmed trial thr
 
 for (const json of [false, true]) {
   test.skipIf(process.platform === "win32")(
-    `foreground SIGINT interrupts exactly one active turn before archiving (${json ? "JSON" : "terminal"})`,
+    `foreground SIGINT interrupts exactly one turn and skips retention with a pending start reply (${json ? "JSON" : "terminal"})`,
     async () => {
       await withRunnerFixture(
         { interrupt: "confirmed", withholdStartReply: true },
@@ -1009,12 +1009,16 @@ for (const json of [false, true]) {
             expect(result.issues).toEqual([]);
             expect(result.exitCode).toBe(130);
             expect(result.stderr).toContain("Waiting for text");
+            expect(result.stderr).toContain("Session retention skipped");
             if (json) {
-              expect(result.stderr.endsWith("\r\x1b[2K\r")).toBe(true);
+              expect(result.stderr).toContain("\r\x1b[2K\r");
               const report = JSON.parse(result.stdout);
               expect(report.run.interrupted).toBe(true);
               expect(report.trials).toHaveLength(1);
-              expect(report.trials[0]).toMatchObject({ status: "cancelled" });
+              expect(report.trials[0]).toMatchObject({
+                status: "cancelled",
+                sessionRetention: { status: "skipped" },
+              });
               expect(report.tokenUsage).toMatchObject({
                 partial: true,
                 totals: { totalTokens: 230 },
@@ -1029,12 +1033,11 @@ for (const json of [false, true]) {
             }
             const events = await trace();
             expect(traceMethod(events, "turn/start")).toHaveLength(1);
-            expect(events.slice(-3).map(({ method }) => method)).toEqual([
+            expect(events.slice(-2).map(({ method }) => method)).toEqual([
               "turn/interrupt",
               "turn/completed",
-              "thread/archive",
             ]);
-            expect(events.at(-1)?.params?.threadId).toBe("thread-1");
+            expect(traceMethod(events, "thread/archive")).toEqual([]);
           } finally {
             cli.shutdown();
             await cli.completion;

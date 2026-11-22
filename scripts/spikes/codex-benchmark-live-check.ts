@@ -18,7 +18,11 @@ import {
 } from "../../src/adapters/codex/app-server-signals.ts";
 import { extractAppServerVersion } from "../../src/adapters/codex/app-server-version.ts";
 import { writeAppServerTurn } from "../../src/adapters/codex/app-server-write.ts";
-import { CodexAppServerError, isTurnInputTooLarge } from "../../src/adapters/codex/app-server.ts";
+import {
+  CodexAppServerError,
+  CodexRequestTimeoutError,
+  isTurnInputTooLarge,
+} from "../../src/adapters/codex/app-server.ts";
 import {
   readSavedTurn,
   type RolloutReadOptions,
@@ -118,7 +122,7 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
       return await once(events, event, { signal });
     } catch (error) {
       if (deadline.aborted && signal.reason === deadline.reason)
-        throw new Error(`${operation} timed out.`);
+        throw new CodexRequestTimeoutError(operation, `${operation} timed out.`);
       if (stopped.signal.aborted && signal.reason === stopped.signal.reason) throw signal.reason;
       throw error;
     }
@@ -217,15 +221,10 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
         return id as string;
       });
       try {
-        // The reply can still contradict the recovered turn during readback.
-        const reply = request(
-          "turn/start",
-          { ...params, threadId },
-          requestTimeoutMs,
-          start.signal,
-          onQueued,
+        const reply = start.trackReply(
+          request("turn/start", { ...params, threadId }, requestTimeoutMs, start.signal, onQueued),
         );
-        return await Promise.race([terminal, reply.then((result) => start.recordReply(result))]);
+        return await Promise.race([terminal, reply]);
       } catch (error) {
         start.assertUnambiguous();
         throw error;
@@ -366,7 +365,7 @@ async function runTrial(
     },
   });
   try {
-    start.assertUnambiguous();
+    await start.reconcileReply();
   } catch (error) {
     return failed(error);
   }

@@ -49,8 +49,10 @@ interface Scenario {
     | "after-reply"
     | "during-readback"
     | "reply-during-readback"
+    | "reply-after-readback"
     | "during-retention";
   retentionConflictThread?: number;
+  lateStartReply?: "matching" | "rejected";
   unfinishedRolloutThread?: number;
   closeStdinOnThreadStart?: number;
   stallPeerShutdown?: boolean;

@@ -58,8 +58,11 @@ export function isTurnInputTooLarge(error: unknown): boolean {
 }
 
 export class CodexRequestTimeoutError extends Error {
-  constructor(readonly method: string) {
-    super(`${method}: Codex app-server request timed out.`);
+  constructor(
+    readonly method: string,
+    message = `${method}: Codex app-server request timed out.`,
+  ) {
+    super(message);
   }
 }
 

@@ -96,7 +96,7 @@ export class TrialObserver {
   }
 
   async waitForStart(response: Promise<unknown>, signal?: AbortSignal): Promise<string> {
-    const rpcTurn = response.then((result) => this.start.recordReply(result));
+    const rpcTurn = this.start.trackReply(response);
     let checkEvidence = () => {};
     let graceTimer: ReturnType<typeof setTimeout> | undefined;
     const observedTurn = new Promise<string>((resolve, reject) => {
