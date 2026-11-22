@@ -32,7 +32,7 @@ if (process.argv[2] === "retention-worker") {
   record("app-server-started");
   writeFileSync(join(process.env.CODEX_HOME, "leader.pid"), String(process.pid));
   if (process.env.CDX_RETENTION_WORKER === "1") {
-    if (process.env.FIXTURE_ESCALATION === "undelivered") resistShutdown();
+    if (["denied", "undelivered"].includes(process.env.FIXTURE_ESCALATION)) resistShutdown();
     spawn(process.execPath, [process.argv[1], "retention-worker"], { stdio: "ignore" }).unref();
     const ready = join(process.env.CODEX_HOME, "worker.pid");
     for (let i = 0; i < 100 && !existsSync(ready); i++) await delay(10);
@@ -51,7 +51,7 @@ if (process.argv[2] === "retention-worker") {
     if (process.env.CDX_RETENTION_RPC === "stall") return;
     if (
       process.env.CDX_RETENTION_RPC === "success" ||
-      process.env.FIXTURE_ESCALATION === "deny-term"
+      process.env.FIXTURE_ESCALATION === "fail-term"
     ) {
       console.log(JSON.stringify({ id: request.id, result: {} }));
       return;

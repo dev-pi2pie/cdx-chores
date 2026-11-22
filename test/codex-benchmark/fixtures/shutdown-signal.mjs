@@ -59,8 +59,11 @@ process.kill = function (pid, signal) {
       join(owner.home, "signals.jsonl"),
       JSON.stringify({ pid, signal, at: Date.now() }) + "\n",
     );
-    if (signal === "SIGTERM" && process.env.FIXTURE_ESCALATION === "deny-term") {
-      throw Object.assign(new Error("Fixture denied app-server SIGTERM."), { code: "EPERM" });
+    if (process.env.FIXTURE_ESCALATION === "deny-all") {
+      throw Object.assign(new Error(`Fixture denied app-server ${signal}.`), { code: "EPERM" });
+    }
+    if (signal === "SIGTERM" && process.env.FIXTURE_ESCALATION === "fail-term") {
+      throw Object.assign(new Error("Fixture failed app-server SIGTERM."), { code: "EIO" });
     }
     if (signal === "SIGKILL") {
       if (process.env.FIXTURE_ESCALATION === "denied") {
