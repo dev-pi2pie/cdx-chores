@@ -655,7 +655,12 @@ The cover is always free of repeating content and page-number labels. The ToC re
 - `show` displays the block when Pandoc provides a title, including when the document has a cover or a matching body heading.
 - `hide` omits the block.
 
-Pandoc reads the Markdown once for the comparison, and the renderer writes HTML from that same parsed document. The first eligible H1 is the first level-one Markdown heading in document order at the top level or inside Pandoc Divs. A heading can use `# Heading` on one line or a line of `=` characters underneath the heading text. The comparison skips headings in block quotes, lists, tables, footnotes, raw HTML, and verbatim blocks.
+Pandoc reads the Markdown once for the comparison, and the renderer writes HTML from that same parsed document. The first eligible H1 is the first level-one Markdown heading in document order at the top level or inside Pandoc Divs. Both `# Heading` and the underlined example below count as level-one headings. The comparison skips headings in block quotes, lists, tables, footnotes, raw HTML, and verbatim blocks.
+
+```markdown
+Heading
+========
+```
 
 The comparison folds case and whitespace and preserves punctuation. It supports plain text, emphasis, strong text, inline code, smart quotes, and link labels. If the first eligible H1 or metadata title uses unsupported formatting such as math, images, or spans, the block stays, even if a later H1 matches. The block also stays when there is no eligible H1. Every metadata title link needs a matching label and destination in the heading before the block can be omitted.
 
