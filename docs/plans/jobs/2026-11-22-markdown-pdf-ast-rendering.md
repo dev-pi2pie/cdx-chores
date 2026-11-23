@@ -149,7 +149,7 @@ The usage guide defines built-in title comparison, controls, and the Pandoc inpu
 
 The focused `bun test` runs selected the `ast-title`, `signals`, and `source-boundaries` unit suites and the `ast-render`, `authoring-source-signals`, `shared-render`, and `generated-lifecycle` app suites. The app run used `--path-ignore-patterns '**/fixtures/**'`.
 
-The `docs_reviewer` inspected all seven files and identified a missing `auto` fallback description. The guide now covers direct conversion when the cover is disabled and the frontmatter title is absent, empty, or non-string. The focused app tests and example, link, formatting, and whitespace checks passed after the edit. The reviewer cleared the updated diff.
+Documentation review of all seven files identified a missing explanation of the `auto` fallback. The guide now explains that direct conversion applies when the cover is disabled and the frontmatter title is absent, empty, or non-string. The focused app tests and the example, link, formatting, and whitespace checks passed after the edit, and the updated diff cleared review.
 
 **Independent review** — Clear for `bcb013fe..db49046c`. The reviewer checked every changed line in all seven documentation files against the title projection, service routing and fallback, template variables, and `distinct-links` fixture. The 102 focused unit cases, `md to-pdf --help`, 108 relative links and anchors across eight documents, and `git diff --check bcb013fe..db49046c` all passed. No outstanding findings.
 
@@ -175,4 +175,4 @@ Node 26.13.1 timed `prepareMarkdownPdfRender` on the same inputs, with three war
 
 `bun run test:all` passed 2,768 app, 41 Codex, and 26 Pandoc cases. The final `bun run test:unit` rerun passed 2,306 cases, including the last three boundary controls. Scoped Oxfmt, Oxlint, and `git diff --check` passed. An additional scoped TypeScript check reproduced the existing readonly CLI metadata fixture error at `355edb56`.
 
-The test reviewer cleared both changes after the contextual controls were added. Review of `355edb56..7b2a7082`, `7b2a7082..e6507d50`, and the full `0dd77cf5..e6507d50` diff found no remaining actionable issues.
+Test coverage review cleared both fixes after the HTML boundary cases were added. Review of `355edb56..7b2a7082`, `7b2a7082..e6507d50`, and the full `0dd77cf5..e6507d50` diff found no remaining actionable issues.
