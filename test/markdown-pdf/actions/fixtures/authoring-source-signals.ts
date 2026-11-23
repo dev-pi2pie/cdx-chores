@@ -34,7 +34,11 @@ const markdown = [
   ].join("\n"),
   labels
     .concat(labels[12]!)
-    .map((label) => "\n~~~" + label + "\nexample\n~~~")
+    .map((label, index) =>
+      index === 0
+        ? "\n<h2>Example</h2>\n~~~" + label + "\n# Hidden heading\n| Hidden | Row |\n~~~"
+        : "\n~~~" + label + "\nexample\n~~~",
+    )
     .join("\n"),
   "~~~\nunlabeled\n~~~",
   "```{=html}\n# Raw body\n| Raw | Row |\n```",

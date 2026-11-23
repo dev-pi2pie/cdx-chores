@@ -1,4 +1,4 @@
-import { MarkdownSourceCursor, type SourceLimits } from "./source-cursor";
+import { MarkdownSourceCursor, type MarkdownSourceToken, type SourceLimits } from "./source-cursor";
 
 type FenceMarker = "`" | "~";
 
@@ -68,20 +68,83 @@ type BlockContext =
 const DEFINITION_MARKER = /^ {0,3}[:~] +/;
 const ATX_HEADING = /^ {0,3}#{1,6}(?:[ \t]|$)/;
 const VERBATIM_TAGS = new Set(["pre", "script", "style", "textarea"]);
-const VOID_BLOCK_TAGS = new Set(["hr", "meta", "col"]);
+const VOID_BLOCK_TAGS = new Set(["area", "col", "embed", "hr", "isindex", "meta", "source"]);
+// Ordinary HTML blocks shared by the Pandoc 2.0 and 3.9 Markdown readers.
+// The summary close has its own offline blank-line rule.
 const BLOCK_TAGS = new Set([
-  "div",
-  "section",
+  "address",
   "article",
   "aside",
-  "figure",
-  "table",
   "blockquote",
+  "body",
+  "canvas",
+  "caption",
+  "center",
+  "col",
+  "colgroup",
+  "dd",
+  "details",
+  "dir",
+  "div",
+  "dl",
+  "dt",
+  "fieldset",
+  "figcaption",
+  "figure",
+  "footer",
+  "form",
+  "frameset",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "head",
+  "header",
+  "hgroup",
+  "hr",
+  "html",
+  "isindex",
+  "li",
   "main",
+  "menu",
+  "meta",
+  "noframes",
+  "ol",
+  "output",
   "p",
+  "section",
   "summary",
-  ...VOID_BLOCK_TAGS,
+  "table",
+  "tbody",
+  "td",
+  "tfoot",
+  "th",
+  "thead",
+  "title",
+  "tr",
+  "ul",
   ...VERBATIM_TAGS,
+]);
+// These tags also occur inside paragraphs. They start a boundary only in a
+// block position, and a close can finish a block that started there.
+const CONTEXTUAL_BLOCK_TAGS = new Set([
+  "applet",
+  "area",
+  "audio",
+  "button",
+  "del",
+  "embed",
+  "iframe",
+  "ins",
+  "map",
+  "noscript",
+  "object",
+  "progress",
+  "source",
+  "svg",
+  "video",
 ]);
 
 function isPipeTableSeparator(line: string): boolean {
@@ -240,13 +303,13 @@ function fenceRecoveryBoundaries(
   };
 }
 
-type LineEnd = "boundary" | "paragraph" | "matched-paragraph";
+type LineEnd = "boundary" | "paragraph" | "paired-close";
 
 class BoundaryScanner {
   private readonly cursor: MarkdownSourceCursor;
   private offset = 0;
   private lineEnd: LineEnd | undefined;
-  private openParagraphs = 0;
+  private readonly openHtmlBlocks = new Map<string, boolean[]>();
 
   constructor(
     private readonly content: string,
@@ -257,6 +320,29 @@ class BoundaryScanner {
 
   coversStart(line: SourceLine) {
     return this.offset > line.start;
+  }
+
+  private htmlBoundary(
+    { name, closing, selfClosing }: Extract<MarkdownSourceToken, { kind: "tag" }>,
+    blockStart: boolean,
+  ): LineEnd | undefined {
+    const ordinary = BLOCK_TAGS.has(name);
+    if (!ordinary && !CONTEXTUAL_BLOCK_TAGS.has(name)) return undefined;
+
+    let matchedBlock = false;
+    if (!VOID_BLOCK_TAGS.has(name)) {
+      const openings = this.openHtmlBlocks.get(name) ?? [];
+      if (closing) {
+        matchedBlock = openings.pop() === true;
+        if (openings.length === 0) this.openHtmlBlocks.delete(name);
+      } else if (!selfClosing) {
+        openings.push(ordinary || blockStart);
+        this.openHtmlBlocks.set(name, openings);
+      }
+    }
+    if (!(ordinary || blockStart || matchedBlock)) return undefined;
+    if (closing && name === "summary") return "paragraph";
+    return matchedBlock ? "paired-close" : "boundary";
   }
 
   scan(line: SourceLine, previous: BlockContext) {
@@ -272,7 +358,7 @@ class BoundaryScanner {
       const tokenEnd = token?.end ?? offset + 1;
       const text = this.content.slice(offset, Math.min(tokenEnd, end));
       if (token?.kind === "comment") {
-        if (lineEnd === "matched-paragraph" && offset > this.offset) lineEnd = "paragraph";
+        if (lineEnd === "paired-close" && offset > this.offset) lineEnd = "paragraph";
         if (!hasText) lineEnd ??= previous === "paragraph" ? "paragraph" : "boundary";
         visible += hasText && !lineEnd && tokenEnd <= end ? text : " ".repeat(text.length);
       } else if (token?.kind === "tag") {
@@ -286,45 +372,29 @@ class BoundaryScanner {
             continue;
           }
         }
-        const blockStart = !hasText && (/^ {0,3}$/.test(visible) || lineEnd === "boundary");
-        const structural =
-          !headingLine &&
-          BLOCK_TAGS.has(name) &&
-          (blockStart ||
-            name === "p" ||
-            name === "summary" ||
-            (closing && !VOID_BLOCK_TAGS.has(name)));
-        if (structural) {
-          const matchedParagraph = name === "p" && closing && this.openParagraphs > 0;
-          if (matchedParagraph) this.openParagraphs--;
-          if (name === "p" && !closing && !selfClosing) this.openParagraphs++;
-          lineEnd =
-            name === "summary" && closing
-              ? "paragraph"
-              : matchedParagraph
-                ? "matched-paragraph"
-                : "boundary";
-        }
-        visible +=
-          tokenEnd <= end && (!structural || (hasText && !blockStart))
-            ? text
-            : " ".repeat(text.length);
-        if (!structural && tokenEnd <= end) {
-          hasText = true;
-          lineEnd = undefined;
+        const startsAtBoundary =
+          lineEnd === "boundary" ||
+          (lineEnd === "paired-close" && offset === this.offset) ||
+          (!hasText && previous !== "paragraph" && /^ {0,3}$/.test(visible));
+        const boundary = headingLine ? undefined : this.htmlBoundary(token, startsAtBoundary);
+        visible += tokenEnd <= end && (!boundary || hasText) ? text : " ".repeat(text.length);
+        if (boundary) lineEnd = boundary;
+        else {
+          if (tokenEnd <= end) hasText = true;
+          lineEnd = lineEnd || tokenEnd > end ? "paragraph" : undefined;
         }
       } else {
         visible += text;
         if (text.trim()) {
           hasText = true;
-          lineEnd = tokenEnd > end ? "paragraph" : undefined;
+          lineEnd = lineEnd || tokenEnd > end ? "paragraph" : undefined;
         }
       }
       offset = tokenEnd;
       if (token) this.offset = offset;
     }
     this.lineEnd = lineEnd;
-    return { visible, context: lineEnd === "matched-paragraph" ? ("boundary" as const) : lineEnd };
+    return { visible, context: lineEnd === "paired-close" ? ("boundary" as const) : lineEnd };
   }
 }
 
