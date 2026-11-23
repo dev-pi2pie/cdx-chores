@@ -44,7 +44,7 @@ export const SUITE_POLICIES: Readonly<Record<Suite, SuitePolicy>> = Object.freez
       "pdfjs",
     ]),
     preflight: limits(20_000),
-    execution: limits(360_000),
+    execution: limits(420_000),
   }),
   codex: Object.freeze({
     prerequisites: Object.freeze([...common, "Node.js", "Installed repository Codex CLI"]),

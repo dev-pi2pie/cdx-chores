@@ -1,7 +1,7 @@
 ---
 title: "Contributor Testing Guide"
 created-date: 2026-09-06
-modified-date: 2026-11-22
+modified-date: 2026-11-23
 status: completed
 agent: codex
 ---
@@ -84,7 +84,7 @@ Each run creates a unique directory under `examples/playground/.tmp-tests/`. Aft
 | Default | Remove scratch space and results, including after test failure |
 | `--keep-results` | Remove scratch space; keep reports, `summary.json`, and registered fixture outputs under the reported results path |
 
-The 360-second limit applies to Application execution. Wall time for a full `test:all` run includes all four suites, preflight, report validation, and cleanup. For a passing run with `--keep-results`, find `result.elapsedMs` for the `app` entry’s `test` stage in `summary.json`. Subtract it from 360,000 ms for a conservative headroom estimate, since it includes post-exit draining. Individual JUnit case times can overlap. See the [suite policy](../../scripts/testing/suites/suite-policy.ts).
+The 420-second (7-minute) limit applies to Application execution. Wall time for a full `test:all` run includes all four suites, preflight, report validation, and cleanup. For a passing run with `--keep-results`, find `result.elapsedMs` for the `app` entry’s `test` stage in `summary.json`. Subtract it from 420,000 ms for a conservative headroom estimate, since it includes post-exit draining. Individual JUnit case times can overlap. See the [suite policy](../../scripts/testing/suites/suite-policy.ts).
 
 Retained results include only reports and designated outputs. Full fixtures and transcripts of streamed stdout/stderr are excluded. Export manifests identify the registered files and whether they contain successful results or failure diagnostics.
 
