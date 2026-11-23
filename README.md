@@ -48,7 +48,7 @@ Runtime requirement:
 
 - Node.js `>= 22.23.5`
 
-Use an up-to-date Node.js 22, 24, or 26 release. Inquirer excludes Node.js 23, Node.js 24 before 24.15.0, and Node.js 25; strict engine checking can reject those versions even though they satisfy the package minimum.
+Use an up-to-date Node.js 22, 24, or 26 release.
 
 ## Command Overview
 
