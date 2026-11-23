@@ -7,7 +7,8 @@ import {
 import { execCommand } from "../process";
 
 export const MARKDOWN_PDF_MINIMUM_PANDOC_VERSION = "2.0";
-// WeasyPrint 70.0 carries the configured fetcher into user stylesheets.
+// WeasyPrint 70.0 is the minimum for protocol restrictions in user stylesheets.
+// This version and later versions must advertise --allowed-protocols.
 export const MARKDOWN_PDF_RESTRICTED_WEASYPRINT_MINIMUM_VERSION = "70.0";
 export const MARKDOWN_PDF_PROTOCOL_ALLOWLIST_OPTION = "--allowed-protocols";
 
