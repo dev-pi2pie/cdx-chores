@@ -266,16 +266,19 @@ describe("stable release notes script", () => {
 
   test("groups PR-backed entries using the resolved PR title instead of the commit subject", async () => {
     const repoDir = await createReleaseFixtureRepo("release-notes-pr-title");
-    const fakeBinDir = join(repoDir, "fake-bin");
+    const fakeBinDir = join(repoDir, ".fixture-bin");
+    const token = "release-fixture-token";
 
     try {
-      await mkdir(fakeBinDir, { recursive: true });
-
       await writeFile(
         join(fakeBinDir, "curl"),
         [
           "#!/usr/bin/env bash",
           "set -euo pipefail",
+          '[[ " $* " == *" -H @- "* ]] || exit 1',
+          `[[ "$*" != *"${token}"* ]] || exit 1`,
+          "IFS= read -r header",
+          `[[ "$header" == "Authorization: Bearer ${token}" ]] || exit 1`,
           'url="${@: -1}"',
           'if [[ "$url" == *"/repos/example/project/commits/"*"/pulls" ]]; then',
           '  printf \'%s\' \'[{"number":77,"title":"fix(parser): release-safe title","user":{"login":"alice"}}]\'',
@@ -313,6 +316,8 @@ describe("stable release notes script", () => {
           env: {
             ...process.env,
             PATH: `${fakeBinDir}:${process.env.PATH ?? ""}`,
+            GH_TOKEN: token,
+            GITHUB_TOKEN: "",
           },
         },
       );

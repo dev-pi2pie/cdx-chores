@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Template Helper"
 created-date: 2026-06-25
-modified-date: 2026-09-05
+modified-date: 2026-11-23
 status: completed
 agent: codex
 ---
@@ -127,6 +127,8 @@ Decision
 
 Low-signal runs fail before output planning; use `md pdf-template init` when you want deterministic defaults without template-specific signals. Unsupported directions are reported instead of being converted into arbitrary HTML or CSS.
 
+When a Markdown sample is available, the helper uses the same [bounded source summaries](markdown-pdf-usage.md#codex-helper-choice) as Profile and Project preparation.
+
 ## Preview Then Decide
 
 Use `--dry-run` to preview the decision without writing bundle files:
@@ -161,7 +163,9 @@ cdx-chores md to-pdf \
   --output ./report.pdf
 ```
 
-`--bundle` discovers the helper's top-level `template.html` and `style.css`; it does not replace or deprecate the direct options. Either form makes the renderer use the custom template and apply the helper stylesheet after the built-in default stylesheet. This layered render keeps built-in renderer behavior, profile-derived repeating content, and newer code-highlighting hooks available when the managed structural compatibility rules below remain satisfied.
+`--bundle` discovers the helper's top-level `template.html` and `style.css`. Either form uses the custom template and applies the helper stylesheet after the built-in default stylesheet. Profile-derived repeating content and code-highlighting hooks are available when the template meets the managed structural compatibility rules below.
+
+See [Custom Template And CSS](markdown-pdf-usage.md#custom-template-and-css) for the original Markdown input and Pandoc template variables used during export.
 
 The direct form remains fully supported. It is especially useful when the files live in different directories, when the selected paths should be visible in the command, or when the template bundle is intentionally self-contained with `--no-default-css`:
 

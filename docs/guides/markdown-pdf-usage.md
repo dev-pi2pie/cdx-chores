@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-09-23
+modified-date: 2026-11-23
 status: completed
 agent: codex
 ---
@@ -14,8 +14,8 @@ Document the current `md to-pdf`, profile, template, and project-helper workflow
 
 `md to-pdf` requires both external tools:
 
-- Pandoc 2.0 or newer for Markdown-to-HTML conversion
-- `weasyprint` for HTML/CSS-to-PDF rendering
+- Pandoc 2.0 or newer to read Markdown and write standalone HTML
+- WeasyPrint 70.0 or newer with `--allowed-protocols` for default HTML/CSS-to-PDF rendering. Explicit `--allow-remote-assets` uses the installed renderer and checks any required Profile capabilities separately.
 
 Check the local environment before using the command in scripts or CI:
 
@@ -31,7 +31,7 @@ For machine-readable checks:
 cdx-chores doctor --json
 ```
 
-Doctor reports an installed Pandoc version below 2.0 as unsupported for `md.to-pdf`, while leaving other Pandoc-backed capabilities under their own requirements. The JSON result keeps `capabilities["md.to-pdf"]` as a boolean and explains the detected versions through `markdownPdf.requirements`.
+Doctor shows `md.to-pdf` as `limited` in `--details` when explicit opt-in is available and default export is unavailable. In JSON, `capabilities["md.to-pdf"]` and `markdownPdf.ready` report default readiness. `markdownPdf.requirements.restrictedAssets` describes the renderer check, and `markdownPdf.readyWithRemoteAssets` reports basic readiness with explicit opt-in. Effective Profile capabilities are checked at render time. [WeasyPrint compatibility](#weasyprint-compatibility)
 
 ## Current Command Boundary
 
@@ -52,6 +52,8 @@ The dedicated guides are:
 - [Markdown PDF Codex Profile Helper](markdown-pdf-codex-profile-helper.md)
 - [Markdown PDF Codex Template Helper](markdown-pdf-codex-template-helper.md)
 - [Markdown PDF Codex Project Helper](markdown-pdf-codex-project-helper.md)
+
+When you supply Markdown, all three helpers build bounded summaries from the source, including headings, code fences, and table-like row counts and widths. Signal collection works with or without Pandoc. The helpers use those summaries to prepare a recipe. During export, the renderer applies the [automatic metadata title rules](#automatic-metadata-titles).
 
 ## Project Helper
 
@@ -325,6 +327,8 @@ cdx-chores md to-pdf \
 ```
 
 The HTML file is written only when `--html-output` is passed.
+
+On a render that uses [automatic metadata title comparison](#automatic-metadata-titles), Pandoc diagnostics appear in Markdown reader and HTML writer order. A failure in either stage identifies the stage and stops the render before publishing a PDF.
 
 ## Code Highlighting
 
@@ -641,9 +645,34 @@ The built-in recipe uses this page order:
 cover, when enabled -> ToC, when enabled -> document body
 ```
 
-`titleBlock.metadataTitle` accepts `auto`, `show`, or `hide`. `auto` keeps the resolved title in the body when there is no cover and suppresses a duplicate body title when the cover owns it. `show` is an explicit request that may repeat the title; `hide` always suppresses it.
-
 The cover is always free of repeating content and page-number labels. The ToC restores configured header and footer content and shows a page number only under document scope. Body pages receive configured repeating content and the effective page-number policy. A named-page transition can still place the ToC and body on separate physical pages even when `toc.pageBreak` is `auto` or `none`.
+
+### Automatic Metadata Titles
+
+`titleBlock.metadataTitle` controls the built-in metadata title block, including any author and date shown in that block. Markdown headings stay in the body. When present, title metadata supplies the HTML document title.
+
+- `auto` is the default. With a cover, it omits the metadata title block. With the cover disabled and a nonempty string `title` in Markdown frontmatter, it compares the parsed title with the first eligible H1 during export and omits the block for a duplicate. With the cover disabled and no eligible frontmatter title, export uses direct Markdown conversion and includes the block when Pandoc supplies a title.
+- `show` displays the block when Pandoc provides a title, including when the document has a cover or a matching body heading.
+- `hide` omits the block.
+
+Pandoc reads the Markdown once for the comparison, and the renderer writes HTML from that same parsed document. The first eligible H1 is the first level-one Markdown heading in document order at the top level or inside Pandoc Divs. Both `# Heading` and the underlined example below count as level-one headings. The comparison skips headings in block quotes, lists, tables, footnotes, raw HTML, and verbatim blocks.
+
+```markdown
+Heading
+========
+```
+
+The comparison folds case and whitespace and preserves punctuation. It supports plain text, emphasis, strong text, inline code, smart quotes, and link labels. If the first eligible H1 or metadata title uses unsupported formatting such as math, images, or spans, the block stays, even if a later H1 matches. The block also stays when there is no eligible H1. Every metadata title link needs a matching label and destination in the heading before the block can be omitted.
+
+In this example, `auto` keeps both links because their destinations differ. Use [Debug HTML](#debug-html) to inspect the generated title block and heading.
+
+```markdown
+---
+title: "[Read the guide](https://example.com/quickstart)"
+---
+
+# [Read the guide](https://example.com/reference) {#guide}
+```
 
 ### Repeating Content
 
@@ -693,7 +722,7 @@ Successful diagnostics are emitted once per document on `stderr`. The shared ter
 
 Body-scoped numbering needs a provable `.document-body` boundary. The built-in recipe and validated managed Project Templates provide it. An arbitrary legacy Template without that hook may use document-origin visibility fallback with a warning, but `countFrom: body` fails rather than guessing. Managed Templates with a missing or ambiguous body hook also fail validation.
 
-Advanced page-number counters and header/footer styling require WeasyPrint `65.1` or newer. The renderer checks only capabilities requested by the effective Profile and fails before rendering when an active capability cannot be satisfied. The contract has been verified on WeasyPrint `65.1`, `68.0`, and `69.0`.
+Advanced page-number counters and header/footer styling require WeasyPrint `65.1` or newer. This feature minimum matters when rendering with explicit remote-asset opt-in. Default rendering also requires WeasyPrint `70.0` or newer with protocol allowlist support. The renderer checks the capabilities requested by the effective Profile and fails before rendering when an active capability cannot be satisfied.
 
 `--no-default-css` removes all generated Profile CSS. An enabled metadata cover is allowed with one warning that custom CSS now owns its page break, layout, and chrome reset. Effective page numbers are incompatible with `--no-default-css` and fail before output, whether enabled by the Profile or by the direct render override.
 
@@ -841,6 +870,8 @@ cdx-chores md to-pdf \
   --css ./pdf-template/style.css
 ```
 
+A custom template, whether selected with `--template` or resolved from a bundle, receives the original Markdown as Pandoc input. The template controls title placement through its own markup. Pandoc's `$sourcefile$` list contains the original input, and an untitled `context.md` gets `context` as the fallback `$pagetitle$`.
+
 When `--css` is provided, generated CSS is applied first and user CSS is applied after it. This means custom CSS can override preset and profile-generated styles.
 
 Use `--no-default-css` to render with only custom CSS:
@@ -892,11 +923,23 @@ cdx-chores md to-pdf --input ./docs/report.md
 
 Local images should render in the PDF when WeasyPrint can load the file. Missing local images are allowed to render with WeasyPrint warnings, and the CLI surfaces those warnings before the success line.
 
-Non-local asset URL schemes are disabled by default, including URLs in HTML asset attributes, custom CSS, inline `style` attributes, and `<style>` blocks. Relative paths, `file:` URLs, and `data:` URLs are allowed by default. Opt in explicitly when the document should fetch remote assets:
+WeasyPrint permits only `file:` and `data:` asset URL schemes by default, including loads initiated by stylesheets. Relative assets resolve against their usual base. Preflight reports detected remote references as errors. A load denied by WeasyPrint during rendering can appear as a warning with the affected asset omitted.
+
+### WeasyPrint compatibility
+
+| WeasyPrint | Default direct and Interactive export | Direct export with `--allow-remote-assets` |
+| --- | --- | --- |
+| Below `65.1` | Requires an upgrade | Basic export if the effective Profile needs no advanced renderer capabilities |
+| `65.1` through `69.x` | Requires an upgrade | Available, including advanced page counters and header/footer styling |
+| `70.0` or newer | Available with `--allowed-protocols` support | Available with remote asset loading enabled |
+
+Use explicit opt-in when a trusted document should fetch remote assets:
 
 ```bash
 cdx-chores md to-pdf --input ./report.md --allow-remote-assets
 ```
+
+The command prints `Info: Remote asset loading is enabled for this render.` on stderr.
 
 ## Related Docs
 

@@ -6,6 +6,10 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
 import {
+  CodexAppServerTransportClosedError,
+  observeAppServerExit,
+} from "../../src/adapters/codex/app-server-exit.ts";
+import {
   claimThreadId,
   isAppServerId,
   TurnStartEvidence,
@@ -18,7 +22,11 @@ import {
 } from "../../src/adapters/codex/app-server-signals.ts";
 import { extractAppServerVersion } from "../../src/adapters/codex/app-server-version.ts";
 import { writeAppServerTurn } from "../../src/adapters/codex/app-server-write.ts";
-import { CodexAppServerError, isTurnInputTooLarge } from "../../src/adapters/codex/app-server.ts";
+import {
+  CodexAppServerError,
+  CodexRequestTimeoutError,
+  isTurnInputTooLarge,
+} from "../../src/adapters/codex/app-server.ts";
 import {
   readSavedTurn,
   type RolloutReadOptions,
@@ -91,18 +99,26 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
   const lines = createInterface({ input: child.stdout });
   const events = new EventEmitter();
   const stopped = new AbortController();
-  const stop = () => stopped.abort(new Error("Codex app-server stopped."));
+  const exit = observeAppServerExit(
+    child,
+    stopped.signal,
+    (error) => stopped.abort(error),
+    "Codex app-server stopped.",
+  );
   child.on("error", (error) => stopped.abort(error));
-  child.stdin.on("error", (error) => stopped.abort(error));
+  child.stdin.on("error", (error) => {
+    if (!exit.error) stopped.abort(error);
+  });
+  lines.on("error", (error) => stopped.abort(error));
   child.stderr.on("error", (error) => stopped.abort(error));
   child.stderr.pipe(process.stderr, { end: false });
-  lines.once("close", stop);
 
   const liveTurns = new Map<string, LiveTurn>();
   const starts = new Map<string, TurnStartEvidence>();
   const turnKey = (threadId: string, turnId: string) => JSON.stringify([threadId, turnId]);
   let nextId = 0;
   const send = (message: object, onQueued?: () => void): void => {
+    exit.throwIfStopped();
     const line = `${JSON.stringify(message)}\n`;
     if (onQueued) {
       writeAppServerTurn(child.stdin, line, (error) => stopped.abort(error));
@@ -118,17 +134,19 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
       return await once(events, event, { signal });
     } catch (error) {
       if (deadline.aborted && signal.reason === deadline.reason)
-        throw new Error(`${operation} timed out.`);
+        throw new CodexRequestTimeoutError(operation, `${operation} timed out.`);
       if (stopped.signal.aborted && signal.reason === stopped.signal.reason) throw signal.reason;
       throw error;
     }
   }
 
   lines.on("line", (line) => {
+    if (stopped.signal.aborted) return;
     try {
       const message = JSON.parse(line) as Message;
       if (message.id !== undefined) {
         if (message.method) {
+          if (exit.error) return;
           send({
             id: message.id,
             error: { code: -32601, message: "Live check supports prompt-only turns." },
@@ -182,7 +200,6 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
     onQueued?: () => void,
   ): Promise<T> {
     const id = ++nextId;
-    stopped.signal.throwIfAborted();
     send({ id, method, params }, onQueued);
     // A child-process reply arrives on a later I/O turn. Install the waiter only
     // after a successful local write so a thrown write leaves no pending listener.
@@ -195,7 +212,9 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
   }
 
   return {
-    signal: stopped.signal,
+    get stopReason() {
+      return exit.reason;
+    },
     notify(method: string) {
       send({ method });
     },
@@ -217,18 +236,15 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
         return id as string;
       });
       try {
-        // The reply can still contradict the recovered turn during readback.
-        const reply = request(
-          "turn/start",
-          { ...params, threadId },
-          requestTimeoutMs,
-          start.signal,
-          onQueued,
+        const reply = start.trackReply(
+          request("turn/start", { ...params, threadId }, requestTimeoutMs, start.signal, onQueued),
         );
-        return await Promise.race([terminal, reply.then((result) => start.recordReply(result))]);
+        return await Promise.race([terminal, reply]);
       } catch (error) {
-        start.assertUnambiguous();
-        throw error;
+        return start.recoverCompletedTurn(
+          error,
+          (turnId) => liveTurns.get(turnKey(threadId, turnId))?.completion !== undefined,
+        );
       } finally {
         settled.abort();
       }
@@ -250,6 +266,7 @@ function startAppServer({ executable, args }: typeof defaultAppServer, env: Node
       return { live, ...live.completion };
     },
     close() {
+      stopped.abort(new Error("Codex app-server was closed."));
       lines.close();
       return shutdown();
     },
@@ -366,7 +383,7 @@ async function runTrial(
     },
   });
   try {
-    start.assertUnambiguous();
+    await start.reconcileReply();
   } catch (error) {
     return failed(error);
   }
@@ -385,7 +402,7 @@ async function runTrial(
   const sessionRetention = await applyCodexSessionRetention({
     mode: retention,
     threadId: thread.id,
-    completed: true,
+    completed: !(server.stopReason instanceof CodexAppServerTransportClosedError),
     request: (method, params) => server.request(method, params),
   });
   if (start.conflicting) return failed(start.signal.reason, sessionRetention);
@@ -499,7 +516,7 @@ export async function runLiveCheck(
     const results = [];
     const ownedThreadIds = new Set<string>();
     for (const { requestedSpeed, tier } of trials) {
-      if (signals.exitCode !== undefined || server.signal.aborted) break;
+      if (signals.exitCode !== undefined || server.stopReason !== undefined) break;
       const trial = { tier, sentTier: null as string | null };
       try {
         const { stopScheduling, trialFailed, ...result } = await runTrial(
@@ -524,9 +541,10 @@ export async function runLiveCheck(
         });
       }
     }
-    if (!signals.hungUp && signals.exitCode === undefined && server.signal.aborted) {
+    const stopReason = server.stopReason;
+    if (!signals.hungUp && signals.exitCode === undefined && stopReason !== undefined) {
       process.exitCode = 1;
-      console.error(`Transport failed: ${String(server.signal.reason)}`);
+      console.error(`Transport failed: ${String(stopReason)}`);
     }
     console.log(
       JSON.stringify({ codexVersion, model, effort, sessionRetention, results }, null, 2),

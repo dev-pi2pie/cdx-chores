@@ -2,6 +2,7 @@ import { isAbsolute } from "node:path";
 
 import { resolveCodexSessionRetention } from "../../../utils/codex-session-retention";
 import { CodexAppServer, CodexRequestTimeoutError, isTurnInputTooLarge } from "../app-server";
+import { CodexAppServerTransportClosedError } from "../app-server-exit";
 import { claimThreadId } from "../app-server-identity";
 import { extractAppServerVersion } from "../app-server-version";
 import { resolveDiscoveryExecutable } from "../discovery/executable";
@@ -168,6 +169,7 @@ class BenchmarkRunner {
     let thread: Thread | undefined;
     let observer: TrialObserver | undefined;
     let completionConfirmed = false;
+    let retentionConfirmed = false;
     let refusedBeforeSubmission = false;
     try {
       const tier =
@@ -252,7 +254,8 @@ class BenchmarkRunner {
       const eligible =
         trial.status === "completed" && !trial.warmup && observer.isEligible(turn.id);
       await this.recover(trial, thread, turn.id, receivedAt);
-      observer.start.assertUnambiguous();
+      await observer.start.reconcileReply(signal);
+      retentionConfirmed = true;
       trial.eligible = eligible;
     } catch (error) {
       trial.error = messageFrom(error);
@@ -261,6 +264,7 @@ class BenchmarkRunner {
         : !trial.inferenceAttempted && requestedSpeed && isTierRejection(trial.error)
           ? "unavailable"
           : "failed";
+      trial.usagePartial ||= trial.usage !== null;
       if (trial.inferenceAttempted) trial.turnId = observer?.start.turnId ?? null;
       if (thread && trial.turnId && !completionConfirmed && !observer?.start.conflicting) {
         let receivedAt: number | undefined;
@@ -274,6 +278,7 @@ class BenchmarkRunner {
           try {
             ({ receivedAt } = await this.interrupt(observer, thread.id, trial.turnId));
             completionConfirmed = true;
+            retentionConfirmed = true;
           } catch (interruptError) {
             trial.error += ` ${messageFrom(interruptError)}`;
           }
@@ -287,10 +292,12 @@ class BenchmarkRunner {
     } finally {
       try {
         if (thread) {
+          const transportClosed =
+            this.server.stopReason instanceof CodexAppServerTransportClosedError;
           trial.sessionRetention = await applyCodexSessionRetention({
             mode: this.retention,
             threadId: thread.id,
-            completed: completionConfirmed && !observer?.start.conflicting,
+            completed: retentionConfirmed && !observer?.start.conflicting && !transportClosed,
             request: (method, params) => this.server.request(method, params),
           });
         }
@@ -345,15 +352,16 @@ export async function runCodexBenchmark(options: BenchmarkOptions): Promise<Benc
     }
     const runner = new BenchmarkRunner(server, options);
     for (const selection of benchmarkWorkload(options)) {
-      if (signal?.aborted || server.signal.aborted || !runner.canStartTrial) break;
+      if (signal?.aborted || server.stopReason !== undefined || !runner.canStartTrial) break;
       onTrialStart?.(selection);
       const trial = trialRecord(selection);
       await runner.runTrial(trial);
       report.trials.push(trial);
       onTrial?.(trial);
     }
-    if (!report.interrupted && !signal?.aborted && server.signal.aborted) {
-      report.transportError = messageFrom(server.stopReason);
+    const stopReason = server.stopReason;
+    if (!report.interrupted && !signal?.aborted && stopReason !== undefined) {
+      report.transportError = messageFrom(stopReason);
     }
     return report;
   } finally {

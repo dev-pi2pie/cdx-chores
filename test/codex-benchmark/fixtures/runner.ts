@@ -15,6 +15,7 @@ interface Scenario {
   rejectFirstLookup?: "model/list" | "config/read";
   configuredModel?: string | null;
   exitDuringReadbackThread?: number;
+  leaderExitDuringTurn?: "before-completion" | "after-completion";
   endStdoutDuringThread?: number;
   endStdoutAfterThread?: number;
   phase?: string | null;
@@ -49,8 +50,10 @@ interface Scenario {
     | "after-reply"
     | "during-readback"
     | "reply-during-readback"
+    | "reply-after-readback"
     | "during-retention";
   retentionConflictThread?: number;
+  lateStartReply?: "matching" | "rejected";
   unfinishedRolloutThread?: number;
   closeStdinOnThreadStart?: number;
   stallPeerShutdown?: boolean;
@@ -78,8 +81,15 @@ export interface RunnerFixture {
   start(options: OwnedProcessOptions): OwnedProcess;
 }
 
+const nodeCallerBuilds = new Map<string, ReturnType<typeof Bun.build>>();
+
 export async function buildNodeCaller(entry: string, cwd: string) {
-  const build = await Bun.build({ entrypoints: [entry], packages: "external", target: "node" });
+  let pending = nodeCallerBuilds.get(entry);
+  if (!pending) {
+    pending = Bun.build({ entrypoints: [entry], packages: "external", target: "node" });
+    nodeCallerBuilds.set(entry, pending);
+  }
+  const build = await pending;
   expect(build.success).toBe(true);
   const executable = join(cwd, "caller.mjs");
   await Bun.write(executable, build.outputs[0]!);

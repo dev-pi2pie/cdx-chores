@@ -20,7 +20,7 @@ describe("Markdown PDF rendering code highlighting", () => {
       });
       const weasyprintInputs: string[] = [];
       const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
-        if (command === "weasyprint" && !args.includes("--info")) {
+        if (command === "weasyprint" && args.includes("--base-url")) {
           const htmlPath = args.at(-2);
           if (htmlPath) {
             weasyprintInputs.push(await readFile(htmlPath, "utf8"));
@@ -60,7 +60,7 @@ describe("Markdown PDF rendering code highlighting", () => {
       });
       const weasyprintInputs: string[] = [];
       const capturingRunner: MarkdownPdfProcessRunner = async (command, args, runnerOptions) => {
-        if (command === "weasyprint" && !args.includes("--info")) {
+        if (command === "weasyprint" && args.includes("--base-url")) {
           const htmlPath = args.at(-2);
           if (htmlPath) {
             weasyprintInputs.push(await readFile(htmlPath, "utf8"));

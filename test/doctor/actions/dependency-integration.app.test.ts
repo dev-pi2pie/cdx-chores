@@ -33,6 +33,9 @@ function doctorDependencyRunner(
       );
     }
     if (command === "ffprobe" && !statuses.ffprobe) return ok("ffprobe version 8.0.1\n");
+    if (command === "weasyprint" && args.includes("--help")) {
+      return statuses.weasyprintHelp ?? ok("  --allowed-protocols ALLOWED_PROTOCOLS\n");
+    }
     const result = statuses[command];
     if (!result) {
       throw new Error(`spawn ${command} ENOENT`);
@@ -122,7 +125,7 @@ describe("doctor action dependency integration", () => {
       {
         statuses: {
           pandoc: ok("pandoc 3.9\n"),
-          weasyprint: ok("WeasyPrint version 68.0\n"),
+          weasyprint: ok("WeasyPrint version 70.0\n"),
         },
         ready: true,
         pandocStatus: "satisfied",
@@ -175,6 +178,32 @@ describe("doctor action dependency integration", () => {
       expect(payload.capabilities["md.to-pdf"]).toBe(scenario.ready);
     }
   });
+
+  test.each([
+    ["69.0", "  --allowed-protocols ALLOWED_PROTOCOLS", "unsupported", false],
+    ["71.0", "  --timeout TIMEOUT", "unverified", false],
+    ["71.0", "  --allowed-protocols ALLOWED_PROTOCOLS", "satisfied", true],
+  ] as const)(
+    "reports default vs opt-in renderer readiness for %s",
+    async (version, help, status, ready) => {
+      const { runtime, stdout } = createActionTestRuntime();
+      await actionDoctor(runtime, {
+        json: true,
+        dependencyRunner: doctorDependencyRunner({
+          pandoc: ok("pandoc 3.9\n"),
+          weasyprint: ok(`WeasyPrint version ${version}\n`),
+          weasyprintHelp: ok(help),
+        }),
+      });
+      const payload = JSON.parse(stdout.text);
+      expect(payload.capabilities["md.to-pdf"]).toBe(ready);
+      expect(payload.markdownPdf).toMatchObject({
+        ready,
+        readyWithRemoteAssets: true,
+        requirements: { restrictedAssets: { status, minimumVersion: "70.0" } },
+      });
+    },
+  );
 
   test.each([
     ["below baseline", "65.0", "unsupported", "rendererCapabilityUnsupported"],
@@ -232,8 +261,9 @@ describe("doctor action dependency integration", () => {
         expect(capability).not.toHaveProperty("requestedBy");
       }
 
-      expect(payload.markdownPdf.ready).toBe(version !== undefined);
-      expect(payload.capabilities["md.to-pdf"]).toBe(version !== undefined);
+      expect(payload.markdownPdf.ready).toBe(false);
+      expect(payload.markdownPdf.readyWithRemoteAssets).toBe(version !== undefined);
+      expect(payload.capabilities["md.to-pdf"]).toBe(false);
     },
   );
 
@@ -242,7 +272,7 @@ describe("doctor action dependency integration", () => {
       "below baseline",
       "65.0",
       "installed (65.0)",
-      "md.to-pdf: available",
+      "md.to-pdf: limited (use --allow-remote-assets; default requires WeasyPrint 70.0+)",
       "pageNumbers.start: unsupported, minimum=65.1, diagnostic=MARKDOWN_PDF_RENDERER_CAPABILITY_UNSUPPORTED",
       true,
     ],
@@ -250,7 +280,7 @@ describe("doctor action dependency integration", () => {
       "unverified renderer",
       "custom-build",
       "installed (custom-build)",
-      "md.to-pdf: available",
+      "md.to-pdf: limited (use --allow-remote-assets; verify WeasyPrint 70.0+ protocol support for default export)",
       "pageNumbers.start: unverified, minimum=65.1, diagnostic=MARKDOWN_PDF_RENDERER_CAPABILITY_UNVERIFIED",
       true,
     ],
@@ -266,7 +296,7 @@ describe("doctor action dependency integration", () => {
       "exact baseline",
       "65.1",
       "installed (65.1)",
-      "md.to-pdf: available",
+      "md.to-pdf: limited (use --allow-remote-assets; default requires WeasyPrint 70.0+)",
       "pageNumbers.start: satisfied, minimum=65.1",
       false,
     ],
@@ -326,8 +356,13 @@ describe("doctor action dependency integration", () => {
       );
       expect(humanRuntime.stdout.text).toContain(`diagnostic=${capability.diagnosticConditionId}`);
     }
-    expect(payload.markdownPdf.ready).toBeTrue();
-    expect(humanRuntime.stdout.text).toContain("md.to-pdf: available");
+    expect(payload.markdownPdf.ready).toBeFalse();
+    expect(payload.markdownPdf.readyWithRemoteAssets).toBeTrue();
+    expect(payload.capabilities["md.to-pdf"]).toBeFalse();
+    expect(payload.markdownPdf.requirements.restrictedAssets.status).toBe("unsupported");
+    expect(humanRuntime.stdout.text).toContain(
+      "md.to-pdf: limited (use --allow-remote-assets; default requires WeasyPrint 70.0+)",
+    );
   });
 
   test("preserves doctor dependency-check failure semantics for a renderer probe exception", async () => {

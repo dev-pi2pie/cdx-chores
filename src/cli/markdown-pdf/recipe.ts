@@ -8,7 +8,6 @@ import {
   type MarkdownPdfPageChromeBodyBoundary,
   type NormalizedMarkdownPdfProfile,
 } from "./profile";
-import type { MarkdownPdfTitleSignals } from "./profile/signals";
 
 export interface MarkdownPdfRecipe {
   templateHtml: string;
@@ -18,7 +17,7 @@ export interface MarkdownPdfRecipe {
 export interface CreateMarkdownPdfRecipeInput {
   bodyBoundary?: MarkdownPdfPageChromeBodyBoundary;
   profile?: NormalizedMarkdownPdfProfile;
-  titleSignals?: MarkdownPdfTitleSignals;
+  suppressMetadataTitle?: boolean;
 }
 
 export type EffectiveMarkdownPdfTocPageBreak = "none" | "before" | "after" | "both";
@@ -79,9 +78,7 @@ export function createMarkdownPdfTemplate(input: CreateMarkdownPdfRecipeInput = 
   const metadataTitleMode = input.profile?.titleBlock.metadataTitle ?? "auto";
   const shouldRenderMetadataTitle =
     metadataTitleMode === "show" ||
-    (metadataTitleMode === "auto" &&
-      !input.profile?.cover.enabled &&
-      !input.titleSignals?.duplicateVisibleTitleRisk);
+    (metadataTitleMode === "auto" && !input.profile?.cover.enabled && !input.suppressMetadataTitle);
   const metadataTitleHtml = shouldRenderMetadataTitle
     ? `$if(title)$
 <header class="document-title">

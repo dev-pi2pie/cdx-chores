@@ -18,6 +18,7 @@ import {
 } from "./fixtures/runner";
 
 const shortRolloutPreload = join(import.meta.dir, "fixtures/short-rollout-preload.mjs");
+const turnRecoveryPreload = join(import.meta.dir, "fixtures/turn-recovery-preload.mjs");
 
 function startCliWithShortReadback(
   options: Parameters<typeof startCliBenchmark>[0],
@@ -120,27 +121,8 @@ test("skips a missing tier per model and continues supported combinations", asyn
   });
 });
 
-test.each([
-  {
-    message: "Service tier priority is not supported for this account.",
-    status: "unavailable",
-    exitCode: 0,
-  },
-  {
-    message: "This account does not support the priority service tier.",
-    status: "unavailable",
-    exitCode: 0,
-  },
-  {
-    message: "This account is not eligible for the priority service tier.",
-    status: "unavailable",
-    exitCode: 0,
-  },
-  {
-    message: "Service tier 'priority' is not eligible for this account.",
-    status: "unavailable",
-    exitCode: 0,
-  },
+// tier-rejection.unit.test.ts covers the provider wording variants.
+test.concurrent.each([
   {
     message: 'Unsupported parameter: "service_tier" is not supported with this model.',
     status: "unavailable",
@@ -148,26 +130,6 @@ test.each([
   },
   {
     message: 'Unsupported parameter: "image_url" is not supported with this service tier.',
-    status: "failed",
-    exitCode: 1,
-  },
-  {
-    message: "Invalid value for 'service_tier': priority.",
-    status: "unavailable",
-    exitCode: 0,
-  },
-  {
-    message: "Image input is not eligible for this model at the priority service tier.",
-    status: "failed",
-    exitCode: 1,
-  },
-  {
-    message: "This model does not support image input at the priority service tier.",
-    status: "failed",
-    exitCode: 1,
-  },
-  {
-    message: "Image input is not supported by this model at the priority service tier.",
     status: "failed",
     exitCode: 1,
   },
@@ -382,7 +344,7 @@ test.skipIf(process.platform === "win32")(
   },
 );
 
-test.each(["thread/start", "turn/start"] as const)(
+test.concurrent.each(["thread/start", "turn/start"] as const)(
   "CLI records a sent tier only on turn requests when %s is rejected",
   async (method) => {
     await withRunnerFixture({ rejectStart: method }, async ({ options, trace }) => {
@@ -452,7 +414,7 @@ test("an ambiguous RPC error about the tier still fails after earlier measuremen
   );
 });
 
-test.each([1, 2])(
+test.concurrent.each([1, 2])(
   "CLI reports transport loss during readback and keeps completed results with %i measured trials scheduled",
   async (runs) => {
     await withRunnerFixture({ exitDuringReadbackThread: 2 }, async ({ options, trace }) => {
@@ -543,13 +505,11 @@ test("CLI reports stdout EOF observed during final rollout readback", async () =
 
 test("CLI retains matching completions when turn/start replies are withheld", async () => {
   await withRunnerFixture({ withholdStartReply: true }, async ({ options, trace }) => {
-    const result = await startCliBenchmark(options, [
-      "--json",
-      "--codex-speed",
-      "standard",
-      "--session-retention",
-      "archive",
-    ]).completion;
+    const result = await startCliBenchmark(
+      options,
+      ["--json", "--codex-speed", "standard", "--session-retention", "archive"],
+      turnRecoveryPreload,
+    ).completion;
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     const report = JSON.parse(result.stdout);
@@ -709,11 +669,12 @@ test("interrupts the matching turn when its ID arrives just after cancellation",
       const result = await run;
       expect(result.interrupted).toBe(true);
       expect(result.trials).toMatchObject([
-        { status: "cancelled", turnId: "turn-thread-1", sessionRetention: { status: "archived" } },
+        { status: "cancelled", turnId: "turn-thread-1", sessionRetention: { status: "skipped" } },
       ]);
       expect(traceMethod(await trace(), "turn/interrupt").map(({ params }) => params)).toEqual([
         { threadId: "thread-1", turnId: "turn-thread-1" },
       ]);
+      expect(traceMethod(await trace(), "thread/archive")).toEqual([]);
     },
   );
 });
@@ -746,7 +707,7 @@ test.skipIf(process.platform === "win32")(
   },
 );
 
-test.each(["model/list", "config/read"] as const)(
+test.concurrent.each(["model/list", "config/read"] as const)(
   "CLI recovers the measured Fast trial after a transient %s failure",
   async (method) => {
     await withRunnerFixture({ rejectFirstLookup: method }, async ({ options, trace }) => {
@@ -863,7 +824,7 @@ test.skipIf(process.platform === "win32")(
   15_000,
 );
 
-test.each(["confirmed", "unconfirmed"] as const)(
+test.concurrent.each(["confirmed", "unconfirmed"] as const)(
   "CLI fails a timed-out trial with %s interruption and recovers partial usage",
   async (interrupt) => {
     await withRunnerFixture(
@@ -873,14 +834,16 @@ test.each(["confirmed", "unconfirmed"] as const)(
         await writeFile(
           preload,
           [
+            `import ${JSON.stringify(pathToFileURL(shortRolloutPreload).href)};`,
             "const timeout = AbortSignal.timeout.bind(AbortSignal);",
             "let turns = 0;",
             "AbortSignal.timeout = (ms) => timeout(ms === 120000 && ++turns === 2 ? 250 : ms);",
           ].join("\n"),
         );
-        const result = await startCliBenchmark(
+        const result = await startCliWithShortReadback(
           { ...options, runs: 2 },
           ["--json", "--show-token-usage", "--session-retention", "archive"],
+          2,
           preload,
         ).completion;
         expect(result.exitCode).toBe(1);
@@ -913,7 +876,7 @@ test.each(["confirmed", "unconfirmed"] as const)(
   15_000,
 );
 
-test.each([null, "fixture interrupted the turn"])(
+test.concurrent.each([null, "fixture interrupted the turn"])(
   "CLI fails a server-interrupted trial after a completed measurement (reason: %s)",
   async (message) => {
     await withRunnerFixture(
@@ -982,7 +945,7 @@ test("CLI reports a failed turn, continues, and retains only confirmed trial thr
 
 for (const json of [false, true]) {
   test.skipIf(process.platform === "win32")(
-    `foreground SIGINT interrupts exactly one active turn before archiving (${json ? "JSON" : "terminal"})`,
+    `foreground SIGINT interrupts exactly one turn and skips retention with a pending start reply (${json ? "JSON" : "terminal"})`,
     async () => {
       await withRunnerFixture(
         { interrupt: "confirmed", withholdStartReply: true },
@@ -1001,7 +964,6 @@ for (const json of [false, true]) {
           );
           try {
             await waitForMethod(trace, "turn/start");
-            expect(traceMethod(await trace(), "turn/start")).toHaveLength(1);
             if (!cli.child.pid) throw new Error("Expected an owned CLI process.");
             process.kill(-cli.child.pid, "SIGINT");
             const result = await cli.completion;
@@ -1009,12 +971,16 @@ for (const json of [false, true]) {
             expect(result.issues).toEqual([]);
             expect(result.exitCode).toBe(130);
             expect(result.stderr).toContain("Waiting for text");
+            expect(result.stderr).toContain("Session retention skipped");
             if (json) {
-              expect(result.stderr.endsWith("\r\x1b[2K\r")).toBe(true);
+              expect(result.stderr).toContain("\r\x1b[2K\r");
               const report = JSON.parse(result.stdout);
               expect(report.run.interrupted).toBe(true);
               expect(report.trials).toHaveLength(1);
-              expect(report.trials[0]).toMatchObject({ status: "cancelled" });
+              expect(report.trials[0]).toMatchObject({
+                status: "cancelled",
+                sessionRetention: { status: "skipped" },
+              });
               expect(report.tokenUsage).toMatchObject({
                 partial: true,
                 totals: { totalTokens: 230 },
@@ -1029,12 +995,11 @@ for (const json of [false, true]) {
             }
             const events = await trace();
             expect(traceMethod(events, "turn/start")).toHaveLength(1);
-            expect(events.slice(-3).map(({ method }) => method)).toEqual([
+            expect(events.slice(-2).map(({ method }) => method)).toEqual([
               "turn/interrupt",
               "turn/completed",
-              "thread/archive",
             ]);
-            expect(events.at(-1)?.params?.threadId).toBe("thread-1");
+            expect(traceMethod(events, "thread/archive")).toEqual([]);
           } finally {
             cli.shutdown();
             await cli.completion;
@@ -1045,7 +1010,8 @@ for (const json of [false, true]) {
   );
 }
 
-test.skipIf(process.platform === "win32").each([
+// Every signal pair targets its own CLI process group.
+test.skipIf(process.platform === "win32").concurrent.each([
   { first: "SIGINT", second: "SIGTERM", exitCode: 130 },
   { first: "SIGTERM", second: "SIGINT", exitCode: 143 },
   { first: "SIGTERM", second: "SIGHUP", exitCode: 143 },
@@ -1058,6 +1024,14 @@ test.skipIf(process.platform === "win32").each([
         preload,
         `\nimport ${JSON.stringify(pathToFileURL(shortRolloutPreload).href)};\n`,
       );
+      // Keep the default interruption wait in the SIGINT-first control.
+      if (first === "SIGTERM") {
+        await appendFile(
+          preload,
+          "const timeout = AbortSignal.timeout.bind(AbortSignal);\n" +
+            "AbortSignal.timeout = (ms) => timeout(ms === 2000 ? 750 : ms);\n",
+        );
+      }
       const cli = startCliWithShortReadback(
         options,
         ["--json", "--session-retention", "archive", "--show-token-usage"],

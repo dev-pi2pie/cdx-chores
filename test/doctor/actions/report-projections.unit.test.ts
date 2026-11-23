@@ -38,6 +38,7 @@ describe("doctor evidence report and legacy JSON projection", () => {
     const markdownPdfRequirements = assessMarkdownPdfRequirements(
       fixture.commands.pandoc,
       fixture.commands.weasyprint,
+      true,
     );
     const payload = JSON.parse(stdout.text);
     expect(payload).toEqual({
@@ -443,7 +444,7 @@ Run \`cdx-chores doctor --details\` for versions and capability evidence.
         expected: [
           "  PDF: limited",
           "Advanced Markdown PDF features require WeasyPrint 65.1 or newer",
-          "- Upgrade WeasyPrint to 65.1 or newer [recommended]",
+          "- Upgrade WeasyPrint to 70.0 or newer [recommended]",
         ],
       },
       detailed: {

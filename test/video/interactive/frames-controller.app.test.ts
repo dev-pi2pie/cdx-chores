@@ -33,8 +33,15 @@ const flush = async () => {
   await new Promise<void>((resolve) => setImmediate(resolve));
   await new Promise<void>((resolve) => setImmediate(resolve));
 };
-const escape = async (input: Input, completed: () => boolean = () => !input.isRaw) => {
-  input.write("\x1b");
+const decodedEscape = async (input: Input, completed: () => boolean = () => !input.isRaw) => {
+  // These cases exercise picker state changes. The fatal-closure cases below use raw bytes.
+  input.emit("keypress", undefined, {
+    name: "escape",
+    sequence: "\x1b",
+    ctrl: false,
+    meta: true,
+    shift: false,
+  });
   const deadline = Date.now() + 2_000;
   while (!completed()) {
     if (Date.now() > deadline) throw new Error("Escape did not settle the expected input owner.");
@@ -96,8 +103,8 @@ describe("synthetic frame picker ownership", () => {
         expect(calls).toBe(0);
         expect(observations.at(-1)?.editor?.draft).toBe("00:00:00.120");
         expect(io.actualOutput.text).toContain("Timestamp must be before the video end");
-        await escape(io.actualInput, () => observations.at(-1)?.editor === undefined);
-        await escape(io.actualInput);
+        await decodedEscape(io.actualInput, () => observations.at(-1)?.editor === undefined);
+        await decodedEscape(io.actualInput);
         expect(await prompt).toBeNull();
         expect(io.actualInput.isRaw).toBe(false);
         expect(io.actualInput.listenerCount("keypress")).toBe(0);
@@ -174,7 +181,7 @@ describe("synthetic frame picker ownership", () => {
       glyphs: "ascii",
     });
     expect(calls).toBe(0);
-    await escape(io.actualInput);
+    await decodedEscape(io.actualInput);
     expect(await prompt).toBeNull();
     expect(io.actualInput.isRaw).toBe(false);
     expect(io.actualInput.listenerCount("keypress")).toBe(0);
@@ -206,7 +213,7 @@ describe("synthetic frame picker ownership", () => {
     io.actualOutput.rows = 32;
     io.actualOutput.emit("resize");
     await flush();
-    await escape(io.actualInput, () => observations.at(-1)?.editor === undefined);
+    await decodedEscape(io.actualInput, () => observations.at(-1)?.editor === undefined);
     io.actualInput.write("f2\r");
     expect((await prompt)?.resolved).toEqual({ frameNumber: 2, startMs: 100 });
     expect(requests).toEqual([{ kind: "frame", frameNumber: 2 }]);
@@ -233,7 +240,7 @@ describe("synthetic frame picker ownership", () => {
     });
     io.actualInput.write("\r");
     await flush();
-    await escape(io.actualInput, () => signal?.aborted === true);
+    await decodedEscape(io.actualInput, () => signal?.aborted === true);
     expect(signal?.aborted).toBe(true);
     expect(observations.at(-1)?.resolving).toBe(true);
     io.actualInput.write("aF\x1b[C\r");
@@ -243,7 +250,7 @@ describe("synthetic frame picker ownership", () => {
     rejectOperation(new Error("Synthetic stop acknowledged"));
     await flush();
     expect(observations.at(-1)?.resolving).toBe(false);
-    await escape(io.actualInput);
+    await decodedEscape(io.actualInput);
     expect(await prompt).toBeNull();
     expect(io.actualInput.isRaw).toBe(false);
     expect(io.actualInput.listenerCount("keypress")).toBe(0);

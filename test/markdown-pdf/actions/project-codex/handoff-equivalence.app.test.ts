@@ -107,7 +107,10 @@ function capturingPdfRunner(captured: CapturedRender): MarkdownPdfProcessRunner 
       return ok("pandoc 3.1\n");
     }
     if (command === "weasyprint" && args.includes("--info")) {
-      return ok("WeasyPrint version 68.0\n");
+      return ok("WeasyPrint version 70.0\n");
+    }
+    if (command === "weasyprint" && args.includes("--help")) {
+      return ok("  --allowed-protocols ALLOWED_PROTOCOLS\n");
     }
     if (command === "pandoc") {
       const inputPath = args[0];

@@ -1,0 +1,157 @@
+import { describe, expect, test } from "bun:test";
+
+import { shouldSuppressMarkdownPdfMetadataTitle } from "../../../src/cli/markdown-pdf/ast-title";
+
+const attr = ["", [], []];
+const space = { t: "Space" };
+const str = (text: string) => ({ t: "Str", c: text });
+const header = (level: number, ...inlines: unknown[]) => ({
+  t: "Header",
+  c: [level, attr, inlines],
+});
+const div = (...blocks: unknown[]) => ({ t: "Div", c: [attr, blocks] });
+const link = (destination: string, ...label: unknown[]) => ({
+  t: "Link",
+  c: [attr, label, [destination, ""]],
+});
+const meta = (...inlines: unknown[]) => ({ t: "MetaInlines", c: inlines });
+const document = (title: unknown, ...blocks: unknown[]) => ({ meta: { title }, blocks });
+
+const guide = str("Guide");
+
+describe("Pandoc AST title comparison", () => {
+  test("uses the first H1 at the top level or in a native Div", () => {
+    const ast = document(
+      meta(guide),
+      { t: "RawBlock", c: ["html", "<h1>Raw heading</h1>"] },
+      { t: "CodeBlock", c: [attr, "# Hidden heading"] },
+      header(2, str("Preface")),
+      div(div(header(1, guide))),
+      header(1, str("Later")),
+    );
+    expect(shouldSuppressMarkdownPdfMetadataTitle(ast, "Guide")).toBe(true);
+  });
+
+  test.each([
+    { t: "BlockQuote", c: [div(header(1, str("Aside")))] },
+    { t: "BulletList", c: [[header(1, str("Aside"))]] },
+    { t: "OrderedList", c: [[1, { t: "Decimal" }, { t: "Period" }], [[header(1, str("Aside"))]]] },
+    { t: "Table", c: [[[[header(1, str("Aside"))]]]] },
+    { t: "Para", c: [str("Note"), { t: "Note", c: [header(1, str("Aside"))] }] },
+  ])("skips headings in $t", (container) => {
+    const ast = document(meta(guide), container, header(1, guide));
+    expect(shouldSuppressMarkdownPdfMetadataTitle(ast, "Guide")).toBe(true);
+    expect(shouldSuppressMarkdownPdfMetadataTitle(document(meta(guide), container), "Guide")).toBe(
+      false,
+    );
+  });
+
+  test("stops at an earlier eligible H1", () => {
+    const ast = document(meta(guide), header(1, str("Earlier")), div(header(1, guide)));
+    expect(shouldSuppressMarkdownPdfMetadataTitle(ast, "Guide")).toBe(false);
+  });
+
+  test("projects formatted text consistently across metadata and heading", () => {
+    const ast = document(
+      meta(
+        { t: "Emph", c: [str("Build")] },
+        { t: "SoftBreak" },
+        { t: "Strong", c: [str("guide")] },
+        { t: "LineBreak" },
+        { t: "Quoted", c: [{ t: "DoubleQuote" }, [str("A")]] },
+        space,
+        { t: "Quoted", c: [{ t: "SingleQuote" }, [str("B")]] },
+      ),
+      header(1, str("build  guide “a” ‘b’")),
+    );
+    expect(shouldSuppressMarkdownPdfMetadataTitle(ast, "Build guide")).toBe(true);
+  });
+
+  test("supports a parsed MetaString", () => {
+    const ast = document({ t: "MetaString", c: "   GUIDE  " }, header(1, guide));
+    expect(shouldSuppressMarkdownPdfMetadataTitle(ast, "GUIDE")).toBe(true);
+  });
+
+  test("preserves literal punctuation in inline code", () => {
+    const title = meta({ t: "Code", c: [attr, "build_task()"] });
+    expect(
+      shouldSuppressMarkdownPdfMetadataTitle(
+        document(title, header(1, str("build_task()"))),
+        "code",
+      ),
+    ).toBe(true);
+    expect(
+      shouldSuppressMarkdownPdfMetadataTitle(document(title, header(1, str("buildtask"))), "code"),
+    ).toBe(false);
+  });
+
+  test("keeps meaningful punctuation in plain text", () => {
+    const ast = document(meta(str("Guide (draft)")), header(1, str("Guide draft")));
+    expect(shouldSuppressMarkdownPdfMetadataTitle(ast, "Guide (draft)")).toBe(false);
+  });
+
+  test.each([
+    { t: "Math", c: [{ t: "InlineMath" }, "x"] },
+    { t: "Span", c: [attr, [guide]] },
+    { t: "Image", c: [attr, [guide], ["figure.svg", ""]] },
+    { t: "Quoted", c: [{ t: "UnknownQuote" }, [guide]] },
+  ])("keeps the title when $t prevents a comparison", (unsupported) => {
+    const ast = document(meta(guide), header(1, unsupported), header(1, guide));
+    expect(shouldSuppressMarkdownPdfMetadataTitle(ast, "Guide")).toBe(false);
+    expect(
+      shouldSuppressMarkdownPdfMetadataTitle(
+        document(meta(unsupported), header(1, guide)),
+        "Guide",
+      ),
+    ).toBe(false);
+  });
+
+  test("requires a nonempty string from front matter and a supported parsed title", () => {
+    const ast = document(meta(guide), header(1, guide));
+    for (const source of [null, undefined, 17, ["Guide"], "", " \t\n"]) {
+      expect(shouldSuppressMarkdownPdfMetadataTitle(ast, source)).toBe(false);
+    }
+    expect(shouldSuppressMarkdownPdfMetadataTitle({ blocks: [header(1, guide)] }, "Guide")).toBe(
+      false,
+    );
+    expect(shouldSuppressMarkdownPdfMetadataTitle(document(meta(), header(1)), "Guide")).toBe(
+      false,
+    );
+  });
+
+  test("keeps the title when the first eligible H1 has an unreadable inline array", () => {
+    const ast = document(meta(guide), { t: "Header", c: [1, attr, null] }, header(1, guide));
+    expect(shouldSuppressMarkdownPdfMetadataTitle(ast, "Guide")).toBe(false);
+  });
+
+  test("matches a formatted label and its exact destination", () => {
+    const title = meta(link("/Quickstart", { t: "Emph", c: [guide] }));
+    const match = document(title, header(1, link("/Quickstart", str("guide"))));
+    expect(shouldSuppressMarkdownPdfMetadataTitle(match, "Guide")).toBe(true);
+
+    for (const heading of [header(1, guide), header(1, link("/quickstart", guide))]) {
+      expect(shouldSuppressMarkdownPdfMetadataTitle(document(title, heading), "Guide")).toBe(false);
+    }
+  });
+
+  test("requires the destination to stay paired with the same label", () => {
+    const title = meta(link("/guide", str("Read the")), space, guide);
+    const heading = header(1, link("/guide", str("Read the guide")));
+    expect(shouldSuppressMarkdownPdfMetadataTitle(document(title, heading), "Read the guide")).toBe(
+      false,
+    );
+  });
+
+  test("requires every metadata link when the displayed text matches", () => {
+    const title = meta(link("/guide", guide), space, link("/api", str("API")));
+    const heading = header(1, link("/guide", guide), space, link("/reference", str("API")));
+    expect(shouldSuppressMarkdownPdfMetadataTitle(document(title, heading), "Guide API")).toBe(
+      false,
+    );
+  });
+
+  test("allows a heading link when the metadata title has no link", () => {
+    const ast = document(meta(guide), header(1, link("/guide", guide)));
+    expect(shouldSuppressMarkdownPdfMetadataTitle(ast, "Guide")).toBe(true);
+  });
+});

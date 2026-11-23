@@ -125,17 +125,23 @@ describe("Markdown PDF Codex profile signals", () => {
     });
   });
 
-  test("ignores code-fenced Markdown headings when collecting first H1 title signals", () => {
+  test.each(["`", "~"])("ignores structure inside %s fences until a valid close", (marker) => {
+    const fence = marker.repeat(4);
     const markdown = [
       "---",
       "title: Actual Title",
       "---",
-      "```md",
+      `   ${fence}md`,
+      marker.repeat(3),
       "# Fake Title",
-      "```",
+      `${fence}sh`,
+      "| a | b | c | d | e | f | g | h |",
+      `   ${marker.repeat(5)} \t`,
       "# Actual Title",
       "",
-      "Body text.",
+      "| A | B |",
+      "| - | - |",
+      "| 1 | 2 |",
     ].join("\n");
 
     const signals = collectMarkdownPdfDocumentSignals(markdown);
@@ -146,6 +152,77 @@ describe("Markdown PDF Codex profile signals", () => {
       normalizedTitleMatch: true,
       duplicateVisibleTitleRisk: true,
     });
+    expect(signals.headings).toEqual({ total: 1, maxDepth: 1, byDepth: { "1": 1 } });
+    expect(signals.tables).toEqual({
+      scannedRows: 3,
+      maxColumns: 2,
+      maxLineWidth: "| A | B |".length,
+      overflowRows: 0,
+    });
+    expect(signals.codeFences).toEqual({
+      languages: ["md"],
+      unlabeledCount: 0,
+      overflowLanguageCount: 0,
+    });
+  });
+
+  test("scans ordinary lines and later valid fences after an unmatched opener", () => {
+    const signals = collectMarkdownPdfDocumentSignals(
+      ["~~~~sh", "    ~~~~", "", "# Visible", "", "```js", "# Example", "```"].join("\n"),
+    );
+    expect(signals.title.firstH1).toEqual({ present: true, charCount: "Visible".length });
+    expect(signals.headings.total).toBe(1);
+    expect(signals.codeFences.languages).toEqual(["js"]);
+    expect(signals.codeFences.unlabeledCount).toBe(0);
+  });
+
+  test.each([
+    ["Paragraph.", "~~~", []],
+    ["Paragraph.", "```", ["sh"]],
+    ["Paragraph.\n", "~~~", ["sh"]],
+    ["# Heading", "~~~", ["sh"]],
+    ["", "    ~~~", []],
+    ["<!-- Note -->", "~~~", ["sh"]],
+    ["Paragraph.\n<!-- Inline note -->", "~~~", []],
+    ["<!--\n~~~Example\n~~~\n-->", "~~~", ["sh"]],
+    ["<div>\nBody\n</div>", "~~~", ["sh"]],
+    ["- Item\n  Continuation", "~~~", ["sh"]],
+    ["Term\n:   Meaning", "~~~", ["sh"]],
+    ["Term\n\n:   Meaning", "~~~", ["sh"]],
+    ["Two\nlines\n:   Meaning", "~~~", []],
+    ["Paragraph.\n| A | B |\n| - | - |\n| 1 | 2 |", "~~~", []],
+  ] as const)(
+    "classifies %j followed by %j using Pandoc opener placement",
+    (before, opener, languages) => {
+      const signals = collectMarkdownPdfDocumentSignals(
+        [before, `${opener}sh`, "example", opener.trim()].join("\n"),
+      );
+      expect(signals.codeFences.languages).toEqual([...languages]);
+    },
+  );
+
+  test("recognizes a tilde fence after a standalone HTML block", () => {
+    const signals = collectMarkdownPdfDocumentSignals(
+      ["<hr />", "~~~sh", "# Hidden", "| a | b | c |", "~~~", "", "# Visible heading"].join("\n"),
+    );
+    expect(signals.title.firstH1).toEqual({ present: true, charCount: "Visible heading".length });
+    expect(signals.headings.total).toBe(1);
+    expect(signals.tables.scannedRows).toBe(0);
+    expect(signals.codeFences.languages).toEqual(["sh"]);
+  });
+
+  test.each([
+    [String.raw`~~~{.python key="a\" b"}`, ["python"]],
+    ["~~~{=html}", []],
+  ] as const)("excludes structure inside attributed fence %s", (opener, languages) => {
+    const signals = collectMarkdownPdfDocumentSignals(
+      [opener, "# Hidden", "| a | b | c |", "~~~", "", "# Visible heading"].join("\n"),
+    );
+    expect(signals.title.firstH1).toEqual({ present: true, charCount: "Visible heading".length });
+    expect(signals.headings.total).toBe(1);
+    expect(signals.tables.scannedRows).toBe(0);
+    expect(signals.codeFences.languages).toEqual([...languages]);
+    expect(signals.codeFences.unlabeledCount).toBe(0);
   });
 
   test("collects bounded font summaries without font paths", () => {

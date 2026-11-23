@@ -406,7 +406,7 @@ describe("Markdown PDF render bundle action integration", () => {
             rewrittenTemplate = await readFile(selectedTemplate, "utf8");
           }
         }
-        if (command === "weasyprint" && !args.includes("--info")) {
+        if (command === "weasyprint" && args.includes("--base-url")) {
           const stylesheetIndexes = args
             .map((argument, index) => (argument === "--stylesheet" ? index : -1))
             .filter((index) => index >= 0);
@@ -433,7 +433,7 @@ describe("Markdown PDF render bundle action integration", () => {
       expect(renderedStyles.join("\n")).toContain("size: A4 landscape");
       expect(renderedStyles.at(-1)).toContain(".bundle-style");
       const weasyprintCall = calls.find(
-        (call) => call.command === "weasyprint" && !call.args.includes("--info"),
+        (call) => call.command === "weasyprint" && call.args.includes("--base-url"),
       );
       expect(weasyprintCall?.args).toContain(cssPath);
       expectNoStderr();
@@ -472,7 +472,7 @@ describe("Markdown PDF render bundle action integration", () => {
 
       expect(await readFile(htmlOutput, "utf8")).toBe(html);
       const weasyprintCall = calls.find(
-        (call) => call.command === "weasyprint" && !call.args.includes("--info"),
+        (call) => call.command === "weasyprint" && call.args.includes("--base-url"),
       );
       expect(weasyprintCall?.args.filter((argument) => argument === "--stylesheet")).toHaveLength(
         1,

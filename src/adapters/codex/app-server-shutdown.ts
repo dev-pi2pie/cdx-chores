@@ -8,6 +8,7 @@ const shutdownVerificationMs = 1_000;
 export function createAppServerShutdown(child: ChildProcess, separateGroup: boolean) {
   let exited = false;
   let closing: Promise<void> | undefined;
+  let deniedSignal: NodeJS.ErrnoException | undefined;
   child.once("exit", () => {
     exited = true;
   });
@@ -24,7 +25,13 @@ export function createAppServerShutdown(child: ChildProcess, separateGroup: bool
     try {
       process.kill(separateGroup ? -pid : pid, signal);
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+      const failure = error as NodeJS.ErrnoException;
+      if (failure.code === "EPERM") {
+        // The group may be exiting before the child close event reaches us.
+        deniedSignal ??= failure;
+      } else if (failure.code !== "ESRCH") {
+        throw error;
+      }
     }
   }
 
@@ -76,7 +83,7 @@ export function createAppServerShutdown(child: ChildProcess, separateGroup: bool
     } catch (error) {
       // A child whose exit we cannot confirm must not pin the caller's event loop.
       child.unref();
-      throw error;
+      throw deniedSignal ?? error;
     }
   }
 

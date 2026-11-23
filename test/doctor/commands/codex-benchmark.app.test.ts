@@ -66,7 +66,7 @@ test.skipIf(process.platform === "win32").each([
   {
     mode: "initialization error",
     initializeError: true,
-    escalation: "deny-term",
+    escalation: "deny-all",
     signal: null,
     exitCode: 0,
   },

@@ -1,13 +1,11 @@
 import {
   beep,
-  createKeypressParser,
   createInlinePromptRenderer,
   dim,
-  startRawSession,
   supportsRawSessionIO,
-  type RawSession,
   type RawSessionKeypressInfo,
 } from "../tui";
+import { runInlinePromptSession } from "./inline-session";
 import type { PathPromptRuntimeConfig } from "./path-config";
 import { styleCliDiagnosticLabel } from "../diagnostic-color";
 import { resolveCliColorEnabled } from "../colors";
@@ -57,12 +55,6 @@ export interface InlinePathPromptOptions {
 }
 
 type KeypressInfo = RawSessionKeypressInfo;
-
-function createPromptAbortError(): Error {
-  const error = new Error("User aborted prompt");
-  error.name = "ExitPromptError";
-  return error;
-}
 
 function isPrintableInput(str: string | undefined, key: KeypressInfo): boolean {
   if (typeof str !== "string") {
@@ -199,7 +191,7 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
       resolvingSuggestions = false;
     }
 
-    if (closed) {
+    if (closed || options.signal?.aborted) {
       return;
     }
 
@@ -234,27 +226,16 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
       fileExtensions: options.suggestionFilter.fileExtensions,
     });
 
-    const replacements = suggestions.map((item) => item.replacement);
-    if (replacements.length === 0) {
-      return false;
-    }
-
-    const deduped: string[] = [];
-    for (const replacement of replacements) {
-      if (!deduped.includes(replacement)) {
-        deduped.push(replacement);
-      }
-    }
-
-    if (deduped.length === 0) {
+    const replacements = [...new Set(suggestions.map((item) => item.replacement))];
+    if (closed || replacements.length === 0) {
       return false;
     }
 
     interactionState = setCycleState(interactionState, {
-      replacements: deduped,
+      replacements,
       index: 0,
     });
-    value = deduped[0] ?? value;
+    value = replacements[0] ?? value;
     ghostSuffix = "";
     scheduleRender();
     return true;
@@ -270,7 +251,7 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
       return true;
     }
 
-    if (ghostSuffix.length === 0) {
+    if (closed || ghostSuffix.length === 0) {
       return false;
     }
 
@@ -333,6 +314,7 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
             fileExtensions: options.suggestionFilter.fileExtensions,
           });
 
+    if (closed) return false;
     const previewAdvance = advanceSiblingPreview(interactionState, candidates, direction);
     interactionState = previewAdvance.nextState;
 
@@ -350,182 +332,117 @@ export async function promptPathInlineGhost(options: InlinePathPromptOptions): P
   options.signal?.throwIfAborted();
   scheduleRender();
 
-  return await new Promise<string>((resolve, reject) => {
-    let settled = false;
-    let session: RawSession | undefined;
-    const keyParser = createKeypressParser({
-      onEscapeAbort: () => {
-        settleReject(createPromptAbortError());
-      },
-    });
-    const abort = (): void => settleReject(createPromptAbortError());
-
-    const settleResolve = (result: string): void => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      closed = true;
-      activeRefreshSeq += 1;
-      cleanup();
-      inlineRenderer.clear();
-      stdout.write(`${options.message} ${result}\n`);
-      resolve(result);
-    };
-
-    const settleReject = (error: unknown): void => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      options.onChange?.(value);
-      closed = true;
-      activeRefreshSeq += 1;
-      cleanup();
-      inlineRenderer.clear();
-      stdout.write("\n");
-      reject(error);
-    };
-
-    const keypressHandler = (str: string, key: KeypressInfo = {}): void => {
-      void (async () => {
-        if (closed) return;
-        const parsed = keyParser.handle(str, key);
-
-        if (parsed.kind === "incomplete") {
-          return;
-        }
-
-        if (parsed.kind === "arrow") {
-          if (parsed.direction === "right") {
-            const accepted = await acceptGhostSuffix();
-            if (!accepted) {
-              beep(stdout);
-              scheduleRender();
-            }
-            return;
-          }
-
-          if (parsed.direction === "left") {
-            const moved = await moveToParentPathSegment();
-            if (!moved) {
-              beep(stdout);
-              scheduleRender();
-            }
-            return;
-          }
-
-          const navigated = await browseSiblingPreview(
-            parsed.direction === "up" ? "previous" : "next",
-          );
-          if (!navigated) {
-            beep(stdout);
-            scheduleRender();
-          }
-          return;
-        }
-
-        const nextStr = parsed.str;
-        const nextKey = parsed.key;
-
-        if (nextKey.ctrl && nextKey.name === "c") {
-          settleReject(createPromptAbortError());
-          return;
-        }
-
-        if (nextKey.name === "return" || nextKey.name === "enter") {
-          const validation = await options.validate(value);
-          if (closed) return;
-          if (validation === true) {
-            settleResolve(value);
-            return;
-          }
-          inlineRenderer.clear();
-          const label = styleCliDiagnosticLabel(
-            { colorEnabled: options.colorEnabled ?? resolveCliColorEnabled() },
-            stdout,
-            "error",
-            "Error:",
-          );
-          const message = validation.replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, " ");
-          stdout.write(`${label} ${message}\n`);
-          scheduleRender();
-          return;
-        }
-
-        if (nextKey.name === "tab") {
-          const acceptedPreview = await acceptActiveSiblingPreview();
-          if (acceptedPreview) {
-            return;
-          }
-
-          const cycled = await startOrAdvanceCycle();
-          if (!cycled) {
-            beep(stdout);
-            scheduleRender();
-          }
-          return;
-        }
-
-        if (nextKey.ctrl && nextKey.name === "u") {
-          value = "";
-          ghostSuffix = "";
-          resetInteractionState();
-          await refreshGhost();
-          return;
-        }
-
-        if (nextKey.name === "backspace") {
-          if (value.length === 0) {
-            beep(stdout);
-            scheduleRender();
-            return;
-          }
-          value = value.slice(0, -1);
-          ghostSuffix = "";
-          resetInteractionState();
-          await refreshGhost();
-          return;
-        }
-
-        if (isPrintableInput(nextStr, nextKey)) {
-          value += nextStr;
-          ghostSuffix = "";
-          resetInteractionState();
-          await refreshGhost();
-          return;
-        }
-
-        // Ignore unsupported keys for MVP (arrows/home/end/etc.).
-        scheduleRender();
-      })().catch((error) => {
-        settleReject(error);
-      });
-    };
-
-    const cleanup = (): void => {
-      options.signal?.removeEventListener("abort", abort);
-      session?.close();
-    };
-
-    try {
-      options.signal?.throwIfAborted();
+  return await runInlinePromptSession(options, {
+    beforeStart() {
       if (options.defaultHint && options.defaultHint.trim().length > 0) {
         const label = options.defaultHintLabel?.trim() || "Default path";
         stdout.write(`${dim(`${label}: ${options.defaultHint}`)}\n`);
       }
-      session = startRawSession({
-        stdin: options.stdin,
-        stdout,
-        onTeardown: () => {
-          keyParser.dispose();
-        },
-      });
-      session.addKeypressListener(keypressHandler);
-      options.signal?.addEventListener("abort", abort, { once: true });
-      if (options.signal?.aborted) abort();
-    } catch (error) {
-      settleReject(error);
-    }
+    },
+    onClose(rejected) {
+      closed = true;
+      activeRefreshSeq += 1;
+      if (rejected) options.onChange?.(value);
+    },
+    clear: inlineRenderer.clear,
+    async onKey(parsed, submit) {
+      if (parsed.kind === "arrow") {
+        if (parsed.direction === "right") {
+          const accepted = await acceptGhostSuffix();
+          if (!closed && !accepted) {
+            beep(stdout);
+            scheduleRender();
+          }
+          return;
+        }
+
+        if (parsed.direction === "left") {
+          const moved = await moveToParentPathSegment();
+          if (!closed && !moved) {
+            beep(stdout);
+            scheduleRender();
+          }
+          return;
+        }
+
+        const navigated = await browseSiblingPreview(
+          parsed.direction === "up" ? "previous" : "next",
+        );
+        if (!closed && !navigated) {
+          beep(stdout);
+          scheduleRender();
+        }
+        return;
+      }
+
+      const nextStr = parsed.str;
+      const nextKey = parsed.key;
+
+      if (nextKey.name === "return" || nextKey.name === "enter") {
+        const validation = await options.validate(value);
+        if (closed) return;
+        if (validation === true) {
+          submit(value);
+          return;
+        }
+        inlineRenderer.clear();
+        const label = styleCliDiagnosticLabel(
+          { colorEnabled: options.colorEnabled ?? resolveCliColorEnabled() },
+          stdout,
+          "error",
+          "Error:",
+        );
+        const message = validation.replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, " ");
+        stdout.write(`${label} ${message}\n`);
+        scheduleRender();
+        return;
+      }
+
+      if (nextKey.name === "tab") {
+        const acceptedPreview = await acceptActiveSiblingPreview();
+        if (acceptedPreview || closed) {
+          return;
+        }
+
+        const cycled = await startOrAdvanceCycle();
+        if (!closed && !cycled) {
+          beep(stdout);
+          scheduleRender();
+        }
+        return;
+      }
+
+      if (nextKey.ctrl && nextKey.name === "u") {
+        value = "";
+        ghostSuffix = "";
+        resetInteractionState();
+        await refreshGhost();
+        return;
+      }
+
+      if (nextKey.name === "backspace") {
+        if (value.length === 0) {
+          beep(stdout);
+          scheduleRender();
+          return;
+        }
+        value = value.slice(0, -1);
+        ghostSuffix = "";
+        resetInteractionState();
+        await refreshGhost();
+        return;
+      }
+
+      if (isPrintableInput(nextStr, nextKey)) {
+        value += nextStr;
+        ghostSuffix = "";
+        resetInteractionState();
+        await refreshGhost();
+        return;
+      }
+
+      // Ignore unsupported keys for MVP (arrows/home/end/etc.).
+      scheduleRender();
+    },
   });
 }

@@ -7,8 +7,9 @@ import type { DoctorWorkflowId, DoctorWorkflowProjection, DoctorWorkflowState } 
 
 function markdownPdfCapabilityStatus(
   requirements: DoctorReport["markdownPdf"],
-): "available" | "unavailable" | "unsupported" | "unverified" {
+): "available" | "limited" | "unavailable" | "unsupported" | "unverified" {
   if (requirements.ready) return "available";
+  if (requirements.readyWithRemoteAssets) return "limited";
   if (
     requirements.requirements.pandoc.status === "missing" ||
     requirements.requirements.weasyprint.status === "missing"
@@ -21,6 +22,16 @@ function markdownPdfCapabilityStatus(
 function markdownPdfCapabilityDetail(
   requirements: DoctorReport["markdownPdf"],
 ): string | undefined {
+  if (!requirements.ready && requirements.readyWithRemoteAssets) {
+    const { minimumVersion, status } = requirements.requirements.restrictedAssets;
+    const renderer = `WeasyPrint ${minimumVersion}+`;
+    const defaultDetail =
+      status === "unverified"
+        ? `verify ${renderer} protocol support for default export`
+        : `default requires ${renderer}`;
+    return `use --allow-remote-assets; ${defaultDetail}`;
+  }
+
   const details: string[] = [];
   const pandoc = requirements.requirements.pandoc;
   if (pandoc.status === "missing") {

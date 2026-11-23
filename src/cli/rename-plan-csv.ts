@@ -1,10 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { basename, isAbsolute, relative, resolve } from "node:path";
+import { lstat, realpath } from "node:fs/promises";
+import { basename, dirname, relative, resolve } from "node:path";
 
 import { csvRowsToObjects, parseCsv, stringifyCsv } from "../utils/csv";
 import { formatUtcFileDateTimeISO } from "../utils/datetime";
+import { isContainedRelativePath, isUnrootedFilePath } from "../utils/paths";
 import { CliError } from "./errors";
-import { readTextFileRequired, writeTextFileSafe } from "./file-io";
+import { assertNoSymlinkPathParents, readTextFileRequired, writeTextFileSafe } from "./file-io";
 import { applyPlannedRenames } from "./rename/apply";
 import type { CliRuntime, PlannedRename, SkippedRenameItem } from "./types";
 
@@ -55,7 +57,7 @@ export interface RenamePlanCsvRow {
 
 function toRelativePathFromCwd(cwd: string, absolutePath: string): string {
   const next = relative(cwd, absolutePath);
-  if (!next || next.startsWith("..")) {
+  if (!isContainedRelativePath(next)) {
     throw new CliError(`Rename plan path escaped current working directory: ${absolutePath}`, {
       code: "INVALID_RENAME_PLAN",
       exitCode: 2,
@@ -73,7 +75,7 @@ function assertPathWithinCwd(cwd: string, pathValue: string, label: string): str
     });
   }
 
-  if (isAbsolute(trimmed)) {
+  if (!isUnrootedFilePath(trimmed)) {
     throw new CliError(`Rename plan ${label} must be cwd-relative: ${trimmed}`, {
       code: "INVALID_RENAME_PLAN",
       exitCode: 2,
@@ -82,7 +84,7 @@ function assertPathWithinCwd(cwd: string, pathValue: string, label: string): str
 
   const resolved = resolve(cwd, trimmed);
   const back = relative(cwd, resolved);
-  if (!back || back.startsWith("..")) {
+  if (!isContainedRelativePath(back)) {
     throw new CliError(`Rename plan ${label} escaped current working directory: ${trimmed}`, {
       code: "INVALID_RENAME_PLAN",
       exitCode: 2,
@@ -193,10 +195,7 @@ function assertNoDuplicateExecutablePath(
   seen.set(resolvedPath, rowNumber);
 }
 
-function validateExecutableApplyRows(
-  runtime: CliRuntime,
-  rows: RenamePlanCsvRow[],
-): PlannedRename[] {
+function validateExecutableApplyRows(cwd: string, rows: RenamePlanCsvRow[]): PlannedRename[] {
   // Validate per-row replay metadata before cross-row checks.
   rows.forEach((row, index) => {
     const rowNumber = index + 2;
@@ -217,8 +216,8 @@ function validateExecutableApplyRows(
     }
 
     const rowNumber = index + 2;
-    const fromPath = assertPathWithinCwd(runtime.cwd, row.old_path, "old_path");
-    const toPath = assertPathWithinCwd(runtime.cwd, row.new_path, "new_path");
+    const fromPath = assertPathWithinCwd(cwd, row.old_path, "old_path");
+    const toPath = assertPathWithinCwd(cwd, row.new_path, "new_path");
 
     assertNoDuplicateExecutablePath(seenOldPaths, fromPath, rowNumber, "old_path");
     assertNoDuplicateExecutablePath(seenNewPaths, toPath, rowNumber, "new_path");
@@ -231,6 +230,57 @@ function validateExecutableApplyRows(
   });
 
   return plans;
+}
+
+async function validateReplayParent(cwd: string, path: string, field: string): Promise<void> {
+  const label = `Rename plan ${field}`;
+  await assertNoSymlinkPathParents({ label, parentRootDirectory: cwd, path });
+
+  const parent = dirname(path);
+  const canonicalParent = await realpath(parent).catch(() => {
+    throw new CliError(`${label} parent must be an existing directory: ${parent}`, {
+      code: "INVALID_RENAME_PLAN",
+      exitCode: 2,
+    });
+  });
+  if (!isContainedRelativePath(relative(cwd, canonicalParent), { allowEqual: true })) {
+    throw new CliError(`${label} parent must resolve within the working directory: ${parent}`, {
+      code: "INVALID_RENAME_PLAN",
+      exitCode: 2,
+    });
+  }
+}
+
+function readReplayEntry(path: string) {
+  return lstat(path).catch((error: NodeJS.ErrnoException) => {
+    if (error.code !== "ENOENT") throw error;
+    return undefined;
+  });
+}
+
+async function validateReplayPaths(cwd: string, plans: PlannedRename[]): Promise<void> {
+  for (const plan of plans) {
+    if (!plan.changed) continue;
+    await validateReplayParent(cwd, plan.fromPath, "old_path");
+    await validateReplayParent(cwd, plan.toPath, "new_path");
+
+    const source = await readReplayEntry(plan.fromPath);
+    if (!source?.isFile()) {
+      throw new CliError(
+        `Rename plan old_path must be an existing regular file: ${plan.fromPath}`,
+        {
+          code: "INVALID_RENAME_PLAN",
+          exitCode: 2,
+        },
+      );
+    }
+    if ((await readReplayEntry(plan.toPath))?.isDirectory()) {
+      throw new CliError(`Rename plan new_path cannot be a directory: ${plan.toPath}`, {
+        code: "INVALID_RENAME_PLAN",
+        exitCode: 2,
+      });
+    }
+  }
 }
 
 function stringifyRenamePlanCsv(rows: RenamePlanCsvRow[]): string {
@@ -336,9 +386,11 @@ export async function applyRenamePlanCsv(
   skippedCount: number;
 }> {
   const { csvPath, rows } = await readRenamePlanCsv(runtime, csvPathInput);
-  const plans = validateExecutableApplyRows(runtime, rows);
+  const cwd = await realpath(runtime.cwd);
+  const plans = validateExecutableApplyRows(cwd, rows);
   const executableRows = rows.filter((row) => row.status === "planned");
 
+  await validateReplayPaths(cwd, plans);
   await applyPlannedRenames(plans);
 
   const appliedAt = runtime.now().toISOString();

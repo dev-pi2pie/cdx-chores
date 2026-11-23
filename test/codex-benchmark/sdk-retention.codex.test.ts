@@ -114,7 +114,7 @@ test.each([
             CDX_CHORES_CODEX_PATH: join(root, "other-codex"),
             CDX_RETENTION_EVENTS: events,
             CDX_RETENTION_CANCEL: cancelled ? "1" : "0",
-            FIXTURE_ESCALATION: closeFailure ? "deny-term" : undefined,
+            FIXTURE_ESCALATION: closeFailure ? "fail-term" : undefined,
             CODEX_HOME: home,
           },
           timeoutMs: 7_500,
@@ -148,7 +148,7 @@ test.each([
           cancelled
             ? "skipped"
             : closeFailure
-              ? "Fixture denied app-server SIGTERM."
+              ? "Fixture failed app-server SIGTERM."
               : "Fixture binary does not support retention",
         );
         if (closeFailure) {
@@ -175,6 +175,8 @@ test
   .skipIf(process.platform === "win32")
   .each([
     { escalation: "allowed", signal: null, output: "fixture-answer", exitCode: 0 },
+    { escalation: "denied", signal: null, output: "fixture-answer", exitCode: 0 },
+    { escalation: "denied", signal: null, output: "Original helper error.", exitCode: 0 },
     { escalation: "undelivered", signal: null, output: "fixture-answer", exitCode: 0 },
     { escalation: "undelivered", signal: null, output: "Original helper error.", exitCode: 0 },
     ...callerCancellationSignals.flatMap((signal) => [
@@ -250,9 +252,11 @@ test
           `thread/${mode}:owned-fixture-thread`,
         ]);
         if (output !== null) expect(result.stdout.trim()).toBe(output);
-        if (escalation === "undelivered") {
+        if (escalation === "denied" || escalation === "undelivered") {
           expect(result.stderr).toContain(`Codex session ${mode} failed`);
-          expect(result.stderr).toContain("shutdown deadline");
+          expect(result.stderr).toContain(
+            escalation === "denied" ? "Fixture denied app-server SIGKILL." : "shutdown deadline",
+          );
         } else if (callerHandlesSignal) {
           expect(result.stderr).toContain("Codex session archive failed");
           expect(result.stderr).toContain("Codex app-server was closed.");

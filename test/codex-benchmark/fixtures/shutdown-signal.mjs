@@ -43,6 +43,19 @@ if (process.env.FIXTURE_RECORD_APP_SERVER === "1") {
     const child = spawn(executable, args, options);
     // A partial write may contain a shorter, valid-looking PID.
     writeFileSync(receipt, `${child.pid ?? "not-started"}\n`);
+    if (process.env.FIXTURE_READ_TURN_AFTER_EXIT === "1") {
+      const write = child.stdin.write;
+      child.stdin.write = function (chunk, ...args) {
+        if (JSON.parse(chunk).method === "turn/start") {
+          child.stdout.pause();
+          child.stdout.prependOnceListener("data", () => {
+            writeFileSync(join(owner.home, "turn-read-exit-code"), String(child.exitCode));
+          });
+          child.once("exit", () => child.stdout.resume());
+        }
+        return write.call(this, chunk, ...args);
+      };
+    }
     return child;
   };
   syncBuiltinESMExports();
@@ -59,8 +72,11 @@ process.kill = function (pid, signal) {
       join(owner.home, "signals.jsonl"),
       JSON.stringify({ pid, signal, at: Date.now() }) + "\n",
     );
-    if (signal === "SIGTERM" && process.env.FIXTURE_ESCALATION === "deny-term") {
-      throw Object.assign(new Error("Fixture denied app-server SIGTERM."), { code: "EPERM" });
+    if (process.env.FIXTURE_ESCALATION === "deny-all") {
+      throw Object.assign(new Error(`Fixture denied app-server ${signal}.`), { code: "EPERM" });
+    }
+    if (signal === "SIGTERM" && process.env.FIXTURE_ESCALATION === "fail-term") {
+      throw Object.assign(new Error("Fixture failed app-server SIGTERM."), { code: "EIO" });
     }
     if (signal === "SIGKILL") {
       if (process.env.FIXTURE_ESCALATION === "denied") {

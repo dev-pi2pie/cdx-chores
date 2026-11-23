@@ -294,7 +294,7 @@ describe("Markdown PDF page numbers with no default CSS", () => {
       });
 
       const weasyprintCall = calls.find(
-        (call) => call.command === "weasyprint" && !call.args.includes("--info"),
+        (call) => call.command === "weasyprint" && call.args.includes("--base-url"),
       );
       expect(weasyprintCall?.args.filter((argument) => argument === "--stylesheet")).toHaveLength(
         1,

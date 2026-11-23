@@ -1,6 +1,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { StringDecoder } from "node:string_decoder";
 
+import { observeAppServerExit } from "./app-server-exit";
 import { createAppServerShutdown } from "./app-server-shutdown";
 import {
   checkAppServerLaunchDuringCancellation,
@@ -24,10 +25,6 @@ interface RequestOptions {
   timeoutMs?: number;
   signal?: AbortSignal;
   onQueued?: () => void;
-}
-
-function appServerExitError(code: number | null, signal: NodeJS.Signals | null): Error {
-  return new Error(`Codex app-server stopped with ${signal ?? `exit code ${code}`}.`);
 }
 
 export class CodexAppServerError extends Error {
@@ -58,20 +55,23 @@ export function isTurnInputTooLarge(error: unknown): boolean {
 }
 
 export class CodexRequestTimeoutError extends Error {
-  constructor(readonly method: string) {
-    super(`${method}: Codex app-server request timed out.`);
+  constructor(
+    readonly method: string,
+    message = `${method}: Codex app-server request timed out.`,
+  ) {
+    super(message);
   }
 }
 
 export class CodexAppServer {
   private readonly child: ChildProcessWithoutNullStreams;
   private readonly shutdown: () => Promise<void>;
+  private readonly exit: ReturnType<typeof observeAppServerExit>;
   private readonly releaseSignalCleanup?: () => void;
   private readonly stopped = new AbortController();
   private readonly pending = new Map<number, PendingRequest>();
   private readonly listeners = new Set<NotificationListener>();
   private nextId = 0;
-  private unexpectedStdoutEnd = false;
 
   constructor(
     executable: string,
@@ -93,8 +93,11 @@ export class CodexAppServer {
       windowsHide: true,
       detached: separateGroup,
     });
+    this.exit = observeAppServerExit(this.child, this.signal, (error) => this.fail(error));
     this.child.on("error", (error) => this.fail(error));
-    this.child.stdin.on("error", (error) => this.fail(error));
+    this.child.stdin.on("error", (error) => {
+      if (!this.exit.error) this.fail(error);
+    });
     this.child.stdout.on("error", (error) => this.fail(error));
     this.child.stderr.on("error", (error) => this.fail(error));
     this.child.stderr.resume();
@@ -102,12 +105,6 @@ export class CodexAppServer {
     if (separateGroup) {
       this.releaseSignalCleanup = stopAppServerOnSignal(() => this.close(), acceptHangup);
     }
-    this.child.once("close", (code, signal) => this.fail(appServerExitError(code, signal)));
-    this.child.stdout.once("end", () => {
-      if (this.signal.aborted) return;
-      this.unexpectedStdoutEnd = true;
-      this.fail(new Error("Codex app-server stdout ended unexpectedly."));
-    });
     const decoder = new StringDecoder("utf8");
     let buffer = "";
     this.child.stdout.on("data", (chunk: Buffer) => {
@@ -135,12 +132,7 @@ export class CodexAppServer {
   }
 
   get stopReason(): unknown {
-    const { exitCode, signalCode } = this.child;
-    // The child's exit status can arrive after EOF while the caller recovers saved results.
-    if (this.unexpectedStdoutEnd && (exitCode !== null || signalCode !== null)) {
-      return appServerExitError(exitCode, signalCode);
-    }
-    return this.signal.reason;
+    return this.exit.reason;
   }
 
   private fail(error: Error): void {
@@ -149,7 +141,7 @@ export class CodexAppServer {
   }
 
   private send(message: object, onQueued?: () => void): void {
-    this.signal.throwIfAborted();
+    this.exit.throwIfStopped();
     const line = `${JSON.stringify(message)}\n`;
     if (onQueued) {
       writeAppServerTurn(this.child.stdin, line, (error) => this.fail(error));
@@ -169,6 +161,7 @@ export class CodexAppServer {
         return;
       }
       if ("id" in message && typeof message.method === "string") {
+        if (this.exit.error) return;
         this.send({
           id: message.id,
           error: { code: -32601, message: "This client supports prompt-only turns." },
@@ -207,7 +200,7 @@ export class CodexAppServer {
     { timeoutMs = requestTimeoutMs, signal, onQueued }: RequestOptions = {},
   ): Promise<T> {
     signal?.throwIfAborted();
-    this.signal.throwIfAborted();
+    this.exit.throwIfStopped();
     const id = ++this.nextId;
     return new Promise<T>((resolve, reject) => {
       const cleanup = () => {
