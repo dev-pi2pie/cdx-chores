@@ -2,7 +2,7 @@
 title: "Markdown PDF AST rendering"
 created-date: 2026-11-22
 modified-date: 2026-11-23
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -23,7 +23,7 @@ The comparator requires a nonempty front-matter string, selects the first Markdo
 | Standalone HTML on both versions | The matching link kept the H1 link and suppressed the metadata block. In the distinct-link case, the metadata title anchor kept `https://example.com/quickstart` and the eligible body H1 anchor kept `https://example.com/reference`. |
 | Formatting, lint, and whitespace | The four TypeScript files passed targeted Oxfmt and Oxlint checks. The phase diff passed `git diff --check ddc5d119`. |
 
-The cross-version run used the ignored local driver with `bun examples/playground/markdown-pdf-html-spike/phase-1-title.ts <pandoc-executable> <version>`. To reproduce with the tracked tests, select Pandoc 2.0 or 3.9 on `PATH`, verify `pandoc --version`, and run `bun test ./test/markdown-pdf/direct/ast-title.pandoc.test.ts --path-ignore-patterns '**/fixtures/**'`.
+To reproduce the cross-version checks with the tracked tests, select Pandoc 2.0 or 3.9 on `PATH`, verify `pandoc --version`, and run `bun test ./test/markdown-pdf/direct/ast-title.pandoc.test.ts --path-ignore-patterns '**/fixtures/**'`.
 
 Focused fixture review found no material coverage gaps. The documentation recheck confirmed the version selection and tracked reproduction command. Phase 1 verifies the comparator and its standalone HTML decisions. Shared render routing and full PDF validation belong to later phases.
 
@@ -49,7 +49,7 @@ Prepared interactive execution with Pandoc absent from `PATH` made no dependency
 
 The focused app run selected the AST, profile, prepared-render, and write-lifecycle app tests under `test/markdown-pdf/actions/rendering/` and the shared-render, render-sources, and generated-lifecycle app tests under `test/markdown-pdf/interactive/`. It used `bun test` with `--path-ignore-patterns '**/fixtures/**'`.
 
-The cross-version run used the ignored local driver with `bun examples/playground/markdown-pdf-html-spike/phase-2-render.ts <pandoc-executable> <version>`. To reproduce with the tracked tests, select the expected binary on `PATH`, verify `pandoc --version`, and run `bun test ./test/markdown-pdf/actions/rendering/ast-render.pandoc.test.ts --path-ignore-patterns '**/fixtures/**'`. These cases run the production service with real Pandoc and a WeasyPrint fixture boundary. PDF layout and timing are Phase 4 checks.
+To reproduce the cross-version checks with the tracked tests, select the expected binary on `PATH`, verify `pandoc --version`, and run `bun test ./test/markdown-pdf/actions/rendering/ast-render.pandoc.test.ts --path-ignore-patterns '**/fixtures/**'`. These cases run the production service with real Pandoc and a WeasyPrint fixture boundary. PDF layout and timing are Phase 4 checks.
 
 Focused reviews verified the race fixture for the untitled direct fallback and preservation of both Pandoc diagnostics when WeasyPrint returns a failure.
 
@@ -79,7 +79,7 @@ The shared scanner resumes at exact tag, comment, inline code, and verbatim offs
 | Actual authoring PATH matrix | All three preparation entries agreed with real 2.0 or 3.9 discoverable and on an empty `PATH`. All four runs returned byte-identical signals and made zero Pandoc calls. The fixture checked 50 scanned pipe rows, two overflow rows, source width, 12 distinct languages, one overflow language, one unlabeled fence, and the 20,000-character script cap. |
 | Static checks | Scoped TypeScript, targeted Oxfmt and Oxlint, and `git diff --check b5c195ad` passed. |
 
-The focused unit run used `bun test ./test/markdown-pdf/actions/profile-codex/{signals,source-boundaries}.unit.test.ts`. The version-locked comparison used the ignored spike driver `phase-3-source.ts <pandoc-executable> <version>`, which verifies the executable and reads each shared fixture with `--from markdown --to json`.
+The focused unit run used `bun test ./test/markdown-pdf/actions/profile-codex/{signals,source-boundaries}.unit.test.ts`. The version-locked comparison verified the Pandoc executable and read each shared fixture with `--from markdown --to json`.
 
 Focused review added recovery tests for a closing delimiter inside a later fence, a complete literal body, a wrapped attribute with Markdown-looking lines, and preservation of inline HTML in source metrics.
 
@@ -103,7 +103,7 @@ The follow-up passed 66 focused source cases, the focused authoring app test, an
 | Real PDF parity | On each Pandoc version, direct and AST output matched in HTML, exact per-page extracted text, and title metadata for the 1-page and 21-page reports. Poppler rasters matched on the small page and large pages 1, 11, and 21. The relative SVG passed a pixel check on both versions. Visual inspection covered the title, cover, SVG, highlighted code, and tables. |
 | Duplicate title control | With the TOC disabled, the one-page PDF went from two visible copies under explicit show to one under automatic title handling. Both retained `Title sentinel 957` as PDF Title metadata and preserved the remaining text. The cover control produced a two-page PDF with the same metadata title. |
 
-The managed suites ran serially with zero failures or skips. The version-locked checks used the five [shared render fixtures](../../../test/markdown-pdf/actions/rendering/ast-render-fixtures.ts) and the implemented [prepare, plan, and execute service](../../../src/cli/actions/markdown/to-pdf-service.ts). The ignored Bun driver `phase-4-render.ts <pandoc-executable> <version> <weasyprint-executable>` verified the tools and captured subprocess routes. The separate `phase-4-verify.py` check used pdfplumber and Poppler for PDF assertions.
+The managed suites ran serially with zero failures or skips. The version-locked checks verified the tools and captured subprocess routes for the five shared render fixtures through the implemented service. PDF assertions used pdfplumber and Poppler. [Render fixtures](../../../test/markdown-pdf/actions/rendering/ast-render-fixtures.ts) · [Prepare, plan, and execute service](../../../src/cli/actions/markdown/to-pdf-service.ts)
 
 ### Native timing
 
@@ -135,16 +135,22 @@ The retest passed 81 focused source cases, the focused authoring app case, and a
 
 ## Phase 5 — Docs Validation
 
-**Status** — Guide and example verification passed from `bcb013fe`. Independent review and final closure are pending.
+**Status** — Verified and independently reviewed for `bcb013fe..db49046c`.
 
 The usage guide defines built-in title comparison, controls, and the Pandoc inputs for custom templates. The Interactive and three authoring guides link to the shared behavior and describe the distinction between bounded source summaries during preparation and the parsed heading decision during export. [Automatic Metadata Titles](../../guides/markdown-pdf-usage.md#automatic-metadata-titles) · [Custom Template And CSS](../../guides/markdown-pdf-usage.md#custom-template-and-css) · [Phase 5 plan](../plan-2026-11-22-markdown-pdf-ast-rendering.md#phase-5--docs-validation)
 
-- **CLI help** — `bun ./src/bin.ts` confirmed the documented flags for `md to-pdf --help`, `interactive --help`, `md pdf-profile codex --help`, `md pdf-template codex --help`, and `md pdf-project codex --help`.
-- **Examples and schema** — The ignored Bun check `phase-5-examples.ts` parsed both Profile YAML examples through the production loader and accepted `auto`, `show`, and `hide`. The Debug HTML command matched the documented flags. The title example matched the tracked `distinct-links` fixture and both saved Phase 4 inputs byte for byte. The existing HTML and PDFs retained both destinations with Pandoc 2.0 and 3.9 and WeasyPrint 70.0.
-- **Focused unit tests** — `bun test ./test/markdown-pdf/direct/ast-title.unit.test.ts ./test/markdown-pdf/actions/profile-codex/{signals,source-boundaries}.unit.test.ts` passed 102 cases.
-- **Focused app tests** — `bun test ./test/markdown-pdf/actions/{rendering/ast-render,authoring-source-signals}.app.test.ts ./test/markdown-pdf/interactive/{shared-render,generated-lifecycle}.app.test.ts --path-ignore-patterns '**/fixtures/**'` passed 72 cases.
-- **Markdown checks** — The ignored `phase-5-doc-check.py` check used Pandoc 3.9 to validate 108 local links and anchors across eight Markdown files, including reciprocal research, plan, and job links. Oxfmt comparison found zero new deviations from the baseline. `git diff --check bcb013fe` passed.
+| Verification             | Result                                                                                                                                                                        |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CLI help                 | Help matched the documented flags for `md to-pdf`, `interactive`, and the three Codex helpers via `bun ./src/bin.ts`.                                                         |
+| Examples and schema      | Both Profile YAML examples passed production validation. All three title modes were accepted, and the Debug HTML command matched CLI help.                                    |
+| Existing render evidence | The title example matched the `distinct-links` fixture and both saved Phase 4 inputs byte for byte. HTML and PDFs kept both links on Pandoc 2.0 and 3.9 with WeasyPrint 70.0. |
+| Focused Bun tests        | 102 unit and 72 app cases passed.                                                                                                                                             |
+| Links and formatting     | Validated 108 relative links and anchors across eight documents. Oxfmt found zero new deviations from the baseline. `git diff --check bcb013fe` passed.                       |
+
+The focused `bun test` runs selected the `ast-title`, `signals`, and `source-boundaries` unit suites and the `ast-render`, `authoring-source-signals`, `shared-render`, and `generated-lifecycle` app suites. The app run used `--path-ignore-patterns '**/fixtures/**'`.
 
 The `docs_reviewer` inspected all seven files and identified a missing `auto` fallback description. The guide now covers direct conversion when the cover is disabled and the frontmatter title is absent, empty, or non-string. The focused app tests and example, link, formatting, and whitespace checks passed after the edit. The reviewer cleared the updated diff.
 
-**Independent review** — Pending.
+**Independent review** — Clear for `bcb013fe..db49046c`. The reviewer checked every changed line in all seven documentation files against the title projection, service routing and fallback, template variables, and `distinct-links` fixture. The 102 focused unit cases, `md to-pdf --help`, 108 relative links and anchors across eight documents, and `git diff --check bcb013fe..db49046c` all passed. No outstanding findings.
+
+All 21 checklist items across the five phases have matching job evidence.
