@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-11-22
+modified-date: 2026-11-23
 status: completed
 agent: codex
 ---
@@ -14,7 +14,7 @@ Document the current `md to-pdf`, profile, template, and project-helper workflow
 
 `md to-pdf` requires both external tools:
 
-- Pandoc 2.0 or newer for Markdown-to-HTML conversion
+- Pandoc 2.0 or newer to read Markdown and write standalone HTML
 - WeasyPrint 70.0 or newer with `--allowed-protocols` for default HTML/CSS-to-PDF rendering. Explicit `--allow-remote-assets` uses the installed renderer and checks any required Profile capabilities separately.
 
 Check the local environment before using the command in scripts or CI:
@@ -52,6 +52,8 @@ The dedicated guides are:
 - [Markdown PDF Codex Profile Helper](markdown-pdf-codex-profile-helper.md)
 - [Markdown PDF Codex Template Helper](markdown-pdf-codex-template-helper.md)
 - [Markdown PDF Codex Project Helper](markdown-pdf-codex-project-helper.md)
+
+When you supply Markdown, all three helpers build bounded summaries from the source, including headings, code fences, and table-like row counts and widths. Signal collection works with or without Pandoc. The helpers use those summaries to prepare a recipe. During export, the renderer applies the [automatic metadata title rules](#automatic-metadata-titles).
 
 ## Project Helper
 
@@ -325,6 +327,8 @@ cdx-chores md to-pdf \
 ```
 
 The HTML file is written only when `--html-output` is passed.
+
+On a render that uses [automatic metadata title comparison](#automatic-metadata-titles), Pandoc diagnostics appear in Markdown reader and HTML writer order. A failure in either stage identifies the stage and stops the render before publishing a PDF.
 
 ## Code Highlighting
 
@@ -641,9 +645,29 @@ The built-in recipe uses this page order:
 cover, when enabled -> ToC, when enabled -> document body
 ```
 
-`titleBlock.metadataTitle` accepts `auto`, `show`, or `hide`. `auto` keeps the resolved title in the body when there is no cover and suppresses a duplicate body title when the cover owns it. `show` is an explicit request that may repeat the title; `hide` always suppresses it.
-
 The cover is always free of repeating content and page-number labels. The ToC restores configured header and footer content and shows a page number only under document scope. Body pages receive configured repeating content and the effective page-number policy. A named-page transition can still place the ToC and body on separate physical pages even when `toc.pageBreak` is `auto` or `none`.
+
+### Automatic Metadata Titles
+
+`titleBlock.metadataTitle` controls the built-in metadata title block, including any author and date shown in that block. Markdown headings stay in the body. When present, title metadata supplies the HTML document title.
+
+- `auto` is the default. With a cover, it omits the metadata title block. With the cover disabled and a nonempty string `title` in Markdown frontmatter, it compares the parsed title with the first eligible H1 during export and omits the block for a duplicate. With the cover disabled and no eligible frontmatter title, export uses direct Markdown conversion and includes the block when Pandoc supplies a title.
+- `show` displays the block when Pandoc provides a title, including when the document has a cover or a matching body heading.
+- `hide` omits the block.
+
+Pandoc reads the Markdown once for the comparison, and the renderer writes HTML from that same parsed document. The first eligible H1 is the first level-one Markdown heading in document order at the top level or inside Pandoc Divs. Both ATX (`# Heading`) and Setext headings qualify. The comparison skips headings in block quotes, lists, tables, footnotes, raw HTML, and verbatim blocks.
+
+The comparison folds case and whitespace and preserves punctuation. It supports plain text, emphasis, strong text, inline code, smart quotes, and link labels. If the first eligible H1 or metadata title uses unsupported formatting such as math, images, or spans, the block stays, even if a later H1 matches. The block also stays when there is no eligible H1. Every metadata title link needs a matching label and destination in the heading before the block can be omitted.
+
+In this example, `auto` keeps both links because their destinations differ. Use [Debug HTML](#debug-html) to inspect the generated title block and heading.
+
+```markdown
+---
+title: "[Read the guide](https://example.com/quickstart)"
+---
+
+# [Read the guide](https://example.com/reference) {#guide}
+```
 
 ### Repeating Content
 
@@ -840,6 +864,8 @@ cdx-chores md to-pdf \
   --template ./pdf-template/template.html \
   --css ./pdf-template/style.css
 ```
+
+A custom template, whether selected with `--template` or resolved from a bundle, receives the original Markdown as Pandoc input. The template controls title placement through its own markup. Pandoc's `$sourcefile$` list contains the original input, and an untitled `context.md` gets `context` as the fallback `$pagetitle$`.
 
 When `--css` is provided, generated CSS is applied first and user CSS is applied after it. This means custom CSS can override preset and profile-generated styles.
 

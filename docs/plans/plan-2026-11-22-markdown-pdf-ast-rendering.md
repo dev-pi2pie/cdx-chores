@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF AST rendering implementation"
 created-date: 2026-11-22
-modified-date: 2026-11-22
+modified-date: 2026-11-23
 status: active
 agent: codex
 ---
@@ -79,9 +79,11 @@ Independent canary re-review cleared `0dd77cf5..1e040ace`. The [canary follow-up
 
 ## Phase 5 — Docs Validation
 
-- [ ] Check the [Markdown PDF usage guide](../guides/markdown-pdf-usage.md), [interactive guide](../guides/markdown-pdf-interactive-usage.md), and related authoring guidance against the validated behavior. Update guidance where the user-visible contract changes.
-- [ ] Verify changed examples against the implemented commands or schema. Check Markdown formatting, relative links, and traceability between the research, plan, and unified job record.
-- [ ] Run `git diff --check` and review the complete documentation diff. Resolve accepted findings and rerun the affected checks. If documentation validation exposes an implementation mismatch, reopen the relevant phase and revalidate before closing the docs phase.
+- [x] Check the [Markdown PDF usage guide](../guides/markdown-pdf-usage.md), [interactive guide](../guides/markdown-pdf-interactive-usage.md), and related authoring guidance against the validated behavior. Update guidance where the user-visible contract changes.
+- [x] Verify changed examples against the implemented commands or schema. Check Markdown formatting, relative links, and traceability between the research, plan, and unified job record.
+- [x] Run `git diff --check` and review the complete documentation diff. Resolve accepted findings and rerun the affected checks. If documentation validation exposes an implementation mismatch, reopen the relevant phase and revalidate before closing the docs phase.
 - [ ] Record the documentation checks and review outcome in Phase 5 of the unified job record. Confirm every phase checklist has matching evidence, then mark the plan and record `completed`.
 
 **Checkpoint** — The guides describe verified behavior and the plan and unified job record agree on completion.
+
+Independent review and final closure are pending from `bcb013fe`. The [Phase 5 job record](jobs/2026-11-22-markdown-pdf-ast-rendering.md#phase-5--docs-validation) tracks the checks.

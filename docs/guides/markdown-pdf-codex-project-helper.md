@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Codex Project Helper"
 created-date: 2026-07-05
-modified-date: 2026-09-24
+modified-date: 2026-11-23
 status: completed
 agent: codex
 ---
@@ -134,6 +134,8 @@ Use `md pdf-profile codex` first when the main goal is reusable typography, page
 ## Signal Behavior
 
 The project helper collects shared inputs once, then runs profile-first orchestration followed by template synthesis against the final profile contract.
+
+When a Markdown sample is available, both phases use the [bounded source summaries](markdown-pdf-usage.md#codex-helper-choice) shared with Profile and Template preparation.
 
 Useful inputs include:
 

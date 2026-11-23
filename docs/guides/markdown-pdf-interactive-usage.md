@@ -1,7 +1,7 @@
 ---
 title: "Interactive Markdown PDF Usage"
 created-date: 2026-07-22
-modified-date: 2026-11-22
+modified-date: 2026-11-23
 status: completed
 agent: codex
 ---
@@ -101,6 +101,8 @@ After selecting the Markdown input, choose one recipe source:
 Custom inputs use two layers. First choose either `Explicit inputs` or `Bundle + explicit inputs`. Then select one or more explicit roles: Profile, Template, and Stylesheet. Explicit selections remain authoritative for their roles; a selected bundle fills only unresolved roles.
 
 The recipe review shows the selected source, resolved role provenance, effective page settings, ToC behavior, separate reusable Profile settings, the two one-render overrides, their effective results, and any bundle warnings. No PDF is written before this review.
+
+Interactive export follows the same [automatic metadata title rules](markdown-pdf-usage.md#automatic-metadata-titles) and [custom-template behavior](markdown-pdf-usage.md#custom-template-and-css) as the direct command.
 
 ## Prepare A Recipe
 
@@ -229,6 +231,8 @@ Every generated path shares the same preparation boundary:
 1. collect preparation answers
 2. prepare one candidate
 3. validate and review that candidate with no writes
+
+Recipe preparation and review can run without Pandoc or WeasyPrint. When a Markdown sample is available, the helpers prepare a recipe from [bounded source summaries](markdown-pdf-usage.md#codex-helper-choice). Pandoc reads the Markdown for the title decision during an eligible export.
 
 A render-capable `to-pdf` continuation then:
 

@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF AST rendering"
 created-date: 2026-11-22
-modified-date: 2026-11-22
+modified-date: 2026-11-23
 status: in-progress
 agent: codex
 ---
@@ -135,4 +135,16 @@ The retest passed 81 focused source cases, the focused authoring app case, and a
 
 ## Phase 5 — Docs Validation
 
-**Status** — Pending.
+**Status** — Guide and example verification passed from `bcb013fe`. Independent review and final closure are pending.
+
+The usage guide defines built-in title comparison, controls, and the Pandoc inputs for custom templates. The Interactive and three authoring guides link to the shared behavior and describe the distinction between bounded source summaries during preparation and the parsed heading decision during export. [Automatic Metadata Titles](../../guides/markdown-pdf-usage.md#automatic-metadata-titles) · [Custom Template And CSS](../../guides/markdown-pdf-usage.md#custom-template-and-css) · [Phase 5 plan](../plan-2026-11-22-markdown-pdf-ast-rendering.md#phase-5--docs-validation)
+
+- **CLI help** — `bun ./src/bin.ts` confirmed the documented flags for `md to-pdf --help`, `interactive --help`, `md pdf-profile codex --help`, `md pdf-template codex --help`, and `md pdf-project codex --help`.
+- **Examples and schema** — The ignored Bun check `phase-5-examples.ts` parsed both Profile YAML examples through the production loader and accepted `auto`, `show`, and `hide`. The Debug HTML command matched the documented flags. The title example matched the tracked `distinct-links` fixture and both saved Phase 4 inputs byte for byte. The existing HTML and PDFs retained both destinations with Pandoc 2.0 and 3.9 and WeasyPrint 70.0.
+- **Focused unit tests** — `bun test ./test/markdown-pdf/direct/ast-title.unit.test.ts ./test/markdown-pdf/actions/profile-codex/{signals,source-boundaries}.unit.test.ts` passed 102 cases.
+- **Focused app tests** — `bun test ./test/markdown-pdf/actions/{rendering/ast-render,authoring-source-signals}.app.test.ts ./test/markdown-pdf/interactive/{shared-render,generated-lifecycle}.app.test.ts --path-ignore-patterns '**/fixtures/**'` passed 72 cases.
+- **Markdown checks** — The ignored `phase-5-doc-check.py` check used Pandoc 3.9 to validate 108 local links and anchors across eight Markdown files, including reciprocal research, plan, and job links. Oxfmt comparison found zero new deviations from the baseline. `git diff --check bcb013fe` passed.
+
+The `docs_reviewer` inspected all seven files and identified a missing `auto` fallback description. The guide now covers direct conversion when the cover is disabled and the frontmatter title is absent, empty, or non-string. The focused app tests and example, link, formatting, and whitespace checks passed after the edit. The reviewer cleared the updated diff.
+
+**Independent review** — Pending.
