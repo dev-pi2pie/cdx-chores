@@ -154,3 +154,25 @@ The `docs_reviewer` inspected all seven files and identified a missing `auto` fa
 **Independent review** — Clear for `bcb013fe..db49046c`. The reviewer checked every changed line in all seven documentation files against the title projection, service routing and fallback, template variables, and `distinct-links` fixture. The 102 focused unit cases, `md to-pdf --help`, 108 relative links and anchors across eight documents, and `git diff --check bcb013fe..db49046c` all passed. No outstanding findings.
 
 All 21 checklist items across the five phases have matching job evidence.
+
+## Post-merge canary review follow-up
+
+Both P3s from the review of `0dd77cf5..355edb56` were addressed in `355edb56..e6507d50`.
+
+| Checkpoint | Change and verification |
+| --- | --- |
+| `7b2a7082` | Render preparation uses front matter for profile metadata. The template uses a single AST suppression decision during eligible export. Passed 125 focused recipe, renderer, and interactive tests. Pandoc 2.0 and 3.9 each passed 16 AST title fixtures and the HTML/PDF smoke with WeasyPrint 70.0. The smoke verified title count and metadata, both distinct links, direct title and cover modes, and custom-template variables. |
+| `e6507d50` | The source scanner uses shared ordinary, contextual, standalone, and verbatim HTML rules, including the distinction between adjacent and spaced tokens after a matched close. Passed 128 boundary comparisons per Pandoc version and 122 focused source and authoring tests. Profile, Template, and Project produced identical signals with Pandoc 2.0, Pandoc 3.9, and an empty `PATH`, with zero Pandoc calls. |
+
+The offline policy requires a blank line before a tilde fence in the tested `summary`, `nav`, and `track` forms where the readers disagree. Complete `textarea` bodies are literal. The boundary fixtures check that fenced headings and rows are excluded and the following visible Markdown still contributes signals. [Source boundary tests](../../../test/markdown-pdf/actions/profile-codex/source-boundaries.unit.test.ts) · [Render route tests](../../../test/markdown-pdf/actions/rendering/ast-render.app.test.ts)
+
+Node 26.13.1 timed `prepareMarkdownPdfRender` on the same inputs, with three warm-up pairs and nine measured pairs in alternating order. Values are medians in milliseconds. The reduction is calculated within each pair.
+
+| Input | Before | After | Paired reduction |
+| --- | ---: | ---: | ---: |
+| 3,213 bytes | 0.26 | 0.22 | 0.03 |
+| 3,555,053 bytes | 48.26 | 2.97 | 45.57 |
+
+`bun run test:all` passed 2,768 app, 41 Codex, and 26 Pandoc cases. The final `bun run test:unit` rerun passed 2,306 cases, including the last three boundary controls. Scoped Oxfmt, Oxlint, and `git diff --check` passed. An additional scoped TypeScript check reproduced the existing readonly CLI metadata fixture error at `355edb56`.
+
+The test reviewer cleared both changes after the contextual controls were added. Review of `355edb56..7b2a7082`, `7b2a7082..e6507d50`, and the full `0dd77cf5..e6507d50` diff found no remaining actionable issues.
