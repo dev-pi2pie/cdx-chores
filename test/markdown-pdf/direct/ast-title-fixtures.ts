@@ -4,7 +4,6 @@ import { join } from "node:path";
 import { parse, type DefaultTreeAdapterTypes as Html } from "parse5";
 
 import { shouldSuppressMarkdownPdfMetadataTitle } from "../../../src/cli/markdown-pdf/ast-title";
-import { collectMarkdownPdfTitleSignals } from "../../../src/cli/markdown-pdf/profile/signals";
 import { createMarkdownPdfTemplate } from "../../../src/cli/markdown-pdf/recipe";
 import { parseMarkdown } from "../../../src/markdown";
 
@@ -239,12 +238,9 @@ export async function verifyAstTitleFixture(
 
   const template = fixture.name + ".template.html";
   const output = fixture.name + ".html";
-  const signals = collectMarkdownPdfTitleSignals(parsed.content, parsed.data);
   await writeFile(
     join(fixtureDir, template),
-    createMarkdownPdfTemplate({
-      titleSignals: { ...signals, duplicateVisibleTitleRisk: suppress },
-    }),
+    createMarkdownPdfTemplate({ suppressMetadataTitle: suppress }),
     "utf8",
   );
   await runPandoc([

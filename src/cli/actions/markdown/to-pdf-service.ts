@@ -28,10 +28,6 @@ import {
   type ResolvedMarkdownPdfPageNumberConfiguration,
 } from "../../markdown-pdf/profile";
 import {
-  collectMarkdownPdfTitleSignals,
-  type MarkdownPdfTitleSignals,
-} from "../../markdown-pdf/profile/signals";
-import {
   renderMarkdownPdf,
   type MarkdownPdfCodeHighlighter,
   type MarkdownPdfProcessRunner,
@@ -84,7 +80,6 @@ export interface PreparedMarkdownPdfRender {
   resolvedInputs: MarkdownPdfRenderBundleResolvedInputs;
   resolvedBundle?: MarkdownPdfRenderBundleResolvedInputs;
   templateCompatibility: MarkdownPdfTemplateCompatibilityResult;
-  titleSignals: MarkdownPdfTitleSignals;
 }
 
 export interface MarkdownPdfRenderOutputInput {
@@ -210,11 +205,6 @@ export async function prepareMarkdownPdfRender(
     ...normalizedProfile.profile,
     pageNumbers: pageNumberConfiguration.effective,
   };
-  const titleSignals = collectMarkdownPdfTitleSignals(parsedMarkdown.content, parsedMarkdown.data);
-  const initialRecipe = createMarkdownPdfRecipe(options, {
-    profile: effectiveProfile,
-    titleSignals,
-  });
 
   if (customTemplatePath) {
     await ensureExistingFile(customTemplatePath, "Template");
@@ -225,7 +215,7 @@ export async function prepareMarkdownPdfRender(
 
   const selectedTemplateHtml = customTemplatePath
     ? await readTextFileRequired(customTemplatePath)
-    : initialRecipe.templateHtml;
+    : createMarkdownPdfTemplate({ profile: effectiveProfile });
   const templateCompatibility = assessMarkdownPdfTemplateCompatibility({
     builtIn: customTemplatePath === undefined,
     profile: effectiveProfile,
@@ -245,7 +235,6 @@ export async function prepareMarkdownPdfRender(
   const recipe = createMarkdownPdfRecipe(options, {
     bodyBoundary: templateCompatibility.bodyBoundary,
     profile: effectiveProfile,
-    titleSignals,
   });
 
   const resolvedInputs =
@@ -273,7 +262,6 @@ export async function prepareMarkdownPdfRender(
     resolvedInputs,
     resolvedBundle,
     templateCompatibility,
-    titleSignals,
   };
 }
 
@@ -339,11 +327,8 @@ export async function executePlannedMarkdownPdfRender(
     !prepared.customTemplatePath &&
     profile.titleBlock.metadataTitle === "auto" &&
     !profile.cover.enabled
-      ? (duplicateVisibleTitleRisk: boolean) =>
-          createMarkdownPdfTemplate({
-            profile,
-            titleSignals: { ...prepared.titleSignals, duplicateVisibleTitleRisk },
-          })
+      ? (suppressMetadataTitle: boolean) =>
+          createMarkdownPdfTemplate({ profile, suppressMetadataTitle })
       : undefined;
   const result = await renderMarkdownPdf({
     bodyBoundary: plan.prepared.templateCompatibility.bodyBoundary,

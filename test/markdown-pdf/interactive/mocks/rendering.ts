@@ -184,7 +184,6 @@ export function installMarkdownPdfRenderingMocks(context: HarnessRunnerContext):
         },
         rendererCapabilityRequests: context.scenario.markdownPdfRendererCapabilityRequests ?? [],
         recipe: { templateHtml: "<main>$body$</main>", styleCss: "body {}" },
-        titleSignals: { duplicateVisibleTitleRisk: false },
       };
     },
     planMarkdownPdfRender: async (

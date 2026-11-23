@@ -98,7 +98,13 @@ describe("Markdown PDF AST render execution", () => {
   });
 
   test.each([
-    { name: "eligible title", source: markdown, split: true },
+    { name: "matching eligible title", source: markdown, split: true, titleBlock: false },
+    {
+      name: "distinct eligible title",
+      source: markdown.replace("# Report", "# Introduction"),
+      split: true,
+      pandocJson: pandocTitleJson("Report", "Introduction"),
+    },
     { name: "missing title", source: "# Report\n" },
     { name: "empty title", source: "---\ntitle: '  '\n---\n\n# Report\n" },
     { name: "numeric title", source: "---\ntitle: 123\n---\n\n# 123\n" },
@@ -109,8 +115,18 @@ describe("Markdown PDF AST render execution", () => {
       profile: "metadata:\n  title: Report\n",
     },
     { name: "explicit show", source: markdown, profile: "titleBlock:\n  metadataTitle: show\n" },
-    { name: "explicit hide", source: markdown, profile: "titleBlock:\n  metadataTitle: hide\n" },
-    { name: "enabled cover", source: markdown, profile: "cover:\n  enabled: true\n" },
+    {
+      name: "explicit hide",
+      source: markdown,
+      profile: "titleBlock:\n  metadataTitle: hide\n",
+      titleBlock: false,
+    },
+    {
+      name: "enabled cover",
+      source: markdown,
+      profile: "cover:\n  enabled: true\n",
+      titleBlock: false,
+    },
     { name: "custom template", source: markdown, custom: true },
     { name: "bundle template", source: markdown, bundle: true },
   ])("chooses the expected route for $name", async (fixture) => {
@@ -120,7 +136,17 @@ describe("Markdown PDF AST render execution", () => {
       if (fixture.profile) await writeFile(join(dir, "profile.yml"), fixture.profile);
       if (fixture.custom || fixture.bundle) await writeFile(join(dir, "template.html"), customHtml);
       const { runtime } = createActionTestRuntime({ cwd: dir });
-      const { calls, runner } = createPdfRunner({ html, pandocJson: ast });
+      const { calls, runner: pdfRunner } = createPdfRunner({
+        html,
+        pandocJson: fixture.pandocJson ?? ast,
+      });
+      let writerTemplate: string | undefined;
+      const runner: MarkdownPdfProcessRunner = async (command, args, executionOptions) => {
+        if (command === "pandoc" && arg(args, "--to") === "html") {
+          writerTemplate = await readFile(arg(args, "--template")!, "utf8");
+        }
+        return pdfRunner(command, args, executionOptions);
+      };
 
       const prepared = await prepareMarkdownPdfRender(runtime, {
         input,
@@ -145,6 +171,10 @@ describe("Markdown PDF AST render execution", () => {
           : [["markdown", "html"]],
       );
       if (fixture.custom || fixture.bundle) expect(conversions[0]?.args[0]).toBe(input);
+      expect(writerTemplate).toBeDefined();
+      expect(writerTemplate?.includes('class="document-title"')).toBe(
+        fixture.titleBlock ?? !(fixture.custom || fixture.bundle),
+      );
     });
   });
 

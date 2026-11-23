@@ -150,7 +150,7 @@ describe("Markdown PDF prepared render service", () => {
         css: { path: cssPath, source: "explicit" },
       });
       expect(prepared.normalizedProfile.metadata.title).toBe("Prepared report");
-      expect(prepared.titleSignals.frontmatterTitle.present).toBeTrue();
+      expect(prepared.recipe.templateHtml).toContain('class="document-title"');
       expect(prepared.recipe.templateHtml).toContain("$body$");
       expect(prepared.options.pageSize).toBe("Letter");
       await expect(stat(outputPath)).rejects.toMatchObject({ code: "ENOENT" });

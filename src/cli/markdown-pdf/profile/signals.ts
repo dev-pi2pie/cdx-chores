@@ -178,10 +178,6 @@ function collectHeadingSignals(lines: string[]): MarkdownPdfHeadingSignals {
   return { total, maxDepth, byDepth };
 }
 
-export function firstMarkdownH1Text(content: string): string | undefined {
-  return firstH1InLines(scanMarkdownPdfFences(content).ordinaryLines);
-}
-
 function firstH1InLines(lines: string[]): string | undefined {
   for (const line of lines) {
     const match = /^#[\t ]+(.+?)(?:\s+\{[#.][^}]*})?\s*#*\s*$/.exec(line);
@@ -206,13 +202,6 @@ function titleSourceSignal(value: string | undefined): MarkdownPdfTitleSourceSig
     present: Boolean(value),
     charCount: value?.length ?? 0,
   };
-}
-
-export function collectMarkdownPdfTitleSignals(
-  content: string,
-  data: Record<string, unknown> | null,
-): MarkdownPdfTitleSignals {
-  return buildTitleSignals(firstMarkdownH1Text(content), data);
 }
 
 function buildTitleSignals(
