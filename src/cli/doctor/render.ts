@@ -27,9 +27,9 @@ function markdownPdfCapabilityDetail(
     const renderer = `WeasyPrint ${minimumVersion}+`;
     const defaultDetail =
       status === "unverified"
-        ? `verify ${renderer} protocol support for default export`
-        : `default requires ${renderer}`;
-    return `use --allow-remote-assets; ${defaultDetail}`;
+        ? `verify ${renderer} protocol support for Interactive and default direct rendering`
+        : `PDF rendering in Interactive or default direct mode requires ${renderer}`;
+    return `${defaultDetail}. To render directly with remote assets, use md to-pdf --allow-remote-assets`;
   }
 
   const details: string[] = [];

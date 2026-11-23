@@ -272,7 +272,7 @@ describe("doctor action dependency integration", () => {
       "below baseline",
       "65.0",
       "installed (65.0)",
-      "md.to-pdf: limited (use --allow-remote-assets; default requires WeasyPrint 70.0+)",
+      "md.to-pdf: limited (PDF rendering in Interactive or default direct mode requires WeasyPrint 70.0+. To render directly with remote assets, use md to-pdf --allow-remote-assets)",
       "pageNumbers.start: unsupported, minimum=65.1, diagnostic=MARKDOWN_PDF_RENDERER_CAPABILITY_UNSUPPORTED",
       true,
     ],
@@ -280,7 +280,7 @@ describe("doctor action dependency integration", () => {
       "unverified renderer",
       "custom-build",
       "installed (custom-build)",
-      "md.to-pdf: limited (use --allow-remote-assets; verify WeasyPrint 70.0+ protocol support for default export)",
+      "md.to-pdf: limited (verify WeasyPrint 70.0+ protocol support for Interactive and default direct rendering. To render directly with remote assets, use md to-pdf --allow-remote-assets)",
       "pageNumbers.start: unverified, minimum=65.1, diagnostic=MARKDOWN_PDF_RENDERER_CAPABILITY_UNVERIFIED",
       true,
     ],
@@ -296,7 +296,7 @@ describe("doctor action dependency integration", () => {
       "exact baseline",
       "65.1",
       "installed (65.1)",
-      "md.to-pdf: limited (use --allow-remote-assets; default requires WeasyPrint 70.0+)",
+      "md.to-pdf: limited (PDF rendering in Interactive or default direct mode requires WeasyPrint 70.0+. To render directly with remote assets, use md to-pdf --allow-remote-assets)",
       "pageNumbers.start: satisfied, minimum=65.1",
       false,
     ],
@@ -361,7 +361,7 @@ describe("doctor action dependency integration", () => {
     expect(payload.capabilities["md.to-pdf"]).toBeFalse();
     expect(payload.markdownPdf.requirements.restrictedAssets.status).toBe("unsupported");
     expect(humanRuntime.stdout.text).toContain(
-      "md.to-pdf: limited (use --allow-remote-assets; default requires WeasyPrint 70.0+)",
+      "md.to-pdf: limited (PDF rendering in Interactive or default direct mode requires WeasyPrint 70.0+. To render directly with remote assets, use md to-pdf --allow-remote-assets)",
     );
   });
 

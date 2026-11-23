@@ -146,7 +146,7 @@ export function registerMarkdownCommands(
         )
         .option("--no-default-css", "Do not apply the built-in default stylesheet")
         .option("--html-output <path>", "Write the intermediate rendered HTML")
-        .option("--allow-remote-assets", "Allow non-local asset URLs during PDF rendering", false)
+        .option("--allow-remote-assets", "Allow remote asset fetching during PDF rendering", false)
         .option("--code-highlight", "Enable Shiki code highlighting")
         .option("--no-code-highlight", "Disable Shiki code highlighting")
         .option(
