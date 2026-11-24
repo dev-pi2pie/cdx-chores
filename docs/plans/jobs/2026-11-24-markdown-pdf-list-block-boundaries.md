@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF list block boundaries implementation record"
 created-date: 2026-11-24
-status: completed
+status: in-progress
 agent: codex
 ---
 
@@ -195,4 +195,8 @@ Independent code review cleared the full `origin/main` comparison `c15c6467...4b
 
 At `4b4baa5e`, the full suites passed 2,696 unit tests, 2,768 application tests, and 102 Pandoc 3.9 integration tests. In earlier concurrent runs, ten benchmark tests and the Pandoc suite reached their time limits. Both suites passed when run separately with their existing limits. TypeScript, lint, formatting, and whitespace checks passed.
 
-Documentation review cleared the guide, the [research outcome](../../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#research-outcome), and the evidence for the [five plan checkpoints](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md). All five are complete.
+Documentation review cleared the guide, the [research outcome](../../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#research-outcome), and the evidence for the [five plan checkpoints](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md). The original five checkpoints were complete at `2759ec4a`.
+
+## Phase 2 follow-up after canary review
+
+Review of `9d578d9d...2759ec4a` found that an indented quote marker after verse produced a false Python hint and hid a source row. Two separate title regressions affected the printed PDF. A nonbreaking space in a display value could remove the only visible title, and a custom property set to `initial` could print it twice. The target is one printed title in both cases.

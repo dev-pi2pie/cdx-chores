@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF list block boundaries implementation"
 created-date: 2026-11-24
-status: completed
+status: active
 agent: codex
 ---
 
@@ -60,6 +60,12 @@ The [follow-up record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#pha
 - [x] Resolve a list inside a quote and a compact quoted item with an outdented opener. Verify both readers, both render routes, offline language hints and pipe rows, and HTML recovery. `29f786fd`. [Phase 5 branch review findings](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#phase-5-branch-review-findings)
 - [x] Keep physical row widths through tab expansion and share nested quote scopes across lazy prose. Verify that inline code and unmatched backticks preserve sharing while a complete outer fence still interrupts the quote. `8edefe95`, `4b4baa5e`.
 
+### Canary review follow-up
+
+- [ ] Resolve verse continuation before opening a quote. Verify the indented, flush, and blank-separated variants in the three offline helpers and on Pandoc 2.0 and 3.9.
+- [ ] Complete the separate title correction. Compare CSS whitespace with a nonbreaking space, and distinguish a custom property set to `initial` from one that is absent. Verify a single printed title with each reader.
+- [ ] Record the corrective commits and the result of a full canary comparison in the [follow-up record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#phase-2-follow-up-after-canary-review).
+
 ## Phase 3 — Use the same fence spans during HTML recovery
 
 - [x] Supply the container-relative candidate spans to HTML delimiter recovery and ordinary fence recognition. Decide which matched fences are visible after resolving the HTML region. Preserve original source offsets across tabs and line endings so a recovered suffix resumes at the correct character. [Source cursor](../../src/cli/markdown-pdf/profile/source-cursor.ts)
@@ -97,4 +103,4 @@ Independent code and test reviews cleared `e9b5e7f9..a8ecd37b`. The [Phase 4 job
 
 **Checkpoint** — A reader can trace each documented behavior to a fixture, a verified result, and its phase in the single job record.
 
-All five checkpoints passed. Independent code review cleared `c15c6467...4b4baa5e`. The [final verification and review record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#phase-5--validate-documentation-and-close-the-record) covers both readers, the guide example at `c053bca8`, and the corrections made during branch review.
+All five original checkpoints passed at `2759ec4a`. Independent code review cleared `c15c6467...4b4baa5e`. The [final verification and review record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#phase-5--validate-documentation-and-close-the-record) covers both readers, the guide example at `c053bca8`, and the corrections made during branch review.
