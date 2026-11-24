@@ -52,7 +52,25 @@ interface RenderFixture {
   boundary?: string;
 }
 
+const setextReport = "Report\n======";
+const hiddenDiv = '::: {style="display:none"}';
+
 export const astRenderFixtures: RenderFixture[] = [
+  {
+    name: "hidden-title",
+    split: true,
+    markdown: `---\ntitle: Report\n---\n\n${hiddenDiv}\n\n${setextReport}\n\n:::\n`,
+  },
+  {
+    name: "visible-title",
+    split: true,
+    markdown: `---\ntitle: Report\n---\n\n::: note\n\n${setextReport}\n\n:::\n`,
+  },
+  {
+    name: "visible-title-after-hidden",
+    split: true,
+    markdown: `---\ntitle: Report\n---\n\n${hiddenDiv}\n\nEarlier\n=======\n\n:::\n\n${setextReport}\n`,
+  },
   {
     name: "matching-link-and-render-assets",
     split: true,
@@ -203,6 +221,30 @@ function checkRenderedHtml(
       assert(destinations.includes("#visible"));
       assert(destinations.includes("#included"));
       assert(!destinations.includes("#excluded"));
+      break;
+    }
+    case "hidden-title":
+    case "visible-title":
+    case "visible-title-after-hidden": {
+      const headingTexts = elements(main, "h1").map(text);
+      assert.deepEqual(
+        titleBlocks.map((header) => elements(header, "h1").map(text)),
+        fixture.name === "hidden-title" ? [["Report"]] : [],
+      );
+      const hidden = [...elements(main, "div"), ...elements(main, "section")].filter(
+        (node) => attribute(node, "style") === "display:none",
+      );
+      const hiddenHeadings = hidden.flatMap((node) => elements(node, "h1").map(text));
+      if (fixture.name === "hidden-title") {
+        assert.deepEqual(hiddenHeadings, ["Report"]);
+        assert.deepEqual(headingTexts, ["Report", "Report"]);
+      } else if (fixture.name === "visible-title-after-hidden") {
+        assert.deepEqual(hiddenHeadings, ["Earlier"]);
+        assert.deepEqual(headingTexts, ["Earlier", "Report"]);
+      } else {
+        assert.deepEqual(hiddenHeadings, []);
+        assert.deepEqual(headingTexts, ["Report"]);
+      }
       break;
     }
     case "distinct-links": {

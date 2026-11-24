@@ -46,6 +46,34 @@ describe("Pandoc AST title comparison", () => {
     );
   });
 
+  test.each([
+    ["display: NONE /* comment */ !important; display: block", false],
+    ["display: none; display: block", true],
+    ["display: block !important; display: none", true],
+    ['--label: ";display:none;"; color: black', true],
+    ["color: red", true],
+  ] as const)("resolves inline visibility for both Div and Header: %s", (style, suppress) => {
+    const attrs = ["", [], [["style", style]]];
+    for (const block of [
+      { t: "Div", c: [attrs, [div(header(1, guide))]] },
+      { t: "Header", c: [1, attrs, [guide]] },
+    ]) {
+      expect(shouldSuppressMarkdownPdfMetadataTitle(document(meta(guide), block), "Guide")).toBe(
+        suppress,
+      );
+    }
+  });
+
+  test("continues past an explicitly hidden subtree", () => {
+    const hidden = { t: "Div", c: [["", [], [["hidden", ""]]], [header(1, str("Earlier"))]] };
+    expect(
+      shouldSuppressMarkdownPdfMetadataTitle(
+        document(meta(guide), hidden, header(1, guide)),
+        "Guide",
+      ),
+    ).toBe(true);
+  });
+
   test("stops at an earlier eligible H1", () => {
     const ast = document(meta(guide), header(1, str("Earlier")), div(header(1, guide)));
     expect(shouldSuppressMarkdownPdfMetadataTitle(ast, "Guide")).toBe(false);
