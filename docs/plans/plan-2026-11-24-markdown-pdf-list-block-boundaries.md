@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF list block boundaries implementation"
 created-date: 2026-11-24
-status: draft
+status: active
 agent: codex
 ---
 
@@ -17,7 +17,7 @@ Change the shared offline source scanner. For the list cases where Pandoc 2.0 an
 
 ## Unified job record
 
-Create one record under `docs/plans/jobs/` when Phase 1 starts. Use the implementation start date and the slug `markdown-pdf-list-block-boundaries`, set the record to `in-progress` and this plan to `active`, and link them in both directions. Use the five phase headings below in that record. For each phase, record the change, fixture or command, expected and observed result, and review disposition. Identify the reviewed commit range, or the baseline and scope of the reviewed diff for uncommitted work. After a correction, rerun the affected checks and re-review the full revised phase. Mark checklist items complete when the corresponding evidence is recorded. Use fixture names, tool versions, and behavioral results that another contributor can reproduce.
+The [unified job record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md) tracks all five phases from baseline `60df6caf`. For each phase, record the change, fixture or command, expected and observed result, and review disposition. Identify the reviewed commit range, or the baseline and scope of the reviewed diff for uncommitted work. After a correction, rerun the affected checks and re-review the full revised phase. Mark checklist items complete when the corresponding evidence is recorded. Use fixture names, tool versions, and behavioral results that another contributor can reproduce.
 
 ## Phase 1 — Establish the compatibility fixtures
 

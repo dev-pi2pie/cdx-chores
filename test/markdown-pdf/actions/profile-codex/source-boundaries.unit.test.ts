@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 
 import { scanMarkdownPdfFences } from "../../../../src/cli/markdown-pdf/profile/fence-signals";
 import { collectMarkdownPdfDocumentSignals } from "../../../../src/cli/markdown-pdf/profile/signals";
+import { htmlBoundaryCases, listBoundaryCases, pipeBody } from "../fixtures/list-block-boundaries";
 import { markdownSourceFixtures } from "../fixtures/markdown-source-fixtures";
 
 test.each(markdownSourceFixtures)("$name preserves source signals", (fixture) => {
@@ -28,6 +29,71 @@ test.each(markdownSourceFixtures)("$name preserves source signals", (fixture) =>
     overflowRows: 0,
   });
 });
+
+const missingListFences = new Set(["numbered", "empty-six", "padded-seven"]);
+const missingShellHints = new Set([
+  "comment-item",
+  "textarea-item",
+  "comment-item-early-close",
+  "textarea-item-early-close",
+  "closer-in-item",
+]);
+const wrongHtmlHeadings = new Set([
+  "comment-item",
+  "textarea-item",
+  "closer-in-item",
+  "genuine-close-after-item",
+]);
+
+// Keep successful dimensions active even when another signal for the fixture needs correction.
+// Remove each expected-failure marker as its target begins to pass.
+for (const fixture of [...listBoundaryCases, ...htmlBoundaryCases]) {
+  const { name, markdown } = fixture;
+  const scan = scanMarkdownPdfFences(markdown);
+  const signals = collectMarkdownPdfDocumentSignals(markdown);
+  const headings = scan.ordinaryLines.flatMap((line) => /^# (.+)$/.exec(line)?.[1] ?? []);
+  const missingFence = missingListFences.has(name);
+
+  const headingTest = wrongHtmlHeadings.has(name) ? test.failing : test;
+  headingTest(name + " exposes the expected headings", () => {
+    const names =
+      "recovered" in fixture && fixture.recovered
+        ? ["Recovered heading", "Visible heading"]
+        : ["Visible heading"];
+    expect(headings).toEqual(names);
+    expect(signals.headings.total).toBe(names.length);
+  });
+
+  const languageTest = missingFence || missingShellHints.has(name) ? test.failing : test;
+  languageTest(name + " reports the expected languages", () => {
+    const languages =
+      "fenced" in fixture
+        ? fixture.fenced
+          ? ["python"]
+          : []
+        : fixture.recovered
+          ? ["sh", "js"]
+          : name === "closed-textarea"
+            ? []
+            : ["js"];
+    expect(signals.codeFences.languages).toEqual(languages);
+  });
+
+  const rowTest = missingFence || name === "genuine-close-after-item" ? test.failing : test;
+  rowTest(name + " counts visible source rows", () => {
+    const verseRow = name === "nested-verse" ? 1 : 0;
+    const bodyRow = "fenced" in fixture && !fixture.fenced ? 1 : 0;
+    expect(signals.tables.scannedRows).toBe(3 + verseRow + bodyRow);
+  });
+
+  if ("fenced" in fixture) {
+    const plain = collectMarkdownPdfDocumentSignals(markdown.replace(pipeBody, "plain"));
+    const deltaTest = missingFence ? test.failing : test;
+    deltaTest(name + " isolates the pipe body's contribution", () => {
+      expect(signals.tables.scannedRows - plain.tables.scannedRows).toBe(fixture.fenced ? 0 : 1);
+    });
+  }
+}
 
 test("keeps exact wrapped-token offsets with CRLF and CR", () => {
   const source = markdownSourceFixtures.find(
