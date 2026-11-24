@@ -31,7 +31,23 @@ function bulletFence(name: string, body: string, closer: string, fenced = true) 
   return { name, markdown, fenced };
 }
 
+export const quotedListCases = [
+  listCase("list-in-quote", "> - Item\n", "", "~~~", true),
+  listCase("prose-in-quote", "> Item\n", "", "~~~", false),
+  listCase("marked-list-in-quote", "> - Item\n", "> ", "~~~", true),
+  listCase("quote-list-after-blank", "> - Item\n>\n", ">   ", "~~~", true),
+  listCase("quote-list-paragraph", "> - Item\n", ">   ", "~~~", false),
+  ...[true, false].map((quoted) => ({
+    name: quoted ? "compact-quote-closer" : "compact-plain-closer",
+    markdown: ["- > Quote.", "```python", pipeBody, quoted ? "> ```" : "```", "", visible].join(
+      "\n",
+    ),
+    fenced: true,
+  })),
+];
+
 export const listBoundaryCases = [
+  ...quotedListCases,
   bulletFence("bullet-outdented-closer", "  " + pipeBody, "```"),
   bulletFence("bullet-outdented-body", pipeBody, "  ```"),
   bulletFence("bullet-aligned", "  " + pipeBody, "  ```"),

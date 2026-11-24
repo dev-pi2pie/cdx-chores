@@ -3,6 +3,7 @@ import type { HtmlRecovery } from "./source-cursor";
 
 export interface MatchedFence {
   owner: Container;
+  columns: string[];
   continued: boolean;
   open: number;
   close: number;
@@ -158,10 +159,15 @@ export class FenceRecovery implements HtmlRecovery {
     this.needsOrigin = false;
   }
 
-  candidate(index: number, owner: Container, continued: boolean) {
+  candidate(index: number, owner: Container, continued: boolean, columns: string[]) {
     for (const view of this.views.values()) {
       const span = view.candidates.get(index);
-      if (span && span.continued === continued && sameFenceScope(span.owner, owner)) return span;
+      if (
+        span?.columns === columns &&
+        span.continued === continued &&
+        sameFenceScope(span.owner, owner)
+      )
+        return span;
     }
   }
 }

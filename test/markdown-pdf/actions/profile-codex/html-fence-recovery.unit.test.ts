@@ -42,6 +42,28 @@ for (const [kind, open, close] of [
     },
   );
 
+  test.each([false, true])(
+    kind + " checks the quote-relative span before closing HTML (%s)",
+    (genuineClose) => {
+      const source = [
+        open,
+        "",
+        "# Recovered",
+        "",
+        "> - Item",
+        "~~~sh",
+        close,
+        "~~~",
+        ...(genuineClose ? ["", close] : []),
+        "",
+        "# Visible",
+      ].join("\n");
+      const signals = collect(source);
+      expect(signals.codeFences.languages).toEqual(genuineClose ? [] : ["sh"]);
+      expect(signals.headings.total).toBe(genuineClose ? 1 : 2);
+    },
+  );
+
   test.each(["\n", "\r\n", "\r"])(
     kind + " resumes at the original offset with %j line endings",
     (newline) => {

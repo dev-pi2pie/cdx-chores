@@ -1,3 +1,5 @@
+export const VERBATIM_TAGS = new Set(["pre", "script", "style", "textarea"]);
+
 interface SourceSpan {
   start: number;
   end: number;

@@ -125,6 +125,20 @@ test("an item projects adjacent quote markers before matching the following fenc
   expect(signals.tables.scannedRows).toBe(0);
 });
 
+test("nested quote prefixes share a long lazy list continuation", () => {
+  const markdown = [
+    ">".repeat(2048) + " - Item",
+    "~~~python",
+    ...Array(2048).fill(pipeBody),
+    "~~~",
+    "",
+    "# Visible",
+  ].join("\n");
+  const signals = collectMarkdownPdfDocumentSignals(markdown);
+  expect(signals.codeFences.languages).toEqual(["python"]);
+  expect(signals.tables.scannedRows).toBe(0);
+});
+
 test("a flush-left backtick fence can leave a quote and span a blank line", () => {
   const source = ["> Quote.", "```python", "", pipeBody, "```"].join("\n");
   const signals = collectMarkdownPdfDocumentSignals(source);

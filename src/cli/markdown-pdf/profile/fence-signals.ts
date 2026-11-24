@@ -1,5 +1,6 @@
 import { FenceRecovery, type ScanOrigin, type SourceEvent } from "./fence-recovery";
-import { FenceRange, closesFence, fenceLanguage, readDivFence, readFenceLine } from "./fence-lines";
+import { ContainerScopes } from "./container-scopes";
+import { closesFence, fenceLanguage, readDivFence, readFenceLine } from "./fence-lines";
 import {
   ATX_HEADING,
   Container,
@@ -8,16 +9,19 @@ import {
   expandIndent,
   isParagraph,
   isPipeTableSeparator,
-  resolveContainer,
 } from "./list-containers";
-import { MarkdownSourceCursor, type MarkdownSourceToken, type SourceLimits } from "./source-cursor";
+import {
+  MarkdownSourceCursor,
+  VERBATIM_TAGS,
+  type MarkdownSourceToken,
+  type SourceLimits,
+} from "./source-cursor";
 
 interface MarkdownFenceScan {
   ordinaryLines: string[];
   fenceLanguages: string[];
 }
 
-const VERBATIM_TAGS = new Set(["pre", "script", "style", "textarea"]);
 const VOID_BLOCK_TAGS = new Set(["area", "col", "embed", "hr", "isindex", "meta", "source"]);
 // Ordinary HTML blocks shared by the Pandoc 2.0 and 3.9 Markdown readers.
 // The summary close has its own offline blank-line rule.
@@ -98,7 +102,6 @@ const CONTEXTUAL_BLOCK_TAGS = new Set([
 ]);
 
 interface SourceLine extends SourceLimits {
-  lastBlank: number;
   start: number;
   end: number;
 }
@@ -106,18 +109,15 @@ interface SourceLine extends SourceLimits {
 function sourceLines(content: string, lines: string[]): SourceLine[] {
   const breaks = content.matchAll(/\r\n?|\n/g);
   let start = 0;
-  let lastBlank = -1;
-  const positions = lines.map((line, index) => {
+  const positions = lines.map((line) => {
     const end = start + line.length;
     const position = {
-      lastBlank,
       start,
       end,
       inlineLimit: content.length,
       tagLimit: content.length,
       nextMarkdownStructure: content.length,
     };
-    if (!line.trim()) lastBlank = index;
     const newline = breaks.next().value;
     start = end + (newline?.[0].length ?? 0);
     return position;
@@ -280,24 +280,22 @@ class BoundaryScanner {
 
 function prepareSource(content: string) {
   const lines = content.split(/\r\n?|\n/);
-  const columns = lines.map(expandIndent);
   const positions = sourceLines(content, lines);
-  const documentFences = new FenceRange(columns, 0, 0);
-  return { content, lines, columns, positions, documentFences };
+  return { content, lines, positions };
 }
 
 function* walkSource(
   source: ReturnType<typeof prepareSource>,
   scanner: BoundaryScanner,
-  owner = new Container(),
+  scopes = ContainerScopes.document(source.lines),
   firstLine = 0,
   ignored: ReadonlyMap<string, number> = new Map(),
   reportClose?: (start: number, end: number) => void,
 ): Generator<SourceEvent> {
-  const { lines, columns, positions, documentFences } = source;
+  const { lines, positions } = source;
   function origin(index: number): ScanOrigin {
     const boundary = scanner.fork();
-    const container = owner.fork();
+    const container = scopes.fork();
     return (kinds, report) =>
       walkSource(source, boundary.fork(), container.fork(), index, kinds, report);
   }
@@ -309,41 +307,43 @@ function* walkSource(
     if (recovery.needsOrigin && scanner.canResume(position)) recovery.resume(origin(index));
     const covered = scanner.coversStart(position);
     const hasPipe = line.includes("|") && scanner.hasPipeDelimiter(position);
-    const placement = covered
-      ? { owner, relative: line, marker: false, lazy: false, literal: false }
-      : resolveContainer(owner, columns, index, hasPipe, position.lastBlank, documentFences);
-    owner = placement.owner;
+    const { frame, local, placement, quoted } = scopes.place(index, covered, hasPipe);
+    const { columns, fences: documentFences } = frame;
+    const owner = placement.owner;
     const { relative, marker, lazy } = placement;
     const previous = owner.block;
     const fence = covered || lazy || placement.literal ? undefined : readFenceLine(relative);
     const wasRejected = owner.rejectedTilde && closesFence(owner.rejectedTilde, fence);
     if (wasRejected) owner.rejectedTilde = undefined;
 
-    let codeLimit = position.inlineLimit;
+    let codeLimit = Math.min(
+      position.inlineLimit,
+      positions[frame.start + columns.length]?.start ?? Infinity,
+    );
     if (fence && !wasRejected) {
       const language = fenceLanguage(fence.info);
       const interrupts = canOpenFence(previous, fence);
       if (interrupts && language !== undefined) {
         const continued = !!placement.continued;
-        let span = recovery.candidate(index, owner, continued);
+        let span = recovery.candidate(index, owner, continued, columns);
         if (!span) {
           const range = continued
-            ? owner.continuationRange(columns, index)
+            ? owner.continuationRange(columns, local)
             : owner.parent
-              ? owner.fenceRange(columns, index, fence, documentFences, position.lastBlank)
+              ? owner.fenceRange(columns, local, fence, documentFences, frame.lastBlank[local]!)
               : documentFences;
-          const close = range.close(index);
+          const close = range.close(local);
           if (close !== undefined) {
-            span = { owner, continued, open: index, close, language };
+            span = { owner, continued, open: index, close: frame.start + close, language, columns };
           } else {
             // An unmatched opener may still be inline code within its item.
-            const end = positions[range.end]?.start;
+            const end = positions[frame.start + range.end]?.start;
             if (fence.marker === "`" && end !== undefined) codeLimit = Math.min(codeLimit, end);
           }
         }
         if (span) {
           yield span;
-          owner.observeFencedBody(columns, index, span.close, documentFences);
+          owner.observeFencedBody(columns, local, span.close - frame.start, documentFences);
           owner.block = "boundary";
           owner.rejectedTilde = undefined;
           index = span.close;
@@ -374,26 +374,27 @@ function* walkSource(
 
     // HTML token offsets and row widths use the original source offsets.
     const inItem = !!owner.parent && !covered && !lazy;
-    const start = marker
-      ? position.end - relative.length
-      : inItem
-        ? position.start + /^[ \t]*/.exec(line)![0].length
-        : position.start;
+    const start =
+      marker || quoted
+        ? position.end - relative.length
+        : inItem
+          ? position.start + /^[ \t]*/.exec(line)![0].length
+          : position.start;
     const aligned = !inItem || (!/^[ \t]/.test(relative) && !isParagraph(previous));
     if (owner.parent && line.includes("`")) {
-      const next = positions[owner.inlineCodeEnd(columns, index)];
+      const next = positions[frame.start + owner.inlineCodeEnd(columns, local)];
       if (next) codeLimit = Math.min(codeLimit, next.start);
     }
     const { visible, context } = scanner.scan(position, owner, start, aligned, codeLimit);
     const visibleLine = line.slice(0, start - position.start) + visible;
     yield { line: visibleLine, index };
     const blockLine =
-      marker || placement.continued
+      marker || quoted || placement.continued
         ? visible
         : inItem
           ? expandIndent(visibleLine).slice(owner.margin)
           : visibleLine;
-    owner.block = context ?? classifyBlock(owner, blockLine, index, columns, hasPipe);
+    owner.block = context ?? classifyBlock(owner, blockLine, local, columns, hasPipe);
   }
 }
 

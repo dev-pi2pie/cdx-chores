@@ -52,6 +52,9 @@ const visible = h1("Visible heading");
 const bulletPython = code(pipeBody, "python", ["BulletList"]);
 const bulletExample = code("example", "", ["BulletList"]);
 const documentPython = code(pipeBody, "python");
+const quotedPython = code(pipeBody, "python", ["BlockQuote"]);
+const quotedItemPython = code(pipeBody, "python", ["BlockQuote", "BulletList"]);
+const itemQuotePython = code(pipeBody, "python", ["BulletList", "BlockQuote"]);
 const ordered = ["OrderedList"];
 const bullets = ["BulletList", "BulletList"];
 const js = code("\n# Example heading\n", "js");
@@ -72,6 +75,13 @@ const readers: Record<string, [unknown[], unknown[]]> = {
     [bulletPython, h1("Middle heading"), code("```sh\n| following | probe |\n```")],
     [bulletPython, h1("Middle heading"), code("```sh\n| following | probe |\n```")],
   ],
+  "list-in-quote": [[quotedPython], [quotedPython]],
+  "prose-in-quote": [[], []],
+  "marked-list-in-quote": [[quotedPython], [quotedPython]],
+  "quote-list-after-blank": [[quotedItemPython], [quotedItemPython]],
+  "quote-list-paragraph": [[], []],
+  "compact-quote-closer": [[itemQuotePython], [itemQuotePython]],
+  "compact-plain-closer": [[documentPython], [documentPython]],
   "bullet-outdented-closer": [[bulletPython], [bulletPython]],
   "bullet-outdented-body": [[bulletPython], [bulletPython]],
   "bullet-aligned": [[bulletPython], [bulletPython]],
