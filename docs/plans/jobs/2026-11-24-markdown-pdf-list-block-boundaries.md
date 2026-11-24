@@ -173,4 +173,8 @@ At `3a60caf5` the regression suites passed 2,659 unit tests, 2,768 application t
 
 ## Phase 5 — Validate documentation and close the record
 
-Pending.
+The Profile, Template, and Project guides already point to the shared [Markdown PDF usage guide](../../guides/markdown-pdf-usage.md#codex-helper-choice). That guide now shows the four-space fence under `1. Item`. Its example matches the opening of the [numbered fixture](../../../test/markdown-pdf/actions/fixtures/list-block-boundaries.ts). The source scanner reports `python` and zero table rows for the excerpt. All three authoring helpers passed the fixture with Pandoc absent and with a detectable executable that received zero calls.
+
+Pandoc 2.0 kept the excerpt in the item without producing a code block. Pandoc 3.9 produced a Python code block inside the ordered item. Both the direct HTML route and the titled JSON-to-HTML route matched each reader on the numbered fixture, including its trailing heading and table controls. [Application render assertions](../../../test/markdown-pdf/actions/rendering/ast-render-fixtures.ts)
+
+Documentation review cleared the guide example and its evidence. Relative links and heading anchors resolved across all four guides, the research, the plan, and this record. Every cited implementation SHA was verified against the branch history. The Markdown diff passed `git diff --check`.

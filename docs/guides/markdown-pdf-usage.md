@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-11-23
+modified-date: 2026-11-24
 status: completed
 agent: codex
 ---
@@ -54,6 +54,18 @@ The dedicated guides are:
 - [Markdown PDF Codex Project Helper](markdown-pdf-codex-project-helper.md)
 
 When you supply Markdown, all three helpers build bounded summaries from the source, including headings, code fences, and table-like row counts and widths. Signal collection works with or without Pandoc. The helpers use those summaries to prepare a recipe. At render time, the [automatic metadata title rules](#automatic-metadata-titles) apply.
+
+For example, the following fence starts four spaces in from the left margin, inside a numbered item.
+
+````markdown
+1. Item
+
+    ```python
+    | fenced | sample |
+    ```
+````
+
+Profile, Template, and Project report a `python` hint and exclude the pipe-delimited line from their table counts. When you render this example, Pandoc 3.9 produces a Python code block in the list item. Pandoc 2.0 keeps the text in the item without producing a code block.
 
 ## Project Helper
 
