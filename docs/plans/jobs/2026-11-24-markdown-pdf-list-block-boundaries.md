@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF list block boundaries implementation record"
 created-date: 2026-11-24
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -178,3 +178,21 @@ The Profile, Template, and Project guides already point to the shared [Markdown 
 Pandoc 2.0 kept the excerpt in the item without producing a code block. Pandoc 3.9 produced a Python code block inside the ordered item. Both the direct HTML route and the titled JSON-to-HTML route matched each reader on the numbered fixture, including its trailing heading and table controls. [Application render assertions](../../../test/markdown-pdf/actions/rendering/ast-render-fixtures.ts)
 
 Documentation review cleared the guide example and its evidence. Relative links and heading anchors resolved across all four guides, the research, the plan, and this record. Every cited implementation SHA was verified against the branch history. The Markdown diff passed `git diff --check`.
+
+### Phase 5 branch review findings
+
+Full-branch review at `c15c6467...c053bca8` reopened Phase 2. The scanner treated a list marker inside a quote as prose and missed a following tilde fence. It also released a compact quoted item at an outdented backtick opener, even when the closer belonged to the quote. Commit `29f786fd` parses the quote’s contents with the same list rules as the document and checks for a complete fence at the enclosing margin before leaving the item.
+
+Both readers put the first Python block inside the quote, following its bullet list. Both put the second inside the quoted bullet item. Removing the quote marker from its closer moves the block to document scope. All three offline helpers retain the `python` hint and exclude the pipe row for both reported cases. Adjacent prose, explicit quote markers, and a quoted blank line provide the controls. [Regression fixtures](../../../test/markdown-pdf/actions/fixtures/list-block-boundaries.ts)
+
+Re-review at `29f786fd` confirmed both ownership fixes and found two errors in quote projection. A tab after the quote marker inflated a 19-character row to 38 characters and changed its column count from three to five. Deeply marked quotes also retained the same intervening prose at each level. At `8edefe95`, all three helpers report the original 19 characters and three columns. A regression test verifies that 2,048 matching quote markers around 2,048 lazy prose lines use one projected body and preserve the trailing heading. [Source and nesting checks](../../../test/markdown-pdf/actions/profile-codex/source-boundaries.unit.test.ts) · [Authoring checks](../../../test/markdown-pdf/actions/fixtures/authoring-source-signals.ts)
+
+Re-review at `8edefe95` found that a lazy prose line beginning with inline code still rebuilt the nested quote body at each level. Commit `4b4baa5e` checks whether a backtick line actually opens a complete outer fence. The inline-code and unmatched-backtick controls each use one projected body at depth 2,048. A complete fence still interrupts at the outer quote margin.
+
+Independent code review cleared the full `origin/main` comparison `c15c6467...4b4baa5e`, including the guide at `c053bca8` and all quote corrections. It replayed the three offline helpers on 51 inputs with zero Pandoc calls, 49 Pandoc 3.9 reader fixtures, 80 application render fixtures, and 27 title PDFs. The corresponding Pandoc 2.0 reader and render checks passed in implementation verification. Both routes preserved the installed reader’s behavior.
+
+### Final verification
+
+At `4b4baa5e`, the full suites passed 2,696 unit tests, 2,768 application tests, and 102 Pandoc 3.9 integration tests. In earlier concurrent runs, ten benchmark tests and the Pandoc suite reached their time limits. Both suites passed when run separately with their existing limits. TypeScript, lint, formatting, and whitespace checks passed.
+
+Documentation review cleared the guide, the [research outcome](../../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#research-outcome), and the evidence for the [five plan checkpoints](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md). All five are complete.

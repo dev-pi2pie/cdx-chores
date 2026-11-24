@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF list block boundaries implementation"
 created-date: 2026-11-24
-status: active
+status: completed
 agent: codex
 ---
 
@@ -55,6 +55,11 @@ The [follow-up record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#pha
 - [x] Recognize the fence that continues a document-level quote and verify the blank-line control against each reader. `7c1f6724`
 - [x] Preserve item ownership across an adjacent heading between two fences. Verify that a blank before the heading ends the item. Independent re-review cleared `f03f5c55..3a60caf5`. [Reader and render results](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#ordinary-list-and-document-quote-follow-up)
 
+### Quote findings during final review
+
+- [x] Resolve a list inside a quote and a compact quoted item with an outdented opener. Verify both readers, both render routes, offline language hints and pipe rows, and HTML recovery. `29f786fd`. [Phase 5 branch review findings](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#phase-5-branch-review-findings)
+- [x] Keep physical row widths through tab expansion and share nested quote scopes across lazy prose. Verify that inline code and unmatched backticks preserve sharing while a complete outer fence still interrupts the quote. `8edefe95`, `4b4baa5e`.
+
 ## Phase 3 — Use the same fence spans during HTML recovery
 
 - [x] Supply the container-relative candidate spans to HTML delimiter recovery and ordinary fence recognition. Decide which matched fences are visible after resolving the HTML region. Preserve original source offsets across tabs and line endings so a recovered suffix resumes at the correct character. [Source cursor](../../src/cli/markdown-pdf/profile/source-cursor.ts)
@@ -88,6 +93,8 @@ Independent code and test reviews cleared `e9b5e7f9..a8ecd37b`. The [Phase 4 job
 
 - [x] Check the authoring and rendering guides against the verified outcomes. Update affected wording or examples where users need to distinguish a source hint from rendered output. Validate changed examples against the Phase 4 results. [Profile guide](../guides/markdown-pdf-codex-profile-helper.md) · [Template guide](../guides/markdown-pdf-codex-template-helper.md) · [Project guide](../guides/markdown-pdf-codex-project-helper.md) · [Markdown PDF usage](../guides/markdown-pdf-usage.md)
 - [x] Review Markdown formatting, relative links, and traceability among research, plan, and unified record. Check `git diff --check` and review the documentation diff. If a claim disagrees with the implementation, reopen its phase, resolve the discrepancy, and repeat the affected validation.
-- [ ] Match every completed item to evidence in the unified record, including both Pandoc versions and the final reviewed scope. Record the docs review and resolution of findings. Mark the plan and job record `completed` when all five checkpoints pass, then update the research status according to the evidence and link its outcome.
+- [x] Match every completed item to evidence in the unified record, including both Pandoc versions and the final reviewed scope. Record the docs review and resolution of findings. Mark the plan and job record `completed` when all five checkpoints pass, then update the research status according to the evidence and link its outcome.
 
 **Checkpoint** — A reader can trace each documented behavior to a fixture, a verified result, and its phase in the single job record.
+
+All five checkpoints passed. Independent code review cleared `c15c6467...4b4baa5e`. The [final verification and review record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#phase-5--validate-documentation-and-close-the-record) covers both readers, the guide example at `c053bca8`, and the corrections made during branch review.

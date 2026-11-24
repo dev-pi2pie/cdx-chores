@@ -2,7 +2,7 @@
 title: "Markdown PDF list block boundaries"
 created-date: 2026-11-23
 modified-date: 2026-11-24
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -21,6 +21,10 @@ During review for the 0.2.2 release, a Python example inside a numbered list exp
 The four leading spaces matter. Under `1. Item`, the fence starts one column past the start of the item text. Move the same three lines to the top level and those four spaces introduce literal code, including the backticks. Pandoc 3.9 recognizes the Python fence inside the item. Pandoc 2.0, the supported minimum, produces no code block there. Both readers treat the top-level example as literal code.
 
 The installed Pandoc determines how the PDF renders. The authoring helpers also work when Pandoc is absent and need details its parsed document can lose, including the difference between an unlabeled fence and indented literal code, or the width of a source table row. The research question is how the offline scanner can tell which block owns a line before deciding whether a fence opens or closes. [Earlier research on source signals](research-2026-11-22-markdown-pdf-html-boundaries.md#source-scanning)
+
+## Research outcome
+
+The scanner now determines which list item, quote, or document block owns a fence before matching its closer. HTML recovery consults the same span, and the helpers measure visible rows from the original source. For the numbered example above, all three helpers report `python` and exclude the pipe row with Pandoc absent. Rendering preserves each reader’s interpretation. The comparisons below retain the canary and prototype observations that motivated the change. [Implementation plan](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md) · [Verification and review results](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#phase-5--validate-documentation-and-close-the-record)
 
 ## What successive reviews found
 
@@ -76,7 +80,7 @@ The proposed offline behavior is to recover the same signals in both placements.
 
 When a genuine `</textarea>` follows the apparent fence, the text inside the element should stay literal. In the `real-close-after-fenced-textarea-delimiter` fixture, both scanners report only `# Visible heading`, the `js` hint, and three source rows with the apparent `python` fence at the top level. Move the entire fence under `1. Item` and leave the genuine close in place. Both scanners now also expose `# Literal heading` and two pipe rows from inside the element, bringing the count to five. The `js` hint is identical in both placements. [Recovery fixtures](../../test/markdown-pdf/actions/fixtures/markdown-source-fixtures.ts)
 
-## Proposed implementation direction
+## Implementation direction
 
 Resolve the list transition in one place. Keep the marker’s end column and actual separator width, accounting for tab stops. Carry the selected container, its content margin, and its current block kind together into the fence check. A less-indented line can still continue list prose, so deciding its owner may require inspecting whether a candidate opener interrupts that paragraph.
 
@@ -96,11 +100,11 @@ flowchart TD
 
 Use the same container-relative span for HTML recovery and for ordinary fence recognition. In the recovery fixtures, the intervening H1 and the later matched fence keep the delimiter inside that fence from closing the earlier HTML opener. If a genuine `</textarea>` follows the apparent fence, that later delimiter closes the element and its contents stay literal. Once HTML and fence boundaries are resolved, one decision supplies the hint and determines which lines reach the heading and table collectors. [Document signal collection](../../src/cli/markdown-pdf/profile/signals.ts)
 
-For the version differences in the table, the proposed hint follows the fenced syntax recognized by 3.9. This is a version-independent authoring choice. Profile, Template, and Project should produce identical signals with Pandoc present or absent.
+For the version differences in the table, the offline hint follows the fenced syntax recognized by 3.9. Profile, Template, and Project use the same rule regardless of whether Pandoc is installed.
 
-## Verification before adopting the change
+## Verification criteria
 
-Replay the observed inputs first. Then exercise the same transition with a different preceding block or a different destination. These comparisons are proposed checks on the design.
+The following comparisons isolate one boundary at a time. The implementation plan used them to verify the scanner and HTML recovery.
 
 | Vary one boundary | What the comparison tests |
 | --- | --- |
@@ -111,7 +115,7 @@ Replay the observed inputs first. Then exercise the same transition with a diffe
 | Place the apparent `python` fence at the top level or under `1. Item`, keeping the genuine `</textarea>` after it. | Both placements should expose only `# Visible heading`, the `js` hint, and three table rows. |
 | Keep the complete `closed-textarea-with-apparent-fence` fixture as a control. | The apparent `text` fence contributes no hint. Only the later H1 and three table rows are visible to those collectors. |
 
-For each pair, check the visible headings, language hints, and source-row count. Where the example has a pipe row in its body, replace that row with plain text to measure its contribution. For the `sh` recovery fixtures, keep the HTML delimiter in the body and check the totals above. Run the same source through all three authoring helpers with zero Pandoc calls. The design is ready for implementation when the same ownership and margin rules predict the observed cases and the neighboring controls.
+The checks compare visible headings, language hints, and source-row counts. Replacing a pipe-shaped body line with plain text isolates its contribution. The `sh` recovery fixtures keep the HTML delimiter in the body and assert the totals above. All three helpers ran on the same inputs with zero Pandoc calls. [Offline and reader results](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#phase-4--verify-authoring-and-rendering-through-the-application)
 
 ## Related Plans
 
