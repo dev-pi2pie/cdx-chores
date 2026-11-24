@@ -158,5 +158,6 @@ export const offlineBoundaryCases = [
     headings: recovered ? ["Recovered heading", "Visible heading"] : ["Visible heading"],
     languages: recovered ? ["sh", "js"] : name === "closed-textarea" ? [] : ["js"],
     rows: 3,
+    pipeBodyRows: undefined,
   })),
 ];

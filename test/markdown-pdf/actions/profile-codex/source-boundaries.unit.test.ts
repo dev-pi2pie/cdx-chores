@@ -49,10 +49,11 @@ for (const fixture of offlineBoundaryCases) {
     expect(signals.tables.scannedRows).toBe(fixture.rows);
   });
 
-  if ("pipeBodyRows" in fixture) {
+  const { pipeBodyRows } = fixture;
+  if (pipeBodyRows !== undefined) {
     const plain = collectMarkdownPdfDocumentSignals(markdown.replace(pipeBody, "plain"));
     test(name + " isolates the pipe body's contribution", () => {
-      expect(signals.tables.scannedRows - plain.tables.scannedRows).toBe(fixture.pipeBodyRows);
+      expect(signals.tables.scannedRows - plain.tables.scannedRows).toBe(pipeBodyRows);
     });
   }
 }
