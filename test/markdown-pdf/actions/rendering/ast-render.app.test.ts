@@ -153,7 +153,7 @@ describe("Markdown PDF AST render execution", () => {
         ...(fixture.profile ? { profile: "profile.yml" } : {}),
         ...(fixture.custom ? { template: "template.html" } : {}),
         ...(fixture.bundle ? { bundle: dir } : {}),
-        meta: fixture.meta,
+        meta: fixture.meta && [...fixture.meta],
       });
       const plan = await planMarkdownPdfRender(runtime, prepared, { output: "report.pdf" });
       expect(calls).toEqual([]);
