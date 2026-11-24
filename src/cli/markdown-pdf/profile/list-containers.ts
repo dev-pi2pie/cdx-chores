@@ -30,7 +30,7 @@ export class Container {
   openHtmlBlocks?: Map<string, boolean[]>;
   rejectedTilde?: FenceLine;
   private fences?: FenceRange;
-  private childSource?: FenceRange;
+  private continuationSource?: FenceRange;
   inContinuation = false;
   private inlineEnd = 0;
 
@@ -69,7 +69,7 @@ export class Container {
   observeFencedBody(lines: string[], open: number, close: number, document: FenceRange) {
     if (!this.parent || this.inContinuation) return;
     const first = Math.max(open, this.startLine + 1);
-    const source = this.parent.parent ? this.parent.childSourceRange(lines, first) : document;
+    const source = this.parent.parent ? this.parent.continuationRange(lines, first) : document;
     for (let i = first; i <= close; i++) {
       const candidate = source.at(i);
       if (candidate?.hasClose && fenceLanguage(candidate.info) !== undefined) {
@@ -79,18 +79,17 @@ export class Container {
     }
   }
 
-  private childSourceRange(lines: string[], start: number) {
-    if (!this.childSource || start >= this.childSource.end) {
-      // The enclosing item can retain outdented text in a lazy continuation.
-      // A blank before the outdent or a new sibling ends that source.
-      const includes = (line: string, i: number) => {
-        if (!lines[i - 1]?.trim()) return false;
-        const { margin } = containerAtIndent(this, line);
-        return !readMarker(line.slice(margin), margin);
+  continuationRange(lines: string[], start: number) {
+    if (!this.continuationSource || start >= this.continuationSource.end) {
+      const project = (line: string, i: number) => {
+        if (!lines[i - 1]?.trim()) return;
+        const destination = containerAtIndent(this, line);
+        if (readMarker(line.slice(destination.margin), destination.margin)) return;
+        return continuationLine(this, destination, line);
       };
-      this.childSource = new FenceRange(lines, start, this.margin, undefined, includes);
+      this.continuationSource = new FenceRange(lines, start, this.margin, undefined, project);
     }
-    return this.childSource;
+    return this.continuationSource;
   }
 }
 
@@ -98,6 +97,23 @@ function containerAtIndent(owner: Container, line: string) {
   const indent = /^ */.exec(line)![0].length;
   while (owner.parent && indent < owner.margin) owner = owner.parent;
   return owner;
+}
+
+// Each enclosing item strips its own marker width only if enough spaces remain.
+// With widths three then two, two leading spaces survive the parent and align
+// the text in the child. One leading space survives both items.
+function continuationLine(owner: Container, destination: Container, line: string) {
+  let offset = destination.margin;
+  const indent = /^ */.exec(line)![0].length;
+  if (indent === offset) return line.slice(offset);
+  const widths = [];
+  for (let item = owner; item !== destination; item = item.parent!) {
+    widths.push(item.margin - item.parent!.margin);
+  }
+  for (let i = widths.length - 1; i >= 0; i--) {
+    if (offset + widths[i]! <= indent) offset += widths[i]!;
+  }
+  return line.slice(offset);
 }
 
 function endColumn(whitespace: string, start: number) {
@@ -196,6 +212,21 @@ export function resolveContainer(
   const line = lines[index]!;
   let owner = line.trim() ? containerAtIndent(current, line) : current;
   let relative = line.slice(owner.margin);
+  if (owner !== current && isParagraph(current.block) && relative.trimStart().startsWith("```")) {
+    const continued = continuationLine(current, owner, line);
+    const inItem =
+      continued !== relative || current.inContinuation || lastBlank > current.startLine;
+    if (inItem && continued.startsWith("```")) {
+      return {
+        owner: current,
+        relative: continued,
+        continued: true,
+        lazy: false,
+        marker: false,
+        literal: false,
+      };
+    }
+  }
   if (owner !== current && continuesItem(current, owner, relative, lastBlank)) {
     return { owner: current, relative: line, lazy: true, marker: false, literal: false };
   }

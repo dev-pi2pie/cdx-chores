@@ -227,6 +227,47 @@ test.each([
   },
 );
 
+const nestedProse = [
+  "1. Parent",
+  "   - " + ticks + "js",
+  "     sample",
+  "     " + ticks,
+  "     prose",
+];
+
+test.each([
+  [0, true],
+  [1, false],
+  [2, true],
+  [3, true],
+  [4, false],
+  [5, true],
+] as const)("nested continuation strips available marker widths at %i spaces", (spaces, python) => {
+  const pad = " ".repeat(spaces);
+  const s = collect(
+    [...nestedProse, pad + ticks + "python", pad + longRow, pad + ticks, "", "# Visible"].join(
+      "\n",
+    ),
+  );
+  expect(s.codeFences.languages).toEqual(python ? ["js", "python"] : ["js"]);
+  // The backticks form inline code at one and four spaces, also hiding the pipe.
+  expect(s.tables.scannedRows).toBe(0);
+  expect(s.headings.total).toBe(1);
+});
+
+test.each([
+  ["aligned closer", "     " + ticks, true],
+  ["sibling closer", "   - Sibling\n\n     " + ticks, false],
+  ["closer after the item", "\nOutside\n" + ticks, false],
+] as const)("a partially outdented opener checks the %s", (_name, close, python) => {
+  const s = collect(
+    [...nestedProse, "  " + ticks + "python", "  " + longRow, close, "", "# Visible"].join("\n"),
+  );
+  expect(s.codeFences.languages).toEqual(python ? ["js", "python"] : ["js"]);
+  expect(s.tables.scannedRows).toBe(python ? 0 : 1);
+  expect(s.headings.total).toBe(1);
+});
+
 test.each([
   ["ordered marker as Setext text", "1. Item\n---", false],
   ["ordered marker above equals", "a) Item\n===", false],

@@ -325,7 +325,11 @@ export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
       const language = fenceLanguage(fence.info);
       const interrupts = canOpenFence(previous, fence);
       if (interrupts && language !== undefined) {
-        const range = owner.parent ? owner.fenceRange(columns, index, fence) : documentFences;
+        const range = placement.continued
+          ? owner.continuationRange(columns, index)
+          : owner.parent
+            ? owner.fenceRange(columns, index, fence)
+            : documentFences;
         const close = range.close(index);
         if (close !== undefined) {
           if (language !== null) fenceLanguages.push(language);
@@ -379,11 +383,12 @@ export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
     const { visible, context } = scanner.scan(position, owner, start, aligned, codeLimit);
     const visibleLine = line.slice(0, start - position.start) + visible;
     ordinaryLines.push(visibleLine);
-    const blockLine = marker
-      ? visible
-      : inItem
-        ? expandIndent(visibleLine).slice(owner.margin)
-        : visibleLine;
+    const blockLine =
+      marker || placement.continued
+        ? visible
+        : inItem
+          ? expandIndent(visibleLine).slice(owner.margin)
+          : visibleLine;
     owner.block = context ?? classifyBlock(owner, blockLine, index, columns, hasPipe);
   }
   return { ordinaryLines, fenceLanguages };

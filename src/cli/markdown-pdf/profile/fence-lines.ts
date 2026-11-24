@@ -90,7 +90,7 @@ export class FenceRange {
     private readonly start: number,
     margin: number,
     opener?: FenceLine,
-    includeOutdent?: (line: string, index: number) => boolean,
+    projectOutdent?: (line: string, index: number) => string | undefined,
   ) {
     const padding = " ".repeat(margin);
     let i = start;
@@ -100,9 +100,10 @@ export class FenceRange {
         this.candidates.push(opener);
         continue;
       }
-      const indented = line.startsWith(padding);
-      if (line.trim() && !indented && !includeOutdent?.(line, i)) break;
-      this.candidates.push(readFenceLine(indented ? line.slice(margin) : line));
+      const relative =
+        line.startsWith(padding) || !line.trim() ? line.slice(margin) : projectOutdent?.(line, i);
+      if (relative === undefined) break;
+      this.candidates.push(readFenceLine(relative));
     }
     this.end = i;
     markCandidatesWithClosers(this.candidates);
