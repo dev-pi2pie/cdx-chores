@@ -19,6 +19,12 @@ const SPACE = /\s*/y;
 const ATTRIBUTE = /[^\s"'<>/=]+/y;
 const ATTRIBUTE_VALUE = /[^\s"'`=<>]+/y;
 
+function escapedAt(source: string, offset: number): boolean {
+  let start = offset;
+  while (source[start - 1] === "\\") start--;
+  return (offset - start) % 2 === 1;
+}
+
 export class MarkdownSourceCursor {
   private readonly delimiters = new Map<string | number, SourceSpan[]>();
   private readonly outsideFences = new Map<string, SourceSpan[]>();
@@ -27,9 +33,22 @@ export class MarkdownSourceCursor {
     private readonly source: string,
     fenceRecoveryBoundary: (delimiter: number) => number | undefined,
   ) {
-    const markers = /`+|<!--|-->|["']|<\/(pre|script|style|textarea)[\t \r\n]*>/gi;
+    const markers = /`+|\$+|<!--|-->|["']|<\/(pre|script|style|textarea)[\t \r\n]*>/gi;
     for (const match of source.matchAll(markers)) {
       const part = match[0];
+      if (part.startsWith("$")) {
+        const start = match.index + (escapedAt(source, match.index) ? 1 : 0);
+        const end = match.index + part.length;
+        const length = end - start;
+        // A single-dollar close needs nonspace before it and no digit after it.
+        if (
+          length === 2 ||
+          (length === 1 && /\S/.test(source[start - 1] ?? "") && !/\d/.test(source[end] ?? ""))
+        ) {
+          this.add(this.delimiters, length === 1 ? "$" : "$$", { start, end });
+        }
+        continue;
+      }
       const key = match[1]?.toLowerCase() ?? (part.startsWith("`") ? part.length : part);
       const span = { start: match.index, end: match.index + part.length };
       if (typeof key === "string" && (part.startsWith("<") || part === "-->")) {
@@ -72,6 +91,40 @@ export class MarkdownSourceCursor {
 
   verbatimEnd(name: string, start: number, offset: number): number | undefined {
     return this.matchingEnd(name, start, offset)?.end;
+  }
+
+  private readBackticks(start: number, inlineLimit: number): MarkdownSourceToken {
+    let end = start + 1;
+    while (this.source[end] === "`") end++;
+    const close = this.next(this.delimiters.get(end - start), end);
+    return close && close.end <= inlineLimit
+      ? { kind: "code", end: close.end }
+      : { kind: "text", end };
+  }
+
+  private mathEnd(start: number, lineEnd: number): number {
+    let end = start + 1;
+    while (this.source[end] === "$") end++;
+    const length = end - start;
+    if (length > 2 || (length === 1 && !/\S/.test(this.source[end] ?? ""))) return end;
+    const close = this.next(this.delimiters.get(length === 1 ? "$" : "$$"), end);
+    return close && close.end <= lineEnd ? close.end : end;
+  }
+
+  hasPipeDelimiter(start: number, end: number): boolean {
+    let offset = start;
+    while (offset < end) {
+      const ch = this.source[offset];
+      if (ch === "|") return true;
+      if (ch === "`") offset = this.readBackticks(offset, end).end;
+      else if (ch === "$") offset = this.mathEnd(offset, end);
+      else if (ch === "<") {
+        offset =
+          this.read(offset, { inlineLimit: end, tagLimit: end, nextMarkdownStructure: end })?.end ??
+          offset + 1;
+      } else offset += ch === "\\" ? 2 : 1;
+    }
+    return false;
   }
 
   private readTag(
@@ -130,14 +183,7 @@ export class MarkdownSourceCursor {
     if (ch === "\\" && /[<`\\]/.test(this.source[start + 1] ?? "")) {
       return { kind: "text", end: start + 2 };
     }
-    if (ch === "`") {
-      let end = start + 1;
-      while (this.source[end] === "`") end++;
-      const close = this.next(this.delimiters.get(end - start), end);
-      return close && close.end <= inlineLimit
-        ? { kind: "code", end: close.end }
-        : { kind: "text", end };
-    }
+    if (ch === "`") return this.readBackticks(start, inlineLimit);
     if (ch !== "<") return undefined;
     if (!this.source.startsWith("<!--", start)) return this.readTag(start, inlineLimit, tagLimit);
 

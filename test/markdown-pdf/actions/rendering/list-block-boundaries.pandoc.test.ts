@@ -4,7 +4,12 @@ import { join } from "node:path";
 import { test } from "bun:test";
 
 import { withPandocFixtureDir } from "../../pandoc-support";
-import { htmlBoundaryCases, listBoundaryCases, pipeBody } from "../fixtures/list-block-boundaries";
+import {
+  htmlBoundaryCases,
+  listBoundaryCases,
+  listTransitionCases,
+  pipeBody,
+} from "../fixtures/list-block-boundaries";
 
 // Keep reader-specific list ancestry, code attributes and text. Ignore unrelated table schema changes.
 function project(blocks: unknown) {
@@ -41,6 +46,7 @@ const recovered = h1("Recovered heading");
 const literal = h1("Literal heading");
 const before = h1("Literal heading before apparent fence");
 const visible = h1("Visible heading");
+const bulletPython = code(pipeBody, "python", ["BulletList"]);
 const ordered = ["OrderedList"];
 const bullets = ["BulletList", "BulletList"];
 const js = code("\n# Example heading\n", "js");
@@ -53,6 +59,10 @@ const topLiteral = code("```python\n" + pipeBody + "\n```");
 
 // Each pair lists the events preceding the final visible H1, first on 2.0 and then on 3.9.
 const readers: Record<string, [unknown[], unknown[]]> = {
+  "parent-after-verse": [[bulletPython], [bulletPython]],
+  "parent-after-table": [[bulletPython], [bulletPython]],
+  "document-after-table": [[code(pipeBody, "python")], [code(pipeBody, "python")]],
+  "adjacent-sibling-opener": [[bulletPython], [bulletPython]],
   numbered: [[], [code(pipeBody, "python", ordered)]],
   "nested-verse": [[], [code(pipeBody, "python")]],
   "document-verse": [[], []],
@@ -106,7 +116,7 @@ const readers: Record<string, [unknown[], unknown[]]> = {
 test("Pandoc list boundaries match the verified readers and top-level controls", async () => {
   await withPandocFixtureDir("md-pdf-list-boundaries", async (dir, runPandoc) => {
     const version = (await runPandoc(["--version"])).stdout.split(/\r?\n/)[0];
-    const cases = [...listBoundaryCases, ...htmlBoundaryCases];
+    const cases = [...listBoundaryCases, ...listTransitionCases, ...htmlBoundaryCases];
     assert.deepEqual(Object.keys(readers).sort(), cases.map(({ name }) => name).sort());
     const path = join(dir, "case.md");
     for (const { name, markdown } of cases) {

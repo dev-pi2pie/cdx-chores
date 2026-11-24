@@ -55,7 +55,15 @@ Independent code review cleared `60df6caf..4a4c0627` with no findings. All five 
 
 ## Phase 2 — Resolve list ownership and match fences
 
-Pending.
+Started from `b66bc6df`. The scanner tracks the content margin and preceding block for each item and the document. One matched span supplies the language and excludes its body. Visible rows retain their source widths. [List ownership tests](../../../test/markdown-pdf/actions/profile-codex/list-ownership.unit.test.ts)
+
+| Check | Observed result |
+| --- | --- |
+| Eight Phase 1 list and document controls | All offline targets pass. The numbered, six-space, and padded seven-space cases now give `python`, three rows, and zero added body rows. The unpadded seven-space control gives no hint and four rows. |
+| Adjacent blocks and closers | A parent fence after child verse and a fence after a child table see the destination’s block state. Moving the only closer into a sibling keeps the earlier body row visible. A sibling with its own complete fence retains its hint. |
+| HTML controls | Both genuine early closes under a numbered item now expose `sh` and `js`. Four Phase 3 fixtures still differ from their targets across eight expected-failure assertions. |
+| Reader compatibility | `pandoc --version` confirmed 2.0 and 3.9. All 25 reader cases passed on each. The four added cases check code text and list ancestry after verse, after a table with a blank line, and across adjacent sibling openers. [Reader checks](../../../test/markdown-pdf/actions/rendering/list-block-boundaries.pandoc.test.ts) |
+| Regression checks | `bun run test:unit` passed 2,407 tests. `bun run test:integration:pandoc` passed 27 tests on 3.9. TypeScript, lint, formatting, and whitespace checks passed. |
 
 ## Phase 3 — Use the same fence spans during HTML recovery
 

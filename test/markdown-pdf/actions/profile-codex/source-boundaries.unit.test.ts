@@ -30,14 +30,7 @@ test.each(markdownSourceFixtures)("$name preserves source signals", (fixture) =>
   });
 });
 
-const missingListFences = new Set(["numbered", "empty-six", "padded-seven"]);
-const missingShellHints = new Set([
-  "comment-item",
-  "textarea-item",
-  "comment-item-early-close",
-  "textarea-item-early-close",
-  "closer-in-item",
-]);
+const missingShellHints = new Set(["comment-item", "textarea-item", "closer-in-item"]);
 const wrongHtmlHeadings = new Set([
   "comment-item",
   "textarea-item",
@@ -52,7 +45,6 @@ for (const fixture of [...listBoundaryCases, ...htmlBoundaryCases]) {
   const scan = scanMarkdownPdfFences(markdown);
   const signals = collectMarkdownPdfDocumentSignals(markdown);
   const headings = scan.ordinaryLines.flatMap((line) => /^# (.+)$/.exec(line)?.[1] ?? []);
-  const missingFence = missingListFences.has(name);
 
   const headingTest = wrongHtmlHeadings.has(name) ? test.failing : test;
   headingTest(name + " exposes the expected headings", () => {
@@ -64,7 +56,7 @@ for (const fixture of [...listBoundaryCases, ...htmlBoundaryCases]) {
     expect(signals.headings.total).toBe(names.length);
   });
 
-  const languageTest = missingFence || missingShellHints.has(name) ? test.failing : test;
+  const languageTest = missingShellHints.has(name) ? test.failing : test;
   languageTest(name + " reports the expected languages", () => {
     const languages =
       "fenced" in fixture
@@ -79,7 +71,7 @@ for (const fixture of [...listBoundaryCases, ...htmlBoundaryCases]) {
     expect(signals.codeFences.languages).toEqual(languages);
   });
 
-  const rowTest = missingFence || name === "genuine-close-after-item" ? test.failing : test;
+  const rowTest = name === "genuine-close-after-item" ? test.failing : test;
   rowTest(name + " counts visible source rows", () => {
     const verseRow = name === "nested-verse" ? 1 : 0;
     const bodyRow = "fenced" in fixture && !fixture.fenced ? 1 : 0;
@@ -88,8 +80,7 @@ for (const fixture of [...listBoundaryCases, ...htmlBoundaryCases]) {
 
   if ("fenced" in fixture) {
     const plain = collectMarkdownPdfDocumentSignals(markdown.replace(pipeBody, "plain"));
-    const deltaTest = missingFence ? test.failing : test;
-    deltaTest(name + " isolates the pipe body's contribution", () => {
+    test(name + " isolates the pipe body's contribution", () => {
       expect(signals.tables.scannedRows - plain.tables.scannedRows).toBe(fixture.fenced ? 0 : 1);
     });
   }

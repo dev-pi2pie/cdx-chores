@@ -21,6 +21,19 @@ export const listBoundaryCases = [
   listCase("document-literal", "", "    ", "```", false),
 ];
 
+const childTable =
+  "- Parent\n  - Child\n\n    | Key | Value |\n    | --- | --- |\n    | x | y |\n\n";
+export const listTransitionCases = [
+  { ...listCase("parent-after-verse", "- Parent\n  - | poem\n", "  ", "~~~", true), rows: 4 },
+  { ...listCase("parent-after-table", childTable, "  ", "~~~", true), rows: 6 },
+  { ...listCase("document-after-table", childTable, "", "~~~", true), rows: 6 },
+  {
+    name: "adjacent-sibling-opener",
+    markdown: ["- ```abandoned", "- ```python", "  " + pipeBody, "  ```", "", visible].join("\n"),
+    rows: 3,
+  },
+];
+
 function source(name: string) {
   const fixture = markdownSourceFixtures.find((candidate) => candidate.name === name);
   assert.ok(fixture, name);
