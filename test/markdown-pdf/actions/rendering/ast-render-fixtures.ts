@@ -10,7 +10,12 @@ import {
 } from "../../../../src/cli/actions/markdown/to-pdf-service";
 import type { ExecCommandResult } from "../../../../src/cli/process";
 import { createCapturedRuntime } from "../../../helpers/cli-test-utils";
-import { htmlBoundaryCases, listBoundaryCases, pipeBody } from "../fixtures/list-block-boundaries";
+import {
+  htmlBoundaryCases,
+  listBoundaryCases,
+  pipeBody,
+  successiveFenceCases,
+} from "../fixtures/list-block-boundaries";
 import { ok } from "./render-support";
 import { attribute, boundaryStructure, elements, text } from "./rendered-html";
 
@@ -26,6 +31,7 @@ const customTemplate = [
 
 const boundaryTitle = "Boundary report";
 const boundaryRenderFixtures = [
+  ...successiveFenceCases.map(({ name }) => name),
   "bullet-outdented-closer",
   "bullet-outdented-body",
   "bullet-aligned",
@@ -42,7 +48,9 @@ const boundaryRenderFixtures = [
   "comment-item-early-close",
   "textarea-item",
 ].flatMap((boundary) => {
-  const body = [...listBoundaryCases, ...htmlBoundaryCases].find(({ name }) => name === boundary);
+  const body = [...listBoundaryCases, ...successiveFenceCases, ...htmlBoundaryCases].find(
+    ({ name }) => name === boundary,
+  );
   assert(body, boundary);
   return [false, true].map((split) => ({
     name: boundary + (split ? " via JSON" : " direct"),
@@ -272,7 +280,9 @@ function checkBoundaryHtml(
   const headings =
     fixture.boundary === "comment-item-early-close"
       ? ["Recovered heading", "Visible heading"]
-      : ["Visible heading"];
+      : (successiveFenceCases.find(({ name }) => name === fixture.boundary)?.headings.slice() ?? [
+          "Visible heading",
+        ]);
   if (fixture.split) headings.unshift(boundaryTitle);
   assert.deepEqual(actual.headings, headings);
   const js = { text: "\n# Example heading", languages: ["js"], lists: [] };

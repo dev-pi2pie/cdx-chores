@@ -92,6 +92,39 @@ test.each([
   expect(scanMarkdownPdfFences(item).fenceLanguages).toEqual(["python"]);
 });
 
+test("a heading following a marker-line fence stays in the first run of the item", () => {
+  const source = [
+    "- ```python",
+    "  one",
+    "```",
+    "# Middle",
+    "    ```sh",
+    "    " + pipeBody,
+    "    ```",
+  ].join("\n");
+  const signals = collectMarkdownPdfDocumentSignals(source);
+  expect(signals.codeFences.languages).toEqual(["python", "sh"]);
+  expect(signals.tables.scannedRows).toBe(0);
+});
+
+test("an item projects adjacent quote markers before matching the following fence", () => {
+  const source = [
+    "- ```python",
+    "  one",
+    "  ```",
+    "> ```",
+    "> two",
+    "> ```",
+    "    ```sh",
+    "    " + pipeBody,
+    "    ```",
+  ].join("\n");
+  const signals = collectMarkdownPdfDocumentSignals(source);
+  expect(signals.codeFences.languages).toEqual(["python", "sh"]);
+  expect(signals.codeFences.unlabeledCount).toBe(1);
+  expect(signals.tables.scannedRows).toBe(0);
+});
+
 test("a flush-left backtick fence can leave a quote and span a blank line", () => {
   const source = ["> Quote.", "```python", "", pipeBody, "```"].join("\n");
   const signals = collectMarkdownPdfDocumentSignals(source);

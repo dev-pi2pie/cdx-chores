@@ -78,7 +78,7 @@ export class Container {
     if (!range || index < range.start || index >= range.end) {
       const project =
         this.kind === "quote"
-          ? (line: string, i: number) => this.quoteLine(line, i, document)
+          ? (_line: string, i: number) => this.quoteLine(lines, i, document)
           : this.kind === "definition"
             ? this.projectContinuation(lines)
             : this.projectListFence(lines, index, document, lastBlank);
@@ -89,19 +89,25 @@ export class Container {
 
   // Marked lines lose their quote prefix. Lazy lines lose leading whitespace
   // while the enclosing document or list still assigns them to this quote.
-  quoteLine(line: string, index: number, document: FenceRange) {
+  quoteLine(lines: string[], index: number, document: FenceRange) {
+    const line = lines[index]!;
     const indent = /^ */.exec(line)![0].length;
-    const relative = line.slice(Math.min(this.margin, indent));
-    const mark = indent >= this.margin && /^ {0,3}>[ \t]?/.exec(relative);
+    const item = this.parent!;
+    const relative =
+      indent < this.margin
+        ? item.projectOutdent(line, containerAtIndent(item, line))
+        : line.slice(this.margin);
+    if (relative === undefined) return;
+    const mark = /^ {0,3}>[ \t]?/.exec(relative);
     if (mark) return relative.slice(mark[0].length);
     if (!line.trim()) return;
-    if (this.parent?.parent) {
-      if (readMarker(relative, this.margin)) return;
-    } else {
-      // A complete flush-left backtick fence interrupts the quote before
-      // lazy continuation strips the source indentation.
-      if (line.startsWith("`") && document.opens(index)) return;
-      if (this.parent?.closesBlock(line)) return;
+    if (item.parent && readMarker(relative, this.margin)) return;
+    if (item.closesBlock(relative)) return;
+    // Check the enclosing margin before stripping lazy indentation: a
+    // complete flush-left backtick fence starts outside the quote.
+    if (relative.startsWith("`")) {
+      const enclosing = item.parent ? item.continuationRange(lines, index) : document;
+      if (enclosing.opens(index)) return;
     }
     return line.trimStart();
   }
@@ -151,11 +157,15 @@ export class Container {
       if (inside !== undefined) return inside;
       if (!lines[i - 1]?.trim()) return;
       const destination = containerAtIndent(this, line);
-      const relative = line.slice(destination.margin);
-      if (destination.closesBlock(relative)) return;
-      if (readMarker(relative, destination.margin, undefined, this.kind === "definition")) return;
-      return continuationLine(this, destination, line);
+      return this.projectOutdent(line, destination);
     };
+  }
+
+  projectOutdent(line: string, destination: Container) {
+    const relative = line.slice(destination.margin);
+    if (destination.closesBlock(relative)) return;
+    if (readMarker(relative, destination.margin, undefined, this.kind === "definition")) return;
+    return continuationLine(this, destination, line);
   }
 
   continuationRange(lines: string[], start: number) {
@@ -320,15 +330,30 @@ export function resolveContainer(
       lastBlank <= item.startLine &&
       !item.inContinuation &&
       readFenceLine(line.slice(destination.margin));
-    const relative = endsFirstRun ? undefined : current.quoteLine(line, index, document);
+    const relative = endsFirstRun ? undefined : current.quoteLine(lines, index, document);
     if (relative !== undefined)
       return { owner: current, relative, marker: true, lazy: false, literal: false };
     current = current.parent!;
   }
   let owner = line.trim() ? containerAtIndent(current, line) : current;
-  const continuation = paragraphContinuation(current, owner, line, lastBlank);
-  if (continuation) return continuation;
-  let relative = line.slice(owner.margin);
+  // A continuation keeps its adjacent lines even across an internal block
+  // boundary. The same projection decides ownership inside a matched fence.
+  let projected: string | undefined;
+  if (
+    owner !== current &&
+    current.kind === "list" &&
+    lastBlank !== index - 1 &&
+    (current.inContinuation ||
+      lastBlank > current.startLine ||
+      (!isParagraph(current.block) && !readFenceLine(line.slice(owner.margin))))
+  ) {
+    projected = current.projectOutdent(line, owner);
+    if (projected !== undefined) owner = current;
+  } else {
+    const continuation = paragraphContinuation(current, owner, line, lastBlank);
+    if (continuation) return continuation;
+  }
+  let relative = projected ?? line.slice(owner.margin);
 
   const setext =
     isParagraph(owner.block) && owner.proseStart === index - 1 && /^(-+|=+)[ \t]*$/.test(relative);
@@ -337,7 +362,7 @@ export function resolveContainer(
     !(owner.block === "verse" && /^[ \t]/.test(relative)) &&
     !(owner.block === "pipe-table" && hasPipe) &&
     !setext;
-  let marker = false;
+  let marker = projected !== undefined;
   if (canStartItem) {
     // A spaced run of bullets is a thematic break. Once that is ruled out,
     // consume compact markers from left to right using each new item's margin.
@@ -383,7 +408,14 @@ export function resolveContainer(
     relative = relative.slice(quote[0].length);
     marker = true;
   }
-  return { owner, relative, marker, lazy: false, literal: false };
+  return {
+    owner,
+    relative,
+    marker,
+    continued: projected !== undefined && owner === current,
+    lazy: false,
+    literal: false,
+  };
 }
 
 export function canOpenFence(block: BlockContext, fence: FenceLine) {

@@ -8,6 +8,7 @@ import {
   htmlBoundaryCases,
   listBoundaryCases,
   listTransitionCases,
+  successiveFenceCases,
   pipeBody,
 } from "../fixtures/list-block-boundaries";
 
@@ -63,6 +64,14 @@ const topLiteral = code("```python\n" + pipeBody + "\n```");
 
 // Each pair lists the events preceding the final visible H1, first on 2.0 and then on 3.9.
 const readers: Record<string, [unknown[], unknown[]]> = {
+  "second-fence-in-item": [
+    [bulletPython, h1("Middle heading")],
+    [bulletPython, h1("Middle heading"), code("| following | probe |", "sh", ["BulletList"])],
+  ],
+  "second-fence-after-blank": [
+    [bulletPython, h1("Middle heading"), code("```sh\n| following | probe |\n```")],
+    [bulletPython, h1("Middle heading"), code("```sh\n| following | probe |\n```")],
+  ],
   "bullet-outdented-closer": [[bulletPython], [bulletPython]],
   "bullet-outdented-body": [[bulletPython], [bulletPython]],
   "bullet-aligned": [[bulletPython], [bulletPython]],
@@ -153,7 +162,12 @@ const readers: Record<string, [unknown[], unknown[]]> = {
 test("Pandoc list boundaries match the verified readers and top-level controls", async () => {
   await withPandocFixtureDir("md-pdf-list-boundaries", async (dir, runPandoc) => {
     const version = (await runPandoc(["--version"])).stdout.split(/\r?\n/)[0];
-    const cases = [...listBoundaryCases, ...listTransitionCases, ...htmlBoundaryCases];
+    const cases = [
+      ...listBoundaryCases,
+      ...listTransitionCases,
+      ...successiveFenceCases,
+      ...htmlBoundaryCases,
+    ];
     assert.deepEqual(Object.keys(readers).sort(), cases.map(({ name }) => name).sort());
     const path = join(dir, "case.md");
     for (const { name, markdown } of cases) {

@@ -67,6 +67,28 @@ export const listBoundaryCases = [
   ),
 ];
 
+export const successiveFenceCases = [false, true].map((blank) => ({
+  name: blank ? "second-fence-after-blank" : "second-fence-in-item",
+  markdown: [
+    "- Item",
+    "",
+    "  ```python",
+    "  " + pipeBody,
+    "```",
+    ...(blank ? [""] : []),
+    "# Middle heading",
+    "    ```sh",
+    "    | following | probe |",
+    "    ```",
+    "",
+    visible,
+  ].join("\n"),
+  headings: ["Middle heading", "Visible heading"],
+  languages: blank ? ["python"] : ["python", "sh"],
+  rows: blank ? 4 : 3,
+  pipeBodyRows: 0,
+}));
+
 const childTable =
   "- Parent\n  - Child\n\n    | Key | Value |\n    | --- | --- |\n    | x | y |\n\n";
 export const listTransitionCases = [
@@ -168,6 +190,7 @@ export const htmlBoundaryCases = [
 
 // Shared source expectations for the scanner and all three offline authoring entry points.
 export const offlineBoundaryCases = [
+  ...successiveFenceCases,
   ...listBoundaryCases.map(({ name, markdown, fenced }) => ({
     name,
     markdown,
