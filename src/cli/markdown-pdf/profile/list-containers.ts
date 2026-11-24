@@ -9,18 +9,18 @@ const ROMAN = /^M{0,3}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})$/;
 export type BlockContext =
   | "boundary"
   | "paragraph"
-  | "item-prose"
   | "verse"
   | "pipe-table"
   | "definition-term"
   | { definitionIndent: number };
 export function isParagraph(block: BlockContext) {
-  return block === "paragraph" || block === "item-prose";
+  return block === "paragraph";
 }
 
 export class Container {
   block: BlockContext = "boundary";
   proseStart = -1;
+  hasBlankLine = false;
   divDepth = 0;
   openHtmlBlocks?: Map<string, boolean[]>;
   rejectedTilde?: FenceLine;
@@ -45,6 +45,7 @@ export class Container {
   constructor(
     readonly margin = 0,
     readonly parent?: Container,
+    readonly orderedStyle?: string,
   ) {}
 
   fenceRange(lines: string[], index: number, opener: FenceLine) {
@@ -114,10 +115,29 @@ export function isPipeTableSeparator(line: string) {
 function continuesItem(owner: Container, destination: Container, relative: string) {
   if (!isParagraph(owner.block) || !owner.parent) return false;
   const fence = readFenceLine(relative);
-  if (fence) return owner.block === "paragraph" && (fence.indent > 0 || fence.marker === "~");
+  if (fence) return owner.hasBlankLine && (fence.indent > 0 || fence.marker === "~");
   const div = readDivFence(relative);
   if (div) return !!destination.parent && div === "open";
   return !readMarker(relative, destination.margin);
+}
+
+function orderedStyle(marker: string, sibling?: string) {
+  const value = /[a-z]+|\d+|#/i.exec(marker)![0];
+  const delimiter = marker.startsWith("(") ? "paired" : marker.slice(-1);
+  if (value === "#") return sibling?.endsWith(delimiter) ? sibling : "decimal" + delimiter;
+  if (/\d/.test(value)) return "decimal" + delimiter;
+  const upper = value.toUpperCase();
+  const letterCase = value === upper ? "upper" : "lower";
+  const roman = letterCase + "Roman" + delimiter;
+  if (sibling === roman && ROMAN.test(upper)) return roman;
+  const alpha = letterCase + "Alpha" + delimiter;
+  if (sibling === alpha && value.length === 1) return alpha;
+  return value.length > 1 || upper === "I" ? roman : alpha;
+}
+
+function underlinesMarker(line: string, margin: number) {
+  const relative = line.slice(Math.min(/^ */.exec(line)![0].length, margin));
+  return /^(?:=+| {0,3}-+)[ \t]*$/.test(relative);
 }
 
 export function resolveContainer(
@@ -125,6 +145,7 @@ export function resolveContainer(
   line: string,
   index: number,
   hasPipe: boolean,
+  nextLine: string,
 ) {
   let owner = line.trim() ? containerAtIndent(current, line) : current;
   let relative = line.slice(owner.margin);
@@ -132,6 +153,7 @@ export function resolveContainer(
     return { owner: current, relative: line, lazy: true, marker: false, literal: false };
   }
 
+  if (!line.trim()) owner.hasBlankLine = true;
   const setext =
     isParagraph(owner.block) && owner.proseStart === index - 1 && /^(-+|=+)[ \t]*$/.test(relative);
   const canStartItem =
@@ -147,8 +169,19 @@ export function resolveContainer(
     for (;;) {
       const next = readMarker(relative, owner.margin, enclosingSymbol);
       if (!next) break;
+      let listStyle: string | undefined;
+      if (!/^[-+*]$/.test(next.symbol)) {
+        let sibling: Container | undefined = !marker && current !== owner ? current : undefined;
+        while (sibling && sibling.parent !== owner) sibling = sibling.parent;
+        const style = orderedStyle(next.symbol, sibling?.orderedStyle);
+        // At the start of an ordered list, Pandoc gives a Setext title or
+        // dashed simple-table underline precedence over the apparent marker.
+        // A compatible sibling is already inside the ordered list.
+        if (style !== sibling?.orderedStyle && underlinesMarker(nextLine, owner.margin)) break;
+        listStyle = style;
+      }
       owner.block = "boundary";
-      owner = new Container(next.margin, owner);
+      owner = new Container(next.margin, owner, listStyle);
       enclosingSymbol = next.symbol;
       marker = true;
       relative = next.content;
@@ -169,7 +202,6 @@ export function classifyBlock(
   line: string,
   index: number,
   lines: string[],
-  marker: boolean,
   hasPipe: boolean,
 ): BlockContext {
   const previous = owner.block;
@@ -201,5 +233,5 @@ export function classifyBlock(
     if (typeof previous === "object") return previous;
     owner.proseStart = index;
   }
-  return marker || previous === "item-prose" ? "item-prose" : "paragraph";
+  return "paragraph";
 }

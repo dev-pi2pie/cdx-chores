@@ -308,7 +308,7 @@ export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
     const hasPipe = line.includes("|") && scanner.hasPipeDelimiter(position);
     const placement = covered
       ? { owner, relative: line, marker: false, lazy: false, literal: false }
-      : resolveContainer(owner, columns[index]!, index, hasPipe);
+      : resolveContainer(owner, columns[index]!, index, hasPipe, columns[index + 1] ?? "");
     owner = placement.owner;
     const { relative, marker, lazy } = placement;
     const previous = owner.block;
@@ -379,7 +379,7 @@ export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
       : inItem
         ? expandIndent(visibleLine).slice(owner.margin)
         : visibleLine;
-    owner.block = context ?? classifyBlock(owner, blockLine, index, columns, marker, hasPipe);
+    owner.block = context ?? classifyBlock(owner, blockLine, index, columns, hasPipe);
   }
   return { ordinaryLines, fenceLanguages };
 }

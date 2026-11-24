@@ -172,6 +172,37 @@ test("inline code keeps a lazy continuation in the same item", () => {
   expect(collect(source).codeFences.languages).toEqual(["python"]);
 });
 
+test.each([
+  ["tight plain continuation", "- Item\n  note", true],
+  ["tight comment", "- Item\n  <!-- note -->", true],
+  ["loose comment", "- Item\n\n  more\n  <!-- note -->", false],
+  ["tight paragraph after a heading", "- # Title\n  plain", true],
+  ["loose paragraph after a heading", "- # Title\n\n  plain", false],
+] as const)("%s resolves a following document-margin fence", (_name, before, fenced) => {
+  const source = [before, "~~~python", longRow, "~~~", "", "# Visible"].join("\n");
+  const s = collect(source);
+  expect(s.codeFences.languages).toEqual(fenced ? ["python"] : []);
+  expect(s.tables.scannedRows).toBe(fenced ? 0 : 1);
+  expect(s.headings.total).toBe(1);
+});
+
+test.each([
+  ["ordered marker as Setext text", "1. Item\n---", false],
+  ["ordered marker above equals", "a) Item\n===", false],
+  ["bullet containing a Setext heading", "- Item\n---", true],
+  ["continuing ordered list", "1. First\n2. Next\n---", true],
+  ["automatic sibling", "a) First\n#) Next\n---", true],
+  ["new ordered style", "- First\n2. Next\n---", false],
+  ["new ordered delimiter", "1. First\n2) Next\n---", false],
+  ["indented dashed table underline", "1. Item\n  ---", false],
+] as const)("%s determines the margin below the underline", (_name, before, fenced) => {
+  const source = [before, "    ~~~python", "    " + longRow, "    ~~~", "", "# Visible"].join("\n");
+  const s = collect(source);
+  expect(s.codeFences.languages).toEqual(fenced ? ["python"] : []);
+  expect(s.tables.scannedRows).toBe(fenced ? 0 : 1);
+  expect(s.headings.total).toBe(1);
+});
+
 test("repeated unmatched openers leave a later sibling and heading visible", () => {
   const source =
     "- Item\n" + "\n  ~~~~missing\n".repeat(2048) + "- ~~~js\n  code\n  ~~~\n\n# Visible";
