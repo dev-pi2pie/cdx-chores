@@ -65,6 +65,16 @@ const titleControls = [
     keep: false,
   },
   {
+    name: "visible-title-reordered-display",
+    attributes: 'hidden=hidden style="display:flow-root block"',
+    keep: false,
+  },
+  {
+    name: "hidden-title-unsupported-display",
+    attributes: 'style="display:none;display:revert-layer"',
+    keep: true,
+  },
+  {
     name: "visible-title-after-hidden",
     attributes: 'style="display:none"',
     keep: false,
@@ -233,7 +243,7 @@ function checkRenderedHtml(
     assert.equal(attribute(section, "style"), style);
     assert.equal(
       attribute(section, "hidden"),
-      control.name === "visible-title-overrides-hidden" ? "hidden" : undefined,
+      control.attributes.includes("hidden=hidden") ? "hidden" : undefined,
     );
     assert.deepEqual(elements(section, "h1").map(text), [control.later ? "Earlier" : "Report"]);
     assert.deepEqual(elements(main, "h1").map(text), [

@@ -1,11 +1,27 @@
 import { normalizeCssForInspection } from "./css-inspection";
 
 type Visibility = "visible" | "hidden" | "omitted";
-const cssWide = /^(?:initial|inherit|unset|revert|revert-layer)$/u;
-// Recognize explicit box-generating display values. An invalid declaration
-// must not cancel a preceding display:none or override the HTML hidden attribute.
-const displayBox =
-  /^(?:block|inline|inline-block|list-item|flow|flow-root|flex|inline-flex|grid|inline-grid|table|inline-table|table-(?:caption|cell|column|column-group|row|row-group|header-group|footer-group)|(?:block|inline)\s+(?:flow|flow-root|flex|grid|table))$/u;
+const singleDisplayBox =
+  /^(?:inline-(?:block|flex|grid|table)|table-(?:caption|cell|column|column-group|row|row-group|header-group|footer-group))$/u;
+const insideDisplay = new Set(["flow", "flow-root", "flex", "grid", "table"]);
+
+// WeasyPrint accepts one outside keyword, one inside keyword, and an optional
+// list-item in any order. List items only support flow and flow-root.
+function generatesBox(value: string): boolean {
+  if (singleDisplayBox.test(value)) return true;
+  const tokens = value.split(/\s+/u);
+  if (tokens.length > 3) return false;
+  let outside = false;
+  let inside: string | undefined;
+  let listItem = false;
+  for (const token of tokens) {
+    if (!outside && (token === "block" || token === "inline")) outside = true;
+    else if (!inside && insideDisplay.has(token)) inside = token;
+    else if (!listItem && token === "list-item") listItem = true;
+    else return false;
+  }
+  return !listItem || !inside || inside === "flow" || inside === "flow-root";
+}
 
 function* declarations(style: string) {
   const { css } = normalizeCssForInspection(style, {
@@ -19,7 +35,7 @@ function* declarations(style: string) {
     const char = token[0];
     if (char === "" || (char === ";" && depth === 0)) {
       const match =
-        /^\s*(display|visibility|all)\s*:\s*([a-z-]+(?:\s+[a-z-]+)*?)\s*(!\s*important)?\s*$/u.exec(
+        /^\s*(display|visibility)\s*:\s*([a-z-]+(?:\s+[a-z-]+)*?)\s*(!\s*important)?\s*$/u.exec(
           css.slice(start, token.index),
         );
       if (match) yield { property: match[1], value: match[2]!, important: !!match[3] };
@@ -51,19 +67,16 @@ export function titleBlockVisibility(
   let displayImportant = false;
   let visibilityImportant = false;
   for (const { property, value, important } of declarations(style)) {
-    const wide = cssWide.test(value);
+    const wide = value === "initial" || value === "inherit";
     if (
-      (property === "display" || (property === "all" && wide)) &&
+      property === "display" &&
       (!displayImportant || important) &&
-      (value === "none" || wide || displayBox.test(value))
+      (value === "none" || wide || generatesBox(value))
     ) {
-      omitted = value === "none" || (value.startsWith("revert") && hiddenAttribute);
+      omitted = value === "none";
       displayImportant = important;
     }
-    if (
-      (property === "visibility" || (property === "all" && wide)) &&
-      (!visibilityImportant || important)
-    ) {
+    if (property === "visibility" && (!visibilityImportant || important)) {
       if (value === "hidden" || value === "collapse") visibility = "hidden";
       else if (value === "visible" || value === "initial") visibility = "visible";
       else if (wide) visibility = inherited;

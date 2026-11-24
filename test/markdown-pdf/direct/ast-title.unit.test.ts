@@ -80,6 +80,30 @@ describe("Pandoc AST title comparison", () => {
     );
   });
 
+  test.each([
+    ["flow-root block", true],
+    ["block flow-root list-item", true],
+    ["block list-item flow-root", true],
+    ["flow-root block list-item", true],
+    ["flow-root list-item block", true],
+    ["list-item block flow-root", true],
+    ["list-item flow-root block", true],
+    ["list-item inline", true],
+    ["inline-grid", true],
+    ["flow-root flow", false],
+    ["inline block", false],
+    ["list-item list-item", false],
+    ["flex list-item", false],
+    ["revert-layer", false],
+    ["bogus", false],
+  ] as const)("resolves a display override after display:none: %s", (display, suppress) => {
+    const attrs = ["", [], [["style", `display:none; display:${display}`]]];
+    const node = { t: "Div", c: [attrs, [header(1, guide)]] };
+    expect(shouldSuppressMarkdownPdfMetadataTitle(document(meta(guide), node), "Guide")).toBe(
+      suppress,
+    );
+  });
+
   test("continues past an explicitly hidden subtree", () => {
     const hidden = { t: "Div", c: [["", [], [["hidden", ""]]], [header(1, str("Earlier"))]] };
     expect(
