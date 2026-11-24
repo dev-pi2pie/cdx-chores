@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { parse, type DefaultTreeAdapterTypes as Html } from "parse5";
+import { parse, parseFragment, type DefaultTreeAdapterTypes as Html } from "parse5";
 
 import {
   executePlannedMarkdownPdfRender,
@@ -12,6 +12,7 @@ import type { ExecCommandResult } from "../../../../src/cli/process";
 import { createCapturedRuntime } from "../../../helpers/cli-test-utils";
 import { htmlBoundaryCases, listBoundaryCases, pipeBody } from "../fixtures/list-block-boundaries";
 import { ok } from "./render-support";
+import { attribute, boundaryStructure, elements, text } from "./rendered-html";
 
 const quickstart = "https://example.com/quickstart";
 const reference = "https://example.com/reference";
@@ -24,18 +25,21 @@ const customTemplate = [
 ].join("\n");
 
 const boundaryTitle = "Boundary report";
-const boundaryRenderFixtures = ["numbered", "document-literal", "comment-item-early-close"].flatMap(
-  (boundary) => {
-    const body = [...listBoundaryCases, ...htmlBoundaryCases].find(({ name }) => name === boundary);
-    assert(body, boundary);
-    return [false, true].map((split) => ({
-      name: boundary + (split ? " via JSON" : " direct"),
-      boundary,
-      split,
-      markdown: (split ? `---\ntitle: ${boundaryTitle}\n---\n\n` : "") + body.markdown,
-    }));
-  },
-);
+const boundaryRenderFixtures = [
+  "numbered",
+  "document-literal",
+  "comment-item-early-close",
+  "textarea-item",
+].flatMap((boundary) => {
+  const body = [...listBoundaryCases, ...htmlBoundaryCases].find(({ name }) => name === boundary);
+  assert(body, boundary);
+  return [false, true].map((split) => ({
+    name: boundary + (split ? " via JSON" : " direct"),
+    boundary,
+    split,
+    markdown: (split ? `---\ntitle: ${boundaryTitle}\n---\n\n` : "") + body.markdown,
+  }));
+});
 
 interface RenderFixture {
   name: string;
@@ -104,83 +108,72 @@ export const astRenderFixtures: RenderFixture[] = [
   ...boundaryRenderFixtures,
 ];
 
-function elements(root: Html.Node, tag: string): Html.Element[] {
-  const own = "tagName" in root && root.tagName === tag ? [root] : [];
-  return "childNodes" in root
-    ? own.concat(root.childNodes.flatMap((node) => elements(node, tag)))
-    : own;
-}
-
-function attribute(node: Html.Element, name: string) {
-  return node.attrs.find((attr) => attr.name === name)?.value;
-}
-
-function text(node: Html.Node): string {
-  if ("value" in node) return node.value;
-  return "childNodes" in node ? node.childNodes.map(text).join("") : "";
-}
-
 function links(node: Html.Node) {
   return elements(node, "a").map((link) => attribute(link, "href"));
 }
 
-function checkBoundaryHtml(fixture: RenderFixture, main: Html.Element, version: string) {
-  const recovery = fixture.boundary === "comment-item-early-close";
-  const literal = fixture.boundary === "document-literal";
-  const headings = recovery ? ["Recovered heading", "Visible heading"] : ["Visible heading"];
-  if (fixture.split) headings.unshift(boundaryTitle);
-  assert.deepEqual(elements(main, "h1").map(text), headings);
+function checkBoundaryHtml(
+  fixture: RenderFixture,
+  main: Html.Element,
+  reference: { html: string; version: string },
+) {
+  const expected = boundaryStructure(parseFragment(reference.html));
+  if (fixture.split) expected.headings.unshift(boundaryTitle);
+  const actual = boundaryStructure(main);
+  assert.deepEqual(actual, expected, fixture.name + " on " + reference.version);
 
-  const lists = elements(main, "ol");
-  const items = lists.flatMap((ol) => elements(ol, "li"));
-  assert.equal(lists.length, literal ? 0 : 1);
-  assert.equal(items.length, literal ? 0 : 1);
-  const item = items[0];
-  if (item) {
-    assert.match(text(item), /^\s*Item\b/);
-    if (!recovery) assert(text(item).includes(pipeBody), "missing numbered item's pipe text");
+  const old = reference.version === "pandoc 2.0";
+  if (!old && reference.version !== "pandoc 3.9") return;
+  const headings =
+    fixture.boundary === "comment-item-early-close"
+      ? ["Recovered heading", "Visible heading"]
+      : ["Visible heading"];
+  if (fixture.split) headings.unshift(boundaryTitle);
+  assert.deepEqual(actual.headings, headings);
+  const js = { text: "\n# Example heading", languages: ["js"], lists: [] };
+  if (fixture.boundary === "numbered") {
+    assert.equal(actual.items.length, 1);
+    assert.deepEqual(actual.items[0]!.lists, ["ol"]);
+    assert(actual.items[0]!.text.includes(pipeBody));
+    assert.deepEqual(
+      actual.blocks,
+      old ? [] : [{ text: pipeBody, languages: ["python"], lists: ["ol", "li"] }],
+    );
   }
-  const nested = item ? elements(item, "pre") : [];
-  const blocks = elements(main, "pre").map((pre) => {
-    const [code] = elements(pre, "code");
-    assert(code, "missing code inside pre");
-    const classes = (attribute(pre, "class") ?? "").split(/\s+/).filter(Boolean);
-    return {
-      text: text(code),
-      languages: classes.filter((c) => c !== "sourceCode"),
-      inItem: nested.includes(pre),
-    };
-  });
-  if (literal) {
-    assert.deepEqual(blocks, [
-      { text: "```python\n" + pipeBody + "\n```", languages: [], inItem: false },
+  if (fixture.boundary === "document-literal") {
+    assert.deepEqual(actual.blocks, [
+      { text: "```python\n" + pipeBody + "\n```", languages: [], lists: [] },
     ]);
-    return;
   }
-  // Only the list-fence decision varies between the two reader baselines.
-  const trailing = recovery
-    ? [{ text: "\n# Example heading", languages: ["js"], inItem: false }]
-    : [];
-  const fenced = [
-    { text: recovery ? "-->" : pipeBody, languages: [recovery ? "sh" : "python"], inItem: true },
-    ...trailing,
-  ];
-  if (version === "pandoc 2.0") assert.deepEqual(blocks, trailing);
-  else if (version === "pandoc 3.9") assert.deepEqual(blocks, fenced);
-  else assert.deepEqual(blocks, nested.length ? fenced : trailing);
+  if (fixture.boundary === "comment-item-early-close") {
+    assert.deepEqual(
+      actual.blocks,
+      old ? [js] : [{ text: "-->", languages: ["sh"], lists: ["ol", "li"] }, js],
+    );
+  }
+  if (fixture.boundary === "textarea-item") {
+    // 2.0 emits its recovered AST heading inside the textarea, where HTML treats it as text.
+    assert.equal(actual.textareas.length, 1);
+    assert(
+      actual.textareas[0]!.includes(
+        old ? '<h1 id="recovered-heading">Recovered heading</h1>' : "# Recovered heading",
+      ),
+    );
+    assert.deepEqual(actual.blocks, old ? [js] : [{ text: "~~~", languages: [], lists: [] }, js]);
+  }
 }
 
 function checkRenderedHtml(
-  fixture: (typeof astRenderFixtures)[number],
+  fixture: RenderFixture,
   html: string,
   sourcefile: string,
-  version: string,
+  readerOutput?: { html: string; version: string },
 ) {
   const doc = parse(html);
   const [main] = elements(doc, "main");
   assert(main, "missing rendered main body");
-  if (fixture.boundary) {
-    checkBoundaryHtml(fixture, main, version);
+  if (readerOutput) {
+    checkBoundaryHtml(fixture, main, readerOutput);
     return;
   }
   const titleBlocks = elements(main, "header").filter(
@@ -243,7 +236,7 @@ function checkRenderedHtml(
 export async function verifyAstRenderFixture(
   dir: string,
   runPandoc: (args: readonly string[], cwd: string) => Promise<ExecCommandResult>,
-  fixture: (typeof astRenderFixtures)[number],
+  fixture: RenderFixture,
   sourceArgument = (path: string) => path,
 ) {
   const input = join(dir, "context.md");
@@ -258,6 +251,15 @@ export async function verifyAstRenderFixture(
   );
   await writeFile(input, fixture.markdown);
   if (fixture.template) await writeFile(template, fixture.template);
+  // Compare both routes to a standalone invocation of this reader and writer on the original input.
+  let referenceHtml: { html: string; version: string } | undefined;
+  if (fixture.boundary) {
+    const version = await runPandoc(["--version"], dir);
+    const fragment = await runPandoc([input, "--from", "markdown", "--to", "html"], dir);
+    assert(version.ok, version.stderr);
+    assert(fragment.ok, fragment.stderr);
+    referenceHtml = { html: fragment.stdout, version: version.stdout.split(/\r?\n/)[0]! };
+  }
   const { runtime } = createCapturedRuntime({ cwd: dir });
   const prepared = await prepareMarkdownPdfRender(runtime, {
     input,
@@ -300,9 +302,6 @@ export async function verifyAstRenderFixture(
   const html = await readFile(publishedHtml, "utf8");
   assert.equal(rendererInput, html);
   assert.equal(await readFile(output, "utf8"), "%PDF stub");
-  const version = fixture.boundary
-    ? (await runPandoc(["--version"], dir)).stdout.split(/\r?\n/)[0]!
-    : "";
-  checkRenderedHtml(fixture, html, sourceArgument(input), version);
+  checkRenderedHtml(fixture, html, sourceArgument(input), referenceHtml);
   return publishedHtml;
 }

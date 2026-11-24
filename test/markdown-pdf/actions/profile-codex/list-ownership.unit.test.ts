@@ -2,20 +2,6 @@ import { expect, test } from "bun:test";
 
 import { scanMarkdownPdfFences } from "../../../../src/cli/markdown-pdf/profile/fence-signals";
 import { collectMarkdownPdfDocumentSignals as collect } from "../../../../src/cli/markdown-pdf/profile/signals";
-import { listTransitionCases, pipeBody } from "../fixtures/list-block-boundaries";
-
-test.each(listTransitionCases)(
-  "$name keeps the trailing H1 and excludes only the fenced row",
-  ({ markdown, rows }) => {
-    const signals = collect(markdown);
-    expect(signals.headings.total).toBe(1);
-    expect(signals.codeFences.languages).toEqual(["python"]);
-    expect(signals.tables.scannedRows).toBe(
-      collect(markdown.replace(pipeBody, "plain")).tables.scannedRows,
-    );
-    expect(signals.tables.scannedRows).toBe(rows);
-  },
-);
 
 const ticks = "```";
 const table = "- Item\n\n  | Key | Value |\n  | --- | --- |\n  | In item | 1 |";

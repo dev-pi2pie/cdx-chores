@@ -19,7 +19,7 @@ assert(availability === "present" || availability === "absent");
 assert.equal(Boolean(Bun.which("pandoc")), availability === "present");
 
 const labels = Array.from({ length: 13 }, (_, index) => "example-" + (index + 1));
-const wideRow = "| Original source width | 1 |";
+const wideRow = "  | Original source width | 1 |";
 const markdown = [
   "---\ntitle: Visible report\nlang: en\n---",
   "<textarea>\n\n# Literal heading\n\n| Literal | Row |\n\n~~~hidden\ncode\n~~~\n</textarea>",
