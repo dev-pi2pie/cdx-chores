@@ -246,4 +246,23 @@ On the two reported fixtures, the existing tagged-PDF check took 213–223 ms an
 
 Independent review of `9d578d9d...35a1ab3c` found no new actionable issues. On Pandoc 3.9 and WeasyPrint 70.0, the reviewer reproduced both cut-off titles. Every glyph box changed in the paired prints, although each title retained less than half the changed pixels of its unobscured control. All 2,730 unit tests passed in review. This clears the experiment checkpoint. The two production findings and final canary clearance remain open.
 
-The [next experiment](../../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#pending-experiment-on-unobscured-title-text) is pending. It keeps the heading and letter spacing fixed while varying clipping and the position of an overlay. The [Follow-Up checklist](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css) tracks that decision before implementation.
+## Unobscured title experiment
+
+At `ec6e5a9a`, the built CLI rendered nine fixtures in `auto`, `show`, and `hide` on each of Pandoc 2.0 and 3.9 with WeasyPrint 70.0. The Markdown and styles were identical across readers. The current CLI produced the `show` page for all four letter-spaced variants and the `hide` page for the transparent title. The results below are from the separate prototype.
+
+The prototype started with each reader’s Pandoc JSON and built-in HTML template output. It omitted the metadata header for the proof, associated the source H1 with its WeasyPrint text draw, and replayed that draw in isolation using the embedded font and original transform. It required a complete matching glyph sequence inside the page and active rectangular clips. Intersecting later paint or missing evidence kept the header. For a positive decision it checked every ink pixel of the isolated run against the proof and checked for a white backdrop by muting just that run. It then printed its chosen HTML independently of the explicit controls.
+
+| Fixture | Expected and observed on both readers |
+| --- | --- |
+| Fully visible letter-spaced `Report`, with and without the overlay in clear space | `hide` for both. The heading supplied the complete title. |
+| Letter-spaced heading clipped to `.65em` or covered across its lower half | `show` for both. The glyph bounds extended outside the clip or intersected later paint. |
+| Letter-spaced heading with a `2em`-high clip | `hide`. The glyph bounds fit inside the clip. |
+| Transparent title after an inline-hidden H1, hidden emphasis, H1 hidden by `:first-child` | `show` for all three. |
+| Ordinary visible navy title | `hide`. |
+| Visible letter-spaced title with identity evidence withheld, then with identity known but visibility evidence withheld | `show` for each independent injection. |
+
+For the overlay pair, `#report` had relative positioning and `letter-spacing: .25em`. Its white, absolutely positioned `::after` rectangle was `8em` wide with `top: 50%` and `bottom: 0`. Moving only `left` from `0` to `10em` put the same rectangle in clear space on the page. The clipped pair used `overflow: hidden` and varied only the height. [Fixture expectations](../../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#experiment-on-unobscured-title-text)
+
+All 22 candidate PDFs matched only the expected explicit control from their own reader. MuPDF and Poppler independently compared the full rasterized pages. The selected HTML agreed on header presence in every case. The four paired cases each needed one WeasyPrint proof, the same count as the current check. Positive decisions additionally rasterized the original proof and two in-memory PDF variants. Across the eight reader/fixture combinations, median proof time was 211–216 ms for the current check and 265–289 ms for the prototype, including proof inspection and excluding the final print. Each median used three timed runs after warm-up.
+
+**Decision.** The bounded experiment passed. The positive evidence covers a single opaque text run on white with known source identity. Obtaining that identity through the production renderer boundary, choosing the fallback for unsupported paint, and weighing the added proof cost remain open. [Follow-Up checklist](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)

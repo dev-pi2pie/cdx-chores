@@ -156,9 +156,9 @@ The experiment printed the same page twice, suppressing only the selected headin
 
 A heading styled with `#report { overflow: hidden; height: .65em }` exposed a limit. The PDF contained all six characters in “Report”, and every glyph’s bounding box contained changed pixels. The page showed only the tops of the letters. An opaque overlay across the lower half of the heading produced the same false result on both readers. This rules out using a pixel change per glyph as the test for complete visibility. [Experiment and timings](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up-experiment-on-complete-title-visibility)
 
-### Pending experiment on unobscured title text
+### Experiment on unobscured title text
 
-Can the renderer recognize an ordinary styled title in full and keep the metadata block when the same title is partly obscured? The candidate would establish that the complete text belongs to the source H1, fits inside the page and its clipping boundaries, and remains visible after later content is painted. If the evidence runs out, the candidate keeps the block. The experiment starts with contrasting text on a plain background to make each change visible. The background and CSS declarations below are fixture choices.
+Can the renderer recognize an ordinary styled title in full and keep the metadata block when the same title is partly obscured? The prototype traced an eligible source H1 to its text draw, replayed the embedded glyphs in isolation, and checked their bounds against the page, the active clip, and later paint. It also compared the complete isolated letter shapes with the printed page on a plain white background. The background and CSS declarations below are fixture choices.
 
 Use the same metadata title `Report`, first body H1 `# Report {#report}`, and `letter-spacing: .25em` in all four variants. Each expected page comes from rendering that variant with the specified explicit mode.
 
@@ -171,7 +171,9 @@ Use the same metadata title `Report`, first body H1 `# Report {#report}`, and `l
 
 On both readers the original transparent-heading case must match `show`, as must hidden emphasis and the `:first-child` selector. The visible navy heading must match `hide`. Use the fully visible letter-spaced fixture for two independent fallback checks. First withhold the evidence linking the printed text to its source H1. Then identify the H1 but withhold the evidence that its text is unobscured. Each decision must keep the metadata block and produce the `show` page.
 
-On each reader, explicit `show` and `hide` pages must be distinguishable before they can serve as controls. The candidate makes its decision from the title-omitted layout. The page comparisons then test that decision. If a control fails, revisit the approach before changing production code or guide wording. [Follow-up phase](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
+All four variants matched their expected pages on Pandoc 2.0 and 3.9. A second clipping control left enough room for the complete title and matched `hide` on both. The prototype also retained the block when identity or visibility evidence was withheld. The explicit controls were distinguishable in every case and served only to check the decision. [Results and proof cost](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#unobscured-title-experiment)
+
+This establishes feasibility for a single opaque text run on white. The prototype observed the source H1 inside WeasyPrint as it was drawn. How the CLI could obtain equally reliable source identity, and when it should keep the block outside this tested case, remain open implementation questions. [Follow-up phase](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
 
 ## Related Plans
 
