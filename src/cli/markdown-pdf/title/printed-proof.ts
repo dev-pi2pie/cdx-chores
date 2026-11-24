@@ -1,0 +1,318 @@
+import { readFile, stat, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { isDeepStrictEqual } from "node:util";
+import type {
+  PDFDocumentProxy,
+  PDFOperatorList,
+  PDFPageProxy,
+  StructTreeNode,
+} from "pdfjs-dist/types/src/display/api";
+
+export interface SourceTitleProbe {
+  id: string;
+  earlierIds: string[];
+  text: string;
+  substitute: string;
+  html: string;
+}
+
+interface TitleEvidence {
+  sourceId?: string;
+  complete?: boolean;
+}
+
+interface TextRun {
+  index: number;
+  mcid: number;
+  text: string;
+}
+
+type PdfJs = typeof import("pdfjs-dist/legacy/build/pdf.mjs");
+type Operators = PdfJs["OPS"];
+
+interface HeadingProof {
+  pages: number;
+  emptyHeadings: number;
+  page: PDFPageProxy;
+  operators: PDFOperatorList;
+  destinations: Map<string, unknown>;
+  tree: StructTreeNode;
+  runs: TextRun[];
+}
+
+function* bodyHeadings(node: StructTreeNode, inBody = false): Generator<StructTreeNode> {
+  if (["BlockQuote", "L", "Table", "Note"].includes(node.role)) return;
+  // The built-in template's main element is a Part in a WeasyPrint tagged PDF.
+  inBody ||= node.role === "Part";
+  if (inBody && node.role === "H1") {
+    yield node;
+    return;
+  }
+  for (const child of node.children) {
+    if ("role" in child) yield* bodyHeadings(child, inBody);
+  }
+}
+
+function* contentIds(node: StructTreeNode): Generator<number> {
+  for (const child of node.children) {
+    if ("role" in child) {
+      yield* contentIds(child);
+    } else if (child.type === "content") {
+      const match = /_mc(\d+)$/u.exec(child.id);
+      if (match) yield Number(match[1]);
+    }
+  }
+}
+
+function isEmptyHeading(node: StructTreeNode, emptyContent: Set<number>): boolean {
+  return (
+    node.children.length > 0 &&
+    node.children.every((child) => {
+      if ("role" in child) return isEmptyHeading(child, emptyContent);
+      const match = /_mc(\d+)$/u.exec(child.id);
+      return child.type === "content" && !!match && emptyContent.has(Number(match[1]));
+    })
+  );
+}
+
+function readRuns(
+  operators: PDFOperatorList,
+  include: (id: number) => boolean,
+  ops: Operators,
+): TextRun[] {
+  const runs: TextRun[] = [];
+  const stack: (number | undefined)[] = [];
+  for (const [index, code] of operators.fnArray.entries()) {
+    const args = operators.argsArray[index];
+    if (code === ops.beginMarkedContentProps) {
+      stack.push(typeof args[1] === "number" ? args[1] : undefined);
+    } else if (code === ops.beginMarkedContent) {
+      stack.push(undefined);
+    } else if (code === ops.endMarkedContent) {
+      stack.pop();
+    } else if (code === ops.showText) {
+      const mcid = stack.at(-1);
+      if (mcid === undefined || !include(mcid)) continue;
+      // TJ numbers adjust position. Only the embedded glyphs supply source text.
+      const glyphs: (number | { unicode: string })[] = args[0];
+      const text = glyphs.map((glyph) => (typeof glyph === "number" ? "" : glyph.unicode)).join("");
+      runs.push({ index, mcid, text });
+    }
+  }
+  return runs;
+}
+
+async function firstHeadingPage(document: PDFDocumentProxy) {
+  for (let number = 1; number <= document.numPages; number++) {
+    const page = await document.getPage(number);
+    const tree = await page.getStructTree();
+    if (!tree) return;
+    const headings = Array.from(bodyHeadings(tree));
+    if (headings.length) return { page, tree, headings };
+    page.cleanup();
+  }
+}
+
+async function inspectPdf(
+  pdf: PdfJs,
+  file: string,
+  inspect: (proof: HeadingProof) => Promise<TitleEvidence>,
+): Promise<TitleEvidence> {
+  // Bound memory for documents with large embedded assets before opening both proofs.
+  if ((await stat(file)).size > 16 * 1024 * 1024) return {};
+  const task = pdf.getDocument({
+    data: new Uint8Array(await readFile(file)),
+    disableFontFace: true,
+    useSystemFonts: false,
+    useWorkerFetch: false,
+    verbosity: pdf.VerbosityLevel.ERRORS,
+  });
+  try {
+    const document = await task.promise;
+    const first = await firstHeadingPage(document);
+    if (!first) return {};
+    const { page, tree, headings } = first;
+    const operators = await page.getOperatorList();
+    if (operators.fnArray.length > 50_000) return {};
+    // visibility:hidden can leave an H1 tag and a destination in the PDF.
+    // Advance only if all of its marked spans contain no commands at all.
+    const emptyContent = new Set<number>();
+    for (const [i, op] of operators.fnArray.entries()) {
+      if (
+        op === pdf.OPS.beginMarkedContentProps &&
+        operators.fnArray[i + 1] === pdf.OPS.endMarkedContent
+      ) {
+        emptyContent.add(operators.argsArray[i][1]);
+      }
+    }
+    let emptyHeadings = 0;
+    for (const heading of headings) {
+      if (isEmptyHeading(heading, emptyContent)) {
+        emptyHeadings++;
+        continue;
+      }
+      const ids = new Set(contentIds(heading));
+      const runs = readRuns(operators, (id) => ids.has(id), pdf.OPS);
+      if (!runs.length) return {};
+      return await inspect({
+        pages: document.numPages,
+        emptyHeadings,
+        page,
+        tree,
+        operators,
+        runs,
+        destinations: await document.getDestinations(),
+      });
+    }
+    return {};
+  } finally {
+    await task.destroy();
+  }
+}
+
+function admitsEarlierHeadings(
+  proof: HeadingProof,
+  candidate: SourceTitleProbe,
+  ops: Operators,
+): boolean {
+  const destination = proof.destinations.get(candidate.id);
+  let anchored = 0;
+  for (const id of candidate.earlierIds) {
+    const prior = proof.destinations.get(id);
+    if (prior === undefined) continue;
+    if (
+      !Array.isArray(prior) ||
+      !isDeepStrictEqual(prior[0], proof.page.ref) ||
+      isDeepStrictEqual(prior, destination)
+    )
+      return false;
+    anchored++;
+  }
+  if (anchored <= proof.emptyHeadings) return anchored === proof.emptyHeadings;
+
+  // A running H1 can retain a page destination and print in a margin box
+  // outside the structure tree. Only advance when there is one possible body
+  // H1 after the empty tags; a second one could be a reordered earlier heading.
+  if (Array.from(bodyHeadings(proof.tree)).length !== proof.emptyHeadings + 1) return false;
+  const semantic = new Set(contentIds(proof.tree));
+  const furniture = readRuns(proof.operators, (id) => !semantic.has(id), ops);
+  return (
+    new Set(furniture.filter((run) => run.text.trim()).map((run) => run.mcid)).size >=
+    anchored - proof.emptyHeadings
+  );
+}
+
+function comparableArgs(code: number, args: unknown, ops: Operators): unknown {
+  if ((code === ops.setFont || code === ops.dependency) && Array.isArray(args)) {
+    // PDF.js prefixes equivalent font resource IDs with each loading task's ID.
+    return args.map((arg: unknown) =>
+      typeof arg === "string" ? arg.replace(/^g_d\d+_/u, "") : arg,
+    );
+  }
+  return args;
+}
+
+function isolatedChange(
+  original: HeadingProof,
+  marked: HeadingProof,
+  substitute: string,
+  ops: Operators,
+): boolean {
+  if (
+    original.pages !== marked.pages ||
+    original.page.pageNumber !== marked.page.pageNumber ||
+    original.runs.length !== marked.runs.length ||
+    marked.runs.map((run) => run.text).join("") !== substitute ||
+    !isDeepStrictEqual(original.tree, marked.tree) ||
+    !isDeepStrictEqual(original.destinations, marked.destinations) ||
+    !isDeepStrictEqual(original.operators.fnArray, marked.operators.fnArray)
+  )
+    return false;
+
+  const changed = new Set<number>();
+  for (const [index, before] of original.runs.entries()) {
+    const after = marked.runs[index]!;
+    if (
+      before.index !== after.index ||
+      before.mcid !== after.mcid ||
+      before.text.length !== after.text.length
+    )
+      return false;
+    if (before.text === after.text) {
+      if (before.text.trim()) return false;
+    } else {
+      changed.add(before.index);
+    }
+  }
+  return (
+    changed.size > 0 &&
+    original.operators.fnArray.every(
+      (code, index) =>
+        changed.has(index) ||
+        isDeepStrictEqual(
+          comparableArgs(code, original.operators.argsArray[index], ops),
+          comparableArgs(code, marked.operators.argsArray[index], ops),
+        ),
+    )
+  );
+}
+
+export async function inspectPrintedTitle(
+  html: string,
+  tempDir: string,
+  print: (htmlPath: string, pdfPath: string) => Promise<boolean>,
+  candidates: readonly SourceTitleProbe[],
+): Promise<TitleEvidence> {
+  const render = async (stem: string, content: string) => {
+    const path = join(tempDir, stem + ".html");
+    const out = join(tempDir, stem + ".pdf");
+    await writeFile(path, content);
+    return (await print(path, out)) ? out : undefined;
+  };
+  try {
+    if (!candidates.length) return {};
+    const path = await render("title-proof", html);
+    if (!path) return {};
+    const pdf = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    return await inspectPdf(pdf, path, async (original) => {
+      const printed = original.runs.map((run) => run.text).join("");
+      const candidate = candidates.find((candidate) => {
+        const dest = original.destinations.get(candidate.id);
+        return (
+          candidate.text === printed &&
+          candidate.text !== candidate.substitute &&
+          Array.isArray(dest) &&
+          isDeepStrictEqual(dest[0], original.page.ref)
+        );
+      });
+      if (!candidate || !admitsEarlierHeadings(original, candidate, pdf.OPS)) return {};
+      const destination = original.destinations.get(candidate.id);
+      if (
+        candidates.some(
+          (other) =>
+            other.id !== candidate.id &&
+            isDeepStrictEqual(original.destinations.get(other.id), destination),
+        )
+      )
+        return {};
+      const markedPath = await render("title-substitution", candidate.html);
+      if (!markedPath) return {};
+      return inspectPdf(pdf, markedPath, async (marked) => {
+        if (!isolatedChange(original, marked, candidate.substitute, pdf.OPS)) return {};
+        const identity = { sourceId: candidate.id };
+        try {
+          const { hasVisibleGlyphs } = await import("./visible-glyphs");
+          return {
+            ...identity,
+            complete: await hasVisibleGlyphs(original.page, original.operators, original.runs),
+          };
+        } catch {
+          return identity;
+        }
+      });
+    });
+  } catch {
+    // Missing inspection support or an unreadable proof keeps the metadata block.
+    return {};
+  }
+}

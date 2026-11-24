@@ -108,17 +108,17 @@ export function shouldSuppressMarkdownPdfMetadataTitle(
   const heading = firstH1(document.blocks);
   if (!heading || heading === "unknown") return false;
 
-  return titleMatcher(document.meta.title)(heading);
+  return titleMatcher(document.meta.title)(heading).matches;
 }
 
 function titleMatcher(metadata: unknown) {
   const titleLinks: TitleLink[] = [];
   const title = normalizeText(projectMetadataTitle(metadata, titleLinks) ?? "");
-  return (heading: unknown[]): boolean => {
-    if (!title) return false;
+  return (heading: unknown[]) => {
     const headingLinks: TitleLink[] = [];
     const text = projectInlines(heading[2], headingLinks);
-    return (
+    const matches =
+      title.length > 0 &&
       text !== undefined &&
       title === normalizeText(text) &&
       titleLinks.every((link) =>
@@ -126,14 +126,15 @@ function titleMatcher(metadata: unknown) {
           (candidate) =>
             candidate.label === link.label && candidate.destination === link.destination,
         ),
-      )
-    );
+      );
+    return { text, matches };
   };
 }
 
 export interface StyledTitleHeading {
   id: string;
   matches: boolean;
+  text?: string;
 }
 
 /** Author styles can also reveal an earlier inline-hidden heading. Preserve document order. */
@@ -142,7 +143,7 @@ export function styledTitleHeadings(document: unknown): StyledTitleHeading[] {
   const matches = titleMatcher(document.meta.title);
   const headings = Array.from(bodyHeadings(document.blocks), (heading) => ({
     id: Array.isArray(heading[1]) && typeof heading[1][0] === "string" ? heading[1][0] : "",
-    matches: matches(heading),
+    ...matches(heading),
   }));
   return headings.some((heading) => heading.matches) ? headings : [];
 }

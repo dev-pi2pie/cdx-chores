@@ -24,12 +24,12 @@ export function failing(stderr: string): ExecCommandResult {
   };
 }
 
-export function pandocTitleJson(title: string, heading: string): string {
+export function pandocTitleJson(title: string, heading: string, id = "heading"): string {
   const text = (c: string) => ({ t: "Str", c });
   return JSON.stringify({
     "pandoc-api-version": [1, 23, 1, 1],
     meta: { title: { t: "MetaInlines", c: [text(title)] } },
-    blocks: [{ t: "Header", c: [1, ["heading", [], []], [text(heading)]] }],
+    blocks: [{ t: "Header", c: [1, [id, [], []], [text(heading)]] }],
   });
 }
 

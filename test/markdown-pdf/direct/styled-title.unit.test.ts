@@ -6,40 +6,73 @@ const body =
   '<h1 id="earlier" style="display:none">Earlier</h1><h1 id="report">Re<em>port</em></h1>';
 const html = '<main class="document-body">' + header + body + "</main>";
 const headings = [
-  { id: "earlier", matches: false },
-  { id: "report", matches: true },
+  { id: "earlier", matches: false, text: "Earlier" },
+  { id: "report", matches: true, text: "Report" },
 ];
+const input = { html, customStyle: true, inlineMatch: true, headings };
 
-test.each([
-  ["the stylesheet hides the matching heading", [], true],
-  ["the entire matching heading prints", ["Report"], false],
-  ["a hidden earlier heading leaves an empty tag", ["", "Report"], false],
-  ["a stylesheet reveals the earlier heading", ["Earlier", "Report"], true],
-  ["only part of the title prints", ["port"], true],
-] as const)("%s", async (_label, visible, keep) => {
+test("the substitution changes only the matching heading text, preserving emphasis and source order", async () => {
   const result = await resolveStyledTitle({
-    html,
-    headings,
-    customStyle: true,
-    inlineMatch: true,
-    inspect: async (probe) => {
-      expect(probe).toBe(html.replace(header, ""));
-      return [...visible];
+    ...input,
+    inspect: async (original, candidates) => {
+      expect(original).toBe(html.replace(header, ""));
+      expect(candidates).toHaveLength(1);
+      const candidate = candidates[0]!;
+      expect(candidate.earlierIds).toEqual(["earlier"]);
+      expect(candidate.id).toBe("report");
+      expect(candidate.text).toBe("Report");
+      expect(candidate.substitute).toBe("eRtrop");
+      expect(candidate.html).toBe(original.replace("Re<em>port</em>", "eR<em>trop</em>"));
+      return { sourceId: candidate.id, complete: true };
     },
   });
-  expect(result).toBe(keep ? html : html.replace(header, ""));
+  expect(result).toBe(html.replace(header, ""));
+});
+
+test.each([
+  ["missing source identity", { complete: true }],
+  ["known identity without visibility evidence", { sourceId: "report" }],
+  ["incomplete printed text", { sourceId: "report", complete: false }],
+  ["unmatched earlier heading", { sourceId: "earlier", complete: true }],
+])("retains metadata for %s", async (_reason, evidence) => {
+  expect(await resolveStyledTitle({ ...input, inspect: async () => evidence })).toBe(html);
+});
+
+test("a duplicate source ID cannot authorize omission", async () => {
+  const duplicate = html.replace('id="earlier"', 'id="report"');
+  expect(
+    await resolveStyledTitle({
+      ...input,
+      html: duplicate,
+      inspect: async () => {
+        throw new Error("unexpected proof");
+      },
+    }),
+  ).toBe(duplicate);
+});
+
+test("a one-character heading has a distinct substitute", async () => {
+  const single = html.replace(body, '<h1 id="report">X</h1>');
+  await resolveStyledTitle({
+    ...input,
+    html: single,
+    headings: [{ id: "report", matches: true, text: "X" }],
+    inspect: async (_, candidates) => {
+      expect(candidates[0]!.substitute).not.toBe("X");
+      return {};
+    },
+  });
 });
 
 test("an inert style example keeps the ordinary title comparison", async () => {
   const example = html + "<code>&lt;style&gt;</code>";
   expect(
     await resolveStyledTitle({
+      ...input,
       html: example,
-      headings,
       customStyle: false,
-      inlineMatch: true,
       inspect: async () => {
-        throw new Error("unexpected print");
+        throw new Error("unexpected proof");
       },
     }),
   ).toBe(example.replace(header, ""));
@@ -49,11 +82,10 @@ test("an embedded stylesheet uses print evidence", async () => {
   const styled = "<style>#report { display:none }</style>" + html;
   expect(
     await resolveStyledTitle({
+      ...input,
       html: styled,
-      headings,
       customStyle: false,
-      inlineMatch: true,
-      inspect: async () => [],
+      inspect: async () => ({}),
     }),
   ).toBe(styled);
 });

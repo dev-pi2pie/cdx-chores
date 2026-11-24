@@ -1,9 +1,6 @@
-import { readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
 import { parse, type DefaultTreeAdapterTypes as Html } from "parse5";
-import type { StructTreeNode } from "pdfjs-dist/types/src/display/api";
-
 import type { StyledTitleHeading } from "./ast-title";
+import type { SourceTitleProbe } from "./printed-proof";
 
 function* elements(node: Html.Node, bodyOnly = false): Generator<Html.Element> {
   if ("tagName" in node) {
@@ -19,98 +16,117 @@ function attribute(node: Html.Element, name: string) {
   return node.attrs.find((attr) => attr.name === name)?.value;
 }
 
-function text(node: Html.Node): string {
-  if ("value" in node && node.nodeName === "#text") return node.value;
-  return "childNodes" in node ? node.childNodes.map(text).join("") : "";
+function substituteWord(word: string) {
+  const reverse = Array.from(word).reverse().join("");
+  if (reverse !== word) return reverse;
+  // A palindrome or a single character still needs an observable change.
+  return word.replace(/./gu, (char) => (char === "x" ? "y" : "x"));
 }
 
-function label(value: string) {
-  return value.replace(/\s+/gu, " ").trim().toLowerCase();
+interface TextEdit {
+  start: number;
+  end: number;
+  text: string;
+  substitute: string;
 }
 
-function taggedText(node: StructTreeNode, content: Map<string, string>): string {
-  return node.children
-    .map((child) => ("role" in child ? taggedText(child, content) : (content.get(child.id) ?? "")))
-    .join("");
-}
-
-function* bodyTitles(
-  node: StructTreeNode,
-  content: Map<string, string>,
-  inMain = false,
-): Generator<string> {
-  // WeasyPrint tags <main> as Part. Page furniture and the built-in ToC are outside it.
-  if (["BlockQuote", "L", "Table", "Note"].includes(node.role)) return;
-  inMain ||= node.role === "Part";
-  if (inMain && node.role === "H1") {
-    yield taggedText(node, content);
-    return;
+function collectText(node: Html.ChildNode, parts: TextEdit[]): boolean {
+  if (node.nodeName === "#text" && "value" in node && node.sourceCodeLocation) {
+    parts.push({
+      start: node.sourceCodeLocation.startOffset,
+      end: node.sourceCodeLocation.endOffset,
+      text: node.value,
+      substitute: node.value.replace(/\S+/gu, substituteWord),
+    });
+    return true;
   }
-  for (const child of node.children) {
-    if ("role" in child) yield* bodyTitles(child, content, inMain);
+  if (!("tagName" in node) || !["em", "strong", "a", "code"].includes(node.tagName)) return false;
+  return node.childNodes.every((child) => collectText(child, parts));
+}
+
+function replaceText(html: string, edits: TextEdit[]) {
+  const pieces: string[] = [];
+  let start = 0;
+  for (const edit of edits) {
+    pieces.push(
+      html.slice(start, edit.start),
+      edit.substitute.replaceAll("&", "&amp;").replaceAll("<", "&lt;"),
+    );
+    start = edit.end;
   }
+  pieces.push(html.slice(start));
+  return pieces.join("");
 }
 
-async function printedHeadings(path: string): Promise<string[]> {
-  const { getDocument, VerbosityLevel } = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  const task = getDocument({
-    data: new Uint8Array(await readFile(path)),
-    useWorkerFetch: false,
-    verbosity: VerbosityLevel.ERRORS,
-  });
-  try {
-    const doc = await task.promise;
-    const headings: string[] = [];
-    for (let i = 1; i <= doc.numPages; i++) {
-      const page = await doc.getPage(i);
-      const tree = await page.getStructTree();
-      if (tree) {
-        const content = new Map<string, string>();
-        const stack: (string | undefined)[] = [];
-        const { items } = await page.getTextContent({ includeMarkedContent: true });
-        for (const item of items) {
-          if ("str" in item) {
-            const id = stack.at(-1);
-            if (id) content.set(id, (content.get(id) ?? "") + item.str + (item.hasEOL ? " " : ""));
-          } else if (item.type === "endMarkedContent") stack.pop();
-          else stack.push(item.id ?? stack.at(-1));
-        }
-        headings.push(...bodyTitles(tree, content));
-      }
-      page.cleanup();
-    }
-    return headings;
-  } finally {
-    await task.destroy();
+function headingProbes(html: string, headings: StyledTitleHeading[]): SourceTitleProbe[] {
+  const nodes = [...elements(parse(html, { sourceCodeLocationInfo: true }))];
+  const ids = new Set<string>();
+  const duplicates = new Set<string>();
+  for (const node of nodes) {
+    const id = attribute(node, "id");
+    if (!id) continue;
+    if (ids.has(id)) duplicates.add(id);
+    ids.add(id);
   }
+  const main = nodes.find((n) => n.tagName === "main" && attribute(n, "class") === "document-body");
+  if (!main) return [];
+  const byId = new Map(headings.map((h, index) => [h.id, index]));
+  if (byId.size !== headings.length) return [];
+  const candidates: SourceTitleProbe[] = [];
+  const order: string[] = [];
+  for (const node of elements(main, true)) {
+    if (node.tagName !== "h1") continue;
+    const id = attribute(node, "id");
+    if (!id || !byId.has(id)) continue;
+    const index = byId.get(id)!;
+    if (index !== order.length || duplicates.has(id)) return [];
+    order.push(id);
+    const heading = headings[index]!;
+    if (!heading.matches) continue;
+    const edits: TextEdit[] = [];
+    if (!node.childNodes.every((child) => collectText(child, edits))) continue;
+    const text = edits
+      .map((edit) => edit.text)
+      .join("")
+      .replace(/\s+/gu, " ")
+      .trim();
+    const substitute = edits
+      .map((edit) => edit.substitute)
+      .join("")
+      .replace(/\s+/gu, " ")
+      .trim();
+    if (text !== heading.text?.replace(/\s+/gu, " ").trim() || text === substitute) continue;
+    candidates.push({
+      id,
+      text,
+      substitute,
+      get earlierIds() {
+        return order.slice(0, index);
+      },
+      get html() {
+        return replaceText(html, edits);
+      },
+    });
+  }
+  return order.length === headings.length ? candidates : [];
 }
 
-export async function inspectPrintedTitle(
-  html: string,
-  tempDir: string,
-  print: (html: string, pdf: string) => Promise<boolean>,
-) {
-  const htmlPath = join(tempDir, "title-proof.html");
-  const pdfPath = join(tempDir, "title-proof.pdf");
-  await writeFile(htmlPath, html);
-  if (!(await print(htmlPath, pdfPath))) return [];
-  return printedHeadings(pdfPath).catch(() => []);
-}
-
-/** Check the same body HTML and author CSS that would print with the metadata block omitted. */
+/** Decide against the body layout that would print with the metadata header omitted. */
 export async function resolveStyledTitle(input: {
   html: string;
   customStyle: boolean;
   headings: StyledTitleHeading[];
   inlineMatch: boolean;
-  inspect: (html: string) => Promise<string[]>;
+  inspect: (
+    html: string,
+    candidates: SourceTitleProbe[],
+  ) => Promise<{ sourceId?: string; complete?: boolean }>;
 }): Promise<string> {
   const nodes = [...elements(parse(input.html, { sourceCodeLocationInfo: true }))];
   const main = nodes.find(
     (node) => node.tagName === "main" && attribute(node, "class") === "document-body",
   );
-  if (!main) return input.html;
-  const header = main.childNodes.find(
+  const header = main?.childNodes.find(
     (node) =>
       "tagName" in node &&
       node.tagName === "header" &&
@@ -119,42 +135,19 @@ export async function resolveStyledTitle(input: {
   const loc = header?.sourceCodeLocation;
   if (!loc) return input.html;
   const withoutTitle = input.html.slice(0, loc.startOffset) + input.html.slice(loc.endOffset);
-  if (
-    !input.customStyle &&
-    !nodes.some(
+  const styled =
+    input.customStyle ||
+    nodes.some(
       (node) =>
         node.tagName === "style" ||
         (node.tagName === "link" &&
           attribute(node, "rel")?.toLowerCase().split(/\s+/u).includes("stylesheet")),
-    )
-  ) {
-    return input.inlineMatch ? withoutTitle : input.html;
-  }
-
-  // A printed label can occur in multiple source headings. Suppress only when all
-  // possible origins are eligible and preserve the metadata title's text and links.
-  const candidates = new Map(input.headings.map(({ id, matches }) => [id, matches]));
-  const origins = new Map<string, Set<boolean | undefined>>();
-  const seenIds = new Set<string>();
-  for (const node of elements(main, true)) {
-    if (node.tagName !== "h1" || node.sourceCodeLocation?.startOffset === undefined) continue;
-    if (node.sourceCodeLocation.startOffset < loc.endOffset) continue;
-    const id = attribute(node, "id");
-    if (id && seenIds.has(id)) return input.html;
-    if (id) seenIds.add(id);
-    const key = label(text(node));
-    const choices = origins.get(key) ?? new Set();
-    choices.add(id ? candidates.get(id) : undefined);
-    origins.set(key, choices);
-  }
-  for (const printed of await input.inspect(withoutTitle)) {
-    const printedLabel = label(printed);
-    const possibilities = origins.get(printedLabel);
-    // A visibility:hidden heading can leave an empty H1 tag in the PDF.
-    if (!printedLabel && !possibilities) continue;
-    if (!possibilities) return input.html;
-    if (possibilities.size === 1 && possibilities.has(undefined)) continue;
-    return possibilities.size === 1 && possibilities.has(true) ? withoutTitle : input.html;
-  }
-  return input.html;
+    );
+  if (!styled) return input.inlineMatch ? withoutTitle : input.html;
+  const candidates = headingProbes(withoutTitle, input.headings);
+  if (!candidates.length) return input.html;
+  const proof = await input.inspect(withoutTitle, candidates);
+  return proof.complete === true && candidates.some((candidate) => candidate.id === proof.sourceId)
+    ? withoutTitle
+    : input.html;
 }

@@ -8,7 +8,8 @@ import { readTextFileRequired, writeBufferFileSafe, writeTextFileSafe } from "..
 import { execCommand, type ExecCommandResult } from "../process";
 import { highlightMarkdownPdfCodeBlocks } from "./code-highlight";
 import { finalizeMarkdownPdfPageNumberHtml } from "./page-number-html";
-import { inspectPrintedTitle, resolveStyledTitle } from "./title/styled-title";
+import { inspectPrintedTitle } from "./title/printed-proof";
+import { resolveStyledTitle } from "./title/styled-title";
 import {
   resolveMarkdownPdfPandocSource,
   runMarkdownPdfPandocStage,
@@ -278,7 +279,7 @@ export async function renderMarkdownPdf(
         ...source.styledTitle,
         html,
         customStyle: Boolean(input.customCssPath),
-        inspect: (probe) =>
+        inspect: (probe, candidates) =>
           inspectPrintedTitle(
             probe,
             tempDir,
@@ -290,6 +291,7 @@ export async function renderMarkdownPdf(
                   { cwd },
                 )
               ).ok,
+            candidates,
           ),
       });
     }
