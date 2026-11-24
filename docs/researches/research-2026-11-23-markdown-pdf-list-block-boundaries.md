@@ -181,9 +181,9 @@ Use the original proof to judge visibility. For the letter-spaced “Report”, 
 
 ### Where should metadata-title selection live?
 
-Group both parts of `auto` under `src/cli/markdown-pdf/title/` before adding the visibility check.
+Both parts of `auto` now live under `src/cli/markdown-pdf/title/`. [Module layout and verification](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#title-selection-module-layout)
 
-| Responsibility | Files to move |
+| Responsibility | Files |
 | --- | --- |
 | Match source headings and interpret inline styles | `ast-title.ts`, `ast-title-visibility.ts`, `ast-title-variables.ts` |
 | Inspect printed headings and select the metadata title block | `styled-title.ts` |

@@ -278,3 +278,26 @@ With WeasyPrint 69.0, the Node.js prototype compared 12 fixtures and two indepen
 | Matched `show` in both fallback checks | On the fully visible letter-spaced fixture, withhold source identity alone, then retain identity and withhold visibility alone. |
 
 For the visible letter-spaced fixture, median proof time rose from 262 to 523 ms on Pandoc 2.0 and from 258 to 532 ms on 3.9. Each median covers three runs after warm-up and excludes the final print. The single-run result supports the [Node.js implementation direction](../../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#identifying-a-plain-text-h1-in-nodejs). Production implementation, both built-CLI fallbacks, and the earlier-hidden-H1 compatibility check remain open in the [Follow-Up checklist](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css).
+
+## Title-selection module layout
+
+Paths are relative to `src/cli/markdown-pdf/`.
+
+| Responsibility | Before | After |
+| --- | --- | --- |
+| Source matching and inline visibility | `ast-title.ts`, `ast-title-visibility.ts`, `ast-title-variables.ts` | `title/ast-title.ts`, `title/ast-title-visibility.ts`, `title/ast-title-variables.ts` |
+| Printed heading inspection and metadata-title selection | `styled-title.ts` | `title/styled-title.ts` |
+
+At `73306696`, the build and all 412 focused title and rendering tests passed. The production callers are [Pandoc source preparation](../../../src/cli/markdown-pdf/pandoc-source.ts) and [PDF rendering](../../../src/cli/markdown-pdf/render.ts).
+
+## Earlier hidden heading compatibility
+
+At `73306696`, the built CLI and the single-run prototype selected different pages when an inline-hidden `# Earlier` preceded the matching title. Pandoc 2.0 and 3.9 gave the same results with WeasyPrint 70.0 under the default asset restrictions. Each result below matched the full raster of the named explicit control, and the debug HTML agreed.
+
+| Body headings with metadata title `Report` | Built CLI | Single-run prototype |
+| --- | --- | --- |
+| Earlier H1 hidden, then visible `# Report` | `hide` | `show` |
+| Earlier H1 hidden, then visible `# Re*port*` | `hide` | `show` |
+| CSS reveals the earlier nonmatching H1, with either spelling of the later heading | `show` | `show` |
+
+The prototype retained the block for both hidden cases because the source contained two H1s. The visible formatted title also spanned two tagged fragments. The compatibility decision is to preserve the current CLI output. Test whether the proof can identify every run in the later H1 and keep the block when an earlier nonmatch appears or any part of the title is uncertain. [Follow-Up checklist](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
