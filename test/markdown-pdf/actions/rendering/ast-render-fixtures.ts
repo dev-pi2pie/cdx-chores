@@ -68,6 +68,23 @@ const titleControls = [
     laterStyle: "--layout:none;display:var(--layout)",
   },
   {
+    name: "hidden-title-empty-variable-fallback",
+    attributes: 'style="display:none"',
+    keep: true,
+    later: true,
+    laterStyle: "display:var(--missing,) none",
+  },
+  {
+    name: "hidden-title-empty-variable-value",
+    attributes: 'style="--layout:var(--missing,);display:var(--layout,none)"',
+    keep: true,
+  },
+  {
+    name: "visible-title-empty-variable-fallback",
+    attributes: 'hidden=hidden style="display:var(--missing,) block"',
+    keep: false,
+  },
+  {
     name: "hidden-title-nested-variable-fallback",
     attributes: 'style="display:none"',
     keep: true,

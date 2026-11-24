@@ -36,12 +36,13 @@ function resolve(value: string, variables: InlineVariables, depth: number): Valu
     const name = (comma < 0 ? args : args.slice(0, comma)).trim();
     if (!/^--[\w-]+$/u.test(name)) return unresolved;
     let result = variables(name, depth + 1);
-    if (result === undefined && comma >= 0)
+    // WeasyPrint uses a supplied fallback for a variable with zero computed tokens.
+    if ((result === undefined || result === "") && comma >= 0)
       result = resolve(args.slice(comma + 1).trim(), variables, depth + 1);
     if (result === undefined || result === unresolved) return unresolved;
     // The display grammar accepts at most three keywords. Avoid expanding
     // arbitrary custom-property data when inspecting a title.
-    if (!/^[a-z-]+(?:\s+[a-z-]+){0,2}$/iu.test(result)) return "\uFFFD";
+    if (result && !/^[a-z-]+(?:\s+[a-z-]+){0,2}$/iu.test(result)) return "\uFFFD";
     parts.push(value.slice(cursor, ref.index), " ", result, " ");
     functions.lastIndex = cursor = end + 1;
   }
