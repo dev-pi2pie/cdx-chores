@@ -9,6 +9,7 @@ import { execCommand, type ExecCommandResult } from "../process";
 import { highlightMarkdownPdfCodeBlocks } from "./code-highlight";
 import { finalizeMarkdownPdfPageNumberHtml } from "./page-number-html";
 import { inspectPrintedTitle } from "./title/printed-proof";
+import { readTitlePrintDiagnostics } from "./title/print-diagnostics";
 import { resolveStyledTitle } from "./title/styled-title";
 import {
   resolveMarkdownPdfPandocSource,
@@ -83,16 +84,6 @@ function splitLines(value: string): string[] {
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
-}
-
-function resourceFailureCounts(stderr: string): Map<string, number> {
-  const counts = new Map<string, number>();
-  for (const line of splitLines(stderr)) {
-    if (/^(?:ERROR|WARNING): (?:Failed to load\b|Font-face .+ cannot be loaded\b)/u.test(line)) {
-      counts.set(line, (counts.get(line) ?? 0) + 1);
-    }
-  }
-  return counts;
 }
 
 function formatProcessFailure(
@@ -285,14 +276,15 @@ export async function renderMarkdownPdf(
       weasyprintArgs.push("--stylesheet", cssPath);
     }
     const renderedPdfPath = join(tempDir, "rendered.pdf");
-    const printPdf = async (htmlPath: string, path: string, tagged = false) => ({
+    const printPdf = async (htmlPath: string, path: string, ...flags: string[]) => ({
       path,
-      result: await runner(
-        "weasyprint",
-        [...weasyprintArgs, ...(tagged ? ["--pdf-tags"] : []), htmlPath, path],
-        { cwd },
-      ),
+      result: await runner("weasyprint", [...weasyprintArgs, ...flags, htmlPath, path], { cwd }),
     });
+    const printForTitle = async (htmlPath: string, pdfPath: string, ...flags: string[]) => {
+      const { path, result } = await printPdf(htmlPath, pdfPath, "--debug", ...flags);
+      const { stderr, failures } = readTitlePrintDiagnostics(result.stderr, result.ok);
+      return { path, result: { ...result, stderr }, failures };
+    };
     const printed = new Map<string, Awaited<ReturnType<typeof printPdf>>>();
     if (source.styledTitle) {
       html = await resolveStyledTitle({
@@ -303,20 +295,19 @@ export async function renderMarkdownPdf(
           // Capture the ordinary output before optional inspection can consume a
           // one-shot asset. Both decisions then publish already-rendered bytes.
           const fallbackHtml = await createTempFile(tempDir, "title-fallback.html", html);
-          const fallback = await printPdf(fallbackHtml, renderedPdfPath);
+          const fallback = await printForTitle(fallbackHtml, renderedPdfPath);
           printed.set(html, fallback);
-          if (!fallback.result.ok) return {};
-          const fallbackFailures = resourceFailureCounts(fallback.result.stderr);
+          const fallbackFailures = fallback.failures;
+          if (!fallback.result.ok || !fallbackFailures) return {};
           return inspectPrintedTitle(
             probe,
             tempDir,
             async (probeHtml, probePdf) => {
-              const output = await printPdf(probeHtml, probePdf, true);
-              // Different font faces can produce identical warnings. Compare
-              // each proof with the ordinary render independently.
+              const output = await printForTitle(probeHtml, probePdf, "--pdf-tags");
               if (
                 !output.result.ok ||
-                [...resourceFailureCounts(output.result.stderr)].some(
+                !output.failures ||
+                [...output.failures].some(
                   ([line, count]) => count > (fallbackFailures.get(line) ?? 0),
                 )
               ) {

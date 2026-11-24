@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { actionMdToPdf } from "../../../../src/cli/actions/markdown/to-pdf";
 import { createActionTestRuntime } from "../../../helpers/cli-action-test-utils";
 import { inspectPrintedTitle } from "../../../../src/cli/markdown-pdf/title/printed-proof";
+import { readTitlePrintDiagnostics } from "../../../../src/cli/markdown-pdf/title/print-diagnostics";
 import { withTempFixtureDir } from "../../../helpers/cli-test-utils";
 import { taggedTitlePdf, type HeadingPaint } from "../fixtures/tagged-title-pdf";
 import { createPdfRunner, ok, pandocTitleJson } from "./render-support";
@@ -21,6 +22,12 @@ function supportsOutlines() {
   }
 }
 const outlines = supportsOutlines();
+
+test("keeps the exception from a failed renderer after its last debug record", () => {
+  const traceback = "Traceback (most recent call last):\nRuntimeError: could not finish the PDF";
+  const log = "DEBUG: weasyprint fonts.py:172 (add_font_face): Failed to load font at 'face.ttf'";
+  expect(readTitlePrintDiagnostics(log + "\n" + traceback, false).stderr).toBe(traceback);
+});
 
 function expectProof(evidence: { sourceId?: string; complete?: boolean }, complete: boolean) {
   if (outlines) expect(evidence).toEqual({ sourceId: "report", complete });
@@ -184,45 +191,67 @@ test.each(["hidden", "revealed"] as const)(
 );
 
 test.each([
-  { counts: [1, 1, 1], omit: true },
-  { counts: [1, 2], omit: false },
-  { counts: [1, 1, 2], omit: false },
-])(
-  "compares font warning counts independently for each proof: $counts",
-  async ({ counts, omit }) => {
-    await withTempFixtureDir("styled-font-warnings", async (dir) => {
-      const input = join(dir, "report.md");
-      const css = join(dir, "print.css");
-      const output = join(dir, "report.pdf");
-      await writeFile(input, "---\ntitle: Report\n---\n\n# Report {#report}\n");
-      await writeFile(css, "#report {color: navy}");
-      const header = '<header class="document-title"><h1>Report</h1></header>';
-      const { runner } = createPdfRunner({
-        html: '<main class="document-body">' + header + original + "</main>",
-        pandocJson: pandocTitleJson("Report", "Report", "report"),
-      });
-      const { runtime, stderr } = createActionTestRuntime({ cwd: dir });
-      const pdfs = ["Baseline", "Report", "tropeR"].map((text) => taggedTitlePdf([text], "clear"));
-      const warning = "WARNING: Font-face 'Report' cannot be loaded";
-      let prints = 0;
-      await actionMdToPdf(runtime, {
-        input,
-        css,
-        output,
-        runner: async (command, args, opts) => {
-          if (command !== "weasyprint" || !args.includes("--base-url"))
-            return runner(command, args, opts);
-          const i = prints++;
-          await writeFile(args.at(-1)!, pdfs[i]!);
-          return ok("", Array(counts[i]).fill(warning).join("\n"));
-        },
-      });
-      if (outlines) expect(prints).toBe(counts.length);
-      expect(await readFile(output)).toEqual(pdfs[omit && outlines ? 1 : 0]!);
-      expect(stderr.text.split("\n").filter((line) => line.includes(warning))).toHaveLength(1);
+  { sources: [["light"], ["light"], ["light"]], omit: true },
+  { sources: [["light"], ["light", "regular"]], omit: false },
+  { sources: [["light"], ["light"], ["light", "regular"]], omit: false },
+  { sources: [["light"], ["regular"]], omit: false },
+  { sources: [["light"], ["light"], ["regular"]], omit: false },
+  { sources: [["light"], [null]], omit: false },
+  { sources: [[null]], omit: false },
+])("compares each title print's failed font sources $sources", async ({ sources, omit }) => {
+  await withTempFixtureDir("styled-font-warnings", async (dir) => {
+    const input = join(dir, "report.md");
+    const css = join(dir, "print.css");
+    const output = join(dir, "report.pdf");
+    await writeFile(input, "---\ntitle: Report\n---\n\n# Report {#report}\n");
+    await writeFile(css, "#report {color: navy}");
+    const header = '<header class="document-title"><h1>Report</h1></header>';
+    const { runner } = createPdfRunner({
+      html: '<main class="document-body">' + header + original + "</main>",
+      pandocJson: pandocTitleJson("Report", "Report", "report"),
     });
-  },
-);
+    const { runtime, stderr } = createActionTestRuntime({ cwd: dir });
+    const pdfs = ["Baseline", "Report", "tropeR"].map((text) => taggedTitlePdf([text], "clear"));
+    const message = "Font-face 'Report' cannot be loaded";
+    let prints = 0;
+    await actionMdToPdf(runtime, {
+      input,
+      css,
+      output,
+      runner: async (command, args, opts) => {
+        if (command !== "weasyprint" || !args.includes("--base-url"))
+          return runner(command, args, opts);
+        const i = prints++;
+        expect(args).toContain("--debug");
+        await writeFile(args.at(-1)!, pdfs[i]!);
+        const diagnostics = [
+          "INFO: weasyprint.progress render.py:12 (render): Step 1",
+          "Fontconfig warning: native diagnostic",
+        ];
+        for (const face of sources[i]!) {
+          if (face)
+            diagnostics.push(
+              `DEBUG: weasyprint fonts.py:172 (add_font_face): Failed to load font at 'file:///${face}.ttf' (attempt ${i})`,
+            );
+          diagnostics.push(`WARNING: weasyprint fonts.py:249 (add_font_face): ${message}`);
+        }
+        diagnostics.push(
+          "DEBUG: weasyprint images.py:20 (get_image): Error while loading image:",
+          "Traceback (most recent call last):",
+          "  private trace detail",
+        );
+        return ok("", diagnostics.join("\n"));
+      },
+    });
+    if (outlines) expect(prints).toBe(sources.length);
+    expect(await readFile(output)).toEqual(pdfs[omit && outlines ? 1 : 0]!);
+    expect(stderr.text.split("\n").filter((line) => line === `- WARNING: ${message}`)).toHaveLength(
+      1,
+    );
+    expect(stderr.text).toContain("Fontconfig warning: native diagnostic");
+    expect(stderr.text).not.toMatch(/file:\/\/|fonts\.py|DEBUG:|INFO:|[Tt]race/u);
+  });
+});
 
 test.each([
   "complete",
