@@ -81,7 +81,22 @@ Independent implementation and test reviews cleared `b66bc6df..2bb809a6`. The im
 
 ## Phase 3 — Use the same fence spans during HTML recovery
 
-Pending.
+Started from `f786aff5`. Commit `04927533` exposed the opener and closer selected by the ordinary scanner. Commit `978faaa9` used those spans to decide whether an apparent HTML close belongs to a code example. A genuine close resumes scanning at its original source offset. All eight expected failures across four fixtures became ordinary passing assertions.
+
+| Control | Observed offline result |
+| --- | --- |
+| Comment and `textarea`, at document level or in the numbered item | The recovered and trailing H1s, hints `sh` then `js`, and three source rows survive. A genuine close before the example gives the same signals. |
+| Move the fence closer from the first item to its sibling | Only the trailing H1, `js`, and three rows survive. Moving it back restores both H1s and hints. |
+| Genuine `</textarea>` after the apparent Python fence | Both placements expose only the trailing H1, `js`, and three rows. The complete closed-`textarea` control contributes no `text` hint. |
+| Pipe suffix after a tab-indented close | Comments and `textarea` preserve the visible pipe suffix and its original source width under LF, CRLF, and CR. [Recovery tests](../../../test/markdown-pdf/actions/profile-codex/html-fence-recovery.unit.test.ts) |
+
+Review found that repeated genuine closes in one item rebuilt its fence index, and that a heading inside a closed `textarea` could change which headings survived an outer comment. Commit `e10250e0` shared the item’s index and resolved the inner element before using its fences for the outer comment. The paired heading and prose fixtures now both expose only the trailing H1 and the `js` hint. Across 60 and 480 repeated regions in one item, indexed lines rose from 1,184 to 9,584.
+
+Verified versions with `pandoc --version`, then ran the [reader checks](../../../test/markdown-pdf/actions/rendering/list-block-boundaries.pandoc.test.ts) on identical Markdown bytes. All 29 fixtures passed on both 2.0 and 3.9. For the new nested HTML pair, both readers produced an unlabeled block containing literal tildes, the trailing JavaScript example, and the visible H1. Each reader retained its own expectations for the earlier fixtures.
+
+`bun run test:unit` passed 2,497 tests. The targeted authoring checks passed 38 tests, including Profile, Template, and Project with Pandoc present and absent. `bun run test:integration:pandoc` passed 27 tests on 3.9. TypeScript, lint, formatting, and whitespace checks passed.
+
+Independent implementation and test reviews cleared `f786aff5..e10250e0`. Re-review confirmed both fixes and checked 120 combinations of nested HTML kinds and fence placement. Replacing prose with a heading inside the innermost genuinely closed region preserved the outer signals in every pair. All four Phase 3 checklist items are complete.
 
 ## Phase 4 — Verify authoring and rendering through the application
 
