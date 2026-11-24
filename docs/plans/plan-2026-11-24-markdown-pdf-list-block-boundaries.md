@@ -62,8 +62,9 @@ The [follow-up record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#pha
 
 ### Canary review follow-up
 
-- [ ] Resolve verse continuation before opening a quote. Verify the indented, flush, and blank-separated variants in the three offline helpers and on Pandoc 2.0 and 3.9.
-- [ ] Complete the separate title correction. Compare CSS whitespace with a nonbreaking space, and distinguish a custom property set to `initial` from one that is absent. Verify a single printed title with each reader.
+- [x] Resolve verse continuation before opening a quote. Verify the indented, flush, and blank-separated variants in the three offline helpers and on Pandoc 2.0 and 3.9. `f430c285`.
+- [x] Complete the separate title correction. Compare CSS whitespace with a nonbreaking space, and distinguish a custom property set to `initial` from one that is absent. Verify a single printed title with each reader. `03faefbf`.
+- [x] Verify automatic title selection when an author stylesheet hides the matching H1 or reveals an earlier H1. Verify the final HTML and printed PDF with both readers. `f5992378`.
 - [ ] Record the corrective commits and the result of a full canary comparison in the [follow-up record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#phase-2-follow-up-after-canary-review).
 
 ## Phase 3 — Use the same fence spans during HTML recovery

@@ -676,6 +676,8 @@ Heading
 
 The comparison folds case and whitespace and preserves punctuation. It supports plain text, emphasis, strong text, inline code, smart quotes, and link labels. If the first eligible H1 or metadata title uses unsupported formatting such as math, images, or spans, the block stays, even if a later H1 matches. The block also stays when there is no eligible H1. Every metadata title link needs a matching label and destination in the heading before the block can be omitted.
 
+For a custom stylesheet or a stylesheet embedded in the Markdown, `auto` checks which eligible heading text prints before omitting a matching title. This adds a private WeasyPrint pass when a heading could match. If the renderer cannot confirm a complete match, the metadata block stays. Debug HTML reflects the final choice.
+
 In this example, `auto` keeps both links because their destinations differ. Use [Debug HTML](#debug-html) to inspect the generated title block and heading.
 
 ```markdown

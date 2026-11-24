@@ -200,3 +200,12 @@ Documentation review cleared the guide, the [research outcome](../../researches/
 ## Phase 2 follow-up after canary review
 
 Review of `9d578d9d...2759ec4a` found that an indented quote marker after verse produced a false Python hint and hid a source row. Two separate title regressions affected the printed PDF. A nonbreaking space in a display value could remove the only visible title, and a custom property set to `initial` could print it twice. The target is one printed title in both cases.
+
+| Correction | Verification |
+| --- | --- |
+| Verse ownership, `f430c285` | The indented `>` after verse continues the line block. All three offline helpers retain the pipe row and report no language. Moving the marker to the margin or inserting a blank line produces a Python fence and excludes its body row. Both direct and titled HTML matched Pandoc 2.0 and 3.9 for all three variants. [Boundary fixtures](../../../test/markdown-pdf/actions/fixtures/list-block-boundaries.ts) |
+| Title visibility, `03faefbf` | The classifier preserves a nonbreaking space inside a display token and substitutes a defined custom property before interpreting its value. The two failing PDFs went from zero and two printed titles to one each. The ordinary-space, absent-variable, explicit-`none`, and plain-heading controls also printed one title on each reader with WeasyPrint 70.0. All 64 comparisons of visibility predictions to printed pages agreed. [Title checks](../../../test/markdown-pdf/direct/ast-title.unit.test.ts) |
+
+The first re-review cleared those three regressions on `9d578d9d...03faefbf` and found a missing title with author CSS. A stylesheet hid the matching H1 after an inline-hidden earlier H1. Both readers reproduced the missing printed title.
+
+Commit `f5992378` checks the body H1 text in a tagged print when author CSS could change the result. On Pandoc 2.0 and 3.9 with WeasyPrint 70.0, the built CLI kept the metadata title when external, embedded, or imported CSS hid the match. Decorative CSS and a rule hiding an unrelated element preserved deduplication. An earlier H1 revealed by CSS remained the first eligible heading, and a heading printed in a page header did not count as a body H1. All nine stylesheet cases per reader matched their expected PDF text and final HTML. [Title selection tests](../../../test/markdown-pdf/direct/styled-title.unit.test.ts) · [Application render test](../../../test/markdown-pdf/actions/rendering/ast-render.app.test.ts)
