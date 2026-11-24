@@ -1,11 +1,15 @@
+import {
+  type InlineDeclaration,
+  type InlineVariables,
+  inlineKeywords,
+  inlineVariables,
+} from "./ast-title-variables";
 import { normalizeCssForInspection } from "./css-inspection";
-
-type Variables = (name: string, depth: number) => string | undefined;
 
 export interface TitleBlockStyle {
   display: "box" | "omitted" | "unknown";
   visibility: "visible" | "hidden" | "unknown";
-  variables: Variables;
+  variables: InlineVariables;
 }
 
 export const documentTitleStyle: TitleBlockStyle = {
@@ -35,13 +39,7 @@ function generatesBox(value: string): boolean {
   return !listItem || !inside || inside === "flow" || inside === "flow-root";
 }
 
-interface Declaration {
-  property: string;
-  value: string;
-  important: boolean;
-}
-
-function* declarations(style: string): Generator<Declaration> {
+function* declarations(style: string): Generator<InlineDeclaration> {
   const { css } = normalizeCssForInspection(style, {
     lowercase: false,
     preserveTokenBoundaries: true,
@@ -71,53 +69,6 @@ function* declarations(style: string): Generator<Declaration> {
   }
 }
 
-// Only literal keywords can prove a heading visible. Keep the metadata title
-// when a variable used by display or visibility depends on a stylesheet.
-function keywords(value: string, variables: Variables, depth: number): string | undefined {
-  if (!/\bvar\(/iu.test(value)) return value;
-  if (depth >= 32) return undefined;
-  const parts: string[] = [];
-  let cursor = 0;
-  for (const ref of value.matchAll(
-    /\bvar\(\s*(--[\w-]+)\s*(?:,\s*([a-z-]+(?:\s+[a-z-]+)*)\s*)?\)/giu,
-  )) {
-    const resolved = variables(ref[1]!, depth + 1) ?? ref[2];
-    if (resolved === undefined || !/^[a-z-]+(?:\s+[a-z-]+){0,2}$/iu.test(resolved))
-      return undefined;
-    parts.push(value.slice(cursor, ref.index), " ", resolved, " ");
-    cursor = ref.index + ref[0].length;
-  }
-  parts.push(value.slice(cursor));
-  const result = parts.join("").trim();
-  return /\bvar\(/iu.test(result) ? undefined : result;
-}
-
-function inlineVariables(rules: Declaration[], inherited: Variables): Variables {
-  const local = new Map<string, Declaration>();
-  for (const rule of rules) {
-    if (
-      rule.property.startsWith("--") &&
-      (rule.important || !local.get(rule.property)?.important)
-    ) {
-      local.set(rule.property, rule);
-    }
-  }
-  if (!local.size) return inherited;
-  const resolved = new Map<string, string | undefined>();
-  const lookup: Variables = (name, depth) => {
-    const rule = local.get(name);
-    if (!rule || /^(inherit|unset)$/iu.test(rule.value)) return inherited(name, depth);
-    if (resolved.has(name)) return resolved.get(name);
-    if (depth >= 32 || /^initial$/iu.test(rule.value)) return undefined;
-    // Mark this name before following references to break cycles.
-    resolved.set(name, undefined);
-    const result = keywords(rule.value, lookup, depth);
-    resolved.set(name, result);
-    return result;
-  };
-  return lookup;
-}
-
 // display:none removes the subtree. visibility is inherited and a descendant
 // can restore visibility:visible. Inline author display overrides the UA's [hidden].
 export function titleBlockVisibility(
@@ -144,12 +95,12 @@ export function titleBlockVisibility(
   let visibilityImportant = false;
   for (const { property, value: raw, important } of rules) {
     if (property !== "display" && property !== "visibility") continue;
-    const value = keywords(raw, variables, 0);
+    const value = inlineKeywords(raw, variables);
     const folded = value?.toLowerCase();
     const wide = folded === "initial" || folded === "inherit";
     // Invalid literal declarations are ignored. A winning var() declaration
     // that computes to an invalid value uses the initial or inherited value.
-    const substituted = /\bvar\(/iu.test(raw);
+    const substituted = /(?<![\w-])var\(/iu.test(raw);
     if (
       property === "display" &&
       (!displayImportant || important) &&

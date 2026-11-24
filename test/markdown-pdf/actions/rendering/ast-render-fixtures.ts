@@ -68,6 +68,20 @@ const titleControls = [
     laterStyle: "--layout:none;display:var(--layout)",
   },
   {
+    name: "hidden-title-nested-variable-fallback",
+    attributes: 'style="display:none"',
+    keep: true,
+    later: true,
+    laterStyle:
+      "--present:none;--fallback:block;--layout:var(--present,var(--fallback));display:var(--layout,block)",
+  },
+  {
+    name: "visible-title-nested-variable-fallback",
+    attributes:
+      'style="--fallback:block;--layout:var(--missing,var(--fallback));display:var(--layout,none)"',
+    keep: false,
+  },
+  {
     name: "visible-title-inline-variable",
     attributes: 'style="--layout:block;display:var(--layout)"',
     keep: false,
