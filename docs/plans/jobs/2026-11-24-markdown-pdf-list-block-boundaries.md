@@ -340,3 +340,15 @@ Round two covered `9d578d9d...605ae132`. Independent review cleared both first-r
 | CSS uppercase expanded one source character into two printed letters. | `Straße` → `STRASSE` and `ß` → `SS` each printed one heading. A CSS-generated `STRASSE` that did not change with the source kept the metadata block. |
 
 At `2a58ed11`, the median interval from starting the first print to selecting the HTML was 1,200 ms on Pandoc 2.0 and 1,121 ms on 3.9. The one-page measurement used the same alternating method and included the ordinary fallback print, two tagged prints and inspection. The corresponding intervals at `73306696` were 399 and 375 ms, excluding that baseline's separate final print.
+
+### Open finding after the third title review
+
+Round three covered `9d578d9d...3e253e80`. The reviewer independently cleared the disappearing-logo and Unicode uppercase cases on Pandoc 3.9 with WeasyPrint 70.0. One font-loading finding remains open.
+
+| Reproduction | Observed output |
+| --- | --- |
+| Use a matching first H1 and two font faces under the same family on a later page. The light face is missing from the start. Remove the regular face after the ordinary print. | The ordinary PDF embeds the regular face and reports one warning. The proofs report the same warning twice. The CLI compares distinct warning lines, accepts the proof and publishes a PDF with a substitute font. |
+
+All 46 fixtures per reader matched the explicit controls across their rendered pages on Pandoc 2.0 and 3.9, including the logo on either page and the unchanged CSS-generated title. Both missing-evidence controls and the unavailable-inspection check kept the metadata block. These fixtures did not cover two font faces producing the same warning. One renderer invocation exited during a Pandoc 2.0 fallback run. The full fallback group passed when repeated separately.
+
+At this tip, 2,732 unit, 2,792 application and 110 Pandoc integration tests passed. The Pandoc suite passed separately after an earlier run reached its 30-second limit. The build, tracked TypeScript, lint, formatting and whitespace checks passed. The [Follow-Up](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css) remains open. Code review paused after round three for discussion of ambiguous resource diagnostics.
