@@ -80,6 +80,10 @@ describe("Pandoc AST title comparison", () => {
   test.each([
     ["visibility:hidden", "color:red", false],
     ["--layout:none", "display:var(--layout)", false],
+    ["display:table-column", "display:block;visibility:visible", false],
+    ["display:table-column-group", "display:table-cell", false],
+    ["display:table-column;display:table-cell", "display:block", true],
+    ["display:table-row", "display:table-cell", true],
     ["--a:none;--b:block;--layout:var(--a,var(--b))", "display:var(--layout,block)", false],
     ["--b:block;--layout:var(--a,var(--b))", "display:var(--layout,none)", true],
     ["--layout:var(--external)", "display:var(--layout,block)", false],

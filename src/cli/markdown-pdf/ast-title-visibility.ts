@@ -18,7 +18,7 @@ export const documentTitleStyle: TitleBlockStyle = {
   variables: () => undefined,
 };
 const singleDisplayBox =
-  /^(?:inline-(?:block|flex|grid|table)|table-(?:caption|cell|column|column-group|row|row-group|header-group|footer-group))$/u;
+  /^(?:inline-(?:block|flex|grid|table)|table-(?:caption|cell|row|row-group|header-group|footer-group))$/u;
 const insideDisplay = new Set(["flow", "flow-root", "flex", "grid", "table"]);
 
 // WeasyPrint accepts one outside keyword, one inside keyword, and an optional
@@ -101,12 +101,15 @@ export function titleBlockVisibility(
     // Invalid literal declarations are ignored. A winning var() declaration
     // that computes to an invalid value uses the initial or inherited value.
     const substituted = /(?<![\w-])var\(/iu.test(raw);
+    // Table columns participate in layout but discard their heading content.
+    const omitsContent =
+      value === "none" || value === "table-column" || value === "table-column-group";
     if (
       property === "display" &&
       (!displayImportant || important) &&
-      (substituted || value === undefined || value === "none" || wide || generatesBox(value))
+      (substituted || value === undefined || omitsContent || wide || generatesBox(value))
     ) {
-      display = value === undefined ? "unknown" : value === "none" ? "omitted" : "box";
+      display = value === undefined ? "unknown" : omitsContent ? "omitted" : "box";
       displayImportant = important;
     }
     if (property === "visibility" && (!visibilityImportant || important)) {

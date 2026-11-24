@@ -55,7 +55,22 @@ interface RenderFixture {
 }
 
 const setextReport = "Report\n======";
-const titleControls = [
+interface TitleControl {
+  name: string;
+  attributes: string;
+  keep: boolean;
+  later?: boolean;
+  laterStyle?: string;
+}
+
+const titleControls: TitleControl[] = [
+  ...["table-column", "table-column-group"].map((display) => ({
+    name: `hidden-title-${display}`,
+    attributes: 'style="display:none"',
+    keep: true,
+    later: true,
+    laterStyle: "display:" + display,
+  })),
   { name: "hidden-title", attributes: 'style="display:none"', keep: true },
   { name: "visibility-hidden-title", attributes: 'style="visibility:hidden"', keep: true },
   { name: "visible-title", attributes: ".note", keep: false },
