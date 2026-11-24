@@ -667,7 +667,7 @@ The cover is always free of repeating content and page-number labels. The ToC re
 - `show` displays the block when Pandoc provides a title, including when the document has a cover or a matching body heading.
 - `hide` omits the block.
 
-Pandoc reads the Markdown once for the comparison, and the renderer writes HTML from that same parsed document. The first eligible H1 is the first level-one Markdown heading in document order at the top level or inside Pandoc Divs. Both `# Heading` and the underlined example below count as level-one headings. The comparison skips headings in block quotes, lists, tables, footnotes, raw HTML, and verbatim blocks.
+Pandoc reads the Markdown once for comparison and HTML output. The first eligible H1 is the first top-level or Pandoc Div heading of level one after skipping any confirmed hidden headings. Headings in block quotes, lists, tables, footnotes, raw HTML, and verbatim blocks are excluded. With `title: Report`, a visible `# Draft` before `# Report` keeps the block. If `# Draft` is confirmed hidden, `# Report` can supply the title. Both `# Heading` and the underlined form below count as H1s.
 
 ```markdown
 Heading
@@ -676,9 +676,9 @@ Heading
 
 The comparison folds case and whitespace and preserves punctuation. It supports plain text, emphasis, strong text, inline code, smart quotes, and link labels. If the first eligible H1 or metadata title uses unsupported formatting such as math, images, or spans, the block stays, even if a later H1 matches. The block also stays when there is no eligible H1. Every metadata title link needs a matching label and destination in the heading before the block can be omitted.
 
-With author CSS, a fully visible first body H1 can still supply the title. For example, frontmatter `title: Report` and a visible `# Report` print one title even with letter spacing. Emphasis in `# Re*port*` can also supply the complete title. The check uses the layout with the metadata block omitted, so a stylesheet that hides the H1 only in that layout keeps the block.
+With a custom stylesheet (from `--css` or a bundle), an embedded `<style>`, or a linked stylesheet, `auto` omits the block only if it can verify that the matching source H1 prints in full without the block. Letter spacing and emphasis (`# Re*port*`) can pass this check. Transparent, clipped, or covered letters and unavailable PDF inspection keep the block. Inline styles alone use the parsed heading check, so inline `opacity: 0` can leave the page without a visible title.
 
-If the heading is transparent, clipped, covered, or only partly visible, `auto` keeps the metadata title. It also keeps the block when it cannot identify the source heading or verify all its letters, including when PDF inspection is unavailable. If a new image or font source fails to load during inspection, the CLI uses the earlier PDF with its assets and metadata title. It also uses that PDF when WeasyPrint cannot identify which font source failed. WeasyPrint warnings on stderr describe the selected render. These fallbacks can print a duplicate. Use `show` or `hide` for a fixed choice. Debug HTML includes the same metadata block choice as the final PDF.
+A stable asset warning can still allow one title. If inspection adds a loading failure, reports the same failure more often, or cannot identify a failed font source, the CLI publishes the earlier PDF with its metadata block. This can print a duplicate. WeasyPrint warnings on stderr and the title choice in debug HTML reflect the selected PDF. Use `show` or `hide` for a fixed choice.
 
 In this example, `auto` keeps both links because their destinations differ. Use [Debug HTML](#debug-html) to inspect the generated title block and heading.
 
