@@ -178,6 +178,10 @@ test.each([
   ["loose comment", "- Item\n\n  more\n  <!-- note -->", false],
   ["tight paragraph after a heading", "- # Title\n  plain", true],
   ["loose paragraph after a heading", "- # Title\n\n  plain", false],
+  ["tight return from a child", "- Parent\n  - Child\n  Returned parent paragraph", true],
+  ["blank before returning to parent", "- Parent\n  - Child\n\n  Returned parent paragraph", false],
+  ["no blank inside preceding fence", "- ```\n  example\n  ```\n  next paragraph", true],
+  ["blank inside preceding fence", "- ```\n\n  example\n  ```\n  next paragraph", false],
 ] as const)("%s resolves a following document-margin fence", (_name, before, fenced) => {
   const source = [before, "~~~python", longRow, "~~~", "", "# Visible"].join("\n");
   const s = collect(source);
@@ -195,6 +199,8 @@ test.each([
   ["new ordered style", "- First\n2. Next\n---", false],
   ["new ordered delimiter", "1. First\n2) Next\n---", false],
   ["indented dashed table underline", "1. Item\n  ---", false],
+  ["ordered-looking heading after tight parent prose", "- Intro\n  1. Next\n  ---", true],
+  ["outdented underline in a tight parent", "- Intro\n  1. Next\n---", true],
 ] as const)("%s determines the margin below the underline", (_name, before, fenced) => {
   const source = [before, "    ~~~python", "    " + longRow, "    ~~~", "", "# Visible"].join("\n");
   const s = collect(source);

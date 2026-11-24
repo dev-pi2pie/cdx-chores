@@ -97,6 +97,7 @@ const CONTEXTUAL_BLOCK_TAGS = new Set([
 ]);
 
 interface SourceLine extends SourceLimits {
+  lastBlank: number;
   start: number;
   end: number;
 }
@@ -104,15 +105,18 @@ interface SourceLine extends SourceLimits {
 function sourceLines(content: string, lines: string[]): SourceLine[] {
   const breaks = content.matchAll(/\r\n?|\n/g);
   let start = 0;
-  const positions = lines.map((line) => {
+  let lastBlank = -1;
+  const positions = lines.map((line, index) => {
     const end = start + line.length;
     const position = {
+      lastBlank,
       start,
       end,
       inlineLimit: content.length,
       tagLimit: content.length,
       nextMarkdownStructure: content.length,
     };
+    if (!line.trim()) lastBlank = index;
     const newline = breaks.next().value;
     start = end + (newline?.[0].length ?? 0);
     return position;
@@ -308,7 +312,7 @@ export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
     const hasPipe = line.includes("|") && scanner.hasPipeDelimiter(position);
     const placement = covered
       ? { owner, relative: line, marker: false, lazy: false, literal: false }
-      : resolveContainer(owner, columns[index]!, index, hasPipe, columns[index + 1] ?? "");
+      : resolveContainer(owner, columns, index, hasPipe, position.lastBlank);
     owner = placement.owner;
     const { relative, marker, lazy } = placement;
     const previous = owner.block;

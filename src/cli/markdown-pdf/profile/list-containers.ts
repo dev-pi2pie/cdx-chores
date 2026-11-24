@@ -20,7 +20,6 @@ export function isParagraph(block: BlockContext) {
 export class Container {
   block: BlockContext = "boundary";
   proseStart = -1;
-  hasBlankLine = false;
   divDepth = 0;
   openHtmlBlocks?: Map<string, boolean[]>;
   rejectedTilde?: FenceLine;
@@ -46,6 +45,7 @@ export class Container {
     readonly margin = 0,
     readonly parent?: Container,
     readonly orderedStyle?: string,
+    readonly startLine = -1,
   ) {}
 
   fenceRange(lines: string[], index: number, opener: FenceLine) {
@@ -112,10 +112,15 @@ export function isPipeTableSeparator(line: string) {
 
 // A less-indented line can belong to the current paragraph. Test potential
 // interruptions at the destination margin before dropping the child.
-function continuesItem(owner: Container, destination: Container, relative: string) {
+function continuesItem(
+  owner: Container,
+  destination: Container,
+  relative: string,
+  lastBlank: number,
+) {
   if (!isParagraph(owner.block) || !owner.parent) return false;
   const fence = readFenceLine(relative);
-  if (fence) return owner.hasBlankLine && (fence.indent > 0 || fence.marker === "~");
+  if (fence) return lastBlank > owner.startLine && (fence.indent > 0 || fence.marker === "~");
   const div = readDivFence(relative);
   if (div) return !!destination.parent && div === "open";
   return !readMarker(relative, destination.margin);
@@ -142,18 +147,18 @@ function underlinesMarker(line: string, margin: number) {
 
 export function resolveContainer(
   current: Container,
-  line: string,
+  lines: string[],
   index: number,
   hasPipe: boolean,
-  nextLine: string,
+  lastBlank: number,
 ) {
+  const line = lines[index]!;
   let owner = line.trim() ? containerAtIndent(current, line) : current;
   let relative = line.slice(owner.margin);
-  if (owner !== current && continuesItem(current, owner, relative)) {
+  if (owner !== current && continuesItem(current, owner, relative, lastBlank)) {
     return { owner: current, relative: line, lazy: true, marker: false, literal: false };
   }
 
-  if (!line.trim()) owner.hasBlankLine = true;
   const setext =
     isParagraph(owner.block) && owner.proseStart === index - 1 && /^(-+|=+)[ \t]*$/.test(relative);
   const canStartItem =
@@ -177,11 +182,20 @@ export function resolveContainer(
         // At the start of an ordered list, Pandoc gives a Setext title or
         // dashed simple-table underline precedence over the apparent marker.
         // A compatible sibling is already inside the ordered list.
-        if (style !== sibling?.orderedStyle && underlinesMarker(nextLine, owner.margin)) break;
+        if (
+          style !== sibling?.orderedStyle &&
+          underlinesMarker(lines[index + 1] ?? "", owner.margin)
+        ) {
+          // The apparent marker is title text in this container, even when
+          // earlier prose immediately precedes it.
+          owner.proseStart = index;
+          owner.block = "paragraph";
+          break;
+        }
         listStyle = style;
       }
       owner.block = "boundary";
-      owner = new Container(next.margin, owner, listStyle);
+      owner = new Container(next.margin, owner, listStyle, index);
       enclosingSymbol = next.symbol;
       marker = true;
       relative = next.content;
