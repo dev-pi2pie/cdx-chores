@@ -291,18 +291,30 @@ class BoundaryScanner {
   }
 }
 
-export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
+function prepareSource(content: string) {
   const lines = content.split(/\r\n?|\n/);
   const columns = lines.map(expandIndent);
   const positions = sourceLines(content, lines);
   const documentFences = new FenceRange(columns, 0, 0);
-  const scanner = new BoundaryScanner(
-    content,
-    fenceRecoveryBoundaries(lines, positions, documentFences),
-  );
+  return { content, lines, columns, positions, documentFences };
+}
 
-  const ordinaryLines: string[] = [];
-  const fenceLanguages: string[] = [];
+interface MatchedFence {
+  open: number;
+  close: number;
+  language: string | null;
+}
+
+interface SourceVisitor {
+  ordinary(line: string, index: number): void;
+  fence(span: MatchedFence): void;
+}
+
+function walkSource(
+  { lines, columns, positions, documentFences }: ReturnType<typeof prepareSource>,
+  scanner: BoundaryScanner,
+  visitor: SourceVisitor,
+) {
   let owner = new Container();
 
   for (let index = 0; index < lines.length; index++) {
@@ -332,7 +344,7 @@ export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
             : documentFences;
         const close = range.close(index);
         if (close !== undefined) {
-          if (language !== null) fenceLanguages.push(language);
+          visitor.fence({ open: index, close, language });
           owner.observeFencedBody(columns, index, close, documentFences);
           owner.block = "boundary";
           owner.rejectedTilde = undefined;
@@ -356,14 +368,14 @@ export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
           /^ {4}/.test(relative) &&
           (previous === "boundary" || (previous === "pipe-table" && !hasPipe))))
     ) {
-      ordinaryLines.push(line);
+      visitor.ordinary(line, index);
       owner.block = "boundary";
       continue;
     }
     const div = covered ? undefined : readDivFence(relative);
     if ((div === "open" && !isParagraph(previous)) || (div === "close" && owner.divDepth > 0)) {
       owner.divDepth += div === "open" ? 1 : -1;
-      ordinaryLines.push(line);
+      visitor.ordinary(line, index);
       owner.block = "boundary";
       continue;
     }
@@ -382,7 +394,7 @@ export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
     }
     const { visible, context } = scanner.scan(position, owner, start, aligned, codeLimit);
     const visibleLine = line.slice(0, start - position.start) + visible;
-    ordinaryLines.push(visibleLine);
+    visitor.ordinary(visibleLine, index);
     const blockLine =
       marker || placement.continued
         ? visible
@@ -391,5 +403,23 @@ export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
           : visibleLine;
     owner.block = context ?? classifyBlock(owner, blockLine, index, columns, hasPipe);
   }
+}
+
+export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
+  const source = prepareSource(content);
+  const scanner = new BoundaryScanner(
+    content,
+    fenceRecoveryBoundaries(source.lines, source.positions, source.documentFences),
+  );
+  const ordinaryLines: string[] = [];
+  const fenceLanguages: string[] = [];
+  walkSource(source, scanner, {
+    ordinary(line) {
+      ordinaryLines.push(line);
+    },
+    fence({ language }) {
+      if (language !== null) fenceLanguages.push(language);
+    },
+  });
   return { ordinaryLines, fenceLanguages };
 }
