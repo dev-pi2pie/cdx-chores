@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { resolveStyledTitle } from "../../../src/cli/markdown-pdf/styled-title";
+import { resolveStyledTitle } from "../../../src/cli/markdown-pdf/title/styled-title";
 
 const header = '<header class="document-title"><h1>Report</h1></header>';
 const body =

@@ -8,7 +8,7 @@ import {
   shouldSuppressMarkdownPdfMetadataTitle,
   styledTitleHeadings,
   type StyledTitleHeading,
-} from "./ast-title";
+} from "./title/ast-title";
 
 export type MarkdownPdfAstTitleTemplate = (suppressMetadataTitle: boolean) => string;
 

@@ -3,7 +3,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parse, type DefaultTreeAdapterTypes as Html } from "parse5";
 
-import { shouldSuppressMarkdownPdfMetadataTitle } from "../../../src/cli/markdown-pdf/ast-title";
+import { shouldSuppressMarkdownPdfMetadataTitle } from "../../../src/cli/markdown-pdf/title/ast-title";
 import { createMarkdownPdfTemplate } from "../../../src/cli/markdown-pdf/recipe";
 import { parseMarkdown } from "../../../src/markdown";
 

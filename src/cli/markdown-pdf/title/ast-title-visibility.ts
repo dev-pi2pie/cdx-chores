@@ -4,7 +4,7 @@ import {
   inlineValue,
   inlineVariables,
 } from "./ast-title-variables";
-import { normalizeCssForInspection } from "./css-inspection";
+import { normalizeCssForInspection } from "../css-inspection";
 
 export interface TitleBlockStyle {
   display: "box" | "omitted" | "unknown";

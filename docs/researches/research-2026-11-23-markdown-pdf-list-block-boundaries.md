@@ -121,7 +121,7 @@ The checks compare visible headings, language hints, and source-row counts. Repl
 
 ## When can a styled body heading stand in for the metadata title?
 
-With the built-in template, the cover off, and a nonempty frontmatter title, `titleBlock.metadataTitle: auto` can omit the metadata block when a body H1 supplies the same title. An author stylesheet can change which heading the reader sees. The current renderer extracts H1 text from a tagged PDF made without the metadata block, then looks for the extracted label among the source headings. [Automatic metadata titles](../guides/markdown-pdf-usage.md#automatic-metadata-titles) · [Current comparison](../../src/cli/markdown-pdf/styled-title.ts)
+With the built-in template, the cover off, and a nonempty frontmatter title, `titleBlock.metadataTitle: auto` can omit the metadata block when a body H1 supplies the same title. An author stylesheet can change which heading the reader sees. The current renderer extracts H1 text from a tagged PDF made without the metadata block, then looks for the extracted label among the source headings. [Automatic metadata titles](../guides/markdown-pdf-usage.md#automatic-metadata-titles) · [Current comparison](../../src/cli/markdown-pdf/title/styled-title.ts)
 
 Both examples use the metadata title `Report` and the Markdown heading `# Report {#report}`. With Pandoc 2.0 and 3.9 and WeasyPrint 70.0, the rendered pages differed from the previous canary in opposite ways. [Reproductions and page comparisons](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#open-title-findings-after-the-third-canary-review)
 

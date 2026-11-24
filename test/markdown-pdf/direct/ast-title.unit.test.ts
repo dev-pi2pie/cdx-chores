@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { shouldSuppressMarkdownPdfMetadataTitle } from "../../../src/cli/markdown-pdf/ast-title";
+import { shouldSuppressMarkdownPdfMetadataTitle } from "../../../src/cli/markdown-pdf/title/ast-title";
 
 const attr = ["", [], []];
 const space = { t: "Space" };

@@ -12,7 +12,7 @@ Implementation baseline `ddc5d119`. [Implementation plan](../plan-2026-11-22-mar
 
 **Status** — Verified and independently reviewed. Checkpoint `ddc5d119..bdabdac2` includes the linked job setup and the title comparison with fixtures.
 
-The comparator requires a nonempty front-matter string, selects the first Markdown H1 at the top level or inside native Divs, and compares supported display text with case and whitespace folded and punctuation preserved. Unsupported formatting in the first eligible H1 or parsed title keeps the title block. Every metadata link needs the same label and literal destination in the H1. [Comparator](../../../src/cli/markdown-pdf/ast-title.ts) · [Shared fixtures](../../../test/markdown-pdf/direct/ast-title-fixtures.ts)
+The comparator requires a nonempty front-matter string, selects the first Markdown H1 at the top level or inside native Divs, and compares supported display text with case and whitespace folded and punctuation preserved. Unsupported formatting in the first eligible H1 or parsed title keeps the title block. Every metadata link needs the same label and literal destination in the H1. [Comparator](../../../src/cli/markdown-pdf/title/ast-title.ts) · [Shared fixtures](../../../test/markdown-pdf/direct/ast-title-fixtures.ts)
 
 | Verification | Result |
 | --- | --- |

@@ -8,7 +8,7 @@ import { readTextFileRequired, writeBufferFileSafe, writeTextFileSafe } from "..
 import { execCommand, type ExecCommandResult } from "../process";
 import { highlightMarkdownPdfCodeBlocks } from "./code-highlight";
 import { finalizeMarkdownPdfPageNumberHtml } from "./page-number-html";
-import { inspectPrintedTitle, resolveStyledTitle } from "./styled-title";
+import { inspectPrintedTitle, resolveStyledTitle } from "./title/styled-title";
 import {
   resolveMarkdownPdfPandocSource,
   runMarkdownPdfPandocStage,
