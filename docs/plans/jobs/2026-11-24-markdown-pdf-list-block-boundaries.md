@@ -266,3 +266,14 @@ For the overlay pair, `#report` had relative positioning and `letter-spacing: .2
 All 22 candidate PDFs matched only the expected explicit control from their own reader. MuPDF and Poppler independently compared the full rasterized pages. The selected HTML agreed on header presence in every case. The four paired cases each needed one WeasyPrint proof, the same count as the current check. Positive decisions additionally rasterized the original proof and two in-memory PDF variants. Across the eight reader/fixture combinations, median proof time was 211–216 ms for the current check and 265–289 ms for the prototype, including proof inspection and excluding the final print. Each median used three timed runs after warm-up.
 
 **Decision after the experiment.** Accepted the visibility rule for `auto` on the strength of the two-reader experiment recorded at `98276ddf`. Keep the metadata block whenever source identity or complete visibility is uncertain. The positive evidence covers a single opaque text run on white. Production integration and built-CLI verification on both readers remain open. [Accepted direction](../../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#accepted-direction-for-automatic-title-selection) · [Follow-Up checklist](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
+
+## Source heading handoff at the renderer boundary
+
+At `b51f30df`, the built CLI rendered two fixtures for each combination of Pandoc 2.0 and 3.9 with WeasyPrint 69.0 and 70.0. Version 69 used the existing direct-render opt-in for remote assets with local-only inputs. Version 70 used the default asset restrictions. A test observer inside WeasyPrint recorded each source H1’s HTML ID and the marked-content ID assigned to its text draw. A Node reader using PDF.js independently matched those IDs to the H1 structure and glyph operators in each single-page proof.
+
+| Fixture | Result across all four version pairs |
+| --- | --- |
+| One `Report` H1 with `letter-spacing: .25em` | The Pandoc heading ID mapped to one marked text draw encoding all six source characters. |
+| Two `Report` H1s at the same position, the first transparent and the second opaque | Both named destinations had identical coordinates. The H1 tags carried distinct marked-content IDs but omitted the HTML IDs. The observer correctly attributed each draw to its source heading. |
+
+The observer established the source-to-draw link in eight renders. The current CLI invokes a WeasyPrint executable. Shipping this observer would also require a way to run it in the matching, importable Python renderer. The two built-CLI fallback checks and production paint verification remain open pending the integration decision.
