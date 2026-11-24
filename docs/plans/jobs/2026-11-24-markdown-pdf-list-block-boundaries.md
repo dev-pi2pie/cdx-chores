@@ -223,3 +223,23 @@ The third review covered `9d578d9d...9e159a3a` and `c15c6467...9e159a3a`. It cle
 | `#report { letter-spacing: 0.25em }` on the first H1 | Extraction inserted spaces into the label. The rendered `auto` page matched `show` pixel for pixel and printed both titles. | Use the visible body heading once. |
 
 These results reopened the research. The [proposed title rule](../../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#proposed-rule-for-author-stylesheets) distinguishes heading identity from visible text on the page. The [dedicated follow-up phase](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css) owns the experiment, implementation, guide update, and canary re-review. Both findings remain open.
+
+## Follow-up experiment on complete title visibility
+
+At `f0cf7591`, the built CLI rendered nine single-page fixtures in `auto`, `show`, and `hide` on Pandoc 2.0 and 3.9 with WeasyPrint 70.0 (54 PDFs). The transparent and letter-spaced fixtures reproduced the two failures above. For each fixture, the prototype printed the `hide` HTML and original styles twice. The first raster matched the CLI’s `hide` page. The second print suppressed only the selected H1’s source text at draw time, including text in descendants. Borders, backgrounds, generated content, and layout remained in place.
+
+The prototype compared the source title with the emitted glyphs and checked for changed pixels in every non-space glyph’s bounding box. Both readers gave the same results.
+
+| Fixture | Observation | Proposed omission test |
+| --- | --- | --- |
+| Transparent text, with or without a visible border | All six glyphs were emitted. Suppressing them changed no pixels. | Correctly retained the metadata title. |
+| Letter-spaced title or ordinary navy text | All six glyphs were emitted and visible. | Correctly omitted the block. |
+| Hidden emphasis or a heading hidden by `:first-child` | Only “Re” or no glyphs were emitted. | Correctly retained the block. |
+| Opaque overlay covering the suffix from `left: 1em` | Some glyph boxes contained no changed pixels. | Correctly retained the block. |
+| Opaque overlay covering the bottom half, or `overflow: hidden; height: .65em` | Every glyph box contained changed pixels. Inspection of both rasterized controls showed cut-off letters. | Incorrectly omitted the block in both cases. |
+
+To reproduce the lower-half overlay, give `#report` relative positioning and set `#report::after { content: ""; position: absolute; top: 50%; right: 0; bottom: 0; left: 0; background: white }`. The clipping control needs only the overflow and height declarations in the table. Both use the built-in styles, frontmatter title `Report`, and body heading `# Report {#report}`.
+
+On the two reported fixtures, the existing tagged-PDF check took 213–223 ms and the two-print prototype took 277–300 ms. Each range spans four medians, one per reader and fixture, with three timed runs after warm-up. Timings cover the proof and its inspection on these single-page inputs. The prototype also rasterized and compared the CLI control.
+
+**Decision.** Reject this omission test. Source identity, the full emitted string, and some visible ink in each glyph box still allow a partially covered title to pass. The implementation and guide await a decision on how to establish complete visibility. [Research decision](../../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#why-a-pixel-change-in-every-letter-is-insufficient)

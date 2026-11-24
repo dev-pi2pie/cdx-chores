@@ -148,9 +148,15 @@ flowchart TD
 
 Only a confirmed wholly invisible heading allows the comparison to advance. An earlier visible heading with a different title ends the comparison, even when a later heading matches. Keeping the metadata block when evidence is inconclusive can print a duplicate.
 
-Two proposed controls distinguish these decisions. With `# Re*port* {#report}` and `#report em { visibility: hidden }`, only “Re” is visible, so `auto` should keep the complete metadata title. With `# Report` as the first body heading and `.document-body > h1:first-child { display: none }`, omitting the preceding metadata block hides the H1. Here too, `auto` should keep the block.
+Two controls distinguish these decisions. With `# Re*port* {#report}` and `#report em { visibility: hidden }`, only “Re” is visible, so `auto` should keep the complete metadata title. With `# Report` as the first body heading and `.document-body > h1:first-child { display: none }`, omitting the preceding metadata block hides the H1. Here too, `auto` should keep the block.
 
-The open question is whether the renderer can associate visible title text with a specific source heading at an acceptable cost. One experiment would compare the page with and without that heading’s text paint while preserving layout and author styles. A shifted paragraph or a painted heading border alone would not establish that the title text was visible. Compare the result with explicit `show` and `hide` pages, record the extra renders and elapsed time, and use that evidence to choose an approach. [Follow-up phase](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
+### Why a pixel change in every letter is insufficient
+
+The experiment printed the same page twice, suppressing only the selected heading’s text paint on the second pass. Changing pixels revealed the letter-spaced title and correctly excluded the transparent one. Comparing the drawn characters with the source also detected the missing “port” in the emphasis control.
+
+A heading styled with `#report { overflow: hidden; height: .65em }` exposed a limit. The PDF contained all six characters in “Report”, and every glyph’s bounding box contained changed pixels. The page showed only the tops of the letters. An opaque overlay across the lower half of the heading produced the same false result on both readers. This rules out using a pixel change per glyph as the test for complete visibility. [Experiment and timings](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up-experiment-on-complete-title-visibility)
+
+The open decision is how much author CSS automatic deduplication should support. A narrower rule could retain the metadata block whenever clipping or overlapping paint cannot be ruled out. A broader rule would need an independent reference for the complete, unobscured letter shapes. Neither approach has been verified. [Follow-up phase](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
 
 ## Related Plans
 
