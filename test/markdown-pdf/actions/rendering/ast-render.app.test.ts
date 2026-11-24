@@ -69,6 +69,41 @@ describe("Markdown PDF AST render execution", () => {
     });
   });
 
+  test("retains the metadata block when a styled heading cannot be confirmed in print", async () => {
+    await withTempFixtureDir("md-pdf-styled-title", async (dir) => {
+      const input = join(dir, "report.md");
+      const css = join(dir, "print.css");
+      const htmlOutput = join(dir, "report.html");
+      await writeFile(input, markdown);
+      await writeFile(css, "#heading { display: none; }");
+      const header = '<header class="document-title"><h1>Report</h1></header>';
+      const main = '<main class="document-body">' + header + '<h1 id="heading">Report</h1></main>';
+      const { runtime } = createActionTestRuntime({ cwd: dir });
+      const { runner: ordinary } = createPdfRunner({ html: main, pandocJson: ast });
+      const prints: string[] = [];
+      const runner: MarkdownPdfProcessRunner = async (command, args, opts) => {
+        if (command === "weasyprint" && args.includes("--base-url")) {
+          expect(args).toContain(css);
+          expect(arg(args, "--allowed-protocols")).toBe("file,data");
+          prints.push(await readFile(args.at(-2)!, "utf8"));
+          if (args.includes("--pdf-variant")) return failing("tagged inspection unavailable");
+        }
+        return ordinary(command, args, opts);
+      };
+      await actionMdToPdf(runtime, {
+        input,
+        css,
+        output: join(dir, "report.pdf"),
+        htmlOutput,
+        runner,
+      });
+      expect(prints).toHaveLength(2);
+      expect(prints[0]).not.toContain(header);
+      expect(prints[1]).toContain(header);
+      expect(await readFile(htmlOutput, "utf8")).toBe(prints[1]!);
+    });
+  });
+
   test("reports both Pandoc stages when PDF production later fails", async () => {
     await withTempFixtureDir("md-pdf-ast-pdf-failure", async (dir) => {
       const input = join(dir, "report.md");

@@ -30,6 +30,14 @@ function firstH1(
   }
 }
 
+function* bodyHeadings(blocks: unknown[]): Generator<unknown[]> {
+  for (const block of blocks) {
+    if (!isRecord(block) || !Array.isArray(block.c)) continue;
+    if (block.t === "Header" && block.c[0] === 1) yield block.c;
+    if (block.t === "Div" && Array.isArray(block.c[1])) yield* bodyHeadings(block.c[1]);
+  }
+}
+
 function normalizeText(text: string): string {
   return text.replace(/\s+/gu, " ").trim().toLowerCase();
 }
@@ -100,21 +108,41 @@ export function shouldSuppressMarkdownPdfMetadataTitle(
   const heading = firstH1(document.blocks);
   if (!heading || heading === "unknown") return false;
 
-  const titleLinks: TitleLink[] = [];
-  const headingLinks: TitleLink[] = [];
-  const titleText = projectMetadataTitle(document.meta.title, titleLinks);
-  const headingText = projectInlines(heading[2], headingLinks);
-  if (titleText === undefined || headingText === undefined) return false;
+  return titleMatcher(document.meta.title)(heading);
+}
 
-  const title = normalizeText(titleText);
-  return (
-    title.length > 0 &&
-    title === normalizeText(headingText) &&
-    titleLinks.every((link) =>
-      headingLinks.some(
-        (headingLink) =>
-          link.label === headingLink.label && link.destination === headingLink.destination,
-      ),
-    )
-  );
+function titleMatcher(metadata: unknown) {
+  const titleLinks: TitleLink[] = [];
+  const title = normalizeText(projectMetadataTitle(metadata, titleLinks) ?? "");
+  return (heading: unknown[]): boolean => {
+    if (!title) return false;
+    const headingLinks: TitleLink[] = [];
+    const text = projectInlines(heading[2], headingLinks);
+    return (
+      text !== undefined &&
+      title === normalizeText(text) &&
+      titleLinks.every((link) =>
+        headingLinks.some(
+          (candidate) =>
+            candidate.label === link.label && candidate.destination === link.destination,
+        ),
+      )
+    );
+  };
+}
+
+export interface StyledTitleHeading {
+  id: string;
+  matches: boolean;
+}
+
+/** Author styles can also reveal an earlier inline-hidden heading. Preserve document order. */
+export function styledTitleHeadings(document: unknown): StyledTitleHeading[] {
+  if (!isRecord(document) || !isRecord(document.meta) || !Array.isArray(document.blocks)) return [];
+  const matches = titleMatcher(document.meta.title);
+  const headings = Array.from(bodyHeadings(document.blocks), (heading) => ({
+    id: Array.isArray(heading[1]) && typeof heading[1][0] === "string" ? heading[1][0] : "",
+    matches: matches(heading),
+  }));
+  return headings.some((heading) => heading.matches) ? headings : [];
 }

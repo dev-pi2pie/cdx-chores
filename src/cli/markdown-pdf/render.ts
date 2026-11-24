@@ -8,6 +8,7 @@ import { readTextFileRequired, writeBufferFileSafe, writeTextFileSafe } from "..
 import { execCommand, type ExecCommandResult } from "../process";
 import { highlightMarkdownPdfCodeBlocks } from "./code-highlight";
 import { finalizeMarkdownPdfPageNumberHtml } from "./page-number-html";
+import { inspectPrintedTitle, resolveStyledTitle } from "./styled-title";
 import {
   resolveMarkdownPdfPandocSource,
   runMarkdownPdfPandocStage,
@@ -195,6 +196,7 @@ export async function renderMarkdownPdf(
       tempDir,
       templateHtml: input.templateHtml,
       templateForAstTitle: input.templateForAstTitle,
+      customStyle: Boolean(input.customCssPath),
       runner,
     });
     const templatePath = input.customTemplatePath
@@ -245,8 +247,7 @@ export async function renderMarkdownPdf(
     }
     const pandocWarnings = [...splitLines(source.readerStderr), ...splitLines(pandoc.stderr)];
 
-    const html = await createFinalHtml(input, pandocHtmlPath);
-    await writeFile(finalHtmlPath, html, "utf8");
+    let html = await createFinalHtml(input, pandocHtmlPath);
 
     await rejectRemoteMarkdownPdfAssetsWhenDisabled({
       html,
@@ -269,6 +270,30 @@ export async function renderMarkdownPdf(
       weasyprintArgs.push(MARKDOWN_PDF_PROTOCOL_ALLOWLIST_OPTION, "file,data");
     }
 
+    for (const cssPath of cssPaths) {
+      weasyprintArgs.push("--stylesheet", cssPath);
+    }
+    if (source.styledTitle) {
+      html = await resolveStyledTitle({
+        ...source.styledTitle,
+        html,
+        customStyle: Boolean(input.customCssPath),
+        inspect: (probe) =>
+          inspectPrintedTitle(
+            probe,
+            tempDir,
+            async (probeHtml, probePdf) =>
+              (
+                await runner(
+                  "weasyprint",
+                  [...weasyprintArgs, "--pdf-variant", "pdf/ua-1", probeHtml, probePdf],
+                  { cwd },
+                )
+              ).ok,
+          ),
+      });
+    }
+    await writeFile(finalHtmlPath, html, "utf8");
     if (input.htmlOutputPath) {
       await writeTextFileSafe(input.htmlOutputPath, html, {
         label: "HTML output",
@@ -278,9 +303,6 @@ export async function renderMarkdownPdf(
     }
 
     const renderedPdfPath = join(tempDir, "rendered.pdf");
-    for (const cssPath of cssPaths) {
-      weasyprintArgs.push("--stylesheet", cssPath);
-    }
     weasyprintArgs.push(finalHtmlPath, renderedPdfPath);
 
     const weasyprint = await runner("weasyprint", weasyprintArgs, { cwd });
