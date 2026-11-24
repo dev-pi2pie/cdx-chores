@@ -215,14 +215,14 @@ At `9e159a3a`, the full suites passed 2,730 unit, 2,769 application, and 110 Pan
 
 ### Open title findings after the third canary review
 
-The third review covered `9d578d9d...9e159a3a` and `c15c6467...9e159a3a`. It cleared the three original findings and the stylesheet hiding the matching H1. Two regressions remain in automatic title selection with author CSS. Both reproduced on the built CLI with Pandoc 2.0 and 3.9 and WeasyPrint 70.0. Raster comparisons used the same document with explicit `show` and `hide` as controls.
+The third review covered `9d578d9d...9e159a3a` and `c15c6467...9e159a3a`. It cleared the three original findings and the stylesheet hiding the matching H1. Two regressions remained in automatic title selection with author CSS. Both reproduced on the built CLI with Pandoc 2.0 and 3.9 and WeasyPrint 70.0. Raster comparisons used the same document with explicit `show` and `hide` as controls.
 
 | Author stylesheet | Observed output | Expected output |
 | --- | --- | --- |
 | `#report { color: transparent }` after an earlier inline-hidden H1 | The tagged PDF contained “Report”. The rendered `auto` page matched `hide` pixel for pixel and showed only the body text. | Keep the visible metadata title. |
 | `#report { letter-spacing: 0.25em }` on the first H1 | Extraction inserted spaces into the label. The rendered `auto` page matched `show` pixel for pixel and printed both titles. | Use the visible body heading once. |
 
-These results reopened the research into [automatic title selection](../../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#accepted-direction-for-automatic-title-selection). The [dedicated follow-up phase](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css) owns the experiment, implementation, guide update, and canary re-review. Both findings remain open.
+These results reopened the research into [automatic title selection](../../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#accepted-direction-for-automatic-title-selection). The [dedicated follow-up phase](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css) took over the experiment, implementation, guide update, and canary re-review.
 
 ## Follow-up experiment on complete title visibility
 
@@ -244,7 +244,7 @@ On the two reported fixtures, the existing tagged-PDF check took 213–223 ms an
 
 **Decision.** Reject this omission test. Source identity, the full emitted string, and some visible ink in each glyph box still allow a partially covered title to pass. The implementation and guide await a decision on how to establish complete visibility. [Research decision](../../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#why-a-pixel-change-in-every-letter-is-insufficient)
 
-Independent review of `9d578d9d...35a1ab3c` found no new actionable issues. On Pandoc 3.9 and WeasyPrint 70.0, the reviewer reproduced both cut-off titles. Every glyph box changed in the paired prints, although each title retained less than half the changed pixels of its unobscured control. All 2,730 unit tests passed in review. This clears the experiment checkpoint. The two production findings and final canary clearance remain open.
+Independent review of `9d578d9d...35a1ab3c` found no new actionable issues. On Pandoc 3.9 and WeasyPrint 70.0, the reviewer reproduced both cut-off titles. Every glyph box changed in the paired prints, although each title retained less than half the changed pixels of its unobscured control. All 2,730 unit tests passed in review. This cleared the experiment checkpoint. The two production findings and final canary clearance were still open at that point.
 
 ## Unobscured title experiment
 
@@ -277,7 +277,7 @@ With WeasyPrint 69.0, the Node.js prototype compared 12 fixtures and two indepen
 | Matched `show` | A clip through the letters, an overlay across them, transparent text alone or after a hidden H1, hidden emphasis, a heading hidden by `:first-child`, coincident same-label headings, and CSS-generated lookalike text. |
 | Matched `show` in both fallback checks | On the fully visible letter-spaced fixture, withhold source identity alone, then retain identity and withhold visibility alone. |
 
-For the visible letter-spaced fixture, median proof time rose from 262 to 523 ms on Pandoc 2.0 and from 258 to 532 ms on 3.9. Each median covers three runs after warm-up and excludes the final print. The single-run result supports the [Node.js implementation direction](../../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#identifying-a-plain-text-h1-in-nodejs). Production implementation, both built-CLI fallbacks, and the earlier-hidden-H1 compatibility check remain open in the [Follow-Up checklist](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css).
+For the visible letter-spaced fixture, median proof time rose from 262 to 523 ms on Pandoc 2.0 and from 258 to 532 ms on 3.9. Each median covers three runs after warm-up and excludes the final print. The single-run result supports the [Node.js implementation direction](../../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#identifying-a-plain-text-h1-in-nodejs). Production implementation, both built-CLI fallbacks, and the earlier-hidden-H1 compatibility check were still open at this checkpoint. See the [Follow-Up checklist](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css).
 
 ## Title-selection module layout
 
@@ -302,7 +302,7 @@ At `73306696`, the built CLI and the single-run prototype selected different pag
 
 The prototype retained the block for both hidden cases because the source contained two H1s. The visible formatted title also spanned two tagged fragments. The compatibility decision is to preserve the current CLI output. Test whether the proof can identify every run in the later H1 and keep the block when an earlier nonmatch appears or any part of the title is uncertain. [Follow-Up checklist](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
 
-Before production integration, an extended prototype matched all nine expected pages on each reader with the same renderer and default asset restrictions. The plain and emphasized first H1 each matched `hide`, both alone and after the hidden H1. Revealing the earlier nonmatch matched `show` for either later heading. Hiding the emphasized suffix, making it transparent, or replacing its visible text with CSS-generated content each matched `show`. The full-page rasters and selected HTML agreed. The built-CLI production checks remain open.
+Before production integration, an extended prototype matched all nine expected pages on each reader with the same renderer and default asset restrictions. The plain and emphasized first H1 each matched `hide`, both alone and after the hidden H1. Revealing the earlier nonmatch matched `show` for either later heading. Hiding the emphasized suffix, making it transparent, or replacing its visible text with CSS-generated content each matched `show`. The full-page rasters and selected HTML agreed. The next checkpoint repeated these checks through the built CLI.
 
 ## Production verification of styled auto
 
@@ -318,3 +318,16 @@ At `81bae1a1`, the built `md to-pdf` command used the same WeasyPrint 70.0 defau
 The built CLI passed 34 fixture comparisons per reader before the independent fallback runs. They included the guide’s plain and emphasized first H1 with and without author CSS, an H1 following a page break, CSS whitespace and custom properties, and a matching H1 moved into page furniture.
 
 On the one-page letter-spaced fixture, median proof time was 341 ms before the fix and 707 ms after it on Pandoc 2.0. On 3.9 the medians were 402 and 872 ms. Each comparison used the same reader and WeasyPrint 70.0 default restrictions, alternated the baseline and revised built CLIs, and measured three runs after warm-up. The interval includes the tagged print, the additional substitution print for the revised check, and inspection. It excludes Pandoc conversion and the final print.
+
+### Canary review of the production title check
+
+Round one covered `9d578d9d...2c3b1a88`. Both corrections at `fbb447e0` passed on Pandoc 2.0 and 3.9.
+
+| Finding | Verified output after correction |
+| --- | --- |
+| A stylesheet changed after inspection. Printing the selected HTML again could hide the only title. | The published PDF was byte-for-byte identical to the inspected original. It retained one visible heading after the stylesheet changed. |
+| An uppercase or wrapped heading printed twice. | Uppercase, lowercase, a three-line title and uppercase across three lines each matched `hide`. Different source word boundaries kept the block. |
+
+All 40 page comparisons per reader passed with WeasyPrint 70.0. The missing-identity, missing-glyph-evidence and unavailable-inspection controls each matched `show`. A visible letter-spaced heading also published the inspected PDF on both readers with WeasyPrint 69.0 and remote assets explicitly allowed. [Regression tests](../../../test/markdown-pdf/actions/rendering/printed-title.app.test.ts)
+
+Repeating the one-page measurement above, the median time from starting the proof to selecting the HTML was 313 ms at `73306696` and 723 ms at `fbb447e0` on Pandoc 2.0. On 3.9 it was 337 and 684 ms. At `fbb447e0` the first of the two prints also supplied the published PDF.

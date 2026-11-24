@@ -185,7 +185,7 @@ The built-in `md to-pdf` title policy shipped in `v0.1.5` at `6cd30daa`. A visib
 
 The bounded extension changed the source text separately in each inline fragment and required each printed run to show its corresponding change. It checked every glyph outline in the original proof. For italic text, adjacent glyphs can have overlapping bounding boxes even when their outlines are separate. Comparing the outlines preserved the complete formatted heading on both readers. [Two-reader results](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#earlier-hidden-heading-compatibility)
 
-The built CLI preserved one title for both spellings on Pandoc 2.0 and 3.9. An incomplete heading or missing inspection evidence kept the metadata block. [Production verification](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#production-verification-of-styled-auto)
+The built CLI preserved one title for both spellings on Pandoc 2.0 and 3.9. CSS case changes and line wrapping also preserved the source words. When the complete matching heading supplied the title, the CLI published the inspected PDF so a later stylesheet change could not remove it. An incomplete heading or missing inspection evidence kept the metadata block. [Production verification](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#production-verification-of-styled-auto)
 
 ### Where should metadata-title selection live?
 
@@ -194,7 +194,7 @@ Both parts of `auto` now live under `src/cli/markdown-pdf/title/`. [Module layou
 | Responsibility | Files |
 | --- | --- |
 | Match source headings and interpret inline styles | `ast-title.ts`, `ast-title-visibility.ts`, `ast-title-variables.ts` |
-| Inspect printed headings and select the metadata title block | `styled-title.ts` |
+| Select the metadata block, identify printed text and check glyph visibility | `styled-title.ts`, `printed-proof.ts`, `visible-glyphs.ts` |
 
 - `pandoc-source.ts` supplies the parsed Markdown.
 - `render.ts` coordinates printing.
