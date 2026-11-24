@@ -179,6 +179,18 @@ Two headings with the same text can share a PDF destination position. For a sing
 
 Use the original proof to judge visibility. For the letter-spaced “Report”, all six opaque glyph outlines fit inside the page and its active clips on a white background. A clip through the letters or later paint covering them kept the metadata block. On Pandoc 2.0 and 3.9 with WeasyPrint 69.0, the second proof and inspection added about 0.26–0.27 seconds on this one-page example. This supports implementing the single-run case. Preserving title selection when an earlier H1 is hidden and a later one matches remains a compatibility check. [Node.js results](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#nodejs-title-visibility-experiment) · [Follow-up phase](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
 
+### Where should metadata-title selection live?
+
+Group both parts of `auto` under `src/cli/markdown-pdf/title/` before adding the visibility check.
+
+| Responsibility | Files to move |
+| --- | --- |
+| Match source headings and interpret inline styles | `ast-title.ts`, `ast-title-visibility.ts`, `ast-title-variables.ts` |
+| Inspect printed headings and select the metadata title block | `styled-title.ts` |
+
+- `pandoc-source.ts` supplies the parsed Markdown.
+- `render.ts` coordinates printing.
+
 ## Related Plans
 
 - [Markdown PDF list block boundaries implementation](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md)
