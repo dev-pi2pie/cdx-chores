@@ -341,9 +341,9 @@ Round two covered `9d578d9d...605ae132`. Independent review cleared both first-r
 
 At `2a58ed11`, the median interval from starting the first print to selecting the HTML was 1,200 ms on Pandoc 2.0 and 1,121 ms on 3.9. The one-page measurement used the same alternating method and included the ordinary fallback print, two tagged prints and inspection. The corresponding intervals at `73306696` were 399 and 375 ms, excluding that baseline's separate final print.
 
-### Open finding after the third title review
+### Font loading in the third title review
 
-Round three covered `9d578d9d...3e253e80`. The reviewer independently cleared the disappearing-logo and Unicode uppercase cases on Pandoc 3.9 with WeasyPrint 70.0. One font-loading finding remains open.
+Round three covered `9d578d9d...3e253e80`. The reviewer independently cleared the disappearing-logo and Unicode uppercase cases on Pandoc 3.9 with WeasyPrint 70.0. One font-loading finding remained open at that tip.
 
 | Reproduction | Observed output |
 | --- | --- |
@@ -351,4 +351,13 @@ Round three covered `9d578d9d...3e253e80`. The reviewer independently cleared th
 
 All 46 fixtures per reader matched the explicit controls across their rendered pages on Pandoc 2.0 and 3.9, including the logo on either page and the unchanged CSS-generated title. Both missing-evidence controls and the unavailable-inspection check kept the metadata block. These fixtures did not cover two font faces producing the same warning. One renderer invocation exited during a Pandoc 2.0 fallback run. The full fallback group passed when repeated separately.
 
-At this tip, 2,732 unit, 2,792 application and 110 Pandoc integration tests passed. The Pandoc suite passed separately after an earlier run reached its 30-second limit. The build, tracked TypeScript, lint, formatting and whitespace checks passed. The [Follow-Up](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css) remains open. Code review paused after round three for discussion of ambiguous resource diagnostics.
+At this tip, 2,732 unit, 2,792 application and 110 Pandoc integration tests passed. The Pandoc suite passed separately after an earlier run reached its 30-second limit. The build, tracked TypeScript, lint, formatting and whitespace checks passed. The [Follow-Up](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css) stayed open. Code review paused after round three for discussion of ambiguous resource diagnostics.
+
+At `23baabf9` each proof compares the number of occurrences of each resource warning with the ordinary render. Pandoc 2.0 and 3.9 gave the same results with WeasyPrint 70.0. Both comparisons used the complete two-page output and inspected the embedded regular font on page two.
+
+| Font during inspection | Warning counts, ordinary render then proofs | Published output |
+| --- | --- | --- |
+| Regular face stays available | 1, 1, 1 | Matches `hide`. One title and the regular font. |
+| Regular face disappears after the ordinary render | 1, 2 | Matches `show`. The saved ordinary PDF retains the regular font. |
+
+Application tests also introduced the extra warning only in the second proof. Either proof could select the fallback. In all three cases stderr reported the one font warning from the published render. [Regression tests](../../../test/markdown-pdf/actions/rendering/printed-title.app.test.ts)
