@@ -12,6 +12,10 @@ export function isParagraph(block: BlockContext) {
   return block === "paragraph";
 }
 
+export function continuesVerse(block: BlockContext, relative: string) {
+  return block === "verse" && /^[ \t]/.test(relative);
+}
+
 export class Container {
   block: BlockContext = "boundary";
   proseStart = -1;
@@ -368,7 +372,7 @@ export function resolveContainer(
     isParagraph(owner.block) && owner.proseStart === index - 1 && /^(-+|=+)[ \t]*$/.test(relative);
   const canStartItem =
     (owner.parent || !isParagraph(owner.block)) &&
-    !(owner.block === "verse" && /^[ \t]/.test(relative)) &&
+    !continuesVerse(owner.block, relative) &&
     !(owner.block === "pipe-table" && hasPipe) &&
     !setext;
   let marker = projected !== undefined;
@@ -438,7 +442,7 @@ export function classifyBlock(
   if (!line.trim()) return previous === "definition-term" ? previous : "boundary";
   const next = lines[index + 1] ?? "";
 
-  if (previous === "verse" && /^[ \t]/.test(line)) return "verse";
+  if (continuesVerse(previous, line)) return "verse";
   if (
     !isParagraph(previous) &&
     hasPipe &&

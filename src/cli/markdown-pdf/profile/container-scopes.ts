@@ -1,5 +1,11 @@
 import { FenceRange } from "./fence-lines";
-import { Container, expandIndent, isParagraph, resolveContainer } from "./list-containers";
+import {
+  Container,
+  continuesVerse,
+  expandIndent,
+  isParagraph,
+  resolveContainer,
+} from "./list-containers";
 
 // A quote contains another Markdown block sequence. Parse its projected
 // lines with the same list rules and map spans back to physical line numbers.
@@ -87,6 +93,7 @@ export class ContainerScopes {
         !placement.lazy &&
         !placement.literal &&
         !isParagraph(frame.owner.block) &&
+        !continuesVerse(frame.owner.block, placement.relative) &&
         /^ {0,3}>[ \t]?/.exec(placement.relative);
       if (!mark) return { frame, local, placement, quoted: this.stack.length > 1 };
       const body = frame.owner.quoteBody(

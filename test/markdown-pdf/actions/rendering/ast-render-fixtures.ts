@@ -15,7 +15,7 @@ import {
   listBoundaryCases,
   pipeBody,
   successiveFenceCases,
-  quotedListCases,
+  quoteBoundaryCases,
 } from "../fixtures/list-block-boundaries";
 import { ok } from "./render-support";
 import { attribute, boundaryStructure, elements, text } from "./rendered-html";
@@ -33,7 +33,7 @@ const customTemplate = [
 const boundaryTitle = "Boundary report";
 const boundaryRenderFixtures = [
   ...successiveFenceCases.map(({ name }) => name),
-  ...quotedListCases.map(({ name }) => name),
+  ...quoteBoundaryCases.map(({ name }) => name),
   "bullet-outdented-closer",
   "bullet-outdented-body",
   "bullet-aligned",
