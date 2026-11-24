@@ -10,12 +10,16 @@ export interface TitleBlockStyle {
   display: "box" | "omitted" | "unknown";
   visibility: "visible" | "hidden" | "unknown";
   variables: InlineVariables;
+  position: string | null;
+  float: string | null;
 }
 
 export const documentTitleStyle: TitleBlockStyle = {
   display: "box",
   visibility: "visible",
   variables: () => undefined,
+  position: "static",
+  float: "none",
 };
 const singleDisplayBox =
   /^(?:inline-(?:block|flex|grid|table)|table-(?:caption|cell|row|row-group|header-group|footer-group))$/u;
@@ -52,7 +56,7 @@ function* declarations(style: string): Generator<InlineDeclaration> {
     const char = token[0];
     if (char === "" || (char === ";" && depth === 0)) {
       const match =
-        /^\s*(display|visibility|--[\w-]+)\s*:\s*([\s\S]*?)\s*(!\s*important)?\s*$/iu.exec(
+        /^\s*(display|visibility|position|float|--[\w-]+)\s*:\s*([\s\S]*?)\s*(!\s*important)?\s*$/iu.exec(
           css.slice(start, token.index),
         );
       if (match) {
@@ -67,6 +71,65 @@ function* declarations(style: string): Generator<InlineDeclaration> {
     } else if ("([{".includes(char)) depth++;
     else if (")]}".includes(char)) depth = Math.max(depth - 1, 0);
   }
+}
+
+type Property = "display" | "visibility" | "float" | "position";
+type Cascade = Partial<Record<Property, string | null>>;
+
+function accepted(property: Property, value: string): boolean {
+  switch (property) {
+    case "display":
+      return (
+        value === "none" ||
+        value === "table-column" ||
+        value === "table-column-group" ||
+        generatesBox(value)
+      );
+    case "visibility":
+      return /^(visible|hidden|collapse)$/u.test(value);
+    case "float":
+      return /^(none|left|right|inline-start|inline-end|footnote)$/u.test(value);
+    case "position":
+      return /^(static|relative|absolute|fixed|(?:running|note)\(\s*[\w-]+\s*\))$/u.test(value);
+  }
+}
+
+// A declaration invalid after var() substitution uses its initial or inherited
+// value. An invalid literal has no effect on the cascade.
+function cascade(rules: InlineDeclaration[], variables: InlineVariables): Cascade {
+  const result: Cascade = {};
+  const priority = new Set<Property>();
+  for (const { property, value: raw, important } of rules) {
+    if (
+      property !== "display" &&
+      property !== "visibility" &&
+      property !== "float" &&
+      property !== "position"
+    )
+      continue;
+    if (priority.has(property) && !important) continue;
+    const value = inlineKeywords(raw, variables);
+    const folded = value?.toLowerCase();
+    if (value === undefined) result[property] = null;
+    else if (folded === "inherit" || folded === "initial") result[property] = folded;
+    else {
+      // Display tokens and position function names retain their case in WeasyPrint.
+      const preserveCase =
+        property === "display" || (property === "position" && value.includes("("));
+      const keyword = preserveCase ? value : value.toLowerCase();
+      if (accepted(property, keyword)) result[property] = keyword;
+      else if (/(?<![\w-])var\(/iu.test(raw))
+        result[property] = property === "visibility" ? "inherit" : "initial";
+      else continue;
+    }
+    if (important) priority.add(property);
+  }
+  return result;
+}
+
+function computed(value: string | null | undefined, initial: string, parent: string | null) {
+  if (value === "inherit") return parent;
+  return value === "initial" || value === undefined ? initial : value;
 }
 
 // display:none removes the subtree. visibility is inherited and a descendant
@@ -86,41 +149,44 @@ export function titleBlockVisibility(
     if (name === "style" && typeof entry[1] === "string") style = entry[1];
   }
 
-  if (!style && !hiddenAttribute) return inherited;
+  if (!style && !hiddenAttribute && inherited.position === "static" && inherited.float === "none")
+    return inherited;
   const rules = [...declarations(style)];
   const variables = inlineVariables(rules, inherited.variables);
-  let display: TitleBlockStyle["display"] = hiddenAttribute ? "omitted" : "box";
-  let visibility = inherited.visibility;
-  let displayImportant = false;
-  let visibilityImportant = false;
-  for (const { property, value: raw, important } of rules) {
-    if (property !== "display" && property !== "visibility") continue;
-    const value = inlineKeywords(raw, variables);
-    const folded = value?.toLowerCase();
-    const wide = folded === "initial" || folded === "inherit";
-    // Invalid literal declarations are ignored. A winning var() declaration
-    // that computes to an invalid value uses the initial or inherited value.
-    const substituted = /(?<![\w-])var\(/iu.test(raw);
-    // Table columns participate in layout but discard their heading content.
-    const omitsContent =
-      value === "none" || value === "table-column" || value === "table-column-group";
-    if (
-      property === "display" &&
-      (!displayImportant || important) &&
-      (substituted || value === undefined || omitsContent || wide || generatesBox(value))
-    ) {
-      display = value === undefined ? "unknown" : omitsContent ? "omitted" : "box";
-      displayImportant = important;
-    }
-    if (property === "visibility" && (!visibilityImportant || important)) {
-      if (value === undefined) visibility = "unknown";
-      else if (folded === "hidden" || folded === "collapse") visibility = "hidden";
-      else if (folded === "visible" || folded === "initial") visibility = "visible";
-      else if (wide || substituted) visibility = inherited.visibility;
-      else continue;
-      visibilityImportant = important;
+  const values = cascade(rules, variables);
+  const position = computed(values.position, "static", inherited.position);
+  const specifiedFloat = computed(values.float, "none", inherited.float);
+  const positioned = position === "absolute" || position === "fixed";
+  const float =
+    positioned || position?.startsWith("running(") || position?.startsWith("note(")
+      ? "none"
+      : specifiedFloat;
+
+  const value =
+    values.display === undefined && hiddenAttribute
+      ? "none"
+      : computed(values.display, "block", "block");
+  let display: TitleBlockStyle["display"] = "box";
+  if (value === null) display = "unknown";
+  else if (value === "none") display = "omitted";
+  else if (value === "table-column" || value === "table-column-group") {
+    // WeasyPrint converts floated and absolutely positioned table columns to
+    // block boxes before discarding the contents of remaining column boxes.
+    if (!positioned && (specifiedFloat === "none" || specifiedFloat === null)) {
+      display = position === null || specifiedFloat === null ? "unknown" : "omitted";
     }
   }
+
+  const ownVisibility =
+    values.visibility === undefined
+      ? inherited.visibility
+      : computed(values.visibility, "visible", inherited.visibility);
+  const visibility =
+    ownVisibility === null || ownVisibility === "unknown"
+      ? "unknown"
+      : ownVisibility === "visible"
+        ? "visible"
+        : "hidden";
   if (inherited.display === "unknown" && display === "box") display = "unknown";
-  return { display, visibility, variables };
+  return { display, visibility, variables, position, float };
 }

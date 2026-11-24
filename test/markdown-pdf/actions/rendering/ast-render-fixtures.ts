@@ -64,6 +64,13 @@ interface TitleControl {
 }
 
 const titleControls: TitleControl[] = [
+  ...["table-column", "table-column-group"].flatMap((display) =>
+    ["float:left", "position:absolute"].map((layout) => ({
+      name: `visible-title-${display}-${layout.split(":")[0]}`,
+      attributes: `style="display:${display};${layout}"`,
+      keep: false,
+    })),
+  ),
   ...["table-column", "table-column-group"].map((display) => ({
     name: `hidden-title-${display}`,
     attributes: 'style="display:none"',
