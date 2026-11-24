@@ -130,9 +130,9 @@ Both examples use the metadata title `Report` and the Markdown heading `# Report
 | Add an earlier H1 with `display:none`. Give `#report` the color `transparent`. | The PDF still yields the text “Report”. `auto` omits the metadata block and the page has no visible title. | Keep the metadata block. The page should match explicit `show`. |
 | Make `#report` the first H1 and set `letter-spacing: 0.25em`. | The body heading is visible, but the extracted label reads “R e p o r t”. `auto` also prints the metadata title. | Omit the metadata block. The page should match explicit `hide`. |
 
-### Proposed rule for author stylesheets
+### Accepted direction for automatic title selection
 
-The proposed behavior is to print the title once when the first visible eligible body H1 supplies the complete matching title. If its identity or visibility is uncertain, keep the metadata block, even if that prints a duplicate. Compare the title text and required links at the source, and judge visibility in the layout that would print with the metadata block omitted. The diagram follows eligible Markdown H1s in source order.
+The visibility check belongs to the existing `titleBlock.metadataTitle: auto` mode when an author stylesheet applies. Explicit `show` and `hide` honor the author’s choice directly. For `auto`, the implementation target is to omit the metadata block only when the renderer identifies the first visible eligible body H1, its source title and required links match, and its complete text is visible in the layout with the metadata block omitted. If identity or complete visibility is uncertain, keep the block, even if that prints a duplicate. The diagram follows eligible Markdown H1s in source order.
 
 ```mermaid
 flowchart TD
@@ -173,7 +173,7 @@ On both readers the original transparent-heading case must match `show`, as must
 
 All four variants matched their expected pages on Pandoc 2.0 and 3.9. A second clipping control left enough room for the complete title and matched `hide` on both. The prototype also retained the block when identity or visibility evidence was withheld. The explicit controls were distinguishable in every case and served only to check the decision. [Results and proof cost](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#unobscured-title-experiment)
 
-This establishes feasibility for a single opaque text run on white. The prototype observed the source H1 inside WeasyPrint as it was drawn. How the CLI could obtain equally reliable source identity, and when it should keep the block outside this tested case, remain open implementation questions. [Follow-up phase](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
+The positive evidence covers a single opaque text run on white. The prototype observed the source H1 inside WeasyPrint as it was drawn. The open engineering question is how the production CLI can connect an eligible source heading to its visible glyphs at an acceptable render cost. Where the available evidence cannot establish that connection and complete visibility, the accepted fallback is to keep the metadata block. [Follow-up phase](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
 
 ## Related Plans
 
