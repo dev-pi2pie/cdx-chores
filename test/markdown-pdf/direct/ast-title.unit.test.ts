@@ -64,6 +64,22 @@ describe("Pandoc AST title comparison", () => {
     }
   });
 
+  test.each([
+    ["visibility:hidden", "color:red", false],
+    ["visibility:hidden", "visibility:visible", true],
+    ["visibility:hidden", "visibility:inherit", false],
+    ["visibility:collapse", "visibility:initial", true],
+    ["display:none", "display:block; visibility:visible", false],
+    ["display:none; display:bogus", "visibility:visible", false],
+    ["--value:fn(x;display:none;); color:red", "color:red", true],
+  ] as const)("resolves %s on the parent and %s on the H1", (parent, child, suppress) => {
+    const attrs = (style: string) => ["", [], [["style", style]]];
+    const node = { t: "Div", c: [attrs(parent), [{ t: "Header", c: [1, attrs(child), [guide]] }]] };
+    expect(shouldSuppressMarkdownPdfMetadataTitle(document(meta(guide), node), "Guide")).toBe(
+      suppress,
+    );
+  });
+
   test("continues past an explicitly hidden subtree", () => {
     const hidden = { t: "Div", c: [["", [], [["hidden", ""]]], [header(1, str("Earlier"))]] };
     expect(

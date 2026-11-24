@@ -1,4 +1,4 @@
-import { normalizeCssForInspection } from "./css-inspection";
+import { titleBlockVisibility } from "./ast-title-visibility";
 
 interface TitleLink {
   label: string;
@@ -9,41 +9,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function explicitlyHidden(attributes: unknown): boolean {
-  const entries = Array.isArray(attributes) ? attributes[2] : undefined;
-  if (!Array.isArray(entries)) return false;
-  for (const entry of entries) {
-    if (!Array.isArray(entry) || typeof entry[0] !== "string") continue;
-    const name = entry[0].toLowerCase();
-    if (name === "hidden") return true;
-    if (name !== "style" || typeof entry[1] !== "string") continue;
-    const { css } = normalizeCssForInspection(entry[1], {
-      lowercase: true,
-      maskStrings: true,
-      commentReplacement: " ",
-    });
-    // Inline declarations of equal importance are resolved in source order.
-    let hidden = false;
-    let important = false;
-    for (const match of css.matchAll(/(?:^|;)\s*display\s*:\s*([^;]+)/gu)) {
-      const value = match[1]!.trim();
-      const priority = /!\s*important$/u.test(value);
-      if (!important || priority) {
-        hidden = /^none(?:\s*!\s*important)?$/u.test(value);
-        important = priority;
-      }
-    }
-    if (hidden) return true;
-  }
-  return false;
-}
-
-function firstH1(blocks: unknown[]): unknown[] | undefined {
+function firstH1(
+  blocks: unknown[],
+  inherited: "visible" | "hidden" = "visible",
+): unknown[] | undefined {
   for (const block of blocks) {
     if (!isRecord(block) || !Array.isArray(block.c)) continue;
-    if (block.t === "Header" && block.c[0] === 1 && !explicitlyHidden(block.c[1])) return block.c;
-    if (block.t === "Div" && Array.isArray(block.c[1]) && !explicitlyHidden(block.c[0])) {
-      const heading = firstH1(block.c[1]);
+    if (
+      block.t === "Header" &&
+      block.c[0] === 1 &&
+      titleBlockVisibility(block.c[1], inherited) === "visible"
+    )
+      return block.c;
+    if (block.t === "Div" && Array.isArray(block.c[1])) {
+      const visibility = titleBlockVisibility(block.c[0], inherited);
+      if (visibility === "omitted") continue;
+      const heading = firstH1(block.c[1], visibility);
       if (heading) return heading;
     }
   }
