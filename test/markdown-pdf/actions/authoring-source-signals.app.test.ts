@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -11,10 +11,12 @@ const harness = fileURLToPath(new URL("./fixtures/authoring-source-signals.ts", 
 test("Profile, Template, and Project authoring agree with and without Pandoc on PATH", async () => {
   await withTempFixtureDir("md-pdf-authoring-source-signals", async (root) => {
     const bin = join(root, "bin");
+    const callLog = join(root, "pandoc-calls");
     await mkdir(bin);
+    await writeFile(callLog, "");
     await writeFile(
       join(bin, "pandoc"),
-      '#!/bin/sh\nprintf "unexpected Pandoc call" >&2\n: > pandoc-called\nexit 1\n',
+      '#!/bin/sh\nprintf "%s\\n" "$*" >> "$PANDOC_CALL_LOG"\nexit 1\n',
       { mode: 0o755 },
     );
 
@@ -28,7 +30,7 @@ test("Profile, Template, and Project authoring agree with and without Pandoc on 
       const child = startFixtureProcess({
         executable: process.execPath,
         args: [harness, availability],
-        env: { ...process.env, PATH, TMPDIR: cwd },
+        env: { ...process.env, PATH, TMPDIR: cwd, PANDOC_CALL_LOG: callLog, FORCE_COLOR: "" },
         cwd,
         timeoutMs: 10_000,
         graceMs: 250,
@@ -37,6 +39,7 @@ test("Profile, Template, and Project authoring agree with and without Pandoc on 
       child.child.stdin.end();
       const result = await child.completion;
       expect(result.stopped).toBe(true);
+      expect(await readFile(callLog, "utf8")).toBe("");
       expect(result.stderr).toBe("");
       expect(result.ok).toBe(true);
       results.push(JSON.parse(result.stdout));

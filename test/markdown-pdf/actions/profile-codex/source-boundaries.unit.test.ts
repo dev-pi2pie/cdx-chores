@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import { scanMarkdownPdfFences } from "../../../../src/cli/markdown-pdf/profile/fence-signals";
 import { collectMarkdownPdfDocumentSignals } from "../../../../src/cli/markdown-pdf/profile/signals";
-import { htmlBoundaryCases, listBoundaryCases, pipeBody } from "../fixtures/list-block-boundaries";
+import { offlineBoundaryCases, pipeBody } from "../fixtures/list-block-boundaries";
 import { markdownSourceFixtures } from "../fixtures/markdown-source-fixtures";
 
 test.each(markdownSourceFixtures)("$name preserves source signals", (fixture) => {
@@ -30,45 +30,29 @@ test.each(markdownSourceFixtures)("$name preserves source signals", (fixture) =>
   });
 });
 
-for (const fixture of [...listBoundaryCases, ...htmlBoundaryCases]) {
+for (const fixture of offlineBoundaryCases) {
   const { name, markdown } = fixture;
   const scan = scanMarkdownPdfFences(markdown);
   const signals = collectMarkdownPdfDocumentSignals(markdown);
   const headings = scan.ordinaryLines.flatMap((line) => /^# (.+)$/.exec(line)?.[1] ?? []);
 
   test(name + " exposes the expected headings", () => {
-    const names =
-      "recovered" in fixture && fixture.recovered
-        ? ["Recovered heading", "Visible heading"]
-        : ["Visible heading"];
-    expect(headings).toEqual(names);
-    expect(signals.headings.total).toBe(names.length);
+    expect(headings).toEqual(fixture.headings);
+    expect(signals.headings.total).toBe(fixture.headings.length);
   });
 
   test(name + " reports the expected languages", () => {
-    const languages =
-      "fenced" in fixture
-        ? fixture.fenced
-          ? ["python"]
-          : []
-        : fixture.recovered
-          ? ["sh", "js"]
-          : name === "closed-textarea"
-            ? []
-            : ["js"];
-    expect(signals.codeFences.languages).toEqual(languages);
+    expect(signals.codeFences.languages).toEqual(fixture.languages);
   });
 
   test(name + " counts visible source rows", () => {
-    const verseRow = name === "nested-verse" ? 1 : 0;
-    const bodyRow = "fenced" in fixture && !fixture.fenced ? 1 : 0;
-    expect(signals.tables.scannedRows).toBe(3 + verseRow + bodyRow);
+    expect(signals.tables.scannedRows).toBe(fixture.rows);
   });
 
-  if ("fenced" in fixture) {
+  if ("pipeBodyRows" in fixture) {
     const plain = collectMarkdownPdfDocumentSignals(markdown.replace(pipeBody, "plain"));
     test(name + " isolates the pipe body's contribution", () => {
-      expect(signals.tables.scannedRows - plain.tables.scannedRows).toBe(fixture.fenced ? 0 : 1);
+      expect(signals.tables.scannedRows - plain.tables.scannedRows).toBe(fixture.pipeBodyRows);
     });
   }
 }

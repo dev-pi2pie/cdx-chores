@@ -133,3 +133,30 @@ export const htmlBoundaryCases = [
     recovered: false,
   },
 ];
+
+// Shared source expectations for the scanner and all three offline authoring entry points.
+export const offlineBoundaryCases = [
+  ...listBoundaryCases.map(({ name, markdown, fenced }) => ({
+    name,
+    markdown,
+    headings: ["Visible heading"],
+    languages: fenced ? ["python"] : [],
+    rows: 3 + Number(!fenced) + Number(name === "nested-verse"),
+    pipeBodyRows: Number(!fenced),
+  })),
+  ...listTransitionCases.map(({ name, markdown, rows }) => ({
+    name,
+    markdown,
+    headings: ["Visible heading"],
+    languages: ["python"],
+    rows,
+    pipeBodyRows: 0,
+  })),
+  ...htmlBoundaryCases.map(({ name, markdown, recovered }) => ({
+    name,
+    markdown,
+    headings: recovered ? ["Recovered heading", "Visible heading"] : ["Visible heading"],
+    languages: recovered ? ["sh", "js"] : name === "closed-textarea" ? [] : ["js"],
+    rows: 3,
+  })),
+];
