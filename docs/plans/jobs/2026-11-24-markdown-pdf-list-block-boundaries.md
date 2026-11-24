@@ -303,3 +303,18 @@ At `73306696`, the built CLI and the single-run prototype selected different pag
 The prototype retained the block for both hidden cases because the source contained two H1s. The visible formatted title also spanned two tagged fragments. The compatibility decision is to preserve the current CLI output. Test whether the proof can identify every run in the later H1 and keep the block when an earlier nonmatch appears or any part of the title is uncertain. [Follow-Up checklist](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
 
 Before production integration, an extended prototype matched all nine expected pages on each reader with the same renderer and default asset restrictions. The plain and emphasized first H1 each matched `hide`, both alone and after the hidden H1. Revealing the earlier nonmatch matched `show` for either later heading. Hiding the emphasized suffix, making it transparent, or replacing its visible text with CSS-generated content each matched `show`. The full-page rasters and selected HTML agreed. The built-CLI production checks remain open.
+
+## Production verification of styled auto
+
+At `81bae1a1`, the built `md to-pdf` command used the same WeasyPrint 70.0 default asset restrictions for proofs and final output. On Pandoc 2.0 and 3.9, each fixture’s `auto` PDF matched the expected `show` or `hide` control across all rasterized pages. Debug HTML agreed on header presence. The original visible letter-spaced and transparent-heading reports each printed one complete title. [Proof regression tests](../../../test/markdown-pdf/actions/rendering/printed-title.app.test.ts)
+
+| Check | Result on both readers |
+| --- | --- |
+| Matching first H1 | Plain, emphasized, linked, multiword and letter-spaced titles matched `hide`. A mismatched link destination kept the metadata block. |
+| Heading order and pages | A hidden earlier H1 or an earlier H1 printed in a page header allowed the visible matching body H1 to supply the title. Revealing the earlier nonmatch retained the block. A complete first H1 also matched `hide` in a multipage document. |
+| Clipping and later paint | A roomy clip and an overlay in clear space matched `hide`. A cut through the letters, an opaque overlay across them, transparent ink, and hidden emphasis matched `show`. Generated lookalikes and coincident same-label headings also kept the block. |
+| Independent fallbacks | On the same fully visible `Report` fixture, an unchanged substitution prevented identification. In a separate run the source was identified and glyph bounds were unavailable. Both matched `show`. Removing the optional inspection backend also matched `show`. Explicit modes made zero proof calls. |
+
+The built CLI passed 34 fixture comparisons per reader before the independent fallback runs. They included the guide’s plain and emphasized first H1 with and without author CSS, an H1 following a page break, CSS whitespace and custom properties, and a matching H1 moved into page furniture.
+
+On the one-page letter-spaced fixture, median proof time was 341 ms before the fix and 707 ms after it on Pandoc 2.0. On 3.9 the medians were 402 and 872 ms. Each comparison used the same reader and WeasyPrint 70.0 default restrictions, alternated the baseline and revised built CLIs, and measured three runs after warm-up. The interval includes the tagged print, the additional substitution print for the revised check, and inspection. It excludes Pandoc conversion and the final print.

@@ -121,11 +121,11 @@ The checks compare visible headings, language hints, and source-row counts. Repl
 
 ## When can a styled body heading stand in for the metadata title?
 
-With the built-in template, the cover off, and a nonempty frontmatter title, `titleBlock.metadataTitle: auto` can omit the metadata block when a body H1 supplies the same title. An author stylesheet can change which heading the reader sees. The current renderer extracts H1 text from a tagged PDF made without the metadata block, then looks for the extracted label among the source headings. [Automatic metadata titles](../guides/markdown-pdf-usage.md#automatic-metadata-titles) · [Current comparison](../../src/cli/markdown-pdf/title/styled-title.ts)
+With the built-in template, the cover off, and a nonempty frontmatter title, `titleBlock.metadataTitle: auto` can omit the metadata block when a body H1 supplies the same title. An author stylesheet can change which heading the reader sees. Before the visibility fix, the renderer extracted H1 text from a tagged PDF made without the metadata block and looked for that label among the source headings. [Automatic metadata titles](../guides/markdown-pdf-usage.md#automatic-metadata-titles)
 
 Both examples use the metadata title `Report` and the Markdown heading `# Report {#report}`. With Pandoc 2.0 and 3.9 and WeasyPrint 70.0, the rendered pages differed from the previous canary in opposite ways. [Reproductions and page comparisons](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#open-title-findings-after-the-third-canary-review)
 
-| Change to the example | What the reader sees today | Expected result |
+| Change to the example | Output before the visibility fix | Expected result |
 | --- | --- | --- |
 | Add an earlier H1 with `display:none`. Give `#report` the color `transparent`. | The PDF still yields the text “Report”. `auto` omits the metadata block and the page has no visible title. | Keep the metadata block. The page should match explicit `show`. |
 | Make `#report` the first H1 and set `letter-spacing: 0.25em`. | The body heading is visible, but the extracted label reads “R e p o r t”. `auto` also prints the metadata title. | Omit the metadata block. The page should match explicit `hide`. |
@@ -177,13 +177,15 @@ All four variants matched their expected pages on Pandoc 2.0 and 3.9. A second c
 
 Two headings with the same text can share a PDF destination position. For a single plain-text H1, the Node.js prototype printed the page with the metadata block omitted, then reversed only that heading’s text and printed it again. The same tagged run had to change from “Report” to “tropeR” while the surrounding drawing instructions and destinations stayed stable. CSS-generated “Report” therefore kept the block. A reversal that leaves the text unchanged, as with “LEVEL”, cannot establish identity either.
 
-Use the original proof to judge visibility. For the letter-spaced “Report”, all six opaque glyph outlines fit inside the page and its active clips on a white background. A clip through the letters or later paint covering them kept the metadata block. On Pandoc 2.0 and 3.9 with WeasyPrint 69.0, the second proof and inspection added about 0.26–0.27 seconds on this one-page example. This supports implementing the single-run case. Preserving title selection when an earlier H1 is hidden and a later one matches remains a compatibility check. [Node.js results](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#nodejs-title-visibility-experiment) · [Follow-up phase](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
+Use the original proof to judge visibility. For the letter-spaced “Report”, all six opaque glyph outlines fit inside the page and its active clips on a white background. A clip through the letters or later paint covering them kept the metadata block. On Pandoc 2.0 and 3.9 with WeasyPrint 69.0, the second proof and inspection added about 0.26–0.27 seconds on this one-page example. That experiment established the single-run case. The next comparison checked heading order and formatted text. [Node.js results](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#nodejs-title-visibility-experiment) · [Follow-up phase](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
 
 ### Preserving the first matching H1
 
 The built-in `md to-pdf` title policy shipped in `v0.1.5` at `6cd30daa`. A visible first H1 that matches the frontmatter title should supply the single printed title in `auto`, including when emphasis splits its text. The same rule applies after a wholly hidden earlier H1.
 
 The bounded extension changed the source text separately in each inline fragment and required each printed run to show its corresponding change. It checked every glyph outline in the original proof. For italic text, adjacent glyphs can have overlapping bounding boxes even when their outlines are separate. Comparing the outlines preserved the complete formatted heading on both readers. [Two-reader results](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#earlier-hidden-heading-compatibility)
+
+The built CLI preserved one title for both spellings on Pandoc 2.0 and 3.9. An incomplete heading or missing inspection evidence kept the metadata block. [Production verification](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#production-verification-of-styled-auto)
 
 ### Where should metadata-title selection live?
 

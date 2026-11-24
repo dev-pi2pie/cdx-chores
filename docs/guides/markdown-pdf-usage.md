@@ -676,7 +676,9 @@ Heading
 
 The comparison folds case and whitespace and preserves punctuation. It supports plain text, emphasis, strong text, inline code, smart quotes, and link labels. If the first eligible H1 or metadata title uses unsupported formatting such as math, images, or spans, the block stays, even if a later H1 matches. The block also stays when there is no eligible H1. Every metadata title link needs a matching label and destination in the heading before the block can be omitted.
 
-For a custom stylesheet or a stylesheet embedded in the Markdown, `auto` compares body H1 text extracted from a private tagged PDF with the eligible source headings. Debug HTML reflects the resulting choice. A transparent H1 can still supply extractable text, and letter spacing can add spaces to the extracted label. Use `show` to retain the metadata title for a transparent body heading or `hide` to use a visible, letter-spaced body heading.
+With author CSS, a fully visible first body H1 can still supply the title. For example, frontmatter `title: Report` and a visible `# Report` print one title even with letter spacing. Emphasis in `# Re*port*` can also supply the complete title. The check uses the layout with the metadata block omitted, so a stylesheet that hides the H1 only in that layout keeps the block.
+
+If the heading is transparent, clipped, covered, or only partly visible, `auto` keeps the metadata title. It also keeps the block when it cannot identify the source heading or verify all its letters, including when PDF inspection is unavailable. This can print a duplicate. Use `show` or `hide` for a fixed choice. Debug HTML includes the same metadata block choice as the final PDF.
 
 In this example, `auto` keeps both links because their destinations differ. Use [Debug HTML](#debug-html) to inspect the generated title block and heading.
 
