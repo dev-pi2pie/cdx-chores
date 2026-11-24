@@ -329,6 +329,7 @@ export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
         const close = range.close(index);
         if (close !== undefined) {
           if (language !== null) fenceLanguages.push(language);
+          owner.observeFencedBody(columns, index, close, documentFences);
           owner.block = "boundary";
           owner.rejectedTilde = undefined;
           index = close;

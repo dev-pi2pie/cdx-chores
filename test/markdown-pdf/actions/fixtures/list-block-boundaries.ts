@@ -19,6 +19,20 @@ export const listBoundaryCases = [
   listCase("padded-seven", "- -" + " " + "\n", " ".repeat(7), "~~~", true),
   listCase("document-fence", "", "", "```", true),
   listCase("document-literal", "", "    ", "```", false),
+  listCase(
+    "prose-after-tilde-block",
+    "- ~~~\n  example\n  ~~~\n  next paragraph\n",
+    "",
+    "~~~",
+    false,
+  ),
+  listCase(
+    "prose-after-backtick-block",
+    "- ```\n  example\n  ```\n  next paragraph\n",
+    "",
+    "~~~",
+    true,
+  ),
 ];
 
 const childTable =

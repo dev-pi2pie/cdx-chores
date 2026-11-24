@@ -191,6 +191,43 @@ test.each([
 });
 
 test.each([
+  ["unlabeled", "- ~~~", "  ~~~", "", "~~~", [], 1],
+  ["labeled", "- ~~~js", "  ~~~", "", "~~~", ["js"], 0],
+  ["raw", "- ~~~{=html}", "  ~~~", "", "~~~", [], 0],
+  ["blank before next opener", "- ~~~js", "  ~~~", "\n", "~~~", ["js", "python"], 0],
+  ["shorter following run", "- ~~~~js", "  ~~~~", "", "~~~", ["js", "python"], 0],
+  ["equal following run", "- ~~~~js", "  ~~~~", "", "~~~~", ["js"], 0],
+  ["different first marker", "- " + ticks + "js", "  " + ticks, "", "~~~", ["js", "python"], 0],
+  ["backticks interrupt prose", "- ~~~js", "  ~~~", "", ticks, ["js", "python"], 0],
+  ["wider item margin", "123. ~~~js", "     ~~~", "", "~~~", ["js", "python"], 0],
+  ["opener below marker", "- # Title\n  " + ticks + "js", "  " + ticks, "", "~~~", ["js"], 0],
+  ["return to parent", "- Parent\n  - ~~~js", "    ~~~", "", "  ~~~", ["js"], 0],
+  ["return to document", "- Parent\n  - ~~~js", "    ~~~", "", "~~~", ["js"], 0],
+] as const)(
+  "a preceding fence controls the list continuation: %s",
+  (_name, open, close, gap, next, hints, bare) => {
+    const pad = close.match(/^ */)![0];
+    const outdent = next.match(/^ */)![0];
+    const source = [
+      open,
+      pad + "example",
+      close,
+      pad + "prose",
+      gap + next + "python",
+      outdent + longRow,
+      next,
+      "",
+      "# Visible",
+    ].join("\n");
+    const signals = collect(source);
+    expect(signals.codeFences.languages).toEqual([...hints]);
+    expect(signals.codeFences.unlabeledCount).toBe(bare);
+    expect(signals.tables.scannedRows).toBe(hints.some((hint) => hint === "python") ? 0 : 1);
+    expect(signals.headings.total).toBe(1);
+  },
+);
+
+test.each([
   ["ordered marker as Setext text", "1. Item\n---", false],
   ["ordered marker above equals", "a) Item\n===", false],
   ["bullet containing a Setext heading", "- Item\n---", true],

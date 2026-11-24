@@ -90,6 +90,7 @@ export class FenceRange {
     private readonly start: number,
     margin: number,
     opener?: FenceLine,
+    includeOutdent?: (line: string, index: number) => boolean,
   ) {
     const padding = " ".repeat(margin);
     let i = start;
@@ -99,8 +100,9 @@ export class FenceRange {
         this.candidates.push(opener);
         continue;
       }
-      if (line.trim() && !line.startsWith(padding)) break;
-      this.candidates.push(readFenceLine(line.slice(margin)));
+      const indented = line.startsWith(padding);
+      if (line.trim() && !indented && !includeOutdent?.(line, i)) break;
+      this.candidates.push(readFenceLine(indented ? line.slice(margin) : line));
     }
     this.end = i;
     markCandidatesWithClosers(this.candidates);

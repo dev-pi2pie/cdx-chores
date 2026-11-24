@@ -1,4 +1,10 @@
-import { FenceRange, readDivFence, readFenceLine, type FenceLine } from "./fence-lines";
+import {
+  FenceRange,
+  fenceLanguage,
+  readDivFence,
+  readFenceLine,
+  type FenceLine,
+} from "./fence-lines";
 
 export const ATX_HEADING = /^ {0,3}#{1,6}(?:[ \t]|$)/;
 const DEFINITION_MARKER = /^ {0,3}[:~] +/;
@@ -24,6 +30,8 @@ export class Container {
   openHtmlBlocks?: Map<string, boolean[]>;
   rejectedTilde?: FenceLine;
   private fences?: FenceRange;
+  private childSource?: FenceRange;
+  inContinuation = false;
   private inlineEnd = 0;
 
   // Inline code may continue through lazy prose, but cannot absorb a delimiter
@@ -53,6 +61,36 @@ export class Container {
       this.fences = new FenceRange(lines, index, this.margin, opener);
     }
     return this.fences;
+  }
+
+  // Before parsing blocks within an item, the reader separates its first run
+  // of lines from continuations. A complete fence visible from the enclosing
+  // margin ends that first run, even if its opener is a closer inside the item.
+  observeFencedBody(lines: string[], open: number, close: number, document: FenceRange) {
+    if (!this.parent || this.inContinuation) return;
+    const first = Math.max(open, this.startLine + 1);
+    const source = this.parent.parent ? this.parent.childSourceRange(lines, first) : document;
+    for (let i = first; i <= close; i++) {
+      const candidate = source.at(i);
+      if (candidate?.hasClose && fenceLanguage(candidate.info) !== undefined) {
+        this.inContinuation = true;
+        return;
+      }
+    }
+  }
+
+  private childSourceRange(lines: string[], start: number) {
+    if (!this.childSource || start >= this.childSource.end) {
+      // The enclosing item can retain outdented text in a lazy continuation.
+      // A blank before the outdent or a new sibling ends that source.
+      const includes = (line: string, i: number) => {
+        if (!lines[i - 1]?.trim()) return false;
+        const { margin } = containerAtIndent(this, line);
+        return !readMarker(line.slice(margin), margin);
+      };
+      this.childSource = new FenceRange(lines, start, this.margin, undefined, includes);
+    }
+    return this.childSource;
   }
 }
 
@@ -120,7 +158,10 @@ function continuesItem(
 ) {
   if (!isParagraph(owner.block) || !owner.parent) return false;
   const fence = readFenceLine(relative);
-  if (fence) return lastBlank > owner.startLine && (fence.indent > 0 || fence.marker === "~");
+  if (fence) {
+    const continuation = owner.inContinuation || lastBlank > owner.startLine;
+    return continuation && (fence.indent > 0 || fence.marker === "~");
+  }
   const div = readDivFence(relative);
   if (div) return !!destination.parent && div === "open";
   return !readMarker(relative, destination.margin);

@@ -47,6 +47,8 @@ const literal = h1("Literal heading");
 const before = h1("Literal heading before apparent fence");
 const visible = h1("Visible heading");
 const bulletPython = code(pipeBody, "python", ["BulletList"]);
+const bulletExample = code("example", "", ["BulletList"]);
+const documentPython = code(pipeBody, "python");
 const ordered = ["OrderedList"];
 const bullets = ["BulletList", "BulletList"];
 const js = code("\n# Example heading\n", "js");
@@ -63,6 +65,11 @@ const readers: Record<string, [unknown[], unknown[]]> = {
   "parent-after-table": [[bulletPython], [bulletPython]],
   "document-after-table": [[code(pipeBody, "python")], [code(pipeBody, "python")]],
   "adjacent-sibling-opener": [[bulletPython], [bulletPython]],
+  "prose-after-tilde-block": [[bulletExample, documentPython], [bulletExample]],
+  "prose-after-backtick-block": [
+    [bulletExample, documentPython],
+    [bulletExample, documentPython],
+  ],
   numbered: [[], [code(pipeBody, "python", ordered)]],
   "nested-verse": [[], [code(pipeBody, "python")]],
   "document-verse": [[], []],
