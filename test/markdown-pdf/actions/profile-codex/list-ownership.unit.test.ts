@@ -213,6 +213,38 @@ test.each([
   },
 );
 
+test.each([
+  ["definition at its content margin", "Term\n\n: Definition\n", 2, "~~~", true],
+  ["literal inside a definition", "Term\n\n: Definition\n", 6, "~~~", false],
+  ["same indentation at document level", "Document paragraph\n", 4, "~~~", false],
+  ["compact list at the parent margin", "1. - Item", 3, "~~~", true],
+  ["compact list inside child prose", "1. - Item", 5, "~~~", false],
+  ["split markers with the same widths", "1. Item\n   - Item", 2, "~~~", false],
+  [
+    "quote lazily continues without another marker",
+    "- Item\n\n  > Quoted\n   more",
+    3,
+    ticks,
+    true,
+  ],
+  ["ordinary item prose at the same indent", "- Item\n\n  Quoted", 3, ticks, false],
+  ["tilde cannot interrupt the quoted paragraph", "- Item\n\n  > Quoted", 3, "~~~", false],
+  ["outdent from a quote on the marker line", "1. - > Quoted", 2, "~~~", true],
+] as const)("%s matches its container", (_name, prefix, spaces, fence, recognized) => {
+  const pad = " ".repeat(spaces);
+  const signals = collect([prefix, pad + fence + "python", pad + longRow, pad + fence].join("\n"));
+  expect(signals.codeFences.languages).toEqual(recognized ? ["python"] : []);
+});
+
+test.each(["\nOutside\n", "\n- Sibling\n   "])(
+  "a closer beyond the quoted item leaves its opener unmatched: %j",
+  (outside) => {
+    const markdown =
+      "- Item\n\n  > Quoted\n   " + ticks + "python\n   " + longRow + "\n" + outside + ticks;
+    expect(collect(markdown).codeFences.languages).toEqual([]);
+  },
+);
+
 const nestedProse = [
   "1. Parent",
   "   - " + ticks + "js",

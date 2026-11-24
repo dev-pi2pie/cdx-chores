@@ -26,6 +26,9 @@ const customTemplate = [
 
 const boundaryTitle = "Boundary report";
 const boundaryRenderFixtures = [
+  "definition-continuation",
+  "compact-mixed-list",
+  "quote-in-item",
   "numbered",
   "document-literal",
   "comment-item-early-close",

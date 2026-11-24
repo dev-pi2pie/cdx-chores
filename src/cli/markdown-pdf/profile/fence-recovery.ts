@@ -170,7 +170,7 @@ export class FenceRecovery implements HtmlRecovery {
 // be reused only within the same chain of list items.
 function sameFenceScope(a: Container | undefined, b: Container | undefined) {
   while (a && b) {
-    if (a.startLine !== b.startLine || a.margin !== b.margin) return false;
+    if (a.startLine !== b.startLine || a.margin !== b.margin || a.kind !== b.kind) return false;
     a = a.parent;
     b = b.parent;
   }

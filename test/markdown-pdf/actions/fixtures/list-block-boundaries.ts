@@ -11,6 +11,9 @@ function listCase(name: string, prefix: string, margin: string, fence: string, f
 }
 
 export const listBoundaryCases = [
+  listCase("definition-continuation", "Term\n\n: Definition\n\n", "    ", "~~~", true),
+  listCase("compact-mixed-list", "1. - Item\n", "  ", "~~~", true),
+  listCase("quote-in-item", "- Item\n\n  > Quoted\n", "   ", "```", true),
   listCase("numbered", "1. Item\n\n", "    ", "```", true),
   listCase("nested-verse", "- - | poem\n", " ", "~~~", true),
   listCase("document-verse", "| poem\n", " ", "~~~", false),

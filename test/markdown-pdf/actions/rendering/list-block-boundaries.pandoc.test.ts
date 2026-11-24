@@ -26,7 +26,9 @@ function project(blocks: unknown) {
       events.push(t === "Header" ? [t, c[0], c[2]] : [t, lists, c[0][1], c[1]]);
       return;
     }
-    visit(c, t === "OrderedList" || t === "BulletList" ? [...lists, t] : lists);
+    const container =
+      t === "OrderedList" || t === "BulletList" || t === "DefinitionList" || t === "BlockQuote";
+    visit(c, container ? [...lists, t] : lists);
   }
   visit(blocks, []);
   return events;
@@ -69,6 +71,15 @@ const readers: Record<string, [unknown[], unknown[]]> = {
   "prose-after-backtick-block": [
     [bulletExample, documentPython],
     [bulletExample, documentPython],
+  ],
+  "definition-continuation": [
+    [code(pipeBody, "python", ["DefinitionList"])],
+    [code(pipeBody, "python", ["DefinitionList"])],
+  ],
+  "compact-mixed-list": [[], [documentPython]],
+  "quote-in-item": [
+    [code(pipeBody, "python", ["BulletList", "BlockQuote"])],
+    [code(pipeBody, "python", ["BulletList", "BlockQuote"])],
   ],
   numbered: [[], [code(pipeBody, "python", ordered)]],
   "nested-verse": [[], [code(pipeBody, "python")]],

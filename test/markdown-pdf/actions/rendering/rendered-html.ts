@@ -20,7 +20,8 @@ export function text(node: Html.Node): string {
 function listAncestry(node: Html.Element) {
   const ancestry: string[] = [];
   for (let parent = node.parentNode; parent && "tagName" in parent; parent = parent.parentNode) {
-    if (["li", "ol", "ul"].includes(parent.tagName)) ancestry.unshift(parent.tagName);
+    if (["li", "ol", "ul", "dl", "dd", "blockquote"].includes(parent.tagName))
+      ancestry.unshift(parent.tagName);
   }
   return ancestry;
 }

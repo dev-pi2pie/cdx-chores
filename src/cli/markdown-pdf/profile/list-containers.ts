@@ -7,18 +7,12 @@ import {
 } from "./fence-lines";
 
 export const ATX_HEADING = /^ {0,3}#{1,6}(?:[ \t]|$)/;
-const DEFINITION_MARKER = /^ {0,3}[:~] +/;
+const DEFINITION_MARKER = /^( {0,3})([:~])([ \t]+|$)/;
 const BLOCK_SEPARATOR = /^ {0,3}(?:=+|-+|(?:\*[ \t]*){3,}|(?:_[ \t]*){3,}|(?:-[ \t]*){3,})[ \t]*$/;
 const LIST_MARKER = /^( {0,3})([-+*]|(?:#|\d+|[A-Za-z]+)[.)]|\((?:#|\d+|[A-Za-z]+)\))([ \t]+|$)/;
 const ROMAN = /^M{0,3}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})$/;
 
-export type BlockContext =
-  | "boundary"
-  | "paragraph"
-  | "verse"
-  | "pipe-table"
-  | "definition-term"
-  | { definitionIndent: number };
+export type BlockContext = "boundary" | "paragraph" | "verse" | "pipe-table" | "definition-term";
 export function isParagraph(block: BlockContext) {
   return block === "paragraph";
 }
@@ -53,6 +47,7 @@ export class Container {
     readonly parent?: Container,
     readonly orderedStyle?: string,
     readonly startLine = -1,
+    readonly kind: "list" | "definition" | "quote" = "list",
   ) {}
 
   // Candidate discovery can advance independently while a multiline HTML
@@ -62,7 +57,7 @@ export class Container {
     for (let item = this.parent; item; item = item.parent) chain.push(item);
     let copy: Container | undefined;
     for (const item of chain.reverse()) {
-      copy = new Container(item.margin, copy, item.orderedStyle, item.startLine);
+      copy = new Container(item.margin, copy, item.orderedStyle, item.startLine, item.kind);
       copy.block = item.block;
       copy.proseStart = item.proseStart;
       copy.divDepth = item.divDepth;
@@ -81,9 +76,21 @@ export class Container {
   fenceRange(lines: string[], index: number, opener: FenceLine) {
     const range = this.ranges.strict;
     if (!range || index < range.start || index >= range.end) {
-      return (this.ranges.strict = new FenceRange(lines, index, this.margin, opener));
+      const project = this.kind === "quote" ? (line: string) => this.quoteLine(line) : undefined;
+      return (this.ranges.strict = new FenceRange(lines, index, this.margin, opener, project));
     }
     return range;
+  }
+
+  // A marked line removes the quote prefix. An unmarked continuation within
+  // the paragraph loses its leading whitespace and ends at a blank or a sibling.
+  quoteLine(line: string) {
+    const indent = /^ */.exec(line)![0].length;
+    const relative = line.slice(Math.min(this.margin, indent));
+    const mark = indent >= this.margin && /^ {0,3}>[ \t]?/.exec(relative);
+    if (mark) return relative.slice(mark[0].length);
+    if (!line.trim() || readMarker(relative, this.margin)) return;
+    return line.trimStart();
   }
 
   // Before parsing blocks within an item, the reader separates its first run
@@ -105,7 +112,8 @@ export class Container {
   continuationRange(lines: string[], start: number) {
     const range = this.ranges.continuation;
     if (!range || start < range.start || start >= range.end) {
-      const project = (line: string, i: number) => {
+      const project = (line: string, i: number, inside: string | undefined) => {
+        if (inside !== undefined) return inside;
         if (!lines[i - 1]?.trim()) return;
         const destination = containerAtIndent(this, line);
         if (readMarker(line.slice(destination.margin), destination.margin)) return;
@@ -158,8 +166,8 @@ export function expandIndent(line: string) {
   );
 }
 
-function readMarker(line: string, margin: number, enclosingSymbol?: string) {
-  const match = LIST_MARKER.exec(line);
+function readMarker(line: string, margin: number, enclosingSymbol?: string, definition = false) {
+  const match = (definition && DEFINITION_MARKER.exec(line)) || LIST_MARKER.exec(line);
   if (!match) return;
   const leading = match[1]!;
   const symbol = match[2]!;
@@ -205,7 +213,14 @@ function paragraphContinuation(
   const relative = line.slice(destination.margin);
   if (/^ *(?:`{3}|~{3})/.test(relative)) {
     const projected = continuationLine(owner, destination, line);
-    const inItem = projected !== relative || owner.inContinuation || lastBlank > owner.startLine;
+    let outer = owner;
+    while (outer.parent && outer.parent !== destination) outer = outer.parent;
+    // Markers on one line start the same first run. A fence visible at the
+    // destination can end it before an inner marker consumes its indentation.
+    const inItem =
+      (projected !== relative && outer.startLine !== owner.startLine) ||
+      owner.inContinuation ||
+      lastBlank > owner.startLine;
     if (inItem) {
       const fence = readFenceLine(projected);
       if (fence && canOpenFence(owner.block, fence)) {
@@ -254,6 +269,19 @@ export function resolveContainer(
   lastBlank: number,
 ) {
   const line = lines[index]!;
+  if (current.kind === "quote") {
+    const item = current.parent!;
+    const destination = containerAtIndent(item, line);
+    const endsFirstRun =
+      destination !== item &&
+      lastBlank <= item.startLine &&
+      !item.inContinuation &&
+      readFenceLine(line.slice(destination.margin));
+    const relative = endsFirstRun ? undefined : current.quoteLine(line);
+    if (relative !== undefined)
+      return { owner: current, relative, marker: true, lazy: false, literal: false };
+    current = current.parent!;
+  }
   let owner = line.trim() ? containerAtIndent(current, line) : current;
   const continuation = paragraphContinuation(current, owner, line, lastBlank);
   if (continuation) return continuation;
@@ -272,10 +300,13 @@ export function resolveContainer(
     // consume compact markers from left to right using each new item's margin.
     let enclosingSymbol: string | undefined;
     for (;;) {
-      const next = readMarker(relative, owner.margin, enclosingSymbol);
+      const definition =
+        owner.block === "definition-term" ||
+        (current.kind === "definition" && current.parent === owner);
+      const next = readMarker(relative, owner.margin, enclosingSymbol, definition);
       if (!next) break;
       let listStyle: string | undefined;
-      if (!/^[-+*]$/.test(next.symbol)) {
+      if (!/^[-+*:~]$/.test(next.symbol)) {
         let sibling: Container | undefined = !marker && current !== owner ? current : undefined;
         while (sibling && sibling.parent !== owner) sibling = sibling.parent;
         const style = orderedStyle(next.symbol, sibling?.orderedStyle);
@@ -295,12 +326,19 @@ export function resolveContainer(
         listStyle = style;
       }
       owner.block = "boundary";
-      owner = new Container(next.margin, owner, listStyle, index);
+      const kind = next.symbol === ":" || next.symbol === "~" ? "definition" : "list";
+      owner = new Container(next.margin, owner, listStyle, index, kind);
       enclosingSymbol = next.symbol;
       marker = true;
       relative = next.content;
       if (next.literal) return { owner, relative, marker, lazy: false, literal: true };
     }
+  }
+  const quote = owner.parent && !isParagraph(owner.block) && /^ {0,3}>[ \t]?/.exec(relative);
+  if (quote) {
+    owner = new Container(owner.margin, owner, undefined, index, "quote");
+    relative = relative.slice(quote[0].length);
+    marker = true;
   }
   return { owner, relative, marker, lazy: false, literal: false };
 }
@@ -308,7 +346,7 @@ export function resolveContainer(
 export function canOpenFence(block: BlockContext, fence: FenceLine) {
   if (isParagraph(block)) return fence.marker === "`" && fence.indent === 0;
   if (block === "verse") return fence.indent === 0;
-  return typeof block !== "object" || fence.indent < block.definitionIndent;
+  return true;
 }
 
 export function classifyBlock(
@@ -321,10 +359,7 @@ export function classifyBlock(
   const previous = owner.block;
   if (!line.trim()) return previous === "definition-term" ? previous : "boundary";
   const next = lines[index + 1] ?? "";
-  if (previous === "definition-term") {
-    const match = DEFINITION_MARKER.exec(line);
-    if (match) return { definitionIndent: match[0].length };
-  }
+
   if (previous === "verse" && /^[ \t]/.test(line)) return "verse";
   if (
     !isParagraph(previous) &&
@@ -344,7 +379,7 @@ export function classifyBlock(
     if (ATX_HEADING.test(line) && (!owner.parent || line.startsWith("#"))) return "boundary";
     if (DEFINITION_MARKER.test(next.trim() ? next : (lines[index + 2] ?? "")))
       return "definition-term";
-    if (typeof previous === "object") return previous;
+
     owner.proseStart = index;
   }
   return "paragraph";
