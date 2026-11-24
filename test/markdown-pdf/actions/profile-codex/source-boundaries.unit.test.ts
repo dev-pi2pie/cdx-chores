@@ -30,24 +30,13 @@ test.each(markdownSourceFixtures)("$name preserves source signals", (fixture) =>
   });
 });
 
-const missingShellHints = new Set(["comment-item", "textarea-item", "closer-in-item"]);
-const wrongHtmlHeadings = new Set([
-  "comment-item",
-  "textarea-item",
-  "closer-in-item",
-  "genuine-close-after-item",
-]);
-
-// Keep successful dimensions active even when another signal for the fixture needs correction.
-// Remove each expected-failure marker as its target begins to pass.
 for (const fixture of [...listBoundaryCases, ...htmlBoundaryCases]) {
   const { name, markdown } = fixture;
   const scan = scanMarkdownPdfFences(markdown);
   const signals = collectMarkdownPdfDocumentSignals(markdown);
   const headings = scan.ordinaryLines.flatMap((line) => /^# (.+)$/.exec(line)?.[1] ?? []);
 
-  const headingTest = wrongHtmlHeadings.has(name) ? test.failing : test;
-  headingTest(name + " exposes the expected headings", () => {
+  test(name + " exposes the expected headings", () => {
     const names =
       "recovered" in fixture && fixture.recovered
         ? ["Recovered heading", "Visible heading"]
@@ -56,8 +45,7 @@ for (const fixture of [...listBoundaryCases, ...htmlBoundaryCases]) {
     expect(signals.headings.total).toBe(names.length);
   });
 
-  const languageTest = missingShellHints.has(name) ? test.failing : test;
-  languageTest(name + " reports the expected languages", () => {
+  test(name + " reports the expected languages", () => {
     const languages =
       "fenced" in fixture
         ? fixture.fenced
@@ -71,8 +59,7 @@ for (const fixture of [...listBoundaryCases, ...htmlBoundaryCases]) {
     expect(signals.codeFences.languages).toEqual(languages);
   });
 
-  const rowTest = name === "genuine-close-after-item" ? test.failing : test;
-  rowTest(name + " counts visible source rows", () => {
+  test(name + " counts visible source rows", () => {
     const verseRow = name === "nested-verse" ? 1 : 0;
     const bodyRow = "fenced" in fixture && !fixture.fenced ? 1 : 0;
     expect(signals.tables.scannedRows).toBe(3 + verseRow + bodyRow);

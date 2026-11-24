@@ -56,6 +56,28 @@ export class Container {
     readonly startLine = -1,
   ) {}
 
+  // Candidate discovery can advance independently while a multiline HTML
+  // close is unresolved. Keep the mutable block and tag state private to it.
+  fork(): Container {
+    const chain: Container[] = [this];
+    for (let item = this.parent; item; item = item.parent) chain.push(item);
+    let copy: Container | undefined;
+    for (const item of chain.reverse()) {
+      copy = new Container(item.margin, copy, item.orderedStyle, item.startLine);
+      copy.block = item.block;
+      copy.proseStart = item.proseStart;
+      copy.divDepth = item.divDepth;
+      if (item.openHtmlBlocks) {
+        copy.openHtmlBlocks = new Map(
+          Array.from(item.openHtmlBlocks, ([tag, stack]) => [tag, [...stack]]),
+        );
+      }
+      copy.rejectedTilde = item.rejectedTilde;
+      copy.inContinuation = item.inContinuation;
+    }
+    return copy!;
+  }
+
   fenceRange(lines: string[], index: number, opener: FenceLine) {
     if (!this.fences || index >= this.fences.end) {
       this.fences = new FenceRange(lines, index, this.margin, opener);

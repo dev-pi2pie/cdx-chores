@@ -1,3 +1,4 @@
+import { FenceLookahead, type MatchedFence, type SourceEvent } from "./fence-recovery";
 import { FenceRange, closesFence, fenceLanguage, readDivFence, readFenceLine } from "./fence-lines";
 import {
   ATX_HEADING,
@@ -145,55 +146,27 @@ function sourceLines(content: string, lines: string[]): SourceLine[] {
   return positions;
 }
 
-function fenceRecoveryBoundaries(lines: string[], positions: SourceLine[], fences: FenceRange) {
-  // A later, complete Markdown fence cannot supply a missing HTML delimiter
-  // across an intervening heading or table. Immediately following apparent
-  // fences stay literal when the HTML opener has a complete end.
-  const bodies: { start: number; end: number; precedingStructure: number }[] = [];
-  let precedingStructure: number | undefined;
-  for (let index = 0; index < fences.end; index++) {
-    const line = lines[index]!;
-    if (ATX_HEADING.test(line) || isPipeTableSeparator(line)) {
-      precedingStructure = positions[index]!.start;
-    }
-    const fence = fences.at(index);
-    if (!fence?.hasClose || (fence.marker === "~" && lines[index - 1]?.trim())) continue;
-    if (fenceLanguage(fence.info) === undefined) continue;
-    const close = fences.close(index)!;
-    if (precedingStructure !== undefined) {
-      bodies.push({
-        start: positions[index + 1]!.start,
-        end: positions[close]!.start,
-        precedingStructure,
-      });
-    }
-    index = close;
-  }
-  return (delimiter: number) => {
-    let low = 0;
-    let high = bodies.length;
-    while (low < high) {
-      const middle = Math.floor((low + high) / 2);
-      if (bodies[middle]!.end <= delimiter) low = middle + 1;
-      else high = middle;
-    }
-    const body = bodies[low];
-    return body && delimiter >= body.start ? body.precedingStructure : undefined;
-  };
-}
-
 type LineEnd = "boundary" | "paragraph" | "paired-close";
 
 class BoundaryScanner {
-  private readonly cursor: MarkdownSourceCursor;
   private offset = 0;
   private lineEnd: LineEnd | undefined;
 
   constructor(
     private readonly content: string,
-    fenceRecoveryBoundary: (delimiter: number) => number | undefined,
-  ) {
-    this.cursor = new MarkdownSourceCursor(content, fenceRecoveryBoundary);
+    private readonly cursor: MarkdownSourceCursor,
+    readonly recovery?: FenceLookahead,
+  ) {}
+
+  fork() {
+    const scanner = new BoundaryScanner(this.content, this.cursor);
+    scanner.offset = this.offset;
+    scanner.lineEnd = this.lineEnd;
+    return scanner;
+  }
+
+  canResume(line: SourceLine) {
+    return this.offset <= line.end;
   }
 
   coversStart(line: SourceLine) {
@@ -201,7 +174,12 @@ class BoundaryScanner {
   }
 
   hasPipeDelimiter(line: SourceLine) {
-    return this.cursor.hasPipeDelimiter(Math.max(line.start, this.offset), line.end);
+    return this.cursor.hasPipeDelimiter(
+      Math.max(line.start, this.offset),
+      line.end,
+      line.nextMarkdownStructure,
+      this.recovery,
+    );
   }
 
   private htmlBoundary(
@@ -245,18 +223,28 @@ class BoundaryScanner {
     const headingLine = blockAligned && ATX_HEADING.test(this.content.slice(start, end));
 
     while (offset < end) {
-      const token = this.cursor.read(offset, line, codeLimit);
+      const token = this.cursor.read(offset, line, codeLimit, this.recovery);
       const tokenEnd = token?.end ?? offset + 1;
       const text = this.content.slice(offset, Math.min(tokenEnd, end));
       if (token?.kind === "comment") {
+        if (this.recovery && tokenEnd > line.nextMarkdownStructure)
+          this.recovery.needsRestart = true;
         if (lineEnd === "paired-close" && offset > this.offset) lineEnd = "paragraph";
         if (!hasText) lineEnd ??= isParagraph(previous) ? "paragraph" : "boundary";
         visible += hasText && !lineEnd && tokenEnd <= end ? text : " ".repeat(text.length);
       } else if (token?.kind === "tag") {
         const { name, closing, selfClosing } = token;
         if (!closing && !selfClosing && VERBATIM_TAGS.has(name)) {
-          const verbatimEnd = this.cursor.verbatimEnd(name, offset, tokenEnd);
+          const verbatimEnd = this.cursor.verbatimEnd(
+            name,
+            offset,
+            tokenEnd,
+            line.nextMarkdownStructure,
+            this.recovery,
+          );
           if (verbatimEnd !== undefined) {
+            if (this.recovery && verbatimEnd > line.nextMarkdownStructure)
+              this.recovery.needsRestart = true;
             visible += " ".repeat(Math.min(verbatimEnd, end) - offset);
             offset = this.offset = verbatimEnd;
             lineEnd = "boundary";
@@ -299,27 +287,31 @@ function prepareSource(content: string) {
   return { content, lines, columns, positions, documentFences };
 }
 
-interface MatchedFence {
-  open: number;
-  close: number;
-  language: string | null;
+// HTML can hide a marker that was visible during candidate discovery. Reuse
+// its span only when the opener still belongs to the same chain of list items.
+function sameFenceScope(a: Container | undefined, b: Container | undefined) {
+  while (a && b) {
+    if (a.startLine !== b.startLine || a.margin !== b.margin) return false;
+    a = a.parent;
+    b = b.parent;
+  }
+  return a === b;
 }
 
-interface SourceVisitor {
-  ordinary(line: string, index: number): void;
-  fence(span: MatchedFence): void;
-}
-
-function walkSource(
-  { lines, columns, positions, documentFences }: ReturnType<typeof prepareSource>,
+function* walkSource(
+  source: ReturnType<typeof prepareSource>,
   scanner: BoundaryScanner,
-  visitor: SourceVisitor,
-) {
-  let owner = new Container();
-
-  for (let index = 0; index < lines.length; index++) {
+  owner = new Container(),
+  firstLine = 0,
+): Generator<SourceEvent> {
+  const { lines, columns, positions, documentFences } = source;
+  const recovery = scanner.recovery;
+  for (let index = firstLine; index < lines.length; index++) {
     const line = lines[index]!;
     const position = positions[index]!;
+    if (recovery?.needsRestart && scanner.canResume(position)) {
+      recovery.restart(walkSource(source, scanner.fork(), owner.fork(), index));
+    }
     const covered = scanner.coversStart(position);
     const hasPipe = line.includes("|") && scanner.hasPipeDelimiter(position);
     const placement = covered
@@ -337,25 +329,37 @@ function walkSource(
       const language = fenceLanguage(fence.info);
       const interrupts = canOpenFence(previous, fence);
       if (interrupts && language !== undefined) {
-        const range = placement.continued
-          ? owner.continuationRange(columns, index)
-          : owner.parent
-            ? owner.fenceRange(columns, index, fence)
-            : documentFences;
-        const close = range.close(index);
-        if (close !== undefined) {
-          visitor.fence({ open: index, close, language });
-          owner.observeFencedBody(columns, index, close, documentFences);
+        const continued = !!placement.continued;
+        const candidate = recovery?.candidates.get(index);
+        let span: MatchedFence | undefined;
+        if (
+          candidate &&
+          candidate.continued === continued &&
+          sameFenceScope(candidate.owner, owner)
+        ) {
+          span = candidate;
+        } else {
+          const range = continued
+            ? owner.continuationRange(columns, index)
+            : owner.parent
+              ? owner.fenceRange(columns, index, fence)
+              : documentFences;
+          const close = range.close(index);
+          if (close !== undefined) {
+            span = { owner, continued, open: index, close, language };
+          } else {
+            // An unmatched opener may still be inline code within its item.
+            const end = positions[range.end]?.start;
+            if (fence.marker === "`" && end !== undefined) codeLimit = Math.min(codeLimit, end);
+          }
+        }
+        if (span) {
+          yield span;
+          owner.observeFencedBody(columns, index, span.close, documentFences);
           owner.block = "boundary";
           owner.rejectedTilde = undefined;
-          index = close;
+          index = span.close;
           continue;
-        }
-        // An unmatched block opener can still be inline code. Limit that fallback
-        // to this item so a sibling's backticks cannot hide its own fence.
-        const end = positions[range.end]?.start;
-        if (fence.marker === "`" && end !== undefined && end < position.inlineLimit) {
-          codeLimit = end;
         }
       } else if (fence.marker === "~" && language && !interrupts) {
         owner.rejectedTilde ??= fence;
@@ -368,14 +372,14 @@ function walkSource(
           /^ {4}/.test(relative) &&
           (previous === "boundary" || (previous === "pipe-table" && !hasPipe))))
     ) {
-      visitor.ordinary(line, index);
+      yield { line, index };
       owner.block = "boundary";
       continue;
     }
     const div = covered ? undefined : readDivFence(relative);
     if ((div === "open" && !isParagraph(previous)) || (div === "close" && owner.divDepth > 0)) {
       owner.divDepth += div === "open" ? 1 : -1;
-      visitor.ordinary(line, index);
+      yield { line, index };
       owner.block = "boundary";
       continue;
     }
@@ -394,7 +398,7 @@ function walkSource(
     }
     const { visible, context } = scanner.scan(position, owner, start, aligned, codeLimit);
     const visibleLine = line.slice(0, start - position.start) + visible;
-    visitor.ordinary(visibleLine, index);
+    yield { line: visibleLine, index };
     const blockLine =
       marker || placement.continued
         ? visible
@@ -407,19 +411,13 @@ function walkSource(
 
 export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
   const source = prepareSource(content);
-  const scanner = new BoundaryScanner(
-    content,
-    fenceRecoveryBoundaries(source.lines, source.positions, source.documentFences),
-  );
-  const ordinaryLines: string[] = [];
-  const fenceLanguages: string[] = [];
-  walkSource(source, scanner, {
-    ordinary(line) {
-      ordinaryLines.push(line);
-    },
-    fence({ language }) {
-      if (language !== null) fenceLanguages.push(language);
-    },
-  });
-  return { ordinaryLines, fenceLanguages };
+  const cursor = new MarkdownSourceCursor(content);
+  const discovery = walkSource(source, new BoundaryScanner(content, cursor));
+  const recovery = new FenceLookahead(source.positions, discovery);
+  const result: MarkdownFenceScan = { ordinaryLines: [], fenceLanguages: [] };
+  for (const event of walkSource(source, new BoundaryScanner(content, cursor, recovery))) {
+    if ("line" in event) result.ordinaryLines.push(event.line);
+    else if (event.language !== null) result.fenceLanguages.push(event.language);
+  }
+  return result;
 }

@@ -1,7 +1,14 @@
 interface SourceSpan {
   start: number;
   end: number;
-  recoveryBoundary?: number;
+}
+
+export interface HtmlRecovery {
+  matchingEnd(
+    start: number,
+    close: SourceSpan,
+    next: (offset: number) => SourceSpan | undefined,
+  ): SourceSpan | undefined;
 }
 
 export type MarkdownSourceToken =
@@ -27,12 +34,8 @@ function escapedAt(source: string, offset: number): boolean {
 
 export class MarkdownSourceCursor {
   private readonly delimiters = new Map<string | number, SourceSpan[]>();
-  private readonly outsideFences = new Map<string, SourceSpan[]>();
 
-  constructor(
-    private readonly source: string,
-    fenceRecoveryBoundary: (delimiter: number) => number | undefined,
-  ) {
+  constructor(private readonly source: string) {
     const markers = /`+|\$+|<!--|-->|["']|<\/(pre|script|style|textarea)[\t \r\n]*>/gi;
     for (const match of source.matchAll(markers)) {
       const part = match[0];
@@ -50,14 +53,7 @@ export class MarkdownSourceCursor {
         continue;
       }
       const key = match[1]?.toLowerCase() ?? (part.startsWith("`") ? part.length : part);
-      const span = { start: match.index, end: match.index + part.length };
-      if (typeof key === "string" && (part.startsWith("<") || part === "-->")) {
-        const recoveryBoundary = fenceRecoveryBoundary(span.start);
-        this.add(this.delimiters, key, { ...span, recoveryBoundary });
-        if (recoveryBoundary === undefined) this.add(this.outsideFences, key, span);
-      } else {
-        this.add(this.delimiters, key, span);
-      }
+      this.add(this.delimiters, key, { start: match.index, end: match.index + part.length });
     }
   }
 
@@ -79,18 +75,29 @@ export class MarkdownSourceCursor {
     return spans[low];
   }
 
-  private matchingEnd(key: string, start: number, offset: number): SourceSpan | undefined {
-    const close = this.next(this.delimiters.get(key), offset);
-    if (close?.recoveryBoundary !== undefined && start < close.recoveryBoundary) {
-      // Recovery boundaries only advance, so a later fenced delimiter also
-      // cannot close this opener.
-      return this.next(this.outsideFences.get(key), close.end);
-    }
-    return close;
+  private matchingEnd(
+    key: string,
+    start: number,
+    offset: number,
+    nextStructure: number,
+    recovery?: HtmlRecovery,
+  ) {
+    const spans = this.delimiters.get(key);
+    const close = this.next(spans, offset);
+    if (!close || close.start < nextStructure) return close;
+    // During lookahead, leave a cross-structure opener unresolved to discover
+    // the Markdown that would be visible if the delimiter is in a fence.
+    return recovery?.matchingEnd(start, close, (from) => this.next(spans, from));
   }
 
-  verbatimEnd(name: string, start: number, offset: number): number | undefined {
-    return this.matchingEnd(name, start, offset)?.end;
+  verbatimEnd(
+    name: string,
+    start: number,
+    offset: number,
+    nextStructure: number,
+    recovery?: HtmlRecovery,
+  ) {
+    return this.matchingEnd(name, start, offset, nextStructure, recovery)?.end;
   }
 
   private readBackticks(start: number, inlineLimit: number): MarkdownSourceToken {
@@ -111,7 +118,12 @@ export class MarkdownSourceCursor {
     return close && close.end <= lineEnd ? close.end : end;
   }
 
-  hasPipeDelimiter(start: number, end: number): boolean {
+  hasPipeDelimiter(
+    start: number,
+    end: number,
+    nextMarkdownStructure: number,
+    recovery?: HtmlRecovery,
+  ): boolean {
     let offset = start;
     while (offset < end) {
       const ch = this.source[offset];
@@ -120,8 +132,12 @@ export class MarkdownSourceCursor {
       else if (ch === "$") offset = this.mathEnd(offset, end);
       else if (ch === "<") {
         offset =
-          this.read(offset, { inlineLimit: end, tagLimit: end, nextMarkdownStructure: end })?.end ??
-          offset + 1;
+          this.read(
+            offset,
+            { inlineLimit: end, tagLimit: end, nextMarkdownStructure },
+            end,
+            recovery,
+          )?.end ?? offset + 1;
       } else offset += ch === "\\" ? 2 : 1;
     }
     return false;
@@ -179,6 +195,7 @@ export class MarkdownSourceCursor {
     start: number,
     { inlineLimit, tagLimit, nextMarkdownStructure }: SourceLimits,
     codeLimit = inlineLimit,
+    recovery?: HtmlRecovery,
   ): MarkdownSourceToken | undefined {
     const ch = this.source[start];
     if (ch === "\\" && /[<`\\]/.test(this.source[start + 1] ?? "")) {
@@ -188,9 +205,9 @@ export class MarkdownSourceCursor {
     if (ch !== "<") return undefined;
     if (!this.source.startsWith("<!--", start)) return this.readTag(start, inlineLimit, tagLimit);
 
-    const close = this.matchingEnd("-->", start, start + 4);
+    const close = this.matchingEnd("-->", start, start + 4, nextMarkdownStructure, recovery);
     if (!close) return undefined;
-    const nextOpen = this.matchingEnd("<!--", start, start + 4);
+    const nextOpen = this.matchingEnd("<!--", start, start + 4, nextMarkdownStructure, recovery);
     // Pandoc treats an inner opener as literal comment text. Recover at a
     // separate opener only when visible Markdown intervenes before it.
     if (nextOpen && nextMarkdownStructure <= nextOpen.start && nextOpen.start < close.start) {
