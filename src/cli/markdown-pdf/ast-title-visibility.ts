@@ -1,7 +1,7 @@
 import {
   type InlineDeclaration,
   type InlineVariables,
-  inlineKeywords,
+  inlineValue,
   inlineVariables,
 } from "./ast-title-variables";
 import { normalizeCssForInspection } from "./css-inspection";
@@ -56,7 +56,7 @@ function* declarations(style: string): Generator<InlineDeclaration> {
     const char = token[0];
     if (char === "" || (char === ";" && depth === 0)) {
       const match =
-        /^\s*(display|visibility|position|float|--[\w-]+)\s*:\s*([\s\S]*?)\s*(!\s*important)?\s*$/iu.exec(
+        /^\s*(display|visibility|position|float|--[-\w\u0080-\u{10ffff}]+)\s*:\s*([\s\S]*?)\s*(!\s*important)?\s*$/iu.exec(
           css.slice(start, token.index),
         );
       if (match) {
@@ -110,7 +110,7 @@ function cascade(rules: InlineDeclaration[], variables: InlineVariables): Cascad
     )
       continue;
     if (priority.has(property) && !important) continue;
-    const value = inlineKeywords(raw, variables);
+    const value = inlineValue(raw, variables);
     const folded = value?.toLowerCase();
     if (value === undefined) result[property] = null;
     else if (folded === "inherit" || folded === "initial") result[property] = folded;

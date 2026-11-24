@@ -91,6 +91,12 @@ describe("Pandoc AST title comparison", () => {
     ["display:table-column;float:left;position:running(Heading)", "display:block", false],
     ["position:running(章節)", "color:red", false],
     ["position:note(Heading)", "color:red", false],
+    ["--layout:running(Heading)", "position:var(--layout)", false],
+    ["--配置:running(章節)", "position:var(--配置)", false],
+    ["--layout:note(Heading)", "position:var(--layout)", false],
+    ["--slot:Heading", "position:var(--missing,running(var(--slot)))", false],
+    ["--layout:function(Heading)", "position:var(--layout)", true],
+    ["--layout:running(Heading)", "display:var(--layout)", true],
     ["position:running(Heading);position:static", "color:red", true],
     ["position:running(123)", "color:red", true],
     [String.raw`position:running(\31 23)`, "color:red", false],
@@ -147,6 +153,18 @@ describe("Pandoc AST title comparison", () => {
     const node = { t: "Div", c: [attrs, [header(1, guide)]] };
     expect(shouldSuppressMarkdownPdfMetadataTitle(document(meta(guide), node), "Guide")).toBe(
       suppress,
+    );
+  });
+
+  test("keeps the title when variable expansion exceeds the inspection budget", () => {
+    const names = Array.from({ length: 16 }, (_, i) => "--layout" + i);
+    const rules = names.map(
+      (name, i) => name + ":" + (i ? `var(${names[i - 1]}) var(${names[i - 1]})` : "block"),
+    );
+    const style = [...rules, `display:var(${names.at(-1)})`].join(";");
+    const node = { t: "Header", c: [1, ["", [], [["style", style]]], [guide]] };
+    expect(shouldSuppressMarkdownPdfMetadataTitle(document(meta(guide), node), "Guide")).toBe(
+      false,
     );
   });
 

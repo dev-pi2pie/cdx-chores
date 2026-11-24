@@ -11,6 +11,7 @@ export interface InlineDeclaration {
 }
 
 const maxDepth = 32;
+const maxExpandedLength = 4096;
 
 function closingParen(value: string, start: number): number {
   let nesting = 1;
@@ -28,30 +29,33 @@ function resolve(value: string, variables: InlineVariables, depth: number): Valu
   const functions = /(?<![\w-])var\(/giu;
   const parts: string[] = [];
   let cursor = 0;
+  let expandedLength = 0;
   for (let ref; (ref = functions.exec(value));) {
     const end = closingParen(value, functions.lastIndex);
     if (end < 0) return unresolved;
     const args = value.slice(functions.lastIndex, end);
     const comma = args.indexOf(",");
     const name = (comma < 0 ? args : args.slice(0, comma)).trim();
-    if (!/^--[\w-]+$/u.test(name)) return unresolved;
+    if (!/^--[-\w\u0080-\u{10ffff}]+$/u.test(name) || name.includes("\uFFFD")) return unresolved;
     let result = variables(name, depth + 1);
     // WeasyPrint uses a supplied fallback for a variable with zero computed tokens.
     if ((result === undefined || result === "") && comma >= 0)
       result = resolve(args.slice(comma + 1).trim(), variables, depth + 1);
     if (result === undefined || result === unresolved) return unresolved;
-    // The display grammar accepts at most three keywords. Avoid expanding
-    // arbitrary custom-property data when inspecting a title.
-    if (result && !/^[a-z-]+(?:\s+[a-z-]+){0,2}$/iu.test(result)) return "\uFFFD";
+    // The destination property validates the assembled value, including functions.
+    // Bound expansion independently of that property's grammar.
+    expandedLength += ref.index - cursor + result.length + 2;
+    if (expandedLength > maxExpandedLength) return unresolved;
     parts.push(value.slice(cursor, ref.index), " ", result, " ");
     functions.lastIndex = cursor = end + 1;
   }
   if (!parts.length) return value;
+  if (expandedLength + value.length - cursor > maxExpandedLength) return unresolved;
   parts.push(value.slice(cursor));
   return parts.join("").trim();
 }
 
-export function inlineKeywords(value: string, variables: InlineVariables): string | undefined {
+export function inlineValue(value: string, variables: InlineVariables): string | undefined {
   const result = resolve(value, variables, 0);
   return result === unresolved ? undefined : result;
 }
