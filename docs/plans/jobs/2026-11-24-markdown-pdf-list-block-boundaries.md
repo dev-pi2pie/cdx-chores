@@ -62,8 +62,22 @@ Started from `b66bc6df`. The scanner tracks the content margin and preceding blo
 | Eight Phase 1 list and document controls | All offline targets pass. The numbered, six-space, and padded seven-space cases now give `python`, three rows, and zero added body rows. The unpadded seven-space control gives no hint and four rows. |
 | Adjacent blocks and closers | A parent fence after child verse and a fence after a child table see the destination’s block state. Moving the only closer into a sibling keeps the earlier body row visible. A sibling with its own complete fence retains its hint. |
 | HTML controls | Both genuine early closes under a numbered item now expose `sh` and `js`. Four Phase 3 fixtures still differ from their targets across eight expected-failure assertions. |
-| Reader compatibility | `pandoc --version` confirmed 2.0 and 3.9. All 25 reader cases passed on each. The four added cases check code text and list ancestry after verse, after a table with a blank line, and across adjacent sibling openers. [Reader checks](../../../test/markdown-pdf/actions/rendering/list-block-boundaries.pandoc.test.ts) |
-| Regression checks | `bun run test:unit` passed 2,407 tests. `bun run test:integration:pandoc` passed 27 tests on 3.9. TypeScript, lint, formatting, and whitespace checks passed. |
+| Reader compatibility | `pandoc --version` confirmed 2.0 and 3.9. All 27 reader cases passed on each. The six additions check code text and list ancestry after verse, a table, a sibling opener, or an item fence followed by prose. [Reader checks](../../../test/markdown-pdf/actions/rendering/list-block-boundaries.pandoc.test.ts) |
+| Regression checks | `bun run test:unit` passed 2,463 tests. `bun run test:integration:pandoc` passed 27 tests on 3.9. All 38 targeted authoring tests passed, including agreement across Profile, Template, and Project with Pandoc available and absent. TypeScript, lint, formatting, and whitespace checks passed. |
+
+| Checkpoint | Correction and reader evidence |
+| --- | --- |
+| `2f066d01` | Introduced item-relative margins and matched spans. The eight original list and document controls passed. |
+| `7100245f` | Kept inline backticks and contextual HTML tags within their item and retained outdented prose in its paragraph. All eight added controls matched the 3.9 language targets. On the three outdented prose cases, 2.0 produced no Python block. |
+| `1d709235` | Preserved a following fence after a tight paragraph containing a comment or following a heading. Distinguished an ordered item from text above a Setext underline. All 13 controls matched 3.9. On the bullet and two continuing ordered-list controls, 2.0 produced no Python block. |
+| `50124fb3` | Retained the preceding blank line when returning from a child and recognized an underlined title after tight parent prose. Both readers agreed on all four blank-line controls. Only 3.9 produced Python blocks for the two nested title controls. |
+| `2d9fe21a` | Kept outdented text in a continuing list paragraph after a fence. In `prose-after-tilde-block`, 3.9 keeps the apparent Python fence in the paragraph and 2.0 emits a document-level Python block. Change only the first fence to backticks and both readers emit the Python block. The offline helper follows 3.9 on both inputs. |
+| `ee3086c6` | Applied each enclosing marker width to partially outdented backticks. Under a three-column ordered marker and a two-column bullet, both readers recognize Python at zero, two, three and five spaces. At one and four spaces, the backticks form inline code. Moving the closer to a sibling or past the item leaves the pipe row visible. |
+| `2bb809a6` | Used the same ownership decision for tildes before checking whether they interrupt prose. In the same six-width comparison, two-space tildes stay in the child paragraph on both readers and leave the pipe row visible. At one and four spaces only 3.9 recognizes the Python block. |
+
+The full application suite stopped at its DuckDB extension preflight. Its full run remains a Phase 4 checklist item.
+
+Independent implementation and test reviews cleared `b66bc6df..2bb809a6`. The implementation reviewer compared 384 combinations of marker, margin, body and blank-line placement against Pandoc 3.9. All language hints agreed. All four Phase 2 checklist items are complete.
 
 ## Phase 3 — Use the same fence spans during HTML recovery
 
