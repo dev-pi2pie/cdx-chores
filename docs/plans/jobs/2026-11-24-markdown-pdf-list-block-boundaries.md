@@ -209,3 +209,16 @@ Review of `9d578d9d...2759ec4a` found that an indented quote marker after verse 
 The first re-review cleared those three regressions on `9d578d9d...03faefbf` and found a missing title with author CSS. A stylesheet hid the matching H1 after an inline-hidden earlier H1. Both readers reproduced the missing printed title.
 
 Commit `f5992378` checks the body H1 text in a tagged print when author CSS could change the result. On Pandoc 2.0 and 3.9 with WeasyPrint 70.0, the built CLI kept the metadata title when external, embedded, or imported CSS hid the match. Decorative CSS and a rule hiding an unrelated element preserved deduplication. An earlier H1 revealed by CSS remained the first eligible heading, and a heading printed in a page header did not count as a body H1. All nine stylesheet cases per reader matched their expected PDF text and final HTML. [Title selection tests](../../../test/markdown-pdf/direct/styled-title.unit.test.ts) · [Application render test](../../../test/markdown-pdf/actions/rendering/ast-render.app.test.ts)
+
+At `9e159a3a`, the full suites passed 2,730 unit, 2,769 application, and 110 Pandoc 3.9 integration tests. All 52 reader fixtures passed on each version. The first 2.0 replay reached the 30-second test limit. A batched replay checked the same fixture bytes and assertions. Build, type checking, lint, formatting, and whitespace checks passed.
+
+### Open title findings after the third canary review
+
+The third review covered `9d578d9d...9e159a3a` and `c15c6467...9e159a3a`. It cleared the three original findings and the stylesheet hiding the matching H1. Two regressions remain in automatic title selection with author CSS. Both reproduced on the built CLI with Pandoc 2.0 and 3.9 and WeasyPrint 70.0. Raster comparisons used the same document with explicit `show` and `hide` as controls.
+
+| Author stylesheet | Observed output | Expected output |
+| --- | --- | --- |
+| `#report { color: transparent }` after an earlier inline-hidden H1 | The tagged PDF contained “Report”. The rendered `auto` page matched `hide` pixel for pixel and showed only the body text. | Keep the visible metadata title. |
+| `#report { letter-spacing: 0.25em }` on the first H1 | Extraction inserted spaces into the label. The rendered `auto` page matched `show` pixel for pixel and printed both titles. | Use the visible body heading once. |
+
+The plan remains active pending a decision about the evidence required to omit a title under author CSS. Extracted characters alone establish neither visible paint nor the identity of a styled heading.
