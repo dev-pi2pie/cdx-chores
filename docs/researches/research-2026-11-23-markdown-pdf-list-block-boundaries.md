@@ -179,6 +179,12 @@ Two headings with the same text can share a PDF destination position. For a sing
 
 Use the original proof to judge visibility. For the letter-spaced “Report”, all six opaque glyph outlines fit inside the page and its active clips on a white background. A clip through the letters or later paint covering them kept the metadata block. On Pandoc 2.0 and 3.9 with WeasyPrint 69.0, the second proof and inspection added about 0.26–0.27 seconds on this one-page example. This supports implementing the single-run case. Preserving title selection when an earlier H1 is hidden and a later one matches remains a compatibility check. [Node.js results](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#nodejs-title-visibility-experiment) · [Follow-up phase](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
 
+### Preserving the first matching H1
+
+The built-in `md to-pdf` title policy shipped in `v0.1.5` at `6cd30daa`. A visible first H1 that matches the frontmatter title should supply the single printed title in `auto`, including when emphasis splits its text. The same rule applies after a wholly hidden earlier H1.
+
+The bounded extension changed the source text separately in each inline fragment and required each printed run to show its corresponding change. It checked every glyph outline in the original proof. For italic text, adjacent glyphs can have overlapping bounding boxes even when their outlines are separate. Comparing the outlines preserved the complete formatted heading on both readers. [Two-reader results](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#earlier-hidden-heading-compatibility)
+
 ### Where should metadata-title selection live?
 
 Both parts of `auto` now live under `src/cli/markdown-pdf/title/`. [Module layout and verification](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#title-selection-module-layout)
