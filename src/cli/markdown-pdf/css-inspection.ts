@@ -73,7 +73,7 @@ export function normalizeCssForInspection(
 
     if (char === '"' || char === "'") {
       quote = char;
-      result += options.maskStrings ? (options.preserveTokenBoundaries ? "\uFFFD" : " ") : char;
+      result += options.maskStrings ? (options.preserveTokenBoundaries ? "?" : " ") : char;
       continue;
     }
 
@@ -89,10 +89,18 @@ export function normalizeCssForInspection(
 
     if (char === "\\") {
       const escape = decodeCssEscape(css, index);
-      result +=
-        options.preserveTokenBoundaries && !/^[a-z0-9_-]+$/iu.test(escape.value)
-          ? "\uFFFD"
-          : normalizeCase(escape.value);
+      if (options.preserveTokenBoundaries && !/^[a-z0-9_-]+$/iu.test(escape.value)) {
+        result += "\uFFFD";
+      } else {
+        // An escaped digit can start a CSS identifier. A literal leading digit cannot.
+        if (
+          options.preserveTokenBoundaries &&
+          /^[0-9]$/u.test(escape.value) &&
+          /(?:^|[(,\s])-?$/u.test(result.slice(-2))
+        )
+          result += "\uFFFD";
+        result += normalizeCase(escape.value);
+      }
       index = escape.nextIndex;
       continue;
     }

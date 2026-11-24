@@ -90,7 +90,9 @@ function accepted(property: Property, value: string): boolean {
     case "float":
       return /^(none|left|right|inline-start|inline-end|footnote)$/u.test(value);
     case "position":
-      return /^(static|relative|absolute|fixed|(?:running|note)\(\s*[\w-]+\s*\))$/u.test(value);
+      return /^(?:static|relative|absolute|fixed|(?:running|note)\(\s*(?:--|-?[_a-zA-Z\u0080-\u{10ffff}])[-\w\u0080-\u{10ffff}]*\s*\))$/u.test(
+        value,
+      );
   }
 }
 
@@ -157,18 +159,17 @@ export function titleBlockVisibility(
   const position = computed(values.position, "static", inherited.position);
   const specifiedFloat = computed(values.float, "none", inherited.float);
   const positioned = position === "absolute" || position === "fixed";
-  const float =
-    positioned || position?.startsWith("running(") || position?.startsWith("note(")
-      ? "none"
-      : specifiedFloat;
+  // Running elements and named notes contribute to page material outside the body.
+  const running = position?.startsWith("running(") || position?.startsWith("note(");
+  const float = positioned || running ? "none" : specifiedFloat;
 
   const value =
     values.display === undefined && hiddenAttribute
       ? "none"
       : computed(values.display, "block", "block");
   let display: TitleBlockStyle["display"] = "box";
-  if (value === null) display = "unknown";
-  else if (value === "none") display = "omitted";
+  if (running || value === "none") display = "omitted";
+  else if (value === null) display = "unknown";
   else if (value === "table-column" || value === "table-column-group") {
     // WeasyPrint converts floated and absolutely positioned table columns to
     // block boxes before discarding the contents of remaining column boxes.
