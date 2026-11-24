@@ -1,6 +1,7 @@
 ---
 title: "Markdown PDF list block boundaries implementation"
 created-date: 2026-11-24
+modified-date: 2026-11-24
 status: active
 agent: codex
 ---
@@ -11,13 +12,15 @@ A four-space-indented Python fence under `1. Item` can lose its language hint an
 
 Change the shared offline source scanner. For the list cases where Pandoc 2.0 and 3.9 disagree, use the 3.9 fence interpretation for authoring hints. Preserve the helpers’ existing HTML recovery behavior and source-based metrics. Rendering continues to follow the installed Pandoc reader. A successful run can therefore report a Python authoring hint even when Pandoc 2.0 renders the example without a code block.
 
+The five original phases verified that scanner and render behavior. A later canary comparison found two regressions in automatic title selection with author CSS. The [follow-up phase](#follow-up--automatic-metadata-titles-under-author-css) owns the remaining work.
+
 ## Related Research
 
 - [Markdown PDF list block boundaries](../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md)
 
 ## Unified job record
 
-The [unified job record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md) tracks all five phases from baseline `60df6caf`. For each phase, record the change, fixture or command, expected and observed result, and review disposition. Identify the reviewed commit range, or the baseline and scope of the reviewed diff for uncommitted work. After a correction, rerun the affected checks and re-review the full revised phase. Mark checklist items complete when the corresponding evidence is recorded. Use fixture names, tool versions, and behavioral results that another contributor can reproduce.
+The [unified job record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md) tracks the five original phases from baseline `60df6caf` and the title follow-up. For each phase, record the change, fixture or command, expected and observed result, and review disposition. Identify the reviewed commit range, or the baseline and scope of the reviewed diff for uncommitted work. After a correction, rerun the affected checks and re-review the full revised phase. Mark checklist items complete when the corresponding evidence is recorded. Use fixture names, tool versions, and behavioral results that another contributor can reproduce.
 
 ## Phase 1 — Establish the compatibility fixtures
 
@@ -65,8 +68,8 @@ The [follow-up record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#pha
 - [x] Resolve verse continuation before opening a quote. Verify the indented, flush, and blank-separated variants in the three offline helpers and on Pandoc 2.0 and 3.9. `f430c285`.
 - [x] Complete the separate title correction. Compare CSS whitespace with a nonbreaking space, and distinguish a custom property set to `initial` from one that is absent. Verify a single printed title with each reader. `03faefbf`.
 - [x] Verify automatic title selection when an author stylesheet hides the matching H1 or reveals an earlier H1. Verify the final HTML and printed PDF with both readers. `f5992378`.
-- [ ] Resolve how `auto` distinguishes extractable text from visible title ink when CSS makes the matching H1 transparent, and how it identifies a title when letter spacing changes the extracted label.
-- [ ] Record the corrective commits and the result of a full canary comparison in the [follow-up record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#phase-2-follow-up-after-canary-review).
+
+The next review reproduced a missing title and a duplicate title with author CSS. The [dedicated phase](#follow-up--automatic-metadata-titles-under-author-css) continues from those results. [Canary verification record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#open-title-findings-after-the-third-canary-review)
 
 ## Phase 3 — Use the same fence spans during HTML recovery
 
@@ -106,3 +109,13 @@ Independent code and test reviews cleared `e9b5e7f9..a8ecd37b`. The [Phase 4 job
 **Checkpoint** — A reader can trace each documented behavior to a fixture, a verified result, and its phase in the single job record.
 
 All five original checkpoints passed at `2759ec4a`. Independent code review cleared `c15c6467...4b4baa5e`. The [final verification and review record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#phase-5--validate-documentation-and-close-the-record) covers both readers, the guide example at `c053bca8`, and the corrections made during branch review.
+
+## Follow-Up — Automatic metadata titles under author CSS
+
+For the built-in template with the cover off, determine whether the first visible eligible body H1 supplies the complete metadata title in the layout that would print with the metadata block omitted. The [research](../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#proposed-rule-for-author-stylesheets) proposes keeping the block when the title is only partly visible or the evidence is uncertain. The [unified record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#open-title-findings-after-the-third-canary-review) contains the two failing baselines.
+
+- [ ] **Test the proposed rule.** Prototype a way to identify the complete text painted by an eligible source H1 in the title-omitted layout. On Pandoc 2.0 and 3.9, compare the two reported cases with explicit `show` and `hide` pages and measure render cost against the current tagged-PDF check. Record the evidence and the decision before changing production code. If the experiment cannot distinguish the two cases, revisit the design.
+- [ ] **Implement the supported decision.** Compare text and required links at the source. Add automated regression fixtures for both findings and for source order and identity. An earlier visible, differently titled H1 keeps the metadata block. A confirmed invisible earlier H1 allows a later visible match. Uncertain visibility, ambiguous heading identity, and a link-destination mismatch each keep the block.
+- [ ] **Verify the final output.** With the built CLI on Pandoc 2.0 and 3.9, compare rasterized `auto` pages to the explicit controls. The transparent case must match `show` and the letter-spaced case must match `hide`, with one visible title in each. Add regression fixtures for the partly hidden “Report” and the `:first-child` selector from the research. Both must match `show`. Check that debug HTML agrees. Rerun the title and rendering suites, including CSS whitespace, custom properties, stylesheet hide/reveal, and running elements. Record each reader’s results for checks that depend on the rendered output.
+- [ ] **Align the guide with verified behavior.** Update the [automatic metadata title rules](../guides/markdown-pdf-usage.md#automatic-metadata-titles), including the outcome when evidence is inconclusive. Link the research decision to the fixtures and both reader results in the unified record. Validate documentation links and the examples against those results.
+- [ ] **Review and close.** Record the corrective short SHAs and the exact full branch comparison against the canary. Address actionable findings and recheck the revised range. If findings persist through three code reviews, revisit the design before a fourth. Mark the research, plan, and unified record complete once the decision, output, guide, and independent review agree.

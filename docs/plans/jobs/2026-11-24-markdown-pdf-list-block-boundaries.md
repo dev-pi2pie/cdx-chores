@@ -1,11 +1,12 @@
 ---
 title: "Markdown PDF list block boundaries implementation record"
 created-date: 2026-11-24
+modified-date: 2026-11-24
 status: in-progress
 agent: codex
 ---
 
-The [implementation plan](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md) defines the five checkpoints. Implementation started from `60df6caf`.
+The [implementation plan](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md) defines the five original checkpoints and the subsequent title follow-up. Implementation started from `60df6caf`.
 
 ## Phase 1 — Establish the compatibility fixtures
 
@@ -221,4 +222,4 @@ The third review covered `9d578d9d...9e159a3a` and `c15c6467...9e159a3a`. It cle
 | `#report { color: transparent }` after an earlier inline-hidden H1 | The tagged PDF contained “Report”. The rendered `auto` page matched `hide` pixel for pixel and showed only the body text. | Keep the visible metadata title. |
 | `#report { letter-spacing: 0.25em }` on the first H1 | Extraction inserted spaces into the label. The rendered `auto` page matched `show` pixel for pixel and printed both titles. | Use the visible body heading once. |
 
-The plan remains active pending a decision about the evidence required to omit a title under author CSS. Extracted characters alone establish neither visible paint nor the identity of a styled heading.
+These results reopened the research. The [proposed title rule](../../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#proposed-rule-for-author-stylesheets) distinguishes heading identity from visible text on the page. The [dedicated follow-up phase](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css) owns the experiment, implementation, guide update, and canary re-review. Both findings remain open.

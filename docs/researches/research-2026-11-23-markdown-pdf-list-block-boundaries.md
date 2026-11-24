@@ -2,7 +2,7 @@
 title: "Markdown PDF list block boundaries"
 created-date: 2026-11-23
 modified-date: 2026-11-24
-status: completed
+status: in-progress
 agent: codex
 ---
 
@@ -25,6 +25,8 @@ The installed Pandoc determines how the PDF renders. The authoring helpers also 
 ## Research outcome
 
 The scanner now determines which list item, quote, or document block owns a fence before matching its closer. HTML recovery consults the same span, and the helpers measure visible rows from the original source. For the numbered example above, all three helpers report `python` and exclude the pipe row with Pandoc absent. Rendering preserves each reader’s interpretation. The comparisons below retain the canary and prototype observations that motivated the change. [Implementation plan](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md) · [Verification and review results](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#phase-5--validate-documentation-and-close-the-record)
+
+The fence investigation is complete. Comparing the branch with the previous canary also exposed two regressions in the PDF renderer’s automatic title selection. Those findings reopened this research for a separate question. [When can a styled body heading stand in for the metadata title?](#when-can-a-styled-body-heading-stand-in-for-the-metadata-title)
 
 ## What successive reviews found
 
@@ -116,6 +118,39 @@ The following comparisons isolate one boundary at a time. The implementation pla
 | Keep the complete `closed-textarea-with-apparent-fence` fixture as a control. | The apparent `text` fence contributes no hint. Only the later H1 and three table rows are visible to those collectors. |
 
 The checks compare visible headings, language hints, and source-row counts. Replacing a pipe-shaped body line with plain text isolates its contribution. The `sh` recovery fixtures keep the HTML delimiter in the body and assert the totals above. All three helpers ran on the same inputs with zero Pandoc calls. [Offline and reader results](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#phase-4--verify-authoring-and-rendering-through-the-application)
+
+## When can a styled body heading stand in for the metadata title?
+
+With the built-in template, the cover off, and a nonempty frontmatter title, `titleBlock.metadataTitle: auto` can omit the metadata block when a body H1 supplies the same title. An author stylesheet can change which heading the reader sees. The current renderer extracts H1 text from a tagged PDF made without the metadata block, then looks for the extracted label among the source headings. [Automatic metadata titles](../guides/markdown-pdf-usage.md#automatic-metadata-titles) · [Current comparison](../../src/cli/markdown-pdf/styled-title.ts)
+
+Both examples use the metadata title `Report` and the Markdown heading `# Report {#report}`. With Pandoc 2.0 and 3.9 and WeasyPrint 70.0, the rendered pages differed from the previous canary in opposite ways. [Reproductions and page comparisons](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#open-title-findings-after-the-third-canary-review)
+
+| Change to the example | What the reader sees today | Expected result |
+| --- | --- | --- |
+| Add an earlier H1 with `display:none`. Give `#report` the color `transparent`. | The PDF still yields the text “Report”. `auto` omits the metadata block and the page has no visible title. | Keep the metadata block. The page should match explicit `show`. |
+| Make `#report` the first H1 and set `letter-spacing: 0.25em`. | The body heading is visible, but the extracted label reads “R e p o r t”. `auto` also prints the metadata title. | Omit the metadata block. The page should match explicit `hide`. |
+
+### Proposed rule for author stylesheets
+
+Use the source heading to compare the title text and link destinations. Inspect the layout that would print with the metadata block omitted and the author stylesheet applied. Omission requires evidence that the same heading shows the complete matching title in the document body. The diagram starts with the eligible Markdown H1s in source order.
+
+```mermaid
+flowchart TD
+    A{"Another eligible body H1 in source order?"}
+    A -->|No| K["Keep the metadata block"]
+    A -->|Yes| B{"How much of this heading's text is visible in the body with the metadata block omitted?"}
+    B -->|"Confirmed wholly invisible"| A
+    B -->|"Partly visible, or identity or visibility uncertain"| K
+    B -->|"Complete text confirmed for this heading"| C{"Does its source match the metadata title and required links?"}
+    C -->|Yes| O["Omit the metadata block"]
+    C -->|"No or unsupported"| K
+```
+
+Only a confirmed wholly invisible heading allows the comparison to advance. An earlier visible heading with a different title ends the comparison, even when a later heading matches. Keeping the metadata block when evidence is inconclusive can print a duplicate.
+
+Two proposed controls distinguish these decisions. With `# Re*port* {#report}` and `#report em { visibility: hidden }`, only “Re” is visible, so `auto` should keep the complete metadata title. With `# Report` as the first body heading and `.document-body > h1:first-child { display: none }`, omitting the preceding metadata block hides the H1. Here too, `auto` should keep the block.
+
+The open question is whether the renderer can associate visible title text with a specific source heading at an acceptable cost. One experiment would compare the page with and without that heading’s text paint while preserving layout and author styles. A shifted paragraph or a painted heading border alone would not establish that the title text was visible. Compare the result with explicit `show` and `hide` pages, record the extra renders and elapsed time, and use that evidence to choose an approach. [Follow-up phase](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
 
 ## Related Plans
 
