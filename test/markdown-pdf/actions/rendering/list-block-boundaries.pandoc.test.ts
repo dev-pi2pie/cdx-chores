@@ -63,6 +63,10 @@ const topLiteral = code("```python\n" + pipeBody + "\n```");
 
 // Each pair lists the events preceding the final visible H1, first on 2.0 and then on 3.9.
 const readers: Record<string, [unknown[], unknown[]]> = {
+  "bullet-outdented-closer": [[bulletPython], [bulletPython]],
+  "bullet-outdented-body": [[bulletPython], [bulletPython]],
+  "bullet-aligned": [[bulletPython], [bulletPython]],
+  "bullet-close-after-blank": [[], []],
   "parent-after-verse": [[bulletPython], [bulletPython]],
   "parent-after-table": [[bulletPython], [bulletPython]],
   "document-after-table": [[code(pipeBody, "python")], [code(pipeBody, "python")]],

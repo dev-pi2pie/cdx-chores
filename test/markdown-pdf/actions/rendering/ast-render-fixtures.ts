@@ -26,6 +26,10 @@ const customTemplate = [
 
 const boundaryTitle = "Boundary report";
 const boundaryRenderFixtures = [
+  "bullet-outdented-closer",
+  "bullet-outdented-body",
+  "bullet-aligned",
+  "bullet-close-after-blank",
   "definition-outdented-close",
   "definition-close-after-blank",
   "definition-continuation",

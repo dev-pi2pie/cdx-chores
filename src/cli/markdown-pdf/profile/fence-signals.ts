@@ -330,7 +330,7 @@ function* walkSource(
           const range = continued
             ? owner.continuationRange(columns, index)
             : owner.parent
-              ? owner.fenceRange(columns, index, fence)
+              ? owner.fenceRange(columns, index, fence, documentFences, position.lastBlank)
               : documentFences;
           const close = range.close(index);
           if (close !== undefined) {

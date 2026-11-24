@@ -83,6 +83,15 @@ test.each(["span", "p", "summary"])(
   },
 );
 
+test.each([
+  ["::: box", ":::"],
+  ["<div>", "</div>"],
+])("an outdented %s close ends a list continuation", (open, close) => {
+  const item = ["- Item", "", "  ~~~python", "  " + pipeBody, close, "~~~"].join("\n");
+  expect(scanMarkdownPdfFences(open + "\n\n" + item).fenceLanguages).toEqual([]);
+  expect(scanMarkdownPdfFences(item).fenceLanguages).toEqual(["python"]);
+});
+
 const ending = "~~~python\n# Fenced example\n| A longer example row hidden by the fence | B |\n~~~";
 const visibleTable = "| Item | Count |\n| --- | --- |\n| Live | 1 |";
 

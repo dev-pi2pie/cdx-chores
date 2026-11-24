@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { scanMarkdownPdfFences } from "../../../../src/cli/markdown-pdf/profile/fence-signals";
-import { readFenceLine } from "../../../../src/cli/markdown-pdf/profile/fence-lines";
+import { FenceRange, readFenceLine } from "../../../../src/cli/markdown-pdf/profile/fence-lines";
 import { Container } from "../../../../src/cli/markdown-pdf/profile/list-containers";
 import { collectMarkdownPdfDocumentSignals as collect } from "../../../../src/cli/markdown-pdf/profile/signals";
 import { htmlBoundaryCases } from "../fixtures/list-block-boundaries";
@@ -114,9 +114,10 @@ test("independent HTML regions in one item reuse its indexed fence range", () =>
   const example = ["   ~~~sh", "   </textarea>", "   ~~~", ""];
   const lines = [...example, ...example];
   const opener = readFenceLine("~~~sh")!;
-  const first = item.fork().fenceRange(lines, 0, opener);
+  const document = new FenceRange(lines, 0, 0);
+  const first = item.fork().fenceRange(lines, 0, opener, document, -1);
   expect(first.close(0)).toBe(2);
-  const second = item.fork().fenceRange(lines, 4, opener);
+  const second = item.fork().fenceRange(lines, 4, opener, document, 3);
   expect(second).toBe(first);
   expect(second.close(4)).toBe(6);
 });

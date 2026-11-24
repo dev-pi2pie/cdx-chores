@@ -73,7 +73,13 @@ export class Container {
     return copy!;
   }
 
-  fenceRange(lines: string[], index: number, opener: FenceLine) {
+  fenceRange(
+    lines: string[],
+    index: number,
+    opener: FenceLine,
+    document: FenceRange,
+    lastBlank: number,
+  ) {
     const range = this.ranges.strict;
     if (!range || index < range.start || index >= range.end) {
       const project =
@@ -81,7 +87,7 @@ export class Container {
           ? (line: string) => this.quoteLine(line)
           : this.kind === "definition"
             ? this.projectContinuation(lines)
-            : undefined;
+            : this.projectListFence(lines, index, document, lastBlank);
       return (this.ranges.strict = new FenceRange(lines, index, this.margin, opener, project));
     }
     return range;
@@ -114,20 +120,38 @@ export class Container {
     }
   }
 
+  private projectListFence(lines: string[], open: number, document: FenceRange, lastBlank: number) {
+    const project = this.projectContinuation(lines);
+    const enclosing = this.parent?.parent ? this.parent.continuationRange(lines, open) : document;
+    const outerFence = (i: number) => {
+      const fence = enclosing.at(i);
+      return fence?.hasClose && fenceLanguage(fence.info) !== undefined;
+    };
+    // In the first run of an item, a complete outer fence ends the run.
+    // An indented line can then start a continuation, as it can after a blank.
+    let firstRun =
+      !this.inContinuation &&
+      lastBlank <= this.startLine &&
+      (open === this.startLine || !outerFence(open));
+    return (line: string, i: number, inside: string | undefined) => {
+      if (firstRun && (!line.trim() || outerFence(i))) {
+        if (inside === undefined) return;
+        firstRun = false;
+      }
+      return project(line, i, inside);
+    };
+  }
+
   private projectContinuation(lines: string[]) {
     return (line: string, i: number, inside: string | undefined) => {
       if (inside !== undefined) return inside;
       if (!lines[i - 1]?.trim()) return;
       const destination = containerAtIndent(this, line);
-      if (
-        readMarker(
-          line.slice(destination.margin),
-          destination.margin,
-          undefined,
-          this.kind === "definition",
-        )
-      )
-        return;
+      const relative = line.slice(destination.margin);
+      if (destination.divDepth && readDivFence(relative) === "close") return;
+      const tag = /^<\/([a-z][\w:-]*)\s*>/i.exec(relative)?.[1]?.toLowerCase();
+      if (tag && destination.openHtmlBlocks?.get(tag)?.at(-1)) return;
+      if (readMarker(relative, destination.margin, undefined, this.kind === "definition")) return;
       return continuationLine(this, destination, line);
     };
   }

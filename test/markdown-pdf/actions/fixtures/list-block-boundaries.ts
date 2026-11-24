@@ -26,7 +26,16 @@ function definitionCloser(name: string, blank: boolean) {
   return { name, markdown, fenced: !blank };
 }
 
+function bulletFence(name: string, body: string, closer: string, fenced = true) {
+  const markdown = ["- Item", "", "  ```python", body, closer, "", visible].join("\n");
+  return { name, markdown, fenced };
+}
+
 export const listBoundaryCases = [
+  bulletFence("bullet-outdented-closer", "  " + pipeBody, "```"),
+  bulletFence("bullet-outdented-body", pipeBody, "  ```"),
+  bulletFence("bullet-aligned", "  " + pipeBody, "  ```"),
+  bulletFence("bullet-close-after-blank", "  " + pipeBody, "\n```", false),
   definitionCloser("definition-outdented-close", false),
   definitionCloser("definition-close-after-blank", true),
   listCase("definition-continuation", "Term\n\n: Definition\n\n", "    ", "~~~", true),
