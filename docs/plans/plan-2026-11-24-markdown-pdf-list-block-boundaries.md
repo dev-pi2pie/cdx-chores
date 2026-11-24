@@ -49,6 +49,12 @@ The [follow-up record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#pha
 - [x] Correct ownership for a definition continuation, a partially outdented fence after compact markers, and a quote inside a list item. Verified shared offline signals and both application render routes against Pandoc 2.0 and 3.9 at `a39cd9e7`.
 - [x] Verify that a definition can own an outdented closer until a blank line ends its continuation. Both reader and render controls passed at `c2f11532`.
 
+### Ordinary list and document quote follow-up
+
+- [x] Preserve the Python hint and exclude the pipe row when either the bullet fence body or its closer outdents. Cover an aligned fence and a blank before the outdented closer. `1b5e334b`
+- [x] Recognize the fence that continues a document-level quote and verify the blank-line control against each reader. `7c1f6724`
+- [x] Preserve item ownership across an adjacent heading between two fences. Verify that a blank before the heading ends the item. Independent re-review cleared `f03f5c55..3a60caf5`. [Reader and render results](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#ordinary-list-and-document-quote-follow-up)
+
 ## Phase 3 — Use the same fence spans during HTML recovery
 
 - [x] Supply the container-relative candidate spans to HTML delimiter recovery and ordinary fence recognition. Decide which matched fences are visible after resolving the HTML region. Preserve original source offsets across tabs and line endings so a recovered suffix resumes at the correct character. [Source cursor](../../src/cli/markdown-pdf/profile/source-cursor.ts)

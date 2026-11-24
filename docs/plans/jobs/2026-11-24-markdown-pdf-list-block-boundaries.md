@@ -152,6 +152,25 @@ At `eb360181`, each reader passed all 34 reader fixtures and all 50 application 
 
 Independent re-review cleared the three original ownership findings, the hidden-title finding, and every reported follow-up over `f9f80fdd..eb360181`. The reviewer independently ran 404 focused unit tests, 50 application render fixtures on Pandoc 3.9, and 27 title PDF checks on WeasyPrint 70. The branch verification supplied the Pandoc 2.0 results.
 
+## Ordinary list and document quote follow-up
+
+At `f03f5c55`, outdenting either the body or the closer of a bullet fence dropped the Python hint and exposed its pipe row. A one-space-indented fence immediately after a top-level quote also lost its language hint. The list fix at `1b5e334b` checks whether the outdented line continues the same item. The quote fix at `7c1f6724` checks the enclosing margin before stripping quote indentation.
+
+| Source placement | Pandoc 2.0 | Pandoc 3.9 |
+| --- | --- | --- |
+| Bullet fence with an outdented body or closer, or fully aligned | Python in bullet item | Python in bullet item |
+| Blank before outdented bullet closer | No code block | No code block |
+| One-space fence immediately after quote prose | Python in quote | Python in quote |
+| Blank between quote prose and same fence | No code block | Document-level Python block |
+| Outdented heading immediately after bullet fence, followed by four-space shell fence | Heading in item, shell example is inline code | Heading and shell code block in item |
+| Blank before that heading | Document heading and literal indented code | Document heading and literal indented code |
+
+Re-review found that the scanner released the item at the intervening heading, lost the shell hint, and counted the second fenced row. At `3a60caf5` the scanner applies the same continuation rule between fenced blocks. Profile, Template, and Project agreed on 43 offline inputs with Pandoc absent and with a detectable executable that received zero calls. The adjacent-heading example reports both languages and counts only the three trailing table rows. [Shared fixtures](../../../test/markdown-pdf/actions/fixtures/list-block-boundaries.ts)
+
+Each version passed 42 reader fixtures and 66 application render fixtures covering direct Markdown → HTML and titled Markdown → JSON → HTML. The earlier definition, compact-list, and quoted-list inputs remained covered. All 27 title PDFs per reader printed exactly one matching H1. Independent re-review cleared all three findings over `f03f5c55..3a60caf5`, including neighboring list, quote, and HTML recovery cases. The reviewer independently replayed Pandoc 3.9. [Reader checks](../../../test/markdown-pdf/actions/rendering/list-block-boundaries.pandoc.test.ts) · [Render checks](../../../test/markdown-pdf/actions/rendering/ast-render-fixtures.ts)
+
+At `3a60caf5` the regression suites passed 2,659 unit tests, 2,768 application tests, and 88 Pandoc integration tests on 3.9. Type checking, lint, formatting, and whitespace checks passed.
+
 ## Phase 5 — Validate documentation and close the record
 
 Pending.
