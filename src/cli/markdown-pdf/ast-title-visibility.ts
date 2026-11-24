@@ -29,7 +29,7 @@ const insideDisplay = new Set(["flow", "flow-root", "flex", "grid", "table"]);
 // list-item in any order. List items only support flow and flow-root.
 function generatesBox(value: string): boolean {
   if (singleDisplayBox.test(value)) return true;
-  const tokens = value.split(/\s+/u);
+  const tokens = value.split(/ +/u);
   if (tokens.length > 3) return false;
   let outside = false;
   let inside: string | undefined;
@@ -50,14 +50,16 @@ function* declarations(style: string): Generator<InlineDeclaration> {
     maskStrings: true,
     commentReplacement: " ",
   });
+  // Only CSS whitespace separates tokens. Other Unicode spaces can be part of an identifier.
+  const source = css.replace(/[\t\n\r\f]/gu, " ");
   let start = 0;
   let depth = 0;
-  for (const token of css.matchAll(/[(){}[\];]|$/gu)) {
+  for (const token of source.matchAll(/[(){}[\];]|$/gu)) {
     const char = token[0];
     if (char === "" || (char === ";" && depth === 0)) {
       const match =
-        /^\s*(display|visibility|position|float|--[-\w\u0080-\u{10ffff}]+)\s*:\s*([\s\S]*?)\s*(!\s*important)?\s*$/iu.exec(
-          css.slice(start, token.index),
+        /^ *(display|visibility|position|float|--[-\w\u0080-\u{10ffff}]+) *: *([\s\S]*?) *(! *important)? *$/iu.exec(
+          source.slice(start, token.index),
         );
       if (match) {
         const name = match[1]!;
@@ -90,7 +92,7 @@ function accepted(property: Property, value: string): boolean {
     case "float":
       return /^(none|left|right|inline-start|inline-end|footnote)$/u.test(value);
     case "position":
-      return /^(?:static|relative|absolute|fixed|(?:running|note)\(\s*(?:--|-?[_a-zA-Z\u0080-\u{10ffff}])[-\w\u0080-\u{10ffff}]*\s*\))$/u.test(
+      return /^(?:static|relative|absolute|fixed|(?:running|note)\( *(?:--|-?[_a-zA-Z\u0080-\u{10ffff}])[-\w\u0080-\u{10ffff}]* *\))$/u.test(
         value,
       );
   }

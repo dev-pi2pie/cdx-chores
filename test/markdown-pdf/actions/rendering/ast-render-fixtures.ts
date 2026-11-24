@@ -116,6 +116,18 @@ const titleControls: TitleControl[] = [
   { name: "hidden-title", attributes: 'style="display:none"', keep: true },
   { name: "visibility-hidden-title", attributes: 'style="visibility:hidden"', keep: true },
   { name: "visible-title", attributes: ".note", keep: false },
+  {
+    name: "hidden-title-nonbreaking-space",
+    attributes: 'style="display:none"',
+    later: true,
+    laterStyle: "display:none;display:block\u00a0flow",
+    keep: true,
+  },
+  {
+    name: "visible-title-custom-property-reset",
+    attributes: 'style="--layout:initial;display:var(--layout,none)"',
+    keep: false,
+  },
   { name: "visible-title-uppercase-display", attributes: 'style="display:NONE"', keep: false },
   {
     name: "hidden-title-after-hidden",

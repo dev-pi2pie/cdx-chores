@@ -13,6 +13,11 @@ export interface InlineDeclaration {
 const maxDepth = 32;
 const maxExpandedLength = 4096;
 
+function trimCssWhitespace(value: string): string {
+  // The declaration reader normalizes CSS whitespace to spaces before substitution.
+  return value.replace(/^ +| +$/gu, "");
+}
+
 function closingParen(value: string, start: number): number {
   let nesting = 1;
   for (let i = start; i < value.length; i++) {
@@ -35,12 +40,12 @@ function resolve(value: string, variables: InlineVariables, depth: number): Valu
     if (end < 0) return unresolved;
     const args = value.slice(functions.lastIndex, end);
     const comma = args.indexOf(",");
-    const name = (comma < 0 ? args : args.slice(0, comma)).trim();
+    const name = trimCssWhitespace(comma < 0 ? args : args.slice(0, comma));
     if (!/^--[-\w\u0080-\u{10ffff}]+$/u.test(name) || name.includes("\uFFFD")) return unresolved;
     let result = variables(name, depth + 1);
     // WeasyPrint uses a supplied fallback for a variable with zero computed tokens.
     if ((result === undefined || result === "") && comma >= 0)
-      result = resolve(args.slice(comma + 1).trim(), variables, depth + 1);
+      result = resolve(trimCssWhitespace(args.slice(comma + 1)), variables, depth + 1);
     if (result === undefined || result === unresolved) return unresolved;
     // The destination property validates the assembled value, including functions.
     // Bound expansion independently of that property's grammar.
@@ -52,7 +57,7 @@ function resolve(value: string, variables: InlineVariables, depth: number): Valu
   if (!parts.length) return value;
   if (expandedLength + value.length - cursor > maxExpandedLength) return unresolved;
   parts.push(value.slice(cursor));
-  return parts.join("").trim();
+  return trimCssWhitespace(parts.join(""));
 }
 
 export function inlineValue(value: string, variables: InlineVariables): string | undefined {
@@ -68,6 +73,7 @@ export function inlineVariables(
   for (const rule of rules) {
     if (
       rule.property.startsWith("--") &&
+      rule.value !== "" &&
       (rule.important || !local.get(rule.property)?.important)
     ) {
       local.set(rule.property, rule);
@@ -77,8 +83,9 @@ export function inlineVariables(
   const cache = new Map<string, Value>();
   const lookup: InlineVariables = (name, depth) => {
     const rule = local.get(name);
-    if (!rule || /^(inherit|unset)$/iu.test(rule.value)) return inherited(name, depth);
-    if (/^initial$/iu.test(rule.value)) return undefined;
+    // WeasyPrint substitutes custom property tokens before interpreting keywords
+    // such as initial or inherit on the destination property.
+    if (!rule) return inherited(name, depth);
     if (depth >= maxDepth) return unresolved;
     const previous = cache.get(name);
     if (previous !== undefined) return previous;

@@ -96,7 +96,7 @@ export function normalizeCssForInspection(
         if (
           options.preserveTokenBoundaries &&
           /^[0-9]$/u.test(escape.value) &&
-          /(?:^|[(,\s])-?$/u.test(result.slice(-2))
+          /(?:^|[(, \t\r\n\f])-?$/u.test(result.slice(-2))
         )
           result += "\uFFFD";
         result += normalizeCase(escape.value);
