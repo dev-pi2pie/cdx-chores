@@ -178,12 +178,13 @@ export class MarkdownSourceCursor {
   read(
     start: number,
     { inlineLimit, tagLimit, nextMarkdownStructure }: SourceLimits,
+    codeLimit = inlineLimit,
   ): MarkdownSourceToken | undefined {
     const ch = this.source[start];
     if (ch === "\\" && /[<`\\]/.test(this.source[start + 1] ?? "")) {
       return { kind: "text", end: start + 2 };
     }
-    if (ch === "`") return this.readBackticks(start, inlineLimit);
+    if (ch === "`") return this.readBackticks(start, codeLimit);
     if (ch !== "<") return undefined;
     if (!this.source.startsWith("<!--", start)) return this.readTag(start, inlineLimit, tagLimit);
 

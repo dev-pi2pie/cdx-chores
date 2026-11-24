@@ -1,7 +1,6 @@
 import { FenceRange, closesFence, fenceLanguage, readDivFence, readFenceLine } from "./fence-lines";
 import {
   ATX_HEADING,
-  type BlockContext,
   Container,
   canOpenFence,
   classifyBlock,
@@ -185,7 +184,6 @@ class BoundaryScanner {
   private readonly cursor: MarkdownSourceCursor;
   private offset = 0;
   private lineEnd: LineEnd | undefined;
-  private readonly openHtmlBlocks = new Map<string, boolean[]>();
 
   constructor(
     private readonly content: string,
@@ -205,19 +203,21 @@ class BoundaryScanner {
   private htmlBoundary(
     { name, closing, selfClosing }: Extract<MarkdownSourceToken, { kind: "tag" }>,
     blockStart: boolean,
+    owner: Container,
   ): LineEnd | undefined {
     const ordinary = BLOCK_TAGS.has(name);
     if (!ordinary && !CONTEXTUAL_BLOCK_TAGS.has(name)) return undefined;
 
     let matchedBlock = false;
     if (!VOID_BLOCK_TAGS.has(name)) {
-      const openings = this.openHtmlBlocks.get(name) ?? [];
+      const blocks = (owner.openHtmlBlocks ??= new Map());
+      const openings = blocks.get(name) ?? [];
       if (closing) {
         matchedBlock = openings.pop() === true;
-        if (openings.length === 0) this.openHtmlBlocks.delete(name);
+        if (openings.length === 0) blocks.delete(name);
       } else if (!selfClosing) {
         openings.push(ordinary || blockStart);
-        this.openHtmlBlocks.set(name, openings);
+        blocks.set(name, openings);
       }
     }
     if (!(ordinary || blockStart || matchedBlock)) return undefined;
@@ -225,7 +225,14 @@ class BoundaryScanner {
     return matchedBlock ? "paired-close" : "boundary";
   }
 
-  scan(line: SourceLine, previous: BlockContext, start: number, blockAligned: boolean) {
+  scan(
+    line: SourceLine,
+    owner: Container,
+    start: number,
+    blockAligned: boolean,
+    codeLimit: number,
+  ) {
+    const previous = owner.block;
     const { end } = line;
     let offset = Math.max(start, this.offset);
     let visible = " ".repeat(Math.min(offset, end) - start);
@@ -234,7 +241,7 @@ class BoundaryScanner {
     const headingLine = blockAligned && ATX_HEADING.test(this.content.slice(start, end));
 
     while (offset < end) {
-      const token = this.cursor.read(offset, line);
+      const token = this.cursor.read(offset, line, codeLimit);
       const tokenEnd = token?.end ?? offset + 1;
       const text = this.content.slice(offset, Math.min(tokenEnd, end));
       if (token?.kind === "comment") {
@@ -256,7 +263,9 @@ class BoundaryScanner {
           lineEnd === "boundary" ||
           (lineEnd === "paired-close" && offset === this.offset) ||
           (!hasText && blockAligned && !isParagraph(previous) && /^ {0,3}$/.test(visible));
-        const boundary = headingLine ? undefined : this.htmlBoundary(token, startsAtBoundary);
+        const boundary = headingLine
+          ? undefined
+          : this.htmlBoundary(token, startsAtBoundary, owner);
         visible += tokenEnd <= end && (!boundary || hasText) ? text : " ".repeat(text.length);
         if (boundary) lineEnd = boundary;
         else {
@@ -307,7 +316,7 @@ export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
     const wasRejected = owner.rejectedTilde && closesFence(owner.rejectedTilde, fence);
     if (wasRejected) owner.rejectedTilde = undefined;
 
-    let tokenLimits = position;
+    let codeLimit = position.inlineLimit;
     if (fence && !wasRejected) {
       const language = fenceLanguage(fence.info);
       const interrupts = canOpenFence(previous, fence);
@@ -325,7 +334,7 @@ export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
         // to this item so a sibling's backticks cannot hide its own fence.
         const end = positions[range.end]?.start;
         if (fence.marker === "`" && end !== undefined && end < position.inlineLimit) {
-          tokenLimits = { ...position, inlineLimit: end };
+          codeLimit = end;
         }
       } else if (fence.marker === "~" && language && !interrupts) {
         owner.rejectedTilde ??= fence;
@@ -358,7 +367,11 @@ export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
         ? position.start + /^[ \t]*/.exec(line)![0].length
         : position.start;
     const aligned = !inItem || (!/^[ \t]/.test(relative) && !isParagraph(previous));
-    const { visible, context } = scanner.scan(tokenLimits, previous, start, aligned);
+    if (owner.parent && line.includes("`")) {
+      const next = positions[owner.inlineCodeEnd(columns, index)];
+      if (next) codeLimit = Math.min(codeLimit, next.start);
+    }
+    const { visible, context } = scanner.scan(position, owner, start, aligned, codeLimit);
     const visibleLine = line.slice(0, start - position.start) + visible;
     ordinaryLines.push(visibleLine);
     const blockLine = marker

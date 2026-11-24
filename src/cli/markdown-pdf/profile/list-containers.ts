@@ -22,8 +22,25 @@ export class Container {
   block: BlockContext = "boundary";
   proseStart = -1;
   divDepth = 0;
+  openHtmlBlocks?: Map<string, boolean[]>;
   rejectedTilde?: FenceLine;
   private fences?: FenceRange;
+  private inlineEnd = 0;
+
+  // Inline code may continue through lazy prose, but cannot absorb a delimiter
+  // from a sibling or a new child. Reuse the limit across lines of the item.
+  inlineCodeEnd(lines: string[], index: number) {
+    if (index < this.inlineEnd) return this.inlineEnd;
+    let i = index + 1;
+    for (; i < lines.length; i++) {
+      const line = lines[i]!;
+      if (!line.trim()) break;
+      const destination = containerAtIndent(this, line);
+      if (readMarker(line.slice(destination.margin), destination.margin)) break;
+    }
+    this.inlineEnd = i;
+    return i;
+  }
 
   constructor(
     readonly margin = 0,
@@ -36,6 +53,12 @@ export class Container {
     }
     return this.fences;
   }
+}
+
+function containerAtIndent(owner: Container, line: string) {
+  const indent = /^ */.exec(line)![0].length;
+  while (owner.parent && indent < owner.margin) owner = owner.parent;
+  return owner;
 }
 
 function endColumn(whitespace: string, start: number) {
@@ -94,12 +117,7 @@ function continuesItem(owner: Container, destination: Container, relative: strin
   if (fence) return owner.block === "paragraph" && (fence.indent > 0 || fence.marker === "~");
   const div = readDivFence(relative);
   if (div) return !!destination.parent && div === "open";
-  return (
-    !ATX_HEADING.test(relative) &&
-    !BLOCK_SEPARATOR.test(relative) &&
-    !readMarker(relative, destination.margin) &&
-    !/^ {0,3}[<>]/.test(relative)
-  );
+  return !readMarker(relative, destination.margin);
 }
 
 export function resolveContainer(
@@ -108,11 +126,7 @@ export function resolveContainer(
   index: number,
   hasPipe: boolean,
 ) {
-  let owner = current;
-  const indent = /^ */.exec(line)![0].length;
-  if (line.trim()) {
-    while (owner.parent && indent < owner.margin) owner = owner.parent;
-  }
+  let owner = line.trim() ? containerAtIndent(current, line) : current;
   let relative = line.slice(owner.margin);
   if (owner !== current && continuesItem(current, owner, relative)) {
     return { owner: current, relative: line, lazy: true, marker: false, literal: false };

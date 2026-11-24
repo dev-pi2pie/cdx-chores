@@ -129,6 +129,49 @@ test("raw and unlabeled spans skip their bodies and preserve the width of a visi
   });
 });
 
+test.each(["- inline `start", "- Item\n   ```inline"])(
+  "an inline backtick run after %j cannot consume a sibling opener",
+  (first) => {
+    const s = collect(
+      [first, "- ```python", "  " + longRow, "  ```", "  `", "", "# Visible"].join("\n"),
+    );
+    expect(s.codeFences.languages).toEqual(["python"]);
+    expect(s.tables.scannedRows).toBe(0);
+    expect(s.headings.total).toBe(1);
+  },
+);
+
+test.each(["<span>words</span>", "<!-- note -->", "# heading-like prose"])(
+  "outdented %s can continue a loose paragraph inside the list",
+  (continuation) => {
+    const source = [
+      "- Item",
+      "",
+      "  Paragraph",
+      continuation,
+      "",
+      "    ~~~python",
+      "    " + longRow,
+      "    ~~~",
+    ].join("\n");
+    expect(collect(source).codeFences.languages).toEqual(["python"]);
+  },
+);
+
+test.each([
+  ["same item", "- <audio>\n  more", true],
+  ["sibling item", "- <audio>\n- more", false],
+])("a contextual HTML close in the %s uses that item's openings", (_name, prefix, matched) => {
+  const source = [prefix, "  </audio>", "  ~~~python", "  " + longRow, "  ~~~"].join("\n");
+  expect(collect(source).codeFences.languages).toEqual(matched ? ["python"] : []);
+});
+
+test("inline code keeps a lazy continuation in the same item", () => {
+  const source =
+    "- `words\nlazy continuation\n  <textarea>`\n\n  ~~~python\n  ok\n  ~~~\n\n</textarea>";
+  expect(collect(source).codeFences.languages).toEqual(["python"]);
+});
+
 test("repeated unmatched openers leave a later sibling and heading visible", () => {
   const source =
     "- Item\n" + "\n  ~~~~missing\n".repeat(2048) + "- ~~~js\n  code\n  ~~~\n\n# Visible";
