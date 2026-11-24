@@ -1,7 +1,7 @@
 ---
 title: "CLI Action Tool Integration Guide"
 created-date: 2026-02-25
-modified-date: 2026-11-22
+modified-date: 2026-11-24
 status: completed
 agent: codex
 ---
@@ -62,7 +62,7 @@ Avoid direct SDK/tool-client complexity inside action modules when an adapter bo
 
 ## Codex SDK Integration
 
-The Codex SDK baseline for `v0.2.2-canary.8` is `@openai/codex-sdk` `0.171.0`.
+The Codex SDK baseline for `v0.2.2-canary.9` is `@openai/codex-sdk` `0.172.0`.
 
 `src/adapters/codex/shared.ts` loads the Codex SDK on demand. Feature-specific adapters provide Codex assistance for rename, Markdown PDF, and data workflows.
 
@@ -85,7 +85,7 @@ Recommended shape for rename semantic assistance:
 
 ### Execution settings and discovery
 
-Use `src/cli/options/codex-execution-option.ts` to register the three execution options on an adopted command node. The shared resolver in `src/utils/codex-execution.ts` validates action and adapter inputs and supplies the default effort `low`; omitted model/provider stay absent. Forward the resolved `codexExecution` object through every request, batch, retry, repair, and regeneration seam to `startCodexReadOnlyThread()`. Keep timeout resolution separate and retain lazy SDK loading for Node ESM/CJS compatibility.
+Use `applyCodexExecutionOptions()` from `src/cli/options/codex-execution-option.ts` to register model, provider, reasoning effort, speed, and session retention on an adopted command node. The shared resolver in `src/utils/codex-execution.ts` validates action and adapter inputs and supplies the helper effort default `low`. Omitted model, provider, and speed inherit Codex settings. Pass the resolved `codexExecution` object to `withCodexReadOnlyThread()` for SDK helper work that honors session retention. Keep requests that share a thread inside its callback so retention runs after the final use. Keep timeout resolution separate and retain lazy SDK loading for Node ESM/CJS compatibility.
 
 Interactive mode owns one selection in `src/cli/interactive/session.ts`. Do not put execution settings into prompts, saved PDF profiles, data plans, advisory reports, or recovery artifacts. Existing helpers keep their own enablement and consent boundaries. Do not change selection to recover from an incompatible model/provider/effort response.
 

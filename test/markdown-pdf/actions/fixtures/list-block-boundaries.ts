@@ -1,0 +1,237 @@
+import assert from "node:assert/strict";
+
+import { markdownSourceFixtures } from "./markdown-source-fixtures";
+
+export const pipeBody = "| fenced | sample |";
+const visible = "# Visible heading\n\n| Item | Count |\n| ---- | ----: |\n| Live | 1 |";
+
+function listCase(name: string, prefix: string, margin: string, fence: string, fenced: boolean) {
+  const block = [fence + "python", pipeBody, fence].map((line) => margin + line).join("\n");
+  return { name, markdown: prefix + block + "\n\n" + visible, fenced };
+}
+
+function definitionCloser(name: string, blank: boolean) {
+  const markdown = [
+    "Term",
+    "",
+    ": Definition",
+    "",
+    "  ~~~python",
+    "  " + pipeBody,
+    ...(blank ? [""] : []),
+    "~~~",
+    "",
+    visible,
+  ].join("\n");
+  return { name, markdown, fenced: !blank };
+}
+
+function bulletFence(name: string, body: string, closer: string, fenced = true) {
+  const markdown = ["- Item", "", "  ```python", body, closer, "", visible].join("\n");
+  return { name, markdown, fenced };
+}
+
+export const quoteBoundaryCases = [
+  listCase("verse-quoted-continuation", "| verse\n", "  > ", "~~~", false),
+  listCase("verse-quote-flush", "| verse\n", "> ", "~~~", true),
+  listCase("verse-quote-after-blank", "| verse\n\n", "  > ", "~~~", true),
+  listCase("list-in-quote", "> - Item\n", "", "~~~", true),
+  listCase("prose-in-quote", "> Item\n", "", "~~~", false),
+  listCase("marked-list-in-quote", "> - Item\n", "> ", "~~~", true),
+  listCase("quote-list-after-blank", "> - Item\n>\n", ">   ", "~~~", true),
+  listCase("quote-list-paragraph", "> - Item\n", ">   ", "~~~", false),
+  ...[true, false].map((quoted) => ({
+    name: quoted ? "compact-quote-closer" : "compact-plain-closer",
+    markdown: ["- > Quote.", "```python", pipeBody, quoted ? "> ```" : "```", "", visible].join(
+      "\n",
+    ),
+    fenced: true,
+  })),
+];
+
+export const listBoundaryCases = [
+  ...quoteBoundaryCases,
+  bulletFence("bullet-outdented-closer", "  " + pipeBody, "```"),
+  bulletFence("bullet-outdented-body", pipeBody, "  ```"),
+  bulletFence("bullet-aligned", "  " + pipeBody, "  ```"),
+  bulletFence("bullet-close-after-blank", "  " + pipeBody, "\n```", false),
+  definitionCloser("definition-outdented-close", false),
+  definitionCloser("definition-close-after-blank", true),
+  listCase("definition-continuation", "Term\n\n: Definition\n\n", "    ", "~~~", true),
+  listCase("compact-mixed-list", "1. - Item\n", "  ", "~~~", true),
+  listCase("quote-in-item", "- Item\n\n  > Quoted\n", "   ", "```", true),
+  listCase("document-quote-adjacent", "> Quote.\n", " ", "```", true),
+  listCase("document-quote-after-blank", "> Quote.\n\n", " ", "```", true),
+  listCase("numbered", "1. Item\n\n", "    ", "```", true),
+  listCase("nested-verse", "- - | poem\n", " ", "~~~", true),
+  listCase("document-verse", "| poem\n", " ", "~~~", false),
+  listCase("empty-six", "- -\n", " ".repeat(6), "~~~", true),
+  listCase("empty-seven", "- -\n", " ".repeat(7), "~~~", false),
+  listCase("padded-seven", "- -" + " " + "\n", " ".repeat(7), "~~~", true),
+  listCase("document-fence", "", "", "```", true),
+  listCase("document-literal", "", "    ", "```", false),
+  listCase(
+    "prose-after-tilde-block",
+    "- ~~~\n  example\n  ~~~\n  next paragraph\n",
+    "",
+    "~~~",
+    false,
+  ),
+  listCase(
+    "prose-after-backtick-block",
+    "- ```\n  example\n  ```\n  next paragraph\n",
+    "",
+    "~~~",
+    true,
+  ),
+];
+
+export const successiveFenceCases = [false, true].map((blank) => ({
+  name: blank ? "second-fence-after-blank" : "second-fence-in-item",
+  markdown: [
+    "- Item",
+    "",
+    "  ```python",
+    "  " + pipeBody,
+    "```",
+    ...(blank ? [""] : []),
+    "# Middle heading",
+    "    ```sh",
+    "    | following | probe |",
+    "    ```",
+    "",
+    visible,
+  ].join("\n"),
+  headings: ["Middle heading", "Visible heading"],
+  languages: blank ? ["python"] : ["python", "sh"],
+  rows: blank ? 4 : 3,
+  pipeBodyRows: 0,
+}));
+
+const childTable =
+  "- Parent\n  - Child\n\n    | Key | Value |\n    | --- | --- |\n    | x | y |\n\n";
+export const listTransitionCases = [
+  { ...listCase("parent-after-verse", "- Parent\n  - | poem\n", "  ", "~~~", true), rows: 4 },
+  { ...listCase("parent-after-table", childTable, "  ", "~~~", true), rows: 6 },
+  { ...listCase("document-after-table", childTable, "", "~~~", true), rows: 6 },
+  {
+    name: "adjacent-sibling-opener",
+    markdown: ["- ```abandoned", "- ```python", "  " + pipeBody, "  ```", "", visible].join("\n"),
+    rows: 3,
+  },
+];
+
+function source(name: string) {
+  const fixture = markdownSourceFixtures.find((candidate) => candidate.name === name);
+  assert.ok(fixture, name);
+  return fixture.markdown;
+}
+
+// Fail if an upstream fixture edit would silently erase the contrast between two variants.
+function replaceOnce(markdown: string, original: string, replacement: string) {
+  assert.ok(
+    markdown.includes(original) && markdown.indexOf(original) === markdown.lastIndexOf(original),
+  );
+  return markdown.replace(original, replacement);
+}
+
+function inItem(block: string) {
+  return (
+    "1. Item\n\n" +
+    block
+      .split("\n")
+      .map((line) => "    " + line)
+      .join("\n")
+  );
+}
+
+function recoveryPair(kind: "comment" | "textarea", delimiter: string) {
+  const base = source("apparent-" + kind + "-close-inside-fence");
+  const block = "~~~sh\n" + delimiter + "\n~~~";
+  const opener = kind === "comment" ? "<!-- abandoned" : "<textarea>";
+  return [
+    { placement: "document", markdown: base },
+    { placement: "item", markdown: replaceOnce(base, block, inItem(block)) },
+  ].flatMap(({ placement, markdown }) => [
+    { name: kind + "-" + placement, markdown, recovered: true },
+    {
+      name: kind + "-" + placement + "-early-close",
+      markdown: replaceOnce(markdown, opener + "\n", opener + "\n" + delimiter + "\n"),
+      recovered: true,
+    },
+  ]);
+}
+
+const textarea = source("apparent-textarea-close-inside-fence");
+const shellFence = "~~~sh\n</textarea>\n~~~";
+const sibling = "\n\n2. Sibling";
+const laterClose = source("real-close-after-fenced-textarea-delimiter");
+const pythonFence = "~~~python\n</textarea>\n| Hidden | Code |\n~~~";
+
+export const htmlBoundaryCases = [
+  ...recoveryPair("comment", "-->"),
+  ...recoveryPair("textarea", "</textarea>"),
+  ...["## Inside", "literal"].map((inner, i) => ({
+    name: i === 0 ? "comment-around-textarea-heading" : "comment-around-textarea-prose",
+    markdown: replaceOnce(
+      source("apparent-comment-close-inside-fence"),
+      "~~~sh\n-->\n~~~",
+      ["<textarea>", "", inner, "", inItem("~~~sh\n-->\n~~~"), "", "</textarea>"].join("\n"),
+    ),
+    recovered: false,
+  })),
+  {
+    name: "closer-in-item",
+    markdown: replaceOnce(textarea, shellFence, inItem(shellFence) + sibling),
+    recovered: true,
+  },
+  {
+    name: "closer-in-sibling",
+    markdown: replaceOnce(
+      textarea,
+      shellFence,
+      inItem("~~~sh\n</textarea>") + sibling + "\n\n    ~~~",
+    ),
+    recovered: false,
+  },
+  { name: "genuine-close-after-document", markdown: laterClose, recovered: false },
+  {
+    name: "genuine-close-after-item",
+    markdown: replaceOnce(laterClose, pythonFence, inItem(pythonFence)),
+    recovered: false,
+  },
+  {
+    name: "closed-textarea",
+    markdown: source("closed-textarea-with-apparent-fence"),
+    recovered: false,
+  },
+];
+
+// Shared source expectations for the scanner and all three offline authoring entry points.
+export const offlineBoundaryCases = [
+  ...successiveFenceCases,
+  ...listBoundaryCases.map(({ name, markdown, fenced }) => ({
+    name,
+    markdown,
+    headings: ["Visible heading"],
+    languages: fenced ? ["python"] : [],
+    rows: 3 + Number(!fenced) + Number(name === "nested-verse"),
+    pipeBodyRows: Number(!fenced),
+  })),
+  ...listTransitionCases.map(({ name, markdown, rows }) => ({
+    name,
+    markdown,
+    headings: ["Visible heading"],
+    languages: ["python"],
+    rows,
+    pipeBodyRows: 0,
+  })),
+  ...htmlBoundaryCases.map(({ name, markdown, recovered }) => ({
+    name,
+    markdown,
+    headings: recovered ? ["Recovered heading", "Visible heading"] : ["Visible heading"],
+    languages: recovered ? ["sh", "js"] : name === "closed-textarea" ? [] : ["js"],
+    rows: 3,
+    pipeBodyRows: undefined,
+  })),
+];

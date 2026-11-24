@@ -50,7 +50,7 @@ The root-level form is rejected. If the option is omitted, Interactive mode uses
 
 Choose `md`, then choose `to-pdf` or `pdf-recipes`.
 
-Rendering requires Pandoc 2.0 or newer and WeasyPrint 70.0 or newer with `--allowed-protocols`. Interactive rendering uses the default asset policy. The direct command supports explicit remote-asset opt-in, including on WeasyPrint 65.1 and 69.0. Codex-assisted preparation also requires configured Codex support. [WeasyPrint compatibility](markdown-pdf-usage.md#weasyprint-compatibility)
+Interactive PDF rendering loads assets from local files and data URLs only, including images and fonts referenced by stylesheets. It requires Pandoc 2.0 or newer and WeasyPrint 70.0 or newer with `--allowed-protocols` support, even when every asset is local. To render with remote assets, use the direct `md to-pdf` command with `--allow-remote-assets`. Codex-assisted preparation also requires configured Codex support. [WeasyPrint compatibility](markdown-pdf-usage.md#weasyprint-compatibility) · [Advanced CLI usage](markdown-pdf-usage.md#advanced-cli-usage)
 
 Check available capabilities with:
 
@@ -102,7 +102,7 @@ Custom inputs use two layers. First choose either `Explicit inputs` or `Bundle +
 
 The recipe review shows the selected source, resolved role provenance, effective page settings, ToC behavior, separate reusable Profile settings, the two one-render overrides, their effective results, and any bundle warnings. No PDF is written before this review.
 
-Interactive export follows the same [automatic metadata title rules](markdown-pdf-usage.md#automatic-metadata-titles) and [custom-template behavior](markdown-pdf-usage.md#custom-template-and-css) as the direct command.
+Interactive rendering follows the same [automatic metadata title rules](markdown-pdf-usage.md#automatic-metadata-titles) and [custom-template behavior](markdown-pdf-usage.md#custom-template-and-css) as the direct command.
 
 ## Prepare A Recipe
 
@@ -232,7 +232,7 @@ Every generated path shares the same preparation boundary:
 2. prepare one candidate
 3. validate and review that candidate with no writes
 
-Recipe preparation and review can run without Pandoc or WeasyPrint. When a Markdown sample is available, the helpers prepare a recipe from [bounded source summaries](markdown-pdf-usage.md#codex-helper-choice). Pandoc reads the Markdown for the title decision during an eligible export.
+Recipe preparation and review can run without Pandoc or WeasyPrint. When a Markdown sample is available, the helpers prepare a recipe from [bounded source summaries](markdown-pdf-usage.md#codex-helper-choice). Pandoc reads the Markdown for the title decision during an eligible render.
 
 A render-capable `to-pdf` continuation then:
 

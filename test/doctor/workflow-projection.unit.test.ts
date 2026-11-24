@@ -102,12 +102,12 @@ const CONDITION_CONTRACT = {
   "markdown.pdf.asset-policy.unsupported": {
     affectedWorkflowIds: ["markdown.pdf"],
     message:
-      "Default Markdown PDF rendering requires WeasyPrint 70.0 or newer with --allowed-protocols. Basic rendering is available with explicit remote-asset opt-in",
+      "PDF rendering in Interactive or default direct mode requires WeasyPrint 70.0 or newer with --allowed-protocols. For basic PDF rendering with remote assets enabled, use md to-pdf --allow-remote-assets",
   },
   "markdown.pdf.asset-policy.unverified": {
     affectedWorkflowIds: ["markdown.pdf"],
     message:
-      "Default Markdown PDF rendering requires WeasyPrint 70.0 or newer with --allowed-protocols. Basic rendering is available with explicit remote-asset opt-in",
+      "PDF rendering in Interactive or default direct mode requires WeasyPrint 70.0 or newer with --allowed-protocols. For basic PDF rendering with remote assets enabled, use md to-pdf --allow-remote-assets",
   },
   "data.query.runtime.unavailable": {
     affectedWorkflowIds: ["data.query", "data.query.codex"],

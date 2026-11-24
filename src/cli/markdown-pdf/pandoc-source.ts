@@ -4,7 +4,11 @@ import { basename, join } from "node:path";
 import { parseMarkdown } from "../../markdown";
 import { CliError, toCliError } from "../errors";
 import type { execCommand } from "../process";
-import { shouldSuppressMarkdownPdfMetadataTitle } from "./ast-title";
+import {
+  shouldSuppressMarkdownPdfMetadataTitle,
+  styledTitleHeadings,
+  type StyledTitleHeading,
+} from "./title/ast-title";
 
 export type MarkdownPdfAstTitleTemplate = (suppressMetadataTitle: boolean) => string;
 
@@ -13,6 +17,7 @@ interface PandocRenderSource {
   format: "markdown" | "json";
   templateHtml: string;
   readerStderr: string;
+  styledTitle?: { headings: StyledTitleHeading[]; inlineMatch: boolean };
 }
 
 function stageError(message: string, readerStderr = ""): CliError {
@@ -79,6 +84,7 @@ export async function resolveMarkdownPdfPandocSource(input: {
   tempDir: string;
   templateHtml: string;
   templateForAstTitle?: MarkdownPdfAstTitleTemplate;
+  customStyle?: boolean;
   runner: typeof execCommand;
 }): Promise<PandocRenderSource> {
   const direct: PandocRenderSource = {
@@ -92,7 +98,8 @@ export async function resolveMarkdownPdfPandocSource(input: {
   const markdown = await readFile(input.inputPath).catch((error: unknown) => {
     throw stageError(`pandoc Markdown input could not be read: ${toCliError(error).message}`);
   });
-  const title = parseMarkdown(markdown.toString("utf8")).data?.title;
+  const text = markdown.toString("utf8");
+  const title = parseMarkdown(text).data?.title;
   // Both routes must read the bytes that determined the front-matter title eligibility.
   const sourceDir = join(input.tempDir, "source");
   await mkdir(sourceDir);
@@ -110,12 +117,15 @@ export async function resolveMarkdownPdfPandocSource(input: {
     input.cwd,
   );
   const document = await readAst(path, reader.stderr);
+  const inlineMatch = shouldSuppressMarkdownPdfMetadataTitle(document, title);
+  const styled = input.customStyle || /<(?:style|link)\b/iu.test(text);
+  const headings = styled ? styledTitleHeadings(document) : [];
+  const styledTitle = headings.length ? { headings, inlineMatch } : undefined;
   return {
     path,
     format: "json",
-    templateHtml: input.templateForAstTitle(
-      shouldSuppressMarkdownPdfMetadataTitle(document, title),
-    ),
+    templateHtml: input.templateForAstTitle(!styledTitle && inlineMatch),
+    styledTitle,
     readerStderr: reader.stderr,
   };
 }

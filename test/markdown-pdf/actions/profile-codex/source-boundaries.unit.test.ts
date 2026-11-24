@@ -1,7 +1,10 @@
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
+import { ContainerScopes } from "../../../../src/cli/markdown-pdf/profile/container-scopes";
+import { Container } from "../../../../src/cli/markdown-pdf/profile/list-containers";
 
 import { scanMarkdownPdfFences } from "../../../../src/cli/markdown-pdf/profile/fence-signals";
 import { collectMarkdownPdfDocumentSignals } from "../../../../src/cli/markdown-pdf/profile/signals";
+import { offlineBoundaryCases, pipeBody } from "../fixtures/list-block-boundaries";
 import { markdownSourceFixtures } from "../fixtures/markdown-source-fixtures";
 
 test.each(markdownSourceFixtures)("$name preserves source signals", (fixture) => {
@@ -29,6 +32,34 @@ test.each(markdownSourceFixtures)("$name preserves source signals", (fixture) =>
   });
 });
 
+for (const fixture of offlineBoundaryCases) {
+  const { name, markdown } = fixture;
+  const scan = scanMarkdownPdfFences(markdown);
+  const signals = collectMarkdownPdfDocumentSignals(markdown);
+  const headings = scan.ordinaryLines.flatMap((line) => /^# (.+)$/.exec(line)?.[1] ?? []);
+
+  test(name + " exposes the expected headings", () => {
+    expect(headings).toEqual(fixture.headings);
+    expect(signals.headings.total).toBe(fixture.headings.length);
+  });
+
+  test(name + " reports the expected languages", () => {
+    expect(signals.codeFences.languages).toEqual(fixture.languages);
+  });
+
+  test(name + " counts visible source rows", () => {
+    expect(signals.tables.scannedRows).toBe(fixture.rows);
+  });
+
+  const { pipeBodyRows } = fixture;
+  if (pipeBodyRows !== undefined) {
+    const plain = collectMarkdownPdfDocumentSignals(markdown.replace(pipeBody, "plain"));
+    test(name + " isolates the pipe body's contribution", () => {
+      expect(signals.tables.scannedRows - plain.tables.scannedRows).toBe(pipeBodyRows);
+    });
+  }
+}
+
 test("keeps exact wrapped-token offsets with CRLF and CR", () => {
   const source = markdownSourceFixtures.find(
     ({ name }) => name === "wrapped-and-quoted-tag",
@@ -53,6 +84,117 @@ test.each(["span", "p", "summary"])(
     });
   },
 );
+
+test.each([
+  ["::: box", ":::"],
+  ["<div>", "</div>"],
+])("an outdented %s close ends a list continuation", (open, close) => {
+  const item = ["- Item", "", "  ~~~python", "  " + pipeBody, close, "~~~"].join("\n");
+  expect(scanMarkdownPdfFences(open + "\n\n" + item).fenceLanguages).toEqual([]);
+  expect(scanMarkdownPdfFences(item).fenceLanguages).toEqual(["python"]);
+});
+
+test("a heading following a marker-line fence stays in the first run of the item", () => {
+  const source = [
+    "- ```python",
+    "  one",
+    "```",
+    "# Middle",
+    "    ```sh",
+    "    " + pipeBody,
+    "    ```",
+  ].join("\n");
+  const signals = collectMarkdownPdfDocumentSignals(source);
+  expect(signals.codeFences.languages).toEqual(["python", "sh"]);
+  expect(signals.tables.scannedRows).toBe(0);
+});
+
+test("an item projects adjacent quote markers before matching the following fence", () => {
+  const source = [
+    "- ```python",
+    "  one",
+    "  ```",
+    "> ```",
+    "> two",
+    "> ```",
+    "    ```sh",
+    "    " + pipeBody,
+    "    ```",
+  ].join("\n");
+  const signals = collectMarkdownPdfDocumentSignals(source);
+  expect(signals.codeFences.languages).toEqual(["python", "sh"]);
+  expect(signals.codeFences.unlabeledCount).toBe(1);
+  expect(signals.tables.scannedRows).toBe(0);
+});
+
+test.each(["\n", "\r\n"])(
+  "tabs in quote indentation preserve the source row with %j",
+  (newline) => {
+    const row = "> \t| Left | Right |";
+    const markdown = ["> Prose.", row, ""].join(newline);
+    expect(scanMarkdownPdfFences(markdown).ordinaryLines).toContain(row);
+    expect(collectMarkdownPdfDocumentSignals(markdown).tables).toEqual({
+      scannedRows: 1,
+      maxColumns: 3,
+      maxLineWidth: row.length,
+      overflowRows: 0,
+    });
+  },
+);
+
+test("deep quote markers on both ends preserve the lazy text and the trailing heading", () => {
+  const marks = ">".repeat(2048);
+  const markdown = [
+    marks + " First",
+    ...Array(2046).fill("plain text"),
+    "`example` is inline code",
+    "```unmatched",
+    marks + " Last",
+    "",
+    "# Visible",
+  ].join("\n");
+  const scopes = spyOn(Container.prototype, "quoteBody");
+  try {
+    const lines = scanMarkdownPdfFences(markdown).ordinaryLines;
+    expect(lines).toHaveLength(2052);
+    expect(lines.at(-3)).toBe(marks + " Last");
+    expect(lines.at(-1)).toBe("# Visible");
+    expect(scopes).toHaveBeenCalledTimes(1);
+  } finally {
+    scopes.mockRestore();
+  }
+});
+
+test("a complete backtick fence interrupts the inner quote at the outer quote margin", () => {
+  const lines = [">>> Text", "> ```python", "> " + pipeBody, "> ```"];
+  const scopes = ContainerScopes.document(lines);
+  const inner = scopes.place(0, false, false).frame;
+  const { frame, local } = scopes.place(1, false, false);
+  expect(frame).not.toBe(inner);
+  expect(frame.fences.close(local)).toBe(3);
+  expect(scanMarkdownPdfFences(lines.join("\n")).fenceLanguages).toEqual(["python"]);
+});
+
+test("nested quote prefixes share a long lazy list continuation", () => {
+  const markdown = [
+    ">".repeat(2048) + " - Item",
+    "~~~python",
+    ...Array(2048).fill(pipeBody),
+    "~~~",
+    "",
+    "# Visible",
+  ].join("\n");
+  const signals = collectMarkdownPdfDocumentSignals(markdown);
+  expect(signals.codeFences.languages).toEqual(["python"]);
+  expect(signals.tables.scannedRows).toBe(0);
+});
+
+test("a flush-left backtick fence can leave a quote and span a blank line", () => {
+  const source = ["> Quote.", "```python", "", pipeBody, "```"].join("\n");
+  const signals = collectMarkdownPdfDocumentSignals(source);
+  expect(signals.codeFences.languages).toEqual(["python"]);
+  expect(signals.tables.scannedRows).toBe(0);
+});
 
 const ending = "~~~python\n# Fenced example\n| A longer example row hidden by the fence | B |\n~~~";
 const visibleTable = "| Item | Count |\n| --- | --- |\n| Live | 1 |";

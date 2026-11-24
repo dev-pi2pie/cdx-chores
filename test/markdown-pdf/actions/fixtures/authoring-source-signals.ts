@@ -12,13 +12,14 @@ import {
   BASE_PROFILE,
 } from "../project-codex/prepared-fixtures";
 import { minimalPng } from "../template-codex/fixtures";
+import { offlineBoundaryCases } from "./list-block-boundaries";
 
 const availability = process.argv[2];
 assert(availability === "present" || availability === "absent");
 assert.equal(Boolean(Bun.which("pandoc")), availability === "present");
 
 const labels = Array.from({ length: 13 }, (_, index) => "example-" + (index + 1));
-const wideRow = "| Original source width | 1 |";
+const wideRow = "  | Original source width | 1 |";
 const markdown = [
   "---\ntitle: Visible report\nlang: en\n---",
   "<textarea>\n\n# Literal heading\n\n| Literal | Row |\n\n~~~hidden\ncode\n~~~\n</textarea>",
@@ -48,51 +49,55 @@ const markdown = [
 
 const cwd = process.cwd();
 await Promise.all([
-  writeFile(join(cwd, "report.md"), markdown),
   writeFile(join(cwd, "base.yml"), BASE_PROFILE),
   writeFile(join(cwd, "cover.png"), minimalPng(1200, 800)),
 ]);
-const existing = (await readdir(cwd)).sort();
+
 const { runtime } = createActionTestRuntime({ cwd, now: () => new Date("2026-11-22T12:00:00Z") });
 const common = {
   dryRun: true,
   input: "report.md",
   intent: "Prepare a report with a cover.",
 };
-const profile = await prepareMarkdownPdfProfileCodex(runtime, {
-  ...common,
-  baseProfile: "base.yml",
-  codexRunner: async () => adaptedProfileResponse(),
-  output: "profile.yml",
-});
-assert.equal(profile.kind, "profile");
-const template = await prepareMdPdfTemplateCodex(runtime, {
-  ...common,
-  coverImage: "cover.png",
-  codexRunner: async () =>
-    adaptedTemplateResponse().replace('"renderer-default"', '"explicit-recipe"'),
-  output: "template",
-  preset: "article",
-});
-const project = await prepareMdPdfProjectCodex(runtime, {
-  ...common,
-  baseProfile: "base.yml",
-  coverImage: "cover.png",
-  profileCodexRunner: async () => adaptedProfileResponse(),
-  templateCodexRunner: async () => adaptedTemplateResponse(),
-  output: "project",
-});
-assert.equal(
-  template.synthesis.decisionMode,
-  "adapted",
-  JSON.stringify(template.synthesis.warnings),
-);
-assert.equal(project.binding.validation.decisionMode, "adapted");
-assert.deepEqual((await readdir(cwd)).sort(), existing);
+async function authoringSignals(name: string, source: string) {
+  await writeFile(join(cwd, common.input), source);
+  const profile = await prepareMarkdownPdfProfileCodex(runtime, {
+    ...common,
+    baseProfile: "base.yml",
+    codexRunner: async () => adaptedProfileResponse(),
+    output: "profile.yml",
+  });
+  assert.equal(profile.kind, "profile");
+  const template = await prepareMdPdfTemplateCodex(runtime, {
+    ...common,
+    coverImage: "cover.png",
+    codexRunner: async () =>
+      adaptedTemplateResponse().replace('"renderer-default"', '"explicit-recipe"'),
+    output: "template",
+    preset: "article",
+  });
+  const project = await prepareMdPdfProjectCodex(runtime, {
+    ...common,
+    baseProfile: "base.yml",
+    coverImage: "cover.png",
+    profileCodexRunner: async () => adaptedProfileResponse(),
+    templateCodexRunner: async () => adaptedTemplateResponse(),
+    output: "project",
+  });
+  assert.equal(
+    template.synthesis.decisionMode,
+    "adapted",
+    JSON.stringify(template.synthesis.warnings),
+  );
+  assert.equal(project.binding.validation.decisionMode, "adapted");
 
-const signals = profile.reportPayload.request.documentSignals;
-assert.deepEqual(template.signals.documentSignals, signals);
-assert.deepEqual(project.signals.shared.document, signals);
+  const signals = profile.reportPayload.request.documentSignals;
+  assert.deepEqual(template.signals.documentSignals, signals, name);
+  assert.deepEqual(project.signals.shared.document, signals, name);
+  return signals;
+}
+
+const signals = await authoringSignals("limits", markdown);
 assert.deepEqual(signals.headings, { total: 1, maxDepth: 1, byDepth: { 1: 1 } });
 assert.deepEqual(signals.tables, {
   scannedRows: 50,
@@ -114,4 +119,27 @@ assert.deepEqual(signals.title, {
 assert.equal(signals.scripts.scannedChars, 20_000);
 assert.equal(signals.scripts.truncated, true);
 assert(!JSON.stringify(signals).includes("Original source width"));
-process.stdout.write(JSON.stringify(signals));
+const quotedRow = "> \t| Left | Right |";
+const quoted = await authoringSignals("quoted tab", "> Prose.\n" + quotedRow + "\n");
+assert.deepEqual(quoted.tables, {
+  scannedRows: 1,
+  maxColumns: 3,
+  maxLineWidth: quotedRow.length,
+  overflowRows: 0,
+});
+const results = [signals, quoted];
+for (const fixture of offlineBoundaryCases) {
+  const actual = await authoringSignals(fixture.name, fixture.markdown);
+  const total = fixture.headings.length;
+  assert.deepEqual(actual.headings, { total, maxDepth: 1, byDepth: { 1: total } }, fixture.name);
+  assert.deepEqual(
+    actual.title.firstH1,
+    { present: true, charCount: fixture.headings[0]!.length },
+    fixture.name,
+  );
+  assert.deepEqual(actual.codeFences.languages, fixture.languages, fixture.name);
+  assert.equal(actual.tables.scannedRows, fixture.rows, fixture.name);
+  results.push(actual);
+}
+assert.deepEqual((await readdir(cwd)).sort(), ["base.yml", "cover.png", "report.md"]);
+process.stdout.write(JSON.stringify(results));

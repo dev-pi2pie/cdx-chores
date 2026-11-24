@@ -8,6 +8,9 @@ import { readTextFileRequired, writeBufferFileSafe, writeTextFileSafe } from "..
 import { execCommand, type ExecCommandResult } from "../process";
 import { highlightMarkdownPdfCodeBlocks } from "./code-highlight";
 import { finalizeMarkdownPdfPageNumberHtml } from "./page-number-html";
+import { inspectPrintedTitle } from "./title/printed-proof";
+import { readTitlePrintDiagnostics } from "./title/print-diagnostics";
+import { resolveStyledTitle } from "./title/styled-title";
 import {
   resolveMarkdownPdfPandocSource,
   runMarkdownPdfPandocStage,
@@ -195,6 +198,7 @@ export async function renderMarkdownPdf(
       tempDir,
       templateHtml: input.templateHtml,
       templateForAstTitle: input.templateForAstTitle,
+      customStyle: Boolean(input.customCssPath),
       runner,
     });
     const templatePath = input.customTemplatePath
@@ -245,8 +249,7 @@ export async function renderMarkdownPdf(
     }
     const pandocWarnings = [...splitLines(source.readerStderr), ...splitLines(pandoc.stderr)];
 
-    const html = await createFinalHtml(input, pandocHtmlPath);
-    await writeFile(finalHtmlPath, html, "utf8");
+    let html = await createFinalHtml(input, pandocHtmlPath);
 
     await rejectRemoteMarkdownPdfAssetsWhenDisabled({
       html,
@@ -269,6 +272,56 @@ export async function renderMarkdownPdf(
       weasyprintArgs.push(MARKDOWN_PDF_PROTOCOL_ALLOWLIST_OPTION, "file,data");
     }
 
+    for (const cssPath of cssPaths) {
+      weasyprintArgs.push("--stylesheet", cssPath);
+    }
+    const renderedPdfPath = join(tempDir, "rendered.pdf");
+    const printPdf = async (htmlPath: string, path: string, ...flags: string[]) => ({
+      path,
+      result: await runner("weasyprint", [...weasyprintArgs, ...flags, htmlPath, path], { cwd }),
+    });
+    const printForTitle = async (htmlPath: string, pdfPath: string, ...flags: string[]) => {
+      const { path, result } = await printPdf(htmlPath, pdfPath, "--debug", ...flags);
+      const { stderr, failures } = readTitlePrintDiagnostics(result.stderr, result.ok);
+      return { path, result: { ...result, stderr }, failures };
+    };
+    const printed = new Map<string, Awaited<ReturnType<typeof printPdf>>>();
+    if (source.styledTitle) {
+      html = await resolveStyledTitle({
+        ...source.styledTitle,
+        html,
+        customStyle: Boolean(input.customCssPath),
+        inspect: async (probe, candidates) => {
+          // Capture the ordinary output before optional inspection can consume a
+          // one-shot asset. Both decisions then publish already-rendered bytes.
+          const fallbackHtml = await createTempFile(tempDir, "title-fallback.html", html);
+          const fallback = await printForTitle(fallbackHtml, renderedPdfPath);
+          printed.set(html, fallback);
+          const fallbackFailures = fallback.failures;
+          if (!fallback.result.ok || !fallbackFailures) return {};
+          return inspectPrintedTitle(
+            probe,
+            tempDir,
+            async (probeHtml, probePdf) => {
+              const output = await printForTitle(probeHtml, probePdf, "--pdf-tags");
+              if (
+                !output.result.ok ||
+                !output.failures ||
+                [...output.failures].some(
+                  ([line, count]) => count > (fallbackFailures.get(line) ?? 0),
+                )
+              ) {
+                return false;
+              }
+              if (!printed.has(probe)) printed.set(probe, output);
+              return true;
+            },
+            candidates,
+          );
+        },
+      });
+    }
+    await writeFile(finalHtmlPath, html, "utf8");
     if (input.htmlOutputPath) {
       await writeTextFileSafe(input.htmlOutputPath, html, {
         label: "HTML output",
@@ -277,13 +330,8 @@ export async function renderMarkdownPdf(
       });
     }
 
-    const renderedPdfPath = join(tempDir, "rendered.pdf");
-    for (const cssPath of cssPaths) {
-      weasyprintArgs.push("--stylesheet", cssPath);
-    }
-    weasyprintArgs.push(finalHtmlPath, renderedPdfPath);
-
-    const weasyprint = await runner("weasyprint", weasyprintArgs, { cwd });
+    const { path: selectedPdf, result: weasyprint } =
+      printed.get(html) ?? (await printPdf(finalHtmlPath, renderedPdfPath));
     if (!weasyprint.ok) {
       throw formatProcessFailure(
         "weasyprint",
@@ -291,7 +339,7 @@ export async function renderMarkdownPdf(
         source.format === "json" ? pandocWarnings : [],
       );
     }
-    await writeBufferFileSafe(input.outputPath, await readFile(renderedPdfPath), {
+    await writeBufferFileSafe(input.outputPath, await readFile(selectedPdf), {
       label: "PDF output",
       overwrite: input.overwrite,
       parentRootDirectory: parsePath(input.outputPath).root,

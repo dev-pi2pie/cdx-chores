@@ -1,7 +1,18 @@
+export const VERBATIM_TAGS = new Set(["pre", "script", "style", "textarea"]);
+
 interface SourceSpan {
   start: number;
   end: number;
-  recoveryBoundary?: number;
+}
+
+export interface HtmlRecovery {
+  insideVerbatim(kind: string, start: number): boolean;
+  matchingEnd(
+    key: string,
+    start: number,
+    close: SourceSpan,
+    next: (offset: number) => SourceSpan | undefined,
+  ): SourceSpan | undefined;
 }
 
 export type MarkdownSourceToken =
@@ -19,26 +30,34 @@ const SPACE = /\s*/y;
 const ATTRIBUTE = /[^\s"'<>/=]+/y;
 const ATTRIBUTE_VALUE = /[^\s"'`=<>]+/y;
 
+function escapedAt(source: string, offset: number): boolean {
+  let start = offset;
+  while (source[start - 1] === "\\") start--;
+  return (offset - start) % 2 === 1;
+}
+
 export class MarkdownSourceCursor {
   private readonly delimiters = new Map<string | number, SourceSpan[]>();
-  private readonly outsideFences = new Map<string, SourceSpan[]>();
 
-  constructor(
-    private readonly source: string,
-    fenceRecoveryBoundary: (delimiter: number) => number | undefined,
-  ) {
-    const markers = /`+|<!--|-->|["']|<\/(pre|script|style|textarea)[\t \r\n]*>/gi;
+  constructor(private readonly source: string) {
+    const markers = /`+|\$+|<!--|-->|["']|<\/(pre|script|style|textarea)[\t \r\n]*>/gi;
     for (const match of source.matchAll(markers)) {
       const part = match[0];
-      const key = match[1]?.toLowerCase() ?? (part.startsWith("`") ? part.length : part);
-      const span = { start: match.index, end: match.index + part.length };
-      if (typeof key === "string" && (part.startsWith("<") || part === "-->")) {
-        const recoveryBoundary = fenceRecoveryBoundary(span.start);
-        this.add(this.delimiters, key, { ...span, recoveryBoundary });
-        if (recoveryBoundary === undefined) this.add(this.outsideFences, key, span);
-      } else {
-        this.add(this.delimiters, key, span);
+      if (part.startsWith("$")) {
+        const start = match.index + (escapedAt(source, match.index) ? 1 : 0);
+        const end = match.index + part.length;
+        const length = end - start;
+        // A single-dollar close needs nonspace before it and no digit after it.
+        if (
+          length === 2 ||
+          (length === 1 && /\S/.test(source[start - 1] ?? "") && !/\d/.test(source[end] ?? ""))
+        ) {
+          this.add(this.delimiters, length === 1 ? "$" : "$$", { start, end });
+        }
+        continue;
       }
+      const key = match[1]?.toLowerCase() ?? (part.startsWith("`") ? part.length : part);
+      this.add(this.delimiters, key, { start: match.index, end: match.index + part.length });
     }
   }
 
@@ -60,18 +79,73 @@ export class MarkdownSourceCursor {
     return spans[low];
   }
 
-  private matchingEnd(key: string, start: number, offset: number): SourceSpan | undefined {
-    const close = this.next(this.delimiters.get(key), offset);
-    if (close?.recoveryBoundary !== undefined && start < close.recoveryBoundary) {
-      // Recovery boundaries only advance, so a later fenced delimiter also
-      // cannot close this opener.
-      return this.next(this.outsideFences.get(key), close.end);
-    }
-    return close;
+  private matchingEnd(
+    key: string,
+    start: number,
+    offset: number,
+    nextStructure: number,
+    recovery?: HtmlRecovery,
+  ) {
+    const spans = this.delimiters.get(key);
+    const close = this.next(spans, offset);
+    if (!close || (close.start < nextStructure && !recovery?.insideVerbatim(key, start)))
+      return close;
+    // During lookahead, leave a cross-structure opener unresolved to discover
+    // the Markdown that would be visible if the delimiter is in a fence.
+    return recovery?.matchingEnd(key, start, close, (from) => this.next(spans, from));
   }
 
-  verbatimEnd(name: string, start: number, offset: number): number | undefined {
-    return this.matchingEnd(name, start, offset)?.end;
+  verbatimEnd(
+    name: string,
+    start: number,
+    offset: number,
+    nextStructure: number,
+    recovery?: HtmlRecovery,
+  ) {
+    return this.matchingEnd(name, start, offset, nextStructure, recovery)?.end;
+  }
+
+  private readBackticks(start: number, inlineLimit: number): MarkdownSourceToken {
+    let end = start + 1;
+    while (this.source[end] === "`") end++;
+    const close = this.next(this.delimiters.get(end - start), end);
+    return close && close.end <= inlineLimit
+      ? { kind: "code", end: close.end }
+      : { kind: "text", end };
+  }
+
+  private mathEnd(start: number, lineEnd: number): number {
+    let end = start + 1;
+    while (this.source[end] === "$") end++;
+    const length = end - start;
+    if (length > 2 || (length === 1 && !/\S/.test(this.source[end] ?? ""))) return end;
+    const close = this.next(this.delimiters.get(length === 1 ? "$" : "$$"), end);
+    return close && close.end <= lineEnd ? close.end : end;
+  }
+
+  hasPipeDelimiter(
+    start: number,
+    end: number,
+    nextMarkdownStructure: number,
+    recovery?: HtmlRecovery,
+  ): boolean {
+    let offset = start;
+    while (offset < end) {
+      const ch = this.source[offset];
+      if (ch === "|") return true;
+      if (ch === "`") offset = this.readBackticks(offset, end).end;
+      else if (ch === "$") offset = this.mathEnd(offset, end);
+      else if (ch === "<") {
+        offset =
+          this.read(
+            offset,
+            { inlineLimit: end, tagLimit: end, nextMarkdownStructure },
+            end,
+            recovery,
+          )?.end ?? offset + 1;
+      } else offset += ch === "\\" ? 2 : 1;
+    }
+    return false;
   }
 
   private readTag(
@@ -125,25 +199,20 @@ export class MarkdownSourceCursor {
   read(
     start: number,
     { inlineLimit, tagLimit, nextMarkdownStructure }: SourceLimits,
+    codeLimit = inlineLimit,
+    recovery?: HtmlRecovery,
   ): MarkdownSourceToken | undefined {
     const ch = this.source[start];
     if (ch === "\\" && /[<`\\]/.test(this.source[start + 1] ?? "")) {
       return { kind: "text", end: start + 2 };
     }
-    if (ch === "`") {
-      let end = start + 1;
-      while (this.source[end] === "`") end++;
-      const close = this.next(this.delimiters.get(end - start), end);
-      return close && close.end <= inlineLimit
-        ? { kind: "code", end: close.end }
-        : { kind: "text", end };
-    }
+    if (ch === "`") return this.readBackticks(start, codeLimit);
     if (ch !== "<") return undefined;
     if (!this.source.startsWith("<!--", start)) return this.readTag(start, inlineLimit, tagLimit);
 
-    const close = this.matchingEnd("-->", start, start + 4);
+    const close = this.matchingEnd("-->", start, start + 4, nextMarkdownStructure, recovery);
     if (!close) return undefined;
-    const nextOpen = this.matchingEnd("<!--", start, start + 4);
+    const nextOpen = this.matchingEnd("<!--", start, start + 4, nextMarkdownStructure, recovery);
     // Pandoc treats an inner opener as literal comment text. Recover at a
     // separate opener only when visible Markdown intervenes before it.
     if (nextOpen && nextMarkdownStructure <= nextOpen.start && nextOpen.start < close.start) {

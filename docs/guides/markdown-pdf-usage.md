@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-11-23
+modified-date: 2026-11-24
 status: completed
 agent: codex
 ---
@@ -15,7 +15,7 @@ Document the current `md to-pdf`, profile, template, and project-helper workflow
 `md to-pdf` requires both external tools:
 
 - Pandoc 2.0 or newer to read Markdown and write standalone HTML
-- WeasyPrint 70.0 or newer with `--allowed-protocols` for default HTML/CSS-to-PDF rendering. Explicit `--allow-remote-assets` uses the installed renderer and checks any required Profile capabilities separately.
+- WeasyPrint 70.0 or newer with `--allowed-protocols` support for Interactive and default direct PDF rendering. See [WeasyPrint compatibility](#weasyprint-compatibility) for direct rendering on older versions.
 
 Check the local environment before using the command in scripts or CI:
 
@@ -31,7 +31,7 @@ For machine-readable checks:
 cdx-chores doctor --json
 ```
 
-Doctor shows `md.to-pdf` as `limited` in `--details` when explicit opt-in is available and default export is unavailable. In JSON, `capabilities["md.to-pdf"]` and `markdownPdf.ready` report default readiness. `markdownPdf.requirements.restrictedAssets` describes the renderer check, and `markdownPdf.readyWithRemoteAssets` reports basic readiness with explicit opt-in. Effective Profile capabilities are checked at render time. [WeasyPrint compatibility](#weasyprint-compatibility)
+See [WeasyPrint compatibility](#weasyprint-compatibility) for why `doctor --details` can report `md.to-pdf` as `limited`. In JSON, `capabilities["md.to-pdf"]` and `markdownPdf.ready` report readiness for Interactive and default direct rendering. `markdownPdf.requirements.restrictedAssets` describes the renderer check, and `markdownPdf.readyWithRemoteAssets` reports basic readiness for direct rendering with the remote-asset opt-in. Effective Profile capabilities are checked at render time.
 
 ## Current Command Boundary
 
@@ -53,7 +53,19 @@ The dedicated guides are:
 - [Markdown PDF Codex Template Helper](markdown-pdf-codex-template-helper.md)
 - [Markdown PDF Codex Project Helper](markdown-pdf-codex-project-helper.md)
 
-When you supply Markdown, all three helpers build bounded summaries from the source, including headings, code fences, and table-like row counts and widths. Signal collection works with or without Pandoc. The helpers use those summaries to prepare a recipe. During export, the renderer applies the [automatic metadata title rules](#automatic-metadata-titles).
+When you supply Markdown, all three helpers build bounded summaries from the source, including headings, code fences, and table-like row counts and widths. Signal collection works with or without Pandoc. The helpers use those summaries to prepare a recipe. At render time, the [automatic metadata title rules](#automatic-metadata-titles) apply.
+
+For example, the following fence starts four spaces in from the left margin, inside a numbered item.
+
+````markdown
+1. Item
+
+    ```python
+    | fenced | sample |
+    ```
+````
+
+Profile, Template, and Project report a `python` hint and exclude the pipe-delimited line from their table counts. When you render this example, Pandoc 3.9 produces a Python code block in the list item. Pandoc 2.0 keeps the text in the item without producing a code block.
 
 ## Project Helper
 
@@ -651,11 +663,11 @@ The cover is always free of repeating content and page-number labels. The ToC re
 
 `titleBlock.metadataTitle` controls the built-in metadata title block, including any author and date shown in that block. Markdown headings stay in the body. When present, title metadata supplies the HTML document title.
 
-- `auto` is the default. With a cover, it omits the metadata title block. With the cover disabled and a nonempty string `title` in Markdown frontmatter, it compares the parsed title with the first eligible H1 during export and omits the block for a duplicate. With the cover disabled and no eligible frontmatter title, export uses direct Markdown conversion and includes the block when Pandoc supplies a title.
+- `auto` is the default. With a cover, it omits the metadata title block. With the cover disabled and a nonempty string `title` in Markdown frontmatter, it compares the parsed title with the first eligible H1 at render time and omits the block for a duplicate. With the cover disabled and no eligible frontmatter title, rendering uses direct Markdown conversion and includes the block when Pandoc supplies a title.
 - `show` displays the block when Pandoc provides a title, including when the document has a cover or a matching body heading.
 - `hide` omits the block.
 
-Pandoc reads the Markdown once for the comparison, and the renderer writes HTML from that same parsed document. The first eligible H1 is the first level-one Markdown heading in document order at the top level or inside Pandoc Divs. Both `# Heading` and the underlined example below count as level-one headings. The comparison skips headings in block quotes, lists, tables, footnotes, raw HTML, and verbatim blocks.
+Pandoc reads the Markdown once for comparison and HTML output. The first eligible H1 is the first top-level or Pandoc Div heading of level one after skipping any confirmed hidden headings. Headings in block quotes, lists, tables, footnotes, raw HTML, and verbatim blocks are excluded. With `title: Report`, a visible `# Draft` before `# Report` keeps the block. If `# Draft` is confirmed hidden, `# Report` can supply the title. Both `# Heading` and the underlined form below count as H1s.
 
 ```markdown
 Heading
@@ -663,6 +675,10 @@ Heading
 ```
 
 The comparison folds case and whitespace and preserves punctuation. It supports plain text, emphasis, strong text, inline code, smart quotes, and link labels. If the first eligible H1 or metadata title uses unsupported formatting such as math, images, or spans, the block stays, even if a later H1 matches. The block also stays when there is no eligible H1. Every metadata title link needs a matching label and destination in the heading before the block can be omitted.
+
+With a custom stylesheet (from `--css` or a bundle), an embedded `<style>`, or a linked stylesheet, `auto` omits the block only if it can verify that the matching source H1 prints in full without the block. Letter spacing and emphasis (`# Re*port*`) can pass this check. Transparent, clipped, or covered letters and unavailable PDF inspection keep the block. Inline styles alone use the parsed heading check, so inline `opacity: 0` can leave the page without a visible title.
+
+A stable asset warning can still allow one title. If inspection adds a loading failure, reports the same failure more often, or cannot identify a failed font source, the CLI publishes the earlier PDF with its metadata block. This can print a duplicate. WeasyPrint warnings on stderr and the title choice in debug HTML reflect the selected PDF. Use `show` or `hide` for a fixed choice.
 
 In this example, `auto` keeps both links because their destinations differ. Use [Debug HTML](#debug-html) to inspect the generated title block and heading.
 
@@ -923,20 +939,52 @@ cdx-chores md to-pdf --input ./docs/report.md
 
 Local images should render in the PDF when WeasyPrint can load the file. Missing local images are allowed to render with WeasyPrint warnings, and the CLI surfaces those warnings before the success line.
 
-WeasyPrint permits only `file:` and `data:` asset URL schemes by default, including loads initiated by stylesheets. Relative assets resolve against their usual base. Preflight reports detected remote references as errors. A load denied by WeasyPrint during rendering can appear as a warning with the affected asset omitted.
+### Rendering modes and flags
+
+| Flag | Who supplies it | Effect |
+| --- | --- | --- |
+| `--allow-remote-assets` | You pass it to `cdx-chores md to-pdf`. | Allows remote fetching for one render. WeasyPrint uses its normal asset loading, including HTTP(S). |
+| `--allowed-protocols file,data` | `cdx-chores` passes it to WeasyPrint automatically for Interactive and default direct rendering. | Restricts the renderer to local files and embedded data URLs. |
+
+```mermaid
+flowchart TD
+    renderMode{"How are you rendering the PDF?"}
+    renderMode -->|"Interactive or default direct CLI"| restricted["cdx-chores passes --allowed-protocols file,data to WeasyPrint"]
+    renderMode -->|"Direct CLI with --allow-remote-assets"| optIn["cdx-chores omits the WeasyPrint protocol allowlist"]
+    restricted -->|"WeasyPrint 70.0+ with protocol support"| localOnly(["Local files and data URLs only"])
+    optIn --> normalLoading(["Local, embedded, and HTTP(S) assets can load"])
+```
+
+Markdown PDF rendering first shipped in [v0.1.3](../../CHANGELOGS/v0.1.3.md) with a preflight check for remote asset references and the direct CLI opt-in `--allow-remote-assets`. Starting with `v0.2.2-canary.8`, WeasyPrint also enforces the default policy during rendering, including when it loads resources from CSS. Existing commands that pass `--allow-remote-assets` can still fetch remote assets.
 
 ### WeasyPrint compatibility
 
-| WeasyPrint | Default direct and Interactive export | Direct export with `--allow-remote-assets` |
-| --- | --- | --- |
-| Below `65.1` | Requires an upgrade | Basic export if the effective Profile needs no advanced renderer capabilities |
-| `65.1` through `69.x` | Requires an upgrade | Available, including advanced page counters and header/footer styling |
-| `70.0` or newer | Available with `--allowed-protocols` support | Available with remote asset loading enabled |
+Rendering in Interactive mode or with the default direct command requires WeasyPrint `70.0` or newer with `--allowed-protocols` support so the renderer can block remote asset requests. With Pandoc ready, `doctor --details` reports `md.to-pdf` as `limited` when only direct rendering with `--allow-remote-assets` is available. On WeasyPrint `65.1` and `69.0`, that flag is required even when every asset is local or embedded.
 
-Use explicit opt-in when a trusted document should fetch remote assets:
+| What you want to do | Below `65.1` (including `65.0`) | `65.1` through `69.x` (including `69.0`) | `70.0` or newer |
+| --- | --- | --- | --- |
+| Render a basic PDF with local images, stylesheets, or embedded fonts | Direct CLI with `--allow-remote-assets` | Direct CLI with `--allow-remote-assets` | Interactive or direct CLI |
+| Render with advanced page counters or header/footer styling | Upgrade to `65.1` or newer | Direct CLI with `--allow-remote-assets` | Interactive or direct CLI |
+| Restrict asset loading to local files and data URLs | Upgrade to `70.0` or newer | Upgrade to `70.0` or newer | Interactive or default direct CLI |
+
+### Asset loading by rendering mode
+
+The asset policy applies to images, linked stylesheets, and resources loaded from CSS, such as background images and fonts. Relative references resolve against their usual base. Individual assets still depend on WeasyPrint’s format support and whether the resource can be read.
+
+| Asset source and examples | Interactive or default direct rendering | Direct rendering with `--allow-remote-assets` |
+| --- | --- | --- |
+| `file:` — an image, stylesheet, or font read from disk. Relative paths such as `./images/chart.png` also resolve to local files. | Allowed | Allowed |
+| `data:` — an image or font embedded in a URL, such as a Base64-encoded image. | Allowed | Allowed |
+| `http:` or `https:` — a remote image, stylesheet, or font. | Blocked | Allowed |
+
+### Advanced CLI usage
+
+A local `print.css` can still trigger a remote request. For example, if it contains `background-image: url("https://example.com/background.png")`, the stylesheet comes from disk and the image requires a separate HTTPS request. In Interactive and default direct rendering, detected remote references fail preflight. If WeasyPrint encounters a blocked URL during rendering, it may warn and omit the asset.
+
+For a trusted document and stylesheet that intentionally use a remote background, enable remote fetching for that render. The renderer still checks any capabilities required by the effective Profile.
 
 ```bash
-cdx-chores md to-pdf --input ./report.md --allow-remote-assets
+cdx-chores md to-pdf --input ./report.md --css ./print.css --allow-remote-assets
 ```
 
 The command prints `Info: Remote asset loading is enabled for this render.` on stderr.

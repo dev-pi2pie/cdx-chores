@@ -1,7 +1,7 @@
 ---
 title: "Rename Scope and Codex Capability Guide"
 created-date: 2026-02-26
-modified-date: 2026-10-19
+modified-date: 2026-11-23
 status: completed
 agent: codex
 ---
@@ -50,7 +50,7 @@ DOCX title suggestions are included when Codex document analysis is enabled. No 
 | --- | --- |
 | `v0.0.6–v0.0.7` | Required `CDX_CHORES_CODEX_DOCS_DOCX_EXPERIMENTAL=1` to enable DOCX title suggestions. |
 | Since `v0.0.8` | DOCX participates when Codex document analysis is enabled. The experimental variable was removed and has no effect. |
-| `v0.2.1` (upcoming) | Replaces Mammoth with the internal DOCX reader. Extraction runs separately from the CLI under the [documented resource limits](../references/docx-extraction.md#default-limits). |
+| `v0.2.1` | Replaced Mammoth with the internal DOCX reader. Extraction runs separately from the CLI under the [documented resource limits](../references/docx-extraction.md#default-limits). |
 
 ## Pattern/Template Coverage
 

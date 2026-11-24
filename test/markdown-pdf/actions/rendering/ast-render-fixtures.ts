@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { parse, type DefaultTreeAdapterTypes as Html } from "parse5";
+import { parse, parseFragment, type DefaultTreeAdapterTypes as Html } from "parse5";
 
 import {
   executePlannedMarkdownPdfRender,
@@ -10,7 +10,15 @@ import {
 } from "../../../../src/cli/actions/markdown/to-pdf-service";
 import type { ExecCommandResult } from "../../../../src/cli/process";
 import { createCapturedRuntime } from "../../../helpers/cli-test-utils";
+import {
+  htmlBoundaryCases,
+  listBoundaryCases,
+  pipeBody,
+  successiveFenceCases,
+  quoteBoundaryCases,
+} from "../fixtures/list-block-boundaries";
 import { ok } from "./render-support";
+import { attribute, boundaryStructure, elements, text } from "./rendered-html";
 
 const quickstart = "https://example.com/quickstart";
 const reference = "https://example.com/reference";
@@ -22,7 +30,193 @@ const customTemplate = [
   "</body></html>",
 ].join("\n");
 
-export const astRenderFixtures = [
+const boundaryTitle = "Boundary report";
+const boundaryRenderFixtures = [
+  ...successiveFenceCases.map(({ name }) => name),
+  ...quoteBoundaryCases.map(({ name }) => name),
+  "bullet-outdented-closer",
+  "bullet-outdented-body",
+  "bullet-aligned",
+  "bullet-close-after-blank",
+  "definition-outdented-close",
+  "definition-close-after-blank",
+  "definition-continuation",
+  "compact-mixed-list",
+  "quote-in-item",
+  "document-quote-adjacent",
+  "document-quote-after-blank",
+  "numbered",
+  "document-literal",
+  "comment-item-early-close",
+  "textarea-item",
+].flatMap((boundary) => {
+  const body = [...listBoundaryCases, ...successiveFenceCases, ...htmlBoundaryCases].find(
+    ({ name }) => name === boundary,
+  );
+  assert(body, boundary);
+  return [false, true].map((split) => ({
+    name: boundary + (split ? " via JSON" : " direct"),
+    boundary,
+    split,
+    markdown: (split ? `---\ntitle: ${boundaryTitle}\n---\n\n` : "") + body.markdown,
+  }));
+});
+
+interface RenderFixture {
+  name: string;
+  split: boolean;
+  markdown: string;
+  template?: string;
+  boundary?: string;
+}
+
+const setextReport = "Report\n======";
+interface TitleControl {
+  name: string;
+  attributes: string;
+  keep: boolean;
+  later?: boolean;
+  laterStyle?: string;
+}
+
+const titleControls: TitleControl[] = [
+  ...["table-column", "table-column-group"].flatMap((display) =>
+    [
+      "--layout:running(Heading);position:var(--layout)",
+      "position:var(--absent,running(Heading))",
+    ].map((position, i) => ({
+      name: `hidden-title-${display}-running-${i === 0 ? "variable" : "fallback"}`,
+      attributes: 'style="display:none"',
+      keep: true,
+      later: true,
+      laterStyle: `display:${display};float:left;${position}`,
+    })),
+  ),
+  ...["table-column", "table-column-group"].map((display) => ({
+    name: `hidden-title-running-${display}`,
+    attributes: 'style="display:none"',
+    keep: true,
+    later: true,
+    laterStyle: `display:${display};float:left;position:running(Heading)`,
+  })),
+  ...["table-column", "table-column-group"].flatMap((display) =>
+    ["float:left", "position:absolute"].map((layout) => ({
+      name: `visible-title-${display}-${layout.split(":")[0]}`,
+      attributes: `style="display:${display};${layout}"`,
+      keep: false,
+    })),
+  ),
+  ...["table-column", "table-column-group"].map((display) => ({
+    name: `hidden-title-${display}`,
+    attributes: 'style="display:none"',
+    keep: true,
+    later: true,
+    laterStyle: "display:" + display,
+  })),
+  { name: "hidden-title", attributes: 'style="display:none"', keep: true },
+  { name: "visibility-hidden-title", attributes: 'style="visibility:hidden"', keep: true },
+  { name: "visible-title", attributes: ".note", keep: false },
+  {
+    name: "hidden-title-nonbreaking-space",
+    attributes: 'style="display:none"',
+    later: true,
+    laterStyle: "display:none;display:block\u00a0flow",
+    keep: true,
+  },
+  {
+    name: "visible-title-custom-property-reset",
+    attributes: 'style="--layout:initial;display:var(--layout,none)"',
+    keep: false,
+  },
+  { name: "visible-title-uppercase-display", attributes: 'style="display:NONE"', keep: false },
+  {
+    name: "hidden-title-after-hidden",
+    attributes: 'style="display:none"',
+    keep: true,
+    later: true,
+    laterStyle: "--layout:none;display:var(--layout)",
+  },
+  {
+    name: "hidden-title-empty-variable-fallback",
+    attributes: 'style="display:none"',
+    keep: true,
+    later: true,
+    laterStyle: "display:var(--missing,) none",
+  },
+  {
+    name: "hidden-title-empty-variable-value",
+    attributes: 'style="--layout:var(--missing,);display:var(--layout,none)"',
+    keep: true,
+  },
+  {
+    name: "visible-title-empty-variable-fallback",
+    attributes: 'hidden=hidden style="display:var(--missing,) block"',
+    keep: false,
+  },
+  {
+    name: "hidden-title-nested-variable-fallback",
+    attributes: 'style="display:none"',
+    keep: true,
+    later: true,
+    laterStyle:
+      "--present:none;--fallback:block;--layout:var(--present,var(--fallback));display:var(--layout,block)",
+  },
+  {
+    name: "visible-title-nested-variable-fallback",
+    attributes:
+      'style="--fallback:block;--layout:var(--missing,var(--fallback));display:var(--layout,none)"',
+    keep: false,
+  },
+  {
+    name: "visible-title-inline-variable",
+    attributes: 'style="--layout:block;display:var(--layout)"',
+    keep: false,
+  },
+  {
+    name: "visible-title-overrides-hidden",
+    attributes: 'hidden=hidden style="display:block"',
+    keep: false,
+  },
+  {
+    name: "visible-title-reordered-display",
+    attributes: 'hidden=hidden style="display:flow-root block"',
+    keep: false,
+  },
+  {
+    name: "hidden-title-unsupported-display",
+    attributes: 'style="display:none;display:revert-layer"',
+    keep: true,
+  },
+  {
+    name: "visible-title-after-hidden",
+    attributes: 'style="display:none"',
+    keep: false,
+    later: true,
+  },
+];
+
+export const astRenderFixtures: RenderFixture[] = [
+  ...titleControls.map(({ name, attributes, later, laterStyle }) => ({
+    name,
+    split: true,
+    markdown: [
+      "---",
+      "title: Report",
+      "---",
+      "",
+      `::: {${attributes}}`,
+      "",
+      later ? "Earlier\n=======" : setextReport,
+      "",
+      ":::",
+      "",
+      ...(laterStyle
+        ? [`::: {style="${laterStyle}"}`, "", setextReport, "", ":::"]
+        : later
+          ? [setextReport]
+          : []),
+    ].join("\n"),
+  })),
   {
     name: "matching-link-and-render-assets",
     split: true,
@@ -78,39 +272,112 @@ export const astRenderFixtures = [
     markdown: "# Visible\n",
     template: customTemplate,
   },
+  ...boundaryRenderFixtures,
 ];
-
-function elements(root: Html.Node, tag: string): Html.Element[] {
-  const own = "tagName" in root && root.tagName === tag ? [root] : [];
-  return "childNodes" in root
-    ? own.concat(root.childNodes.flatMap((node) => elements(node, tag)))
-    : own;
-}
-
-function attribute(node: Html.Element, name: string) {
-  return node.attrs.find((attr) => attr.name === name)?.value;
-}
-
-function text(node: Html.Node): string {
-  if ("value" in node) return node.value;
-  return "childNodes" in node ? node.childNodes.map(text).join("") : "";
-}
 
 function links(node: Html.Node) {
   return elements(node, "a").map((link) => attribute(link, "href"));
 }
 
+function checkBoundaryHtml(
+  fixture: RenderFixture,
+  main: Html.Element,
+  reference: { html: string; version: string },
+) {
+  const expected = boundaryStructure(parseFragment(reference.html));
+  if (fixture.split) expected.headings.unshift(boundaryTitle);
+  const actual = boundaryStructure(main);
+  assert.deepEqual(actual, expected, fixture.name + " on " + reference.version);
+
+  const old = reference.version === "pandoc 2.0";
+  if (!old && reference.version !== "pandoc 3.9") return;
+  const headings =
+    fixture.boundary === "comment-item-early-close"
+      ? ["Recovered heading", "Visible heading"]
+      : (successiveFenceCases.find(({ name }) => name === fixture.boundary)?.headings.slice() ?? [
+          "Visible heading",
+        ]);
+  if (fixture.split) headings.unshift(boundaryTitle);
+  assert.deepEqual(actual.headings, headings);
+  const js = { text: "\n# Example heading", languages: ["js"], lists: [] };
+  if (fixture.boundary === "numbered") {
+    assert.equal(actual.items.length, 1);
+    assert.deepEqual(actual.items[0]!.lists, ["ol"]);
+    assert(actual.items[0]!.text.includes(pipeBody));
+    assert.deepEqual(
+      actual.blocks,
+      old ? [] : [{ text: pipeBody, languages: ["python"], lists: ["ol", "li"] }],
+    );
+  }
+  if (fixture.boundary === "document-literal") {
+    assert.deepEqual(actual.blocks, [
+      { text: "```python\n" + pipeBody + "\n```", languages: [], lists: [] },
+    ]);
+  }
+  if (fixture.boundary === "comment-item-early-close") {
+    assert.deepEqual(
+      actual.blocks,
+      old ? [js] : [{ text: "-->", languages: ["sh"], lists: ["ol", "li"] }, js],
+    );
+  }
+  if (fixture.boundary === "textarea-item") {
+    // 2.0 emits its recovered AST heading inside the textarea, where HTML treats it as text.
+    assert.equal(actual.textareas.length, 1);
+    assert(
+      actual.textareas[0]!.includes(
+        old ? '<h1 id="recovered-heading">Recovered heading</h1>' : "# Recovered heading",
+      ),
+    );
+    assert.deepEqual(actual.blocks, old ? [js] : [{ text: "~~~", languages: [], lists: [] }, js]);
+  }
+}
+
 function checkRenderedHtml(
-  fixture: (typeof astRenderFixtures)[number],
+  fixture: RenderFixture,
   html: string,
   sourcefile: string,
+  readerOutput?: { html: string; version: string },
 ) {
   const doc = parse(html);
   const [main] = elements(doc, "main");
   assert(main, "missing rendered main body");
+  if (readerOutput) {
+    checkBoundaryHtml(fixture, main, readerOutput);
+    return;
+  }
   const titleBlocks = elements(main, "header").filter(
     (node) => attribute(node, "class") === "document-title",
   );
+  const control = titleControls.find(({ name }) => name === fixture.name);
+  if (control) {
+    const titles = titleBlocks.flatMap((header) => elements(header, "h1").map(text));
+    assert.deepEqual(titles, control.keep ? ["Report"] : []);
+    const [section] = [...elements(main, "div"), ...elements(main, "section")].filter(
+      (node) =>
+        elements(node, "h1").length &&
+        (attribute(node, "style") || attribute(node, "class") === "note"),
+    );
+    assert(section, "missing original heading container");
+    const style = /style="([^"]+)"/u.exec(control.attributes)?.[1];
+    assert.equal(attribute(section, "style"), style);
+    assert.equal(
+      attribute(section, "hidden"),
+      control.attributes.includes("hidden=hidden") ? "hidden" : undefined,
+    );
+    assert.deepEqual(elements(section, "h1").map(text), [control.later ? "Earlier" : "Report"]);
+    if (control.laterStyle) {
+      const second = [...elements(main, "div"), ...elements(main, "section")].find(
+        (node) => attribute(node, "style") === control.laterStyle,
+      );
+      assert(second);
+      assert.deepEqual(elements(second, "h1").map(text), ["Report"]);
+    }
+    assert.deepEqual(elements(main, "h1").map(text), [
+      ...titles,
+      ...(control.later ? ["Earlier", "Report"] : ["Report"]),
+    ]);
+    return;
+  }
   switch (fixture.name) {
     case "matching-link-and-render-assets": {
       assert.equal(titleBlocks.length, 0);
@@ -168,7 +435,7 @@ function checkRenderedHtml(
 export async function verifyAstRenderFixture(
   dir: string,
   runPandoc: (args: readonly string[], cwd: string) => Promise<ExecCommandResult>,
-  fixture: (typeof astRenderFixtures)[number],
+  fixture: RenderFixture,
   sourceArgument = (path: string) => path,
 ) {
   const input = join(dir, "context.md");
@@ -183,12 +450,22 @@ export async function verifyAstRenderFixture(
   );
   await writeFile(input, fixture.markdown);
   if (fixture.template) await writeFile(template, fixture.template);
+  // Compare both routes to a standalone invocation of this reader and writer on the original input.
+  let referenceHtml: { html: string; version: string } | undefined;
+  if (fixture.boundary) {
+    const version = await runPandoc(["--version"], dir);
+    const fragment = await runPandoc([input, "--from", "markdown", "--to", "html"], dir);
+    assert(version.ok, version.stderr);
+    assert(fragment.ok, fragment.stderr);
+    referenceHtml = { html: fragment.stdout, version: version.stdout.split(/\r?\n/)[0]! };
+  }
   const { runtime } = createCapturedRuntime({ cwd: dir });
   const prepared = await prepareMarkdownPdfRender(runtime, {
     input,
     toc: true,
     tocDepth: 2,
-    codeHighlight: true,
+    // Preserve Pandoc's original language classes in the boundary assertions.
+    codeHighlight: !fixture.boundary,
     template: fixture.template ? template : undefined,
   });
   const plan = await planMarkdownPdfRender(runtime, prepared, {
@@ -224,6 +501,6 @@ export async function verifyAstRenderFixture(
   const html = await readFile(publishedHtml, "utf8");
   assert.equal(rendererInput, html);
   assert.equal(await readFile(output, "utf8"), "%PDF stub");
-  checkRenderedHtml(fixture, html, sourceArgument(input));
+  checkRenderedHtml(fixture, html, sourceArgument(input), referenceHtml);
   return publishedHtml;
 }

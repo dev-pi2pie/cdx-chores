@@ -93,7 +93,7 @@ export function projectMarkdown(projection: MutableProjection, report: DoctorRep
         id: unsupported
           ? "markdown.pdf.asset-policy.unsupported"
           : "markdown.pdf.asset-policy.unverified",
-        message: `Default Markdown PDF rendering requires ${requirement}. Basic rendering is available with explicit remote-asset opt-in`,
+        message: `PDF rendering in Interactive or default direct mode requires ${requirement}. For basic PDF rendering with remote assets enabled, use md to-pdf --allow-remote-assets`,
         affectedWorkflowIds: ["markdown.pdf"],
       },
       "limited",
