@@ -35,6 +35,8 @@ const boundaryRenderFixtures = [
   "definition-continuation",
   "compact-mixed-list",
   "quote-in-item",
+  "document-quote-adjacent",
+  "document-quote-after-blank",
   "numbered",
   "document-literal",
   "comment-item-early-close",

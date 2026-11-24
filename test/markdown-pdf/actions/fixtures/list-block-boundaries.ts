@@ -41,6 +41,8 @@ export const listBoundaryCases = [
   listCase("definition-continuation", "Term\n\n: Definition\n\n", "    ", "~~~", true),
   listCase("compact-mixed-list", "1. - Item\n", "  ", "~~~", true),
   listCase("quote-in-item", "- Item\n\n  > Quoted\n", "   ", "```", true),
+  listCase("document-quote-adjacent", "> Quote.\n", " ", "```", true),
+  listCase("document-quote-after-blank", "> Quote.\n\n", " ", "```", true),
   listCase("numbered", "1. Item\n\n", "    ", "```", true),
   listCase("nested-verse", "- - | poem\n", " ", "~~~", true),
   listCase("document-verse", "| poem\n", " ", "~~~", false),

@@ -92,6 +92,13 @@ test.each([
   expect(scanMarkdownPdfFences(item).fenceLanguages).toEqual(["python"]);
 });
 
+test("a flush-left backtick fence can leave a quote and span a blank line", () => {
+  const source = ["> Quote.", "```python", "", pipeBody, "```"].join("\n");
+  const signals = collectMarkdownPdfDocumentSignals(source);
+  expect(signals.codeFences.languages).toEqual(["python"]);
+  expect(signals.tables.scannedRows).toBe(0);
+});
+
 const ending = "~~~python\n# Fenced example\n| A longer example row hidden by the fence | B |\n~~~";
 const visibleTable = "| Item | Count |\n| --- | --- |\n| Live | 1 |";
 

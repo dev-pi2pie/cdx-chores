@@ -113,6 +113,11 @@ export class FenceRange {
     return this.candidates[index - this.start];
   }
 
+  opens(index: number) {
+    const fence = this.at(index);
+    return !!fence?.hasClose && fenceLanguage(fence.info) !== undefined;
+  }
+
   close(index: number): number | undefined {
     const relative = index - this.start;
     const fence = this.candidates[relative];

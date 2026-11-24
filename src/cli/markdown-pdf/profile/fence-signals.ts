@@ -311,7 +311,7 @@ function* walkSource(
     const hasPipe = line.includes("|") && scanner.hasPipeDelimiter(position);
     const placement = covered
       ? { owner, relative: line, marker: false, lazy: false, literal: false }
-      : resolveContainer(owner, columns, index, hasPipe, position.lastBlank);
+      : resolveContainer(owner, columns, index, hasPipe, position.lastBlank, documentFences);
     owner = placement.owner;
     const { relative, marker, lazy } = placement;
     const previous = owner.block;

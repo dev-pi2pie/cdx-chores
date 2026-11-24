@@ -83,6 +83,11 @@ const readers: Record<string, [unknown[], unknown[]]> = {
   "compact-mixed-list": [[], [documentPython]],
   "definition-outdented-close": [[], [code(pipeBody, "python", ["DefinitionList"])]],
   "definition-close-after-blank": [[], []],
+  "document-quote-adjacent": [
+    [code(pipeBody, "python", ["BlockQuote"])],
+    [code(pipeBody, "python", ["BlockQuote"])],
+  ],
+  "document-quote-after-blank": [[], [documentPython]],
   "quote-in-item": [
     [code(pipeBody, "python", ["BulletList", "BlockQuote"])],
     [code(pipeBody, "python", ["BulletList", "BlockQuote"])],

@@ -1,10 +1,4 @@
-import {
-  FenceRange,
-  fenceLanguage,
-  readDivFence,
-  readFenceLine,
-  type FenceLine,
-} from "./fence-lines";
+import { FenceRange, readDivFence, readFenceLine, type FenceLine } from "./fence-lines";
 
 export const ATX_HEADING = /^ {0,3}#{1,6}(?:[ \t]|$)/;
 const DEFINITION_MARKER = /^( {0,3})([:~])([ \t]+|$)/;
@@ -84,7 +78,7 @@ export class Container {
     if (!range || index < range.start || index >= range.end) {
       const project =
         this.kind === "quote"
-          ? (line: string) => this.quoteLine(line)
+          ? (line: string, i: number) => this.quoteLine(line, i, document)
           : this.kind === "definition"
             ? this.projectContinuation(lines)
             : this.projectListFence(lines, index, document, lastBlank);
@@ -93,14 +87,22 @@ export class Container {
     return range;
   }
 
-  // A marked line removes the quote prefix. An unmarked continuation within
-  // the paragraph loses its leading whitespace and ends at a blank or a sibling.
-  quoteLine(line: string) {
+  // Marked lines lose their quote prefix. Lazy lines lose leading whitespace
+  // while the enclosing document or list still assigns them to this quote.
+  quoteLine(line: string, index: number, document: FenceRange) {
     const indent = /^ */.exec(line)![0].length;
     const relative = line.slice(Math.min(this.margin, indent));
     const mark = indent >= this.margin && /^ {0,3}>[ \t]?/.exec(relative);
     if (mark) return relative.slice(mark[0].length);
-    if (!line.trim() || readMarker(relative, this.margin)) return;
+    if (!line.trim()) return;
+    if (this.parent?.parent) {
+      if (readMarker(relative, this.margin)) return;
+    } else {
+      // A complete flush-left backtick fence interrupts the quote before
+      // lazy continuation strips the source indentation.
+      if (line.startsWith("`") && document.opens(index)) return;
+      if (this.parent?.closesBlock(line)) return;
+    }
     return line.trimStart();
   }
 
@@ -112,8 +114,7 @@ export class Container {
     const first = Math.max(open, this.startLine + 1);
     const source = this.parent.parent ? this.parent.continuationRange(lines, first) : document;
     for (let i = first; i <= close; i++) {
-      const candidate = source.at(i);
-      if (candidate?.hasClose && fenceLanguage(candidate.info) !== undefined) {
+      if (source.opens(i)) {
         this.inContinuation = true;
         return;
       }
@@ -123,23 +124,26 @@ export class Container {
   private projectListFence(lines: string[], open: number, document: FenceRange, lastBlank: number) {
     const project = this.projectContinuation(lines);
     const enclosing = this.parent?.parent ? this.parent.continuationRange(lines, open) : document;
-    const outerFence = (i: number) => {
-      const fence = enclosing.at(i);
-      return fence?.hasClose && fenceLanguage(fence.info) !== undefined;
-    };
+
     // In the first run of an item, a complete outer fence ends the run.
     // An indented line can then start a continuation, as it can after a blank.
     let firstRun =
       !this.inContinuation &&
       lastBlank <= this.startLine &&
-      (open === this.startLine || !outerFence(open));
+      (open === this.startLine || !enclosing.opens(open));
     return (line: string, i: number, inside: string | undefined) => {
-      if (firstRun && (!line.trim() || outerFence(i))) {
+      if (firstRun && (!line.trim() || enclosing.opens(i))) {
         if (inside === undefined) return;
         firstRun = false;
       }
       return project(line, i, inside);
     };
+  }
+
+  private closesBlock(line: string) {
+    if (this.divDepth && readDivFence(line) === "close") return true;
+    const tag = /^<\/([a-z][\w:-]*)\s*>/i.exec(line)?.[1]?.toLowerCase();
+    return !!tag && this.openHtmlBlocks?.get(tag)?.at(-1);
   }
 
   private projectContinuation(lines: string[]) {
@@ -148,9 +152,7 @@ export class Container {
       if (!lines[i - 1]?.trim()) return;
       const destination = containerAtIndent(this, line);
       const relative = line.slice(destination.margin);
-      if (destination.divDepth && readDivFence(relative) === "close") return;
-      const tag = /^<\/([a-z][\w:-]*)\s*>/i.exec(relative)?.[1]?.toLowerCase();
-      if (tag && destination.openHtmlBlocks?.get(tag)?.at(-1)) return;
+      if (destination.closesBlock(relative)) return;
       if (readMarker(relative, destination.margin, undefined, this.kind === "definition")) return;
       return continuationLine(this, destination, line);
     };
@@ -307,6 +309,7 @@ export function resolveContainer(
   index: number,
   hasPipe: boolean,
   lastBlank: number,
+  document: FenceRange,
 ) {
   const line = lines[index]!;
   if (current.kind === "quote") {
@@ -317,7 +320,7 @@ export function resolveContainer(
       lastBlank <= item.startLine &&
       !item.inContinuation &&
       readFenceLine(line.slice(destination.margin));
-    const relative = endsFirstRun ? undefined : current.quoteLine(line);
+    const relative = endsFirstRun ? undefined : current.quoteLine(line, index, document);
     if (relative !== undefined)
       return { owner: current, relative, marker: true, lazy: false, literal: false };
     current = current.parent!;
@@ -374,7 +377,7 @@ export function resolveContainer(
       if (next.literal) return { owner, relative, marker, lazy: false, literal: true };
     }
   }
-  const quote = owner.parent && !isParagraph(owner.block) && /^ {0,3}>[ \t]?/.exec(relative);
+  const quote = !isParagraph(owner.block) && /^ {0,3}>[ \t]?/.exec(relative);
   if (quote) {
     owner = new Container(owner.margin, owner, undefined, index, "quote");
     relative = relative.slice(quote[0].length);
