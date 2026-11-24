@@ -87,7 +87,7 @@ export class FenceRange {
 
   constructor(
     lines: string[],
-    private readonly start: number,
+    readonly start: number,
     margin: number,
     opener?: FenceLine,
     projectOutdent?: (line: string, index: number) => string | undefined,

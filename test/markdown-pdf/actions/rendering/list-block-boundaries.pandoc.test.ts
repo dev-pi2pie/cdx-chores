@@ -83,6 +83,14 @@ const readers: Record<string, [unknown[], unknown[]]> = {
     [strayCloser, js],
     [strayCloser, js],
   ],
+  "comment-around-textarea-heading": [
+    [strayCloser, js],
+    [strayCloser, js],
+  ],
+  "comment-around-textarea-prose": [
+    [strayCloser, js],
+    [strayCloser, js],
+  ],
   "comment-document-early-close": [
     [recovered, shellComment, js],
     [recovered, shellComment, js],

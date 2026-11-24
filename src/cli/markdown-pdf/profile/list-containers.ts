@@ -29,8 +29,7 @@ export class Container {
   divDepth = 0;
   openHtmlBlocks?: Map<string, boolean[]>;
   rejectedTilde?: FenceLine;
-  private fences?: FenceRange;
-  private continuationSource?: FenceRange;
+  private ranges: { strict?: FenceRange; continuation?: FenceRange } = {};
   inContinuation = false;
   private inlineEnd = 0;
 
@@ -74,15 +73,17 @@ export class Container {
       }
       copy.rejectedTilde = item.rejectedTilde;
       copy.inContinuation = item.inContinuation;
+      copy.ranges = item.ranges;
     }
     return copy!;
   }
 
   fenceRange(lines: string[], index: number, opener: FenceLine) {
-    if (!this.fences || index >= this.fences.end) {
-      this.fences = new FenceRange(lines, index, this.margin, opener);
+    const range = this.ranges.strict;
+    if (!range || index < range.start || index >= range.end) {
+      return (this.ranges.strict = new FenceRange(lines, index, this.margin, opener));
     }
-    return this.fences;
+    return range;
   }
 
   // Before parsing blocks within an item, the reader separates its first run
@@ -102,16 +103,23 @@ export class Container {
   }
 
   continuationRange(lines: string[], start: number) {
-    if (!this.continuationSource || start >= this.continuationSource.end) {
+    const range = this.ranges.continuation;
+    if (!range || start < range.start || start >= range.end) {
       const project = (line: string, i: number) => {
         if (!lines[i - 1]?.trim()) return;
         const destination = containerAtIndent(this, line);
         if (readMarker(line.slice(destination.margin), destination.margin)) return;
         return continuationLine(this, destination, line);
       };
-      this.continuationSource = new FenceRange(lines, start, this.margin, undefined, project);
+      return (this.ranges.continuation = new FenceRange(
+        lines,
+        start,
+        this.margin,
+        undefined,
+        project,
+      ));
     }
-    return this.continuationSource;
+    return range;
   }
 }
 

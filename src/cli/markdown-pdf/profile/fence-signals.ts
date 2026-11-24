@@ -1,4 +1,4 @@
-import { FenceLookahead, type MatchedFence, type SourceEvent } from "./fence-recovery";
+import { FenceRecovery, type ScanOrigin, type SourceEvent } from "./fence-recovery";
 import { FenceRange, closesFence, fenceLanguage, readDivFence, readFenceLine } from "./fence-lines";
 import {
   ATX_HEADING,
@@ -152,10 +152,11 @@ class BoundaryScanner {
   private offset = 0;
   private lineEnd: LineEnd | undefined;
 
+  recovery?: FenceRecovery;
+
   constructor(
     private readonly content: string,
     private readonly cursor: MarkdownSourceCursor,
-    readonly recovery?: FenceLookahead,
   ) {}
 
   fork() {
@@ -227,8 +228,7 @@ class BoundaryScanner {
       const tokenEnd = token?.end ?? offset + 1;
       const text = this.content.slice(offset, Math.min(tokenEnd, end));
       if (token?.kind === "comment") {
-        if (this.recovery && tokenEnd > line.nextMarkdownStructure)
-          this.recovery.needsRestart = true;
+        this.recovery?.confirmed(offset, tokenEnd, tokenEnd > line.nextMarkdownStructure);
         if (lineEnd === "paired-close" && offset > this.offset) lineEnd = "paragraph";
         if (!hasText) lineEnd ??= isParagraph(previous) ? "paragraph" : "boundary";
         visible += hasText && !lineEnd && tokenEnd <= end ? text : " ".repeat(text.length);
@@ -243,8 +243,7 @@ class BoundaryScanner {
             this.recovery,
           );
           if (verbatimEnd !== undefined) {
-            if (this.recovery && verbatimEnd > line.nextMarkdownStructure)
-              this.recovery.needsRestart = true;
+            this.recovery?.confirmed(offset, verbatimEnd, verbatimEnd > line.nextMarkdownStructure);
             visible += " ".repeat(Math.min(verbatimEnd, end) - offset);
             offset = this.offset = verbatimEnd;
             lineEnd = "boundary";
@@ -287,31 +286,27 @@ function prepareSource(content: string) {
   return { content, lines, columns, positions, documentFences };
 }
 
-// HTML can hide a marker that was visible during candidate discovery. Reuse
-// its span only when the opener still belongs to the same chain of list items.
-function sameFenceScope(a: Container | undefined, b: Container | undefined) {
-  while (a && b) {
-    if (a.startLine !== b.startLine || a.margin !== b.margin) return false;
-    a = a.parent;
-    b = b.parent;
-  }
-  return a === b;
-}
-
 function* walkSource(
   source: ReturnType<typeof prepareSource>,
   scanner: BoundaryScanner,
   owner = new Container(),
   firstLine = 0,
+  ignored: ReadonlyMap<string, number> = new Map(),
+  reportClose?: (start: number, end: number) => void,
 ): Generator<SourceEvent> {
   const { lines, columns, positions, documentFences } = source;
-  const recovery = scanner.recovery;
+  function origin(index: number): ScanOrigin {
+    const boundary = scanner.fork();
+    const container = owner.fork();
+    return (kinds, report) =>
+      walkSource(source, boundary.fork(), container.fork(), index, kinds, report);
+  }
+  const recovery = new FenceRecovery(positions, ignored, origin(firstLine), reportClose);
+  scanner.recovery = recovery;
   for (let index = firstLine; index < lines.length; index++) {
     const line = lines[index]!;
     const position = positions[index]!;
-    if (recovery?.needsRestart && scanner.canResume(position)) {
-      recovery.restart(walkSource(source, scanner.fork(), owner.fork(), index));
-    }
+    if (recovery.needsOrigin && scanner.canResume(position)) recovery.resume(origin(index));
     const covered = scanner.coversStart(position);
     const hasPipe = line.includes("|") && scanner.hasPipeDelimiter(position);
     const placement = covered
@@ -330,15 +325,8 @@ function* walkSource(
       const interrupts = canOpenFence(previous, fence);
       if (interrupts && language !== undefined) {
         const continued = !!placement.continued;
-        const candidate = recovery?.candidates.get(index);
-        let span: MatchedFence | undefined;
-        if (
-          candidate &&
-          candidate.continued === continued &&
-          sameFenceScope(candidate.owner, owner)
-        ) {
-          span = candidate;
-        } else {
+        let span = recovery.candidate(index, owner, continued);
+        if (!span) {
           const range = continued
             ? owner.continuationRange(columns, index)
             : owner.parent
@@ -412,10 +400,8 @@ function* walkSource(
 export function scanMarkdownPdfFences(content: string): MarkdownFenceScan {
   const source = prepareSource(content);
   const cursor = new MarkdownSourceCursor(content);
-  const discovery = walkSource(source, new BoundaryScanner(content, cursor));
-  const recovery = new FenceLookahead(source.positions, discovery);
   const result: MarkdownFenceScan = { ordinaryLines: [], fenceLanguages: [] };
-  for (const event of walkSource(source, new BoundaryScanner(content, cursor, recovery))) {
+  for (const event of walkSource(source, new BoundaryScanner(content, cursor))) {
     if ("line" in event) result.ordinaryLines.push(event.line);
     else if (event.language !== null) result.fenceLanguages.push(event.language);
   }

@@ -98,6 +98,15 @@ const pythonFence = "~~~python\n</textarea>\n| Hidden | Code |\n~~~";
 export const htmlBoundaryCases = [
   ...recoveryPair("comment", "-->"),
   ...recoveryPair("textarea", "</textarea>"),
+  ...["## Inside", "literal"].map((inner, i) => ({
+    name: i === 0 ? "comment-around-textarea-heading" : "comment-around-textarea-prose",
+    markdown: replaceOnce(
+      source("apparent-comment-close-inside-fence"),
+      "~~~sh\n-->\n~~~",
+      ["<textarea>", "", inner, "", inItem("~~~sh\n-->\n~~~"), "", "</textarea>"].join("\n"),
+    ),
+    recovered: false,
+  })),
   {
     name: "closer-in-item",
     markdown: replaceOnce(textarea, shellFence, inItem(shellFence) + sibling),

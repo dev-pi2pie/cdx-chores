@@ -21,27 +21,20 @@ interface FenceBody extends OffsetRange {
 // Read ahead only as far as the delimiter being queried. Recovering an
 // abandoned opener keeps these spans available to the ordinary scan. Accepting
 // a genuine close discards decisions made inside the now-literal HTML.
-export class FenceLookahead implements HtmlRecovery {
+class FenceLookahead {
+  readonly closes = new Map<number, number>();
   readonly candidates = new Map<number, MatchedFence>();
   private readonly bodies: FenceBody[] = [];
   private readonly nextOutside = new Map<number, number>();
   private through = -1;
   private precedingStructure?: number;
-  needsRestart = false;
-
+  private readonly events: Iterator<SourceEvent>;
   constructor(
     private readonly positions: OffsetRange[],
-    private events: Iterator<SourceEvent>,
-  ) {}
-
-  restart(events: Iterator<SourceEvent>) {
-    this.events = events;
-    this.through = -1;
-    this.precedingStructure = undefined;
-    this.candidates.clear();
-    this.bodies.length = 0;
-    this.nextOutside.clear();
-    this.needsRestart = false;
+    origin: ScanOrigin,
+    ignored: ReadonlyMap<string, number>,
+  ) {
+    this.events = origin(ignored, (start, end) => this.closes.set(start, end));
   }
 
   private bodyAt(delimiter: number) {
@@ -97,4 +90,89 @@ export class FenceLookahead implements HtmlRecovery {
     for (const offset of skipped) this.nextOutside.set(offset, close?.start ?? Infinity);
     return close;
   }
+}
+
+type ReportClose = (start: number, end: number) => void;
+export type ScanOrigin = (
+  ignored: ReadonlyMap<string, number>,
+  reportClose: ReportClose,
+) => Iterator<SourceEvent>;
+
+// To decide a comment close, inspect the Markdown visible with that comment
+// abandoned. Other HTML kinds still resolve their own closes: a fence hidden
+// by a complete textarea cannot protect a delimiter outside that element.
+// Each nested lookup excludes another kind, bounding the dependency depth.
+export class FenceRecovery implements HtmlRecovery {
+  private readonly views = new Map<string, FenceLookahead>();
+  needsOrigin = false;
+
+  constructor(
+    private readonly positions: OffsetRange[],
+    private readonly ignored: ReadonlyMap<string, number>,
+    private origin: ScanOrigin,
+    private readonly reportClose?: ReportClose,
+  ) {}
+
+  insideVerbatim(kind: string, start: number) {
+    const outer = this.ignored.get(kind);
+    // A nested start tag of the same raw element is literal within the
+    // outer element. Earlier, independent regions still close normally.
+    return outer !== undefined && start > outer;
+  }
+
+  matchingEnd(
+    key: string,
+    start: number,
+    close: OffsetRange,
+    next: (offset: number) => OffsetRange | undefined,
+  ) {
+    const kind = key === "<!--" || key === "-->" ? "comment" : key;
+    if (this.ignored.has(kind)) return undefined;
+    let view = this.views.get(kind);
+    if (!view) {
+      view = new FenceLookahead(
+        this.positions,
+        this.origin,
+        new Map(this.ignored).set(kind, start),
+      );
+      this.views.set(kind, view);
+    }
+    return view.matchingEnd(start, close, next);
+  }
+
+  confirmed(start: number, end: number, crossedStructure: boolean) {
+    this.reportClose?.(start, end);
+    for (const [kind, view] of this.views) {
+      // A different kind's lookahead can already have consumed this same
+      // genuine close. Its scanned suffix and delimiter index are still valid.
+      if (view.closes.get(start) !== end) {
+        this.views.delete(kind);
+        this.needsOrigin = true;
+      } else view.closes.delete(start);
+    }
+    this.needsOrigin ||= crossedStructure;
+  }
+
+  resume(origin: ScanOrigin) {
+    this.origin = origin;
+    this.needsOrigin = false;
+  }
+
+  candidate(index: number, owner: Container, continued: boolean) {
+    for (const view of this.views.values()) {
+      const span = view.candidates.get(index);
+      if (span && span.continued === continued && sameFenceScope(span.owner, owner)) return span;
+    }
+  }
+}
+
+// HTML can hide a marker seen during candidate discovery. Its raw range can
+// be reused only within the same chain of list items.
+function sameFenceScope(a: Container | undefined, b: Container | undefined) {
+  while (a && b) {
+    if (a.startLine !== b.startLine || a.margin !== b.margin) return false;
+    a = a.parent;
+    b = b.parent;
+  }
+  return a === b;
 }

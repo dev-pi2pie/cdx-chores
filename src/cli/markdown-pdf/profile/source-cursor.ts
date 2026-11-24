@@ -4,7 +4,9 @@ interface SourceSpan {
 }
 
 export interface HtmlRecovery {
+  insideVerbatim(kind: string, start: number): boolean;
   matchingEnd(
+    key: string,
     start: number,
     close: SourceSpan,
     next: (offset: number) => SourceSpan | undefined,
@@ -84,10 +86,11 @@ export class MarkdownSourceCursor {
   ) {
     const spans = this.delimiters.get(key);
     const close = this.next(spans, offset);
-    if (!close || close.start < nextStructure) return close;
+    if (!close || (close.start < nextStructure && !recovery?.insideVerbatim(key, start)))
+      return close;
     // During lookahead, leave a cross-structure opener unresolved to discover
     // the Markdown that would be visible if the delimiter is in a fence.
-    return recovery?.matchingEnd(start, close, (from) => this.next(spans, from));
+    return recovery?.matchingEnd(key, start, close, (from) => this.next(spans, from));
   }
 
   verbatimEnd(

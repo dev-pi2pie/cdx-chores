@@ -1,5 +1,7 @@
 import { expect, test } from "bun:test";
 import { scanMarkdownPdfFences } from "../../../../src/cli/markdown-pdf/profile/fence-signals";
+import { readFenceLine } from "../../../../src/cli/markdown-pdf/profile/fence-lines";
+import { Container } from "../../../../src/cli/markdown-pdf/profile/list-containers";
 import { collectMarkdownPdfDocumentSignals as collect } from "../../../../src/cli/markdown-pdf/profile/signals";
 import { htmlBoundaryCases } from "../fixtures/list-block-boundaries";
 
@@ -106,3 +108,67 @@ test("repeated apparent closes leave the first genuine close and its suffix visi
   expect(signals.headings.total).toBe(1);
   expect(signals.tables.scannedRows).toBe(1);
 });
+
+test("independent HTML regions in one item reuse its indexed fence range", () => {
+  const item = new Container(3, new Container());
+  const example = ["   ~~~sh", "   </textarea>", "   ~~~", ""];
+  const lines = [...example, ...example];
+  const opener = readFenceLine("~~~sh")!;
+  const first = item.fork().fenceRange(lines, 0, opener);
+  expect(first.close(0)).toBe(2);
+  const second = item.fork().fenceRange(lines, 4, opener);
+  expect(second).toBe(first);
+  expect(second.close(4)).toBe(6);
+});
+
+test("interleaved comment and textarea lookups preserve the trailing heading", () => {
+  const region = [
+    "<textarea>",
+    "<!-- text",
+    "",
+    "# Hidden",
+    "",
+    "1. Item",
+    "",
+    "    ~~~sh",
+    "    </textarea>",
+    "    ~~~",
+    "",
+    "-->",
+    "",
+  ].join("\n");
+  const source = region.repeat(256) + "\n# Visible";
+  const result = scanMarkdownPdfFences(source);
+  expect(result.ordinaryLines.filter((line) => line.startsWith("#"))).toEqual(["# Visible"]);
+  expect(result.fenceLanguages).toEqual([]);
+});
+
+test.each(["literal", "## Inside"])(
+  "a nested textarea start stays literal with %s inside",
+  (inner) => {
+    const source = [
+      "<textarea>",
+      "",
+      "# Outer",
+      "",
+      "<textarea>",
+      "",
+      inner,
+      "",
+      "1. Item",
+      "",
+      "    ~~~sh",
+      "    </textarea>",
+      "    ~~~",
+      "",
+      "# Between",
+      "",
+      "</textarea>",
+      "",
+      "# Visible",
+    ].join("\n");
+    const result = scanMarkdownPdfFences(source);
+    expect(result.ordinaryLines.filter((line) => line.startsWith("#"))).toEqual(["# Visible"]);
+    expect(result.fenceLanguages).toEqual([]);
+  },
+);
