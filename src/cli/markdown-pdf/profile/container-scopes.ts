@@ -34,9 +34,14 @@ function quotePrefix(line: string, limit: number) {
 // carries those prefixes or passes through all layers as unchanged lazy text.
 function stripSharedQuotePrefixes(body: string[]) {
   let { depth } = quotePrefix(body[0]!, Infinity);
+  let fences: FenceRange | undefined;
   for (let i = 1; depth && i < body.length; i++) {
     const line = body[i]!;
-    if (!line || /^[\s>`]/.test(line)) depth = quotePrefix(line, depth).depth;
+    if (line.startsWith("```")) {
+      fences ??= new FenceRange(body, 0, 0);
+      if (fences.opens(i)) return;
+    }
+    if (!line || /^[\s>]/.test(line)) depth = quotePrefix(line, depth).depth;
   }
   if (!depth) return;
   for (let i = 0; i < body.length; i++) {

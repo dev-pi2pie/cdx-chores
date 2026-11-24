@@ -1,4 +1,5 @@
 import { expect, spyOn, test } from "bun:test";
+import { ContainerScopes } from "../../../../src/cli/markdown-pdf/profile/container-scopes";
 import { Container } from "../../../../src/cli/markdown-pdf/profile/list-containers";
 
 import { scanMarkdownPdfFences } from "../../../../src/cli/markdown-pdf/profile/fence-signals";
@@ -145,7 +146,9 @@ test("deep quote markers on both ends preserve the lazy text and the trailing he
   const marks = ">".repeat(2048);
   const markdown = [
     marks + " First",
-    ...Array(2048).fill("plain text"),
+    ...Array(2046).fill("plain text"),
+    "`example` is inline code",
+    "```unmatched",
     marks + " Last",
     "",
     "# Visible",
@@ -160,6 +163,16 @@ test("deep quote markers on both ends preserve the lazy text and the trailing he
   } finally {
     scopes.mockRestore();
   }
+});
+
+test("a complete backtick fence interrupts the inner quote at the outer quote margin", () => {
+  const lines = [">>> Text", "> ```python", "> " + pipeBody, "> ```"];
+  const scopes = ContainerScopes.document(lines);
+  const inner = scopes.place(0, false, false).frame;
+  const { frame, local } = scopes.place(1, false, false);
+  expect(frame).not.toBe(inner);
+  expect(frame.fences.close(local)).toBe(3);
+  expect(scanMarkdownPdfFences(lines.join("\n")).fenceLanguages).toEqual(["python"]);
 });
 
 test("nested quote prefixes share a long lazy list continuation", () => {
