@@ -90,6 +90,57 @@ test.each([true, false])(
   },
 );
 
+test.each([
+  ["uppercase", "Report", "tropeR", ["REPORT"], ["TROPER"], true],
+  [
+    "wrapped words",
+    "Weekly Report",
+    "ylkeeW tropeR",
+    ["Weekly", "Report"],
+    ["ylkeeW", "tropeR"],
+    true,
+  ],
+  [
+    "missing word boundary",
+    "Weekly Report",
+    "ylkeeW tropeR",
+    ["WeeklyReport"],
+    ["ylkeeWtropeR"],
+    false,
+  ],
+  [
+    "same-line split without a space",
+    "Weekly Report",
+    "ylkeeW tropeR",
+    ["Weekly", "Report"],
+    ["ylkeeW", "tropeR"],
+    false,
+  ],
+] as const)(
+  "checks source words against %s text",
+  async (layout, text, substitute, before, after, match) => {
+    await withTempFixtureDir("printed-title", async (dir) => {
+      const html = `<h1 id=report>${text}</h1>`;
+      const probe = { ...candidate, text, substitute, html: `<h1 id=report>${substitute}</h1>` };
+      const evidence = await inspectPrintedTitle(
+        html,
+        dir,
+        async (input, pdf) => {
+          const printed = (await readFile(input, "utf8")) === html ? before : after;
+          await writeFile(
+            pdf,
+            taggedTitlePdf(printed, "clear", { wrapped: layout === "wrapped words" }),
+          );
+          return true;
+        },
+        [probe],
+      );
+      if (match) expectProof(evidence, true);
+      else expect(evidence).toEqual({});
+    });
+  },
+);
+
 test("coincident source destinations leave identity unconfirmed", async () => {
   await withTempFixtureDir("printed-title", async (dir) => {
     let prints = 0;
@@ -153,6 +204,8 @@ test.each([
     const proofHtml: string[] = [];
     const finalHtml: string[] = [];
     const finalPdf = taggedTitlePdf(["Final"], "clear");
+    const originalPdf = taggedTitlePdf(["Report"], "clear");
+    const proofOptions: string[][] = [];
     let restoreBackend: (() => void) | undefined;
     let attemptedCanvas = false;
     try {
@@ -166,12 +219,13 @@ test.each([
             return runner(command, args, opts);
           const html = await readFile(args.at(-2)!, "utf8"),
             pdf = args.at(-1)!;
-          if (!args.includes("--pdf-variant")) {
+          if (!args.includes("--pdf-tags")) {
             finalHtml.push(html);
             await writeFile(pdf, finalPdf);
             return ok();
           }
           proofHtml.push(html);
+          proofOptions.push([...args]);
           const alternate = html.includes(">tropeR</h1>");
           const text = alternate && condition !== "unchanged substitution" ? "tropeR" : "Report";
           await writeFile(
@@ -180,6 +234,8 @@ test.each([
               ? "invalid PDF"
               : taggedTitlePdf([text], condition === "clipped" ? "clipped" : "clear"),
           );
+          // A new read of the author stylesheet would hide the previously visible heading.
+          if (alternate && condition === "complete") await writeFile(css, "#report {display:none}");
           if (alternate && condition === "unavailable canvas" && outlines) {
             const canvas = pdfRequire("@napi-rs/canvas");
             const unavailable = spyOn(canvas, "createCanvas").mockImplementation(() => {
@@ -197,12 +253,16 @@ test.each([
     expect(proofHtml[0]).toContain(body);
     if (outlines && condition === "unavailable canvas") expect(attemptedCanvas).toBe(true);
     expect(proofHtml[0]).not.toContain(header);
+    expect(proofOptions.every((args) => !args.includes("--pdf-variant"))).toBe(true);
     if (outlines && condition !== "malformed proof") expect(proofHtml[1]).toContain(">tropeR</h1>");
     if (condition === "malformed proof") expect(proofHtml).toHaveLength(1);
-    expect(finalHtml).toHaveLength(1);
-    expect(finalHtml[0]).toContain(body);
-    expect(finalHtml[0]!.includes(header)).toBe(condition !== "complete" || !outlines);
-    expect(await readFile(htmlOutput, "utf8")).toBe(finalHtml[0]!);
-    expect((await readFile(output)).equals(finalPdf)).toBe(true);
+    const reused = condition === "complete" && outlines;
+    expect(finalHtml).toHaveLength(reused ? 0 : 1);
+    if (reused) expect(await readFile(css, "utf8")).toBe("#report {display:none}");
+    const selected = reused ? proofHtml[0]! : finalHtml[0]!;
+    expect(selected).toContain(body);
+    expect(selected.includes(header)).toBe(!reused);
+    expect(await readFile(htmlOutput, "utf8")).toBe(selected);
+    expect((await readFile(output)).equals(reused ? originalPdf : finalPdf)).toBe(true);
   });
 });

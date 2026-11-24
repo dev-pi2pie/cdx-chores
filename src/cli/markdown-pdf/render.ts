@@ -274,6 +274,9 @@ export async function renderMarkdownPdf(
     for (const cssPath of cssPaths) {
       weasyprintArgs.push("--stylesheet", cssPath);
     }
+    // If the selected HTML is the original proof, publish those inspected bytes.
+    // Printing it again could reload a changed stylesheet, font, or image.
+    const proof: { original?: { html: string; path: string; result: ExecCommandResult } } = {};
     if (source.styledTitle) {
       html = await resolveStyledTitle({
         ...source.styledTitle,
@@ -283,14 +286,15 @@ export async function renderMarkdownPdf(
           inspectPrintedTitle(
             probe,
             tempDir,
-            async (probeHtml, probePdf) =>
-              (
-                await runner(
-                  "weasyprint",
-                  [...weasyprintArgs, "--pdf-variant", "pdf/ua-1", probeHtml, probePdf],
-                  { cwd },
-                )
-              ).ok,
+            async (probeHtml, probePdf) => {
+              const result = await runner(
+                "weasyprint",
+                [...weasyprintArgs, "--pdf-tags", probeHtml, probePdf],
+                { cwd },
+              );
+              if (result.ok) proof.original ??= { html: probe, path: probePdf, result };
+              return result.ok;
+            },
             candidates,
           ),
       });
@@ -304,10 +308,11 @@ export async function renderMarkdownPdf(
       });
     }
 
-    const renderedPdfPath = join(tempDir, "rendered.pdf");
-    weasyprintArgs.push(finalHtmlPath, renderedPdfPath);
-
-    const weasyprint = await runner("weasyprint", weasyprintArgs, { cwd });
+    const selectedProof = proof.original?.html === html ? proof.original : undefined;
+    const renderedPdfPath = selectedProof?.path ?? join(tempDir, "rendered.pdf");
+    const weasyprint =
+      selectedProof?.result ??
+      (await runner("weasyprint", [...weasyprintArgs, finalHtmlPath, renderedPdfPath], { cwd }));
     if (!weasyprint.ok) {
       throw formatProcessFailure(
         "weasyprint",

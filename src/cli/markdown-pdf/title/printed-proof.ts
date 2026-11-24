@@ -25,6 +25,7 @@ interface TextRun {
   index: number;
   mcid: number;
   text: string;
+  startsLine?: boolean;
 }
 
 type PdfJs = typeof import("pdfjs-dist/legacy/build/pdf.mjs");
@@ -102,6 +103,59 @@ function readRuns(
   return runs;
 }
 
+async function markLineStarts(page: PDFPageProxy, runs: TextRun[]): Promise<void> {
+  if (runs.length < 2) return;
+  // PDF text can omit the space at a soft wrap. Use text-layer positions only
+  // for line boundaries; the spelling still comes from the painted glyphs.
+  const content = await page.getTextContent({ includeMarkedContent: true });
+  const stack: (number | undefined)[] = [];
+  const breaks = new Map<number, number>();
+  let previous: { id: number | undefined; y: number } | undefined;
+  let ended = false;
+  for (const item of content.items) {
+    if (!("str" in item)) {
+      if (item.type === "endMarkedContent") stack.pop();
+      else {
+        const match = /_mc(\d+)$/u.exec(item.id ?? "");
+        stack.push(match ? Number(match[1]) : undefined);
+      }
+      continue;
+    }
+    if (item.str.trim()) {
+      const id = stack.at(-1);
+      const y = item.transform[5];
+      if (
+        ended &&
+        previous?.id !== undefined &&
+        id !== undefined &&
+        id !== previous.id &&
+        y < previous.y
+      ) {
+        breaks.set(id, previous.id);
+      }
+      previous = { id, y };
+      ended = false;
+    }
+    ended ||= item.hasEOL;
+  }
+  for (let i = 1; i < runs.length; i++) {
+    const run = runs[i]!;
+    run.startsLine = breaks.get(run.mcid) === runs[i - 1]!.mcid;
+  }
+}
+
+function matchesSource(runs: TextRun[], source: string): boolean {
+  const fold = (text: string) => text.toLowerCase().replace(/\s+/gu, " ");
+  const expected = fold(source).trim();
+  let actual = "";
+  for (const run of runs) {
+    if (run.startsLine && expected[actual.length] === " ") actual += " ";
+    const text = fold(run.text);
+    actual += !actual || actual.endsWith(" ") ? text.trimStart() : text;
+  }
+  return actual.trimEnd() === expected;
+}
+
 async function firstHeadingPage(document: PDFDocumentProxy) {
   for (let number = 1; number <= document.numPages; number++) {
     const page = await document.getPage(number);
@@ -153,7 +207,8 @@ async function inspectPdf(
       }
       const ids = new Set(contentIds(heading));
       const runs = readRuns(operators, (id) => ids.has(id), pdf.OPS);
-      if (!runs.length) return {};
+      if (!runs.length || runs.reduce((n, run) => n + run.text.length, 0) > 256) return {};
+      await markLineStarts(page, runs);
       return await inspect({
         pages: document.numPages,
         emptyHeadings,
@@ -222,7 +277,7 @@ function isolatedChange(
     original.pages !== marked.pages ||
     original.page.pageNumber !== marked.page.pageNumber ||
     original.runs.length !== marked.runs.length ||
-    marked.runs.map((run) => run.text).join("") !== substitute ||
+    !matchesSource(marked.runs, substitute) ||
     !isDeepStrictEqual(original.tree, marked.tree) ||
     !isDeepStrictEqual(original.destinations, marked.destinations) ||
     !isDeepStrictEqual(original.operators.fnArray, marked.operators.fnArray)
@@ -275,11 +330,10 @@ export async function inspectPrintedTitle(
     if (!path) return {};
     const pdf = await import("pdfjs-dist/legacy/build/pdf.mjs");
     return await inspectPdf(pdf, path, async (original) => {
-      const printed = original.runs.map((run) => run.text).join("");
       const candidate = candidates.find((candidate) => {
         const dest = original.destinations.get(candidate.id);
         return (
-          candidate.text === printed &&
+          matchesSource(original.runs, candidate.text) &&
           candidate.text !== candidate.substitute &&
           Array.isArray(dest) &&
           isDeepStrictEqual(dest[0], original.page.ref)

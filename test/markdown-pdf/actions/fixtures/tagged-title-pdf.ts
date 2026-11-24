@@ -17,6 +17,7 @@ interface PageOptions {
   coincident?: boolean;
   earlier?: "hidden" | "revealed";
   laterPage?: boolean;
+  wrapped?: boolean;
 }
 
 /** A tagged H1 with a named destination and independently positioned text runs. */
@@ -39,8 +40,9 @@ export function taggedTitlePdf(
   runs.forEach((text, i) => {
     // TJ adjustments space the letters without introducing source spaces.
     const letters = Array.from(text, (letter) => `(${letter})`).join(" -250 ");
+    const position = options.wrapped ? `20 ${100 - i * 32}` : `${20 + 75 * i} 100`;
     content.push(
-      `/Span << /MCID ${i} >> BDC BT /Font 22 Tf 1 0 0 1 ${20 + 75 * i} 100 Tm [${letters}] TJ ET EMC`,
+      `/Span << /MCID ${i} >> BDC BT /Font 22 Tf 1 0 0 1 ${position} Tm [${letters}] TJ ET EMC`,
     );
   });
   content.push("Q");

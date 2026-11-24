@@ -86,7 +86,7 @@ describe("Markdown PDF AST render execution", () => {
           expect(args).toContain(css);
           expect(arg(args, "--allowed-protocols")).toBe("file,data");
           prints.push(await readFile(args.at(-2)!, "utf8"));
-          if (args.includes("--pdf-variant")) return failing("tagged inspection unavailable");
+          if (args.includes("--pdf-tags")) return failing("tagged inspection unavailable");
         }
         return ordinary(command, args, opts);
       };
