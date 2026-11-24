@@ -85,6 +85,16 @@ function splitLines(value: string): string[] {
     .filter((line) => line.length > 0);
 }
 
+function resourceFailureCounts(stderr: string): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const line of splitLines(stderr)) {
+    if (/^(?:ERROR|WARNING): (?:Failed to load\b|Font-face .+ cannot be loaded\b)/u.test(line)) {
+      counts.set(line, (counts.get(line) ?? 0) + 1);
+    }
+  }
+  return counts;
+}
+
 function formatProcessFailure(
   command: string,
   result: ExecCommandResult,
@@ -296,22 +306,18 @@ export async function renderMarkdownPdf(
           const fallback = await printPdf(fallbackHtml, renderedPdfPath);
           printed.set(html, fallback);
           if (!fallback.result.ok) return {};
-          const diagnostics = new Set(splitLines(fallback.result.stderr));
+          const fallbackFailures = resourceFailureCounts(fallback.result.stderr);
           return inspectPrintedTitle(
             probe,
             tempDir,
             async (probeHtml, probePdf) => {
               const output = await printPdf(probeHtml, probePdf, true);
-              // WeasyPrint can succeed after a resource load fails. PDF tagging
-              // can also produce unrelated accessibility diagnostics.
+              // Different font faces can produce identical warnings. Compare
+              // each proof with the ordinary render independently.
               if (
                 !output.result.ok ||
-                splitLines(output.result.stderr).some(
-                  (line) =>
-                    !diagnostics.has(line) &&
-                    /^(?:ERROR|WARNING): (?:Failed to load\b|Font-face .+ cannot be loaded\b)/u.test(
-                      line,
-                    ),
+                [...resourceFailureCounts(output.result.stderr)].some(
+                  ([line, count]) => count > (fallbackFailures.get(line) ?? 0),
                 )
               ) {
                 return false;

@@ -184,6 +184,47 @@ test.each(["hidden", "revealed"] as const)(
 );
 
 test.each([
+  { counts: [1, 1, 1], omit: true },
+  { counts: [1, 2], omit: false },
+  { counts: [1, 1, 2], omit: false },
+])(
+  "compares font warning counts independently for each proof: $counts",
+  async ({ counts, omit }) => {
+    await withTempFixtureDir("styled-font-warnings", async (dir) => {
+      const input = join(dir, "report.md");
+      const css = join(dir, "print.css");
+      const output = join(dir, "report.pdf");
+      await writeFile(input, "---\ntitle: Report\n---\n\n# Report {#report}\n");
+      await writeFile(css, "#report {color: navy}");
+      const header = '<header class="document-title"><h1>Report</h1></header>';
+      const { runner } = createPdfRunner({
+        html: '<main class="document-body">' + header + original + "</main>",
+        pandocJson: pandocTitleJson("Report", "Report", "report"),
+      });
+      const { runtime, stderr } = createActionTestRuntime({ cwd: dir });
+      const pdfs = ["Baseline", "Report", "tropeR"].map((text) => taggedTitlePdf([text], "clear"));
+      const warning = "WARNING: Font-face 'Report' cannot be loaded";
+      let prints = 0;
+      await actionMdToPdf(runtime, {
+        input,
+        css,
+        output,
+        runner: async (command, args, opts) => {
+          if (command !== "weasyprint" || !args.includes("--base-url"))
+            return runner(command, args, opts);
+          const i = prints++;
+          await writeFile(args.at(-1)!, pdfs[i]!);
+          return ok("", Array(counts[i]).fill(warning).join("\n"));
+        },
+      });
+      if (outlines) expect(prints).toBe(counts.length);
+      expect(await readFile(output)).toEqual(pdfs[omit && outlines ? 1 : 0]!);
+      expect(stderr.text.split("\n").filter((line) => line.includes(warning))).toHaveLength(1);
+    });
+  },
+);
+
+test.each([
   "complete",
   "unchanged substitution",
   "clipped",
