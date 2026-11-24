@@ -1,8 +1,8 @@
 ---
 title: "Markdown PDF list block boundaries"
 created-date: 2026-11-23
-modified-date: 2026-11-23
-status: draft
+modified-date: 2026-11-24
+status: in-progress
 agent: codex
 ---
 
@@ -115,4 +115,5 @@ For each pair, check the visible headings, language hints, and source-row count.
 
 ## Related Plans
 
+- [Markdown PDF list block boundaries implementation](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md)
 - [Markdown PDF AST rendering implementation](../plans/plan-2026-11-22-markdown-pdf-ast-rendering.md)
