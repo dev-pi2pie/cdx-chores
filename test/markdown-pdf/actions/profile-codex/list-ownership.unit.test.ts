@@ -236,24 +236,37 @@ const nestedProse = [
 ];
 
 test.each([
-  [0, true],
-  [1, false],
-  [2, true],
-  [3, true],
-  [4, false],
-  [5, true],
-] as const)("nested continuation strips available marker widths at %i spaces", (spaces, python) => {
-  const pad = " ".repeat(spaces);
-  const s = collect(
-    [...nestedProse, pad + ticks + "python", pad + longRow, pad + ticks, "", "# Visible"].join(
-      "\n",
-    ),
-  );
-  expect(s.codeFences.languages).toEqual(python ? ["js", "python"] : ["js"]);
-  // The backticks form inline code at one and four spaces, also hiding the pipe.
-  expect(s.tables.scannedRows).toBe(0);
-  expect(s.headings.total).toBe(1);
-});
+  [0, true, true],
+  [1, false, true],
+  [2, true, false],
+  [3, true, true],
+  [4, false, true],
+  [5, true, false],
+] as const)(
+  "nested continuation strips available marker widths at %i spaces",
+  (spaces, backtickBlock, tildeBlock) => {
+    const pad = " ".repeat(spaces);
+    for (const [marker, block] of [
+      [ticks, backtickBlock],
+      ["~~~", tildeBlock],
+    ] as const) {
+      const s = collect(
+        [
+          ...nestedProse,
+          pad + marker + "python",
+          pad + longRow,
+          pad + marker,
+          "",
+          "# Visible",
+        ].join("\n"),
+      );
+      expect(s.codeFences.languages).toEqual(block ? ["js", "python"] : ["js"]);
+      // Backticks can still enclose inline code. Tildes in prose leave the pipe visible.
+      expect(s.tables.scannedRows).toBe(block || marker === ticks ? 0 : 1);
+      expect(s.headings.total).toBe(1);
+    }
+  },
+);
 
 test.each([
   ["aligned closer", "     " + ticks, true],

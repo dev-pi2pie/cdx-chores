@@ -164,23 +164,37 @@ export function isPipeTableSeparator(line: string) {
     .every((cell) => /^:?-+:?$/.test(cell.trim()));
 }
 
-// A less-indented line can belong to the current paragraph. Test potential
-// interruptions at the destination margin before dropping the child.
-function continuesItem(
+// Resolve ownership first, then ask whether the fence interrupts that paragraph.
+function paragraphContinuation(
   owner: Container,
   destination: Container,
-  relative: string,
+  line: string,
   lastBlank: number,
 ) {
-  if (!isParagraph(owner.block) || !owner.parent) return false;
-  const fence = readFenceLine(relative);
-  if (fence) {
-    const continuation = owner.inContinuation || lastBlank > owner.startLine;
-    return continuation && (fence.indent > 0 || fence.marker === "~");
+  if (destination === owner || !isParagraph(owner.block)) return;
+  const relative = line.slice(destination.margin);
+  if (/^ *(?:`{3}|~{3})/.test(relative)) {
+    const projected = continuationLine(owner, destination, line);
+    const inItem = projected !== relative || owner.inContinuation || lastBlank > owner.startLine;
+    if (inItem) {
+      const fence = readFenceLine(projected);
+      if (fence && canOpenFence(owner.block, fence)) {
+        return {
+          owner,
+          relative: projected,
+          continued: true,
+          lazy: false,
+          marker: false,
+          literal: false,
+        };
+      }
+    } else if (readFenceLine(relative)) return;
+  } else {
+    const div = readDivFence(relative);
+    if (div ? !destination.parent || div !== "open" : readMarker(relative, destination.margin))
+      return;
   }
-  const div = readDivFence(relative);
-  if (div) return !!destination.parent && div === "open";
-  return !readMarker(relative, destination.margin);
+  return { owner, relative: line, lazy: true, marker: false, literal: false };
 }
 
 function orderedStyle(marker: string, sibling?: string) {
@@ -211,25 +225,9 @@ export function resolveContainer(
 ) {
   const line = lines[index]!;
   let owner = line.trim() ? containerAtIndent(current, line) : current;
+  const continuation = paragraphContinuation(current, owner, line, lastBlank);
+  if (continuation) return continuation;
   let relative = line.slice(owner.margin);
-  if (owner !== current && isParagraph(current.block) && relative.trimStart().startsWith("```")) {
-    const continued = continuationLine(current, owner, line);
-    const inItem =
-      continued !== relative || current.inContinuation || lastBlank > current.startLine;
-    if (inItem && continued.startsWith("```")) {
-      return {
-        owner: current,
-        relative: continued,
-        continued: true,
-        lazy: false,
-        marker: false,
-        literal: false,
-      };
-    }
-  }
-  if (owner !== current && continuesItem(current, owner, relative, lastBlank)) {
-    return { owner: current, relative: line, lazy: true, marker: false, literal: false };
-  }
 
   const setext =
     isParagraph(owner.block) && owner.proseStart === index - 1 && /^(-+|=+)[ \t]*$/.test(relative);
