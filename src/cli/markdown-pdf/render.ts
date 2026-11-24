@@ -274,29 +274,54 @@ export async function renderMarkdownPdf(
     for (const cssPath of cssPaths) {
       weasyprintArgs.push("--stylesheet", cssPath);
     }
-    // If the selected HTML is the original proof, publish those inspected bytes.
-    // Printing it again could reload a changed stylesheet, font, or image.
-    const proof: { original?: { html: string; path: string; result: ExecCommandResult } } = {};
+    const renderedPdfPath = join(tempDir, "rendered.pdf");
+    const printPdf = async (htmlPath: string, path: string, tagged = false) => ({
+      path,
+      result: await runner(
+        "weasyprint",
+        [...weasyprintArgs, ...(tagged ? ["--pdf-tags"] : []), htmlPath, path],
+        { cwd },
+      ),
+    });
+    const printed = new Map<string, Awaited<ReturnType<typeof printPdf>>>();
     if (source.styledTitle) {
       html = await resolveStyledTitle({
         ...source.styledTitle,
         html,
         customStyle: Boolean(input.customCssPath),
-        inspect: (probe, candidates) =>
-          inspectPrintedTitle(
+        inspect: async (probe, candidates) => {
+          // Capture the ordinary output before optional inspection can consume a
+          // one-shot asset. Both decisions then publish already-rendered bytes.
+          const fallbackHtml = await createTempFile(tempDir, "title-fallback.html", html);
+          const fallback = await printPdf(fallbackHtml, renderedPdfPath);
+          printed.set(html, fallback);
+          if (!fallback.result.ok) return {};
+          const diagnostics = new Set(splitLines(fallback.result.stderr));
+          return inspectPrintedTitle(
             probe,
             tempDir,
             async (probeHtml, probePdf) => {
-              const result = await runner(
-                "weasyprint",
-                [...weasyprintArgs, "--pdf-tags", probeHtml, probePdf],
-                { cwd },
-              );
-              if (result.ok) proof.original ??= { html: probe, path: probePdf, result };
-              return result.ok;
+              const output = await printPdf(probeHtml, probePdf, true);
+              // WeasyPrint can succeed after a resource load fails. PDF tagging
+              // can also produce unrelated accessibility diagnostics.
+              if (
+                !output.result.ok ||
+                splitLines(output.result.stderr).some(
+                  (line) =>
+                    !diagnostics.has(line) &&
+                    /^(?:ERROR|WARNING): (?:Failed to load\b|Font-face .+ cannot be loaded\b)/u.test(
+                      line,
+                    ),
+                )
+              ) {
+                return false;
+              }
+              if (!printed.has(probe)) printed.set(probe, output);
+              return true;
             },
             candidates,
-          ),
+          );
+        },
       });
     }
     await writeFile(finalHtmlPath, html, "utf8");
@@ -308,11 +333,8 @@ export async function renderMarkdownPdf(
       });
     }
 
-    const selectedProof = proof.original?.html === html ? proof.original : undefined;
-    const renderedPdfPath = selectedProof?.path ?? join(tempDir, "rendered.pdf");
-    const weasyprint =
-      selectedProof?.result ??
-      (await runner("weasyprint", [...weasyprintArgs, finalHtmlPath, renderedPdfPath], { cwd }));
+    const { path: selectedPdf, result: weasyprint } =
+      printed.get(html) ?? (await printPdf(finalHtmlPath, renderedPdfPath));
     if (!weasyprint.ok) {
       throw formatProcessFailure(
         "weasyprint",
@@ -320,7 +342,7 @@ export async function renderMarkdownPdf(
         source.format === "json" ? pandocWarnings : [],
       );
     }
-    await writeBufferFileSafe(input.outputPath, await readFile(renderedPdfPath), {
+    await writeBufferFileSafe(input.outputPath, await readFile(selectedPdf), {
       label: "PDF output",
       overwrite: input.overwrite,
       parentRootDirectory: parsePath(input.outputPath).root,

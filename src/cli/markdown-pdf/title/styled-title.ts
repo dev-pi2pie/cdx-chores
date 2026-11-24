@@ -18,9 +18,9 @@ function attribute(node: Html.Element, name: string) {
 
 function substituteWord(word: string) {
   const reverse = Array.from(word).reverse().join("");
-  if (reverse !== word) return reverse;
+  if (reverse.toLowerCase().toUpperCase() !== word.toLowerCase().toUpperCase()) return reverse;
   // A palindrome or a single character still needs an observable change.
-  return word.replace(/./gu, (char) => (char === "x" ? "y" : "x"));
+  return word.replace(/./gu, (char) => (char.toLowerCase() === "x" ? "y" : "x"));
 }
 
 interface TextEdit {

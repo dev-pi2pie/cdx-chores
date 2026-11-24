@@ -1,5 +1,5 @@
 import { expect, spyOn, test } from "bun:test";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, unlink, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { join } from "node:path";
 import { actionMdToPdf } from "../../../../src/cli/actions/markdown/to-pdf";
@@ -92,6 +92,9 @@ test.each([true, false])(
 
 test.each([
   ["uppercase", "Report", "tropeR", ["REPORT"], ["TROPER"], true],
+  ["expanding uppercase", "Straße", "eßartS", ["STRASSE"], ["ESSARTS"], true],
+  ["single expanding letter", "ß", "x", ["SS"], ["X"], true],
+  ["unchanged uppercase lookalike", "Straße", "eßartS", ["STRASSE"], ["STRASSE"], false],
   [
     "wrapped words",
     "Weekly Report",
@@ -186,26 +189,43 @@ test.each([
   "clipped",
   "malformed proof",
   "unavailable canvas",
+  "logo disappears",
 ] as const)("publishes the selected HTML and final PDF with %s evidence", async (condition) => {
   await withTempFixtureDir("styled-auto-render", async (dir) => {
     const input = join(dir, "title.md"),
       css = join(dir, "author.css");
     const output = join(dir, "title.pdf"),
       htmlOutput = join(dir, "title.html");
-    await writeFile(input, "---\ntitle: Report\n---\n\n# Report {#report}\n");
+    const lostLogo = condition === "logo disappears";
+    const logo = join(dir, "logo.svg");
+    if (lostLogo)
+      await writeFile(
+        logo,
+        '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="12"><rect width="18" height="12" fill="#4080bf"/></svg>',
+      );
+    await writeFile(
+      input,
+      "---\ntitle: Report\n---\n\n# Report {#report}\n" + (lostLogo ? "\n![Logo](logo.svg)\n" : ""),
+    );
     await writeFile(css, "#report {letter-spacing: .25em}");
     const header = '<header class="document-title"><h1>Report</h1></header>';
     const body = '<h1 id="report">Report</h1>';
     const { runner } = createPdfRunner({
-      html: '<main class="document-body">' + header + body + "</main>",
+      html:
+        '<main class="document-body">' +
+        header +
+        body +
+        (lostLogo ? '<img src="logo.svg" alt="Logo">' : "") +
+        "</main>",
       pandocJson: pandocTitleJson("Report", "Report", "report"),
     });
     const { runtime } = createActionTestRuntime({ cwd: dir });
     const proofHtml: string[] = [];
-    const finalHtml: string[] = [];
-    const finalPdf = taggedTitlePdf(["Final"], "clear");
+    const baselineHtml: string[] = [];
+    const baselinePdf = taggedTitlePdf(["Final"], "clear", { logo: lostLogo });
     const originalPdf = taggedTitlePdf(["Report"], "clear");
     const proofOptions: string[][] = [];
+    const printOrder: string[] = [];
     let restoreBackend: (() => void) | undefined;
     let attemptedCanvas = false;
     try {
@@ -219,10 +239,23 @@ test.each([
             return runner(command, args, opts);
           const html = await readFile(args.at(-2)!, "utf8"),
             pdf = args.at(-1)!;
-          if (!args.includes("--pdf-tags")) {
-            finalHtml.push(html);
-            await writeFile(pdf, finalPdf);
-            return ok();
+          const tag = args.includes("--pdf-tags");
+          const hasLogo =
+            lostLogo &&
+            (await readFile(logo).then(
+              () => true,
+              () => false,
+            ));
+          printOrder.push(tag ? "proof" : "baseline");
+          if (lostLogo && printOrder.length === 1) await unlink(logo);
+          const warning =
+            lostLogo && !hasLogo
+              ? "ERROR: Failed to load image at 'logo.svg': FileNotFoundError"
+              : "";
+          if (!tag) {
+            baselineHtml.push(html);
+            await writeFile(pdf, taggedTitlePdf(["Final"], "clear", { logo: hasLogo }));
+            return ok("", warning);
           }
           proofHtml.push(html);
           proofOptions.push([...args]);
@@ -232,7 +265,9 @@ test.each([
             pdf,
             condition === "malformed proof"
               ? "invalid PDF"
-              : taggedTitlePdf([text], condition === "clipped" ? "clipped" : "clear"),
+              : taggedTitlePdf([text], condition === "clipped" ? "clipped" : "clear", {
+                  logo: hasLogo,
+                }),
           );
           // A new read of the author stylesheet would hide the previously visible heading.
           if (alternate && condition === "complete") await writeFile(css, "#report {display:none}");
@@ -244,7 +279,13 @@ test.each([
             });
             restoreBackend = () => unavailable.mockRestore();
           }
-          return ok();
+          // Tagging alone can report accessibility issues while all resources loaded.
+          return ok(
+            "",
+            condition === "complete"
+              ? 'ERROR: Image "logo.svg" has no required alt description'
+              : warning,
+          );
         },
       });
     } finally {
@@ -254,15 +295,18 @@ test.each([
     if (outlines && condition === "unavailable canvas") expect(attemptedCanvas).toBe(true);
     expect(proofHtml[0]).not.toContain(header);
     expect(proofOptions.every((args) => !args.includes("--pdf-variant"))).toBe(true);
-    if (outlines && condition !== "malformed proof") expect(proofHtml[1]).toContain(">tropeR</h1>");
+    if (outlines && condition !== "malformed proof" && !lostLogo)
+      expect(proofHtml[1]).toContain(">tropeR</h1>");
     if (condition === "malformed proof") expect(proofHtml).toHaveLength(1);
     const reused = condition === "complete" && outlines;
-    expect(finalHtml).toHaveLength(reused ? 0 : 1);
+    expect(printOrder[0]).toBe("baseline");
+    expect(baselineHtml).toHaveLength(1);
+    expect(baselineHtml[0]).toContain(header);
     if (reused) expect(await readFile(css, "utf8")).toBe("#report {display:none}");
-    const selected = reused ? proofHtml[0]! : finalHtml[0]!;
+    const selected = reused ? proofHtml[0]! : baselineHtml[0]!;
     expect(selected).toContain(body);
     expect(selected.includes(header)).toBe(!reused);
     expect(await readFile(htmlOutput, "utf8")).toBe(selected);
-    expect((await readFile(output)).equals(reused ? originalPdf : finalPdf)).toBe(true);
+    expect((await readFile(output)).equals(reused ? originalPdf : baselinePdf)).toBe(true);
   });
 });

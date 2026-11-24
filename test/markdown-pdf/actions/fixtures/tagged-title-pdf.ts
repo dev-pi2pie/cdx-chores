@@ -18,6 +18,7 @@ interface PageOptions {
   earlier?: "hidden" | "revealed";
   laterPage?: boolean;
   wrapped?: boolean;
+  logo?: boolean;
 }
 
 /** A tagged H1 with a named destination and independently positioned text runs. */
@@ -28,6 +29,7 @@ export function taggedTitlePdf(
 ) {
   const font = readFileSync(load.resolve("pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf"));
   const content = ["q"];
+  if (options.logo) content.push("q 0.25 0.5 0.75 rg 15 28 18 12 re f Q");
   if (options.earlier) {
     content.push(`/Span << /MCID ${runs.length} >> BDC`);
     if (options.earlier === "revealed")

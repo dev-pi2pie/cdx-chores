@@ -98,9 +98,9 @@ describe("Markdown PDF AST render execution", () => {
         runner,
       });
       expect(prints).toHaveLength(2);
-      expect(prints[0]).not.toContain(header);
-      expect(prints[1]).toContain(header);
-      expect(await readFile(htmlOutput, "utf8")).toBe(prints[1]!);
+      expect(prints[0]).toContain(header);
+      expect(prints[1]).not.toContain(header);
+      expect(await readFile(htmlOutput, "utf8")).toBe(prints[0]!);
     });
   });
 

@@ -144,16 +144,43 @@ async function markLineStarts(page: PDFPageProxy, runs: TextRun[]): Promise<void
   }
 }
 
-function matchesSource(runs: TextRun[], source: string): boolean {
-  const fold = (text: string) => text.toLowerCase().replace(/\s+/gu, " ");
-  const expected = fold(source).trim();
-  let actual = "";
-  for (const run of runs) {
-    if (run.startsLine && expected[actual.length] === " ") actual += " ";
-    const text = fold(run.text);
-    actual += !actual || actual.endsWith(" ") ? text.trimStart() : text;
+function caseKey(text: string): string {
+  return text.toLowerCase().toUpperCase();
+}
+
+function sourceRunEnds(runs: TextRun[], source: string): number[] | undefined {
+  // A printed SS can belong to one source ß. Compare run boundaries in source characters.
+  let expected = "";
+  const boundaries = new Map([[0, 0]]);
+  for (const [index, char] of Array.from(source.trim().replace(/\s+/gu, " ")).entries()) {
+    expected += caseKey(char);
+    boundaries.set(expected.length, index + 1);
   }
-  return actual.trimEnd() === expected;
+  const ends: number[] = [];
+  let actual = "";
+  for (const [index, run] of runs.entries()) {
+    if (run.startsLine && expected[actual.length] === " ") actual += " ";
+    const text = caseKey(run.text).replace(/\s+/gu, " ");
+    actual += !actual || actual.endsWith(" ") ? text.trimStart() : text;
+    const end = boundaries.get(index === runs.length - 1 ? actual.trimEnd().length : actual.length);
+    if (end === undefined) return;
+    ends.push(end);
+  }
+  if (actual.trimEnd() === expected) return ends;
+}
+
+function sourceMatch(original: HeadingProof, candidates: readonly SourceTitleProbe[]) {
+  for (const candidate of candidates) {
+    const dest = original.destinations.get(candidate.id);
+    if (
+      candidate.text === candidate.substitute ||
+      !Array.isArray(dest) ||
+      !isDeepStrictEqual(dest[0], original.page.ref)
+    )
+      continue;
+    const ends = sourceRunEnds(original.runs, candidate.text);
+    if (ends) return { candidate, ends };
+  }
 }
 
 async function firstHeadingPage(document: PDFDocumentProxy) {
@@ -270,6 +297,7 @@ function comparableArgs(code: number, args: unknown, ops: Operators): unknown {
 function isolatedChange(
   original: HeadingProof,
   marked: HeadingProof,
+  originalEnds: number[],
   substitute: string,
   ops: Operators,
 ): boolean {
@@ -277,7 +305,7 @@ function isolatedChange(
     original.pages !== marked.pages ||
     original.page.pageNumber !== marked.page.pageNumber ||
     original.runs.length !== marked.runs.length ||
-    !matchesSource(marked.runs, substitute) ||
+    !isDeepStrictEqual(sourceRunEnds(marked.runs, substitute), originalEnds) ||
     !isDeepStrictEqual(original.tree, marked.tree) ||
     !isDeepStrictEqual(original.destinations, marked.destinations) ||
     !isDeepStrictEqual(original.operators.fnArray, marked.operators.fnArray)
@@ -287,13 +315,8 @@ function isolatedChange(
   const changed = new Set<number>();
   for (const [index, before] of original.runs.entries()) {
     const after = marked.runs[index]!;
-    if (
-      before.index !== after.index ||
-      before.mcid !== after.mcid ||
-      before.text.length !== after.text.length
-    )
-      return false;
-    if (before.text === after.text) {
+    if (before.index !== after.index || before.mcid !== after.mcid) return false;
+    if (caseKey(before.text) === caseKey(after.text)) {
       if (before.text.trim()) return false;
     } else {
       changed.add(before.index);
@@ -330,16 +353,9 @@ export async function inspectPrintedTitle(
     if (!path) return {};
     const pdf = await import("pdfjs-dist/legacy/build/pdf.mjs");
     return await inspectPdf(pdf, path, async (original) => {
-      const candidate = candidates.find((candidate) => {
-        const dest = original.destinations.get(candidate.id);
-        return (
-          matchesSource(original.runs, candidate.text) &&
-          candidate.text !== candidate.substitute &&
-          Array.isArray(dest) &&
-          isDeepStrictEqual(dest[0], original.page.ref)
-        );
-      });
-      if (!candidate || !admitsEarlierHeadings(original, candidate, pdf.OPS)) return {};
+      const match = sourceMatch(original, candidates);
+      if (!match || !admitsEarlierHeadings(original, match.candidate, pdf.OPS)) return {};
+      const { candidate, ends } = match;
       const destination = original.destinations.get(candidate.id);
       if (
         candidates.some(
@@ -352,7 +368,7 @@ export async function inspectPrintedTitle(
       const markedPath = await render("title-substitution", candidate.html);
       if (!markedPath) return {};
       return inspectPdf(pdf, markedPath, async (marked) => {
-        if (!isolatedChange(original, marked, candidate.substitute, pdf.OPS)) return {};
+        if (!isolatedChange(original, marked, ends, candidate.substitute, pdf.OPS)) return {};
         const identity = { sourceId: candidate.id };
         try {
           const { hasVisibleGlyphs } = await import("./visible-glyphs");
