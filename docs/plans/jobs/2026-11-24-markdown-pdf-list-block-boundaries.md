@@ -2,11 +2,11 @@
 title: "Markdown PDF list block boundaries implementation record"
 created-date: 2026-11-24
 modified-date: 2026-11-24
-status: in-progress
+status: completed
 agent: codex
 ---
 
-The [implementation plan](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md) defines the five original checkpoints and the subsequent title follow-up. Implementation started from `60df6caf`.
+The [implementation plan](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md) defines the five original checkpoints and the subsequent title follow-up. Implementation started from `60df6caf`. The [closing record](#follow-up-closure) gives the reviewed range and final compatibility results.
 
 ## Phase 1 — Establish the compatibility fixtures
 
@@ -242,7 +242,7 @@ To reproduce the lower-half overlay, give `#report` relative positioning and set
 
 On the two reported fixtures, the existing tagged-PDF check took 213–223 ms and the two-print prototype took 277–300 ms. Each range spans four medians, one per reader and fixture, with three timed runs after warm-up. Timings cover the proof and its inspection on these single-page inputs. The prototype also rasterized and compared the CLI control.
 
-**Decision.** Reject this omission test. Source identity, the full emitted string, and some visible ink in each glyph box still allow a partially covered title to pass. The implementation and guide await a decision on how to establish complete visibility. [Research decision](../../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#why-a-pixel-change-in-every-letter-is-insufficient)
+**Decision.** Reject this omission test. Source identity, the full emitted string, and some visible ink in each glyph box still allow a partially covered title to pass. At that checkpoint, implementation and guide changes awaited a decision on how to establish complete visibility. [Research decision](../../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#why-a-pixel-change-in-every-letter-is-insufficient)
 
 Independent review of `9d578d9d...35a1ab3c` found no new actionable issues. On Pandoc 3.9 and WeasyPrint 70.0, the reviewer reproduced both cut-off titles. Every glyph box changed in the paired prints, although each title retained less than half the changed pixels of its unobscured control. All 2,730 unit tests passed in review. This cleared the experiment checkpoint. The two production findings and final canary clearance were still open at that point.
 
@@ -265,7 +265,7 @@ For the overlay pair, `#report` had relative positioning and `letter-spacing: .2
 
 All 22 candidate PDFs matched only the expected explicit control from their own reader. MuPDF and Poppler independently compared the full rasterized pages. The selected HTML agreed on header presence in every case. The four paired cases each needed one WeasyPrint proof, the same count as the current check. Positive decisions additionally rasterized the original proof and two in-memory PDF variants. Across the eight reader/fixture combinations, median proof time was 211–216 ms for the current check and 265–289 ms for the prototype, including proof inspection and excluding the final print. Each median used three timed runs after warm-up.
 
-**Decision after the experiment.** Accepted the visibility rule for `auto` on the strength of the two-reader experiment recorded at `98276ddf`. Keep the metadata block whenever source identity or complete visibility is uncertain. The positive evidence covers a single opaque text run on white. The built Node.js CLI still needs verification on Pandoc 2.0 and 3.9 when source identity is missing and when identity is known but complete visibility is uncertain. [Accepted direction](../../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#accepted-direction-for-automatic-title-selection) · [Follow-Up checklist](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
+**Decision after the experiment.** Accepted the visibility rule for `auto` on the strength of the two-reader experiment recorded at `98276ddf`. Keep the metadata block whenever source identity or complete visibility is uncertain. The positive evidence covers a single opaque text run on white. Later verification tested the built Node.js CLI on Pandoc 2.0 and 3.9 with source identity missing and with identity known but complete visibility uncertain. [Accepted direction](../../researches/research-2026-11-23-markdown-pdf-list-block-boundaries.md#accepted-direction-for-automatic-title-selection) · [Follow-Up checklist](../plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
 
 ## Node.js title visibility experiment
 
@@ -381,3 +381,11 @@ At `e70be8a1`, each proof compared failed font sources with the ordinary render.
 | Regular face disappears as the light face becomes available | Despite one identical family warning per print, the published bytes matched the saved ordinary PDF. Its page-two raster and embedded font matched the regular-face control. |
 
 Each case emitted one font warning from the selected render. Application tests also covered a swap in the second proof, a missing source identity, and colored and plain warning output. [Title proof tests](../../../test/markdown-pdf/actions/rendering/printed-title.app.test.ts)
+
+### Follow-Up closure
+
+Independent code review cleared the full canary comparison `9d578d9d...61a001a1` with no actionable findings. The reviewer confirmed the stable, newly missing and swapped font cases on Pandoc 3.9 with WeasyPrint 69.0 and 70.0. It also checked 54 authoring fixtures with Pandoc present and absent.
+
+On the reviewed branch, all 46 earlier PDF comparisons per reader passed again on Pandoc 2.0 and 3.9, along with the missing-identity, missing-visibility and unavailable-inspection controls. The three additional [font-source cases](#font-source-verification) passed on both readers and both renderer versions.
+
+All 2,732 unit, 2,800 application and 110 Pandoc integration tests passed on the reviewed implementation. The complete application suite passed in isolation after an earlier run reached four benchmark timeouts and spanned the final renderer-error test change. The build, tracked TypeScript, lint and formatting checks passed. All relative links in the guide, research, plan and job record resolved.

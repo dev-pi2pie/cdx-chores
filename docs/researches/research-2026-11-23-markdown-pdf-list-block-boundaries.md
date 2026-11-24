@@ -2,7 +2,7 @@
 title: "Markdown PDF list block boundaries"
 created-date: 2026-11-23
 modified-date: 2026-11-24
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -26,9 +26,9 @@ The installed Pandoc determines how the PDF renders. The authoring helpers also 
 
 The scanner now determines which list item, quote, or document block owns a fence before matching its closer. HTML recovery consults the same span, and the helpers measure visible rows from the original source. For the numbered example above, all three helpers report `python` and exclude the pipe row with Pandoc absent. Rendering preserves each reader’s interpretation. The comparisons below retain the canary and prototype observations that motivated the change. [Implementation plan](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md) · [Verification and review results](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#phase-5--validate-documentation-and-close-the-record)
 
-The fence investigation is complete. Comparing the branch with the previous canary also exposed two regressions in the PDF renderer’s automatic title selection. Those findings reopened this research for a separate question. [When can a styled body heading stand in for the metadata title?](#when-can-a-styled-body-heading-stand-in-for-the-metadata-title)
+Canary comparison also exposed two regressions in automatic title selection with author CSS. A matching first eligible H1 supplies the printed title when the renderer can verify its source and complete visibility. Uncertain evidence retains the metadata block. [Styled heading decision](#when-can-a-styled-body-heading-stand-in-for-the-metadata-title)
 
-The styled-title check preserved one heading when the same font source remained unavailable. When two faces in one family exchanged availability, the family warning stayed the same. Comparing the failed sources let the CLI keep the earlier PDF with the regular face embedded. [Two-reader verification](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#font-source-verification)
+A stable font-loading warning still allowed one matching heading to supply the title. When two faces in one family exchanged availability, the family warning stayed the same. Comparing the failed sources let the CLI keep the earlier PDF with the regular face embedded. [Final verification and review](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up-closure)
 
 ## What successive reviews found
 
@@ -134,7 +134,7 @@ Both examples use the metadata title `Report` and the Markdown heading `# Report
 
 ### Accepted direction for automatic title selection
 
-The visibility check belongs to the existing `titleBlock.metadataTitle: auto` mode when an author stylesheet applies. Explicit `show` and `hide` honor the author’s choice directly. For `auto`, the implementation target is to omit the metadata block only when the renderer identifies the first visible eligible body H1, its source title and required links match, and its complete text is visible in the layout with the metadata block omitted. If identity or complete visibility is uncertain, keep the block, even if that prints a duplicate. The diagram follows eligible Markdown H1s in source order.
+The visibility check belongs to the existing `titleBlock.metadataTitle: auto` mode when an author stylesheet applies. Explicit `show` and `hide` honor the author’s choice directly. In `auto`, the renderer omits the metadata block only when the renderer identifies the first visible eligible body H1, its source title and required links match, and its complete text is visible in the layout with the metadata block omitted. If identity or complete visibility is uncertain, keep the block, even if that prints a duplicate. The diagram follows eligible Markdown H1s in source order.
 
 ```mermaid
 flowchart TD

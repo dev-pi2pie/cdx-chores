@@ -2,7 +2,7 @@
 title: "Markdown PDF list block boundaries implementation"
 created-date: 2026-11-24
 modified-date: 2026-11-24
-status: active
+status: completed
 agent: codex
 ---
 
@@ -12,7 +12,7 @@ A four-space-indented Python fence under `1. Item` can lose its language hint an
 
 Change the shared offline source scanner. For the list cases where Pandoc 2.0 and 3.9 disagree, use the 3.9 fence interpretation for authoring hints. Preserve the helpers’ existing HTML recovery behavior and source-based metrics. Rendering continues to follow the installed Pandoc reader. A successful run can therefore report a Python authoring hint even when Pandoc 2.0 renders the example without a code block.
 
-The five original phases verified that scanner and render behavior. A later canary comparison found two regressions in automatic title selection with author CSS. The [follow-up phase](#follow-up--automatic-metadata-titles-under-author-css) owns the remaining work.
+The five original phases verified that scanner and render behavior. A later canary comparison exposed two regressions in automatic title selection with author CSS. The [follow-up phase](#follow-up--automatic-metadata-titles-under-author-css) records their correction and verification.
 
 ## Related Research
 
@@ -132,6 +132,4 @@ With the built-in template, the cover off, and an eligible frontmatter title, th
 - [x] **Correct the second canary review findings.** Preserve an asset that disappears during inspection and recognize Unicode case expansions in the identified H1. Six additional page comparisons per reader passed at `2a58ed11`. [Review record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#canary-review-of-the-production-title-check)
 - [x] **Correct repeated font warnings.** At `23baabf9`, a stable warning kept one title. An extra occurrence in either proof selected the saved PDF with the regular font. [Two-reader verification](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#font-loading-in-the-third-title-review)
 - [x] **Distinguish failed font sources.** At `e70be8a1`, switching the failed face within a family selected the PDF with the original regular font. A stable failure preserved one title. [Source and output checks](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#font-source-verification)
-- [ ] **Review and close.** Record the corrective short SHAs and the exact full branch comparison against the canary. Address actionable findings and recheck the revised range. If findings persist through three code reviews, revisit the design before a fourth. Mark the research, plan, and unified record complete once the decision, output, guide, and independent review agree.
-
-The font-source correction passed on Pandoc 2.0 and 3.9. Full canary re-review is pending.
+- [x] **Review and close.** Independent code review cleared the full canary comparison `9d578d9d...61a001a1` with no actionable findings. The guide, research and unified record agree with the verified output. [Closing verification](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up-closure)
