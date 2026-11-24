@@ -96,7 +96,7 @@ export class Container {
     lastBlank: number,
   ) {
     const body = [first];
-    let unchangedTail = !this.parent;
+
     const project = !this.parent
       ? undefined
       : this.kind === "definition"
@@ -110,7 +110,6 @@ export class Container {
       if (relative === undefined) break;
       const mark = /^ {0,3}>[ \t]?/.exec(relative);
       if (mark) {
-        unchangedTail = false;
         body.push(relative.slice(mark[0].length));
         continue;
       }
@@ -124,13 +123,8 @@ export class Container {
         const enclosing = this.parent ? this.continuationRange(lines, i) : document;
         if (enclosing.opens(i)) break;
       }
-      const lazy = relative.trimStart();
-      unchangedTail &&= lazy === line;
-      body.push(lazy);
+      body.push(relative.trimStart());
     }
-    // With only unchanged lazy lines after the opener, every additional
-    // quote prefix on that opener encloses exactly the same suffix.
-    if (unchangedTail) body[0] = first.replace(/^(?: {0,3}>[ \t]?)+/, "");
     return body;
   }
 

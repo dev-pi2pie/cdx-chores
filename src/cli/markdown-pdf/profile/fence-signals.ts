@@ -214,14 +214,16 @@ class BoundaryScanner {
     start: number,
     blockAligned: boolean,
     codeLimit: number,
+    projectedIndent: string,
   ) {
     const previous = owner.block;
     const { end } = line;
     let offset = Math.max(start, this.offset);
-    let visible = " ".repeat(Math.min(offset, end) - start);
+    let visible = projectedIndent + " ".repeat(Math.min(offset, end) - start);
     let lineEnd = this.coversStart(line) ? this.lineEnd : undefined;
     let hasText = false;
-    const headingLine = blockAligned && ATX_HEADING.test(this.content.slice(start, end));
+    const headingLine =
+      blockAligned && ATX_HEADING.test(projectedIndent + this.content.slice(start, end));
 
     while (offset < end) {
       const token = this.cursor.read(offset, line, codeLimit, this.recovery);
@@ -374,19 +376,30 @@ function* walkSource(
 
     // HTML token offsets and row widths use the original source offsets.
     const inItem = !!owner.parent && !covered && !lazy;
-    const start =
-      marker || quoted
-        ? position.end - relative.length
-        : inItem
-          ? position.start + /^[ \t]*/.exec(line)![0].length
-          : position.start;
+    // The non-indented suffix still has its original length. Its expanded
+    // indentation is only for block classification and can exceed the source width.
+    const projected = (marker || quoted) && !covered;
+    const projectedIndent = projected ? /^[ \t]*/.exec(relative)![0] : "";
+    const start = projected
+      ? position.end - (relative.length - projectedIndent.length)
+      : inItem
+        ? position.start + /^[ \t]*/.exec(line)![0].length
+        : position.start;
     const aligned = !inItem || (!/^[ \t]/.test(relative) && !isParagraph(previous));
     if (owner.parent && line.includes("`")) {
       const next = positions[frame.start + owner.inlineCodeEnd(columns, local)];
       if (next) codeLimit = Math.min(codeLimit, next.start);
     }
-    const { visible, context } = scanner.scan(position, owner, start, aligned, codeLimit);
-    const visibleLine = line.slice(0, start - position.start) + visible;
+    const { visible, context } = scanner.scan(
+      position,
+      owner,
+      start,
+      aligned,
+      codeLimit,
+      projectedIndent,
+    );
+    const visibleLine =
+      line.slice(0, start - position.start) + visible.slice(projectedIndent.length);
     yield { line: visibleLine, index };
     const blockLine =
       marker || quoted || placement.continued

@@ -19,6 +19,32 @@ function scope(columns: string[], start: number) {
   };
 }
 
+function quotePrefix(line: string, limit: number) {
+  const mark = / {0,3}>[ \t]?/gy;
+  let depth = 0;
+  let end = 0;
+  while (depth < limit && mark.test(line)) {
+    depth++;
+    end = mark.lastIndex;
+  }
+  return { depth, end };
+}
+
+// Nested prefixes on the first line share a scope while every later line
+// carries those prefixes or passes through all layers as unchanged lazy text.
+function stripSharedQuotePrefixes(body: string[]) {
+  let { depth } = quotePrefix(body[0]!, Infinity);
+  for (let i = 1; depth && i < body.length; i++) {
+    const line = body[i]!;
+    if (!line || /^[\s>`]/.test(line)) depth = quotePrefix(line, depth).depth;
+  }
+  if (!depth) return;
+  for (let i = 0; i < body.length; i++) {
+    const line = body[i]!;
+    body[i] = line.slice(quotePrefix(line, depth).end);
+  }
+}
+
 export class ContainerScopes {
   private constructor(private readonly stack: ReturnType<typeof scope>[]) {}
 
@@ -66,6 +92,9 @@ export class ContainerScopes {
         blank,
       );
       frame.owner.block = "boundary";
+      stripSharedQuotePrefixes(body);
+      // A quoted parent ending on the same line cannot resume.
+      if (this.stack.length > 1 && local + body.length === frame.columns.length) this.stack.pop();
       frame = scope(body.map(expandIndent), index);
       this.stack.push(frame);
     }

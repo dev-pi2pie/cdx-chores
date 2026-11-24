@@ -119,7 +119,15 @@ assert.deepEqual(signals.title, {
 assert.equal(signals.scripts.scannedChars, 20_000);
 assert.equal(signals.scripts.truncated, true);
 assert(!JSON.stringify(signals).includes("Original source width"));
-const results = [signals];
+const quotedRow = "> \t| Left | Right |";
+const quoted = await authoringSignals("quoted tab", "> Prose.\n" + quotedRow + "\n");
+assert.deepEqual(quoted.tables, {
+  scannedRows: 1,
+  maxColumns: 3,
+  maxLineWidth: quotedRow.length,
+  overflowRows: 0,
+});
+const results = [signals, quoted];
 for (const fixture of offlineBoundaryCases) {
   const actual = await authoringSignals(fixture.name, fixture.markdown);
   const total = fixture.headings.length;

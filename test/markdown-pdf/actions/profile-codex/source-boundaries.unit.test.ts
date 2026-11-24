@@ -1,4 +1,5 @@
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
+import { Container } from "../../../../src/cli/markdown-pdf/profile/list-containers";
 
 import { scanMarkdownPdfFences } from "../../../../src/cli/markdown-pdf/profile/fence-signals";
 import { collectMarkdownPdfDocumentSignals } from "../../../../src/cli/markdown-pdf/profile/signals";
@@ -123,6 +124,42 @@ test("an item projects adjacent quote markers before matching the following fenc
   expect(signals.codeFences.languages).toEqual(["python", "sh"]);
   expect(signals.codeFences.unlabeledCount).toBe(1);
   expect(signals.tables.scannedRows).toBe(0);
+});
+
+test.each(["\n", "\r\n"])(
+  "tabs in quote indentation preserve the source row with %j",
+  (newline) => {
+    const row = "> \t| Left | Right |";
+    const markdown = ["> Prose.", row, ""].join(newline);
+    expect(scanMarkdownPdfFences(markdown).ordinaryLines).toContain(row);
+    expect(collectMarkdownPdfDocumentSignals(markdown).tables).toEqual({
+      scannedRows: 1,
+      maxColumns: 3,
+      maxLineWidth: row.length,
+      overflowRows: 0,
+    });
+  },
+);
+
+test("deep quote markers on both ends preserve the lazy text and the trailing heading", () => {
+  const marks = ">".repeat(2048);
+  const markdown = [
+    marks + " First",
+    ...Array(2048).fill("plain text"),
+    marks + " Last",
+    "",
+    "# Visible",
+  ].join("\n");
+  const scopes = spyOn(Container.prototype, "quoteBody");
+  try {
+    const lines = scanMarkdownPdfFences(markdown).ordinaryLines;
+    expect(lines).toHaveLength(2052);
+    expect(lines.at(-3)).toBe(marks + " Last");
+    expect(lines.at(-1)).toBe("# Visible");
+    expect(scopes).toHaveBeenCalledTimes(1);
+  } finally {
+    scopes.mockRestore();
+  }
 });
 
 test("nested quote prefixes share a long lazy list continuation", () => {
