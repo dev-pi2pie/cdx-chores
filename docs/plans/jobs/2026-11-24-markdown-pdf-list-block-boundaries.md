@@ -361,3 +361,11 @@ At `23baabf9` each proof compares the number of occurrences of each resource war
 | Regular face disappears after the ordinary render | 1, 2 | Matches `show`. The saved ordinary PDF retains the regular font. |
 
 Application tests also introduced the extra warning only in the second proof. Either proof could select the fallback. In all three cases stderr reported the one font warning from the published render. [Regression tests](../../../test/markdown-pdf/actions/rendering/printed-title.app.test.ts)
+
+### Canary re-review of the font warning correction
+
+Independent review of `9d578d9d...79d7f3fb` cleared `23baabf9` and found one remaining P3. With two font faces in one family, make the missing light face available at the same time the regular face disappears. The ordinary render and both proofs each report the same family-level warning once.
+
+On Pandoc 2.0 and 3.9 with WeasyPrint 70.0, the ordinary PDF embedded the regular face on page two. The published PDF embedded the replacement face. Its rasterized pages and embedded font matched an explicit `hide` render with the replacement available. The matching first H1 still printed once. Full canary clearance and the final Follow-Up checklist item remain open.
+
+At the reviewed tip, 2,732 unit tests, 2,795 application tests and 110 Pandoc integration tests passed. The focused warning tests covered colored and plain stderr. The build, tracked TypeScript, lint, formatting and whitespace checks passed.

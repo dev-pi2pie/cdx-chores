@@ -28,6 +28,8 @@ The scanner now determines which list item, quote, or document block owns a fenc
 
 The fence investigation is complete. Comparing the branch with the previous canary also exposed two regressions in the PDF renderer’s automatic title selection. Those findings reopened this research for a separate question. [When can a styled body heading stand in for the metadata title?](#when-can-a-styled-body-heading-stand-in-for-the-metadata-title)
 
+The styled-title check passed the matching-heading and repeated-warning cases on both Pandoc readers. One font-loading question remains open. Two faces in the same family can exchange availability while WeasyPrint reports the same warning once in every render. [Reproduction and review status](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#canary-re-review-of-the-font-warning-correction)
+
 ## What successive reviews found
 
 An unpublished prototype measured fence indentation from the start of the list item’s content. That restored the hint in the numbered example. Its first focused review added coverage for paragraph continuations and tab-indented fences and literal code. Subsequent reviews examined the revised scanner, each time varying the marker, the preceding block, or the list level. Reviews 1–8 below describe cases corrected in the prototype. Review 9 found that the prototype still missed a fence after nested verse and reported a false hint under an empty list marker.
