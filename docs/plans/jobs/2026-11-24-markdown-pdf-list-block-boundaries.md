@@ -117,6 +117,41 @@ Review led to `a8ecd37b`, which added the ambiguous textarea case and compared e
 
 Independent code and test reviewers cleared the full revised range `e9b5e7f9..a8ecd37b`. All three Phase 4 checklist items are complete.
 
+## Phase 2 follow-up and separate title correction
+
+Branch review reopened Phase 2 at `f9f80fdd`. Profile, Template, and Project missed the Python hint in all three original examples. The definition and compact-list examples also counted a fenced pipe line as a table row. At `a39cd9e7`, each example exposes one trailing H1, the Python hint, and three source rows, all outside the fence. Commit `c2f11532` adds the outdented definition closer and its blank-line control. The authoring helpers agree with Pandoc absent and with a detectable stub that recorded zero calls. [Offline fixtures](../../../test/markdown-pdf/actions/fixtures/list-block-boundaries.ts)
+
+| Fence placement | Pandoc 2.0 | Pandoc 3.9 |
+| --- | --- | --- |
+| Four-space fence after a blank in a definition | Python in the definition | Python in the definition |
+| Two-space fence immediately after `1. - Item` | No code block | Document-level Python block |
+| Three-space fence after a quote in a loose bullet item | Python inside the quoted list item | Python inside the quoted list item |
+| Two-space definition opener with an adjacent outdented closer | No code block | Python in the definition |
+| Same closer moved past a blank line | No code block | No code block |
+
+Both application render routes preserve the installed reader’s interpretation of each body. The checks compare code text and ancestry with an independent Pandoc conversion. [Reader fixtures](../../../test/markdown-pdf/actions/rendering/list-block-boundaries.pandoc.test.ts) · [Render fixtures](../../../test/markdown-pdf/actions/rendering/ast-render-fixtures.ts)
+
+The separate title correction came from a matching Setext H1 inside a hidden Div. Both readers preserve the H1 in the AST. Using it as a visible duplicate removed the only visible title.
+
+| Commit | Verified title decision |
+| --- | --- |
+| `7de799cf` | Keep the metadata title for a hidden match. Suppress it when a later visible H1 matches. |
+| `cdb0f4d9` | Honor inherited `visibility:hidden`, a child restoring visibility, and inline `display:block` overriding the HTML `hidden` attribute. |
+| `4b7244cf` | Accept reordered display keywords. Ignore the unsupported `revert-layer` override after `display:none`. |
+| `89eebc89` | Resolve inline variables and preserve the case of display keywords. A variable-hidden match retains the title. Uppercase `NONE` leaves the matching H1 visible in WeasyPrint 70. |
+| `cda63100` | Use a defined inline variable before its nested fallback. Hidden and visible controls both failed before the fix and passed on both readers afterward. Keep the metadata title when inline visibility remains uncertain. |
+| `c61355cf` | Preserve the empty substitution in `display:var(--missing,) none`. A variable with an empty computed value uses its supplied fallback. |
+| `6a1d2d0c` | Keep the metadata title when the matching H1 belongs to a table column or column group. Both discard their heading content. |
+| `4ffacebe` | Suppress the duplicate when floating or absolute positioning turns the column into a visible block. Plain columns still retain the metadata title. |
+| `9a87c949` | Keep the metadata title when the matching heading becomes running page material. A floated column can no longer remove the only body title. |
+| `eb360181` | Validate the destination property after variable substitution. Both column types keep the metadata title when a variable supplies the running position directly or through a fallback. |
+
+WeasyPrint 70 printed exactly one `Report` H1 in each of 54 application PDFs at `eb360181`, covering 27 title controls from each Pandoc version. The 330 inline variable and fallback cases preserved the metadata title whenever the matching H1 was hidden. The classifier also agreed with printed text in all 600 display cases and all 1,146 position and float cases that produced a PDF. WeasyPrint raised a layout error in six exploratory cases involving an un-floated running table column. [Title controls](../../../test/markdown-pdf/actions/rendering/ast-render-fixtures.ts) · [WeasyPrint display computation](https://github.com/Kozea/WeasyPrint/blob/v70.0/weasyprint/css/computed_values.py#L495-L510)
+
+At `eb360181`, each reader passed all 34 reader fixtures and all 50 application render fixtures, including direct Markdown → HTML and titled Markdown → JSON → HTML conversions. The full suites passed 2,622 unit tests, 2,768 application tests, and 72 Pandoc integration tests on 3.9. An earlier Project dry-run check passed both in isolation and in the final application run. TypeScript, lint, formatting, and whitespace checks passed.
+
+Independent re-review cleared the three original ownership findings, the hidden-title finding, and every reported follow-up over `f9f80fdd..eb360181`. The reviewer independently ran 404 focused unit tests, 50 application render fixtures on Pandoc 3.9, and 27 title PDF checks on WeasyPrint 70. The branch verification supplied the Pandoc 2.0 results.
+
 ## Phase 5 — Validate documentation and close the record
 
 Pending.

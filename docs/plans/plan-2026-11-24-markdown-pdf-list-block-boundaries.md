@@ -42,6 +42,13 @@ Independent code review cleared `60df6caf..4a4c0627`. The [Phase 1 job record](j
 
 Independent implementation and test reviews cleared `b66bc6df..2bb809a6`. The [Phase 2 job record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#phase-2--resolve-list-ownership-and-match-fences) records both reader results, regression checks and review corrections.
 
+### Reopened after branch review
+
+The [follow-up record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#phase-2-follow-up-and-separate-title-correction) tracks the baseline at `f9f80fdd`, the reader differences, and the review corrections.
+
+- [x] Correct ownership for a definition continuation, a partially outdented fence after compact markers, and a quote inside a list item. Verified shared offline signals and both application render routes against Pandoc 2.0 and 3.9 at `a39cd9e7`.
+- [x] Verify that a definition can own an outdented closer until a blank line ends its continuation. Both reader and render controls passed at `c2f11532`.
+
 ## Phase 3 — Use the same fence spans during HTML recovery
 
 - [x] Supply the container-relative candidate spans to HTML delimiter recovery and ordinary fence recognition. Decide which matched fences are visible after resolving the HTML region. Preserve original source offsets across tabs and line endings so a recovered suffix resumes at the correct character. [Source cursor](../../src/cli/markdown-pdf/profile/source-cursor.ts)
@@ -62,6 +69,14 @@ Independent implementation and test reviews cleared `f786aff5..e10250e0`. The [P
 **Checkpoint** — All three helpers agree offline. Both render routes preserve each real reader’s interpretation, including the known 2.0 and 3.9 difference for the same list fence.
 
 Independent code and test reviews cleared `e9b5e7f9..a8ecd37b`. The [Phase 4 job record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#phase-4--verify-authoring-and-rendering-through-the-application) records offline agreement, both render routes on each reader, and the full suite results.
+
+## Separate render correction before Phase 5
+
+- [x] Preserve the metadata title for a hidden matching H1, and suppress it for a later visible match. Verify inline visibility inheritance and display overrides on both readers. `7de799cf`, `cdb0f4d9`, `4b7244cf`.
+- [x] Cover visible and hidden variable values, nested fallbacks, and empty substitutions on both readers. `89eebc89`, `cda63100`, `c61355cf`.
+- [x] Verify plain, positioned, and floated table columns. Compare title eligibility with printed text in 600 display cases, 320 position and float cases, and 42 application PDFs. `6a1d2d0c`, `4ffacebe`.
+- [x] Keep running elements out of body-title matching, including floated columns and column groups. Verify literal positions and positions supplied by variables or fallbacks. All 54 final title PDFs printed one H1. `9a87c949`, `eb360181`.
+- [x] Record the regression suite results and independent clearance of `f9f80fdd..eb360181`. [Unified job record](jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#phase-2-follow-up-and-separate-title-correction)
 
 ## Phase 5 — Validate documentation and close the record
 
