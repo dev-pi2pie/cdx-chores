@@ -158,7 +158,7 @@ A heading styled with `#report { overflow: hidden; height: .65em }` exposed a li
 
 ### Experiment on unobscured title text
 
-Can the renderer recognize an ordinary styled title in full and keep the metadata block when the same title is partly obscured? The prototype traced an eligible source H1 to its text draw, replayed the embedded glyphs in isolation, and checked their bounds against the page, the active clip, and later paint. It also compared the complete isolated letter shapes with the printed page on a plain white background. The background and CSS declarations below are fixture choices.
+Can the renderer recognize an ordinary styled title in full and keep the metadata block when that same title is partly obscured? The experiment compared complete letter shapes with the printed page, accounting for clipping and later paint. It used a plain white background.
 
 Use the same metadata title `Report`, first body H1 `# Report {#report}`, and `letter-spacing: .25em` in all four variants. Each expected page comes from rendering that variant with the specified explicit mode.
 
@@ -173,7 +173,11 @@ On both readers the original transparent-heading case must match `show`, as must
 
 All four variants matched their expected pages on Pandoc 2.0 and 3.9. A second clipping control left enough room for the complete title and matched `hide` on both. The prototype also retained the block when identity or visibility evidence was withheld. The explicit controls were distinguishable in every case and served only to check the decision. [Results and proof cost](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#unobscured-title-experiment)
 
-The positive evidence covers a single opaque text run on white. The prototype observed the source H1 inside WeasyPrint as it was drawn. The open engineering question is how the production CLI can connect an eligible source heading to its visible glyphs at an acceptable render cost. Where the available evidence cannot establish that connection and complete visibility, the accepted fallback is to keep the metadata block. [Follow-up phase](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
+### Identifying a plain-text H1 in Node.js
+
+Two headings with the same text can share a PDF destination position. For a single plain-text H1, the Node.js prototype printed the page with the metadata block omitted, then reversed only that heading’s text and printed it again. The same tagged run had to change from “Report” to “tropeR” while the surrounding drawing instructions and destinations stayed stable. CSS-generated “Report” therefore kept the block. A reversal that leaves the text unchanged, as with “LEVEL”, cannot establish identity either.
+
+Use the original proof to judge visibility. For the letter-spaced “Report”, all six opaque glyph outlines fit inside the page and its active clips on a white background. A clip through the letters or later paint covering them kept the metadata block. On Pandoc 2.0 and 3.9 with WeasyPrint 69.0, the second proof and inspection added about 0.26–0.27 seconds on this one-page example. This supports implementing the single-run case. Preserving title selection when an earlier H1 is hidden and a later one matches remains a compatibility check. [Node.js results](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#nodejs-title-visibility-experiment) · [Follow-up phase](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
 
 ## Related Plans
 
