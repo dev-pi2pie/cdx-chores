@@ -132,7 +132,7 @@ Both examples use the metadata title `Report` and the Markdown heading `# Report
 
 ### Proposed rule for author stylesheets
 
-Use the source heading to compare the title text and link destinations. Inspect the layout that would print with the metadata block omitted and the author stylesheet applied. Omission requires evidence that the same heading shows the complete matching title in the document body. The diagram starts with the eligible Markdown H1s in source order.
+The proposed behavior is to print the title once when the first visible eligible body H1 supplies the complete matching title. If its identity or visibility is uncertain, keep the metadata block, even if that prints a duplicate. Compare the title text and required links at the source, and judge visibility in the layout that would print with the metadata block omitted. The diagram follows eligible Markdown H1s in source order.
 
 ```mermaid
 flowchart TD
@@ -146,7 +146,7 @@ flowchart TD
     C -->|"No or unsupported"| K
 ```
 
-Only a confirmed wholly invisible heading allows the comparison to advance. An earlier visible heading with a different title ends the comparison, even when a later heading matches. Keeping the metadata block when evidence is inconclusive can print a duplicate.
+Only a confirmed wholly invisible heading allows the comparison to advance. An earlier visible heading with a different title ends the comparison, even when a later heading matches.
 
 Two controls distinguish these decisions. With `# Re*port* {#report}` and `#report em { visibility: hidden }`, only “Re” is visible, so `auto` should keep the complete metadata title. With `# Report` as the first body heading and `.document-body > h1:first-child { display: none }`, omitting the preceding metadata block hides the H1. Here too, `auto` should keep the block.
 
@@ -156,7 +156,22 @@ The experiment printed the same page twice, suppressing only the selected headin
 
 A heading styled with `#report { overflow: hidden; height: .65em }` exposed a limit. The PDF contained all six characters in “Report”, and every glyph’s bounding box contained changed pixels. The page showed only the tops of the letters. An opaque overlay across the lower half of the heading produced the same false result on both readers. This rules out using a pixel change per glyph as the test for complete visibility. [Experiment and timings](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up-experiment-on-complete-title-visibility)
 
-The open decision is how much author CSS automatic deduplication should support. A narrower rule could retain the metadata block whenever clipping or overlapping paint cannot be ruled out. A broader rule would need an independent reference for the complete, unobscured letter shapes. Neither approach has been verified. [Follow-up phase](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
+### Pending experiment on unobscured title text
+
+Can the renderer recognize an ordinary styled title in full and keep the metadata block when the same title is partly obscured? The candidate would establish that the complete text belongs to the source H1, fits inside the page and its clipping boundaries, and remains visible after later content is painted. If the evidence runs out, the candidate keeps the block. The experiment starts with contrasting text on a plain background to make each change visible. The background and CSS declarations below are fixture choices.
+
+Use the same metadata title `Report`, first body H1 `# Report {#report}`, and `letter-spacing: .25em` in all four variants. Each expected page comes from rendering that variant with the specified explicit mode.
+
+| Variant | Expected `auto` page | What the comparison establishes |
+| --- | --- | --- |
+| Whole heading visible | `hide` | Letter spacing preserves the identity of the visible title. |
+| Clip the heading to `.65em` high with `overflow: hidden` | `show` | Cutting through the letters makes the title incomplete. |
+| Paint an opaque rectangle over the lower half of the letters | `show` | Later paint can obscure glyphs that fit inside the heading. |
+| Move that same rectangle into blank space on the page | `hide` | The rectangle matters only when it obscures the title. |
+
+On both readers the original transparent-heading case must match `show`, as must hidden emphasis and the `:first-child` selector. The visible navy heading must match `hide`. Use the fully visible letter-spaced fixture for two independent fallback checks. First withhold the evidence linking the printed text to its source H1. Then identify the H1 but withhold the evidence that its text is unobscured. Each decision must keep the metadata block and produce the `show` page.
+
+On each reader, explicit `show` and `hide` pages must be distinguishable before they can serve as controls. The candidate makes its decision from the title-omitted layout. The page comparisons then test that decision. If a control fails, revisit the approach before changing production code or guide wording. [Follow-up phase](../plans/plan-2026-11-24-markdown-pdf-list-block-boundaries.md#follow-up--automatic-metadata-titles-under-author-css)
 
 ## Related Plans
 
