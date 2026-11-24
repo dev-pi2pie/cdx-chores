@@ -366,6 +366,18 @@ Application tests also introduced the extra warning only in the second proof. Ei
 
 Independent review of `9d578d9d...79d7f3fb` cleared `23baabf9` and found one remaining P3. With two font faces in one family, make the missing light face available at the same time the regular face disappears. The ordinary render and both proofs each report the same family-level warning once.
 
-On Pandoc 2.0 and 3.9 with WeasyPrint 70.0, the ordinary PDF embedded the regular face on page two. The published PDF embedded the replacement face. Its rasterized pages and embedded font matched an explicit `hide` render with the replacement available. The matching first H1 still printed once. Full canary clearance and the final Follow-Up checklist item remain open.
+On Pandoc 2.0 and 3.9 with WeasyPrint 70.0, the ordinary PDF embedded the regular face on page two. The published PDF embedded the replacement face. Its rasterized pages and embedded font matched an explicit `hide` render with the replacement available. The matching first H1 still printed once. This finding kept the final Follow-Up item open at that tip.
 
 At the reviewed tip, 2,732 unit tests, 2,795 application tests and 110 Pandoc integration tests passed. The focused warning tests covered colored and plain stderr. The build, tracked TypeScript, lint, formatting and whitespace checks passed.
+
+### Font-source verification
+
+At `e70be8a1`, each proof compared failed font sources with the ordinary render. Both Pandoc 2.0 and 3.9 passed these two-page checks with WeasyPrint 70.0 under default asset restrictions and with 69.0 with remote assets explicitly allowed.
+
+| Font availability during inspection | Published PDF |
+| --- | --- |
+| Light face stays missing, regular face stays available | Matched `hide`, with one title and the regular font on page two. |
+| Regular face disappears while the light face stays missing | Matched `show`, retaining the saved ordinary PDF and regular font. |
+| Regular face disappears as the light face becomes available | Despite one identical family warning per print, the published bytes matched the saved ordinary PDF. Its page-two raster and embedded font matched the regular-face control. |
+
+Each case emitted one font warning from the selected render. Application tests also covered a swap in the second proof, a missing source identity, and colored and plain warning output. [Title proof tests](../../../test/markdown-pdf/actions/rendering/printed-title.app.test.ts)

@@ -28,7 +28,7 @@ The scanner now determines which list item, quote, or document block owns a fenc
 
 The fence investigation is complete. Comparing the branch with the previous canary also exposed two regressions in the PDF renderer’s automatic title selection. Those findings reopened this research for a separate question. [When can a styled body heading stand in for the metadata title?](#when-can-a-styled-body-heading-stand-in-for-the-metadata-title)
 
-The styled-title check passed the matching-heading and repeated-warning cases on both Pandoc readers. One font-loading question remains open. Two faces in the same family can exchange availability while WeasyPrint reports the same warning once in every render. [Reproduction and review status](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#canary-re-review-of-the-font-warning-correction)
+The styled-title check preserved one heading when the same font source remained unavailable. When two faces in one family exchanged availability, the family warning stayed the same. Comparing the failed sources let the CLI keep the earlier PDF with the regular face embedded. [Two-reader verification](../plans/jobs/2026-11-24-markdown-pdf-list-block-boundaries.md#font-source-verification)
 
 ## What successive reviews found
 
@@ -197,6 +197,7 @@ Both parts of `auto` now live under `src/cli/markdown-pdf/title/`. [Module layou
 | --- | --- |
 | Match source headings and interpret inline styles | `ast-title.ts`, `ast-title-visibility.ts`, `ast-title-variables.ts` |
 | Select the metadata block, identify printed text and check glyph visibility | `styled-title.ts`, `printed-proof.ts`, `visible-glyphs.ts` |
+| Compare font failures between renders | `print-diagnostics.ts` |
 
 - `pandoc-source.ts` supplies the parsed Markdown.
 - `render.ts` coordinates printing.
