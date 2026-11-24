@@ -331,3 +331,12 @@ Round one covered `9d578d9d...2c3b1a88`. Both corrections at `fbb447e0` passed o
 All 40 page comparisons per reader passed with WeasyPrint 70.0. The missing-identity, missing-glyph-evidence and unavailable-inspection controls each matched `show`. A visible letter-spaced heading also published the inspected PDF on both readers with WeasyPrint 69.0 and remote assets explicitly allowed. [Regression tests](../../../test/markdown-pdf/actions/rendering/printed-title.app.test.ts)
 
 Repeating the one-page measurement above, the median time from starting the proof to selecting the HTML was 313 ms at `73306696` and 723 ms at `fbb447e0` on Pandoc 2.0. On 3.9 it was 337 and 684 ms. At `fbb447e0` the first of the two prints also supplied the published PDF.
+
+Round two covered `9d578d9d...605ae132`. Independent review cleared both first-round corrections and found two regressions. Both reproduced on Pandoc 2.0 and 3.9. At `2a58ed11`, six additional page comparisons per reader passed.
+
+| Finding | Verified output after correction |
+| --- | --- |
+| A logo available for just one print disappeared from the fallback PDF. | The CLI rendered the ordinary metadata layout first. When the next print lost the logo, the published pages matched `show`, with the logo intact on either the first or a later page. A stable later-page logo allowed the complete heading to supply the title. |
+| CSS uppercase expanded one source character into two printed letters. | `Straße` → `STRASSE` and `ß` → `SS` each printed one heading. A CSS-generated `STRASSE` that did not change with the source kept the metadata block. |
+
+At `2a58ed11`, the median interval from starting the first print to selecting the HTML was 1,200 ms on Pandoc 2.0 and 1,121 ms on 3.9. The one-page measurement used the same alternating method and included the ordinary fallback print, two tagged prints and inspection. The corresponding intervals at `73306696` were 399 and 375 ms, excluding that baseline's separate final print.
