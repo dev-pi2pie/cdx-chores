@@ -75,7 +75,7 @@ Started from `b66bc6df`. The scanner tracks the content margin and preceding blo
 | `ee3086c6` | Applied each enclosing marker width to partially outdented backticks. Under a three-column ordered marker and a two-column bullet, both readers recognize Python at zero, two, three and five spaces. At one and four spaces, the backticks form inline code. Moving the closer to a sibling or past the item leaves the pipe row visible. |
 | `2bb809a6` | Used the same ownership decision for tildes before checking whether they interrupt prose. In the same six-width comparison, two-space tildes stay in the child paragraph on both readers and leave the pipe row visible. At one and four spaces only 3.9 recognizes the Python block. |
 
-The full application suite stopped at its DuckDB extension preflight. Its full run remains a Phase 4 checklist item.
+The full application suite stopped at its DuckDB extension preflight during Phase 2. The [Phase 4 verification](#phase-4--verify-authoring-and-rendering-through-the-application) records the subsequent full run.
 
 Independent implementation and test reviews cleared `b66bc6df..2bb809a6`. The implementation reviewer compared 384 combinations of marker, margin, body and blank-line placement against Pandoc 3.9. All language hints agreed. All four Phase 2 checklist items are complete.
 
@@ -100,7 +100,22 @@ Independent implementation and test reviews cleared `f786aff5..e10250e0`. Re-rev
 
 ## Phase 4 — Verify authoring and rendering through the application
 
-Pending.
+Started from `e9b5e7f9`. At `b7b7911c`, Profile, Template, and Project agreed on all 29 boundary fixtures with Pandoc absent and with a detectable Pandoc stub. All heading, language, and row targets passed. The stub recorded zero invocations, including version probes. The limits control retained 12 languages with one overflow, one unlabeled fence, and 50 source rows with two overflow rows. The widest retained row kept its original width. [Authoring checks](../../../test/markdown-pdf/actions/authoring-source-signals.app.test.ts)
+
+Commit `96ae5f2d` exercised the untitled Markdown → HTML route and the titled Markdown → JSON → HTML route. Both used the same Markdown body. The tests checked the conversion sequence and matched the exported HTML to the input received by the PDF renderer stub. [Render checks](../../../test/markdown-pdf/actions/rendering/ast-render-fixtures.ts)
+
+| Fixture | Pandoc 2.0 on both routes | Pandoc 3.9 on both routes |
+| --- | --- | --- |
+| `numbered` | The ordered item retains the pipe text as inline code. | The ordered item contains a Python code block with the exact pipe text. |
+| `document-literal` | An unclassified document-level code block retains both backtick delimiters. | Same as 2.0. |
+| `comment-item-early-close` | Both body H1s survive. Only the document-level `js` block remains. | Both body H1s survive. The ordered item also contains the `sh` block with `-->`. |
+| `textarea-item` | The reader emits a recovered H1, but its HTML markup lands inside the textarea as text. Only the trailing H1 survives as a body heading, and `js` is the only code block. | The textarea contains the original Markdown heading as text. An unclassified document-level block contains the closing tildes, followed by the `js` block and the trailing body H1. |
+
+Review led to `a8ecd37b`, which added the ambiguous textarea case and compared each application render with a separate Pandoc conversion of the original input. The comparison covers heading text, code text and language, and ordered or unordered list ancestry. The authoring detector now logs calls even when a subprocess filters its environment. The width control includes indentation, and the shared scanner tests retain all four list transitions after duplicate checks were removed.
+
+`pandoc --version` confirmed 2.0 and 3.9. All 29 [reader fixtures](../../../test/markdown-pdf/actions/rendering/list-block-boundaries.pandoc.test.ts) and eight application renders passed on each version. `bun run test:unit` passed 2,509 tests. `bun run test:integration:app` passed 2,768 tests. `bun run test:integration:pandoc` passed 35 tests on 3.9. TypeScript, lint, formatting, and whitespace checks passed.
+
+Independent code and test reviewers cleared the full revised range `e9b5e7f9..a8ecd37b`. All three Phase 4 checklist items are complete.
 
 ## Phase 5 — Validate documentation and close the record
 
