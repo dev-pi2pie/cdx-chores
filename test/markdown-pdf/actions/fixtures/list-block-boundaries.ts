@@ -10,7 +10,25 @@ function listCase(name: string, prefix: string, margin: string, fence: string, f
   return { name, markdown: prefix + block + "\n\n" + visible, fenced };
 }
 
+function definitionCloser(name: string, blank: boolean) {
+  const markdown = [
+    "Term",
+    "",
+    ": Definition",
+    "",
+    "  ~~~python",
+    "  " + pipeBody,
+    ...(blank ? [""] : []),
+    "~~~",
+    "",
+    visible,
+  ].join("\n");
+  return { name, markdown, fenced: !blank };
+}
+
 export const listBoundaryCases = [
+  definitionCloser("definition-outdented-close", false),
+  definitionCloser("definition-close-after-blank", true),
   listCase("definition-continuation", "Term\n\n: Definition\n\n", "    ", "~~~", true),
   listCase("compact-mixed-list", "1. - Item\n", "  ", "~~~", true),
   listCase("quote-in-item", "- Item\n\n  > Quoted\n", "   ", "```", true),

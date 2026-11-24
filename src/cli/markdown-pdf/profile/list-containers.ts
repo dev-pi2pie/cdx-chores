@@ -76,7 +76,12 @@ export class Container {
   fenceRange(lines: string[], index: number, opener: FenceLine) {
     const range = this.ranges.strict;
     if (!range || index < range.start || index >= range.end) {
-      const project = this.kind === "quote" ? (line: string) => this.quoteLine(line) : undefined;
+      const project =
+        this.kind === "quote"
+          ? (line: string) => this.quoteLine(line)
+          : this.kind === "definition"
+            ? this.projectContinuation(lines)
+            : undefined;
       return (this.ranges.strict = new FenceRange(lines, index, this.margin, opener, project));
     }
     return range;
@@ -109,22 +114,33 @@ export class Container {
     }
   }
 
+  private projectContinuation(lines: string[]) {
+    return (line: string, i: number, inside: string | undefined) => {
+      if (inside !== undefined) return inside;
+      if (!lines[i - 1]?.trim()) return;
+      const destination = containerAtIndent(this, line);
+      if (
+        readMarker(
+          line.slice(destination.margin),
+          destination.margin,
+          undefined,
+          this.kind === "definition",
+        )
+      )
+        return;
+      return continuationLine(this, destination, line);
+    };
+  }
+
   continuationRange(lines: string[], start: number) {
     const range = this.ranges.continuation;
     if (!range || start < range.start || start >= range.end) {
-      const project = (line: string, i: number, inside: string | undefined) => {
-        if (inside !== undefined) return inside;
-        if (!lines[i - 1]?.trim()) return;
-        const destination = containerAtIndent(this, line);
-        if (readMarker(line.slice(destination.margin), destination.margin)) return;
-        return continuationLine(this, destination, line);
-      };
       return (this.ranges.continuation = new FenceRange(
         lines,
         start,
         this.margin,
         undefined,
-        project,
+        this.projectContinuation(lines),
       ));
     }
     return range;
