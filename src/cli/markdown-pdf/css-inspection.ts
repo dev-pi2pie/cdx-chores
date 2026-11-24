@@ -4,6 +4,8 @@ export interface CssInspectionOptions {
   commentReplacement: string;
   lowercase: boolean;
   maskStrings: boolean;
+  /** Keep strings and escaped punctuation distinct from declaration syntax. */
+  preserveTokenBoundaries?: boolean;
 }
 
 export interface CssInspectionResult {
@@ -71,7 +73,7 @@ export function normalizeCssForInspection(
 
     if (char === '"' || char === "'") {
       quote = char;
-      result += options.maskStrings ? " " : char;
+      result += options.maskStrings ? (options.preserveTokenBoundaries ? "\uFFFD" : " ") : char;
       continue;
     }
 
@@ -87,7 +89,10 @@ export function normalizeCssForInspection(
 
     if (char === "\\") {
       const escape = decodeCssEscape(css, index);
-      result += normalizeCase(escape.value);
+      result +=
+        options.preserveTokenBoundaries && !/^[a-z0-9_-]+$/iu.test(escape.value)
+          ? "\uFFFD"
+          : normalizeCase(escape.value);
       index = escape.nextIndex;
       continue;
     }

@@ -47,8 +47,13 @@ describe("Pandoc AST title comparison", () => {
   });
 
   test.each([
-    ["display: NONE /* comment */ !important; display: block", false],
+    ["display: NONE /* comment */ !important; display: block", true],
+    ["DISPLAY: none /* comment */ !IMPORTANT; display: block", false],
+    ["display: none; display: block 'extra'", false],
+    ["display: none; display: var(--layout); --layout: block", true],
     ["display: none; display: block", true],
+    ["display: none; --layout:bogus; display:var(--layout)", true],
+    ["visibility:hidden; --show:bogus; visibility:var(--show)", true],
     ["display: block !important; display: none", true],
     ['--label: ";display:none;"; color: black', true],
     ["color: red", true],
@@ -66,6 +71,14 @@ describe("Pandoc AST title comparison", () => {
 
   test.each([
     ["visibility:hidden", "color:red", false],
+    ["--layout:none", "display:var(--layout)", false],
+    ["--layout:inline; --outer:var(--layout)", "--layout:none;display:var(--outer)", true],
+    ["--Layout:block; --Layout:none!important; --Layout:inline", "display:var(--Layout)", false],
+    ["--layout:block", "display:var(--layout) flow-root", true],
+    ["color:red", "DISPLAY:var(--missing, block)", true],
+    ["color:red", "visibility:var(--external)", false],
+    ["display:var(--external)", "display:block", false],
+    ["color:red", "visibility:HIDDEN", false],
     ["visibility:hidden", "visibility:visible", true],
     ["visibility:hidden", "visibility:inherit", false],
     ["visibility:collapse", "visibility:initial", true],

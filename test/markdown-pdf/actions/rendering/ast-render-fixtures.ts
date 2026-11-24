@@ -59,6 +59,19 @@ const titleControls = [
   { name: "hidden-title", attributes: 'style="display:none"', keep: true },
   { name: "visibility-hidden-title", attributes: 'style="visibility:hidden"', keep: true },
   { name: "visible-title", attributes: ".note", keep: false },
+  { name: "visible-title-uppercase-display", attributes: 'style="display:NONE"', keep: false },
+  {
+    name: "hidden-title-after-hidden",
+    attributes: 'style="display:none"',
+    keep: true,
+    later: true,
+    laterStyle: "--layout:none;display:var(--layout)",
+  },
+  {
+    name: "visible-title-inline-variable",
+    attributes: 'style="--layout:block;display:var(--layout)"',
+    keep: false,
+  },
   {
     name: "visible-title-overrides-hidden",
     attributes: 'hidden=hidden style="display:block"',
@@ -83,7 +96,7 @@ const titleControls = [
 ];
 
 export const astRenderFixtures: RenderFixture[] = [
-  ...titleControls.map(({ name, attributes, later }) => ({
+  ...titleControls.map(({ name, attributes, later, laterStyle }) => ({
     name,
     split: true,
     markdown: [
@@ -97,7 +110,11 @@ export const astRenderFixtures: RenderFixture[] = [
       "",
       ":::",
       "",
-      ...(later ? [setextReport] : []),
+      ...(laterStyle
+        ? [`::: {style="${laterStyle}"}`, "", setextReport, "", ":::"]
+        : later
+          ? [setextReport]
+          : []),
     ].join("\n"),
   })),
   {
@@ -246,6 +263,13 @@ function checkRenderedHtml(
       control.attributes.includes("hidden=hidden") ? "hidden" : undefined,
     );
     assert.deepEqual(elements(section, "h1").map(text), [control.later ? "Earlier" : "Report"]);
+    if (control.laterStyle) {
+      const second = [...elements(main, "div"), ...elements(main, "section")].find(
+        (node) => attribute(node, "style") === control.laterStyle,
+      );
+      assert(second);
+      assert.deepEqual(elements(second, "h1").map(text), ["Report"]);
+    }
     assert.deepEqual(elements(main, "h1").map(text), [
       ...titles,
       ...(control.later ? ["Earlier", "Report"] : ["Report"]),

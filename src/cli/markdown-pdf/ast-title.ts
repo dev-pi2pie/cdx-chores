@@ -1,4 +1,4 @@
-import { titleBlockVisibility } from "./ast-title-visibility";
+import { documentTitleStyle, titleBlockVisibility } from "./ast-title-visibility";
 
 interface TitleLink {
   label: string;
@@ -11,19 +11,19 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function firstH1(
   blocks: unknown[],
-  inherited: "visible" | "hidden" = "visible",
-): unknown[] | undefined {
+  inherited = documentTitleStyle,
+): unknown[] | "unknown" | undefined {
   for (const block of blocks) {
     if (!isRecord(block) || !Array.isArray(block.c)) continue;
-    if (
-      block.t === "Header" &&
-      block.c[0] === 1 &&
-      titleBlockVisibility(block.c[1], inherited) === "visible"
-    )
+    if (block.t === "Header" && block.c[0] === 1) {
+      const { display, visibility } = titleBlockVisibility(block.c[1], inherited);
+      if (display === "omitted" || visibility === "hidden") continue;
+      if (display === "unknown" || visibility === "unknown") return "unknown";
       return block.c;
+    }
     if (block.t === "Div" && Array.isArray(block.c[1])) {
       const visibility = titleBlockVisibility(block.c[0], inherited);
-      if (visibility === "omitted") continue;
+      if (visibility.display === "omitted") continue;
       const heading = firstH1(block.c[1], visibility);
       if (heading) return heading;
     }
@@ -98,7 +98,7 @@ export function shouldSuppressMarkdownPdfMetadataTitle(
     return false;
   }
   const heading = firstH1(document.blocks);
-  if (!heading) return false;
+  if (!heading || heading === "unknown") return false;
 
   const titleLinks: TitleLink[] = [];
   const headingLinks: TitleLink[] = [];
