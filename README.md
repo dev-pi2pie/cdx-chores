@@ -86,7 +86,7 @@ Use `cdx-chores doctor` before relying on a command in a script, a CI job, or a 
 | `data extract` reviewed suggestions, `data query codex`                 | Codex-assisted source shaping, semantic header review, and natural-language SQL drafting | Codex support must be configured and an auth/session signal must be available                                                 | Run `cdx-chores doctor`                                                                                            |
 | `md pdf-profile codex`, `md pdf-template codex`, `md pdf-project codex` | Codex-assisted Markdown PDF profile, template, and coordinated project drafting          | Codex support must be configured for Codex-assisted decisions; deterministic fallback paths remain available where documented | Run `cdx-chores doctor`                                                                                            |
 
-The Codex SDK baseline for `v0.2.2-canary.9` is `@openai/codex-sdk` `0.172.0`.
+The Codex SDK baseline for `v0.2.2` is `@openai/codex-sdk` `0.172.0`.
 
 Adopted helper commands and explicit `interactive` sessions accept `--codex-model`, `--codex-provider`, `--codex-reasoning-effort`, and `--codex-speed`. Model, provider, and speed inherit Codex configuration when omitted, and helper reasoning defaults to `low`. Use `--session-retention` to keep, archive, or permanently delete sessions created by the command. See [Codex execution configuration](docs/guides/codex-execution-configuration.md) for command scope and failure behavior.
 

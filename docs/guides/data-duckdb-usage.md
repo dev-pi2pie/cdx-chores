@@ -1,7 +1,7 @@
 ---
 title: "Data DuckDB Usage"
 created-date: 2026-03-12
-modified-date: 2026-11-19
+modified-date: 2026-11-25
 status: completed
 agent: codex
 ---
@@ -114,7 +114,7 @@ Manual cache cleanup should be treated as an advanced fallback, not the primary 
 
 ### DuckDB 2 migration
 
-`cdx-chores` switched to DuckDB 2.0.0 (`@duckdb/node-api@2.0.0-r.1`) in `v0.2.2-canary.2`. If you use Excel or SQLite, install the matching extensions for the new engine. Before rerunning saved SQL or Codex drafts, check the expressions below for changes in results or errors.
+`v0.2.2` upgrades DuckDB from 1.5.6 to 2.0.1 (`@duckdb/node-api@2.0.1-r.1`). If you use Excel or SQLite, install the matching extensions for the new engine. Before rerunning saved SQL or Codex drafts, check the expressions below for changes in results or errors.
 
 | Earlier behavior | DuckDB 2 behavior | Migration |
 | --- | --- | --- |

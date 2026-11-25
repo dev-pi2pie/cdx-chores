@@ -1,7 +1,7 @@
 ---
 title: "Markdown PDF Usage"
 created-date: 2026-05-06
-modified-date: 2026-11-24
+modified-date: 2026-11-25
 status: completed
 agent: codex
 ---
@@ -957,7 +957,7 @@ flowchart TD
     optIn --> normalLoading(["Local, embedded, and HTTP(S) assets can load"])
 ```
 
-Markdown PDF rendering first shipped in [v0.1.3](../../CHANGELOGS/v0.1.3.md) with a preflight check for remote asset references and the direct CLI opt-in `--allow-remote-assets`. Starting with `v0.2.2-canary.8`, WeasyPrint also enforces the default policy during rendering, including when it loads resources from CSS. Existing commands that pass `--allow-remote-assets` can still fetch remote assets.
+Markdown PDF rendering first shipped in [v0.1.3](../../CHANGELOGS/v0.1.3.md) with a preflight check for remote asset references and the direct CLI opt-in `--allow-remote-assets`. Starting with [v0.2.2](../../CHANGELOGS/v0.2.2.md), WeasyPrint also enforces the default policy during rendering, including when it loads resources from CSS. Existing commands that pass `--allow-remote-assets` can still fetch remote assets.
 
 ### WeasyPrint compatibility
 
