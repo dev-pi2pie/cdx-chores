@@ -1,4 +1,8 @@
-import { documentTitleStyle, titleBlockVisibility } from "./ast-title-visibility";
+import {
+  documentTitleStyle,
+  titleBlockVisibility,
+  type TitleBlockStyle,
+} from "./ast-title-visibility";
 
 interface TitleLink {
   label: string;
@@ -9,6 +13,49 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+// The AST shortcut needs uniform visibility. A mixed or unsupported inline
+// subtree cannot establish a full duplicate or justify skipping an earlier H1.
+function hasInlineVisibility(
+  inlines: unknown,
+  inherited: TitleBlockStyle,
+  expected: "visible" | "hidden",
+): boolean {
+  if (!Array.isArray(inlines)) return false;
+  return inlines.every((inline: unknown) => {
+    if (!isRecord(inline)) return false;
+    const { t, c } = inline;
+    switch (t) {
+      case "Str":
+      case "Space":
+      case "SoftBreak":
+      case "LineBreak":
+        return inherited.visibility === expected;
+      case "Emph":
+      case "Strong":
+        return hasInlineVisibility(c, inherited, expected);
+      case "Quoted":
+        return (
+          inherited.visibility === expected &&
+          Array.isArray(c) &&
+          hasInlineVisibility(c[1], inherited, expected)
+        );
+      case "Code":
+      case "Link":
+      case "Span": {
+        if (!Array.isArray(c) || !Array.isArray(c[0])) return false;
+        const style = titleBlockVisibility(c[0], inherited);
+        if (style.display === "omitted") return expected === "hidden";
+        if (style.display === "unknown" || style.visibility === "unknown") return false;
+        return t === "Code"
+          ? style.visibility === expected
+          : hasInlineVisibility(c[1], style, expected);
+      }
+      default:
+        return false;
+    }
+  });
+}
+
 function firstH1(
   blocks: unknown[],
   inherited = documentTitleStyle,
@@ -16,10 +63,15 @@ function firstH1(
   for (const block of blocks) {
     if (!isRecord(block) || !Array.isArray(block.c)) continue;
     if (block.t === "Header" && block.c[0] === 1) {
-      const { display, visibility } = titleBlockVisibility(block.c[1], inherited);
-      if (display === "omitted" || visibility === "hidden") continue;
-      if (display === "unknown" || visibility === "unknown") return "unknown";
-      return block.c;
+      const style = titleBlockVisibility(block.c[1], inherited);
+      if (style.display === "omitted") continue;
+      if (
+        style.display === "unknown" ||
+        style.visibility === "unknown" ||
+        !hasInlineVisibility(block.c[2], style, style.visibility)
+      )
+        return "unknown";
+      if (style.visibility === "visible") return block.c;
     }
     if (block.t === "Div" && Array.isArray(block.c[1])) {
       const visibility = titleBlockVisibility(block.c[0], inherited);

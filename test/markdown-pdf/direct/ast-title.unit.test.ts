@@ -198,6 +198,54 @@ describe("Pandoc AST title comparison", () => {
     expect(shouldSuppressMarkdownPdfMetadataTitle(ast, "Guide")).toBe(false);
   });
 
+  test.each([
+    ["display:none", false],
+    ["visibility:hidden", false],
+    ["visibility:var(--unresolved)", false],
+    ["visibility:visible", true],
+  ] as const)("requires visible inline code and link text with %s", (style, suppress) => {
+    const attributes = ["", [], [["style", style]]];
+    const code = { t: "Code", c: [attributes, "Guide"] };
+    const styledLink = { t: "Link", c: [attributes, [guide], ["/guide", ""]] };
+    for (const inline of [code, styledLink]) {
+      const ast = document(meta(guide), header(1, { t: "Emph", c: [inline] }));
+      expect(shouldSuppressMarkdownPdfMetadataTitle(ast, "Guide")).toBe(suppress);
+    }
+  });
+
+  test.each([
+    ["visibility:hidden", false],
+    ["display:none", true],
+  ] as const)("checks nested visibility overrides in an earlier H1 with %s", (style, suppress) => {
+    const span = {
+      t: "Span",
+      c: [["", [], [["style", "visibility:visible"]]], [str("Earlier")]],
+    };
+    const earlier = {
+      t: "Header",
+      c: [1, ["", [], [["style", style]]], [link("/earlier", { t: "Strong", c: [span] })]],
+    };
+    expect(
+      shouldSuppressMarkdownPdfMetadataTitle(
+        document(meta(guide), earlier, header(1, guide)),
+        "Guide",
+      ),
+    ).toBe(suppress);
+  });
+
+  test("skips an earlier H1 when formatting inherits its hidden visibility", () => {
+    const earlier = {
+      t: "Header",
+      c: [1, ["", [], [["style", "visibility:hidden"]]], [link("/earlier", str("Earlier"))]],
+    };
+    expect(
+      shouldSuppressMarkdownPdfMetadataTitle(
+        document(meta(guide), earlier, header(1, guide)),
+        "Guide",
+      ),
+    ).toBe(true);
+  });
+
   test("projects formatted text consistently across metadata and heading", () => {
     const ast = document(
       meta(

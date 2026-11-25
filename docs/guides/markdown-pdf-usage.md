@@ -676,7 +676,9 @@ Heading
 
 The comparison folds case and whitespace and preserves punctuation. It supports plain text, emphasis, strong text, inline code, smart quotes, and link labels. If the first eligible H1 or metadata title uses unsupported formatting such as math, images, or spans, the block stays, even if a later H1 matches. The block also stays when there is no eligible H1. Every metadata title link needs a matching label and destination in the heading before the block can be omitted.
 
-With a custom stylesheet (from `--css` or a bundle), an embedded `<style>`, or a linked stylesheet, `auto` omits the block only if it can verify that the matching source H1 prints in full without the block. Letter spacing and emphasis (`# Re*port*`) can pass this check. Transparent, clipped, or covered letters and unavailable PDF inspection keep the block. Inline styles alone use the parsed heading check, so inline `opacity: 0` can leave the page without a visible title.
+With a custom stylesheet (from `--css` or a bundle), an embedded `<style>`, or a linked stylesheet, `auto` omits the block only if it can verify that the matching source H1 prints in full without the block. Letter spacing and emphasis (`# Re*port*`) can pass this check. Transparent, clipped, or covered letters and unavailable PDF inspection keep the block.
+
+Inline styles alone use the parsed heading check. The block stays if inline `display` or `visibility` hides part of the matching H1, or if a child may still be visible inside an earlier H1. Effects such as inline `opacity: 0` can still hide a title in print.
 
 A stable asset warning can still allow one title. If inspection adds a loading failure, reports the same failure more often, or cannot identify a failed font source, the CLI publishes the earlier PDF with its metadata block. This can print a duplicate. WeasyPrint warnings on stderr and the title choice in debug HTML reflect the selected PDF. Use `show` or `hide` for a fixed choice.
 

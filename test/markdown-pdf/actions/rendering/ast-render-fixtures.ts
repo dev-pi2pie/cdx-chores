@@ -70,6 +70,34 @@ interface RenderFixture {
   boundary?: string;
 }
 
+const inlineTitleControls = [
+  {
+    name: "metadata-title-with-hidden-link",
+    title: "Report",
+    headings: '# [Report](#details){style="display:none"}',
+    bodyTitles: ["Report"],
+  },
+  {
+    name: "metadata-title-with-hidden-inline-code",
+    title: "Report",
+    headings: '# `Report`{style="display:none"}',
+    bodyTitles: ["Report"],
+  },
+  {
+    name: "metadata-title-with-partially-hidden-heading",
+    title: "Annual Report",
+    headings:
+      '# Annual [Report](#details){style="visibility:var(--label)"} {style="--label:hidden"}',
+    bodyTitles: ["Annual Report"],
+  },
+  {
+    name: "metadata-title-after-earlier-heading-with-visible-child",
+    title: "Report",
+    headings: '# [Earlier]{style="visibility:visible"} {style="visibility:hidden"}\n\n# Report',
+    bodyTitles: ["Earlier", "Report"],
+  },
+];
+
 const setextReport = "Report\n======";
 interface TitleControl {
   name: string;
@@ -196,6 +224,11 @@ const titleControls: TitleControl[] = [
 ];
 
 export const astRenderFixtures: RenderFixture[] = [
+  ...inlineTitleControls.map(({ name, title, headings }) => ({
+    name,
+    split: true,
+    markdown: `---\ntitle: ${title}\n---\n\n${headings}\n\n## Details\n`,
+  })),
   ...titleControls.map(({ name, attributes, later, laterStyle }) => ({
     name,
     split: true,
@@ -348,6 +381,16 @@ function checkRenderedHtml(
   const titleBlocks = elements(main, "header").filter(
     (node) => attribute(node, "class") === "document-title",
   );
+  const inlineControl = inlineTitleControls.find(({ name }) => name === fixture.name);
+  if (inlineControl) {
+    const { title, bodyTitles } = inlineControl;
+    assert.deepEqual(
+      titleBlocks.flatMap((header) => elements(header, "h1").map(text)),
+      [title],
+    );
+    assert.deepEqual(elements(main, "h1").map(text), [title, ...bodyTitles]);
+    return;
+  }
   const control = titleControls.find(({ name }) => name === fixture.name);
   if (control) {
     const titles = titleBlocks.flatMap((header) => elements(header, "h1").map(text));
